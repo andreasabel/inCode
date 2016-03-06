@@ -1,0 +1,606 @@
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/"><channel><title>in Code — Entries</title><link>/</link><description>Weblog of Justin Le, covering his various adventures in programming and explorations in the vast worlds of computation physics, and knowledge.</description><item><title>Unique sample drawing &amp; searches with List and StateT --- &quot;Send more money&quot;</title><link>http://mstksg.github.com/inCode/entry/unique-sample-drawing-searches-with-list-and-statet</link><description>&lt;p&gt;Nothing too crazy today, just a cute (basic/intermediate) haskell trick as a response to Mark Dominus’s excellent &lt;a href=&quot;http://blog.plover.com&quot;&gt;Universe of Discourse&lt;/a&gt; post on &lt;a href=&quot;http://blog.plover.com/prog/haskell/monad-search.html&quot;&gt;Easy exhaustive search with the list monad&lt;/a&gt; intended for people new or unfamiliar with haskell demonstrating the common “list monad as a constraint solver” approach that is standard fare for learning Haskell. I myself have literally done &lt;a href=&quot;http://blog.jle.im/entries/series/+monadplus-success-failure-monads&quot;&gt;an entire series of blog posts&lt;/a&gt; on this usage.&lt;/p&gt;
+&lt;p&gt;Mark’s use case however incorporates a bit of an extra pattern not typically discussed. The list monad is good for taking “independent samples” of things (looking at different samples from a list):&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;ghci&lt;span class=&quot;fu&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt; x &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;abc&amp;quot;&lt;/span&gt;
+         y &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;abc&amp;quot;&lt;/span&gt;
+         z &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;abc&amp;quot;&lt;/span&gt;
+         return [x,y,z]
+[&lt;span class=&quot;st&quot;&gt;&amp;quot;aaa&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;aab&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;aac&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;aba&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;abb&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;...&lt;/span&gt; ]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;However, what if you wanted to instead “draw” from a pool, and represent different drawings? Traditionally, the answer was something like:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;ghci&lt;span class=&quot;fu&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt; x &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;abc&amp;quot;&lt;/span&gt;
+         y &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; filter (&lt;span class=&quot;fu&quot;&gt;/=&lt;/span&gt; x) &lt;span class=&quot;st&quot;&gt;&amp;quot;abc&amp;quot;&lt;/span&gt;
+         z &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; filter (&lt;span class=&quot;fu&quot;&gt;/=&lt;/span&gt; y) &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; filter (&lt;span class=&quot;fu&quot;&gt;/=&lt;/span&gt; x) &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;abc&amp;quot;&lt;/span&gt;
+         return [x,y,z]
+&lt;span class=&quot;st&quot;&gt;&amp;quot;abc&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;acb&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;bac&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;bca&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;cab&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;cba&amp;quot;&lt;/span&gt;]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This is a little bit awkward…and it definitely gets a lot worse (&lt;img style=&quot;vertical-align:middle&quot; src=&quot;http://chart.apis.google.com/chart?cht=tx&amp;amp;chf=bg,s,FFFFFF00&amp;amp;chl=O%28n%5E2%29&quot; alt=&quot;O(n^2)&quot; title=&quot;O(n^2)&quot; /&gt;) when you have more items. Also, it relies on an &lt;code&gt;Eq&lt;/code&gt; constraint — what if our thing doesn’t have an &lt;code&gt;Eq&lt;/code&gt; instance? And this also falls apart when our list contains duplicate items. If we had used &lt;code&gt;&amp;quot;aabc&amp;quot;&lt;/code&gt; instead of &lt;code&gt;&amp;quot;abc&amp;quot;&lt;/code&gt;, the result would be the same — despite having more &lt;code&gt;&#39;a&#39;&lt;/code&gt;s to pick from!&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Important note:&lt;/strong&gt; After writing this article, I found out that Douglas Auclair in &lt;a href=&quot;https://wiki.haskell.org/wikiupload/6/6a/TMR-Issue11.pdf&quot;&gt;11th issue of the Monad Reader&lt;/a&gt; solved this exact same problem with pretty much the exact same approach. (Oops!) If you want to do further reading, check it out! :D&lt;/p&gt;
+&lt;h2 id=&quot;statet&quot;&gt;StateT&lt;/h2&gt;
+&lt;p&gt;There’s a type in the &lt;em&gt;transformers&lt;/em&gt; library that provides a very useful monad instance:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;kw&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;StateT&lt;/span&gt; s m a &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;StateT&lt;/span&gt; (s &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; m (a, s))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;A &lt;code&gt;StateT s m a&lt;/code&gt; is a function that takes an initial state &lt;code&gt;s&lt;/code&gt; and returns a result &lt;code&gt;a&lt;/code&gt; with a modified state…in the context of &lt;code&gt;m&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Specialize for &lt;code&gt;m ~ []&lt;/code&gt; and we get&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;kw&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;StateT&lt;/span&gt; s [] a &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;StateT&lt;/span&gt; (s &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; [(a, s)])&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Which is basically describing a function from a initial state to a list of &lt;em&gt;ways you can modify the state&lt;/em&gt;, and different results from each one. It returns a list of “all ways you can mutate this state”.&lt;/p&gt;
+&lt;p&gt;For example,&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;ot&quot;&gt;foo ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;StateT&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Int&lt;/span&gt; [] &lt;span class=&quot;dt&quot;&gt;Bool&lt;/span&gt;
+foo &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;StateT&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; \x &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; [(even x, x&lt;span class=&quot;fu&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;), (odd x, x&lt;span class=&quot;fu&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;), (x &lt;span class=&quot;fu&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;, negate x)]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;So &lt;code&gt;foo&lt;/code&gt; takes a number, &lt;code&gt;x&lt;/code&gt;, and says, “here are three ways we might proceed from having this number. We can return whether or not it’s even, in which case the new state is &lt;code&gt;x+1&lt;/code&gt;…we can return whether or not it’s odd, in which case the new state is &lt;code&gt;x-1&lt;/code&gt;….or we can return whether or not it’s positive, in which case the new state is &lt;code&gt;negate x&lt;/code&gt;”&lt;/p&gt;
+&lt;p&gt;What the monad instance does is that it allows you to “chain” forks, and go along different forks, and gather together “all possible forks” you could have taken. At the end, it outputs all possible forks. So if you did &lt;code&gt;foo &amp;gt;&amp;gt; foo&lt;/code&gt;, there’d be nine results — one result for when you took the first route (the &lt;code&gt;x+1&lt;/code&gt;) twice, one for when you took the first and then the second (&lt;code&gt;x-1&lt;/code&gt;), one for when you took the first and the third….and the second and the first…etc., etc.&lt;/p&gt;
+&lt;h3 id=&quot;monadplus&quot;&gt;MonadPlus&lt;/h3&gt;
+&lt;p&gt;One other tool we have at our disposal is &lt;code&gt;guard&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;ot&quot;&gt;guard ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Bool&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;StateT&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Int&lt;/span&gt; [] ()&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;which is a &lt;code&gt;StateT&lt;/code&gt; action that says “kill this current branch if given &lt;code&gt;False&lt;/code&gt;, or go on if given &lt;code&gt;True&lt;/code&gt;”&lt;/p&gt;
+&lt;h2 id=&quot;the-problem&quot;&gt;The Problem&lt;/h2&gt;
+&lt;p&gt;The problem, as stated, was to find distinct digits for each letter to solve:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;    S E N D
++   M O R E
+-----------
+  M O N E Y&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;So &lt;code&gt;SEND&lt;/code&gt; is a four-digit number, &lt;code&gt;MORE&lt;/code&gt; is a four-digit number, and &lt;code&gt;MONEY&lt;/code&gt; is a five-digit number that is the sum of the two. The first digit of &lt;code&gt;MONEY&lt;/code&gt; has to be the first digit of &lt;code&gt;MORE&lt;/code&gt;, the last digit of &lt;code&gt;MORE&lt;/code&gt; has to be the second digit of &lt;code&gt;SEND&lt;/code&gt;, etc.&lt;/p&gt;
+&lt;p&gt;The previous approach was done using the entire “pick from all possibilities…except for the ones already chosen”, using &lt;code&gt;(/=)&lt;/code&gt; and filtering over all of the things seen vs all of the things to pick from.&lt;/p&gt;
+&lt;p&gt;However, we can abstract over “picking dependently from a sample” by defining a function called &lt;code&gt;select&lt;/code&gt;, which really should be in the base libraries but isn’t for some reason:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;fu&quot;&gt;!!!&lt;/span&gt;misc&lt;span class=&quot;fu&quot;&gt;/&lt;/span&gt;send&lt;span class=&quot;fu&quot;&gt;-&lt;/span&gt;more&lt;span class=&quot;fu&quot;&gt;-&lt;/span&gt;money&lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt;hs &lt;span class=&quot;st&quot;&gt;&amp;quot;select ::&amp;quot;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;(Implementation thanks to Cale, who has fought valiantly yet fruitlessly to get this into base for many years.)&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;select&lt;/code&gt; will take a list &lt;code&gt;[a]&lt;/code&gt; and return a list of different “selected” &lt;code&gt;a&lt;/code&gt;s, with the rest of the list, too:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;ghci&lt;span class=&quot;fu&quot;&gt;&amp;gt;&lt;/span&gt; select &lt;span class=&quot;st&quot;&gt;&amp;quot;abcd&amp;quot;&lt;/span&gt;
+[(&lt;span class=&quot;ch&quot;&gt;&amp;#39;a&amp;#39;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;bcd&amp;quot;&lt;/span&gt;),(&lt;span class=&quot;ch&quot;&gt;&amp;#39;b&amp;#39;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;acd&amp;quot;&lt;/span&gt;),(&lt;span class=&quot;ch&quot;&gt;&amp;#39;c&amp;#39;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;abd&amp;quot;&lt;/span&gt;),(&lt;span class=&quot;ch&quot;&gt;&amp;#39;d&amp;#39;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;abc&amp;quot;&lt;/span&gt;)]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;But, hey…does the type signature of &lt;code&gt;select&lt;/code&gt; look like anything familiar?&lt;/p&gt;
+&lt;p&gt;It looks &lt;em&gt;exactly&lt;/em&gt; like something that &lt;code&gt;StateT&lt;/code&gt; is supposed to describe! Give an initial state (&lt;code&gt;[a]&lt;/code&gt;), and returns a list of all possible ways to “mutate” that state (by removing one element from the state), and a result from each mutation (the removed element).&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;dt&quot;&gt;StateT&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt; select ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;StateT&lt;/span&gt; [a] [] a&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;And armed with this…we have all we need&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;fu&quot;&gt;!!!&lt;/span&gt;misc&lt;span class=&quot;fu&quot;&gt;/&lt;/span&gt;send&lt;span class=&quot;fu&quot;&gt;-&lt;/span&gt;more&lt;span class=&quot;fu&quot;&gt;-&lt;/span&gt;money&lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt;hs &lt;span class=&quot;st&quot;&gt;&amp;quot;import Control.Monad &amp;quot;&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;asNumber ::&amp;quot;&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;main ::&amp;quot;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Remember, &lt;code&gt;StateT&lt;/code&gt; here operates with an underlying state of &lt;code&gt;[Int]&lt;/code&gt;, a list of numbers not yet picked. &lt;code&gt;StateT select&lt;/code&gt; picks one of these numbers, and modifies the state to now only include the items that were not picked. So every time you sequence &lt;code&gt;StateT select&lt;/code&gt;, &lt;code&gt;select&lt;/code&gt; draws from a smaller and smaller pool of numbers, and makes the state list smaller and smaller. What sequencing &lt;code&gt;StateT&lt;/code&gt; does is allow us to explore &lt;em&gt;all&lt;/em&gt; of the possible ways we could pick and modify state, all at once. Using &lt;code&gt;guard&lt;/code&gt;, we then “close off” and kill off the paths that don’t end up how we’d like.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;asNumber&lt;/code&gt; takes a list like &lt;code&gt;[1,2,3]&lt;/code&gt; and turns it into the number &lt;code&gt;123&lt;/code&gt;; credit to the source blog.&lt;/p&gt;
+&lt;p&gt;And, to test it out…&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode bash&quot;&gt;&lt;code class=&quot;sourceCode bash&quot;&gt;$ &lt;span class=&quot;kw&quot;&gt;ghc&lt;/span&gt; -O2 send-more-money.hs
+$ &lt;span class=&quot;kw&quot;&gt;./send-more-money&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;# [(9567,1085,10652)]&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;It returns the one and only solution, &lt;code&gt;SEND = 9567&lt;/code&gt;, &lt;code&gt;MORE = 1085&lt;/code&gt;, and &lt;code&gt;MONEY = 10652&lt;/code&gt;.&lt;a href=&quot;#fn1&quot; class=&quot;footnoteRef&quot; id=&quot;fnref1&quot;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;div class=&quot;note&quot;&gt;
+&lt;p&gt;&lt;strong&gt;Aside&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;We can make things a little bit more efficient with minimal cost in expressiveness. But not that it matters…the original version runs fast already.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;fu&quot;&gt;!!!&lt;/span&gt;misc&lt;span class=&quot;fu&quot;&gt;/&lt;/span&gt;send&lt;span class=&quot;fu&quot;&gt;-&lt;/span&gt;more&lt;span class=&quot;fu&quot;&gt;-&lt;/span&gt;money&lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt;hs &lt;span class=&quot;st&quot;&gt;&amp;quot;select&amp;#39; ::&amp;quot;&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;main&amp;#39; ::&amp;quot;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This is a more performant version of &lt;code&gt;select&lt;/code&gt; &lt;a href=&quot;http://chimera.labs.oreilly.com/books/1230000000929/pr01.html&quot;&gt;courtesy of Simon Marlow&lt;/a&gt; that doesn’t preserve the order of the “rest of the elements”.&lt;/p&gt;
+&lt;p&gt;Also, we use &lt;code&gt;mfilter&lt;/code&gt; to “eliminate bad &lt;code&gt;s&lt;/code&gt; and &lt;code&gt;m&lt;/code&gt;s” right off the bat, before having to pick any more things. &lt;code&gt;mfilter&lt;/code&gt; can be thought of as “killing the fork immediately” if the action doesn’t satisfy the predicate. If the &lt;code&gt;s&lt;/code&gt; picked doesn’t match &lt;code&gt;(/= 0)&lt;/code&gt;, then the entire branch/fork is immediately ruled invalid.&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;By the way, isn’t it neat that it does all of this in “constant space”? It just keeps track of the output list, but the actual search processes is in constant space. You don’t need to keep track of all &lt;code&gt;10!&lt;/code&gt; combinations in memory at once. Hooray laziness!&lt;/p&gt;
+&lt;h2 id=&quot;other-applications&quot;&gt;Other Applications&lt;/h2&gt;
+&lt;p&gt;Using &lt;code&gt;select&lt;/code&gt; and &lt;code&gt;StateT&lt;/code&gt;, we can do a lot of things involving picking from a sample, or permutations. Anything that you used to awkwardly do by using filter not-equal-to’s can work now. You can do things like drawing from a deck:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;ot&quot;&gt;pokerGame ::&lt;/span&gt; [&lt;span class=&quot;dt&quot;&gt;Ordering&lt;/span&gt;]
+pokerGame &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; flip evalStateT [&lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;51&lt;/span&gt;] &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    p2Hand &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; replicateM &lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;StateT&lt;/span&gt; select)
+    p1Hand &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; replicateM &lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;StateT&lt;/span&gt; select)
+    return &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; pokerCompare p1Hand p2Hand&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Which would draw five distinct cards from a deck of &lt;code&gt;[0..51]&lt;/code&gt;, and return who won for each draw (assuming you had a suitable &lt;code&gt;pokerCompare :: [Card] -&amp;gt; [Card] -&amp;gt; Ordering&lt;/code&gt;). Note that if you use &lt;code&gt;runStateT&lt;/code&gt;, you’d get the results (the winner), &lt;em&gt;as well as&lt;/em&gt; the leftover cards in the deck for each path!&lt;/p&gt;
+&lt;!-- I used to have an example here about simulating russian roulette --&gt;
+&lt;!-- But this doesn&#39;t really work in a useful way...because the paths all &quot;stop&quot; --&gt;
+&lt;!-- after the first shot.  In reality, you are just as likely to be shot on the --&gt;
+&lt;!-- first pull as you are on the second.  But as this simulation runs, it &quot;stops&quot; --&gt;
+&lt;!-- after the first shot...so `1` will only show up once. --&gt;
+&lt;p&gt;You can even combine the two sorts of drawings — sampling independently (like rolling dice) using &lt;code&gt;lift&lt;/code&gt;, and drawing from an underlying deck. For example, you might encode some game logic from a board game like monopoly:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;combo &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; flip evalStateT initialDeck &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    roll &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; lift [&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;6&lt;/span&gt;]
+    draw &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;StateT&lt;/span&gt; select
+    &lt;span class=&quot;fu&quot;&gt;...&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Whenever you want a dice roll, use &lt;code&gt;lift [1..6]&lt;/code&gt;…and whenever you want to draw from the deck, use &lt;code&gt;StateT select&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;What you get in the end, remember, is a list of “all possible paths”. You’ll get a list of every possible result from all of your different rolling and drawing choices.&lt;/p&gt;
+&lt;p&gt;Happy Haskelling!&lt;/p&gt;
+&lt;section class=&quot;footnotes&quot;&gt;
+&lt;hr /&gt;
+&lt;ol&gt;
+&lt;li id=&quot;fn1&quot;&gt;&lt;p&gt;For some reason this runs pretty slowly if you use &lt;code&gt;runghc&lt;/code&gt;/&lt;code&gt;runHaskell&lt;/code&gt;, but it runs in the blink of an eye when you actually compile it (and especially with optimizations on). The difference is pretty striking…and I don’t really know what’s going on here, to be honest. If anyone does know a good explanation, I’d love to hear it :)&lt;a href=&quot;#fnref1&quot;&gt;↩&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/section&gt;</description><author>Justin Le</author><category>Haskell</category><category>Tutorials</category><guid isPermaLink="true">http://mstksg.github.com/inCode/entry/unique-sample-drawing-searches-with-list-and-statet</guid><pubDate>Fri, 24 Apr 2015 19:05:56 UTC</pubDate><dc:creator>Justin Le</dc:creator><dc:subject>Haskell, Tutorials</dc:subject><dc:date>2015-04-24</dc:date></item><item><title>A (Dead End?) Arrowized Dataflow Parallelism Interface Attempt</title><link>http://mstksg.github.com/inCode/entry/a-dead-end-arrowized-dataflow-parallelism-interface-attempt</link><description>&lt;p&gt;So I’ve been having several ‘dead end’ projects in Haskell recently that I’ve sort of just scrapped and move from, but I decided that it might be nice to document some of them :) For reading back on it later, for people to possibly help/offer suggestions, for people to peruse and possibly learn something, or for people to laugh at me. Here is my most recent semi-failure — implicit dataflow parallelism through an Arrow interface.&lt;/p&gt;
+&lt;p&gt;tl;dr:&lt;/p&gt;
+&lt;ol type=&quot;1&quot;&gt;
+&lt;li&gt;Compose parallelizable computations using expressive proc notation.&lt;/li&gt;
+&lt;li&gt;Consolidate and join forks to maintain maximum parallelization.&lt;/li&gt;
+&lt;li&gt;All data dependencies implicit; allows for nice succinct direct translations of normal functions.&lt;/li&gt;
+&lt;li&gt;All “parallelizable” functions can also trivially be typechecked and run as normal functions, due to arrow polymorphism.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The main problem:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Consider &lt;code&gt;ParArrow a c&lt;/code&gt;, &lt;code&gt;ParArrow b d&lt;/code&gt;, &lt;code&gt;ParArrow (c,d) (e,f)&lt;/code&gt;, &lt;code&gt;ParArrow e g&lt;/code&gt;, and &lt;code&gt;ParArrow f h&lt;/code&gt;. We execute the first two in parallel, apply the third, and execute the second two in parallel. Basically, we want two independent &lt;code&gt;ParArrow a g&lt;/code&gt; and &lt;code&gt;ParArrow c h&lt;/code&gt; that we can fork. And this is possible, as long as the “middle” arrow does not “cross-talk” — that is, it can’t be something like &lt;code&gt;arr (\(x,y) -&amp;gt; (y,x))&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;the-vision&quot;&gt;The Vision&lt;/h2&gt;
+&lt;p&gt;So what do I mean?&lt;/p&gt;
+&lt;h3 id=&quot;dataflow-parallelism&quot;&gt;Dataflow Parallelism&lt;/h3&gt;
+&lt;p&gt;By “dataflow parallelism”, I refer to structuring parallel computations by “what depends on what”. If two values &lt;em&gt;can&lt;/em&gt; be computed in parallel, then that is taken advantage of. Consider something like &lt;code&gt;map f xs&lt;/code&gt;. Normally, this would: one by one step over &lt;code&gt;xs&lt;/code&gt; and apply &lt;code&gt;f&lt;/code&gt; to each one, building a new list as you go along one at a time.&lt;/p&gt;
+&lt;p&gt;But note that there are some easy places to parallelize this — because none of the results the mapped list depend on eachother, you can apply &lt;code&gt;f&lt;/code&gt; to every element in parallel, and re-collect everything back at the end. And this is a big deal if &lt;code&gt;f&lt;/code&gt; takes a long time. This is an example of something commonly refered to as “embarassingly parallel”.&lt;/p&gt;
+&lt;h3 id=&quot;arrows&quot;&gt;Arrows&lt;/h3&gt;
+&lt;p&gt;So what kind of Arrow interface am I imagining with this?&lt;/p&gt;
+&lt;p&gt;Haskell has some nice syntax for composing “functions” (&lt;code&gt;f&lt;/code&gt;, &lt;code&gt;g&lt;/code&gt;, and &lt;code&gt;h&lt;/code&gt;):&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;proc x &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    y &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; f &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; x
+    z &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; g &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; x
+    q &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; h &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; y
+    returnA &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; y &lt;span class=&quot;fu&quot;&gt;*&lt;/span&gt; z &lt;span class=&quot;fu&quot;&gt;+&lt;/span&gt; q&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;A &lt;code&gt;proc&lt;/code&gt; statement is a fancy lambda, which takes an input &lt;code&gt;x&lt;/code&gt; and “funnels” &lt;code&gt;x&lt;/code&gt; through several different “functions” — in our case, &lt;code&gt;f&lt;/code&gt;, &lt;code&gt;g&lt;/code&gt;, and &lt;code&gt;h&lt;/code&gt; — and lets you name the results so that you can use them later.&lt;/p&gt;
+&lt;figure&gt;
+&lt;img src=&quot;/img/entries/pararrow/proc1.png&quot; title=&quot;proc&quot; alt=&quot;The above proc statement, diagrammed.&quot; /&gt;&lt;figcaption&gt;The above proc statement, diagrammed.&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;While this looks like you are ‘performing’ &lt;code&gt;f&lt;/code&gt;, then &lt;code&gt;g&lt;/code&gt;, then &lt;code&gt;h&lt;/code&gt;, what is actually happening is that you are &lt;em&gt;composing&lt;/em&gt; and synthesizing a &lt;em&gt;new function&lt;/em&gt;. You are “assembling” a new function that, when given an &lt;code&gt;x&lt;/code&gt;, collects the results of &lt;code&gt;x&lt;/code&gt; run through &lt;code&gt;f&lt;/code&gt;, &lt;code&gt;g&lt;/code&gt;, and &lt;code&gt;h&lt;/code&gt;, and pops out a function of what comes out of those functions.&lt;/p&gt;
+&lt;p&gt;Except…&lt;code&gt;f&lt;/code&gt;, &lt;code&gt;g&lt;/code&gt;, and &lt;code&gt;h&lt;/code&gt; don’t have to be normal functions. They are “generalized” functions; functions that could perhaps even have side-effects, or trigger special things, or be evaluated in special ways. They are instances of the &lt;code&gt;Arrow&lt;/code&gt; typeclass.&lt;/p&gt;
+&lt;p&gt;An &lt;code&gt;Arrow a b&lt;/code&gt; just represents, abstractly, a way to get some &lt;code&gt;b&lt;/code&gt; from some &lt;code&gt;a&lt;/code&gt;, equipped with combinators that allow you to compose them in neat ways. Proc notation allows us to assemble a giant new arrow, from sequencing and composing smaller arrows.&lt;/p&gt;
+&lt;h3 id=&quot;forking-arrows&quot;&gt;Forking Arrows&lt;/h3&gt;
+&lt;p&gt;Look at the proc statement and tell me that that doesn’t scream “data parallelism” to you. Because every arrow &lt;code&gt;f&lt;/code&gt;, &lt;code&gt;g&lt;/code&gt;, and &lt;code&gt;h&lt;/code&gt; can potentially do side-effecty, stateful, IO things, depending on how we implemented the arrow…what if &lt;code&gt;f&lt;/code&gt;, &lt;code&gt;g&lt;/code&gt;, and &lt;code&gt;h&lt;/code&gt; represented “a way to get a &lt;code&gt;b&lt;/code&gt; from an &lt;code&gt;a&lt;/code&gt;…in its own separate thread”?&lt;/p&gt;
+&lt;p&gt;So if I were to “run” this special arrow, a &lt;code&gt;ParArrow a b&lt;/code&gt;, I would do&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;ot&quot;&gt;runPar ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;ParArrow&lt;/span&gt; a b &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; a &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;IO&lt;/span&gt; b&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Where if i gave &lt;code&gt;runPar&lt;/code&gt; a &lt;code&gt;ParArrow a b&lt;/code&gt;, and an &lt;code&gt;a&lt;/code&gt;, It would fork itself into its own thread and give you an &lt;code&gt;IO b&lt;/code&gt; in response to your &lt;code&gt;a&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Because of Arrow’s ability to “separate out” and “side-chain” compositions (note that &lt;code&gt;q&lt;/code&gt; in the previous example does not depend on &lt;code&gt;z&lt;/code&gt; at all, and can clearly be launched in parallel alongside the calculation of &lt;code&gt;z&lt;/code&gt;), it looks like from a &lt;code&gt;proc&lt;/code&gt; notation statement, we can easily write arrows that all ‘fork themselves’ under composition.&lt;/p&gt;
+&lt;p&gt;Using this, in the above proc example with the fancy diagram, we should be able to see that &lt;code&gt;z&lt;/code&gt; is completely independent of &lt;code&gt;y&lt;/code&gt; and &lt;code&gt;q&lt;/code&gt;, so the &lt;code&gt;g&lt;/code&gt; arrow could really compute itself “in parallel”, forked-off, from the &lt;code&gt;f&lt;/code&gt; and &lt;code&gt;h&lt;/code&gt; arrows.&lt;/p&gt;
+&lt;p&gt;You should also be able to “join together” parallel computations. That is, if you have an &lt;code&gt;a -&amp;gt; c&lt;/code&gt; and a &lt;code&gt;b -&amp;gt; d&lt;/code&gt;, you could make a “parallel” &lt;code&gt;(a,b) -&amp;gt; (c,d)&lt;/code&gt;. But what if I also had a &lt;code&gt;c -&amp;gt; e&lt;/code&gt; and a &lt;code&gt;d -&amp;gt; f&lt;/code&gt;? I could chain the entire &lt;code&gt;a&lt;/code&gt;-&lt;code&gt;c&lt;/code&gt;-&lt;code&gt;e&lt;/code&gt; chain and the &lt;code&gt;b&lt;/code&gt;-&lt;code&gt;d&lt;/code&gt;-&lt;code&gt;f&lt;/code&gt; chain, and perform both chains in parallel and re-collect things at the end. That is, a &lt;code&gt;(a,b) -&amp;gt; (c,d)&lt;/code&gt; and a &lt;code&gt;(c,d) -&amp;gt; (e,f)&lt;/code&gt; should meaningfully compose into a &lt;code&gt;(a,b) -&amp;gt; (e,f)&lt;/code&gt;, where the left and right sides (the &lt;code&gt;a -&amp;gt; e&lt;/code&gt; and the &lt;code&gt;b -&amp;gt; f&lt;/code&gt;) are performed “in parallel” from eachother.&lt;/p&gt;
+&lt;p&gt;With that in mind, we could even do something like &lt;code&gt;parMap&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;ot&quot;&gt;parMap ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;ParArrow&lt;/span&gt; a b &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;ParArrow&lt;/span&gt; [a] [b]
+parMap f &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; proc input &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; input &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+      []     &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt;
+          returnA        &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; []
+      (x&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;xs) &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+          y  &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; f        &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; x
+          ys &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; parMap f &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; xs
+          returnA        &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; y&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;ys&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;And because “what depends on what” is so &lt;em&gt;obviously clear&lt;/em&gt; from proc/do notation — you know exactly what depends on what, and the graph is already laid out there for you — and because &lt;code&gt;f&lt;/code&gt; is actaully a “smart” function, with “smart” semantics which can do things like fork threads to solve itself…this should be great way to structure programs and take advantage of implicit data parallelism.&lt;/p&gt;
+&lt;h4 id=&quot;the-coolest-thing&quot;&gt;The coolest thing&lt;/h4&gt;
+&lt;p&gt;Also notice something cool – if leave our proc blocks polymorphic:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;ot&quot;&gt;map&amp;#39; ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;ArrowChoice&lt;/span&gt; r &lt;span class=&quot;ot&quot;&gt;=&amp;gt;&lt;/span&gt; r a b &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; r [a] [b]
+map&amp;#39; f &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; proc input &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; input &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+      []     &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt;
+          returnA        &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; []
+      (x&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;xs) &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+          y  &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; f        &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; x
+          ys &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; map&amp;#39; f   &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; xs
+          returnA        &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; y&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;ys&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;We can now use &lt;code&gt;map&#39;&lt;/code&gt; as &lt;em&gt;both&lt;/em&gt; a normal, sequentual function &lt;em&gt;and&lt;/em&gt; a parallel, forked computation!&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;          map&amp;#39; (arr (&lt;span class=&quot;fu&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;)) [&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt;]
+[&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;4&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;6&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;8&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;10&lt;/span&gt;]
+λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; runPar &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; map&amp;#39; (arr (&lt;span class=&quot;fu&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;)) [&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt;]
+[&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;4&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;6&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;8&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;10&lt;/span&gt;]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Yup!&lt;/p&gt;
+&lt;p&gt;Let’s try implementing it, and let’s see where things go wrong.&lt;/p&gt;
+&lt;h2 id=&quot;pararrow&quot;&gt;ParArrow&lt;/h2&gt;
+&lt;h3 id=&quot;data-and-instances&quot;&gt;Data and Instances&lt;/h3&gt;
+&lt;p&gt;Let’s start out with our arrow data type:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;fu&quot;&gt;!!!&lt;/span&gt;pararrow&lt;span class=&quot;fu&quot;&gt;/&lt;/span&gt;ParArrow.hs &lt;span class=&quot;st&quot;&gt;&amp;quot;data ParArrow&amp;quot;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;So a &lt;code&gt;ParArrow a b&lt;/code&gt; represents a (pure) paralleizable, forkable computation that returns a &lt;code&gt;b&lt;/code&gt; (as &lt;code&gt;IO b&lt;/code&gt;) when given an &lt;code&gt;a&lt;/code&gt;.&lt;a href=&quot;#fn1&quot; class=&quot;footnoteRef&quot; id=&quot;fnref1&quot;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;&lt;code&gt;Pure f&lt;/code&gt; wraps a pure function in a &lt;code&gt;ParArrow&lt;/code&gt; that computes that function in a fork when necessary.&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;&lt;code&gt;Seq f g&lt;/code&gt; sequences a &lt;code&gt;ParArrow a z&lt;/code&gt; and a &lt;code&gt;ParArrow z b&lt;/code&gt; into a big &lt;code&gt;ParArrow a b&lt;/code&gt;. It reprensents composing two forkable functions into one big forkable function, sequentially.&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;&lt;code&gt;Par l f g r&lt;/code&gt; takes two &lt;code&gt;ParArrow&lt;/code&gt;s &lt;code&gt;f&lt;/code&gt; and &lt;code&gt;g&lt;/code&gt; of different types and represents the idea of performing them in parallel. Of forking them off from eachother and computing them independently, and collecting it all together.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;l&lt;/code&gt; and &lt;code&gt;r&lt;/code&gt; are supposed to be functions that turn the tupled inputs/outputs of the parallel computations and makes them fit &lt;code&gt;ParArrow a b&lt;/code&gt;. &lt;code&gt;r&lt;/code&gt; is kind of supposed to be &lt;code&gt;id&lt;/code&gt;, and &lt;code&gt;l&lt;/code&gt; is supposed to be &lt;code&gt;id&lt;/code&gt; (to continue a parallel action) or &lt;code&gt;\x -&amp;gt; (x,x)&lt;/code&gt; (to begin a fork).&lt;/p&gt;
+&lt;p&gt;It’s a little hacky, and there might be a better way with GADT’s and all sorts of type/kind-level magic, but it was the way I found that I understood the most.&lt;/p&gt;
+&lt;p&gt;The main purpose of &lt;code&gt;l&lt;/code&gt; and &lt;code&gt;r&lt;/code&gt; is to be able to meaningfully refer to the two parallel &lt;code&gt;ParArrow&lt;/code&gt;s in terms of the &lt;code&gt;a&lt;/code&gt; and &lt;code&gt;b&lt;/code&gt; of the “combined” &lt;code&gt;ParArrow&lt;/code&gt;. Otherwise, the two inputs of the two parallel &lt;code&gt;ParArrow&lt;/code&gt;s don’t have anything to do with the input type &lt;code&gt;a&lt;/code&gt; of the combined &lt;code&gt;ParArrow&lt;/code&gt;, and same for output.&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Okay, let’s define a Category instance, that lets us compose &lt;code&gt;ParArrow&lt;/code&gt;s:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;fu&quot;&gt;!!!&lt;/span&gt;pararrow&lt;span class=&quot;fu&quot;&gt;/&lt;/span&gt;ParArrow.hs &lt;span class=&quot;st&quot;&gt;&amp;quot;instance Category ParArrow&amp;quot;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;No surprises there, hopefully! Now an Arrow instance:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;fu&quot;&gt;!!!&lt;/span&gt;pararrow&lt;span class=&quot;fu&quot;&gt;/&lt;/span&gt;ParArrow.hs &lt;span class=&quot;st&quot;&gt;&amp;quot;instance Arrow ParArrow&amp;quot;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Also simple enough. Note that &lt;code&gt;first&lt;/code&gt; and &lt;code&gt;second&lt;/code&gt; are defined in terms of &lt;code&gt;(***)&lt;/code&gt;, instead of the typical way of defining &lt;code&gt;second&lt;/code&gt;, &lt;code&gt;(&amp;amp;&amp;amp;&amp;amp;)&lt;/code&gt;, and &lt;code&gt;(***)&lt;/code&gt; in terms of &lt;code&gt;arr&lt;/code&gt; and &lt;code&gt;first&lt;/code&gt;.&lt;/p&gt;
+&lt;h3 id=&quot;the-magic&quot;&gt;The Magic&lt;/h3&gt;
+&lt;p&gt;Now, for the magic — consolidating a big composition of fragmented &lt;code&gt;ParArrow&lt;/code&gt;s into a streamlined simple-as-possible graph:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;fu&quot;&gt;!!!&lt;/span&gt;pararrow&lt;span class=&quot;fu&quot;&gt;/&lt;/span&gt;ParArrow.hs &lt;span class=&quot;st&quot;&gt;&amp;quot;collapse ::&amp;quot;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;There are probably a couple of redundant calls to &lt;code&gt;collapse&lt;/code&gt; in there, but the picture should still be evident:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Collapsing two sequenced &lt;code&gt;Pure&lt;/code&gt;s should just be a single &lt;code&gt;Pure&lt;/code&gt; with their pure functions composed.&lt;/li&gt;
+&lt;li&gt;Collapsing a &lt;code&gt;Seq&lt;/code&gt; sequenced with anything else should re-associate the &lt;code&gt;Seq&lt;/code&gt;s to the left, and collapse the &lt;code&gt;ParArrow&lt;/code&gt;s inside as well.&lt;/li&gt;
+&lt;li&gt;Collapsing a &lt;code&gt;Pure&lt;/code&gt; and a &lt;code&gt;Par&lt;/code&gt; should just involve moving the function inside the &lt;code&gt;Pure&lt;/code&gt; to the wrapping/unwrapping functions around the &lt;code&gt;Par&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Collapsing two &lt;code&gt;Par&lt;/code&gt;s is where the fun happens!&lt;/p&gt;
+&lt;p&gt;We “fuse” the parallel branches of the fork together. We do that by running the export functions and the extract functions on each side, “ignoring” the other half of the tuple. This should work if the export/extract functions are all either &lt;code&gt;id&lt;/code&gt; or &lt;code&gt;id &amp;amp;&amp;amp;&amp;amp; id&lt;/code&gt;.&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;And…here we have a highly condensed parallelism graph.&lt;/p&gt;
+&lt;h3 id=&quot;inspecting-pararrow-structures&quot;&gt;Inspecting &lt;code&gt;ParArrow&lt;/code&gt; structures&lt;/h3&gt;
+&lt;p&gt;It might be useful to get a peek at the internal structures of a collapsed &lt;code&gt;ParArrow&lt;/code&gt;. I used a helper data type, &lt;code&gt;Graph&lt;/code&gt;.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;fu&quot;&gt;!!!&lt;/span&gt;pararrow&lt;span class=&quot;fu&quot;&gt;/&lt;/span&gt;ParArrow.hs &lt;span class=&quot;st&quot;&gt;&amp;quot;data Graph&amp;quot;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;And we can convert a given &lt;code&gt;ParArrow&lt;/code&gt; into its internal graph:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;fu&quot;&gt;!!!&lt;/span&gt;pararrow&lt;span class=&quot;fu&quot;&gt;/&lt;/span&gt;ParArrow.hs &lt;span class=&quot;st&quot;&gt;&amp;quot;analyze&amp;#39; ::&amp;quot;&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;analyze ::&amp;quot;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;h3 id=&quot;sample-pararrows&quot;&gt;Sample ParArrows&lt;/h3&gt;
+&lt;p&gt;Let’s try examining it with some simple &lt;code&gt;Arrow&lt;/code&gt;s, like the one we mentioned before:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;let&lt;/span&gt; test1 &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt;
+ &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt;       proc x &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+ &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt;       y &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; arr (&lt;span class=&quot;fu&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; x
+ &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt;       z &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; arr (&lt;span class=&quot;fu&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; x
+ &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt;       q &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; arr (&lt;span class=&quot;fu&quot;&gt;^&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; y
+ &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt;       returnA &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; y &lt;span class=&quot;fu&quot;&gt;*&lt;/span&gt; z &lt;span class=&quot;fu&quot;&gt;+&lt;/span&gt; q
+λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;t test1
+&lt;span class=&quot;ot&quot;&gt;test1 ::&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Arrow&lt;/span&gt; r, &lt;span class=&quot;dt&quot;&gt;Num&lt;/span&gt; t) &lt;span class=&quot;ot&quot;&gt;=&amp;gt;&lt;/span&gt; r t t
+λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; test1 &lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt;
+&lt;span class=&quot;dv&quot;&gt;180&lt;/span&gt;
+λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; analyze test1
+&lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;:/:&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This is what we would expect. From looking at the diagram above, we can see that there are two completely parallel forks; so in the collapsed arrow, there are indeed only two parallel forks of pure functions.&lt;/p&gt;
+&lt;p&gt;How about a much simpler one that we unroll ourselves:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;let&lt;/span&gt; test2 &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; arr (uncurry (&lt;span class=&quot;fu&quot;&gt;+&lt;/span&gt;))
+ &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt;           &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; (arr (&lt;span class=&quot;fu&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;***&lt;/span&gt; arr (&lt;span class=&quot;fu&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;))
+ &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt;           &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; (id &lt;span class=&quot;fu&quot;&gt;&amp;amp;&amp;amp;&amp;amp;&lt;/span&gt; id)
+λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;t test2
+&lt;span class=&quot;ot&quot;&gt;test2 ::&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Arrow&lt;/span&gt; r, &lt;span class=&quot;dt&quot;&gt;Num&lt;/span&gt; t) &lt;span class=&quot;ot&quot;&gt;=&amp;gt;&lt;/span&gt; r t t
+λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; test2 &lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt;
+&lt;span class=&quot;dv&quot;&gt;18&lt;/span&gt;
+λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; analyze&amp;#39; test2
+((&lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;:/:&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;:-&amp;gt;:&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;:/:&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt;)) &lt;span class=&quot;fu&quot;&gt;:-&amp;gt;:&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt;
+λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; analyze test2
+&lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;:/:&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;So as we can see, the “uncollapsed” &lt;code&gt;test2&lt;/code&gt; is actually three sequenced functions (as we would expect): Two parallel pure arrows (the &lt;code&gt;id &amp;amp;&amp;amp;&amp;amp; id&lt;/code&gt; and &lt;code&gt;(arr (*2) *** arr (+3))&lt;/code&gt;) and then one sequential arrow (the &lt;code&gt;arr (uncurry (+))&lt;/code&gt;).&lt;/p&gt;
+&lt;p&gt;However, we can see that that is just a single fork-and-recombine, so when we collapse it, we get &lt;code&gt;GPure :/: GPure&lt;/code&gt;, as we would expect.&lt;/p&gt;
+&lt;h2 id=&quot;running-pararrows&quot;&gt;Running ParArrows&lt;/h2&gt;
+&lt;p&gt;Now we just need a way to run a &lt;code&gt;ParArrow&lt;/code&gt;, and do the proper forking. This actually isn’t too bad at all, because of what we did in &lt;code&gt;collapse&lt;/code&gt;.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;fu&quot;&gt;!!!&lt;/span&gt;pararrow&lt;span class=&quot;fu&quot;&gt;/&lt;/span&gt;ParArrow.hs &lt;span class=&quot;st&quot;&gt;&amp;quot;runPar&amp;#39; ::&amp;quot;&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;runPar ::&amp;quot;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;(Note that I left in debug traces)&lt;/p&gt;
+&lt;h3 id=&quot;testing&quot;&gt;Testing&lt;/h3&gt;
+&lt;p&gt;Sweet, now let’s run it!&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; test2 &lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt;
+&lt;span class=&quot;dv&quot;&gt;18&lt;/span&gt;
+λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; runPar test2 &lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;F&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;P&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;P&lt;/span&gt;
+&lt;span class=&quot;dv&quot;&gt;18&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;That works as expected!&lt;/p&gt;
+&lt;p&gt;We can see from the debug trace that first things are forked, and then two pure functions are run. A final value of 18 is returned, which is the same as for the &lt;code&gt;(-&amp;gt;)&lt;/code&gt; version. (Note how we can use &lt;code&gt;test2&lt;/code&gt; as both, due to what we mentioned above)&lt;/p&gt;
+&lt;p&gt;Okay, so it looks like this does exactly what we want. It intelligently “knows” when to fork, when to unfork, when to “sequence” forks. Let’s try it with &lt;code&gt;test1&lt;/code&gt;, which was written in &lt;code&gt;proc&lt;/code&gt; notation.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; test1 &lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt;
+&lt;span class=&quot;dv&quot;&gt;180&lt;/span&gt;
+λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; runPar test1 &lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;F&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;P&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;P&lt;/span&gt;
+&lt;span class=&quot;fu&quot;&gt;***&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Exception&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; Prelude.undefined&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;What! :/&lt;/p&gt;
+&lt;h2 id=&quot;what-went-wrong&quot;&gt;What went wrong&lt;/h2&gt;
+&lt;p&gt;Let’s dig into actual desguaring. According to the proc notation specs:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;test3 &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; proc x &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    y &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; arr (&lt;span class=&quot;fu&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; x
+    z &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; arr (&lt;span class=&quot;fu&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; x
+    returnA &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; y &lt;span class=&quot;fu&quot;&gt;+&lt;/span&gt; z
+
+&lt;span class=&quot;co&quot;&gt;-- desugared:&lt;/span&gt;
+test3&amp;#39; &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; arr (\(x,y) &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; x &lt;span class=&quot;fu&quot;&gt;+&lt;/span&gt; y)     &lt;span class=&quot;co&quot;&gt;-- add&lt;/span&gt;
+       &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; arr (\(x,y) &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; (y,x))     &lt;span class=&quot;co&quot;&gt;-- flip&lt;/span&gt;
+       &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; first (arr (&lt;span class=&quot;fu&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;))          &lt;span class=&quot;co&quot;&gt;-- z&lt;/span&gt;
+       &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; arr (\(x,y) &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; (y,x))     &lt;span class=&quot;co&quot;&gt;-- flip&lt;/span&gt;
+       &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; first (arr (&lt;span class=&quot;fu&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;))          &lt;span class=&quot;co&quot;&gt;-- y&lt;/span&gt;
+       &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; arr (\x &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; (x,x))         &lt;span class=&quot;co&quot;&gt;-- split&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Ah. Everything is in terms of &lt;code&gt;arr&lt;/code&gt; and &lt;code&gt;first&lt;/code&gt;, and it never uses &lt;code&gt;second&lt;/code&gt;, &lt;code&gt;(***)&lt;/code&gt;, or &lt;code&gt;(&amp;amp;&amp;amp;&amp;amp;)&lt;/code&gt;. (These should be equivalent, due to the Arrow laws, of course; my instance is obviously unlawful, oops)&lt;/p&gt;
+&lt;p&gt;I’m going to cut right to the chase here. The main problem is our collapsing sequenced &lt;code&gt;Pure&lt;/code&gt; and &lt;code&gt;Par&lt;/code&gt;s.&lt;/p&gt;
+&lt;p&gt;Basically, the collapsing rules say that if we have:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;dt&quot;&gt;Par&lt;/span&gt; l p1 p2 r &lt;span class=&quot;ot&quot;&gt;`Seq`&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Pure&lt;/span&gt; f &lt;span class=&quot;ot&quot;&gt;`Seq`&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Par&lt;/span&gt; l&amp;#39; p1&amp;#39; p2&amp;#39; r&amp;#39;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;It should be the same as one giant &lt;code&gt;Par&lt;/code&gt;, where &lt;code&gt;f&lt;/code&gt; is “injected” between &lt;code&gt;p1&lt;/code&gt; and &lt;code&gt;p1&#39;&lt;/code&gt;, &lt;code&gt;p2&lt;/code&gt; and &lt;code&gt;p2&#39;&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The bridge is basically a tuple, and we take advantage of laziness to basically pop the results of &lt;code&gt;p1&lt;/code&gt; into a tuple using &lt;code&gt;r&lt;/code&gt;, apply &lt;code&gt;f&lt;/code&gt; to the tuple, and extract it using &lt;code&gt;l&lt;/code&gt;, and run it through &lt;code&gt;p1&#39;&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;So &lt;code&gt;f&lt;/code&gt; has to be some sort of function &lt;code&gt;(a,b) -&amp;gt; (c,d)&lt;/code&gt;, where &lt;code&gt;c&lt;/code&gt;’s value can only depend on &lt;code&gt;a&lt;/code&gt;’s value, and &lt;code&gt;d&lt;/code&gt;’s value can only depend on &lt;code&gt;b&lt;/code&gt;’s value. Basically, it has to be derived from functions &lt;code&gt;a -&amp;gt; c&lt;/code&gt; and &lt;code&gt;b -&amp;gt; d&lt;/code&gt;. A “parallel” function.&lt;/p&gt;
+&lt;p&gt;As long as this is true, this will work.&lt;/p&gt;
+&lt;p&gt;However, we see in the desugaring of &lt;code&gt;test3&lt;/code&gt; that &lt;code&gt;f&lt;/code&gt; is not always that. &lt;code&gt;f&lt;/code&gt; can be &lt;em&gt;any&lt;/em&gt; function, actually, and we can’t really control what happens to it. In &lt;code&gt;test3&lt;/code&gt;, we actaully use &lt;code&gt;f = \(x,y) -&amp;gt; (y,x)&lt;/code&gt;…definitely not a “parallel” function!&lt;/p&gt;
+&lt;p&gt;Actually, this doesn’t even make any sense in terms of our parallel computation model! How can we “combine” two parallel forks…when halfway in between the two forks, they must exchange information? Then it’s no longer fully parallel!&lt;/p&gt;
+&lt;p&gt;We can “fix” this. We can make &lt;code&gt;collapse&lt;/code&gt; not collapse the &lt;code&gt;Pure&lt;/code&gt;-&lt;code&gt;Par&lt;/code&gt; cases:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;fu&quot;&gt;!!!&lt;/span&gt;pararrow&lt;span class=&quot;fu&quot;&gt;/&lt;/span&gt;ParArrow.hs &lt;span class=&quot;st&quot;&gt;&amp;quot;collapse_ ::&amp;quot;&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;analyze_ ::&amp;quot;&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;runPar_ ::&amp;quot;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Then we have:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; analyze_ test1
+(
+  &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;:-&amp;gt;:&lt;/span&gt; ( ( &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;:-&amp;gt;:&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt; ) &lt;span class=&quot;fu&quot;&gt;:/:&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt; )
+) &lt;span class=&quot;fu&quot;&gt;:-&amp;gt;:&lt;/span&gt; ((
+  &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;:-&amp;gt;:&lt;/span&gt; ( ( &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;:-&amp;gt;:&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt; ) &lt;span class=&quot;fu&quot;&gt;:/:&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt; )
+) &lt;span class=&quot;fu&quot;&gt;:-&amp;gt;:&lt;/span&gt; ((
+  &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;:-&amp;gt;:&lt;/span&gt; ( ( &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;:-&amp;gt;:&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt; ) &lt;span class=&quot;fu&quot;&gt;:/:&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt; )
+) &lt;span class=&quot;fu&quot;&gt;:-&amp;gt;:&lt;/span&gt;
+  &lt;span class=&quot;dt&quot;&gt;GPure&lt;/span&gt;
+))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;We basically have three &lt;code&gt;GPure :-&amp;gt; ((GPure :-&amp;gt;: GPure) :/: GPure)&lt;/code&gt;’s in a row. A pure function followed by parallel functions. This sort of makes sense, and if we sort of imagined manually unrolling &lt;code&gt;test3&lt;/code&gt;, this is what we’d imagine we’d get, sorta. now we don’t “collapse” the three parallel forks together.&lt;/p&gt;
+&lt;p&gt;This runs without error:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;λ&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; runPar_ test1 &lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;P&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;F&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;P&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;P&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;P&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;P&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;F&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;P&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;P&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;P&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;P&lt;/span&gt;
+&lt;span class=&quot;dv&quot;&gt;18&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;And the trace shows that it is “forking” two times. The structural analysis would actaully suggest that we forked three times, but…I’m not totally sure what’s going on here heh. Still two is much more than what should ideally be required (one).&lt;/p&gt;
+&lt;h2 id=&quot;oh.&quot;&gt;Oh.&lt;/h2&gt;
+&lt;p&gt;So now we can no longer fully “collapse” the two parallel forks, and it involves forking twice. Which makes complete sense, because we have to swap in the middle.&lt;/p&gt;
+&lt;p&gt;And without the collapsing…there are a lot of unecessary reforks/recominbations that would basically kill any useful parallelization unless you pre-compose all of your forks…which kind of defeats the purpose of the implicit dataflow parallization in the first place.&lt;/p&gt;
+&lt;p&gt;Anyways, this is all rather annoying, because the analogous manual &lt;code&gt;(&amp;amp;&amp;amp;&amp;amp;)&lt;/code&gt; / &lt;code&gt;(***)&lt;/code&gt; / &lt;code&gt;second&lt;/code&gt;-based &lt;code&gt;test1&lt;/code&gt; should not ever fail, because we never fork. So if the proc block had desugared to using those combinators and never using &lt;code&gt;arr (\(x,y) -&amp;gt; (y,x))&lt;/code&gt;, everything would work out fine!&lt;/p&gt;
+&lt;p&gt;But hey, if you write out the arrow computation manually by composing &lt;code&gt;(&amp;amp;&amp;amp;&amp;amp;)&lt;/code&gt;, &lt;code&gt;(***)&lt;/code&gt;, and &lt;code&gt;second&lt;/code&gt;…this will &lt;em&gt;all actually work&lt;/em&gt;! I mean serious! Isn’t that crazy! (Provided, all of your &lt;code&gt;Pure&lt;/code&gt;’s are sufficiently “parallel”).&lt;/p&gt;
+&lt;p&gt;But the whole point in the first place was to use proc/do notation, so this becomes a lot less useful than before.&lt;/p&gt;
+&lt;p&gt;Also, it’s inherently pretty fragile, as you can no longer rely on the type system to enforce “sufficiently parallel” &lt;code&gt;Pure&lt;/code&gt;‘s. You can’t even check against something like &lt;code&gt;arr (\(x,y) -&amp;gt; (x,x))&lt;/code&gt;, which makes no sense again in ’isolated parallel’ computations.&lt;/p&gt;
+&lt;p&gt;(Interestingly enough, you &lt;em&gt;can&lt;/em&gt; use the type system to enforce against things like &lt;code&gt;arr (\(x,y) -&amp;gt; x)&lt;/code&gt; or &lt;code&gt;arr (\(x,y) -&amp;gt; 5)&lt;/code&gt;; you can’t collapse tuples)&lt;/p&gt;
+&lt;p&gt;Basically, &lt;em&gt;it mostly works&lt;/em&gt; for almost all &lt;code&gt;ParArrow (a,b) (c,d)&lt;/code&gt;…&lt;em&gt;except&lt;/em&gt; for when they have cross-talk.&lt;/p&gt;
+&lt;p&gt;So, well…back to the drawing board I guess.&lt;/p&gt;
+&lt;h2 id=&quot;what-can-be-done&quot;&gt;What can be done?&lt;/h2&gt;
+&lt;p&gt;So I’m open to seeing different avenues that this can be approached by, and also if anyone else has tried doing this and had more success than me.&lt;/p&gt;
+&lt;p&gt;In particular, I do not have much experience with type-/kind-level stuff involving those fun extensions, so if there is something that can be done there, I would be happy to learn :)&lt;/p&gt;
+&lt;h3 id=&quot;other-avenues&quot;&gt;Other avenues&lt;/h3&gt;
+&lt;p&gt;I have tried other things “in addition to” the things mentioned in this post, but most of them have also been dead ends. Among one of the attempts that I tried involve throwing exceptions from one thread to another containing the “missing half”. If an &lt;code&gt;arr (\(x,y) -&amp;gt; (y,x))&lt;/code&gt;-like function is used, then each thread will know, and “wait” on the other to throw an exception to the other containing the missing data.&lt;/p&gt;
+&lt;p&gt;I couldn’t get this to work, exactly, because I couldn’t get it to work without adding a &lt;code&gt;Typeable&lt;/code&gt; constraint to the parameters…and even when using things like the &lt;a href=&quot;http://hsenag.livejournal.com/11803.html&quot;&gt;constrained monads technique&lt;/a&gt;, I couldn’t get the “unwrap” functions to work because I couldn’t show that &lt;code&gt;z&lt;/code&gt;, &lt;code&gt;a1&lt;/code&gt;, &lt;code&gt;b1&lt;/code&gt;, etc. were Typeable.&lt;/p&gt;
+&lt;p&gt;Perhaps without the exception method, I could use &lt;code&gt;MVar&lt;/code&gt;s to sort of have a branch “wait” on the other if they find out that they have been given an &lt;code&gt;arr&lt;/code&gt; that has cross-talk.&lt;/p&gt;
+&lt;p&gt;Another path is just giving up &lt;code&gt;Arrow&lt;/code&gt; completely and using non-typeclass … but I don’t think that offers much advantages over the current system (using &lt;code&gt;(***)&lt;/code&gt; etc.), and also it gives up the entire point — using proc notation, and also the neat ability to use them as if they were regular functions.&lt;/p&gt;
+&lt;p&gt;For now, though, I am calling this a “dead end”&lt;a href=&quot;#fn2&quot; class=&quot;footnoteRef&quot; id=&quot;fnref2&quot;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/a&gt;; if anyone has any suggestions, I’d be happy to hear them :) I just thought it’d be worth putting up my thought process up in written form somewhere so that I could look back on them, or so that people can see what doesn’t work and/or possibly learn :) And of course for entertainment in case I am hilariously awful.&lt;/p&gt;
+&lt;section class=&quot;footnotes&quot;&gt;
+&lt;hr /&gt;
+&lt;ol&gt;
+&lt;li id=&quot;fn1&quot;&gt;&lt;p&gt;Technically, all &lt;code&gt;ParArrow&lt;/code&gt; computations are pure, so you might not loose too much by just returning a &lt;code&gt;b&lt;/code&gt; instead of an &lt;code&gt;IO b&lt;/code&gt; with &lt;code&gt;unsafePerformIO&lt;/code&gt;, but…&lt;a href=&quot;#fnref1&quot;&gt;↩&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;li id=&quot;fn2&quot;&gt;&lt;p&gt;Actually, this is technically not true; while I was writing this article another idea came to me by using some sort of state machine/automation arrow to wait on the results and pass them on, but that’s still in the first stages of being thought through :)&lt;a href=&quot;#fnref2&quot;&gt;↩&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/section&gt;</description><author>Justin Le</author><category>Haskell</category><category>Ramblings</category><category>Projects</category><guid isPermaLink="true">http://mstksg.github.com/inCode/entry/a-dead-end-arrowized-dataflow-parallelism-interface-attempt</guid><pubDate>Thu,  3 Apr 2014 19:35:01 UTC</pubDate><dc:creator>Justin Le</dc:creator><dc:subject>Haskell, Ramblings, Projects</dc:subject><dc:date>2014-04-03</dc:date></item><item><title>Shake: Task Automation and Scripting in Haskell</title><link>http://mstksg.github.com/inCode/entry/shake-task-automation-and-scripting-in-haskell</link><description>&lt;p&gt;As someone who comes from a background in ruby and &lt;em&gt;rake&lt;/em&gt;, I’m used to powerful task management systems with expressive dependency. &lt;em&gt;Make&lt;/em&gt; is a favorite tool of mine when I’m working on projects with people who don’t use ruby, and when I’m working on ruby projects I never go far without starting a good Rakefile. The two tools provided a perfect DSL for setting up systems of tasks that had complicated file and task dependencies.&lt;/p&gt;
+&lt;p&gt;As I was starting to learn Haskell and building larger-scale Haskell projects, I began to look for alternatives in Haskell. Was there a Haskell counterpart to Ruby’s &lt;a href=&quot;http://rake.rubyforge.org/&quot;&gt;&lt;em&gt;rake&lt;/em&gt;&lt;/a&gt;, Node’s &lt;a href=&quot;https://github.com/mde/jake&quot;&gt;&lt;em&gt;jake&lt;/em&gt;&lt;/a&gt;? (Not to mention the tools of slightly different philosophy &lt;a href=&quot;http://gruntjs.com/&quot;&gt;&lt;em&gt;grunt&lt;/em&gt;&lt;/a&gt; and &lt;a href=&quot;http://ant.apache.org/&quot;&gt;&lt;em&gt;ant&lt;/em&gt;&lt;/a&gt;)&lt;/p&gt;
+&lt;p&gt;It turns out that by far the most established answer is a library known as &lt;a href=&quot;http://hackage.haskell.org/package/shake&quot;&gt;&lt;em&gt;Shake&lt;/em&gt;&lt;/a&gt; (maintained by the prolific Neil Mitchell of &lt;a href=&quot;http://haskell.org/hoogle&quot;&gt;&lt;em&gt;hoogle&lt;/em&gt;&lt;/a&gt; fame and much more). So far it’s served me pretty well. Its documentation is written from the perspective of chiefly using it as a build tool (more “make” than “rake”), so if you’re looking to use it as a task management system, you might have to do some digging. Hopefully this post can help you get started.&lt;/p&gt;
+&lt;p&gt;I also go over the core concepts of a task management system, so I assume no knowledge of &lt;em&gt;make&lt;/em&gt;; this post therefore should also be a good introduction to starting with any sort of task management system.&lt;/p&gt;
+&lt;h2 id=&quot;our-sample-project&quot;&gt;Our Sample Project&lt;/h2&gt;
+&lt;p&gt;Our sample project is going to be a report build system that builds reports written in markdown with &lt;a href=&quot;http://johnmacfarlane.net/pandoc/&quot;&gt;pandoc&lt;/a&gt; into html, pdf, and doc formats. This is honestly one of my most common use cases for &lt;em&gt;make&lt;/em&gt;, so porting it all to &lt;em&gt;shake&lt;/em&gt; will be something useful for me.&lt;/p&gt;
+&lt;p&gt;The final directory structure will look like this:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;img
+&lt;ul&gt;
+&lt;li&gt;img1.jpg&lt;/li&gt;
+&lt;li&gt;img2.jpg&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;out
+&lt;ul&gt;
+&lt;li&gt;report.doc&lt;/li&gt;
+&lt;li&gt;report.html&lt;/li&gt;
+&lt;li&gt;report.pdf&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;src
+&lt;ul&gt;
+&lt;li&gt;report.md&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;css
+&lt;ul&gt;
+&lt;li&gt;report.css&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;Shakefile&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;When we run &lt;code&gt;shake&lt;/code&gt;, we want to build &lt;code&gt;report.doc&lt;/code&gt; and &lt;code&gt;report.pdf&lt;/code&gt; if &lt;code&gt;report.md&lt;/code&gt; or any of the images have changed, and &lt;code&gt;report.html&lt;/code&gt; if &lt;code&gt;report.md&lt;/code&gt;, &lt;code&gt;report.css&lt;/code&gt;, or any of the images have changed.&lt;/p&gt;
+&lt;p&gt;Furthermore, &lt;code&gt;img2.jpg&lt;/code&gt; actually comes from online, and requires us to re-download it every time we compile to make sure it is up to date.&lt;/p&gt;
+&lt;h2 id=&quot;setup&quot;&gt;Setup&lt;/h2&gt;
+&lt;h3 id=&quot;installing-shake&quot;&gt;Installing Shake&lt;/h3&gt;
+&lt;p&gt;Installing &lt;em&gt;shake&lt;/em&gt; is as simple as installing any other cabal package:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode bash&quot;&gt;&lt;code class=&quot;sourceCode bash&quot;&gt;$ &lt;span class=&quot;kw&quot;&gt;cabal&lt;/span&gt; update
+$ &lt;span class=&quot;kw&quot;&gt;cabal&lt;/span&gt; install shake&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;I’ll will be using &lt;code&gt;shake-0.10.6&lt;/code&gt; for this post.&lt;/p&gt;
+&lt;h3 id=&quot;setting-up-the-shakefile&quot;&gt;Setting up the Shakefile&lt;/h3&gt;
+&lt;p&gt;We set up our Shakefile with a simple scaffold:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;co&quot;&gt;-- Shakefile&lt;/span&gt;
+
+&lt;span class=&quot;kw&quot;&gt;import &lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;Development.Shake&lt;/span&gt;
+
+opts &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; shakeOptions { shakeFiles    &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;.shake/&amp;quot;&lt;/span&gt; }        &lt;span class=&quot;co&quot;&gt;-- 1&lt;/span&gt;
+
+(&lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; phony                                             &lt;span class=&quot;co&quot;&gt;-- 2&lt;/span&gt;
+                                                         &lt;span class=&quot;co&quot;&gt;-- (obsolete)&lt;/span&gt;
+
+&lt;span class=&quot;ot&quot;&gt;main ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;IO&lt;/span&gt; ()
+main &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; shakeArgs opts &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    want []
+
+    &lt;span class=&quot;st&quot;&gt;&amp;quot;clean&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; removeFilesAfter &lt;span class=&quot;st&quot;&gt;&amp;quot;.shake&amp;quot;&lt;/span&gt; [&lt;span class=&quot;st&quot;&gt;&amp;quot;//*&amp;quot;&lt;/span&gt;]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;On my machine I’ve set this up to be generated by a &lt;a href=&quot;https://gist.github.com/mstksg/6588764&quot;&gt;bash script&lt;/a&gt; called “shakeup”, so I can start a project up on a Shakefile by simply typing &lt;code&gt;shakeup&lt;/code&gt; at the project root.&lt;/p&gt;
+&lt;p&gt;Some notes:&lt;/p&gt;
+&lt;ol type=&quot;1&quot;&gt;
+&lt;li&gt;Store shake’s metadata files to the folder &lt;code&gt;.shake/&lt;/code&gt;. This differs from the default behavior, where all files would be saved to the root directory with &lt;code&gt;.shake&lt;/code&gt; as a filename prefix.&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;I’ve aliased the operator &lt;code&gt;~&amp;gt;&lt;/code&gt; for &lt;code&gt;phony&lt;/code&gt; to allow for a more expressive infix notation — more on this later. I’ve submitted a patch to the project and it should be included in the next cabal release.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Edit&lt;/strong&gt;: As of the 0.10.7 release of &lt;em&gt;Shake&lt;/em&gt;, this is no longer needed, as &lt;code&gt;~&amp;gt;&lt;/code&gt; is included in the library.&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&quot;what-is-a-rule&quot;&gt;What is a Rule?&lt;/h2&gt;
+&lt;p&gt;If you haven’t used &lt;em&gt;make&lt;/em&gt; before, it is important that you understand the key concepts before moving on.&lt;/p&gt;
+&lt;p&gt;A task management system/build system is a system that works to ensure that all files in the project are “up to date”. In our case, our system will ensure that the files in the &lt;code&gt;out&lt;/code&gt; directory are up to date.&lt;/p&gt;
+&lt;p&gt;In order to do this, files are given “rules”. Rules specify:&lt;/p&gt;
+&lt;ol type=&quot;1&quot;&gt;
+&lt;li&gt;&lt;p&gt;What other files/rules this file “depends” on&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Instructions to execute to make this file up to date (or to create the file), if it is not already up to date or created.&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;A file or rule is out of date if any of its dependencies are out of date &lt;strong&gt;or&lt;/strong&gt; if the file it indicates is either not created or has been updated since the last time the task management system has run. When this happens, the guilty dependencies are updated using their own rules. Afterwards, the file’s own instructions are executed.&lt;/p&gt;
+&lt;p&gt;If a file has no rule, “out of date” simply means that it has been updated or changed since the last time the task management system has run, or it does not exist. If it has, then all files or rules that depend on it are also out of date.&lt;/p&gt;
+&lt;p&gt;A good task management system is smart enough to keep track of what is up to date and what isn’t. If multiple rules all have one dependency, that dependency might be checked and updated every single time. For example, all of our builds in this sample project require &lt;code&gt;img2.jpg&lt;/code&gt; to be downloaded afresh from online. A naive build system might re-download &lt;code&gt;img2.jpg&lt;/code&gt; for every single build, instead of once for all three.&lt;/p&gt;
+&lt;h2 id=&quot;file-rules&quot;&gt;File Rules&lt;/h2&gt;
+&lt;p&gt;Let’s set up &lt;code&gt;src/report.md&lt;/code&gt; with a simple markdown document on our new project:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode markdown&quot;&gt;&lt;code class=&quot;sourceCode markdown&quot;&gt;&amp;lt;!--&lt;span class=&quot;co&quot;&gt; src/report.md --&amp;gt;&lt;/span&gt;
+
+Report
+======
+
+This is a report.  Render me!
+
+&lt;span class=&quot;al&quot;&gt;![first image](img/img1.jpg)&lt;/span&gt;
+&lt;span class=&quot;al&quot;&gt;![second image](img/img2.jpg)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Our project tree should look like this at this point:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;img
+&lt;ul&gt;
+&lt;li&gt;img1.jpg&lt;/li&gt;
+&lt;li&gt;img2.jpg&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;out&lt;/li&gt;
+&lt;li&gt;src
+&lt;ul&gt;
+&lt;li&gt;report.md&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;template&lt;/li&gt;
+&lt;li&gt;Shakefile&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Let’s set up our first rule – rendering &lt;code&gt;out/report.doc&lt;/code&gt; if &lt;code&gt;report.md&lt;/code&gt; has changed.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.doc&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    need [&lt;span class=&quot;st&quot;&gt;&amp;quot;src/report.md&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;img/img1.jpg&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;img/img2.jpg&amp;quot;&lt;/span&gt;]
+    cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;pandoc&amp;quot;&lt;/span&gt; [ &lt;span class=&quot;st&quot;&gt;&amp;quot;src/report.md&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-o&amp;quot;&lt;/span&gt;, f ]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This is equivalent to the Makefile rule:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode makefile&quot;&gt;&lt;code class=&quot;sourceCode makefile&quot;&gt;&lt;span class=&quot;dv&quot;&gt;out/report.doc:&lt;/span&gt;&lt;span class=&quot;dt&quot;&gt; src/report.md&lt;/span&gt;
+&#9;pandoc src/report.md -o out/report.doc&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The operator &lt;code&gt;*&amp;gt;&lt;/code&gt; attaches an &lt;a href=&quot;http://hackage.haskell.org/packages/archive/shake/0.10.6/doc/html/Development-Shake.html#t:Action&quot;&gt;&lt;code&gt;Action&lt;/code&gt;&lt;/a&gt; (with a parameter) to a &lt;a href=&quot;http://hackage.haskell.org/packages/archive/shake/0.10.6/doc/html/Development-Shake.html#t:FilePattern&quot;&gt;&lt;code&gt;FilePattern&lt;/code&gt;&lt;/a&gt; (a string) – that is, when &lt;em&gt;shake&lt;/em&gt; decides that it needs that specified file on the left hand side to be up to date, it runs the action on the right hand side with that filename as a parameter.&lt;/p&gt;
+&lt;p&gt;To be clear, the right hand side is of type:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;ot&quot;&gt;rightHandSide ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;FilePattern&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Action&lt;/span&gt; ()&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;where the &lt;code&gt;FilePattern&lt;/code&gt; is the filename of the file that is being “needed”.&lt;/p&gt;
+&lt;p&gt;The &lt;code&gt;need&lt;/code&gt; function specifies all of the dependencies of that action. If &lt;em&gt;shake&lt;/em&gt; decides it needs &lt;code&gt;out/report.doc&lt;/code&gt; to be up to date, &lt;code&gt;need&lt;/code&gt; tells it that it first needs &lt;code&gt;src/report.md&lt;/code&gt; and the images to be up to date – or rather, that &lt;code&gt;out/report.doc&lt;/code&gt; is only out of date if &lt;code&gt;src/report.md&lt;/code&gt; or the images are out of date, or have changed since the last build.&lt;/p&gt;
+&lt;p&gt;With this in mind, let us write the rest of our file rules:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;co&quot;&gt;-- Shakefile&lt;/span&gt;
+
+&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.doc&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    need [&lt;span class=&quot;st&quot;&gt;&amp;quot;src/report.md&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;img/img1.jpg&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;img/img2.jpg&amp;quot;&lt;/span&gt;]
+    cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;pandoc&amp;quot;&lt;/span&gt; [ &lt;span class=&quot;st&quot;&gt;&amp;quot;src/report.md&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-o&amp;quot;&lt;/span&gt;, f ]
+
+&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.pdf&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    need [&lt;span class=&quot;st&quot;&gt;&amp;quot;src/report.md&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;img/img1.jpg&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;img/img2.jpg&amp;quot;&lt;/span&gt;]
+    cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;pandoc&amp;quot;&lt;/span&gt; [ &lt;span class=&quot;st&quot;&gt;&amp;quot;src/report.md&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-o&amp;quot;&lt;/span&gt;, f, &lt;span class=&quot;st&quot;&gt;&amp;quot;-V&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;links-as-notes&amp;quot;&lt;/span&gt; ]
+
+&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.html&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    need [ &lt;span class=&quot;st&quot;&gt;&amp;quot;src/report.md&amp;quot;&lt;/span&gt;
+         , &lt;span class=&quot;st&quot;&gt;&amp;quot;img/img1.jpg&amp;quot;&lt;/span&gt;
+         , &lt;span class=&quot;st&quot;&gt;&amp;quot;img/img2.jpg&amp;quot;&lt;/span&gt;
+         , &lt;span class=&quot;st&quot;&gt;&amp;quot;css/report.css&amp;quot;&lt;/span&gt; ]
+    cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;pandoc&amp;quot;&lt;/span&gt; [ &lt;span class=&quot;st&quot;&gt;&amp;quot;src/report.md&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-o&amp;quot;&lt;/span&gt;, f, &lt;span class=&quot;st&quot;&gt;&amp;quot;-c&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;css/report.css&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-S&amp;quot;&lt;/span&gt; ]
+
+&lt;span class=&quot;st&quot;&gt;&amp;quot;img/img2.jpg&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;wget&amp;quot;&lt;/span&gt; [ &lt;span class=&quot;st&quot;&gt;&amp;quot;http://example.com/img2.jpg&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-O&amp;quot;&lt;/span&gt;, f ]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;And that is it!&lt;/p&gt;
+&lt;h2 id=&quot;running-shake&quot;&gt;Running Shake&lt;/h2&gt;
+&lt;p&gt;How do we tell &lt;em&gt;shake&lt;/em&gt; what file it is that we want to be up to date? We specify this by modifying the line &lt;code&gt;want []&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;want [&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.doc&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.pdf&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.html&amp;quot;&lt;/span&gt;]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;That tells &lt;em&gt;shake&lt;/em&gt; that when we run &lt;code&gt;main&lt;/code&gt; with no arguments, we want those three files to be checked to be up to date.&lt;/p&gt;
+&lt;p&gt;Now, to wrap it all together, we run:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode bash&quot;&gt;&lt;code class=&quot;sourceCode bash&quot;&gt;$ &lt;span class=&quot;kw&quot;&gt;runhaskell&lt;/span&gt; Shakefile&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;And let the magic happen!&lt;/p&gt;
+&lt;p&gt;I run this enough times that I like to alias this:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode bash&quot;&gt;&lt;code class=&quot;sourceCode bash&quot;&gt;&lt;span class=&quot;co&quot;&gt;# in ~/.bashrc&lt;/span&gt;
+&lt;span class=&quot;kw&quot;&gt;alias&lt;/span&gt; shake=runhaskell Shakefile&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Note that &lt;code&gt;want&lt;/code&gt; specifies the &lt;strong&gt;default&lt;/strong&gt; “wants”. You can specify your own collection by passing a parameter:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode bash&quot;&gt;&lt;code class=&quot;sourceCode bash&quot;&gt;$ &lt;span class=&quot;kw&quot;&gt;runhaskell&lt;/span&gt; Shakefile out/report.doc&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;h2 id=&quot;wildcards&quot;&gt;Wildcards&lt;/h2&gt;
+&lt;p&gt;You may have noticed that even though we had multiple images in the &lt;code&gt;img&lt;/code&gt; folder, we required them all explicitly. This could cause problems. What if in the future, our documents used more images?&lt;/p&gt;
+&lt;p&gt;We can define wildcards using &lt;em&gt;shake&lt;/em&gt;’s &lt;code&gt;getDirectoryFiles&lt;/code&gt;, which returns results of a wildcard search in an &lt;code&gt;Action&lt;/code&gt; monad. &lt;code&gt;getDirectoryFiles&lt;/code&gt; takes a directory base and a list of wildcards.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;co&quot;&gt;-- Shakefile&lt;/span&gt;
+
+&lt;span class=&quot;ot&quot;&gt;srcFiles ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Action&lt;/span&gt; [FilePath]
+srcFiles &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; getDirectoryFiles &lt;span class=&quot;st&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;
+    [ &lt;span class=&quot;st&quot;&gt;&amp;quot;src/report.md&amp;quot;&lt;/span&gt;
+    , &lt;span class=&quot;st&quot;&gt;&amp;quot;img/*.jpg&amp;quot;&lt;/span&gt; ]
+
+&lt;span class=&quot;ot&quot;&gt;main ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;IO&lt;/span&gt; ()
+main &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; shakeArgs opts &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    want [&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.doc&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.pdf&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.html&amp;quot;&lt;/span&gt;]
+
+    &lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.doc&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+        deps &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; srcFiles
+        need deps
+        cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;pandoc&amp;quot;&lt;/span&gt; [ &lt;span class=&quot;st&quot;&gt;&amp;quot;src/report.md&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-o&amp;quot;&lt;/span&gt;, f ]
+
+    &lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.pdf&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+        deps &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; srcFiles
+        need deps
+        cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;pandoc&amp;quot;&lt;/span&gt; [ &lt;span class=&quot;st&quot;&gt;&amp;quot;src/report.md&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-o&amp;quot;&lt;/span&gt;, f, &lt;span class=&quot;st&quot;&gt;&amp;quot;-V&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;links-as-notes&amp;quot;&lt;/span&gt; ]
+
+    &lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.html&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+        deps &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; srcFiles
+        need &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;css/report.css&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; deps
+        cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;pandoc&amp;quot;&lt;/span&gt; [ &lt;span class=&quot;st&quot;&gt;&amp;quot;src/report.md&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-o&amp;quot;&lt;/span&gt;, f, &lt;span class=&quot;st&quot;&gt;&amp;quot;-c&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;css/report.css&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-S&amp;quot;&lt;/span&gt; ]
+
+    &lt;span class=&quot;st&quot;&gt;&amp;quot;img/img2.jpg&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+        cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;wget&amp;quot;&lt;/span&gt; [ &lt;span class=&quot;st&quot;&gt;&amp;quot;http://example.com/img2.jpg&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-O&amp;quot;&lt;/span&gt;, f ]
+
+    &lt;span class=&quot;st&quot;&gt;&amp;quot;clean&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; removeFilesAfter &lt;span class=&quot;st&quot;&gt;&amp;quot;.shake&amp;quot;&lt;/span&gt; [&lt;span class=&quot;st&quot;&gt;&amp;quot;//*&amp;quot;&lt;/span&gt;]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;If you are comfortable with applicative style, you can make it all happen on one line:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.doc&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    need &lt;span class=&quot;fu&quot;&gt;&amp;lt;$&amp;gt;&lt;/span&gt; srcFiles&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;(You’ll need to import &lt;code&gt;&amp;lt;$&amp;gt;&lt;/code&gt; from &lt;code&gt;Control.Applicative&lt;/code&gt;, and GHC will complain about the discarded value unless you use &lt;code&gt;void&lt;/code&gt; or enable &lt;code&gt;-fno-warn-wrong-do-bind&lt;/code&gt;)&lt;/p&gt;
+&lt;h2 id=&quot;phony-rules&quot;&gt;Phony Rules&lt;/h2&gt;
+&lt;p&gt;Now, you might sometimes want rules that are “just tasks” that don’t relate to creating a specific file. That is, they still depend on other files or rules and are triggered to update when their dependencies are out of date, but they just aren’t about building files.&lt;/p&gt;
+&lt;p&gt;For example, what if you wanted a task &lt;code&gt;build-some&lt;/code&gt;, which builds only &lt;code&gt;report.pdf&lt;/code&gt; and &lt;code&gt;report.doc&lt;/code&gt;, and outputs a proverb to the command line?&lt;/p&gt;
+&lt;p&gt;One thing you can do is to simply use a rule with a name that does not correspond to any file:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;co&quot;&gt;-- Bad&lt;/span&gt;
+&lt;span class=&quot;st&quot;&gt;&amp;quot;build-some&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \_ &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    need [&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.pdf&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.doc&amp;quot;&lt;/span&gt;]
+    cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;fortune&amp;quot;&lt;/span&gt; [&lt;span class=&quot;st&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;However, this is kind of an inelegant solution. There really actually is not a file &lt;code&gt;build-some&lt;/code&gt;. Also, if someone ever decides to create a file called &lt;code&gt;build-some&lt;/code&gt;, you’ll find that this rule never gets run.&lt;/p&gt;
+&lt;p&gt;The best way is to create a “phony” rule, which is a rule that is not tied to a file. This is the reason for the alias I specified at the beginning of the post:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;co&quot;&gt;-- Good&lt;/span&gt;
+&lt;span class=&quot;st&quot;&gt;&amp;quot;build-some&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    need [&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.pdf&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.doc&amp;quot;&lt;/span&gt;]
+    cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;fortune&amp;quot;&lt;/span&gt; [&lt;span class=&quot;st&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;And voilà!&lt;/p&gt;
+&lt;h3 id=&quot;cleanup&quot;&gt;Cleanup&lt;/h3&gt;
+&lt;p&gt;You might have noticed the phony rule in the scaffold Shakefile:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;clean&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; removeFilesAfter &lt;span class=&quot;st&quot;&gt;&amp;quot;.shake&amp;quot;&lt;/span&gt; [&lt;span class=&quot;st&quot;&gt;&amp;quot;//*&amp;quot;&lt;/span&gt;]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;If you run &lt;code&gt;shake clean&lt;/code&gt;, it will remove all files in the &lt;code&gt;.shake/&lt;/code&gt; directory after the rule has completed its execution. &lt;code&gt;removeFilesAfter&lt;/code&gt; removes the files in the given base directory (&lt;code&gt;.shake&lt;/code&gt;) matching the given wildcards (&lt;code&gt;[&amp;quot;//*&amp;quot;]&lt;/code&gt;) after all rules have completed their course.&lt;/p&gt;
+&lt;p&gt;This is useful for cleaning up &lt;em&gt;shake&lt;/em&gt;’s metadata files after you are done with your build, or if you want to run the task management system on a clean start.&lt;/p&gt;
+&lt;h2 id=&quot;completed-file&quot;&gt;Completed File&lt;/h2&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;co&quot;&gt;-- Shakefile&lt;/span&gt;
+&lt;span class=&quot;ot&quot;&gt;{-# OPTIONS_GHC -fno-warn-wrong-do-bind #-}&lt;/span&gt;
+
+&lt;span class=&quot;kw&quot;&gt;import &lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;Control.Applicative&lt;/span&gt; ((&amp;lt;$&amp;gt;))
+&lt;span class=&quot;kw&quot;&gt;import &lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;Development.Shake&lt;/span&gt;
+
+opts &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; shakeOptions { shakeFiles    &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;.shake/&amp;quot;&lt;/span&gt; }
+
+&lt;span class=&quot;ot&quot;&gt;main ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;IO&lt;/span&gt; ()
+main &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; shakeArgs opts &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    want [&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.doc&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.pdf&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.html&amp;quot;&lt;/span&gt;]
+
+    &lt;span class=&quot;st&quot;&gt;&amp;quot;build-some&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+        need [&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.pdf&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.doc&amp;quot;&lt;/span&gt;]
+        cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;fortune&amp;quot;&lt;/span&gt; [&lt;span class=&quot;st&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;]
+
+    &lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.doc&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+        need &lt;span class=&quot;fu&quot;&gt;&amp;lt;$&amp;gt;&lt;/span&gt; srcFiles
+        cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;pandoc&amp;quot;&lt;/span&gt; [ &lt;span class=&quot;st&quot;&gt;&amp;quot;src/report.md&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-o&amp;quot;&lt;/span&gt;, f ]
+
+    &lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.pdf&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+        need &lt;span class=&quot;fu&quot;&gt;&amp;lt;$&amp;gt;&lt;/span&gt; srcFiles
+        cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;pandoc&amp;quot;&lt;/span&gt; [ &lt;span class=&quot;st&quot;&gt;&amp;quot;src/report.md&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-o&amp;quot;&lt;/span&gt;, f, &lt;span class=&quot;st&quot;&gt;&amp;quot;-V&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;links-as-notes&amp;quot;&lt;/span&gt; ]
+
+    &lt;span class=&quot;st&quot;&gt;&amp;quot;out/report.html&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+        deps &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; srcFiles
+        need &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;css/report.css&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; deps
+        cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;pandoc&amp;quot;&lt;/span&gt; [ &lt;span class=&quot;st&quot;&gt;&amp;quot;src/report.md&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-o&amp;quot;&lt;/span&gt;, f, &lt;span class=&quot;st&quot;&gt;&amp;quot;-c&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;css/report.css&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-S&amp;quot;&lt;/span&gt; ]
+
+    &lt;span class=&quot;st&quot;&gt;&amp;quot;img/img2.jpg&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+        cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;wget&amp;quot;&lt;/span&gt; [ &lt;span class=&quot;st&quot;&gt;&amp;quot;http://example.com/img2.jpg&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-O&amp;quot;&lt;/span&gt;, f ]
+
+    &lt;span class=&quot;st&quot;&gt;&amp;quot;clean&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; removeFilesAfter &lt;span class=&quot;st&quot;&gt;&amp;quot;.shake&amp;quot;&lt;/span&gt; [&lt;span class=&quot;st&quot;&gt;&amp;quot;//*&amp;quot;&lt;/span&gt;]
+
+&lt;span class=&quot;ot&quot;&gt;srcFiles ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Action&lt;/span&gt; [FilePath]
+srcFiles &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; getDirectoryFiles &lt;span class=&quot;st&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;
+    [ &lt;span class=&quot;st&quot;&gt;&amp;quot;src/report.md&amp;quot;&lt;/span&gt;
+    , &lt;span class=&quot;st&quot;&gt;&amp;quot;img/*.jpg&amp;quot;&lt;/span&gt; ]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;h2 id=&quot;wrapping-up&quot;&gt;Wrapping Up&lt;/h2&gt;
+&lt;p&gt;If you look at the &lt;a href=&quot;http://hackage.haskell.org/packages/archive/shake/0.10.6/doc/html/Development-Shake.html&quot;&gt;Shake Documentation&lt;/a&gt;, you will find a lot of ways you can build complex networks of dependencies.&lt;/p&gt;
+&lt;p&gt;Hopefully there are enough use cases here to be useful in general applications.&lt;/p&gt;
+&lt;h3 id=&quot;monadic-tricks&quot;&gt;Monadic Tricks&lt;/h3&gt;
+&lt;p&gt;Because everything is Haskell, you can easily generate rules using your basic monad iterators by taking advantage of Haskell’s extensive standard library of monad functions. For example, if you want to generate multiple reports, you can use &lt;code&gt;forM_&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;kw&quot;&gt;let&lt;/span&gt; reports &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; [&lt;span class=&quot;st&quot;&gt;&amp;quot;report1&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;report2&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;report3&amp;quot;&lt;/span&gt;]
+
+want &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; (\s f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;out/&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;++&lt;/span&gt; s &lt;span class=&quot;fu&quot;&gt;++&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;.&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;++&lt;/span&gt; f) &lt;span class=&quot;fu&quot;&gt;&amp;lt;$&amp;gt;&lt;/span&gt;
+    [&lt;span class=&quot;st&quot;&gt;&amp;quot;report1&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;report2&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;report3&amp;quot;&lt;/span&gt;] &lt;span class=&quot;fu&quot;&gt;&amp;lt;*&amp;gt;&lt;/span&gt; [&lt;span class=&quot;st&quot;&gt;&amp;quot;doc&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;pdf&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;html&amp;quot;&lt;/span&gt;]
+
+forM_ [&lt;span class=&quot;st&quot;&gt;&amp;quot;report1&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;report2&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;report3&amp;quot;&lt;/span&gt;] &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; \reportName &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;let&lt;/span&gt;
+        outBase &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;out/&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;++&lt;/span&gt; reportName
+        srcName &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;src/&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;++&lt;/span&gt; reportName &lt;span class=&quot;fu&quot;&gt;++&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;.md&amp;quot;&lt;/span&gt;
+
+    outBase &lt;span class=&quot;fu&quot;&gt;++&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;.doc&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+        need &lt;span class=&quot;fu&quot;&gt;&amp;lt;$&amp;gt;&lt;/span&gt; srcFiles
+        cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;pandoc&amp;quot;&lt;/span&gt; [ srcName, &lt;span class=&quot;st&quot;&gt;&amp;quot;-o&amp;quot;&lt;/span&gt;, f ]
+
+    outBase &lt;span class=&quot;fu&quot;&gt;++&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;.pdf&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+        need &lt;span class=&quot;fu&quot;&gt;&amp;lt;$&amp;gt;&lt;/span&gt; srcFiles
+        cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;pandoc&amp;quot;&lt;/span&gt; [ srcName, &lt;span class=&quot;st&quot;&gt;&amp;quot;-o&amp;quot;&lt;/span&gt;, f, &lt;span class=&quot;st&quot;&gt;&amp;quot;-V&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;links-as-notes&amp;quot;&lt;/span&gt; ]
+
+    outBase &lt;span class=&quot;fu&quot;&gt;++&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;.html&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;*&amp;gt;&lt;/span&gt; \f &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
+        deps &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; srcFiles
+        need &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;css/report.css&amp;quot;&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; deps
+        cmd &lt;span class=&quot;st&quot;&gt;&amp;quot;pandoc&amp;quot;&lt;/span&gt; [ srcName, &lt;span class=&quot;st&quot;&gt;&amp;quot;-o&amp;quot;&lt;/span&gt;, f, &lt;span class=&quot;st&quot;&gt;&amp;quot;-c&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;css/report.css&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;-S&amp;quot;&lt;/span&gt; ]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Note however that you can get the same thing by just using wildcards (with &lt;code&gt;takeFileName&lt;/code&gt;). But this is just an example, feel free to let your imagination roam!&lt;/p&gt;
+&lt;h3 id=&quot;looking-forward&quot;&gt;Looking Forward&lt;/h3&gt;
+&lt;p&gt;We’ve seen how &lt;em&gt;Shake&lt;/em&gt; is good at setting up systems for managing and executing dependencies. This is good for running simple system commands. However, there is a lot more about scripting and task automation than managing dependencies.&lt;/p&gt;
+&lt;p&gt;For example, almost everything we’ve done can be done with a simple Makefile. What does Haskell offer to the scripting scene?&lt;/p&gt;
+&lt;h4 id=&quot;strong-typing&quot;&gt;Strong Typing&lt;/h4&gt;
+&lt;p&gt;As you’ll know, one of the magical things about Haskell is that because of its expressive strong typing system, you leave the debugging to the compiler. If it compiles, it works exactly the way you want!&lt;/p&gt;
+&lt;p&gt;This is pretty lacking in the bare-bones system we have in place now. Right now we are just firing off arbitrary system commands that are basically specified in strings with no type of typing. We can compile anything, whether there are bugs in it or not.&lt;/p&gt;
+&lt;p&gt;Luckily &lt;em&gt;Shake&lt;/em&gt; is very good at integrating seamlessly with any kind of framework. We can leave this up to other frameworks.&lt;/p&gt;
+&lt;p&gt;One popular framework for this that is gaining in maturity is &lt;a href=&quot;http://hackage.haskell.org/package/shelly&quot;&gt;&lt;em&gt;Shelly&lt;/em&gt;&lt;/a&gt; (A fork of an older project that is an &lt;a href=&quot;http://www.yesodweb.com/blog/2012/03/shelly-for-shell-scripts&quot;&gt;ongoing&lt;/a&gt; Yesod Project &lt;a href=&quot;http://www.yesodweb.com/blog/2012/07/shelly-update&quot;&gt;experiment&lt;/a&gt;), but you are welcome to using your own. At the present Haskell is still developing and growing in this aspect. I hope to eventually write an article about &lt;em&gt;Shelly&lt;/em&gt; integration with &lt;em&gt;Shake&lt;/em&gt;.&lt;/p&gt;
+&lt;h4 id=&quot;other&quot;&gt;Other&lt;/h4&gt;
+&lt;p&gt;These are just some ways to think about using &lt;em&gt;Shake&lt;/em&gt; in new more creative ways. Let me know if you think of any clever integrations in the comments!&lt;/p&gt;</description><author>Justin Le</author><category>Haskell</category><category>Tutorials</category><guid isPermaLink="true">http://mstksg.github.com/inCode/entry/shake-task-automation-and-scripting-in-haskell</guid><pubDate>Wed, 18 Sep 2013 00:23:11 UTC</pubDate><dc:creator>Justin Le</dc:creator><dc:subject>Haskell, Tutorials</dc:subject><dc:date>2013-09-18</dc:date></item><language>en</language><copyright>Copyright 2016 Justin Le</copyright><managingEditor>justin@jle.im (Justin Le)</managingEditor><webMaster>justin@jle.im (Justin Le)</webMaster><lastBuildDate>Sun,  6 Mar 2016 02:40:31 UTC</lastBuildDate><generator>feed-0.3.9.1 (Sigbjorn Finne)</generator><image><url>/img/site_logo.jpg</url><title>in Code</title><link>/</link></image><dc:creator>Justin Le</dc:creator><dc:language>en</dc:language><dc:rights>Copyright 2016 Justin Le</dc:rights><dc:date>2016-03-06</dc:date><dc:description>Weblog of Justin Le, covering his various adventures in programming and explorations in the vast worlds of computation physics, and knowledge.</dc:description></channel></rss>
