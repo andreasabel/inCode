@@ -2,15 +2,13 @@
 
 module Blog.Util where
 
--- import           Blog.Types
--- import qualified Text.Blaze.Html5  as H
--- import qualified Text.Pandoc.Error as P
 import           Data.Char
 import           Data.Default
 import           Data.Time.Format
 import           Hakyll
-import qualified Data.Text            as T
-import qualified Text.Pandoc          as P
+import           System.FilePath
+import qualified Data.Text        as T
+import qualified Text.Pandoc      as P
 
 
 renderShortFriendlyTime :: FormatTime t => t -> String
@@ -59,3 +57,5 @@ entryWriterOpts =
                               ,("links-as-notes","true")]
         }
 
+ghcjsReq :: String -> T.Text
+ghcjsReq f = T.pack $ "/ghcjs" </> (f <.> "jsexe") </> "all.js"

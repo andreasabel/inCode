@@ -4,7 +4,6 @@
 
 module Blog.View.Home where
 
-import           Blog.Compiler.Tag
 import           Blog.Compiler.Entry
 import           Blog.Types
 import           Blog.Util
@@ -132,7 +131,7 @@ viewTags tags =
           H.ul $
             forM_ (filterTags tt (sortTags tags)) $ \t ->
               H.li $ do
-                tagLink tagPrettyLabel t
+                tagLink tagPrettyLabelLower t
                 H.preEscapedToHtml ("&nbsp;" :: T.Text)
                 H.span $ do
                   "(" :: H.Html

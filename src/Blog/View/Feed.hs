@@ -4,7 +4,6 @@
 
 module Blog.View.Feed where
 
--- import           Hakyll
 import           Blog.Types
 import           Blog.View
 import           Data.Maybe
@@ -47,7 +46,7 @@ feedRss entries tz now = (nullRSS feedTitle feedLink)
       , rssWebMaster     = Just feedAuthor
       , rssLastUpdate    = Just (formatDateRfc now)
       -- , rssCategories =
-      , rssGenerator     = Just "feed-0.3.9.1 (Sigbjorn Finne)"
+      , rssGenerator     = Just "feed-0.3.11.1 (Sigbjorn Finne)"
       , rssItems         = map rssItem entries
       , rssChannelOther  = map dcItemToXml dcData
       , rssImage         = Just siteLogo

@@ -5,46 +5,35 @@ module Blog.Compiler.TagIndex where
 
 import           Blog.Compiler.Entry
 import           Blog.Types
-import           Blog.Util
 import           Blog.Util.Tag
-import           Blog.View
 import           Blog.View.TagIndex
-import           Data.Bifunctor
 import           Data.Default
-import           Data.Foldable
 import           Data.List
 import           Data.Maybe
-import           Data.Monoid
 import           Data.Ord
-import           Data.Time.LocalTime
 import           Data.Traversable
 import           Hakyll
 import           Hakyll.Web.Blaze
-import           System.FilePath
-import           Text.Read           (readMaybe)
-import qualified Data.Text           as T
-import qualified Text.Pandoc         as P
-import qualified Text.Pandoc.Error   as P
-import qualified Text.Pandoc.Walk    as P
+import qualified Data.Text              as T
 
 
 tagIndexCompiler
     :: (?config :: Config)
     => TagType
     -> [(String, [Identifier])]
-    -> [Identifier]
     -> Compiler (Item String)
-tagIndexCompiler tt tmap recents = do
+tagIndexCompiler tt tmap = do
     tmap' <- forM tmap $ \(s, es) -> do
       t      <- fetchTag tt (T.pack s)
       recent <- listToMaybe . sortEntries
             <$> traverse (flip loadSnapshotBody "entry") es
       return (t, recent)
 
-    recents' <- traverse (flip loadSnapshotBody "entry") recents
+    recents <- getRecentEntries
 
-    let tmapSort = sortBy f tmap'
-        tii = TII tt tmapSort recents'
+    let sorter  = indexSorter tt
+        tmapSort = sortBy (tsCompare sorter) tmap'
+        tii = TII tt tmapSort recents
         title = case tt of
                   GeneralTag  -> "Tags"
                   CategoryTag -> "Categories"
@@ -54,9 +43,23 @@ tagIndexCompiler tt tmap recents = do
                     }
 
     blazeCompiler pd (viewTagIndex tii)
-  where
-    f = case tt of
-          GeneralTag  -> flip $ comparing (length . tagEntries . fst)
-          CategoryTag -> comparing (tagLabel . fst)
-          SeriesTag   -> comparing (fmap entryPostTime . snd)
 
+
+data TagSortType = TSLabel
+                 | TSCount
+                 | TSRecent
+  deriving Show
+
+tsCompare
+    :: TagSortType
+    -> (Tag, Maybe Entry)
+    -> (Tag, Maybe Entry)
+    -> Ordering
+tsCompare TSLabel  =        comparing (tagLabel . fst)
+tsCompare TSCount  = flip $ comparing (length . tagEntries . fst)
+tsCompare TSRecent = flip $ comparing (fmap entryPostTime . snd)
+
+indexSorter :: TagType -> TagSortType
+indexSorter GeneralTag  = TSCount
+indexSorter CategoryTag = TSCount   -- should this be Label, Recent?
+indexSorter SeriesTag   = TSRecent

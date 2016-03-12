@@ -8,29 +8,22 @@ import           Blog.Compiler.Archive
 import           Blog.Types
 import           Blog.Util
 import           Blog.Util.Tag
-import           Blog.View
-import           Data.Char
 import           Data.List
 import           Data.Maybe
 import           Data.Ord
 import           Data.String
 import           Hakyll
 import           System.FilePath
-import           Text.Blaze.Html5            ((!))
-import qualified Data.Text                   as T
-import qualified Text.Blaze.Html5            as H
-import qualified Text.Blaze.Html5.Attributes as A
-import qualified Text.Pandoc                 as P
-import qualified Text.Pandoc.Error           as P
+import qualified Data.Text             as T
+import qualified Text.Pandoc           as P
 
 tagCompiler
     :: (?config :: Config)
     => TagType
     -> String
     -> Pattern
-    -> [Identifier]
     -> Compiler (Item String)
-tagCompiler tt tLab p recents = do
+tagCompiler tt tLab p = do
     t@Tag{..} <- fmap itemBody . saveSnapshot "tag" =<< compileTag tt tLab p
 
     let sorted = map (fromFilePath . entrySourceFile)
@@ -38,7 +31,7 @@ tagCompiler tt tLab p recents = do
                . filter (isJust . entryPostTime)
                $ tagEntries
 
-    archiveCompiler (ADTagged t sorted) recents
+    archiveCompiler (ADTagged t sorted)
 
 compileTag :: TagType -> String -> Pattern -> Compiler (Item Tag)
 compileTag tt tLab p = do

@@ -5,11 +5,6 @@
 
 module Blog.View.Archive where
 
--- import           Blog.View.Social
--- import           Control.Applicative
--- import           Control.Arrow            ((&&&))
--- import           Data.Foldable
--- import           Data.Function
 import           Blog.Compiler.Entry
 import           Blog.Types
 import           Blog.Util
@@ -65,7 +60,7 @@ viewArchive AI{..} = do
     archiveList = case aiData of
                     ADAll        es -> viewArchiveByYears es
                     ADYear   y   es -> viewArchiveByMonths True y es
-                    ADMonth  y m es -> viewArchiveFlat True es
+                    ADMonth  _ _ es -> viewArchiveFlat True es
                     ADTagged t   es -> viewArchiveFlat True . flip map es $ \case
                                          TE e ts -> TE e . flip filter ts $ \t' ->
                                            not ( tagLabel t == tagLabel t'
@@ -120,8 +115,9 @@ viewArchiveSidebar recents isIndex = do
       H.h2 "Recent"
       H.ul $
         forM_ recents $ \Entry{..} ->
-          H.a ! A.href (fromString (renderUrl' entryCanonical)) $
-            H.toHtml entryTitle
+          H.li $
+            H.a ! A.href (fromString (renderUrl' entryCanonical)) $
+              H.toHtml entryTitle
   where
     indexList =  [("History"   , "/entries"   , AIndHistory           )
                  ,("Tags"      , "/tags"      , AIndTagged GeneralTag )
@@ -173,7 +169,7 @@ viewArchiveByMonths
     -> H.Html
 viewArchiveByMonths tile y entries =
     H.ul ! A.class_ ulClass $
-      void . flip M.traverseWithKey entries $ \m tes -> do
+      forM_ (reverse (M.toList entries)) $ \(m, tes) -> do
         let monthPath = renderUrl' $ "/entries/in" </> show y </> show (mInt m)
         H.li $ do
           H.h3 $
@@ -191,7 +187,7 @@ viewArchiveByYears
     -> H.Html
 viewArchiveByYears entries =
     H.ul ! A.class_ "entry-list" $
-      void . flip M.traverseWithKey entries $ \y tes -> do
+      forM_ (reverse (M.toList entries)) $ \(y, tes) -> do
         let yearPath = renderUrl' $ "/entries/in" </> show y
         H.li ! A.class_ "tile" $ do
           H.h2 $

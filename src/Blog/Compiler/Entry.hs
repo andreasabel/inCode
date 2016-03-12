@@ -7,6 +7,7 @@ module Blog.Compiler.Entry where
 
 import           Blog.Types
 import           Blog.Util
+import           Blog.Util.Preprocessor
 import           Blog.Util.Tag
 import           Blog.View
 import           Blog.View.Entry
@@ -21,18 +22,20 @@ import           Data.Time.LocalTime
 import           Hakyll
 import           Hakyll.Web.Blaze
 import           System.FilePath
-import           Text.Read           (readMaybe)
-import qualified Data.Text           as T
-import qualified Text.Pandoc         as P
-import qualified Text.Pandoc.Error   as P
-import qualified Text.Pandoc.Walk    as P
+import           Text.Read              (readMaybe)
+import qualified Data.Text              as T
+import qualified Text.Pandoc            as P
+import qualified Text.Pandoc.Error      as P
+import qualified Text.Pandoc.Walk       as P
 
 compileEntry
     :: (?config :: Config)
     => Compiler (Item Entry)
 compileEntry = do
     i         <- getUnderlying
-    eBody     <- getResourceBody
+    eRawBody  <- getResourceBody
+    eBody     <- fmap T.unpack
+             <$> traverse (preprocessEntry . T.pack) eRawBody
     ePandoc   <- readPandocWith entryReaderOpts eBody
     let eContents   = T.pack . P.writeMarkdown entryWriterOpts <$> ePandoc
         ePandocLede = flip fmap ePandoc $ \(P.Pandoc m bs) ->
@@ -41,7 +44,12 @@ compileEntry = do
                           . takeWhile validLede
                           $ bs
         eLede       = T.pack . P.writeMarkdown entryWriterOpts <$> ePandocLede
-    eTitle    <- T.unwords . T.lines . T.pack <$> getMetadataField' i "title"
+    eTitle    <- T.pack
+               . P.writeMarkdown entryWriterOpts
+               . P.handleError
+               . P.readMarkdown entryReaderOpts
+               . T.unpack . T.unwords . T.lines . T.pack
+             <$> getMetadataField' i "title"
     eCreate   <- (parseETime =<<) <$> getMetadataField i "create-time"
     ePost     <- (parseETime =<<) <$> getMetadataField i "date"
     eModified <- (parseETime =<<) <$> getMetadataField i "modified-time"
@@ -80,11 +88,10 @@ compileEntry = do
 
 entryCompiler
     :: (?config :: Config)
-    => LocalTime
-    -> [((Year, Month), Identifier)]
+    => [((Year, Month), Identifier)]
     -> [(TagType, T.Text)]
     -> Compiler (Item String)
-entryCompiler now histList allTags = do
+entryCompiler histList allTags = do
     i <- setVersion Nothing <$> getUnderlying
     e@Entry{..} <- loadSnapshotBody i "entry"
     let (befs,afts) = break ((/= i) . snd) histList
@@ -99,7 +106,6 @@ entryCompiler now histList allTags = do
                 , eiTags      = sortTags allTs
                 , eiPrevEntry = eb
                 , eiNextEntry = ea
-                , eiNow       = now
                 }
         pd = def { pageDataTitle   = Just entryTitle
                  , pageDataType    = Just "article"
@@ -107,9 +113,8 @@ entryCompiler now histList allTags = do
                  , pageDataCss     = [ "/css/page/entry.css"
                                      , "/css/pygments.css"
                                      ]
-                 , pageDataJs      = [ "/js/fay-runtime.min.js"
-                                     , "/js/page/entry.js"
-                                     , "/js/page/entry_toc.js"
+                 , pageDataJs      = [ "/js/page/entry_toc.js"
+                                     , ghcjsReq "blog-javascript-entry"
                                      , "/js/disqus.js"
                                      , "/js/disqus_count.js"
                                      , "/js/social.js"
@@ -144,9 +149,13 @@ entryMarkdownCompiler = do
 
 entryLaTeXCompiler
     :: (?config :: Config)
-    => String
-    -> Compiler (Item String)
-entryLaTeXCompiler templ = do
+    => Compiler (Item String)
+entryLaTeXCompiler = do
+    templ <- loadBody "latex/templates/default.latex"
+    let opts = entryWriterOpts { P.writerStandalone = True
+                               , P.writerTemplate   = templ
+                               }
+
     i <- setVersion Nothing <$> getUnderlying
     Entry{..} <- loadSnapshotBody i "entry"
     let eDate    = maybe T.empty (("% " <>) . T.pack . renderShortFriendlyTime)
@@ -166,12 +175,12 @@ entryLaTeXCompiler templ = do
                              , entryContents
                              ]
     body <- makeItem $ T.unpack mdHeader
-    fmap toTex <$> readPandocWith entryReaderOpts body
+    fmap (toTex opts) <$> readPandocWith entryReaderOpts body
   where
-    toTex :: P.Pandoc -> String
-    toTex = P.writeLaTeX opts
-          . P.walk upgrade
-          . P.bottomUp stripRules
+    toTex :: P.WriterOptions -> P.Pandoc -> String
+    toTex opts = P.writeLaTeX opts
+               . P.walk upgrade
+               . P.bottomUp stripRules
     stripRules P.HorizontalRule = P.Null
     stripRules other = other
     upgrade p = case p of
@@ -181,9 +190,6 @@ entryLaTeXCompiler templ = do
                       -> P.Div di (P.HorizontalRule : xs ++ [P.HorizontalRule])
                   _
                       -> p
-    opts = entryWriterOpts { P.writerStandalone = True
-                           , P.writerTemplate   = templ
-                           }
 
 entryLedeStripped :: Entry -> T.Text
 entryLedeStripped = stripPandoc
@@ -216,3 +222,11 @@ sortEntries = sortBy (flip $ comparing entryPostTime)
 sortTaggedEntries :: [TaggedEntry] -> [TaggedEntry]
 sortTaggedEntries = sortBy (flip $ comparing (entryPostTime . teEntry))
                   . filter (isJust . entryPostTime . teEntry)
+
+getEntries :: Compiler [Entry]
+getEntries = map itemBody <$> loadAllSnapshots ("copy/entries/*" .&&. hasNoVersion) "entry"
+
+getRecentEntries :: (?config :: Config) => Compiler [Entry]
+getRecentEntries = take (prefSidebarEntries (confBlogPrefs ?config))
+                 . sortEntries
+               <$> getEntries
