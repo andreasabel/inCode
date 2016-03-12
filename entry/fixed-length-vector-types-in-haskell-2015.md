@@ -68,16 +68,18 @@ kind `*` (our vector itself).
 Using DataKinds for Type-Level Nats
 -----------------------------------
 
-(The code in this section for this type is \[available
-online\]\[fvtypenats\], if you wanted to play along!)
-
-!!\[fvtypenats\]:fixvec/FVTypeNats.hs
+(The code in this section for this type is [available
+online](https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs),
+if you wanted to play along!)
 
 There are a couple of ways to find something for that `n` `Nat` kind,
 and one way is to use the simple inductive `Nat`:
 
 ``` {.haskell}
-!!!fixvec/FVTypeNats.hs "data Nat ="
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L26-27
+data Nat = Z | S Nat
+         deriving Show
+
 ```
 
 You might have seen this type before…it gives us value-level natural
@@ -127,7 +129,16 @@ Now we can make our `Vec` data type, with the *GADTs* extension, or
 “generalized algebraic data types”:
 
 ``` {.haskell}
-!!!fixvec/FVTypeNats.hs "data Vec ::" "infixr 5 :#" "deriving instance Show a => Show (Vec n a)"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L37-44
+data Vec :: Nat -> * -> * where
+    Nil  :: Vec Z a
+    (:#) :: a -> Vec n a -> Vec (S n) a
+
+infixr 5 :#
+
+deriving instance Show a => Show (Vec n a)
+deriving instance Eq a => Eq (Vec n a)
+
 ```
 
 If you’ve never seen GADTs before, think of it as a way of declaring a
@@ -177,7 +188,13 @@ but its type has an extra tag that is erased at compile-time.
 Okay, let’s define some useful methods:
 
 ``` {.haskell}
-!!!fixvec/FVTypeNats.hs "headV ::" "tailV ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L93-97
+headV :: Vec (S n) a -> a
+headV (x :# _)  = x
+
+tailV :: Vec (S n) a -> Vec n a
+tailV (_ :# xs) = xs
+
 ```
 
 Ah, the classic `head`/`tail` duo from the days pre-dating Haskell.
@@ -215,14 +232,22 @@ first. For that, we can use a type family, using the *TypeFamilies*
 extension (with `TypeOperators`):
 
 ``` {.haskell}
-!!!fixvec/FVTypeNats.hs "type family (x :: Nat) + (y :: Nat)"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L29-31
+type family (x :: Nat) + (y :: Nat) where
+    'Z   + y = y
+    'S x + y = 'S (x + y)
+
 ```
 
 A “type family” is like a type level function. Compare this to defining
 `(+)` on the value level to the `Nat` *data* type:
 
 ``` {.haskell}
-!!!fixvec/FVTypeNats.hs "(+#) ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L33-35
+(+#) :: Nat -> Nat -> Nat       -- types!
+Z   +# y = y
+S x +# y = S (x +# y)
+
 ```
 
 Basically, we’re defining a new type-level function `(+)` on two types
@@ -231,7 +256,11 @@ yourself that this “addition” is actually addition. Now, let’s use it
 for `appendV`:
 
 ``` {.haskell}
-!!!fixvec/FVTypeNats.hs "appendV ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L99-101
+appendV :: Vec n a -> Vec m a -> Vec (n + m) a
+appendV Nil       ys = ys
+appendV (x :# xs) ys = x :# appendV xs ys
+
 ```
 
 ``` {.haskell}
@@ -247,13 +276,15 @@ v1 `appendV` v2 :: Vec (S (S (S (S (S Z))) Int
 
 It’d be nice to have type-safe methods of *generating* these things,
 too…functions like `iterate`, or `enumFrom`. One of the ways to do this
-is by using a typeclass. (Available in a \[separate file\]\[unfoldable\]
+is by using a typeclass. (Available in a [separate
+file](https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs)
 to try out).
 
-!!\[unfoldable\]:fixvec/Unfoldable.hs
-
 ``` {.haskell}
-!!!fixvec/Unfoldable.hs "class Unfoldable v"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L7-8
+class Unfoldable v where
+    unfold :: (b -> (a, b)) -> b -> v a
+
 ```
 
 We’re going to call `v` an `Unfoldable` if you can build a `v` from an
@@ -264,7 +295,11 @@ on the new state and get the second item and the next state.
 The list instance should make it more clear:
 
 ``` {.haskell}
-!!!fixvec/Unfoldable.hs "instance Unfoldable []"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L11-13
+instance Unfoldable [] where
+    unfold f x0 = let (y, x1) = f x0
+                  in  y : unfold f x1
+
 ```
 
 ``` {.haskell}
@@ -276,7 +311,14 @@ Note that we can have an instance for any fixed-length vector type…where
 the thing “cuts off” after it’s filled the entire vector:
 
 ``` {.haskell}
-!!!fixvec/FVTypeNats.hs "instance Unfoldable (Vec Z)" "instance Unfoldable (Vec n) => Unfoldable (Vec (S n))"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L46-51
+instance Unfoldable (Vec Z) where
+    unfold _ _ = Nil
+
+instance Unfoldable (Vec n) => Unfoldable (Vec (S n)) where
+    unfold f x0 = let (y, x1) = f x0
+                  in  y :# unfold f x1
+
 ```
 
 Take a moment to think about what these instances are doing.
@@ -303,7 +345,18 @@ then so is `S n`”. Induction!
 Let’s see this in action.
 
 ``` {.haskell}
-!!!fixvec/Unfoldable.hs "replicateU ::" "iterateU ::" "fromListMaybes ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L15-24
+replicateU :: Unfoldable v => a -> v a
+replicateU = unfold (\x -> (x, x))
+
+iterateU :: Unfoldable v => (a -> a) -> a -> v a
+iterateU f = unfold (\x -> (x, f x))
+
+fromListMaybes :: Unfoldable v => [a] -> v (Maybe a)
+fromListMaybes = unfold $ \l -> case l of
+                                  []   -> (Nothing, [])
+                                  x:xs -> (Just x , xs)
+
 ```
 
 ``` {.haskell}
@@ -332,7 +385,11 @@ We can actually use the *DeriveFunctor* extension to write a `Functor`
 instance, but let’s write one on our own just for learning purposes:
 
 ``` {.haskell}
-!!!fixvec/FVTypeNats.hs "instance Functor (Vec n)"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L53-55
+instance Functor (Vec n) where
+    fmap _ Nil       = Nil
+    fmap f (x :# xs) = f x :# fmap f xs
+
 ```
 
 For `Applicative`, it isn’t so simple. The Applicative instance is going
@@ -340,7 +397,15 @@ to be the “ZipList” instance…so we have to be able to make a `pure` that
 depends on the type, and a `(<*>)` that depends on the type, too.
 
 ``` {.haskell}
-!!!fixvec/FVTypeNats.hs "instance Applicative (Vec Z)" "instance Applicative (Vec n) => Applicative (Vec (S n))"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L57-63
+instance Applicative (Vec Z) where
+    pure _    = Nil
+    Nil <*> _ = Nil
+
+instance Applicative (Vec n) => Applicative (Vec (S n)) where
+    pure x = x :# pure x
+    (f :# fs) <*> (x :# xs) = f x :# (fs <*> xs)
+
 ```
 
 For `Vec Z`, it’s just `Nil`. For `Vec (S n)`…for pure, you need `x :#`
@@ -377,7 +442,19 @@ We can define `Foldable` and `Traversable` the same way. Like for
 *DeriveTraversable*…but we’ll do it again here just to demonstrate.
 
 ``` {.haskell}
-!!!fixvec/FVTypeNats.hs "instance Foldable (Vec Z)" "instance Foldable (Vec n) => Foldable (Vec (S n))" "instance Traversable (Vec Z)" "instance Traversable (Vec n) => Traversable (Vec (S n))"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L65-75
+instance Foldable (Vec Z) where
+    foldMap _ Nil = mempty
+
+instance Foldable (Vec n) => Foldable (Vec (S n)) where
+    foldMap f (x :# xs) = f x <> foldMap f xs
+
+instance Traversable (Vec Z) where
+    traverse _ Nil = pure Nil
+
+instance Traversable (Vec n) => Traversable (Vec (S n)) where
+    traverse f (x :# xs) = liftA2 (:#) (f x) (traverse f xs)
+
 ```
 
 Note that we can only use `foldMap f xs` on `xs :: Vec n a`, if `Vec n`
@@ -406,7 +483,10 @@ Nothing
 write a “safe `fromList`”:
 
 ``` {.haskell}
-!!!fixvec/Unfoldable.hs "fromListU ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L26-27
+fromListU :: (Unfoldable v, Traversable v) => [a] -> Maybe (v a)
+fromListU = sequence . fromListMaybes
+
 ```
 
 ``` {.haskell}
@@ -428,7 +508,14 @@ is that the `IsList` typeclass asks for a type family to return the
 *type of the element in the container* from the container type.
 
 ``` {.haskell}
-!!!fixvec/FVTypeNats.hs "instance (Unfoldable (Vec n), Traversable (Vec n)) => L.IsList (Vec n a)"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L86-91
+instance (Unfoldable (Vec n), Traversable (Vec n)) => L.IsList (Vec n a) where
+    type Item (Vec n a) = a
+    fromList xs = case fromListU xs of
+                    Nothing -> error "Demanded vector from a list that was too short."
+                    Just ys -> ys
+    toList      = Data.Foldable.toList
+
 ```
 
 ``` {.haskell}
@@ -488,7 +575,10 @@ specific `Index` typeclass: (or make another typeclass like `Take`, and
 write `index` in terms of it)
 
 ``` {.haskell}
-!!!fixvec/FVTypeNats.hs "class Index"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L77-78
+class Index (n :: Nat) v where
+    index :: Proxy n -> v a -> a
+
 ```
 
 Here, we can say that `n` and `v` are instances of `Index n v` if and
@@ -511,7 +601,13 @@ us to pass a *type* (`S Z`, `S (S Z)`, etc.) as a “value”.
 Let’s write our instances — but only the instances that *make sense*.
 
 ``` {.haskell}
-!!!fixvec/FVTypeNats.hs "instance Index Z (Vec (S n))" "instance forall n m. Index n (Vec m) => Index (S n) (Vec (S m))"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L80-84
+instance Index Z (Vec (S n)) where
+    index _ (x :# _) = x
+
+instance forall n m. Index n (Vec m) => Index (S n) (Vec (S m)) where
+    index _ (_ :# xs) = index (Proxy :: Proxy n) xs
+
 ```
 
 The first case instance makes sense. We can definitely index at index
@@ -597,10 +693,9 @@ consider Template Haskell an optimal or clean approach :)
 Using TypeLits and Type Checker Plugins
 ---------------------------------------
 
-(This next section uses code that is \[also available
-online\]\[fvtypelits\], as well!)
-
-!!\[fvtypelits\]:fixvec/FVTypeLits.hs
+(This next section uses code that is [also available
+online](https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs),
+as well!)
 
 Using a custom `Nat` kind and *DataKinds* is nice and all, but it’s a
 bit of a hassle to express large numbers like 100, 1000, etc. However,
@@ -621,7 +716,9 @@ extend its type checking by passing in `-fplugin GHC.TypeLits.Normalise`
 when we execute our code, or by adding a pragma:
 
 ``` {.haskell}
-!!!fixvec/FVTypeLits.hs "{-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-}"1
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L14-14
+{-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-}
+
 ```
 
 to the top of our file, along with our `LANGUAGE` pragmas. (Assuming, of
@@ -654,7 +751,16 @@ With that in mind, let’s start restating everything in terms of
 *TypeLits* and see what it gains us.
 
 ``` {.haskell}
-!!!fixvec/FVTypeLits.hs "data Vec ::" "infixr 5 :#" "deriving instance Show a => Show (Vec n a)"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L33-40
+data Vec :: Nat -> * -> * where
+    Nil  :: Vec 0 a
+    (:#) :: a -> Vec (n - 1) a -> Vec n a
+
+infixr 5 :#
+
+deriving instance Show a => Show (Vec n a)
+deriving instance Eq a => Eq (Vec n a)
+
 ```
 
 A little nicer, right? `Nil` is a `Vec 0 a`, and `x :# xs` is an element
@@ -677,7 +783,9 @@ types), which is provided and defined for us by GHC in `GHC.TypeLits`.
 So defining a `x > y` constraint is pretty straightforward:
 
 ``` {.haskell}
-!!!fixvec/FVTypeLits.hs "type x > y ="
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L31-31
+type x > y = CmpNat x y ~ 'GT
+
 ```
 
 Note that we need the *ConstraintKinds* extension for this to work, as
@@ -686,7 +794,13 @@ Note that we need the *ConstraintKinds* extension for this to work, as
 Given this, let’s do our favorite list functions, `headV` and `tailV`:
 
 ``` {.haskell}
-!!!fixvec/FVTypeLits.hs "headV ::" "tailV ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L89-93
+headV :: (n > 0) => Vec n a -> a
+headV (x :# _)  = x
+
+tailV :: (n > 0) => Vec n a -> Vec (n - 1) a
+tailV (_ :# xs) = xs
+
 ```
 
 Magnificent!
@@ -715,7 +829,11 @@ our own type family `x + y`…because `GHC.TypeLits` already defines it
 for us! So, we can instantly write….
 
 ``` {.haskell}
-!!!fixvec/FVTypeLits.hs "appendV ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L95-97
+appendV :: Vec n a -> Vec m a -> Vec (n + m) a
+appendV Nil       ys = ys
+appendV (x :# xs) ys = x :# appendV xs ys
+
 ```
 
 ``` {.haskell}
@@ -730,7 +848,14 @@ v1 `appendV` v2 :: Vec 5 Int
 And our list generating typeclasses —
 
 ``` {.haskell}
-!!!fixvec/FVTypeLits.hs "instance Unfoldable (Vec 0)" "instance (Unfoldable (Vec (n - 1)), n > 0) => Unfoldable (Vec n)"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L42-47
+instance Unfoldable (Vec 0) where
+    unfold _ _ = Nil
+
+instance (Unfoldable (Vec (n - 1)), n > 0) => Unfoldable (Vec n) where
+    unfold f x0 = let (y, x1) = f x0
+                  in  y :# unfold f x1
+
 ```
 
 The translation is pretty mechanical, but I think that this new
@@ -759,7 +884,47 @@ adjustments… (remembering that we can also derive `Functor`,
 `Traversable`, and `Foldable` using GHC)
 
 ``` {.haskell}
-!!!fixvec/FVTypeLits.hs "instance Functor" "instance Applicative" "instance (Applicative" "instance Foldable" "instance (Foldable" "instance Traversable" "instance (Traversable" "class Index" "instance (m > 0)" "instance forall n m." "instance (Unfoldable (Vec n), Traversable (Vec n)) => L.IsList (Vec n a)"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L49-87
+instance Functor (Vec n) where
+    fmap _ Nil       = Nil
+    fmap f (x :# xs) = f x :# fmap f xs
+
+instance Applicative (Vec 0) where
+    pure _    = Nil
+    Nil <*> _ = Nil
+
+instance (Applicative (Vec (n - 1)), n > 0) => Applicative (Vec n) where
+    pure x = x :# pure x
+    (f :# fs) <*> (x :# xs) = f x :# (fs <*> xs)
+
+instance Foldable (Vec 0) where
+    foldMap _ Nil = mempty
+
+instance (Foldable (Vec (n - 1)), n > 0) => Foldable (Vec n) where
+    foldMap f (x :# xs) = f x <> foldMap f xs
+
+instance Traversable (Vec 0) where
+    traverse _ Nil = pure Nil
+
+instance (Traversable (Vec (n - 1)), n > 0) => Traversable (Vec n) where
+    traverse f (x :# xs) = liftA2 (:#) (f x) (traverse f xs)
+
+class Index (n :: Nat) v where
+    index :: Proxy n -> v a -> a
+
+instance (m > 0) => Index 0 (Vec m) where
+    index _ (x :# _) = x
+
+instance forall n m. (Index (n - 1) (Vec (m - 1)), n > 0, m > 0) => Index n (Vec m) where
+    index _ (_ :# xs) = index (Proxy :: Proxy (n - 1)) xs
+
+instance (Unfoldable (Vec n), Traversable (Vec n)) => L.IsList (Vec n a) where
+    type Item (Vec n a) = a
+    fromList xs = case fromListU xs of
+                    Nothing -> error "Demanded vector from a list that was too short."
+                    Just ys -> ys
+    toList      = Data.Foldable.toList
+
 ```
 
 (Remember, we use the `forall` here with *ScopedTypeVariables* to be

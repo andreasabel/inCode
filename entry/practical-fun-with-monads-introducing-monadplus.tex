@@ -665,7 +665,33 @@ But let's try doing this instead with the Maybe monad:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{monad}\FunctionTok{-}\NormalTok{plus}\FunctionTok{/}\NormalTok{MaybeGame.hs }\StringTok{"die or fail"} \StringTok{"if not dead"} \StringTok{"damage the player"} \StringTok{"an alternative"} \StringTok{"increase"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/MaybeGame.hs#L26-51}
+\CommentTok{-- die or fail immediately}
+\OtherTok{die ::} \DataTypeTok{Maybe} \DataTypeTok{Int}
+\NormalTok{die }\FunctionTok{=} \NormalTok{mzero                         }\CommentTok{-- or die = mzero}
+
+\CommentTok{-- if not dead, sets the health to the given level}
+\OtherTok{setHealth ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Int}
+\NormalTok{setHealth n }\FunctionTok{=} \NormalTok{return n              }\CommentTok{-- or setHealth n = return n}
+
+\CommentTok{-- damage the player (from its previous health) and check for death}
+\OtherTok{hit ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Int}
+\NormalTok{hit currHealth }\FunctionTok{=} \KeywordTok{do}
+    \KeywordTok{let} \NormalTok{newHealth }\FunctionTok{=} \NormalTok{currHealth }\FunctionTok{-} \DecValTok{1}
+    \NormalTok{guard }\FunctionTok{$} \NormalTok{newHealth }\FunctionTok{>} \DecValTok{0}           \CommentTok{-- fail/die immediately unless newHealth}
+                                    \CommentTok{--     is positive}
+    \NormalTok{return newHealth                }\CommentTok{-- succeed with newHealth if not already}
+                                    \CommentTok{--     dead}
+
+\CommentTok{-- an alternative but identical definition of `hit`, using >>= and >>}
+\OtherTok{hit' ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Int}
+\NormalTok{hit' currHealth }\FunctionTok{=} \NormalTok{guard (newHealth }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\FunctionTok{>>} \NormalTok{return newHealth}
+    \KeywordTok{where}
+        \NormalTok{newHealth }\FunctionTok{=} \NormalTok{currHealth }\FunctionTok{-} \DecValTok{1}
+
+\CommentTok{-- increase the player's health from its previous health}
+\OtherTok{powerup ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Int}
+\NormalTok{powerup currHealth }\FunctionTok{=} \NormalTok{return }\FunctionTok{$} \NormalTok{currHealth }\FunctionTok{+} \DecValTok{1}
 \end{Highlighting}
 \end{Shaded}
 

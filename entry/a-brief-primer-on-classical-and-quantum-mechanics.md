@@ -1,4 +1,5 @@
-A Brief Primer on Classical and Quantum Mechanics for Numerical Techniques
+A Brief Primer on Classical and Quantum Mechanics for Numerical
+Techniques
 ==========================================================================
 
 (Originally posted by Justin Le [/] on November 29, 2013)

@@ -246,7 +246,8 @@ shall we?
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto3.hs }\StringTok{"newtype AutoM"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L27-27}
+\KeywordTok{newtype} \DataTypeTok{AutoM} \NormalTok{m a b }\FunctionTok{=} \DataTypeTok{AConsM} \NormalTok{\{}\OtherTok{ runAutoM ::} \NormalTok{a }\OtherTok{->} \NormalTok{m (b, }\DataTypeTok{AutoM} \NormalTok{m a b) \}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -272,7 +273,13 @@ sequencing is nice, so you might be surprised when you write the
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto3.hs }\StringTok{"instance Monad m => Category (AutoM m)"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L43-48}
+\KeywordTok{instance} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Category} \NormalTok{(}\DataTypeTok{AutoM} \NormalTok{m) }\KeywordTok{where}
+    \NormalTok{id    }\FunctionTok{=} \DataTypeTok{AConsM} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \NormalTok{return (x, id)}
+    \NormalTok{g }\FunctionTok{.} \NormalTok{f }\FunctionTok{=} \DataTypeTok{AConsM} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \KeywordTok{do}
+              \NormalTok{(y, f') }\OtherTok{<-} \NormalTok{runAutoM f x}
+              \NormalTok{(z, g') }\OtherTok{<-} \NormalTok{runAutoM g y}
+              \NormalTok{return (z, g' }\FunctionTok{.} \NormalTok{f')}
 \end{Highlighting}
 \end{Shaded}
 
@@ -282,7 +289,13 @@ It should! Remember the logic from the \texttt{Auto} Category instance?
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"instance Category Auto"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L13-18}
+\KeywordTok{instance} \DataTypeTok{Category} \DataTypeTok{Auto} \KeywordTok{where}
+    \NormalTok{id    }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \NormalTok{(x, id)}
+    \NormalTok{g }\FunctionTok{.} \NormalTok{f }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+              \KeywordTok{let} \NormalTok{(y, f') }\FunctionTok{=} \NormalTok{runAuto f x}
+                  \NormalTok{(z, g') }\FunctionTok{=} \NormalTok{runAuto g y}
+              \KeywordTok{in}  \NormalTok{(z, g' }\FunctionTok{.} \NormalTok{f')}
 \end{Highlighting}
 \end{Shaded}
 
@@ -302,13 +315,55 @@ they're exactly the same!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"instance Functor (Auto r)"} \StringTok{"instance Arrow Auto"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L20-47}
+\KeywordTok{instance} \DataTypeTok{Functor} \NormalTok{(}\DataTypeTok{Auto} \NormalTok{r) }\KeywordTok{where}
+    \NormalTok{fmap f a }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+                 \KeywordTok{let} \NormalTok{(y, a') }\FunctionTok{=} \NormalTok{runAuto a x}
+                 \KeywordTok{in}  \NormalTok{(f y, fmap f a')}
+
+\KeywordTok{instance} \DataTypeTok{Arrow} \DataTypeTok{Auto} \KeywordTok{where}
+    \NormalTok{arr f     }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \NormalTok{(f x, arr f)}
+    \NormalTok{first a   }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}(x, z) }\OtherTok{->}
+                  \KeywordTok{let} \NormalTok{(y, a') }\FunctionTok{=} \NormalTok{runAuto a x}
+                  \KeywordTok{in}  \NormalTok{((y, z), first a')}
+    \NormalTok{second a  }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}(z, x) }\OtherTok{->}
+                  \KeywordTok{let} \NormalTok{(y, a') }\FunctionTok{=} \NormalTok{runAuto a x}
+                  \KeywordTok{in}  \NormalTok{((z, y), second a')}
+    \NormalTok{a1 }\FunctionTok{***} \NormalTok{a2 }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}(x1, x2) }\OtherTok{->}
+                  \KeywordTok{let} \NormalTok{(y1, a1') }\FunctionTok{=} \NormalTok{runAuto a1 x1}
+                      \NormalTok{(y2, a2') }\FunctionTok{=} \NormalTok{runAuto a2 x2}
+                  \KeywordTok{in}  \NormalTok{((y1, y2), a1' }\FunctionTok{***} \NormalTok{a2')}
+    \NormalTok{a1 }\FunctionTok{&&&} \NormalTok{a2 }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+                  \KeywordTok{let} \NormalTok{(y1, a1') }\FunctionTok{=} \NormalTok{runAuto a1 x}
+                      \NormalTok{(y2, a2') }\FunctionTok{=} \NormalTok{runAuto a2 x}
+                  \KeywordTok{in}  \NormalTok{((y1, y2), a1' }\FunctionTok{&&&} \NormalTok{a2')}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto3.hs }\StringTok{"instance Monad m => Functor (AutoM m r)"} \StringTok{"instance Monad m => Arrow (AutoM m)"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L50-77}
+\KeywordTok{instance} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Functor} \NormalTok{(}\DataTypeTok{AutoM} \NormalTok{m r) }\KeywordTok{where}
+    \NormalTok{fmap f a }\FunctionTok{=} \DataTypeTok{AConsM} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \KeywordTok{do}
+                 \NormalTok{(y, a') }\OtherTok{<-} \NormalTok{runAutoM a x}
+                 \NormalTok{return (f y, fmap f a')}
+
+\KeywordTok{instance} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Arrow} \NormalTok{(}\DataTypeTok{AutoM} \NormalTok{m) }\KeywordTok{where}
+    \NormalTok{arr f     }\FunctionTok{=} \DataTypeTok{AConsM} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \NormalTok{return (f x, arr f)}
+    \NormalTok{first a   }\FunctionTok{=} \DataTypeTok{AConsM} \FunctionTok{$} \NormalTok{\textbackslash{}(x, z) }\OtherTok{->} \KeywordTok{do}
+                  \NormalTok{(y, a') }\OtherTok{<-} \NormalTok{runAutoM a x}
+                  \NormalTok{return ((y, z), first a')}
+    \NormalTok{second a  }\FunctionTok{=} \DataTypeTok{AConsM} \FunctionTok{$} \NormalTok{\textbackslash{}(z, x) }\OtherTok{->} \KeywordTok{do}
+                  \NormalTok{(y, a') }\OtherTok{<-} \NormalTok{runAutoM a x}
+                  \NormalTok{return ((z, y), second a')}
+    \NormalTok{a1 }\FunctionTok{***} \NormalTok{a2 }\FunctionTok{=} \DataTypeTok{AConsM} \FunctionTok{$} \NormalTok{\textbackslash{}(x1, x2) }\OtherTok{->} \KeywordTok{do}
+                  \NormalTok{(y1, a1') }\OtherTok{<-} \NormalTok{runAutoM a1 x1}
+                  \NormalTok{(y2, a2') }\OtherTok{<-} \NormalTok{runAutoM a2 x2}
+                  \NormalTok{return ((y1, y2), a1' }\FunctionTok{***} \NormalTok{a2')}
+    \NormalTok{a1 }\FunctionTok{&&&} \NormalTok{a2 }\FunctionTok{=} \DataTypeTok{AConsM} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \KeywordTok{do}
+                  \NormalTok{(y1, a1') }\OtherTok{<-} \NormalTok{runAutoM a1 x}
+                  \NormalTok{(y2, a2') }\OtherTok{<-} \NormalTok{runAutoM a2 x}
+                  \NormalTok{return ((y1, y2), a1' }\FunctionTok{&&&} \NormalTok{a2')}
 \end{Highlighting}
 \end{Shaded}
 
@@ -377,19 +432,35 @@ into an \texttt{Auto\ a\ b}, it turns an
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto3.hs }\StringTok{"autoM ::"} \StringTok{"arrM ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L97-107}
+\OtherTok{autoM ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Auto} \NormalTok{a b }\OtherTok{->} \DataTypeTok{AutoM} \NormalTok{m a b}
+\NormalTok{autoM a }\FunctionTok{=} \DataTypeTok{AConsM} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \KeywordTok{let} \NormalTok{(y, a') }\FunctionTok{=} \NormalTok{runAuto a x}
+                         \KeywordTok{in}  \NormalTok{return (y, autoM a')}
+
+\OtherTok{arrM ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \NormalTok{(a }\OtherTok{->} \NormalTok{m b) }\OtherTok{->} \DataTypeTok{AutoM} \NormalTok{m a b}
+\NormalTok{arrM f }\FunctionTok{=} \DataTypeTok{AConsM} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \KeywordTok{do}
+                    \NormalTok{y }\OtherTok{<-} \NormalTok{f x}
+                    \NormalTok{return (y, arrM f)}
 \end{Highlighting}
 \end{Shaded}
 
 We will need to of course re-write our trusty
-{[}\texttt{testAuto}{]}{[}testauto{]} functions from the first entry,
-which is again a direct translation of the original ones:
-
-!!{[}testauto{]}:machines/Auto.hs ``testAuto ::'' ``testAuto\_ ::''
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs\#L17-25}{\texttt{testAuto}}
+functions from the first entry, which is again a direct translation of
+the original ones:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto3.hs }\StringTok{"testAutoM ::"} \StringTok{"testAutoM_ ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L31-39}
+\OtherTok{testAutoM ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{AutoM} \NormalTok{m a b }\OtherTok{->} \NormalTok{[a] }\OtherTok{->} \NormalTok{m ([b], }\DataTypeTok{AutoM} \NormalTok{m a b)}
+\NormalTok{testAutoM a []      }\FunctionTok{=} \NormalTok{return ([], a)}
+\NormalTok{testAutoM a (x}\FunctionTok{:}\NormalTok{xs)  }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{(y , a' ) }\OtherTok{<-} \NormalTok{runAutoM a x}
+    \NormalTok{(ys, a'') }\OtherTok{<-} \NormalTok{testAutoM a' xs}
+    \NormalTok{return (y}\FunctionTok{:}\NormalTok{ys, a'')}
+
+\OtherTok{testAutoM_ ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{AutoM} \NormalTok{m a b }\OtherTok{->} \NormalTok{[a] }\OtherTok{->} \NormalTok{m [b]}
+\NormalTok{testAutoM_ a }\FunctionTok{=} \NormalTok{liftM fst }\FunctionTok{.} \NormalTok{testAutoM a}
 \end{Highlighting}
 \end{Shaded}
 
@@ -420,19 +491,23 @@ streams'': one from the normal input, and the other from \texttt{IO}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto3.hs }\StringTok{"replicateGets ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L119-123}
+\OtherTok{replicateGets ::} \DataTypeTok{AutoM} \DataTypeTok{IO} \DataTypeTok{Int} \DataTypeTok{String}
+\NormalTok{replicateGets }\FunctionTok{=} \NormalTok{proc n }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{ioString }\OtherTok{<-} \NormalTok{arrM (\textbackslash{}_ }\OtherTok{->} \NormalTok{getLine) }\FunctionTok{-<} \NormalTok{()}
+    \KeywordTok{let} \NormalTok{inpStr }\FunctionTok{=} \NormalTok{concat (replicate n ioString)}
+    \NormalTok{autoM monoidAccum }\FunctionTok{-<} \NormalTok{inpStr}
 \end{Highlighting}
 \end{Shaded}
 
-So, \texttt{replicateGets} uses {[}\texttt{monoidAccum}{]}{[}macum{]}
+So, \texttt{replicateGets} uses
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs\#L106-107}{\texttt{monoidAccum}}
 (or, an \texttt{AutoM} version) to accumulate a string. At every step,
 it adds \texttt{inpStr} to the running accumulated string.
 \texttt{inpStr} is the result of repeating the the string that
 \texttt{getLine} returns replicated \texttt{n} times --- \texttt{n}
 being the official ``input'' to the \texttt{AutoM} when we eventually
 run it.
-
-!!{[}macum{]}:machines/Auto.hs ``monoidAccum ::''
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -455,7 +530,12 @@ You can also use this to ``tack on'' effects into your pipeline.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto3.hs }\StringTok{"logging ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L127-131}
+\OtherTok{logging ::} \DataTypeTok{Show} \NormalTok{b }\OtherTok{=>} \DataTypeTok{Auto} \NormalTok{a b }\OtherTok{->} \DataTypeTok{AutoM} \DataTypeTok{IO} \NormalTok{a b}
+\NormalTok{logging a }\FunctionTok{=} \NormalTok{proc x }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{y }\OtherTok{<-} \NormalTok{autoM a }\FunctionTok{-<} \NormalTok{x}
+    \NormalTok{arrM (appendFile }\StringTok{"log.txt"}\NormalTok{) }\FunctionTok{-<} \NormalTok{show y }\FunctionTok{++} \StringTok{"\textbackslash{}n"}
+    \NormalTok{id }\FunctionTok{-<} \NormalTok{y}
 \end{Highlighting}
 \end{Shaded}
 
@@ -584,7 +664,32 @@ same pool, given at the initial \texttt{runState} running.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto3.hs }\StringTok{"limit ::"} \StringTok{"sumSqDiff ::"} \StringTok{"stuff ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L139-175}
+\OtherTok{limit ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Auto} \NormalTok{a b }\OtherTok{->} \DataTypeTok{AutoM} \NormalTok{(}\DataTypeTok{State} \DataTypeTok{Int}\NormalTok{) a (}\DataTypeTok{Maybe} \NormalTok{b)}
+\NormalTok{limit cost a }\FunctionTok{=} \NormalTok{proc x }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{fuel }\OtherTok{<-} \NormalTok{arrM (\textbackslash{}_ }\OtherTok{->} \NormalTok{get) }\FunctionTok{-<} \NormalTok{()}
+    \KeywordTok{if} \NormalTok{fuel }\FunctionTok{>=} \NormalTok{cost}
+      \KeywordTok{then} \KeywordTok{do}
+        \NormalTok{arrM (\textbackslash{}_ }\OtherTok{->} \NormalTok{modify (subtract cost)) }\FunctionTok{-<} \NormalTok{()}
+        \NormalTok{y }\OtherTok{<-} \NormalTok{autoM a }\FunctionTok{-<} \NormalTok{x}
+        \NormalTok{id }\FunctionTok{-<} \DataTypeTok{Just} \NormalTok{y}
+      \KeywordTok{else}
+        \NormalTok{id }\FunctionTok{-<} \DataTypeTok{Nothing}
+
+\OtherTok{sumSqDiff ::} \DataTypeTok{AutoM} \NormalTok{(}\DataTypeTok{State} \DataTypeTok{Int}\NormalTok{) }\DataTypeTok{Int} \DataTypeTok{Int}
+\NormalTok{sumSqDiff }\FunctionTok{=} \NormalTok{proc x }\OtherTok{->} \KeywordTok{do}
+  \NormalTok{sums   }\OtherTok{<-} \NormalTok{fromMaybe }\DecValTok{0} \FunctionTok{<$>} \NormalTok{limit }\DecValTok{3} \NormalTok{summer }\FunctionTok{-<} \NormalTok{x}
+  \NormalTok{sumSqs }\OtherTok{<-} \NormalTok{fromMaybe }\DecValTok{0} \FunctionTok{<$>} \NormalTok{limit }\DecValTok{1} \NormalTok{summer }\FunctionTok{-<} \NormalTok{x}\FunctionTok{^}\DecValTok{2}
+  \NormalTok{id }\FunctionTok{-<} \NormalTok{sumSqs }\FunctionTok{-} \NormalTok{sums}
+
+\OtherTok{stuff ::} \DataTypeTok{AutoM} \NormalTok{(}\DataTypeTok{State} \DataTypeTok{Int}\NormalTok{) }\DataTypeTok{Int} \NormalTok{(}\DataTypeTok{Maybe} \DataTypeTok{Int}\NormalTok{, }\DataTypeTok{Maybe} \DataTypeTok{Int}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)}
+\NormalTok{stuff }\FunctionTok{=} \NormalTok{proc x }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{doubled }\OtherTok{<-} \NormalTok{limit }\DecValTok{1} \NormalTok{id }\FunctionTok{-<} \NormalTok{x }\FunctionTok{*} \DecValTok{2}
+    \NormalTok{tripled }\OtherTok{<-} \KeywordTok{if} \NormalTok{even x}
+                 \KeywordTok{then} \NormalTok{limit }\DecValTok{2} \NormalTok{id }\FunctionTok{-<} \NormalTok{x }\FunctionTok{*} \DecValTok{3}
+                 \KeywordTok{else} \NormalTok{id         }\FunctionTok{-<} \DataTypeTok{Just} \NormalTok{(x }\FunctionTok{*} \DecValTok{3}\NormalTok{)}
+    \NormalTok{sumSqD  }\OtherTok{<-} \NormalTok{sumSqDiff }\FunctionTok{-<} \NormalTok{x}
+    \NormalTok{id }\FunctionTok{-<} \NormalTok{(doubled, tripled, sumSqD)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -651,7 +756,28 @@ effect:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto3.hs }\StringTok{"integral ::"} \StringTok{"derivative ::"} \StringTok{"fancyCalculus ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L199-234}
+\OtherTok{integral ::} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{AutoM} \NormalTok{(}\DataTypeTok{Reader} \DataTypeTok{Double}\NormalTok{) }\DataTypeTok{Double} \DataTypeTok{Double}
+\NormalTok{integral x0 }\FunctionTok{=} \DataTypeTok{AConsM} \FunctionTok{$} \NormalTok{\textbackslash{}dx }\OtherTok{->} \KeywordTok{do}
+                \NormalTok{dt }\OtherTok{<-} \NormalTok{ask}
+                \KeywordTok{let} \NormalTok{x1 }\FunctionTok{=} \NormalTok{x0 }\FunctionTok{+} \NormalTok{dx }\FunctionTok{*} \NormalTok{dt}
+                \NormalTok{return (x1, integral x1)}
+
+\OtherTok{derivative ::} \DataTypeTok{AutoM} \NormalTok{(}\DataTypeTok{Reader} \DataTypeTok{Double}\NormalTok{) }\DataTypeTok{Double} \NormalTok{(}\DataTypeTok{Maybe} \DataTypeTok{Double}\NormalTok{)}
+\NormalTok{derivative }\FunctionTok{=} \DataTypeTok{AConsM} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \NormalTok{return (}\DataTypeTok{Nothing}\NormalTok{, derivative' x)}
+  \KeywordTok{where}
+                 \CommentTok{-- x0 is the "previous input"}
+    \NormalTok{derivative' x0 }\FunctionTok{=} \DataTypeTok{AConsM} \FunctionTok{$} \NormalTok{\textbackslash{}x1 }\OtherTok{->} \KeywordTok{do}
+                       \KeywordTok{let} \NormalTok{dx }\FunctionTok{=} \NormalTok{x1 }\FunctionTok{-} \NormalTok{x0}
+                       \NormalTok{dt }\OtherTok{<-} \NormalTok{ask}
+                       \NormalTok{return (}\DataTypeTok{Just} \NormalTok{(dx}\FunctionTok{/}\NormalTok{dt), derivative' x1)}
+
+\OtherTok{fancyCalculus ::} \DataTypeTok{AutoM} \NormalTok{(}\DataTypeTok{Reader} \DataTypeTok{Double}\NormalTok{) }\DataTypeTok{Double} \NormalTok{(}\DataTypeTok{Double}\NormalTok{, }\DataTypeTok{Double}\NormalTok{)}
+\NormalTok{fancyCalculus }\FunctionTok{=} \NormalTok{proc x }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{deriv  }\OtherTok{<-} \NormalTok{fromMaybe }\DecValTok{0} \FunctionTok{<$>} \NormalTok{derivative }\FunctionTok{-<} \NormalTok{x}
+    \NormalTok{deriv2 }\OtherTok{<-} \NormalTok{fromMaybe }\DecValTok{0} \FunctionTok{<$>} \NormalTok{derivative }\FunctionTok{-<} \NormalTok{deriv}
+    \NormalTok{intdev }\OtherTok{<-}                 \NormalTok{integral }\DecValTok{0} \FunctionTok{-<} \NormalTok{deriv}
+    \NormalTok{id }\FunctionTok{-<} \NormalTok{(deriv2, intdev)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -768,7 +894,16 @@ within their local worlds, as we turn them into \texttt{Auto}'s.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto3.hs }\StringTok{"sealStateAuto ::"} \StringTok{"runStateAuto ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L182-192}
+\OtherTok{sealStateAuto ::} \DataTypeTok{AutoM} \NormalTok{(}\DataTypeTok{State} \NormalTok{s) a b }\OtherTok{->} \NormalTok{s }\OtherTok{->} \DataTypeTok{Auto} \NormalTok{a b}
+\NormalTok{sealStateAuto a s0 }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+                       \KeywordTok{let} \NormalTok{((y, a'), s1) }\FunctionTok{=} \NormalTok{runState (runAutoM a x) s0}
+                       \KeywordTok{in}  \NormalTok{(y, sealStateAuto a' s1)}
+
+\OtherTok{runStateAuto ::} \DataTypeTok{AutoM} \NormalTok{(}\DataTypeTok{State} \NormalTok{s) a b }\OtherTok{->} \DataTypeTok{Auto} \NormalTok{(a, s) (b, s)}
+\NormalTok{runStateAuto a }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}(x, s) }\OtherTok{->}
+                   \KeywordTok{let} \NormalTok{((y, a'), s') }\FunctionTok{=} \NormalTok{runState (runAutoM a x) s}
+                   \KeywordTok{in}  \NormalTok{((y, s'), runStateAuto a')}
 \end{Highlighting}
 \end{Shaded}
 
@@ -822,7 +957,11 @@ We can simulate an ``immutable local environment'', for example:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto3.hs }\StringTok{"runReaderAuto ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L248-251}
+\OtherTok{runReaderAuto ::} \DataTypeTok{AutoM} \NormalTok{(}\DataTypeTok{Reader} \NormalTok{r) a b }\OtherTok{->} \DataTypeTok{Auto} \NormalTok{(a, r) b}
+\NormalTok{runReaderAuto a }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}(x, e) }\OtherTok{->}
+                    \KeywordTok{let} \NormalTok{(y, a') }\FunctionTok{=} \NormalTok{runReader (runAutoM a x) e}
+                    \KeywordTok{in}  \NormalTok{(y, runReaderAuto a')}
 \end{Highlighting}
 \end{Shaded}
 
@@ -941,7 +1080,18 @@ Without further ado ---
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto3.hs }\StringTok{"piTargeter ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L266-276}
+\OtherTok{piTargeter ::} \DataTypeTok{Auto} \DataTypeTok{Double} \DataTypeTok{Double}
+\NormalTok{piTargeter }\FunctionTok{=} \NormalTok{proc control }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{rec }\KeywordTok{let} \NormalTok{err }\FunctionTok{=} \NormalTok{control }\FunctionTok{-} \NormalTok{response}
+        \NormalTok{errSums  }\OtherTok{<-} \NormalTok{summer         }\FunctionTok{-<} \NormalTok{err}
+
+        \NormalTok{input    }\OtherTok{<-} \NormalTok{laggingSummer  }\FunctionTok{-<} \FloatTok{0.2} \FunctionTok{*} \NormalTok{err }\FunctionTok{+} \FloatTok{0.01} \FunctionTok{*} \NormalTok{errSums}
+        \NormalTok{response }\OtherTok{<-} \NormalTok{blackBoxSystem }\FunctionTok{-<} \NormalTok{input}
+
+    \NormalTok{id }\FunctionTok{-<} \NormalTok{response}
+  \KeywordTok{where}
+    \NormalTok{blackBoxSystem }\FunctionTok{=} \NormalTok{id     }\CommentTok{-- to simplify things :)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1016,7 +1166,12 @@ The MVP here really is this function that I sneakily introduced,
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto3.hs }\StringTok{"laggingSummer ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L258-262}
+\OtherTok{laggingSummer ::} \DataTypeTok{Num} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Auto} \NormalTok{a a}
+\NormalTok{laggingSummer }\FunctionTok{=} \NormalTok{sumFrom }\DecValTok{0}
+  \KeywordTok{where}
+\OtherTok{    sumFrom ::} \DataTypeTok{Num} \NormalTok{a }\OtherTok{=>} \NormalTok{a }\OtherTok{->} \DataTypeTok{Auto} \NormalTok{a a}
+    \NormalTok{sumFrom x0 }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \NormalTok{(x0, sumFrom (x0 }\FunctionTok{+} \NormalTok{x))}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1116,7 +1271,11 @@ We can write an \texttt{ArrowLoop} instance for \texttt{Auto}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"instance ArrowLoop Auto"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L58-61}
+\KeywordTok{instance} \DataTypeTok{ArrowLoop} \DataTypeTok{Auto} \KeywordTok{where}
+    \NormalTok{loop a }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+               \KeywordTok{let} \NormalTok{((y, d), a') }\FunctionTok{=} \NormalTok{runAuto a (x, d)}
+               \KeywordTok{in}  \NormalTok{(y, loop a')}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1148,7 +1307,11 @@ used above:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto3.hs }\StringTok{"instance MonadFix m => ArrowLoop (AutoM m)"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L88-91}
+\KeywordTok{instance} \DataTypeTok{MonadFix} \NormalTok{m }\OtherTok{=>} \DataTypeTok{ArrowLoop} \NormalTok{(}\DataTypeTok{AutoM} \NormalTok{m) }\KeywordTok{where}
+    \NormalTok{loop a }\FunctionTok{=} \DataTypeTok{AConsM} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \KeywordTok{do}
+               \NormalTok{rec ((y, d), a') }\OtherTok{<-} \NormalTok{runAutoM a (x, d)}
+               \NormalTok{return (y, loop a')}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1180,7 +1343,8 @@ We can imagine ``baking this in'' to our Auto type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{AutoOn.hs }\StringTok{"newtype AutoOn"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L19-19}
+\KeywordTok{newtype} \DataTypeTok{AutoOn} \NormalTok{a b }\FunctionTok{=} \DataTypeTok{AConsOn} \NormalTok{\{}\OtherTok{ runAutoOn ::} \NormalTok{a }\OtherTok{->} \NormalTok{(}\DataTypeTok{Maybe} \NormalTok{b, }\DataTypeTok{AutoOn} \NormalTok{a b) \}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1190,7 +1354,15 @@ you get a \texttt{Just\ x} as an input run the auto on the \texttt{x}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{AutoOn.hs }\StringTok{"instance Category AutoOn"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L22-29}
+\KeywordTok{instance} \DataTypeTok{Category} \DataTypeTok{AutoOn} \KeywordTok{where}
+    \NormalTok{id    }\FunctionTok{=} \DataTypeTok{AConsOn} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \NormalTok{(}\DataTypeTok{Just} \NormalTok{x, id)}
+    \NormalTok{g }\FunctionTok{.} \NormalTok{f }\FunctionTok{=} \DataTypeTok{AConsOn} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+              \KeywordTok{let} \NormalTok{(y, f') }\FunctionTok{=} \NormalTok{runAutoOn f x}
+                  \NormalTok{(z, g') }\FunctionTok{=} \KeywordTok{case} \NormalTok{y }\KeywordTok{of}
+                              \DataTypeTok{Just} \NormalTok{_y }\OtherTok{->} \NormalTok{runAutoOn g _y}
+                              \DataTypeTok{Nothing} \OtherTok{->} \NormalTok{(}\DataTypeTok{Nothing}\NormalTok{, g)}
+              \KeywordTok{in}  \NormalTok{(z, g' }\FunctionTok{.} \NormalTok{f')}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1328,7 +1500,14 @@ One neat thing is that \texttt{AutoOn} admits a handy
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{AutoOn.hs }\StringTok{"instance Alternative (AutoOn a)"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L80-86}
+\KeywordTok{instance} \DataTypeTok{Alternative} \NormalTok{(}\DataTypeTok{AutoOn} \NormalTok{a) }\KeywordTok{where}
+    \NormalTok{empty     }\FunctionTok{=} \DataTypeTok{AConsOn} \FunctionTok{$} \NormalTok{\textbackslash{}_ }\OtherTok{->} \NormalTok{(}\DataTypeTok{Nothing}\NormalTok{, empty)}
+    \CommentTok{-- (<|>) :: AutoOn a b -> AutoOn a b -> AutoOn a b}
+    \NormalTok{a1 }\FunctionTok{<|>} \NormalTok{a2 }\FunctionTok{=} \DataTypeTok{AConsOn} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+                  \KeywordTok{let} \NormalTok{(y1, a1') }\FunctionTok{=} \NormalTok{runAutoOn a1 x}
+                      \NormalTok{(y2, a2') }\FunctionTok{=} \NormalTok{runAutoOn a2 x}
+                  \KeywordTok{in}  \NormalTok{(y1 }\FunctionTok{<|>} \NormalTok{y2, a1' }\FunctionTok{<|>} \NormalTok{a2')}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1346,7 +1525,14 @@ behaves like the second forever after:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{AutoOn.hs }\StringTok{"(-->) ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L115-121}
+\OtherTok{(-->) ::} \DataTypeTok{AutoOn} \NormalTok{a b }\OtherTok{->} \DataTypeTok{AutoOn} \NormalTok{a b }\OtherTok{->} \DataTypeTok{AutoOn} \NormalTok{a b}
+\NormalTok{a1 }\FunctionTok{-->} \NormalTok{a2 }\FunctionTok{=} \DataTypeTok{AConsOn} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+              \KeywordTok{let} \NormalTok{(y1, a1') }\FunctionTok{=} \NormalTok{runAutoOn a1 x}
+              \KeywordTok{in}   \KeywordTok{case} \NormalTok{y1 }\KeywordTok{of}
+                     \DataTypeTok{Just} \NormalTok{_  }\OtherTok{->} \NormalTok{(y1, a1' }\FunctionTok{-->} \NormalTok{a2)}
+                     \DataTypeTok{Nothing} \OtherTok{->} \NormalTok{runAutoOn a2 x}
+\KeywordTok{infixr} \DecValTok{1} \FunctionTok{-->}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1357,7 +1543,19 @@ wrote for \texttt{AutoM})
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{AutoOn.hs }\StringTok{"autoOn ::"} \StringTok{"arrOn ::"} \StringTok{"fromAutoOn ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L91-107}
+\OtherTok{autoOn ::} \DataTypeTok{Auto} \NormalTok{a b }\OtherTok{->} \DataTypeTok{AutoOn} \NormalTok{a b}
+\NormalTok{autoOn a }\FunctionTok{=} \DataTypeTok{AConsOn} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+             \KeywordTok{let} \NormalTok{(y, a') }\FunctionTok{=} \NormalTok{runAuto a x}
+             \KeywordTok{in}  \NormalTok{(}\DataTypeTok{Just} \NormalTok{y, autoOn a')}
+
+\OtherTok{arrOn ::} \NormalTok{(a }\OtherTok{->} \DataTypeTok{Maybe} \NormalTok{b) }\OtherTok{->} \DataTypeTok{AutoOn} \NormalTok{a b}
+\NormalTok{arrOn f }\FunctionTok{=} \DataTypeTok{AConsOn} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \NormalTok{(f x, arrOn f)}
+
+\OtherTok{fromAutoOn ::} \DataTypeTok{AutoOn} \NormalTok{a b }\OtherTok{->} \DataTypeTok{Auto} \NormalTok{a (}\DataTypeTok{Maybe} \NormalTok{b)}
+\NormalTok{fromAutoOn a }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+                 \KeywordTok{let} \NormalTok{(y, a') }\FunctionTok{=} \NormalTok{runAutoOn a x}
+                 \KeywordTok{in}  \NormalTok{(y, fromAutoOn a')}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1374,7 +1572,28 @@ Let's play around with some test \texttt{AutoOn}s!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{AutoOn.hs }\StringTok{"onFor ::"} \StringTok{"filterA ::"} \StringTok{"untilA ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L131-152}
+\OtherTok{onFor ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{AutoOn} \NormalTok{a a}
+\NormalTok{onFor n }\FunctionTok{=} \NormalTok{proc x }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{i }\OtherTok{<-} \NormalTok{autoOn summer }\FunctionTok{-<} \DecValTok{1}
+    \KeywordTok{if} \NormalTok{i }\FunctionTok{<=} \NormalTok{n}
+      \KeywordTok{then} \NormalTok{id    }\FunctionTok{-<} \NormalTok{x       }\CommentTok{-- succeed}
+      \KeywordTok{else} \NormalTok{empty }\FunctionTok{-<} \NormalTok{x       }\CommentTok{-- fail}
+\CommentTok{-- alternatively, using explit recursion:}
+\CommentTok{-- onFor 0 = empty}
+\CommentTok{-- onFor n = AConsOn $ \textbackslash{}x -> (Just x, onFor' (n-1))}
+
+\OtherTok{filterA ::} \NormalTok{(a }\OtherTok{->} \DataTypeTok{Bool}\NormalTok{) }\OtherTok{->} \DataTypeTok{AutoOn} \NormalTok{a a}
+\NormalTok{filterA p }\FunctionTok{=} \NormalTok{arrOn (\textbackslash{}x }\OtherTok{->} \NormalTok{x }\FunctionTok{<$} \NormalTok{guard (p x))}
+
+\OtherTok{untilA ::} \NormalTok{(a }\OtherTok{->} \DataTypeTok{Bool}\NormalTok{) }\OtherTok{->} \DataTypeTok{AutoOn} \NormalTok{a a}
+\NormalTok{untilA p }\FunctionTok{=} \NormalTok{proc x }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{stopped }\OtherTok{<-} \NormalTok{autoOn (autoFold (}\FunctionTok{||}\NormalTok{) }\DataTypeTok{False}\NormalTok{) }\FunctionTok{-<} \NormalTok{p x}
+    \KeywordTok{if} \NormalTok{stopped}
+      \KeywordTok{then} \NormalTok{empty }\FunctionTok{-<} \NormalTok{x       }\CommentTok{-- fail}
+      \KeywordTok{else} \NormalTok{id    }\FunctionTok{-<} \NormalTok{x       }\CommentTok{-- succeed}
+
+
 \CommentTok{-- alternatively, using explicit recursion:}
 \CommentTok{-- untilA p = AConsOn $ \textbackslash{}x ->}
 \CommentTok{--              if p x}
@@ -1388,7 +1607,18 @@ proc blocks, just like with monadic \texttt{Maybe} and do blocks:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{AutoOn.hs }\StringTok{"shortCircuit1 ::"} \StringTok{"shortCircuit2 ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L163-173}
+\OtherTok{shortCircuit1 ::} \DataTypeTok{AutoOn} \DataTypeTok{Int} \DataTypeTok{Int}
+\NormalTok{shortCircuit1 }\FunctionTok{=} \NormalTok{proc x }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{filterA even }\FunctionTok{-<} \NormalTok{x}
+    \NormalTok{onFor }\DecValTok{3}      \FunctionTok{-<} \NormalTok{()}
+    \NormalTok{id           }\FunctionTok{-<} \NormalTok{x }\FunctionTok{*} \DecValTok{10}
+
+\OtherTok{shortCircuit2 ::} \DataTypeTok{AutoOn} \DataTypeTok{Int} \DataTypeTok{Int}
+\NormalTok{shortCircuit2 }\FunctionTok{=} \NormalTok{proc x }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{onFor }\DecValTok{3}      \FunctionTok{-<} \NormalTok{()}
+    \NormalTok{filterA even }\FunctionTok{-<} \NormalTok{x}
+    \NormalTok{id           }\FunctionTok{-<} \NormalTok{x }\FunctionTok{*} \DecValTok{10}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1425,7 +1655,13 @@ ready.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{AutoOn.hs }\StringTok{"stages ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L178-183}
+\OtherTok{stages ::} \DataTypeTok{AutoOn} \DataTypeTok{Int} \DataTypeTok{Int}
+\NormalTok{stages }\FunctionTok{=} \NormalTok{stage1 }\FunctionTok{-->} \NormalTok{stage2 }\FunctionTok{-->} \NormalTok{stage3 }\FunctionTok{-->} \NormalTok{stages}
+  \KeywordTok{where}
+    \NormalTok{stage1 }\FunctionTok{=} \NormalTok{onFor }\DecValTok{2} \FunctionTok{.} \NormalTok{arr negate}
+    \NormalTok{stage2 }\FunctionTok{=} \NormalTok{untilA (}\FunctionTok{>} \DecValTok{15}\NormalTok{) }\FunctionTok{.} \NormalTok{autoOn summer}
+    \NormalTok{stage3 }\FunctionTok{=} \NormalTok{onFor }\DecValTok{3} \FunctionTok{.} \NormalTok{(pure }\DecValTok{100} \FunctionTok{.} \NormalTok{filterA even }\FunctionTok{<|>} \NormalTok{pure }\DecValTok{200}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1462,7 +1698,8 @@ powerful enough; you'll have to go deeper:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{AutoOn2.hs }\StringTok{"newtype AutoOn2"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs#L10-10}
+\KeywordTok{newtype} \DataTypeTok{AutoOn2} \NormalTok{a b }\FunctionTok{=} \DataTypeTok{ACons2} \NormalTok{\{}\OtherTok{ runAutoOn2 ::} \DataTypeTok{Maybe} \NormalTok{a }\OtherTok{->} \NormalTok{(}\DataTypeTok{Maybe} \NormalTok{b, }\DataTypeTok{AutoOn2} \NormalTok{a b) \}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1471,7 +1708,10 @@ So now, you can write something like \texttt{onFor}, which keeps on
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{AutoOn2.hs }\StringTok{"onFor ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs#L16-18}
+\OtherTok{onFor ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{AutoOn2} \NormalTok{a a}
+\NormalTok{onFor }\DecValTok{0} \FunctionTok{=} \DataTypeTok{ACons2} \FunctionTok{$} \NormalTok{\textbackslash{}_ }\OtherTok{->} \NormalTok{(}\DataTypeTok{Nothing}\NormalTok{, onFor }\DecValTok{0}\NormalTok{)}
+\NormalTok{onFor n }\FunctionTok{=} \DataTypeTok{ACons2} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \NormalTok{(x, onFor (n }\FunctionTok{-} \DecValTok{1}\NormalTok{))}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1480,7 +1720,15 @@ type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{AutoOn2.hs }\StringTok{"autoOn ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs#L24-31}
+\OtherTok{autoOn ::} \DataTypeTok{AutoOn} \NormalTok{a b }\OtherTok{->} \DataTypeTok{AutoOn2} \NormalTok{a b}
+\NormalTok{autoOn a }\FunctionTok{=} \DataTypeTok{ACons2} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+             \KeywordTok{case} \NormalTok{x }\KeywordTok{of}
+               \DataTypeTok{Just} \NormalTok{_x }\OtherTok{->}
+                 \KeywordTok{let} \NormalTok{(y, a') }\FunctionTok{=} \NormalTok{runAutoOn a _x}
+                 \KeywordTok{in}  \NormalTok{(y, autoOn a')}
+               \DataTypeTok{Nothing} \OtherTok{->}
+                 \NormalTok{(}\DataTypeTok{Nothing}\NormalTok{, autoOn a)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1496,7 +1744,8 @@ into our \texttt{Auto} type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{AutoX.hs }\StringTok{"newtype AutoX"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L18-18}
+\KeywordTok{newtype} \DataTypeTok{AutoX} \NormalTok{m a b }\FunctionTok{=} \DataTypeTok{AConsX} \NormalTok{\{}\OtherTok{ runAutoX ::} \NormalTok{a }\OtherTok{->} \NormalTok{m (}\DataTypeTok{Maybe} \NormalTok{b, }\DataTypeTok{AutoX} \NormalTok{m a b) \}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1528,7 +1777,21 @@ way}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{AutoX.hs }\StringTok{"aCons ::"} \StringTok{"aConsM ::"} \StringTok{"aConsOn ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L85-100}
+\OtherTok{aCons ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \NormalTok{(a }\OtherTok{->} \NormalTok{(b, }\DataTypeTok{AutoX} \NormalTok{m a b)) }\OtherTok{->} \DataTypeTok{AutoX} \NormalTok{m a b}
+\NormalTok{aCons a }\FunctionTok{=} \DataTypeTok{AConsX} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+            \KeywordTok{let} \NormalTok{(y, aX) }\FunctionTok{=} \NormalTok{a x}
+            \KeywordTok{in}  \NormalTok{return (}\DataTypeTok{Just} \NormalTok{y, aX)}
+
+\OtherTok{aConsM ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \NormalTok{(a }\OtherTok{->} \NormalTok{m (b, }\DataTypeTok{AutoX} \NormalTok{m a b)) }\OtherTok{->} \DataTypeTok{AutoX} \NormalTok{m a b}
+\NormalTok{aConsM a }\FunctionTok{=} \DataTypeTok{AConsX} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \KeywordTok{do}
+             \NormalTok{(y, aX) }\OtherTok{<-} \NormalTok{a x}
+             \NormalTok{return (}\DataTypeTok{Just} \NormalTok{y, aX)}
+
+\OtherTok{aConsOn ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \NormalTok{(a }\OtherTok{->} \NormalTok{(}\DataTypeTok{Maybe} \NormalTok{b, }\DataTypeTok{AutoX} \NormalTok{m a b)) }\OtherTok{->} \DataTypeTok{AutoX} \NormalTok{m a b}
+\NormalTok{aConsOn a }\FunctionTok{=} \DataTypeTok{AConsX} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+              \KeywordTok{let} \NormalTok{(y, aX) }\FunctionTok{=} \NormalTok{a x}
+              \KeywordTok{in}  \NormalTok{return (y, aX)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1538,15 +1801,52 @@ versions to their \texttt{AutoX}-generic ``smart constructor'' versions:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto.hs }\StringTok{"summer ::"}
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto3.hs }\StringTok{"arrM ::"}
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{AutoOn.hs }\StringTok{"untilA' ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L67-73}
+\OtherTok{summer ::} \DataTypeTok{Num} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Auto} \NormalTok{a a}
+\NormalTok{summer }\FunctionTok{=} \NormalTok{sumFrom }\DecValTok{0}
+  \KeywordTok{where}
+\OtherTok{    sumFrom ::} \DataTypeTok{Num} \NormalTok{a }\OtherTok{=>} \NormalTok{a }\OtherTok{->} \DataTypeTok{Auto} \NormalTok{a a}
+    \NormalTok{sumFrom n }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}input }\OtherTok{->}
+      \KeywordTok{let} \NormalTok{s }\FunctionTok{=} \NormalTok{n }\FunctionTok{+} \NormalTok{input}
+      \KeywordTok{in}  \NormalTok{( s , sumFrom s )}
+
+
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L104-107}
+\OtherTok{arrM ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \NormalTok{(a }\OtherTok{->} \NormalTok{m b) }\OtherTok{->} \DataTypeTok{AutoM} \NormalTok{m a b}
+\NormalTok{arrM f }\FunctionTok{=} \DataTypeTok{AConsM} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \KeywordTok{do}
+                    \NormalTok{y }\OtherTok{<-} \NormalTok{f x}
+                    \NormalTok{return (y, arrM f)}
+
+
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L154-158}
+\OtherTok{untilA' ::} \NormalTok{(a }\OtherTok{->} \DataTypeTok{Bool}\NormalTok{) }\OtherTok{->} \DataTypeTok{AutoOn} \NormalTok{a a}
+\NormalTok{untilA' p }\FunctionTok{=} \DataTypeTok{AConsOn} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+              \KeywordTok{if} \NormalTok{p x}
+                \KeywordTok{then} \NormalTok{(}\DataTypeTok{Just} \NormalTok{x , untilA p)}
+                \KeywordTok{else} \NormalTok{(}\DataTypeTok{Nothing}\NormalTok{, empty   )}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{AutoX.hs }\StringTok{"summer ::"} \StringTok{"arrM ::"} \StringTok{"untilA ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L106-128}
+\OtherTok{summer ::} \NormalTok{(}\DataTypeTok{Monad} \NormalTok{m, }\DataTypeTok{Num} \NormalTok{a) }\OtherTok{=>} \DataTypeTok{AutoX} \NormalTok{m a a}
+\NormalTok{summer }\FunctionTok{=} \NormalTok{sumFrom }\DecValTok{0}
+  \KeywordTok{where}
+    \NormalTok{sumFrom n }\FunctionTok{=} \NormalTok{aCons }\FunctionTok{$} \NormalTok{\textbackslash{}input }\OtherTok{->}
+      \KeywordTok{let} \NormalTok{s }\FunctionTok{=} \NormalTok{n }\FunctionTok{+} \NormalTok{input}
+      \KeywordTok{in}  \NormalTok{( s , sumFrom s )}
+
+\OtherTok{arrM ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \NormalTok{(a }\OtherTok{->} \NormalTok{m b) }\OtherTok{->} \DataTypeTok{AutoX} \NormalTok{m a b}
+\NormalTok{arrM f }\FunctionTok{=} \NormalTok{aConsM }\FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \KeywordTok{do}
+                    \NormalTok{y }\OtherTok{<-} \NormalTok{f x}
+                    \NormalTok{return (y, arrM f)}
+
+\OtherTok{untilA ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \NormalTok{(a }\OtherTok{->} \DataTypeTok{Bool}\NormalTok{) }\OtherTok{->} \DataTypeTok{AutoX} \NormalTok{m a a}
+\NormalTok{untilA p }\FunctionTok{=} \NormalTok{aConsOn }\FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+             \KeywordTok{if} \NormalTok{p x}
+               \KeywordTok{then} \NormalTok{(}\DataTypeTok{Just} \NormalTok{x , untilA p)}
+               \KeywordTok{else} \NormalTok{(}\DataTypeTok{Nothing}\NormalTok{, empty   )}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1559,7 +1859,8 @@ polymorphic over all monads:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{AutoX.hs }\StringTok{"summer ::"}\DecValTok{1}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L106-106}
+\OtherTok{summer ::} \NormalTok{(}\DataTypeTok{Monad} \NormalTok{m, }\DataTypeTok{Num} \NormalTok{a) }\OtherTok{=>} \DataTypeTok{AutoX} \NormalTok{m a a}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1582,7 +1883,9 @@ By the way, here's a ``smart constructor'' for \texttt{AutoM}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto3.hs }\StringTok{"aCons ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L112-113}
+\OtherTok{aCons ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \NormalTok{(a }\OtherTok{->} \NormalTok{(b, }\DataTypeTok{AutoM} \NormalTok{m a b)) }\OtherTok{->} \DataTypeTok{AutoM} \NormalTok{m a b}
+\NormalTok{aCons f }\FunctionTok{=} \DataTypeTok{AConsM} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \NormalTok{return (f x)}
 \end{Highlighting}
 \end{Shaded}
 

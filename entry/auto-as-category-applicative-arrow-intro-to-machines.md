@@ -23,13 +23,12 @@ try to find me on [twitter](https://twitter.com/mstk "Twitter"), or drop
 by the \#haskell Freenode IRC channel! (I go by *jle\`*)
 
 Note that all of the code in this post can be downloaded (from
-\[Auto.hs\]\[autodl\] for the last post, and \[Auto2.hs\]\[auto2dl\] for
-this post’s new material) so you can play along on GHCi, or write your
-own code using it the concepts and types here :) You can also run it
-\[online interactively\]\[fpcomplint\].
-
-!!\[autodl\]:machines/Auto.hs !!\[auto2dl\]:machines/Auto2.hs
-\[fpcomplint\]: https://www.fpcomplete.com/user/jle/machines
+[Auto.hs](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs)
+for the last post, and
+[Auto2.hs](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs)
+for this post’s new material) so you can play along on GHCi, or write
+your own code using it the concepts and types here :) You can also run
+it [online interactively](https://www.fpcomplete.com/user/jle/machines).
 
 A fair warning: at times this post might feel a bit fragmented; but
 remember that we really are just going to be exploring and getting very
@@ -43,7 +42,10 @@ Recap
 We left off in our last post having looked at `Auto`:
 
 ``` {.haskell}
-!!!machines/Auto.hs "newtype Auto" machines
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-12
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+newtype Auto a b = ACons { runAuto :: a -> (b, Auto a b) }
+
 ```
 
 which we saw as a stream that had an influencing input of type `a`, an
@@ -51,21 +53,19 @@ internal, opaque state (a function of the input and of the previous
 state), and an output “head” of type `b` (also a function of the input
 and of the previous state).
 
-And we looked at \[a simple auto\]\[simpleauto\] which acted like a
-constantly incrementing stream, but where you could reset the counter by
-passing in a `Just`.
-
-!!\[simpleauto\]:machines/Auto.hs “settableAuto:”
+And we looked at [a simple
+auto](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L46-54)
+which acted like a constantly incrementing stream, but where you could
+reset the counter by passing in a `Just`.
 
 Then we took another approach to looking at this — we thought about
 Autos as functions “with state”. As in, `Auto a b` was like a function
 `a -> b`, but which had an internal state that updated every time it was
 called.
 
-We saw this in an auto that \[returns the sum\]\[summer\] of everything
-you have given it.
-
-!!\[summer\]:machines/Auto.hs “summer:”
+We saw this in an auto that [returns the
+sum](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L66-73)
+of everything you have given it.
 
 Autos are “function-like things”…they map or “morph” things of type `a`
 to things of type `b` in some form, just like functions. It looks like
@@ -207,7 +207,13 @@ updated Autos!
 Enough talk, let’s code! We’ll call our composition operator `(~.~)`.
 
 ``` {.haskell}
-!!!machines/Auto2.hs "(~.~) ::" machines
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L67-70
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+(~.~) :: Auto b c -> Auto a b -> Auto a c
+g ~.~ f = ACons $ \x -> let (y, f') = runAuto f x
+                            (z, g') = runAuto g y
+                        in  (z, g' ~.~ f')
+
 ```
 
 And…that should be it! We run the input through first `f` then `g`,
@@ -218,7 +224,11 @@ Let’s write a useful helper function so that we have more things to test
 this out on:
 
 ``` {.haskell}
-!!!machines/Auto2.hs "toAuto ::" machines
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L74-75
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+toAuto :: (a -> b) -> Auto a b
+toAuto f = ACons $ \x -> (f x, toAuto f)
+
 ```
 
 `toAuto` basically turns a function `a -> b` into a stateless
@@ -258,7 +268,11 @@ And it looks like our Autos really can meaningfully compose!
 Well, wait. We need one last thing: the identity Auto:
 
 ``` {.haskell}
-!!!machines/Auto2.hs "idA ::" machines
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L78-79
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+idA :: Auto a a
+idA = ACons $ \x -> (x, idA)
+
 ```
 
 ``` {.haskell}
@@ -321,14 +335,26 @@ instance Category (->) where
 And then our `Auto` Category instance:
 
 ``` {.haskell}
-!!!machines/Auto2.hs "instance Category Auto" machines
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L13-18
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+instance Category Auto where
+    id    = ACons $ \x -> (x, id)
+    g . f = ACons $ \x ->
+              let (y, f') = runAuto f x
+                  (z, g') = runAuto g y
+              in  (z, g' . f')
+
 ```
 
 And now… we can work with both `(->)` and `Auto` as if they were the
 “same thing” :)
 
 ``` {.haskell}
-!!!machines/Auto2.hs "doTwice ::" machines
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L92-93
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+doTwice :: Category r => r a a -> r a a
+doTwice f = f . f
+
 ```
 
 ``` {.haskell}
@@ -404,7 +430,13 @@ to output a 1, it will now output a `"1"`. It turns an `Auto Int Int`
 into an `Auto Int String`!
 
 ``` {.haskell}
-!!!machines/Auto2.hs "instance Functor (Auto r)" machines
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L20-23
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+instance Functor (Auto r) where
+    fmap f a = ACons $ \x ->
+                 let (y, a') = runAuto a x
+                 in  (f y, fmap f a')
+
 ```
 
 ``` {.haskell}
@@ -459,7 +491,15 @@ We can pretty much use this to write our Applicative instance for
 `Auto r`.
 
 ``` {.haskell}
-!!!machines/Auto2.hs "instance Applicative (Auto r)" machines
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L25-30
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+instance Applicative (Auto r) where
+    pure y    = ACons $ \_ -> (y, pure y)
+    af <*> ay = ACons $ \x ->
+                  let (f, af') = runAuto af x
+                      (y, ay') = runAuto ay x
+                  in  (f y, af' <*> ay')
+
 ```
 
 Note that `pure` gives us a “constant Auto” — an `Auto` that ignores its
@@ -548,7 +588,25 @@ a “forking” `Auto a (b, c)`.
 Writing the instance is straightforward enough:
 
 ``` {.haskell}
-!!!machines/Auto2.hs "instance Arrow Auto" machines
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L32-47
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+instance Arrow Auto where
+    arr f     = ACons $ \x -> (f x, arr f)
+    first a   = ACons $ \(x, z) ->
+                  let (y, a') = runAuto a x
+                  in  ((y, z), first a')
+    second a  = ACons $ \(z, x) ->
+                  let (y, a') = runAuto a x
+                  in  ((z, y), second a')
+    a1 *** a2 = ACons $ \(x1, x2) ->
+                  let (y1, a1') = runAuto a1 x1
+                      (y2, a2') = runAuto a2 x2
+                  in  ((y1, y2), a1' *** a2')
+    a1 &&& a2 = ACons $ \x ->
+                  let (y1, a1') = runAuto a1 x
+                      (y2, a2') = runAuto a2 x
+                  in  ((y1, y2), a1' &&& a2')
+
 ```
 
 <div class="note">
@@ -639,7 +697,17 @@ stepped or anything. The rest of the methods can be implemented in terms
 of `left` and `arr`.
 
 ``` {.haskell}
-!!!machines/Auto2.hs "instance ArrowChoice Auto" machines
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L49-56
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+instance ArrowChoice Auto where
+    left a = ACons $ \x ->
+                 case x of
+                   Left l  ->
+                     let (l', a') = runAuto a l
+                     in  (Left l', left a')
+                   Right r ->
+                     (Right r, left a)
+
 ```
 
 We’ll see `ArrowChoice` used in the upcoming syntactic sugar construct,
@@ -709,7 +777,17 @@ The output is the state of both counters.
 We could write this “from scratch”, using explicit recursion:
 
 ``` {.haskell}
-!!!machines/Auto2.hs "dualCounterR ::" machines
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L102-109
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+dualCounterR :: Auto (Either Int Int) (Int, Int)
+dualCounterR = dualCounterWith (0, 0)
+  where
+    dualCounterWith (x, y) = ACons $ \inp ->
+                               let newC = case inp of
+                                            Left i  -> (x + i, y)
+                                            Right i -> (x, y + 1)
+                               in  (newC, dualCounterWith newC)
+
 ```
 
 But we all know in Haskell that explicit recursion is usually a sign of
@@ -719,13 +797,31 @@ places for bugs!
 Let’s try writing the same thing using Auto composition:
 
 ``` {.haskell}
-!!!machines/Auto2.hs "dualCounterC ::" machines
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L112-116
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+dualCounterC :: Auto (Either Int Int) (Int, Int)
+dualCounterC = (summer *** summer) . arr wrap
+  where
+    wrap (Left i)  = (i, 0)
+    wrap (Right i) = (0, i)
+
 ```
 
 That’s a bit more succinct, but I think the proc notation is much nicer!
 
 ``` {.haskell}
-!!!machines/Auto2.hs "dualCounterP ::" machines
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L119-127
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+dualCounterP :: Auto (Either Int Int) (Int, Int)
+dualCounterP = proc inp -> do
+    let (add1, add2) = case inp of Left i  -> (i, 0)
+                                   Right i -> (0, i)
+
+    sum1 <- summer -< add1
+    sum2 <- summer -< add2
+
+    id -< (sum1, sum2)
+
 ```
 
 It’s a bit more verbose…but I think it’s much clearer what’s going on,
@@ -753,7 +849,22 @@ composition.
 But the proc notation? Piece of cake!
 
 ``` {.haskell}
-!!!machines/Auto2.hs "dualCounterSkipP ::" machines
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L148-160
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+dualCounterSkipP :: Auto (Either Int Int) (Int, Int)
+dualCounterSkipP = proc inp -> do
+    (add1, add2) <- case inp of
+                      Left i -> do
+                        count <- summer -< 1
+                        id -< (if odd count then i else 0, 0)
+                      Right i ->
+                        id -< (0, i)
+
+    sum1 <- summer -< add1
+    sum2 <- summer -< add2
+
+    id -< (sum1, sum2)
+
 ```
 
 ``` {.haskell}
@@ -775,7 +886,19 @@ the explicit recursion?
 We’d have carried the “entire” state in the parameter:
 
 ``` {.haskell}
-!!!machines/Auto2.hs "dualCounterSkipR ::" machines
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L136-145
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+dualCounterSkipR :: Auto (Either Int Int) (Int, Int)
+dualCounterSkipR = counterFrom ((0, 0), 1)
+  where
+    counterFrom ((x, y), s) =
+      ACons $ \inp ->
+        let newCS = case inp of
+                      Left i  | odd s     -> ((x + i, y), s + 1)
+                              | otherwise -> ((x    , y), s + 1)
+                      Right i             -> ((x, y + i), s    )
+        in  (fst newCS, counterFrom newCS)
+
 ```
 
 Not only is it a real mess and pain — and somewhere where bugs are rife

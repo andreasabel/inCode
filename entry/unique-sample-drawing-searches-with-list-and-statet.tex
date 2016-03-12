@@ -241,7 +241,10 @@ the base libraries but isn't for some reason:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{misc}\FunctionTok{/}\NormalTok{send}\FunctionTok{-}\NormalTok{more}\FunctionTok{-}\NormalTok{money}\FunctionTok{.}\NormalTok{hs }\StringTok{"select ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L7-9}
+\OtherTok{select ::} \NormalTok{[a] }\OtherTok{->} \NormalTok{[(a, [a])]}
+\NormalTok{select []     }\FunctionTok{=} \NormalTok{[]}
+\NormalTok{select (x}\FunctionTok{:}\NormalTok{xs) }\FunctionTok{=} \NormalTok{(x,xs) }\FunctionTok{:} \NormalTok{[(y,x}\FunctionTok{:}\NormalTok{ys) }\FunctionTok{|} \NormalTok{(y,ys) }\OtherTok{<-} \NormalTok{select xs]}
 \end{Highlighting}
 \end{Shaded}
 
@@ -277,7 +280,30 @@ And armed with this\ldots{}we have all we need
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{misc}\FunctionTok{/}\NormalTok{send}\FunctionTok{-}\NormalTok{more}\FunctionTok{-}\NormalTok{money}\FunctionTok{.}\NormalTok{hs }\StringTok{"import Control.Monad "} \StringTok{"asNumber ::"} \StringTok{"main ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L3-35}
+\KeywordTok{import }\DataTypeTok{Control.Monad}             \NormalTok{(guard, mfilter)}
+\KeywordTok{import }\DataTypeTok{Control.Monad.Trans.State}
+\KeywordTok{import }\DataTypeTok{Data.List}                 \NormalTok{(foldl')}
+
+\OtherTok{asNumber ::} \NormalTok{[}\DataTypeTok{Int}\NormalTok{] }\OtherTok{->} \DataTypeTok{Int}
+\NormalTok{asNumber }\FunctionTok{=} \NormalTok{foldl' (\textbackslash{}t o }\OtherTok{->} \NormalTok{t}\FunctionTok{*}\DecValTok{10} \FunctionTok{+} \NormalTok{o) }\DecValTok{0}
+
+\OtherTok{main ::} \DataTypeTok{IO} \NormalTok{()}
+\NormalTok{main }\FunctionTok{=} \NormalTok{print }\FunctionTok{.} \NormalTok{flip evalStateT [}\DecValTok{0}\FunctionTok{..}\DecValTok{9}\NormalTok{] }\FunctionTok{$} \KeywordTok{do}
+    \NormalTok{s }\OtherTok{<-} \DataTypeTok{StateT} \NormalTok{select}
+    \NormalTok{e }\OtherTok{<-} \DataTypeTok{StateT} \NormalTok{select}
+    \NormalTok{n }\OtherTok{<-} \DataTypeTok{StateT} \NormalTok{select}
+    \NormalTok{d }\OtherTok{<-} \DataTypeTok{StateT} \NormalTok{select}
+    \NormalTok{m }\OtherTok{<-} \DataTypeTok{StateT} \NormalTok{select}
+    \NormalTok{o }\OtherTok{<-} \DataTypeTok{StateT} \NormalTok{select}
+    \NormalTok{r }\OtherTok{<-} \DataTypeTok{StateT} \NormalTok{select}
+    \NormalTok{y }\OtherTok{<-} \DataTypeTok{StateT} \NormalTok{select}
+    \NormalTok{guard }\FunctionTok{$} \NormalTok{s }\FunctionTok{/=} \DecValTok{0} \FunctionTok{&&} \NormalTok{m }\FunctionTok{/=} \DecValTok{0}
+    \KeywordTok{let} \NormalTok{send  }\FunctionTok{=} \NormalTok{asNumber [s,e,n,d]}
+        \NormalTok{more  }\FunctionTok{=} \NormalTok{asNumber [m,o,r,e]}
+        \NormalTok{money }\FunctionTok{=} \NormalTok{asNumber [m,o,n,e,y]}
+    \NormalTok{guard }\FunctionTok{$} \NormalTok{send }\FunctionTok{+} \NormalTok{more }\FunctionTok{==} \NormalTok{money}
+    \NormalTok{return (send, more, money)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -324,7 +350,28 @@ fast already.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{misc}\FunctionTok{/}\NormalTok{send}\FunctionTok{-}\NormalTok{more}\FunctionTok{-}\NormalTok{money}\FunctionTok{.}\NormalTok{hs }\StringTok{"select' ::"} \StringTok{"main' ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L38-59}
+\OtherTok{select' ::} \NormalTok{[a] }\OtherTok{->} \NormalTok{[(a,[a])]}
+\NormalTok{select' }\FunctionTok{=} \NormalTok{go []}
+  \KeywordTok{where}
+   \NormalTok{go xs [] }\FunctionTok{=} \NormalTok{[]}
+   \NormalTok{go xs (y}\FunctionTok{:}\NormalTok{ys) }\FunctionTok{=} \NormalTok{(y,xs}\FunctionTok{++}\NormalTok{ys) }\FunctionTok{:} \NormalTok{go (y}\FunctionTok{:}\NormalTok{xs) ys}
+
+\OtherTok{main' ::} \DataTypeTok{IO} \NormalTok{()}
+\NormalTok{main' }\FunctionTok{=} \NormalTok{print }\FunctionTok{.} \NormalTok{flip evalStateT [}\DecValTok{0}\FunctionTok{..}\DecValTok{9}\NormalTok{] }\FunctionTok{$} \KeywordTok{do}
+    \NormalTok{s }\OtherTok{<-} \NormalTok{mfilter (}\FunctionTok{/=} \DecValTok{0}\NormalTok{) }\FunctionTok{$} \DataTypeTok{StateT} \NormalTok{select'}
+    \NormalTok{m }\OtherTok{<-} \NormalTok{mfilter (}\FunctionTok{/=} \DecValTok{0}\NormalTok{) }\FunctionTok{$} \DataTypeTok{StateT} \NormalTok{select'}
+    \NormalTok{e }\OtherTok{<-} \DataTypeTok{StateT} \NormalTok{select'}
+    \NormalTok{n }\OtherTok{<-} \DataTypeTok{StateT} \NormalTok{select'}
+    \NormalTok{d }\OtherTok{<-} \DataTypeTok{StateT} \NormalTok{select'}
+    \NormalTok{o }\OtherTok{<-} \DataTypeTok{StateT} \NormalTok{select'}
+    \NormalTok{r }\OtherTok{<-} \DataTypeTok{StateT} \NormalTok{select'}
+    \NormalTok{y }\OtherTok{<-} \DataTypeTok{StateT} \NormalTok{select'}
+    \KeywordTok{let} \NormalTok{send  }\FunctionTok{=} \NormalTok{asNumber [s,e,n,d]}
+        \NormalTok{more  }\FunctionTok{=} \NormalTok{asNumber [m,o,r,e]}
+        \NormalTok{money }\FunctionTok{=} \NormalTok{asNumber [m,o,n,e,y]}
+    \NormalTok{guard }\FunctionTok{$} \NormalTok{send }\FunctionTok{+} \NormalTok{more }\FunctionTok{==} \NormalTok{money}
+    \NormalTok{return (send, more, money)}
 \end{Highlighting}
 \end{Shaded}
 

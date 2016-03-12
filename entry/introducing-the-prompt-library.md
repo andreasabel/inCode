@@ -1,4 +1,4 @@
-Introducing the "Prompt" library
+Introducing the “Prompt” library
 ================================
 
 (Originally posted by Justin Le [/] on June 30, 2015)

@@ -1,5 +1,6 @@
-Unique sample drawing & searches with List and StateT --- "Send more money"
-===========================================================================
+Unique sample drawing & searches with List and StateT — “Send more
+money”
+=========================================================================
 
 (Originally posted by Justin Le [/] on April 24, 2015)
 
@@ -130,7 +131,11 @@ defining a function called `select`, which really should be in the base
 libraries but isn’t for some reason:
 
 ``` {.haskell}
-!!!misc/send-more-money.hs "select ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L7-9
+select :: [a] -> [(a, [a])]
+select []     = []
+select (x:xs) = (x,xs) : [(y,x:ys) | (y,ys) <- select xs]
+
 ```
 
 (Implementation thanks to Cale, who has fought valiantly yet fruitlessly
@@ -159,7 +164,31 @@ StateT select :: StateT [a] [] a
 And armed with this…we have all we need
 
 ``` {.haskell}
-!!!misc/send-more-money.hs "import Control.Monad " "asNumber ::" "main ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L3-35
+import Control.Monad             (guard, mfilter)
+import Control.Monad.Trans.State
+import Data.List                 (foldl')
+
+asNumber :: [Int] -> Int
+asNumber = foldl' (\t o -> t*10 + o) 0
+
+main :: IO ()
+main = print . flip evalStateT [0..9] $ do
+    s <- StateT select
+    e <- StateT select
+    n <- StateT select
+    d <- StateT select
+    m <- StateT select
+    o <- StateT select
+    r <- StateT select
+    y <- StateT select
+    guard $ s /= 0 && m /= 0
+    let send  = asNumber [s,e,n,d]
+        more  = asNumber [m,o,r,e]
+        money = asNumber [m,o,n,e,y]
+    guard $ send + more == money
+    return (send, more, money)
+
 ```
 
 Remember, `StateT` here operates with an underlying state of `[Int]`, a
@@ -195,7 +224,29 @@ expressiveness. But not that it matters…the original version runs fast
 already.
 
 ``` {.haskell}
-!!!misc/send-more-money.hs "select' ::" "main' ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L38-59
+select' :: [a] -> [(a,[a])]
+select' = go []
+  where
+   go xs [] = []
+   go xs (y:ys) = (y,xs++ys) : go (y:xs) ys
+
+main' :: IO ()
+main' = print . flip evalStateT [0..9] $ do
+    s <- mfilter (/= 0) $ StateT select'
+    m <- mfilter (/= 0) $ StateT select'
+    e <- StateT select'
+    n <- StateT select'
+    d <- StateT select'
+    o <- StateT select'
+    r <- StateT select'
+    y <- StateT select'
+    let send  = asNumber [s,e,n,d]
+        more  = asNumber [m,o,r,e]
+        money = asNumber [m,o,n,e,y]
+    guard $ send + more == money
+    return (send, more, money)
+
 ```
 
 This is a more performant version of `select` [courtesy of Simon

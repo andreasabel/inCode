@@ -115,14 +115,16 @@ And without any further delay, let’s write *encode.hs*!
 Encoding
 --------
 
-(Remember that you can download \[encode.hs\]\[\] from github and try it
-out yourself; just remember to also grab \[Huffman.hs\]\[\],
-\[PQueue.hs\]\[\], and \[PreTree.hs\]\[\], and \[Weighted.hs\]\[\] from
-the previous parts of this tutorial!)
-
-!!\[encode.hs\]:huffman/encode.hs !!\[Huffman.hs\]:huffman/Huffman.hs
-!!\[PQueue.hs\]:huffman/PQueue.hs !!\[PreTree.hs\]:huffman/PreTree.hs
-!!\[Weighted.hs\]:huffman/Weighted.hs
+(Remember that you can download
+[encode.hs](https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs)
+from github and try it out yourself; just remember to also grab
+[Huffman.hs](https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs),
+[PQueue.hs](https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs),
+and
+[PreTree.hs](https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs),
+and
+[Weighted.hs](https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs)
+from the previous parts of this tutorial!)
 
 ### Design
 
@@ -264,7 +266,36 @@ Let’s just get down to it!
 First, our imports:
 
 ``` {.haskell}
-!!!huffman/encode.hs "-- General imports" "-- Pipes imports" "-- Working with Binary" "-- Huffman imports"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L19-46
+-- General imports
+import Control.Applicative              ((<$>))
+import Control.Monad.Trans.State.Strict (evalState)
+import Data.Foldable                    (sum)
+import Data.Map.Strict                  (Map, (!))
+import Lens.Family2                     (view)
+import Prelude hiding                   (sum)
+import System.Environment               (getArgs)
+import System.IO                        (withFile, IOMode(..))
+import qualified Data.Map.Strict        as M
+
+-- Pipes imports
+import Pipes
+import Pipes.Parse
+import qualified Pipes.ByteString as PB
+import qualified Pipes.Prelude    as PP
+
+-- Working with Binary
+import Data.Binary hiding             (encodeFile)
+import Data.Bits                      (setBit)
+import Data.ByteString                (ByteString)
+import qualified Data.ByteString      as B
+import qualified Data.ByteString.Lazy as BL
+
+-- Huffman imports
+import Huffman
+import PQueue
+import PreTree
+
 ```
 
 It’s a doozy, admittedly!
@@ -272,7 +303,21 @@ It’s a doozy, admittedly!
 Now `main`:
 
 ``` {.haskell}
-!!!huffman/encode.hs "main ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L48-60
+main :: IO ()
+main = do
+    args     <- getArgs
+    let (inp, out)  = case args of
+                        i:o:_      -> (i,o)
+                        _          -> error "Give input and output files."
+
+    metadata <- analyzeFile inp
+    let (len, tree) = case metadata of
+                        Just (l, t) -> (l, t)
+                        Nothing     -> error "Empty File"
+
+    encodeFile inp out len tree
+
 ```
 
 Just straight-forward, more or less. The error handling is kind of not
@@ -289,7 +334,20 @@ because it tells us where to stop decoding (lest we begin decoding the
 leftover padding bits).
 
 ``` {.haskell}
-!!!huffman/encode.hs "analyzeFile ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L63-74
+analyzeFile :: FilePath -> IO (Maybe (Int, PreTree Word8))
+analyzeFile fp = withFile fp ReadMode $ \hIn -> do
+    let byteProducer = PB.fromHandle hIn >-> bsToBytes
+    fqs <- freqs byteProducer
+    let len  = sum fqs
+        tree = evalState (listQueueStateTable fqs >> buildTree) emptyPQ
+    return $ fmap (len,) tree
+  where
+    freqs :: (Monad m, Ord a) => Producer a m () -> m (M.Map a Int)
+    freqs = PP.fold f M.empty id
+      where
+        f m x = M.insertWith (+) x 1 m
+
 ```
 
 First, we use
@@ -307,7 +365,10 @@ takes incoming `ByteString`s and emits their constituent, unpacked
 `Word8`s one-by-one:
 
 ``` {.haskell}
-!!!huffman/encode.hs "bsToBytes ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L96-97
+bsToBytes :: Monad m => Pipe ByteString Word8 m r
+bsToBytes = PP.mapFoldable B.unpack
+
 ```
 
 Our implementation uses `B.unpack :: ByteString -> [Word8]` from
@@ -326,7 +387,12 @@ The fold is identical in logic to `listFreq` from a [Part
 2](http://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-2-binary):
 
 ``` {.haskell}
-!!!huffman/Huffman.hs "listFreq ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L22-25
+listFreq :: Ord a => [a] -> FreqTable a
+listFreq = foldr f M.empty
+  where
+    f x m = M.insertWith (+) x 1 m
+
 ```
 
 Except instead of folding over a list, we fold over the elements of the
@@ -351,7 +417,23 @@ Once we have that, we can get onto the actual encoding process: the
 second pass.
 
 ``` {.haskell}
-!!!huffman/encode.hs "encodeFile ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L78-92
+encodeFile :: FilePath -> FilePath -> Int -> PreTree Word8 -> IO ()
+encodeFile inp out len tree =
+    withFile inp ReadMode  $ \hIn  ->
+    withFile out WriteMode $ \hOut -> do
+      BL.hPut hOut $ encode (len, tree)
+      let dirsOut   = PB.fromHandle hIn
+                  >-> bsToBytes
+                  >-> encodeByte encTable
+          bsOut     = view PB.pack . dirsBytes $ dirsOut
+          pipeline  = bsOut
+                  >-> PB.toHandle hOut
+
+      runEffect pipeline
+  where
+    encTable  = ptTable tree
+
 ```
 
 First, we open our file handles for our input and output files. Then, we
@@ -382,7 +464,12 @@ and spits out the resulting `Direction`s one at a time.
 `encodeByte encTable` is implemented “exactly the same” as `bsToBytes`:
 
 ``` {.haskell}
-!!!huffman/encode.hs "encodeByte ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L101-104
+encodeByte :: (Ord a, Monad m)
+           => Map a Encoding
+           -> Pipe a Direction m r
+encodeByte encTable = PP.mapFoldable (encTable !)
+
 ```
 
 instead of using `mapFoldable` with a `ByteString -> [Word8]`, we use
@@ -400,7 +487,18 @@ directions, using the “producer transformer” tactic we discussed
 earlier.
 
 ``` {.haskell}
-!!!huffman/encode.hs "dirsBytes ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L108-117
+dirsBytes :: (MonadIO m, Functor m)
+          => Producer Direction m r
+          -> Producer Word8     m ()
+dirsBytes p = do
+    (result, leftovers) <- lift $ runStateT dirsBytesP p
+    case result of
+      Just byte -> do
+        yield byte
+        dirsBytes leftovers
+      Nothing   -> return ()
+
 ```
 
 `dirsBytes` turns out `Direction` producer into a `Word8` producer by
@@ -437,7 +535,23 @@ Let’s take a look at the `dirsBytesP` parser, which parses `Direction`s
 into a `Word8`:
 
 ``` {.haskell}
-!!!huffman/encode.hs "dirsBytesP ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L123-137
+dirsBytesP :: (Monad m, Functor m) => Parser Direction m (Maybe Word8)
+dirsBytesP = do
+    isEnd <- isEndOfInput
+    if isEnd
+      then return Nothing
+      else Just <$> go 0 0
+  where
+    go :: Monad m => Word8 -> Int -> Parser Direction m Word8
+    go b 8 = return b
+    go b i = do
+      dir <- draw
+      case dir of
+        Just DLeft  -> go     b            (i + 1)
+        Just DRight -> go     (setBit b i) (i + 1)
+        Nothing     -> return b
+
 ```
 
 This implementation is pretty straightforward — “if the producer is
@@ -462,7 +576,9 @@ And finally, we use the “smart chunking” provided by *pipes-bytestring*
 by transforming our bytes stream:
 
 ``` {.haskell}
-!!!huffman/encode.hs "bsOut"1
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L86-86
+          bsOut     = view PB.pack . dirsBytes $ dirsOut
+
 ```
 
 #### All together
@@ -503,12 +619,16 @@ gigabyte. We’ll look into performance in a later post!
 Decoding
 --------
 
-(Remember again that download \[decode.hs\]\[\] is also available online
-from github! Again, be sure to also grab \[Huffman.hs\]\[\],
-\[PQueue.hs\]\[\], and \[PreTree.hs\]\[\], and \[Weighted.hs\]\[\] from
-posts past.)
-
-!!\[decode.hs\]:huffman/decode.hs
+(Remember again that download
+[decode.hs](https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs)
+is also available online from github! Again, be sure to also grab
+[Huffman.hs](https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs),
+[PQueue.hs](https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs),
+and
+[PreTree.hs](https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs),
+and
+[Weighted.hs](https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs)
+from posts past.)
 
 ### Design
 
@@ -539,19 +659,71 @@ imports, so it’s a sign that decoding is going to be slightly simpler
 than encoding.
 
 ``` {.haskell}
-!!!huffman/decode.hs "-- General imports" "-- Pipes imports" "-- Working with Binary" "-- Huffman imports"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L18-37
+-- General imports
+import Lens.Family2       (view)
+import System.Environment (getArgs)
+import System.IO          (withFile, IOMode(..))
+
+-- Pipes imports
+import Pipes
+import Pipes.Parse
+import qualified Pipes.Binary     as PB
+import qualified Pipes.ByteString as PB
+import qualified Pipes.Prelude    as PP
+
+-- Working with Binary
+import Data.Bits                 (testBit)
+import Data.ByteString           (ByteString)
+import Data.Word                 (Word8)
+import qualified Data.ByteString as B
+
+-- Huffman imports
+import PreTree
+
 ```
 
 `main` should seem very familiar:
 
 ``` {.haskell}
-!!!huffman/decode.hs "main ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L39-45
+main :: IO ()
+main = do
+    args     <- getArgs
+    let (inp, out)  = case args of
+                        i:o:_      -> (i,o)
+                        _          -> error "Give input and output files."
+    decodeFile inp out
+
 ```
 
 And now on to the juicy parts:
 
 ``` {.haskell}
-!!!huffman/decode.hs "decodeFile ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L48-69
+decodeFile :: FilePath -> FilePath -> IO ()
+decodeFile inp out =
+    withFile inp ReadMode  $ \hIn  ->
+    withFile out WriteMode $ \hOut -> do
+      let metadataPipe = PB.fromHandle hIn
+
+      -- consume metapipe to read in the tree/metadata
+      (metadata, decodingPipe) <- runStateT PB.decode metadataPipe
+
+      case metadata of
+        Left   _          ->
+          error "Corrupt metadata."
+        Right (len, tree) -> do
+          -- do everything with the rest
+          let bytesOut  = decodingPipe >-> bsToBytes
+                      >-> bytesToDirs  >-> searchPT tree
+                      >-> PP.take len
+              bsOut     = (view PB.pack) bytesOut
+              pipeline  = bsOut
+                      >-> PB.toHandle hOut
+
+          runEffect pipeline
+
 ```
 
 #### Loading metadata
@@ -598,7 +770,17 @@ is implemented “exactly” like `bsToBytes` and `encodeByte` (from
 function.
 
 ``` {.haskell}
-!!!huffman/decode.hs "bytesToDirs ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L96-104
+bytesToDirs :: Monad m => Pipe Word8 Direction m r
+bytesToDirs = PP.mapFoldable byteToDirList
+  where
+    -- Turns a byte into a list of directions
+    byteToDirList :: Word8 -> [Direction]
+    byteToDirList b = map f [0..7]
+      where
+        f i | testBit b i = DRight
+            | otherwise   = DLeft
+
 ```
 
 It uses the *bits* package to turn an incoming `Word8` into a list of
@@ -655,7 +837,21 @@ forever consuming and re-yielding — in essence, it turns a `Consumer'`
 returning values into a `Pipe` repeatedly yielding the returned values.
 
 ``` {.haskell}
-!!!huffman/decode.hs "searchPT ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L74-86
+searchPT :: forall a m r. Monad m
+         => PreTree a
+         -> Pipe Direction a m r
+searchPT t = searchPT' t >~ cat
+  where
+    searchPT' :: PreTree a -> Consumer' Direction m a
+    searchPT' (PTLeaf x)       =
+        return x
+    searchPT' (PTNode pt1 pt2) = do
+        dir <- await
+        searchPT' $ case dir of
+                      DLeft  -> pt1
+                      DRight -> pt2
+
 ```
 
 The logic is slightly cleaner; the gain isn’t that much, but just being
@@ -815,7 +1011,9 @@ more.
 Basically, we don’t ever need `bsToBytes`; instead of
 
 ``` {.haskell}
-!!!huffman/encode.hs "let byteProducer"1
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L65-65
+    let byteProducer = PB.fromHandle hIn >-> bsToBytes
+
 ```
 
 We can just write

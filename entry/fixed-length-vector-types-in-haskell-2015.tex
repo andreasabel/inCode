@@ -172,10 +172,9 @@ be a type of kind \texttt{Nat}), something of kind \texttt{*} (the
 \section{Using DataKinds for Type-Level
 Nats}\label{using-datakinds-for-type-level-nats}
 
-(The code in this section for this type is {[}available
-online{]}{[}fvtypenats{]}, if you wanted to play along!)
-
-!!{[}fvtypenats{]}:fixvec/FVTypeNats.hs
+(The code in this section for this type is
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs}{available
+online}, if you wanted to play along!)
 
 There are a couple of ways to find something for that \texttt{n}
 \texttt{Nat} kind, and one way is to use the simple inductive
@@ -183,7 +182,9 @@ There are a couple of ways to find something for that \texttt{n}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeNats.hs }\StringTok{"data Nat ="}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L26-27}
+\KeywordTok{data} \DataTypeTok{Nat} \FunctionTok{=} \DataTypeTok{Z} \FunctionTok{|} \DataTypeTok{S} \DataTypeTok{Nat}
+         \KeywordTok{deriving} \DataTypeTok{Show}
 \end{Highlighting}
 \end{Shaded}
 
@@ -253,7 +254,15 @@ extension, or ``generalized algebraic data types'':
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeNats.hs }\StringTok{"data Vec ::"} \StringTok{"infixr 5 :#"} \StringTok{"deriving instance Show a => Show (Vec n a)"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L37-44}
+\KeywordTok{data} \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
+    \DataTypeTok{Nil}\OtherTok{  ::} \DataTypeTok{Vec} \DataTypeTok{Z} \NormalTok{a}
+\OtherTok{    (:#) ::} \NormalTok{a }\OtherTok{->} \DataTypeTok{Vec} \NormalTok{n a }\OtherTok{->} \DataTypeTok{Vec} \NormalTok{(}\DataTypeTok{S} \NormalTok{n) a}
+
+\KeywordTok{infixr} \DecValTok{5} \FunctionTok{:#}
+
+\KeywordTok{deriving} \KeywordTok{instance} \DataTypeTok{Show} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Show} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n a)}
+\KeywordTok{deriving} \KeywordTok{instance} \DataTypeTok{Eq} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Eq} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n a)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -313,7 +322,12 @@ Okay, let's define some useful methods:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeNats.hs }\StringTok{"headV ::"} \StringTok{"tailV ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L93-97}
+\OtherTok{headV ::} \DataTypeTok{Vec} \NormalTok{(}\DataTypeTok{S} \NormalTok{n) a }\OtherTok{->} \NormalTok{a}
+\NormalTok{headV (x }\FunctionTok{:#} \NormalTok{_)  }\FunctionTok{=} \NormalTok{x}
+
+\OtherTok{tailV ::} \DataTypeTok{Vec} \NormalTok{(}\DataTypeTok{S} \NormalTok{n) a }\OtherTok{->} \DataTypeTok{Vec} \NormalTok{n a}
+\NormalTok{tailV (_ }\FunctionTok{:#} \NormalTok{xs) }\FunctionTok{=} \NormalTok{xs}
 \end{Highlighting}
 \end{Shaded}
 
@@ -359,7 +373,10 @@ together first. For that, we can use a type family, using the
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeNats.hs }\StringTok{"type family (x :: Nat) + (y :: Nat)"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L29-31}
+\KeywordTok{type} \NormalTok{family (}\OtherTok{x ::} \DataTypeTok{Nat}\NormalTok{) }\FunctionTok{+} \NormalTok{(}\OtherTok{y ::} \DataTypeTok{Nat}\NormalTok{) }\KeywordTok{where}
+    \CharTok{'Z   + y = y}
+    \CharTok{'S x + y = '}\DataTypeTok{S} \NormalTok{(x }\FunctionTok{+} \NormalTok{y)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -369,7 +386,10 @@ type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeNats.hs }\StringTok{"(+#) ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L33-35}
+\OtherTok{(+#) ::} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Nat}       \CommentTok{-- types!}
+\DataTypeTok{Z}   \FunctionTok{+#} \NormalTok{y }\FunctionTok{=} \NormalTok{y}
+\DataTypeTok{S} \NormalTok{x }\FunctionTok{+#} \NormalTok{y }\FunctionTok{=} \DataTypeTok{S} \NormalTok{(x }\FunctionTok{+#} \NormalTok{y)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -380,7 +400,10 @@ actually addition. Now, let's use it for \texttt{appendV}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeNats.hs }\StringTok{"appendV ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L99-101}
+\OtherTok{appendV ::} \DataTypeTok{Vec} \NormalTok{n a }\OtherTok{->} \DataTypeTok{Vec} \NormalTok{m a }\OtherTok{->} \DataTypeTok{Vec} \NormalTok{(n }\FunctionTok{+} \NormalTok{m) a}
+\NormalTok{appendV }\DataTypeTok{Nil}       \NormalTok{ys }\FunctionTok{=} \NormalTok{ys}
+\NormalTok{appendV (x }\FunctionTok{:#} \NormalTok{xs) ys }\FunctionTok{=} \NormalTok{x }\FunctionTok{:#} \NormalTok{appendV xs ys}
 \end{Highlighting}
 \end{Shaded}
 
@@ -400,13 +423,15 @@ actually addition. Now, let's use it for \texttt{appendV}:
 It'd be nice to have type-safe methods of \emph{generating} these
 things, too\ldots{}functions like \texttt{iterate}, or
 \texttt{enumFrom}. One of the ways to do this is by using a typeclass.
-(Available in a {[}separate file{]}{[}unfoldable{]} to try out).
-
-!!{[}unfoldable{]}:fixvec/Unfoldable.hs
+(Available in a
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs}{separate
+file} to try out).
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{Unfoldable.hs }\StringTok{"class Unfoldable v"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L7-8}
+\KeywordTok{class} \DataTypeTok{Unfoldable} \NormalTok{v }\KeywordTok{where}
+\OtherTok{    unfold ::} \NormalTok{(b }\OtherTok{->} \NormalTok{(a, b)) }\OtherTok{->} \NormalTok{b }\OtherTok{->} \NormalTok{v a}
 \end{Highlighting}
 \end{Shaded}
 
@@ -420,7 +445,10 @@ The list instance should make it more clear:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{Unfoldable.hs }\StringTok{"instance Unfoldable []"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L11-13}
+\KeywordTok{instance} \DataTypeTok{Unfoldable} \NormalTok{[] }\KeywordTok{where}
+    \NormalTok{unfold f x0 }\FunctionTok{=} \KeywordTok{let} \NormalTok{(y, x1) }\FunctionTok{=} \NormalTok{f x0}
+                  \KeywordTok{in}  \NormalTok{y }\FunctionTok{:} \NormalTok{unfold f x1}
 \end{Highlighting}
 \end{Shaded}
 
@@ -437,7 +465,13 @@ vector:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeNats.hs }\StringTok{"instance Unfoldable (Vec Z)"} \StringTok{"instance Unfoldable (Vec n) => Unfoldable (Vec (S n))"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L46-51}
+\KeywordTok{instance} \DataTypeTok{Unfoldable} \NormalTok{(}\DataTypeTok{Vec} \DataTypeTok{Z}\NormalTok{) }\KeywordTok{where}
+    \NormalTok{unfold _ _ }\FunctionTok{=} \DataTypeTok{Nil}
+
+\KeywordTok{instance} \DataTypeTok{Unfoldable} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n) }\OtherTok{=>} \DataTypeTok{Unfoldable} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{(}\DataTypeTok{S} \NormalTok{n)) }\KeywordTok{where}
+    \NormalTok{unfold f x0 }\FunctionTok{=} \KeywordTok{let} \NormalTok{(y, x1) }\FunctionTok{=} \NormalTok{f x0}
+                  \KeywordTok{in}  \NormalTok{y }\FunctionTok{:#} \NormalTok{unfold f x1}
 \end{Highlighting}
 \end{Shaded}
 
@@ -469,7 +503,17 @@ Let's see this in action.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{Unfoldable.hs }\StringTok{"replicateU ::"} \StringTok{"iterateU ::"} \StringTok{"fromListMaybes ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L15-24}
+\OtherTok{replicateU ::} \DataTypeTok{Unfoldable} \NormalTok{v }\OtherTok{=>} \NormalTok{a }\OtherTok{->} \NormalTok{v a}
+\NormalTok{replicateU }\FunctionTok{=} \NormalTok{unfold (\textbackslash{}x }\OtherTok{->} \NormalTok{(x, x))}
+
+\OtherTok{iterateU ::} \DataTypeTok{Unfoldable} \NormalTok{v }\OtherTok{=>} \NormalTok{(a }\OtherTok{->} \NormalTok{a) }\OtherTok{->} \NormalTok{a }\OtherTok{->} \NormalTok{v a}
+\NormalTok{iterateU f }\FunctionTok{=} \NormalTok{unfold (\textbackslash{}x }\OtherTok{->} \NormalTok{(x, f x))}
+
+\OtherTok{fromListMaybes ::} \DataTypeTok{Unfoldable} \NormalTok{v }\OtherTok{=>} \NormalTok{[a] }\OtherTok{->} \NormalTok{v (}\DataTypeTok{Maybe} \NormalTok{a)}
+\NormalTok{fromListMaybes }\FunctionTok{=} \NormalTok{unfold }\FunctionTok{$} \NormalTok{\textbackslash{}l }\OtherTok{->} \KeywordTok{case} \NormalTok{l }\KeywordTok{of}
+                                  \NormalTok{[]   }\OtherTok{->} \NormalTok{(}\DataTypeTok{Nothing}\NormalTok{, [])}
+                                  \NormalTok{x}\FunctionTok{:}\NormalTok{xs }\OtherTok{->} \NormalTok{(}\DataTypeTok{Just} \NormalTok{x , xs)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -503,7 +547,10 @@ learning purposes:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeNats.hs }\StringTok{"instance Functor (Vec n)"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L53-55}
+\KeywordTok{instance} \DataTypeTok{Functor} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n) }\KeywordTok{where}
+    \NormalTok{fmap _ }\DataTypeTok{Nil}       \FunctionTok{=} \DataTypeTok{Nil}
+    \NormalTok{fmap f (x }\FunctionTok{:#} \NormalTok{xs) }\FunctionTok{=} \NormalTok{f x }\FunctionTok{:#} \NormalTok{fmap f xs}
 \end{Highlighting}
 \end{Shaded}
 
@@ -514,7 +561,14 @@ make a \texttt{pure} that depends on the type, and a
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeNats.hs }\StringTok{"instance Applicative (Vec Z)"} \StringTok{"instance Applicative (Vec n) => Applicative (Vec (S n))"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L57-63}
+\KeywordTok{instance} \DataTypeTok{Applicative} \NormalTok{(}\DataTypeTok{Vec} \DataTypeTok{Z}\NormalTok{) }\KeywordTok{where}
+    \NormalTok{pure _    }\FunctionTok{=} \DataTypeTok{Nil}
+    \DataTypeTok{Nil} \FunctionTok{<*>} \NormalTok{_ }\FunctionTok{=} \DataTypeTok{Nil}
+
+\KeywordTok{instance} \DataTypeTok{Applicative} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n) }\OtherTok{=>} \DataTypeTok{Applicative} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{(}\DataTypeTok{S} \NormalTok{n)) }\KeywordTok{where}
+    \NormalTok{pure x }\FunctionTok{=} \NormalTok{x }\FunctionTok{:#} \NormalTok{pure x}
+    \NormalTok{(f }\FunctionTok{:#} \NormalTok{fs) }\FunctionTok{<*>} \NormalTok{(x }\FunctionTok{:#} \NormalTok{xs) }\FunctionTok{=} \NormalTok{f x }\FunctionTok{:#} \NormalTok{(fs }\FunctionTok{<*>} \NormalTok{xs)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -561,7 +615,18 @@ it again here just to demonstrate.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeNats.hs }\StringTok{"instance Foldable (Vec Z)"} \StringTok{"instance Foldable (Vec n) => Foldable (Vec (S n))"} \StringTok{"instance Traversable (Vec Z)"} \StringTok{"instance Traversable (Vec n) => Traversable (Vec (S n))"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L65-75}
+\KeywordTok{instance} \DataTypeTok{Foldable} \NormalTok{(}\DataTypeTok{Vec} \DataTypeTok{Z}\NormalTok{) }\KeywordTok{where}
+    \NormalTok{foldMap _ }\DataTypeTok{Nil} \FunctionTok{=} \NormalTok{mempty}
+
+\KeywordTok{instance} \DataTypeTok{Foldable} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n) }\OtherTok{=>} \DataTypeTok{Foldable} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{(}\DataTypeTok{S} \NormalTok{n)) }\KeywordTok{where}
+    \NormalTok{foldMap f (x }\FunctionTok{:#} \NormalTok{xs) }\FunctionTok{=} \NormalTok{f x }\FunctionTok{<>} \NormalTok{foldMap f xs}
+
+\KeywordTok{instance} \DataTypeTok{Traversable} \NormalTok{(}\DataTypeTok{Vec} \DataTypeTok{Z}\NormalTok{) }\KeywordTok{where}
+    \NormalTok{traverse _ }\DataTypeTok{Nil} \FunctionTok{=} \NormalTok{pure }\DataTypeTok{Nil}
+
+\KeywordTok{instance} \DataTypeTok{Traversable} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n) }\OtherTok{=>} \DataTypeTok{Traversable} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{(}\DataTypeTok{S} \NormalTok{n)) }\KeywordTok{where}
+    \NormalTok{traverse f (x }\FunctionTok{:#} \NormalTok{xs) }\FunctionTok{=} \NormalTok{liftA2 (}\FunctionTok{:#}\NormalTok{) (f x) (traverse f xs)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -595,7 +660,9 @@ we can write a ``safe \texttt{fromList}'':
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{Unfoldable.hs }\StringTok{"fromListU ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L26-27}
+\OtherTok{fromListU ::} \NormalTok{(}\DataTypeTok{Unfoldable} \NormalTok{v, }\DataTypeTok{Traversable} \NormalTok{v) }\OtherTok{=>} \NormalTok{[a] }\OtherTok{->} \DataTypeTok{Maybe} \NormalTok{(v a)}
+\NormalTok{fromListU }\FunctionTok{=} \NormalTok{sequence }\FunctionTok{.} \NormalTok{fromListMaybes}
 \end{Highlighting}
 \end{Shaded}
 
@@ -622,7 +689,13 @@ from the container type.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeNats.hs }\StringTok{"instance (Unfoldable (Vec n), Traversable (Vec n)) => L.IsList (Vec n a)"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L86-91}
+\KeywordTok{instance} \NormalTok{(}\DataTypeTok{Unfoldable} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n), }\DataTypeTok{Traversable} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n)) }\OtherTok{=>} \DataTypeTok{L.IsList} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n a) }\KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Item} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n a) }\FunctionTok{=} \NormalTok{a}
+    \NormalTok{fromList xs }\FunctionTok{=} \KeywordTok{case} \NormalTok{fromListU xs }\KeywordTok{of}
+                    \DataTypeTok{Nothing} \OtherTok{->} \NormalTok{error }\StringTok{"Demanded vector from a list that was too short."}
+                    \DataTypeTok{Just} \NormalTok{ys }\OtherTok{->} \NormalTok{ys}
+    \NormalTok{toList      }\FunctionTok{=} \NormalTok{Data.Foldable.toList}
 \end{Highlighting}
 \end{Shaded}
 
@@ -696,7 +769,9 @@ specific \texttt{Index} typeclass: (or make another typeclass like
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeNats.hs }\StringTok{"class Index"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L77-78}
+\KeywordTok{class} \DataTypeTok{Index} \NormalTok{(}\OtherTok{n ::} \DataTypeTok{Nat}\NormalTok{) v }\KeywordTok{where}
+\OtherTok{    index ::} \DataTypeTok{Proxy} \NormalTok{n }\OtherTok{->} \NormalTok{v a }\OtherTok{->} \NormalTok{a}
 \end{Highlighting}
 \end{Shaded}
 
@@ -728,7 +803,12 @@ sense}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeNats.hs }\StringTok{"instance Index Z (Vec (S n))"} \StringTok{"instance forall n m. Index n (Vec m) => Index (S n) (Vec (S m))"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L80-84}
+\KeywordTok{instance} \DataTypeTok{Index} \DataTypeTok{Z} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{(}\DataTypeTok{S} \NormalTok{n)) }\KeywordTok{where}
+    \NormalTok{index _ (x }\FunctionTok{:#} \NormalTok{_) }\FunctionTok{=} \NormalTok{x}
+
+\KeywordTok{instance} \NormalTok{forall n m}\FunctionTok{.} \DataTypeTok{Index} \NormalTok{n (}\DataTypeTok{Vec} \NormalTok{m) }\OtherTok{=>} \DataTypeTok{Index} \NormalTok{(}\DataTypeTok{S} \NormalTok{n) (}\DataTypeTok{Vec} \NormalTok{(}\DataTypeTok{S} \NormalTok{m)) }\KeywordTok{where}
+    \NormalTok{index _ (_ }\FunctionTok{:#} \NormalTok{xs) }\FunctionTok{=} \NormalTok{index (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy} \NormalTok{n) xs}
 \end{Highlighting}
 \end{Shaded}
 
@@ -824,10 +904,9 @@ consider Template Haskell an optimal or clean approach :)
 \section{Using TypeLits and Type Checker
 Plugins}\label{using-typelits-and-type-checker-plugins}
 
-(This next section uses code that is {[}also available
-online{]}{[}fvtypelits{]}, as well!)
-
-!!{[}fvtypelits{]}:fixvec/FVTypeLits.hs
+(This next section uses code that is
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs}{also
+available online}, as well!)
 
 Using a custom \texttt{Nat} kind and \emph{DataKinds} is nice and all,
 but it's a bit of a hassle to express large numbers like 100, 1000, etc.
@@ -853,7 +932,8 @@ by adding a pragma:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeLits.hs }\StringTok{"\{-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-\}"}\DecValTok{1}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L14-14}
+\OtherTok{\{-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-\}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -892,7 +972,15 @@ With that in mind, let's start restating everything in terms of
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeLits.hs }\StringTok{"data Vec ::"} \StringTok{"infixr 5 :#"} \StringTok{"deriving instance Show a => Show (Vec n a)"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L33-40}
+\KeywordTok{data} \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
+    \DataTypeTok{Nil}\OtherTok{  ::} \DataTypeTok{Vec} \DecValTok{0} \NormalTok{a}
+\OtherTok{    (:#) ::} \NormalTok{a }\OtherTok{->} \DataTypeTok{Vec} \NormalTok{(n }\FunctionTok{-} \DecValTok{1}\NormalTok{) a }\OtherTok{->} \DataTypeTok{Vec} \NormalTok{n a}
+
+\KeywordTok{infixr} \DecValTok{5} \FunctionTok{:#}
+
+\KeywordTok{deriving} \KeywordTok{instance} \DataTypeTok{Show} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Show} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n a)}
+\KeywordTok{deriving} \KeywordTok{instance} \DataTypeTok{Eq} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Eq} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n a)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -919,7 +1007,8 @@ straightforward:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeLits.hs }\StringTok{"type x > y ="}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L31-31}
+\KeywordTok{type} \NormalTok{x }\FunctionTok{>} \NormalTok{y }\FunctionTok{=} \DataTypeTok{CmpNat} \NormalTok{x y }\FunctionTok{~} \CharTok{'GT}
 \end{Highlighting}
 \end{Shaded}
 
@@ -932,7 +1021,12 @@ Given this, let's do our favorite list functions, \texttt{headV} and
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeLits.hs }\StringTok{"headV ::"} \StringTok{"tailV ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L89-93}
+\OtherTok{headV ::} \NormalTok{(n }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Vec} \NormalTok{n a }\OtherTok{->} \NormalTok{a}
+\NormalTok{headV (x }\FunctionTok{:#} \NormalTok{_)  }\FunctionTok{=} \NormalTok{x}
+
+\OtherTok{tailV ::} \NormalTok{(n }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Vec} \NormalTok{n a }\OtherTok{->} \DataTypeTok{Vec} \NormalTok{(n }\FunctionTok{-} \DecValTok{1}\NormalTok{) a}
+\NormalTok{tailV (_ }\FunctionTok{:#} \NormalTok{xs) }\FunctionTok{=} \NormalTok{xs}
 \end{Highlighting}
 \end{Shaded}
 
@@ -968,7 +1062,10 @@ write\ldots{}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeLits.hs }\StringTok{"appendV ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L95-97}
+\OtherTok{appendV ::} \DataTypeTok{Vec} \NormalTok{n a }\OtherTok{->} \DataTypeTok{Vec} \NormalTok{m a }\OtherTok{->} \DataTypeTok{Vec} \NormalTok{(n }\FunctionTok{+} \NormalTok{m) a}
+\NormalTok{appendV }\DataTypeTok{Nil}       \NormalTok{ys }\FunctionTok{=} \NormalTok{ys}
+\NormalTok{appendV (x }\FunctionTok{:#} \NormalTok{xs) ys }\FunctionTok{=} \NormalTok{x }\FunctionTok{:#} \NormalTok{appendV xs ys}
 \end{Highlighting}
 \end{Shaded}
 
@@ -987,7 +1084,13 @@ And our list generating typeclasses ---
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeLits.hs }\StringTok{"instance Unfoldable (Vec 0)"} \StringTok{"instance (Unfoldable (Vec (n - 1)), n > 0) => Unfoldable (Vec n)"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L42-47}
+\KeywordTok{instance} \DataTypeTok{Unfoldable} \NormalTok{(}\DataTypeTok{Vec} \DecValTok{0}\NormalTok{) }\KeywordTok{where}
+    \NormalTok{unfold _ _ }\FunctionTok{=} \DataTypeTok{Nil}
+
+\KeywordTok{instance} \NormalTok{(}\DataTypeTok{Unfoldable} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{(n }\FunctionTok{-} \DecValTok{1}\NormalTok{)), n }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Unfoldable} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n) }\KeywordTok{where}
+    \NormalTok{unfold f x0 }\FunctionTok{=} \KeywordTok{let} \NormalTok{(y, x1) }\FunctionTok{=} \NormalTok{f x0}
+                  \KeywordTok{in}  \NormalTok{y }\FunctionTok{:#} \NormalTok{unfold f x1}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1022,7 +1125,46 @@ adjustments\ldots{} (remembering that we can also derive
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{fixvec}\FunctionTok{/}\NormalTok{FVTypeLits.hs }\StringTok{"instance Functor"} \StringTok{"instance Applicative"} \StringTok{"instance (Applicative"} \StringTok{"instance Foldable"} \StringTok{"instance (Foldable"} \StringTok{"instance Traversable"} \StringTok{"instance (Traversable"} \StringTok{"class Index"} \StringTok{"instance (m > 0)"} \StringTok{"instance forall n m."} \StringTok{"instance (Unfoldable (Vec n), Traversable (Vec n)) => L.IsList (Vec n a)"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L49-87}
+\KeywordTok{instance} \DataTypeTok{Functor} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n) }\KeywordTok{where}
+    \NormalTok{fmap _ }\DataTypeTok{Nil}       \FunctionTok{=} \DataTypeTok{Nil}
+    \NormalTok{fmap f (x }\FunctionTok{:#} \NormalTok{xs) }\FunctionTok{=} \NormalTok{f x }\FunctionTok{:#} \NormalTok{fmap f xs}
+
+\KeywordTok{instance} \DataTypeTok{Applicative} \NormalTok{(}\DataTypeTok{Vec} \DecValTok{0}\NormalTok{) }\KeywordTok{where}
+    \NormalTok{pure _    }\FunctionTok{=} \DataTypeTok{Nil}
+    \DataTypeTok{Nil} \FunctionTok{<*>} \NormalTok{_ }\FunctionTok{=} \DataTypeTok{Nil}
+
+\KeywordTok{instance} \NormalTok{(}\DataTypeTok{Applicative} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{(n }\FunctionTok{-} \DecValTok{1}\NormalTok{)), n }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Applicative} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n) }\KeywordTok{where}
+    \NormalTok{pure x }\FunctionTok{=} \NormalTok{x }\FunctionTok{:#} \NormalTok{pure x}
+    \NormalTok{(f }\FunctionTok{:#} \NormalTok{fs) }\FunctionTok{<*>} \NormalTok{(x }\FunctionTok{:#} \NormalTok{xs) }\FunctionTok{=} \NormalTok{f x }\FunctionTok{:#} \NormalTok{(fs }\FunctionTok{<*>} \NormalTok{xs)}
+
+\KeywordTok{instance} \DataTypeTok{Foldable} \NormalTok{(}\DataTypeTok{Vec} \DecValTok{0}\NormalTok{) }\KeywordTok{where}
+    \NormalTok{foldMap _ }\DataTypeTok{Nil} \FunctionTok{=} \NormalTok{mempty}
+
+\KeywordTok{instance} \NormalTok{(}\DataTypeTok{Foldable} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{(n }\FunctionTok{-} \DecValTok{1}\NormalTok{)), n }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Foldable} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n) }\KeywordTok{where}
+    \NormalTok{foldMap f (x }\FunctionTok{:#} \NormalTok{xs) }\FunctionTok{=} \NormalTok{f x }\FunctionTok{<>} \NormalTok{foldMap f xs}
+
+\KeywordTok{instance} \DataTypeTok{Traversable} \NormalTok{(}\DataTypeTok{Vec} \DecValTok{0}\NormalTok{) }\KeywordTok{where}
+    \NormalTok{traverse _ }\DataTypeTok{Nil} \FunctionTok{=} \NormalTok{pure }\DataTypeTok{Nil}
+
+\KeywordTok{instance} \NormalTok{(}\DataTypeTok{Traversable} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{(n }\FunctionTok{-} \DecValTok{1}\NormalTok{)), n }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Traversable} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n) }\KeywordTok{where}
+    \NormalTok{traverse f (x }\FunctionTok{:#} \NormalTok{xs) }\FunctionTok{=} \NormalTok{liftA2 (}\FunctionTok{:#}\NormalTok{) (f x) (traverse f xs)}
+
+\KeywordTok{class} \DataTypeTok{Index} \NormalTok{(}\OtherTok{n ::} \DataTypeTok{Nat}\NormalTok{) v }\KeywordTok{where}
+\OtherTok{    index ::} \DataTypeTok{Proxy} \NormalTok{n }\OtherTok{->} \NormalTok{v a }\OtherTok{->} \NormalTok{a}
+
+\KeywordTok{instance} \NormalTok{(m }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Index} \DecValTok{0} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{m) }\KeywordTok{where}
+    \NormalTok{index _ (x }\FunctionTok{:#} \NormalTok{_) }\FunctionTok{=} \NormalTok{x}
+
+\KeywordTok{instance} \NormalTok{forall n m}\FunctionTok{.} \NormalTok{(}\DataTypeTok{Index} \NormalTok{(n }\FunctionTok{-} \DecValTok{1}\NormalTok{) (}\DataTypeTok{Vec} \NormalTok{(m }\FunctionTok{-} \DecValTok{1}\NormalTok{)), n }\FunctionTok{>} \DecValTok{0}\NormalTok{, m }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Index} \NormalTok{n (}\DataTypeTok{Vec} \NormalTok{m) }\KeywordTok{where}
+    \NormalTok{index _ (_ }\FunctionTok{:#} \NormalTok{xs) }\FunctionTok{=} \NormalTok{index (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy} \NormalTok{(n }\FunctionTok{-} \DecValTok{1}\NormalTok{)) xs}
+
+\KeywordTok{instance} \NormalTok{(}\DataTypeTok{Unfoldable} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n), }\DataTypeTok{Traversable} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n)) }\OtherTok{=>} \DataTypeTok{L.IsList} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n a) }\KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Item} \NormalTok{(}\DataTypeTok{Vec} \NormalTok{n a) }\FunctionTok{=} \NormalTok{a}
+    \NormalTok{fromList xs }\FunctionTok{=} \KeywordTok{case} \NormalTok{fromListU xs }\KeywordTok{of}
+                    \DataTypeTok{Nothing} \OtherTok{->} \NormalTok{error }\StringTok{"Demanded vector from a list that was too short."}
+                    \DataTypeTok{Just} \NormalTok{ys }\OtherTok{->} \NormalTok{ys}
+    \NormalTok{toList      }\FunctionTok{=} \NormalTok{Data.Foldable.toList}
 \end{Highlighting}
 \end{Shaded}
 

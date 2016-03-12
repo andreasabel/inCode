@@ -211,16 +211,16 @@ And without any further delay, let's write \emph{encode.hs}!
 
 \section{Encoding}\label{encoding}
 
-(Remember that you can download {[}encode.hs{]}{[}{]} from github and
-try it out yourself; just remember to also grab {[}Huffman.hs{]}{[}{]},
-{[}PQueue.hs{]}{[}{]}, and {[}PreTree.hs{]}{[}{]}, and
-{[}Weighted.hs{]}{[}{]} from the previous parts of this tutorial!)
-
-!!{[}encode.hs{]}:huffman/encode.hs
-!!{[}Huffman.hs{]}:huffman/Huffman.hs
-!!{[}PQueue.hs{]}:huffman/PQueue.hs
-!!{[}PreTree.hs{]}:huffman/PreTree.hs
-!!{[}Weighted.hs{]}:huffman/Weighted.hs
+(Remember that you can download
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs}{encode.hs}
+from github and try it out yourself; just remember to also grab
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs}{Huffman.hs},
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs}{PQueue.hs},
+and
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs}{PreTree.hs},
+and
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs}{Weighted.hs}
+from the previous parts of this tutorial!)
 
 \subsection{Design}\label{design}
 
@@ -400,7 +400,35 @@ First, our imports:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{encode}\FunctionTok{.}\NormalTok{hs }\StringTok{"-- General imports"} \StringTok{"-- Pipes imports"} \StringTok{"-- Working with Binary"} \StringTok{"-- Huffman imports"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L19-46}
+\CommentTok{-- General imports}
+\KeywordTok{import }\DataTypeTok{Control.Applicative}              \NormalTok{((<$>))}
+\KeywordTok{import }\DataTypeTok{Control.Monad.Trans.State.Strict} \NormalTok{(evalState)}
+\KeywordTok{import }\DataTypeTok{Data.Foldable}                    \NormalTok{(sum)}
+\KeywordTok{import }\DataTypeTok{Data.Map.Strict}                  \NormalTok{(}\DataTypeTok{Map}\NormalTok{, (!))}
+\KeywordTok{import }\DataTypeTok{Lens.Family2}                     \NormalTok{(view)}
+\KeywordTok{import }\DataTypeTok{Prelude} \KeywordTok{hiding}                   \NormalTok{(sum)}
+\KeywordTok{import }\DataTypeTok{System.Environment}               \NormalTok{(getArgs)}
+\KeywordTok{import }\DataTypeTok{System.IO}                        \NormalTok{(withFile, }\DataTypeTok{IOMode}\NormalTok{(..))}
+\KeywordTok{import qualified} \DataTypeTok{Data.Map.Strict}        \KeywordTok{as} \DataTypeTok{M}
+
+\CommentTok{-- Pipes imports}
+\KeywordTok{import }\DataTypeTok{Pipes}
+\KeywordTok{import }\DataTypeTok{Pipes.Parse}
+\KeywordTok{import qualified} \DataTypeTok{Pipes.ByteString} \KeywordTok{as} \DataTypeTok{PB}
+\KeywordTok{import qualified} \DataTypeTok{Pipes.Prelude}    \KeywordTok{as} \DataTypeTok{PP}
+
+\CommentTok{-- Working with Binary}
+\KeywordTok{import }\DataTypeTok{Data.Binary} \KeywordTok{hiding}             \NormalTok{(encodeFile)}
+\KeywordTok{import }\DataTypeTok{Data.Bits}                      \NormalTok{(setBit)}
+\KeywordTok{import }\DataTypeTok{Data.ByteString}                \NormalTok{(}\DataTypeTok{ByteString}\NormalTok{)}
+\KeywordTok{import qualified} \DataTypeTok{Data.ByteString}      \KeywordTok{as} \DataTypeTok{B}
+\KeywordTok{import qualified} \DataTypeTok{Data.ByteString.Lazy} \KeywordTok{as} \DataTypeTok{BL}
+
+\CommentTok{-- Huffman imports}
+\KeywordTok{import }\DataTypeTok{Huffman}
+\KeywordTok{import }\DataTypeTok{PQueue}
+\KeywordTok{import }\DataTypeTok{PreTree}
 \end{Highlighting}
 \end{Shaded}
 
@@ -410,7 +438,20 @@ Now \texttt{main}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{encode}\FunctionTok{.}\NormalTok{hs }\StringTok{"main ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L48-60}
+\OtherTok{main ::} \DataTypeTok{IO} \NormalTok{()}
+\NormalTok{main }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{args     }\OtherTok{<-} \NormalTok{getArgs}
+    \KeywordTok{let} \NormalTok{(inp, out)  }\FunctionTok{=} \KeywordTok{case} \NormalTok{args }\KeywordTok{of}
+                        \NormalTok{i}\FunctionTok{:}\NormalTok{o}\FunctionTok{:}\NormalTok{_      }\OtherTok{->} \NormalTok{(i,o)}
+                        \NormalTok{_          }\OtherTok{->} \NormalTok{error }\StringTok{"Give input and output files."}
+
+    \NormalTok{metadata }\OtherTok{<-} \NormalTok{analyzeFile inp}
+    \KeywordTok{let} \NormalTok{(len, tree) }\FunctionTok{=} \KeywordTok{case} \NormalTok{metadata }\KeywordTok{of}
+                        \DataTypeTok{Just} \NormalTok{(l, t) }\OtherTok{->} \NormalTok{(l, t)}
+                        \DataTypeTok{Nothing}     \OtherTok{->} \NormalTok{error }\StringTok{"Empty File"}
+
+    \NormalTok{encodeFile inp out len tree}
 \end{Highlighting}
 \end{Shaded}
 
@@ -429,7 +470,19 @@ decoding the leftover padding bits).
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{encode}\FunctionTok{.}\NormalTok{hs }\StringTok{"analyzeFile ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L63-74}
+\OtherTok{analyzeFile ::} \NormalTok{FilePath }\OtherTok{->} \DataTypeTok{IO} \NormalTok{(}\DataTypeTok{Maybe} \NormalTok{(}\DataTypeTok{Int}\NormalTok{, }\DataTypeTok{PreTree} \DataTypeTok{Word8}\NormalTok{))}
+\NormalTok{analyzeFile fp }\FunctionTok{=} \NormalTok{withFile fp }\DataTypeTok{ReadMode} \FunctionTok{$} \NormalTok{\textbackslash{}hIn }\OtherTok{->} \KeywordTok{do}
+    \KeywordTok{let} \NormalTok{byteProducer }\FunctionTok{=} \NormalTok{PB.fromHandle hIn }\FunctionTok{>->} \NormalTok{bsToBytes}
+    \NormalTok{fqs }\OtherTok{<-} \NormalTok{freqs byteProducer}
+    \KeywordTok{let} \NormalTok{len  }\FunctionTok{=} \NormalTok{sum fqs}
+        \NormalTok{tree }\FunctionTok{=} \NormalTok{evalState (listQueueStateTable fqs }\FunctionTok{>>} \NormalTok{buildTree) emptyPQ}
+    \NormalTok{return }\FunctionTok{$} \NormalTok{fmap (len,) tree}
+  \KeywordTok{where}
+\OtherTok{    freqs ::} \NormalTok{(}\DataTypeTok{Monad} \NormalTok{m, }\DataTypeTok{Ord} \NormalTok{a) }\OtherTok{=>} \DataTypeTok{Producer} \NormalTok{a m () }\OtherTok{->} \NormalTok{m (}\DataTypeTok{M.Map} \NormalTok{a }\DataTypeTok{Int}\NormalTok{)}
+    \NormalTok{freqs }\FunctionTok{=} \NormalTok{PP.fold f M.empty id}
+      \KeywordTok{where}
+        \NormalTok{f m x }\FunctionTok{=} \NormalTok{M.insertWith (}\FunctionTok{+}\NormalTok{) x }\DecValTok{1} \NormalTok{m}
 \end{Highlighting}
 \end{Shaded}
 
@@ -450,7 +503,9 @@ and chaining it to \texttt{bsToBytes}, a pipe that takes incoming
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{encode}\FunctionTok{.}\NormalTok{hs }\StringTok{"bsToBytes ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L96-97}
+\OtherTok{bsToBytes ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Pipe} \DataTypeTok{ByteString} \DataTypeTok{Word8} \NormalTok{m r}
+\NormalTok{bsToBytes }\FunctionTok{=} \NormalTok{PP.mapFoldable B.unpack}
 \end{Highlighting}
 \end{Shaded}
 
@@ -475,7 +530,11 @@ The fold is identical in logic to \texttt{listFreq} from a
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{Huffman.hs }\StringTok{"listFreq ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L22-25}
+\OtherTok{listFreq ::} \DataTypeTok{Ord} \NormalTok{a }\OtherTok{=>} \NormalTok{[a] }\OtherTok{->} \DataTypeTok{FreqTable} \NormalTok{a}
+\NormalTok{listFreq }\FunctionTok{=} \NormalTok{foldr f M.empty}
+  \KeywordTok{where}
+    \NormalTok{f x m }\FunctionTok{=} \NormalTok{M.insertWith (}\FunctionTok{+}\NormalTok{) x }\DecValTok{1} \NormalTok{m}
 \end{Highlighting}
 \end{Shaded}
 
@@ -503,7 +562,22 @@ second pass.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{encode}\FunctionTok{.}\NormalTok{hs }\StringTok{"encodeFile ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L78-92}
+\OtherTok{encodeFile ::} \NormalTok{FilePath }\OtherTok{->} \NormalTok{FilePath }\OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{PreTree} \DataTypeTok{Word8} \OtherTok{->} \DataTypeTok{IO} \NormalTok{()}
+\NormalTok{encodeFile inp out len tree }\FunctionTok{=}
+    \NormalTok{withFile inp }\DataTypeTok{ReadMode}  \FunctionTok{$} \NormalTok{\textbackslash{}hIn  }\OtherTok{->}
+    \NormalTok{withFile out }\DataTypeTok{WriteMode} \FunctionTok{$} \NormalTok{\textbackslash{}hOut }\OtherTok{->} \KeywordTok{do}
+      \NormalTok{BL.hPut hOut }\FunctionTok{$} \NormalTok{encode (len, tree)}
+      \KeywordTok{let} \NormalTok{dirsOut   }\FunctionTok{=} \NormalTok{PB.fromHandle hIn}
+                  \FunctionTok{>->} \NormalTok{bsToBytes}
+                  \FunctionTok{>->} \NormalTok{encodeByte encTable}
+          \NormalTok{bsOut     }\FunctionTok{=} \NormalTok{view PB.pack }\FunctionTok{.} \NormalTok{dirsBytes }\FunctionTok{$} \NormalTok{dirsOut}
+          \NormalTok{pipeline  }\FunctionTok{=} \NormalTok{bsOut}
+                  \FunctionTok{>->} \NormalTok{PB.toHandle hOut}
+
+      \NormalTok{runEffect pipeline}
+  \KeywordTok{where}
+    \NormalTok{encTable  }\FunctionTok{=} \NormalTok{ptTable tree}
 \end{Highlighting}
 \end{Shaded}
 
@@ -540,7 +614,11 @@ given handle) piped into our old friend \texttt{bsToBytes} piped into
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{encode}\FunctionTok{.}\NormalTok{hs }\StringTok{"encodeByte ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L101-104}
+\OtherTok{encodeByte ::} \NormalTok{(}\DataTypeTok{Ord} \NormalTok{a, }\DataTypeTok{Monad} \NormalTok{m)}
+           \OtherTok{=>} \DataTypeTok{Map} \NormalTok{a }\DataTypeTok{Encoding}
+           \OtherTok{->} \DataTypeTok{Pipe} \NormalTok{a }\DataTypeTok{Direction} \NormalTok{m r}
+\NormalTok{encodeByte encTable }\FunctionTok{=} \NormalTok{PP.mapFoldable (encTable }\FunctionTok{!}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -563,7 +641,17 @@ tactic we discussed earlier.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{encode}\FunctionTok{.}\NormalTok{hs }\StringTok{"dirsBytes ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L108-117}
+\OtherTok{dirsBytes ::} \NormalTok{(}\DataTypeTok{MonadIO} \NormalTok{m, }\DataTypeTok{Functor} \NormalTok{m)}
+          \OtherTok{=>} \DataTypeTok{Producer} \DataTypeTok{Direction} \NormalTok{m r}
+          \OtherTok{->} \DataTypeTok{Producer} \DataTypeTok{Word8}     \NormalTok{m ()}
+\NormalTok{dirsBytes p }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{(result, leftovers) }\OtherTok{<-} \NormalTok{lift }\FunctionTok{$} \NormalTok{runStateT dirsBytesP p}
+    \KeywordTok{case} \NormalTok{result }\KeywordTok{of}
+      \DataTypeTok{Just} \NormalTok{byte }\OtherTok{->} \KeywordTok{do}
+        \NormalTok{yield byte}
+        \NormalTok{dirsBytes leftovers}
+      \DataTypeTok{Nothing}   \OtherTok{->} \NormalTok{return ()}
 \end{Highlighting}
 \end{Shaded}
 
@@ -607,7 +695,22 @@ Let's take a look at the \texttt{dirsBytesP} parser, which parses
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{encode}\FunctionTok{.}\NormalTok{hs }\StringTok{"dirsBytesP ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L123-137}
+\OtherTok{dirsBytesP ::} \NormalTok{(}\DataTypeTok{Monad} \NormalTok{m, }\DataTypeTok{Functor} \NormalTok{m) }\OtherTok{=>} \DataTypeTok{Parser} \DataTypeTok{Direction} \NormalTok{m (}\DataTypeTok{Maybe} \DataTypeTok{Word8}\NormalTok{)}
+\NormalTok{dirsBytesP }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{isEnd }\OtherTok{<-} \NormalTok{isEndOfInput}
+    \KeywordTok{if} \NormalTok{isEnd}
+      \KeywordTok{then} \NormalTok{return }\DataTypeTok{Nothing}
+      \KeywordTok{else} \DataTypeTok{Just} \FunctionTok{<$>} \NormalTok{go }\DecValTok{0} \DecValTok{0}
+  \KeywordTok{where}
+\OtherTok{    go ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Word8} \OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Parser} \DataTypeTok{Direction} \NormalTok{m }\DataTypeTok{Word8}
+    \NormalTok{go b }\DecValTok{8} \FunctionTok{=} \NormalTok{return b}
+    \NormalTok{go b i }\FunctionTok{=} \KeywordTok{do}
+      \NormalTok{dir }\OtherTok{<-} \NormalTok{draw}
+      \KeywordTok{case} \NormalTok{dir }\KeywordTok{of}
+        \DataTypeTok{Just} \DataTypeTok{DLeft}  \OtherTok{->} \NormalTok{go     b            (i }\FunctionTok{+} \DecValTok{1}\NormalTok{)}
+        \DataTypeTok{Just} \DataTypeTok{DRight} \OtherTok{->} \NormalTok{go     (setBit b i) (i }\FunctionTok{+} \DecValTok{1}\NormalTok{)}
+        \DataTypeTok{Nothing}     \OtherTok{->} \NormalTok{return b}
 \end{Highlighting}
 \end{Shaded}
 
@@ -636,7 +739,8 @@ And finally, we use the ``smart chunking'' provided by
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{encode}\FunctionTok{.}\NormalTok{hs }\StringTok{"bsOut"}\DecValTok{1}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L86-86}
+          \NormalTok{bsOut     }\FunctionTok{=} \NormalTok{view PB.pack }\FunctionTok{.} \NormalTok{dirsBytes }\FunctionTok{$} \NormalTok{dirsOut}
 \end{Highlighting}
 \end{Shaded}
 
@@ -679,12 +783,16 @@ gigabyte. We'll look into performance in a later post!
 
 \section{Decoding}\label{decoding}
 
-(Remember again that download {[}decode.hs{]}{[}{]} is also available
-online from github! Again, be sure to also grab {[}Huffman.hs{]}{[}{]},
-{[}PQueue.hs{]}{[}{]}, and {[}PreTree.hs{]}{[}{]}, and
-{[}Weighted.hs{]}{[}{]} from posts past.)
-
-!!{[}decode.hs{]}:huffman/decode.hs
+(Remember again that download
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs}{decode.hs}
+is also available online from github! Again, be sure to also grab
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs}{Huffman.hs},
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs}{PQueue.hs},
+and
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs}{PreTree.hs},
+and
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs}{Weighted.hs}
+from posts past.)
 
 \subsection{Design}\label{design-1}
 
@@ -730,7 +838,27 @@ than encoding.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{decode}\FunctionTok{.}\NormalTok{hs }\StringTok{"-- General imports"} \StringTok{"-- Pipes imports"} \StringTok{"-- Working with Binary"} \StringTok{"-- Huffman imports"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L18-37}
+\CommentTok{-- General imports}
+\KeywordTok{import }\DataTypeTok{Lens.Family2}       \NormalTok{(view)}
+\KeywordTok{import }\DataTypeTok{System.Environment} \NormalTok{(getArgs)}
+\KeywordTok{import }\DataTypeTok{System.IO}          \NormalTok{(withFile, }\DataTypeTok{IOMode}\NormalTok{(..))}
+
+\CommentTok{-- Pipes imports}
+\KeywordTok{import }\DataTypeTok{Pipes}
+\KeywordTok{import }\DataTypeTok{Pipes.Parse}
+\KeywordTok{import qualified} \DataTypeTok{Pipes.Binary}     \KeywordTok{as} \DataTypeTok{PB}
+\KeywordTok{import qualified} \DataTypeTok{Pipes.ByteString} \KeywordTok{as} \DataTypeTok{PB}
+\KeywordTok{import qualified} \DataTypeTok{Pipes.Prelude}    \KeywordTok{as} \DataTypeTok{PP}
+
+\CommentTok{-- Working with Binary}
+\KeywordTok{import }\DataTypeTok{Data.Bits}                 \NormalTok{(testBit)}
+\KeywordTok{import }\DataTypeTok{Data.ByteString}           \NormalTok{(}\DataTypeTok{ByteString}\NormalTok{)}
+\KeywordTok{import }\DataTypeTok{Data.Word}                 \NormalTok{(}\DataTypeTok{Word8}\NormalTok{)}
+\KeywordTok{import qualified} \DataTypeTok{Data.ByteString} \KeywordTok{as} \DataTypeTok{B}
+
+\CommentTok{-- Huffman imports}
+\KeywordTok{import }\DataTypeTok{PreTree}
 \end{Highlighting}
 \end{Shaded}
 
@@ -738,7 +866,14 @@ than encoding.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{decode}\FunctionTok{.}\NormalTok{hs }\StringTok{"main ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L39-45}
+\OtherTok{main ::} \DataTypeTok{IO} \NormalTok{()}
+\NormalTok{main }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{args     }\OtherTok{<-} \NormalTok{getArgs}
+    \KeywordTok{let} \NormalTok{(inp, out)  }\FunctionTok{=} \KeywordTok{case} \NormalTok{args }\KeywordTok{of}
+                        \NormalTok{i}\FunctionTok{:}\NormalTok{o}\FunctionTok{:}\NormalTok{_      }\OtherTok{->} \NormalTok{(i,o)}
+                        \NormalTok{_          }\OtherTok{->} \NormalTok{error }\StringTok{"Give input and output files."}
+    \NormalTok{decodeFile inp out}
 \end{Highlighting}
 \end{Shaded}
 
@@ -746,7 +881,29 @@ And now on to the juicy parts:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{decode}\FunctionTok{.}\NormalTok{hs }\StringTok{"decodeFile ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L48-69}
+\OtherTok{decodeFile ::} \NormalTok{FilePath }\OtherTok{->} \NormalTok{FilePath }\OtherTok{->} \DataTypeTok{IO} \NormalTok{()}
+\NormalTok{decodeFile inp out }\FunctionTok{=}
+    \NormalTok{withFile inp }\DataTypeTok{ReadMode}  \FunctionTok{$} \NormalTok{\textbackslash{}hIn  }\OtherTok{->}
+    \NormalTok{withFile out }\DataTypeTok{WriteMode} \FunctionTok{$} \NormalTok{\textbackslash{}hOut }\OtherTok{->} \KeywordTok{do}
+      \KeywordTok{let} \NormalTok{metadataPipe }\FunctionTok{=} \NormalTok{PB.fromHandle hIn}
+
+      \CommentTok{-- consume metapipe to read in the tree/metadata}
+      \NormalTok{(metadata, decodingPipe) }\OtherTok{<-} \NormalTok{runStateT PB.decode metadataPipe}
+
+      \KeywordTok{case} \NormalTok{metadata }\KeywordTok{of}
+        \DataTypeTok{Left}   \NormalTok{_          }\OtherTok{->}
+          \NormalTok{error }\StringTok{"Corrupt metadata."}
+        \DataTypeTok{Right} \NormalTok{(len, tree) }\OtherTok{->} \KeywordTok{do}
+          \CommentTok{-- do everything with the rest}
+          \KeywordTok{let} \NormalTok{bytesOut  }\FunctionTok{=} \NormalTok{decodingPipe }\FunctionTok{>->} \NormalTok{bsToBytes}
+                      \FunctionTok{>->} \NormalTok{bytesToDirs  }\FunctionTok{>->} \NormalTok{searchPT tree}
+                      \FunctionTok{>->} \NormalTok{PP.take len}
+              \NormalTok{bsOut     }\FunctionTok{=} \NormalTok{(view PB.pack) bytesOut}
+              \NormalTok{pipeline  }\FunctionTok{=} \NormalTok{bsOut}
+                      \FunctionTok{>->} \NormalTok{PB.toHandle hOut}
+
+          \NormalTok{runEffect pipeline}
 \end{Highlighting}
 \end{Shaded}
 
@@ -802,7 +959,16 @@ using \texttt{PP.mapFoldable} and a
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{decode}\FunctionTok{.}\NormalTok{hs }\StringTok{"bytesToDirs ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L96-104}
+\OtherTok{bytesToDirs ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Pipe} \DataTypeTok{Word8} \DataTypeTok{Direction} \NormalTok{m r}
+\NormalTok{bytesToDirs }\FunctionTok{=} \NormalTok{PP.mapFoldable byteToDirList}
+  \KeywordTok{where}
+    \CommentTok{-- Turns a byte into a list of directions}
+\OtherTok{    byteToDirList ::} \DataTypeTok{Word8} \OtherTok{->} \NormalTok{[}\DataTypeTok{Direction}\NormalTok{]}
+    \NormalTok{byteToDirList b }\FunctionTok{=} \NormalTok{map f [}\DecValTok{0}\FunctionTok{..}\DecValTok{7}\NormalTok{]}
+      \KeywordTok{where}
+        \NormalTok{f i }\FunctionTok{|} \NormalTok{testBit b i }\FunctionTok{=} \DataTypeTok{DRight}
+            \FunctionTok{|} \NormalTok{otherwise   }\FunctionTok{=} \DataTypeTok{DLeft}
 \end{Highlighting}
 \end{Shaded}
 
@@ -868,7 +1034,20 @@ consuming and re-yielding --- in essence, it turns a
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{decode}\FunctionTok{.}\NormalTok{hs }\StringTok{"searchPT ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L74-86}
+\OtherTok{searchPT ::} \NormalTok{forall a m r}\FunctionTok{.} \DataTypeTok{Monad} \NormalTok{m}
+         \OtherTok{=>} \DataTypeTok{PreTree} \NormalTok{a}
+         \OtherTok{->} \DataTypeTok{Pipe} \DataTypeTok{Direction} \NormalTok{a m r}
+\NormalTok{searchPT t }\FunctionTok{=} \NormalTok{searchPT' t }\FunctionTok{>~} \NormalTok{cat}
+  \KeywordTok{where}
+\OtherTok{    searchPT' ::} \DataTypeTok{PreTree} \NormalTok{a }\OtherTok{->} \DataTypeTok{Consumer'} \DataTypeTok{Direction} \NormalTok{m a}
+    \NormalTok{searchPT' (}\DataTypeTok{PTLeaf} \NormalTok{x)       }\FunctionTok{=}
+        \NormalTok{return x}
+    \NormalTok{searchPT' (}\DataTypeTok{PTNode} \NormalTok{pt1 pt2) }\FunctionTok{=} \KeywordTok{do}
+        \NormalTok{dir }\OtherTok{<-} \NormalTok{await}
+        \NormalTok{searchPT' }\FunctionTok{$} \KeywordTok{case} \NormalTok{dir }\KeywordTok{of}
+                      \DataTypeTok{DLeft}  \OtherTok{->} \NormalTok{pt1}
+                      \DataTypeTok{DRight} \OtherTok{->} \NormalTok{pt2}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1051,7 +1230,8 @@ Basically, we don't ever need \texttt{bsToBytes}; instead of
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{encode}\FunctionTok{.}\NormalTok{hs }\StringTok{"let byteProducer"}\DecValTok{1}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L65-65}
+    \KeywordTok{let} \NormalTok{byteProducer }\FunctionTok{=} \NormalTok{PB.fromHandle hIn }\FunctionTok{>->} \NormalTok{bsToBytes}
 \end{Highlighting}
 \end{Shaded}
 

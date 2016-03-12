@@ -112,14 +112,13 @@ try to find me on \href{https://twitter.com/mstk}{twitter}, or drop by
 the \#haskell Freenode IRC channel! (I go by \emph{jle`})
 
 Note that all of the code in this post can be downloaded (from
-{[}Auto.hs{]}{[}autodl{]} for the last post, and
-{[}Auto2.hs{]}{[}auto2dl{]} for this post's new material) so you can
-play along on GHCi, or write your own code using it the concepts and
-types here :) You can also run it {[}online
-interactively{]}{[}fpcomplint{]}.
-
-!!{[}autodl{]}:machines/Auto.hs !!{[}auto2dl{]}:machines/Auto2.hs
-{[}fpcomplint{]}: https://www.fpcomplete.com/user/jle/machines
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs}{Auto.hs}
+for the last post, and
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs}{Auto2.hs}
+for this post's new material) so you can play along on GHCi, or write
+your own code using it the concepts and types here :) You can also run
+it \href{https://www.fpcomplete.com/user/jle/machines}{online
+interactively}.
 
 A fair warning: at times this post might feel a bit fragmented; but
 remember that we really are just going to be exploring and getting very
@@ -133,7 +132,9 @@ We left off in our last post having looked at \texttt{Auto}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto.hs }\StringTok{"newtype Auto"} \NormalTok{machines}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-12}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/machines}
+\KeywordTok{newtype} \DataTypeTok{Auto} \NormalTok{a b }\FunctionTok{=} \DataTypeTok{ACons} \NormalTok{\{}\OtherTok{ runAuto ::} \NormalTok{a }\OtherTok{->} \NormalTok{(b, }\DataTypeTok{Auto} \NormalTok{a b) \}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -142,21 +143,19 @@ which we saw as a stream that had an influencing input of type
 the previous state), and an output ``head'' of type \texttt{b} (also a
 function of the input and of the previous state).
 
-And we looked at {[}a simple auto{]}{[}simpleauto{]} which acted like a
-constantly incrementing stream, but where you could reset the counter by
-passing in a \texttt{Just}.
-
-!!{[}simpleauto{]}:machines/Auto.hs ``settableAuto:''
+And we looked at
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs\#L46-54}{a
+simple auto} which acted like a constantly incrementing stream, but
+where you could reset the counter by passing in a \texttt{Just}.
 
 Then we took another approach to looking at this --- we thought about
 Autos as functions ``with state''. As in, \texttt{Auto\ a\ b} was like a
 function \texttt{a\ -\textgreater{}\ b}, but which had an internal state
 that updated every time it was called.
 
-We saw this in an auto that {[}returns the sum{]}{[}summer{]} of
-everything you have given it.
-
-!!{[}summer{]}:machines/Auto.hs ``summer:''
+We saw this in an auto that
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs\#L66-73}{returns
+the sum} of everything you have given it.
 
 Autos are ``function-like things''\ldots{}they map or ``morph'' things
 of type \texttt{a} to things of type \texttt{b} in some form, just like
@@ -328,7 +327,12 @@ Enough talk, let's code! We'll call our composition operator
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"(~.~) ::"} \NormalTok{machines}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L67-70}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/machines}
+\OtherTok{(~.~) ::} \DataTypeTok{Auto} \NormalTok{b c }\OtherTok{->} \DataTypeTok{Auto} \NormalTok{a b }\OtherTok{->} \DataTypeTok{Auto} \NormalTok{a c}
+\NormalTok{g }\FunctionTok{~.~} \NormalTok{f }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \KeywordTok{let} \NormalTok{(y, f') }\FunctionTok{=} \NormalTok{runAuto f x}
+                            \NormalTok{(z, g') }\FunctionTok{=} \NormalTok{runAuto g y}
+                        \KeywordTok{in}  \NormalTok{(z, g' }\FunctionTok{~.~} \NormalTok{f')}
 \end{Highlighting}
 \end{Shaded}
 
@@ -341,7 +345,10 @@ this out on:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"toAuto ::"} \NormalTok{machines}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L74-75}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/machines}
+\OtherTok{toAuto ::} \NormalTok{(a }\OtherTok{->} \NormalTok{b) }\OtherTok{->} \DataTypeTok{Auto} \NormalTok{a b}
+\NormalTok{toAuto f }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \NormalTok{(f x, toAuto f)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -385,7 +392,10 @@ Well, wait. We need one last thing: the identity Auto:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"idA ::"} \NormalTok{machines}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L78-79}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/machines}
+\OtherTok{idA ::} \DataTypeTok{Auto} \NormalTok{a a}
+\NormalTok{idA }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \NormalTok{(x, idA)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -463,7 +473,14 @@ And then our \texttt{Auto} Category instance:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"instance Category Auto"} \NormalTok{machines}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L13-18}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/machines}
+\KeywordTok{instance} \DataTypeTok{Category} \DataTypeTok{Auto} \KeywordTok{where}
+    \NormalTok{id    }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \NormalTok{(x, id)}
+    \NormalTok{g }\FunctionTok{.} \NormalTok{f }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+              \KeywordTok{let} \NormalTok{(y, f') }\FunctionTok{=} \NormalTok{runAuto f x}
+                  \NormalTok{(z, g') }\FunctionTok{=} \NormalTok{runAuto g y}
+              \KeywordTok{in}  \NormalTok{(z, g' }\FunctionTok{.} \NormalTok{f')}
 \end{Highlighting}
 \end{Shaded}
 
@@ -472,7 +489,10 @@ And now\ldots{} we can work with both \texttt{(-\textgreater{})} and
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"doTwice ::"} \NormalTok{machines}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L92-93}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/machines}
+\OtherTok{doTwice ::} \DataTypeTok{Category} \NormalTok{r }\OtherTok{=>} \NormalTok{r a a }\OtherTok{->} \NormalTok{r a a}
+\NormalTok{doTwice f }\FunctionTok{=} \NormalTok{f }\FunctionTok{.} \NormalTok{f}
 \end{Highlighting}
 \end{Shaded}
 
@@ -561,7 +581,12 @@ For example, if I fmapped \texttt{show} onto \texttt{summer} --- if
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"instance Functor (Auto r)"} \NormalTok{machines}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L20-23}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/machines}
+\KeywordTok{instance} \DataTypeTok{Functor} \NormalTok{(}\DataTypeTok{Auto} \NormalTok{r) }\KeywordTok{where}
+    \NormalTok{fmap f a }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+                 \KeywordTok{let} \NormalTok{(y, a') }\FunctionTok{=} \NormalTok{runAuto a x}
+                 \KeywordTok{in}  \NormalTok{(f y, fmap f a')}
 \end{Highlighting}
 \end{Shaded}
 
@@ -624,7 +649,14 @@ We can pretty much use this to write our Applicative instance for
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"instance Applicative (Auto r)"} \NormalTok{machines}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L25-30}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/machines}
+\KeywordTok{instance} \DataTypeTok{Applicative} \NormalTok{(}\DataTypeTok{Auto} \NormalTok{r) }\KeywordTok{where}
+    \NormalTok{pure y    }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}_ }\OtherTok{->} \NormalTok{(y, pure y)}
+    \NormalTok{af }\FunctionTok{<*>} \NormalTok{ay }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+                  \KeywordTok{let} \NormalTok{(f, af') }\FunctionTok{=} \NormalTok{runAuto af x}
+                      \NormalTok{(y, ay') }\FunctionTok{=} \NormalTok{runAuto ay x}
+                  \KeywordTok{in}  \NormalTok{(f y, af' }\FunctionTok{<*>} \NormalTok{ay')}
 \end{Highlighting}
 \end{Shaded}
 
@@ -723,7 +755,24 @@ Writing the instance is straightforward enough:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"instance Arrow Auto"} \NormalTok{machines}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L32-47}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/machines}
+\KeywordTok{instance} \DataTypeTok{Arrow} \DataTypeTok{Auto} \KeywordTok{where}
+    \NormalTok{arr f     }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->} \NormalTok{(f x, arr f)}
+    \NormalTok{first a   }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}(x, z) }\OtherTok{->}
+                  \KeywordTok{let} \NormalTok{(y, a') }\FunctionTok{=} \NormalTok{runAuto a x}
+                  \KeywordTok{in}  \NormalTok{((y, z), first a')}
+    \NormalTok{second a  }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}(z, x) }\OtherTok{->}
+                  \KeywordTok{let} \NormalTok{(y, a') }\FunctionTok{=} \NormalTok{runAuto a x}
+                  \KeywordTok{in}  \NormalTok{((z, y), second a')}
+    \NormalTok{a1 }\FunctionTok{***} \NormalTok{a2 }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}(x1, x2) }\OtherTok{->}
+                  \KeywordTok{let} \NormalTok{(y1, a1') }\FunctionTok{=} \NormalTok{runAuto a1 x1}
+                      \NormalTok{(y2, a2') }\FunctionTok{=} \NormalTok{runAuto a2 x2}
+                  \KeywordTok{in}  \NormalTok{((y1, y2), a1' }\FunctionTok{***} \NormalTok{a2')}
+    \NormalTok{a1 }\FunctionTok{&&&} \NormalTok{a2 }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+                  \KeywordTok{let} \NormalTok{(y1, a1') }\FunctionTok{=} \NormalTok{runAuto a1 x}
+                      \NormalTok{(y2, a2') }\FunctionTok{=} \NormalTok{runAuto a2 x}
+                  \KeywordTok{in}  \NormalTok{((y1, y2), a1' }\FunctionTok{&&&} \NormalTok{a2')}
 \end{Highlighting}
 \end{Shaded}
 
@@ -828,7 +877,16 @@ methods can be implemented in terms of \texttt{left} and \texttt{arr}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"instance ArrowChoice Auto"} \NormalTok{machines}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L49-56}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/machines}
+\KeywordTok{instance} \DataTypeTok{ArrowChoice} \DataTypeTok{Auto} \KeywordTok{where}
+    \NormalTok{left a }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}x }\OtherTok{->}
+                 \KeywordTok{case} \NormalTok{x }\KeywordTok{of}
+                   \DataTypeTok{Left} \NormalTok{l  }\OtherTok{->}
+                     \KeywordTok{let} \NormalTok{(l', a') }\FunctionTok{=} \NormalTok{runAuto a l}
+                     \KeywordTok{in}  \NormalTok{(}\DataTypeTok{Left} \NormalTok{l', left a')}
+                   \DataTypeTok{Right} \NormalTok{r }\OtherTok{->}
+                     \NormalTok{(}\DataTypeTok{Right} \NormalTok{r, left a)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -907,7 +965,16 @@ We could write this ``from scratch'', using explicit recursion:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"dualCounterR ::"} \NormalTok{machines}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L102-109}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/machines}
+\OtherTok{dualCounterR ::} \DataTypeTok{Auto} \NormalTok{(}\DataTypeTok{Either} \DataTypeTok{Int} \DataTypeTok{Int}\NormalTok{) (}\DataTypeTok{Int}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)}
+\NormalTok{dualCounterR }\FunctionTok{=} \NormalTok{dualCounterWith (}\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{)}
+  \KeywordTok{where}
+    \NormalTok{dualCounterWith (x, y) }\FunctionTok{=} \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}inp }\OtherTok{->}
+                               \KeywordTok{let} \NormalTok{newC }\FunctionTok{=} \KeywordTok{case} \NormalTok{inp }\KeywordTok{of}
+                                            \DataTypeTok{Left} \NormalTok{i  }\OtherTok{->} \NormalTok{(x }\FunctionTok{+} \NormalTok{i, y)}
+                                            \DataTypeTok{Right} \NormalTok{i }\OtherTok{->} \NormalTok{(x, y }\FunctionTok{+} \DecValTok{1}\NormalTok{)}
+                               \KeywordTok{in}  \NormalTok{(newC, dualCounterWith newC)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -919,7 +986,13 @@ Let's try writing the same thing using Auto composition:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"dualCounterC ::"} \NormalTok{machines}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L112-116}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/machines}
+\OtherTok{dualCounterC ::} \DataTypeTok{Auto} \NormalTok{(}\DataTypeTok{Either} \DataTypeTok{Int} \DataTypeTok{Int}\NormalTok{) (}\DataTypeTok{Int}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)}
+\NormalTok{dualCounterC }\FunctionTok{=} \NormalTok{(summer }\FunctionTok{***} \NormalTok{summer) }\FunctionTok{.} \NormalTok{arr wrap}
+  \KeywordTok{where}
+    \NormalTok{wrap (}\DataTypeTok{Left} \NormalTok{i)  }\FunctionTok{=} \NormalTok{(i, }\DecValTok{0}\NormalTok{)}
+    \NormalTok{wrap (}\DataTypeTok{Right} \NormalTok{i) }\FunctionTok{=} \NormalTok{(}\DecValTok{0}\NormalTok{, i)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -927,7 +1000,17 @@ That's a bit more succinct, but I think the proc notation is much nicer!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"dualCounterP ::"} \NormalTok{machines}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L119-127}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/machines}
+\OtherTok{dualCounterP ::} \DataTypeTok{Auto} \NormalTok{(}\DataTypeTok{Either} \DataTypeTok{Int} \DataTypeTok{Int}\NormalTok{) (}\DataTypeTok{Int}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)}
+\NormalTok{dualCounterP }\FunctionTok{=} \NormalTok{proc inp }\OtherTok{->} \KeywordTok{do}
+    \KeywordTok{let} \NormalTok{(add1, add2) }\FunctionTok{=} \KeywordTok{case} \NormalTok{inp }\KeywordTok{of} \DataTypeTok{Left} \NormalTok{i  }\OtherTok{->} \NormalTok{(i, }\DecValTok{0}\NormalTok{)}
+                                   \DataTypeTok{Right} \NormalTok{i }\OtherTok{->} \NormalTok{(}\DecValTok{0}\NormalTok{, i)}
+
+    \NormalTok{sum1 }\OtherTok{<-} \NormalTok{summer }\FunctionTok{-<} \NormalTok{add1}
+    \NormalTok{sum2 }\OtherTok{<-} \NormalTok{summer }\FunctionTok{-<} \NormalTok{add2}
+
+    \NormalTok{id }\FunctionTok{-<} \NormalTok{(sum1, sum2)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -960,7 +1043,21 @@ But the proc notation? Piece of cake!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"dualCounterSkipP ::"} \NormalTok{machines}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L148-160}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/machines}
+\OtherTok{dualCounterSkipP ::} \DataTypeTok{Auto} \NormalTok{(}\DataTypeTok{Either} \DataTypeTok{Int} \DataTypeTok{Int}\NormalTok{) (}\DataTypeTok{Int}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)}
+\NormalTok{dualCounterSkipP }\FunctionTok{=} \NormalTok{proc inp }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{(add1, add2) }\OtherTok{<-} \KeywordTok{case} \NormalTok{inp }\KeywordTok{of}
+                      \DataTypeTok{Left} \NormalTok{i }\OtherTok{->} \KeywordTok{do}
+                        \NormalTok{count }\OtherTok{<-} \NormalTok{summer }\FunctionTok{-<} \DecValTok{1}
+                        \NormalTok{id }\FunctionTok{-<} \NormalTok{(}\KeywordTok{if} \NormalTok{odd count }\KeywordTok{then} \NormalTok{i }\KeywordTok{else} \DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{)}
+                      \DataTypeTok{Right} \NormalTok{i }\OtherTok{->}
+                        \NormalTok{id }\FunctionTok{-<} \NormalTok{(}\DecValTok{0}\NormalTok{, i)}
+
+    \NormalTok{sum1 }\OtherTok{<-} \NormalTok{summer }\FunctionTok{-<} \NormalTok{add1}
+    \NormalTok{sum2 }\OtherTok{<-} \NormalTok{summer }\FunctionTok{-<} \NormalTok{add2}
+
+    \NormalTok{id }\FunctionTok{-<} \NormalTok{(sum1, sum2)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -987,7 +1084,18 @@ We'd have carried the ``entire'' state in the parameter:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{machines}\FunctionTok{/}\NormalTok{Auto2.hs }\StringTok{"dualCounterSkipR ::"} \NormalTok{machines}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L136-145}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/machines}
+\OtherTok{dualCounterSkipR ::} \DataTypeTok{Auto} \NormalTok{(}\DataTypeTok{Either} \DataTypeTok{Int} \DataTypeTok{Int}\NormalTok{) (}\DataTypeTok{Int}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)}
+\NormalTok{dualCounterSkipR }\FunctionTok{=} \NormalTok{counterFrom ((}\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{), }\DecValTok{1}\NormalTok{)}
+  \KeywordTok{where}
+    \NormalTok{counterFrom ((x, y), s) }\FunctionTok{=}
+      \DataTypeTok{ACons} \FunctionTok{$} \NormalTok{\textbackslash{}inp }\OtherTok{->}
+        \KeywordTok{let} \NormalTok{newCS }\FunctionTok{=} \KeywordTok{case} \NormalTok{inp }\KeywordTok{of}
+                      \DataTypeTok{Left} \NormalTok{i  }\FunctionTok{|} \NormalTok{odd s     }\OtherTok{->} \NormalTok{((x }\FunctionTok{+} \NormalTok{i, y), s }\FunctionTok{+} \DecValTok{1}\NormalTok{)}
+                              \FunctionTok{|} \NormalTok{otherwise }\OtherTok{->} \NormalTok{((x    , y), s }\FunctionTok{+} \DecValTok{1}\NormalTok{)}
+                      \DataTypeTok{Right} \NormalTok{i             }\OtherTok{->} \NormalTok{((x, y }\FunctionTok{+} \NormalTok{i), s    )}
+        \KeywordTok{in}  \NormalTok{(fst newCS, counterFrom newCS)}
 \end{Highlighting}
 \end{Shaded}
 

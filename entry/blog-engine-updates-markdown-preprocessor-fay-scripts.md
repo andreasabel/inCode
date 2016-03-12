@@ -25,7 +25,26 @@ Here it is in action:
 yields:
 
 ``` {.haskell}
-!!!monad-plus/WolfGoatCabbage.hs "findSolutions ::" "makeMove ::" wolf-goat-cabbage
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/WolfGoatCabbage.hs#L28-45
+-- interactive: https://www.fpcomplete.com/user/jle/wolf-goat-cabbage
+findSolutions :: Int -> [Plan]
+findSolutions n = do
+    p <- makeNMoves
+    guard $ isSolution p
+    return p
+    where
+        makeNMoves = iterate (>>= makeMove) (return startingPlan) !! n
+
+makeMove :: Plan -> [Plan]
+makeMove p = do
+    next <- MoveThe <$> [Farmer ..]
+    guard       $ moveLegal p next
+    guard . not $ moveRedundant p next
+    let
+        p' = p ++ [next]
+    guard $ safePlan p'
+    return p'
+
 ```
 
 (If you’re reading this on the actual website, mouse over or click them
@@ -69,7 +88,30 @@ So…writing the parser for the syntax specification was pretty easy due
 to parsec and parser combinators:
 
 ``` {.haskell}
-!!!source/EntryPP.hs "data SampleSpec" "sampleSpec ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/source/EntryPP.hs#L32-127
+data SampleSpec = SampleSpec  { sSpecFile       :: FilePath
+                              , _sSpecLive      :: Maybe String
+                              , _sSpecKeywords  :: [(String,Maybe Int)]
+                              } deriving (Show)
+
+sampleSpec :: Parser SampleSpec
+sampleSpec = do
+    filePath <- noSpaces <?> "sample filePath"
+    spaces
+    keywords <- many $ do
+      keyword <- char '"' *> manyTill anyChar (char '"') <?> "keyword"
+      keylimit <- optionMaybe (read <$> many1 digit <?> "keyword limit")
+      spaces
+      return (keyword,keylimit)
+
+    live <- optionMaybe noSpaces <?> "live url"
+    let
+      live' = mfilter (not . null) live
+
+    return $ SampleSpec filePath live' keywords
+  where
+    noSpaces = manyTill anyChar (space <|> ' ' <$ eof)
+
 ```
 
 The code to actually find the right code block to paste was complicated
@@ -116,7 +158,18 @@ Here is a characteristic example of fay code with
 (0.6.0.2):
 
 ``` {.haskell}
-!!!source/entry.hs "appendTopLinks ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/source/entry.hs#L45-54
+appendTopLinks :: Fay ()
+appendTopLinks = do
+  mainContent <- select ".main-content"
+  headings <- childrenMatching "h2,h3,h4,h5" mainContent
+  J.append topLink headings
+  topLinks <- select ".top-link"
+  click (scrollTo 400) topLinks
+  return ()
+  where
+    topLink = "<a href='#title' class='top-link'>top</a>"
+
 ```
 
 As you can see, some of the method calls in fay-jquery seem a bit

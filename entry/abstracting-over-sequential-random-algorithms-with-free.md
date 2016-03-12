@@ -19,7 +19,13 @@ The man plain is to first create a type that represents just a value
 produced from a random number…and then figure out how to chain them.
 
 ``` {.haskell}
-!!!free-random/Rand.hs "data RandF a where"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-random/Rand.hs#L18-22
+data RandF a where
+    FromRandom   :: Random r =>           ( r  -> a) -> RandF a
+    FromRandomR  :: Random r => r -> r -> ( r  -> a) -> RandF a
+    FromRandoms  :: Random r =>           ([r] -> a) -> RandF a
+    FromRandomRs :: Random r => r -> r -> ([r] -> a) -> RandF a
+
 ```
 
 For those of you unfamiliar with GADT syntax, this is just basically
@@ -82,7 +88,13 @@ One typical way of doing this is to ask for a random generator/seed from
 the user:
 
 ``` {.haskell}
-!!!free-random/Rand.hs "runRandomF ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-random/Rand.hs#L31-35
+runRandomF :: RandomGen g => RandF a -> g -> a
+runRandomF (FromRandom f)         = f . fst . random
+runRandomF (FromRandomR r0 r1 f)  = f . fst . randomR (r0, r1)
+runRandomF (FromRandoms f)        = f . randoms
+runRandomF (FromRandomRs r0 r1 f) = f . randomRs (r0, r1)
+
 ```
 
 We can try some of these out:
@@ -109,7 +121,14 @@ whenever we “ran” the `RandF`…if it was “meant” to make a `10`
 originally, it would now make a `"10"`.
 
 ``` {.haskell}
-!!!free-random/Rand.hs "instance Functor RandF"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-random/Rand.hs#L24-29
+instance Functor RandF where
+    fmap h rnd = case rnd of
+        FromRandom         f -> FromRandom         (h . f)
+        FromRandomR r0 r1  f -> FromRandomR r0 r1  (h . f)
+        FromRandoms        f -> FromRandoms        (h . f)
+        FromRandomRs r0 r1 f -> FromRandomRs r0 r1 (h . f)
+
 ```
 
 ``` {.haskell}

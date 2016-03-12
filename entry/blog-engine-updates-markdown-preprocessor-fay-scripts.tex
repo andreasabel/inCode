@@ -116,7 +116,25 @@ yields:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{monad}\FunctionTok{-}\NormalTok{plus}\FunctionTok{/}\NormalTok{WolfGoatCabbage.hs }\StringTok{"findSolutions ::"} \StringTok{"makeMove ::"} \NormalTok{wolf}\FunctionTok{-}\NormalTok{goat}\FunctionTok{-}\NormalTok{cabbage}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/WolfGoatCabbage.hs#L28-45}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/wolf-goat-cabbage}
+\OtherTok{findSolutions ::} \DataTypeTok{Int} \OtherTok{->} \NormalTok{[}\DataTypeTok{Plan}\NormalTok{]}
+\NormalTok{findSolutions n }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{p }\OtherTok{<-} \NormalTok{makeNMoves}
+    \NormalTok{guard }\FunctionTok{$} \NormalTok{isSolution p}
+    \NormalTok{return p}
+    \KeywordTok{where}
+        \NormalTok{makeNMoves }\FunctionTok{=} \NormalTok{iterate (}\FunctionTok{>>=} \NormalTok{makeMove) (return startingPlan) }\FunctionTok{!!} \NormalTok{n}
+
+\OtherTok{makeMove ::} \DataTypeTok{Plan} \OtherTok{->} \NormalTok{[}\DataTypeTok{Plan}\NormalTok{]}
+\NormalTok{makeMove p }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{next }\OtherTok{<-} \DataTypeTok{MoveThe} \FunctionTok{<$>} \NormalTok{[}\DataTypeTok{Farmer} \FunctionTok{..}\NormalTok{]}
+    \NormalTok{guard       }\FunctionTok{$} \NormalTok{moveLegal p next}
+    \NormalTok{guard }\FunctionTok{.} \NormalTok{not }\FunctionTok{$} \NormalTok{moveRedundant p next}
+    \KeywordTok{let}
+        \NormalTok{p' }\FunctionTok{=} \NormalTok{p }\FunctionTok{++} \NormalTok{[next]}
+    \NormalTok{guard }\FunctionTok{$} \NormalTok{safePlan p'}
+    \NormalTok{return p'}
 \end{Highlighting}
 \end{Shaded}
 
@@ -164,7 +182,29 @@ easy due to parsec and parser combinators:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{source}\FunctionTok{/}\NormalTok{EntryPP.hs }\StringTok{"data SampleSpec"} \StringTok{"sampleSpec ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/source/EntryPP.hs#L32-127}
+\KeywordTok{data} \DataTypeTok{SampleSpec} \FunctionTok{=} \DataTypeTok{SampleSpec}  \NormalTok{\{}\OtherTok{ sSpecFile       ::} \NormalTok{FilePath}
+                              \NormalTok{, _}\OtherTok{sSpecLive      ::} \DataTypeTok{Maybe} \DataTypeTok{String}
+                              \NormalTok{, _}\OtherTok{sSpecKeywords  ::} \NormalTok{[(}\DataTypeTok{String}\NormalTok{,}\DataTypeTok{Maybe} \DataTypeTok{Int}\NormalTok{)]}
+                              \NormalTok{\} }\KeywordTok{deriving} \NormalTok{(}\DataTypeTok{Show}\NormalTok{)}
+
+\OtherTok{sampleSpec ::} \DataTypeTok{Parser} \DataTypeTok{SampleSpec}
+\NormalTok{sampleSpec }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{filePath }\OtherTok{<-} \NormalTok{noSpaces }\FunctionTok{<?>} \StringTok{"sample filePath"}
+    \NormalTok{spaces}
+    \NormalTok{keywords }\OtherTok{<-} \NormalTok{many }\FunctionTok{$} \KeywordTok{do}
+      \NormalTok{keyword }\OtherTok{<-} \NormalTok{char }\CharTok{'"'} \FunctionTok{*>} \NormalTok{manyTill anyChar (char }\CharTok{'"'}\NormalTok{) }\FunctionTok{<?>} \StringTok{"keyword"}
+      \NormalTok{keylimit }\OtherTok{<-} \NormalTok{optionMaybe (read }\FunctionTok{<$>} \NormalTok{many1 digit }\FunctionTok{<?>} \StringTok{"keyword limit"}\NormalTok{)}
+      \NormalTok{spaces}
+      \NormalTok{return (keyword,keylimit)}
+
+    \NormalTok{live }\OtherTok{<-} \NormalTok{optionMaybe noSpaces }\FunctionTok{<?>} \StringTok{"live url"}
+    \KeywordTok{let}
+      \NormalTok{live' }\FunctionTok{=} \NormalTok{mfilter (not }\FunctionTok{.} \NormalTok{null) live}
+
+    \NormalTok{return }\FunctionTok{$} \DataTypeTok{SampleSpec} \NormalTok{filePath live' keywords}
+  \KeywordTok{where}
+    \NormalTok{noSpaces }\FunctionTok{=} \NormalTok{manyTill anyChar (space }\FunctionTok{<|>} \CharTok{' '} \FunctionTok{<$} \NormalTok{eof)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -212,7 +252,17 @@ Here is a characteristic example of fay code with
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{source}\FunctionTok{/}\NormalTok{entry}\FunctionTok{.}\NormalTok{hs }\StringTok{"appendTopLinks ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/source/entry.hs#L45-54}
+\OtherTok{appendTopLinks ::} \DataTypeTok{Fay} \NormalTok{()}
+\NormalTok{appendTopLinks }\FunctionTok{=} \KeywordTok{do}
+  \NormalTok{mainContent }\OtherTok{<-} \NormalTok{select }\StringTok{".main-content"}
+  \NormalTok{headings }\OtherTok{<-} \NormalTok{childrenMatching }\StringTok{"h2,h3,h4,h5"} \NormalTok{mainContent}
+  \NormalTok{J.append topLink headings}
+  \NormalTok{topLinks }\OtherTok{<-} \NormalTok{select }\StringTok{".top-link"}
+  \NormalTok{click (scrollTo }\DecValTok{400}\NormalTok{) topLinks}
+  \NormalTok{return ()}
+  \KeywordTok{where}
+    \NormalTok{topLink }\FunctionTok{=} \StringTok{"<a href='#title' class='top-link'>top</a>"}
 \end{Highlighting}
 \end{Shaded}
 

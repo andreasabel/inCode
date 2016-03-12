@@ -23,11 +23,10 @@ your mind…feel free to also leave a comment, stop by *\#haskell-auto* on
 freenode where I go by *jle\`*, or [tweet
 me](https://twitter.com/mstk "Twitter")
 
-All of the code in this tutorial can be \[downloaded and run\]\[source\]
+All of the code in this tutorial can be [downloaded and
+run](https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs)
 using `runghc` (with the appropriate dependencies installed). Feel free
 to play along!
-
-!!\[source\]:auto/chatbot.hs
 
 Overall Layout
 --------------
@@ -44,11 +43,48 @@ let’s make some types.
 
 ``` {.haskell}
 -- first, our imports
-!!!auto/chatbot.hs "import Control.Auto"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L25-43
+import Control.Auto
+import Control.Auto.Blip
+import Control.Auto.Collection  (mux)
+import Control.Auto.Run         (runOnChanM)
+import Control.Auto.Serialize   (serializing')
+import Control.Auto.Switch      (resetOn)
+import Control.Concurrent       (Chan, newChan, writeChan, forkIO, threadDelay)
+import Control.Monad            (void, forever)
+import Control.Monad.IO.Class
+import Data.Foldable            (forM_)
+import Data.Map                 (Map)
+import Data.Serialize
+import Data.Text hiding         (words, unwords, map)
+import Data.Text.Encoding
+import Data.Text.Encoding.Error
+import Data.Time
+import Network.SimpleIRC
+import Prelude hiding           ((.), id)   -- we use (.) and id from `Control.Category`
+import qualified Data.Map       as M
+
 ```
 
 ``` {.haskell}
-!!!auto/chatbot.hs "type Nick" "data InMessage" "newtype OutMessages" "instance Monoid"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L51-66
+type Nick    = String
+type Channel = String
+type Message = String
+
+data InMessage = InMessage { _inMessageNick   :: Nick
+                           , _inMessageBody   :: Message
+                           , _inMessageSource :: Channel
+                           , _inMessageTime   :: UTCTime
+                           } deriving Show
+
+newtype OutMessages = OutMessages (Map Channel [Message]) deriving Show
+
+instance Monoid OutMessages where
+    mempty  = OutMessages M.empty
+    mappend (OutMessages m1) (OutMessages m2)
+            = OutMessages (M.unionWith (++) m1 m2)
+
 ```
 
 We make some type aliases to make things a bit clearer. Our inputs are
@@ -60,7 +96,9 @@ associating channels with messages to send. I’m just adding here a
 The type for a chat bot over a monad `m` would then be:
 
 ``` {.haskell}
-!!!auto/chatbot.hs "type ChatBot"1
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L68-68
+type ChatBot m = Auto m InMessage OutMessages
+
 ```
 
 A `ChatBot` takes a stream of `InMessage`s and returns a stream of
@@ -82,7 +120,9 @@ outputs…they might just always reply directly to the room they received
 the message on. So it’ll help us to also make another sort of `Auto`:
 
 ``` {.haskell}
-!!!auto/chatbot.hs "type RoomBot"1
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L69-69
+type RoomBot m = Auto m InMessage (Blip [Message])
+
 ```
 
 A `RoomBot` doesn’t care where its messages go…it just replies to the
@@ -102,7 +142,12 @@ We can write a quick helper function to convert a `RoomBot` into a
 full-on `ChatBot`, so we can merge them together with `mappend`/`(<>)`:
 
 ``` {.haskell}
-!!!auto/chatbot.hs "perRoom ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L72-75
+perRoom :: Monad m => RoomBot m -> ChatBot m
+perRoom rb = proc inp@(InMessage _ _ src _) -> do
+    messages <- fromBlips [] . rb -< inp
+    id -< OutMessages $ M.singleton src messages
+
 ```
 
 (This example uses proc notation; see this [proc notation
@@ -225,7 +270,58 @@ way. This will vary based on what library you use; I’m going to use the
 but feel free to use any interface/library you want.
 
 ``` {.haskell}
-!!!auto/chatbot.hs "withIrcConf ::" "channels ::" "conf ::" "main ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L45-228
+withIrcConf :: IrcConfig -> ChatBot IO -> IO ()
+withIrcConf ircconf chatbot = do
+
+    -- chan to receive `InMessage`s
+    inputChan <- newChan :: IO (Chan InMessage)
+
+    -- configuring IRC
+    let events   = cEvents ircconf ++ [ Privmsg (onMessage inputChan) ]
+        ircconf' = ircconf { cEvents = events }
+
+    -- connect; simplified for demonstration purposes
+    Right server <- connect ircconf' True True
+
+    -- run `chatbot` on `inputChan`
+    void . forkIO . void $
+        runOnChanM id (processOutput server) inputChan chatbot
+
+  where
+    -- what to do when `chatBot` outputs
+    processOutput :: MIrc -> OutMessages -> IO Bool
+    processOutput server (OutMessages outs) = do
+      print outs
+      _ <- flip M.traverseWithKey outs $ \channel messages -> do
+        let channel' = encodeUtf8 . pack $ channel
+        forM_ messages $ \message -> do
+          let message' = encodeUtf8 . pack $ message
+          sendMsg server channel' message'
+      return True       -- "yes, continue on"
+
+    -- what to do when you get a new message
+    onMessage :: Chan InMessage -> EventFunc
+    onMessage inputChan = \_ message -> do
+      case (mNick message, mOrigin message) of
+        (Just nick, Just src) -> do
+          time <- getCurrentTime
+          writeChan inputChan $ InMessage (unpack (decodeUtf8 nick))
+                                          (unpack (decodeUtf8 (mMsg message)))
+                                          (unpack (decodeUtf8 src))
+                                          time
+
+channels :: [Channel]
+channels = ["#testchan1", "#testchan2"]
+
+conf :: IrcConfig
+conf = (mkDefaultConfig "myserver" "mynick") { cChannels = channels }
+
+main :: IO ()
+main = do
+    withIrcConf conf chatBot
+    forever (threadDelay 1000000000)
+
 ```
 
 That should be it…don’t worry if you don’t understand all of it, most of
@@ -302,7 +398,15 @@ let’s make one now. Let’s also write a `Serialize` instance for `Day`
 (which represents a date) too, while we’re at it.
 
 ``` {.haskell}
-!!!auto/chatbot.hs "instance Serialize UTCTime" "instance Serialize Day"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L230-236
+instance Serialize UTCTime where
+    get = read <$> get      -- haha don't do this in real life.
+    put = put . show
+
+instance Serialize Day where
+    get = ModifiedJulianDay <$> get
+    put = put . toModifiedJulianDay
+
 ```
 
 The next component is just to respond to requests. We want to do
@@ -326,7 +430,28 @@ With these simple blocks, we can build our `seenBot`:
 
 ``` {.haskell}
 -- seenBot :: Monad m => Auto m InMessage (Blip [Message])
-!!!auto/chatbot.hs "seenBot ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L96-115
+seenBot :: Monad m => RoomBot m
+seenBot = proc (InMessage nick msg _ time) -> do
+    seens  <- trackSeens -< (nick, time)
+
+    queryB <- queryBlips -< msg
+
+    let respond :: Nick -> [Message]
+        respond qry = case M.lookup qry seens of
+                        Just t  -> [qry ++ " last seen at " ++ show t ++ "."]
+                        Nothing -> ["No record of " ++ qry ++ "."]
+
+    id -< respond <$> queryB
+  where
+    trackSeens :: Monad m => Auto m (Nick, UTCTime) (Map Nick UTCTime)
+    trackSeens = accum (\mp (nick, time) -> M.insert nick time mp) M.empty
+    queryBlips :: Auto m Message (Blip Nick)
+    queryBlips = emitJusts (getRequest . words)
+      where
+        getRequest ("@seen":nick:_) = Just nick
+        getRequest _                = Nothing
+
 ```
 
 Here we define `respond` as a function that takes a `Nick` and returns
@@ -426,7 +551,39 @@ And…now we can wrap it all together with a nice proc block:
 
 ``` {.haskell}
 -- repBot :: Monad m => Auto m InMessage (Blip [Message])
-!!!auto/chatbot.hs "repBot ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L117-147
+repBot :: Monad m => RoomBot m
+repBot = proc (InMessage nick msg _ _) -> do
+    updateB <- updateBlips -< (nick, msg)
+
+    reps    <- trackReps   -< updateB
+
+    queryB  <- queryBlips  -< msg
+
+    let lookupRep :: Nick -> [Message]
+        lookupRep nick = [nick ++ " has a reputation of " ++ show rep ++ "."]
+          where
+            rep = M.findWithDefault 0 nick reps
+
+    id -< lookupRep <$> queryB
+  where
+    updateBlips :: Auto m (Nick, Message) (Blip (Nick, Int))
+    updateBlips = emitJusts getUpdateCommand
+      where
+        -- updater is the person triggering the update blip
+        getUpdateCommand (updater, msg) =
+          case words msg of
+            "@addRep":nick:_ | nick /= updater -> Just (nick, 1)
+            "@subRep":nick:_                   -> Just (nick, -1)
+            _                                  -> Nothing
+    trackReps :: Monad m => Auto m (Blip (Nick, Int)) (Map Nick Int)
+    trackReps = scanB (\mp (nick, change) -> M.insertWith (+) nick change mp) M.empty
+    queryBlips :: Auto m Message (Blip Nick)
+    queryBlips = emitJusts (getRequest . words)
+      where
+        getRequest ("@rep":nick:_) = Just nick
+        getRequest _                = Nothing
+
 ```
 
 Again note that we take advantage of the `Functor` instance of blip
@@ -505,7 +662,43 @@ anymore, so it has to say where it wants to send its messages.
 
 ``` {.haskell}
 -- announceBot :: Monad m => [Channel] -> Auto m InMessage OutMessages
-!!!auto/chatbot.hs "announceBot ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L149-183
+announceBot :: Monad m => [Channel] -> ChatBot m
+announceBot chans = proc (InMessage nick msg src time) -> do
+    announceB <- announceBlips     -< (nick, msg)
+
+    newDayB   <- newDayBlips       -< utctDay time
+
+    annCounts <- resetOn trackAnns -< (nick <$ announceB, newDayB)
+
+    let hasFlooded  = M.findWithDefault 0 nick annCounts > 3
+
+        targetChans :: [Channel]
+        targetChans | hasFlooded = [src]
+                    | otherwise  = chans
+
+        outB        :: Blip [Message]
+        outB        | hasFlooded = [nick ++ ": No flooding!"] <$ announceB
+                    | otherwise  = announceB
+
+        outMsgsB    :: Blip OutMessages
+        outMsgsB    = (\out -> OutMessages (M.fromList (map (,out) targetChans)))
+                  <$> outB
+
+    fromBlips mempty -< outMsgsB
+  where
+    announceBlips :: Monad m => Auto m (Nick, Message) (Blip [Message])
+    announceBlips = emitJusts getAnnounces
+      where
+        getAnnounces (nick, msg) =
+          case words msg of
+            "@ann":ann -> Just [nick ++ " says \"" ++ unwords ann ++ "\"."]
+            _          -> Nothing
+    newDayBlips :: Monad m => Auto m Day (Blip Day)
+    newDayBlips = onChange
+    trackAnns :: Monad m => Auto m (Blip Nick) (Map Nick Int)
+    trackAnns = scanB (\mp nick -> M.insertWith (+) nick 1 mp) M.empty
+
 ```
 
 Only slightly more involved, but still pretty readable, right? We find
@@ -535,19 +728,33 @@ Wrapping it all up
 We have three nice modules now. Now let’s wrap it all together.
 
 ``` {.haskell}
-!!!auto/chatbot.hs "chatBot ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L83-88
+chatBot :: MonadIO m => ChatBot m
+chatBot = serializing' "chatbot.dat"
+        . mconcat $ [ perRoom seenBot
+                    , perRoom repBot
+                    , announceBot channels
+                    ]
+
 ```
 
 Or, to future-proof, in case we foresee adding new modules:
 
 ``` {.haskell}
-!!!auto/chatbot.hs "chatBot' ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L90-94
+chatBot' :: MonadIO m => ChatBot m
+chatBot' = mconcat [ perRoom . serializing' "seens.dat" $ seenBot
+                   , perRoom . serializing' "reps.dat"  $ repBot
+                   ,           serializing' "anns.dat"  $ announceBot channels
+                   ]
+
 ```
 
 And…that’s it!
 
-Feel free to \[download and run this all yourself\]\[source\] using
-`runghc`! (provided you have the appropriate libraries installed)
+Feel free to [download and run this all
+yourself](https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs)
+using `runghc`! (provided you have the appropriate libraries installed)
 
 <div class="note">
 
@@ -567,7 +774,12 @@ Another way we could “upgrade” a `RoomBot` is to give each channel its
 own little copy, with separate state. We can do this using `mux`:
 
 ``` {.haskell}
-!!!auto/chatbot.hs "isolatedRooms ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L78-81
+isolatedRooms :: Monad m => RoomBot m -> ChatBot m
+isolatedRooms rb = proc inp@(InMessage _ _ src _) -> do
+    messages <- fromBlips [] . mux (const rb) -< (src, inp)
+    id -< OutMessages $ M.singleton src messages
+
 ```
 
 `mux` is an “`Auto` multiplexer”:

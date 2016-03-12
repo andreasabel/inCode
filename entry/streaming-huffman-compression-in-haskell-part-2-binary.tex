@@ -167,7 +167,16 @@ Let's define our own custom \texttt{Put} for our \texttt{PreTree}s:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{PreTree.hs }\StringTok{"putPT ::"} \NormalTok{huffman}\FunctionTok{-}\NormalTok{encoding}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L69-76}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{putPT ::} \DataTypeTok{Binary} \NormalTok{a }\OtherTok{=>} \DataTypeTok{PreTree} \NormalTok{a }\OtherTok{->} \DataTypeTok{Put}
+\NormalTok{putPT (}\DataTypeTok{PTLeaf} \NormalTok{x) }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{put }\DataTypeTok{True}                    \CommentTok{-- signify we have a leaf}
+    \NormalTok{put x}
+\NormalTok{putPT (}\DataTypeTok{PTNode} \NormalTok{pt1 pt2) }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{put }\DataTypeTok{False}                   \CommentTok{-- signify we have a node}
+    \NormalTok{put pt1}
+    \NormalTok{put pt2}
 \end{Highlighting}
 \end{Shaded}
 
@@ -199,7 +208,14 @@ Now let's define our own custom \texttt{Get}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{PreTree.hs }\StringTok{"getPT ::"} \NormalTok{huffman}\FunctionTok{-}\NormalTok{encoding}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L79-84}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{getPT ::} \DataTypeTok{Binary} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Get} \NormalTok{(}\DataTypeTok{PreTree} \NormalTok{a)}
+\NormalTok{getPT }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{isLeaf }\OtherTok{<-} \NormalTok{get}
+    \KeywordTok{if} \NormalTok{isLeaf}
+      \KeywordTok{then} \DataTypeTok{PTLeaf} \FunctionTok{<$>} \NormalTok{get}
+      \KeywordTok{else} \DataTypeTok{PTNode} \FunctionTok{<$>} \NormalTok{get }\FunctionTok{<*>} \NormalTok{get}
 \end{Highlighting}
 \end{Shaded}
 
@@ -251,7 +267,11 @@ And finally, to tie it all together:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{PreTree.hs }\StringTok{"instance Binary a => Binary (PreTree a)"} \NormalTok{huffman}\FunctionTok{-}\NormalTok{encoding}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L36-38}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\KeywordTok{instance} \DataTypeTok{Binary} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Binary} \NormalTok{(}\DataTypeTok{PreTree} \NormalTok{a) }\KeywordTok{where}
+    \NormalTok{put }\FunctionTok{=} \NormalTok{putPT}
+    \NormalTok{get }\FunctionTok{=} \NormalTok{getPT}
 \end{Highlighting}
 \end{Shaded}
 
@@ -327,7 +347,13 @@ Let's represent this path as a list of \texttt{Direction}s:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{PreTree.hs }\StringTok{"data Direction ="} \StringTok{"type Encoding ="} \NormalTok{huffman}\FunctionTok{-}\NormalTok{encoding}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L25-30}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\KeywordTok{data} \DataTypeTok{Direction} \FunctionTok{=} \DataTypeTok{DLeft}
+               \FunctionTok{|} \DataTypeTok{DRight}
+               \KeywordTok{deriving} \NormalTok{(}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Eq}\NormalTok{, }\DataTypeTok{Generic}\NormalTok{)}
+
+\KeywordTok{type} \DataTypeTok{Encoding} \FunctionTok{=} \NormalTok{[}\DataTypeTok{Direction}\NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
 
@@ -347,7 +373,15 @@ Here's a naive recursive direct (depth-first) search.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{PreTree.hs }\StringTok{"findPT ::"} \NormalTok{huffman}\FunctionTok{-}\NormalTok{encoding}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L90-96}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{findPT ::} \DataTypeTok{Eq} \NormalTok{a }\OtherTok{=>} \DataTypeTok{PreTree} \NormalTok{a }\OtherTok{->} \NormalTok{a }\OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Encoding}
+\NormalTok{findPT pt0 x }\FunctionTok{=} \NormalTok{go pt0 []}
+  \KeywordTok{where}
+    \NormalTok{go (}\DataTypeTok{PTLeaf} \NormalTok{y      ) enc }\FunctionTok{|} \NormalTok{x }\FunctionTok{==} \NormalTok{y    }\FunctionTok{=} \DataTypeTok{Just} \NormalTok{(reverse enc)}
+                            \FunctionTok{|} \NormalTok{otherwise }\FunctionTok{=} \DataTypeTok{Nothing}
+    \NormalTok{go (}\DataTypeTok{PTNode} \NormalTok{pt1 pt2) enc }\FunctionTok{=} \NormalTok{go pt1 (}\DataTypeTok{DLeft}  \FunctionTok{:} \NormalTok{enc) }\FunctionTok{<|>}
+                              \NormalTok{go pt2 (}\DataTypeTok{DRight} \FunctionTok{:} \NormalTok{enc)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -412,7 +446,14 @@ Monoid instance:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{PreTree.hs }\StringTok{"ptTable ::"} \NormalTok{huffman}\FunctionTok{-}\NormalTok{encoding}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L101-106}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{ptTable ::} \DataTypeTok{Ord} \NormalTok{a }\OtherTok{=>} \DataTypeTok{PreTree} \NormalTok{a }\OtherTok{->} \DataTypeTok{Map} \NormalTok{a }\DataTypeTok{Encoding}
+\NormalTok{ptTable pt }\FunctionTok{=} \NormalTok{go pt []}
+  \KeywordTok{where}
+    \NormalTok{go (}\DataTypeTok{PTLeaf} \NormalTok{x) enc       }\FunctionTok{=} \NormalTok{x }\OtherTok{`M.singleton`} \NormalTok{reverse enc}
+    \NormalTok{go (}\DataTypeTok{PTNode} \NormalTok{pt1 pt2) enc }\FunctionTok{=} \NormalTok{go pt1 (}\DataTypeTok{DLeft}  \FunctionTok{:} \NormalTok{enc) }\FunctionTok{<>}
+                              \NormalTok{go pt2 (}\DataTypeTok{DRight} \FunctionTok{:} \NormalTok{enc)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -424,7 +465,15 @@ Note how it is almost identical in structure to \texttt{findPT}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{PreTree.hs }\StringTok{"findPT ::"} \NormalTok{huffman}\FunctionTok{-}\NormalTok{encoding}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L90-96}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{findPT ::} \DataTypeTok{Eq} \NormalTok{a }\OtherTok{=>} \DataTypeTok{PreTree} \NormalTok{a }\OtherTok{->} \NormalTok{a }\OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Encoding}
+\NormalTok{findPT pt0 x }\FunctionTok{=} \NormalTok{go pt0 []}
+  \KeywordTok{where}
+    \NormalTok{go (}\DataTypeTok{PTLeaf} \NormalTok{y      ) enc }\FunctionTok{|} \NormalTok{x }\FunctionTok{==} \NormalTok{y    }\FunctionTok{=} \DataTypeTok{Just} \NormalTok{(reverse enc)}
+                            \FunctionTok{|} \NormalTok{otherwise }\FunctionTok{=} \DataTypeTok{Nothing}
+    \NormalTok{go (}\DataTypeTok{PTNode} \NormalTok{pt1 pt2) enc }\FunctionTok{=} \NormalTok{go pt1 (}\DataTypeTok{DLeft}  \FunctionTok{:} \NormalTok{enc) }\FunctionTok{<|>}
+                              \NormalTok{go pt2 (}\DataTypeTok{DRight} \FunctionTok{:} \NormalTok{enc)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -439,7 +488,10 @@ both simple and performant:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{PreTree.hs }\StringTok{"lookupPTTable ::"} \NormalTok{huffman}\FunctionTok{-}\NormalTok{encoding}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L110-111}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{lookupPTTable ::} \DataTypeTok{Ord} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Map} \NormalTok{a }\DataTypeTok{Encoding} \OtherTok{->} \NormalTok{a }\OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Encoding}
+\NormalTok{lookupPTTable }\FunctionTok{=} \NormalTok{flip M.lookup}
 \end{Highlighting}
 \end{Shaded}
 
@@ -469,7 +521,12 @@ returning a list of the encodings.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{PreTree.hs }\StringTok{"encodeAll ::"} \NormalTok{huffman}\FunctionTok{-}\NormalTok{encoding}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L114-117}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{encodeAll ::} \DataTypeTok{Ord} \NormalTok{a }\OtherTok{=>} \DataTypeTok{PreTree} \NormalTok{a }\OtherTok{->} \NormalTok{[a] }\OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Encoding}
+\NormalTok{encodeAll pt xs }\FunctionTok{=} \NormalTok{concat }\FunctionTok{<$>} \NormalTok{sequence (map (lookupPTTable tb) xs)}
+  \KeywordTok{where}
+    \NormalTok{tb }\FunctionTok{=} \NormalTok{ptTable pt}
 \end{Highlighting}
 \end{Shaded}
 
@@ -535,7 +592,14 @@ reach a leaf.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{PreTree.hs }\StringTok{"decodePT ::"} \NormalTok{huffman}\FunctionTok{-}\NormalTok{encoding}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L123-128}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{decodePT ::} \DataTypeTok{PreTree} \NormalTok{a }\OtherTok{->} \DataTypeTok{Encoding} \OtherTok{->} \DataTypeTok{Maybe} \NormalTok{(a, }\DataTypeTok{Encoding}\NormalTok{)}
+\NormalTok{decodePT (}\DataTypeTok{PTLeaf} \NormalTok{x)       ds     }\FunctionTok{=} \DataTypeTok{Just} \NormalTok{(x, ds)}
+\NormalTok{decodePT (}\DataTypeTok{PTNode} \NormalTok{pt1 pt2) (d}\FunctionTok{:}\NormalTok{ds) }\FunctionTok{=} \KeywordTok{case} \NormalTok{d }\KeywordTok{of}
+                                     \DataTypeTok{DLeft}  \OtherTok{->} \NormalTok{decodePT pt1 ds}
+                                     \DataTypeTok{DRight} \OtherTok{->} \NormalTok{decodePT pt2 ds}
+\NormalTok{decodePT (}\DataTypeTok{PTNode} \NormalTok{_ _)     []     }\FunctionTok{=} \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
 
@@ -588,7 +652,10 @@ Using \texttt{unfoldr}, we can write a \texttt{decodeAll}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{PreTree.hs }\StringTok{"decodeAll ::"} \NormalTok{huffman}\FunctionTok{-}\NormalTok{encoding}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L132-133}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{decodeAll ::} \DataTypeTok{PreTree} \NormalTok{a }\OtherTok{->} \DataTypeTok{Encoding} \OtherTok{->} \NormalTok{[a]}
+\NormalTok{decodeAll pt }\FunctionTok{=} \NormalTok{unfoldr (decodePT pt)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -608,7 +675,16 @@ We can write a utility to test our encoding/decoding functions:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{Huffman.hs }\StringTok{"testTree ::"} \NormalTok{huffman}\FunctionTok{-}\NormalTok{encoding}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L106-113}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{testTree ::} \DataTypeTok{Ord} \NormalTok{a }\OtherTok{=>} \NormalTok{[a] }\OtherTok{->} \NormalTok{[a]}
+\NormalTok{testTree [] }\FunctionTok{=} \NormalTok{[]                    }\CommentTok{-- handle the empty list}
+\NormalTok{testTree xs }\FunctionTok{=} \NormalTok{decoded}
+  \KeywordTok{where}
+    \DataTypeTok{Just} \NormalTok{decoded }\FunctionTok{=} \KeywordTok{do}
+      \NormalTok{pt  }\OtherTok{<-} \NormalTok{runBuildTree xs}
+      \NormalTok{enc }\OtherTok{<-} \NormalTok{encodeAll pt xs}
+      \NormalTok{return (decodeAll pt enc)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -684,7 +760,11 @@ terminate if the given tree is a singleton tree. We can write a ``safe''
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{PreTree.hs }\StringTok{"decodeAll' ::"} \NormalTok{huffman}\FunctionTok{-}\NormalTok{encoding}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L137-139}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{decodeAll' ::} \DataTypeTok{PreTree} \NormalTok{a }\OtherTok{->} \DataTypeTok{Encoding} \OtherTok{->} \DataTypeTok{Maybe} \NormalTok{[a]}
+\NormalTok{decodeAll' (}\DataTypeTok{PTLeaf} \NormalTok{_) _   }\FunctionTok{=} \DataTypeTok{Nothing}
+\NormalTok{decodeAll' pt         enc }\FunctionTok{=} \DataTypeTok{Just} \FunctionTok{$} \NormalTok{unfoldr (decodePT pt) enc}
 \end{Highlighting}
 \end{Shaded}
 
@@ -702,7 +782,13 @@ We'll also a ``safe'' \texttt{testTree}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{huffman}\FunctionTok{/}\NormalTok{Huffman.hs }\StringTok{"testTree' ::"} \NormalTok{huffman}\FunctionTok{-}\NormalTok{encoding}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L117-121}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{testTree' ::} \DataTypeTok{Ord} \NormalTok{a }\OtherTok{=>} \NormalTok{[a] }\OtherTok{->} \DataTypeTok{Maybe} \NormalTok{[a]}
+\NormalTok{testTree' xs }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{pt  }\OtherTok{<-} \NormalTok{runBuildTree xs}
+    \NormalTok{enc }\OtherTok{<-} \NormalTok{encodeAll pt xs}
+    \NormalTok{decodeAll' pt enc}
 \end{Highlighting}
 \end{Shaded}
 

@@ -322,7 +322,14 @@ Let's start out with our arrow data type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{pararrow}\FunctionTok{/}\NormalTok{ParArrow.hs }\StringTok{"data ParArrow"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L12-18}
+\KeywordTok{data} \DataTypeTok{ParArrow} \NormalTok{a b }\FunctionTok{=}                     \DataTypeTok{Pure}  \NormalTok{(a }\OtherTok{->} \NormalTok{b)}
+                  \FunctionTok{|} \NormalTok{forall z}\FunctionTok{.}           \DataTypeTok{Seq}   \NormalTok{(}\DataTypeTok{ParArrow} \NormalTok{a z)}
+                                              \NormalTok{(}\DataTypeTok{ParArrow} \NormalTok{z b)}
+                  \FunctionTok{|} \NormalTok{forall a1 a2 b1 b2}\FunctionTok{.} \DataTypeTok{Par}   \NormalTok{(a }\OtherTok{->} \NormalTok{(a1, a2))}
+                                              \NormalTok{(}\DataTypeTok{ParArrow} \NormalTok{a1 b1)}
+                                              \NormalTok{(}\DataTypeTok{ParArrow} \NormalTok{a2 b2)}
+                                              \NormalTok{((b1, b2) }\OtherTok{->} \NormalTok{b)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -372,7 +379,10 @@ Okay, let's define a Category instance, that lets us compose
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{pararrow}\FunctionTok{/}\NormalTok{ParArrow.hs }\StringTok{"instance Category ParArrow"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L20-22}
+\KeywordTok{instance} \DataTypeTok{Category} \DataTypeTok{ParArrow} \KeywordTok{where}
+    \NormalTok{id    }\FunctionTok{=} \DataTypeTok{Pure} \NormalTok{id}
+    \NormalTok{f }\FunctionTok{.} \NormalTok{g }\FunctionTok{=} \DataTypeTok{Seq} \NormalTok{g f}
 \end{Highlighting}
 \end{Shaded}
 
@@ -380,7 +390,13 @@ No surprises there, hopefully! Now an Arrow instance:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{pararrow}\FunctionTok{/}\NormalTok{ParArrow.hs }\StringTok{"instance Arrow ParArrow"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L24-29}
+\KeywordTok{instance} \DataTypeTok{Arrow} \DataTypeTok{ParArrow} \KeywordTok{where}
+    \NormalTok{arr      }\FunctionTok{=} \DataTypeTok{Pure}
+    \NormalTok{first f  }\FunctionTok{=} \NormalTok{f  }\FunctionTok{***} \NormalTok{id}
+    \NormalTok{second g }\FunctionTok{=} \NormalTok{id }\FunctionTok{***} \NormalTok{g}
+    \NormalTok{f }\FunctionTok{&&&} \NormalTok{g  }\FunctionTok{=} \DataTypeTok{Par} \NormalTok{(id }\FunctionTok{&&&} \NormalTok{id) f g id}
+    \NormalTok{f }\FunctionTok{***} \NormalTok{g  }\FunctionTok{=} \DataTypeTok{Par} \NormalTok{id          f g id}
 \end{Highlighting}
 \end{Shaded}
 
@@ -396,7 +412,28 @@ Now, for the magic --- consolidating a big composition of fragmented
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{pararrow}\FunctionTok{/}\NormalTok{ParArrow.hs }\StringTok{"collapse ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L31-51}
+\OtherTok{collapse ::} \DataTypeTok{ParArrow} \NormalTok{a b }\OtherTok{->} \DataTypeTok{ParArrow} \NormalTok{a b}
+\NormalTok{collapse (}\DataTypeTok{Seq} \NormalTok{f g)       }\FunctionTok{=}
+    \KeywordTok{case} \NormalTok{(collapse f, collapse g) }\KeywordTok{of}
+      \NormalTok{(}\DataTypeTok{Pure} \NormalTok{p1, }\DataTypeTok{Pure} \NormalTok{p2)      }\OtherTok{->} \DataTypeTok{Pure} \NormalTok{(p1 }\FunctionTok{>>>} \NormalTok{p2)}
+      \NormalTok{(}\DataTypeTok{Seq} \NormalTok{s1 s2, _)          }\OtherTok{->} \DataTypeTok{Seq} \NormalTok{(collapse s1)}
+                                     \NormalTok{(collapse (}\DataTypeTok{Seq} \NormalTok{s2 g))}
+      \NormalTok{(_, }\DataTypeTok{Seq} \NormalTok{s1 s2)          }\OtherTok{->} \DataTypeTok{Seq} \NormalTok{(collapse (}\DataTypeTok{Seq} \NormalTok{f s1))}
+                                     \NormalTok{(collapse s2)}
+      \NormalTok{(}\DataTypeTok{Pure} \NormalTok{p, }\DataTypeTok{Par} \NormalTok{l p1 p2 r) }\OtherTok{->} \DataTypeTok{Par} \NormalTok{(p }\FunctionTok{>>>} \NormalTok{l)}
+                                     \NormalTok{(collapse p1) (collapse p2)}
+                                     \NormalTok{r}
+      \NormalTok{(}\DataTypeTok{Par} \NormalTok{l p1 p2 r, }\DataTypeTok{Pure} \NormalTok{p) }\OtherTok{->} \DataTypeTok{Par} \NormalTok{l}
+                                     \NormalTok{(collapse p1) (collapse p2)}
+                                     \NormalTok{(r }\FunctionTok{>>>} \NormalTok{p)}
+      \NormalTok{(}\DataTypeTok{Par} \NormalTok{l p1 p2 r,}
+       \DataTypeTok{Par} \NormalTok{l' p1' p2' r')     }\OtherTok{->} \KeywordTok{let} \NormalTok{p1f x }\FunctionTok{=} \NormalTok{fst }\FunctionTok{.} \NormalTok{l' }\FunctionTok{.} \NormalTok{r }\FunctionTok{$} \NormalTok{(x, undefined)}
+                                     \NormalTok{p2f x }\FunctionTok{=} \NormalTok{snd }\FunctionTok{.} \NormalTok{l' }\FunctionTok{.} \NormalTok{r }\FunctionTok{$} \NormalTok{(undefined, x)}
+                                     \NormalTok{pp1 }\FunctionTok{=} \NormalTok{collapse (p1 }\FunctionTok{>>>} \NormalTok{arr p1f }\FunctionTok{>>>} \NormalTok{p1')}
+                                     \NormalTok{pp2 }\FunctionTok{=} \NormalTok{collapse (p2 }\FunctionTok{>>>} \NormalTok{arr p2f }\FunctionTok{>>>} \NormalTok{p2')}
+                                 \KeywordTok{in}  \DataTypeTok{Par} \NormalTok{l pp1 pp2 r'}
+\NormalTok{collapse p }\FunctionTok{=} \NormalTok{p}
 \end{Highlighting}
 \end{Shaded}
 
@@ -435,7 +472,11 @@ collapsed \texttt{ParArrow}. I used a helper data type, \texttt{Graph}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{pararrow}\FunctionTok{/}\NormalTok{ParArrow.hs }\StringTok{"data Graph"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L76-79}
+\KeywordTok{data} \DataTypeTok{Graph} \FunctionTok{=} \DataTypeTok{GPure}                  \CommentTok{-- Pure function}
+           \FunctionTok{|} \DataTypeTok{Graph} \FunctionTok{:->:} \DataTypeTok{Graph}       \CommentTok{-- Sequenced arrows}
+           \FunctionTok{|} \DataTypeTok{Graph} \FunctionTok{:/:} \DataTypeTok{Graph}        \CommentTok{-- Parallel arrows}
+           \KeywordTok{deriving} \DataTypeTok{Show}
 \end{Highlighting}
 \end{Shaded}
 
@@ -443,7 +484,14 @@ And we can convert a given \texttt{ParArrow} into its internal graph:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{pararrow}\FunctionTok{/}\NormalTok{ParArrow.hs }\StringTok{"analyze' ::"} \StringTok{"analyze ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L81-87}
+\OtherTok{analyze' ::} \DataTypeTok{ParArrow} \NormalTok{a b }\OtherTok{->} \DataTypeTok{Graph}
+\NormalTok{analyze' (}\DataTypeTok{Pure} \NormalTok{_) }\FunctionTok{=} \DataTypeTok{GPure}
+\NormalTok{analyze' (}\DataTypeTok{Seq} \NormalTok{f g) }\FunctionTok{=} \NormalTok{analyze' f }\FunctionTok{:->:} \NormalTok{analyze' g}
+\NormalTok{analyze' (}\DataTypeTok{Par} \NormalTok{_ f g _) }\FunctionTok{=} \NormalTok{analyze' f }\FunctionTok{:/:} \NormalTok{analyze' g}
+
+\OtherTok{analyze ::} \DataTypeTok{ParArrow} \NormalTok{a b }\OtherTok{->} \DataTypeTok{Graph}
+\NormalTok{analyze }\FunctionTok{=} \NormalTok{analyze' }\FunctionTok{.} \NormalTok{collapse}
 \end{Highlighting}
 \end{Shaded}
 
@@ -508,7 +556,28 @@ forking. This actually isn't too bad at all, because of what we did in
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{pararrow}\FunctionTok{/}\NormalTok{ParArrow.hs }\StringTok{"runPar' ::"} \StringTok{"runPar ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L92-113}
+\OtherTok{runPar' ::} \DataTypeTok{ParArrow} \NormalTok{a b }\OtherTok{->} \NormalTok{(a }\OtherTok{->} \DataTypeTok{IO} \NormalTok{b)}
+\NormalTok{runPar' }\FunctionTok{=} \NormalTok{go}
+  \KeywordTok{where}
+\OtherTok{    go ::} \DataTypeTok{ParArrow} \NormalTok{a b }\OtherTok{->} \NormalTok{(a }\OtherTok{->} \DataTypeTok{IO} \NormalTok{b)}
+    \NormalTok{go (}\DataTypeTok{Pure} \NormalTok{f)      }\FunctionTok{=} \NormalTok{\textbackslash{}x }\OtherTok{->} \NormalTok{putStrLn }\StringTok{"P"} \FunctionTok{>>} \NormalTok{return (f x)}
+    \NormalTok{go (}\DataTypeTok{Seq} \NormalTok{f g)     }\FunctionTok{=} \NormalTok{go f }\FunctionTok{>=>} \NormalTok{go g}
+    \NormalTok{go (}\DataTypeTok{Par} \NormalTok{l f g r) }\FunctionTok{=} \NormalTok{\textbackslash{}x }\OtherTok{->} \KeywordTok{do}
+      \NormalTok{putStrLn }\StringTok{"F"}
+
+      \NormalTok{fres }\OtherTok{<-} \NormalTok{newEmptyMVar}
+      \NormalTok{gres }\OtherTok{<-} \NormalTok{newEmptyMVar}
+
+      \KeywordTok{let} \NormalTok{(fin,gin) }\FunctionTok{=} \NormalTok{l x}
+      \NormalTok{forkIO }\FunctionTok{$} \NormalTok{runPar' f fin }\FunctionTok{>>=} \NormalTok{putMVar fres}
+      \NormalTok{forkIO }\FunctionTok{$} \NormalTok{runPar' g gin }\FunctionTok{>>=} \NormalTok{putMVar gres}
+
+      \NormalTok{reses }\OtherTok{<-} \NormalTok{(,) }\FunctionTok{<$>} \NormalTok{takeMVar fres }\FunctionTok{<*>} \NormalTok{takeMVar gres}
+      \NormalTok{return (r reses)}
+
+\OtherTok{runPar ::} \DataTypeTok{ParArrow} \NormalTok{a b }\OtherTok{->} \NormalTok{(a }\OtherTok{->} \DataTypeTok{IO} \NormalTok{b)}
+\NormalTok{runPar }\FunctionTok{=} \NormalTok{runPar' }\FunctionTok{.} \NormalTok{collapse}
 \end{Highlighting}
 \end{Shaded}
 
@@ -628,7 +697,35 @@ We can ``fix'' this. We can make \texttt{collapse} not collapse the
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{pararrow}\FunctionTok{/}\NormalTok{ParArrow.hs }\StringTok{"collapse_ ::"} \StringTok{"analyze_ ::"} \StringTok{"runPar_ ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L53-116}
+\OtherTok{collapse_ ::} \DataTypeTok{ParArrow} \NormalTok{a b }\OtherTok{->} \DataTypeTok{ParArrow} \NormalTok{a b}
+\NormalTok{collapse_ (}\DataTypeTok{Seq} \NormalTok{f g)       }\FunctionTok{=}
+    \KeywordTok{case} \NormalTok{(collapse_ f, collapse_ g) }\KeywordTok{of}
+      \NormalTok{(}\DataTypeTok{Pure} \NormalTok{p1, }\DataTypeTok{Pure} \NormalTok{p2)      }\OtherTok{->} \DataTypeTok{Pure} \NormalTok{(p1 }\FunctionTok{>>>} \NormalTok{p2)}
+      \NormalTok{(}\DataTypeTok{Seq} \NormalTok{s1 s2, _)          }\OtherTok{->} \DataTypeTok{Seq} \NormalTok{(collapse_ s1)}
+                                     \NormalTok{(collapse_ (}\DataTypeTok{Seq} \NormalTok{s2 g))}
+      \NormalTok{(_, }\DataTypeTok{Seq} \NormalTok{s1 s2)          }\OtherTok{->} \DataTypeTok{Seq} \NormalTok{(collapse_ (}\DataTypeTok{Seq} \NormalTok{f s1))}
+                                     \NormalTok{(collapse_ s2)}
+      \CommentTok{-- (Pure p, Par l p1 p2 r) -> Par (p >>> l)}
+      \CommentTok{--                                (collapse_ p1) (collapse_ p2)}
+      \CommentTok{--                                r}
+      \CommentTok{-- (Par l p1 p2 r, Pure p) -> Par l}
+      \CommentTok{--                                (collapse_ p1) (collapse_ p2)}
+      \CommentTok{--                                (r >>> p)}
+      \NormalTok{(}\DataTypeTok{Par} \NormalTok{l p1 p2 r,}
+       \DataTypeTok{Par} \NormalTok{l' p1' p2' r')     }\OtherTok{->} \KeywordTok{let} \NormalTok{p1f x }\FunctionTok{=} \NormalTok{fst }\FunctionTok{.} \NormalTok{l' }\FunctionTok{.} \NormalTok{r }\FunctionTok{$} \NormalTok{(x, undefined)}
+                                     \NormalTok{p2f x }\FunctionTok{=} \NormalTok{snd }\FunctionTok{.} \NormalTok{l' }\FunctionTok{.} \NormalTok{r }\FunctionTok{$} \NormalTok{(undefined, x)}
+                                     \NormalTok{pp1 }\FunctionTok{=} \NormalTok{collapse_ (p1 }\FunctionTok{>>>} \NormalTok{arr p1f }\FunctionTok{>>>} \NormalTok{p1')}
+                                     \NormalTok{pp2 }\FunctionTok{=} \NormalTok{collapse_ (p2 }\FunctionTok{>>>} \NormalTok{arr p2f }\FunctionTok{>>>} \NormalTok{p2')}
+                                 \KeywordTok{in}  \DataTypeTok{Par} \NormalTok{l pp1 pp2 r'}
+      \NormalTok{(f,g)                   }\OtherTok{->} \DataTypeTok{Seq} \NormalTok{f g}
+\NormalTok{collapse_ p }\FunctionTok{=} \NormalTok{p}
+
+\OtherTok{analyze_ ::} \DataTypeTok{ParArrow} \NormalTok{a b }\OtherTok{->} \DataTypeTok{Graph}
+\NormalTok{analyze_ }\FunctionTok{=} \NormalTok{analyze' }\FunctionTok{.} \NormalTok{collapse_}
+
+\OtherTok{runPar_ ::} \DataTypeTok{ParArrow} \NormalTok{a b }\OtherTok{->} \NormalTok{(a }\OtherTok{->} \DataTypeTok{IO} \NormalTok{b)}
+\NormalTok{runPar_ }\FunctionTok{=} \NormalTok{runPar' }\FunctionTok{.} \NormalTok{collapse_}
 \end{Highlighting}
 \end{Shaded}
 

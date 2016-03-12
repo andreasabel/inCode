@@ -1,4 +1,4 @@
-Introducing "in Code"!
+Introducing “in Code”!
 ======================
 
 (Originally posted by Justin Le [/] on September 17, 2013)

@@ -114,11 +114,10 @@ refresh your mind\ldots{}feel free to also leave a comment, stop by
 \emph{\#haskell-auto} on freenode where I go by \emph{jle`}, or
 \href{https://twitter.com/mstk}{tweet me}
 
-All of the code in this tutorial can be {[}downloaded and
-run{]}{[}source{]} using \texttt{runghc} (with the appropriate
-dependencies installed). Feel free to play along!
-
-!!{[}source{]}:auto/chatbot.hs
+All of the code in this tutorial can be
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs}{downloaded
+and run} using \texttt{runghc} (with the appropriate dependencies
+installed). Feel free to play along!
 
 \section{Overall Layout}\label{overall-layout}
 
@@ -135,13 +134,48 @@ let's make some types.
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- first, our imports}
-\FunctionTok{!!!}\NormalTok{auto}\FunctionTok{/}\NormalTok{chatbot}\FunctionTok{.}\NormalTok{hs }\StringTok{"import Control.Auto"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L25-43}
+\KeywordTok{import }\DataTypeTok{Control.Auto}
+\KeywordTok{import }\DataTypeTok{Control.Auto.Blip}
+\KeywordTok{import }\DataTypeTok{Control.Auto.Collection}  \NormalTok{(mux)}
+\KeywordTok{import }\DataTypeTok{Control.Auto.Run}         \NormalTok{(runOnChanM)}
+\KeywordTok{import }\DataTypeTok{Control.Auto.Serialize}   \NormalTok{(serializing')}
+\KeywordTok{import }\DataTypeTok{Control.Auto.Switch}      \NormalTok{(resetOn)}
+\KeywordTok{import }\DataTypeTok{Control.Concurrent}       \NormalTok{(}\DataTypeTok{Chan}\NormalTok{, newChan, writeChan, forkIO, threadDelay)}
+\KeywordTok{import }\DataTypeTok{Control.Monad}            \NormalTok{(void, forever)}
+\KeywordTok{import }\DataTypeTok{Control.Monad.IO.Class}
+\KeywordTok{import }\DataTypeTok{Data.Foldable}            \NormalTok{(forM_)}
+\KeywordTok{import }\DataTypeTok{Data.Map}                 \NormalTok{(}\DataTypeTok{Map}\NormalTok{)}
+\KeywordTok{import }\DataTypeTok{Data.Serialize}
+\KeywordTok{import }\DataTypeTok{Data.Text} \KeywordTok{hiding}         \NormalTok{(words, unwords, map)}
+\KeywordTok{import }\DataTypeTok{Data.Text.Encoding}
+\KeywordTok{import }\DataTypeTok{Data.Text.Encoding.Error}
+\KeywordTok{import }\DataTypeTok{Data.Time}
+\KeywordTok{import }\DataTypeTok{Network.SimpleIRC}
+\KeywordTok{import }\DataTypeTok{Prelude} \KeywordTok{hiding}           \NormalTok{((.), id)   }\CommentTok{-- we use (.) and id from `Control.Category`}
+\KeywordTok{import qualified} \DataTypeTok{Data.Map}       \KeywordTok{as} \DataTypeTok{M}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{auto}\FunctionTok{/}\NormalTok{chatbot}\FunctionTok{.}\NormalTok{hs }\StringTok{"type Nick"} \StringTok{"data InMessage"} \StringTok{"newtype OutMessages"} \StringTok{"instance Monoid"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L51-66}
+\KeywordTok{type} \DataTypeTok{Nick}    \FunctionTok{=} \DataTypeTok{String}
+\KeywordTok{type} \DataTypeTok{Channel} \FunctionTok{=} \DataTypeTok{String}
+\KeywordTok{type} \DataTypeTok{Message} \FunctionTok{=} \DataTypeTok{String}
+
+\KeywordTok{data} \DataTypeTok{InMessage} \FunctionTok{=} \DataTypeTok{InMessage} \NormalTok{\{ _}\OtherTok{inMessageNick   ::} \DataTypeTok{Nick}
+                           \NormalTok{, _}\OtherTok{inMessageBody   ::} \DataTypeTok{Message}
+                           \NormalTok{, _}\OtherTok{inMessageSource ::} \DataTypeTok{Channel}
+                           \NormalTok{, _}\OtherTok{inMessageTime   ::} \DataTypeTok{UTCTime}
+                           \NormalTok{\} }\KeywordTok{deriving} \DataTypeTok{Show}
+
+\KeywordTok{newtype} \DataTypeTok{OutMessages} \FunctionTok{=} \DataTypeTok{OutMessages} \NormalTok{(}\DataTypeTok{Map} \DataTypeTok{Channel} \NormalTok{[}\DataTypeTok{Message}\NormalTok{]) }\KeywordTok{deriving} \DataTypeTok{Show}
+
+\KeywordTok{instance} \DataTypeTok{Monoid} \DataTypeTok{OutMessages} \KeywordTok{where}
+    \NormalTok{mempty  }\FunctionTok{=} \DataTypeTok{OutMessages} \NormalTok{M.empty}
+    \NormalTok{mappend (}\DataTypeTok{OutMessages} \NormalTok{m1) (}\DataTypeTok{OutMessages} \NormalTok{m2)}
+            \FunctionTok{=} \DataTypeTok{OutMessages} \NormalTok{(M.unionWith (}\FunctionTok{++}\NormalTok{) m1 m2)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -156,7 +190,8 @@ The type for a chat bot over a monad \texttt{m} would then be:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{auto}\FunctionTok{/}\NormalTok{chatbot}\FunctionTok{.}\NormalTok{hs }\StringTok{"type ChatBot"}\DecValTok{1}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L68-68}
+\KeywordTok{type} \DataTypeTok{ChatBot} \NormalTok{m }\FunctionTok{=} \DataTypeTok{Auto} \NormalTok{m }\DataTypeTok{InMessage} \DataTypeTok{OutMessages}
 \end{Highlighting}
 \end{Shaded}
 
@@ -186,7 +221,8 @@ received the message on. So it'll help us to also make another sort of
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{auto}\FunctionTok{/}\NormalTok{chatbot}\FunctionTok{.}\NormalTok{hs }\StringTok{"type RoomBot"}\DecValTok{1}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L69-69}
+\KeywordTok{type} \DataTypeTok{RoomBot} \NormalTok{m }\FunctionTok{=} \DataTypeTok{Auto} \NormalTok{m }\DataTypeTok{InMessage} \NormalTok{(}\DataTypeTok{Blip} \NormalTok{[}\DataTypeTok{Message}\NormalTok{])}
 \end{Highlighting}
 \end{Shaded}
 
@@ -210,7 +246,11 @@ a full-on \texttt{ChatBot}, so we can merge them together with
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{auto}\FunctionTok{/}\NormalTok{chatbot}\FunctionTok{.}\NormalTok{hs }\StringTok{"perRoom ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L72-75}
+\OtherTok{perRoom ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{RoomBot} \NormalTok{m }\OtherTok{->} \DataTypeTok{ChatBot} \NormalTok{m}
+\NormalTok{perRoom rb }\FunctionTok{=} \NormalTok{proc inp}\FunctionTok{@}\NormalTok{(}\DataTypeTok{InMessage} \NormalTok{_ _ src _) }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{messages }\OtherTok{<-} \NormalTok{fromBlips [] }\FunctionTok{.} \NormalTok{rb }\FunctionTok{-<} \NormalTok{inp}
+    \NormalTok{id }\FunctionTok{-<} \DataTypeTok{OutMessages} \FunctionTok{$} \NormalTok{M.singleton src messages}
 \end{Highlighting}
 \end{Shaded}
 
@@ -358,7 +398,57 @@ but feel free to use any interface/library you want.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{auto}\FunctionTok{/}\NormalTok{chatbot}\FunctionTok{.}\NormalTok{hs }\StringTok{"withIrcConf ::"} \StringTok{"channels ::"} \StringTok{"conf ::"} \StringTok{"main ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L45-228}
+\OtherTok{withIrcConf ::} \DataTypeTok{IrcConfig} \OtherTok{->} \DataTypeTok{ChatBot} \DataTypeTok{IO} \OtherTok{->} \DataTypeTok{IO} \NormalTok{()}
+\NormalTok{withIrcConf ircconf chatbot }\FunctionTok{=} \KeywordTok{do}
+
+    \CommentTok{-- chan to receive `InMessage`s}
+    \NormalTok{inputChan }\OtherTok{<- newChan ::} \DataTypeTok{IO} \NormalTok{(}\DataTypeTok{Chan} \DataTypeTok{InMessage}\NormalTok{)}
+
+    \CommentTok{-- configuring IRC}
+    \KeywordTok{let} \NormalTok{events   }\FunctionTok{=} \NormalTok{cEvents ircconf }\FunctionTok{++} \NormalTok{[ }\DataTypeTok{Privmsg} \NormalTok{(onMessage inputChan) ]}
+        \NormalTok{ircconf' }\FunctionTok{=} \NormalTok{ircconf \{ cEvents }\FunctionTok{=} \NormalTok{events \}}
+
+    \CommentTok{-- connect; simplified for demonstration purposes}
+    \DataTypeTok{Right} \NormalTok{server }\OtherTok{<-} \NormalTok{connect ircconf' }\DataTypeTok{True} \DataTypeTok{True}
+
+    \CommentTok{-- run `chatbot` on `inputChan`}
+    \NormalTok{void }\FunctionTok{.} \NormalTok{forkIO }\FunctionTok{.} \NormalTok{void }\FunctionTok{$}
+        \NormalTok{runOnChanM id (processOutput server) inputChan chatbot}
+
+  \KeywordTok{where}
+    \CommentTok{-- what to do when `chatBot` outputs}
+\OtherTok{    processOutput ::} \DataTypeTok{MIrc} \OtherTok{->} \DataTypeTok{OutMessages} \OtherTok{->} \DataTypeTok{IO} \DataTypeTok{Bool}
+    \NormalTok{processOutput server (}\DataTypeTok{OutMessages} \NormalTok{outs) }\FunctionTok{=} \KeywordTok{do}
+      \NormalTok{print outs}
+      \NormalTok{_ }\OtherTok{<-} \NormalTok{flip M.traverseWithKey outs }\FunctionTok{$} \NormalTok{\textbackslash{}channel messages }\OtherTok{->} \KeywordTok{do}
+        \KeywordTok{let} \NormalTok{channel' }\FunctionTok{=} \NormalTok{encodeUtf8 }\FunctionTok{.} \NormalTok{pack }\FunctionTok{$} \NormalTok{channel}
+        \NormalTok{forM_ messages }\FunctionTok{$} \NormalTok{\textbackslash{}message }\OtherTok{->} \KeywordTok{do}
+          \KeywordTok{let} \NormalTok{message' }\FunctionTok{=} \NormalTok{encodeUtf8 }\FunctionTok{.} \NormalTok{pack }\FunctionTok{$} \NormalTok{message}
+          \NormalTok{sendMsg server channel' message'}
+      \NormalTok{return }\DataTypeTok{True}       \CommentTok{-- "yes, continue on"}
+
+    \CommentTok{-- what to do when you get a new message}
+\OtherTok{    onMessage ::} \DataTypeTok{Chan} \DataTypeTok{InMessage} \OtherTok{->} \DataTypeTok{EventFunc}
+    \NormalTok{onMessage inputChan }\FunctionTok{=} \NormalTok{\textbackslash{}_ message }\OtherTok{->} \KeywordTok{do}
+      \KeywordTok{case} \NormalTok{(mNick message, mOrigin message) }\KeywordTok{of}
+        \NormalTok{(}\DataTypeTok{Just} \NormalTok{nick, }\DataTypeTok{Just} \NormalTok{src) }\OtherTok{->} \KeywordTok{do}
+          \NormalTok{time }\OtherTok{<-} \NormalTok{getCurrentTime}
+          \NormalTok{writeChan inputChan }\FunctionTok{$} \DataTypeTok{InMessage} \NormalTok{(unpack (decodeUtf8 nick))}
+                                          \NormalTok{(unpack (decodeUtf8 (mMsg message)))}
+                                          \NormalTok{(unpack (decodeUtf8 src))}
+                                          \NormalTok{time}
+
+\OtherTok{channels ::} \NormalTok{[}\DataTypeTok{Channel}\NormalTok{]}
+\NormalTok{channels }\FunctionTok{=} \NormalTok{[}\StringTok{"#testchan1"}\NormalTok{, }\StringTok{"#testchan2"}\NormalTok{]}
+
+\OtherTok{conf ::} \DataTypeTok{IrcConfig}
+\NormalTok{conf }\FunctionTok{=} \NormalTok{(mkDefaultConfig }\StringTok{"myserver"} \StringTok{"mynick"}\NormalTok{) \{ cChannels }\FunctionTok{=} \NormalTok{channels \}}
+
+\OtherTok{main ::} \DataTypeTok{IO} \NormalTok{()}
+\NormalTok{main }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{withIrcConf conf chatBot}
+    \NormalTok{forever (threadDelay }\DecValTok{1000000000}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -446,7 +536,14 @@ too, while we're at it.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{auto}\FunctionTok{/}\NormalTok{chatbot}\FunctionTok{.}\NormalTok{hs }\StringTok{"instance Serialize UTCTime"} \StringTok{"instance Serialize Day"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L230-236}
+\KeywordTok{instance} \DataTypeTok{Serialize} \DataTypeTok{UTCTime} \KeywordTok{where}
+    \NormalTok{get }\FunctionTok{=} \NormalTok{read }\FunctionTok{<$>} \NormalTok{get      }\CommentTok{-- haha don't do this in real life.}
+    \NormalTok{put }\FunctionTok{=} \NormalTok{put }\FunctionTok{.} \NormalTok{show}
+
+\KeywordTok{instance} \DataTypeTok{Serialize} \DataTypeTok{Day} \KeywordTok{where}
+    \NormalTok{get }\FunctionTok{=} \DataTypeTok{ModifiedJulianDay} \FunctionTok{<$>} \NormalTok{get}
+    \NormalTok{put }\FunctionTok{=} \NormalTok{put }\FunctionTok{.} \NormalTok{toModifiedJulianDay}
 \end{Highlighting}
 \end{Shaded}
 
@@ -475,7 +572,27 @@ With these simple blocks, we can build our \texttt{seenBot}:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- seenBot :: Monad m => Auto m InMessage (Blip [Message])}
-\FunctionTok{!!!}\NormalTok{auto}\FunctionTok{/}\NormalTok{chatbot}\FunctionTok{.}\NormalTok{hs }\StringTok{"seenBot ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L96-115}
+\OtherTok{seenBot ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{RoomBot} \NormalTok{m}
+\NormalTok{seenBot }\FunctionTok{=} \NormalTok{proc (}\DataTypeTok{InMessage} \NormalTok{nick msg _ time) }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{seens  }\OtherTok{<-} \NormalTok{trackSeens }\FunctionTok{-<} \NormalTok{(nick, time)}
+
+    \NormalTok{queryB }\OtherTok{<-} \NormalTok{queryBlips }\FunctionTok{-<} \NormalTok{msg}
+
+    \KeywordTok{let}\OtherTok{ respond ::} \DataTypeTok{Nick} \OtherTok{->} \NormalTok{[}\DataTypeTok{Message}\NormalTok{]}
+        \NormalTok{respond qry }\FunctionTok{=} \KeywordTok{case} \NormalTok{M.lookup qry seens }\KeywordTok{of}
+                        \DataTypeTok{Just} \NormalTok{t  }\OtherTok{->} \NormalTok{[qry }\FunctionTok{++} \StringTok{" last seen at "} \FunctionTok{++} \NormalTok{show t }\FunctionTok{++} \StringTok{"."}\NormalTok{]}
+                        \DataTypeTok{Nothing} \OtherTok{->} \NormalTok{[}\StringTok{"No record of "} \FunctionTok{++} \NormalTok{qry }\FunctionTok{++} \StringTok{"."}\NormalTok{]}
+
+    \NormalTok{id }\FunctionTok{-<} \NormalTok{respond }\FunctionTok{<$>} \NormalTok{queryB}
+  \KeywordTok{where}
+\OtherTok{    trackSeens ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Auto} \NormalTok{m (}\DataTypeTok{Nick}\NormalTok{, }\DataTypeTok{UTCTime}\NormalTok{) (}\DataTypeTok{Map} \DataTypeTok{Nick} \DataTypeTok{UTCTime}\NormalTok{)}
+    \NormalTok{trackSeens }\FunctionTok{=} \NormalTok{accum (\textbackslash{}mp (nick, time) }\OtherTok{->} \NormalTok{M.insert nick time mp) M.empty}
+\OtherTok{    queryBlips ::} \DataTypeTok{Auto} \NormalTok{m }\DataTypeTok{Message} \NormalTok{(}\DataTypeTok{Blip} \DataTypeTok{Nick}\NormalTok{)}
+    \NormalTok{queryBlips }\FunctionTok{=} \NormalTok{emitJusts (getRequest }\FunctionTok{.} \NormalTok{words)}
+      \KeywordTok{where}
+        \NormalTok{getRequest (}\StringTok{"@seen"}\FunctionTok{:}\NormalTok{nick}\FunctionTok{:}\NormalTok{_) }\FunctionTok{=} \DataTypeTok{Just} \NormalTok{nick}
+        \NormalTok{getRequest _                }\FunctionTok{=} \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
 
@@ -596,7 +713,38 @@ And\ldots{}now we can wrap it all together with a nice proc block:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- repBot :: Monad m => Auto m InMessage (Blip [Message])}
-\FunctionTok{!!!}\NormalTok{auto}\FunctionTok{/}\NormalTok{chatbot}\FunctionTok{.}\NormalTok{hs }\StringTok{"repBot ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L117-147}
+\OtherTok{repBot ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{RoomBot} \NormalTok{m}
+\NormalTok{repBot }\FunctionTok{=} \NormalTok{proc (}\DataTypeTok{InMessage} \NormalTok{nick msg _ _) }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{updateB }\OtherTok{<-} \NormalTok{updateBlips }\FunctionTok{-<} \NormalTok{(nick, msg)}
+
+    \NormalTok{reps    }\OtherTok{<-} \NormalTok{trackReps   }\FunctionTok{-<} \NormalTok{updateB}
+
+    \NormalTok{queryB  }\OtherTok{<-} \NormalTok{queryBlips  }\FunctionTok{-<} \NormalTok{msg}
+
+    \KeywordTok{let}\OtherTok{ lookupRep ::} \DataTypeTok{Nick} \OtherTok{->} \NormalTok{[}\DataTypeTok{Message}\NormalTok{]}
+        \NormalTok{lookupRep nick }\FunctionTok{=} \NormalTok{[nick }\FunctionTok{++} \StringTok{" has a reputation of "} \FunctionTok{++} \NormalTok{show rep }\FunctionTok{++} \StringTok{"."}\NormalTok{]}
+          \KeywordTok{where}
+            \NormalTok{rep }\FunctionTok{=} \NormalTok{M.findWithDefault }\DecValTok{0} \NormalTok{nick reps}
+
+    \NormalTok{id }\FunctionTok{-<} \NormalTok{lookupRep }\FunctionTok{<$>} \NormalTok{queryB}
+  \KeywordTok{where}
+\OtherTok{    updateBlips ::} \DataTypeTok{Auto} \NormalTok{m (}\DataTypeTok{Nick}\NormalTok{, }\DataTypeTok{Message}\NormalTok{) (}\DataTypeTok{Blip} \NormalTok{(}\DataTypeTok{Nick}\NormalTok{, }\DataTypeTok{Int}\NormalTok{))}
+    \NormalTok{updateBlips }\FunctionTok{=} \NormalTok{emitJusts getUpdateCommand}
+      \KeywordTok{where}
+        \CommentTok{-- updater is the person triggering the update blip}
+        \NormalTok{getUpdateCommand (updater, msg) }\FunctionTok{=}
+          \KeywordTok{case} \NormalTok{words msg }\KeywordTok{of}
+            \StringTok{"@addRep"}\FunctionTok{:}\NormalTok{nick}\FunctionTok{:}\NormalTok{_ }\FunctionTok{|} \NormalTok{nick }\FunctionTok{/=} \NormalTok{updater }\OtherTok{->} \DataTypeTok{Just} \NormalTok{(nick, }\DecValTok{1}\NormalTok{)}
+            \StringTok{"@subRep"}\FunctionTok{:}\NormalTok{nick}\FunctionTok{:}\NormalTok{_                   }\OtherTok{->} \DataTypeTok{Just} \NormalTok{(nick, }\FunctionTok{-}\DecValTok{1}\NormalTok{)}
+            \NormalTok{_                                  }\OtherTok{->} \DataTypeTok{Nothing}
+\OtherTok{    trackReps ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Auto} \NormalTok{m (}\DataTypeTok{Blip} \NormalTok{(}\DataTypeTok{Nick}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)) (}\DataTypeTok{Map} \DataTypeTok{Nick} \DataTypeTok{Int}\NormalTok{)}
+    \NormalTok{trackReps }\FunctionTok{=} \NormalTok{scanB (\textbackslash{}mp (nick, change) }\OtherTok{->} \NormalTok{M.insertWith (}\FunctionTok{+}\NormalTok{) nick change mp) M.empty}
+\OtherTok{    queryBlips ::} \DataTypeTok{Auto} \NormalTok{m }\DataTypeTok{Message} \NormalTok{(}\DataTypeTok{Blip} \DataTypeTok{Nick}\NormalTok{)}
+    \NormalTok{queryBlips }\FunctionTok{=} \NormalTok{emitJusts (getRequest }\FunctionTok{.} \NormalTok{words)}
+      \KeywordTok{where}
+        \NormalTok{getRequest (}\StringTok{"@rep"}\FunctionTok{:}\NormalTok{nick}\FunctionTok{:}\NormalTok{_) }\FunctionTok{=} \DataTypeTok{Just} \NormalTok{nick}
+        \NormalTok{getRequest _                }\FunctionTok{=} \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
 
@@ -691,7 +839,42 @@ its messages.
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- announceBot :: Monad m => [Channel] -> Auto m InMessage OutMessages}
-\FunctionTok{!!!}\NormalTok{auto}\FunctionTok{/}\NormalTok{chatbot}\FunctionTok{.}\NormalTok{hs }\StringTok{"announceBot ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L149-183}
+\OtherTok{announceBot ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \NormalTok{[}\DataTypeTok{Channel}\NormalTok{] }\OtherTok{->} \DataTypeTok{ChatBot} \NormalTok{m}
+\NormalTok{announceBot chans }\FunctionTok{=} \NormalTok{proc (}\DataTypeTok{InMessage} \NormalTok{nick msg src time) }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{announceB }\OtherTok{<-} \NormalTok{announceBlips     }\FunctionTok{-<} \NormalTok{(nick, msg)}
+
+    \NormalTok{newDayB   }\OtherTok{<-} \NormalTok{newDayBlips       }\FunctionTok{-<} \NormalTok{utctDay time}
+
+    \NormalTok{annCounts }\OtherTok{<-} \NormalTok{resetOn trackAnns }\FunctionTok{-<} \NormalTok{(nick }\FunctionTok{<$} \NormalTok{announceB, newDayB)}
+
+    \KeywordTok{let} \NormalTok{hasFlooded  }\FunctionTok{=} \NormalTok{M.findWithDefault }\DecValTok{0} \NormalTok{nick annCounts }\FunctionTok{>} \DecValTok{3}
+
+\OtherTok{        targetChans ::} \NormalTok{[}\DataTypeTok{Channel}\NormalTok{]}
+        \NormalTok{targetChans }\FunctionTok{|} \NormalTok{hasFlooded }\FunctionTok{=} \NormalTok{[src]}
+                    \FunctionTok{|} \NormalTok{otherwise  }\FunctionTok{=} \NormalTok{chans}
+
+\OtherTok{        outB        ::} \DataTypeTok{Blip} \NormalTok{[}\DataTypeTok{Message}\NormalTok{]}
+        \NormalTok{outB        }\FunctionTok{|} \NormalTok{hasFlooded }\FunctionTok{=} \NormalTok{[nick }\FunctionTok{++} \StringTok{": No flooding!"}\NormalTok{] }\FunctionTok{<$} \NormalTok{announceB}
+                    \FunctionTok{|} \NormalTok{otherwise  }\FunctionTok{=} \NormalTok{announceB}
+
+\OtherTok{        outMsgsB    ::} \DataTypeTok{Blip} \DataTypeTok{OutMessages}
+        \NormalTok{outMsgsB    }\FunctionTok{=} \NormalTok{(\textbackslash{}out }\OtherTok{->} \DataTypeTok{OutMessages} \NormalTok{(M.fromList (map (,out) targetChans)))}
+                  \FunctionTok{<$>} \NormalTok{outB}
+
+    \NormalTok{fromBlips mempty }\FunctionTok{-<} \NormalTok{outMsgsB}
+  \KeywordTok{where}
+\OtherTok{    announceBlips ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Auto} \NormalTok{m (}\DataTypeTok{Nick}\NormalTok{, }\DataTypeTok{Message}\NormalTok{) (}\DataTypeTok{Blip} \NormalTok{[}\DataTypeTok{Message}\NormalTok{])}
+    \NormalTok{announceBlips }\FunctionTok{=} \NormalTok{emitJusts getAnnounces}
+      \KeywordTok{where}
+        \NormalTok{getAnnounces (nick, msg) }\FunctionTok{=}
+          \KeywordTok{case} \NormalTok{words msg }\KeywordTok{of}
+            \StringTok{"@ann"}\FunctionTok{:}\NormalTok{ann }\OtherTok{->} \DataTypeTok{Just} \NormalTok{[nick }\FunctionTok{++} \StringTok{" says \textbackslash{}""} \FunctionTok{++} \NormalTok{unwords ann }\FunctionTok{++} \StringTok{"\textbackslash{}"."}\NormalTok{]}
+            \NormalTok{_          }\OtherTok{->} \DataTypeTok{Nothing}
+\OtherTok{    newDayBlips ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Auto} \NormalTok{m }\DataTypeTok{Day} \NormalTok{(}\DataTypeTok{Blip} \DataTypeTok{Day}\NormalTok{)}
+    \NormalTok{newDayBlips }\FunctionTok{=} \NormalTok{onChange}
+\OtherTok{    trackAnns ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Auto} \NormalTok{m (}\DataTypeTok{Blip} \DataTypeTok{Nick}\NormalTok{) (}\DataTypeTok{Map} \DataTypeTok{Nick} \DataTypeTok{Int}\NormalTok{)}
+    \NormalTok{trackAnns }\FunctionTok{=} \NormalTok{scanB (\textbackslash{}mp nick }\OtherTok{->} \NormalTok{M.insertWith (}\FunctionTok{+}\NormalTok{) nick }\DecValTok{1} \NormalTok{mp) M.empty}
 \end{Highlighting}
 \end{Shaded}
 
@@ -727,7 +910,13 @@ We have three nice modules now. Now let's wrap it all together.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{auto}\FunctionTok{/}\NormalTok{chatbot}\FunctionTok{.}\NormalTok{hs }\StringTok{"chatBot ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L83-88}
+\OtherTok{chatBot ::} \DataTypeTok{MonadIO} \NormalTok{m }\OtherTok{=>} \DataTypeTok{ChatBot} \NormalTok{m}
+\NormalTok{chatBot }\FunctionTok{=} \NormalTok{serializing' }\StringTok{"chatbot.dat"}
+        \FunctionTok{.} \NormalTok{mconcat }\FunctionTok{$} \NormalTok{[ perRoom seenBot}
+                    \NormalTok{, perRoom repBot}
+                    \NormalTok{, announceBot channels}
+                    \NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
 
@@ -735,14 +924,21 @@ Or, to future-proof, in case we foresee adding new modules:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{auto}\FunctionTok{/}\NormalTok{chatbot}\FunctionTok{.}\NormalTok{hs }\StringTok{"chatBot' ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L90-94}
+\OtherTok{chatBot' ::} \DataTypeTok{MonadIO} \NormalTok{m }\OtherTok{=>} \DataTypeTok{ChatBot} \NormalTok{m}
+\NormalTok{chatBot' }\FunctionTok{=} \NormalTok{mconcat [ perRoom }\FunctionTok{.} \NormalTok{serializing' }\StringTok{"seens.dat"} \FunctionTok{$} \NormalTok{seenBot}
+                   \NormalTok{, perRoom }\FunctionTok{.} \NormalTok{serializing' }\StringTok{"reps.dat"}  \FunctionTok{$} \NormalTok{repBot}
+                   \NormalTok{,           serializing' }\StringTok{"anns.dat"}  \FunctionTok{$} \NormalTok{announceBot channels}
+                   \NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
 
 And\ldots{}that's it!
 
-Feel free to {[}download and run this all yourself{]}{[}source{]} using
-\texttt{runghc}! (provided you have the appropriate libraries installed)
+Feel free to
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs}{download
+and run this all yourself} using \texttt{runghc}! (provided you have the
+appropriate libraries installed)
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
@@ -765,7 +961,11 @@ channel its own little copy, with separate state. We can do this using
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{!!!}\NormalTok{auto}\FunctionTok{/}\NormalTok{chatbot}\FunctionTok{.}\NormalTok{hs }\StringTok{"isolatedRooms ::"}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L78-81}
+\OtherTok{isolatedRooms ::} \DataTypeTok{Monad} \NormalTok{m }\OtherTok{=>} \DataTypeTok{RoomBot} \NormalTok{m }\OtherTok{->} \DataTypeTok{ChatBot} \NormalTok{m}
+\NormalTok{isolatedRooms rb }\FunctionTok{=} \NormalTok{proc inp}\FunctionTok{@}\NormalTok{(}\DataTypeTok{InMessage} \NormalTok{_ _ src _) }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{messages }\OtherTok{<-} \NormalTok{fromBlips [] }\FunctionTok{.} \NormalTok{mux (const rb) }\FunctionTok{-<} \NormalTok{(src, inp)}
+    \NormalTok{id }\FunctionTok{-<} \DataTypeTok{OutMessages} \FunctionTok{$} \NormalTok{M.singleton src messages}
 \end{Highlighting}
 \end{Shaded}
 

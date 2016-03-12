@@ -1,5 +1,5 @@
-The List MonadPlus --- Practical Fun with Monads (Part 2 of 3)
-==============================================================
+The List MonadPlus — Practical Fun with Monads (Part 2 of 3)
+============================================================
 
 (Originally posted by Justin Le [/] on December 18, 2013)
 
@@ -72,7 +72,12 @@ guard :: MonadPlus m => Bool -> m ()
 guard True  = return ()
 guard False = mzero
 
-!!!monad-plus/Halves.hs "halve ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L30-33
+halve :: Int -> Maybe Int
+halve n = do
+    guard $ even n
+    return $ n `div` 2
+
 ```
 
 ``` {.haskell}
@@ -96,7 +101,12 @@ is used in `guard`) and a `return` (auto-succeed).
 Let’s see what happens when we replace our Maybe container with a list:
 
 ``` {.haskell}
-!!!monad-plus/Halves.hs "halve' ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L35-38
+halve' :: Int -> [Int]
+halve' n = do
+    guard $ even n
+    return $ n `div` 2
+
 ```
 
 This is…the exact same function body. We didn’t do anything but change
@@ -140,7 +150,12 @@ In fact, if we generalize our type signature for `halve`, we can do some
 crazy things…
 
 ``` {.haskell}
-!!!monad-plus/Halves.hs "genericHalve ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-43
+genericHalve :: MonadPlus m => Int -> m Int
+genericHalve n = do
+    guard $ even n
+    return $ n `div` 2
+
 ```
 
 ``` {.haskell}
@@ -216,7 +231,11 @@ or possible path to success if you are odd: doubling. In this way it is
 slightly racist.
 
 ``` {.haskell}
-!!!monad-plus/HalveOrDouble.hs "halveOrDouble ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L19-21
+halveOrDouble :: Int -> [Int]
+halveOrDouble n | even n    = [n `div` 2, n * 2]
+                | otherwise = [n * 2]
+
 ```
 
 ``` {.haskell}
@@ -274,7 +293,12 @@ Let’s look at the same thing in do notation form to offer some possible
 insight:
 
 ``` {.haskell}
-!!!monad-plus/HalveOrDouble.hs "halveOrDoubleTwice ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L24-27
+halveOrDoubleTwice :: Int -> [Int]
+halveOrDoubleTwice n = do
+    x <- halveOrDouble n
+    halveOrDouble x
+
 ```
 
 Do notation describes **a single path of a value**. This is slightly
@@ -310,7 +334,10 @@ the value for `x` for the entire rest of the journey. In fact, let’s see
 it in action:
 
 ``` {.haskell}
-!!!monad-plus/HalveOrDouble.hs "hod2PlusOne ::"1
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L29-29
+hod2PlusOne :: Int -> [Int]
+
+
 hod2PlusOne n = do              -- hod2PlusOne 6
     x <- halveOrDouble n        -- x <-     Just 3          Just 12
     halveOrDouble x             --      Nothing  Just 6  Just 6  Just 24
@@ -468,7 +495,15 @@ Here is probably the most common of all examples involving the list
 monad: finding Pythagorean triples.
 
 ``` {.haskell}
-!!!monad-plus/TriplesUnder.hs "triplesUnder ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-18
+triplesUnder :: Int -> [Int]
+triplesUnder n = do
+    a <- [1..n]
+    b <- [a..n]
+    c <- [b..n]
+    guard $ a^2 + b^2 == c^2
+    return (a,b,c)
+
 ```
 
 ([Download it and try it out
@@ -561,7 +596,15 @@ keeping-track-of-separate-paths thing is all handled behind-the scenes.
 In fact you should be able to look at code like:
 
 ``` {.haskell}
-!!!monad-plus/TriplesUnder.hs "triplesUnder ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-18
+triplesUnder :: Int -> [Int]
+triplesUnder n = do
+    a <- [1..n]
+    b <- [a..n]
+    c <- [b..n]
+    guard $ a^2 + b^2 == c^2
+    return (a,b,c)
+
 ```
 
 and see that it is structurally identical to
@@ -582,7 +625,12 @@ for any arbitrary choice of `a`, `b`, and `c`, except instead of
 In fact recall that this block:
 
 ``` {.haskell}
-!!!monad-plus/Halves.hs "genericHalve ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-43
+genericHalve :: MonadPlus m => Int -> m Int
+genericHalve n = do
+    guard $ even n
+    return $ n `div` 2
+
 ```
 
 is general enough that it works for both.

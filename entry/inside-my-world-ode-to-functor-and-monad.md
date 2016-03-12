@@ -18,10 +18,10 @@ Haskell](http://learnyouahaskell.com/) a quick read!)
 Stuck in Maybe
 --------------
 
-(Feel free to play along with the code in this section by \[loading it
-into ghci\]\[insidemaybe\], the Haskell interpreter!)
-
-!!\[insidemaybe\]:inside/maybe.hs
+(Feel free to play along with the code in this section by [loading it
+into
+ghci](https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs),
+the Haskell interpreter!)
 
 In Haskell, we have a type called `Maybe a`:
 
@@ -50,7 +50,28 @@ some `a`.
 This type is useful for functions that might fail:
 
 ``` {.haskell}
-!!!inside/maybe.hs "-- divideMaybe:" "-- headMaybe:" "-- halveMaybe:" inside-my-world
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L23-41
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+-- divideMaybe: Takes two integers and returns -- possibly -- their integer
+--      quotient. It succeeds if the denominator is not zero, and fails if
+--      it is.
+divideMaybe :: Int -> Int -> Maybe Int
+divideMaybe _ 0 = Nothing
+divideMaybe x y = Just (x `div` y)
+
+-- headMaybe: Takes a list and returns -- possibly -- its first element.
+--      Fails if the list is empty, and succeeds with the first element
+--      otherwise.
+headMaybe :: [a] -> Maybe a
+headMaybe []    = Nothing
+headMaybe (x:_) = Just x
+
+-- halveMaybe: Takes an integer and returns -- possibly -- its half.  Fails
+--      if it is an odd number.
+halveMaybe :: Int -> Maybe Int
+halveMaybe x | x `mod` 2 == 0 = Just (x `div` 2)
+             | otherwise      = Nothing
+
 ```
 
 <div class="note">
@@ -101,7 +122,17 @@ normal inty-things with it.
 That is…I have all these functions that work only on `Int`!
 
 ``` {.haskell}
-!!!inside/maybe.hs "addThree ::" "square ::" "showInt ::" inside-my-world
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L43-50
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+addThree :: Int -> Int
+addThree = (+ 3)
+
+square :: Int -> Int
+square = (^ 2)
+
+showInt :: Int -> String
+showInt = show
+
 ```
 
 But…I can’t do these things on `Maybe Int`!
@@ -140,7 +171,16 @@ certain 5 or some “default” value.
 That is, you would use functions like these to exit your world:[^2]
 
 ``` {.haskell}
-!!!inside/maybe.hs "certaintify ::" "certaintifyWithDefault ::" inside-my-world
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L76-82
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+certaintify :: Maybe a -> a
+certaintify (Just x) = x
+certaintify Nothing  = error "Nothing was there, you fool!"
+
+certaintifyWithDefault :: a -> Maybe a -> a
+certaintifyWithDefault _ (Just x) = x
+certaintifyWithDefault d Nothing  = d
+
 ```
 
 And then you can just willy-nilly use your normal `Int -> Int` functions
@@ -212,7 +252,14 @@ Let’s make one! It’ll apply the function to the value inside a `Just`,
 and leave a `Nothing` alone.
 
 ``` {.haskell}
-!!!inside/maybe.hs "inMaybe ::" inside-my-world
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L84-88
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+inMaybe :: (a -> b) -> (Maybe a -> Maybe b)
+inMaybe f = liftedF
+  where
+    liftedF (Just x) = Just (f x)
+    liftedF Nothing  = Nothing
+
 ```
 
 What can we do with it?
@@ -235,7 +282,11 @@ Wow! We can now use normal functions and still stay inside my uncertain
 world. We could even write our `ageFromId`:
 
 ``` {.haskell}
-!!!inside/maybe.hs "ageFromId ::" inside-my-world
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L68-69
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+ageFromId :: ID -> Maybe Int
+ageFromId i = (inMaybe age) (personFromId i)
+
 ```
 
 Now we are no longer afraid of dealing with uncertainty. It’s a scary
@@ -426,7 +477,14 @@ don’t.
 We have enough to write this out ourselves:
 
 ``` {.haskell}
-!!!inside/maybe.hs "liftInput ::" inside-my-world
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L90-94
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+liftInput :: (a -> Maybe b) -> (Maybe a -> Maybe b)
+liftInput f = liftedF
+  where
+    liftedF Nothing  = Nothing
+    liftedF (Just x) = f x
+
 ```
 
 ``` {.haskell}
@@ -444,7 +502,11 @@ Neat! Now we don’t have to fear `a -> Maybe b`’s…we can use them and
 *still stay in our world*, without leaving our world of uncertainty!
 
 ``` {.haskell}
-!!!inside/maybe.hs "halfOfAge ::" inside-my-world
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L71-72
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+halfOfAge :: ID -> Maybe Int
+halfOfAge i = (liftInput halveMaybe) (ageFromId i)
+
 ```
 
 ### Monad
@@ -623,10 +685,8 @@ Haskell, and why having `fmap` and `(=<<)` are so useful!
 
 ### The world of future values
 
-(Play along with this section too by \[loading the
-source\]\[insidereader\]!)
-
-!!\[insidereader\]:inside/reader.hs
+(Play along with this section too by [loading the
+source](https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs)!)
 
 In Haskell, we have a `Reader r` world. You can think of `(Reader r) a`
 as a little machine that “waits” for something of type `r`, then *uses*
@@ -634,7 +694,20 @@ it to (purely) make an `a`. The `a` doesn’t exist yet; it’s a future `a`
 that will exist as soon as you give it an `r`.
 
 ``` {.haskell}
-!!!inside/reader.hs "-- futureLength:" "-- futureHead:" "-- futureOdd:" inside-my-world
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L17-27
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+-- futureLength: A future `Int` that will be the length of whatever the
+--      list it is waiting for will be.
+futureLength :: (Reader [a]) Int
+
+-- futureHead: An future `a` that will be the first element of whatever the
+--      list it is waiting for will be.
+futureHead   :: (Reader [a]) a
+
+-- futureOdd: A future `Bool` that will be whether the `Int` it is waiting
+--      for is odd or not.
+futureOdd    :: (Reader Int) Bool
+
 ```
 
 `futureLength` is a “future `Int`”; an `Int` waiting (for an `[a]`) to
@@ -685,7 +758,14 @@ Oh — but, because `Reader [a]` is a Functor, I can use `fmap` to turn
 `fmap (< 5) :: (Reader [a]) Int -> (Reader [a]) Bool`!
 
 ``` {.haskell}
-!!!inside/reader.hs "futureShorterThan ::" "futureShorterThan5 ::" inside-my-world
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L34-38
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+futureShorterThan :: Int -> (Reader [a]) Bool
+futureShorterThan n = fmap (< n) futureLength
+
+futureShorterThan5 :: (Reader [a]) Bool
+futureShorterThan5 = futureShorterThan 5
+
 ```
 
 ``` {.haskell}
@@ -721,7 +801,11 @@ Hm. Let’s try this out on a future `Int` we have…we can use
 `futureHead :: (Reader [Int]) Int`.
 
 ``` {.haskell}
-!!!inside/reader.hs "futureShorterThanHead ::" inside-my-world
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L40-41
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+futureShorterThanHead :: (Reader [Int]) Bool
+futureShorterThanHead = futureShorterThan =<< futureHead
+
 ```
 
 So, we are applying `futureShorterThan` to the `Int` we got from
@@ -754,10 +838,9 @@ Who said futures were complicated, anyway?
 
 ### The world of “IO”
 
-(The source code for this section is \[also available
-online\]\[insideio\] for you to play with!)
-
-!!\[insideio\]:inside/io.hs
+(The source code for this section is [also available
+online](https://github.com/mstksg/inCode/tree/master/code-samples/inside/io.hs)
+for you to play with!)
 
 And now we go into the most infamous of Haskell worlds, `IO`.
 
@@ -813,7 +896,10 @@ filename and returns a program that, when executed, promises an `Int` —
 the number of lines in that file.
 
 ``` {.haskell}
-!!!inside/io.hs "wc ::"1 inside-my-world
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/io.hs#L19-19
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+wc :: String -> IO Int
+
 ```
 
 So `wc "file.txt"` would evaluate to a computation that, when executed

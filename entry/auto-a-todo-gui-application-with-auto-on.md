@@ -68,7 +68,34 @@ So the “overall loop” will be:
 We like types in Haskell, so let’s begin by laying out our types!
 
 ``` {.haskell}
-!!!auto/Todo.hs "import " "data TodoInp" "data TaskCmd" "data Task " "instance Serialize Task"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L19-46
+import Control.Auto
+import Control.Auto.Collection
+import Control.Monad.Fix
+import Data.IntMap             (IntMap)
+import Data.Serialize
+import GHC.Generics
+import Prelude hiding          ((.), id)
+import qualified Data.IntMap   as IM
+
+data TodoInp = IAdd  String           -- new task with description
+             | ITask TaskID TaskCmd   -- send command to task by ID
+             | IAll TaskCmd           -- send command to all tasks
+             deriving Show
+
+data TaskCmd = CDelete          -- delete
+             | CPrune           -- delete if completed
+             | CComplete Bool   -- set completed status
+             | CModify String   -- modify description
+             | CNop             -- do nothing
+             deriving Show
+
+data Task = Task { taskDescr     :: String
+                 , taskCompleted :: Bool
+                 } deriving (Show, Generic)
+
+instance Serialize Task -- from Data.Serialize, from the cereal library
+
 ```
 
 We have a type to represent our inputs, `TodoInp`, which can be an “add”
@@ -157,7 +184,11 @@ We can then use this as our “initializer” for `dynMapF`…and now we have
 a dynamic collection of tasks!
 
 ``` {.haskell}
-!!!auto/Todo.hs "taskCollection ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L48-50
+taskCollection :: Monad m
+               => Auto m (IntMap TaskCmd, Blip [String]) (IntMap Task)
+taskCollection = dynMapF initTask CNop
+
 ```
 
 If we wanted to send in the command `CModify "hey!"` to the task whose
@@ -171,7 +202,19 @@ which is basically like `foldl` on the inputs and a “current state”.
 (The current state is of course the `Task`).
 
 ``` {.haskell}
-!!!auto/Todo.hs "initTask ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L52-62
+initTask :: Monad m => String -> Interval m TaskCmd Task
+initTask descr = accum f (Just (Task descr False))
+  where
+    f (Just t) tc = case tc of
+                      CDelete                  -> Nothing
+                      CPrune | taskCompleted t -> Nothing
+                             | otherwise       -> Just t
+                      CComplete s              -> Just t { taskCompleted = s }
+                      CModify descr            -> Just t { taskDescr = descr }
+                      CNop                     -> Just t
+    f Nothing _   = Nothing
+
 ```
 
 See that our `Auto` “turns off” by outputting `Nothing`. That’s interval
@@ -204,7 +247,19 @@ stream of `b`’s.
 We can build our “siphoners”:
 
 ``` {.haskell}
-!!!auto/Todo.hs "getAddEvts ::" "getModEvts ::" "getMassEvts ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L95-105
+getAddEvts :: TodoInp -> Maybe [String]
+getAddEvts (IAdd descr) = Just [descr]
+getAddEvts _            = Nothing
+
+getModEvts :: TodoInp -> Maybe (IntMap TaskCmd)
+getModEvts (ITask n te) = Just $ IM.singleton n te
+getModEvts _            = Nothing
+
+getMassEvts :: ([TaskID], TodoInp) -> Maybe (IntMap TaskCmd)
+getMassEvts (allIds, IAll te) = Just $ IM.fromList (map (,te) allIds)
+getMassEvts _                 = Nothing
+
 ```
 
 `getAddEvts`, when used with `emitJusts`, will siphon off all `IAdd`
@@ -227,7 +282,38 @@ be the command we want to send to task id 1.
 Let’s see it all work together!
 
 ``` {.haskell}
-!!!auto/Todo.hs "todoApp ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L64-93
+todoApp :: MonadFix m => Auto m TodoInp (IntMap Task)
+todoApp = proc inpEvt -> do
+
+    rec -- all id's currently alive
+        allIds <- arrD IM.keys [] -< taskMap
+
+        -- "forking" `inpEvt` into three blip streams:
+        -- newTaskB :: Blip [String]
+        newTaskB  <- emitJusts getAddEvts  -< inpEvt
+        -- modTaskB :: Blip (IntMap TaskCmd)
+        modTaskB  <- emitJusts getModEvts  -< inpEvt
+        -- massTaskB :: Blip (IntMap TaskCmd)
+        massTaskB <- emitJusts getMassEvts -< (allIds, inpEvt)
+
+        -- merge the two streams together to get "all" inputs, single and
+        -- mass.
+        let allInpB :: Blip (IntMap TaskCmd)
+            allInpB = modTaskB <> massTaskB
+
+        -- from a blip stream to an `IntMap` stream that is empty when the
+        -- stream doesn't emit
+        -- taskCommands :: IntMap TaskCmd
+        taskCommands <- fromBlips IM.empty -< allInpB
+
+        -- feed the commands and the new tasks to `taskMap`...the result is
+        -- the `IntMap` of tasks.
+        -- taskMap :: IntMap Task
+        taskMap <- taskCollection -< (taskCommands, newTaskB)
+
+    id -< taskMap
+
 ```
 
 To read the proc block, it does help to sort of see all of the lines as
@@ -304,7 +390,45 @@ Our application logic is done; let’s explore ways to interface with it!
 ### Testing/command line
 
 ``` {.haskell}
-!!!auto/todo-cmd.hs "parseInp ::" "formatTodo ::" "main ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/todo-cmd.hs#L25-62
+parseInp :: String -> Maybe TodoInp
+parseInp = p . words
+  where
+    p ("A":xs)   = Just (IAdd (unwords xs))
+    p ("D":n:_)  = onId n CDelete
+    p ("C":n:_)  = onId n (CComplete True)
+    p ("U":n:_)  = onId n (CComplete False)
+    p ("P":n:_)  = onId n CPrune
+    p ("M":n:xs) = onId n (CModify (unwords xs))
+    p _          = Nothing
+
+    onId :: String -> TaskCmd -> Maybe TodoInp
+    onId "*" te = Just (IAll te)
+    onId n   te = (`ITask` te) <$> readMaybe n
+
+formatTodo :: IntMap Task -> String
+formatTodo = unlines . map format . IM.toList
+  where
+    format (n, Task desc compl) = concat [ show n
+                                         , ". ["
+                                         , if compl then "X" else " "
+                                         , "] "
+                                         , desc
+                                         ]
+
+main :: IO ()
+main = do
+    putStrLn "Enter command! 'A descr' or '[D/C/U/P/M] [id/*]'"
+    void . interactAuto $ -- interactAuto takes an Interval; `toOn` gives
+                          --   one that runs forever
+                          toOn
+                          -- default output value on bad command
+                        . fromBlips "Bad command!"
+                          -- run `formatTodo <$> todoApp` on emitted commands
+                        . perBlip (formatTodo <$> todoApp)
+                          -- emit when input is parseable
+                        . emitJusts parseInp
+
 ```
 
 `interactAuto` runs an `Interval` by feeding it in strings from stdin
@@ -339,9 +463,8 @@ condense it all with `fromBlips` and wrap it in an “always on” `toOn`.
     > P *
     1. [ ] do the dishes
 
-You can \[download and run this yourself\]\[testcmd\]!
-
-!!\[testcmd\]:auto/todo-cmd.hs
+You can [download and run this
+yourself](https://github.com/mstksg/inCode/tree/master/code-samples/auto/todo-cmd.hs)!
 
 Looks like the logic works! Time to take it to GUI!
 

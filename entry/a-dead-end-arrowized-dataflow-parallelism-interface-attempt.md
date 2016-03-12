@@ -185,7 +185,15 @@ ParArrow
 Let’s start out with our arrow data type:
 
 ``` {.haskell}
-!!!pararrow/ParArrow.hs "data ParArrow"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L12-18
+data ParArrow a b =                     Pure  (a -> b)
+                  | forall z.           Seq   (ParArrow a z)
+                                              (ParArrow z b)
+                  | forall a1 a2 b1 b2. Par   (a -> (a1, a2))
+                                              (ParArrow a1 b1)
+                                              (ParArrow a2 b2)
+                                              ((b1, b2) -> b)
+
 ```
 
 So a `ParArrow a b` represents a (pure) paralleizable, forkable
@@ -223,13 +231,24 @@ Okay, let’s define a Category instance, that lets us compose
 `ParArrow`s:
 
 ``` {.haskell}
-!!!pararrow/ParArrow.hs "instance Category ParArrow"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L20-22
+instance Category ParArrow where
+    id    = Pure id
+    f . g = Seq g f
+
 ```
 
 No surprises there, hopefully! Now an Arrow instance:
 
 ``` {.haskell}
-!!!pararrow/ParArrow.hs "instance Arrow ParArrow"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L24-29
+instance Arrow ParArrow where
+    arr      = Pure
+    first f  = f  *** id
+    second g = id *** g
+    f &&& g  = Par (id &&& id) f g id
+    f *** g  = Par id          f g id
+
 ```
 
 Also simple enough. Note that `first` and `second` are defined in terms
@@ -242,7 +261,29 @@ Now, for the magic — consolidating a big composition of fragmented
 `ParArrow`s into a streamlined simple-as-possible graph:
 
 ``` {.haskell}
-!!!pararrow/ParArrow.hs "collapse ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L31-51
+collapse :: ParArrow a b -> ParArrow a b
+collapse (Seq f g)       =
+    case (collapse f, collapse g) of
+      (Pure p1, Pure p2)      -> Pure (p1 >>> p2)
+      (Seq s1 s2, _)          -> Seq (collapse s1)
+                                     (collapse (Seq s2 g))
+      (_, Seq s1 s2)          -> Seq (collapse (Seq f s1))
+                                     (collapse s2)
+      (Pure p, Par l p1 p2 r) -> Par (p >>> l)
+                                     (collapse p1) (collapse p2)
+                                     r
+      (Par l p1 p2 r, Pure p) -> Par l
+                                     (collapse p1) (collapse p2)
+                                     (r >>> p)
+      (Par l p1 p2 r,
+       Par l' p1' p2' r')     -> let p1f x = fst . l' . r $ (x, undefined)
+                                     p2f x = snd . l' . r $ (undefined, x)
+                                     pp1 = collapse (p1 >>> arr p1f >>> p1')
+                                     pp2 = collapse (p2 >>> arr p2f >>> p2')
+                                 in  Par l pp1 pp2 r'
+collapse p = p
+
 ```
 
 There are probably a couple of redundant calls to `collapse` in there,
@@ -270,13 +311,26 @@ It might be useful to get a peek at the internal structures of a
 collapsed `ParArrow`. I used a helper data type, `Graph`.
 
 ``` {.haskell}
-!!!pararrow/ParArrow.hs "data Graph"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L76-79
+data Graph = GPure                  -- Pure function
+           | Graph :->: Graph       -- Sequenced arrows
+           | Graph :/: Graph        -- Parallel arrows
+           deriving Show
+
 ```
 
 And we can convert a given `ParArrow` into its internal graph:
 
 ``` {.haskell}
-!!!pararrow/ParArrow.hs "analyze' ::" "analyze ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L81-87
+analyze' :: ParArrow a b -> Graph
+analyze' (Pure _) = GPure
+analyze' (Seq f g) = analyze' f :->: analyze' g
+analyze' (Par _ f g _) = analyze' f :/: analyze' g
+
+analyze :: ParArrow a b -> Graph
+analyze = analyze' . collapse
+
 ```
 
 ### Sample ParArrows
@@ -335,7 +389,29 @@ This actually isn’t too bad at all, because of what we did in
 `collapse`.
 
 ``` {.haskell}
-!!!pararrow/ParArrow.hs "runPar' ::" "runPar ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L92-113
+runPar' :: ParArrow a b -> (a -> IO b)
+runPar' = go
+  where
+    go :: ParArrow a b -> (a -> IO b)
+    go (Pure f)      = \x -> putStrLn "P" >> return (f x)
+    go (Seq f g)     = go f >=> go g
+    go (Par l f g r) = \x -> do
+      putStrLn "F"
+
+      fres <- newEmptyMVar
+      gres <- newEmptyMVar
+
+      let (fin,gin) = l x
+      forkIO $ runPar' f fin >>= putMVar fres
+      forkIO $ runPar' g gin >>= putMVar gres
+
+      reses <- (,) <$> takeMVar fres <*> takeMVar gres
+      return (r reses)
+
+runPar :: ParArrow a b -> (a -> IO b)
+runPar = runPar' . collapse
+
 ```
 
 (Note that I left in debug traces)
@@ -438,7 +514,36 @@ We can “fix” this. We can make `collapse` not collapse the `Pure`-`Par`
 cases:
 
 ``` {.haskell}
-!!!pararrow/ParArrow.hs "collapse_ ::" "analyze_ ::" "runPar_ ::"
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L53-116
+collapse_ :: ParArrow a b -> ParArrow a b
+collapse_ (Seq f g)       =
+    case (collapse_ f, collapse_ g) of
+      (Pure p1, Pure p2)      -> Pure (p1 >>> p2)
+      (Seq s1 s2, _)          -> Seq (collapse_ s1)
+                                     (collapse_ (Seq s2 g))
+      (_, Seq s1 s2)          -> Seq (collapse_ (Seq f s1))
+                                     (collapse_ s2)
+      -- (Pure p, Par l p1 p2 r) -> Par (p >>> l)
+      --                                (collapse_ p1) (collapse_ p2)
+      --                                r
+      -- (Par l p1 p2 r, Pure p) -> Par l
+      --                                (collapse_ p1) (collapse_ p2)
+      --                                (r >>> p)
+      (Par l p1 p2 r,
+       Par l' p1' p2' r')     -> let p1f x = fst . l' . r $ (x, undefined)
+                                     p2f x = snd . l' . r $ (undefined, x)
+                                     pp1 = collapse_ (p1 >>> arr p1f >>> p1')
+                                     pp2 = collapse_ (p2 >>> arr p2f >>> p2')
+                                 in  Par l pp1 pp2 r'
+      (f,g)                   -> Seq f g
+collapse_ p = p
+
+analyze_ :: ParArrow a b -> Graph
+analyze_ = analyze' . collapse_
+
+runPar_ :: ParArrow a b -> (a -> IO b)
+runPar_ = runPar' . collapse_
+
 ```
 
 Then we have:
