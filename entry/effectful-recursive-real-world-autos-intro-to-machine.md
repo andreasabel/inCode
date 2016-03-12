@@ -1,7 +1,7 @@
 Effectful, Recursive, Real-World Autos: Intro to Machine/Auto Part 3
 ====================================================================
 
-(Originally posted by Justin Le [/] on February 9, 2015)
+(Originally posted by Justin Le [http://mstksg.github.com/inCode/] on February 9, 2015)
 
 Hi! I have to apologize a bit for the long delay; starting grad school
 and things like that have made me have to scramble to adjust to the new

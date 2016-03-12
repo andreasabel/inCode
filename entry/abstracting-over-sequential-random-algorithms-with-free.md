@@ -1,7 +1,7 @@
 Abstracting over Sequential Random Algorithms with Free
 =======================================================
 
-(Originally posted by Justin Le [/])
+(Originally posted by Justin Le [http://mstksg.github.com/inCode/])
 
 It’s fair enough to say that I’m a little late to the free monad party,
 but I still think their power is greatly either misunderstood or

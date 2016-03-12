@@ -1,7 +1,7 @@
 Auto: Building a Declarative Chatbot with Implicit Serialization
 ================================================================
 
-(Originally posted by Justin Le [/] on March 25, 2015)
+(Originally posted by Justin Le [http://mstksg.github.com/inCode/] on March 25, 2015)
 
 Today we’re going to continue along with the [All About
 Auto](http://blog.jle.im/entries/series/+all-about-auto) introduction

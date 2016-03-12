@@ -1,7 +1,7 @@
 A (Dead End?) Arrowized Dataflow Parallelism Interface Attempt
 ==============================================================
 
-(Originally posted by Justin Le [/] on April 3, 2014)
+(Originally posted by Justin Le [http://mstksg.github.com/inCode/] on April 3, 2014)
 
 So I’ve been having several ‘dead end’ projects in Haskell recently that
 I’ve sort of just scrapped and move from, but I decided that it might be

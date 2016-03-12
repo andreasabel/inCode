@@ -1,7 +1,7 @@
 Streaming Huffman Compression in Haskell (Part 2: Binary and Searches)
 ======================================================================
 
-(Originally posted by Justin Le [/] on April 11, 2014)
+(Originally posted by Justin Le [http://mstksg.github.com/inCode/] on April 11, 2014)
 
 Continuing on this series of beginner/intermediate projects for newer
 Haskell users, let’s look back at our Huffman encoding project.

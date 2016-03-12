@@ -1,7 +1,7 @@
 Fixed-Length Vector Types in Haskell, 2015
 ==========================================
 
-(Originally posted by Justin Le [/] on May 5, 2015)
+(Originally posted by Justin Le [http://mstksg.github.com/inCode/] on May 5, 2015)
 
 Fixed-length vector types (vector types that indicate the length of the
 vector in the type itself) are one of the more straightforward

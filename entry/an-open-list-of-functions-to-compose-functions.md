@@ -1,7 +1,7 @@
 An open list of functions to compose functions in Haskell
 =========================================================
 
-(Originally posted by Justin Le [/])
+(Originally posted by Justin Le [http://mstksg.github.com/inCode/])
 
 Hi all, just a fun post here :) I’ve been telling myself for a long time
 to compile a list of all the ways you can compose two functions,

@@ -1,7 +1,7 @@
 The Hamster Hotel: An Introduction to Control Theory (Part 1)
 =============================================================
 
-(Originally posted by Justin Le [/] on September 26, 2013)
+(Originally posted by Justin Le [http://mstksg.github.com/inCode/] on September 26, 2013)
 
 Over this summer my work has been in the field of control theory. I must
 admit that I at first found it a little odd that the idea of

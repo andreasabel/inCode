@@ -1,7 +1,7 @@
 Introducing the “Prompt” library
 ================================
 
-(Originally posted by Justin Le [/] on June 30, 2015)
+(Originally posted by Justin Le [http://mstksg.github.com/inCode/] on June 30, 2015)
 
 **Prompt**:
 [README](https://github.com/mstksg/prompt/blob/master/README.md) /

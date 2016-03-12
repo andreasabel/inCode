@@ -1,7 +1,7 @@
 Shake: Task Automation and Scripting in Haskell
 ===============================================
 
-(Originally posted by Justin Le [/] on September 17, 2013)
+(Originally posted by Justin Le [http://mstksg.github.com/inCode/] on September 17, 2013)
 
 As someone who comes from a background in ruby and *rake*, I’m used to
 powerful task management systems with expressive dependency. *Make* is a
