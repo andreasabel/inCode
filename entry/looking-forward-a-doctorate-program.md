@@ -1,7 +1,7 @@
 Looking forward: A Doctorate Program
 ====================================
 
-(Originally posted by Justin Le [http://mstksg.github.com/inCode/] on June 2, 2014)
+(Originally posted by Justin Le [http://blog.jle.im/] on June 2, 2014)
 
 So a bit of some personal news (which you can safely ignore if you’re
 not interested in my personal life!) — I’m excited to announce that I

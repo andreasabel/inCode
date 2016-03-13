@@ -1,7 +1,7 @@
 Blog engine updates: Markdown Preprocessor & Fay Scripts
 ========================================================
 
-(Originally posted by Justin Le [http://mstksg.github.com/inCode/] on January 27, 2014)
+(Originally posted by Justin Le [http://blog.jle.im/] on January 27, 2014)
 
 I spent some time over the past week writing a preprocessor for the
 entry copy markdowns and getting Fay to deploy some simple scripts.

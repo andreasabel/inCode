@@ -1,7 +1,7 @@
 Introducing “in Code”!
 ======================
 
-(Originally posted by Justin Le [http://mstksg.github.com/inCode/] on September 17, 2013)
+(Originally posted by Justin Le [http://blog.jle.im/] on September 17, 2013)
 
 Throughout my time programming and developing, I’ve noticed that there
 are few legitimately useful sources of practical and beneficial

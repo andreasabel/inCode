@@ -2,7 +2,7 @@ A Brief Primer on Classical and Quantum Mechanics for Numerical
 Techniques
 ==========================================================================
 
-(Originally posted by Justin Le [http://mstksg.github.com/inCode/] on November 29, 2013)
+(Originally posted by Justin Le [http://blog.jle.im/] on November 29, 2013)
 
 Okay! In this series we will be going over many subjects in both physics
 and computational techniques, including the Lagrangian formulation of

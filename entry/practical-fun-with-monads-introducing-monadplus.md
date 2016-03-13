@@ -1,7 +1,7 @@
 Practical Fun with Monads — Introducing: MonadPlus!
 ===================================================
 
-(Originally posted by Justin Le [http://mstksg.github.com/inCode/] on December 9, 2013)
+(Originally posted by Justin Le [http://blog.jle.im/] on December 9, 2013)
 
 Monads. Haskell’s famous for them, but they are one of the most
 ill-understood concepts to the public. They are mostly shrouded in

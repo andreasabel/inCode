@@ -1,7 +1,7 @@
 Practical Dependent Types in Haskell: Type-Safe Neural Networks
 ===============================================================
 
-(Originally posted by Justin Le [http://mstksg.github.com/inCode/])
+(Originally posted by Justin Le [http://blog.jle.im/])
 
 Whether you like it or not, programming with dependent types in Haskell
 moving slowly but steadily to the mainstream of Haskell programming. In
