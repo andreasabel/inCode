@@ -31,6 +31,10 @@ times, by using [hakyll](https://jaspervdj.be/hakyll/) and
 observations on how the migration went, with insight on Haskell
 migrations in general!
 
+My blog engine is open-source, and the [source for this specific
+instance](https://github.com/mstksg/inCode) is up on github, for those
+interesting in checking it out!
+
 Hakyll
 ------
 
@@ -106,14 +110,17 @@ Purescript
 
 ### on Fay
 
+With my [last major blog
+update](http://blog.jle.im/entry/blog-engine-updates-markdown-preprocessor-fay-scripts.html#fay),
+I ported all of my one-off javascript scripts to fay. This time around,
 I figured I’d move away from [fay](https://github.com/faylang/fay/wiki),
 because it was slightly clunky to build/get working/integrate in the way
 that GHCJS spoiled me to be accustomed to. In the future, I might return
 … but at this point in time, Fay seems as awkward in the ecosystem to me
-as haste did when I first started using it. GHCJS lets you use the full
-power of Haskell (including all of *base*’s concurrency mechanisms and
-almost every library on hackage), at the expense of creating large and
-unreadable javascript blobs.
+now as *haste* did when I first started using it. GHCJS lets you use the
+full power of Haskell (including all of *base*’s concurrency mechanisms
+and almost every library on hackage), at the expense of creating large
+and unreadable javascript blobs.
 
 Fay seemed like just a *weaker* GHCJS to me, but in all the ways that
 mattered. It doesn’t have all of the awesome GHC things that make modern
@@ -129,7 +136,7 @@ like Haskell, but forces you to write it in a way that is nothing like
 any actual Haskell code you’d normally write… why even bother keeping up
 with Haskell semantics and Haskell compatibility? Why not break out and
 try something new and fresh, unbound by Haskell and compatibility
-issues?
+issues?[^1]
 
 ### on Purescript
 
@@ -158,7 +165,7 @@ At many moments, I felt like writing in Purescript felt like writing in
 *the language that Haskell should have been*.
 
 But one of my favorite aspects about purescript ended up being the sheer
-beauty and conciseness of the generated javascript. Look at how[^1]:
+beauty and conciseness of the generated javascript. Look at how[^2]:
 
 ``` {.purescript}
 appendTopLinks doc = do
@@ -200,8 +207,8 @@ happy to import in your node or normal js project.
 
 The total exported javascript blob is only *88 kB*, even smaller than
 fay’s *100 kB* output (but not significantly so), and much smaller than
-GHCJS’s *100 MB* output (which has to also contain the entire Haskell
-runtime, implementing haskell semantics, as well).
+GHCJS’s *1.4 MB*[^3] output (which has to also contain the entire
+Haskell runtime, implementing Haskell semantics, as well).
 
 Interestingly enough, the *original* raw javacript I wrote in 2013 came
 out to about the same size, about *80 kB*. (Well, it is about *2 kB* of
@@ -215,6 +222,10 @@ I’d recommend purescript to anyone who has to write simple javascript
 and its ecosystem, along with the free data type sharing and code
 re-usage. But for small scripts like these, purescript might just be the
 ideal and perfect solution!
+
+You can check out [the actual purescript
+script](https://github.com/mstksg/inCode/blob/28f6a5da4c83356c4be87067ab88171879c68784/app-purescript/Entry.purs)
+on github!
 
 Conclusions
 -----------
@@ -236,6 +247,13 @@ hope they can be useful for those of you looking for new technologies to
 learn and ways to implement/approach your stack or next programming
 project, as well!
 
-[^1]: Unfortunately,
+[^1]: I definitely don’t mean to bash on *fay* or *haste* here! Both
+    definitely have their role and place in the ecosystem. It’s for my
+    specific application that I was looking for an alternative with.
+
+[^2]: Unfortunately,
     *[highlighting-kate](https://github.com/jgm/highlighting-kate)*
     doesn’t yet support purescript syntax highlighting?
+
+[^3]: A previous version of this post claimed that the javascript bundle
+    was *140 MB*, instead of *1.4 MB*. My bad!

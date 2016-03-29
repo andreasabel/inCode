@@ -78,7 +78,7 @@
 \hypersetup{breaklinks=true,
             bookmarks=true,
             pdfauthor={Justin Le},
-            pdftitle={Practical Dependent Types in Haskell: Type-Safe Neural Networks},
+            pdftitle={Practical Dependent Types in Haskell: Type-Safe Linear Algebra},
             colorlinks=true,
             citecolor=blue,
             urlcolor=blue,
@@ -92,7 +92,7 @@
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
 
-\title{Practical Dependent Types in Haskell: Type-Safe Neural Networks}
+\title{Practical Dependent Types in Haskell: Type-Safe Linear Algebra}
 \author{Justin Le}
 
 \begin{document}
@@ -118,12 +118,115 @@ programs. It'll also hopefully instill an intuition of a dependently
 typed work flow of ``exploring'' how dependent types can help your
 current programs.
 
+The first project in this series will build up to type-safe artificial
+neural network implementations. Hooray!
+
 There are other great tutorials I'd recommend online if you want to
 explore dependent types in Haskell further, including
 \href{http://www.well-typed.com/blog/2015/11/implementing-a-minimal-version-of-haskell-servant/}{this
 great servant ``tutorial''}. Also, I should provide a disclaimer --- I'm
 also currently exploring all of this as I'm going along too. It's a wild
 world out there. Join me and let's be a part of the frontier!
+
+\section{Toy Example: Linear Algebra}\label{toy-example-linear-algebra}
+
+We're going to build up to type-safe neural networks in Haskell, but to
+start off, let's go over a really really small example of dependent
+types in Haskell by applying it to the ``hello world'' of dependent
+types: linear algebra.
+
+We're going to do two simple linear algebra concepts, and see why it's
+super scary to program without dependent types (and wonder how we ever
+survived without them), and then add in a bit of dependent types to the
+rescue!
+
+For the most part, we'll be using the awesome
+\emph{\href{http://hackage.haskell.org/package/hmatrix}{hmatrix}}
+library, which offers both ``type-safe'' and ``non-type-safe'' API's, so
+we can better compare the two approaches.
+
+\section{The Scary World of Unsafe
+Code}\label{the-scary-world-of-unsafe-code}
+
+The first thing we're going to do is simple:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Read in two vectors from stdin
+\item
+  Print the dot product of the two
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{readList}\OtherTok{ ::} \DataTypeTok{IO} \NormalTok{[}\DataTypeTok{Double}\NormalTok{]}
+\NormalTok{readList }\FunctionTok{=} \NormalTok{concat }\FunctionTok{.} \NormalTok{readMaybe }\FunctionTok{<$>} \NormalTok{getLine}
+
+\OtherTok{dotStdin ::} \DataTypeTok{IO} \NormalTok{()}
+\NormalTok{dotStdin }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{v1 }\OtherTok{<-} \NormalTok{vector }\FunctionTok{<$>} \NormalTok{readList}
+    \NormalTok{v2 }\OtherTok{<-} \NormalTok{vector }\FunctionTok{<$>} \NormalTok{readList}
+    \NormalTok{print }\FunctionTok{$} \NormalTok{l1 }\FunctionTok{<.>} \NormalTok{l2}
+\end{Highlighting}
+\end{Shaded}
+
+Now, already you should be feeling sweaty. The dot product,
+\texttt{\textless{}.\textgreater{}}, is actually \emph{undefined} for
+two vectors of different lengths. Our code here is\ldots{}unsafe!
+Runtime errors can happen that are unchecked by the compiler. To fix
+this in an unsafe language, we'd have to:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Be able to recognize by our own human reasoning that there is a
+  potential for a runtime error.
+\item
+  Restructure control flow to avoid situations where the runtime error
+  would occur.
+\item
+  Somehow prove to ourselves, as humans, that our new solution is safe.
+  Then trust our human verification of our human proof.
+\end{enumerate}
+
+Now, (2) might be cumbersome in some cases, but at least it's usually a
+mechanical process. It's (1) and (3) that are killer. There is no way I
+trust myself to recognize \emph{every} potential runtime error. And, in
+the case that I \emph{do} actually catch opportunities for runtime
+errors, I definitely don't always trust myself that my fix works. If
+only the compiler could handle (1) and (3) for us!
+
+The second task we'll do is build up a chain of matrices, and then ask
+for a vector from stdin to multiply by each one successively.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{readChain ::} \DataTypeTok{IO} \NormalTok{[}\DataTypeTok{Matrix} \DataTypeTok{Double}\NormalTok{]}
+\NormalTok{readChain }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{l }\OtherTok{<-} \NormalTok{getLine}
+    \KeywordTok{case} \NormalTok{fromLists }\FunctionTok{<$>} \NormalTok{readMaybe l }\KeywordTok{of}
+      \DataTypeTok{Just} \NormalTok{m  }\OtherTok{->} \NormalTok{(m}\FunctionTok{:}\NormalTok{) }\FunctionTok{<$>} \NormalTok{readChain}
+      \DataTypeTok{Nothing} \OtherTok{->} \NormalTok{return []}
+    
+\OtherTok{collapseChain ::} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Matrix} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}
+\NormalTok{collapseChain v []     }\FunctionTok{=} \NormalTok{v}
+\NormalTok{collapseChain v (m}\FunctionTok{:}\NormalTok{ms) }\FunctionTok{=} \NormalTok{collapseChain (m }\FunctionTok{#>} \NormalTok{v) ms}
+
+\OtherTok{chainMats ::} \DataTypeTok{IO} \NormalTok{()}
+\NormalTok{chainMats }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{ms }\OtherTok{<-} \NormalTok{readChain}
+    \NormalTok{v  }\OtherTok{<-} \NormalTok{vector }\FunctionTok{<$>} \NormalTok{readList}
+    \NormalTok{print }\FunctionTok{$} \NormalTok{collapseChain v ms}
+\end{Highlighting}
+\end{Shaded}
+
+Now, this should be giving you heart attacks. Matrix-vector
+multiplication is only defined when the number of columns the matrix has
+is the number of rows the vector has. If \emph{any} of the matrices
+along the chain is the wrong dimension, the entire thing will blow up.
 
 \section{Neural Networks}\label{neural-networks}
 
