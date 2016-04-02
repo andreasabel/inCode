@@ -1,7 +1,7 @@
 IO Monad Considered Harmful
 ===========================
 
-(Originally posted by Justin Le [http://blog.jle.im/] on January 22, 2015)
+(Originally posted by Justin Le [https://blog.jle.im/] on January 22, 2015)
 
 In the tradition of “considered harmful” posts, this post’s title is
 intentionally misleading and designed to incite controversy — or at

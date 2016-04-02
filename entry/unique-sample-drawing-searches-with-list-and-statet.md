@@ -2,7 +2,7 @@ Unique sample drawing & searches with List and StateT — “Send more
 money”
 =========================================================================
 
-(Originally posted by Justin Le [http://blog.jle.im/] on April 24, 2015)
+(Originally posted by Justin Le [https://blog.jle.im/] on April 24, 2015)
 
 Nothing too crazy today, just a cute (basic/intermediate) haskell trick
 as a response to Mark Dominus’s excellent [Universe of

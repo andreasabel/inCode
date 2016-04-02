@@ -1,7 +1,7 @@
 Practical Dependent Types in Haskell: Type-Safe Linear Algebra
 ==============================================================
 
-(Originally posted by Justin Le [http://blog.jle.im/])
+(Originally posted by Justin Le [https://blog.jle.im/])
 
 Whether you like it or not, programming with dependent types in Haskell
 moving slowly but steadily to the mainstream of Haskell programming. In

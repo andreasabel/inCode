@@ -1,7 +1,7 @@
 Pipes: Streaming Huffman Compression in Haskell (Part 3)
 ========================================================
 
-(Originally posted by Justin Le [http://blog.jle.im/] on June 26, 2014)
+(Originally posted by Justin Le [https://blog.jle.im/] on June 26, 2014)
 
 Let’s finally finish up our Streaming Huffman Compression project by
 actually implementing the “streaming” part :) In [part

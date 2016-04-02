@@ -1,7 +1,7 @@
 Entropy and Entropic Forces
 ===========================
 
-(Originally posted by Justin Le [http://blog.jle.im/])
+(Originally posted by Justin Le [https://blog.jle.im/])
 
 There’s actually a bit of an air of mystery and misunderstanding around
 the idea of entropy. Notoriously misrepresented in popular science as
