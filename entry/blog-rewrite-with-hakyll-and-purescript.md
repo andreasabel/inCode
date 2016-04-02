@@ -116,11 +116,10 @@ I ported all of my one-off javascript scripts to fay. This time around,
 I figured I’d move away from [fay](https://github.com/faylang/fay/wiki),
 because it was slightly clunky to build/get working/integrate in the way
 that GHCJS spoiled me to be accustomed to. In the future, I might return
-… but at this point in time, Fay seems as awkward in the ecosystem to me
-now as *haste* did when I first started using it. GHCJS lets you use the
-full power of Haskell (including all of *base*’s concurrency mechanisms
-and almost every library on hackage), at the expense of creating large
-and unreadable javascript blobs.
+… but at this point in time, Fay seems a bit awkward in the ecosystem.
+GHCJS lets you use the full power of Haskell (including all of *base*’s
+concurrency mechanisms and almost every library on hackage), at the
+expense of creating large and unreadable javascript blobs.
 
 Fay seemed like just a *weaker* GHCJS to me, but in all the ways that
 mattered. It doesn’t have all of the awesome GHC things that make modern
@@ -136,7 +135,7 @@ like Haskell, but forces you to write it in a way that is nothing like
 any actual Haskell code you’d normally write… why even bother keeping up
 with Haskell semantics and Haskell compatibility? Why not break out and
 try something new and fresh, unbound by Haskell and compatibility
-issues?[^1]
+issues?[^1][^2]
 
 ### on Purescript
 
@@ -165,7 +164,7 @@ At many moments, I felt like writing in Purescript felt like writing in
 *the language that Haskell should have been*.
 
 But one of my favorite aspects about purescript ended up being the sheer
-beauty and conciseness of the generated javascript. Look at how[^2]:
+beauty and conciseness of the generated javascript. Look at how[^3]:
 
 ``` {.purescript}
 appendTopLinks doc = do
@@ -207,7 +206,7 @@ happy to import in your node or normal javascript project.
 
 The total exported javascript blob is only *88 kB*, even smaller than
 fay’s *100 kB* output (but not significantly so), and much smaller than
-GHCJS’s *1.4 MB*[^3] output (which has to also contain the entire
+GHCJS’s *1.4 MB*[^4] output (which has to also contain the entire
 Haskell runtime, implementing Haskell semantics, as well).
 
 Interestingly enough, the *original* raw javacript I wrote in 2013 came
@@ -247,13 +246,18 @@ hope they can be useful for those of you looking for new technologies to
 learn and ways to implement/approach your stack or next programming
 project, as well!
 
-[^1]: I definitely don’t mean to bash on *fay* or *haste* here! Both
-    definitely have their role and place in the ecosystem. It’s for my
-    specific application that I was looking for an alternative with.
+[^1]: I definitely don’t mean to bash on *fay* here! It definitely has
+    its role and place in the ecosystem. It’s for my specific
+    application that I was looking for an alternative with.
 
-[^2]: Unfortunately,
+[^2]: There’s another thing here that I skipped over slightly –
+    [Haste](http://haste-lang.org/). I haven’t had much experience with
+    it myself, but for this purpose, I decided to jump into something
+    not-Haskell and try out something new!
+
+[^3]: Unfortunately,
     *[highlighting-kate](https://github.com/jgm/highlighting-kate)*
     doesn’t yet support purescript syntax highlighting?
 
-[^3]: A previous version of this post claimed that the javascript bundle
+[^4]: A previous version of this post claimed that the javascript bundle
     was *140 MB*, instead of *1.4 MB*. My bad!
