@@ -255,7 +255,7 @@ ghci> diffs0 (\x -> x^2 - 2 x^3) 4
 ```
 
 The first value is actually $4^2 - 2 \times 4^3$. The second is the
-derivative – $2 x - 6x^2$ at 4, the third is the second derivative
+derivative ($2 x - 6x^2$) at 4, the third is the second derivative
 $2 - 12 x$ at 4, then the third derivative $-12$, then the fourth
 derivative $0$, etc.
 
