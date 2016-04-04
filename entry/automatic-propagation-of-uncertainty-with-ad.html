@@ -75,22 +75,22 @@ f(\mu_X, \mu_Y) +
 <p>For our case of simple addition, <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Coperatorname%7BE%7D%5BX%20%2B%20Y%5D%20%3D%20%5Cmu_X%20%2B%20%5Cmu_Y" alt="\operatorname{E}[X + Y] = \mu_X + \mu_Y" title="\operatorname{E}[X + Y] = \mu_X + \mu_Y" />, because the second-order partials of <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?f%28x%2Cy%29%20%3D%20x%20%2B%20y" alt="f(x,y) = x + y" title="f(x,y) = x + y" /> are 0.</p>
 <h2 id="uncertain-values-in-haskell">Uncertain Values in Haskell</h2>
 <p>So, how are we going to model our uncertain values in Haskell … ? With an Algebraic Data Type, of course! <a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L3-5</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L18-20</span>
 <span class="kw">data</span> <span class="dt">Uncert</span> a <span class="fu">=</span> <span class="dt">Un</span> {<span class="ot"> uMean ::</span> <span class="fu">!</span>a
                    ,<span class="ot"> uVar  ::</span> <span class="fu">!</span>a
                    }</code></pre></div>
 <p>We’ll keep track of the mean (the central point) and the <em>variance</em>, which is the standard deviation <em>squared</em>. We keep track of the variance and not the standard deviation (the “plus or minus”) because the mathematics is a bit more straightforward.</p>
 <p>We can write a function to turn a “plus or minus” statement into an <code>Uncert</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L7-8</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L22-23</span>
 <span class="ot">(+/-) ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Uncert</span> a
 x <span class="fu">+/-</span> dx <span class="fu">=</span> <span class="dt">Un</span> x (dx<span class="fu">*</span>dx)</code></pre></div>
 <p>Give the <code>dx</code> (the standard deviation) and store <code>dx^2</code>, the variance.</p>
 <p>Let’s also throw in a handy helper function for “exact” values:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L10-11</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L25-26</span>
 <span class="ot">exact ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Uncert</span> a
 exact x <span class="fu">=</span> x <span class="fu">+/-</span> <span class="dv">0</span></code></pre></div>
 <p>But, we can do better. We can use pattern synonyms to basically “abstract” away the data type itself, and let people “pattern match” on a mean and standard deviation:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L13-16</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L28-31</span>
 pattern<span class="ot"> (:+/-) ::</span> () <span class="ot">=&gt;</span> <span class="dt">Floating</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Uncert</span> a
 pattern x <span class="fu">:+/-</span> dx <span class="ot">&lt;-</span> <span class="dt">Un</span> x (sqrt<span class="ot">-&gt;</span>dx)
   <span class="kw">where</span>
@@ -146,7 +146,7 @@ ghci<span class="fu">&gt;</span> diff (\x <span class="ot">-&gt;</span> sin (x<s
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">y  <span class="fu">=</span> fx <span class="fu">+</span> ddfx <span class="fu">*</span> vx <span class="fu">/</span> <span class="dv">2</span>
 vy <span class="fu">=</span> dfx<span class="fu">^</span><span class="dv">2</span> <span class="fu">*</span> vx</code></pre></div>
 <p>Putting it all together:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L18-27</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L33-42</span>
 liftU
 <span class="ot">    ::</span> <span class="dt">Fractional</span> a
     <span class="ot">=&gt;</span> (forall s<span class="fu">.</span> <span class="dt">AD</span> s (<span class="dt">Tower</span> a) <span class="ot">-&gt;</span> <span class="dt">AD</span> s (<span class="dt">Tower</span> a))
@@ -180,7 +180,7 @@ sin    <span class="fu">=</span> liftU sin</code></pre></div>
 )</code></pre></div>
 <p>We can access the gradient by using <code>fmap fst</code> on the second component of the tuple and access the hessian by using <code>fmap snd</code>.</p>
 <p>We need a couple of helpers, first — one to get the “diagonal” of our hessian, because we only care about the double partials:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L29-35</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L44-50</span>
 <span class="ot">diag ::</span> [[a]] <span class="ot">-&gt;</span> [a]
 diag <span class="fu">=</span> \<span class="kw">case</span> []        <span class="ot">-&gt;</span> []
              []   <span class="fu">:</span>yss <span class="ot">-&gt;</span> diag (drop1 <span class="fu">&lt;$&gt;</span> yss)
@@ -189,11 +189,11 @@ diag <span class="fu">=</span> \<span class="kw">case</span> []        <span cla
     drop1 []     <span class="fu">=</span> []
     drop1 (_<span class="fu">:</span>zs) <span class="fu">=</span> zs</code></pre></div>
 <p>And then a “dot product”, which sums two lists component-wise and adds the results:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L37-38</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L52-53</span>
 <span class="ot">dot ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> a
 xs <span class="ot">`dot`</span> ys <span class="fu">=</span> sum (zipWith (<span class="fu">*</span>) xs ys)</code></pre></div>
 <p>And now we can write our multi-variate function lifter:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L40-56</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-71</span>
 liftUF
 <span class="ot">    ::</span> (<span class="dt">Traversable</span> f, <span class="dt">Fractional</span> a)
     <span class="ot">=&gt;</span> (forall s<span class="fu">.</span> f (<span class="dt">AD</span> s (<span class="dt">Sparse</span> a)) <span class="ot">-&gt;</span> <span class="dt">AD</span> s (<span class="dt">Sparse</span> a))
@@ -202,18 +202,18 @@ liftUF
 liftUF f us <span class="fu">=</span> <span class="dt">Un</span> y vy
   <span class="kw">where</span>
     xs          <span class="fu">=</span> uMean <span class="fu">&lt;$&gt;</span> us
-    vxs         <span class="fu">=</span> uVar  <span class="fu">&lt;$&gt;</span> us
+    vxs         <span class="fu">=</span> toList (uVar <span class="fu">&lt;$&gt;</span> us)
     (fx, hgrad) <span class="fu">=</span> hessian&#39; f xs
     dfxs        <span class="fu">=</span> fst <span class="fu">&lt;$&gt;</span> hgrad
     hess        <span class="fu">=</span> snd <span class="fu">&lt;$&gt;</span> hgrad
     y           <span class="fu">=</span> fx <span class="fu">+</span> partials <span class="fu">/</span> <span class="dv">2</span>
       <span class="kw">where</span>
-        partials <span class="fu">=</span> dot vxs <span class="fu">.</span> diag
-                 <span class="fu">$</span> toList (fmap toList hess))
-    vy          <span class="fu">=</span> vxs <span class="ot">`dot`</span> ((<span class="fu">^</span><span class="dv">2</span>) <span class="fu">&lt;$&gt;</span> dfxs)</code></pre></div>
+        partials <span class="fu">=</span> (vxs <span class="ot">`dot`</span>) <span class="fu">.</span> diag
+                 <span class="fu">$</span> toList (fmap toList hess)
+    vy          <span class="fu">=</span> vxs <span class="ot">`dot`</span> toList ((<span class="fu">^</span><span class="dv">2</span>) <span class="fu">&lt;$&gt;</span> dfxs)</code></pre></div>
 <p>(Again, don’t mind the scary type <code>forall s. f (AD s (Sparse a)) -&gt; AD s (Sparse a)</code>, it’s just <em>ad</em>’s type for things you can use <code>hessian'</code> on)</p>
 <p>And we can write some nice helper functions so we can use them more easily:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L58-73</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L73-88</span>
 liftU2
 <span class="ot">    ::</span> <span class="dt">Fractional</span> a
     <span class="ot">=&gt;</span> (forall s<span class="fu">.</span> <span class="dt">AD</span> s (<span class="dt">Sparse</span> a) <span class="ot">-&gt;</span> <span class="dt">AD</span> s (<span class="dt">Sparse</span> a) <span class="ot">-&gt;</span> <span class="dt">AD</span> s (<span class="dt">Sparse</span> a))
@@ -237,6 +237,7 @@ liftU3 f x y z <span class="fu">=</span> liftUF (\(<span class="dt">V3</span> x&
 (<span class="fu">**</span>)    <span class="fu">=</span> liftU2 (<span class="fu">**</span>)
 logBase <span class="fu">=</span> liftU2 logBase</code></pre></div>
 <p>Admittedly, there’s still some slight boilerplate (that you can get rid of with some Template Haskell, maybe), but you have a <em>lot</em> less room for error, and a lot simpler to check over and read to make sure you didn’t miss any bugs.</p>
+<h2 id="wrapping-it-up">Wrapping it up</h2>
 <!-- ~~~haskell -->
 <!-- 46 +/- 2 -->
 <!-- 450 +/- 41 -->
