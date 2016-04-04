@@ -132,9 +132,11 @@ So, how are we going to model our uncertain values in Haskell … ? With
 an Algebraic Data Type, of course! [^2]
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L3-5
 data Uncert a = Un { uMean :: !a
                    , uVar  :: !a
                    }
+
 ```
 
 We’ll keep track of the mean (the central point) and the *variance*,
@@ -146,8 +148,10 @@ We can write a function to turn a “plus or minus” statement into an
 `Uncert`:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L7-8
 (+/-) :: Num a => a -> a -> Uncert a
 x +/- dx = Un x (dx*dx)
+
 ```
 
 Give the `dx` (the standard deviation) and store `dx^2`, the variance.
@@ -155,8 +159,10 @@ Give the `dx` (the standard deviation) and store `dx^2`, the variance.
 Let’s also throw in a handy helper function for “exact” values:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L10-11
 exact :: Num a => a -> Uncert a
 exact x = x +/- 0
+
 ```
 
 But, we can do better. We can use pattern synonyms to basically
@@ -164,10 +170,12 @@ But, we can do better. We can use pattern synonyms to basically
 a mean and standard deviation:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L13-16
 pattern (:+/-) :: () => Floating a => a -> a -> Uncert a
 pattern x :+/- dx <- Un x (sqrt->dx)
   where
     x :+/- dx = Un x (dx*dx)
+
 ```
 
 Now, people can pattern match on `x :+/- dx` and receive the mean and
@@ -280,6 +288,7 @@ vy = dfx^2 * vx
 Putting it all together:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L18-27
 liftU
     :: Fractional a
     => (forall s. AD s (Tower a) -> AD s (Tower a))
@@ -290,6 +299,7 @@ liftU f (Un x vx) = Un y vy
     fx:dfx:ddfx:_ = diffs0 f x
     y             = fx + ddfx * vx / 2
     vy            = dfx^2 * vx
+
 ```
 
 The type `forall s. AD s (Tower a) -> AD s (Tower a)` looks a little
@@ -358,6 +368,7 @@ We need a couple of helpers, first — one to get the “diagonal” of our
 hessian, because we only care about the double partials:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L29-35
 diag :: [[a]] -> [a]
 diag = \case []        -> []
              []   :yss -> diag (drop1 <$> yss)
@@ -365,19 +376,23 @@ diag = \case []        -> []
   where
     drop1 []     = []
     drop1 (_:zs) = zs
+
 ```
 
-And then a “dot product”, which sums two `Foldable`s component-wise and
-adds the results:
+And then a “dot product”, which sums two lists component-wise and adds
+the results:
 
 ``` {.haskell}
-dot :: (Foldable t, Num a) => t a -> t a -> a
-xs `dot` ys = sum (zipWith (*) (toList xs) (toList ys))
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L37-38
+dot :: Num a => [a] -> [a] -> a
+xs `dot` ys = sum (zipWith (*) xs ys)
+
 ```
 
 And now we can write our multi-variate function lifter:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L40-56
 liftUF
     :: (Traversable f, Fractional a)
     => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a))
@@ -392,9 +407,10 @@ liftUF f us = Un y vy
     hess        = snd <$> hgrad
     y           = fx + partials / 2
       where
-        partials = dot vxsL . diag
+        partials = dot vxs . diag
                  $ toList (fmap toList hess))
     vy          = vxs `dot` ((^2) <$> dfxs)
+
 ```
 
 (Again, don’t mind the scary type
@@ -405,6 +421,7 @@ And we can write some nice helper functions so we can use them more
 easily:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L58-73
 liftU2
     :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
@@ -421,6 +438,7 @@ liftU3
     -> Uncert a
     -> Uncert a
 liftU3 f x y z = liftUF (\(V3 x' y' z') -> f x' y' z') (V3 x y z)
+
 ```
 
 At this point, we’re officially done. We can fill in the other

@@ -229,6 +229,7 @@ With an Algebraic Data Type, of course! \footnote{What else were you
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L3-5}
 \KeywordTok{data} \DataTypeTok{Uncert} \NormalTok{a }\FunctionTok{=} \DataTypeTok{Un} \NormalTok{\{}\OtherTok{ uMean ::} \FunctionTok{!}\NormalTok{a}
                    \NormalTok{,}\OtherTok{ uVar  ::} \FunctionTok{!}\NormalTok{a}
                    \NormalTok{\}}
@@ -245,6 +246,7 @@ We can write a function to turn a ``plus or minus'' statement into an
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L7-8}
 \OtherTok{(+/-) ::} \DataTypeTok{Num} \NormalTok{a }\OtherTok{=>} \NormalTok{a }\OtherTok{->} \NormalTok{a }\OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
 \NormalTok{x }\FunctionTok{+/-} \NormalTok{dx }\FunctionTok{=} \DataTypeTok{Un} \NormalTok{x (dx}\FunctionTok{*}\NormalTok{dx)}
 \end{Highlighting}
@@ -257,6 +259,7 @@ Let's also throw in a handy helper function for ``exact'' values:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L10-11}
 \OtherTok{exact ::} \DataTypeTok{Num} \NormalTok{a }\OtherTok{=>} \NormalTok{a }\OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
 \NormalTok{exact x }\FunctionTok{=} \NormalTok{x }\FunctionTok{+/-} \DecValTok{0}
 \end{Highlighting}
@@ -268,6 +271,7 @@ on a mean and standard deviation:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L13-16}
 \NormalTok{pattern}\OtherTok{ (:+/-) ::} \NormalTok{() }\OtherTok{=>} \DataTypeTok{Floating} \NormalTok{a }\OtherTok{=>} \NormalTok{a }\OtherTok{->} \NormalTok{a }\OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
 \NormalTok{pattern x }\FunctionTok{:+/-} \NormalTok{dx }\OtherTok{<-} \DataTypeTok{Un} \NormalTok{x (sqrt}\OtherTok{->}\NormalTok{dx)}
   \KeywordTok{where}
@@ -398,6 +402,7 @@ Putting it all together:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L18-27}
 \NormalTok{liftU}
 \OtherTok{    ::} \DataTypeTok{Fractional} \NormalTok{a}
     \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Tower} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Tower} \NormalTok{a))}
@@ -489,6 +494,7 @@ our hessian, because we only care about the double partials:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L29-35}
 \OtherTok{diag ::} \NormalTok{[[a]] }\OtherTok{->} \NormalTok{[a]}
 \NormalTok{diag }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \NormalTok{[]        }\OtherTok{->} \NormalTok{[]}
              \NormalTok{[]   }\FunctionTok{:}\NormalTok{yss }\OtherTok{->} \NormalTok{diag (drop1 }\FunctionTok{<$>} \NormalTok{yss)}
@@ -499,13 +505,14 @@ our hessian, because we only care about the double partials:
 \end{Highlighting}
 \end{Shaded}
 
-And then a ``dot product'', which sums two \texttt{Foldable}s
-component-wise and adds the results:
+And then a ``dot product'', which sums two lists component-wise and adds
+the results:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{dot ::} \NormalTok{(}\DataTypeTok{Foldable} \NormalTok{t, }\DataTypeTok{Num} \NormalTok{a) }\OtherTok{=>} \NormalTok{t a }\OtherTok{->} \NormalTok{t a }\OtherTok{->} \NormalTok{a}
-\NormalTok{xs }\OtherTok{`dot`} \NormalTok{ys }\FunctionTok{=} \NormalTok{sum (zipWith (}\FunctionTok{*}\NormalTok{) (toList xs) (toList ys))}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L37-38}
+\OtherTok{dot ::} \DataTypeTok{Num} \NormalTok{a }\OtherTok{=>} \NormalTok{[a] }\OtherTok{->} \NormalTok{[a] }\OtherTok{->} \NormalTok{a}
+\NormalTok{xs }\OtherTok{`dot`} \NormalTok{ys }\FunctionTok{=} \NormalTok{sum (zipWith (}\FunctionTok{*}\NormalTok{) xs ys)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -513,6 +520,7 @@ And now we can write our multi-variate function lifter:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L40-56}
 \NormalTok{liftUF}
 \OtherTok{    ::} \NormalTok{(}\DataTypeTok{Traversable} \NormalTok{f, }\DataTypeTok{Fractional} \NormalTok{a)}
     \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \NormalTok{f (}\DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a)) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a))}
@@ -527,7 +535,7 @@ And now we can write our multi-variate function lifter:
     \NormalTok{hess        }\FunctionTok{=} \NormalTok{snd }\FunctionTok{<$>} \NormalTok{hgrad}
     \NormalTok{y           }\FunctionTok{=} \NormalTok{fx }\FunctionTok{+} \NormalTok{partials }\FunctionTok{/} \DecValTok{2}
       \KeywordTok{where}
-        \NormalTok{partials }\FunctionTok{=} \NormalTok{dot vxsL }\FunctionTok{.} \NormalTok{diag}
+        \NormalTok{partials }\FunctionTok{=} \NormalTok{dot vxs }\FunctionTok{.} \NormalTok{diag}
                  \FunctionTok{$} \NormalTok{toList (fmap toList hess))}
     \NormalTok{vy          }\FunctionTok{=} \NormalTok{vxs }\OtherTok{`dot`} \NormalTok{((}\FunctionTok{^}\DecValTok{2}\NormalTok{) }\FunctionTok{<$>} \NormalTok{dfxs)}
 \end{Highlighting}
@@ -543,6 +551,7 @@ easily:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L58-73}
 \NormalTok{liftU2}
 \OtherTok{    ::} \DataTypeTok{Fractional} \NormalTok{a}
     \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a))}
