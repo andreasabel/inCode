@@ -163,7 +163,7 @@ a mean and standard deviation:
 pattern (:+/-) :: () => Floating a => a -> a -> Uncert a
 pattern x :+/- dx <- Un x (sqrt->dx)
   where
-  x :+/- dx = Un x (dx*dx)
+    x :+/- dx = Un x (dx*dx)
 ```
 
 Now, people can pattern match on `x :+/- dx` and receive the mean and
