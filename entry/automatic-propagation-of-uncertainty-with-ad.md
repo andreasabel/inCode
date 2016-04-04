@@ -314,7 +314,8 @@ And … that’s it!
 [^1]: If you don’t believe me, stop reading this article now and try it
     yourself! You can simulate noisy data by using uniform noise
     distributions, Gaussian distributions, or however manner you like.
-    Verify by checking the
-    [variance](https://en.wikipedia.org/wiki/Variance) of the sum.
+    Verify by checking the [standard
+    deviation](https://en.wikipedia.org/wiki/Standard_deviation) of the
+    sums.
 
 [^2]: What else were you expecting!
