@@ -118,6 +118,8 @@ $$
 \frac{\partial f}{\partial x}|_{\mu_X, \mu_Y}^2 \sigma_Y^2
 $$
 
+neat, huh?
+
 <!-- Some people like to talk about probability and statistics as "inexact maths" or -->
 <!-- "non-deterministic math", but the exact opposite is true.  Probability and -->
 <!-- statistics is the *exact*, rigorous, and *deterministic* math of -->
