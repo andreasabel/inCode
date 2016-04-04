@@ -273,4 +273,56 @@ on a mean and standard deviation:
 Now, people can pattern match on \texttt{x\ :+/-\ dx} and receive the
 mean and uncertainty directly. Neat!
 
+\subsection{Making it Numeric}\label{making-it-numeric}
+
+Now, time for the magic! Let's write a \texttt{Num} instance!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{instance} \DataTypeTok{Num} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Num} \NormalTok{(}\DataTypeTok{Uncert} \NormalTok{a) }\KeywordTok{where}
+    \NormalTok{fromIntegral      }\FunctionTok{=} \NormalTok{exact }\FunctionTok{.} \NormalTok{fromIntegral}
+    \DataTypeTok{Un} \NormalTok{x vx }\FunctionTok{+} \DataTypeTok{Un} \NormalTok{y vy }\FunctionTok{=} \DataTypeTok{Un} \NormalTok{(x }\FunctionTok{+} \NormalTok{y)    (vx }\FunctionTok{+} \NormalTok{vy)}
+    \DataTypeTok{Un} \NormalTok{x vx }\FunctionTok{-} \DataTypeTok{Un} \NormalTok{y vy }\FunctionTok{=} \DataTypeTok{Un} \NormalTok{(x }\FunctionTok{-} \NormalTok{y)    (vx }\FunctionTok{+} \NormalTok{vy)}
+    \DataTypeTok{Un} \NormalTok{x vx }\FunctionTok{*} \DataTypeTok{Un} \NormalTok{y vy }\FunctionTok{=} \DataTypeTok{Un} \NormalTok{(x }\FunctionTok{*} \NormalTok{y)    (y}\FunctionTok{*}\NormalTok{y }\FunctionTok{*} \NormalTok{vx }\FunctionTok{+} \NormalTok{x}\FunctionTok{*}\NormalTok{x }\FunctionTok{*} \NormalTok{vy)}
+    \NormalTok{negate (}\DataTypeTok{Un} \NormalTok{x vx)  }\FunctionTok{=} \DataTypeTok{Un} \NormalTok{(negate x) vx}
+    \CommentTok{-- ...}
+\end{Highlighting}
+\end{Shaded}
+
+And\ldots{}that's it! Do the same thing for every numeric typeclass, and
+you get automatic propagation of uncertainty woo hoo.
+
+Pretty anticlimactic, huh?
+
+\subsection{The Problem}\label{the-problem}
+
+But, wait\ldots{}this method is definitely not ideal. It's pretty
+repetitive, and involves a but of copy-and-pasting code that is slightly
+different in ways the typechecker can't verify. What if we didn't change
+something we were supposed to? And\ldots{}if you look at the
+\texttt{Fractional} instance\ldots{}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{instance} \DataTypeTok{Fractional} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Fractional} \NormalTok{(}\DataTypeTok{Uncert} \NormalTok{a) }\KeywordTok{where}
+    \NormalTok{fromRational      }\FunctionTok{=} \NormalTok{exact }\FunctionTok{.} \NormalTok{fromRational}
+    \DataTypeTok{Un} \NormalTok{x vx }\FunctionTok{/} \DataTypeTok{Un} \NormalTok{y vy }\FunctionTok{=} \DataTypeTok{Un} \NormalTok{(x}\FunctionTok{/}\NormalTok{y }\FunctionTok{+} \NormalTok{x}\FunctionTok{/}\NormalTok{y}\FunctionTok{^}\DecValTok{3}\FunctionTok{*}\NormalTok{vy)   (x}\FunctionTok{^}\DecValTok{2}\FunctionTok{/}\NormalTok{y}\FunctionTok{^}\DecValTok{4}\FunctionTok{*}\NormalTok{vx }\FunctionTok{+} \NormalTok{vy}\FunctionTok{/}\NormalTok{y}\FunctionTok{^}\DecValTok{2}\NormalTok{)}
+    \NormalTok{recip (}\DataTypeTok{Un} \NormalTok{x vx)   }\FunctionTok{=} \DataTypeTok{Un} \NormalTok{(recip x }\FunctionTok{+} \NormalTok{vx}\FunctionTok{/}\NormalTok{x}\FunctionTok{^}\DecValTok{3}\NormalTok{) (vx }\FunctionTok{/} \NormalTok{x}\FunctionTok{^}\DecValTok{4}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Yikes. All that ugly and complicated numerical code that the typechecker
+verify. Those are runtime bugs just waiting to happen. How do we even
+\emph{know} that we calculated the right derivatives, and implemented
+the formula correctly?
+
+What if we could reduce this boilerplate to things that the typechecker
+can enforce for us? That'd be ideal, right? What if we could somehow
+analytically compute derivatives for functions instead of computing them
+manually?
+
+\section{Automatic Differentiation}\label{automatic-differentiation}
+
+Surprise!
+
 \end{document}

@@ -91,6 +91,27 @@ pattern x <span class="fu">:+/-</span> dx <span class="ot">&lt;-</span> <span cl
   <span class="kw">where</span>
     x <span class="fu">:+/-</span> dx <span class="fu">=</span> <span class="dt">Un</span> x (dx<span class="fu">*</span>dx)</code></pre></div>
 <p>Now, people can pattern match on <code>x :+/- dx</code> and receive the mean and uncertainty directly. Neat!</p>
+<h3 id="making-it-numeric">Making it Numeric</h3>
+<p>Now, time for the magic! Let’s write a <code>Num</code> instance!</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Num</span> (<span class="dt">Uncert</span> a) <span class="kw">where</span>
+    fromIntegral      <span class="fu">=</span> exact <span class="fu">.</span> fromIntegral
+    <span class="dt">Un</span> x vx <span class="fu">+</span> <span class="dt">Un</span> y vy <span class="fu">=</span> <span class="dt">Un</span> (x <span class="fu">+</span> y)    (vx <span class="fu">+</span> vy)
+    <span class="dt">Un</span> x vx <span class="fu">-</span> <span class="dt">Un</span> y vy <span class="fu">=</span> <span class="dt">Un</span> (x <span class="fu">-</span> y)    (vx <span class="fu">+</span> vy)
+    <span class="dt">Un</span> x vx <span class="fu">*</span> <span class="dt">Un</span> y vy <span class="fu">=</span> <span class="dt">Un</span> (x <span class="fu">*</span> y)    (y<span class="fu">*</span>y <span class="fu">*</span> vx <span class="fu">+</span> x<span class="fu">*</span>x <span class="fu">*</span> vy)
+    negate (<span class="dt">Un</span> x vx)  <span class="fu">=</span> <span class="dt">Un</span> (negate x) vx
+    <span class="co">-- ...</span></code></pre></div>
+<p>And…that’s it! Do the same thing for every numeric typeclass, and you get automatic propagation of uncertainty woo hoo.</p>
+<p>Pretty anticlimactic, huh?</p>
+<h3 id="the-problem">The Problem</h3>
+<p>But, wait…this method is definitely not ideal. It’s pretty repetitive, and involves a but of copy-and-pasting code that is slightly different in ways the typechecker can’t verify. What if we didn’t change something we were supposed to? And…if you look at the <code>Fractional</code> instance…</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Fractional</span> a <span class="ot">=&gt;</span> <span class="dt">Fractional</span> (<span class="dt">Uncert</span> a) <span class="kw">where</span>
+    fromRational      <span class="fu">=</span> exact <span class="fu">.</span> fromRational
+    <span class="dt">Un</span> x vx <span class="fu">/</span> <span class="dt">Un</span> y vy <span class="fu">=</span> <span class="dt">Un</span> (x<span class="fu">/</span>y <span class="fu">+</span> x<span class="fu">/</span>y<span class="fu">^</span><span class="dv">3</span><span class="fu">*</span>vy)   (x<span class="fu">^</span><span class="dv">2</span><span class="fu">/</span>y<span class="fu">^</span><span class="dv">4</span><span class="fu">*</span>vx <span class="fu">+</span> vy<span class="fu">/</span>y<span class="fu">^</span><span class="dv">2</span>)
+    recip (<span class="dt">Un</span> x vx)   <span class="fu">=</span> <span class="dt">Un</span> (recip x <span class="fu">+</span> vx<span class="fu">/</span>x<span class="fu">^</span><span class="dv">3</span>) (vx <span class="fu">/</span> x<span class="fu">^</span><span class="dv">4</span>)</code></pre></div>
+<p>Yikes. All that ugly and complicated numerical code that the typechecker verify. Those are runtime bugs just waiting to happen. How do we even <em>know</em> that we calculated the right derivatives, and implemented the formula correctly?</p>
+<p>What if we could reduce this boilerplate to things that the typechecker can enforce for us? That’d be ideal, right? What if we could somehow analytically compute derivatives for functions instead of computing them manually?</p>
+<h2 id="automatic-differentiation">Automatic Differentiation</h2>
+<p>Surprise!</p>
 <!-- Some people like to talk about probability and statistics as "inexact maths" or -->
 <!-- "non-deterministic math", but the exact opposite is true.  Probability and -->
 <!-- statistics is the *exact*, rigorous, and *deterministic* math of -->

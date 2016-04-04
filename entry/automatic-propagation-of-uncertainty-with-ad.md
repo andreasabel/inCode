@@ -169,6 +169,54 @@ pattern x :+/- dx <- Un x (sqrt->dx)
 Now, people can pattern match on `x :+/- dx` and receive the mean and
 uncertainty directly. Neat!
 
+### Making it Numeric
+
+Now, time for the magic! Let’s write a `Num` instance!
+
+``` {.haskell}
+instance Num a => Num (Uncert a) where
+    fromIntegral      = exact . fromIntegral
+    Un x vx + Un y vy = Un (x + y)    (vx + vy)
+    Un x vx - Un y vy = Un (x - y)    (vx + vy)
+    Un x vx * Un y vy = Un (x * y)    (y*y * vx + x*x * vy)
+    negate (Un x vx)  = Un (negate x) vx
+    -- ...
+```
+
+And…that’s it! Do the same thing for every numeric typeclass, and you
+get automatic propagation of uncertainty woo hoo.
+
+Pretty anticlimactic, huh?
+
+### The Problem
+
+But, wait…this method is definitely not ideal. It’s pretty repetitive,
+and involves a but of copy-and-pasting code that is slightly different
+in ways the typechecker can’t verify. What if we didn’t change something
+we were supposed to? And…if you look at the `Fractional` instance…
+
+``` {.haskell}
+instance Fractional a => Fractional (Uncert a) where
+    fromRational      = exact . fromRational
+    Un x vx / Un y vy = Un (x/y + x/y^3*vy)   (x^2/y^4*vx + vy/y^2)
+    recip (Un x vx)   = Un (recip x + vx/x^3) (vx / x^4)
+```
+
+Yikes. All that ugly and complicated numerical code that the typechecker
+verify. Those are runtime bugs just waiting to happen. How do we even
+*know* that we calculated the right derivatives, and implemented the
+formula correctly?
+
+What if we could reduce this boilerplate to things that the typechecker
+can enforce for us? That’d be ideal, right? What if we could somehow
+analytically compute derivatives for functions instead of computing them
+manually?
+
+Automatic Differentiation
+-------------------------
+
+Surprise!
+
 <!-- Some people like to talk about probability and statistics as "inexact maths" or -->
 <!-- "non-deterministic math", but the exact opposite is true.  Probability and -->
 <!-- statistics is the *exact*, rigorous, and *deterministic* math of -->
