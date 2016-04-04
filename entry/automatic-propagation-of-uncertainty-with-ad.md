@@ -54,7 +54,9 @@ Certain Uncertainty
 -------------------
 
 First of all, let’s think about why adding two “uncertain” values
-doesn’t involve simply adding the uncertainties linearly.
+doesn’t involve simply adding the uncertainties linearly. If you don’t
+care about the math and just want to get on to the Haskell, feel free to
+skip this section!
 
 If I have a value $16 \pm 3$ (maybe I have a ruler whose ticks are 2
 units apart, or an instrument that produces measurements with 4 units of
@@ -68,16 +70,10 @@ that to be possible, the errors in the two values have to *always be
 aligned*. Only when every “little bit above” 16 error lines up perfectly
 with a “little bit above” 25 error, and when every single “little bit
 below” 16 error lines up perfectly with a “little bit above” 25 error,
-would you really get something that is $\pm 7$.
-
-But our two values were sampled independently, and so they are
-uncorrelated. You shouldn’t expect that if your $16 \pm 3$ value is ever
-“a little bit above”, then the $25 \pm 4$ value is also “a little bit
-above”, as well. They’re uncorrelated and independent, so their errors
-won’t actually always align. Instead, you’ll get a variance that’s *less
-than* $\pm 7$, because a lot of times the deviations will “cancel out”.
-We can mathematically derive that the variance will be exactly (in a
-platonic way) $\pm 5$.
+would you really get something that is $\pm 7$. But, because the two
+values are sampled independently, you shouldn’t expect such alignment.
+So, you’ll get an uncertainty that’s *less than* $\pm 7$. In fact, it’ll
+actually be around $\pm 5$.
 
 In general, we find that, for *independent* $X$ and $Y$:
 
@@ -87,9 +83,7 @@ $$
 
 Where $\sigma_X^2$ is the variance in $X$. We consider $\sigma_X$ to be
 the standard deviation of $X$, or the “plus or minus” part of our
-numbers.
-
-In the simple case of addition, we have
+numbers. In the simple case of addition, we have
 $\operatorname{Var}[X + Y] = \sigma_X^2 + \sigma_Y^2$, so our new
 uncertainty is $\sqrt{\sigma_X^2 + \sigma_Y^2}$.
 
@@ -103,30 +97,77 @@ In general, we can attempt to approximate any well-behaving function as
 its tangent hyperplane:
 
 $$
-f(x_0 + x, y_0 + y) \approx
-\left.\frac{\partial f}{\partial x}\right\vert_{x_0, y_0} x +
-\left.\frac{\partial f}{\partial y}\right\vert_{x_0, y_0} y +
-f(x_0, y_0)
+f(x_0 + x, y_0 + y) \approx f_x(x_0, y_0) x + f_y(x_0, y_0) y + f(x_0, y_0)
 $$
 
 Look familiar? This is exactly the form that we used earlier to
 calculate “combined” variance!
 
 $$
-\operatorname{Var}[f(X,Y)] \approx
-\left.\frac{\partial f}{\partial x}\right\vert_{\mu_X, \mu_Y}^2 \sigma_X^2 +
-\left.\frac{\partial f}{\partial x}\right\vert_{\mu_X, \mu_Y}^2 \sigma_Y^2
+\operatorname{Var}[f(X,Y)] \approx f_x(\mu_X, \mu_Y)^2 \sigma_X^2 + f_y(\mu_X,\mu_Y)^2 \sigma_Y^2
 $$
 
 A similar analysis can be used to figure out how the expected value
-changes by taking the taylor expansion to the second degree:
+changes by taking the taylor expansion to the *second* degree:
 
 $$
 \operatorname{E}[f(X,Y)] \approx
 f(\mu_X, \mu_Y) +
-\frac{1}{2} \left.\frac{\partial^2 f}{{\partial x}^2}\right\vert_{\mu_X, \mu_Y} \sigma_X^2 +
-\frac{1}{2} \left.\frac{\partial^2 f}{{\partial y}^2}\right\vert_{\mu_X, \mu_Y} \sigma_Y^2
+\frac{1}{2} f_{xx}(\mu_X, \mu_Y) \sigma_X^2 +
+\frac{1}{2} f_{yy}(\mu_X, \mu_Y) \sigma_Y^2 +
 $$
+
+For our case of simple addition,
+$\operatorname{E}[X + Y] = \mu_X + \mu_Y$, because the second-order
+partials of $f(x,y) = x + y$ are 0.
+
+Uncertain Values in Haskell
+---------------------------
+
+So, how are we going to model our uncertain values in Haskell … ? With
+an Algebraic Data Type, of course! [^2]
+
+``` {.haskell}
+data Uncert a = Un { uMean :: !a
+                   , uVar  :: !a
+                   }
+```
+
+We’ll keep track of the mean (the central point) and the *variance*,
+which is the standard deviation *squared*. We keep track of the variance
+and not the standard deviation (the “plus or minus”) because the
+mathematics is a bit more straightforward.
+
+We can write a function to turn a “plus or minus” statement into an
+`Uncert`:
+
+``` {.haskell}
+(+/-) :: Num a => a -> a -> Uncert a
+x +/- dx = Un x (dx*dx)
+```
+
+Give the `dx` (the standard deviation) and store `dx^2`, the variance.
+
+Let’s also throw in a handy helper function for “exact” values:
+
+``` {.haskell}
+exact :: Num a => a -> Uncert a
+exact x = x +/- 0
+```
+
+But, we can do better. We can use pattern synonyms to basically
+“abstract” away the data type itself, and let people “pattern match” on
+a mean and standard deviation:
+
+``` {.haskell}
+pattern (:+/-) :: () => Floating a => a -> a -> Uncert a
+pattern x :+/- dx <- Un x (sqrt->dx)
+  where
+  x :+/- dx = Un x (dx*dx)
+```
+
+Now, people can pattern match on `x :+/- dx` and receive the mean and
+uncertainty directly. Neat!
 
 <!-- Some people like to talk about probability and statistics as "inexact maths" or -->
 <!-- "non-deterministic math", but the exact opposite is true.  Probability and -->
@@ -175,3 +216,5 @@ $$
     distributions, Gaussian distributions, or however manner you like.
     Verify by checking the
     [variance](https://en.wikipedia.org/wiki/Variance) of the sum.
+
+[^2]: What else were you expecting!
