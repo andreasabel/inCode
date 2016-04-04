@@ -206,11 +206,8 @@ actually a matrix of weights from one layer to another:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L10-13}
-\KeywordTok{data} \DataTypeTok{Weights} \FunctionTok{=} \DataTypeTok{W} \NormalTok{\{}\OtherTok{ wBiases  ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Vector} \DataTypeTok{Double}\NormalTok{)}
-                 \NormalTok{,}\OtherTok{ wWeights ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Matrix} \DataTypeTok{Double}\NormalTok{)}
-                 \NormalTok{\}}
-  \KeywordTok{deriving} \NormalTok{(}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Eq}\NormalTok{)}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L0-0}
+\DataTypeTok{Key} \NormalTok{not found}\FunctionTok{:} \KeywordTok{data} \DataTypeTok{Weights}
 \end{Highlighting}
 \end{Shaded}
 
@@ -227,9 +224,9 @@ Now let's represent a feed-forward network:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L15-18}
-\KeywordTok{data} \DataTypeTok{Network} \FunctionTok{=} \DataTypeTok{O} \FunctionTok{!}\DataTypeTok{Weights}
-             \FunctionTok{|} \FunctionTok{!}\DataTypeTok{Weights} \FunctionTok{:&~} \FunctionTok{!}\DataTypeTok{Network}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L10-13}
+\KeywordTok{data} \DataTypeTok{Network} \FunctionTok{=} \DataTypeTok{O} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Matrix} \DataTypeTok{Double}\NormalTok{)}
+             \FunctionTok{|} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Matrix} \DataTypeTok{Double}\NormalTok{) }\FunctionTok{:&~} \FunctionTok{!}\DataTypeTok{Network}
   \KeywordTok{deriving} \NormalTok{(}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Eq}\NormalTok{)}
 \KeywordTok{infixr} \DecValTok{5} \FunctionTok{:&~}
 \end{Highlighting}
@@ -255,14 +252,11 @@ We can write simple procedures, like generating random networks:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L36-46}
-\OtherTok{randomWeights ::} \DataTypeTok{MonadRandom} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \NormalTok{m }\DataTypeTok{Weights}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L28-35}
+\OtherTok{randomWeights ::} \DataTypeTok{MonadRandom} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \NormalTok{m (}\DataTypeTok{Matrix} \DataTypeTok{Double}\NormalTok{)}
 \NormalTok{randomWeights i o }\FunctionTok{=} \KeywordTok{do}
-    \NormalTok{s1 }\OtherTok{<-} \NormalTok{getRandom}
-    \NormalTok{s2 }\OtherTok{<-} \NormalTok{getRandom}
-    \KeywordTok{let} \NormalTok{wBiases  }\FunctionTok{=} \NormalTok{randomVector s1 }\DataTypeTok{Uniform} \NormalTok{o }\FunctionTok{*} \DecValTok{2} \FunctionTok{-} \DecValTok{1}
-        \NormalTok{wWeights }\FunctionTok{=} \NormalTok{uniformSample s2 o (replicate i (}\FunctionTok{-}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{))}
-    \NormalTok{return }\DataTypeTok{W}\NormalTok{\{}\FunctionTok{..}\NormalTok{\}}
+    \NormalTok{s }\OtherTok{<-} \NormalTok{getRandom}
+    \NormalTok{return }\FunctionTok{$} \NormalTok{uniformSample s o (replicate i (}\FunctionTok{-}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{))}
 
 \OtherTok{randomNet ::} \DataTypeTok{MonadRandom} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Int} \OtherTok{->} \NormalTok{[}\DataTypeTok{Int}\NormalTok{] }\OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \NormalTok{m }\DataTypeTok{Network}
 \NormalTok{randomNet i [] o     }\FunctionTok{=}     \DataTypeTok{O} \FunctionTok{<$>} \NormalTok{randomWeights i o}
@@ -279,16 +273,14 @@ And now a function to ``run'' our network on a given input vector:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L20-34}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L0-26}
 \OtherTok{logistic ::} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Double}
 \NormalTok{logistic x }\FunctionTok{=} \DecValTok{1} \FunctionTok{/} \NormalTok{(}\DecValTok{1} \FunctionTok{+} \NormalTok{exp (}\FunctionTok{-}\NormalTok{x))}
 
-\OtherTok{runLayer ::} \DataTypeTok{Weights} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}
-\NormalTok{runLayer (}\DataTypeTok{W} \NormalTok{wB wW) v }\FunctionTok{=} \NormalTok{wB }\FunctionTok{+} \NormalTok{(wW }\FunctionTok{#>} \NormalTok{v)}
-
+\DataTypeTok{Key} \NormalTok{not found}\FunctionTok{:} \NormalTok{runLayer}
 \OtherTok{runNet ::} \DataTypeTok{Network} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}
-\NormalTok{runNet (}\DataTypeTok{O} \NormalTok{w)      }\FunctionTok{!}\NormalTok{v }\FunctionTok{=} \NormalTok{logistic }\OtherTok{`cmap`} \NormalTok{runLayer w v}
-\NormalTok{runNet (w }\FunctionTok{:&~} \NormalTok{n') }\FunctionTok{!}\NormalTok{v }\FunctionTok{=} \KeywordTok{let} \NormalTok{v' }\FunctionTok{=} \NormalTok{logistic }\OtherTok{`cmap`} \NormalTok{runLayer w v}
+\NormalTok{runNet (}\DataTypeTok{O} \NormalTok{w)      }\FunctionTok{!}\NormalTok{v }\FunctionTok{=} \NormalTok{logistic }\OtherTok{`cmap`} \NormalTok{(w }\FunctionTok{#>} \NormalTok{v)}
+\NormalTok{runNet (w }\FunctionTok{:&~} \NormalTok{n') }\FunctionTok{!}\NormalTok{v }\FunctionTok{=} \KeywordTok{let} \NormalTok{v' }\FunctionTok{=} \NormalTok{logistic }\OtherTok{`cmap`} \NormalTok{(w }\FunctionTok{#>} \NormalTok{v)}
                        \KeywordTok{in}  \NormalTok{runNet n' v'}
 \end{Highlighting}
 \end{Shaded}

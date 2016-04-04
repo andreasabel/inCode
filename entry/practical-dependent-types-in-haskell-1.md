@@ -109,12 +109,8 @@ the matrices of weights alone — let’s imagine one “layer”, which is
 actually a matrix of weights from one layer to another:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L10-13
-data Weights = W { wBiases  :: !(Vector Double)
-                 , wWeights :: !(Matrix Double)
-                 }
-  deriving (Show, Eq)
-
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L0-0
+Key not found: data Weights
 ```
 
 Now, a `Weights` linking a layer of $n$ nodes to a layer of $m$ nodes
@@ -128,9 +124,9 @@ linear algebra, implemented using blas/lapack under the hood)
 Now let’s represent a feed-forward network:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L15-18
-data Network = O !Weights
-             | !Weights :&~ !Network
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L10-13
+data Network = O !(Matrix Double)
+             | !(Matrix Double) :&~ !Network
   deriving (Show, Eq)
 infixr 5 :&~
 
@@ -153,14 +149,11 @@ TODO: graphs using diagrams?
 We can write simple procedures, like generating random networks:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L36-46
-randomWeights :: MonadRandom m => Int -> Int -> m Weights
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L28-35
+randomWeights :: MonadRandom m => Int -> Int -> m (Matrix Double)
 randomWeights i o = do
-    s1 <- getRandom
-    s2 <- getRandom
-    let wBiases  = randomVector s1 Uniform o * 2 - 1
-        wWeights = uniformSample s2 o (replicate i (-1, 1))
-    return W{..}
+    s <- getRandom
+    return $ uniformSample s o (replicate i (-1, 1))
 
 randomNet :: MonadRandom m => Int -> [Int] -> Int -> m Network
 randomNet i [] o     =     O <$> randomWeights i o
@@ -175,16 +168,14 @@ configure them to generate them with numbers between -1 and 1)
 And now a function to “run” our network on a given input vector:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L20-34
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L0-26
 logistic :: Double -> Double
 logistic x = 1 / (1 + exp (-x))
 
-runLayer :: Weights -> Vector Double -> Vector Double
-runLayer (W wB wW) v = wB + (wW #> v)
-
+Key not found: runLayer
 runNet :: Network -> Vector Double -> Vector Double
-runNet (O w)      !v = logistic `cmap` runLayer w v
-runNet (w :&~ n') !v = let v' = logistic `cmap` runLayer w v
+runNet (O w)      !v = logistic `cmap` (w #> v)
+runNet (w :&~ n') !v = let v' = logistic `cmap` (w #> v)
                        in  runNet n' v'
 
 ```

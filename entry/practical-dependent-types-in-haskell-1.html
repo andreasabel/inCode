@@ -48,17 +48,14 @@ o_j = f(y_j)
 \mathbf{y} = \mathbf{b} + \hat{W} \mathbf{x}
 " /><br /></p>
 <p>While it’s nice to think about neural networks in terms of their nodes, it makes more sense computationally to only identify a network by simply the matrices of weights alone — let’s imagine one “layer”, which is actually a matrix of weights from one layer to another:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L10-13</span>
-<span class="kw">data</span> <span class="dt">Weights</span> <span class="fu">=</span> <span class="dt">W</span> {<span class="ot"> wBiases  ::</span> <span class="fu">!</span>(<span class="dt">Vector</span> <span class="dt">Double</span>)
-                 ,<span class="ot"> wWeights ::</span> <span class="fu">!</span>(<span class="dt">Matrix</span> <span class="dt">Double</span>)
-                 }
-  <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L0-0</span>
+<span class="dt">Key</span> not found<span class="fu">:</span> <span class="kw">data</span> <span class="dt">Weights</span></code></pre></div>
 <p>Now, a <code>Weights</code> linking a layer of <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?n" alt="n" title="n" /> nodes to a layer of <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?m" alt="m" title="m" /> nodes will have a bias vector of size <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?m" alt="m" title="m" /> (the bias shift for each of the output nodes) and a weight matrix of size <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?m%20%5Ctimes%20n" alt="m \times n" title="m \times n" />.</p>
 <p>(We’re using the <code>Matrix</code> type from the awesome <em><a href="http://hackage.haskell.org/package/hmatrix">hmatrix</a></em> library for linear algebra, implemented using blas/lapack under the hood)</p>
 <p>Now let’s represent a feed-forward network:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L15-18</span>
-<span class="kw">data</span> <span class="dt">Network</span> <span class="fu">=</span> <span class="dt">O</span> <span class="fu">!</span><span class="dt">Weights</span>
-             <span class="fu">|</span> <span class="fu">!</span><span class="dt">Weights</span> <span class="fu">:&amp;~</span> <span class="fu">!</span><span class="dt">Network</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L10-13</span>
+<span class="kw">data</span> <span class="dt">Network</span> <span class="fu">=</span> <span class="dt">O</span> <span class="fu">!</span>(<span class="dt">Matrix</span> <span class="dt">Double</span>)
+             <span class="fu">|</span> <span class="fu">!</span>(<span class="dt">Matrix</span> <span class="dt">Double</span>) <span class="fu">:&amp;~</span> <span class="fu">!</span><span class="dt">Network</span>
   <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)
 <span class="kw">infixr</span> <span class="dv">5</span> <span class="fu">:&amp;~</span></code></pre></div>
 <p>So a network with one input layer, two inner layers, and one output layer would look like:</p>
@@ -66,30 +63,25 @@ o_j = f(y_j)
 <p>Where the first component is the weights from the input to the first hidden layer, the second is the weights from the first hidden layer to the second, and the final is the weights from the second hidden layer to the outputs.</p>
 <p>TODO: graphs using diagrams?</p>
 <p>We can write simple procedures, like generating random networks:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L36-46</span>
-<span class="ot">randomWeights ::</span> <span class="dt">MonadRandom</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m <span class="dt">Weights</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L28-35</span>
+<span class="ot">randomWeights ::</span> <span class="dt">MonadRandom</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m (<span class="dt">Matrix</span> <span class="dt">Double</span>)
 randomWeights i o <span class="fu">=</span> <span class="kw">do</span>
-    s1 <span class="ot">&lt;-</span> getRandom
-    s2 <span class="ot">&lt;-</span> getRandom
-    <span class="kw">let</span> wBiases  <span class="fu">=</span> randomVector s1 <span class="dt">Uniform</span> o <span class="fu">*</span> <span class="dv">2</span> <span class="fu">-</span> <span class="dv">1</span>
-        wWeights <span class="fu">=</span> uniformSample s2 o (replicate i (<span class="fu">-</span><span class="dv">1</span>, <span class="dv">1</span>))
-    return <span class="dt">W</span>{<span class="fu">..</span>}
+    s <span class="ot">&lt;-</span> getRandom
+    return <span class="fu">$</span> uniformSample s o (replicate i (<span class="fu">-</span><span class="dv">1</span>, <span class="dv">1</span>))
 
 <span class="ot">randomNet ::</span> <span class="dt">MonadRandom</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m <span class="dt">Network</span>
 randomNet i [] o     <span class="fu">=</span>     <span class="dt">O</span> <span class="fu">&lt;$&gt;</span> randomWeights i o
 randomNet i (h<span class="fu">:</span>hs) o <span class="fu">=</span> (<span class="fu">:&amp;~</span>) <span class="fu">&lt;$&gt;</span> randomWeights i h <span class="fu">&lt;*&gt;</span> randomNet h hs o</code></pre></div>
 <p>(<code>randomVector</code> and <code>uniformSample</code> are from the <em>hmatrix</em> library, generating random vectors and matrices from a random <code>Int</code> seed. We configure them to generate them with numbers between -1 and 1)</p>
 <p>And now a function to “run” our network on a given input vector:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L20-34</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L0-26</span>
 <span class="ot">logistic ::</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Double</span>
 logistic x <span class="fu">=</span> <span class="dv">1</span> <span class="fu">/</span> (<span class="dv">1</span> <span class="fu">+</span> exp (<span class="fu">-</span>x))
 
-<span class="ot">runLayer ::</span> <span class="dt">Weights</span> <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span>
-runLayer (<span class="dt">W</span> wB wW) v <span class="fu">=</span> wB <span class="fu">+</span> (wW <span class="fu">#&gt;</span> v)
-
+<span class="dt">Key</span> not found<span class="fu">:</span> runLayer
 <span class="ot">runNet ::</span> <span class="dt">Network</span> <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span>
-runNet (<span class="dt">O</span> w)      <span class="fu">!</span>v <span class="fu">=</span> logistic <span class="ot">`cmap`</span> runLayer w v
-runNet (w <span class="fu">:&amp;~</span> n&#39;) <span class="fu">!</span>v <span class="fu">=</span> <span class="kw">let</span> v&#39; <span class="fu">=</span> logistic <span class="ot">`cmap`</span> runLayer w v
+runNet (<span class="dt">O</span> w)      <span class="fu">!</span>v <span class="fu">=</span> logistic <span class="ot">`cmap`</span> (w <span class="fu">#&gt;</span> v)
+runNet (w <span class="fu">:&amp;~</span> n&#39;) <span class="fu">!</span>v <span class="fu">=</span> <span class="kw">let</span> v&#39; <span class="fu">=</span> logistic <span class="ot">`cmap`</span> (w <span class="fu">#&gt;</span> v)
                        <span class="kw">in</span>  runNet n&#39; v&#39;</code></pre></div>
 <p>(<code>#&gt;</code> is matrix-vector multiplication)</p>
 <p>TODO: examples of running</p>
