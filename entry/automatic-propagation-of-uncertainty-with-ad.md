@@ -48,6 +48,23 @@ implementing back-propagation and other optimization algorithms, to
 analyze numerical functions in a mathematical way and break down their
 derivatives and gradients.
 
+You can follow along with [the source
+code](https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs),
+which is actually a *[stack](http://haskellstack.org)* executable! If
+you download the source and you have *[stack](http://haskellstack.org)*
+installed, you can run it as an executable:
+
+``` {.bash}
+$ ./Uncertain.hs
+```
+
+Otherwise, you can run it directly with stack (using `runhaskell`) and
+the
+[linear](http://hackage.haskell.org/package/linear-1.20.4/docs/Linear-V2.html)
+and [ad](http://hackage.haskell.org/package/ad) packages installed. This
+article was written under snapshot
+[lts-5.15](https://www.stackage.org/lts-5.15)!
+
 Certain Uncertainty
 -------------------
 
