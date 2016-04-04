@@ -211,8 +211,7 @@ can’t verify. Those are runtime bugs just waiting to happen. How do we
 even *know* that we calculated the right derivatives, and implemented
 the formula correctly?
 
-What if we could reduce this boilerplate to things that the typechecker
-can enforce for us? That’d be ideal, right? What if we could somehow
+What if we could reduce this boilerplate? What if we could somehow
 analytically compute derivatives for functions instead of computing them
 manually?
 
@@ -299,9 +298,146 @@ scary, but you can think of it as representing a function on `a` (like
 times — something you could use with `diff0` to get a “tower” of
 derivatives.
 
-And … that’s it!
+And … that’s it! We can already define things like:
+
+``` {.haskell}
+negate = liftU negate
+recip  = liftU recip
+sqrt   = liftU sqrt
+sin    = liftU sin
+```
 
 ### Multivariable functions
+
+*ad* also lets you work multivariable functions, too. To model
+multivariable functions, it takes a function from a `Traversable` of
+vales to a single value. We can use the `V2` type from the
+*[linear](http://hackage.haskell.org/package/linear-1.20.4/docs/Linear-V2.html)*
+package to pass in a two-variable function:
+
+``` {.haskell}
+ghci> grad (\(V2 x y) -> x * y^2 + 3*x) (V2 3 1)
+V2 4 6
+```
+
+The gradient of $f(x, y) = x y^2 + 3x$ is $(y^2 + 3, 2xy)$, which, at
+$(3, 2)$, is indeed $(4, 6)$.
+
+The gradient gives us the first order partials, but we need the second
+order partials to calculate the new mean, so for that, we can use
+`hessian`:
+
+``` {.haskell}
+ghci> hessian (\(V2 x y) -> x * y^2 + 3*x) (V2 3 1)
+V2 (V2 0 2)
+   (V2 2 6)
+```
+
+The [hessian](https://en.wikipedia.org/wiki/Hessian_matrix) of a
+function is a symmetric matrix where the diagonals are the second-order
+repeated partial derivatives of each variable, and the off-diagonals are
+mixed partial derivatives. In our case, we only care about the diagonal.
+Indeed, the double-partial with respect to $x$ is $0$, and the
+double-partial with respect to $y$ is $2x$, which gives us a hessian
+with a diagonal $(0, 6)$ at $(3, 1)$.
+
+The *ad* package generously gives us a function that lets us calculate
+the function’s result, its gradient, and its hessian all in one pass:
+
+``` {.haskell}
+ghci> hessian' (\(V2 x y) -> x * y^2 + 3*x) (V2 3 1)
+(12, V2 (4, V2 0 3)
+     V2 (6, V2 2 6)
+)
+```
+
+We can access the gradient by using `fmap fst` on the second component
+of the tuple and access the hessian by using `fmap snd`.
+
+We need a couple of helpers, first — one to get the “diagonal” of our
+hessian, because we only care about the double partials:
+
+``` {.haskell}
+diag :: [[a]] -> [a]
+diag = \case []        -> []
+             []   :yss -> diag (drop1 <$> yss)
+             (x:_):yss -> x : diag (drop1 <$> yss)
+  where
+    drop1 []     = []
+    drop1 (_:zs) = zs
+```
+
+And then a “dot product”, which sums two `Foldable`s component-wise and
+adds the results:
+
+``` {.haskell}
+dot :: (Foldable t, Num a) => t a -> t a -> a
+xs `dot` ys = sum (zipWith (*) (toList xs) (toList ys))
+```
+
+And now we can write our multi-variate function lifter:
+
+``` {.haskell}
+liftUF
+    :: (Traversable f, Fractional a)
+    => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a))
+    -> f (Uncert a)
+    -> Uncert a
+liftUF f us = Un y vy
+  where
+    xs          = uMean <$> us
+    vxs         = uVar  <$> us
+    (fx, hgrad) = hessian' f xs
+    dfxs        = fst <$> hgrad
+    hess        = snd <$> hgrad
+    y           = fx + partials / 2
+      where
+        partials = dot vxsL . diag
+                 $ toList (fmap toList hess))
+    vy          = vxs `dot` ((^2) <$> dfxs)
+```
+
+(Again, don’t mind the scary type
+`forall s. f (AD s (Sparse a)) -> AD s (Sparse a)`, it’s just *ad*’s
+type for things you can use `hessian'` on)
+
+And we can write some nice helper functions so we can use them more
+easily:
+
+``` {.haskell}
+liftU2
+    :: Fractional a
+    => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
+    -> Uncert a
+    -> Uncert a
+    -> Uncert a
+liftU2 f x y = liftUF (\(V2 x' y') -> f x' y') (V2 x y)
+
+liftU3
+    :: Fractional a
+    => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
+    -> Uncert a
+    -> Uncert a
+    -> Uncert a
+    -> Uncert a
+liftU3 f x y z = liftUF (\(V3 x' y' z') -> f x' y' z') (V3 x y z)
+```
+
+At this point, we’re officially done. We can fill in the other
+two-argument functions:
+
+``` {.haskell}
+(+)     = liftU2 (+)
+(*)     = liftU2 (*)
+(/)     = liftU2 (/)
+(**)    = liftU2 (**)
+logBase = liftU2 logBase
+```
+
+Admittedly, there’s still some slight boilerplate (that you can get rid
+of with some Template Haskell, maybe), but you have a *lot* less room
+for error, and a lot simpler to check over and read to make sure you
+didn’t miss any bugs. And at this point, we are done!
 
 <!-- ~~~haskell -->
 <!-- 46 +/- 2 -->
