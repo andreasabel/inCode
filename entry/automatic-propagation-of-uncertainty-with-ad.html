@@ -113,7 +113,49 @@ pattern x <span class="fu">:+/-</span> dx <span class="ot">&lt;-</span> <span cl
 <p>Yikes. All that ugly and complicated numerical code that the typechecker can’t verify. Those are runtime bugs just waiting to happen. How do we even <em>know</em> that we calculated the right derivatives, and implemented the formula correctly?</p>
 <p>What if we could reduce this boilerplate to things that the typechecker can enforce for us? That’d be ideal, right? What if we could somehow analytically compute derivatives for functions instead of computing them manually?</p>
 <h2 id="automatic-differentiation">Automatic Differentiation</h2>
-<p>Automatic differentiation is a technique that</p>
+<p>Automatic differentiation is honestly one of the coolest Haskell tricks you can show that any beginner can immediately understand. Like our trick with <code>Uncert</code>, it is nice to use because of its overloaded <code>Num</code>/numeric typeclasses.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> diff (\x <span class="ot">-&gt;</span> x<span class="fu">^</span><span class="dv">2</span>) <span class="dv">10</span>
+<span class="dv">20</span>
+ghci<span class="fu">&gt;</span> diff (\x <span class="ot">-&gt;</span> sin x) <span class="dv">0</span>
+<span class="fl">1.0</span>
+ghci<span class="fu">&gt;</span> diff (\x <span class="ot">-&gt;</span> sin (x<span class="fu">^</span><span class="dv">3</span>))
+<span class="fl">0.47901729549851046</span></code></pre></div>
+<p>A very rough explanation about how forward-mode automatic differentiation works is that it uses a wrapper type (like ours) that defines <code>*</code>, <code>negate</code>, etc. so that they also compute the <em>derivative(s)</em> of the function, instead of just the <em>result</em>, like normal.</p>
+<h3 id="single-variable-functions">Single-variable functions</h3>
+<p>And, now that we can automatically differentiate functions…we can use this knowledge directly in our implementations. Let’s define a universal “lifter” of single-variable functions.</p>
+<p>We use the function <code>diffs0</code> to get a “tower” of derivatives:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> diffs0 (\x <span class="ot">-&gt;</span> x<span class="fu">^</span><span class="dv">2</span> <span class="fu">-</span> <span class="dv">2</span> x<span class="fu">^</span><span class="dv">3</span>) <span class="dv">4</span>
+[<span class="fu">-</span><span class="dv">112</span>, <span class="fu">-</span><span class="dv">88</span>, <span class="fu">-</span><span class="dv">46</span>, <span class="fu">-</span><span class="dv">12</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span><span class="fu">...</span></code></pre></div>
+<p>The first value is actually <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?4%5E2%20-%202%20%5Ctimes%204%5E3" alt="4^2 - 2 \times 4^3" title="4^2 - 2 \times 4^3" />. The second is the derivative – <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?2%20x%20-%206x%5E2" alt="2 x - 6x^2" title="2 x - 6x^2" /> at 4, the third is the second derivative <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?2%20-%2012%20x" alt="2 - 12 x" title="2 - 12 x" /> at 4, then the third derivative <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?-12" alt="-12" title="-12" />, then the fourth derivative <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?0" alt="0" title="0" />, etc.</p>
+<p>We only need the actual value and the first two derivatives, so we can pattern match them as <code>fx:dfx:ddfx:_ = diffs0 f x</code>, the derivatives and values of our function around the mean <code>x</code>.</p>
+<p>At that point, the equations just translate nicely:</p>
+<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%0A%5Coperatorname%7BE%7D%5Bf%28X%29%5D%20%3D%20f%28%5Cmu_X%29%20%2B%20%5Cfrac%7B1%7D%7B2%7D%20f_%7Bxx%7D%28%5Cmu_X%29%20%5Csigma_X%5E2%0A" alt="
+\operatorname{E}[f(X)] = f(\mu_X) + \frac{1}{2} f_{xx}(\mu_X) \sigma_X^2
+" title="
+\operatorname{E}[f(X)] = f(\mu_X) + \frac{1}{2} f_{xx}(\mu_X) \sigma_X^2
+" /><br /></p>
+<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%0A%5Coperatorname%7BVar%7D%5Bf%28X%29%5D%20%3D%20f_x%28%5Cmu_X%29%5E2%20%5Csigma_X%5E2%0A" alt="
+\operatorname{Var}[f(X)] = f_x(\mu_X)^2 \sigma_X^2
+" title="
+\operatorname{Var}[f(X)] = f_x(\mu_X)^2 \sigma_X^2
+" /><br /></p>
+<p>And we call <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Cmu_X" alt="\mu_X" title="\mu_X" /> <code>x</code> and <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Csigma_X%5E2" alt="\sigma_X^2" title="\sigma_X^2" /> <code>vx</code>, and this becomes:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">y  <span class="fu">=</span> fx <span class="fu">+</span> ddfx <span class="fu">*</span> vx <span class="fu">/</span> <span class="dv">2</span>
+vy <span class="fu">=</span> dfx<span class="fu">^</span><span class="dv">2</span> <span class="fu">*</span> vx</code></pre></div>
+<p>Putting it all together:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">liftU
+<span class="ot">    ::</span> <span class="dt">Fractional</span> a
+    <span class="ot">=&gt;</span> (forall s<span class="fu">.</span> <span class="dt">AD</span> s (<span class="dt">Tower</span> a) <span class="ot">-&gt;</span> <span class="dt">AD</span> s (<span class="dt">Tower</span> a))
+    <span class="ot">-&gt;</span> <span class="dt">Uncert</span> a
+    <span class="ot">-&gt;</span> <span class="dt">Uncert</span> a
+liftU f (<span class="dt">Un</span> x vx) <span class="fu">=</span> <span class="dt">Un</span> y vy
+  <span class="kw">where</span>
+    fx<span class="fu">:</span>dfx<span class="fu">:</span>ddfx<span class="fu">:</span>_ <span class="fu">=</span> diffs0 f x
+    y             <span class="fu">=</span> fx <span class="fu">+</span> ddfx <span class="fu">*</span> vx <span class="fu">/</span> <span class="dv">2</span>
+    vy            <span class="fu">=</span> dfx<span class="fu">^</span><span class="dv">2</span> <span class="fu">*</span> vx</code></pre></div>
+<p>The type <code>forall s. AD s (Tower a) -&gt; AD s (Tower a)</code> looks a little scary, but you can think of it as representing a function on <code>a</code> (like <code>negate</code>, <code>(*2)</code>, etc.) that the <em>ad</em> library can differentiate several times — something you could use with <code>diff0</code> to get a “tower” of derivatives.</p>
+<p>And…that’s it!</p>
+<h3 id="multivariable-functions">Multivariable functions</h3>
 <!-- Some people like to talk about probability and statistics as "inexact maths" or -->
 <!-- "non-deterministic math", but the exact opposite is true.  Probability and -->
 <!-- statistics is the *exact*, rigorous, and *deterministic* math of -->
@@ -133,28 +175,6 @@ pattern x <span class="fu">:+/-</span> dx <span class="ot">&lt;-</span> <span cl
 <!-- 0.78 +/- 0.02 -->
 <!-- 83 +/- 6 -->
 <!-- ~~~ -->
-<!-- That's because more often than not, the errors in both -->
-<!-- values will "cancel each other out" -- it's relatively unlikely that they'll -->
-<!-- both error in the same direction, and so when you add two uncertain values -->
-<!-- together, their uncertainties tend to cancel each other out. -->
-<!-- One of my favorite Haskell magic tricks is "automatic differentiation", "ad", -->
-<!-- which is a surprising application of Haskell's overloaded numeric -->
-<!-- typeclasses/literals, simple algebraic data type manipulation, and universal -->
-<!-- quantification.  The magic happens when you think you're calculating normal -->
-<!-- numeric functions with `+` and `*` and `sin`, etc.,...but you're actually -->
-<!-- calculating their derivatives instead. -->
-<!-- ~~~haskell -->
-<!-- ghci> diff (\x -> x^2) 10 -->
-<!-- 20 -->
-<!-- ghci> diff (\x -> sin x) 0 -->
-<!-- 1.0 -->
-<!-- ghci> diff (\x -> sin (x^3)) -->
-<!-- 0.47901729549851046 -->
-<!-- ~~~ -->
-<!-- We define a new data type with a funky `Num` instance, so instead of defining -->
-<!-- $x^3$ as actual exponentiation, we define it to return $3x^2 \dot{x}$ instead, -->
-<!-- etc. It's a rather cute technique and something that's accessible to any -->
-<!-- Haskell beginner. -->
 <section class="footnotes">
 <hr />
 <ol>

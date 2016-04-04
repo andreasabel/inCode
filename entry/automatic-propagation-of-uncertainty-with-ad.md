@@ -220,7 +220,89 @@ manually?
 Automatic Differentiation
 -------------------------
 
-Automatic differentiation is a technique that
+Automatic differentiation is honestly one of the coolest Haskell tricks
+you can show that any beginner can immediately understand. Like our
+trick with `Uncert`, it is nice to use because of its overloaded
+`Num`/numeric typeclasses.
+
+``` {.haskell}
+ghci> diff (\x -> x^2) 10
+20
+ghci> diff (\x -> sin x) 0
+1.0
+ghci> diff (\x -> sin (x^3))
+0.47901729549851046
+```
+
+A very rough explanation about how forward-mode automatic
+differentiation works is that it uses a wrapper type (like ours) that
+defines `*`, `negate`, etc. so that they also compute the
+*derivative(s)* of the function, instead of just the *result*, like
+normal.
+
+### Single-variable functions
+
+And, now that we can automatically differentiate functions…we can use
+this knowledge directly in our implementations. Let’s define a universal
+“lifter” of single-variable functions.
+
+We use the function `diffs0` to get a “tower” of derivatives:
+
+``` {.haskell}
+ghci> diffs0 (\x -> x^2 - 2 x^3) 4
+[-112, -88, -46, -12, 0, 0, 0, 0...
+```
+
+The first value is actually $4^2 - 2 \times 4^3$. The second is the
+derivative – $2 x - 6x^2$ at 4, the third is the second derivative
+$2 - 12 x$ at 4, then the third derivative $-12$, then the fourth
+derivative $0$, etc.
+
+We only need the actual value and the first two derivatives, so we can
+pattern match them as `fx:dfx:ddfx:_ = diffs0 f x`, the derivatives and
+values of our function around the mean `x`.
+
+At that point, the equations just translate nicely:
+
+$$
+\operatorname{E}[f(X)] = f(\mu_X) + \frac{1}{2} f_{xx}(\mu_X) \sigma_X^2
+$$
+
+$$
+\operatorname{Var}[f(X)] = f_x(\mu_X)^2 \sigma_X^2
+$$
+
+And we call $\mu_X$ `x` and $\sigma_X^2$ `vx`, and this becomes:
+
+``` {.haskell}
+y  = fx + ddfx * vx / 2
+vy = dfx^2 * vx
+```
+
+Putting it all together:
+
+``` {.haskell}
+liftU
+    :: Fractional a
+    => (forall s. AD s (Tower a) -> AD s (Tower a))
+    -> Uncert a
+    -> Uncert a
+liftU f (Un x vx) = Un y vy
+  where
+    fx:dfx:ddfx:_ = diffs0 f x
+    y             = fx + ddfx * vx / 2
+    vy            = dfx^2 * vx
+```
+
+The type `forall s. AD s (Tower a) -> AD s (Tower a)` looks a little
+scary, but you can think of it as representing a function on `a` (like
+`negate`, `(*2)`, etc.) that the *ad* library can differentiate several
+times — something you could use with `diff0` to get a “tower” of
+derivatives.
+
+And…that’s it!
+
+### Multivariable functions
 
 <!-- Some people like to talk about probability and statistics as "inexact maths" or -->
 <!-- "non-deterministic math", but the exact opposite is true.  Probability and -->
@@ -241,28 +323,6 @@ Automatic differentiation is a technique that
 <!-- 0.78 +/- 0.02 -->
 <!-- 83 +/- 6 -->
 <!-- ~~~ -->
-<!-- That's because more often than not, the errors in both -->
-<!-- values will "cancel each other out" -- it's relatively unlikely that they'll -->
-<!-- both error in the same direction, and so when you add two uncertain values -->
-<!-- together, their uncertainties tend to cancel each other out. -->
-<!-- One of my favorite Haskell magic tricks is "automatic differentiation", "ad", -->
-<!-- which is a surprising application of Haskell's overloaded numeric -->
-<!-- typeclasses/literals, simple algebraic data type manipulation, and universal -->
-<!-- quantification.  The magic happens when you think you're calculating normal -->
-<!-- numeric functions with `+` and `*` and `sin`, etc.,...but you're actually -->
-<!-- calculating their derivatives instead. -->
-<!-- ~~~haskell -->
-<!-- ghci> diff (\x -> x^2) 10 -->
-<!-- 20 -->
-<!-- ghci> diff (\x -> sin x) 0 -->
-<!-- 1.0 -->
-<!-- ghci> diff (\x -> sin (x^3)) -->
-<!-- 0.47901729549851046 -->
-<!-- ~~~ -->
-<!-- We define a new data type with a funky `Num` instance, so instead of defining -->
-<!-- $x^3$ as actual exponentiation, we define it to return $3x^2 \dot{x}$ instead, -->
-<!-- etc. It's a rather cute technique and something that's accessible to any -->
-<!-- Haskell beginner. -->
 
 [^1]: If you don’t believe me, stop reading this article now and try it
     yourself! You can simulate noisy data by using uniform noise

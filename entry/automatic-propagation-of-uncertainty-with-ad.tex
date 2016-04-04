@@ -329,6 +329,98 @@ manually?
 
 \section{Automatic Differentiation}\label{automatic-differentiation}
 
-Automatic differentiation is a technique that
+Automatic differentiation is honestly one of the coolest Haskell tricks
+you can show that any beginner can immediately understand. Like our
+trick with \texttt{Uncert}, it is nice to use because of its overloaded
+\texttt{Num}/numeric typeclasses.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{diff (\textbackslash{}x }\OtherTok{->} \NormalTok{x}\FunctionTok{^}\DecValTok{2}\NormalTok{) }\DecValTok{10}
+\DecValTok{20}
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{diff (\textbackslash{}x }\OtherTok{->} \NormalTok{sin x) }\DecValTok{0}
+\FloatTok{1.0}
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{diff (\textbackslash{}x }\OtherTok{->} \NormalTok{sin (x}\FunctionTok{^}\DecValTok{3}\NormalTok{))}
+\FloatTok{0.47901729549851046}
+\end{Highlighting}
+\end{Shaded}
+
+A very rough explanation about how forward-mode automatic
+differentiation works is that it uses a wrapper type (like ours) that
+defines \texttt{*}, \texttt{negate}, etc. so that they also compute the
+\emph{derivative(s)} of the function, instead of just the \emph{result},
+like normal.
+
+\subsection{Single-variable functions}\label{single-variable-functions}
+
+And, now that we can automatically differentiate functions\ldots{}we can
+use this knowledge directly in our implementations. Let's define a
+universal ``lifter'' of single-variable functions.
+
+We use the function \texttt{diffs0} to get a ``tower'' of derivatives:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{diffs0 (\textbackslash{}x }\OtherTok{->} \NormalTok{x}\FunctionTok{^}\DecValTok{2} \FunctionTok{-} \DecValTok{2} \NormalTok{x}\FunctionTok{^}\DecValTok{3}\NormalTok{) }\DecValTok{4}
+\NormalTok{[}\FunctionTok{-}\DecValTok{112}\NormalTok{, }\FunctionTok{-}\DecValTok{88}\NormalTok{, }\FunctionTok{-}\DecValTok{46}\NormalTok{, }\FunctionTok{-}\DecValTok{12}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{0}\FunctionTok{...}
+\end{Highlighting}
+\end{Shaded}
+
+The first value is actually \(4^2 - 2 \times 4^3\). The second is the
+derivative -- \(2 x - 6x^2\) at 4, the third is the second derivative
+\(2 - 12 x\) at 4, then the third derivative \(-12\), then the fourth
+derivative \(0\), etc.
+
+We only need the actual value and the first two derivatives, so we can
+pattern match them as \texttt{fx:dfx:ddfx:\_\ =\ diffs0\ f\ x}, the
+derivatives and values of our function around the mean \texttt{x}.
+
+At that point, the equations just translate nicely:
+
+\[
+\operatorname{E}[f(X)] = f(\mu_X) + \frac{1}{2} f_{xx}(\mu_X) \sigma_X^2
+\]
+
+\[
+\operatorname{Var}[f(X)] = f_x(\mu_X)^2 \sigma_X^2
+\]
+
+And we call \(\mu_X\) \texttt{x} and \(\sigma_X^2\) \texttt{vx}, and
+this becomes:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{y  }\FunctionTok{=} \NormalTok{fx }\FunctionTok{+} \NormalTok{ddfx }\FunctionTok{*} \NormalTok{vx }\FunctionTok{/} \DecValTok{2}
+\NormalTok{vy }\FunctionTok{=} \NormalTok{dfx}\FunctionTok{^}\DecValTok{2} \FunctionTok{*} \NormalTok{vx}
+\end{Highlighting}
+\end{Shaded}
+
+Putting it all together:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{liftU}
+\OtherTok{    ::} \DataTypeTok{Fractional} \NormalTok{a}
+    \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Tower} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Tower} \NormalTok{a))}
+    \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
+    \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
+\NormalTok{liftU f (}\DataTypeTok{Un} \NormalTok{x vx) }\FunctionTok{=} \DataTypeTok{Un} \NormalTok{y vy}
+  \KeywordTok{where}
+    \NormalTok{fx}\FunctionTok{:}\NormalTok{dfx}\FunctionTok{:}\NormalTok{ddfx}\FunctionTok{:}\NormalTok{_ }\FunctionTok{=} \NormalTok{diffs0 f x}
+    \NormalTok{y             }\FunctionTok{=} \NormalTok{fx }\FunctionTok{+} \NormalTok{ddfx }\FunctionTok{*} \NormalTok{vx }\FunctionTok{/} \DecValTok{2}
+    \NormalTok{vy            }\FunctionTok{=} \NormalTok{dfx}\FunctionTok{^}\DecValTok{2} \FunctionTok{*} \NormalTok{vx}
+\end{Highlighting}
+\end{Shaded}
+
+The type
+\texttt{forall\ s.\ AD\ s\ (Tower\ a)\ -\textgreater{}\ AD\ s\ (Tower\ a)}
+looks a little scary, but you can think of it as representing a function
+on \texttt{a} (like \texttt{negate}, \texttt{(*2)}, etc.) that the
+\emph{ad} library can differentiate several times --- something you
+could use with \texttt{diff0} to get a ``tower'' of derivatives.
+
+And\ldots{}that's it!
+
+\subsection{Multivariable functions}\label{multivariable-functions}
 
 \end{document}
