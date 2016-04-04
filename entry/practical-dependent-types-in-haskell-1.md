@@ -1,5 +1,5 @@
-Practical Dependent Types in Haskell: Type-Safe Linear Algebra
-==============================================================
+Practical Dependent Types in Haskell: Type-Safe Neural Networks
+===============================================================
 
 (Originally posted by Justin Le [https://blog.jle.im/])
 
