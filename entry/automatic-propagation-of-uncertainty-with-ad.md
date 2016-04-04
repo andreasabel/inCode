@@ -10,7 +10,7 @@ us work with data in surprisingly elegant and expressive ways.
 Here is one example — from my work in experimental physics and
 statistics, we often deal with experimental/sampled values with inherent
 uncertainty. If you ever measure something to be $12.4\,\mathrm{cm}$,
-that doesn’t mean it’s $12.400000\,\mathrm{cm}$, it means that it’s
+that doesn’t mean it’s $12.400000\,\mathrm{cm}$ — it means that it’s
 somewhere between $12.3\,\mathrm{cm}$ and $12.5\,\mathrm{cm}$…and we
 don’t know exactly. We can write it as $12.4 \pm 0.1\,\mathrm{cm}$.
 
@@ -54,26 +54,26 @@ Certain Uncertainty
 -------------------
 
 First of all, let’s think about why adding two “uncertain” values
-doesn’t involve simply adding the uncertainties linearly. If you don’t
+doesn’t involve simply adding the uncertainties linearly. (If you don’t
 care about the math and just want to get on to the Haskell, feel free to
-skip this section!
+skip this section!)
 
-If I have a value $16 \pm 3$ (maybe I have a ruler whose ticks are 2
+If I have a value $16 \pm 3$ (maybe I have a ruler whose ticks are 3
 units apart, or an instrument that produces measurements with 4 units of
 noise), it either means that it’s a little below 16 or a little above
 16. If I have an independently sampled value $25 \pm 4$, it means that
 it’s a little below 25 or a little above 25.
 
 What happens if I want to think about their sum? Well, it’s going to be
-somewhere around 41. But, the uncertainty won’t be $\pm 7$. In order for
-that to be possible, the errors in the two values have to *always be
-aligned*. Only when every “little bit above” 16 error lines up perfectly
-with a “little bit above” 25 error, and when every single “little bit
-below” 16 error lines up perfectly with a “little bit above” 25 error,
-would you really get something that is $\pm 7$. But, because the two
-values are sampled independently, you shouldn’t expect such alignment.
-So, you’ll get an uncertainty that’s *less than* $\pm 7$. In fact, it’ll
-actually be around $\pm 5$.
+somewhere around 41. But, the uncertainty won’t be $\pm 7$. It would
+only be $\pm 7$ if the errors in the two values are *always aligned*.
+Only when every “little bit above” 16 error lines up perfectly with a
+“little bit above” 25 error, and when every single “little bit below” 16
+error lines up perfectly with a “little bit above” 25 error, would you
+really get something that is $\pm 7$. But, because the two values are
+sampled independently, you shouldn’t expect such alignment. So, you’ll
+get an uncertainty that’s *less than* $\pm 7$. In fact, it’ll actually
+be around $\pm 5$.
 
 In general, we find that, for *independent* $X$ and $Y$:
 
@@ -100,6 +100,8 @@ $$
 f(x_0 + x, y_0 + y) \approx f_x(x_0, y_0) x + f_y(x_0, y_0) y + f(x_0, y_0)
 $$
 
+Where $f_x(x_0,y_0)$ is $\frac{\partial f}{\partial x}$ at $(x_0, y_0)$.
+
 Look familiar? This is exactly the form that we used earlier to
 calculate “combined” variance!
 
@@ -114,8 +116,11 @@ $$
 \operatorname{E}[f(X,Y)] \approx
 f(\mu_X, \mu_Y) +
 \frac{1}{2} f_{xx}(\mu_X, \mu_Y) \sigma_X^2 +
-\frac{1}{2} f_{yy}(\mu_X, \mu_Y) \sigma_Y^2 +
+\frac{1}{2} f_{yy}(\mu_X, \mu_Y) \sigma_Y^2
 $$
+
+Where $f_{xx}(\mu_X, \mu_Y)$ is $\frac{\partial^2 f}{{\partial x}^2}$ at
+$(\mu_X, \mu_Y)$
 
 For our case of simple addition,
 $\operatorname{E}[X + Y] = \mu_X + \mu_Y$, because the second-order
@@ -203,9 +208,9 @@ instance Fractional a => Fractional (Uncert a) where
 ```
 
 Yikes. All that ugly and complicated numerical code that the typechecker
-verify. Those are runtime bugs just waiting to happen. How do we even
-*know* that we calculated the right derivatives, and implemented the
-formula correctly?
+can’t verify. Those are runtime bugs just waiting to happen. How do we
+even *know* that we calculated the right derivatives, and implemented
+the formula correctly?
 
 What if we could reduce this boilerplate to things that the typechecker
 can enforce for us? That’d be ideal, right? What if we could somehow
@@ -215,7 +220,7 @@ manually?
 Automatic Differentiation
 -------------------------
 
-Surprise!
+Automatic differentiation is a technique that
 
 <!-- Some people like to talk about probability and statistics as "inexact maths" or -->
 <!-- "non-deterministic math", but the exact opposite is true.  Probability and -->
