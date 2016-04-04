@@ -19,12 +19,10 @@ numbers with uncertainty. What happens when you “add” $12 \pm 3$ and
 $19 \pm 6$?
 
 The initial guess might be $27 \pm 9$, because one is $\pm 3$ and the
-other is $\pm 6$.
-
-But! If you actually do experiments like this several times, you’ll see
-that this isn’t the case. If you tried this out experimentally and
-simulate several hundred trials, you’ll see that the answer is actually
-something like $31 \pm 7$.[^1]
+other is $\pm 6$. But! If you actually do experiments like this several
+times, you’ll see that this isn’t the case. If you tried this out
+experimentally and simulate several hundred trials, you’ll see that the
+answer is actually something like $31 \pm 7$.[^1]
 
 Let’s write ourselves a Haskell data type that lets us work with
 “numbers with inherent uncertainty”:
@@ -261,9 +259,9 @@ derivative $0$, etc.
 
 We only need the actual value and the first two derivatives, so we can
 pattern match them as `fx:dfx:ddfx:_ = diffs0 f x`, the derivatives and
-values of our function around the mean `x`.
+values of the function we lift, `f`, around the mean `x`.
 
-At that point, the equations just translate nicely:
+At that point, the equations we have from before just translate nicely:
 
 $$
 \operatorname{E}[f(X)] = f(\mu_X) + \frac{1}{2} f_{xx}(\mu_X) \sigma_X^2
