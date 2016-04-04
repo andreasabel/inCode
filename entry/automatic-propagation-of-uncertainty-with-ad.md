@@ -121,14 +121,12 @@ $$
 A similar analysis can be used to figure out how the expected value
 changes by taking the taylor expansion to the second degree:
 
-\$\$ \operatorname{E}\[f(X,Y)\] \approx
-f(\mu\_X, \mu*Y) +
-\left.\frac{\partial^2 f}{{\partial x}^2}\right\vert*{\mu\_X, \mu\_Y}
-\sigma*X\^2 +
-\left.\frac{\partial^2 f}{{\partial y}^2}\right\vert*{\mu\_X, \mu\_Y}
-\sigma\_Y\^2 +
-
-\$\$
+$$
+\operatorname{E}[f(X,Y)] \approx
+f(\mu_X, \mu_Y) +
+\frac{1}{2} \left.\frac{\partial^2 f}{{\partial x}^2}\right\vert_{\mu_X, \mu_Y} \sigma_X^2 +
+\frac{1}{2} \left.\frac{\partial^2 f}{{\partial y}^2}\right\vert_{\mu_X, \mu_Y} \sigma_Y^2
+$$
 
 <!-- Some people like to talk about probability and statistics as "inexact maths" or -->
 <!-- "non-deterministic math", but the exact opposite is true.  Probability and -->
