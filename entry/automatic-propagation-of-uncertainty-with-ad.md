@@ -104,8 +104,8 @@ its tangent hyperplane:
 
 $$
 f(x_0 + x, y_0 + y) \approx
-\frac{\partial f}{\partial x}|_{x_0, y_0} x + 
-\frac{\partial f}{\partial y}|_{x_0, y_0} y + 
+\left.\frac{\partial f}{\partial x}\right\vert_{x_0, y_0} x + 
+\left.\frac{\partial f}{\partial y}\right\vert_{x_0, y_0} y + 
 f(x_0, y_0)
 $$
 
@@ -114,8 +114,8 @@ calculate “combined” variance!
 
 $$
 \operatorname{Var}[f(X,Y)] \approx 
-\frac{\partial f}{\partial x}|_{\mu_X, \mu_Y}^2 \sigma_X^2 +
-\frac{\partial f}{\partial x}|_{\mu_X, \mu_Y}^2 \sigma_Y^2
+\left.\frac{\partial f}{\partial x}\right\vert_{\mu_X, \mu_Y}^2 \sigma_X^2 +
+\left.\frac{\partial f}{\partial x}\right\vert_{\mu_X, \mu_Y}^2 \sigma_Y^2
 $$
 
 neat, huh?
