@@ -437,7 +437,7 @@ logBase = liftU2 logBase
 Admittedly, there’s still some slight boilerplate (that you can get rid
 of with some Template Haskell, maybe), but you have a *lot* less room
 for error, and a lot simpler to check over and read to make sure you
-didn’t miss any bugs. And at this point, we are done!
+didn’t miss any bugs.
 
 <!-- ~~~haskell -->
 <!-- 46 +/- 2 -->
