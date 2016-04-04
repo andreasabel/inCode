@@ -36,6 +36,10 @@ ghci> x + y
 31 +/- 7
 ghci> x * y
 550 +/- 90
+ghci> logBase y x
+1.4 +/- 0.1
+ghci> sin(x) / y
+-0.2 +/- 0.1
 ```
 
 <!-- That's because more often than not, the errors in both -->
