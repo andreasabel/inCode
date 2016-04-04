@@ -100,7 +100,8 @@ $$
 f(x_0 + x, y_0 + y) \approx f_x(x_0, y_0) x + f_y(x_0, y_0) y + f(x_0, y_0)
 $$
 
-Where $f_x(x_0,y_0)$ is $\frac{\partial f}{\partial x}$ at $(x_0, y_0)$.
+Where $f_x(x_0,y_0)$ is the first (partial) derivative with respect to
+$x$ at $(x_0, y_0)$.
 
 Look familiar? This is exactly the form that we used earlier to
 calculate “combined” variance!
@@ -119,8 +120,8 @@ f(\mu_X, \mu_Y) +
 \frac{1}{2} f_{yy}(\mu_X, \mu_Y) \sigma_Y^2
 $$
 
-Where $f_{xx}(\mu_X, \mu_Y)$ is $\frac{\partial^2 f}{{\partial x}^2}$ at
-$(\mu_X, \mu_Y)$
+Where $f_{xx}(\mu_X, \mu_Y)$ is the second (partial) derivative with
+respect to $x$ twice at $(\mu_X, \mu_Y)$
 
 For our case of simple addition,
 $\operatorname{E}[X + Y] = \mu_X + \mu_Y$, because the second-order
@@ -183,7 +184,7 @@ instance Num a => Num (Uncert a) where
     fromIntegral      = exact . fromIntegral
     Un x vx + Un y vy = Un (x + y)    (vx + vy)
     Un x vx - Un y vy = Un (x - y)    (vx + vy)
-    Un x vx * Un y vy = Un (x * y)    (y*y * vx + x*x * vy)
+    Un x vx * Un y vy = Un (x * y)    (y^2 * vx + x^2 * vy)
     negate (Un x vx)  = Un (negate x) vx
     -- ...
 ```
@@ -195,10 +196,10 @@ Pretty anticlimactic, huh?
 
 ### The Problem
 
-But, wait…this method is definitely not ideal. It’s pretty repetitive,
+But, wait — this method is definitely not ideal. It’s pretty repetitive,
 and involves a but of copy-and-pasting code that is slightly different
 in ways the typechecker can’t verify. What if we didn’t change something
-we were supposed to? And…if you look at the `Fractional` instance…
+we were supposed to? And, if you look at the `Fractional` instance…
 
 ``` {.haskell}
 instance Fractional a => Fractional (Uncert a) where
@@ -242,7 +243,7 @@ normal.
 
 ### Single-variable functions
 
-And, now that we can automatically differentiate functions…we can use
+And, now that we can automatically differentiate functions, we can use
 this knowledge directly in our implementations. Let’s define a universal
 “lifter” of single-variable functions.
 
@@ -300,22 +301,10 @@ scary, but you can think of it as representing a function on `a` (like
 times — something you could use with `diff0` to get a “tower” of
 derivatives.
 
-And…that’s it!
+And … that’s it!
 
 ### Multivariable functions
 
-<!-- Some people like to talk about probability and statistics as "inexact maths" or -->
-<!-- "non-deterministic math", but the exact opposite is true.  Probability and -->
-<!-- statistics is the *exact*, rigorous, and *deterministic* math of -->
-<!-- non-deterministic domains. -->
-<!-- But first, let's think about why adding -->
-<!-- Quantum mechanics, after all, is one of the most -->
-<!-- exact and deterministic triumphs of mathematical physics -- despite what you -->
-<!-- might hear in physics popularisations.[^qm] -->
-<!-- [^qm]: Quantum mechanics, the discipline, makes very precise, exact, and -->
-<!-- testable predictions about probability distributions and non-deterministic -->
-<!-- processes, and the predictions of quantum mechanics are some of the most -->
-<!-- precisely tested and verified predictions in the history of physics. -->
 <!-- ~~~haskell -->
 <!-- 46 +/- 2 -->
 <!-- 450 +/- 41 -->
