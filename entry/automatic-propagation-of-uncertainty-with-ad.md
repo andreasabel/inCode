@@ -9,10 +9,10 @@ us work with data in surprisingly elegant and expressive ways.
 
 Here is one example — from my work in experimental physics and
 statistics, we often deal with experimental/sampled values with inherent
-uncertainty. If you ever measure something to be $12.4 cm$, that doesn’t
-mean it’s $12.400000 cm$, it means that it’s somewhere between $12.3 cm$
-and $12.5 cm$…and we don’t know exactly. We can write it as
-$12.4 +/- 0.1 cm$.
+uncertainty. If you ever measure something to be $12.4 \mathrm{cm}$,
+that doesn’t mean it’s $12.400000 \mathrm{cm}$, it means that it’s
+somewhere between $12.3 \mathrm{cm}$ and $12.5 \mathrm{cm}$…and we don’t
+know exactly. We can write it as $12.4 \pm 0.1 \mathrm{cm}$.
 
 <!-- One of my favorite Haskell magic tricks is "automatic differentiation", "ad", -->
 <!-- which is a surprising application of Haskell's overloaded numeric -->
