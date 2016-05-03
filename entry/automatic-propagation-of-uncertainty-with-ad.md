@@ -90,7 +90,9 @@ sampled independently, you shouldn’t expect such alignment. So, you’ll
 get an uncertainty that’s *less than* $\pm 7$. In fact, it’ll actually
 be around $\pm 5$.
 
-In general, we find that for *independent* $X$ and $Y$: $$
+In general, we find that for *independent* $X$ and $Y$:
+
+$$
 \operatorname{Var}[aX + bY + c] = a^2 \sigma_X^2 + b^2 \sigma_Y^2
 $$
 
