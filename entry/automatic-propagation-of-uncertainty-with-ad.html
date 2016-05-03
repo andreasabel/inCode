@@ -34,9 +34,9 @@ ghci<span class="fu">&gt;</span> logBase y x
 ghci<span class="fu">&gt;</span> log (x<span class="fu">**</span>y)
 <span class="fl">85.9</span> <span class="fu">+/-</span> <span class="fl">0.3</span></code></pre></div>
 <p>Along the way, we’ll also learn how to harness the power of awesome <a href="http://hackage.haskell.org/package/ad">ad</a> library, a library used in implementing back-propagation and other optimization algorithms, to analyze numerical functions in a mathematical way and break down their derivatives and gradients.</p>
-<p>You can follow along with <a href="https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs">the source code</a>, which is actually a <em><a href="http://haskellstack.org">stack</a></em> executable! If you download the source and you have <em><a href="http://haskellstack.org">stack</a></em> installed, you can run it as an executable:</p>
+<p>You can follow along with <a href="https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs">the source code</a>, which is actually a <em><a href="http://haskellstack.org">stack</a></em> executable! If you download the source and you have <em><a href="http://haskellstack.org">stack</a></em> installed, you can run it (and run the tests above) as an executable:</p>
 <div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">./Uncertain.hs</span></code></pre></div>
-<p>Otherwise, you can run it directly with stack (using <code>runhaskell</code>) and the <a href="http://hackage.haskell.org/package/linear-1.20.4/docs/Linear-V2.html">linear</a> and <a href="http://hackage.haskell.org/package/ad">ad</a> packages installed. This article was written under snapshot <a href="https://www.stackage.org/lts-5.15">lts-5.15</a>!</p>
+<p>Otherwise, you can run it directly with stack (using <code>runhaskell</code>) and the <a href="http://hackage.haskell.org/package/linear-1.20.4/docs/Linear-V2.html">linear</a> and <a href="http://hackage.haskell.org/package/ad">ad</a> packages installed…or load it up with <code>stack ghci</code> to play with it. This article was written under snapshot <a href="https://www.stackage.org/lts-5.15">lts-5.15</a>!</p>
 <h2 id="certain-uncertainty">Certain Uncertainty</h2>
 <p>First of all, let’s think about why adding two “uncertain” values doesn’t involve simply adding the uncertainties linearly. (If you don’t care about the math and just want to get on to the Haskell, feel free to skip this section!)</p>
 <p>If I have a value <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?16%20%5Cpm%203" alt="16 \pm 3" title="16 \pm 3" /> (maybe I have a ruler whose ticks are 3 units apart, or an instrument that produces measurements with 4 units of noise), it either means that it’s a little below 16 or a little above 16. If I have an independently sampled value <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?25%20%5Cpm%204" alt="25 \pm 4" title="25 \pm 4" />, it means that it’s a little below 25 or a little above 25.</p>
@@ -241,18 +241,38 @@ liftU3 f x y z <span class="fu">=</span> liftUF (\(<span class="dt">V3</span> x&
 logBase <span class="fu">=</span> liftU2 logBase</code></pre></div>
 <p>Admittedly, there’s still some slight boilerplate (that you can get rid of with some Template Haskell, maybe), but you have a <em>lot</em> less room for error, and a lot simpler to check over and read to make sure you didn’t miss any bugs.</p>
 <h2 id="wrapping-it-up">Wrapping it up</h2>
-<!-- ~~~haskell -->
-<!-- 46 +/- 2 -->
-<!-- 450 +/- 41 -->
-<!-- 6.8 +/- 0.2 -->
-<!-- 0.78 +/- 0.02 -->
-<!-- 83 +/- 6 -->
-<!-- ~~~ -->
+<p>The full code (with all of the numeric instances fully implemented) is up <a href="https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs">on github</a>, which you can run and explore and test by executing it or loading it with <code>stack ghci</code>. I’ve added a special <em>Show</em> instance that “rounds” your values to as many digits that your uncertainty suggests, to give more meaningful <code>show</code>s.</p>
+<p>All of what’s in this post is actually up on my <em><a href="http://hackage.haskell.org/package/uncertain">uncertain</a></em> package, on hackage, if you want to use it in your own projects, or see how I take this and make it more robust for real-world applications. The package also has more features on top of the basic things shown here.</p>
+<h3 id="verification-and-accuracy">Verification and Accuracy</h3>
+<p>My <em><a href="http://hackage.haskell.org/package/uncertain">uncertain</a></em> package has a monte carlo module to propagate uncertainty through monte carlo simulations. Let’s see how the values compare!</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> x <span class="fu">+</span> y         <span class="co">-- Monte Carlo Results:</span>
+<span class="dv">46</span> <span class="fu">+/-</span> <span class="dv">2</span>            <span class="co">-- actually 46 +/- 2</span>
+ghci<span class="fu">&gt;</span> x <span class="fu">*</span> y
+<span class="dv">450</span> <span class="fu">+/-</span> <span class="dv">40</span>          <span class="co">-- actually 450 +/- 40</span>
+ghci<span class="fu">&gt;</span> sqrt (x <span class="fu">+</span> y)
+<span class="fl">6.8</span> <span class="fu">+/-</span> <span class="fl">0.2</span>         <span class="co">-- actually 6.8 +/- 0.2</span>
+ghci<span class="fu">&gt;</span> logBase y x
+<span class="fl">0.78</span> <span class="fu">+/-</span> <span class="fl">0.02</span>       <span class="co">-- actually 0.78 +/- 0.02</span>
+ghci<span class="fu">&gt;</span> log (x<span class="fu">**</span>y)
+<span class="fl">85.9</span> <span class="fu">+/-</span> <span class="fl">0.3</span>        <span class="co">-- actually 83 +/- 6</span></code></pre></div>
+<p>So, it looks like the mathematical model of uncertainty propagation matched up well with the “actual” results we gain from monte carlo simulations! The only one of our examples that was significantly wrong was the <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Coperatorname%7Blog%7D%28x%5Ey%29" alt="\operatorname{log}(x^y)" title="\operatorname{log}(x^y)" /> example, which heavily underestimated the uncertainty by about a factor of 20. But, remember, the model was derived after dropping the 2nd, 3rd, 4th, etc. terms of the taylor expansion for the calculation of the new uncertainty, and the 4th, 6th, etc. terms of the taylor expansion for the calculation of the new mean. For functions that have high second, third, fourth derivatives relative to the mean and the uncertainty, it’s going to be a bit off.</p>
+<h3 id="what-next">What next?</h3>
+<p>A simple extension of this would be to implement the monte carlo simulator I mentioned above, which is pretty straightforward to implement with the <em><a href="http://hackage.haskell.org/package/mwc-random">mwc-random</a></em> package.</p>
+<p>However, the weirdest caveat here is that we never deal with what happened to terms that are correlated. All of our math assumed uncorrelated samples. But what happens if we have expressions that involve additions of correlated values?</p>
+<p>For example:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="kw">let</span> x <span class="fu">=</span> <span class="fl">14.6</span> <span class="fu">+/-</span> <span class="fl">0.8</span> <span class="kw">in</span> x <span class="fu">+</span> x
+<span class="dv">29</span> <span class="fu">+/-</span> <span class="dv">1</span>
+ghci<span class="fu">&gt;</span> <span class="kw">let</span> x <span class="fu">=</span> <span class="fl">14.6</span> <span class="fu">+/-</span> <span class="fl">0.8</span> <span class="kw">in</span> <span class="dv">2</span><span class="fu">*</span>x
+<span class="dv">29</span> <span class="fu">+/-</span> <span class="dv">2</span></code></pre></div>
+<p>Unfortunately, <code>x + x</code> is different than <code>2*x</code>. This is because <code>x</code> acts like an <em>independent generator</em>, so when you say <code>x + x</code>, it expands to <code>(14.6 +/- 0.8) + (14.6 +/- 0.8)</code>, which represents the addition of two independent samples.</p>
+<p>When you say <code>2*x</code>, that represents sampling <code>x</code> <em>once</em> and <em>doubling</em> it. If you sample <code>x</code> and double it, any error in <code>x</code> will also be doubled. That’s why the uncertainty is greater in the <code>2*x</code> version.</p>
+<p>How can we account for correlated values that are combined in complex ways? Stay tuned for the next part!<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a></p>
 <section class="footnotes">
 <hr />
 <ol>
 <li id="fn1"><p>If you don’t believe me, stop reading this article now and try it yourself! You can simulate noisy data by using uniform noise distributions, Gaussian distributions, or however manner you like. Verify by checking the <a href="https://en.wikipedia.org/wiki/Standard_deviation">standard deviation</a> of the sums.<a href="#fnref1">↩</a></p></li>
 <li id="fn2"><p>What else were you expecting!<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>Or just look at my package on hackage :)<a href="#fnref3">↩</a></p></li>
 </ol>
 </section></div><footer><ul class="entry-series"></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/numerical-methods.html" class="tag-a-tag">#numerical methods</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@tutorials.html" class="tag-a-category">@TUTORIALS</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing “in Code”!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/automatic-propagation-of-uncertainty-with-ad.html';

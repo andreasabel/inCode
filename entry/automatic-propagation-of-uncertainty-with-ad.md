@@ -52,7 +52,7 @@ You can follow along with [the source
 code](https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs),
 which is actually a *[stack](http://haskellstack.org)* executable! If
 you download the source and you have *[stack](http://haskellstack.org)*
-installed, you can run it as an executable:
+installed, you can run it (and run the tests above) as an executable:
 
 ``` {.bash}
 $ ./Uncertain.hs
@@ -61,9 +61,9 @@ $ ./Uncertain.hs
 Otherwise, you can run it directly with stack (using `runhaskell`) and
 the
 [linear](http://hackage.haskell.org/package/linear-1.20.4/docs/Linear-V2.html)
-and [ad](http://hackage.haskell.org/package/ad) packages installed. This
-article was written under snapshot
-[lts-5.15](https://www.stackage.org/lts-5.15)!
+and [ad](http://hackage.haskell.org/package/ad) packages installed…or
+load it up with `stack ghci` to play with it. This article was written
+under snapshot [lts-5.15](https://www.stackage.org/lts-5.15)!
 
 Certain Uncertainty
 -------------------
@@ -477,13 +477,82 @@ didn’t miss any bugs.
 Wrapping it up
 --------------
 
-<!-- ~~~haskell -->
-<!-- 46 +/- 2 -->
-<!-- 450 +/- 41 -->
-<!-- 6.8 +/- 0.2 -->
-<!-- 0.78 +/- 0.02 -->
-<!-- 83 +/- 6 -->
-<!-- ~~~ -->
+The full code (with all of the numeric instances fully implemented) is
+up [on
+github](https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs),
+which you can run and explore and test by executing it or loading it
+with `stack ghci`. I’ve added a special *Show* instance that “rounds”
+your values to as many digits that your uncertainty suggests, to give
+more meaningful `show`s.
+
+All of what’s in this post is actually up on my
+*[uncertain](http://hackage.haskell.org/package/uncertain)* package, on
+hackage, if you want to use it in your own projects, or see how I take
+this and make it more robust for real-world applications. The package
+also has more features on top of the basic things shown here.
+
+### Verification and Accuracy
+
+My *[uncertain](http://hackage.haskell.org/package/uncertain)* package
+has a monte carlo module to propagate uncertainty through monte carlo
+simulations. Let’s see how the values compare!
+
+``` {.haskell}
+ghci> x + y         -- Monte Carlo Results:
+46 +/- 2            -- actually 46 +/- 2
+ghci> x * y
+450 +/- 40          -- actually 450 +/- 40
+ghci> sqrt (x + y)
+6.8 +/- 0.2         -- actually 6.8 +/- 0.2
+ghci> logBase y x
+0.78 +/- 0.02       -- actually 0.78 +/- 0.02
+ghci> log (x**y)
+85.9 +/- 0.3        -- actually 83 +/- 6
+```
+
+So, it looks like the mathematical model of uncertainty propagation
+matched up well with the “actual” results we gain from monte carlo
+simulations! The only one of our examples that was significantly wrong
+was the $\operatorname{log}(x^y)$ example, which heavily underestimated
+the uncertainty by about a factor of 20. But, remember, the model was
+derived after dropping the 2nd, 3rd, 4th, etc. terms of the taylor
+expansion for the calculation of the new uncertainty, and the 4th, 6th,
+etc. terms of the taylor expansion for the calculation of the new mean.
+For functions that have high second, third, fourth derivatives relative
+to the mean and the uncertainty, it’s going to be a bit off.
+
+### What next?
+
+A simple extension of this would be to implement the monte carlo
+simulator I mentioned above, which is pretty straightforward to
+implement with the
+*[mwc-random](http://hackage.haskell.org/package/mwc-random)* package.
+
+However, the weirdest caveat here is that we never deal with what
+happened to terms that are correlated. All of our math assumed
+uncorrelated samples. But what happens if we have expressions that
+involve additions of correlated values?
+
+For example:
+
+``` {.haskell}
+ghci> let x = 14.6 +/- 0.8 in x + x
+29 +/- 1
+ghci> let x = 14.6 +/- 0.8 in 2*x
+29 +/- 2
+```
+
+Unfortunately, `x + x` is different than `2*x`. This is because `x` acts
+like an *independent generator*, so when you say `x + x`, it expands to
+`(14.6 +/- 0.8) + (14.6 +/- 0.8)`, which represents the addition of two
+independent samples.
+
+When you say `2*x`, that represents sampling `x` *once* and *doubling*
+it. If you sample `x` and double it, any error in `x` will also be
+doubled. That’s why the uncertainty is greater in the `2*x` version.
+
+How can we account for correlated values that are combined in complex
+ways? Stay tuned for the next part![^3]
 
 [^1]: If you don’t believe me, stop reading this article now and try it
     yourself! You can simulate noisy data by using uniform noise
@@ -493,3 +562,5 @@ Wrapping it up
     sums.
 
 [^2]: What else were you expecting!
+
+[^3]: Or just look at my package on hackage :)

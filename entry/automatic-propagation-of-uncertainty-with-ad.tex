@@ -150,7 +150,7 @@ You can follow along with
 source code}, which is actually a
 \emph{\href{http://haskellstack.org}{stack}} executable! If you download
 the source and you have \emph{\href{http://haskellstack.org}{stack}}
-installed, you can run it as an executable:
+installed, you can run it (and run the tests above) as an executable:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -161,8 +161,9 @@ installed, you can run it as an executable:
 Otherwise, you can run it directly with stack (using
 \texttt{runhaskell}) and the
 \href{http://hackage.haskell.org/package/linear-1.20.4/docs/Linear-V2.html}{linear}
-and \href{http://hackage.haskell.org/package/ad}{ad} packages installed.
-This article was written under snapshot
+and \href{http://hackage.haskell.org/package/ad}{ad} packages
+installed\ldots{}or load it up with \texttt{stack\ ghci} to play with
+it. This article was written under snapshot
 \href{https://www.stackage.org/lts-5.15}{lts-5.15}!
 
 \section{Certain Uncertainty}\label{certain-uncertainty}
@@ -610,5 +611,90 @@ room for error, and a lot simpler to check over and read to make sure
 you didn't miss any bugs.
 
 \section{Wrapping it up}\label{wrapping-it-up}
+
+The full code (with all of the numeric instances fully implemented) is
+up
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs}{on
+github}, which you can run and explore and test by executing it or
+loading it with \texttt{stack\ ghci}. I've added a special \emph{Show}
+instance that ``rounds'' your values to as many digits that your
+uncertainty suggests, to give more meaningful \texttt{show}s.
+
+All of what's in this post is actually up on my
+\emph{\href{http://hackage.haskell.org/package/uncertain}{uncertain}}
+package, on hackage, if you want to use it in your own projects, or see
+how I take this and make it more robust for real-world applications. The
+package also has more features on top of the basic things shown here.
+
+\subsection{Verification and Accuracy}\label{verification-and-accuracy}
+
+My \emph{\href{http://hackage.haskell.org/package/uncertain}{uncertain}}
+package has a monte carlo module to propagate uncertainty through monte
+carlo simulations. Let's see how the values compare!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{x }\FunctionTok{+} \NormalTok{y         }\CommentTok{-- Monte Carlo Results:}
+\DecValTok{46} \FunctionTok{+/-} \DecValTok{2}            \CommentTok{-- actually 46 +/- 2}
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{x }\FunctionTok{*} \NormalTok{y}
+\DecValTok{450} \FunctionTok{+/-} \DecValTok{40}          \CommentTok{-- actually 450 +/- 40}
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{sqrt (x }\FunctionTok{+} \NormalTok{y)}
+\FloatTok{6.8} \FunctionTok{+/-} \FloatTok{0.2}         \CommentTok{-- actually 6.8 +/- 0.2}
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{logBase y x}
+\FloatTok{0.78} \FunctionTok{+/-} \FloatTok{0.02}       \CommentTok{-- actually 0.78 +/- 0.02}
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{log (x}\FunctionTok{**}\NormalTok{y)}
+\FloatTok{85.9} \FunctionTok{+/-} \FloatTok{0.3}        \CommentTok{-- actually 83 +/- 6}
+\end{Highlighting}
+\end{Shaded}
+
+So, it looks like the mathematical model of uncertainty propagation
+matched up well with the ``actual'' results we gain from monte carlo
+simulations! The only one of our examples that was significantly wrong
+was the \(\operatorname{log}(x^y)\) example, which heavily
+underestimated the uncertainty by about a factor of 20. But, remember,
+the model was derived after dropping the 2nd, 3rd, 4th, etc. terms of
+the taylor expansion for the calculation of the new uncertainty, and the
+4th, 6th, etc. terms of the taylor expansion for the calculation of the
+new mean. For functions that have high second, third, fourth derivatives
+relative to the mean and the uncertainty, it's going to be a bit off.
+
+\subsection{What next?}\label{what-next}
+
+A simple extension of this would be to implement the monte carlo
+simulator I mentioned above, which is pretty straightforward to
+implement with the
+\emph{\href{http://hackage.haskell.org/package/mwc-random}{mwc-random}}
+package.
+
+However, the weirdest caveat here is that we never deal with what
+happened to terms that are correlated. All of our math assumed
+uncorrelated samples. But what happens if we have expressions that
+involve additions of correlated values?
+
+For example:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let} \NormalTok{x }\FunctionTok{=} \FloatTok{14.6} \FunctionTok{+/-} \FloatTok{0.8} \KeywordTok{in} \NormalTok{x }\FunctionTok{+} \NormalTok{x}
+\DecValTok{29} \FunctionTok{+/-} \DecValTok{1}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let} \NormalTok{x }\FunctionTok{=} \FloatTok{14.6} \FunctionTok{+/-} \FloatTok{0.8} \KeywordTok{in} \DecValTok{2}\FunctionTok{*}\NormalTok{x}
+\DecValTok{29} \FunctionTok{+/-} \DecValTok{2}
+\end{Highlighting}
+\end{Shaded}
+
+Unfortunately, \texttt{x\ +\ x} is different than \texttt{2*x}. This is
+because \texttt{x} acts like an \emph{independent generator}, so when
+you say \texttt{x\ +\ x}, it expands to
+\texttt{(14.6\ +/-\ 0.8)\ +\ (14.6\ +/-\ 0.8)}, which represents the
+addition of two independent samples.
+
+When you say \texttt{2*x}, that represents sampling \texttt{x}
+\emph{once} and \emph{doubling} it. If you sample \texttt{x} and double
+it, any error in \texttt{x} will also be doubled. That's why the
+uncertainty is greater in the \texttt{2*x} version.
+
+How can we account for correlated values that are combined in complex
+ways? Stay tuned for the next part!\footnote{Or just look at my package
+  on hackage :)}
 
 \end{document}
