@@ -355,7 +355,7 @@ V2 4 6
 ```
 
 The gradient of $f(x, y) = x y^2 + 3x$ is $(y^2 + 3, 2xy)$, which, at
-$(3, 2)$, is indeed $(4, 6)$.
+$(3, 1)$, is indeed $(4, 6)$.
 
 The gradient gives us the first order partials, but we need the second
 order partials to calculate the new mean, so for that, we can use
