@@ -287,8 +287,8 @@ Let's also throw in a handy helper function for ``exact'' values:
 \end{Shaded}
 
 But, we can do better. We can use pattern synonyms to basically
-``abstract'' away the data type itself, and let people ``pattern match''
-on a mean and standard deviation:
+``abstract'' away the data type itself, and let people pattern match on
+a mean and standard deviation:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -302,6 +302,14 @@ on a mean and standard deviation:
 
 Now, people can pattern match on \texttt{x\ :+/-\ dx} and receive the
 mean and uncertainty directly. Neat!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L33-34}
+\OtherTok{uStdev ::} \DataTypeTok{Floating} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Uncert} \NormalTok{a }\OtherTok{->} \NormalTok{a}
+\NormalTok{uStdev (_ }\FunctionTok{:+/-} \NormalTok{dx) }\FunctionTok{=} \NormalTok{dx}
+\end{Highlighting}
+\end{Shaded}
 
 \subsection{Making it Numeric}\label{making-it-numeric}
 
@@ -423,7 +431,7 @@ Putting it all together:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L33-42}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L36-45}
 \NormalTok{liftU}
 \OtherTok{    ::} \DataTypeTok{Fractional} \NormalTok{a}
     \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Tower} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Tower} \NormalTok{a))}
@@ -515,7 +523,7 @@ our hessian, because we only care about the double partials:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L44-50}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L47-53}
 \OtherTok{diag ::} \NormalTok{[[a]] }\OtherTok{->} \NormalTok{[a]}
 \NormalTok{diag }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \NormalTok{[]        }\OtherTok{->} \NormalTok{[]}
              \NormalTok{[]   }\FunctionTok{:}\NormalTok{yss }\OtherTok{->} \NormalTok{diag (drop1 }\FunctionTok{<$>} \NormalTok{yss)}
@@ -531,7 +539,7 @@ the results:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L52-53}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-56}
 \OtherTok{dot ::} \DataTypeTok{Num} \NormalTok{a }\OtherTok{=>} \NormalTok{[a] }\OtherTok{->} \NormalTok{[a] }\OtherTok{->} \NormalTok{a}
 \NormalTok{xs }\OtherTok{`dot`} \NormalTok{ys }\FunctionTok{=} \NormalTok{sum (zipWith (}\FunctionTok{*}\NormalTok{) xs ys)}
 \end{Highlighting}
@@ -541,7 +549,7 @@ And now we can write our multi-variate function lifter:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-71}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L58-74}
 \NormalTok{liftUF}
 \OtherTok{    ::} \NormalTok{(}\DataTypeTok{Traversable} \NormalTok{f, }\DataTypeTok{Fractional} \NormalTok{a)}
     \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \NormalTok{f (}\DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a)) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a))}
@@ -572,7 +580,7 @@ easily:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L73-88}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L76-91}
 \NormalTok{liftU2}
 \OtherTok{    ::} \DataTypeTok{Fractional} \NormalTok{a}
     \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a))}

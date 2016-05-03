@@ -92,13 +92,16 @@ x <span class="fu">+/-</span> dx <span class="fu">=</span> <span class="dt">Un</
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L25-26</span>
 <span class="ot">exact ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Uncert</span> a
 exact x <span class="fu">=</span> x <span class="fu">+/-</span> <span class="dv">0</span></code></pre></div>
-<p>But, we can do better. We can use pattern synonyms to basically “abstract” away the data type itself, and let people “pattern match” on a mean and standard deviation:</p>
+<p>But, we can do better. We can use pattern synonyms to basically “abstract” away the data type itself, and let people pattern match on a mean and standard deviation:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L28-31</span>
 pattern<span class="ot"> (:+/-) ::</span> () <span class="ot">=&gt;</span> <span class="dt">Floating</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Uncert</span> a
 pattern x <span class="fu">:+/-</span> dx <span class="ot">&lt;-</span> <span class="dt">Un</span> x (sqrt<span class="ot">-&gt;</span>dx)
   <span class="kw">where</span>
     x <span class="fu">:+/-</span> dx <span class="fu">=</span> <span class="dt">Un</span> x (dx<span class="fu">*</span>dx)</code></pre></div>
 <p>Now, people can pattern match on <code>x :+/- dx</code> and receive the mean and uncertainty directly. Neat!</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L33-34</span>
+<span class="ot">uStdev ::</span> <span class="dt">Floating</span> a <span class="ot">=&gt;</span> <span class="dt">Uncert</span> a <span class="ot">-&gt;</span> a
+uStdev (_ <span class="fu">:+/-</span> dx) <span class="fu">=</span> dx</code></pre></div>
 <h3 id="making-it-numeric">Making it Numeric</h3>
 <p>Now, time for the magic! Let’s write a <code>Num</code> instance!</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Num</span> (<span class="dt">Uncert</span> a) <span class="kw">where</span>
@@ -149,7 +152,7 @@ ghci<span class="fu">&gt;</span> diff (\x <span class="ot">-&gt;</span> sin (x<s
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">y  <span class="fu">=</span> fx <span class="fu">+</span> ddfx <span class="fu">*</span> vx <span class="fu">/</span> <span class="dv">2</span>
 vy <span class="fu">=</span> dfx<span class="fu">^</span><span class="dv">2</span> <span class="fu">*</span> vx</code></pre></div>
 <p>Putting it all together:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L33-42</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L36-45</span>
 liftU
 <span class="ot">    ::</span> <span class="dt">Fractional</span> a
     <span class="ot">=&gt;</span> (forall s<span class="fu">.</span> <span class="dt">AD</span> s (<span class="dt">Tower</span> a) <span class="ot">-&gt;</span> <span class="dt">AD</span> s (<span class="dt">Tower</span> a))
@@ -183,7 +186,7 @@ sin    <span class="fu">=</span> liftU sin</code></pre></div>
 )</code></pre></div>
 <p>We can access the gradient by using <code>fmap fst</code> on the second component of the tuple and access the hessian by using <code>fmap snd</code>.</p>
 <p>We need a couple of helpers, first — one to get the “diagonal” of our hessian, because we only care about the double partials:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L44-50</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L47-53</span>
 <span class="ot">diag ::</span> [[a]] <span class="ot">-&gt;</span> [a]
 diag <span class="fu">=</span> \<span class="kw">case</span> []        <span class="ot">-&gt;</span> []
              []   <span class="fu">:</span>yss <span class="ot">-&gt;</span> diag (drop1 <span class="fu">&lt;$&gt;</span> yss)
@@ -192,11 +195,11 @@ diag <span class="fu">=</span> \<span class="kw">case</span> []        <span cla
     drop1 []     <span class="fu">=</span> []
     drop1 (_<span class="fu">:</span>zs) <span class="fu">=</span> zs</code></pre></div>
 <p>And then a “dot product”, which sums two lists component-wise and adds the results:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L52-53</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-56</span>
 <span class="ot">dot ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> a
 xs <span class="ot">`dot`</span> ys <span class="fu">=</span> sum (zipWith (<span class="fu">*</span>) xs ys)</code></pre></div>
 <p>And now we can write our multi-variate function lifter:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-71</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L58-74</span>
 liftUF
 <span class="ot">    ::</span> (<span class="dt">Traversable</span> f, <span class="dt">Fractional</span> a)
     <span class="ot">=&gt;</span> (forall s<span class="fu">.</span> f (<span class="dt">AD</span> s (<span class="dt">Sparse</span> a)) <span class="ot">-&gt;</span> <span class="dt">AD</span> s (<span class="dt">Sparse</span> a))
@@ -216,7 +219,7 @@ liftUF f us <span class="fu">=</span> <span class="dt">Un</span> y vy
     vy          <span class="fu">=</span> vxs <span class="ot">`dot`</span> toList ((<span class="fu">^</span><span class="dv">2</span>) <span class="fu">&lt;$&gt;</span> dfxs)</code></pre></div>
 <p>(Again, don’t mind the scary type <code>forall s. f (AD s (Sparse a)) -&gt; AD s (Sparse a)</code>, it’s just <em>ad</em>’s type for things you can use <code>hessian'</code> on)</p>
 <p>And we can write some nice helper functions so we can use them more easily:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L73-88</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L76-91</span>
 liftU2
 <span class="ot">    ::</span> <span class="dt">Fractional</span> a
     <span class="ot">=&gt;</span> (forall s<span class="fu">.</span> <span class="dt">AD</span> s (<span class="dt">Sparse</span> a) <span class="ot">-&gt;</span> <span class="dt">AD</span> s (<span class="dt">Sparse</span> a) <span class="ot">-&gt;</span> <span class="dt">AD</span> s (<span class="dt">Sparse</span> a))
