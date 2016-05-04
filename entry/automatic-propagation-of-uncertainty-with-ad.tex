@@ -166,7 +166,8 @@ installed\ldots{}or load it up with \texttt{stack\ ghci} to play with
 it. This article was written under snapshot
 \href{https://www.stackage.org/lts-5.15}{lts-5.15}!
 
-\section{Certain Uncertainty}\label{certain-uncertainty}
+\section{Dealing with Uncertainty
+Precisely}\label{dealing-with-uncertainty-precisely}
 
 First of all, let's think about why adding two ``uncertain'' values
 doesn't involve simply adding the uncertainties linearly. (If you don't
@@ -519,18 +520,15 @@ component of the tuple and access the hessian by using
 \texttt{fmap\ snd}.
 
 We need a couple of helpers, first --- one to get the ``diagonal'' of
-our hessian, because we only care about the double partials:
+our hessian, because we only care about the repeated partials:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L47-53}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L47-50}
 \OtherTok{diag ::} \NormalTok{[[a]] }\OtherTok{->} \NormalTok{[a]}
 \NormalTok{diag }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \NormalTok{[]        }\OtherTok{->} \NormalTok{[]}
-             \NormalTok{[]   }\FunctionTok{:}\NormalTok{yss }\OtherTok{->} \NormalTok{diag (drop1 }\FunctionTok{<$>} \NormalTok{yss)}
-             \NormalTok{(x}\FunctionTok{:}\NormalTok{_)}\FunctionTok{:}\NormalTok{yss }\OtherTok{->} \NormalTok{x }\FunctionTok{:} \NormalTok{diag (drop1 }\FunctionTok{<$>} \NormalTok{yss)}
-  \KeywordTok{where}
-    \NormalTok{drop1 []     }\FunctionTok{=} \NormalTok{[]}
-    \NormalTok{drop1 (_}\FunctionTok{:}\NormalTok{zs) }\FunctionTok{=} \NormalTok{zs}
+             \NormalTok{[]   }\FunctionTok{:}\NormalTok{yss }\OtherTok{->} \NormalTok{diag (drop }\DecValTok{1} \FunctionTok{<$>} \NormalTok{yss)}
+             \NormalTok{(x}\FunctionTok{:}\NormalTok{_)}\FunctionTok{:}\NormalTok{yss }\OtherTok{->} \NormalTok{x }\FunctionTok{:} \NormalTok{diag (drop }\DecValTok{1} \FunctionTok{<$>} \NormalTok{yss)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -539,7 +537,7 @@ the results:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-56}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L52-53}
 \OtherTok{dot ::} \DataTypeTok{Num} \NormalTok{a }\OtherTok{=>} \NormalTok{[a] }\OtherTok{->} \NormalTok{[a] }\OtherTok{->} \NormalTok{a}
 \NormalTok{xs }\OtherTok{`dot`} \NormalTok{ys }\FunctionTok{=} \NormalTok{sum (zipWith (}\FunctionTok{*}\NormalTok{) xs ys)}
 \end{Highlighting}
@@ -549,7 +547,7 @@ And now we can write our multi-variate function lifter:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L58-74}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-71}
 \NormalTok{liftUF}
 \OtherTok{    ::} \NormalTok{(}\DataTypeTok{Traversable} \NormalTok{f, }\DataTypeTok{Fractional} \NormalTok{a)}
     \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \NormalTok{f (}\DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a)) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a))}
@@ -580,7 +578,7 @@ easily:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L76-91}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L73-88}
 \NormalTok{liftU2}
 \OtherTok{    ::} \DataTypeTok{Fractional} \NormalTok{a}
     \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a))}
@@ -629,16 +627,21 @@ instance that ``rounds'' your values to as many digits that your
 uncertainty suggests, to give more meaningful \texttt{show}s.
 
 All of what's in this post is actually up on my
-\emph{\href{http://hackage.haskell.org/package/uncertain}{uncertain}}
-package, on hackage, if you want to use it in your own projects, or see
-how I take this and make it more robust for real-world applications. The
-package also has more features on top of the basic things shown here.
+\emph{\href{https://github.com/mstksg/uncertain}{uncertain}} project
+(with \href{http://mstksg.github.io/uncertain}{documentation} that I'm
+making, if you want to use it in your own projects, or see how I take
+this and make it more robust for real-world applications. The project
+also has more features on top of the basic things shown here. You can
+install it using \emph{\href{http://haskellstack.org}{stack}} by adding
+the github repository along with its latest commit hash to whatever
+\texttt{stack.yaml} file you are using. In the future, I'll revise this
+part to link to my actual package on Hackage!
 
 \subsection{Verification and Accuracy}\label{verification-and-accuracy}
 
-My \emph{\href{http://hackage.haskell.org/package/uncertain}{uncertain}}
-package has a monte carlo module to propagate uncertainty through monte
-carlo simulations. Let's see how the values compare!
+My \emph{\href{https://github.com/mstksg/uncertain}{uncertain}} package
+has a monte carlo module to propagate uncertainty through monte carlo
+simulations. Let's see how the values compare!
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -702,7 +705,7 @@ it, any error in \texttt{x} will also be doubled. That's why the
 uncertainty is greater in the \texttt{2*x} version.
 
 How can we account for correlated values that are combined in complex
-ways? Stay tuned for the next part!\footnote{Or just look at my package
-  on hackage :)}
+ways? Stay tuned for the next part!\footnote{Or just look at my
+  \href{https://github.com/mstksg/uncertain}{package} :)}
 
 \end{document}

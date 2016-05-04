@@ -65,8 +65,8 @@ and [ad](http://hackage.haskell.org/package/ad) packages installed…or
 load it up with `stack ghci` to play with it. This article was written
 under snapshot [lts-5.15](https://www.stackage.org/lts-5.15)!
 
-Certain Uncertainty
--------------------
+Dealing with Uncertainty Precisely
+----------------------------------
 
 First of all, let’s think about why adding two “uncertain” values
 doesn’t involve simply adding the uncertainties linearly. (If you don’t
@@ -389,17 +389,14 @@ We can access the gradient by using `fmap fst` on the second component
 of the tuple and access the hessian by using `fmap snd`.
 
 We need a couple of helpers, first — one to get the “diagonal” of our
-hessian, because we only care about the double partials:
+hessian, because we only care about the repeated partials:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L47-53
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L47-50
 diag :: [[a]] -> [a]
 diag = \case []        -> []
-             []   :yss -> diag (drop1 <$> yss)
-             (x:_):yss -> x : diag (drop1 <$> yss)
-  where
-    drop1 []     = []
-    drop1 (_:zs) = zs
+             []   :yss -> diag (drop 1 <$> yss)
+             (x:_):yss -> x : diag (drop 1 <$> yss)
 
 ```
 
@@ -407,7 +404,7 @@ And then a “dot product”, which sums two lists component-wise and adds
 the results:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-56
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L52-53
 dot :: Num a => [a] -> [a] -> a
 xs `dot` ys = sum (zipWith (*) xs ys)
 
@@ -416,7 +413,7 @@ xs `dot` ys = sum (zipWith (*) xs ys)
 And now we can write our multi-variate function lifter:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L58-74
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-71
 liftUF
     :: (Traversable f, Fractional a)
     => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a))
@@ -445,7 +442,7 @@ And we can write some nice helper functions so we can use them more
 easily:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L76-91
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L73-88
 liftU2
     :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
@@ -493,15 +490,20 @@ your values to as many digits that your uncertainty suggests, to give
 more meaningful `show`s.
 
 All of what’s in this post is actually up on my
-*[uncertain](http://hackage.haskell.org/package/uncertain)* package, on
-hackage, if you want to use it in your own projects, or see how I take
-this and make it more robust for real-world applications. The package
-also has more features on top of the basic things shown here.
+*[uncertain](https://github.com/mstksg/uncertain)* project (with
+[documentation](http://mstksg.github.io/uncertain) that I’m making, if
+you want to use it in your own projects, or see how I take this and make
+it more robust for real-world applications. The project also has more
+features on top of the basic things shown here. You can install it using
+*[stack](http://haskellstack.org)* by adding the github repository along
+with its latest commit hash to whatever `stack.yaml` file you are using.
+In the future, I’ll revise this part to link to my actual package on
+Hackage!
 
 ### Verification and Accuracy
 
-My *[uncertain](http://hackage.haskell.org/package/uncertain)* package
-has a monte carlo module to propagate uncertainty through monte carlo
+My *[uncertain](https://github.com/mstksg/uncertain)* package has a
+monte carlo module to propagate uncertainty through monte carlo
 simulations. Let’s see how the values compare!
 
 ``` {.haskell}
@@ -570,4 +572,5 @@ ways? Stay tuned for the next part![^3]
 
 [^2]: What else were you expecting!
 
-[^3]: Or just look at my package on hackage :)
+[^3]: Or just look at my [package](https://github.com/mstksg/uncertain)
+    :)
