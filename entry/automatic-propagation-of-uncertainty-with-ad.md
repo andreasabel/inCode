@@ -43,16 +43,17 @@ ghci> log (x**y)
 ```
 
 Along the way, we’ll also learn how to harness the power of awesome
-[ad](http://hackage.haskell.org/package/ad) library, a library used in
+[ad](https://hackage.haskell.org/package/ad) library, a library used in
 implementing back-propagation and other optimization algorithms, to
 analyze numerical functions in a mathematical way and break down their
 derivatives and gradients.
 
 You can follow along with [the source
 code](https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs),
-which is actually a *[stack](http://haskellstack.org)* executable! If
-you download the source and you have *[stack](http://haskellstack.org)*
-installed, you can run it (and run the tests above) as an executable:
+which is actually a *[stack](http://www.haskellstack.org)* executable!
+If you download the source and you have
+*[stack](http://www.haskellstack.org)* installed, you can run it (and
+run the tests above) as an executable:
 
 ``` {.bash}
 $ ./Uncertain.hs
@@ -60,8 +61,8 @@ $ ./Uncertain.hs
 
 Otherwise, you can run it directly with stack (using `runhaskell`) and
 the
-[linear](http://hackage.haskell.org/package/linear-1.20.4/docs/Linear-V2.html)
-and [ad](http://hackage.haskell.org/package/ad) packages installed…or
+[linear](shttp://hackage.haskell.org/package/linear/docs/Linear-V2.html)
+and [ad](https://hackage.haskell.org/package/ad) packages installed…or
 load it up with `stack ghci` to play with it. This article was written
 under snapshot [lts-5.15](https://www.stackage.org/lts-5.15)!
 
@@ -182,9 +183,9 @@ exact x = x +/- 0
 
 ```
 
-But, we can do better. We can use pattern synonyms to basically
-“abstract” away the data type itself, and let people pattern match on a
-mean and standard deviation:
+But, we can do better (if just for fun). We can use pattern synonyms to
+basically “abstract” away the data type itself, and let people pattern
+match on a mean and standard deviation:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L28-31
@@ -346,7 +347,7 @@ sin    = liftU sin
 *ad* also lets you work multivariable functions, too. To model
 multivariable functions, it takes a function from a `Traversable` of
 vales to a single value. We can use the `V2` type from the
-*[linear](http://hackage.haskell.org/package/linear-1.20.4/docs/Linear-V2.html)*
+*[linear](shttp://hackage.haskell.org/package/linear/docs/Linear-V2.html)*
 package to pass in a two-variable function:
 
 ``` {.haskell}
@@ -490,20 +491,15 @@ your values to as many digits that your uncertainty suggests, to give
 more meaningful `show`s.
 
 All of what’s in this post is actually up on my
-*[uncertain](https://github.com/mstksg/uncertain)* project (with
-[documentation](http://mstksg.github.io/uncertain) that I’m making, if
-you want to use it in your own projects, or see how I take this and make
-it more robust for real-world applications. The project also has more
-features on top of the basic things shown here. You can install it using
-*[stack](http://haskellstack.org)* by adding the github repository along
-with its latest commit hash to whatever `stack.yaml` file you are using.
-In the future, I’ll revise this part to link to my actual package on
-Hackage!
+*[uncertain](https://hackage.haskell.org/package/uncertain)* package on
+hackage, if you want to use it in your own projects, or see how I take
+this and make it more robust for real-world applications. The project
+also has more features on top of the basic things shown here.
 
 ### Verification and Accuracy
 
-My *[uncertain](https://github.com/mstksg/uncertain)* package has a
-monte carlo module to propagate uncertainty through monte carlo
+My *[uncertain](https://hackage.haskell.org/package/uncertain)* package
+has a monte carlo module to propagate uncertainty through monte carlo
 simulations. Let’s see how the values compare!
 
 ``` {.haskell}
@@ -535,7 +531,7 @@ to the mean and the uncertainty, it’s going to be a bit off.
 A simple extension of this would be to implement the monte carlo
 simulator I mentioned above, which is pretty straightforward to
 implement with the
-*[mwc-random](http://hackage.haskell.org/package/mwc-random)* package.
+*[mwc-random](https://hackage.haskell.org/package/mwc-random)* package.
 
 However, the most disturbing thing here that we never deal with is what
 happens correlated terms that are combined. All of our math assumed
@@ -572,5 +568,5 @@ ways? Stay tuned for the next part![^3]
 
 [^2]: What else were you expecting!
 
-[^3]: Or just look at my [package](https://github.com/mstksg/uncertain)
-    :)
+[^3]: Or just look at my
+    [package](https://hackage.haskell.org/package/uncertain) :)
