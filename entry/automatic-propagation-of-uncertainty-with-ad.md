@@ -48,6 +48,11 @@ implementing back-propagation and other optimization algorithms, to
 analyze numerical functions in a mathematical way and break down their
 derivatives and gradients.
 
+This post and series is actually a walk through of the implementation of
+my [uncertain](https://hackage.haskell.org/package/uncertain) library,
+now on hackage! The functionality in this library is offered along with
+more features there.
+
 You can follow along with [the source
 code](https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs),
 which is actually a *[stack](http://www.haskellstack.org)* executable!
