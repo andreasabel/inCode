@@ -4,10 +4,10 @@ Automatic Propagation of Uncertainty with AD
 (Originally posted by Justin Le [https://blog.jle.im/])
 
 > This post and
-> [series](https://blog.jle.im/entries/series/+haskell-mythbusters.html)
-> is a walk-through of the implementation of my
-> *[uncertain](https://hackage.haskell.org/package/uncertain)* library,
-> now on hackage!
+> [series](https://blog.jle.im/entries/series/+uncertain.html) is a
+> walk-through of the implementation of my
+> ***[uncertain](https://hackage.haskell.org/package/uncertain)***
+> library, now on hackage!
 
 Some of my favorite Haskell “tricks” involve working with exotic numeric
 types with custom “overloaded” numeric functions and literals that let
@@ -564,7 +564,7 @@ doubled. That’s why the uncertainty is greater in the `2*x` version.
 
 How can we account for correlated values that are combined in complex
 ways? Stay tuned for the next part of the
-[series](https://blog.jle.im/entries/series/+haskell-mythbusters.html)![^3]
+[series](https://blog.jle.im/entries/series/+uncertain.html)![^3]
 
 [^1]: If you don’t believe me, stop reading this article now and try it
     yourself! You can simulate noisy data by using uniform noise
