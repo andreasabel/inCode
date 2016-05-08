@@ -280,8 +280,8 @@ following the matrix equation we wrote earlier:
 \NormalTok{runLayer (}\DataTypeTok{W} \NormalTok{wB wN) v }\FunctionTok{=} \NormalTok{wB }\FunctionTok{+} \NormalTok{wN }\FunctionTok{#>} \NormalTok{v}
 
 \OtherTok{runNet ::} \DataTypeTok{Network} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}
-\NormalTok{runNet (}\DataTypeTok{O} \NormalTok{w)      }\FunctionTok{!}\NormalTok{v }\FunctionTok{=} \NormalTok{logistic }\OtherTok{`cmap`} \NormalTok{runLayer w v}
-\NormalTok{runNet (w }\FunctionTok{:&~} \NormalTok{n') }\FunctionTok{!}\NormalTok{v }\FunctionTok{=} \KeywordTok{let} \NormalTok{v' }\FunctionTok{=} \NormalTok{logistic }\OtherTok{`cmap`} \NormalTok{runLayer w v}
+\NormalTok{runNet (}\DataTypeTok{O} \NormalTok{w)      }\FunctionTok{!}\NormalTok{v }\FunctionTok{=} \NormalTok{cmap logistic (runLayer w v)}
+\NormalTok{runNet (w }\FunctionTok{:&~} \NormalTok{n') }\FunctionTok{!}\NormalTok{v }\FunctionTok{=} \KeywordTok{let} \NormalTok{v' }\FunctionTok{=} \NormalTok{cmap logistic (runLayer w v)}
                        \KeywordTok{in}  \NormalTok{runNet n' v'}
 \end{Highlighting}
 \end{Shaded}
@@ -311,32 +311,36 @@ Let's imagine all of the bad things that could happen:
   compiler won't help us.
 \end{itemize}
 
+\subsection{Back-propagation}\label{back-propagation}
+
 Now, let's try implementing back-propagation:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L51-71}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L51-73}
 \OtherTok{train ::} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Network} \OtherTok{->} \DataTypeTok{Network}
-\NormalTok{train rate x0 targ }\FunctionTok{=} \NormalTok{snd }\FunctionTok{.} \NormalTok{go x0}
+\NormalTok{train rate x0 targ }\FunctionTok{=} \NormalTok{fst }\FunctionTok{.} \NormalTok{go x0}
   \KeywordTok{where}
-\OtherTok{    go ::} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Network} \OtherTok{->} \NormalTok{(}\DataTypeTok{Vector} \DataTypeTok{Double}\NormalTok{, }\DataTypeTok{Network}\NormalTok{)}
+\OtherTok{    go ::} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Network} \OtherTok{->} \NormalTok{(}\DataTypeTok{Network}\NormalTok{, }\DataTypeTok{Vector} \DataTypeTok{Double}\NormalTok{)}
     \NormalTok{go }\FunctionTok{!}\NormalTok{x (}\DataTypeTok{O} \NormalTok{w}\FunctionTok{@}\NormalTok{(}\DataTypeTok{W} \NormalTok{wB wN))}
         \FunctionTok{=} \KeywordTok{let} \NormalTok{y     }\FunctionTok{=} \NormalTok{runLayer w x}
               \NormalTok{o     }\FunctionTok{=} \NormalTok{cmap logistic y}
               \NormalTok{dEdy  }\FunctionTok{=} \NormalTok{cmap logistic' y }\FunctionTok{*} \NormalTok{(o }\FunctionTok{-} \NormalTok{targ)}
-              \NormalTok{delWs }\FunctionTok{=} \NormalTok{tr wN }\FunctionTok{#>} \NormalTok{dEdy}
               \NormalTok{wB'   }\FunctionTok{=} \NormalTok{wB }\FunctionTok{-} \NormalTok{scale rate dEdy}
               \NormalTok{wN'   }\FunctionTok{=} \NormalTok{wN }\FunctionTok{-} \NormalTok{scale rate (dEdy }\OtherTok{`outer`} \NormalTok{x)}
-          \KeywordTok{in}  \NormalTok{(delWs, }\DataTypeTok{O} \NormalTok{(}\DataTypeTok{W} \NormalTok{wB' wN'))}
+              \NormalTok{w'    }\FunctionTok{=} \DataTypeTok{W} \NormalTok{wB' wN'}
+              \NormalTok{delWs }\FunctionTok{=} \NormalTok{tr wN }\FunctionTok{#>} \NormalTok{dEdy}
+          \KeywordTok{in}  \NormalTok{(}\DataTypeTok{O} \NormalTok{w', delWs)}
     \NormalTok{go }\FunctionTok{!}\NormalTok{x (w}\FunctionTok{@}\NormalTok{(}\DataTypeTok{W} \NormalTok{wB wN) }\FunctionTok{:&~} \NormalTok{n)}
         \FunctionTok{=} \KeywordTok{let} \NormalTok{y            }\FunctionTok{=} \NormalTok{runLayer w x}
               \NormalTok{o            }\FunctionTok{=} \NormalTok{cmap logistic y}
-              \NormalTok{(delWs', n') }\FunctionTok{=} \NormalTok{go o n}
+              \NormalTok{(n', delWs') }\FunctionTok{=} \NormalTok{go o n}
               \NormalTok{dEdy         }\FunctionTok{=} \NormalTok{cmap logistic' y }\FunctionTok{*} \NormalTok{delWs'}
-              \NormalTok{delWs        }\FunctionTok{=} \NormalTok{tr wN }\FunctionTok{#>} \NormalTok{dEdy}
               \NormalTok{wB'          }\FunctionTok{=} \NormalTok{wB }\FunctionTok{-} \NormalTok{scale rate dEdy}
               \NormalTok{wN'          }\FunctionTok{=} \NormalTok{wN }\FunctionTok{-} \NormalTok{scale rate (dEdy }\OtherTok{`outer`} \NormalTok{x)}
-          \KeywordTok{in}  \NormalTok{(delWs, }\DataTypeTok{W} \NormalTok{wB' wN' }\FunctionTok{:&~} \NormalTok{n')}
+              \NormalTok{w'           }\FunctionTok{=} \DataTypeTok{W} \NormalTok{wB' wN'}
+              \NormalTok{delWs        }\FunctionTok{=} \NormalTok{tr wN }\FunctionTok{#>} \NormalTok{dEdy}
+          \KeywordTok{in}  \NormalTok{(w' }\FunctionTok{:&~} \NormalTok{n', delWs)}
 \end{Highlighting}
 \end{Shaded}
 

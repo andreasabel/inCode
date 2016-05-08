@@ -177,8 +177,8 @@ runLayer :: Weights -> Vector Double -> Vector Double
 runLayer (W wB wN) v = wB + wN #> v
 
 runNet :: Network -> Vector Double -> Vector Double
-runNet (O w)      !v = logistic `cmap` runLayer w v
-runNet (w :&~ n') !v = let v' = logistic `cmap` runLayer w v
+runNet (O w)      !v = cmap logistic (runLayer w v)
+runNet (w :&~ n') !v = let v' = cmap logistic (runLayer w v)
                        in  runNet n' v'
 
 ```
@@ -205,30 +205,34 @@ Let’s imagine all of the bad things that could happen:
     multiply something, or used something in the wrong places? We can it
     prove ourselves, but the compiler won’t help us.
 
+### Back-propagation
+
 Now, let’s try implementing back-propagation:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L51-71
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L51-73
 train :: Double -> Vector Double -> Vector Double -> Network -> Network
-train rate x0 targ = snd . go x0
+train rate x0 targ = fst . go x0
   where
-    go :: Vector Double -> Network -> (Vector Double, Network)
+    go :: Vector Double -> Network -> (Network, Vector Double)
     go !x (O w@(W wB wN))
         = let y     = runLayer w x
               o     = cmap logistic y
               dEdy  = cmap logistic' y * (o - targ)
-              delWs = tr wN #> dEdy
               wB'   = wB - scale rate dEdy
               wN'   = wN - scale rate (dEdy `outer` x)
-          in  (delWs, O (W wB' wN'))
+              w'    = W wB' wN'
+              delWs = tr wN #> dEdy
+          in  (O w', delWs)
     go !x (w@(W wB wN) :&~ n)
         = let y            = runLayer w x
               o            = cmap logistic y
-              (delWs', n') = go o n
+              (n', delWs') = go o n
               dEdy         = cmap logistic' y * delWs'
-              delWs        = tr wN #> dEdy
               wB'          = wB - scale rate dEdy
               wN'          = wN - scale rate (dEdy `outer` x)
-          in  (delWs, W wB' wN' :&~ n')
+              w'           = W wB' wN'
+              delWs        = tr wN #> dEdy
+          in  (w' :&~ n', delWs)
 
 ```
