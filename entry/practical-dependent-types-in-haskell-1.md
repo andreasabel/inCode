@@ -57,8 +57,7 @@ Edwin Brady calls this process “type-driven development”. Start general,
 recognize the partial functions and red flags, and slowly add more
 powerful types.
 
-Vanilla Types
--------------
+### The Network
 
 ![Feed-forward ANN
 architecture](/img/entries/dependent-haskell-1/ffneural.png "Feed-forward ANN architecture")
@@ -69,7 +68,8 @@ connected to the each of the nodes of the previous layer.
 
 Input goes to the first layer, which feeds information to the next year,
 which feeds it to the next, etc., until the final layer, where we read
-it off as the “answer” that the network is giving us.
+it off as the “answer” that the network is giving us. Layers between the
+input and output layers are called *hidden* layers.
 
 Every node “outputs” a weighted sum of all of the outputs of the
 *previous* layer, plus an always-on “bias” term (so that its result can
@@ -85,7 +85,9 @@ a matrix, we can write it a little cleaner:
 
 $$
 \mathbf{y} = \mathbf{b} + \hat{W} \mathbf{x}
-$$ To “scale” the result (and to give the system the magical powers of
+$$
+
+To “scale” the result (and to give the system the magical powers of
 nonlinearity), we actually apply an “activation function” to the output
 before passing it down to the next step. We’ll be using the popular
 [logistic function](https://en.wikipedia.org/wiki/Logistic_function),
@@ -93,6 +95,9 @@ $f(x) = 1 / (1 + e^{-x})$.
 
 *Training* a network involves picking the right set of weights to get
 the network to answer the question you want.
+
+Vanilla Types
+-------------
 
 We can store a network by storing the matrix of of weights and biases
 between each layer:
@@ -113,54 +118,117 @@ each input).
 
 (We’re using the `Matrix` type from the awesome
 *[hmatrix](http://hackage.haskell.org/package/hmatrix)* library for
-linear algebra, implemented using blas/lapack under the hood)
+performant linear algebra, implemented using blas/lapack under the hood)
 
-<!-- Now let's represent a feed-forward network: -->
-<!-- ~~~haskell -->
-<!-- !!!dependent-haskell/NetworkUntyped.hs "data Network" -->
-<!-- ~~~ -->
-<!-- So a network with one input layer, two inner layers, and one output layer would -->
-<!-- look like: -->
-<!-- ~~~haskell -->
-<!-- i2h :&~ h2h :&~ O h2o -->
-<!-- ~~~ -->
-<!-- Where the first component is the weights from the input to the first hidden -->
-<!-- layer, the second is the weights from the first hidden layer to the second, and -->
-<!-- the final is the weights from the second hidden layer to the outputs. -->
+A feed-forward neural network is then just a linked list of these
+weights:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L18-20
+data Network = O !Weights
+             | !Weights :&~ !Network
+  deriving (Show, Eq)
+
+```
+
+So a network with one input layer, two inner layers, and one output
+layer would look like:
+
+``` {.haskell}
+ih :&~ hh :&~ O ho
+```
+
+The first component is the weights from the input to first inner layer,
+the second is the weights between the two hidden layers, and the last is
+the weights between the last hidden layer and the output layer.
+
 <!-- TODO: graphs using diagrams? -->
-<!-- We can write simple procedures, like generating random networks: -->
-<!-- ~~~haskell -->
-<!-- !!!dependent-haskell/NetworkUntyped.hs "randomWeights" "randomNet" -->
-<!-- ~~~ -->
-<!-- (`randomVector` and `uniformSample` are from the *hmatrix* library, generating -->
-<!-- random vectors and matrices from a random `Int` seed.  We configure them to -->
-<!-- generate them with numbers between -1 and 1) -->
-<!-- And now a function to "run" our network on a given input vector: -->
-<!-- ~~~haskell -->
-<!-- !!!dependent-haskell/NetworkUntyped.hs "logistic" "runLayer" "runNet" -->
-<!-- ~~~ -->
-<!-- (`#>` is matrix-vector multiplication) -->
-<!-- TODO: examples of running -->
-<!-- If you're a normal programmer, this might seem perfectly fine.  If you are a -->
-<!-- Haskell programmer, you should already be having heart attacks. Let's imagine -->
-<!-- all of the bad things that could happen: -->
-<!-- *   How do we even know that each subsequent matrix in the network is -->
-<!--     "compatible"?   We want the outputs of one matrix to line up with the -->
-<!--     inputs of the next, but there's no way to know unless we have "smart -->
-<!--     constructors" to check while we add things.  But it's possible to build a -->
-<!--     bad network, and things will just explode at runtime. -->
-<!-- *   How do we know the size vector the network expects?  What stops you from -->
-<!--     sending in a bad vector at run-time and having everything explode? -->
-<!-- *   How do we verify that we have implemented `runLayer` and `runNet` in a way -->
-<!--     that they won't suddenly fail at runtime?  We write `l #> v`, but how do we -->
-<!--     know that it's even correct?  We can it prove ourselves, but the compiler -->
-<!--     won't help us. -->
-<!-- Now, let's try implementing back-propagation: -->
-<!-- ~~~haskell -->
-<!-- train :: Vector Double -> Vector Double -> Network -> Network -->
-<!-- train i o = go i -->
-<!--   where -->
-<!--     go :: Vector Double -> Network -> (Vector Double, Network) -->
-<!--     go = undefined -->
-<!-- ~~~ -->
+We can write simple procedures, like generating random networks:
 
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L40-50
+randomWeights :: MonadRandom m => Int -> Int -> m Weights
+randomWeights i o = do
+    s1 <- getRandom
+    s2 <- getRandom
+    let wBiases = randomVector s1 Uniform o * 2 - 1
+        wNodes  = uniformSample s2 o (replicate i (-1, 1))
+    return W{..}
+
+randomNet :: MonadRandom m => Int -> [Int] -> Int -> m Network
+randomNet i [] o     =     O <$> randomWeights i o
+randomNet i (h:hs) o = (:&~) <$> randomWeights i h <*> randomNet h hs o
+
+```
+
+(`randomVector` and `uniformSample` are from the *hmatrix* library,
+generating random vectors and matrices from a random `Int` seed. We
+configure them to generate them with numbers between -1 and 1)
+
+And now a function to “run” our network on a given input vector,
+following the matrix equation we wrote earlier:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L24-38
+logistic :: Double -> Double
+logistic x = 1 / (1 + exp (-x))
+
+runLayer :: Weights -> Vector Double -> Vector Double
+runLayer (W wB wN) v = wB + wN #> v
+
+runNet :: Network -> Vector Double -> Vector Double
+runNet (O w)      !v = logistic `cmap` runLayer w v
+runNet (w :&~ n') !v = let v' = logistic `cmap` runLayer w v
+                       in  runNet n' v'
+
+```
+
+(`#>` is matrix-vector multiplication)
+
+<!-- TODO: examples of running -->
+If you’re a normal programmer, this might seem perfectly fine. If you
+are a Haskell programmer, you should already be having heart attacks.
+Let’s imagine all of the bad things that could happen:
+
+-   How do we even know that each subsequent matrix in the network is
+    “compatible”? We want the outputs of one matrix to line up with the
+    inputs of the next, but there’s no way to know unless we have “smart
+    constructors” to check while we add things. But it’s possible to
+    build a bad network, and things will just explode at runtime.
+
+-   How do we know the size vector the network expects? What stops you
+    from sending in a bad vector at run-time?
+
+-   How do we verify that we have implemented `runLayer` and `runNet` in
+    a way that they won’t suddenly fail at runtime? We write `l #> v`,
+    but how do we know that it’s even correct…what if we forgot to
+    multiply something, or used something in the wrong places? We can it
+    prove ourselves, but the compiler won’t help us.
+
+Now, let’s try implementing back-propagation:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L52-72
+train :: Double -> Vector Double -> Vector Double -> Network -> Network
+train rate x0 targ = snd . go x0
+  where
+    go :: Vector Double -> Network -> (Vector Double, Network)
+    go !x (O w@(W wB wN))
+        = let y     = runLayer w x
+              o     = cmap logistic y
+              dEdy  = cmap logistic' y * (o - targ)
+              delWs = tr wN #> dEdy
+              wB'   = wB - scale rate dEdy
+              wN'   = wN - scale rate (dEdy `outer` x)
+          in  (delWs, O (W wB' wN'))
+    go !x (w@(W wB wN) :&~ n)
+        = let y            = runLayer w x
+              o            = cmap logistic y
+              (delWs', n') = go o n
+              dEdy         = cmap logistic' y * delWs'
+              delWs        = tr wN #> dEdy
+              wB'          = wB - scale rate dEdy
+              wN'          = wN - scale rate (dEdy `outer` x)
+          in  (delWs, W wB' wN' :&~ n')
+
+```

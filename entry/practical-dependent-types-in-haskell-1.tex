@@ -151,7 +151,7 @@ Edwin Brady calls this process ``type-driven development''. Start
 general, recognize the partial functions and red flags, and slowly add
 more powerful types.
 
-\section{Vanilla Types}\label{vanilla-types}
+\subsection{The Network}\label{the-network}
 
 \begin{figure}[htbp]
 \centering
@@ -165,7 +165,8 @@ connected to the each of the nodes of the previous layer.
 
 Input goes to the first layer, which feeds information to the next year,
 which feeds it to the next, etc., until the final layer, where we read
-it off as the ``answer'' that the network is giving us.
+it off as the ``answer'' that the network is giving us. Layers between
+the input and output layers are called \emph{hidden} layers.
 
 Every node ``outputs'' a weighted sum of all of the outputs of the
 \emph{previous} layer, plus an always-on ``bias'' term (so that its
@@ -181,7 +182,9 @@ a matrix, we can write it a little cleaner:
 
 \[
 \mathbf{y} = \mathbf{b} + \hat{W} \mathbf{x}
-\] To ``scale'' the result (and to give the system the magical powers of
+\]
+
+To ``scale'' the result (and to give the system the magical powers of
 nonlinearity), we actually apply an ``activation function'' to the
 output before passing it down to the next step. We'll be using the
 popular \href{https://en.wikipedia.org/wiki/Logistic_function}{logistic
@@ -189,6 +192,8 @@ function}, \(f(x) = 1 / (1 + e^{-x})\).
 
 \emph{Training} a network involves picking the right set of weights to
 get the network to answer the question you want.
+
+\section{Vanilla Types}\label{vanilla-types}
 
 We can store a network by storing the matrix of of weights and biases
 between each layer:
@@ -210,7 +215,129 @@ matrix (one column for each output, one row for each input).
 
 (We're using the \texttt{Matrix} type from the awesome
 \emph{\href{http://hackage.haskell.org/package/hmatrix}{hmatrix}}
-library for linear algebra, implemented using blas/lapack under the
-hood)
+library for performant linear algebra, implemented using blas/lapack
+under the hood)
+
+A feed-forward neural network is then just a linked list of these
+weights:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L18-20}
+\KeywordTok{data} \DataTypeTok{Network} \FunctionTok{=} \DataTypeTok{O} \FunctionTok{!}\DataTypeTok{Weights}
+             \FunctionTok{|} \FunctionTok{!}\DataTypeTok{Weights} \FunctionTok{:&~} \FunctionTok{!}\DataTypeTok{Network}
+  \KeywordTok{deriving} \NormalTok{(}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Eq}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+So a network with one input layer, two inner layers, and one output
+layer would look like:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ih }\FunctionTok{:&~} \NormalTok{hh }\FunctionTok{:&~} \DataTypeTok{O} \NormalTok{ho}
+\end{Highlighting}
+\end{Shaded}
+
+The first component is the weights from the input to first inner layer,
+the second is the weights between the two hidden layers, and the last is
+the weights between the last hidden layer and the output layer.
+
+We can write simple procedures, like generating random networks:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L40-50}
+\OtherTok{randomWeights ::} \DataTypeTok{MonadRandom} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \NormalTok{m }\DataTypeTok{Weights}
+\NormalTok{randomWeights i o }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{s1 }\OtherTok{<-} \NormalTok{getRandom}
+    \NormalTok{s2 }\OtherTok{<-} \NormalTok{getRandom}
+    \KeywordTok{let} \NormalTok{wBiases }\FunctionTok{=} \NormalTok{randomVector s1 }\DataTypeTok{Uniform} \NormalTok{o }\FunctionTok{*} \DecValTok{2} \FunctionTok{-} \DecValTok{1}
+        \NormalTok{wNodes  }\FunctionTok{=} \NormalTok{uniformSample s2 o (replicate i (}\FunctionTok{-}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{))}
+    \NormalTok{return }\DataTypeTok{W}\NormalTok{\{}\FunctionTok{..}\NormalTok{\}}
+
+\OtherTok{randomNet ::} \DataTypeTok{MonadRandom} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Int} \OtherTok{->} \NormalTok{[}\DataTypeTok{Int}\NormalTok{] }\OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \NormalTok{m }\DataTypeTok{Network}
+\NormalTok{randomNet i [] o     }\FunctionTok{=}     \DataTypeTok{O} \FunctionTok{<$>} \NormalTok{randomWeights i o}
+\NormalTok{randomNet i (h}\FunctionTok{:}\NormalTok{hs) o }\FunctionTok{=} \NormalTok{(}\FunctionTok{:&~}\NormalTok{) }\FunctionTok{<$>} \NormalTok{randomWeights i h }\FunctionTok{<*>} \NormalTok{randomNet h hs o}
+\end{Highlighting}
+\end{Shaded}
+
+(\texttt{randomVector} and \texttt{uniformSample} are from the
+\emph{hmatrix} library, generating random vectors and matrices from a
+random \texttt{Int} seed. We configure them to generate them with
+numbers between -1 and 1)
+
+And now a function to ``run'' our network on a given input vector,
+following the matrix equation we wrote earlier:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L24-38}
+\OtherTok{logistic ::} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Double}
+\NormalTok{logistic x }\FunctionTok{=} \DecValTok{1} \FunctionTok{/} \NormalTok{(}\DecValTok{1} \FunctionTok{+} \NormalTok{exp (}\FunctionTok{-}\NormalTok{x))}
+
+\OtherTok{runLayer ::} \DataTypeTok{Weights} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}
+\NormalTok{runLayer (}\DataTypeTok{W} \NormalTok{wB wN) v }\FunctionTok{=} \NormalTok{wB }\FunctionTok{+} \NormalTok{wN }\FunctionTok{#>} \NormalTok{v}
+
+\OtherTok{runNet ::} \DataTypeTok{Network} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}
+\NormalTok{runNet (}\DataTypeTok{O} \NormalTok{w)      }\FunctionTok{!}\NormalTok{v }\FunctionTok{=} \NormalTok{logistic }\OtherTok{`cmap`} \NormalTok{runLayer w v}
+\NormalTok{runNet (w }\FunctionTok{:&~} \NormalTok{n') }\FunctionTok{!}\NormalTok{v }\FunctionTok{=} \KeywordTok{let} \NormalTok{v' }\FunctionTok{=} \NormalTok{logistic }\OtherTok{`cmap`} \NormalTok{runLayer w v}
+                       \KeywordTok{in}  \NormalTok{runNet n' v'}
+\end{Highlighting}
+\end{Shaded}
+
+(\texttt{\#\textgreater{}} is matrix-vector multiplication)
+
+If you're a normal programmer, this might seem perfectly fine. If you
+are a Haskell programmer, you should already be having heart attacks.
+Let's imagine all of the bad things that could happen:
+
+\begin{itemize}
+\item
+  How do we even know that each subsequent matrix in the network is
+  ``compatible''? We want the outputs of one matrix to line up with the
+  inputs of the next, but there's no way to know unless we have ``smart
+  constructors'' to check while we add things. But it's possible to
+  build a bad network, and things will just explode at runtime.
+\item
+  How do we know the size vector the network expects? What stops you
+  from sending in a bad vector at run-time?
+\item
+  How do we verify that we have implemented \texttt{runLayer} and
+  \texttt{runNet} in a way that they won't suddenly fail at runtime? We
+  write \texttt{l\ \#\textgreater{}\ v}, but how do we know that it's
+  even correct\ldots{}what if we forgot to multiply something, or used
+  something in the wrong places? We can it prove ourselves, but the
+  compiler won't help us.
+\end{itemize}
+
+Now, let's try implementing back-propagation:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L52-72}
+\OtherTok{train ::} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Network} \OtherTok{->} \DataTypeTok{Network}
+\NormalTok{train rate x0 targ }\FunctionTok{=} \NormalTok{snd }\FunctionTok{.} \NormalTok{go x0}
+  \KeywordTok{where}
+\OtherTok{    go ::} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Network} \OtherTok{->} \NormalTok{(}\DataTypeTok{Vector} \DataTypeTok{Double}\NormalTok{, }\DataTypeTok{Network}\NormalTok{)}
+    \NormalTok{go }\FunctionTok{!}\NormalTok{x (}\DataTypeTok{O} \NormalTok{w}\FunctionTok{@}\NormalTok{(}\DataTypeTok{W} \NormalTok{wB wN))}
+        \FunctionTok{=} \KeywordTok{let} \NormalTok{y     }\FunctionTok{=} \NormalTok{runLayer w x}
+              \NormalTok{o     }\FunctionTok{=} \NormalTok{cmap logistic y}
+              \NormalTok{dEdy  }\FunctionTok{=} \NormalTok{cmap logistic' y }\FunctionTok{*} \NormalTok{(o }\FunctionTok{-} \NormalTok{targ)}
+              \NormalTok{delWs }\FunctionTok{=} \NormalTok{tr wN }\FunctionTok{#>} \NormalTok{dEdy}
+              \NormalTok{wB'   }\FunctionTok{=} \NormalTok{wB }\FunctionTok{-} \NormalTok{scale rate dEdy}
+              \NormalTok{wN'   }\FunctionTok{=} \NormalTok{wN }\FunctionTok{-} \NormalTok{scale rate (dEdy }\OtherTok{`outer`} \NormalTok{x)}
+          \KeywordTok{in}  \NormalTok{(delWs, }\DataTypeTok{O} \NormalTok{(}\DataTypeTok{W} \NormalTok{wB' wN'))}
+    \NormalTok{go }\FunctionTok{!}\NormalTok{x (w}\FunctionTok{@}\NormalTok{(}\DataTypeTok{W} \NormalTok{wB wN) }\FunctionTok{:&~} \NormalTok{n)}
+        \FunctionTok{=} \KeywordTok{let} \NormalTok{y            }\FunctionTok{=} \NormalTok{runLayer w x}
+              \NormalTok{o            }\FunctionTok{=} \NormalTok{cmap logistic y}
+              \NormalTok{(delWs', n') }\FunctionTok{=} \NormalTok{go o n}
+              \NormalTok{dEdy         }\FunctionTok{=} \NormalTok{cmap logistic' y }\FunctionTok{*} \NormalTok{delWs'}
+              \NormalTok{delWs        }\FunctionTok{=} \NormalTok{tr wN }\FunctionTok{#>} \NormalTok{dEdy}
+              \NormalTok{wB'          }\FunctionTok{=} \NormalTok{wB }\FunctionTok{-} \NormalTok{scale rate dEdy}
+              \NormalTok{wN'          }\FunctionTok{=} \NormalTok{wN }\FunctionTok{-} \NormalTok{scale rate (dEdy }\OtherTok{`outer`} \NormalTok{x)}
+          \KeywordTok{in}  \NormalTok{(delWs, }\DataTypeTok{W} \NormalTok{wB' wN' }\FunctionTok{:&~} \NormalTok{n')}
+\end{Highlighting}
+\end{Shaded}
 
 \end{document}
