@@ -200,7 +200,7 @@ between each layer:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L13-16}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L12-15}
 \KeywordTok{data} \DataTypeTok{Weights} \FunctionTok{=} \DataTypeTok{W} \NormalTok{\{}\OtherTok{ wBiases ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Vector} \DataTypeTok{Double}\NormalTok{)}
                  \NormalTok{,}\OtherTok{ wNodes  ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Matrix} \DataTypeTok{Double}\NormalTok{)}
                  \NormalTok{\}}
@@ -223,7 +223,7 @@ weights:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L18-20}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L17-19}
 \KeywordTok{data} \DataTypeTok{Network} \FunctionTok{=} \DataTypeTok{O} \FunctionTok{!}\DataTypeTok{Weights}
              \FunctionTok{|} \FunctionTok{!}\DataTypeTok{Weights} \FunctionTok{:&~} \FunctionTok{!}\DataTypeTok{Network}
   \KeywordTok{deriving} \NormalTok{(}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Eq}\NormalTok{)}
@@ -247,14 +247,14 @@ We can write simple procedures, like generating random networks:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L40-50}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L39-49}
 \OtherTok{randomWeights ::} \DataTypeTok{MonadRandom} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \NormalTok{m }\DataTypeTok{Weights}
 \NormalTok{randomWeights i o }\FunctionTok{=} \KeywordTok{do}
     \NormalTok{s1 }\OtherTok{<-} \NormalTok{getRandom}
     \NormalTok{s2 }\OtherTok{<-} \NormalTok{getRandom}
-    \KeywordTok{let} \NormalTok{wBiases }\FunctionTok{=} \NormalTok{randomVector s1 }\DataTypeTok{Uniform} \NormalTok{o }\FunctionTok{*} \DecValTok{2} \FunctionTok{-} \DecValTok{1}
-        \NormalTok{wNodes  }\FunctionTok{=} \NormalTok{uniformSample s2 o (replicate i (}\FunctionTok{-}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{))}
-    \NormalTok{return }\DataTypeTok{W}\NormalTok{\{}\FunctionTok{..}\NormalTok{\}}
+    \KeywordTok{let} \NormalTok{wB }\FunctionTok{=} \NormalTok{randomVector s1 }\DataTypeTok{Uniform} \NormalTok{o }\FunctionTok{*} \DecValTok{2} \FunctionTok{-} \DecValTok{1}
+        \NormalTok{wN }\FunctionTok{=} \NormalTok{uniformSample s2 o (replicate i (}\FunctionTok{-}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{))}
+    \NormalTok{return }\FunctionTok{$} \DataTypeTok{W} \NormalTok{wB wN}
 
 \OtherTok{randomNet ::} \DataTypeTok{MonadRandom} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Int} \OtherTok{->} \NormalTok{[}\DataTypeTok{Int}\NormalTok{] }\OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \NormalTok{m }\DataTypeTok{Network}
 \NormalTok{randomNet i [] o     }\FunctionTok{=}     \DataTypeTok{O} \FunctionTok{<$>} \NormalTok{randomWeights i o}
@@ -272,7 +272,7 @@ following the matrix equation we wrote earlier:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L24-38}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L23-37}
 \OtherTok{logistic ::} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Double}
 \NormalTok{logistic x }\FunctionTok{=} \DecValTok{1} \FunctionTok{/} \NormalTok{(}\DecValTok{1} \FunctionTok{+} \NormalTok{exp (}\FunctionTok{-}\NormalTok{x))}
 
@@ -315,7 +315,7 @@ Now, let's try implementing back-propagation:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L52-72}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L51-71}
 \OtherTok{train ::} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Network} \OtherTok{->} \DataTypeTok{Network}
 \NormalTok{train rate x0 targ }\FunctionTok{=} \NormalTok{snd }\FunctionTok{.} \NormalTok{go x0}
   \KeywordTok{where}

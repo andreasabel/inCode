@@ -103,7 +103,7 @@ We can store a network by storing the matrix of of weights and biases
 between each layer:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L13-16
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L12-15
 data Weights = W { wBiases :: !(Vector Double)
                  , wNodes  :: !(Matrix Double)
                  }
@@ -124,7 +124,7 @@ A feed-forward neural network is then just a linked list of these
 weights:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L18-20
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L17-19
 data Network = O !Weights
              | !Weights :&~ !Network
   deriving (Show, Eq)
@@ -146,14 +146,14 @@ the weights between the last hidden layer and the output layer.
 We can write simple procedures, like generating random networks:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L40-50
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L39-49
 randomWeights :: MonadRandom m => Int -> Int -> m Weights
 randomWeights i o = do
     s1 <- getRandom
     s2 <- getRandom
-    let wBiases = randomVector s1 Uniform o * 2 - 1
-        wNodes  = uniformSample s2 o (replicate i (-1, 1))
-    return W{..}
+    let wB = randomVector s1 Uniform o * 2 - 1
+        wN = uniformSample s2 o (replicate i (-1, 1))
+    return $ W wB wN
 
 randomNet :: MonadRandom m => Int -> [Int] -> Int -> m Network
 randomNet i [] o     =     O <$> randomWeights i o
@@ -169,7 +169,7 @@ And now a function to “run” our network on a given input vector,
 following the matrix equation we wrote earlier:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L24-38
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L23-37
 logistic :: Double -> Double
 logistic x = 1 / (1 + exp (-x))
 
@@ -208,7 +208,7 @@ Let’s imagine all of the bad things that could happen:
 Now, let’s try implementing back-propagation:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L52-72
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L51-71
 train :: Double -> Vector Double -> Vector Double -> Network -> Network
 train rate x0 targ = snd . go x0
   where
