@@ -1,7 +1,7 @@
 Automatic Propagation of Uncertainty with AD
 ============================================
 
-(Originally posted by Justin Le [https://blog.jle.im/])
+(Originally posted by Justin Le [https://blog.jle.im/] on May 9, 2016)
 
 > This post and
 > [series](https://blog.jle.im/entries/series/+uncertain.html) is a
@@ -378,7 +378,8 @@ V2 (V2 0 2)
 ```
 
 The [hessian](https://en.wikipedia.org/wiki/Hessian_matrix) of a
-function $f(x,y)$ is
+function $f(x,y)$ is basically a matrix of second-order partial
+derivatives:
 
 $$
 \begin{bmatrix}
@@ -388,9 +389,10 @@ f_{yx}(x, y) & f_{yy}(x, y)
 $$
 
 In our case, we only care about the diagonal – the repeated
-double-derivatives. Indeed, the double-partial of our function respect
-to $x$ is $0$, and the double-partial with respect to $y$ is $2x$, which
-gives us a hessian with a diagonal $(0, 6)$ for the input $(3, 1)$.
+double-derivatives, $f_{xx}$ and $f_{yy}$. Indeed, the double-partial of
+our function respect to $x$ is $0$, and the double-partial with respect
+to $y$ is $2x$, which gives us a hessian with a diagonal $(0, 6)$ for
+the input $(3, 1)$.
 
 The *ad* package generously gives us a function that lets us calculate
 the function’s result, its gradient, and its hessian all in one pass:
@@ -423,7 +425,7 @@ lists together component-by-component and sums the results:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L52-53
 dot :: Num a => [a] -> [a] -> a
-xs `dot` ys = sum (zipWith (*) xs ys)
+dot xs ys = sum (zipWith (*) xs ys)
 
 ```
 
