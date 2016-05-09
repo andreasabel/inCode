@@ -120,12 +120,13 @@ The initial guess might be \(27 \pm 9\), because one is \(\pm 3\) and
 the other is \(\pm 6\). But! If you actually do experiments like this
 several times, you'll see that this isn't the case. If you tried this
 out experimentally and simulate several hundred trials, you'll see that
-the answer is actually something like \(31 \pm 7\).\footnote{If you
-  don't believe me, stop reading this article now and try it yourself!
-  You can simulate noisy data by using uniform noise distributions,
-  Gaussian distributions, or however manner you like. Verify by checking
+the answer is actually something like \(31 \pm 7\). (We'll explain why
+later, but feel free to stop reading this article now and try this out
+yourself!\footnote{You can simulate noisy data by using uniform noise
+  distributions, Gaussian distributions, or however manner you like that
+  has a given expected value (mean) and ``spread''. Verify by checking
   the \href{https://en.wikipedia.org/wiki/Standard_deviation}{standard
-  deviation} of the sums.}
+  deviation} of the sums!})
 
 Let's write ourselves a Haskell data type that lets us work with
 ``numbers with inherent uncertainty'':
@@ -172,8 +173,9 @@ Otherwise, you can run it directly with stack (using
 \href{shttp://hackage.haskell.org/package/linear/docs/Linear-V2.html}{linear}
 and \href{https://hackage.haskell.org/package/ad}{ad} packages
 installed\ldots{}or load it up with \texttt{stack\ ghci} to play with
-it. This article was written under snapshot
-\href{https://www.stackage.org/lts-5.15}{lts-5.15}!
+it. If you want to be sure to reproduce the behavior, this article was
+written under \href{https://www.stackage.org/}{stackage} snapshot
+\href{https://www.stackage.org/lts-5.15}{lts-5.15}.
 
 \section{Dealing with Uncertainty
 Precisely}\label{dealing-with-uncertainty-precisely}
@@ -184,7 +186,7 @@ care about the math and just want to get on to the Haskell, feel free to
 skip this section!)
 
 If I have a value \(16 \pm 3\) (maybe I have a ruler whose ticks are 3
-units apart, or an instrument that produces measurements with 4 units of
+units apart, or an instrument that produces measurements with 3 units of
 noise), it either means that it's a little below 16 or a little above
 16. If I have an independently sampled value \(25 \pm 4\), it means that
 it's a little below 25 or a little above 25.
@@ -192,7 +194,7 @@ it's a little below 25 or a little above 25.
 What happens if I want to think about their sum? Well, it's going to be
 somewhere around 41. But, the uncertainty won't be \(\pm 7\). It would
 only be \(\pm 7\) if the errors in the two values are \emph{always
-aligned}. Only when every ``little bit above'' 16 error lines up
+aligned}. Only if or when every ``little bit above'' 16 error lines up
 perfectly with a ``little bit above'' 25 error, and when every single
 ``little bit below'' 16 error lines up perfectly with a ``little bit
 above'' 25 error, would you really get something that is \(\pm 7\). But,
@@ -240,9 +242,8 @@ changes by taking the taylor expansion to the \emph{second} degree:
 
 \[
 \operatorname{E}[f(X,Y)] \approx
-f(\mu_X, \mu_Y) +
-\frac{1}{2} f_{xx}(\mu_X, \mu_Y) \sigma_X^2 +
-\frac{1}{2} f_{yy}(\mu_X, \mu_Y) \sigma_Y^2
+f(\mu_X, \mu_Y) + \frac{1}{2}
+\left[ f_{xx}(\mu_X, \mu_Y) \sigma_X^2 + f_{yy}(\mu_X, \mu_Y) \sigma_Y^2 \right]
 \]
 
 Where \(f_{xx}(\mu_X, \mu_Y)\) is the second (partial) derivative with
@@ -255,8 +256,7 @@ partials of \(f(x,y) = x + y\) are 0.
 \section{Uncertain Values in Haskell}\label{uncertain-values-in-haskell}
 
 So, how are we going to model our uncertain values in Haskell \ldots{} ?
-With an Algebraic Data Type, of course! \footnote{What else were you
-  expecting!}
+With an Algebraic Data Type, of course!
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -340,8 +340,6 @@ Now, time for the magic! Let's write a \texttt{Num} instance!
 And\ldots{}that's it! Do the same thing for every numeric typeclass, and
 you get automatic propagation of uncertainty woo hoo.
 
-Pretty anticlimactic, huh?
-
 \subsection{The Problem}\label{the-problem}
 
 But, wait --- this method is definitely not ideal. It's pretty
@@ -372,17 +370,17 @@ manually?
 
 Automatic differentiation is honestly one of the coolest Haskell tricks
 you can show that any beginner can immediately understand. Like our
-trick with \texttt{Uncert}, it is nice to use because of its overloaded
+trick with \texttt{Uncert}, it's nice to use because of its overloaded
 \texttt{Num}/numeric typeclasses.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \NormalTok{diff (\textbackslash{}x }\OtherTok{->} \NormalTok{x}\FunctionTok{^}\DecValTok{2}\NormalTok{) }\DecValTok{10}
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{diff (\textbackslash{}x }\OtherTok{->} \NormalTok{x}\FunctionTok{^}\DecValTok{2}\NormalTok{) }\DecValTok{10}       \CommentTok{-- 2*x}
 \DecValTok{20}
-\NormalTok{ghci}\FunctionTok{>} \NormalTok{diff (\textbackslash{}x }\OtherTok{->} \NormalTok{sin x) }\DecValTok{0}
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{diff (\textbackslash{}x }\OtherTok{->} \NormalTok{sin x) }\DecValTok{0}      \CommentTok{-- cos x}
 \FloatTok{1.0}
-\NormalTok{ghci}\FunctionTok{>} \NormalTok{diff (\textbackslash{}x }\OtherTok{->} \NormalTok{sin (x}\FunctionTok{^}\DecValTok{3}\NormalTok{))}
-\FloatTok{0.47901729549851046}
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{diff (\textbackslash{}x }\OtherTok{->} \NormalTok{x}\FunctionTok{^}\DecValTok{3} \FunctionTok{-} \DecValTok{3}\FunctionTok{*}\NormalTok{x}\FunctionTok{^}\DecValTok{2} \FunctionTok{+} \DecValTok{2}\FunctionTok{*}\NormalTok{x }\FunctionTok{-} \DecValTok{4}\NormalTok{) }\DecValTok{3}  \CommentTok{-- 3*x^2 - 6*x + 2}
+\DecValTok{11}
 \end{Highlighting}
 \end{Shaded}
 
@@ -390,7 +388,9 @@ A very rough explanation about how forward-mode automatic
 differentiation works is that it uses a wrapper type (like ours) that
 defines \texttt{*}, \texttt{negate}, etc. so that they also compute the
 \emph{derivative(s)} of the function, instead of just the \emph{result},
-like normal.
+like normal. There are a lot of nice tutorials online, like
+\href{http://www.danielbrice.net/blog/10/}{this one} by Daniel Brice, if
+you want to follow up on this fun little subject.
 
 \subsection{Single-variable functions}\label{single-variable-functions}
 
@@ -504,12 +504,20 @@ order partials to calculate the new mean, so for that, we can use
 \end{Shaded}
 
 The \href{https://en.wikipedia.org/wiki/Hessian_matrix}{hessian} of a
-function is a symmetric matrix where the diagonals are the second-order
-repeated partial derivatives of each variable, and the off-diagonals are
-mixed partial derivatives. In our case, we only care about the diagonal.
-Indeed, the double-partial with respect to \(x\) is \(0\), and the
-double-partial with respect to \(y\) is \(2x\), which gives us a hessian
-with a diagonal \((0, 6)\) at \((3, 1)\).
+function \(f(x,y)\) is
+
+\[
+\begin{bmatrix}
+f_{xx}(x, y) & f_{yx}(x, y) \\
+f_{yx}(x, y) & f_{yy}(x, y)
+\end{bmatrix}
+\]
+
+In our case, we only care about the diagonal -- the repeated
+double-derivatives. Indeed, the double-partial of our function respect
+to \(x\) is \(0\), and the double-partial with respect to \(y\) is
+\(2x\), which gives us a hessian with a diagonal \((0, 6)\) for the
+input \((3, 1)\).
 
 The \emph{ad} package generously gives us a function that lets us
 calculate the function's result, its gradient, and its hessian all in
@@ -541,8 +549,8 @@ our hessian, because we only care about the repeated partials:
 \end{Highlighting}
 \end{Shaded}
 
-And then a ``dot product'', which sums two lists component-wise and adds
-the results:
+And then a ``dot product'', utility function, which just multiplies two
+lists together component-by-component and sums the results:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -556,7 +564,7 @@ And now we can write our multi-variate function lifter:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-71}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-73}
 \NormalTok{liftUF}
 \OtherTok{    ::} \NormalTok{(}\DataTypeTok{Traversable} \NormalTok{f, }\DataTypeTok{Fractional} \NormalTok{a)}
     \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \NormalTok{f (}\DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a)) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a))}
@@ -571,9 +579,11 @@ And now we can write our multi-variate function lifter:
     \NormalTok{hess        }\FunctionTok{=} \NormalTok{snd }\FunctionTok{<$>} \NormalTok{hgrad}
     \NormalTok{y           }\FunctionTok{=} \NormalTok{fx }\FunctionTok{+} \NormalTok{partials }\FunctionTok{/} \DecValTok{2}
       \KeywordTok{where}
-        \NormalTok{partials }\FunctionTok{=} \NormalTok{(vxs }\OtherTok{`dot`}\NormalTok{) }\FunctionTok{.} \NormalTok{diag}
+        \NormalTok{partials }\FunctionTok{=} \NormalTok{dot vxs}
+                 \FunctionTok{.} \NormalTok{diag}
                  \FunctionTok{$} \NormalTok{toList (fmap toList hess)}
-    \NormalTok{vy          }\FunctionTok{=} \NormalTok{vxs }\OtherTok{`dot`} \NormalTok{toList ((}\FunctionTok{^}\DecValTok{2}\NormalTok{) }\FunctionTok{<$>} \NormalTok{dfxs)}
+    \NormalTok{vy          }\FunctionTok{=} \NormalTok{dot vxs}
+                \FunctionTok{$} \NormalTok{toList ((}\FunctionTok{^}\DecValTok{2}\NormalTok{) }\FunctionTok{<$>} \NormalTok{dfxs)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -587,7 +597,7 @@ easily:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L73-88}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L75-90}
 \NormalTok{liftU2}
 \OtherTok{    ::} \DataTypeTok{Fractional} \NormalTok{a}
     \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a))}
@@ -607,8 +617,8 @@ easily:
 \end{Highlighting}
 \end{Shaded}
 
-At this point, we're officially done. We can fill in the other
-two-argument functions:
+At this point, our code is pretty much complete. We can fill in the
+other two-argument functions from the numeric typeclasses:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -682,7 +692,7 @@ implement with the
 \emph{\href{https://hackage.haskell.org/package/mwc-random}{mwc-random}}
 package.
 
-However, the most disturbing thing here that we never deal with is what
+However, the most unsettling thing here that we never deal with is what
 happens correlated terms that are combined. All of our math assumed
 uncorrelated samples. But what happens if we have expressions that
 involve additions of correlated values?

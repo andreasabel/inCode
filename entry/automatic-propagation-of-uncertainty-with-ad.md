@@ -28,7 +28,9 @@ The initial guess might be $27 \pm 9$, because one is $\pm 3$ and the
 other is $\pm 6$. But! If you actually do experiments like this several
 times, you’ll see that this isn’t the case. If you tried this out
 experimentally and simulate several hundred trials, you’ll see that the
-answer is actually something like $31 \pm 7$.[^1]
+answer is actually something like $31 \pm 7$. (We’ll explain why later,
+but feel free to stop reading this article now and try this out
+yourself![^1])
 
 Let’s write ourselves a Haskell data type that lets us work with
 “numbers with inherent uncertainty”:
@@ -69,8 +71,10 @@ Otherwise, you can run it directly with stack (using `runhaskell`) and
 the
 [linear](shttp://hackage.haskell.org/package/linear/docs/Linear-V2.html)
 and [ad](https://hackage.haskell.org/package/ad) packages installed…or
-load it up with `stack ghci` to play with it. This article was written
-under snapshot [lts-5.15](https://www.stackage.org/lts-5.15)!
+load it up with `stack ghci` to play with it. If you want to be sure to
+reproduce the behavior, this article was written under
+[stackage](https://www.stackage.org/) snapshot
+[lts-5.15](https://www.stackage.org/lts-5.15).
 
 Dealing with Uncertainty Precisely
 ----------------------------------
@@ -81,7 +85,7 @@ care about the math and just want to get on to the Haskell, feel free to
 skip this section!)
 
 If I have a value $16 \pm 3$ (maybe I have a ruler whose ticks are 3
-units apart, or an instrument that produces measurements with 4 units of
+units apart, or an instrument that produces measurements with 3 units of
 noise), it either means that it’s a little below 16 or a little above
 16. If I have an independently sampled value $25 \pm 4$, it means that
 it’s a little below 25 or a little above 25.
@@ -89,13 +93,13 @@ it’s a little below 25 or a little above 25.
 What happens if I want to think about their sum? Well, it’s going to be
 somewhere around 41. But, the uncertainty won’t be $\pm 7$. It would
 only be $\pm 7$ if the errors in the two values are *always aligned*.
-Only when every “little bit above” 16 error lines up perfectly with a
-“little bit above” 25 error, and when every single “little bit below” 16
-error lines up perfectly with a “little bit above” 25 error, would you
-really get something that is $\pm 7$. But, because the two values are
-sampled independently, you shouldn’t expect such alignment. So, you’ll
-get an uncertainty that’s *less than* $\pm 7$. In fact, it’ll actually
-be around $\pm 5$.
+Only if or when every “little bit above” 16 error lines up perfectly
+with a “little bit above” 25 error, and when every single “little bit
+below” 16 error lines up perfectly with a “little bit above” 25 error,
+would you really get something that is $\pm 7$. But, because the two
+values are sampled independently, you shouldn’t expect such alignment.
+So, you’ll get an uncertainty that’s *less than* $\pm 7$. In fact, it’ll
+actually be around $\pm 5$.
 
 In general, we find that for *independent* $X$ and $Y$:
 
@@ -137,9 +141,8 @@ changes by taking the taylor expansion to the *second* degree:
 
 $$
 \operatorname{E}[f(X,Y)] \approx
-f(\mu_X, \mu_Y) +
-\frac{1}{2} f_{xx}(\mu_X, \mu_Y) \sigma_X^2 +
-\frac{1}{2} f_{yy}(\mu_X, \mu_Y) \sigma_Y^2
+f(\mu_X, \mu_Y) + \frac{1}{2}
+\left[ f_{xx}(\mu_X, \mu_Y) \sigma_X^2 + f_{yy}(\mu_X, \mu_Y) \sigma_Y^2 \right]
 $$
 
 Where $f_{xx}(\mu_X, \mu_Y)$ is the second (partial) derivative with
@@ -153,7 +156,7 @@ Uncertain Values in Haskell
 ---------------------------
 
 So, how are we going to model our uncertain values in Haskell … ? With
-an Algebraic Data Type, of course! [^2]
+an Algebraic Data Type, of course!
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L18-20
@@ -229,8 +232,6 @@ instance Num a => Num (Uncert a) where
 And…that’s it! Do the same thing for every numeric typeclass, and you
 get automatic propagation of uncertainty woo hoo.
 
-Pretty anticlimactic, huh?
-
 ### The Problem
 
 But, wait — this method is definitely not ideal. It’s pretty repetitive,
@@ -259,23 +260,25 @@ Automatic Differentiation
 
 Automatic differentiation is honestly one of the coolest Haskell tricks
 you can show that any beginner can immediately understand. Like our
-trick with `Uncert`, it is nice to use because of its overloaded
+trick with `Uncert`, it’s nice to use because of its overloaded
 `Num`/numeric typeclasses.
 
 ``` {.haskell}
-ghci> diff (\x -> x^2) 10
+ghci> diff (\x -> x^2) 10       -- 2*x
 20
-ghci> diff (\x -> sin x) 0
+ghci> diff (\x -> sin x) 0      -- cos x
 1.0
-ghci> diff (\x -> sin (x^3))
-0.47901729549851046
+ghci> diff (\x -> x^3 - 3*x^2 + 2*x - 4) 3  -- 3*x^2 - 6*x + 2
+11
 ```
 
 A very rough explanation about how forward-mode automatic
 differentiation works is that it uses a wrapper type (like ours) that
 defines `*`, `negate`, etc. so that they also compute the
 *derivative(s)* of the function, instead of just the *result*, like
-normal.
+normal. There are a lot of nice tutorials online, like [this
+one](http://www.danielbrice.net/blog/10/) by Daniel Brice, if you want
+to follow up on this fun little subject.
 
 ### Single-variable functions
 
@@ -375,12 +378,19 @@ V2 (V2 0 2)
 ```
 
 The [hessian](https://en.wikipedia.org/wiki/Hessian_matrix) of a
-function is a symmetric matrix where the diagonals are the second-order
-repeated partial derivatives of each variable, and the off-diagonals are
-mixed partial derivatives. In our case, we only care about the diagonal.
-Indeed, the double-partial with respect to $x$ is $0$, and the
-double-partial with respect to $y$ is $2x$, which gives us a hessian
-with a diagonal $(0, 6)$ at $(3, 1)$.
+function $f(x,y)$ is
+
+$$
+\begin{bmatrix}
+f_{xx}(x, y) & f_{yx}(x, y) \\
+f_{yx}(x, y) & f_{yy}(x, y)
+\end{bmatrix}
+$$
+
+In our case, we only care about the diagonal – the repeated
+double-derivatives. Indeed, the double-partial of our function respect
+to $x$ is $0$, and the double-partial with respect to $y$ is $2x$, which
+gives us a hessian with a diagonal $(0, 6)$ for the input $(3, 1)$.
 
 The *ad* package generously gives us a function that lets us calculate
 the function’s result, its gradient, and its hessian all in one pass:
@@ -407,8 +417,8 @@ diag = \case []        -> []
 
 ```
 
-And then a “dot product”, which sums two lists component-wise and adds
-the results:
+And then a “dot product”, utility function, which just multiplies two
+lists together component-by-component and sums the results:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L52-53
@@ -420,7 +430,7 @@ xs `dot` ys = sum (zipWith (*) xs ys)
 And now we can write our multi-variate function lifter:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-71
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-73
 liftUF
     :: (Traversable f, Fractional a)
     => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a))
@@ -435,9 +445,11 @@ liftUF f us = Un y vy
     hess        = snd <$> hgrad
     y           = fx + partials / 2
       where
-        partials = (vxs `dot`) . diag
+        partials = dot vxs
+                 . diag
                  $ toList (fmap toList hess)
-    vy          = vxs `dot` toList ((^2) <$> dfxs)
+    vy          = dot vxs
+                $ toList ((^2) <$> dfxs)
 
 ```
 
@@ -449,7 +461,7 @@ And we can write some nice helper functions so we can use them more
 easily:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L73-88
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L75-90
 liftU2
     :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
@@ -469,8 +481,8 @@ liftU3 f x y z = liftUF (\(V3 x' y' z') -> f x' y' z') (V3 x y z)
 
 ```
 
-At this point, we’re officially done. We can fill in the other
-two-argument functions:
+At this point, our code is pretty much complete. We can fill in the
+other two-argument functions from the numeric typeclasses:
 
 ``` {.haskell}
 (+)     = liftU2 (+)
@@ -539,7 +551,7 @@ simulator I mentioned above, which is pretty straightforward to
 implement with the
 *[mwc-random](https://hackage.haskell.org/package/mwc-random)* package.
 
-However, the most disturbing thing here that we never deal with is what
+However, the most unsettling thing here that we never deal with is what
 happens correlated terms that are combined. All of our math assumed
 uncorrelated samples. But what happens if we have expressions that
 involve additions of correlated values?
@@ -564,16 +576,13 @@ doubled. That’s why the uncertainty is greater in the `2*x` version.
 
 How can we account for correlated values that are combined in complex
 ways? Stay tuned for the next part of the
-[series](https://blog.jle.im/entries/series/+uncertain.html)![^3]
+[series](https://blog.jle.im/entries/series/+uncertain.html)![^2]
 
-[^1]: If you don’t believe me, stop reading this article now and try it
-    yourself! You can simulate noisy data by using uniform noise
-    distributions, Gaussian distributions, or however manner you like.
-    Verify by checking the [standard
+[^1]: You can simulate noisy data by using uniform noise distributions,
+    Gaussian distributions, or however manner you like that has a given
+    expected value (mean) and “spread”. Verify by checking the [standard
     deviation](https://en.wikipedia.org/wiki/Standard_deviation) of the
-    sums.
+    sums!
 
-[^2]: What else were you expecting!
-
-[^3]: Or just look at my
+[^2]: Or just look at my
     [package](https://hackage.haskell.org/package/uncertain) :)
