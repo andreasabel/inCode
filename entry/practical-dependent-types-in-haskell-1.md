@@ -13,7 +13,7 @@ forces programming with dependent types to be an integral part of
 regular intermediate (or even beginner) Haskell education, as much as
 Traversable or Maps.
 
-he point of this post is to show some practical examples of using
+The point of this post is to show some practical examples of using
 dependent types in the real world, and to also walk through the “why”
 and high-level philosophy of the way you structure your Haskell
 programs. It’ll also hopefully instill an intuition of a dependently
@@ -103,7 +103,7 @@ We can store a network by storing the matrix of of weights and biases
 between each layer:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L12-15
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L13-16
 data Weights = W { wBiases :: !(Vector Double)
                  , wNodes  :: !(Matrix Double)
                  }
@@ -124,7 +124,7 @@ A feed-forward neural network is then just a linked list of these
 weights:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L17-19
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L18-20
 data Network = O !Weights
              | !Weights :&~ !Network
   deriving (Show, Eq)
@@ -146,7 +146,7 @@ the weights between the last hidden layer and the output layer.
 We can write simple procedures, like generating random networks:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L39-49
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L40-50
 randomWeights :: MonadRandom m => Int -> Int -> m Weights
 randomWeights i o = do
     s1 <- getRandom
@@ -169,7 +169,7 @@ And now a function to “run” our network on a given input vector,
 following the matrix equation we wrote earlier:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L23-37
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L24-38
 logistic :: Double -> Double
 logistic x = 1 / (1 + exp (-x))
 
@@ -207,10 +207,11 @@ Let’s imagine all of the bad things that could happen:
 
 ### Back-propagation
 
-Now, let’s try implementing back-propagation:
+Now, let’s try implementing back-propagation! It’s a basic “gradient
+descent”
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L51-73
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L52-74
 train :: Double -> Vector Double -> Vector Double -> Network -> Network
 train rate x0 targ = fst . go x0
   where
