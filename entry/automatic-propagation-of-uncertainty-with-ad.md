@@ -6,8 +6,8 @@ Automatic Propagation of Uncertainty with AD
 > This post and
 > [series](https://blog.jle.im/entries/series/+uncertain.html) is a
 > walk-through of the implementation of my
-> ***[uncertain](https://hackage.haskell.org/package/uncertain)***
-> library, now on hackage!
+> *[uncertain](https://hackage.haskell.org/package/uncertain)* library,
+> now on hackage!
 
 Some of my favorite Haskell “tricks” involve working with exotic numeric
 types with custom “overloaded” numeric functions and literals that let
@@ -119,18 +119,20 @@ days of high school calculus, you might remember a method for expressing
 any arbitrary function as a linear approximation – the [Taylor
 Expansion](https://en.wikipedia.org/wiki/Taylor_series)!
 
-In general, we can attempt to approximate any well-behaving function as
-its tangent hyperplane:
+In general, we can attempt to approximate any well-behaving function
+around a point as its tangent hyperplane:
 
 $$
 f(x_0 + x, y_0 + y) \approx f_x(x_0, y_0) x + f_y(x_0, y_0) y + f(x_0, y_0)
 $$
 
 Where $f_x(x_0,y_0)$ is the first (partial) derivative with respect to
-$x$ at $(x_0, y_0)$.
+$x$ at $(x_0, y_0)$. This gives us an approximation of $f$ at locations
+close to $(x_0, y_0)$.
 
 Look familiar? This is exactly the form that we used earlier to
-calculate “combined” variance!
+calculate “combined” variance! If we approximate the functions around
+$(\mu_X, \mu_Y)$, the center/expected value of $X$ and $Y$, we see:
 
 $$
 \operatorname{Var}[f(X,Y)] \approx f_x(\mu_X, \mu_Y)^2 \sigma_X^2 + f_y(\mu_X,\mu_Y)^2 \sigma_Y^2
@@ -548,9 +550,14 @@ to the mean and the uncertainty, it’s going to be a bit off.
 
 ### What next?
 
-A simple extension of this would be to implement the Monte Carlo
-simulator I mentioned above, which is pretty straightforward to
-implement with the
+For an extension on the mathematics behind this method, Dan Piponi has a
+[great
+article](http://blog.sigfpe.com/2011/08/computing-errors-with-square-roots-of.html)
+with a lot of good references for further reading on the formal method.
+
+Going off of what we’ve done here, a simple extension of this would be
+to implement the Monte Carlo simulator I mentioned above, which is
+pretty straightforward to implement with the
 *[mwc-random](https://hackage.haskell.org/package/mwc-random)* package.
 
 However, the most unsettling thing here that we never deal with is what
