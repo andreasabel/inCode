@@ -46,7 +46,7 @@ y_j = b_j + \sum_i^m w_{ij} x_i
 <p><em>Training</em> a network involves picking the right set of weights to get the network to answer the question you want.</p>
 <h2 id="vanilla-types">Vanilla Types</h2>
 <p>We can store a network by storing the matrix of of weights and biases between each layer:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L13-16</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L15-18</span>
 <span class="kw">data</span> <span class="dt">Weights</span> <span class="fu">=</span> <span class="dt">W</span> {<span class="ot"> wBiases ::</span> <span class="fu">!</span>(<span class="dt">Vector</span> <span class="dt">Double</span>)
                  ,<span class="ot"> wNodes  ::</span> <span class="fu">!</span>(<span class="dt">Matrix</span> <span class="dt">Double</span>)
                  }
@@ -54,7 +54,7 @@ y_j = b_j + \sum_i^m w_{ij} x_i
 <p>Now, a <code>Weights</code> linking an <em>n</em>-node layer to an <em>m</em>-node layer has an <em>m</em>-dimensional bias vector (one component for each output) and an <em>m</em>-by-<em>n</em> node weight matrix (one column for each output, one row for each input).</p>
 <p>(We’re using the <code>Matrix</code> type from the awesome <em><a href="http://hackage.haskell.org/package/hmatrix">hmatrix</a></em> library for performant linear algebra, implemented using blas/lapack under the hood)</p>
 <p>A feed-forward neural network is then just a linked list of these weights:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L18-20</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L20-22</span>
 <span class="kw">data</span> <span class="dt">Network</span> <span class="fu">=</span> <span class="dt">O</span> <span class="fu">!</span><span class="dt">Weights</span>
              <span class="fu">|</span> <span class="fu">!</span><span class="dt">Weights</span> <span class="fu">:&amp;~</span> <span class="fu">!</span><span class="dt">Network</span>
   <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</code></pre></div>
@@ -63,7 +63,7 @@ y_j = b_j + \sum_i^m w_{ij} x_i
 <p>The first component is the weights from the input to first inner layer, the second is the weights between the two hidden layers, and the last is the weights between the last hidden layer and the output layer.</p>
 <!-- TODO: graphs using diagrams? -->
 <p>We can write simple procedures, like generating random networks:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L40-50</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L42-52</span>
 <span class="ot">randomWeights ::</span> <span class="dt">MonadRandom</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m <span class="dt">Weights</span>
 randomWeights i o <span class="fu">=</span> <span class="kw">do</span>
     s1 <span class="ot">&lt;-</span> getRandom
@@ -77,16 +77,16 @@ randomNet i [] o     <span class="fu">=</span>     <span class="dt">O</span> <sp
 randomNet i (h<span class="fu">:</span>hs) o <span class="fu">=</span> (<span class="fu">:&amp;~</span>) <span class="fu">&lt;$&gt;</span> randomWeights i h <span class="fu">&lt;*&gt;</span> randomNet h hs o</code></pre></div>
 <p>(<code>randomVector</code> and <code>uniformSample</code> are from the <em>hmatrix</em> library, generating random vectors and matrices from a random <code>Int</code> seed. We configure them to generate them with numbers between -1 and 1)</p>
 <p>And now a function to “run” our network on a given input vector, following the matrix equation we wrote earlier:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L24-38</span>
-<span class="ot">logistic ::</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Double</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L26-40</span>
+<span class="ot">logistic ::</span> <span class="dt">Floating</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a
 logistic x <span class="fu">=</span> <span class="dv">1</span> <span class="fu">/</span> (<span class="dv">1</span> <span class="fu">+</span> exp (<span class="fu">-</span>x))
 
 <span class="ot">runLayer ::</span> <span class="dt">Weights</span> <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span>
 runLayer (<span class="dt">W</span> wB wN) v <span class="fu">=</span> wB <span class="fu">+</span> wN <span class="fu">#&gt;</span> v
 
 <span class="ot">runNet ::</span> <span class="dt">Network</span> <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span>
-runNet (<span class="dt">O</span> w)      <span class="fu">!</span>v <span class="fu">=</span> cmap logistic (runLayer w v)
-runNet (w <span class="fu">:&amp;~</span> n&#39;) <span class="fu">!</span>v <span class="fu">=</span> <span class="kw">let</span> v&#39; <span class="fu">=</span> cmap logistic (runLayer w v)
+runNet (<span class="dt">O</span> w)      <span class="fu">!</span>v <span class="fu">=</span> logistic (runLayer w v)
+runNet (w <span class="fu">:&amp;~</span> n&#39;) <span class="fu">!</span>v <span class="fu">=</span> <span class="kw">let</span> v&#39; <span class="fu">=</span> logistic (runLayer w v)
                        <span class="kw">in</span>  runNet n&#39; v&#39;</code></pre></div>
 <p>(<code>#&gt;</code> is matrix-vector multiplication)</p>
 <!-- TODO: examples of running -->
@@ -97,31 +97,76 @@ runNet (w <span class="fu">:&amp;~</span> n&#39;) <span class="fu">!</span>v <sp
 <li><p>How do we verify that we have implemented <code>runLayer</code> and <code>runNet</code> in a way that they won’t suddenly fail at runtime? We write <code>l #&gt; v</code>, but how do we know that it’s even correct…what if we forgot to multiply something, or used something in the wrong places? We can it prove ourselves, but the compiler won’t help us.</p></li>
 </ul>
 <h3 id="back-propagation">Back-propagation</h3>
-<p>Now, let’s try implementing back-propagation! It’s a basic “gradient descent”</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L52-74</span>
-<span class="ot">train ::</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Network</span> <span class="ot">-&gt;</span> <span class="dt">Network</span>
-train rate x0 targ <span class="fu">=</span> fst <span class="fu">.</span> go x0
+<p>Now, let’s try implementing back-propagation! It’s a basic “gradient descent” algorithm. There are <a href="https://en.wikipedia.org/wiki/Backpropagation">many explanations</a> on the internet; the basic idea is that you try to minimize the squared “error” of what the neural network outputs for a given input vs. the actual expected output. You find the direction of change that minimizes the error, and move that direction. The implementation of Feed-forward backpropagation is found in many sources online and in literature, so let’s see the implementation in Haskell:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L54-87</span>
+train
+<span class="ot">    ::</span> <span class="dt">Double</span>           <span class="co">-- ^ learning rate</span>
+    <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span>    <span class="co">-- ^ input vector</span>
+    <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span>    <span class="co">-- ^ target vector</span>
+    <span class="ot">-&gt;</span> <span class="dt">Network</span>          <span class="co">-- ^ network to train</span>
+    <span class="ot">-&gt;</span> <span class="dt">Network</span>
+train rate x0 target <span class="fu">=</span> fst <span class="fu">.</span> go x0
   <span class="kw">where</span>
-<span class="ot">    go ::</span> <span class="dt">Vector</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Network</span> <span class="ot">-&gt;</span> (<span class="dt">Network</span>, <span class="dt">Vector</span> <span class="dt">Double</span>)
+    <span class="co">-- | Recursively trains the network, starting from the outer layer and</span>
+    <span class="co">-- building up to the input layer.  Returns the updated network as well</span>
+    <span class="co">-- as the list of derivatives to use for calculating the gradient at</span>
+    <span class="co">-- the next layer up.</span>
+<span class="ot">    go  ::</span> <span class="dt">Vector</span> <span class="dt">Double</span>    <span class="co">-- ^ input vector</span>
+        <span class="ot">-&gt;</span> <span class="dt">Network</span>          <span class="co">-- ^ network to train</span>
+        <span class="ot">-&gt;</span> (<span class="dt">Network</span>, <span class="dt">Vector</span> <span class="dt">Double</span>)
     go <span class="fu">!</span>x (<span class="dt">O</span> w<span class="fu">@</span>(<span class="dt">W</span> wB wN))
-        <span class="fu">=</span> <span class="kw">let</span> y     <span class="fu">=</span> runLayer w x
-              o     <span class="fu">=</span> cmap logistic y
-              dEdy  <span class="fu">=</span> cmap logistic&#39; y <span class="fu">*</span> (o <span class="fu">-</span> targ)
-              wB&#39;   <span class="fu">=</span> wB <span class="fu">-</span> scale rate dEdy
-              wN&#39;   <span class="fu">=</span> wN <span class="fu">-</span> scale rate (dEdy <span class="ot">`outer`</span> x)
-              w&#39;    <span class="fu">=</span> <span class="dt">W</span> wB&#39; wN&#39;
-              delWs <span class="fu">=</span> tr wN <span class="fu">#&gt;</span> dEdy
-          <span class="kw">in</span>  (<span class="dt">O</span> w&#39;, delWs)
+        <span class="fu">=</span> <span class="kw">let</span> y    <span class="fu">=</span> runLayer w x
+              o    <span class="fu">=</span> logistic y
+              dEdy <span class="fu">=</span> logistic&#39; y <span class="fu">*</span> (o <span class="fu">-</span> target)
+              wB&#39;  <span class="fu">=</span> wB <span class="fu">-</span> scale rate dEdy
+              wN&#39;  <span class="fu">=</span> wN <span class="fu">-</span> scale rate (dEdy <span class="ot">`outer`</span> x)
+              w&#39;   <span class="fu">=</span> <span class="dt">W</span> wB&#39; wN&#39;
+              dWs  <span class="fu">=</span> tr wN <span class="fu">#&gt;</span> dEdy
+          <span class="kw">in</span>  (<span class="dt">O</span> w&#39;, dWs)
     go <span class="fu">!</span>x (w<span class="fu">@</span>(<span class="dt">W</span> wB wN) <span class="fu">:&amp;~</span> n)
-        <span class="fu">=</span> <span class="kw">let</span> y            <span class="fu">=</span> runLayer w x
-              o            <span class="fu">=</span> cmap logistic y
-              (n&#39;, delWs&#39;) <span class="fu">=</span> go o n
-              dEdy         <span class="fu">=</span> cmap logistic&#39; y <span class="fu">*</span> delWs&#39;
-              wB&#39;          <span class="fu">=</span> wB <span class="fu">-</span> scale rate dEdy
-              wN&#39;          <span class="fu">=</span> wN <span class="fu">-</span> scale rate (dEdy <span class="ot">`outer`</span> x)
-              w&#39;           <span class="fu">=</span> <span class="dt">W</span> wB&#39; wN&#39;
-              delWs        <span class="fu">=</span> tr wN <span class="fu">#&gt;</span> dEdy
-          <span class="kw">in</span>  (w&#39; <span class="fu">:&amp;~</span> n&#39;, delWs)</code></pre></div></div><footer><ul class="entry-series"></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/functional-programming.html" class="tag-a-tag">#functional programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/types.html" class="tag-a-tag">#types</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@ramblings.html" class="tag-a-category">@RAMBLINGS</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing “in Code”!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
+        <span class="fu">=</span> <span class="kw">let</span> y          <span class="fu">=</span> runLayer w x
+              o          <span class="fu">=</span> logistic y
+              (n&#39;, dWs&#39;) <span class="fu">=</span> go o n
+              dEdy       <span class="fu">=</span> logistic&#39; y <span class="fu">*</span> dWs&#39;
+              wB&#39;        <span class="fu">=</span> wB <span class="fu">-</span> scale rate dEdy
+              wN&#39;        <span class="fu">=</span> wN <span class="fu">-</span> scale rate (dEdy <span class="ot">`outer`</span> x)
+              w&#39;         <span class="fu">=</span> <span class="dt">W</span> wB&#39; wN&#39;
+              dWs        <span class="fu">=</span> tr wN <span class="fu">#&gt;</span> dEdy
+          <span class="kw">in</span>  (w&#39; <span class="fu">:&amp;~</span> n&#39;, dWs)</code></pre></div>
+<p>Where <code>logistic'</code> is the derivative of <code>logistic</code>. The algorithm computes the <em>updated</em> network by recursively updating the layers, from the output layer all the way up to the input layer. At every step it returns the updated layer/network, as well as a bundle of derivatives for the next layer to use to calculate its descent direction. At the output layer, all it needs to calculate the direction of descent is just <code>o - targ</code>, the target. At the inner layers, it has to use the <code>dWs</code> bundle to figure it out.</p>
+<p>Writing this is a bit of a struggle. The type system doesn’t help you like it normally does in Haskell, and you can’t really use parametricity to help you write your code like normal Haskell. Everything is monomorphic, and everything multiplies with everything else. You don’t have any hits about what to multiply with what at any point in time.</p>
+<p>In short, you’re leaving yourself open to many potential bugs…and the compiler doesn’t help you write your code at all! This is the nightmare of every Haskell programmer. There must be a better way!</p>
+<h4 id="tests">Tests</h4>
+<p>Pretty much the only way you can verify this code is to test it out on example cases. In the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs">source file</a> I have <code>main</code> test out the backprop, training a network on a 2D function that was “on” for two small circles and “off” everywhere else. I implemented a simple printing function and tested the trained network on a grid:</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">stack</span> install hmatrix MonadRandom
+$ <span class="kw">stack</span> ghc -- -O2 ./NetworkUntyped.hs
+$ <span class="kw">./NetworkUntyped.hs</span>
+<span class="co"># Training network...</span>
+<span class="co"># </span>
+<span class="co"># </span>
+<span class="co"># </span>
+<span class="co">#              .-===.</span>
+<span class="co">#            -#########-</span>
+<span class="co">#          -#############=</span>
+<span class="co">#         -###############=</span>
+<span class="co">#         =################</span>
+<span class="co">#         .################</span>
+<span class="co">#          .##############-</span>
+<span class="co">#            =###########.</span>
+<span class="co">#               -=####-.</span>
+<span class="co">#                              .==###=-.</span>
+<span class="co">#                            =###########=</span>
+<span class="co">#                           =##############.</span>
+<span class="co">#                          -###############-</span>
+<span class="co">#                          -###############.</span>
+<span class="co">#                           ##############-</span>
+<span class="co">#                           .############.</span>
+<span class="co">#                            .-=######=.</span>
+<span class="co"># </span>
+<span class="co"># </span>
+<span class="co"># </span>
+<span class="co"># </span></code></pre></div>
+<p>Not too bad! But, I was basically forced to resort to unit testing to ensure my code was correct. Let’s see if we can do better.</p></div><footer><ul class="entry-series"></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/functional-programming.html" class="tag-a-tag">#functional programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/types.html" class="tag-a-tag">#types</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@ramblings.html" class="tag-a-category">@RAMBLINGS</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing “in Code”!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html';
     this.page.identifier = 'dependent-haskell-1';
 };

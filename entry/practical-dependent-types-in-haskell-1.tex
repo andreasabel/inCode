@@ -200,7 +200,7 @@ between each layer:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L13-16}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L15-18}
 \KeywordTok{data} \DataTypeTok{Weights} \FunctionTok{=} \DataTypeTok{W} \NormalTok{\{}\OtherTok{ wBiases ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Vector} \DataTypeTok{Double}\NormalTok{)}
                  \NormalTok{,}\OtherTok{ wNodes  ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Matrix} \DataTypeTok{Double}\NormalTok{)}
                  \NormalTok{\}}
@@ -223,7 +223,7 @@ weights:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L18-20}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L20-22}
 \KeywordTok{data} \DataTypeTok{Network} \FunctionTok{=} \DataTypeTok{O} \FunctionTok{!}\DataTypeTok{Weights}
              \FunctionTok{|} \FunctionTok{!}\DataTypeTok{Weights} \FunctionTok{:&~} \FunctionTok{!}\DataTypeTok{Network}
   \KeywordTok{deriving} \NormalTok{(}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Eq}\NormalTok{)}
@@ -247,7 +247,7 @@ We can write simple procedures, like generating random networks:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L40-50}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L42-52}
 \OtherTok{randomWeights ::} \DataTypeTok{MonadRandom} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \NormalTok{m }\DataTypeTok{Weights}
 \NormalTok{randomWeights i o }\FunctionTok{=} \KeywordTok{do}
     \NormalTok{s1 }\OtherTok{<-} \NormalTok{getRandom}
@@ -272,16 +272,16 @@ following the matrix equation we wrote earlier:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L24-38}
-\OtherTok{logistic ::} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Double}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L26-40}
+\OtherTok{logistic ::} \DataTypeTok{Floating} \NormalTok{a }\OtherTok{=>} \NormalTok{a }\OtherTok{->} \NormalTok{a}
 \NormalTok{logistic x }\FunctionTok{=} \DecValTok{1} \FunctionTok{/} \NormalTok{(}\DecValTok{1} \FunctionTok{+} \NormalTok{exp (}\FunctionTok{-}\NormalTok{x))}
 
 \OtherTok{runLayer ::} \DataTypeTok{Weights} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}
 \NormalTok{runLayer (}\DataTypeTok{W} \NormalTok{wB wN) v }\FunctionTok{=} \NormalTok{wB }\FunctionTok{+} \NormalTok{wN }\FunctionTok{#>} \NormalTok{v}
 
 \OtherTok{runNet ::} \DataTypeTok{Network} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}
-\NormalTok{runNet (}\DataTypeTok{O} \NormalTok{w)      }\FunctionTok{!}\NormalTok{v }\FunctionTok{=} \NormalTok{cmap logistic (runLayer w v)}
-\NormalTok{runNet (w }\FunctionTok{:&~} \NormalTok{n') }\FunctionTok{!}\NormalTok{v }\FunctionTok{=} \KeywordTok{let} \NormalTok{v' }\FunctionTok{=} \NormalTok{cmap logistic (runLayer w v)}
+\NormalTok{runNet (}\DataTypeTok{O} \NormalTok{w)      }\FunctionTok{!}\NormalTok{v }\FunctionTok{=} \NormalTok{logistic (runLayer w v)}
+\NormalTok{runNet (w }\FunctionTok{:&~} \NormalTok{n') }\FunctionTok{!}\NormalTok{v }\FunctionTok{=} \KeywordTok{let} \NormalTok{v' }\FunctionTok{=} \NormalTok{logistic (runLayer w v)}
                        \KeywordTok{in}  \NormalTok{runNet n' v'}
 \end{Highlighting}
 \end{Shaded}
@@ -314,35 +314,118 @@ Let's imagine all of the bad things that could happen:
 \subsection{Back-propagation}\label{back-propagation}
 
 Now, let's try implementing back-propagation! It's a basic ``gradient
-descent''
+descent'' algorithm. There are
+\href{https://en.wikipedia.org/wiki/Backpropagation}{many explanations}
+on the internet; the basic idea is that you try to minimize the squared
+``error'' of what the neural network outputs for a given input vs.~the
+actual expected output. You find the direction of change that minimizes
+the error, and move that direction. The implementation of Feed-forward
+backpropagation is found in many sources online and in literature, so
+let's see the implementation in Haskell:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L52-74}
-\OtherTok{train ::} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Network} \OtherTok{->} \DataTypeTok{Network}
-\NormalTok{train rate x0 targ }\FunctionTok{=} \NormalTok{fst }\FunctionTok{.} \NormalTok{go x0}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L54-87}
+\NormalTok{train}
+\OtherTok{    ::} \DataTypeTok{Double}           \CommentTok{-- ^ learning rate}
+    \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}    \CommentTok{-- ^ input vector}
+    \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}    \CommentTok{-- ^ target vector}
+    \OtherTok{->} \DataTypeTok{Network}          \CommentTok{-- ^ network to train}
+    \OtherTok{->} \DataTypeTok{Network}
+\NormalTok{train rate x0 target }\FunctionTok{=} \NormalTok{fst }\FunctionTok{.} \NormalTok{go x0}
   \KeywordTok{where}
-\OtherTok{    go ::} \DataTypeTok{Vector} \DataTypeTok{Double} \OtherTok{->} \DataTypeTok{Network} \OtherTok{->} \NormalTok{(}\DataTypeTok{Network}\NormalTok{, }\DataTypeTok{Vector} \DataTypeTok{Double}\NormalTok{)}
+    \CommentTok{-- | Recursively trains the network, starting from the outer layer and}
+    \CommentTok{-- building up to the input layer.  Returns the updated network as well}
+    \CommentTok{-- as the list of derivatives to use for calculating the gradient at}
+    \CommentTok{-- the next layer up.}
+\OtherTok{    go  ::} \DataTypeTok{Vector} \DataTypeTok{Double}    \CommentTok{-- ^ input vector}
+        \OtherTok{->} \DataTypeTok{Network}          \CommentTok{-- ^ network to train}
+        \OtherTok{->} \NormalTok{(}\DataTypeTok{Network}\NormalTok{, }\DataTypeTok{Vector} \DataTypeTok{Double}\NormalTok{)}
     \NormalTok{go }\FunctionTok{!}\NormalTok{x (}\DataTypeTok{O} \NormalTok{w}\FunctionTok{@}\NormalTok{(}\DataTypeTok{W} \NormalTok{wB wN))}
-        \FunctionTok{=} \KeywordTok{let} \NormalTok{y     }\FunctionTok{=} \NormalTok{runLayer w x}
-              \NormalTok{o     }\FunctionTok{=} \NormalTok{cmap logistic y}
-              \NormalTok{dEdy  }\FunctionTok{=} \NormalTok{cmap logistic' y }\FunctionTok{*} \NormalTok{(o }\FunctionTok{-} \NormalTok{targ)}
-              \NormalTok{wB'   }\FunctionTok{=} \NormalTok{wB }\FunctionTok{-} \NormalTok{scale rate dEdy}
-              \NormalTok{wN'   }\FunctionTok{=} \NormalTok{wN }\FunctionTok{-} \NormalTok{scale rate (dEdy }\OtherTok{`outer`} \NormalTok{x)}
-              \NormalTok{w'    }\FunctionTok{=} \DataTypeTok{W} \NormalTok{wB' wN'}
-              \NormalTok{delWs }\FunctionTok{=} \NormalTok{tr wN }\FunctionTok{#>} \NormalTok{dEdy}
-          \KeywordTok{in}  \NormalTok{(}\DataTypeTok{O} \NormalTok{w', delWs)}
+        \FunctionTok{=} \KeywordTok{let} \NormalTok{y    }\FunctionTok{=} \NormalTok{runLayer w x}
+              \NormalTok{o    }\FunctionTok{=} \NormalTok{logistic y}
+              \NormalTok{dEdy }\FunctionTok{=} \NormalTok{logistic' y }\FunctionTok{*} \NormalTok{(o }\FunctionTok{-} \NormalTok{target)}
+              \NormalTok{wB'  }\FunctionTok{=} \NormalTok{wB }\FunctionTok{-} \NormalTok{scale rate dEdy}
+              \NormalTok{wN'  }\FunctionTok{=} \NormalTok{wN }\FunctionTok{-} \NormalTok{scale rate (dEdy }\OtherTok{`outer`} \NormalTok{x)}
+              \NormalTok{w'   }\FunctionTok{=} \DataTypeTok{W} \NormalTok{wB' wN'}
+              \NormalTok{dWs  }\FunctionTok{=} \NormalTok{tr wN }\FunctionTok{#>} \NormalTok{dEdy}
+          \KeywordTok{in}  \NormalTok{(}\DataTypeTok{O} \NormalTok{w', dWs)}
     \NormalTok{go }\FunctionTok{!}\NormalTok{x (w}\FunctionTok{@}\NormalTok{(}\DataTypeTok{W} \NormalTok{wB wN) }\FunctionTok{:&~} \NormalTok{n)}
-        \FunctionTok{=} \KeywordTok{let} \NormalTok{y            }\FunctionTok{=} \NormalTok{runLayer w x}
-              \NormalTok{o            }\FunctionTok{=} \NormalTok{cmap logistic y}
-              \NormalTok{(n', delWs') }\FunctionTok{=} \NormalTok{go o n}
-              \NormalTok{dEdy         }\FunctionTok{=} \NormalTok{cmap logistic' y }\FunctionTok{*} \NormalTok{delWs'}
-              \NormalTok{wB'          }\FunctionTok{=} \NormalTok{wB }\FunctionTok{-} \NormalTok{scale rate dEdy}
-              \NormalTok{wN'          }\FunctionTok{=} \NormalTok{wN }\FunctionTok{-} \NormalTok{scale rate (dEdy }\OtherTok{`outer`} \NormalTok{x)}
-              \NormalTok{w'           }\FunctionTok{=} \DataTypeTok{W} \NormalTok{wB' wN'}
-              \NormalTok{delWs        }\FunctionTok{=} \NormalTok{tr wN }\FunctionTok{#>} \NormalTok{dEdy}
-          \KeywordTok{in}  \NormalTok{(w' }\FunctionTok{:&~} \NormalTok{n', delWs)}
+        \FunctionTok{=} \KeywordTok{let} \NormalTok{y          }\FunctionTok{=} \NormalTok{runLayer w x}
+              \NormalTok{o          }\FunctionTok{=} \NormalTok{logistic y}
+              \NormalTok{(n', dWs') }\FunctionTok{=} \NormalTok{go o n}
+              \NormalTok{dEdy       }\FunctionTok{=} \NormalTok{logistic' y }\FunctionTok{*} \NormalTok{dWs'}
+              \NormalTok{wB'        }\FunctionTok{=} \NormalTok{wB }\FunctionTok{-} \NormalTok{scale rate dEdy}
+              \NormalTok{wN'        }\FunctionTok{=} \NormalTok{wN }\FunctionTok{-} \NormalTok{scale rate (dEdy }\OtherTok{`outer`} \NormalTok{x)}
+              \NormalTok{w'         }\FunctionTok{=} \DataTypeTok{W} \NormalTok{wB' wN'}
+              \NormalTok{dWs        }\FunctionTok{=} \NormalTok{tr wN }\FunctionTok{#>} \NormalTok{dEdy}
+          \KeywordTok{in}  \NormalTok{(w' }\FunctionTok{:&~} \NormalTok{n', dWs)}
 \end{Highlighting}
 \end{Shaded}
+
+Where \texttt{logistic\textquotesingle{}} is the derivative of
+\texttt{logistic}. The algorithm computes the \emph{updated} network by
+recursively updating the layers, from the output layer all the way up to
+the input layer. At every step it returns the updated layer/network, as
+well as a bundle of derivatives for the next layer to use to calculate
+its descent direction. At the output layer, all it needs to calculate
+the direction of descent is just \texttt{o\ -\ targ}, the target. At the
+inner layers, it has to use the \texttt{dWs} bundle to figure it out.
+
+Writing this is a bit of a struggle. The type system doesn't help you
+like it normally does in Haskell, and you can't really use parametricity
+to help you write your code like normal Haskell. Everything is
+monomorphic, and everything multiplies with everything else. You don't
+have any hits about what to multiply with what at any point in time.
+
+In short, you're leaving yourself open to many potential bugs\ldots{}and
+the compiler doesn't help you write your code at all! This is the
+nightmare of every Haskell programmer. There must be a better way!
+
+\subsubsection{Tests}\label{tests}
+
+Pretty much the only way you can verify this code is to test it out on
+example cases. In the
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs}{source
+file} I have \texttt{main} test out the backprop, training a network on
+a 2D function that was ``on'' for two small circles and ``off''
+everywhere else. I implemented a simple printing function and tested the
+trained network on a grid:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{$ }\KeywordTok{stack} \NormalTok{install hmatrix MonadRandom}
+\NormalTok{$ }\KeywordTok{stack} \NormalTok{ghc -- -O2 ./NetworkUntyped.hs}
+\NormalTok{$ }\KeywordTok{./NetworkUntyped.hs}
+\CommentTok{# Training network...}
+\CommentTok{# }
+\CommentTok{# }
+\CommentTok{# }
+\CommentTok{#              .-===.}
+\CommentTok{#            -#########-}
+\CommentTok{#          -#############=}
+\CommentTok{#         -###############=}
+\CommentTok{#         =################}
+\CommentTok{#         .################}
+\CommentTok{#          .##############-}
+\CommentTok{#            =###########.}
+\CommentTok{#               -=####-.}
+\CommentTok{#                              .==###=-.}
+\CommentTok{#                            =###########=}
+\CommentTok{#                           =##############.}
+\CommentTok{#                          -###############-}
+\CommentTok{#                          -###############.}
+\CommentTok{#                           ##############-}
+\CommentTok{#                           .############.}
+\CommentTok{#                            .-=######=.}
+\CommentTok{# }
+\CommentTok{# }
+\CommentTok{# }
+\CommentTok{# }
+\end{Highlighting}
+\end{Shaded}
+
+Not too bad! But, I was basically forced to resort to unit testing to
+ensure my code was correct. Let's see if we can do better.
 
 \end{document}

@@ -103,7 +103,7 @@ We can store a network by storing the matrix of of weights and biases
 between each layer:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L13-16
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L15-18
 data Weights = W { wBiases :: !(Vector Double)
                  , wNodes  :: !(Matrix Double)
                  }
@@ -124,7 +124,7 @@ A feed-forward neural network is then just a linked list of these
 weights:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L18-20
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L20-22
 data Network = O !Weights
              | !Weights :&~ !Network
   deriving (Show, Eq)
@@ -146,7 +146,7 @@ the weights between the last hidden layer and the output layer.
 We can write simple procedures, like generating random networks:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L40-50
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L42-52
 randomWeights :: MonadRandom m => Int -> Int -> m Weights
 randomWeights i o = do
     s1 <- getRandom
@@ -169,16 +169,16 @@ And now a function to “run” our network on a given input vector,
 following the matrix equation we wrote earlier:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L24-38
-logistic :: Double -> Double
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L26-40
+logistic :: Floating a => a -> a
 logistic x = 1 / (1 + exp (-x))
 
 runLayer :: Weights -> Vector Double -> Vector Double
 runLayer (W wB wN) v = wB + wN #> v
 
 runNet :: Network -> Vector Double -> Vector Double
-runNet (O w)      !v = cmap logistic (runLayer w v)
-runNet (w :&~ n') !v = let v' = cmap logistic (runLayer w v)
+runNet (O w)      !v = logistic (runLayer w v)
+runNet (w :&~ n') !v = let v' = logistic (runLayer w v)
                        in  runNet n' v'
 
 ```
@@ -208,32 +208,113 @@ Let’s imagine all of the bad things that could happen:
 ### Back-propagation
 
 Now, let’s try implementing back-propagation! It’s a basic “gradient
-descent”
+descent” algorithm. There are [many
+explanations](https://en.wikipedia.org/wiki/Backpropagation) on the
+internet; the basic idea is that you try to minimize the squared “error”
+of what the neural network outputs for a given input vs. the actual
+expected output. You find the direction of change that minimizes the
+error, and move that direction. The implementation of Feed-forward
+backpropagation is found in many sources online and in literature, so
+let’s see the implementation in Haskell:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L52-74
-train :: Double -> Vector Double -> Vector Double -> Network -> Network
-train rate x0 targ = fst . go x0
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L54-87
+train
+    :: Double           -- ^ learning rate
+    -> Vector Double    -- ^ input vector
+    -> Vector Double    -- ^ target vector
+    -> Network          -- ^ network to train
+    -> Network
+train rate x0 target = fst . go x0
   where
-    go :: Vector Double -> Network -> (Network, Vector Double)
+    -- | Recursively trains the network, starting from the outer layer and
+    -- building up to the input layer.  Returns the updated network as well
+    -- as the list of derivatives to use for calculating the gradient at
+    -- the next layer up.
+    go  :: Vector Double    -- ^ input vector
+        -> Network          -- ^ network to train
+        -> (Network, Vector Double)
     go !x (O w@(W wB wN))
-        = let y     = runLayer w x
-              o     = cmap logistic y
-              dEdy  = cmap logistic' y * (o - targ)
-              wB'   = wB - scale rate dEdy
-              wN'   = wN - scale rate (dEdy `outer` x)
-              w'    = W wB' wN'
-              delWs = tr wN #> dEdy
-          in  (O w', delWs)
+        = let y    = runLayer w x
+              o    = logistic y
+              dEdy = logistic' y * (o - target)
+              wB'  = wB - scale rate dEdy
+              wN'  = wN - scale rate (dEdy `outer` x)
+              w'   = W wB' wN'
+              dWs  = tr wN #> dEdy
+          in  (O w', dWs)
     go !x (w@(W wB wN) :&~ n)
-        = let y            = runLayer w x
-              o            = cmap logistic y
-              (n', delWs') = go o n
-              dEdy         = cmap logistic' y * delWs'
-              wB'          = wB - scale rate dEdy
-              wN'          = wN - scale rate (dEdy `outer` x)
-              w'           = W wB' wN'
-              delWs        = tr wN #> dEdy
-          in  (w' :&~ n', delWs)
+        = let y          = runLayer w x
+              o          = logistic y
+              (n', dWs') = go o n
+              dEdy       = logistic' y * dWs'
+              wB'        = wB - scale rate dEdy
+              wN'        = wN - scale rate (dEdy `outer` x)
+              w'         = W wB' wN'
+              dWs        = tr wN #> dEdy
+          in  (w' :&~ n', dWs)
 
 ```
+
+Where `logistic'` is the derivative of `logistic`. The algorithm
+computes the *updated* network by recursively updating the layers, from
+the output layer all the way up to the input layer. At every step it
+returns the updated layer/network, as well as a bundle of derivatives
+for the next layer to use to calculate its descent direction. At the
+output layer, all it needs to calculate the direction of descent is just
+`o - targ`, the target. At the inner layers, it has to use the `dWs`
+bundle to figure it out.
+
+Writing this is a bit of a struggle. The type system doesn’t help you
+like it normally does in Haskell, and you can’t really use parametricity
+to help you write your code like normal Haskell. Everything is
+monomorphic, and everything multiplies with everything else. You don’t
+have any hits about what to multiply with what at any point in time.
+
+In short, you’re leaving yourself open to many potential bugs…and the
+compiler doesn’t help you write your code at all! This is the nightmare
+of every Haskell programmer. There must be a better way!
+
+#### Tests
+
+Pretty much the only way you can verify this code is to test it out on
+example cases. In the [source
+file](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs)
+I have `main` test out the backprop, training a network on a 2D function
+that was “on” for two small circles and “off” everywhere else. I
+implemented a simple printing function and tested the trained network on
+a grid:
+
+``` {.bash}
+$ stack install hmatrix MonadRandom
+$ stack ghc -- -O2 ./NetworkUntyped.hs
+$ ./NetworkUntyped.hs
+# Training network...
+# 
+# 
+# 
+#              .-===.
+#            -#########-
+#          -#############=
+#         -###############=
+#         =################
+#         .################
+#          .##############-
+#            =###########.
+#               -=####-.
+#                              .==###=-.
+#                            =###########=
+#                           =##############.
+#                          -###############-
+#                          -###############.
+#                           ##############-
+#                           .############.
+#                            .-=######=.
+# 
+# 
+# 
+# 
+```
+
+Not too bad! But, I was basically forced to resort to unit testing to
+ensure my code was correct. Let’s see if we can do better.
