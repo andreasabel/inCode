@@ -223,10 +223,11 @@ weights:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L20-22}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L20-23}
 \KeywordTok{data} \DataTypeTok{Network} \FunctionTok{=} \DataTypeTok{O} \FunctionTok{!}\DataTypeTok{Weights}
              \FunctionTok{|} \FunctionTok{!}\DataTypeTok{Weights} \FunctionTok{:&~} \FunctionTok{!}\DataTypeTok{Network}
   \KeywordTok{deriving} \NormalTok{(}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Eq}\NormalTok{)}
+\KeywordTok{infixr} \DecValTok{5} \FunctionTok{:&~}
 \end{Highlighting}
 \end{Shaded}
 
@@ -247,7 +248,7 @@ We can write simple procedures, like generating random networks:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L42-52}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L41-51}
 \OtherTok{randomWeights ::} \DataTypeTok{MonadRandom} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \NormalTok{m }\DataTypeTok{Weights}
 \NormalTok{randomWeights i o }\FunctionTok{=} \KeywordTok{do}
     \NormalTok{s1 }\OtherTok{<-} \NormalTok{getRandom}
@@ -272,7 +273,7 @@ following the matrix equation we wrote earlier:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L26-40}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L25-39}
 \OtherTok{logistic ::} \DataTypeTok{Floating} \NormalTok{a }\OtherTok{=>} \NormalTok{a }\OtherTok{->} \NormalTok{a}
 \NormalTok{logistic x }\FunctionTok{=} \DecValTok{1} \FunctionTok{/} \NormalTok{(}\DecValTok{1} \FunctionTok{+} \NormalTok{exp (}\FunctionTok{-}\NormalTok{x))}
 
@@ -325,7 +326,7 @@ let's see the implementation in Haskell:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L54-87}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L53-86}
 \NormalTok{train}
 \OtherTok{    ::} \DataTypeTok{Double}           \CommentTok{-- ^ learning rate}
     \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}    \CommentTok{-- ^ input vector}
@@ -377,6 +378,8 @@ like it normally does in Haskell, and you can't really use parametricity
 to help you write your code like normal Haskell. Everything is
 monomorphic, and everything multiplies with everything else. You don't
 have any hits about what to multiply with what at any point in time.
+Seeing the implementation here basically amplifies and puts on displays
+all of the red flags/awfulness mentioned before.
 
 In short, you're leaving yourself open to many potential bugs\ldots{}and
 the compiler doesn't help you write your code at all! This is the
@@ -421,5 +424,42 @@ tested the trained network on a grid:
 
 Not too bad! But, I was basically forced to resort to unit testing to
 ensure my code was correct. Let's see if we can do better.
+
+\subsection{The Call of Types}\label{the-call-of-types}
+
+Before we go on to the ``typed'' version of our program, let's take a
+step back and look at some big checks you might want to ask yourself
+after you write code in Haskell.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Are any of my functions partial, or implemented using partial
+  functions? (And, how am I sure they won't fail?)
+\item
+  How could I have written things that are \emph{incorrect}, and yet
+  still type check? (And, how am I sure that the way that \emph{I}
+  implemented it is the correct one?)
+\end{enumerate}
+
+Both of these questions usually yield some truth about the code you
+write and the things you should worry about. As a Haskeller, they should
+always be at the back of your mind!
+
+Looking back at our untyped implementation, we notice some things:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Literally every single function we wrote is partial. If we had passed
+  in the incorrectly sized matrix/vector, or stored mismatched vectors
+  in our network, everything would fall apart.
+\item
+  There are literally billions of ways we could have implemented our
+  functions where they would still typechecked. We could multiply
+  mismatched matrices, or forget to multiply a matrix by another, etc.
+\end{enumerate}
 
 \end{document}

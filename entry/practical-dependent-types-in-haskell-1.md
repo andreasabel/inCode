@@ -124,10 +124,11 @@ A feed-forward neural network is then just a linked list of these
 weights:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L20-22
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L20-23
 data Network = O !Weights
              | !Weights :&~ !Network
   deriving (Show, Eq)
+infixr 5 :&~
 
 ```
 
@@ -146,7 +147,7 @@ the weights between the last hidden layer and the output layer.
 We can write simple procedures, like generating random networks:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L42-52
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L41-51
 randomWeights :: MonadRandom m => Int -> Int -> m Weights
 randomWeights i o = do
     s1 <- getRandom
@@ -169,7 +170,7 @@ And now a function to “run” our network on a given input vector,
 following the matrix equation we wrote earlier:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L26-40
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L25-39
 logistic :: Floating a => a -> a
 logistic x = 1 / (1 + exp (-x))
 
@@ -218,7 +219,7 @@ backpropagation is found in many sources online and in literature, so
 let’s see the implementation in Haskell:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L54-87
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L53-86
 train
     :: Double           -- ^ learning rate
     -> Vector Double    -- ^ input vector
@@ -270,6 +271,8 @@ like it normally does in Haskell, and you can’t really use parametricity
 to help you write your code like normal Haskell. Everything is
 monomorphic, and everything multiplies with everything else. You don’t
 have any hits about what to multiply with what at any point in time.
+Seeing the implementation here basically amplifies and puts on displays
+all of the red flags/awfulness mentioned before.
 
 In short, you’re leaving yourself open to many potential bugs…and the
 compiler doesn’t help you write your code at all! This is the nightmare
@@ -312,3 +315,29 @@ $ ./NetworkUntyped.hs
 
 Not too bad! But, I was basically forced to resort to unit testing to
 ensure my code was correct. Let’s see if we can do better.
+
+### The Call of Types
+
+Before we go on to the “typed” version of our program, let’s take a step
+back and look at some big checks you might want to ask yourself after
+you write code in Haskell.
+
+1.  Are any of my functions partial, or implemented using partial
+    functions? (And, how am I sure they won’t fail?)
+2.  How could I have written things that are *incorrect*, and yet still
+    type check? (And, how am I sure that the way that *I* implemented it
+    is the correct one?)
+
+Both of these questions usually yield some truth about the code you
+write and the things you should worry about. As a Haskeller, they should
+always be at the back of your mind!
+
+Looking back at our untyped implementation, we notice some things:
+
+1.  Literally every single function we wrote is partial. If we had
+    passed in the incorrectly sized matrix/vector, or stored mismatched
+    vectors in our network, everything would fall apart.
+2.  There are literally billions of ways we could have implemented our
+    functions where they would still typechecked. We could multiply
+    mismatched matrices, or forget to multiply a matrix by another, etc.
+
