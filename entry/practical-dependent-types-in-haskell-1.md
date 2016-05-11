@@ -281,9 +281,10 @@ Pretty much the only way you can verify this code is to test it out on
 example cases. In the [source
 file](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs)
 I have `main` test out the backprop, training a network on a 2D function
-that was “on” for two small circles and “off” everywhere else. I
-implemented a simple printing function and tested the trained network on
-a grid:
+that was “on” for two small circles and “off” everywhere else. We
+basically train the network to be able to recognize the two-circle
+pattern. I implemented a simple printing function and tested the trained
+network on a grid:
 
 ``` {.bash}
 $ stack install hmatrix MonadRandom
@@ -292,26 +293,19 @@ $ ./NetworkUntyped.hs
 # Training network...
 # 
 # 
-# 
-#              .-===.
-#            -#########-
-#          -#############=
-#         -###############=
-#         =################
-#         .################
+#            .=########=
+#          .##############.
+#          ################
+#          ################
 #          .##############-
-#            =###########.
-#               -=####-.
-#                              .==###=-.
-#                            =###########=
-#                           =##############.
-#                          -###############-
-#                          -###############.
-#                           ##############-
-#                           .############.
-#                            .-=######=.
-# 
-# 
+#            .###########
+#                 ...             ...
+#                             -##########.
+#                           -##############.
+#                           ################
+#                           ################
+#                            =############=
+#                              .#######=.
 # 
 # 
 ```
