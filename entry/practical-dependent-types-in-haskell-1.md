@@ -348,8 +348,8 @@ write programs.
 Let’s write a `Weights` type that tells you the size of its output and
 the input it expects. Let’s have, say, a `Weights 10 5` be a set of
 weights that takes you from a layer of 10 nodes to a layer of 5 nodes.
-`w : Weights 4 6` would take you from a layer of 4 nodes to a layer of 6
-nodes:
+`w :: Weights 4 6` would take you from a layer of 4 nodes to a layer of
+6 nodes:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L22-24
@@ -366,23 +366,23 @@ vector of Doubles with 5 elements, and a `L 3 6` is a 3x6 vector of
 Doubles.
 
 The `Static` module relies on the `KnownNat` mechanism that GHC offers.
-A `KnownNat n` constraint is pretty much a way for you to “get” the
-value at runtime, so a `KnownNat n => R n` is basically a vector
-“packaged” with its size via `KnownNat n`. Almost all operations in the
-library require a `KnownNat` constraint.
+A `KnownNat n` constraint is more or less just a way for you to “get” an
+Integer at runtime (with the `natVal` function), so a
+`KnownNat n => R n` is basically a vector “packaged” with its size.
+Almost all operations in the library require a `KnownNat` constraint.
 
-A reasonable type for a network might be `Network 10 2`, taking 10
-inputs and popping out 2 outputs. This might be an ideal type to export,
-because it abstracts away the size of the hidden layers. But it’d be
-nice for us to keep all of the hidden layers in the type for now — we’ll
-see how it can be useful, and we’ll also talk about how to later
-hide/abstract it away when we export the type.
+Following this, a reasonable type for a *network* might be
+`Network 10 2`, taking 10 inputs and popping out 2 outputs. This might
+be an ideal type to export, because it abstracts away the size of the
+hidden layers. But it’d be nice for us to keep all of the hidden layers
+in the type for now — we’ll see how it can be useful, and we’ll also
+talk about how to later hide/abstract it away when we export the type.
 
-Our network type can be something like `Network 10 '[7,5,3] 2`: Take 10
-inputs, return 2 outputs. And internally, have hidden layers of size 7,
-5, and 3. (The `'[7,5,3]` is a type-level list of Nats; the optional `'`
-apostrophe is just for our own benefit to distinguish it from a
-value-level list of integers.)
+Our network type for this post will be something like
+`Network 10 '[7,5,3] 2`: Take 10 inputs, return 2 outputs — and
+internally, have hidden layers of size 7, 5, and 3. (The `'[7,5,3]` is a
+type-level list of Nats; the optional `'` apostrophe is just for our own
+benefit to distinguish it from a value-level list of integers.)
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L26-33
@@ -397,7 +397,11 @@ infixr 5 :&~
 
 ```
 
-We use GADT syntax here again, but let’s go over the two constructors.
+We use GADT syntax here again. The *kind signature* of the type
+constructor means that the `Network` type constructor takes three
+inputs: a `Nat` (type level number, like `10` or `5`), list of `Nat`s,
+and another `Nat` (the input, hidden layers, and output sizes). Let’s go
+over the two constructors.
 
 -   The `O` constructor takes a `Weights i o` and returns a
     `Network i '[] o`. That is, if your network is just weights from `i`
@@ -411,15 +415,18 @@ We use GADT syntax here again, but let’s go over the two constructors.
 
     We add a `KnownNat` constraint on the `h`, so that whenever you
     pattern match on `w :&~ net`, you automatically get a `KnownNat`
-    constraint for the input size of `net` that you can use.
+    constraint for the input size of `net` that the *hmatrix* library
+    can use.
 
 We can still construct them the same way:
 
 ``` {.haskell}
+-- given:
 ho :: Weights  4 2
 hh :: Weights  7 4
 ih :: Weights 10 7
 
+-- we have:
 O ho                    :: Network  4 '[] 2
 hh :&~ O ho             :: Network  7 '[4] 2
 ih :&~ hh :&~ O ho      :: Network 10 '[7,4] 2
@@ -437,7 +444,7 @@ error!
 Generating random weights and networks is even nicer now:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L57-70
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L57-64
 randomWeights :: (MonadRandom m, KnownNat i, KnownNat o)
               => m (Weights i o)
 randomWeights = do
@@ -446,12 +453,6 @@ randomWeights = do
     let wB = randomVector s1 Uniform * 2 - 1
         wN = uniformSample s2 (-1) 1
     return $ W wB wN
-
-randomNet :: forall m i hs o. (MonadRandom m, KnownNat i, KnownNats hs, KnownNat o)
-          => m (Network i hs o)
-randomNet = case natsList :: NatList hs of
-              ØNL     -> O     <$> randomWeights
-              _ :<# _ -> (:&~) <$> randomWeights <*> randomNet
 
 ```
 
@@ -463,3 +464,117 @@ thing you want to return. You would use
 `randomVector s Uniform :: R 10`, and type inference would give you a
 10-element vector the same way `read "hello" :: Int` would give you an
 `Int`.
+
+### Singletons and Induction detour
+
+The code for the updated `randomNet` takes a bit of explaining.
+
+Let’s say we want to construct a `Network 4 '[3,2] 1`. In true Haskell
+fashion, we do this recursively, or “inductively”. After all, we know
+how to make a `Network i '[] o` (just `O <$> randomWieights`), and we
+know how to create a `Network i (h ': hs) o` if we had a
+`Network h hs o`. Now all we have to do is just “pattern match” on the
+type-level list, and…
+
+Oh wait. We can’t directly pattern match on lists like that in Haskell.
+But, what we can do is move the list from the type level to the value
+level using singletons.
+
+The
+*[typelits-witnesses](http://hackage.haskell.org/package/typelits-witnesses)*
+library offers a handy singleton for just this job. If you have a type
+level list of nats, you get a `KnowNats ns` constraint. This lets you
+create a `NatList`:
+
+    data NatList :: [Nat] -> * where
+        ØNL   :: NatList '[]
+        (:<#) :: (KnownNat n, KnownNats ns)
+              => !(Proxy n) -> !(NatList ns) -> NatList (n ': ns)
+
+    infixr 5 :<#
+
+Basically, a `NatList '[1,2,3]` is `p1 :<# p2 :<# p3 :<# ØNL`, where
+`p1 :: Proxy 1`, `p2 :: Proxy 2`, and `p3 :: Proxy 3`. (Remember,
+`data Proxy a = Proxy`; `Proxy` is like `()` but with an extra phantom
+type parameter)
+
+We can spontaneously generate a `NatList` for any type-level Nat list
+with `natList :: KnownNats ns => NatList ns`:
+
+``` {.haskell}
+ghci> natList :: NatList '[1,2,3]
+Proxy :<# Proxy :<# Proxy :<# ØNL
+-- ^         ^         ^
+-- `-- :: Proxy 1      |
+--           `-- :: Proxy 2
+--                     `-- :: Proxy 3
+```
+
+Now that we have an actual value-level *structure* (the list of
+`Proxy`s), we can now essentially “pattern match” on `hs` — if it’s
+empty, we’ll get the `ØNL` constructor, otherwise we’ll get the `(:<#)`
+constructor, etc:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L66-70
+randomNet :: forall m i hs o. (MonadRandom m, KnownNat i, KnownNats hs, KnownNat o)
+          => m (Network i hs o)
+randomNet = case natsList :: NatList hs of
+              ØNL     -> O     <$> randomWeights
+              _ :<# _ -> (:&~) <$> randomWeights <*> randomNet
+
+```
+
+Note that we need `ScopedTypeVariables` and the `forall .. hs ..` so
+that we can say `NatList hs` in the function body.
+
+The reason why `NatList` and `:<#` works for this is that its
+constructors *come with proofs* that the head is a `KnownNat` and the
+tail is `KnownNats`. It’s a part of the GADT declaration. If you ever
+pattern match on `:<#`, you get a `KnownNat n` constraint (that
+`randomWeights`) uses, and also a `KnownNats ns` constraint (that the
+recursive call to `randomNet` uses).
+
+This is a common pattern in dependent Haskell of inductively “folding
+down” type-level structures by pattern matching on a singleton skeleton
+(`NatList` here), and getting the singleton skeleton from “folding up”
+using a typeclass (`KnownNats`, here).
+
+#### On Typeclasses
+
+Along the way, the singletons and the typeclasses and the types play an
+intricate dance. `randomWeights` needed a `KnownNat` constraint. Where
+did it come from?
+
+The `KnownNat n` is used by the `KnownNats ns` instance. Then `natList`
+uses the `KnownNat n` to construct the `NatList ns` (because any time
+you use `(:<#)`, you need a `KnownNat`). Then, in `randomNet`, when you
+pattern match on the `(:<#)`, you “release” the `KnownNat n` that was
+stuffed in there by `natList`.
+
+People say that pattern matching on `(:<#)` gives you a “context” in
+that case-statement-branch where `KnownNat n` is in scope/valid. But
+sometimes it helps to think of it in the way we just did — the instance
+is actually a “thing” that gets passed around through typeclasses and
+GADT constructors/deconstructors. The `KnownNat` instance gets put into
+`:<#` by `natList`, and is then taken out in the pattern match for
+`randomWeights` to use.
+
+<div class="note">
+
+**Aside**
+
+At a high-level, you can see that this is really no different than just
+having a plain old `Integer` that you “put in” to the constructor (as an
+extra field), and which you then take out if you pattern match on it.
+Really, every time you see `KnownNat n => ..`, you can think of it as an
+`Integer -> ..`. `(:<#)` requiring a `KnownNat n =>` put into it is
+really the same as requiring an `Integer` in it, which the
+pattern-matcher can then take out.
+
+The difference is that GHC and the compiler can now “track” these at
+compile-time to give you rudimentary checks on how your Nat’s act
+together on the type level, allowing it to catch mismatches with
+compile-time checks instead of run-time checks.
+
+</div>
