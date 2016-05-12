@@ -46,7 +46,7 @@ y_j = b_j + \sum_i^m w_{ij} x_i
 <p><em>Training</em> a network involves picking the right set of weights to get the network to answer the question you want.</p>
 <h2 id="vanilla-types">Vanilla Types</h2>
 <p>We can store a network by storing the matrix of of weights and biases between each layer:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L15-18</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L17-20</span>
 <span class="kw">data</span> <span class="dt">Weights</span> <span class="fu">=</span> <span class="dt">W</span> {<span class="ot"> wBiases ::</span> <span class="fu">!</span>(<span class="dt">Vector</span> <span class="dt">Double</span>)
                  ,<span class="ot"> wNodes  ::</span> <span class="fu">!</span>(<span class="dt">Matrix</span> <span class="dt">Double</span>)
                  }
@@ -54,9 +54,10 @@ y_j = b_j + \sum_i^m w_{ij} x_i
 <p>Now, a <code>Weights</code> linking an <em>n</em>-node layer to an <em>m</em>-node layer has an <em>m</em>-dimensional bias vector (one component for each output) and an <em>m</em>-by-<em>n</em> node weight matrix (one column for each output, one row for each input).</p>
 <p>(We’re using the <code>Matrix</code> type from the awesome <em><a href="http://hackage.haskell.org/package/hmatrix">hmatrix</a></em> library for performant linear algebra, implemented using blas/lapack under the hood)</p>
 <p>A feed-forward neural network is then just a linked list of these weights:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L20-23</span>
-<span class="kw">data</span> <span class="dt">Network</span> <span class="fu">=</span> <span class="dt">O</span> <span class="fu">!</span><span class="dt">Weights</span>
-             <span class="fu">|</span> <span class="fu">!</span><span class="dt">Weights</span> <span class="fu">:&amp;~</span> <span class="fu">!</span><span class="dt">Network</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L22-26</span>
+<span class="kw">data</span> <span class="dt">Network</span><span class="ot"> ::</span> <span class="fu">*</span> <span class="kw">where</span>
+    <span class="dt">O</span><span class="ot">     ::</span> <span class="fu">!</span><span class="dt">Weights</span> <span class="ot">-&gt;</span> <span class="dt">Network</span>
+<span class="ot">    (:&amp;~) ::</span> <span class="fu">!</span><span class="dt">Weights</span> <span class="ot">-&gt;</span> <span class="fu">!</span><span class="dt">Network</span> <span class="ot">-&gt;</span> <span class="dt">Network</span>
   <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)
 <span class="kw">infixr</span> <span class="dv">5</span> <span class="fu">:&amp;~</span></code></pre></div>
 <p>So a network with one input layer, two inner layers, and one output layer would look like:</p>
@@ -64,7 +65,7 @@ y_j = b_j + \sum_i^m w_{ij} x_i
 <p>The first component is the weights from the input to first inner layer, the second is the weights between the two hidden layers, and the last is the weights between the last hidden layer and the output layer.</p>
 <!-- TODO: graphs using diagrams? -->
 <p>We can write simple procedures, like generating random networks:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L41-51</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L44-54</span>
 <span class="ot">randomWeights ::</span> <span class="dt">MonadRandom</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m <span class="dt">Weights</span>
 randomWeights i o <span class="fu">=</span> <span class="kw">do</span>
     s1 <span class="ot">&lt;-</span> getRandom
@@ -78,7 +79,7 @@ randomNet i [] o     <span class="fu">=</span>     <span class="dt">O</span> <sp
 randomNet i (h<span class="fu">:</span>hs) o <span class="fu">=</span> (<span class="fu">:&amp;~</span>) <span class="fu">&lt;$&gt;</span> randomWeights i h <span class="fu">&lt;*&gt;</span> randomNet h hs o</code></pre></div>
 <p>(<code>randomVector</code> and <code>uniformSample</code> are from the <em>hmatrix</em> library, generating random vectors and matrices from a random <code>Int</code> seed. We configure them to generate them with numbers between -1 and 1)</p>
 <p>And now a function to “run” our network on a given input vector, following the matrix equation we wrote earlier:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L25-39</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L28-42</span>
 <span class="ot">logistic ::</span> <span class="dt">Floating</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a
 logistic x <span class="fu">=</span> <span class="dv">1</span> <span class="fu">/</span> (<span class="dv">1</span> <span class="fu">+</span> exp (<span class="fu">-</span>x))
 
@@ -99,19 +100,14 @@ runNet (w <span class="fu">:&amp;~</span> n&#39;) <span class="fu">!</span>v <sp
 </ul>
 <h3 id="back-propagation">Back-propagation</h3>
 <p>Now, let’s try implementing back-propagation! It’s a basic “gradient descent” algorithm. There are <a href="https://en.wikipedia.org/wiki/Backpropagation">many explanations</a> on the internet; the basic idea is that you try to minimize the squared “error” of what the neural network outputs for a given input vs. the actual expected output. You find the direction of change that minimizes the error, and move that direction. The implementation of Feed-forward backpropagation is found in many sources online and in literature, so let’s see the implementation in Haskell:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L53-86</span>
-train
-<span class="ot">    ::</span> <span class="dt">Double</span>           <span class="co">-- ^ learning rate</span>
-    <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span>    <span class="co">-- ^ input vector</span>
-    <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span>    <span class="co">-- ^ target vector</span>
-    <span class="ot">-&gt;</span> <span class="dt">Network</span>          <span class="co">-- ^ network to train</span>
-    <span class="ot">-&gt;</span> <span class="dt">Network</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L56-84</span>
+<span class="ot">train ::</span> <span class="dt">Double</span>           <span class="co">-- ^ learning rate</span>
+      <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span>    <span class="co">-- ^ input vector</span>
+      <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span>    <span class="co">-- ^ target vector</span>
+      <span class="ot">-&gt;</span> <span class="dt">Network</span>          <span class="co">-- ^ network to train</span>
+      <span class="ot">-&gt;</span> <span class="dt">Network</span>
 train rate x0 target <span class="fu">=</span> fst <span class="fu">.</span> go x0
   <span class="kw">where</span>
-    <span class="co">-- | Recursively trains the network, starting from the outer layer and</span>
-    <span class="co">-- building up to the input layer.  Returns the updated network as well</span>
-    <span class="co">-- as the list of derivatives to use for calculating the gradient at</span>
-    <span class="co">-- the next layer up.</span>
 <span class="ot">    go  ::</span> <span class="dt">Vector</span> <span class="dt">Double</span>    <span class="co">-- ^ input vector</span>
         <span class="ot">-&gt;</span> <span class="dt">Network</span>          <span class="co">-- ^ network to train</span>
         <span class="ot">-&gt;</span> (<span class="dt">Network</span>, <span class="dt">Vector</span> <span class="dt">Double</span>)

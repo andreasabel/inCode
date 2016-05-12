@@ -103,7 +103,7 @@ We can store a network by storing the matrix of of weights and biases
 between each layer:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L15-18
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L17-20
 data Weights = W { wBiases :: !(Vector Double)
                  , wNodes  :: !(Matrix Double)
                  }
@@ -124,9 +124,10 @@ A feed-forward neural network is then just a linked list of these
 weights:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L20-23
-data Network = O !Weights
-             | !Weights :&~ !Network
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L22-26
+data Network :: * where
+    O     :: !Weights -> Network
+    (:&~) :: !Weights -> !Network -> Network
   deriving (Show, Eq)
 infixr 5 :&~
 
@@ -147,7 +148,7 @@ the weights between the last hidden layer and the output layer.
 We can write simple procedures, like generating random networks:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L41-51
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L44-54
 randomWeights :: MonadRandom m => Int -> Int -> m Weights
 randomWeights i o = do
     s1 <- getRandom
@@ -170,7 +171,7 @@ And now a function to “run” our network on a given input vector,
 following the matrix equation we wrote earlier:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L25-39
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L28-42
 logistic :: Floating a => a -> a
 logistic x = 1 / (1 + exp (-x))
 
@@ -219,19 +220,14 @@ backpropagation is found in many sources online and in literature, so
 let’s see the implementation in Haskell:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L53-86
-train
-    :: Double           -- ^ learning rate
-    -> Vector Double    -- ^ input vector
-    -> Vector Double    -- ^ target vector
-    -> Network          -- ^ network to train
-    -> Network
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L56-84
+train :: Double           -- ^ learning rate
+      -> Vector Double    -- ^ input vector
+      -> Vector Double    -- ^ target vector
+      -> Network          -- ^ network to train
+      -> Network
 train rate x0 target = fst . go x0
   where
-    -- | Recursively trains the network, starting from the outer layer and
-    -- building up to the input layer.  Returns the updated network as well
-    -- as the list of derivatives to use for calculating the gradient at
-    -- the next layer up.
     go  :: Vector Double    -- ^ input vector
         -> Network          -- ^ network to train
         -> (Network, Vector Double)
