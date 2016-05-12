@@ -457,6 +457,8 @@ Looking back at our untyped implementation, we notice some things:
 
 \section{With Static Types}\label{with-static-types}
 
+\subsection{Networks}\label{networks}
+
 Gauging our potential problems, it seems like the first major class of
 bugs we can address is improperly sized and incompatible matrices. If
 the compiler always made sure we used compatible matrices, we can avoid
@@ -605,7 +607,7 @@ The code for the updated \texttt{randomNet} takes a bit of explaining.
 
 Let's say we want to construct a
 \texttt{Network\ 4\ \textquotesingle{}{[}3,2{]}\ 1}. In true Haskell
-fashion, we do this recursively, or ``inductively''. After all, we know
+fashion, we do this recursively (``inductively''). After all, we know
 how to make a \texttt{Network\ i\ \textquotesingle{}{[}{]}\ o} (just
 \texttt{O\ \textless{}\$\textgreater{}\ randomWieights}), and we know
 how to create a \texttt{Network\ i\ (h\ \textquotesingle{}:\ hs)\ o} if
@@ -622,14 +624,16 @@ library offers a handy singleton for just this job. If you have a type
 level list of nats, you get a \texttt{KnowNats\ ns} constraint. This
 lets you create a \texttt{NatList}:
 
-\begin{verbatim}
-data NatList :: [Nat] -> * where
-    ØNL   :: NatList '[]
-    (:<#) :: (KnownNat n, KnownNats ns)
-          => !(Proxy n) -> !(NatList ns) -> NatList (n ': ns)
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{NatList}\OtherTok{ ::} \NormalTok{[}\DataTypeTok{Nat}\NormalTok{] }\OtherTok{->} \FunctionTok{*} \KeywordTok{where}
+    \NormalTok{Ø}\DataTypeTok{NL}\OtherTok{   ::} \DataTypeTok{NatList} \CharTok{'[]}
+\OtherTok{    (:<#) ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{n, }\DataTypeTok{KnownNats} \NormalTok{ns)}
+          \OtherTok{=>} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Proxy} \NormalTok{n) }\OtherTok{->} \FunctionTok{!}\NormalTok{(}\DataTypeTok{NatList} \NormalTok{ns) }\OtherTok{->} \DataTypeTok{NatList} \NormalTok{(n }\CharTok{': ns)}
 
-infixr 5 :<#
-\end{verbatim}
+\KeywordTok{infixr} \DecValTok{5} \FunctionTok{:<#}
+\end{Highlighting}
+\end{Shaded}
 
 Basically, a \texttt{NatList\ \textquotesingle{}{[}1,2,3{]}} is
 \texttt{p1\ :\textless{}\#\ p2\ :\textless{}\#\ p3\ :\textless{}\#\ ØNL},
@@ -669,9 +673,9 @@ otherwise we'll get the \texttt{(:\textless{}\#)} constructor, etc:
 \end{Highlighting}
 \end{Shaded}
 
-Note that we need \texttt{ScopedTypeVariables} and the
+(Note that we need \texttt{ScopedTypeVariables} and the
 \texttt{forall\ ..\ hs\ ..} so that we can say \texttt{NatList\ hs} in
-the function body.
+the function body.)
 
 The reason why \texttt{NatList} and \texttt{:\textless{}\#} works for
 this is that its constructors \emph{come with proofs} that the head is a
@@ -683,17 +687,18 @@ call to \texttt{randomNet} uses).
 
 This is a common pattern in dependent Haskell of inductively ``folding
 down'' type-level structures by pattern matching on a singleton skeleton
-(\texttt{NatList} here), and getting the singleton skeleton from
-``folding up'' using a typeclass (\texttt{KnownNats}, here).
-
-\subsubsection{On Typeclasses}\label{on-typeclasses}
+structure (\texttt{NatList} here), and getting the singleton skeleton
+from ``folding up'' using a typeclass (\texttt{KnownNats}, here).
+\texttt{NatList\ hs} has exactly the structure we want, so we can fold
+it down to a \texttt{Network\ i\ hs\ o}.
 
 Along the way, the singletons and the typeclasses and the types play an
 intricate dance. \texttt{randomWeights} needed a \texttt{KnownNat}
 constraint. Where did it come from?
 
-The \texttt{KnownNat\ n} is used by the \texttt{KnownNats\ ns} instance.
-Then \texttt{natList} uses the \texttt{KnownNat\ n} to construct the
+\subsubsection{On Typeclasses}\label{on-typeclasses}
+
+\texttt{natList} uses the \texttt{KnownNat\ n} to construct the
 \texttt{NatList\ ns} (because any time you use
 \texttt{(:\textless{}\#)}, you need a \texttt{KnownNat}). Then, in
 \texttt{randomNet}, when you pattern match on the
@@ -729,5 +734,35 @@ together on the type level, allowing it to catch mismatches with
 compile-time checks instead of run-time checks.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+So now, you can use
+\texttt{randomNet\ ::\ IO\ (Network\ 5\ \textquotesingle{}{[}4{]}\ 2)}
+to get a random network of the desired dimensions! Much simpler than
+before, right?
+
+\subsection{Running with it}\label{running-with-it}
+
+The code for running the nets is identical, more or less:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L43-55}
+\OtherTok{runLayer ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+         \OtherTok{=>} \DataTypeTok{Weights} \NormalTok{i o}
+         \OtherTok{->} \DataTypeTok{R} \NormalTok{i}
+         \OtherTok{->} \DataTypeTok{R} \NormalTok{o}
+\NormalTok{runLayer (}\DataTypeTok{W} \NormalTok{wB wN) v }\FunctionTok{=} \NormalTok{wB }\FunctionTok{+} \NormalTok{wN }\FunctionTok{#>} \NormalTok{v}
+
+\OtherTok{runNet ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+       \OtherTok{=>} \DataTypeTok{Network} \NormalTok{i hs o}
+       \OtherTok{->} \DataTypeTok{R} \NormalTok{i}
+       \OtherTok{->} \DataTypeTok{R} \NormalTok{o}
+\NormalTok{runNet (}\DataTypeTok{O} \NormalTok{w)      }\FunctionTok{!}\NormalTok{v }\FunctionTok{=} \NormalTok{logistic (runLayer w v)}
+\NormalTok{runNet (w }\FunctionTok{:&~} \NormalTok{n') }\FunctionTok{!}\NormalTok{v }\FunctionTok{=} \KeywordTok{let} \NormalTok{v' }\FunctionTok{=} \NormalTok{logistic (runLayer w v)}
+                       \KeywordTok{in}  \NormalTok{runNet n' v'}
+\end{Highlighting}
+\end{Shaded}
+
+Anticlimactic, huh?
 
 \end{document}

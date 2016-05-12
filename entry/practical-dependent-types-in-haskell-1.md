@@ -339,6 +339,8 @@ Looking back at our untyped implementation, we notice some things:
 With Static Types
 -----------------
 
+### Networks
+
 Gauging our potential problems, it seems like the first major class of
 bugs we can address is improperly sized and incompatible matrices. If
 the compiler always made sure we used compatible matrices, we can avoid
@@ -470,11 +472,11 @@ thing you want to return. You would use
 The code for the updated `randomNet` takes a bit of explaining.
 
 Let’s say we want to construct a `Network 4 '[3,2] 1`. In true Haskell
-fashion, we do this recursively, or “inductively”. After all, we know
-how to make a `Network i '[] o` (just `O <$> randomWieights`), and we
-know how to create a `Network i (h ': hs) o` if we had a
-`Network h hs o`. Now all we have to do is just “pattern match” on the
-type-level list, and…
+fashion, we do this recursively (“inductively”). After all, we know how
+to make a `Network i '[] o` (just `O <$> randomWieights`), and we know
+how to create a `Network i (h ': hs) o` if we had a `Network h hs o`.
+Now all we have to do is just “pattern match” on the type-level list,
+and…
 
 Oh wait. We can’t directly pattern match on lists like that in Haskell.
 But, what we can do is move the list from the type level to the value
@@ -486,12 +488,14 @@ library offers a handy singleton for just this job. If you have a type
 level list of nats, you get a `KnowNats ns` constraint. This lets you
 create a `NatList`:
 
-    data NatList :: [Nat] -> * where
-        ØNL   :: NatList '[]
-        (:<#) :: (KnownNat n, KnownNats ns)
-              => !(Proxy n) -> !(NatList ns) -> NatList (n ': ns)
+``` {.haskell}
+data NatList :: [Nat] -> * where
+    ØNL   :: NatList '[]
+    (:<#) :: (KnownNat n, KnownNats ns)
+          => !(Proxy n) -> !(NatList ns) -> NatList (n ': ns)
 
-    infixr 5 :<#
+infixr 5 :<#
+```
 
 Basically, a `NatList '[1,2,3]` is `p1 :<# p2 :<# p3 :<# ØNL`, where
 `p1 :: Proxy 1`, `p2 :: Proxy 2`, and `p3 :: Proxy 3`. (Remember,
@@ -525,8 +529,8 @@ randomNet = case natsList :: NatList hs of
 
 ```
 
-Note that we need `ScopedTypeVariables` and the `forall .. hs ..` so
-that we can say `NatList hs` in the function body.
+(Note that we need `ScopedTypeVariables` and the `forall .. hs ..` so
+that we can say `NatList hs` in the function body.)
 
 The reason why `NatList` and `:<#` works for this is that its
 constructors *come with proofs* that the head is a `KnownNat` and the
@@ -537,20 +541,21 @@ recursive call to `randomNet` uses).
 
 This is a common pattern in dependent Haskell of inductively “folding
 down” type-level structures by pattern matching on a singleton skeleton
-(`NatList` here), and getting the singleton skeleton from “folding up”
-using a typeclass (`KnownNats`, here).
-
-#### On Typeclasses
+structure (`NatList` here), and getting the singleton skeleton from
+“folding up” using a typeclass (`KnownNats`, here). `NatList hs` has
+exactly the structure we want, so we can fold it down to a
+`Network i hs o`.
 
 Along the way, the singletons and the typeclasses and the types play an
 intricate dance. `randomWeights` needed a `KnownNat` constraint. Where
 did it come from?
 
-The `KnownNat n` is used by the `KnownNats ns` instance. Then `natList`
-uses the `KnownNat n` to construct the `NatList ns` (because any time
-you use `(:<#)`, you need a `KnownNat`). Then, in `randomNet`, when you
-pattern match on the `(:<#)`, you “release” the `KnownNat n` that was
-stuffed in there by `natList`.
+#### On Typeclasses
+
+`natList` uses the `KnownNat n` to construct the `NatList ns` (because
+any time you use `(:<#)`, you need a `KnownNat`). Then, in `randomNet`,
+when you pattern match on the `(:<#)`, you “release” the `KnownNat n`
+that was stuffed in there by `natList`.
 
 People say that pattern matching on `(:<#)` gives you a “context” in
 that case-statement-branch where `KnownNat n` is in scope/valid. But
@@ -578,3 +583,30 @@ together on the type level, allowing it to catch mismatches with
 compile-time checks instead of run-time checks.
 
 </div>
+
+So now, you can use `randomNet :: IO (Network 5 '[4] 2)` to get a random
+network of the desired dimensions! Much simpler than before, right?
+
+### Running with it
+
+The code for running the nets is identical, more or less:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L43-55
+runLayer :: (KnownNat i, KnownNat o)
+         => Weights i o
+         -> R i
+         -> R o
+runLayer (W wB wN) v = wB + wN #> v
+
+runNet :: (KnownNat i, KnownNat o)
+       => Network i hs o
+       -> R i
+       -> R o
+runNet (O w)      !v = logistic (runLayer w v)
+runNet (w :&~ n') !v = let v' = logistic (runLayer w v)
+                       in  runNet n' v'
+
+```
+
+Anticlimactic, huh?
