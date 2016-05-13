@@ -226,7 +226,7 @@ backpropagation is found in many sources online and in literature, so
 let’s see the implementation in Haskell:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L57-92
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L57-93
 train :: Double           -- ^ learning rate
       -> Vector Double    -- ^ input vector
       -> Vector Double    -- ^ target vector
@@ -241,6 +241,7 @@ train rate x0 target = fst . go x0
         = let y    = runLayer w x
               o    = logistic y
               -- the gradient (how much y affects the error)
+              --   (logistic' is the derivative of logistic)
               dEdy = logistic' y * (o - target)
               -- new bias weights and node weights
               wB'  = wB - scale rate dEdy
@@ -266,14 +267,13 @@ train rate x0 target = fst . go x0
 
 ```
 
-Where `logistic'` is the derivative of `logistic`. The algorithm
-computes the *updated* network by recursively updating the layers, from
-the output layer all the way up to the input layer. At every step it
-returns the updated layer/network, as well as a bundle of derivatives
-for the next layer to use to calculate its descent direction. At the
-output layer, all it needs to calculate the direction of descent is just
-`o - targ`, the target. At the inner layers, it has to use the `dWs`
-bundle to figure it out.
+The algorithm computes the *updated* network by recursively updating the
+layers, from the output layer all the way up to the input layer. At
+every step it returns the updated layer/network, as well as a bundle of
+derivatives for the next layer to use to calculate its descent
+direction. At the output layer, all it needs to calculate the direction
+of descent is just `o - targ`, the target. At the inner layers, it has
+to use the `dWs` bundle to figure it out.
 
 Writing this is a bit of a struggle. Truth be told, I implemented this
 incorrectly several times before writing it now as you see here. The
@@ -385,10 +385,12 @@ vector of Doubles with 5 elements, and a `L 3 6` is a 3x6 vector of
 Doubles.
 
 The `Static` module relies on the `KnownNat` mechanism that GHC offers.
-Almost all operations in the library require a `KnownNat` constraint,
-which basically allows the functions to *use* the information in the
-numeric parameter (the `Integer` it represents, basically) at run-time.
-(More on this later!)
+Almost all operations in the library require a `KnownNat` constraint on
+the type-level Nats — for example, you can take the dot product of two
+vectors with `dot :: KnownNat n => R n -> R n`. The `KnownNat`
+constraint allows the functions to *use* the information in the size
+parameter (the `Integer` it represents) at run-time. (More on this
+later!)
 
 Following this, a reasonable type for a *network* might be
 `Network 10 2`, taking 10 inputs and popping out 2 outputs. This might
@@ -568,29 +570,28 @@ The reason why `NatList` and `:<#` works for this is that its
 constructors *come with proofs* that the head’s type has a `KnownNat`
 and the tail’s type has a `KnownNats`. It’s a part of the GADT
 declaration. If you ever pattern match on `p :<# ns`, you get a
-`KnownNat n` constraint for the `p :: Proxy n` (that `randomWeights`)
-uses, and also a `KnownNats ns` constraint (that the recursive call to
-`randomNet` uses). We just need the constraints, not the proxy/etc.
-themselves, so we can just match on `_ :<# _`.
+`KnownNat n` constraint (that `randomWeights` uses) for the
+`p :: Proxy n`, and also a `KnownNats ns` constraint (that the recursive
+call to `randomNet` uses).
 
 This is a common pattern in dependent Haskell: “building up” a
-value-level *structure* from a type (often done through typeclasses like
-`KnownNats`) and then inductively piggybacking on that structure’s
-constructors to build the thing you *really* want (called
-“elimination”). Here, we use `KnownNats hs` to build our `NatList hs`
-structure, and use/“eliminate” that structure to create our
+value-level singleton *structure* from a type that we want (often done
+through typeclasses like `KnownNats`) and then inductively piggybacking
+on that structure’s constructors to build the thing you *really* want
+(called “elimination”). Here, we use `KnownNats hs` to build our
+`NatList hs` structure, and use/“eliminate” that structure to create our
 `Network i hs o`.
 
 Along the way, the singletons and the typeclasses and the types play an
 intricate dance. `randomWeights` needed a `KnownNat` constraint. Where
-did it come from?
+did it *come* from?
 
 #### On Typeclasses
 
 `natList` uses the `KnownNat n` to construct the `NatList ns` (because
-any time you use `(:<#)`, you need a `KnownNat`). Then, in `randomNet`,
-when you pattern match on the `(:<#)`, you “release” the `KnownNat n`
-that was stuffed in there by `natList`.
+any time you use `(:<#)`, you need a `KnownNat`). Then, when you pattern
+match on the `(:<#)` in `randomNet`, you “release” the `KnownNat n` that
+was stuffed in there by `natList`.
 
 People say that pattern matching on `(:<#)` gives you a “context” in
 that case-statement-branch where `KnownNat n` is in scope and satisfied.
@@ -600,16 +601,17 @@ typeclasses and GADT constructors/deconstructors. The `KnownNat`
 *instance* gets put *into* `:<#` by `natList`, and is then taken *out*
 in the pattern match so that `randomWeights` can use it. (When we match
 on `_ :<# _`, we really are saying that we don’t care about the normal
-contents — we just want the typeclass instances that the constructor
-gives us!)
+contents — we just want the typeclass instances that the constructor is
+hiding!)
 
 At a high-level, you can see that this is really no different than just
 having a plain old `Integer` that you “put in” to the constructor (as an
 extra field), and which you then take out if you pattern match on it.
 Really, every time you see `KnownNat n => ..`, you can think of it as an
-`Integer -> ..`. `(:<#)` requiring a `KnownNat n =>` put into it is
-really the same as requiring an `Integer` in it, which the
-pattern-matcher can then take out.
+`Integer -> ..` (because all the typeclass is is a way to get an
+`Integer` out of it with `natVal`). `(:<#)` requiring a `KnownNat n =>`
+put into it is really the same as requiring an `Integer` in it, which
+the pattern-matcher can then take out.
 
 The difference is that GHC and the compiler can now “track” these at
 compile-time to give you rudimentary checks on how your Nat’s act
@@ -625,7 +627,7 @@ Can we just pause right here to just appreciate how awesome it is that
 we can generate random networks of whatever size we want by *just
 requesting something by its type*?
 
-And also, our implementation is *guarunteed* to have the right sized
+Our implementation is also *guaranteed* to have the right sized
 matrices…no worrying about using the right size parameters for the right
 matrix in the right oder. GHC does it for you automatically!
 
@@ -650,12 +652,25 @@ runNet (w :&~ n') !v = let v' = logistic (runLayer w v)
 ```
 
 But now, we get the assurance that the matrices and vectors all fit
-each-other, at compile-time. GHC basically writes our code for us.
+each-other, at compile-time. GHC basically writes our code for us. The
+operations all demand vectors and matrices that “fit together”:
+
+``` {.haskell}
+(+)  :: KnownNat n
+     => R n -> R n -> R n
+(#>) :: (KnownNat n, KnownNat m)
+     => L n m -> R m -> R n
+
+logistic :: KnownNat n
+         => R n -> R n
+```
+
+So you can only ever multiply a matrix by a properly sized vector!
 
 Our back-prop algorithm is ported pretty nicely too:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L72-109
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L72-110
 train :: forall i hs o. (KnownNat i, KnownNat o)
       => Double           -- ^ learning rate
       -> R i              -- ^ input vector
@@ -672,6 +687,7 @@ train rate x0 target = fst . go x0
         = let y    = runLayer w x
               o    = logistic y
               -- the gradient (how much y affects the error)
+              --   (logistic' is the derivative of logistic)
               dEdy = logistic' y * (o - target)
               -- new bias weights and node weights
               wB'  = wB - konst rate * dEdy
@@ -704,9 +720,9 @@ One thing that’s hard for me to convey here without walking through the
 implementation step-by-step is how much the types *help you* in writing
 this code.
 
-Before starting writing a back-prop implementation, I’d probably be a
-bit concerned. I mentioned earlier that writing the untyped version was
-no fun at all.
+Before starting writing a back-prop implementation without the help of
+types, I’d probably be a bit concerned. I mentioned earlier that writing
+the untyped version was no fun at all.
 
 But, with the types, writing the implementation became a *joy* again.
 And, you have the help of *hole driven development*, too.
@@ -734,10 +750,10 @@ they’re wrong, the compiler will nudge you gently into the correct
 direction.
 
 The most stressful part of programming happens when you have to
-tenuously hold a complex and fragile network of ideas and constraint in
+tenuously hold a complex and fragile network of ideas and constraints in
 your brain, and any slight distraction or break in focus causes
 everything to crash down in your mind. Over time, people have began to
-associate this state with “good programming” and normalize it. Don’t
+believe that this is “normal”, and a sign of a good programmer. Don’t
 believe this lie — it’s not! A good programming experience involves
 maintaining as *little* in your head as possible, and letting the
 compiler handle remembering/checking the rest!

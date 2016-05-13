@@ -330,7 +330,7 @@ let's see the implementation in Haskell:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L57-92}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L57-93}
 \OtherTok{train ::} \DataTypeTok{Double}           \CommentTok{-- ^ learning rate}
       \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}    \CommentTok{-- ^ input vector}
       \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}    \CommentTok{-- ^ target vector}
@@ -345,6 +345,7 @@ let's see the implementation in Haskell:
         \FunctionTok{=} \KeywordTok{let} \NormalTok{y    }\FunctionTok{=} \NormalTok{runLayer w x}
               \NormalTok{o    }\FunctionTok{=} \NormalTok{logistic y}
               \CommentTok{-- the gradient (how much y affects the error)}
+              \CommentTok{--   (logistic' is the derivative of logistic)}
               \NormalTok{dEdy }\FunctionTok{=} \NormalTok{logistic' y }\FunctionTok{*} \NormalTok{(o }\FunctionTok{-} \NormalTok{target)}
               \CommentTok{-- new bias weights and node weights}
               \NormalTok{wB'  }\FunctionTok{=} \NormalTok{wB }\FunctionTok{-} \NormalTok{scale rate dEdy}
@@ -370,14 +371,13 @@ let's see the implementation in Haskell:
 \end{Highlighting}
 \end{Shaded}
 
-Where \texttt{logistic\textquotesingle{}} is the derivative of
-\texttt{logistic}. The algorithm computes the \emph{updated} network by
-recursively updating the layers, from the output layer all the way up to
-the input layer. At every step it returns the updated layer/network, as
-well as a bundle of derivatives for the next layer to use to calculate
-its descent direction. At the output layer, all it needs to calculate
-the direction of descent is just \texttt{o\ -\ targ}, the target. At the
-inner layers, it has to use the \texttt{dWs} bundle to figure it out.
+The algorithm computes the \emph{updated} network by recursively
+updating the layers, from the output layer all the way up to the input
+layer. At every step it returns the updated layer/network, as well as a
+bundle of derivatives for the next layer to use to calculate its descent
+direction. At the output layer, all it needs to calculate the direction
+of descent is just \texttt{o\ -\ targ}, the target. At the inner layers,
+it has to use the \texttt{dWs} bundle to figure it out.
 
 Writing this is a bit of a struggle. Truth be told, I implemented this
 incorrectly several times before writing it now as you see here. The
@@ -504,10 +504,12 @@ offers matrix and vector types with their size in their types: an
 
 The \texttt{Static} module relies on the \texttt{KnownNat} mechanism
 that GHC offers. Almost all operations in the library require a
-\texttt{KnownNat} constraint, which basically allows the functions to
-\emph{use} the information in the numeric parameter (the
-\texttt{Integer} it represents, basically) at run-time. (More on this
-later!)
+\texttt{KnownNat} constraint on the type-level Nats --- for example, you
+can take the dot product of two vectors with
+\texttt{dot\ ::\ KnownNat\ n\ =\textgreater{}\ R\ n\ -\textgreater{}\ R\ n}.
+The \texttt{KnownNat} constraint allows the functions to \emph{use} the
+information in the size parameter (the \texttt{Integer} it represents)
+at run-time. (More on this later!)
 
 Following this, a reasonable type for a \emph{network} might be
 \texttt{Network\ 10\ 2}, taking 10 inputs and popping out 2 outputs.
@@ -716,32 +718,31 @@ this is that its constructors \emph{come with proofs} that the head's
 type has a \texttt{KnownNat} and the tail's type has a
 \texttt{KnownNats}. It's a part of the GADT declaration. If you ever
 pattern match on \texttt{p\ :\textless{}\#\ ns}, you get a
-\texttt{KnownNat\ n} constraint for the \texttt{p\ ::\ Proxy\ n} (that
-\texttt{randomWeights}) uses, and also a \texttt{KnownNats\ ns}
-constraint (that the recursive call to \texttt{randomNet} uses). We just
-need the constraints, not the proxy/etc. themselves, so we can just
-match on \texttt{\_\ :\textless{}\#\ \_}.
+\texttt{KnownNat\ n} constraint (that \texttt{randomWeights} uses) for
+the \texttt{p\ ::\ Proxy\ n}, and also a \texttt{KnownNats\ ns}
+constraint (that the recursive call to \texttt{randomNet} uses).
 
 This is a common pattern in dependent Haskell: ``building up'' a
-value-level \emph{structure} from a type (often done through typeclasses
-like \texttt{KnownNats}) and then inductively piggybacking on that
-structure's constructors to build the thing you \emph{really} want
-(called ``elimination''). Here, we use \texttt{KnownNats\ hs} to build
-our \texttt{NatList\ hs} structure, and use/``eliminate'' that structure
-to create our \texttt{Network\ i\ hs\ o}.
+value-level singleton \emph{structure} from a type that we want (often
+done through typeclasses like \texttt{KnownNats}) and then inductively
+piggybacking on that structure's constructors to build the thing you
+\emph{really} want (called ``elimination''). Here, we use
+\texttt{KnownNats\ hs} to build our \texttt{NatList\ hs} structure, and
+use/``eliminate'' that structure to create our
+\texttt{Network\ i\ hs\ o}.
 
 Along the way, the singletons and the typeclasses and the types play an
 intricate dance. \texttt{randomWeights} needed a \texttt{KnownNat}
-constraint. Where did it come from?
+constraint. Where did it \emph{come} from?
 
 \subsubsection{On Typeclasses}\label{on-typeclasses}
 
 \texttt{natList} uses the \texttt{KnownNat\ n} to construct the
 \texttt{NatList\ ns} (because any time you use
-\texttt{(:\textless{}\#)}, you need a \texttt{KnownNat}). Then, in
-\texttt{randomNet}, when you pattern match on the
-\texttt{(:\textless{}\#)}, you ``release'' the \texttt{KnownNat\ n} that
-was stuffed in there by \texttt{natList}.
+\texttt{(:\textless{}\#)}, you need a \texttt{KnownNat}). Then, when you
+pattern match on the \texttt{(:\textless{}\#)} in \texttt{randomNet},
+you ``release'' the \texttt{KnownNat\ n} that was stuffed in there by
+\texttt{natList}.
 
 People say that pattern matching on \texttt{(:\textless{}\#)} gives you
 a ``context'' in that case-statement-branch where \texttt{KnownNat\ n}
@@ -753,17 +754,19 @@ put \emph{into} \texttt{:\textless{}\#} by \texttt{natList}, and is then
 taken \emph{out} in the pattern match so that \texttt{randomWeights} can
 use it. (When we match on \texttt{\_\ :\textless{}\#\ \_}, we really are
 saying that we don't care about the normal contents --- we just want the
-typeclass instances that the constructor gives us!)
+typeclass instances that the constructor is hiding!)
 
 At a high-level, you can see that this is really no different than just
 having a plain old \texttt{Integer} that you ``put in'' to the
 constructor (as an extra field), and which you then take out if you
 pattern match on it. Really, every time you see
 \texttt{KnownNat\ n\ =\textgreater{}\ ..}, you can think of it as an
-\texttt{Integer\ -\textgreater{}\ ..}. \texttt{(:\textless{}\#)}
-requiring a \texttt{KnownNat\ n\ =\textgreater{}} put into it is really
-the same as requiring an \texttt{Integer} in it, which the
-pattern-matcher can then take out.
+\texttt{Integer\ -\textgreater{}\ ..} (because all the typeclass is is a
+way to get an \texttt{Integer} out of it with \texttt{natVal}).
+\texttt{(:\textless{}\#)} requiring a
+\texttt{KnownNat\ n\ =\textgreater{}} put into it is really the same as
+requiring an \texttt{Integer} in it, which the pattern-matcher can then
+take out.
 
 The difference is that GHC and the compiler can now ``track'' these at
 compile-time to give you rudimentary checks on how your Nat's act
@@ -780,10 +783,9 @@ Can we just pause right here to just appreciate how awesome it is that
 we can generate random networks of whatever size we want by \emph{just
 requesting something by its type}?
 
-And also, our implementation is \emph{guarunteed} to have the right
-sized matrices\ldots{}no worrying about using the right size parameters
-for the right matrix in the right oder. GHC does it for you
-automatically!
+Our implementation is also \emph{guaranteed} to have the right sized
+matrices\ldots{}no worrying about using the right size parameters for
+the right matrix in the right oder. GHC does it for you automatically!
 
 The code for \emph{running} the nets is actually literally identical:
 
@@ -807,13 +809,28 @@ The code for \emph{running} the nets is actually literally identical:
 \end{Shaded}
 
 But now, we get the assurance that the matrices and vectors all fit
-each-other, at compile-time. GHC basically writes our code for us.
+each-other, at compile-time. GHC basically writes our code for us. The
+operations all demand vectors and matrices that ``fit together'':
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{(+)  ::} \DataTypeTok{KnownNat} \NormalTok{n}
+     \OtherTok{=>} \DataTypeTok{R} \NormalTok{n }\OtherTok{->} \DataTypeTok{R} \NormalTok{n }\OtherTok{->} \DataTypeTok{R} \NormalTok{n}
+\OtherTok{(#>) ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{n, }\DataTypeTok{KnownNat} \NormalTok{m)}
+     \OtherTok{=>} \DataTypeTok{L} \NormalTok{n m }\OtherTok{->} \DataTypeTok{R} \NormalTok{m }\OtherTok{->} \DataTypeTok{R} \NormalTok{n}
+
+\OtherTok{logistic ::} \DataTypeTok{KnownNat} \NormalTok{n}
+         \OtherTok{=>} \DataTypeTok{R} \NormalTok{n }\OtherTok{->} \DataTypeTok{R} \NormalTok{n}
+\end{Highlighting}
+\end{Shaded}
+
+So you can only ever multiply a matrix by a properly sized vector!
 
 Our back-prop algorithm is ported pretty nicely too:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L72-109}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L72-110}
 \OtherTok{train ::} \NormalTok{forall i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
       \OtherTok{=>} \DataTypeTok{Double}           \CommentTok{-- ^ learning rate}
       \OtherTok{->} \DataTypeTok{R} \NormalTok{i              }\CommentTok{-- ^ input vector}
@@ -830,6 +847,7 @@ Our back-prop algorithm is ported pretty nicely too:
         \FunctionTok{=} \KeywordTok{let} \NormalTok{y    }\FunctionTok{=} \NormalTok{runLayer w x}
               \NormalTok{o    }\FunctionTok{=} \NormalTok{logistic y}
               \CommentTok{-- the gradient (how much y affects the error)}
+              \CommentTok{--   (logistic' is the derivative of logistic)}
               \NormalTok{dEdy }\FunctionTok{=} \NormalTok{logistic' y }\FunctionTok{*} \NormalTok{(o }\FunctionTok{-} \NormalTok{target)}
               \CommentTok{-- new bias weights and node weights}
               \NormalTok{wB'  }\FunctionTok{=} \NormalTok{wB }\FunctionTok{-} \NormalTok{konst rate }\FunctionTok{*} \NormalTok{dEdy}
@@ -862,9 +880,9 @@ One thing that's hard for me to convey here without walking through the
 implementation step-by-step is how much the types \emph{help you} in
 writing this code.
 
-Before starting writing a back-prop implementation, I'd probably be a
-bit concerned. I mentioned earlier that writing the untyped version was
-no fun at all.
+Before starting writing a back-prop implementation without the help of
+types, I'd probably be a bit concerned. I mentioned earlier that writing
+the untyped version was no fun at all.
 
 But, with the types, writing the implementation became a \emph{joy}
 again. And, you have the help of \emph{hole driven development}, too.
@@ -897,10 +915,10 @@ that if they're wrong, the compiler will nudge you gently into the
 correct direction.
 
 The most stressful part of programming happens when you have to
-tenuously hold a complex and fragile network of ideas and constraint in
+tenuously hold a complex and fragile network of ideas and constraints in
 your brain, and any slight distraction or break in focus causes
 everything to crash down in your mind. Over time, people have began to
-associate this state with ``good programming'' and normalize it. Don't
+believe that this is ``normal'', and a sign of a good programmer. Don't
 believe this lie --- it's not! A good programming experience involves
 maintaining as \emph{little} in your head as possible, and letting the
 compiler handle remembering/checking the rest!
