@@ -721,21 +721,11 @@ the untyped version was no fun at all. But, with the types, writing the
 implementation became a *joy* again. And, you have the help of *hole
 driven development*, too.
 
-The basic thought process goes like this:
-
-1.  “I need an `R n`…how do I get it?”
-
-    “Oh! I have an `L n m` and an `R m`, I can just multiply them!”
-
-2.  “I need something of *this* type…how can I make it?”
-
-    “Ah, there’s only one possible way to get this. Parametric
-    polymorphism to the rescue.”
-
-3.  “I need to multiply this with *something*…but what?”
-
-    “Oh, if I just leave a `_` hole there, GHC will actually tell me
-    *everything in scope* that can fit there!”
+If you need, say, an `R n`, there might be only one way go get it — only
+one function that returns it. If you have something that you need to
+combine with something you don’t know about, you can use typed holes
+(`_`) and GHC will give you a list of all the values you have in scope
+that can fit there. Your programs basically write themselves!
 
 The more you can restrict the implementations of your functions with
 your types, the more of a joy programming in Haskell is. Things fit
