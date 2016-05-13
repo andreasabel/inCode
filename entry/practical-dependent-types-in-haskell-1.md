@@ -44,30 +44,33 @@ correctly — despite being simple, there are many locations where
 accidental bugs might pop up when multiplying the wrong matrices, for
 example.
 
-However, it’s not always easy to gauge before-the-fact what would or
-would not be a good candidate for adding dependent types to, and often
-times, it can be considered premature to start off with “as powerful
-types as you can”. So let’s walk through programming things with as
-“dumb” types as possible, and see where types can help.
+It’s not always easy to gauge before-the-fact what would or would not be
+a good candidate for adding dependent types to, and often times, it can
+be considered premature to start off with “as powerful types as you
+can”. So let’s walk through programming things with as “dumb” types as
+possible, and see where types can help.
 
 Edwin Brady calls this process “type-driven development”. Start general,
 recognize the partial functions and red flags, and slowly add more
 powerful types.
 
-### The Network
+### Background
 
 ![Feed-forward ANN
 architecture](/img/entries/dependent-haskell-1/ffneural.png "Feed-forward ANN architecture")
 
+Here’s a quick run through on background for ANN’s — but remember, this
+isn’t an article on ANN’s, so we are going to be glossing over some of
+this :) Feel free to explore this further too.
+
 We’re going to be implementing a feed-forward neural network, with
 back-propagation training. These networks are layers of “nodes”, each
-connected to the each of the nodes of the previous layer.
-
-Input goes to the first layer, which feeds information to the next year,
-which feeds it to the next, etc., until the final layer, where we read
-it off as the “answer” that the network is giving us. Layers between the
-input and output layers are called *hidden* layers. Every node “outputs”
-a weighted sum of all of the outputs of the *previous* layer, plus an
+connected to the each of the nodes of the previous layer. Input goes to
+the first layer, which feeds information to the next year, which feeds
+it to the next, etc., until the final layer, where we read it off as the
+“answer” that the network is giving us. Layers between the input and
+output layers are called *hidden* layers. Every node “outputs” a
+weighted sum of all of the outputs of the *previous* layer, plus an
 always-on “bias” term (so that its result can be non-zero even when all
 of its inputs are zero). Symbolically, it looks like:
 
@@ -99,15 +102,15 @@ between each layer:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L17-19
-data Weights = W { wBiases :: !(Vector Double)  -- m
-                 , wNodes  :: !(Matrix Double)  -- m x n
-                 }                              -- "n to m" layer
+data Weights = W { wBiases :: !(Vector Double)  -- n
+                 , wNodes  :: !(Matrix Double)  -- n x m
+                 }                              -- "m to n" layer
 
 ```
 
-Now, a `Weights` linking an *n*-node layer to an *m*-node layer has an
-*m*-dimensional bias vector (one component for each output) and an
-*m*-by-*n* node weight matrix (one column for each output, one row for
+Now, a `Weights` linking an *m*-node layer to an *n*-node layer has an
+*n*-dimensional bias vector (one component for each output) and an
+*n*-by-*m* node weight matrix (one column for each output, one row for
 each input).
 
 (We’re using the `Matrix` type from the awesome
@@ -186,9 +189,14 @@ runNet (w :&~ n') !v = let v' = logistic (runLayer w v)
 (`#>` is matrix-vector multiplication)
 
 <!-- TODO: examples of running -->
-If you’re a normal programmer, this might seem perfectly fine. If you
-are a Haskell programmer, you should already be having heart attacks.
-Let’s imagine all of the bad things that could happen:
+If you’re a non-Haskell programmer, this might all seem perfectly fine
+and normal, and you probably have only a slightly elevated heart rate.
+If you are a Haskell programmer, you are most likely already having
+heart attacks. Let’s imagine all of the bad things that could happen:
+
+-   How do we know that we didn’t accidentally mix up the dimensions for
+    our implementation of `randomWeights`? We could have switched
+    parameters and be none the wiser.
 
 -   How do we even know that each subsequent matrix in the network is
     “compatible”? We want the outputs of one matrix to line up with the
@@ -218,7 +226,7 @@ backpropagation is found in many sources online and in literature, so
 let’s see the implementation in Haskell:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L57-85
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L57-92
 train :: Double           -- ^ learning rate
       -> Vector Double    -- ^ input vector
       -> Vector Double    -- ^ target vector
@@ -226,27 +234,34 @@ train :: Double           -- ^ learning rate
       -> Network
 train rate x0 target = fst . go x0
   where
-    go  :: Vector Double    -- ^ input vector
-        -> Network          -- ^ network to train
-        -> (Network, Vector Double)
+    go :: Vector Double    -- ^ input vector
+       -> Network          -- ^ network to train
+       -> (Network, Vector Double)
     go !x (O w@(W wB wN))
         = let y    = runLayer w x
               o    = logistic y
+              -- the gradient (how much y affects the error)
               dEdy = logistic' y * (o - target)
+              -- new bias weights and node weights
               wB'  = wB - scale rate dEdy
               wN'  = wN - scale rate (dEdy `outer` x)
               w'   = W wB' wN'
+              -- bundle of derivatives for next step
               dWs  = tr wN #> dEdy
           in  (O w', dWs)
     go !x (w@(W wB wN) :&~ n)
         = let y          = runLayer w x
               o          = logistic y
+              -- get dWs', bundle of derivatives from rest of the net
               (n', dWs') = go o n
+              -- the gradient (how much y affects the error)
               dEdy       = logistic' y * dWs'
-              wB'        = wB - scale rate dEdy
-              wN'        = wN - scale rate (dEdy `outer` x)
-              w'         = W wB' wN'
-              dWs        = tr wN #> dEdy
+              -- new bias weights and node weights
+              wB'  = wB - scale rate dEdy
+              wN'  = wN - scale rate (dEdy `outer` x)
+              w'   = W wB' wN'
+              -- bundle of derivatives for next step
+              dWs  = tr wN #> dEdy
           in  (w' :&~ n', dWs)
 
 ```
@@ -287,7 +302,7 @@ network on a grid:
 ``` {.bash}
 $ stack install hmatrix MonadRandom
 $ stack ghc -- -O2 ./NetworkUntyped.hs
-$ ./NetworkUntyped.hs
+$ ./NetworkUntyped
 # Training network...
 #
 #
@@ -368,10 +383,10 @@ vector of Doubles with 5 elements, and a `L 3 6` is a 3x6 vector of
 Doubles.
 
 The `Static` module relies on the `KnownNat` mechanism that GHC offers.
-A `KnownNat n` constraint is more or less just a way for you to “get” an
-Integer at runtime (with the `natVal` function), so a
-`KnownNat n => R n` is basically a vector “packaged” with its size.
-Almost all operations in the library require a `KnownNat` constraint.
+Almost all operations in the library require a `KnownNat` constraint,
+which basically allows the functions to *use* the information in the
+numeric parameter (the `Integer` it represents, basically) at run-time.
+(More on this later!)
 
 Following this, a reasonable type for a *network* might be
 `Network 10 2`, taking 10 inputs and popping out 2 outputs. This might
@@ -408,7 +423,7 @@ over the two constructors.
 -   The `O` constructor takes a `Weights i o` and returns a
     `Network i '[] o`. That is, if your network is just weights from `i`
     inputs to `o` outputs, your network itself just takes `i` inputs and
-    returns `o` outputs.
+    returns `o` outputs, with no hidden layers.
 
 -   The `(:&~)` constructor takes a `Network h hs o` – a network with
     `h` inputs and `o` outputs – and “conses” an extra input layer
@@ -429,8 +444,8 @@ hh :: Weights  7 4
 ih :: Weights 10 7
 
 -- we have:
-O ho                    :: Network  4 '[] 2
-hh :&~ O ho             :: Network  7 '[4] 2
+              O ho      :: Network  4 '[] 2
+       hh :&~ O ho      :: Network  7 '[4] 2
 ih :&~ hh :&~ O ho      :: Network 10 '[7,4] 2
 ```
 
@@ -438,10 +453,10 @@ Note that the shape of the constructors requires all of the weight
 vectors to “fit together” Now if we ever pattern match on `:&~`, we know
 that the resulting matrices and vectors are compatible!
 
-Note that this approach is also self-documenting. I don’t need to
-specify what the dimensions are in the docs and trust the users to read
-it. The types tell them! And if they don’t listen, they get a compiler
-error!
+One neat thing is that this approach is also self-documenting. I don’t
+need to specify what the dimensions are in the docs and trust the users
+to read it. The types tell them! And if they don’t listen, they get a
+compiler error!
 
 Generating random weights and networks is even nicer now:
 
@@ -467,6 +482,18 @@ thing you want to return. You would use
 10-element vector the same way `read "hello" :: Int` would give you an
 `Int`.
 
+Here’s something important: note that it’s much harder to implement this
+incorrectly. Before, you could give the matrix the wrong dimensions
+(maybe you flipped the parameters?), or gave the wrong parameter to the
+vector generator.
+
+But here, you are guaranteed/forced to return the correctly sized
+vectors and matrices. In fact, you *don’t even have to worry* about it —
+it’s handled automatically by the magic of type inference! (take *that*,
+Idris![^1]) I consider this a very big victory. One of the whole points
+of types is to give you less to “worry about”, as a programmer. Here, we
+completely eliminate an *entire dimension* of programmer concern.
+
 ### Singletons and Induction detour
 
 The code for the updated `randomNet` takes a bit of explaining.
@@ -479,10 +506,8 @@ Now all we have to do is just “pattern match” on the type-level list,
 and…
 
 Oh wait. We can’t directly pattern match on lists like that in Haskell.
-But, what we can do is move the list from the type level to the value
-level using singletons.
-
-The
+But what we *can* do is move the list from the type level to the value
+level using *singletons*. The
 *[typelits-witnesses](http://hackage.haskell.org/package/typelits-witnesses)*
 library offers a handy singleton for just this job. If you have a type
 level list of nats, you get a `KnowNats ns` constraint. This lets you
@@ -509,15 +534,14 @@ with `natList :: KnownNats ns => NatList ns`:
 ghci> natList :: NatList '[1,2,3]
 Proxy :<# Proxy :<# Proxy :<# ØNL
 -- ^         ^         ^
--- `-- :: Proxy 1      |
---           `-- :: Proxy 2
+-- `-- :: Pro|xy 1     |
+--           `-- :: Pro|xy 2
 --                     `-- :: Proxy 3
 ```
 
 Now that we have an actual value-level *structure* (the list of
-`Proxy`s), we can now essentially “pattern match” on `hs` — if it’s
-empty, we’ll get the `ØNL` constructor, otherwise we’ll get the `(:<#)`
-constructor, etc:
+`Proxy`s), we can now “pattern match” on `hs` — if it’s empty, we’ll get
+the `ØNL` constructor, otherwise we’ll get the `(:<#)` constructor, etc:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L66-70
@@ -529,22 +553,23 @@ randomNet = case natsList :: NatList hs of
 
 ```
 
-(Note that we need `ScopedTypeVariables` and the `forall .. hs ..` so
-that we can say `NatList hs` in the function body.)
+(Note that we need `ScopedTypeVariables` and explicit `forall` so that
+can say `NatList hs` in the function body.)
 
 The reason why `NatList` and `:<#` works for this is that its
-constructors *come with proofs* that the head is a `KnownNat` and the
-tail is `KnownNats`. It’s a part of the GADT declaration. If you ever
-pattern match on `:<#`, you get a `KnownNat n` constraint (that
-`randomWeights`) uses, and also a `KnownNats ns` constraint (that the
-recursive call to `randomNet` uses).
+constructors *come with proofs* that the head’s type has a `KnownNat`
+and the tail’s type has a `KnownNats`. It’s a part of the GADT
+declaration. If you ever pattern match on `p :<# ns`, you get a
+`KnownNat n` constraint for the `Proxy n` (that `randomWeights`) uses,
+and also a `KnownNats ns` constraint (that the recursive call to
+`randomNet` uses).
 
-This is a common pattern in dependent Haskell of inductively “folding
-down” type-level structures by pattern matching on a singleton skeleton
-structure (`NatList` here), and getting the singleton skeleton from
-“folding up” using a typeclass (`KnownNats`, here). `NatList hs` has
-exactly the structure we want, so we can fold it down to a
-`Network i hs o`.
+This is a common pattern in dependent Haskell: “building up” a
+value-level *structure* from a type (often implemented with typeclasses)
+and then inductively piggybacking on that structure’s constructors to
+build the thing you *really* want (called “elimination”). Here, we use
+`KnownNats hs` to build our `NatList hs` structure, and use that
+structure to create our `Network i hs o`.
 
 Along the way, the singletons and the typeclasses and the types play an
 intricate dance. `randomWeights` needed a `KnownNat` constraint. Where
@@ -558,16 +583,12 @@ when you pattern match on the `(:<#)`, you “release” the `KnownNat n`
 that was stuffed in there by `natList`.
 
 People say that pattern matching on `(:<#)` gives you a “context” in
-that case-statement-branch where `KnownNat n` is in scope/valid. But
-sometimes it helps to think of it in the way we just did — the instance
-is actually a “thing” that gets passed around through typeclasses and
-GADT constructors/deconstructors. The `KnownNat` instance gets put into
-`:<#` by `natList`, and is then taken out in the pattern match for
-`randomWeights` to use.
-
-<div class="note">
-
-**Aside**
+that case-statement-branch where `KnownNat n` is in scope and satisfied.
+But sometimes it helps to think of it in the way we just did — the
+instance *itself* is actually a “thing” that gets passed around through
+typeclasses and GADT constructors/deconstructors. The `KnownNat`
+*instance* gets put *into* `:<#` by `natList`, and is then taken *out*
+in the pattern match so that `randomWeights` can use it.
 
 At a high-level, you can see that this is really no different than just
 having a plain old `Integer` that you “put in” to the constructor (as an
@@ -582,14 +603,12 @@ compile-time to give you rudimentary checks on how your Nat’s act
 together on the type level, allowing it to catch mismatches with
 compile-time checks instead of run-time checks.
 
-</div>
+### Running with it
 
 So now, you can use `randomNet :: IO (Network 5 '[4] 2)` to get a random
 network of the desired dimensions! Much simpler than before, right?
 
-### Running with it
-
-The code for running the nets is identical, more or less:
+The code for running the nets is more or less identical:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L43-55
@@ -609,4 +628,4 @@ runNet (w :&~ n') !v = let v' = logistic (runLayer w v)
 
 ```
 
-Anticlimactic, huh?
+[^1]: Just kidding :)

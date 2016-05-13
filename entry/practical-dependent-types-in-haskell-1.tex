@@ -133,17 +133,17 @@ back-propagation) are tricky to implement correctly --- despite being
 simple, there are many locations where accidental bugs might pop up when
 multiplying the wrong matrices, for example.
 
-However, it's not always easy to gauge before-the-fact what would or
-would not be a good candidate for adding dependent types to, and often
-times, it can be considered premature to start off with ``as powerful
-types as you can''. So let's walk through programming things with as
-``dumb'' types as possible, and see where types can help.
+It's not always easy to gauge before-the-fact what would or would not be
+a good candidate for adding dependent types to, and often times, it can
+be considered premature to start off with ``as powerful types as you
+can''. So let's walk through programming things with as ``dumb'' types
+as possible, and see where types can help.
 
 Edwin Brady calls this process ``type-driven development''. Start
 general, recognize the partial functions and red flags, and slowly add
 more powerful types.
 
-\subsection{The Network}\label{the-network}
+\subsection{Background}\label{background}
 
 \begin{figure}[htbp]
 \centering
@@ -151,18 +151,20 @@ more powerful types.
 \caption{Feed-forward ANN architecture}
 \end{figure}
 
+Here's a quick run through on background for ANN's --- but remember,
+this isn't an article on ANN's, so we are going to be glossing over some
+of this :) Feel free to explore this further too.
+
 We're going to be implementing a feed-forward neural network, with
 back-propagation training. These networks are layers of ``nodes'', each
-connected to the each of the nodes of the previous layer.
-
-Input goes to the first layer, which feeds information to the next year,
-which feeds it to the next, etc., until the final layer, where we read
-it off as the ``answer'' that the network is giving us. Layers between
-the input and output layers are called \emph{hidden} layers. Every node
-``outputs'' a weighted sum of all of the outputs of the \emph{previous}
-layer, plus an always-on ``bias'' term (so that its result can be
-non-zero even when all of its inputs are zero). Symbolically, it looks
-like:
+connected to the each of the nodes of the previous layer. Input goes to
+the first layer, which feeds information to the next year, which feeds
+it to the next, etc., until the final layer, where we read it off as the
+``answer'' that the network is giving us. Layers between the input and
+output layers are called \emph{hidden} layers. Every node ``outputs'' a
+weighted sum of all of the outputs of the \emph{previous} layer, plus an
+always-on ``bias'' term (so that its result can be non-zero even when
+all of its inputs are zero). Symbolically, it looks like:
 
 \[
 y_j = b_j + \sum_i^m w_{ij} x_i
@@ -192,15 +194,15 @@ between each layer:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L17-19}
-\KeywordTok{data} \DataTypeTok{Weights} \FunctionTok{=} \DataTypeTok{W} \NormalTok{\{}\OtherTok{ wBiases ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Vector} \DataTypeTok{Double}\NormalTok{)  }\CommentTok{-- m}
-                 \NormalTok{,}\OtherTok{ wNodes  ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Matrix} \DataTypeTok{Double}\NormalTok{)  }\CommentTok{-- m x n}
-                 \NormalTok{\}                              }\CommentTok{-- "n to m" layer}
+\KeywordTok{data} \DataTypeTok{Weights} \FunctionTok{=} \DataTypeTok{W} \NormalTok{\{}\OtherTok{ wBiases ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Vector} \DataTypeTok{Double}\NormalTok{)  }\CommentTok{-- n}
+                 \NormalTok{,}\OtherTok{ wNodes  ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Matrix} \DataTypeTok{Double}\NormalTok{)  }\CommentTok{-- n x m}
+                 \NormalTok{\}                              }\CommentTok{-- "m to n" layer}
 \end{Highlighting}
 \end{Shaded}
 
-Now, a \texttt{Weights} linking an \emph{n}-node layer to an
-\emph{m}-node layer has an \emph{m}-dimensional bias vector (one
-component for each output) and an \emph{m}-by-\emph{n} node weight
+Now, a \texttt{Weights} linking an \emph{m}-node layer to an
+\emph{n}-node layer has an \emph{n}-dimensional bias vector (one
+component for each output) and an \emph{n}-by-\emph{m} node weight
 matrix (one column for each output, one row for each input).
 
 (We're using the \texttt{Matrix} type from the awesome
@@ -286,11 +288,16 @@ following the matrix equation we wrote earlier:
 
 (\texttt{\#\textgreater{}} is matrix-vector multiplication)
 
-If you're a normal programmer, this might seem perfectly fine. If you
-are a Haskell programmer, you should already be having heart attacks.
-Let's imagine all of the bad things that could happen:
+If you're a non-Haskell programmer, this might all seem perfectly fine
+and normal, and you probably have only a slightly elevated heart rate.
+If you are a Haskell programmer, you are most likely already having
+heart attacks. Let's imagine all of the bad things that could happen:
 
 \begin{itemize}
+\item
+  How do we know that we didn't accidentally mix up the dimensions for
+  our implementation of \texttt{randomWeights}? We could have switched
+  parameters and be none the wiser.
 \item
   How do we even know that each subsequent matrix in the network is
   ``compatible''? We want the outputs of one matrix to line up with the
@@ -323,7 +330,7 @@ let's see the implementation in Haskell:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L57-85}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L57-92}
 \OtherTok{train ::} \DataTypeTok{Double}           \CommentTok{-- ^ learning rate}
       \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}    \CommentTok{-- ^ input vector}
       \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}    \CommentTok{-- ^ target vector}
@@ -331,27 +338,34 @@ let's see the implementation in Haskell:
       \OtherTok{->} \DataTypeTok{Network}
 \NormalTok{train rate x0 target }\FunctionTok{=} \NormalTok{fst }\FunctionTok{.} \NormalTok{go x0}
   \KeywordTok{where}
-\OtherTok{    go  ::} \DataTypeTok{Vector} \DataTypeTok{Double}    \CommentTok{-- ^ input vector}
-        \OtherTok{->} \DataTypeTok{Network}          \CommentTok{-- ^ network to train}
-        \OtherTok{->} \NormalTok{(}\DataTypeTok{Network}\NormalTok{, }\DataTypeTok{Vector} \DataTypeTok{Double}\NormalTok{)}
+\OtherTok{    go ::} \DataTypeTok{Vector} \DataTypeTok{Double}    \CommentTok{-- ^ input vector}
+       \OtherTok{->} \DataTypeTok{Network}          \CommentTok{-- ^ network to train}
+       \OtherTok{->} \NormalTok{(}\DataTypeTok{Network}\NormalTok{, }\DataTypeTok{Vector} \DataTypeTok{Double}\NormalTok{)}
     \NormalTok{go }\FunctionTok{!}\NormalTok{x (}\DataTypeTok{O} \NormalTok{w}\FunctionTok{@}\NormalTok{(}\DataTypeTok{W} \NormalTok{wB wN))}
         \FunctionTok{=} \KeywordTok{let} \NormalTok{y    }\FunctionTok{=} \NormalTok{runLayer w x}
               \NormalTok{o    }\FunctionTok{=} \NormalTok{logistic y}
+              \CommentTok{-- the gradient (how much y affects the error)}
               \NormalTok{dEdy }\FunctionTok{=} \NormalTok{logistic' y }\FunctionTok{*} \NormalTok{(o }\FunctionTok{-} \NormalTok{target)}
+              \CommentTok{-- new bias weights and node weights}
               \NormalTok{wB'  }\FunctionTok{=} \NormalTok{wB }\FunctionTok{-} \NormalTok{scale rate dEdy}
               \NormalTok{wN'  }\FunctionTok{=} \NormalTok{wN }\FunctionTok{-} \NormalTok{scale rate (dEdy }\OtherTok{`outer`} \NormalTok{x)}
               \NormalTok{w'   }\FunctionTok{=} \DataTypeTok{W} \NormalTok{wB' wN'}
+              \CommentTok{-- bundle of derivatives for next step}
               \NormalTok{dWs  }\FunctionTok{=} \NormalTok{tr wN }\FunctionTok{#>} \NormalTok{dEdy}
           \KeywordTok{in}  \NormalTok{(}\DataTypeTok{O} \NormalTok{w', dWs)}
     \NormalTok{go }\FunctionTok{!}\NormalTok{x (w}\FunctionTok{@}\NormalTok{(}\DataTypeTok{W} \NormalTok{wB wN) }\FunctionTok{:&~} \NormalTok{n)}
         \FunctionTok{=} \KeywordTok{let} \NormalTok{y          }\FunctionTok{=} \NormalTok{runLayer w x}
               \NormalTok{o          }\FunctionTok{=} \NormalTok{logistic y}
+              \CommentTok{-- get dWs', bundle of derivatives from rest of the net}
               \NormalTok{(n', dWs') }\FunctionTok{=} \NormalTok{go o n}
+              \CommentTok{-- the gradient (how much y affects the error)}
               \NormalTok{dEdy       }\FunctionTok{=} \NormalTok{logistic' y }\FunctionTok{*} \NormalTok{dWs'}
-              \NormalTok{wB'        }\FunctionTok{=} \NormalTok{wB }\FunctionTok{-} \NormalTok{scale rate dEdy}
-              \NormalTok{wN'        }\FunctionTok{=} \NormalTok{wN }\FunctionTok{-} \NormalTok{scale rate (dEdy }\OtherTok{`outer`} \NormalTok{x)}
-              \NormalTok{w'         }\FunctionTok{=} \DataTypeTok{W} \NormalTok{wB' wN'}
-              \NormalTok{dWs        }\FunctionTok{=} \NormalTok{tr wN }\FunctionTok{#>} \NormalTok{dEdy}
+              \CommentTok{-- new bias weights and node weights}
+              \NormalTok{wB'  }\FunctionTok{=} \NormalTok{wB }\FunctionTok{-} \NormalTok{scale rate dEdy}
+              \NormalTok{wN'  }\FunctionTok{=} \NormalTok{wN }\FunctionTok{-} \NormalTok{scale rate (dEdy }\OtherTok{`outer`} \NormalTok{x)}
+              \NormalTok{w'   }\FunctionTok{=} \DataTypeTok{W} \NormalTok{wB' wN'}
+              \CommentTok{-- bundle of derivatives for next step}
+              \NormalTok{dWs  }\FunctionTok{=} \NormalTok{tr wN }\FunctionTok{#>} \NormalTok{dEdy}
           \KeywordTok{in}  \NormalTok{(w' }\FunctionTok{:&~} \NormalTok{n', dWs)}
 \end{Highlighting}
 \end{Shaded}
@@ -393,7 +407,7 @@ the trained network on a grid:
 \begin{Highlighting}[]
 \NormalTok{$ }\KeywordTok{stack} \NormalTok{install hmatrix MonadRandom}
 \NormalTok{$ }\KeywordTok{stack} \NormalTok{ghc -- -O2 ./NetworkUntyped.hs}
-\NormalTok{$ }\KeywordTok{./NetworkUntyped.hs}
+\NormalTok{$ }\KeywordTok{./NetworkUntyped}
 \CommentTok{# Training network...}
 \CommentTok{#}
 \CommentTok{#}
@@ -487,11 +501,11 @@ offers matrix and vector types with their size in their types: an
 \texttt{L\ 3\ 6} is a 3x6 vector of Doubles.
 
 The \texttt{Static} module relies on the \texttt{KnownNat} mechanism
-that GHC offers. A \texttt{KnownNat\ n} constraint is more or less just
-a way for you to ``get'' an Integer at runtime (with the \texttt{natVal}
-function), so a \texttt{KnownNat\ n\ =\textgreater{}\ R\ n} is basically
-a vector ``packaged'' with its size. Almost all operations in the
-library require a \texttt{KnownNat} constraint.
+that GHC offers. Almost all operations in the library require a
+\texttt{KnownNat} constraint, which basically allows the functions to
+\emph{use} the information in the numeric parameter (the
+\texttt{Integer} it represents, basically) at run-time. (More on this
+later!)
 
 Following this, a reasonable type for a \emph{network} might be
 \texttt{Network\ 10\ 2}, taking 10 inputs and popping out 2 outputs.
@@ -534,7 +548,7 @@ hidden layers, and output sizes). Let's go over the two constructors.
   a \texttt{Network\ i\ \textquotesingle{}{[}{]}\ o}. That is, if your
   network is just weights from \texttt{i} inputs to \texttt{o} outputs,
   your network itself just takes \texttt{i} inputs and returns
-  \texttt{o} outputs.
+  \texttt{o} outputs, with no hidden layers.
 \item
   The \texttt{(:\&\textasciitilde{})} constructor takes a
   \texttt{Network\ h\ hs\ o} -- a network with \texttt{h} inputs and
@@ -559,8 +573,8 @@ We can still construct them the same way:
 \OtherTok{ih ::} \DataTypeTok{Weights} \DecValTok{10} \DecValTok{7}
 
 \CommentTok{-- we have:}
-\DataTypeTok{O}\OtherTok{ ho                    ::} \DataTypeTok{Network}  \DecValTok{4} \CharTok{'[] 2}
-\NormalTok{hh }\FunctionTok{:&~} \DataTypeTok{O}\OtherTok{ ho             ::} \DataTypeTok{Network}  \DecValTok{7} \CharTok{'[4] 2}
+              \DataTypeTok{O}\OtherTok{ ho      ::} \DataTypeTok{Network}  \DecValTok{4} \CharTok{'[] 2}
+       \NormalTok{hh }\FunctionTok{:&~} \DataTypeTok{O}\OtherTok{ ho      ::} \DataTypeTok{Network}  \DecValTok{7} \CharTok{'[4] 2}
 \NormalTok{ih }\FunctionTok{:&~} \NormalTok{hh }\FunctionTok{:&~} \DataTypeTok{O}\OtherTok{ ho      ::} \DataTypeTok{Network} \DecValTok{10} \CharTok{'[7,4] 2}
 \end{Highlighting}
 \end{Shaded}
@@ -570,10 +584,10 @@ vectors to ``fit together'' Now if we ever pattern match on
 \texttt{:\&\textasciitilde{}}, we know that the resulting matrices and
 vectors are compatible!
 
-Note that this approach is also self-documenting. I don't need to
-specify what the dimensions are in the docs and trust the users to read
-it. The types tell them! And if they don't listen, they get a compiler
-error!
+One neat thing is that this approach is also self-documenting. I don't
+need to specify what the dimensions are in the docs and trust the users
+to read it. The types tell them! And if they don't listen, they get a
+compiler error!
 
 Generating random weights and networks is even nicer now:
 
@@ -600,6 +614,19 @@ You would use \texttt{randomVector\ s\ Uniform\ ::\ R\ 10}, and type
 inference would give you a 10-element vector the same way
 \texttt{read\ "hello"\ ::\ Int} would give you an \texttt{Int}.
 
+Here's something important: note that it's much harder to implement this
+incorrectly. Before, you could give the matrix the wrong dimensions
+(maybe you flipped the parameters?), or gave the wrong parameter to the
+vector generator.
+
+But here, you are guaranteed/forced to return the correctly sized
+vectors and matrices. In fact, you \emph{don't even have to worry} about
+it --- it's handled automatically by the magic of type inference! (take
+\emph{that}, Idris!\footnote{Just kidding :)}) I consider this a very
+big victory. One of the whole points of types is to give you less to
+``worry about'', as a programmer. Here, we completely eliminate an
+\emph{entire dimension} of programmer concern.
+
 \subsection{Singletons and Induction
 detour}\label{singletons-and-induction-detour}
 
@@ -615,10 +642,8 @@ we had a \texttt{Network\ h\ hs\ o}. Now all we have to do is just
 ``pattern match'' on the type-level list, and\ldots{}
 
 Oh wait. We can't directly pattern match on lists like that in Haskell.
-But, what we can do is move the list from the type level to the value
-level using singletons.
-
-The
+But what we \emph{can} do is move the list from the type level to the
+value level using \emph{singletons}. The
 \emph{\href{http://hackage.haskell.org/package/typelits-witnesses}{typelits-witnesses}}
 library offers a handy singleton for just this job. If you have a type
 level list of nats, you get a \texttt{KnowNats\ ns} constraint. This
@@ -651,16 +676,16 @@ list with
 \NormalTok{ghci}\FunctionTok{>}\OtherTok{ natList ::} \DataTypeTok{NatList} \CharTok{'[1,2,3]}
 \DataTypeTok{Proxy} \FunctionTok{:<#} \DataTypeTok{Proxy} \FunctionTok{:<#} \DataTypeTok{Proxy} \FunctionTok{:<#} \NormalTok{Ø}\DataTypeTok{NL}
 \CommentTok{-- ^         ^         ^}
-\CommentTok{-- `-- :: Proxy 1      |}
-\CommentTok{--           `-- :: Proxy 2}
+\CommentTok{-- `-- :: Pro|xy 1     |}
+\CommentTok{--           `-- :: Pro|xy 2}
 \CommentTok{--                     `-- :: Proxy 3}
 \end{Highlighting}
 \end{Shaded}
 
 Now that we have an actual value-level \emph{structure} (the list of
-\texttt{Proxy}s), we can now essentially ``pattern match'' on
-\texttt{hs} --- if it's empty, we'll get the \texttt{ØNL} constructor,
-otherwise we'll get the \texttt{(:\textless{}\#)} constructor, etc:
+\texttt{Proxy}s), we can now ``pattern match'' on \texttt{hs} --- if
+it's empty, we'll get the \texttt{ØNL} constructor, otherwise we'll get
+the \texttt{(:\textless{}\#)} constructor, etc:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -673,24 +698,26 @@ otherwise we'll get the \texttt{(:\textless{}\#)} constructor, etc:
 \end{Highlighting}
 \end{Shaded}
 
-(Note that we need \texttt{ScopedTypeVariables} and the
-\texttt{forall\ ..\ hs\ ..} so that we can say \texttt{NatList\ hs} in
-the function body.)
+(Note that we need \texttt{ScopedTypeVariables} and explicit
+\texttt{forall} so that can say \texttt{NatList\ hs} in the function
+body.)
 
 The reason why \texttt{NatList} and \texttt{:\textless{}\#} works for
-this is that its constructors \emph{come with proofs} that the head is a
-\texttt{KnownNat} and the tail is \texttt{KnownNats}. It's a part of the
-GADT declaration. If you ever pattern match on \texttt{:\textless{}\#},
-you get a \texttt{KnownNat\ n} constraint (that \texttt{randomWeights})
-uses, and also a \texttt{KnownNats\ ns} constraint (that the recursive
-call to \texttt{randomNet} uses).
+this is that its constructors \emph{come with proofs} that the head's
+type has a \texttt{KnownNat} and the tail's type has a
+\texttt{KnownNats}. It's a part of the GADT declaration. If you ever
+pattern match on \texttt{p\ :\textless{}\#\ ns}, you get a
+\texttt{KnownNat\ n} constraint for the \texttt{Proxy\ n} (that
+\texttt{randomWeights}) uses, and also a \texttt{KnownNats\ ns}
+constraint (that the recursive call to \texttt{randomNet} uses).
 
-This is a common pattern in dependent Haskell of inductively ``folding
-down'' type-level structures by pattern matching on a singleton skeleton
-structure (\texttt{NatList} here), and getting the singleton skeleton
-from ``folding up'' using a typeclass (\texttt{KnownNats}, here).
-\texttt{NatList\ hs} has exactly the structure we want, so we can fold
-it down to a \texttt{Network\ i\ hs\ o}.
+This is a common pattern in dependent Haskell: ``building up'' a
+value-level \emph{structure} from a type (often implemented with
+typeclasses) and then inductively piggybacking on that structure's
+constructors to build the thing you \emph{really} want (called
+``elimination''). Here, we use \texttt{KnownNats\ hs} to build our
+\texttt{NatList\ hs} structure, and use that structure to create our
+\texttt{Network\ i\ hs\ o}.
 
 Along the way, the singletons and the typeclasses and the types play an
 intricate dance. \texttt{randomWeights} needed a \texttt{KnownNat}
@@ -707,16 +734,13 @@ was stuffed in there by \texttt{natList}.
 
 People say that pattern matching on \texttt{(:\textless{}\#)} gives you
 a ``context'' in that case-statement-branch where \texttt{KnownNat\ n}
-is in scope/valid. But sometimes it helps to think of it in the way we
-just did --- the instance is actually a ``thing'' that gets passed
-around through typeclasses and GADT constructors/deconstructors. The
-\texttt{KnownNat} instance gets put into \texttt{:\textless{}\#} by
-\texttt{natList}, and is then taken out in the pattern match for
-\texttt{randomWeights} to use.
-
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
-
-\textbf{Aside}
+is in scope and satisfied. But sometimes it helps to think of it in the
+way we just did --- the instance \emph{itself} is actually a ``thing''
+that gets passed around through typeclasses and GADT
+constructors/deconstructors. The \texttt{KnownNat} \emph{instance} gets
+put \emph{into} \texttt{:\textless{}\#} by \texttt{natList}, and is then
+taken \emph{out} in the pattern match so that \texttt{randomWeights} can
+use it.
 
 At a high-level, you can see that this is really no different than just
 having a plain old \texttt{Integer} that you ``put in'' to the
@@ -733,16 +757,14 @@ compile-time to give you rudimentary checks on how your Nat's act
 together on the type level, allowing it to catch mismatches with
 compile-time checks instead of run-time checks.
 
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+\subsection{Running with it}\label{running-with-it}
 
 So now, you can use
 \texttt{randomNet\ ::\ IO\ (Network\ 5\ \textquotesingle{}{[}4{]}\ 2)}
 to get a random network of the desired dimensions! Much simpler than
 before, right?
 
-\subsection{Running with it}\label{running-with-it}
-
-The code for running the nets is identical, more or less:
+The code for running the nets is more or less identical:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -762,7 +784,5 @@ The code for running the nets is identical, more or less:
                        \KeywordTok{in}  \NormalTok{runNet n' v'}
 \end{Highlighting}
 \end{Shaded}
-
-Anticlimactic, huh?
 
 \end{document}

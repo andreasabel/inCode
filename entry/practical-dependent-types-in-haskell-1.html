@@ -27,14 +27,14 @@ too!). Lots of surveys and introducts to new subjects.">Ramblings</a><span class
 <!-- [servtut]: http://www.well-typed.com/blog/2015/11/implementing-a-minimal-version-of-haskell-servant/ -->
 <h2 id="neural-networks">Neural Networks</h2>
 <p><a href="https://en.wikipedia.org/wiki/Artificial_neural_network">Artificial neural networks</a> have been somewhat of a hot topic in computing recently. At their core they involve matrix multiplication and manipulation, so they do seem like a good candidate for a dependent types. Most importantly, implementations of training algorithms (like back-propagation) are tricky to implement correctly — despite being simple, there are many locations where accidental bugs might pop up when multiplying the wrong matrices, for example.</p>
-<p>However, it’s not always easy to gauge before-the-fact what would or would not be a good candidate for adding dependent types to, and often times, it can be considered premature to start off with “as powerful types as you can”. So let’s walk through programming things with as “dumb” types as possible, and see where types can help.</p>
+<p>It’s not always easy to gauge before-the-fact what would or would not be a good candidate for adding dependent types to, and often times, it can be considered premature to start off with “as powerful types as you can”. So let’s walk through programming things with as “dumb” types as possible, and see where types can help.</p>
 <p>Edwin Brady calls this process “type-driven development”. Start general, recognize the partial functions and red flags, and slowly add more powerful types.</p>
-<h3 id="the-network">The Network</h3>
+<h3 id="background">Background</h3>
 <figure>
 <img src="/img/entries/dependent-haskell-1/ffneural.png" title="Feed-forward ANN architecture" alt="Feed-forward ANN architecture" /><figcaption>Feed-forward ANN architecture</figcaption>
 </figure>
-<p>We’re going to be implementing a feed-forward neural network, with back-propagation training. These networks are layers of “nodes”, each connected to the each of the nodes of the previous layer.</p>
-<p>Input goes to the first layer, which feeds information to the next year, which feeds it to the next, etc., until the final layer, where we read it off as the “answer” that the network is giving us. Layers between the input and output layers are called <em>hidden</em> layers. Every node “outputs” a weighted sum of all of the outputs of the <em>previous</em> layer, plus an always-on “bias” term (so that its result can be non-zero even when all of its inputs are zero). Symbolically, it looks like:</p>
+<p>Here’s a quick run through on background for ANN’s — but remember, this isn’t an article on ANN’s, so we are going to be glossing over some of this :) Feel free to explore this further too.</p>
+<p>We’re going to be implementing a feed-forward neural network, with back-propagation training. These networks are layers of “nodes”, each connected to the each of the nodes of the previous layer. Input goes to the first layer, which feeds information to the next year, which feeds it to the next, etc., until the final layer, where we read it off as the “answer” that the network is giving us. Layers between the input and output layers are called <em>hidden</em> layers. Every node “outputs” a weighted sum of all of the outputs of the <em>previous</em> layer, plus an always-on “bias” term (so that its result can be non-zero even when all of its inputs are zero). Symbolically, it looks like:</p>
 <p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%0Ay_j%20%3D%20b_j%20%2B%20%5Csum_i%5Em%20w_%7Bij%7D%20x_i%0A" alt="
 y_j = b_j + \sum_i^m w_{ij} x_i
 " title="
@@ -51,10 +51,10 @@ y_j = b_j + \sum_i^m w_{ij} x_i
 <h2 id="vanilla-types">Vanilla Types</h2>
 <p>We can store a network by storing the matrix of of weights and biases between each layer:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L17-19</span>
-<span class="kw">data</span> <span class="dt">Weights</span> <span class="fu">=</span> <span class="dt">W</span> {<span class="ot"> wBiases ::</span> <span class="fu">!</span>(<span class="dt">Vector</span> <span class="dt">Double</span>)  <span class="co">-- m</span>
-                 ,<span class="ot"> wNodes  ::</span> <span class="fu">!</span>(<span class="dt">Matrix</span> <span class="dt">Double</span>)  <span class="co">-- m x n</span>
-                 }                              <span class="co">-- &quot;n to m&quot; layer</span></code></pre></div>
-<p>Now, a <code>Weights</code> linking an <em>n</em>-node layer to an <em>m</em>-node layer has an <em>m</em>-dimensional bias vector (one component for each output) and an <em>m</em>-by-<em>n</em> node weight matrix (one column for each output, one row for each input).</p>
+<span class="kw">data</span> <span class="dt">Weights</span> <span class="fu">=</span> <span class="dt">W</span> {<span class="ot"> wBiases ::</span> <span class="fu">!</span>(<span class="dt">Vector</span> <span class="dt">Double</span>)  <span class="co">-- n</span>
+                 ,<span class="ot"> wNodes  ::</span> <span class="fu">!</span>(<span class="dt">Matrix</span> <span class="dt">Double</span>)  <span class="co">-- n x m</span>
+                 }                              <span class="co">-- &quot;m to n&quot; layer</span></code></pre></div>
+<p>Now, a <code>Weights</code> linking an <em>m</em>-node layer to an <em>n</em>-node layer has an <em>n</em>-dimensional bias vector (one component for each output) and an <em>n</em>-by-<em>m</em> node weight matrix (one column for each output, one row for each input).</p>
 <p>(We’re using the <code>Matrix</code> type from the awesome <em><a href="http://hackage.haskell.org/package/hmatrix">hmatrix</a></em> library for performant linear algebra, implemented using blas/lapack under the hood)</p>
 <p>A feed-forward neural network is then just a linked list of these weights:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L21-27</span>
@@ -97,15 +97,16 @@ runNet (w <span class="fu">:&amp;~</span> n&#39;) <span class="fu">!</span>v <sp
                        <span class="kw">in</span>  runNet n&#39; v&#39;</code></pre></div>
 <p>(<code>#&gt;</code> is matrix-vector multiplication)</p>
 <!-- TODO: examples of running -->
-<p>If you’re a normal programmer, this might seem perfectly fine. If you are a Haskell programmer, you should already be having heart attacks. Let’s imagine all of the bad things that could happen:</p>
+<p>If you’re a non-Haskell programmer, this might all seem perfectly fine and normal, and you probably have only a slightly elevated heart rate. If you are a Haskell programmer, you are most likely already having heart attacks. Let’s imagine all of the bad things that could happen:</p>
 <ul>
+<li><p>How do we know that we didn’t accidentally mix up the dimensions for our implementation of <code>randomWeights</code>? We could have switched parameters and be none the wiser.</p></li>
 <li><p>How do we even know that each subsequent matrix in the network is “compatible”? We want the outputs of one matrix to line up with the inputs of the next, but there’s no way to know unless we have “smart constructors” to check while we add things. But it’s possible to build a bad network, and things will just explode at runtime.</p></li>
 <li><p>How do we know the size vector the network expects? What stops you from sending in a bad vector at run-time?</p></li>
 <li><p>How do we verify that we have implemented <code>runLayer</code> and <code>runNet</code> in a way that they won’t suddenly fail at runtime? We write <code>l #&gt; v</code>, but how do we know that it’s even correct…what if we forgot to multiply something, or used something in the wrong places? We can it prove ourselves, but the compiler won’t help us.</p></li>
 </ul>
 <h3 id="back-propagation">Back-propagation</h3>
 <p>Now, let’s try implementing back-propagation! It’s a basic “gradient descent” algorithm. There are <a href="https://en.wikipedia.org/wiki/Backpropagation">many explanations</a> on the internet; the basic idea is that you try to minimize the squared “error” of what the neural network outputs for a given input vs. the actual expected output. You find the direction of change that minimizes the error, and move that direction. The implementation of Feed-forward backpropagation is found in many sources online and in literature, so let’s see the implementation in Haskell:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L57-85</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L57-92</span>
 <span class="ot">train ::</span> <span class="dt">Double</span>           <span class="co">-- ^ learning rate</span>
       <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span>    <span class="co">-- ^ input vector</span>
       <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Double</span>    <span class="co">-- ^ target vector</span>
@@ -113,27 +114,34 @@ runNet (w <span class="fu">:&amp;~</span> n&#39;) <span class="fu">!</span>v <sp
       <span class="ot">-&gt;</span> <span class="dt">Network</span>
 train rate x0 target <span class="fu">=</span> fst <span class="fu">.</span> go x0
   <span class="kw">where</span>
-<span class="ot">    go  ::</span> <span class="dt">Vector</span> <span class="dt">Double</span>    <span class="co">-- ^ input vector</span>
-        <span class="ot">-&gt;</span> <span class="dt">Network</span>          <span class="co">-- ^ network to train</span>
-        <span class="ot">-&gt;</span> (<span class="dt">Network</span>, <span class="dt">Vector</span> <span class="dt">Double</span>)
+<span class="ot">    go ::</span> <span class="dt">Vector</span> <span class="dt">Double</span>    <span class="co">-- ^ input vector</span>
+       <span class="ot">-&gt;</span> <span class="dt">Network</span>          <span class="co">-- ^ network to train</span>
+       <span class="ot">-&gt;</span> (<span class="dt">Network</span>, <span class="dt">Vector</span> <span class="dt">Double</span>)
     go <span class="fu">!</span>x (<span class="dt">O</span> w<span class="fu">@</span>(<span class="dt">W</span> wB wN))
         <span class="fu">=</span> <span class="kw">let</span> y    <span class="fu">=</span> runLayer w x
               o    <span class="fu">=</span> logistic y
+              <span class="co">-- the gradient (how much y affects the error)</span>
               dEdy <span class="fu">=</span> logistic&#39; y <span class="fu">*</span> (o <span class="fu">-</span> target)
+              <span class="co">-- new bias weights and node weights</span>
               wB&#39;  <span class="fu">=</span> wB <span class="fu">-</span> scale rate dEdy
               wN&#39;  <span class="fu">=</span> wN <span class="fu">-</span> scale rate (dEdy <span class="ot">`outer`</span> x)
               w&#39;   <span class="fu">=</span> <span class="dt">W</span> wB&#39; wN&#39;
+              <span class="co">-- bundle of derivatives for next step</span>
               dWs  <span class="fu">=</span> tr wN <span class="fu">#&gt;</span> dEdy
           <span class="kw">in</span>  (<span class="dt">O</span> w&#39;, dWs)
     go <span class="fu">!</span>x (w<span class="fu">@</span>(<span class="dt">W</span> wB wN) <span class="fu">:&amp;~</span> n)
         <span class="fu">=</span> <span class="kw">let</span> y          <span class="fu">=</span> runLayer w x
               o          <span class="fu">=</span> logistic y
+              <span class="co">-- get dWs&#39;, bundle of derivatives from rest of the net</span>
               (n&#39;, dWs&#39;) <span class="fu">=</span> go o n
+              <span class="co">-- the gradient (how much y affects the error)</span>
               dEdy       <span class="fu">=</span> logistic&#39; y <span class="fu">*</span> dWs&#39;
-              wB&#39;        <span class="fu">=</span> wB <span class="fu">-</span> scale rate dEdy
-              wN&#39;        <span class="fu">=</span> wN <span class="fu">-</span> scale rate (dEdy <span class="ot">`outer`</span> x)
-              w&#39;         <span class="fu">=</span> <span class="dt">W</span> wB&#39; wN&#39;
-              dWs        <span class="fu">=</span> tr wN <span class="fu">#&gt;</span> dEdy
+              <span class="co">-- new bias weights and node weights</span>
+              wB&#39;  <span class="fu">=</span> wB <span class="fu">-</span> scale rate dEdy
+              wN&#39;  <span class="fu">=</span> wN <span class="fu">-</span> scale rate (dEdy <span class="ot">`outer`</span> x)
+              w&#39;   <span class="fu">=</span> <span class="dt">W</span> wB&#39; wN&#39;
+              <span class="co">-- bundle of derivatives for next step</span>
+              dWs  <span class="fu">=</span> tr wN <span class="fu">#&gt;</span> dEdy
           <span class="kw">in</span>  (w&#39; <span class="fu">:&amp;~</span> n&#39;, dWs)</code></pre></div>
 <p>Where <code>logistic'</code> is the derivative of <code>logistic</code>. The algorithm computes the <em>updated</em> network by recursively updating the layers, from the output layer all the way up to the input layer. At every step it returns the updated layer/network, as well as a bundle of derivatives for the next layer to use to calculate its descent direction. At the output layer, all it needs to calculate the direction of descent is just <code>o - targ</code>, the target. At the inner layers, it has to use the <code>dWs</code> bundle to figure it out.</p>
 <p>Writing this is a bit of a struggle. The type system doesn’t help you like it normally does in Haskell, and you can’t really use parametricity to help you write your code like normal Haskell. Everything is monomorphic, and everything multiplies with everything else. You don’t have any hits about what to multiply with what at any point in time. Seeing the implementation here basically amplifies and puts on displays all of the red flags/awfulness mentioned before.</p>
@@ -142,7 +150,7 @@ train rate x0 target <span class="fu">=</span> fst <span class="fu">.</span> go 
 <p>Pretty much the only way you can verify this code is to test it out on example cases. In the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs">source file</a> I have <code>main</code> test out the backprop, training a network on a 2D function that was “on” for two small circles and “off” everywhere else (A nice cute non-linearly-separable function to test our network on). We basically train the network to be able to recognize the two-circle pattern. I implemented a simple printing function and tested the trained network on a grid:</p>
 <div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">stack</span> install hmatrix MonadRandom
 $ <span class="kw">stack</span> ghc -- -O2 ./NetworkUntyped.hs
-$ <span class="kw">./NetworkUntyped.hs</span>
+$ <span class="kw">./NetworkUntyped</span>
 <span class="co"># Training network...</span>
 <span class="co">#</span>
 <span class="co">#</span>
@@ -183,7 +191,7 @@ $ <span class="kw">./NetworkUntyped.hs</span>
                      ,<span class="ot"> wNodes  ::</span> <span class="fu">!</span>(<span class="dt">L</span> o i)
                      }</code></pre></div>
 <p>We’re using the <code>Numeric.LinearAlgebra.Static</code> module from <em><a href="http://hackage.haskell.org/package/hmatrix">hmatrix</a></em>, which offers matrix and vector types with their size in their types: an <code>R 5</code> is a vector of Doubles with 5 elements, and a <code>L 3 6</code> is a 3x6 vector of Doubles.</p>
-<p>The <code>Static</code> module relies on the <code>KnownNat</code> mechanism that GHC offers. A <code>KnownNat n</code> constraint is more or less just a way for you to “get” an Integer at runtime (with the <code>natVal</code> function), so a <code>KnownNat n =&gt; R n</code> is basically a vector “packaged” with its size. Almost all operations in the library require a <code>KnownNat</code> constraint.</p>
+<p>The <code>Static</code> module relies on the <code>KnownNat</code> mechanism that GHC offers. Almost all operations in the library require a <code>KnownNat</code> constraint, which basically allows the functions to <em>use</em> the information in the numeric parameter (the <code>Integer</code> it represents, basically) at run-time. (More on this later!)</p>
 <p>Following this, a reasonable type for a <em>network</em> might be <code>Network 10 2</code>, taking 10 inputs and popping out 2 outputs. This might be an ideal type to export, because it abstracts away the size of the hidden layers. But it’d be nice for us to keep all of the hidden layers in the type for now — we’ll see how it can be useful, and we’ll also talk about how to later hide/abstract it away when we export the type.</p>
 <p>Our network type for this post will be something like <code>Network 10 '[7,5,3] 2</code>: Take 10 inputs, return 2 outputs — and internally, have hidden layers of size 7, 5, and 3. (The <code>'[7,5,3]</code> is a type-level list of Nats; the optional <code>'</code> apostrophe is just for our own benefit to distinguish it from a value-level list of integers.)</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L26-33</span>
@@ -197,7 +205,7 @@ $ <span class="kw">./NetworkUntyped.hs</span>
 <span class="kw">infixr</span> <span class="dv">5</span> <span class="fu">:&amp;~</span></code></pre></div>
 <p>We use GADT syntax here again. The <em>kind signature</em> of the type constructor means that the <code>Network</code> type constructor takes three inputs: a <code>Nat</code> (type level number, like <code>10</code> or <code>5</code>), list of <code>Nat</code>s, and another <code>Nat</code> (the input, hidden layers, and output sizes). Let’s go over the two constructors.</p>
 <ul>
-<li><p>The <code>O</code> constructor takes a <code>Weights i o</code> and returns a <code>Network i '[] o</code>. That is, if your network is just weights from <code>i</code> inputs to <code>o</code> outputs, your network itself just takes <code>i</code> inputs and returns <code>o</code> outputs.</p></li>
+<li><p>The <code>O</code> constructor takes a <code>Weights i o</code> and returns a <code>Network i '[] o</code>. That is, if your network is just weights from <code>i</code> inputs to <code>o</code> outputs, your network itself just takes <code>i</code> inputs and returns <code>o</code> outputs, with no hidden layers.</p></li>
 <li><p>The <code>(:&amp;~)</code> constructor takes a <code>Network h hs o</code> – a network with <code>h</code> inputs and <code>o</code> outputs – and “conses” an extra input layer in front. If you give it a <code>Weights i h</code>, its outputs fit perfectly into the inputs of the subnetwork, and you get a <code>Network i hs o</code>.</p>
 <p>We add a <code>KnownNat</code> constraint on the <code>h</code>, so that whenever you pattern match on <code>w :&amp;~ net</code>, you automatically get a <code>KnownNat</code> constraint for the input size of <code>net</code> that the <em>hmatrix</em> library can use.</p></li>
 </ul>
@@ -208,11 +216,11 @@ $ <span class="kw">./NetworkUntyped.hs</span>
 <span class="ot">ih ::</span> <span class="dt">Weights</span> <span class="dv">10</span> <span class="dv">7</span>
 
 <span class="co">-- we have:</span>
-<span class="dt">O</span><span class="ot"> ho                    ::</span> <span class="dt">Network</span>  <span class="dv">4</span> <span class="ch">&#39;[] 2</span>
-hh <span class="fu">:&amp;~</span> <span class="dt">O</span><span class="ot"> ho             ::</span> <span class="dt">Network</span>  <span class="dv">7</span> <span class="ch">&#39;[4] 2</span>
+              <span class="dt">O</span><span class="ot"> ho      ::</span> <span class="dt">Network</span>  <span class="dv">4</span> <span class="ch">&#39;[] 2</span>
+       hh <span class="fu">:&amp;~</span> <span class="dt">O</span><span class="ot"> ho      ::</span> <span class="dt">Network</span>  <span class="dv">7</span> <span class="ch">&#39;[4] 2</span>
 ih <span class="fu">:&amp;~</span> hh <span class="fu">:&amp;~</span> <span class="dt">O</span><span class="ot"> ho      ::</span> <span class="dt">Network</span> <span class="dv">10</span> <span class="ch">&#39;[7,4] 2</span></code></pre></div>
 <p>Note that the shape of the constructors requires all of the weight vectors to “fit together” Now if we ever pattern match on <code>:&amp;~</code>, we know that the resulting matrices and vectors are compatible!</p>
-<p>Note that this approach is also self-documenting. I don’t need to specify what the dimensions are in the docs and trust the users to read it. The types tell them! And if they don’t listen, they get a compiler error!</p>
+<p>One neat thing is that this approach is also self-documenting. I don’t need to specify what the dimensions are in the docs and trust the users to read it. The types tell them! And if they don’t listen, they get a compiler error!</p>
 <p>Generating random weights and networks is even nicer now:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L57-64</span>
 <span class="ot">randomWeights ::</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
@@ -224,11 +232,12 @@ randomWeights <span class="fu">=</span> <span class="kw">do</span>
         wN <span class="fu">=</span> uniformSample s2 (<span class="fu">-</span><span class="dv">1</span>) <span class="dv">1</span>
     return <span class="fu">$</span> <span class="dt">W</span> wB wN</code></pre></div>
 <p>Notice that the <code>Static</code> versions of <code>randomVector</code> and <code>uniformSample</code> don’t actually require the size of the vector/matrix you want as an input – they just use type inference to figure out what size you want! This is the same process that <code>read</code> uses to figure out what type of thing you want to return. You would use <code>randomVector s Uniform :: R 10</code>, and type inference would give you a 10-element vector the same way <code>read &quot;hello&quot; :: Int</code> would give you an <code>Int</code>.</p>
+<p>Here’s something important: note that it’s much harder to implement this incorrectly. Before, you could give the matrix the wrong dimensions (maybe you flipped the parameters?), or gave the wrong parameter to the vector generator.</p>
+<p>But here, you are guaranteed/forced to return the correctly sized vectors and matrices. In fact, you <em>don’t even have to worry</em> about it — it’s handled automatically by the magic of type inference! (take <em>that</em>, Idris!<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a>) I consider this a very big victory. One of the whole points of types is to give you less to “worry about”, as a programmer. Here, we completely eliminate an <em>entire dimension</em> of programmer concern.</p>
 <h3 id="singletons-and-induction-detour">Singletons and Induction detour</h3>
 <p>The code for the updated <code>randomNet</code> takes a bit of explaining.</p>
 <p>Let’s say we want to construct a <code>Network 4 '[3,2] 1</code>. In true Haskell fashion, we do this recursively (“inductively”). After all, we know how to make a <code>Network i '[] o</code> (just <code>O &lt;$&gt; randomWieights</code>), and we know how to create a <code>Network i (h ': hs) o</code> if we had a <code>Network h hs o</code>. Now all we have to do is just “pattern match” on the type-level list, and…</p>
-<p>Oh wait. We can’t directly pattern match on lists like that in Haskell. But, what we can do is move the list from the type level to the value level using singletons.</p>
-<p>The <em><a href="http://hackage.haskell.org/package/typelits-witnesses">typelits-witnesses</a></em> library offers a handy singleton for just this job. If you have a type level list of nats, you get a <code>KnowNats ns</code> constraint. This lets you create a <code>NatList</code>:</p>
+<p>Oh wait. We can’t directly pattern match on lists like that in Haskell. But what we <em>can</em> do is move the list from the type level to the value level using <em>singletons</em>. The <em><a href="http://hackage.haskell.org/package/typelits-witnesses">typelits-witnesses</a></em> library offers a handy singleton for just this job. If you have a type level list of nats, you get a <code>KnowNats ns</code> constraint. This lets you create a <code>NatList</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">NatList</span><span class="ot"> ::</span> [<span class="dt">Nat</span>] <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
     Ø<span class="dt">NL</span><span class="ot">   ::</span> <span class="dt">NatList</span> <span class="ch">&#39;[]</span>
 <span class="ot">    (:&lt;#) ::</span> (<span class="dt">KnownNat</span> n, <span class="dt">KnownNats</span> ns)
@@ -240,31 +249,28 @@ randomWeights <span class="fu">=</span> <span class="kw">do</span>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span><span class="ot"> natList ::</span> <span class="dt">NatList</span> <span class="ch">&#39;[1,2,3]</span>
 <span class="dt">Proxy</span> <span class="fu">:&lt;#</span> <span class="dt">Proxy</span> <span class="fu">:&lt;#</span> <span class="dt">Proxy</span> <span class="fu">:&lt;#</span> Ø<span class="dt">NL</span>
 <span class="co">-- ^         ^         ^</span>
-<span class="co">-- `-- :: Proxy 1      |</span>
-<span class="co">--           `-- :: Proxy 2</span>
+<span class="co">-- `-- :: Pro|xy 1     |</span>
+<span class="co">--           `-- :: Pro|xy 2</span>
 <span class="co">--                     `-- :: Proxy 3</span></code></pre></div>
-<p>Now that we have an actual value-level <em>structure</em> (the list of <code>Proxy</code>s), we can now essentially “pattern match” on <code>hs</code> — if it’s empty, we’ll get the <code>ØNL</code> constructor, otherwise we’ll get the <code>(:&lt;#)</code> constructor, etc:</p>
+<p>Now that we have an actual value-level <em>structure</em> (the list of <code>Proxy</code>s), we can now “pattern match” on <code>hs</code> — if it’s empty, we’ll get the <code>ØNL</code> constructor, otherwise we’ll get the <code>(:&lt;#)</code> constructor, etc:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L66-70</span>
 <span class="ot">randomNet ::</span> forall m i hs o<span class="fu">.</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">KnownNats</span> hs, <span class="dt">KnownNat</span> o)
           <span class="ot">=&gt;</span> m (<span class="dt">Network</span> i hs o)
 randomNet <span class="fu">=</span> <span class="kw">case</span><span class="ot"> natsList ::</span> <span class="dt">NatList</span> hs <span class="kw">of</span>
               Ø<span class="dt">NL</span>     <span class="ot">-&gt;</span> <span class="dt">O</span>     <span class="fu">&lt;$&gt;</span> randomWeights
               _ <span class="fu">:&lt;#</span> _ <span class="ot">-&gt;</span> (<span class="fu">:&amp;~</span>) <span class="fu">&lt;$&gt;</span> randomWeights <span class="fu">&lt;*&gt;</span> randomNet</code></pre></div>
-<p>(Note that we need <code>ScopedTypeVariables</code> and the <code>forall .. hs ..</code> so that we can say <code>NatList hs</code> in the function body.)</p>
-<p>The reason why <code>NatList</code> and <code>:&lt;#</code> works for this is that its constructors <em>come with proofs</em> that the head is a <code>KnownNat</code> and the tail is <code>KnownNats</code>. It’s a part of the GADT declaration. If you ever pattern match on <code>:&lt;#</code>, you get a <code>KnownNat n</code> constraint (that <code>randomWeights</code>) uses, and also a <code>KnownNats ns</code> constraint (that the recursive call to <code>randomNet</code> uses).</p>
-<p>This is a common pattern in dependent Haskell of inductively “folding down” type-level structures by pattern matching on a singleton skeleton structure (<code>NatList</code> here), and getting the singleton skeleton from “folding up” using a typeclass (<code>KnownNats</code>, here). <code>NatList hs</code> has exactly the structure we want, so we can fold it down to a <code>Network i hs o</code>.</p>
+<p>(Note that we need <code>ScopedTypeVariables</code> and explicit <code>forall</code> so that can say <code>NatList hs</code> in the function body.)</p>
+<p>The reason why <code>NatList</code> and <code>:&lt;#</code> works for this is that its constructors <em>come with proofs</em> that the head’s type has a <code>KnownNat</code> and the tail’s type has a <code>KnownNats</code>. It’s a part of the GADT declaration. If you ever pattern match on <code>p :&lt;# ns</code>, you get a <code>KnownNat n</code> constraint for the <code>Proxy n</code> (that <code>randomWeights</code>) uses, and also a <code>KnownNats ns</code> constraint (that the recursive call to <code>randomNet</code> uses).</p>
+<p>This is a common pattern in dependent Haskell: “building up” a value-level <em>structure</em> from a type (often implemented with typeclasses) and then inductively piggybacking on that structure’s constructors to build the thing you <em>really</em> want (called “elimination”). Here, we use <code>KnownNats hs</code> to build our <code>NatList hs</code> structure, and use that structure to create our <code>Network i hs o</code>.</p>
 <p>Along the way, the singletons and the typeclasses and the types play an intricate dance. <code>randomWeights</code> needed a <code>KnownNat</code> constraint. Where did it come from?</p>
 <h4 id="on-typeclasses">On Typeclasses</h4>
 <p><code>natList</code> uses the <code>KnownNat n</code> to construct the <code>NatList ns</code> (because any time you use <code>(:&lt;#)</code>, you need a <code>KnownNat</code>). Then, in <code>randomNet</code>, when you pattern match on the <code>(:&lt;#)</code>, you “release” the <code>KnownNat n</code> that was stuffed in there by <code>natList</code>.</p>
-<p>People say that pattern matching on <code>(:&lt;#)</code> gives you a “context” in that case-statement-branch where <code>KnownNat n</code> is in scope/valid. But sometimes it helps to think of it in the way we just did — the instance is actually a “thing” that gets passed around through typeclasses and GADT constructors/deconstructors. The <code>KnownNat</code> instance gets put into <code>:&lt;#</code> by <code>natList</code>, and is then taken out in the pattern match for <code>randomWeights</code> to use.</p>
-<div class="note">
-<p><strong>Aside</strong></p>
+<p>People say that pattern matching on <code>(:&lt;#)</code> gives you a “context” in that case-statement-branch where <code>KnownNat n</code> is in scope and satisfied. But sometimes it helps to think of it in the way we just did — the instance <em>itself</em> is actually a “thing” that gets passed around through typeclasses and GADT constructors/deconstructors. The <code>KnownNat</code> <em>instance</em> gets put <em>into</em> <code>:&lt;#</code> by <code>natList</code>, and is then taken <em>out</em> in the pattern match so that <code>randomWeights</code> can use it.</p>
 <p>At a high-level, you can see that this is really no different than just having a plain old <code>Integer</code> that you “put in” to the constructor (as an extra field), and which you then take out if you pattern match on it. Really, every time you see <code>KnownNat n =&gt; ..</code>, you can think of it as an <code>Integer -&gt; ..</code>. <code>(:&lt;#)</code> requiring a <code>KnownNat n =&gt;</code> put into it is really the same as requiring an <code>Integer</code> in it, which the pattern-matcher can then take out.</p>
 <p>The difference is that GHC and the compiler can now “track” these at compile-time to give you rudimentary checks on how your Nat’s act together on the type level, allowing it to catch mismatches with compile-time checks instead of run-time checks.</p>
-</div>
-<p>So now, you can use <code>randomNet :: IO (Network 5 '[4] 2)</code> to get a random network of the desired dimensions! Much simpler than before, right?</p>
 <h3 id="running-with-it">Running with it</h3>
-<p>The code for running the nets is identical, more or less:</p>
+<p>So now, you can use <code>randomNet :: IO (Network 5 '[4] 2)</code> to get a random network of the desired dimensions! Much simpler than before, right?</p>
+<p>The code for running the nets is more or less identical:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L43-55</span>
 <span class="ot">runLayer ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
          <span class="ot">=&gt;</span> <span class="dt">Weights</span> i o
@@ -279,7 +285,12 @@ runLayer (<span class="dt">W</span> wB wN) v <span class="fu">=</span> wB <span 
 runNet (<span class="dt">O</span> w)      <span class="fu">!</span>v <span class="fu">=</span> logistic (runLayer w v)
 runNet (w <span class="fu">:&amp;~</span> n&#39;) <span class="fu">!</span>v <span class="fu">=</span> <span class="kw">let</span> v&#39; <span class="fu">=</span> logistic (runLayer w v)
                        <span class="kw">in</span>  runNet n&#39; v&#39;</code></pre></div>
-<p>Anticlimactic, huh?</p></div><footer><ul class="entry-series"></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/functional-programming.html" class="tag-a-tag">#functional programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/types.html" class="tag-a-tag">#types</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@ramblings.html" class="tag-a-category">@RAMBLINGS</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing “in Code”!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Just kidding :)<a href="#fnref1">↩</a></p></li>
+</ol>
+</section></div><footer><ul class="entry-series"></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/functional-programming.html" class="tag-a-tag">#functional programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/types.html" class="tag-a-tag">#types</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@ramblings.html" class="tag-a-category">@RAMBLINGS</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing “in Code”!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html';
     this.page.identifier = 'dependent-haskell-1';
 };
