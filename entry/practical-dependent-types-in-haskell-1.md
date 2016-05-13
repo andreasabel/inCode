@@ -25,12 +25,6 @@ The first project in this series will build up to type-safe
 network](https://en.wikipedia.org/wiki/Artificial_neural_network)**
 implementations. Hooray!
 
-<!-- There are other great tutorials I'd recommend online if you want to explore -->
-<!-- dependent types in Haskell further, including [this great servant -->
-<!-- "tutorial"][servtut].  Also, I should provide a disclaimer --- I'm also -->
-<!-- currently exploring all of this as I'm going along too. It's a wild world out -->
-<!-- there.  Join me and let's be a part of the frontier! -->
-<!-- [servtut]: http://www.well-typed.com/blog/2015/11/implementing-a-minimal-version-of-haskell-servant/ -->
 Neural Networks
 ---------------
 
