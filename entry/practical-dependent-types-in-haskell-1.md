@@ -380,6 +380,10 @@ matrix and vector types with their size in their types: an `R 5` is a
 vector of Doubles with 5 elements, and a `L 3 6` is a 3x6 vector of
 Doubles.
 
+These types are often called “dependent”, because the structure of the
+type itself is parameterized by/depends on a “value” (the size
+parameter).
+
 The `Static` module relies on the `KnownNat` mechanism that GHC offers.
 Almost all operations in the library require a `KnownNat` constraint on
 the type-level Nats — for example, you can take the dot product of two
@@ -509,7 +513,9 @@ match” on the type-level list, and…
 
 Oh wait. We can’t directly pattern match on lists like that in Haskell.
 But what we *can* do is move the list from the type level to the value
-level using *singletons*. The
+level using *singletons*. Singletons (types which only have one
+value/constructor as members) aren’t the only option, but they’re the
+most generally useful and un-specialized solution. The
 *[typelits-witnesses](http://hackage.haskell.org/package/typelits-witnesses)*
 library offers a handy singleton for just this job. If you have a type
 level list of nats, you get a `KnowNats ns` constraint. This lets you
@@ -527,7 +533,9 @@ infixr 5 :<#
 Basically, a `NatList '[1,2,3]` is `p1 :<# p2 :<# p3 :<# ØNL`, where
 `p1 :: Proxy 1`, `p2 :: Proxy 2`, and `p3 :: Proxy 3`. (Remember,
 `data Proxy a = Proxy`; `Proxy` is like `()` but with an extra phantom
-type parameter)
+type parameter) We use singletons like this by *pattern matching* on the
+general type (a `NatList ns`) and consequentially learning about `ns`
+(if it’s `'[]` or `n ': ns`, etc.).
 
 We can spontaneously generate a `NatList` for any type-level Nat list
 with `natList :: KnownNats ns => NatList ns`:
@@ -772,5 +780,53 @@ $ ./NetworkTyped
 #
 #
 ```
+
+Finding Something to Depend on
+------------------------------
+
+We wrote out an initial “non-typed” implementation and recognized a lot
+red flags that you might already be trained to recognize if you have
+been programming Haskell for a while: *partial functions* and *multiple
+potential implementations*.
+
+We followed our well-tuned Haskell guts, listened to our hearts, and
+introduced extra power in our types to remove all partial functions, and
+eliminate *most* potential implementations (not all, yet). And we found
+joy again in programming.
+
+In the process, however, we encountered some unexpected resistance from
+Haskell, the language. We couldn’t directly pattern match on our types,
+so we ended up playing games with singletons and GADT constructors to
+pass instances. In practice, using types as powerful and descriptive as
+these begin to require a whole new set of tools.
+
+For example, our `Network` types so far required you to specify their
+size in the program itself (`Network 2 '[16, 8] 1` in the example source
+code, for instance). But what if we wanted to generate a network that
+has dynamic size (For example, getting the size from user input)? What
+if we wanted to serialize a network…how are we going to load it if we
+don’t know what size/shape it has?
+
+After all, Haskell is a “statically typed” language, right? A lot of
+this stuff — having the type change dynamically at runtime — sounds like
+something for a dynamic language. What safety does all of this add?
+
+Also, how can we edit our networks generically? If we wanted to delete a
+specific layer or a specific node, how are we going to give proper type
+signatures if the layer we want to delete depends on runtime values?
+
+Still, there’s a lot to gain from our first baby steps. Entire swaths of
+programmer concern were essentially eliminated. We managed to get the
+compiler to not only catch bugs for us, but also to give us nudges and
+hints for writing our programs — and in some cases, even have it
+completely write our programs *for* us.
+
+What these types have basically given us is the ability to utilize
+*parametric polymorphism* — one of a Haskeller’s most powerful weapons —
+to an entirely new dimension of usefulness.
+
+Next time, we’ll see how to further harness parametric polymorphism in
+conjunction with dependent types, as well as how to resolve the
+problems/issues of types that depend on runtime that I just mentioned.
 
 [^1]: Thank you based Hindley-Milner.
