@@ -448,12 +448,11 @@ Putting it all together:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L36-45}
-\NormalTok{liftU}
-\OtherTok{    ::} \DataTypeTok{Fractional} \NormalTok{a}
-    \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Tower} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Tower} \NormalTok{a))}
-    \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
-    \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L36-44}
+\OtherTok{liftU ::} \DataTypeTok{Fractional} \NormalTok{a}
+      \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Tower} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Tower} \NormalTok{a))}
+      \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
+      \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
 \NormalTok{liftU f (}\DataTypeTok{Un} \NormalTok{x vx) }\FunctionTok{=} \DataTypeTok{Un} \NormalTok{y vy}
   \KeywordTok{where}
     \NormalTok{fx}\FunctionTok{:}\NormalTok{dfx}\FunctionTok{:}\NormalTok{ddfx}\FunctionTok{:}\NormalTok{_ }\FunctionTok{=} \NormalTok{diffs0 f x}
@@ -549,7 +548,7 @@ our hessian, because we only care about the repeated partials:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L47-50}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L46-49}
 \OtherTok{diag ::} \NormalTok{[[a]] }\OtherTok{->} \NormalTok{[a]}
 \NormalTok{diag }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \NormalTok{[]        }\OtherTok{->} \NormalTok{[]}
              \NormalTok{[]   }\FunctionTok{:}\NormalTok{yss }\OtherTok{->} \NormalTok{diag (drop }\DecValTok{1} \FunctionTok{<$>} \NormalTok{yss)}
@@ -562,7 +561,7 @@ lists together component-by-component and sums the results:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L52-53}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L51-52}
 \OtherTok{dot ::} \DataTypeTok{Num} \NormalTok{a }\OtherTok{=>} \NormalTok{[a] }\OtherTok{->} \NormalTok{[a] }\OtherTok{->} \NormalTok{a}
 \NormalTok{dot xs ys }\FunctionTok{=} \NormalTok{sum (zipWith (}\FunctionTok{*}\NormalTok{) xs ys)}
 \end{Highlighting}
@@ -572,12 +571,11 @@ And now we can write our multi-variate function lifter:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-73}
-\NormalTok{liftUF}
-\OtherTok{    ::} \NormalTok{(}\DataTypeTok{Traversable} \NormalTok{f, }\DataTypeTok{Fractional} \NormalTok{a)}
-    \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \NormalTok{f (}\DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a)) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a))}
-    \OtherTok{->} \NormalTok{f (}\DataTypeTok{Uncert} \NormalTok{a)}
-    \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L54-71}
+\OtherTok{liftUF ::} \NormalTok{(}\DataTypeTok{Traversable} \NormalTok{f, }\DataTypeTok{Fractional} \NormalTok{a)}
+       \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \NormalTok{f (}\DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a)) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a))}
+       \OtherTok{->} \NormalTok{f (}\DataTypeTok{Uncert} \NormalTok{a)}
+       \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
 \NormalTok{liftUF f us }\FunctionTok{=} \DataTypeTok{Un} \NormalTok{y vy}
   \KeywordTok{where}
     \NormalTok{xs          }\FunctionTok{=}         \NormalTok{uMean }\FunctionTok{<$>} \NormalTok{us}
@@ -605,22 +603,20 @@ naturally:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L75-90}
-\NormalTok{liftU2}
-\OtherTok{    ::} \DataTypeTok{Fractional} \NormalTok{a}
-    \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a))}
-    \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
-    \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
-    \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L73-86}
+\OtherTok{liftU2 ::} \DataTypeTok{Fractional} \NormalTok{a}
+       \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a))}
+       \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
+       \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
+       \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
 \NormalTok{liftU2 f x y }\FunctionTok{=} \NormalTok{liftUF (\textbackslash{}(}\DataTypeTok{V2} \NormalTok{x' y') }\OtherTok{->} \NormalTok{f x' y') (}\DataTypeTok{V2} \NormalTok{x y)}
 
-\NormalTok{liftU3}
-\OtherTok{    ::} \DataTypeTok{Fractional} \NormalTok{a}
-    \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a))}
-    \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
-    \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
-    \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
-    \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
+\OtherTok{liftU3 ::} \DataTypeTok{Fractional} \NormalTok{a}
+       \OtherTok{=>} \NormalTok{(forall s}\FunctionTok{.} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a) }\OtherTok{->} \DataTypeTok{AD} \NormalTok{s (}\DataTypeTok{Sparse} \NormalTok{a))}
+       \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
+       \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
+       \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
+       \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
 \NormalTok{liftU3 f x y z }\FunctionTok{=} \NormalTok{liftUF (\textbackslash{}(}\DataTypeTok{V3} \NormalTok{x' y' z') }\OtherTok{->} \NormalTok{f x' y' z') (}\DataTypeTok{V3} \NormalTok{x y z)}
 \end{Highlighting}
 \end{Shaded}

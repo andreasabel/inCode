@@ -8,17 +8,16 @@ moving slowly but steadily to the mainstream of Haskell programming. In
 the current state of Haskell education, dependent types are often
 considered topics for “advanced” Haskell users. However, I can
 definitely foresee a day where the ease of use of modern Haskell
-libraries relying on dependent types as well as their ubiquitousness
-forces programming with dependent types to be an integral part of
-regular intermediate (or even beginner) Haskell education, as much as
-Traversable or Maps.
+libraries relying on dependent types forces programming with dependent
+types to be an integral part of regular intermediate (or even beginner)
+Haskell education, as much as Traversable or Maps.
 
 The point of this post is to show some practical examples of using
-dependent types in the real world, and to also walk through the “why”
-and high-level philosophy of the way you structure your Haskell
-programs. It’ll also hopefully instill an intuition of a dependently
-typed work flow of “exploring” how dependent types can help your current
-programs.
+dependent types in guiding your programming, and to also walk through
+the “why” and high-level philosophy of the way you structure your
+Haskell programs. It’ll also hopefully instill an intuition of a
+dependently typed work flow of “exploring” how dependent types can help
+your current programs.
 
 The first project in this series will build up to type-safe
 **[artificial neural
@@ -55,9 +54,9 @@ architecture](/img/entries/dependent-haskell-1/ffneural.png "Feed-forward ANN ar
 
 Here’s a quick run through on background for ANN’s — but remember, this
 isn’t an article on ANN’s, so we are going to be glossing over some of
-this :) Feel free to explore this further too.
+this.
 
-We’re going to be implementing a feed-forward neural network, with
+We’re going to be implementing a feed-forward neural network with
 back-propagation training. These networks are layers of “nodes”, each
 connected to the each of the nodes of the previous layer. Input goes to
 the first layer, which feeds information to the next year, which feeds
@@ -95,7 +94,7 @@ We can store a network by storing the matrix of of weights and biases
 between each layer:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L17-19
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L18-20
 data Weights = W { wBiases :: !(Vector Double)  -- n
                  , wNodes  :: !(Matrix Double)  -- n x m
                  }                              -- "m to n" layer
@@ -115,7 +114,7 @@ A feed-forward neural network is then just a linked list of these
 weights:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L21-27
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L22-28
 data Network :: * where
     O     :: !Weights
           -> Network
@@ -144,13 +143,13 @@ the weights between the last hidden layer and the output layer.
 We can write simple procedures, like generating random networks:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L45-55
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L46-56
 randomWeights :: MonadRandom m => Int -> Int -> m Weights
 randomWeights i o = do
-    s1 <- getRandom
-    s2 <- getRandom
-    let wB = randomVector s1 Uniform o * 2 - 1
-        wN = uniformSample s2 o (replicate i (-1, 1))
+    seed1 :: Int <- getRandom
+    seed2 :: Int <- getRandom
+    let wB = randomVector seed1 Uniform o * 2 - 1
+        wN = uniformSample seed2 o (replicate i (-1, 1))
     return $ W wB wN
 
 randomNet :: MonadRandom m => Int -> [Int] -> Int -> m Network
@@ -167,7 +166,7 @@ And now a function to “run” our network on a given input vector,
 following the matrix equation we wrote earlier:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L29-43
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L30-44
 logistic :: Floating a => a -> a
 logistic x = 1 / (1 + exp (-x))
 
@@ -213,7 +212,7 @@ heart attacks. Let’s imagine all of the bad things that could happen:
 Now, let’s try implementing back-propagation! It’s a textbook gradient
 descent algorithm. There are [many
 explanations](https://en.wikipedia.org/wiki/Backpropagation) on the
-internet; the basic idea is that you try to minimize the squared “error”
+internet; the basic idea is that you try to minimize the squared error
 of what the neural network outputs for a given input vs. the actual
 expected output. You find the direction of change that minimizes the
 error (by finding the derivative), and move that direction. The
@@ -221,7 +220,7 @@ implementation of Feed-forward backpropagation is found in many sources
 online and in literature, so let’s see the implementation in Haskell:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L57-93
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L58-94
 train :: Double           -- ^ learning rate
       -> Vector Double    -- ^ input vector
       -> Vector Double    -- ^ target vector
@@ -444,14 +443,14 @@ hh :: Weights  7 4
 ih :: Weights 10 7
 
 -- we have:
-              O ho      :: Network  4 '[] 2
-       hh :&~ O ho      :: Network  7 '[4] 2
-ih :&~ hh :&~ O ho      :: Network 10 '[7,4] 2
+              O ho :: Network  4 '[] 2
+       hh :&~ O ho :: Network  7 '[4] 2
+ih :&~ hh :&~ O ho :: Network 10 '[7,4] 2
 ```
 
 Note that the shape of the constructors requires all of the weight
 vectors to “fit together”. `ih :&~ O ho` would be a type error (feeding
-a 7-output layer to a 4-input layer). Now, if we ever pattern match on
+a 7-output layer to a 4-input layer). Also, if we ever pattern match on
 `:&~`, we know that the resulting matrices and vectors are compatible!
 
 One neat thing is that this approach is also self-documenting. I don’t
@@ -468,8 +467,8 @@ Generating random weights and networks is even nicer now:
 randomWeights :: (MonadRandom m, KnownNat i, KnownNat o)
               => m (Weights i o)
 randomWeights = do
-    s1 <- getRandom
-    s2 <- getRandom
+    s1 :: Int <- getRandom
+    s2 :: Int <- getRandom
     let wB = randomVector s1 Uniform * 2 - 1
         wN = uniformSample s2 (-1) 1
     return $ W wB wN
@@ -513,9 +512,9 @@ match” on the type-level list, and…
 
 Oh wait. We can’t directly pattern match on lists like that in Haskell.
 But what we *can* do is move the list from the type level to the value
-level using *singletons*. Singletons (types which only have one
-value/constructor as members) aren’t the only option, but they’re the
-most generally useful and un-specialized solution. The
+level using *singletons*. Singletons are types (often, parameterized
+types) with only one valid constructor. They aren’t the only option, but
+they’re the most generally useful and un-specialized solution. The
 *[typelits-witnesses](http://hackage.haskell.org/package/typelits-witnesses)*
 library offers a handy singleton for just this job. If you have a type
 level list of nats, you get a `KnowNats ns` constraint. This lets you
@@ -534,8 +533,8 @@ Basically, a `NatList '[1,2,3]` is `p1 :<# p2 :<# p3 :<# ØNL`, where
 `p1 :: Proxy 1`, `p2 :: Proxy 2`, and `p3 :: Proxy 3`. (Remember,
 `data Proxy a = Proxy`; `Proxy` is like `()` but with an extra phantom
 type parameter) We use singletons like this by *pattern matching* on the
-general type (a `NatList ns`) and consequentially learning about `ns`
-(if it’s `'[]` or `n ': ns`, etc.).
+general type (a `NatList ns`) and consequentially learning about the
+type parameter `ns` (if it’s `'[]` or `n ': ns`, etc.).
 
 We can spontaneously generate a `NatList` for any type-level Nat list
 with `natList :: KnownNats ns => NatList ns`:
@@ -550,7 +549,7 @@ Proxy :<# Proxy :<# Proxy :<# ØNL
 ```
 
 Now that we have an actual value-level *structure* (the list of
-`Proxy`s), we can now essentially “pattern match” on `hs`, the type — if
+`Proxy`s), we can now morally “pattern match” on `hs`, the type — if
 it’s empty, we’ll get the `ØNL` constructor when we use `natList`,
 otherwise we’ll get the `(:<#)` constructor, etc.
 
@@ -614,9 +613,9 @@ put into it is really the same as requiring an `Integer` in it, which
 the act of pattern-matching can then take out.
 
 The difference is that GHC and the compiler can now “track” these at
-compile-time to give you rudimentary checks on how your Nat’s act
-together on the type level, allowing it to catch mismatches with
-compile-time checks instead of run-time checks.
+compile-time to give you checks on how your Nat’s act together on the
+type level, allowing it to catch mismatches with compile-time checks
+instead of run-time checks.
 
 ### Running with it
 

@@ -323,12 +323,11 @@ vy = dfx^2 * vx
 Putting it all together:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L36-45
-liftU
-    :: Fractional a
-    => (forall s. AD s (Tower a) -> AD s (Tower a))
-    -> Uncert a
-    -> Uncert a
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L36-44
+liftU :: Fractional a
+      => (forall s. AD s (Tower a) -> AD s (Tower a))
+      -> Uncert a
+      -> Uncert a
 liftU f (Un x vx) = Un y vy
   where
     fx:dfx:ddfx:_ = diffs0 f x
@@ -412,7 +411,7 @@ We need a couple of helpers, first — one to get the “diagonal” of our
 hessian, because we only care about the repeated partials:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L47-50
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L46-49
 diag :: [[a]] -> [a]
 diag = \case []        -> []
              []   :yss -> diag (drop 1 <$> yss)
@@ -424,7 +423,7 @@ And then a “dot product”, utility function, which just multiplies two
 lists together component-by-component and sums the results:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L52-53
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L51-52
 dot :: Num a => [a] -> [a] -> a
 dot xs ys = sum (zipWith (*) xs ys)
 
@@ -433,12 +432,11 @@ dot xs ys = sum (zipWith (*) xs ys)
 And now we can write our multi-variate function lifter:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-73
-liftUF
-    :: (Traversable f, Fractional a)
-    => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a))
-    -> f (Uncert a)
-    -> Uncert a
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L54-71
+liftUF :: (Traversable f, Fractional a)
+       => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a))
+       -> f (Uncert a)
+       -> Uncert a
 liftUF f us = Un y vy
   where
     xs          =         uMean <$> us
@@ -464,22 +462,20 @@ And we can write some nice helper functions so we can use them more
 naturally:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L75-90
-liftU2
-    :: Fractional a
-    => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L73-86
+liftU2 :: Fractional a
+       => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
+       -> Uncert a
+       -> Uncert a
+       -> Uncert a
 liftU2 f x y = liftUF (\(V2 x' y') -> f x' y') (V2 x y)
 
-liftU3
-    :: Fractional a
-    => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
+liftU3 :: Fractional a
+       => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
+       -> Uncert a
+       -> Uncert a
+       -> Uncert a
+       -> Uncert a
 liftU3 f x y z = liftUF (\(V3 x' y' z') -> f x' y' z') (V3 x y z)
 
 ```

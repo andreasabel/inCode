@@ -106,17 +106,16 @@ moving slowly but steadily to the mainstream of Haskell programming. In
 the current state of Haskell education, dependent types are often
 considered topics for ``advanced'' Haskell users. However, I can
 definitely foresee a day where the ease of use of modern Haskell
-libraries relying on dependent types as well as their ubiquitousness
-forces programming with dependent types to be an integral part of
-regular intermediate (or even beginner) Haskell education, as much as
-Traversable or Maps.
+libraries relying on dependent types forces programming with dependent
+types to be an integral part of regular intermediate (or even beginner)
+Haskell education, as much as Traversable or Maps.
 
 The point of this post is to show some practical examples of using
-dependent types in the real world, and to also walk through the ``why''
-and high-level philosophy of the way you structure your Haskell
-programs. It'll also hopefully instill an intuition of a dependently
-typed work flow of ``exploring'' how dependent types can help your
-current programs.
+dependent types in guiding your programming, and to also walk through
+the ``why'' and high-level philosophy of the way you structure your
+Haskell programs. It'll also hopefully instill an intuition of a
+dependently typed work flow of ``exploring'' how dependent types can
+help your current programs.
 
 The first project in this series will build up to type-safe
 \textbf{\href{https://en.wikipedia.org/wiki/Artificial_neural_network}{artificial
@@ -153,9 +152,9 @@ more powerful types.
 
 Here's a quick run through on background for ANN's --- but remember,
 this isn't an article on ANN's, so we are going to be glossing over some
-of this :) Feel free to explore this further too.
+of this.
 
-We're going to be implementing a feed-forward neural network, with
+We're going to be implementing a feed-forward neural network with
 back-propagation training. These networks are layers of ``nodes'', each
 connected to the each of the nodes of the previous layer. Input goes to
 the first layer, which feeds information to the next year, which feeds
@@ -193,7 +192,7 @@ between each layer:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L17-19}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L18-20}
 \KeywordTok{data} \DataTypeTok{Weights} \FunctionTok{=} \DataTypeTok{W} \NormalTok{\{}\OtherTok{ wBiases ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Vector} \DataTypeTok{Double}\NormalTok{)  }\CommentTok{-- n}
                  \NormalTok{,}\OtherTok{ wNodes  ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Matrix} \DataTypeTok{Double}\NormalTok{)  }\CommentTok{-- n x m}
                  \NormalTok{\}                              }\CommentTok{-- "m to n" layer}
@@ -215,7 +214,7 @@ weights:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L21-27}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L22-28}
 \KeywordTok{data} \DataTypeTok{Network}\OtherTok{ ::} \FunctionTok{*} \KeywordTok{where}
     \DataTypeTok{O}\OtherTok{     ::} \FunctionTok{!}\DataTypeTok{Weights}
           \OtherTok{->} \DataTypeTok{Network}
@@ -247,13 +246,13 @@ We can write simple procedures, like generating random networks:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L45-55}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L46-56}
 \OtherTok{randomWeights ::} \DataTypeTok{MonadRandom} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \NormalTok{m }\DataTypeTok{Weights}
 \NormalTok{randomWeights i o }\FunctionTok{=} \KeywordTok{do}
-    \NormalTok{s1 }\OtherTok{<-} \NormalTok{getRandom}
-    \NormalTok{s2 }\OtherTok{<-} \NormalTok{getRandom}
-    \KeywordTok{let} \NormalTok{wB }\FunctionTok{=} \NormalTok{randomVector s1 }\DataTypeTok{Uniform} \NormalTok{o }\FunctionTok{*} \DecValTok{2} \FunctionTok{-} \DecValTok{1}
-        \NormalTok{wN }\FunctionTok{=} \NormalTok{uniformSample s2 o (replicate i (}\FunctionTok{-}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{))}
+\OtherTok{    seed1 ::} \DataTypeTok{Int} \OtherTok{<-} \NormalTok{getRandom}
+\OtherTok{    seed2 ::} \DataTypeTok{Int} \OtherTok{<-} \NormalTok{getRandom}
+    \KeywordTok{let} \NormalTok{wB }\FunctionTok{=} \NormalTok{randomVector seed1 }\DataTypeTok{Uniform} \NormalTok{o }\FunctionTok{*} \DecValTok{2} \FunctionTok{-} \DecValTok{1}
+        \NormalTok{wN }\FunctionTok{=} \NormalTok{uniformSample seed2 o (replicate i (}\FunctionTok{-}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{))}
     \NormalTok{return }\FunctionTok{$} \DataTypeTok{W} \NormalTok{wB wN}
 
 \OtherTok{randomNet ::} \DataTypeTok{MonadRandom} \NormalTok{m }\OtherTok{=>} \DataTypeTok{Int} \OtherTok{->} \NormalTok{[}\DataTypeTok{Int}\NormalTok{] }\OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \NormalTok{m }\DataTypeTok{Network}
@@ -272,7 +271,7 @@ following the matrix equation we wrote earlier:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L29-43}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L30-44}
 \OtherTok{logistic ::} \DataTypeTok{Floating} \NormalTok{a }\OtherTok{=>} \NormalTok{a }\OtherTok{->} \NormalTok{a}
 \NormalTok{logistic x }\FunctionTok{=} \DecValTok{1} \FunctionTok{/} \NormalTok{(}\DecValTok{1} \FunctionTok{+} \NormalTok{exp (}\FunctionTok{-}\NormalTok{x))}
 
@@ -322,7 +321,7 @@ Now, let's try implementing back-propagation! It's a textbook gradient
 descent algorithm. There are
 \href{https://en.wikipedia.org/wiki/Backpropagation}{many explanations}
 on the internet; the basic idea is that you try to minimize the squared
-``error'' of what the neural network outputs for a given input vs.~the
+error of what the neural network outputs for a given input vs.~the
 actual expected output. You find the direction of change that minimizes
 the error (by finding the derivative), and move that direction. The
 implementation of Feed-forward backpropagation is found in many sources
@@ -330,7 +329,7 @@ online and in literature, so let's see the implementation in Haskell:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L57-93}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L58-94}
 \OtherTok{train ::} \DataTypeTok{Double}           \CommentTok{-- ^ learning rate}
       \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}    \CommentTok{-- ^ input vector}
       \OtherTok{->} \DataTypeTok{Vector} \DataTypeTok{Double}    \CommentTok{-- ^ target vector}
@@ -578,16 +577,16 @@ We can still construct them the same way:
 \OtherTok{ih ::} \DataTypeTok{Weights} \DecValTok{10} \DecValTok{7}
 
 \CommentTok{-- we have:}
-              \DataTypeTok{O}\OtherTok{ ho      ::} \DataTypeTok{Network}  \DecValTok{4} \CharTok{'[] 2}
-       \NormalTok{hh }\FunctionTok{:&~} \DataTypeTok{O}\OtherTok{ ho      ::} \DataTypeTok{Network}  \DecValTok{7} \CharTok{'[4] 2}
-\NormalTok{ih }\FunctionTok{:&~} \NormalTok{hh }\FunctionTok{:&~} \DataTypeTok{O}\OtherTok{ ho      ::} \DataTypeTok{Network} \DecValTok{10} \CharTok{'[7,4] 2}
+              \DataTypeTok{O}\OtherTok{ ho ::} \DataTypeTok{Network}  \DecValTok{4} \CharTok{'[] 2}
+       \NormalTok{hh }\FunctionTok{:&~} \DataTypeTok{O}\OtherTok{ ho ::} \DataTypeTok{Network}  \DecValTok{7} \CharTok{'[4] 2}
+\NormalTok{ih }\FunctionTok{:&~} \NormalTok{hh }\FunctionTok{:&~} \DataTypeTok{O}\OtherTok{ ho ::} \DataTypeTok{Network} \DecValTok{10} \CharTok{'[7,4] 2}
 \end{Highlighting}
 \end{Shaded}
 
 Note that the shape of the constructors requires all of the weight
 vectors to ``fit together''. \texttt{ih\ :\&\textasciitilde{}\ O\ ho}
 would be a type error (feeding a 7-output layer to a 4-input layer).
-Now, if we ever pattern match on \texttt{:\&\textasciitilde{}}, we know
+Also, if we ever pattern match on \texttt{:\&\textasciitilde{}}, we know
 that the resulting matrices and vectors are compatible!
 
 One neat thing is that this approach is also self-documenting. I don't
@@ -605,8 +604,8 @@ Generating random weights and networks is even nicer now:
 \OtherTok{randomWeights ::} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
               \OtherTok{=>} \NormalTok{m (}\DataTypeTok{Weights} \NormalTok{i o)}
 \NormalTok{randomWeights }\FunctionTok{=} \KeywordTok{do}
-    \NormalTok{s1 }\OtherTok{<-} \NormalTok{getRandom}
-    \NormalTok{s2 }\OtherTok{<-} \NormalTok{getRandom}
+\OtherTok{    s1 ::} \DataTypeTok{Int} \OtherTok{<-} \NormalTok{getRandom}
+\OtherTok{    s2 ::} \DataTypeTok{Int} \OtherTok{<-} \NormalTok{getRandom}
     \KeywordTok{let} \NormalTok{wB }\FunctionTok{=} \NormalTok{randomVector s1 }\DataTypeTok{Uniform} \FunctionTok{*} \DecValTok{2} \FunctionTok{-} \DecValTok{1}
         \NormalTok{wN }\FunctionTok{=} \NormalTok{uniformSample s2 (}\FunctionTok{-}\DecValTok{1}\NormalTok{) }\DecValTok{1}
     \NormalTok{return }\FunctionTok{$} \DataTypeTok{W} \NormalTok{wB wN}
@@ -655,9 +654,10 @@ match'' on the type-level list, and\ldots{}
 
 Oh wait. We can't directly pattern match on lists like that in Haskell.
 But what we \emph{can} do is move the list from the type level to the
-value level using \emph{singletons}. Singletons (types which only have
-one value/constructor as members) aren't the only option, but they're
-the most generally useful and un-specialized solution. The
+value level using \emph{singletons}. Singletons are types (often,
+parameterized types) with only one valid constructor. They aren't the
+only option, but they're the most generally useful and un-specialized
+solution. The
 \emph{\href{http://hackage.haskell.org/package/typelits-witnesses}{typelits-witnesses}}
 library offers a handy singleton for just this job. If you have a type
 level list of nats, you get a \texttt{KnowNats\ ns} constraint. This
@@ -681,7 +681,8 @@ where \texttt{p1\ ::\ Proxy\ 1}, \texttt{p2\ ::\ Proxy\ 2}, and
 \texttt{Proxy} is like \texttt{()} but with an extra phantom type
 parameter) We use singletons like this by \emph{pattern matching} on the
 general type (a \texttt{NatList\ ns}) and consequentially learning about
-\texttt{ns} (if it's \texttt{\textquotesingle{}{[}{]}} or
+the type parameter \texttt{ns} (if it's
+\texttt{\textquotesingle{}{[}{]}} or
 \texttt{n\ \textquotesingle{}:\ ns}, etc.).
 
 We can spontaneously generate a \texttt{NatList} for any type-level Nat
@@ -700,9 +701,9 @@ list with
 \end{Shaded}
 
 Now that we have an actual value-level \emph{structure} (the list of
-\texttt{Proxy}s), we can now essentially ``pattern match'' on
-\texttt{hs}, the type --- if it's empty, we'll get the \texttt{ØNL}
-constructor when we use \texttt{natList}, otherwise we'll get the
+\texttt{Proxy}s), we can now morally ``pattern match'' on \texttt{hs},
+the type --- if it's empty, we'll get the \texttt{ØNL} constructor when
+we use \texttt{natList}, otherwise we'll get the
 \texttt{(:\textless{}\#)} constructor, etc.
 
 \begin{Shaded}
@@ -776,9 +777,9 @@ requiring an \texttt{Integer} in it, which the act of pattern-matching
 can then take out.
 
 The difference is that GHC and the compiler can now ``track'' these at
-compile-time to give you rudimentary checks on how your Nat's act
-together on the type level, allowing it to catch mismatches with
-compile-time checks instead of run-time checks.
+compile-time to give you checks on how your Nat's act together on the
+type level, allowing it to catch mismatches with compile-time checks
+instead of run-time checks.
 
 \subsection{Running with it}\label{running-with-it}
 
