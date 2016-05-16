@@ -27,8 +27,8 @@ implementations. Hooray!
 #### Setup
 
 This post is written on *[stack](http://www.haskellstack.org)* snapshot
-*lts-5.16*, but uses an unreleased version of *hmatrix*, *[hmatrix-0.18
-(commit
+*[lts-5.17](https://www.stackage.org/lts-5.17)*, but uses an unreleased
+version of *hmatrix*, *[hmatrix-0.18 (commit
 42a88fb)](https://github.com/albertoruiz/hmatrix/tree/42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1)*.
 I [maintain my own documentaiton](http://mstksg.github.io/hmatrix/) for
 reference. You can add this to the `packages` field of your directory or
@@ -180,7 +180,7 @@ randomNet i (h:hs) o = (:&~) <$> randomWeights i h <*> randomNet h hs o
 
 ```
 
-(`[randomVector][]` and `[uniformSample][]` are from the
+(\[`randomVector`\]\[\] and \[`uniformSample`\]\[\] are from the
 *[hmatrix](http://hackage.haskell.org/package/hmatrix)* library,
 generating random vectors and matrices from a random `Int` seed. We
 configure them to generate them with numbers between -1 and 1)
@@ -500,13 +500,15 @@ randomWeights = do
 
 Notice that the `Static` versions of
 [`randomVector`](http://mstksg.github.io/hmatrix/Numeric-LinearAlgebra-Static.html#v:randomVector)
-and \[`uniformSample`\]\[uniformSample static\] don’t actually require
-the size of the vector/matrix you want as an input – they just use type
-inference to figure out what size you want! This is the same process
-that `read` uses to figure out what type of thing you want to return.
-You would use `randomVector s Uniform :: R 10`, and type inference would
-give you a 10-element vector the same way `read "hello" :: Int` would
-give you an `Int`.
+and
+[`uniformSample`](http://mstksg.github.io/hmatrix/Numeric-LinearAlgebra-Static.html#v:uniformSample)
+don’t actually require the size of the vector/matrix you want as an
+input – they just use type inference to figure out what size you want!
+This is the same process that `read` uses to figure out what type of
+thing you want to return. You would use
+`randomVector s Uniform :: R 10`, and type inference would give you a
+10-element vector the same way `read "hello" :: Int` would give you an
+`Int`.
 
 Here’s something important: note that it’s much harder to implement this
 incorrectly. Before, you could give the matrix the wrong dimensions
