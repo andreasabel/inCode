@@ -261,10 +261,12 @@ We can write simple procedures, like generating random networks:
 \end{Highlighting}
 \end{Shaded}
 
-(\texttt{randomVector} and \texttt{uniformSample} are from the
-\emph{hmatrix} library, generating random vectors and matrices from a
-random \texttt{Int} seed. We configure them to generate them with
-numbers between -1 and 1)
+(\texttt{{[}randomVector{]}{[}{]}} and
+\texttt{{[}uniformSample{]}{[}{]}} are from the
+\emph{\href{http://hackage.haskell.org/package/hmatrix}{hmatrix}}
+library, generating random vectors and matrices from a random
+\texttt{Int} seed. We configure them to generate them with numbers
+between -1 and 1)
 
 And now a function to ``run'' our network on a given input vector,
 following the matrix equation we wrote earlier:
@@ -612,6 +614,47 @@ Generating random weights and networks is even nicer now:
 \end{Highlighting}
 \end{Shaded}
 
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\textbf{Note}
+
+If you're following along,
+\texttt{{[}randomVector{]}{[}randomVector\ static{]}} and
+\texttt{{[}uniformSample{]}{[}uniformSample\ static{]}} for the
+\emph{Static} module is at the moment only in the yet unreleased
+\emph{0.18} version of \emph{hmatrix}. At the time of this article's
+writing, the current HEAD is at
+\href{https://github.com/albertoruiz/hmatrix/tree/42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1}{commit
+42a88fb}. I maintain my own
+\href{http://mstksg.github.io/hmatrix/}{build of the documentation} for
+reference.
+
+You can use \emph{stack} to make sure that you're using the right
+version. When you build these tests, put a proper \emph{stack.yaml} in
+the directory, including this modification to the \texttt{packages}
+field:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{packages:}
+\KeywordTok{-} \StringTok{'.'}
+\KeywordTok{-} \FunctionTok{location:}
+    \FunctionTok{git:} \NormalTok{git@github.com:albertoruiz/hmatrix.git}
+    \FunctionTok{commit:} \NormalTok{42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1}
+  \FunctionTok{subdirs:}
+    \KeywordTok{-} \NormalTok{packages/base}
+\end{Highlighting}
+\end{Shaded}
+
+You can even add this to your global \emph{stack.yaml} to make this
+(completely reversible) change system-wide.
+
+\emph{stack} will then know (when you use \emph{runghc} or \emph{ghc} or
+\emph{exec}) to use the updated \emph{hmatrix} version instead of the
+one on hackage.
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
 Notice that the \texttt{Static} versions of \texttt{randomVector} and
 \texttt{uniformSample} don't actually require the size of the
 vector/matrix you want as an input -- they just use type inference to
@@ -884,7 +927,7 @@ Our back-prop algorithm is ported pretty nicely too:
 \end{Highlighting}
 \end{Shaded}
 
-It's pretty much again an exact copy-and-paste, but now with GHC
+It's pretty much again almost an exact copy-and-paste, but now with GHC
 checking to make sure everything fits together in our implementation.
 
 One thing that's hard for me to convey here without walking through the
@@ -898,11 +941,12 @@ implementation became a \emph{joy} again. And, you have the help of
 \emph{hole driven development}, too.
 
 If you need, say, an \texttt{R\ n}, there might be only one way go get
-it --- only one function that returns it. If you have something that you
-need to combine with something you don't know about, you can use typed
-holes (\texttt{\_}) and GHC will give you a list of all the values you
-have in scope that can fit there. Your programs basically write
-themselves!
+it --- only one function that returns it.
+
+If you have something that you need to combine with something you don't
+know about, you can use typed holes (\texttt{\_}) and GHC will give you
+a list of all the values you have in scope that can fit there. Your
+programs basically write themselves!
 
 The more you can restrict the implementations of your functions with
 your types, the more of a joy programming in Haskell is. Things fit
@@ -913,11 +957,11 @@ correct direction.
 The most stressful part of programming happens when you have to
 tenuously hold a complex and fragile network of ideas and constraints in
 your brain, and any slight distraction or break in focus causes
-everything to crash down in your mind. Over time, people have began to
-believe that this is ``normal'', and a sign of a good programmer. Don't
-believe this lie --- it's not! A good programming experience involves
-maintaining as \emph{little} in your head as possible, and letting the
-compiler handle remembering/checking the rest!
+everything to crash down in your mind. Over time, people have begun to
+believe that this is ``normal'', and a sign of a good programming
+experience. Don't believe this lie --- it's not! A good programming
+experience involves maintaining as \emph{little} in your head as
+possible, and letting the compiler handle remembering/checking the rest!
 
 \subsubsection{The final test}\label{the-final-test}
 
@@ -962,29 +1006,30 @@ been programming Haskell for a while: \emph{partial functions} and
 \emph{multiple potential implementations}.
 
 We followed our well-tuned Haskell guts, listened to our hearts, and
-introduced extra power in our types to remove all partial functions, and
+introduced extra power in our types to remove all partial functions and
 eliminate \emph{most} potential implementations (not all, yet). We
 removed entire swaths of programmer concern. We found joy again in
 programming.
 
 In the process, however, we encountered some unexpected resistance from
-Haskell, the language. We couldn't directly pattern match on our types,
+Haskell (the language). We couldn't directly pattern match on our types,
 so we ended up playing games with singletons and GADT constructors to
 pass instances.
 
 In practice, using types as powerful and descriptive as these begin to
-require a whole new set of tools. For example, our \texttt{Network}
-types so far required you to specify their size in the program itself
+require a whole new set of tools once you get past the simplest use
+cases here. For example, our \texttt{Network} types so far required you
+to specify their size in the program itself
 (\texttt{Network\ 2\ \textquotesingle{}{[}16,\ 8{]}\ 1} in the example
 source code, for instance). But what if we wanted to generate a network
-that has dynamic size (For example, getting the size from user input)?
-What if we wanted to load a pre-trained network whose size we don't
-know? How can we manipulate our networks in a dynamic and generic way?
+that has runtime-determined size (For example, getting the size from
+user input)? What if we wanted to load a pre-trained network whose size
+we don't know? How can we manipulate our networks in a ``dynamic'' and
+generic way?
 
 What we're looking at here is a world where \emph{types} can depend on
-dynamic values \ldots{} and values can depend on types. A world where
-types become as much of a manipulatable citizen of our world as values
-are.
+run-time values \ldots{} and values can depend on types. A world where
+types become as much of a manipulatable citizen of as values are.
 
 The art of working with types like this is called \emph{dependently
 typed programming}. We're going to feel a bit of push back from Haskell
