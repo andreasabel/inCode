@@ -49,7 +49,7 @@ ghci<span class="fu">&gt;</span> log (x<span class="fu">**</span>y)
 " title="
 \operatorname{Var}[aX + bY + c] = a^2 \sigma_X^2 + b^2 \sigma_Y^2
 " /><br /></p>
-<p>Where <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Csigma_X%5E2" alt="\sigma_X^2" title="\sigma_X^2" /> is the variance in <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?X" alt="X" title="X" />. We consider <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Csigma_X" alt="\sigma_X" title="\sigma_X" /> to be the standard deviation of <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?X" alt="X" title="X" />, or the “plus or minus” part of our numbers. In the simple case of addition, we have <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Coperatorname%7BVar%7D%5BX%20%2B%20Y%5D%20%3D%20%5Csigma_X%5E2%20%2B%20%5Csigma_Y%5E2" alt="\operatorname{Var}[X + Y] = \sigma_X^2 + \sigma_Y^2" title="\operatorname{Var}[X + Y] = \sigma_X^2 + \sigma_Y^2" />, so our new uncertainty is <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Csqrt%7B%5Csigma_X%5E2%20%2B%20%5Csigma_Y%5E2%7D" alt="\sqrt{\sigma_X^2 + \sigma_Y^2}" title="\sqrt{\sigma_X^2 + \sigma_Y^2}" />.</p>
+<p>Where <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Csigma_X%5E2" alt="\sigma_X^2" title="\sigma_X^2" /> is the variance in <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?X" alt="X" title="X" />. We consider <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Csigma_X" alt="\sigma_X" title="\sigma_X" /> to be the standard deviation of <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?X" alt="X" title="X" />, or the “plus or minus” part of our numbers. In the simple case of addition, we have <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Coperatorname%7BVar%7D%5BX%20%2B%20Y%5D%20%3D%20%5Csigma_X%5E2%20%2B%20%5Csigma_Y%5E2" alt="\operatorname{Var}[X + Y] = \sigma_X^2 + \sigma_Y^2" title="\operatorname{Var}[X + Y] = \sigma_X^2 + \sigma_Y^2" />, so our new uncertainty is <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Csqrt%7B%5Csigma_X%5E2%20%2B%20%5Csigma_Y%5E2%7D" alt="\sqrt{\sigma_X^2 + \sigma_Y^2}" title="\sqrt{\sigma_X^2 + \sigma_Y^2}" />.<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
 <p>However, not all functions that combine <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?X" alt="X" title="X" /> and <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?Y" alt="Y" title="Y" /> can be expressed as simple linear combinations <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?aX%20%2B%20bY%20%2B%20c" alt="aX + bY + c" title="aX + bY + c" />. But! If you dig back to your days of high school calculus, you might remember a method for expressing any arbitrary function as a linear approximation – the <a href="https://en.wikipedia.org/wiki/Taylor_series">Taylor Expansion</a>!</p>
 <p>In general, we can attempt to approximate any well-behaving function around a point as its tangent hyperplane:</p>
 <p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%0Af%28x_0%20%2B%20x%2C%20y_0%20%2B%20y%29%20%5Capprox%20f_x%28x_0%2C%20y_0%29%20x%20%2B%20f_y%28x_0%2C%20y_0%29%20y%20%2B%20f%28x_0%2C%20y_0%29%0A" alt="
@@ -111,14 +111,14 @@ uStdev (_ <span class="fu">:+/-</span> dx) <span class="fu">=</span> dx</code></
     <span class="dt">Un</span> x vx <span class="fu">*</span> <span class="dt">Un</span> y vy <span class="fu">=</span> <span class="dt">Un</span> (x <span class="fu">*</span> y)    (y<span class="fu">^</span><span class="dv">2</span> <span class="fu">*</span> vx <span class="fu">+</span> x<span class="fu">^</span><span class="dv">2</span> <span class="fu">*</span> vy)
     negate (<span class="dt">Un</span> x vx)  <span class="fu">=</span> <span class="dt">Un</span> (negate x) vx
     <span class="co">-- ...</span></code></pre></div>
-<p>And…that’s it! Do the same thing for every numeric typeclass, and you get automatic propagation of uncertainty woo hoo.</p>
+<p>And…that’s it! Do the same thing for every numeric typeclass, and you get automatic propagation of uncertainty.</p>
 <h3 id="the-problem">The Problem</h3>
 <p>But, wait — this method is definitely not ideal. It’s pretty repetitive, and involves a but of copy-and-pasting code that is slightly different in ways the typechecker can’t verify. What if we didn’t change something we were supposed to? And, if you look at the <code>Fractional</code> instance…</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Fractional</span> a <span class="ot">=&gt;</span> <span class="dt">Fractional</span> (<span class="dt">Uncert</span> a) <span class="kw">where</span>
     fromRational      <span class="fu">=</span> exact <span class="fu">.</span> fromRational
     <span class="dt">Un</span> x vx <span class="fu">/</span> <span class="dt">Un</span> y vy <span class="fu">=</span> <span class="dt">Un</span> (x<span class="fu">/</span>y <span class="fu">+</span> x<span class="fu">/</span>y<span class="fu">^</span><span class="dv">3</span><span class="fu">*</span>vy)   (x<span class="fu">^</span><span class="dv">2</span><span class="fu">/</span>y<span class="fu">^</span><span class="dv">4</span><span class="fu">*</span>vx <span class="fu">+</span> vy<span class="fu">/</span>y<span class="fu">^</span><span class="dv">2</span>)
     recip (<span class="dt">Un</span> x vx)   <span class="fu">=</span> <span class="dt">Un</span> (recip x <span class="fu">+</span> vx<span class="fu">/</span>x<span class="fu">^</span><span class="dv">3</span>) (vx <span class="fu">/</span> x<span class="fu">^</span><span class="dv">4</span>)</code></pre></div>
-<p>Yikes. All that ugly and complicated numerical code that the typechecker can’t verify. Those are runtime bugs just waiting to happen. How do we even <em>know</em> that we calculated the right derivatives, and implemented the formula correctly?</p>
+<p>Yikes. All that ugly and complicated numerical code that the typechecker can’t help us with (and, honestly, I’m not very confident in the results myself!). Those are runtime bugs just waiting to happen. How do we even <em>know</em> that we calculated the right derivatives, and implemented the formula correctly?</p>
 <p>What if we could reduce this boilerplate? What if we could somehow analytically compute derivatives for functions instead of computing them manually?</p>
 <h2 id="automatic-differentiation">Automatic Differentiation</h2>
 <p>Automatic differentiation is honestly one of the coolest Haskell tricks you can show that any beginner can immediately understand. Like our trick with <code>Uncert</code>, it’s nice to use because of its overloaded <code>Num</code>/numeric typeclasses.</p>
@@ -215,8 +215,8 @@ liftUF
     <span class="ot">-&gt;</span> <span class="dt">Uncert</span> a
 liftUF f us <span class="fu">=</span> <span class="dt">Un</span> y vy
   <span class="kw">where</span>
-    xs          <span class="fu">=</span> uMean <span class="fu">&lt;$&gt;</span> us
-    vxs         <span class="fu">=</span> toList (uVar <span class="fu">&lt;$&gt;</span> us)
+    xs          <span class="fu">=</span>         uMean <span class="fu">&lt;$&gt;</span> us
+    vxs         <span class="fu">=</span> toList (uVar  <span class="fu">&lt;$&gt;</span> us)
     (fx, hgrad) <span class="fu">=</span> hessian&#39; f xs
     dfxs        <span class="fu">=</span> fst <span class="fu">&lt;$&gt;</span> hgrad
     hess        <span class="fu">=</span> snd <span class="fu">&lt;$&gt;</span> hgrad
@@ -224,11 +224,11 @@ liftUF f us <span class="fu">=</span> <span class="dt">Un</span> y vy
       <span class="kw">where</span>
         partials <span class="fu">=</span> dot vxs
                  <span class="fu">.</span> diag
-                 <span class="fu">$</span> toList (fmap toList hess)
+                 <span class="fu">$</span> toList (fmap toList hess) <span class="co">-- from f (f a) to [[a]]</span>
     vy          <span class="fu">=</span> dot vxs
                 <span class="fu">$</span> toList ((<span class="fu">^</span><span class="dv">2</span>) <span class="fu">&lt;$&gt;</span> dfxs)</code></pre></div>
 <p>(Again, don’t mind the scary type <code>forall s. f (AD s (Sparse a)) -&gt; AD s (Sparse a)</code>, it’s just <em>ad</em>’s type for things you can use <code>hessian'</code> on)</p>
-<p>And we can write some nice helper functions so we can use them more easily:</p>
+<p>And we can write some nice helper functions so we can use them more naturally:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L75-90</span>
 liftU2
 <span class="ot">    ::</span> <span class="dt">Fractional</span> a
@@ -280,12 +280,13 @@ ghci<span class="fu">&gt;</span> <span class="kw">let</span> x <span class="fu">
 <span class="dv">29</span> <span class="fu">+/-</span> <span class="dv">2</span></code></pre></div>
 <p>Unfortunately, <code>x + x</code> is different than <code>2*x</code>. This is because <code>x</code> acts like an <em>independent generator</em>, so when you say <code>x + x</code>, it expands to <code>(14.6 +/- 0.8) + (14.6 +/- 0.8)</code>, which represents the addition of two independent samples.</p>
 <p>When you say <code>2*x</code>, that represents sampling <code>x</code> <em>once</em> and <em>doubling</em> it. If you sample <code>x</code> and double it, any error in <code>x</code> will also be doubled. That’s why the uncertainty is greater in the <code>2*x</code> version.</p>
-<p>How can we account for correlated values that are combined in complex ways? Stay tuned for the next part of the <a href="https://blog.jle.im/entries/series/+uncertain.html">series</a>!<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
+<p>How can we account for correlated values that are combined in complex ways? Stay tuned for the next part of the <a href="https://blog.jle.im/entries/series/+uncertain.html">series</a>!<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a></p>
 <section class="footnotes">
 <hr />
 <ol>
 <li id="fn1"><p>You can simulate noisy data by using uniform noise distributions, Gaussian distributions, or however manner you like that has a given expected value (mean) and “spread”. Verify by checking the <a href="https://en.wikipedia.org/wiki/Standard_deviation">standard deviation</a> of the sums!<a href="#fnref1">↩</a></p></li>
-<li id="fn2"><p>Or just look at my <a href="https://hackage.haskell.org/package/uncertain">package</a> :)<a href="#fnref2">↩</a></p></li>
+<li id="fn2"><p>This law actually comes from the mathematical <em>definition</em> of variance, so does not assume anything about the underlying distribution of the sampling — just that they are independent, and that they have defined variances.<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>Or just look at my <a href="https://hackage.haskell.org/package/uncertain">package</a> :)<a href="#fnref3">↩</a></p></li>
 </ol>
 </section></div><footer><ul class="entry-series"><li><div>This entry is a part of a series called <b>&quot;Beginner/Intermediate Haskell Projects&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+beginner-intermediate-haskell-projects.html" class="tag-a-series" title="+Beginner/Intermediate Haskell Projects"> series history</a>.</div></li><li><div>This entry is a part of a series called <b>&quot;Uncertain&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+uncertain.html" class="tag-a-series" title="A little intermediate Haskell walk through representing numbers with
 inherent uncertainty and the implementation of my uncertain library,

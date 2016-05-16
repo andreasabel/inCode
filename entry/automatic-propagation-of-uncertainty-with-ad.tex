@@ -211,7 +211,11 @@ Where \(\sigma_X^2\) is the variance in \(X\). We consider \(\sigma_X\)
 to be the standard deviation of \(X\), or the ``plus or minus'' part of
 our numbers. In the simple case of addition, we have
 \(\operatorname{Var}[X + Y] = \sigma_X^2 + \sigma_Y^2\), so our new
-uncertainty is \(\sqrt{\sigma_X^2 + \sigma_Y^2}\).
+uncertainty is \(\sqrt{\sigma_X^2 + \sigma_Y^2}\).\footnote{This law
+  actually comes from the mathematical \emph{definition} of variance, so
+  does not assume anything about the underlying distribution of the
+  sampling --- just that they are independent, and that they have
+  defined variances.}
 
 However, not all functions that combine \(X\) and \(Y\) can be expressed
 as simple linear combinations \(aX + bY + c\). But! If you dig back to
@@ -340,7 +344,7 @@ Now, time for the magic! Let's write a \texttt{Num} instance!
 \end{Shaded}
 
 And\ldots{}that's it! Do the same thing for every numeric typeclass, and
-you get automatic propagation of uncertainty woo hoo.
+you get automatic propagation of uncertainty.
 
 \subsection{The Problem}\label{the-problem}
 
@@ -360,9 +364,10 @@ something we were supposed to? And, if you look at the
 \end{Shaded}
 
 Yikes. All that ugly and complicated numerical code that the typechecker
-can't verify. Those are runtime bugs just waiting to happen. How do we
-even \emph{know} that we calculated the right derivatives, and
-implemented the formula correctly?
+can't help us with (and, honestly, I'm not very confident in the results
+myself!). Those are runtime bugs just waiting to happen. How do we even
+\emph{know} that we calculated the right derivatives, and implemented
+the formula correctly?
 
 What if we could reduce this boilerplate? What if we could somehow
 analytically compute derivatives for functions instead of computing them
@@ -575,8 +580,8 @@ And now we can write our multi-variate function lifter:
     \OtherTok{->} \DataTypeTok{Uncert} \NormalTok{a}
 \NormalTok{liftUF f us }\FunctionTok{=} \DataTypeTok{Un} \NormalTok{y vy}
   \KeywordTok{where}
-    \NormalTok{xs          }\FunctionTok{=} \NormalTok{uMean }\FunctionTok{<$>} \NormalTok{us}
-    \NormalTok{vxs         }\FunctionTok{=} \NormalTok{toList (uVar }\FunctionTok{<$>} \NormalTok{us)}
+    \NormalTok{xs          }\FunctionTok{=}         \NormalTok{uMean }\FunctionTok{<$>} \NormalTok{us}
+    \NormalTok{vxs         }\FunctionTok{=} \NormalTok{toList (uVar  }\FunctionTok{<$>} \NormalTok{us)}
     \NormalTok{(fx, hgrad) }\FunctionTok{=} \NormalTok{hessian' f xs}
     \NormalTok{dfxs        }\FunctionTok{=} \NormalTok{fst }\FunctionTok{<$>} \NormalTok{hgrad}
     \NormalTok{hess        }\FunctionTok{=} \NormalTok{snd }\FunctionTok{<$>} \NormalTok{hgrad}
@@ -584,7 +589,7 @@ And now we can write our multi-variate function lifter:
       \KeywordTok{where}
         \NormalTok{partials }\FunctionTok{=} \NormalTok{dot vxs}
                  \FunctionTok{.} \NormalTok{diag}
-                 \FunctionTok{$} \NormalTok{toList (fmap toList hess)}
+                 \FunctionTok{$} \NormalTok{toList (fmap toList hess) }\CommentTok{-- from f (f a) to [[a]]}
     \NormalTok{vy          }\FunctionTok{=} \NormalTok{dot vxs}
                 \FunctionTok{$} \NormalTok{toList ((}\FunctionTok{^}\DecValTok{2}\NormalTok{) }\FunctionTok{<$>} \NormalTok{dfxs)}
 \end{Highlighting}
@@ -596,7 +601,7 @@ it's just \emph{ad}'s type for things you can use
 \texttt{hessian\textquotesingle{}} on)
 
 And we can write some nice helper functions so we can use them more
-easily:
+naturally:
 
 \begin{Shaded}
 \begin{Highlighting}[]

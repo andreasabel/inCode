@@ -109,7 +109,7 @@ Where $\sigma_X^2$ is the variance in $X$. We consider $\sigma_X$ to be
 the standard deviation of $X$, or the “plus or minus” part of our
 numbers. In the simple case of addition, we have
 $\operatorname{Var}[X + Y] = \sigma_X^2 + \sigma_Y^2$, so our new
-uncertainty is $\sqrt{\sigma_X^2 + \sigma_Y^2}$.
+uncertainty is $\sqrt{\sigma_X^2 + \sigma_Y^2}$.[^2]
 
 However, not all functions that combine $X$ and $Y$ can be expressed as
 simple linear combinations $aX + bY + c$. But! If you dig back to your
@@ -230,7 +230,7 @@ instance Num a => Num (Uncert a) where
 ```
 
 And…that’s it! Do the same thing for every numeric typeclass, and you
-get automatic propagation of uncertainty woo hoo.
+get automatic propagation of uncertainty.
 
 ### The Problem
 
@@ -247,9 +247,10 @@ instance Fractional a => Fractional (Uncert a) where
 ```
 
 Yikes. All that ugly and complicated numerical code that the typechecker
-can’t verify. Those are runtime bugs just waiting to happen. How do we
-even *know* that we calculated the right derivatives, and implemented
-the formula correctly?
+can’t help us with (and, honestly, I’m not very confident in the results
+myself!). Those are runtime bugs just waiting to happen. How do we even
+*know* that we calculated the right derivatives, and implemented the
+formula correctly?
 
 What if we could reduce this boilerplate? What if we could somehow
 analytically compute derivatives for functions instead of computing them
@@ -440,8 +441,8 @@ liftUF
     -> Uncert a
 liftUF f us = Un y vy
   where
-    xs          = uMean <$> us
-    vxs         = toList (uVar <$> us)
+    xs          =         uMean <$> us
+    vxs         = toList (uVar  <$> us)
     (fx, hgrad) = hessian' f xs
     dfxs        = fst <$> hgrad
     hess        = snd <$> hgrad
@@ -449,7 +450,7 @@ liftUF f us = Un y vy
       where
         partials = dot vxs
                  . diag
-                 $ toList (fmap toList hess)
+                 $ toList (fmap toList hess) -- from f (f a) to [[a]]
     vy          = dot vxs
                 $ toList ((^2) <$> dfxs)
 
@@ -460,7 +461,7 @@ liftUF f us = Un y vy
 type for things you can use `hessian'` on)
 
 And we can write some nice helper functions so we can use them more
-easily:
+naturally:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L75-90
@@ -583,7 +584,7 @@ doubled. That’s why the uncertainty is greater in the `2*x` version.
 
 How can we account for correlated values that are combined in complex
 ways? Stay tuned for the next part of the
-[series](https://blog.jle.im/entries/series/+uncertain.html)![^2]
+[series](https://blog.jle.im/entries/series/+uncertain.html)![^3]
 
 [^1]: You can simulate noisy data by using uniform noise distributions,
     Gaussian distributions, or however manner you like that has a given
@@ -591,5 +592,10 @@ ways? Stay tuned for the next part of the
     deviation](https://en.wikipedia.org/wiki/Standard_deviation) of the
     sums!
 
-[^2]: Or just look at my
+[^2]: This law actually comes from the mathematical *definition* of
+    variance, so does not assume anything about the underlying
+    distribution of the sampling — just that they are independent, and
+    that they have defined variances.
+
+[^3]: Or just look at my
     [package](https://hackage.haskell.org/package/uncertain) :)
