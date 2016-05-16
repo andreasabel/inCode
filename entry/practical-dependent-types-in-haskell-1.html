@@ -19,6 +19,16 @@ compiled…really just the king of great languages.">Haskell</a>, <a href="https
 too!). Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-separator"> &diams; </span><a class="comment-link" href="#disqus_thread">Comments</a></p></header><hr><aside class="contents-container"><h5 id="contents-header">Contents</h5><div id="toc"></div></aside><div class="main-content copy-content"><p>Whether you like it or not, programming with dependent types in Haskell moving slowly but steadily to the mainstream of Haskell programming. In the current state of Haskell education, dependent types are often considered topics for “advanced” Haskell users. However, I can definitely foresee a day where the ease of use of modern Haskell libraries relying on dependent types forces programming with dependent types to be an integral part of regular intermediate (or even beginner) Haskell education, as much as Traversable or Maps.</p>
 <p>The point of this post is to show some practical examples of using dependent types in guiding your programming, and to also walk through the “why” and high-level philosophy of the way you structure your Haskell programs. It’ll also hopefully instill an intuition of a dependently typed work flow of “exploring” how dependent types can help your current programs.</p>
 <p>The first project in this series will build up to type-safe <strong><a href="https://en.wikipedia.org/wiki/Artificial_neural_network">artificial neural network</a></strong> implementations. Hooray!</p>
+<h4 id="setup">Setup</h4>
+<p>This post is written on <em><a href="http://www.haskellstack.org">stack</a></em> snapshot <em>lts-5.16</em>, but uses an unreleased version of <em>hmatrix</em>, <em><a href="https://github.com/albertoruiz/hmatrix/tree/42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1">hmatrix-0.18 (commit 42a88fb)</a></em>. I <a href="http://mstksg.github.io/hmatrix/">maintain my own documentaiton</a> for reference. You can add this to the <code>packages</code> field of your directory or global <em>stack.yaml</em>:</p>
+<div class="sourceCode"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span class="fu">packages:</span>
+<span class="kw">-</span> <span class="st">&#39;.&#39;</span>
+<span class="kw">-</span> <span class="fu">location:</span>
+    <span class="fu">git:</span> git@github.com:albertoruiz/hmatrix.git
+    <span class="fu">commit:</span> 42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1
+  <span class="fu">subdirs:</span>
+    <span class="kw">-</span> packages/base</code></pre></div>
+<p>and <em>stack</em> will know what version of <em>hmatrix</em> to use when you use <code>stack runghc</code> or <code>stack ghc</code>, etc. to build your files!</p>
 <h2 id="neural-networks">Neural Networks</h2>
 <p><a href="https://en.wikipedia.org/wiki/Artificial_neural_network">Artificial neural networks</a> have been somewhat of a hot topic in computing recently. At their core they involve matrix multiplication and manipulation, so they do seem like a good candidate for a dependent types. Most importantly, implementations of training algorithms (like back-propagation) are tricky to implement correctly — despite being simple, there are many locations where accidental bugs might pop up when multiplying the wrong matrices, for example.</p>
 <p>It’s not always easy to gauge before-the-fact what would or would not be a good candidate for adding dependent types to, and often times, it can be considered premature to start off with “as powerful types as you can”. So let’s walk through programming things with as “dumb” types as possible, and see where types can help.</p>
@@ -226,21 +236,7 @@ randomWeights <span class="fu">=</span> <span class="kw">do</span>
     <span class="kw">let</span> wB <span class="fu">=</span> randomVector s1 <span class="dt">Uniform</span> <span class="fu">*</span> <span class="dv">2</span> <span class="fu">-</span> <span class="dv">1</span>
         wN <span class="fu">=</span> uniformSample s2 (<span class="fu">-</span><span class="dv">1</span>) <span class="dv">1</span>
     return <span class="fu">$</span> <span class="dt">W</span> wB wN</code></pre></div>
-<div class="note">
-<p><strong>Note</strong></p>
-<p>If you’re following along, <code>[randomVector][randomVector static]</code> and <code>[uniformSample][uniformSample static]</code> for the <em>Static</em> module is at the moment only in the yet unreleased <em>0.18</em> version of <em>hmatrix</em>. At the time of this article’s writing, the current HEAD is at <a href="https://github.com/albertoruiz/hmatrix/tree/42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1">commit 42a88fb</a>. I maintain my own <a href="http://mstksg.github.io/hmatrix/">build of the documentation</a> for reference.</p>
-<p>You can use <em>stack</em> to make sure that you’re using the right version. When you build these tests, put a proper <em>stack.yaml</em> in the directory, including this modification to the <code>packages</code> field:</p>
-<div class="sourceCode"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span class="fu">packages:</span>
-<span class="kw">-</span> <span class="st">&#39;.&#39;</span>
-<span class="kw">-</span> <span class="fu">location:</span>
-    <span class="fu">git:</span> git@github.com:albertoruiz/hmatrix.git
-    <span class="fu">commit:</span> 42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1
-  <span class="fu">subdirs:</span>
-    <span class="kw">-</span> packages/base</code></pre></div>
-<p>You can even add this to your global <em>stack.yaml</em> to make this (completely reversible) change system-wide.</p>
-<p><em>stack</em> will then know (when you use <em>runghc</em> or <em>ghc</em> or <em>exec</em>) to use the updated <em>hmatrix</em> version instead of the one on hackage.</p>
-</div>
-<p>Notice that the <code>Static</code> versions of <code>randomVector</code> and <code>uniformSample</code> don’t actually require the size of the vector/matrix you want as an input – they just use type inference to figure out what size you want! This is the same process that <code>read</code> uses to figure out what type of thing you want to return. You would use <code>randomVector s Uniform :: R 10</code>, and type inference would give you a 10-element vector the same way <code>read &quot;hello&quot; :: Int</code> would give you an <code>Int</code>.</p>
+<p>Notice that the <code>Static</code> versions of <a href="http://mstksg.github.io/hmatrix/Numeric-LinearAlgebra-Static.html#v:randomVector"><code>randomVector</code></a> and [<code>uniformSample</code>][uniformSample static] don’t actually require the size of the vector/matrix you want as an input – they just use type inference to figure out what size you want! This is the same process that <code>read</code> uses to figure out what type of thing you want to return. You would use <code>randomVector s Uniform :: R 10</code>, and type inference would give you a 10-element vector the same way <code>read &quot;hello&quot; :: Int</code> would give you an <code>Int</code>.</p>
 <p>Here’s something important: note that it’s much harder to implement this incorrectly. Before, you could give the matrix the wrong dimensions (maybe you flipped the parameters?), or gave the wrong parameter to the vector generator.</p>
 <p>But here, you are guaranteed/forced to return the correctly sized vectors and matrices. In fact, you <em>don’t even have to worry</em> about it — it’s handled automatically by the magic of type inference<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a>! I consider this a very big victory. One of the whole points of types is to give you less to “worry about”, as a programmer. Here, we completely eliminate an <em>entire dimension</em> of programmer concern.</p>
 <h3 id="singletons-and-induction">Singletons and Induction</h3>
