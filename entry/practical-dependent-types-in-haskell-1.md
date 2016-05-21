@@ -421,6 +421,12 @@ data Weights i o = W { wBiases :: !(R o)
 
 ```
 
+The type constructor `Weights` has the kind `Weights :: Nat -> Nat -> *`
+— it takes two types of kind `Nat` (which the integer type literals give
+us with
+*[DataKinds](https://www.schoolofhaskell.com/user/konn/prove-your-haskell-for-great-safety/dependent-types-in-haskell#type-level-naturals)*
+enabled) and returns a `*` — a “normal type”.
+
 We’re using the `Numeric.LinearAlgebra.Static` module from
 *[hmatrix](http://hackage.haskell.org/package/hmatrix)*, which offers
 matrix and vector types with their size in their types: an `R 5` is a
