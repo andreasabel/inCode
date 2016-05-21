@@ -1,9 +1,7 @@
 Blog engine updates: Markdown Preprocessor & Fay Scripts
 ========================================================
 
-[Read online!](https://blog.jle.im/entry/blog-engine-updates-markdown-preprocessor-fay-scripts.html)
-
-*Originally posted by [Justin Le](https://blog.jle.im/) on January 27, 2014*
+*Originally posted by [Justin Le](https://blog.jle.im/) on January 27, 2014.  [Read online!](https://blog.jle.im/entry/blog-engine-updates-markdown-preprocessor-fay-scripts.html)*
 
 I spent some time over the past week writing a preprocessor for the
 entry copy markdowns and getting Fay to deploy some simple scripts.

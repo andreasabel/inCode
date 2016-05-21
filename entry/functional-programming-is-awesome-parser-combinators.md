@@ -1,9 +1,7 @@
 Functional Programming is Awesome: Parser Combinators
 =====================================================
 
-[Read online!](https://blog.jle.im/entry/functional-programming-is-awesome-parser-combinators.html)
-
-*Originally posted by [Justin Le](https://blog.jle.im/)*
+*Originally posted by [Justin Le](https://blog.jle.im/).  [Read online!](https://blog.jle.im/entry/functional-programming-is-awesome-parser-combinators.html)*
 
 If you’ve spent your entire life programming imperatively, you could not
 even begin to imagine the vast worlds of thinking that are inaccessible

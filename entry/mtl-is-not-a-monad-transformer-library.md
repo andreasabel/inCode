@@ -1,9 +1,7 @@
 mtl is Not a Monad Transformer Library
 ======================================
 
-[Read online!](https://blog.jle.im/entry/mtl-is-not-a-monad-transformer-library.html)
-
-*Originally posted by [Justin Le](https://blog.jle.im/) on May 18, 2015*
+*Originally posted by [Justin Le](https://blog.jle.im/) on May 18, 2015.  [Read online!](https://blog.jle.im/entry/mtl-is-not-a-monad-transformer-library.html)*
 
 *mtl* is not a monad transformer library — contrary to popular
 conception. I believe that this commonly spread myth is due in part to
