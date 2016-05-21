@@ -18,13 +18,15 @@ and
 [more](https://www.schoolofhaskell.com/user/konn/prove-your-haskell-for-great-safety)
 and
 [more](http://jozefg.bitbucket.org/posts/2014-08-25-dep-types-part-1.html)
-great resources/tutorials/introductions to integrating dependent types
-into your Haskell every day. The point of this series is to show some
-practical examples of using dependent types in guiding your programming,
-and to also walk through the “why” and high-level philosophy of the way
-you structure your Haskell programs. It’ll also hopefully instill an
-intuition of a dependently typed work flow of “exploring” how dependent
-types can help your current programs.
+great resources and tutorials and introductions to integrating dependent
+types into your Haskell every day. The point of this series is to show
+more some practical examples of using dependent types in guiding your
+programming, and to also walk through the “why” and high-level
+philosophy of the way you structure your Haskell programs. It’ll also
+hopefully instill an intuition of a dependently typed work flow of
+“exploring” how dependent types can help your current programs. The
+intended audience of this post is for intermediate Haskell programmers
+in general, with no required knowledge of dependently typed programming.
 
 The first project in this series will build up to type-safe
 **[artificial neural
@@ -37,7 +39,7 @@ This post is written on *[stack](http://www.haskellstack.org)* snapshot
 *[lts-5.17](https://www.stackage.org/lts-5.17)*, but uses an unreleased
 version of *hmatrix*, *[hmatrix-0.18 (commit
 42a88fb)](https://github.com/albertoruiz/hmatrix/tree/42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1)*.
-I [maintain my own documentaiton](http://mstksg.github.io/hmatrix/) for
+I [maintain my own documentation](http://mstksg.github.io/hmatrix/) for
 reference. You can add this to the `packages` field of your directory or
 global *stack.yaml*:
 
@@ -72,8 +74,8 @@ be considered premature to start off with “as powerful types as you
 can”. So let’s walk through programming things with as “dumb” types as
 possible, and see where types can help.
 
-This process is called “type-driven development” by many — start with
-general and non-descriptive types, write the implementation and
+We’ll be following a process called “type-driven development” — start
+with general and non-descriptive types, write the implementation and
 recognize partial functions and red flags, and slowly refine and add
 more and more powerful types to fix the problems.
 
@@ -86,7 +88,7 @@ Here’s a quick run through on background for ANN’s — but remember, this
 isn’t an article on ANN’s, so we are going to be glossing over some of
 the details.
 
-We’re going to be implementing a feed-forward neural network with
+We’re going to be implementing a *feed-forward neural network* with
 back-propagation training. These networks are layers of “nodes”, each
 connected to the each of the nodes of the previous layer. Input goes to
 the first layer, which feeds information to the next year, which feeds
@@ -157,8 +159,15 @@ infixr 5 :&~
 
 Note that we’re using [GADT](https://en.wikibooks.org/wiki/Haskell/GADT)
 syntax here, which just lets us define `Network` (with a kind signature,
-`*`) by providing the type of its *constructors*, `O` and `(:&~)`. A
-network with one input layer, two inner layers, and one output layer
+`*`) by providing the type of its *constructors*, `O` and `(:&~)`. It’d
+be equivalent to the following normal data declaration:
+
+``` {.haskell}
+data Network = O Weights
+             | Weights :&~ Network
+```
+
+A network with one input layer, two inner layers, and one output layer
 would look like:
 
 ``` {.haskell}
@@ -178,7 +187,7 @@ randomWeights :: MonadRandom m => Int -> Int -> m Weights
 randomWeights i o = do
     seed1 :: Int <- getRandom
     seed2 :: Int <- getRandom
-    let wB = randomVector seed1 Uniform o * 2 - 1
+    let wB = randomVector  seed1 Uniform o * 2 - 1
         wN = uniformSample seed2 o (replicate i (-1, 1))
     return $ W wB wN
 
@@ -250,8 +259,8 @@ internet; the basic idea is that you try to minimize the squared error
 of what the neural network outputs for a given input vs. the actual
 expected output. You find the direction of change that minimizes the
 error (by finding the derivative), and move that direction. The
-implementation of Feed-forward backpropagation is found in many sources
-online and in literature, so let’s see the implementation in Haskell:
+implementation of backpropagation is found in many sources online and in
+literature, so let’s see the implementation in Haskell:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L58-96
@@ -298,12 +307,15 @@ train rate x0 target = fst . go x0
 ```
 
 The algorithm computes the *updated* network by recursively updating the
-layers, from the output layer all the way up to the input layer. At
-every step it returns the updated layer/network, as well as a bundle of
-derivatives for the next layer to use to calculate its descent
-direction. At the output layer, all it needs to calculate the direction
-of descent is just `o - targ`, the target. At the inner layers, it has
-to use the `dWs` bundle to figure it out.
+layers, backwards up from the output layer. At every step, it returns
+the updated layer/network, as well as a bundle of derivatives (`dWs`)
+for the next layer up to use to calculate its descent direction.
+
+At the output layer, all it needs to calculate the direction of descent
+is just `o - targ`, the target. At the inner layers, it has to use the
+`dWs` bundle it receives from the lower layers to figure it out. `dWs`
+essentially “bubbles up” from the output layer up to the input layer
+calculations.
 
 Writing this is a bit of a struggle. I actually implemented this
 incorrectly several times before writing it as you see here. The type
@@ -316,7 +328,7 @@ before, but amplified.
 
 In short, you’re leaving yourself open to many potential bugs…and the
 compiler doesn’t help you write your code at all! This is the nightmare
-of every Haskell programmer. There must be a better way!
+of every Haskell programmer. There must be a better way![^1]
 
 #### Putting it to the test
 
@@ -364,7 +376,7 @@ Before we go on to the “typed” version of our program, let’s take a step
 back and look at some big checks you might want to ask yourself after
 you write code in Haskell.
 
-1.  Are any of my functions partial, or implemented using partial
+1.  Are any of my functions either partial or implemented using partial
     functions?
 2.  How could I have written things that are *incorrect*, and yet still
     type check? Where does the compiler *not* help me by restricting my
@@ -376,7 +388,7 @@ always be at the back of your mind!
 
 Looking back at our untyped implementation, we notice some things:
 
-1.  Literally every single function we wrote is partial.[^1] If we had
+1.  Literally every single function we wrote is partial.[^2] If we had
     passed in the incorrectly sized matrix/vector, or stored mismatched
     vectors in our network, everything would fall apart.
 2.  There are billions of ways we could have implemented our functions
@@ -423,10 +435,8 @@ The `Static` module in *hmatrix* relies on the `KnownNat` mechanism that
 GHC offers. Almost all operations in the library require a `KnownNat`
 constraint on the type-level Nats — for example, you can take the dot
 product of two vectors with `dot :: KnownNat n => R n -> R n -> Double`.
-This typeclass-based approach is necessary in Haskell (and has become a
-de-facto idiom) because it gives us a way to “get” the information from
-the `n` (an `Integer`) at runtime and use it in our code — more on this
-later!
+It lets the library use the information in the `n` at runtime as an
+`Integer`. (More on this later!)
 
 Moving on, our network type for this post will be something like
 `Network 10 '[7,5,3] 2`: Take 10 inputs, return 2 outputs — and
@@ -506,7 +516,7 @@ randomWeights :: (MonadRandom m, KnownNat i, KnownNat o)
 randomWeights = do
     s1 :: Int <- getRandom
     s2 :: Int <- getRandom
-    let wB = randomVector s1 Uniform * 2 - 1
+    let wB = randomVector  s1 Uniform * 2 - 1
         wN = uniformSample s2 (-1) 1
     return $ W wB wN
 
@@ -531,7 +541,7 @@ vector generator.
 
 But here, you are guaranteed/forced to return the correctly sized
 vectors and matrices. In fact, you *don’t even have to worry* about it —
-it’s handled automatically by the magic of type inference[^2]! I
+it’s handled automatically by the magic of type inference[^3]! I
 consider this a very big victory. One of the whole points of types is to
 give you less to “worry about”, as a programmer. Here, we completely
 eliminate an *entire dimension* of programmer concern.
@@ -563,10 +573,10 @@ worry about arguments. You don’t need to worry about what order the
 function is expecting the arguments to be in. And you already know
 *exactly* what the dimensions of the result is, right in the type.
 
-This is why I often implement many of my functions in this style, even
-if the rest of my program isn’t intended to be dependently typed (I can
-just convert the type to a “dumb” type as soon as I get the result). All
-of these benefits come even when the caller doesn’t *care* at all about
+I often implement many of my functions in this style, even if the rest
+of my program isn’t intended to be dependently typed (I can just convert
+the type to a “dumb” type as soon as I get the result). All of these
+benefits come even when the caller doesn’t *care* at all about
 dependently typed programming — it’s just a better style of defining
 functions/offering an API!
 
@@ -586,10 +596,9 @@ match” on the type-level list, and…
 
 Oh wait. We can’t pattern match on types like that in Haskell. This is
 due to one of Haskell’s fundamental design decisions: types are
-**erased** at runtime.
-
-We need to have a way to “access” the type (at run-time) as a *value*,
-so we can pattern match on it and do things with it.
+**erased** at runtime. We need to have a way to “access” the type (at
+run-time) as a *value*, so we can pattern match on it and do things with
+it.
 
 In Haskell, the popular way to deal with this is by using *singletons* —
 (parameterized) types which only have valid constructor. The
@@ -614,13 +623,9 @@ type parameter)
 
 We use singletons like this by *pattern matching* on the polymorphic
 type (a `NatList ns`) and consequentially learning about the type
-parameter `ns`:
-
-``` {.haskell}
-ghci> case foo of   -- foo :: NatList ns, but we don't know what `ns`
-        ØNL         -> -- here, we know ns is `'[]`
-        Proxy :<# _ -> -- here, we know ns is `m ': ms`
-```
+parameter `ns`. If we match on the `ØNL` constructor, we (and by we, I
+mean GHC) knows we have a `NatList '[]`, and we match on the `:<#`
+constructor, we know we have `NatList (n ': ns)`
 
 This is called *dependent pattern matching* — the constructor we match
 on yields information about the type of the value.
@@ -638,11 +643,12 @@ Proxy :<# Proxy :<# Proxy :<# ØNL
 ```
 
 Essentially, the `KnownNats ns` typeclass constraint lets us turn `ns`
-into the `NatList ns` that we can pattern match on. Now that we have an
-actual value-level *structure* (the list of `Proxy`s), we can now
-morally “pattern match” on `hs`, the type — if it’s empty, we’ll get the
-`ØNL` constructor when we use `natList`, otherwise we’ll get the `(:<#)`
-constructor, etc.
+into the `NatList ns` that we can pattern match on. (In a sense,
+`KnownNats ns =>` is really equivalent to `NatList ns ->`) Now that we
+have an actual value-level *structure* (the list of `Proxy`s), we can
+now morally “pattern match” on `hs`, the type — if it’s empty, we’ll get
+the `ØNL` constructor when we use `natList`, otherwise we’ll get the
+`(:<#)` constructor, etc.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L66-70
@@ -666,12 +672,12 @@ GADT declaration. If you ever pattern match on `p :<# ns`, you get a
 call to `randomNet` uses).
 
 This is a common pattern in dependent Haskell: “building up” a
-value-level singleton *structure* from a type that we want (often done
-through typeclasses like `KnownNats`) and then inductively piggybacking
-on that structure’s constructors to build the thing you *really* want
-(called “elimination”). Here, we use `KnownNats hs` to build our
-`NatList hs` structure, and use/“eliminate” that structure to create our
-`Network i hs o`.
+value-level singleton *structure* from a type that we want (either
+explicitly passed in, or provided through a typeclass like `KnownNats`)
+and then inductively piggybacking on that structure’s constructors to
+build the thing you *really* want (called “elimination”). Here, we use
+`KnownNats hs` to build our `NatList hs` structure, and use/“eliminate”
+that structure to create our `Network i hs o`.
 
 Along the way, the singletons and the typeclasses and the types play an
 intricate dance. `randomWeights` needed a `KnownNat` constraint. Where
@@ -718,7 +724,10 @@ we can generate random networks of whatever size we want by *just
 requesting something by its type*? Our implementation is also
 *guaranteed* to have the right sized matrices…no worrying about using
 the right size parameters for the right matrix in the right oder. GHC
-does it for you automatically!
+does it for you automatically! And, for the person who *uses*
+`randomNet`, they don’t have to bungle around with figuring out what
+function argument indicates what, and in what order, and they don’t have
+to play a guessing game about the shape of the returned matrix.
 
 The code for *running* the nets is actually literally identical from
 before:
@@ -901,17 +910,20 @@ example source code, for instance). But what if we wanted to generate a
 network that has runtime-determined size (For example, getting the size
 from user input)? What if we wanted to load a pre-trained network whose
 size we don’t know? How can we manipulate our networks in a “dynamic”
-and generic way?
+and generic way that still gives us all of the benefits of type-safe
+programming?
 
 What we’re looking at here is a world where *types* can depend on
 run-time values … and values can depend on types. A world where types
 become as much of a manipulatable citizen of as values are.
 
-The art of working with types like this is called *dependently typed
+The art of working with types like this is *dependently typed
 programming*. We’re going to feel a bit of push back from Haskell at
 first, but after we hit our stride and tame the tools we need, we’re
 going to open up a whole new world of potential!
 
-[^1]: Okay, maybe not *literally* every one. But, pretty much every one.
+[^1]: This sentence is the story of my Haskell life.
 
-[^2]: Thank you based Hindley-Milner.
+[^2]: Okay, maybe not *literally* every one. But, pretty much every one.
+
+[^3]: Thank you based Hindley-Milner.
