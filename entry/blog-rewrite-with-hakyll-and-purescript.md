@@ -33,7 +33,7 @@ migrations in general!
 
 My blog engine is open-source, and the [source for this specific
 instance](https://github.com/mstksg/inCode) is up on github, for those
-interesting in checking it out!
+interested in checking it out!
 
 Hakyll
 ------
