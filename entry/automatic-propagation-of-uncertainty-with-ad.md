@@ -1,7 +1,9 @@
 Automatic Propagation of Uncertainty with AD
 ============================================
 
-(Originally posted by Justin Le [https://blog.jle.im/] on May 9, 2016)
+[Read online!](https://blog.jle.im/entry/automatic-propagation-of-uncertainty-with-ad.html)
+
+*Posted by [Justin Le](https://blog.jle.im/) on May 9, 2016*
 
 > This post and
 > [series](https://blog.jle.im/entries/series/+uncertain.html) is a

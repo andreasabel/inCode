@@ -1,7 +1,9 @@
 Intro to Machines & Arrows (Part 1: Stream and Auto)
 ====================================================
 
-(Originally posted by Justin Le [https://blog.jle.im/] on February 3, 2014)
+[Read online!](https://blog.jle.im/entry/intro-to-machines-arrows-part-1-stream-and.html)
+
+*Posted by [Justin Le](https://blog.jle.im/) on February 3, 2014*
 
 So I’m going to be running a series soon on computation and (physical)
 simulations using AFRP (Arrowized Functional Reactive Programming)

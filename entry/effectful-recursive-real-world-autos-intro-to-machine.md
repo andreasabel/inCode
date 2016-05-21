@@ -1,7 +1,9 @@
 Effectful, Recursive, Real-World Autos: Intro to Machine/Auto Part 3
 ====================================================================
 
-(Originally posted by Justin Le [https://blog.jle.im/] on February 9, 2015)
+[Read online!](https://blog.jle.im/entry/effectful-recursive-real-world-autos-intro-to-machine.html)
+
+*Posted by [Justin Le](https://blog.jle.im/) on February 9, 2015*
 
 Hi! I have to apologize a bit for the long delay; starting grad school
 and things like that have made me have to scramble to adjust to the new

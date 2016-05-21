@@ -1,7 +1,9 @@
 The Compromiseless Reconciliation of I/O and Purity
 ===================================================
 
-(Originally posted by Justin Le [https://blog.jle.im/] on November 12, 2013)
+[Read online!](https://blog.jle.im/entry/the-compromiseless-reconciliation-of-i-o-and-purity.html)
+
+*Posted by [Justin Le](https://blog.jle.im/) on November 12, 2013*
 
 One of the crazy ideals of functional programming is the idea that your
 program is simply a list of definitions of mathematical functions. And

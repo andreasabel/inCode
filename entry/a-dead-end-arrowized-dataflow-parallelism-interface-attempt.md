@@ -1,7 +1,9 @@
 A (Dead End?) Arrowized Dataflow Parallelism Interface Attempt
 ==============================================================
 
-(Originally posted by Justin Le [https://blog.jle.im/] on April 3, 2014)
+[Read online!](https://blog.jle.im/entry/a-dead-end-arrowized-dataflow-parallelism-interface-attempt.html)
+
+*Posted by [Justin Le](https://blog.jle.im/) on April 3, 2014*
 
 So I’ve been having several ‘dead end’ projects in Haskell recently that
 I’ve sort of just scrapped and move from, but I decided that it might be
