@@ -1,7 +1,7 @@
 Auto: Building a Declarative Chatbot with Implicit Serialization
 ================================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/) on March 25, 2015
+> Originally posted by [Justin Le](https://blog.jle.im/) on March 25, 2015.
 > [Read online!](https://blog.jle.im/entry/auto-building-a-declarative-chatbot-with-implicit-serialization.html)
 
 Today we’re going to continue along with the [All About

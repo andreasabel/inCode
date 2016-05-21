@@ -1,7 +1,7 @@
 Entropy and Entropic Forces
 ===========================
 
-> Originally posted by [Justin Le](https://blog.jle.im/)
+> Originally posted by [Justin Le](https://blog.jle.im/).
 > [Read online!](https://blog.jle.im/entry/entropy-and-entropic-forces.html)
 
 There’s actually a bit of an air of mystery and misunderstanding around the idea

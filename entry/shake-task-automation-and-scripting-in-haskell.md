@@ -1,7 +1,7 @@
 Shake: Task Automation and Scripting in Haskell
 ===============================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/) on September 17, 2013
+> Originally posted by [Justin Le](https://blog.jle.im/) on September 17, 2013.
 > [Read online!](https://blog.jle.im/entry/shake-task-automation-and-scripting-in-haskell.html)
 
 As someone who comes from a background in ruby and *rake*, I’m used to powerful

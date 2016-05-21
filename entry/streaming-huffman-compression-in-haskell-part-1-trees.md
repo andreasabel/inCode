@@ -1,7 +1,7 @@
 Streaming Huffman Compression in Haskell (Part 1: Trees and State)
 ==================================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/) on March 31, 2014
+> Originally posted by [Justin Le](https://blog.jle.im/) on March 31, 2014.
 > [Read online!](https://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-1-trees.html)
 
 So you’re learning Haskell and are looking for some projects that aren’t super

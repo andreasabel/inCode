@@ -1,7 +1,7 @@
 Looking forward: A Doctorate Program
 ====================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/) on June 2, 2014
+> Originally posted by [Justin Le](https://blog.jle.im/) on June 2, 2014.
 > [Read online!](https://blog.jle.im/entry/looking-forward-a-doctorate-program.html)
 
 So a bit of some personal news (which you can safely ignore if you’re not

@@ -1,7 +1,7 @@
 log.sh: Lightweight Command Line Note & Logging
 ===============================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/) on October 15, 2013
+> Originally posted by [Justin Le](https://blog.jle.im/) on October 15, 2013.
 > [Read online!](https://blog.jle.im/entry/log-sh-lightweight-command-line-note-logging.html)
 
 What do you use to send off quick one-off notes and logs about a project you are

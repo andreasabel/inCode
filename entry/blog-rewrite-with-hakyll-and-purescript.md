@@ -1,7 +1,7 @@
 Blog Rewrite with Hakyll and Purescript
 =======================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/) on March 25, 2016
+> Originally posted by [Justin Le](https://blog.jle.im/) on March 25, 2016.
 > [Read online!](https://blog.jle.im/entry/blog-rewrite-with-hakyll-and-purescript.html)
 
 It’s been almost a year since my last post! Things have been a bit hectic with

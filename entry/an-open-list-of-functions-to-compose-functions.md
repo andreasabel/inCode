@@ -1,7 +1,7 @@
 An open list of functions to compose functions in Haskell
 =========================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/)
+> Originally posted by [Justin Le](https://blog.jle.im/).
 > [Read online!](https://blog.jle.im/entry/an-open-list-of-functions-to-compose-functions.html)
 
 Hi all, just a fun post here :) I’ve been telling myself for a long time to

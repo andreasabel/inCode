@@ -1,7 +1,7 @@
 First-Class “Statements”
 ========================
 
-> Originally posted by [Justin Le](https://blog.jle.im/) on July 28, 2014
+> Originally posted by [Justin Le](https://blog.jle.im/) on July 28, 2014.
 > [Read online!](https://blog.jle.im/entry/first-class-statements.html)
 
 One thing I’ve really always appreciated about Haskell is that all “statements”

@@ -1,7 +1,7 @@
 Streaming Huffman Compression in Haskell (Part 2: Binary and Searches)
 ======================================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/) on April 11, 2014
+> Originally posted by [Justin Le](https://blog.jle.im/) on April 11, 2014.
 > [Read online!](https://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-2-binary.html)
 
 Continuing on this series of beginner/intermediate projects for newer Haskell

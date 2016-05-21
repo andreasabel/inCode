@@ -1,7 +1,7 @@
 Abstracting over Sequential Random Algorithms with Free
 =======================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/)
+> Originally posted by [Justin Le](https://blog.jle.im/).
 > [Read online!](https://blog.jle.im/entry/abstracting-over-sequential-random-algorithms-with-free.html)
 
 It’s fair enough to say that I’m a little late to the free monad party, but I

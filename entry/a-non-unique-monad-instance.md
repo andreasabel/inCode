@@ -1,7 +1,7 @@
 A Non-Unique Monad Instance
 ===========================
 
-> Originally posted by [Justin Le](https://blog.jle.im/) on January 28, 2015
+> Originally posted by [Justin Le](https://blog.jle.im/) on January 28, 2015.
 > [Read online!](https://blog.jle.im/entry/a-non-unique-monad-instance.html)
 
 Just stopping in for a short post before continuing with a long-overdue series
