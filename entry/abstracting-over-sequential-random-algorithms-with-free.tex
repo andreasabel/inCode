@@ -93,21 +93,19 @@
 \textbf{\href{https://blog.jle.im/entry/abstracting-over-sequential-random-algorithms-with-free.html}{in
 Code}}.}
 
-It's fair enough to say that I'm a little late to the free monad party,
-but I still think their power is greatly either misunderstood or
-underrated or obscure in Haskell, and this article will be my attempt to
-throw more examples of its usage.
+It's fair enough to say that I'm a little late to the free monad party, but I
+still think their power is greatly either misunderstood or underrated or obscure
+in Haskell, and this article will be my attempt to throw more examples of its
+usage.
 
-Here we're going to construct a type that can represent sequential
-computations using randomness or entropy, and we're going to abstract
-over our entropy source --- not by swapping out the pseudorandom
-generator, but by really abstracting over what our computation really
-\emph{is} to the barest essentials. We're going to abstract over what an
-sequential random algorithm even is.
+Here we're going to construct a type that can represent sequential computations
+using randomness or entropy, and we're going to abstract over our entropy source
+--- not by swapping out the pseudorandom generator, but by really abstracting
+over what our computation really \emph{is} to the barest essentials. We're going
+to abstract over what an sequential random algorithm even is.
 
-The man plain is to first create a type that represents just a value
-produced from a random number\ldots{}and then figure out how to chain
-them.
+The man plain is to first create a type that represents just a value produced
+from a random number\ldots{}and then figure out how to chain them.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -120,12 +118,12 @@ them.
 \end{Highlighting}
 \end{Shaded}
 
-For those of you unfamiliar with GADT syntax, this is just basically
-specifying a type by the type of its contructors; \texttt{RandF} has
-four constructors --- one of which, \texttt{FromRandom}, takes a
-function \texttt{(r\ -\textgreater{}\ a)}, and returns a
-\texttt{RandF\ a}\ldots{}as long as the \texttt{r} is an instance of the
-\texttt{Random} typeclass (from the \emph{random} package).
+For those of you unfamiliar with GADT syntax, this is just basically specifying
+a type by the type of its contructors; \texttt{RandF} has four constructors ---
+one of which, \texttt{FromRandom}, takes a function
+\texttt{(r\ -\textgreater{}\ a)}, and returns a \texttt{RandF\ a}\ldots{}as long
+as the \texttt{r} is an instance of the \texttt{Random} typeclass (from the
+\emph{random} package).
 
 For comparison, \texttt{Maybe} could have been written like:
 
@@ -137,14 +135,13 @@ For comparison, \texttt{Maybe} could have been written like:
 \end{Highlighting}
 \end{Shaded}
 
-Anyways, every constructor is basically made with a function,
-``\emph{If} I had a random number, what would I do with it?''
-\texttt{FromRandom} basically contains a function
-\texttt{r\ -\textgreater{}\ a}\ldots{}if I had a random number, how
-would I get my \texttt{a}? Note that this can really contain a function
-from \emph{any} \texttt{r} you want, as long as it is a part of the
-\texttt{Random} typeclass. So we can have something that takes any
-random \texttt{Bool} to a \texttt{String}:
+Anyways, every constructor is basically made with a function, ``\emph{If} I had
+a random number, what would I do with it?'' \texttt{FromRandom} basically
+contains a function \texttt{r\ -\textgreater{}\ a}\ldots{}if I had a random
+number, how would I get my \texttt{a}? Note that this can really contain a
+function from \emph{any} \texttt{r} you want, as long as it is a part of the
+\texttt{Random} typeclass. So we can have something that takes any random
+\texttt{Bool} to a \texttt{String}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -152,11 +149,11 @@ random \texttt{Bool} to a \texttt{String}:
 \end{Highlighting}
 \end{Shaded}
 
-Which says, ``if I had a random \texttt{Bool}, then I'd \texttt{show}
-it, to get a \texttt{String}''.
+Which says, ``if I had a random \texttt{Bool}, then I'd \texttt{show} it, to get
+a \texttt{String}''.
 
-Or maybe something that takes any random \texttt{Double} to an
-\texttt{Int}, like:
+Or maybe something that takes any random \texttt{Double} to an \texttt{Int},
+like:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -164,8 +161,8 @@ Or maybe something that takes any random \texttt{Double} to an
 \end{Highlighting}
 \end{Shaded}
 
-``If I had a random \texttt{Double}, I'd square it and divide it by
-three, then round it, to get my \texttt{Int}''.
+``If I had a random \texttt{Double}, I'd square it and divide it by three, then
+round it, to get my \texttt{Int}''.
 
 Or something as simple as just getting a random \texttt{Double}:
 
@@ -175,12 +172,12 @@ Or something as simple as just getting a random \texttt{Double}:
 \end{Highlighting}
 \end{Shaded}
 
-``If I had a random \texttt{Double}\ldots{}well, that's what I want in
-the end.''
+``If I had a random \texttt{Double}\ldots{}well, that's what I want in the
+end.''
 
 \texttt{FromRandomR} takes a range first before giving the function;
-\texttt{FromRandoms} asks, ``if I had an infinite list of random items,
-what would I do?''
+\texttt{FromRandoms} asks, ``if I had an infinite list of random items, what
+would I do?''
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -189,10 +186,9 @@ what would I do?''
 \end{Highlighting}
 \end{Shaded}
 
-We can ``evaluate'' the random value in a \texttt{RandF} by just
-generating a random value of the type desired and then applying the
-function to it. One typical way of doing this is to ask for a random
-generator/seed from the user:
+We can ``evaluate'' the random value in a \texttt{RandF} by just generating a
+random value of the type desired and then applying the function to it. One
+typical way of doing this is to ask for a random generator/seed from the user:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -224,13 +220,13 @@ We can try some of these out:
 \end{Shaded}
 
 We might also realize that we can make a \texttt{Functor} instance on
-\texttt{RandF}, where \texttt{fmap} is like applying the fmapping
-function to the outbound value. For example, if we had
-\texttt{FromRandom\ (\textbackslash{}r\ -\textgreater{}\ r\ *\ 2)}, if
-we \texttt{fmap\ show}, we would want
-\texttt{FromRandom\ (\textbackslash{}r\ -\textgreater{}\ show\ (r\ *\ 2))},
-so whenever we ``ran'' the \texttt{RandF}\ldots{}if it was ``meant'' to
-make a \texttt{10} originally, it would now make a \texttt{"10"}.
+\texttt{RandF}, where \texttt{fmap} is like applying the fmapping function to
+the outbound value. For example, if we had
+\texttt{FromRandom\ (\textbackslash{}r\ -\textgreater{}\ r\ *\ 2)}, if we
+\texttt{fmap\ show}, we would want
+\texttt{FromRandom\ (\textbackslash{}r\ -\textgreater{}\ show\ (r\ *\ 2))}, so
+whenever we ``ran'' the \texttt{RandF}\ldots{}if it was ``meant'' to make a
+\texttt{10} originally, it would now make a \texttt{"10"}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -257,8 +253,8 @@ make a \texttt{10} originally, it would now make a \texttt{"10"}.
 \end{Highlighting}
 \end{Shaded}
 
-Put in a rather abstract way, if you think of a \texttt{RandF\ Double}
-as something that ``contains'' a random \texttt{Double}, waiting to be
+Put in a rather abstract way, if you think of a \texttt{RandF\ Double} as
+something that ``contains'' a random \texttt{Double}, waiting to be
 computed\ldots{}then \texttt{fmap\ show} applies \texttt{show} to the
 ``contained'' random \texttt{Double}.
 

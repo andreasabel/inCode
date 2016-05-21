@@ -99,22 +99,20 @@ Code}}.}
 \href{http://hackage.haskell.org/package/prompt}{hackage} /
 \href{https://github.com/mstksg/prompt}{github}
 
-Have you ever wanted to specify a computation involving some limited
-form of IO --- like querying a database, or asking stdio --- but didn't
-want a computation in the \texttt{IO} monad, opening the entire can of
-worms that is arbitrary \texttt{IO}? Have you ever looked at complicated
-\texttt{IO\ a} you wrote last week at 4am and prayed that it didn't
-launch missiles if you decided to execute it? Do you want to be able to
-run an effectful computation and explicitly \emph{say} what IO it can or
-cannot do?
+Have you ever wanted to specify a computation involving some limited form of IO
+--- like querying a database, or asking stdio --- but didn't want a computation
+in the \texttt{IO} monad, opening the entire can of worms that is arbitrary
+\texttt{IO}? Have you ever looked at complicated \texttt{IO\ a} you wrote last
+week at 4am and prayed that it didn't launch missiles if you decided to execute
+it? Do you want to be able to run an effectful computation and explicitly
+\emph{say} what IO it can or cannot do?
 
-Introducing the
-\emph{\href{http://hackage.haskell.org/package/prompt}{prompt}} library!
-It's a small little lightweight library that allows you to specify and
-describe computations involving forms of effects where you ``ask'' with
-a value and receive a value in return (such as a database query, etc.),
-but not ever care about how the effects are fulfilled --- freeing you
-from working directly with IO.
+Introducing the \emph{\href{http://hackage.haskell.org/package/prompt}{prompt}}
+library! It's a small little lightweight library that allows you to specify and
+describe computations involving forms of effects where you ``ask'' with a value
+and receive a value in return (such as a database query, etc.), but not ever
+care about how the effects are fulfilled --- freeing you from working directly
+with IO.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -170,17 +168,15 @@ Or maybe you want to fulfill the prompts purely:
 \end{Highlighting}
 \end{Shaded}
 
-With \texttt{Prompt}, specify the computation and your logic
-\emph{without involving any IO}, so you can write safe code without
-arbitrary side effects. If you ever receive a \texttt{Prompt}, you know
-it can't wipe out your hard drive or do any IO other than exactly what
-you allow it to do! I'd feel more safe running a
-\texttt{Prompt\ a\ b\ r} than an \texttt{IO\ r}.
+With \texttt{Prompt}, specify the computation and your logic \emph{without
+involving any IO}, so you can write safe code without arbitrary side effects. If
+you ever receive a \texttt{Prompt}, you know it can't wipe out your hard drive
+or do any IO other than exactly what you allow it to do! I'd feel more safe
+running a \texttt{Prompt\ a\ b\ r} than an \texttt{IO\ r}.
 
-You can also do some cute tricks; \texttt{Prompt\ a\ ()\ r} with a
-``prompt response function'' like \texttt{putStrLn} lets you do
-streaming logging, and defer \emph{how} the logging is done --- to IO,
-to a list?
+You can also do some cute tricks; \texttt{Prompt\ a\ ()\ r} with a ``prompt
+response function'' like \texttt{putStrLn} lets you do streaming logging, and
+defer \emph{how} the logging is done --- to IO, to a list?
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -193,28 +189,26 @@ to a list?
 \end{Highlighting}
 \end{Shaded}
 
-\texttt{Prompt\ ()\ b\ r} is like a fancy \texttt{ReaderT\ b\ m\ r},
-where you ``defer'' the choice of the Monad.
+\texttt{Prompt\ ()\ b\ r} is like a fancy \texttt{ReaderT\ b\ m\ r}, where you
+``defer'' the choice of the Monad.
 
-\section{Combining with other
-effects}\label{combining-with-other-effects}
+\section{Combining with other effects}\label{combining-with-other-effects}
 
-\texttt{Prompt} can be used as an underlying ``effects'' source for
-libraries like \emph{pipes}, \emph{conduit}, and \emph{auto}. If your
-effects are only ever asking and prompting and receiving, there's really
-no need to put the entire power of \texttt{IO} underneath your DSL as an
-effects source. That's just crazy!
+\texttt{Prompt} can be used as an underlying ``effects'' source for libraries
+like \emph{pipes}, \emph{conduit}, and \emph{auto}. If your effects are only
+ever asking and prompting and receiving, there's really no need to put the
+entire power of \texttt{IO} underneath your DSL as an effects source. That's
+just crazy!
 
-\texttt{Prompt} can be used with monad transformers to give you safe
-underlying effect sources, like \texttt{StateT\ s\ (Prompt\ a\ b)\ r},
-which is a stateful computation which can sometimes sequence ``prompty''
-effects. \texttt{Prompt} is also itself a ``Traversable transformer'',
-with \texttt{PrompT\ a\ b\ t\ r}. It can perform computations in the
-context of a Traversable \texttt{t}, to be able to incorporate built-in
-short-circuiting and logging, etc.
+\texttt{Prompt} can be used with monad transformers to give you safe underlying
+effect sources, like \texttt{StateT\ s\ (Prompt\ a\ b)\ r}, which is a stateful
+computation which can sometimes sequence ``prompty'' effects. \texttt{Prompt} is
+also itself a ``Traversable transformer'', with \texttt{PrompT\ a\ b\ t\ r}. It
+can perform computations in the context of a Traversable \texttt{t}, to be able
+to incorporate built-in short-circuiting and logging, etc.
 
-This is all abstracted over with \texttt{MonadPrompt},
-\texttt{MonadError}, \texttt{MonadPlus}, etc., typeclasses ---
+This is all abstracted over with \texttt{MonadPrompt}, \texttt{MonadError},
+\texttt{MonadPlus}, etc., typeclasses ---
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -254,8 +248,8 @@ You can run \texttt{promptFoo} as a
 \end{Highlighting}
 \end{Shaded}
 
-Or you can run it as a \texttt{PromptT\ String\ String\ MaybeT\ Foo}, to
-have \texttt{PromptT} handle the wrapping/unwrapping itself:
+Or you can run it as a \texttt{PromptT\ String\ String\ MaybeT\ Foo}, to have
+\texttt{PromptT} handle the wrapping/unwrapping itself:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -304,15 +298,15 @@ The ``runners'' are:
 \end{Highlighting}
 \end{Shaded}
 
-Note that \texttt{runPromptM} and \texttt{runPromptTM} can run in monads
-(like \texttt{IO}) that are \emph{completely unrelated} to the
-\texttt{Prompt} type itself. It sequences them all ``after the fact''.
-It's also interesting to note that \texttt{runPrompt} is just a
-glorified \texttt{Reader\ (a\ -\textgreater{}\ b)\ r}.
+Note that \texttt{runPromptM} and \texttt{runPromptTM} can run in monads (like
+\texttt{IO}) that are \emph{completely unrelated} to the \texttt{Prompt} type
+itself. It sequences them all ``after the fact''. It's also interesting to note
+that \texttt{runPrompt} is just a glorified
+\texttt{Reader\ (a\ -\textgreater{}\ b)\ r}.
 
-With \texttt{runPromptTM}, you can incorporate \texttt{t} in your
-``prompt response'' function, too. Which brings us to our grand finale
--- environment variable parsing!
+With \texttt{runPromptTM}, you can incorporate \texttt{t} in your ``prompt
+response'' function, too. Which brings us to our grand finale -- environment
+variable parsing!
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -376,9 +370,8 @@ With \texttt{runPromptTM}, you can incorporate \texttt{t} in your
 
 Hope you enjoy! Please feel free to leave a comment, find me on
 \href{https://twitter.com/mstk}{twitter}, leave an issue on the
-\href{https://github.com/mstksg/prompt}{github}, etc. --- and I'm
-usually on freenode's \emph{\#haskell} as \emph{jle`} if you have any
-questions!
+\href{https://github.com/mstksg/prompt}{github}, etc. --- and I'm usually on
+freenode's \emph{\#haskell} as \emph{jle`} if you have any questions!
 
 \section{Comparisons}\label{comparisons}
 
@@ -390,45 +383,41 @@ To lay it all on the floor,
 \end{Highlighting}
 \end{Shaded}
 
-There is admittedly a popular misconception that I've seen going around
-that equates this sort of type to \texttt{Free} from the \emph{free}
-package. However, \texttt{Free} doesn't really have anything significant
-to do with this. Sure, you might be able to generate this type by using
-\texttt{FreeT} over a specifically chosen Functor, but\ldots{}this is
-the case for literally any Monad ever, so that doesn't really mean much
-:)
+There is admittedly a popular misconception that I've seen going around that
+equates this sort of type to \texttt{Free} from the \emph{free} package.
+However, \texttt{Free} doesn't really have anything significant to do with this.
+Sure, you might be able to generate this type by using \texttt{FreeT} over a
+specifically chosen Functor, but\ldots{}this is the case for literally any Monad
+ever, so that doesn't really mean much :)
 
 It's also unrelated in this same manner to \texttt{Prompt} from the
-\emph{MonadPrompt} package, and \texttt{Program} from \emph{operational}
-too.
+\emph{MonadPrompt} package, and \texttt{Program} from \emph{operational} too.
 
 One close relative to this type is
 \texttt{forall\ m.\ ReaderT\ (a\ -\textgreater{}\ m\ b)\ m\ r}, where
-\texttt{prompt\ k\ =\ ReaderT\ (\$\ k)}. This is more or less equivalent
-to \texttt{Prompt}, but still can't do the things that \texttt{PromptT}
-can do without a special instance of Monad.
+\texttt{prompt\ k\ =\ ReaderT\ (\$\ k)}. This is more or less equivalent to
+\texttt{Prompt}, but still can't do the things that \texttt{PromptT} can do
+without a special instance of Monad.
 
-This type is also similar in structure to \texttt{Bazaar}, from the
-\emph{lens} package. The biggest difference that makes \texttt{Bazaar}
-unusable is because the RankN constraint is only \texttt{Applicative},
-not \texttt{Monad}, so a \texttt{Monad} instance is impossible. Ignoring
-that (or if it's okay for you to only use the \texttt{Applicative}
-instance), \texttt{Bazaar} forces the ``prompting effect'' to take place
-in the same context as the \texttt{Traversable} \texttt{t}\ldots{}which
-really defeats the purpose of this whole thing in the first place (the
-idea is to be able to separate your prompting effect from your
-application logic). If the \texttt{Traversable} you want to transform
-has a ``monad transformer'' version, then you can somewhat simulate
-\texttt{PromptT} for that specifc \texttt{t} with the transformer
+This type is also similar in structure to \texttt{Bazaar}, from the \emph{lens}
+package. The biggest difference that makes \texttt{Bazaar} unusable is because
+the RankN constraint is only \texttt{Applicative}, not \texttt{Monad}, so a
+\texttt{Monad} instance is impossible. Ignoring that (or if it's okay for you to
+only use the \texttt{Applicative} instance), \texttt{Bazaar} forces the
+``prompting effect'' to take place in the same context as the
+\texttt{Traversable} \texttt{t}\ldots{}which really defeats the purpose of this
+whole thing in the first place (the idea is to be able to separate your
+prompting effect from your application logic). If the \texttt{Traversable} you
+want to transform has a ``monad transformer'' version, then you can somewhat
+simulate \texttt{PromptT} for that specifc \texttt{t} with the transformer
 version.
 
-It's also somewhat similar to the \texttt{Client} type from
-\emph{pipes}, but it's also a bit tricky to use that with a different
-effect type than the logic \texttt{Traversable}, as well\ldots{}so it
-has a lot of the same difference as \texttt{Bazaar} here.
+It's also somewhat similar to the \texttt{Client} type from \emph{pipes}, but
+it's also a bit tricky to use that with a different effect type than the logic
+\texttt{Traversable}, as well\ldots{}so it has a lot of the same difference as
+\texttt{Bazaar} here.
 
-But this type is common/simple enough that I'm sure someone has it
-somewhere in a library that I haven't been able to find. If you find it,
-let me know!
+But this type is common/simple enough that I'm sure someone has it somewhere in
+a library that I haven't been able to find. If you find it, let me know!
 
 \end{document}

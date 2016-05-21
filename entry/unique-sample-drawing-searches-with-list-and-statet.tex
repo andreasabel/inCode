@@ -83,8 +83,7 @@
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
 
-\title{Unique sample drawing \& searches with List and StateT --- ``Send more
-money''}
+\title{Unique sample drawing \& searches with List and StateT --- ``Send more money''}
 \author{Justin Le}
 \date{April 24, 2015}
 
@@ -95,20 +94,19 @@ money''}
 \textbf{\href{https://blog.jle.im/entry/unique-sample-drawing-searches-with-list-and-statet.html}{in
 Code}}.}
 
-Nothing too crazy today, just a cute (basic/intermediate) haskell trick
-as a response to Mark Dominus's excellent
-\href{http://blog.plover.com}{Universe of Discourse} post on
-\href{http://blog.plover.com/prog/haskell/monad-search.html}{Easy
-exhaustive search with the list monad} intended for people new or
-unfamiliar with haskell demonstrating the common ``list monad as a
-constraint solver'' approach that is standard fare for learning Haskell.
-I myself have literally done
+Nothing too crazy today, just a cute (basic/intermediate) haskell trick as a
+response to Mark Dominus's excellent \href{http://blog.plover.com}{Universe of
+Discourse} post on
+\href{http://blog.plover.com/prog/haskell/monad-search.html}{Easy exhaustive
+search with the list monad} intended for people new or unfamiliar with haskell
+demonstrating the common ``list monad as a constraint solver'' approach that is
+standard fare for learning Haskell. I myself have literally done
 \href{http://blog.jle.im/entries/series/+monadplus-success-failure-monads}{an
 entire series of blog posts} on this usage.
 
-Mark's use case however incorporates a bit of an extra pattern not
-typically discussed. The list monad is good for taking ``independent
-samples'' of things (looking at different samples from a list):
+Mark's use case however incorporates a bit of an extra pattern not typically
+discussed. The list monad is good for taking ``independent samples'' of things
+(looking at different samples from a list):
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -120,9 +118,8 @@ samples'' of things (looking at different samples from a list):
 \end{Highlighting}
 \end{Shaded}
 
-However, what if you wanted to instead ``draw'' from a pool, and
-represent different drawings? Traditionally, the answer was something
-like:
+However, what if you wanted to instead ``draw'' from a pool, and represent
+different drawings? Traditionally, the answer was something like:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -136,23 +133,21 @@ like:
 
 This is a little bit awkward\ldots{}and it definitely gets a lot worse
 (\(O(n^2)\)) when you have more items. Also, it relies on an \texttt{Eq}
-constraint --- what if our thing doesn't have an \texttt{Eq} instance?
-And this also falls apart when our list contains duplicate items. If we
-had used \texttt{"aabc"} instead of \texttt{"abc"}, the result would be
-the same --- despite having more
-\texttt{\textquotesingle{}a\textquotesingle{}}s to pick from!
+constraint --- what if our thing doesn't have an \texttt{Eq} instance? And this
+also falls apart when our list contains duplicate items. If we had used
+\texttt{"aabc"} instead of \texttt{"abc"}, the result would be the same ---
+despite having more \texttt{\textquotesingle{}a\textquotesingle{}}s to pick
+from!
 
-\textbf{Important note:} After writing this article, I found out that
-Douglas Auclair in
-\href{https://wiki.haskell.org/wikiupload/6/6a/TMR-Issue11.pdf}{11th
-issue of the Monad Reader} solved this exact same problem with pretty
-much the exact same approach. (Oops!) If you want to do further reading,
-check it out! :D
+\textbf{Important note:} After writing this article, I found out that Douglas
+Auclair in \href{https://wiki.haskell.org/wikiupload/6/6a/TMR-Issue11.pdf}{11th
+issue of the Monad Reader} solved this exact same problem with pretty much the
+exact same approach. (Oops!) If you want to do further reading, check it out! :D
 
 \section{StateT}\label{statet}
 
-There's a type in the \emph{transformers} library that provides a very
-useful monad instance:
+There's a type in the \emph{transformers} library that provides a very useful
+monad instance:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -160,9 +155,9 @@ useful monad instance:
 \end{Highlighting}
 \end{Shaded}
 
-A \texttt{StateT\ s\ m\ a} is a function that takes an initial state
-\texttt{s} and returns a result \texttt{a} with a modified
-state\ldots{}in the context of \texttt{m}.
+A \texttt{StateT\ s\ m\ a} is a function that takes an initial state \texttt{s}
+and returns a result \texttt{a} with a modified state\ldots{}in the context of
+\texttt{m}.
 
 Specialize for \texttt{m\ \textasciitilde{}\ {[}{]}} and we get
 
@@ -172,9 +167,9 @@ Specialize for \texttt{m\ \textasciitilde{}\ {[}{]}} and we get
 \end{Highlighting}
 \end{Shaded}
 
-Which is basically describing a function from a initial state to a list
-of \emph{ways you can modify the state}, and different results from each
-one. It returns a list of ``all ways you can mutate this state''.
+Which is basically describing a function from a initial state to a list of
+\emph{ways you can modify the state}, and different results from each one. It
+returns a list of ``all ways you can mutate this state''.
 
 For example,
 
@@ -185,21 +180,20 @@ For example,
 \end{Highlighting}
 \end{Shaded}
 
-So \texttt{foo} takes a number, \texttt{x}, and says, ``here are three
-ways we might proceed from having this number. We can return whether or
-not it's even, in which case the new state is \texttt{x+1}\ldots{}we can
-return whether or not it's odd, in which case the new state is
-\texttt{x-1}\ldots{}.or we can return whether or not it's positive, in
-which case the new state is \texttt{negate\ x}''
+So \texttt{foo} takes a number, \texttt{x}, and says, ``here are three ways we
+might proceed from having this number. We can return whether or not it's even,
+in which case the new state is \texttt{x+1}\ldots{}we can return whether or not
+it's odd, in which case the new state is \texttt{x-1}\ldots{}.or we can return
+whether or not it's positive, in which case the new state is
+\texttt{negate\ x}''
 
-What the monad instance does is that it allows you to ``chain'' forks,
-and go along different forks, and gather together ``all possible forks''
-you could have taken. At the end, it outputs all possible forks. So if
-you did \texttt{foo\ \textgreater{}\textgreater{}\ foo}, there'd be nine
-results --- one result for when you took the first route (the
-\texttt{x+1}) twice, one for when you took the first and then the second
-(\texttt{x-1}), one for when you took the first and the
-third\ldots{}.and the second and the first\ldots{}etc., etc.
+What the monad instance does is that it allows you to ``chain'' forks, and go
+along different forks, and gather together ``all possible forks'' you could have
+taken. At the end, it outputs all possible forks. So if you did
+\texttt{foo\ \textgreater{}\textgreater{}\ foo}, there'd be nine results --- one
+result for when you took the first route (the \texttt{x+1}) twice, one for when
+you took the first and then the second (\texttt{x-1}), one for when you took the
+first and the third\ldots{}.and the second and the first\ldots{}etc., etc.
 
 \subsection{MonadPlus}\label{monadplus}
 
@@ -211,13 +205,12 @@ One other tool we have at our disposal is \texttt{guard}:
 \end{Highlighting}
 \end{Shaded}
 
-which is a \texttt{StateT} action that says ``kill this current branch
-if given \texttt{False}, or go on if given \texttt{True}''
+which is a \texttt{StateT} action that says ``kill this current branch if given
+\texttt{False}, or go on if given \texttt{True}''
 
 \section{The Problem}\label{the-problem}
 
-The problem, as stated, was to find distinct digits for each letter to
-solve:
+The problem, as stated, was to find distinct digits for each letter to solve:
 
 \begin{verbatim}
     S E N D
@@ -226,20 +219,18 @@ solve:
   M O N E Y
 \end{verbatim}
 
-So \texttt{SEND} is a four-digit number, \texttt{MORE} is a four-digit
-number, and \texttt{MONEY} is a five-digit number that is the sum of the
-two. The first digit of \texttt{MONEY} has to be the first digit of
-\texttt{MORE}, the last digit of \texttt{MORE} has to be the second
-digit of \texttt{SEND}, etc.
+So \texttt{SEND} is a four-digit number, \texttt{MORE} is a four-digit number,
+and \texttt{MONEY} is a five-digit number that is the sum of the two. The first
+digit of \texttt{MONEY} has to be the first digit of \texttt{MORE}, the last
+digit of \texttt{MORE} has to be the second digit of \texttt{SEND}, etc.
 
 The previous approach was done using the entire ``pick from all
-possibilities\ldots{}except for the ones already chosen'', using
-\texttt{(/=)} and filtering over all of the things seen vs all of the
-things to pick from.
+possibilities\ldots{}except for the ones already chosen'', using \texttt{(/=)}
+and filtering over all of the things seen vs all of the things to pick from.
 
-However, we can abstract over ``picking dependently from a sample'' by
-defining a function called \texttt{select}, which really should be in
-the base libraries but isn't for some reason:
+However, we can abstract over ``picking dependently from a sample'' by defining
+a function called \texttt{select}, which really should be in the base libraries
+but isn't for some reason:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -250,11 +241,11 @@ the base libraries but isn't for some reason:
 \end{Highlighting}
 \end{Shaded}
 
-(Implementation thanks to Cale, who has fought valiantly yet fruitlessly
-to get this into base for many years.)
+(Implementation thanks to Cale, who has fought valiantly yet fruitlessly to get
+this into base for many years.)
 
-\texttt{select} will take a list \texttt{{[}a{]}} and return a list of
-different ``selected'' \texttt{a}s, with the rest of the list, too:
+\texttt{select} will take a list \texttt{{[}a{]}} and return a list of different
+``selected'' \texttt{a}s, with the rest of the list, too:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -263,14 +254,13 @@ different ``selected'' \texttt{a}s, with the rest of the list, too:
 \end{Highlighting}
 \end{Shaded}
 
-But, hey\ldots{}does the type signature of \texttt{select} look like
-anything familiar?
+But, hey\ldots{}does the type signature of \texttt{select} look like anything
+familiar?
 
-It looks \emph{exactly} like something that \texttt{StateT} is supposed
-to describe! Give an initial state (\texttt{{[}a{]}}), and returns a
-list of all possible ways to ``mutate'' that state (by removing one
-element from the state), and a result from each mutation (the removed
-element).
+It looks \emph{exactly} like something that \texttt{StateT} is supposed to
+describe! Give an initial state (\texttt{{[}a{]}}), and returns a list of all
+possible ways to ``mutate'' that state (by removing one element from the state),
+and a result from each mutation (the removed element).
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -310,18 +300,17 @@ And armed with this\ldots{}we have all we need
 \end{Shaded}
 
 Remember, \texttt{StateT} here operates with an underlying state of
-\texttt{{[}Int{]}}, a list of numbers not yet picked.
-\texttt{StateT\ select} picks one of these numbers, and modifies the
-state to now only include the items that were not picked. So every time
-you sequence \texttt{StateT\ select}, \texttt{select} draws from a
-smaller and smaller pool of numbers, and makes the state list smaller
-and smaller. What sequencing \texttt{StateT} does is allow us to explore
-\emph{all} of the possible ways we could pick and modify state, all at
-once. Using \texttt{guard}, we then ``close off'' and kill off the paths
-that don't end up how we'd like.
+\texttt{{[}Int{]}}, a list of numbers not yet picked. \texttt{StateT\ select}
+picks one of these numbers, and modifies the state to now only include the items
+that were not picked. So every time you sequence \texttt{StateT\ select},
+\texttt{select} draws from a smaller and smaller pool of numbers, and makes the
+state list smaller and smaller. What sequencing \texttt{StateT} does is allow us
+to explore \emph{all} of the possible ways we could pick and modify state, all
+at once. Using \texttt{guard}, we then ``close off'' and kill off the paths that
+don't end up how we'd like.
 
-\texttt{asNumber} takes a list like \texttt{{[}1,2,3{]}} and turns it
-into the number \texttt{123}; credit to the source blog.
+\texttt{asNumber} takes a list like \texttt{{[}1,2,3{]}} and turns it into the
+number \texttt{123}; credit to the source blog.
 
 And, to test it out\ldots{}
 
@@ -334,12 +323,11 @@ And, to test it out\ldots{}
 \end{Shaded}
 
 It returns the one and only solution, \texttt{SEND\ =\ 9567},
-\texttt{MORE\ =\ 1085}, and \texttt{MONEY\ =\ 10652}.\footnote{For some
-  reason this runs pretty slowly if you use
-  \texttt{runghc}/\texttt{runHaskell}, but it runs in the blink of an
-  eye when you actually compile it (and especially with optimizations
-  on). The difference is pretty striking\ldots{}and I don't really know
-  what's going on here, to be honest. If anyone does know a good
+\texttt{MORE\ =\ 1085}, and \texttt{MONEY\ =\ 10652}.\footnote{For some reason
+  this runs pretty slowly if you use \texttt{runghc}/\texttt{runHaskell}, but it
+  runs in the blink of an eye when you actually compile it (and especially with
+  optimizations on). The difference is pretty striking\ldots{}and I don't really
+  know what's going on here, to be honest. If anyone does know a good
   explanation, I'd love to hear it :)}
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
@@ -347,8 +335,8 @@ It returns the one and only solution, \texttt{SEND\ =\ 9567},
 \textbf{Aside}
 
 We can make things a little bit more efficient with minimal cost in
-expressiveness. But not that it matters\ldots{}the original version runs
-fast already.
+expressiveness. But not that it matters\ldots{}the original version runs fast
+already.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -378,30 +366,28 @@ fast already.
 \end{Shaded}
 
 This is a more performant version of \texttt{select}
-\href{http://chimera.labs.oreilly.com/books/1230000000929/pr01.html}{courtesy
-of Simon Marlow} that doesn't preserve the order of the ``rest of the
-elements''.
+\href{http://chimera.labs.oreilly.com/books/1230000000929/pr01.html}{courtesy of
+Simon Marlow} that doesn't preserve the order of the ``rest of the elements''.
 
-Also, we use \texttt{mfilter} to ``eliminate bad \texttt{s} and
-\texttt{m}s'' right off the bat, before having to pick any more things.
-\texttt{mfilter} can be thought of as ``killing the fork immediately''
-if the action doesn't satisfy the predicate. If the \texttt{s} picked
-doesn't match \texttt{(/=\ 0)}, then the entire branch/fork is
-immediately ruled invalid.
+Also, we use \texttt{mfilter} to ``eliminate bad \texttt{s} and \texttt{m}s''
+right off the bat, before having to pick any more things. \texttt{mfilter} can
+be thought of as ``killing the fork immediately'' if the action doesn't satisfy
+the predicate. If the \texttt{s} picked doesn't match \texttt{(/=\ 0)}, then the
+entire branch/fork is immediately ruled invalid.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
-By the way, isn't it neat that it does all of this in ``constant
-space''? It just keeps track of the output list, but the actual search
-processes is in constant space. You don't need to keep track of all
-\texttt{10!} combinations in memory at once. Hooray laziness!
+By the way, isn't it neat that it does all of this in ``constant space''? It
+just keeps track of the output list, but the actual search processes is in
+constant space. You don't need to keep track of all \texttt{10!} combinations in
+memory at once. Hooray laziness!
 
 \section{Other Applications}\label{other-applications}
 
-Using \texttt{select} and \texttt{StateT}, we can do a lot of things
-involving picking from a sample, or permutations. Anything that you used
-to awkwardly do by using filter not-equal-to's can work now. You can do
-things like drawing from a deck:
+Using \texttt{select} and \texttt{StateT}, we can do a lot of things involving
+picking from a sample, or permutations. Anything that you used to awkwardly do
+by using filter not-equal-to's can work now. You can do things like drawing from
+a deck:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -413,17 +399,15 @@ things like drawing from a deck:
 \end{Highlighting}
 \end{Shaded}
 
-Which would draw five distinct cards from a deck of
-\texttt{{[}0..51{]}}, and return who won for each draw (assuming you had
-a suitable
+Which would draw five distinct cards from a deck of \texttt{{[}0..51{]}}, and
+return who won for each draw (assuming you had a suitable
 \texttt{pokerCompare\ ::\ {[}Card{]}\ -\textgreater{}\ {[}Card{]}\ -\textgreater{}\ Ordering}).
-Note that if you use \texttt{runStateT}, you'd get the results (the
-winner), \emph{as well as} the leftover cards in the deck for each path!
+Note that if you use \texttt{runStateT}, you'd get the results (the winner),
+\emph{as well as} the leftover cards in the deck for each path!
 
-You can even combine the two sorts of drawings --- sampling
-independently (like rolling dice) using \texttt{lift}, and drawing from
-an underlying deck. For example, you might encode some game logic from a
-board game like monopoly:
+You can even combine the two sorts of drawings --- sampling independently (like
+rolling dice) using \texttt{lift}, and drawing from an underlying deck. For
+example, you might encode some game logic from a board game like monopoly:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -434,12 +418,12 @@ board game like monopoly:
 \end{Highlighting}
 \end{Shaded}
 
-Whenever you want a dice roll, use \texttt{lift\ {[}1..6{]}}\ldots{}and
-whenever you want to draw from the deck, use \texttt{StateT\ select}.
+Whenever you want a dice roll, use \texttt{lift\ {[}1..6{]}}\ldots{}and whenever
+you want to draw from the deck, use \texttt{StateT\ select}.
 
-What you get in the end, remember, is a list of ``all possible paths''.
-You'll get a list of every possible result from all of your different
-rolling and drawing choices.
+What you get in the end, remember, is a list of ``all possible paths''. You'll
+get a list of every possible result from all of your different rolling and
+drawing choices.
 
 Happy Haskelling!
 

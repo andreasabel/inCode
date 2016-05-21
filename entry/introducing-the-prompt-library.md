@@ -1,27 +1,25 @@
 Introducing the “Prompt” library
 ================================
 
-*Originally posted by [Justin Le](https://blog.jle.im/) on June 30, 2015.  [Read online!](https://blog.jle.im/entry/introducing-the-prompt-library.html)*
+> Originally posted by [Justin Le](https://blog.jle.im/) on June 30, 2015
+> [Read online!](https://blog.jle.im/entry/introducing-the-prompt-library.html)
 
-**Prompt**:
-[README](https://github.com/mstksg/prompt/blob/master/README.md) /
+**Prompt**: [README](https://github.com/mstksg/prompt/blob/master/README.md) /
 [hackage](http://hackage.haskell.org/package/prompt) /
 [github](https://github.com/mstksg/prompt)
 
-Have you ever wanted to specify a computation involving some limited
-form of IO — like querying a database, or asking stdio — but didn’t want
-a computation in the `IO` monad, opening the entire can of worms that is
-arbitrary `IO`? Have you ever looked at complicated `IO a` you wrote
-last week at 4am and prayed that it didn’t launch missiles if you
-decided to execute it? Do you want to be able to run an effectful
-computation and explicitly *say* what IO it can or cannot do?
+Have you ever wanted to specify a computation involving some limited form of IO
+— like querying a database, or asking stdio — but didn’t want a computation in
+the `IO` monad, opening the entire can of worms that is arbitrary `IO`? Have you
+ever looked at complicated `IO a` you wrote last week at 4am and prayed that it
+didn’t launch missiles if you decided to execute it? Do you want to be able to
+run an effectful computation and explicitly *say* what IO it can or cannot do?
 
-Introducing the *[prompt](http://hackage.haskell.org/package/prompt)*
-library! It’s a small little lightweight library that allows you to
-specify and describe computations involving forms of effects where you
-“ask” with a value and receive a value in return (such as a database
-query, etc.), but not ever care about how the effects are fulfilled —
-freeing you from working directly with IO.
+Introducing the *[prompt](http://hackage.haskell.org/package/prompt)* library!
+It’s a small little lightweight library that allows you to specify and describe
+computations involving forms of effects where you “ask” with a value and receive
+a value in return (such as a database query, etc.), but not ever care about how
+the effects are fulfilled — freeing you from working directly with IO.
 
 ``` {.haskell}
 data Foo = Foo { fooBar :: String
@@ -70,15 +68,15 @@ ghci> runPrompt promptFoo (testMap M.!)
 Foo "hello!" 8
 ```
 
-With `Prompt`, specify the computation and your logic *without involving
-any IO*, so you can write safe code without arbitrary side effects. If
-you ever receive a `Prompt`, you know it can’t wipe out your hard drive
-or do any IO other than exactly what you allow it to do! I’d feel more
-safe running a `Prompt a b r` than an `IO r`.
+With `Prompt`, specify the computation and your logic *without involving any
+IO*, so you can write safe code without arbitrary side effects. If you ever
+receive a `Prompt`, you know it can’t wipe out your hard drive or do any IO
+other than exactly what you allow it to do! I’d feel more safe running a
+`Prompt a b r` than an `IO r`.
 
-You can also do some cute tricks; `Prompt a () r` with a “prompt
-response function” like `putStrLn` lets you do streaming logging, and
-defer *how* the logging is done — to IO, to a list?
+You can also do some cute tricks; `Prompt a () r` with a “prompt response
+function” like `putStrLn` lets you do streaming logging, and defer *how* the
+logging is done — to IO, to a list?
 
 ``` {.haskell}
 ghci> let logHelloWord = mapM_ prompt ["hello", "world"]
@@ -89,27 +87,26 @@ ghci> execWriter $ runPromptM logHelloWorld tell
 "helloworld"
 ```
 
-`Prompt () b r` is like a fancy `ReaderT b m r`, where you “defer” the
-choice of the Monad.
+`Prompt () b r` is like a fancy `ReaderT b m r`, where you “defer” the choice of
+the Monad.
 
 Combining with other effects
 ----------------------------
 
-`Prompt` can be used as an underlying “effects” source for libraries
-like *pipes*, *conduit*, and *auto*. If your effects are only ever
-asking and prompting and receiving, there’s really no need to put the
-entire power of `IO` underneath your DSL as an effects source. That’s
-just crazy!
+`Prompt` can be used as an underlying “effects” source for libraries like
+*pipes*, *conduit*, and *auto*. If your effects are only ever asking and
+prompting and receiving, there’s really no need to put the entire power of `IO`
+underneath your DSL as an effects source. That’s just crazy!
 
-`Prompt` can be used with monad transformers to give you safe underlying
-effect sources, like `StateT s (Prompt a b) r`, which is a stateful
-computation which can sometimes sequence “prompty” effects. `Prompt` is
-also itself a “Traversable transformer”, with `PrompT a b t r`. It can
-perform computations in the context of a Traversable `t`, to be able to
-incorporate built-in short-circuiting and logging, etc.
+`Prompt` can be used with monad transformers to give you safe underlying effect
+sources, like `StateT s (Prompt a b) r`, which is a stateful computation which
+can sometimes sequence “prompty” effects. `Prompt` is also itself a “Traversable
+transformer”, with `PrompT a b t r`. It can perform computations in the context
+of a Traversable `t`, to be able to incorporate built-in short-circuiting and
+logging, etc.
 
-This is all abstracted over with `MonadPrompt`, `MonadError`,
-`MonadPlus`, etc., typeclasses —
+This is all abstracted over with `MonadPrompt`, `MonadError`, `MonadPlus`, etc.,
+typeclasses —
 
 ``` {.haskell}
 promptFoo2 :: (MonadPlus m, MonadPrompt String String m) => m Foo
@@ -127,8 +124,8 @@ promptFoo = Foo
         <*> fmap length (prompt "baz")
 ```
 
-You can run `promptFoo` as a `MaybeT (Prompt String String) Foo`, and
-manually unwrap:
+You can run `promptFoo` as a `MaybeT (Prompt String String) Foo`, and manually
+unwrap:
 
 ``` {.haskell}
 ghci> interactP . runMaybeT $ promptFoo2
@@ -145,8 +142,8 @@ baz
 Just (Foo "hello!" 19)
 ```
 
-Or you can run it as a `PromptT String String MaybeT Foo`, to have
-`PromptT` handle the wrapping/unwrapping itself:
+Or you can run it as a `PromptT String String MaybeT Foo`, to have `PromptT`
+handle the wrapping/unwrapping itself:
 
 ``` {.haskell}
 ghci> interactPT promptFoo2
@@ -190,14 +187,13 @@ runPromptT  ::                  PromptT a b t r -> (a ->    t b)  -> t r
 runPromptTM :: Monad m       => PromptT a b t r -> (a -> m (t b)) -> m (t r)
 ```
 
-Note that `runPromptM` and `runPromptTM` can run in monads (like `IO`)
-that are *completely unrelated* to the `Prompt` type itself. It
-sequences them all “after the fact”. It’s also interesting to note that
-`runPrompt` is just a glorified `Reader (a -> b) r`.
+Note that `runPromptM` and `runPromptTM` can run in monads (like `IO`) that are
+*completely unrelated* to the `Prompt` type itself. It sequences them all “after
+the fact”. It’s also interesting to note that `runPrompt` is just a glorified
+`Reader (a -> b) r`.
 
-With `runPromptTM`, you can incorporate `t` in your “prompt response”
-function, too. Which brings us to our grand finale – environment
-variable parsing!
+With `runPromptTM`, you can incorporate `t` in your “prompt response” function,
+too. Which brings us to our grand finale – environment variable parsing!
 
 ``` {.haskell}
 import Control.Monad.Error.Class
@@ -259,8 +255,8 @@ throughMap m = runPromptT parseFoo3 $ \k ->
 
 Hope you enjoy! Please feel free to leave a comment, find me on
 [twitter](https://twitter.com/mstk "Twitter"), leave an issue on the
-[github](https://github.com/mstksg/prompt), etc. — and I’m usually on
-freenode’s *\#haskell* as *jle\`* if you have any questions!
+[github](https://github.com/mstksg/prompt), etc. — and I’m usually on freenode’s
+*\#haskell* as *jle\`* if you have any questions!
 
 Comparisons
 -----------
@@ -271,38 +267,35 @@ To lay it all on the floor,
 newtype PromptT a b t r = PromptT { runPromptTM :: forall m. Monad m => (a -> m (t b)) -> m (t r) }
 ```
 
-There is admittedly a popular misconception that I’ve seen going around
-that equates this sort of type to `Free` from the *free* package.
-However, `Free` doesn’t really have anything significant to do with
-this. Sure, you might be able to generate this type by using `FreeT`
-over a specifically chosen Functor, but…this is the case for literally
-any Monad ever, so that doesn’t really mean much :)
+There is admittedly a popular misconception that I’ve seen going around that
+equates this sort of type to `Free` from the *free* package. However, `Free`
+doesn’t really have anything significant to do with this. Sure, you might be
+able to generate this type by using `FreeT` over a specifically chosen Functor,
+but…this is the case for literally any Monad ever, so that doesn’t really mean
+much :)
 
-It’s also unrelated in this same manner to `Prompt` from the
-*MonadPrompt* package, and `Program` from *operational* too.
+It’s also unrelated in this same manner to `Prompt` from the *MonadPrompt*
+package, and `Program` from *operational* too.
 
-One close relative to this type is `forall m. ReaderT (a -> m b) m r`,
-where `prompt k = ReaderT ($ k)`. This is more or less equivalent to
-`Prompt`, but still can’t do the things that `PromptT` can do without a
-special instance of Monad.
+One close relative to this type is `forall m. ReaderT (a -> m b) m r`, where
+`prompt k = ReaderT ($ k)`. This is more or less equivalent to `Prompt`, but
+still can’t do the things that `PromptT` can do without a special instance of
+Monad.
 
-This type is also similar in structure to `Bazaar`, from the *lens*
-package. The biggest difference that makes `Bazaar` unusable is because
-the RankN constraint is only `Applicative`, not `Monad`, so a `Monad`
-instance is impossible. Ignoring that (or if it’s okay for you to only
-use the `Applicative` instance), `Bazaar` forces the “prompting effect”
-to take place in the same context as the `Traversable` `t`…which really
-defeats the purpose of this whole thing in the first place (the idea is
-to be able to separate your prompting effect from your application
-logic). If the `Traversable` you want to transform has a “monad
-transformer” version, then you can somewhat simulate `PromptT` for that
-specifc `t` with the transformer version.
+This type is also similar in structure to `Bazaar`, from the *lens* package. The
+biggest difference that makes `Bazaar` unusable is because the RankN constraint
+is only `Applicative`, not `Monad`, so a `Monad` instance is impossible.
+Ignoring that (or if it’s okay for you to only use the `Applicative` instance),
+`Bazaar` forces the “prompting effect” to take place in the same context as the
+`Traversable` `t`…which really defeats the purpose of this whole thing in the
+first place (the idea is to be able to separate your prompting effect from your
+application logic). If the `Traversable` you want to transform has a “monad
+transformer” version, then you can somewhat simulate `PromptT` for that specifc
+`t` with the transformer version.
 
-It’s also somewhat similar to the `Client` type from *pipes*, but it’s
-also a bit tricky to use that with a different effect type than the
-logic `Traversable`, as well…so it has a lot of the same difference as
-`Bazaar` here.
+It’s also somewhat similar to the `Client` type from *pipes*, but it’s also a
+bit tricky to use that with a different effect type than the logic
+`Traversable`, as well…so it has a lot of the same difference as `Bazaar` here.
 
-But this type is common/simple enough that I’m sure someone has it
-somewhere in a library that I haven’t been able to find. If you find it,
-let me know!
+But this type is common/simple enough that I’m sure someone has it somewhere in
+a library that I haven’t been able to find. If you find it, let me know!

@@ -94,36 +94,33 @@
 \textbf{\href{https://blog.jle.im/entry/a-non-unique-monad-instance.html}{in
 Code}}.}
 
-Just stopping in for a short post before continuing with a long-overdue
-series or two :) This post is a bit of a short fun one that describes a
-quest I had, and hopefully some useful extra ideas I found along the
-way.
+Just stopping in for a short post before continuing with a long-overdue series
+or two :) This post is a bit of a short fun one that describes a quest I had,
+and hopefully some useful extra ideas I found along the way.
 
-Soon after I discovered Haskell, one question has plagued my mind. Day
-and night, I wondered\ldots{}
+Soon after I discovered Haskell, one question has plagued my mind. Day and
+night, I wondered\ldots{}
 
 \begin{quote}
-Are there any Haskell types with more than one unique \texttt{Monad}
-instance?
+Are there any Haskell types with more than one unique \texttt{Monad} instance?
 \end{quote}
 
-This was a question that was pretty simple\ldots{}so simple that I was
-sure many people had already asked and answered this. But I couldn't
-really find any answers and nobody I asked at the time could really give
-me one either, so this soon embedded itself as a pretty deep mystery to
-my psyche.
+This was a question that was pretty simple\ldots{}so simple that I was sure many
+people had already asked and answered this. But I couldn't really find any
+answers and nobody I asked at the time could really give me one either, so this
+soon embedded itself as a pretty deep mystery to my psyche.
 
 The background?
 
 \section{Functor and Applicative}\label{functor-and-applicative}
 
-All \texttt{Functor} instances, if they exist, are \emph{unique} for the
-type. The type uniquely determines the instance. There is only one
-possible \texttt{Functor} instance for \texttt{{[}{]}}, one possible
-\texttt{Functor} instance for \texttt{Maybe}, \texttt{Either}, etc.
+All \texttt{Functor} instances, if they exist, are \emph{unique} for the type.
+The type uniquely determines the instance. There is only one possible
+\texttt{Functor} instance for \texttt{{[}{]}}, one possible \texttt{Functor}
+instance for \texttt{Maybe}, \texttt{Either}, etc.
 
-This fact is taken advantage of by GHC to allow you to derive, for some
-types, a \texttt{Functor} instance automatically.
+This fact is taken advantage of by GHC to allow you to derive, for some types, a
+\texttt{Functor} instance automatically.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -135,8 +132,8 @@ types, a \texttt{Functor} instance automatically.
 \end{Highlighting}
 \end{Shaded}
 
-There is no other possible \texttt{Functor} instance for that data type.
-Go ahead, try :D
+There is no other possible \texttt{Functor} instance for that data type. Go
+ahead, try :D
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -148,9 +145,9 @@ Go ahead, try :D
 \end{Highlighting}
 \end{Shaded}
 
-However, this is not the case for \texttt{Applicative}. Everyone knows
-of course about the normal (cartesian product) Applicative instance and
-the zippy Applicative instance for list:
+However, this is not the case for \texttt{Applicative}. Everyone knows of course
+about the normal (cartesian product) Applicative instance and the zippy
+Applicative instance for list:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -214,10 +211,10 @@ What is also fairly established is that every \emph{noncommutative}
 \end{Highlighting}
 \end{Shaded}
 
-Every non-commutative \texttt{Applicative} admits an alternative
-instance where ``flipping'' the order of the ``effects'' is also a valid
-\texttt{Applicative} instance. So, not \texttt{Maybe} or
-\texttt{Either}, but \texttt{State}, \texttt{{[}{]}}, and \texttt{IO}.
+Every non-commutative \texttt{Applicative} admits an alternative instance where
+``flipping'' the order of the ``effects'' is also a valid \texttt{Applicative}
+instance. So, not \texttt{Maybe} or \texttt{Either}, but \texttt{State},
+\texttt{{[}{]}}, and \texttt{IO}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -231,28 +228,27 @@ instance where ``flipping'' the order of the ``effects'' is also a valid
 \end{Highlighting}
 \end{Shaded}
 
-So cool. Types that have \texttt{Functor} instances only have one. Types
-that have \texttt{Applicative} instances very often have more than one.
+So cool. Types that have \texttt{Functor} instances only have one. Types that
+have \texttt{Applicative} instances very often have more than one.
 
 So, the obvious next question is\ldots{}what about \texttt{Monad}s? Is a
 \texttt{Monad} instance uniquely determined by its type?
 
 \section{Monad}\label{monad}
 
-The answer wasn't that simple, for me. Yes, \emph{most}
-\texttt{Applicative}s in the wild are non-unique, and there was a
-generating rule. But not so for \texttt{Monad}s. You can't have a
-\texttt{Monad} where the effects are switched, because for
-\texttt{(\textgreater{}\textgreater{}=)}, you need the effects of the
-first action in order to even decide what the effects of the next action
+The answer wasn't that simple, for me. Yes, \emph{most} \texttt{Applicative}s in
+the wild are non-unique, and there was a generating rule. But not so for
+\texttt{Monad}s. You can't have a \texttt{Monad} where the effects are switched,
+because for \texttt{(\textgreater{}\textgreater{}=)}, you need the effects of
+the first action in order to even decide what the effects of the next action
 are.
 
-I vaguely remember from my past two data types that are very similar yet
-have very different \texttt{Monad} and \texttt{Applicative} instances:
-(finite) lists, (infinite)
+I vaguely remember from my past two data types that are very similar yet have
+very different \texttt{Monad} and \texttt{Applicative} instances: (finite)
+lists, (infinite)
 \href{http://blog.jle.im/entry/intro-to-machines-arrows-part-1-stream-and}{streams}.
-From the outset, the two have almost identical structure. A
-\texttt{Stream} is just a list with no \texttt{{[}{]}}/nil:
+From the outset, the two have almost identical structure. A \texttt{Stream} is
+just a list with no \texttt{{[}{]}}/nil:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -269,8 +265,8 @@ The \texttt{Functor} instance is identical:
 \end{Highlighting}
 \end{Shaded}
 
-And the (only??) \texttt{Applicative} instance is the \texttt{ZipList}
-instance for lists:
+And the (only??) \texttt{Applicative} instance is the \texttt{ZipList} instance
+for lists:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -280,8 +276,7 @@ instance for lists:
 \end{Highlighting}
 \end{Shaded}
 
-The \texttt{Monad} instance is however very different from that of
-lists:
+The \texttt{Monad} instance is however very different from that of lists:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -295,22 +290,21 @@ lists:
 \end{Highlighting}
 \end{Shaded}
 
-The \texttt{Monad} instance itself is actually interesting enough to
-write about. It all revolves \texttt{join}, where \texttt{join} takes a
-stream of streams and creates a stream \emph{of the diagonals}. So it
-takes the first element of the first stream, the second element of the
-second stream, the third element of the third stream, etc.
+The \texttt{Monad} instance itself is actually interesting enough to write
+about. It all revolves \texttt{join}, where \texttt{join} takes a stream of
+streams and creates a stream \emph{of the diagonals}. So it takes the first
+element of the first stream, the second element of the second stream, the third
+element of the third stream, etc.
 
 This is actually a special case of the \texttt{Monad} instance for all
-fixed-sized ordered containers. A length 5 vector, for example, will
-have the same \texttt{Applicative} and \texttt{Monad} instance as
-described here: \texttt{(\textless{}*\textgreater{})} with ``zipping'',
-and \texttt{join} with grabbing the diagonal of the 5-vector of
-5-vectors.
+fixed-sized ordered containers. A length 5 vector, for example, will have the
+same \texttt{Applicative} and \texttt{Monad} instance as described here:
+\texttt{(\textless{}*\textgreater{})} with ``zipping'', and \texttt{join} with
+grabbing the diagonal of the 5-vector of 5-vectors.
 
-This was a promising lead, but, it doesn't take \emph{too} much thought
-to see that neither lists nor \texttt{Stream} are appropriate for
-\emph{both} instances.
+This was a promising lead, but, it doesn't take \emph{too} much thought to see
+that neither lists nor \texttt{Stream} are appropriate for \emph{both}
+instances.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
@@ -320,30 +314,28 @@ In case you were wondering, here is an elaboration :D
 
 \begin{itemize}
 \item
-  Fixed length vectors can't have the normal list Applicative instance
-  at all, unless they are of size 0 or 1. That's because the result
-  after \texttt{(\textless{}*\textgreater{})}, the resulting list's
-  length is the product of the original lists. So you can forget the
-  \texttt{Monad} instance, too.
+  Fixed length vectors can't have the normal list Applicative instance at all,
+  unless they are of size 0 or 1. That's because the result after
+  \texttt{(\textless{}*\textgreater{})}, the resulting list's length is the
+  product of the original lists. So you can forget the \texttt{Monad} instance,
+  too.
 \item
-  Streams give you no luck, either. The easiest way to see is by
-  considering the analogous \texttt{Monad} instance, where \texttt{join}
-  is the straight-up concatenation.
-  \texttt{m\ \textgreater{}\textgreater{}=\ return\ ==\ m} is clearly
-  violated. If \texttt{m} is an infinite list, \texttt{fmap\ return}
-  gives you an infinite list of infinite lists,
-  ``joining''/concatenating them back will just give you an infinite
-  list of the first item in \texttt{m}.
+  Streams give you no luck, either. The easiest way to see is by considering the
+  analogous \texttt{Monad} instance, where \texttt{join} is the straight-up
+  concatenation. \texttt{m\ \textgreater{}\textgreater{}=\ return\ ==\ m} is
+  clearly violated. If \texttt{m} is an infinite list, \texttt{fmap\ return}
+  gives you an infinite list of infinite lists, ``joining''/concatenating them
+  back will just give you an infinite list of the first item in \texttt{m}.
 
   To put succincently, for \texttt{Stream}, \texttt{concat\ ==\ head}.
 \item
   Lists can have the \texttt{Applicative} instance fine, but not the
   \texttt{Monad} instance. Here we assume that zipping and ``getting the
-  diagonal'' go only as ``far as possible'', and stop when one of the
-  lists is too short.
+  diagonal'' go only as ``far as possible'', and stop when one of the lists is
+  too short.
 
-  This one is a little trickier, but the weakness is when you have lists
-  of lists of lists of different lengths.
+  This one is a little trickier, but the weakness is when you have lists of
+  lists of lists of different lengths.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -359,10 +351,9 @@ In case you were wondering, here is an elaboration :D
 \end{Highlighting}
 \end{Shaded}
 
-  For a monad, joining the inner layer and then joining it all should be
-  the same as joining it all and joining it all. The order of the
-  joining shouldn't count. We can see this in the more haskelly monad
-  laws by noting:
+  For a monad, joining the inner layer and then joining it all should be the
+  same as joining it all and joining it all. The order of the joining shouldn't
+  count. We can see this in the more haskelly monad laws by noting:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -378,15 +369,15 @@ In case you were wondering, here is an elaboration :D
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
-So I didn't really have any leads at that point; I tried a couple of
-other paths but nothing really panned out. So I shelved it for a while.
+So I didn't really have any leads at that point; I tried a couple of other paths
+but nothing really panned out. So I shelved it for a while.
 
 \section{Revelation}\label{revelation}
 
-Several centuries later\footnote{More accurately, ``about a year''}, the
-final revelation came as many revelations do in Haskell --- from a hint
-by Edward Kmett. He pointed out something interesting regarding a
-\texttt{Monad} instance that I had yet to notice:
+Several centuries later\footnote{More accurately, ``about a year''}, the final
+revelation came as many revelations do in Haskell --- from a hint by Edward
+Kmett. He pointed out something interesting regarding a \texttt{Monad} instance
+that I had yet to notice:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -394,22 +385,21 @@ by Edward Kmett. He pointed out something interesting regarding a
 \end{Highlighting}
 \end{Shaded}
 
-This is the classic ``Writer'' monad instance, which is literally about
-as old as monads in functional programming is.
+This is the classic ``Writer'' monad instance, which is literally about as old
+as monads in functional programming is.
 
-The key is that the \texttt{Monad} instance of \texttt{(w,)} depends on
-the \texttt{Monoid} instance of \texttt{w}. This is the ``log'', so to
-speak. You need a \texttt{Monoid} instance in order to make the
-\texttt{Monad} instance\ldots{}and the behavior of the \texttt{Monad}
-instance is directly determined by the behavior of the \texttt{Monoid}
-instance of \texttt{w}.
+The key is that the \texttt{Monad} instance of \texttt{(w,)} depends on the
+\texttt{Monoid} instance of \texttt{w}. This is the ``log'', so to speak. You
+need a \texttt{Monoid} instance in order to make the \texttt{Monad}
+instance\ldots{}and the behavior of the \texttt{Monad} instance is directly
+determined by the behavior of the \texttt{Monoid} instance of \texttt{w}.
 
-And\ldots{}\texttt{Monoid} instances in Haskell are rarely ever unique!
-A different \texttt{Monoid} instance would create a very different
-\texttt{Monad} instance for the same type!
+And\ldots{}\texttt{Monoid} instances in Haskell are rarely ever unique! A
+different \texttt{Monoid} instance would create a very different \texttt{Monad}
+instance for the same type!
 
-So, by factoring out the dependency on an external \texttt{Monoid}
-instance, you get\ldots{}
+So, by factoring out the dependency on an external \texttt{Monoid} instance, you
+get\ldots{}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -423,15 +413,13 @@ instance, you get\ldots{}
 
 and\ldots{}voila! There it is!
 
-This type is basically equivalent to \texttt{(Bool,\ a)}. And
-\texttt{Bool} has multiple \texttt{Monoid}s on it. Instead of requiring
-an outside \texttt{Monoid} instance, we can encode the instance directly
-into the behavior of \texttt{(\textgreater{}\textgreater{}=)}. And here
-we go!
+This type is basically equivalent to \texttt{(Bool,\ a)}. And \texttt{Bool} has
+multiple \texttt{Monoid}s on it. Instead of requiring an outside \texttt{Monoid}
+instance, we can encode the instance directly into the behavior of
+\texttt{(\textgreater{}\textgreater{}=)}. And here we go!
 
 Our instances are basically the \texttt{Writer} instance for
-\texttt{(Bool,\ a)}, with different \texttt{Monoid} instances for
-\texttt{Bool}.
+\texttt{(Bool,\ a)}, with different \texttt{Monoid} instances for \texttt{Bool}.
 
 The first instance:
 
@@ -453,10 +441,10 @@ The first instance:
 \end{Highlighting}
 \end{Shaded}
 
-Which represents the monoids formed by \texttt{(\&\&)} with
-\texttt{True} or by \texttt{(\textbar{}\textbar{})} with \texttt{False}
-(depending on which one you pick as \texttt{True} and which one you pick
-as \texttt{False}; the two instances are isomorphic)
+Which represents the monoids formed by \texttt{(\&\&)} with \texttt{True} or by
+\texttt{(\textbar{}\textbar{})} with \texttt{False} (depending on which one you
+pick as \texttt{True} and which one you pick as \texttt{False}; the two
+instances are isomorphic)
 
 The second:
 
@@ -481,31 +469,29 @@ The second:
 Which represents the monoid formed by \texttt{(/=)} (or ``XOR'') with
 \texttt{False}.
 
-And there you go. One type, two possible unique, non-isomorphic
-\texttt{Monad} instances.
+And there you go. One type, two possible unique, non-isomorphic \texttt{Monad}
+instances.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 \textbf{Aside}
 
 One interesting thing to note is that the Monad instance for
-\texttt{(-\textgreater{})\ a} requires no monoid constraint, and the
-Monad instance for \texttt{(,)\ a} \emph{does}.
+\texttt{(-\textgreater{})\ a} requires no monoid constraint, and the Monad
+instance for \texttt{(,)\ a} \emph{does}.
 
-Interestingly enough, if we look at \emph{comonads}, the Comonad
-instance for \texttt{(-\textgreater{})\ a} \emph{does} require a monoid
-constraint on \texttt{a} (so for example there are many unique Comonad
-instances for things isomorphic to \texttt{(-\textgreater{})\ a} where
-\texttt{a} has more than one Monoid instance) and and the Comonad
-instance for \texttt{(,)\ a} \emph{does not} require a monoid constraint
-on \texttt{a}.
+Interestingly enough, if we look at \emph{comonads}, the Comonad instance for
+\texttt{(-\textgreater{})\ a} \emph{does} require a monoid constraint on
+\texttt{a} (so for example there are many unique Comonad instances for things
+isomorphic to \texttt{(-\textgreater{})\ a} where \texttt{a} has more than one
+Monoid instance) and and the Comonad instance for \texttt{(,)\ a} \emph{does
+not} require a monoid constraint on \texttt{a}.
 
 Is there some duality at play here?
 
-The answer is, apparently, yes! But according to Edward Kmett, it is one
-that is pretty hard to arrive at and a big headache and overall not
-worth the time to dig into. So you're going to have to take my
-second-hand word for it.
+The answer is, apparently, yes! But according to Edward Kmett, it is one that is
+pretty hard to arrive at and a big headache and overall not worth the time to
+dig into. So you're going to have to take my second-hand word for it.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 

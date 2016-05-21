@@ -94,12 +94,12 @@
 \textbf{\href{https://blog.jle.im/entry/fixed-length-vector-types-in-haskell-2015.html}{in
 Code}}.}
 
-Fixed-length vector types (vector types that indicate the length of the
-vector in the type itself) are one of the more straightforward
-applications of the ``super-Haskell'' GHC type extensions. There's a lot
-of magic you can do with GHC's advanced type mechanisms, but I think
-fixed length vectors are a good first step to beginning to understand
-several extensions, including (potentially):
+Fixed-length vector types (vector types that indicate the length of the vector
+in the type itself) are one of the more straightforward applications of the
+``super-Haskell'' GHC type extensions. There's a lot of magic you can do with
+GHC's advanced type mechanisms, but I think fixed length vectors are a good
+first step to beginning to understand several extensions, including
+(potentially):
 
 \begin{itemize}
 \tightlist
@@ -120,21 +120,20 @@ several extensions, including (potentially):
 \end{itemize}
 
 And using type system plugins. (And of course the usual
-\texttt{UndecidableInstances} etc.) We'll be discussing two different
-ways to implement this --- using type-level nats, and using the
-\emph{GHC.TypeLits} model to actually be able to use numeric literals in
-your types. These things are seen in the wild like with the popular
+\texttt{UndecidableInstances} etc.) We'll be discussing two different ways to
+implement this --- using type-level nats, and using the \emph{GHC.TypeLits}
+model to actually be able to use numeric literals in your types. These things
+are seen in the wild like with the popular
 \emph{\href{http://hackage.haskell.org/package/linear-1.18.0.1/docs/Linear-V.html}{linear}}
 package's \texttt{V} type.
 
-There are a few great tutorials/writeups on this topic, but many of them
-are from the time before we had some of these extensions, or only
-discuss a few. I hope to provide a nice comprehensive look about the
-tools available today to really approach this topic. That being said, I
-am no expert myself, so I would appreciate any tips/edits/suggestions
-for things that I've missed or done not-the-best :) This post has a lot
-of open questions that I'm sure people who know more about this than me
-can answer.
+There are a few great tutorials/writeups on this topic, but many of them are
+from the time before we had some of these extensions, or only discuss a few. I
+hope to provide a nice comprehensive look about the tools available today to
+really approach this topic. That being said, I am no expert myself, so I would
+appreciate any tips/edits/suggestions for things that I've missed or done
+not-the-best :) This post has a lot of open questions that I'm sure people who
+know more about this than me can answer.
 
 Most of the code in this article can be
 \href{https://github.com/mstksg/inCode/blob/master/code-samples/fixvec}{downloaded
@@ -150,13 +149,12 @@ The basic idea is we'll have a type:
 \end{Highlighting}
 \end{Shaded}
 
-Which is a vector with items of type \texttt{a}, whose length is somehow
-encoded in the \texttt{n}. We'll then discuss ways to do useful
-operations on this, as if it were a list.
+Which is a vector with items of type \texttt{a}, whose length is somehow encoded
+in the \texttt{n}. We'll then discuss ways to do useful operations on this, as
+if it were a list.
 
-\texttt{n} can really only be a certain ``kind'' of thing --- a type
-that encodes a length. We can represent this by giving it a ``kind
-signature'':
+\texttt{n} can really only be a certain ``kind'' of thing --- a type that
+encodes a length. We can represent this by giving it a ``kind signature'':
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -164,12 +162,11 @@ signature'':
 \end{Highlighting}
 \end{Shaded}
 
-Which says that our \texttt{Vec} type constructor takes two arguments:
-something of kind \texttt{Nat} (so it can't be any type\ldots{}it has to
-be a type of kind \texttt{Nat}), something of kind \texttt{*} (the
-``normal'' kind, of things that have values, like \texttt{Int},
-\texttt{Maybe\ Bool}, etc.), and returns something of kind \texttt{*}
-(our vector itself).
+Which says that our \texttt{Vec} type constructor takes two arguments: something
+of kind \texttt{Nat} (so it can't be any type\ldots{}it has to be a type of kind
+\texttt{Nat}), something of kind \texttt{*} (the ``normal'' kind, of things that
+have values, like \texttt{Int}, \texttt{Maybe\ Bool}, etc.), and returns
+something of kind \texttt{*} (our vector itself).
 
 \section{Using DataKinds for Type-Level
 Nats}\label{using-datakinds-for-type-level-nats}
@@ -178,9 +175,8 @@ Nats}\label{using-datakinds-for-type-level-nats}
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs}{available
 online}, if you wanted to play along!)
 
-There are a couple of ways to find something for that \texttt{n}
-\texttt{Nat} kind, and one way is to use the simple inductive
-\texttt{Nat}:
+There are a couple of ways to find something for that \texttt{n} \texttt{Nat}
+kind, and one way is to use the simple inductive \texttt{Nat}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -190,11 +186,10 @@ There are a couple of ways to find something for that \texttt{n}
 \end{Highlighting}
 \end{Shaded}
 
-You might have seen this type before\ldots{}it gives us value-level
-natural numbers, where \texttt{Z} is zero, \texttt{S\ Z} is one,
-\texttt{S\ (S\ Z)} is two, \texttt{S\ (S\ (S\ Z))} is three, etc. So if
-we had something of type \texttt{Nat}, it could represent any natural
-number. This declaration gives you:
+You might have seen this type before\ldots{}it gives us value-level natural
+numbers, where \texttt{Z} is zero, \texttt{S\ Z} is one, \texttt{S\ (S\ Z)} is
+two, \texttt{S\ (S\ (S\ Z))} is three, etc. So if we had something of type
+\texttt{Nat}, it could represent any natural number. This declaration gives you:
 
 \begin{itemize}
 \tightlist
@@ -206,9 +201,9 @@ number. This declaration gives you:
   A value constructor \texttt{S\ ::\ Nat\ -\textgreater{}\ Nat}
 \end{itemize}
 
-However, with the \emph{DataKinds} extension, when you define this, you
-also define some extra fancy things. You also define a \emph{kind}
-\texttt{Nat}! More specifically, you get:
+However, with the \emph{DataKinds} extension, when you define this, you also
+define some extra fancy things. You also define a \emph{kind} \texttt{Nat}! More
+specifically, you get:
 
 \begin{itemize}
 \tightlist
@@ -217,16 +212,16 @@ also define some extra fancy things. You also define a \emph{kind}
 \item
   A type \texttt{Z\ ::\ Nat} (\texttt{Z}, of \emph{kind} \texttt{Nat})
 \item
-  A type constructor \texttt{S\ ::\ Nat\ -\textgreater{}\ Nat}
-  (\texttt{S}, which takes something of kind \texttt{Nat}, and returns a
-  new thing of kind \texttt{Nat})
+  A type constructor \texttt{S\ ::\ Nat\ -\textgreater{}\ Nat} (\texttt{S},
+  which takes something of kind \texttt{Nat}, and returns a new thing of kind
+  \texttt{Nat})
 \end{itemize}
 
 (Note that, to be principled, GHC would prefer us to use
-\texttt{\textquotesingle{}Z} and \texttt{\textquotesingle{}S} when we
-are referring to the \emph{types}, and this is how it'll print them out
-in error messages. But we're going to run with this for
-now\ldots{}mostly for aesthetic reasons)
+\texttt{\textquotesingle{}Z} and \texttt{\textquotesingle{}S} when we are
+referring to the \emph{types}, and this is how it'll print them out in error
+messages. But we're going to run with this for now\ldots{}mostly for aesthetic
+reasons)
 
 We can check this out in GHCi:
 
@@ -244,15 +239,15 @@ We can check this out in GHCi:
 \end{Shaded}
 
 So now we have a \emph{type} that can encode numbers. Something of type
-\texttt{Z} represents zero\ldots{}something of type \texttt{S\ Z}
-represents 1\ldots{}something of type \texttt{S\ (S\ Z)} represents two.
+\texttt{Z} represents zero\ldots{}something of type \texttt{S\ Z} represents
+1\ldots{}something of type \texttt{S\ (S\ Z)} represents two.
 
-Note that you can't ever have anything like \texttt{S\ Bool}\ldots{}that
-doesn't work, because \texttt{Bool} is of kind \texttt{*}, but
-\texttt{S} expects only \texttt{Nat}s.
+Note that you can't ever have anything like \texttt{S\ Bool}\ldots{}that doesn't
+work, because \texttt{Bool} is of kind \texttt{*}, but \texttt{S} expects only
+\texttt{Nat}s.
 
-Now we can make our \texttt{Vec} data type, with the \emph{GADTs}
-extension, or ``generalized algebraic data types'':
+Now we can make our \texttt{Vec} data type, with the \emph{GADTs} extension, or
+``generalized algebraic data types'':
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -268,10 +263,9 @@ extension, or ``generalized algebraic data types'':
 \end{Highlighting}
 \end{Shaded}
 
-If you've never seen GADTs before, think of it as a way of declaring a
-type by giving the type of your constructors instead of just the normal
-boring form. It's nothing too crazy\ldots{}it's basically like defining
-\texttt{Maybe} as:
+If you've never seen GADTs before, think of it as a way of declaring a type by
+giving the type of your constructors instead of just the normal boring form.
+It's nothing too crazy\ldots{}it's basically like defining \texttt{Maybe} as:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -289,18 +283,17 @@ instead of
 \end{Highlighting}
 \end{Shaded}
 
-In both cases, they create constructors of type
-\texttt{Nothing\ ::\ Maybe\ a} and
-\texttt{Just\ ::\ a\ -\textgreater{}\ Maybe\ a} anyway\ldots{}so the
-GADT form just gives us a way to state it explicitly.
+In both cases, they create constructors of type \texttt{Nothing\ ::\ Maybe\ a}
+and \texttt{Just\ ::\ a\ -\textgreater{}\ Maybe\ a} anyway\ldots{}so the GADT
+form just gives us a way to state it explicitly.
 
-Oh, we also used the \emph{KindSignatures} extension to be able to give
-a kind signature to \texttt{Vec}\ldots{}this is important because we
-want to make sure the first argument has to be a \texttt{Nat}. That is,
-we can't have anything silly like \texttt{Vec\ Bool\ Int}. We also have
-to put a separate \emph{StandaloneDeriving}-extension standalone
-deriving clause instead of just having \texttt{deriving\ Show} because
-\texttt{Vec} isn't a type that can be expressed in ``normal Haskell''.
+Oh, we also used the \emph{KindSignatures} extension to be able to give a kind
+signature to \texttt{Vec}\ldots{}this is important because we want to make sure
+the first argument has to be a \texttt{Nat}. That is, we can't have anything
+silly like \texttt{Vec\ Bool\ Int}. We also have to put a separate
+\emph{StandaloneDeriving}-extension standalone deriving clause instead of just
+having \texttt{deriving\ Show} because \texttt{Vec} isn't a type that can be
+expressed in ``normal Haskell''.
 
 Note that our type is basically like a list:
 
@@ -314,11 +307,10 @@ Note that our type is basically like a list:
 
 Except now our type constructor actually has a new \texttt{Nat}
 
-This means that, because of type erasure, everything ``runtime'' on our
-new type is basically going to be identical to \texttt{{[}{]}} (not
-considering compiler tricks). In-memory, this new type is essentially
-exactly \texttt{{[}{]}}, but its type has an extra tag that is erased at
-compile-time.
+This means that, because of type erasure, everything ``runtime'' on our new type
+is basically going to be identical to \texttt{{[}{]}} (not considering compiler
+tricks). In-memory, this new type is essentially exactly \texttt{{[}{]}}, but
+its type has an extra tag that is erased at compile-time.
 
 Okay, let's define some useful methods:
 
@@ -334,44 +326,41 @@ Okay, let's define some useful methods:
 \end{Shaded}
 
 Ah, the classic \texttt{head}/\texttt{tail} duo from the days pre-dating
-Haskell. \texttt{head} and \texttt{tail} are somewhat of a sore spot or
-wart in Haskell's list API\footnote{Can we get them out of Prelude?
-  Please? :)}, because they're \emph{partial functions}. You tell people
-all about how Haskell is great because it can prevent run-time errors by
-ensuring completeness and having the type system enforce null-pointer
-checks\ldots{}but then you go ahead and put unsafe functions that throw
-errors for empty lists anyways in Prelude.
+Haskell. \texttt{head} and \texttt{tail} are somewhat of a sore spot or wart in
+Haskell's list API\footnote{Can we get them out of Prelude? Please? :)}, because
+they're \emph{partial functions}. You tell people all about how Haskell is great
+because it can prevent run-time errors by ensuring completeness and having the
+type system enforce null-pointer checks\ldots{}but then you go ahead and put
+unsafe functions that throw errors for empty lists anyways in Prelude.
 
-But here\ldots{}this will never happen! We can only use \texttt{headV}
-and \texttt{tailV} on non-empty lists\ldots{}it won't typecheck for
-empty lists. Do you see why?
+But here\ldots{}this will never happen! We can only use \texttt{headV} and
+\texttt{tailV} on non-empty lists\ldots{}it won't typecheck for empty lists. Do
+you see why?
 
-It's because all empty lists are of type \texttt{Vec\ Z\ a}. But
-\texttt{headV} and \texttt{tailV} only take things of \emph{type}
-\texttt{Vec\ (S\ n)\ a}, for any \texttt{Nat} \texttt{n}. So, if you
-ever try to use it on an empty list, it won't even compile! No more
-pesky runtime bugs. \texttt{headV} and \texttt{tailV} are safe and will
-never crash at runtime!
+It's because all empty lists are of type \texttt{Vec\ Z\ a}. But \texttt{headV}
+and \texttt{tailV} only take things of \emph{type} \texttt{Vec\ (S\ n)\ a}, for
+any \texttt{Nat} \texttt{n}. So, if you ever try to use it on an empty list, it
+won't even compile! No more pesky runtime bugs. \texttt{headV} and
+\texttt{tailV} are safe and will never crash at runtime!
 
-Note that the return type of \texttt{tailV} is a vector of a length one
-less than the given vector.
+Note that the return type of \texttt{tailV} is a vector of a length one less
+than the given vector.
 \texttt{tailV\ ::\ Vec\ (S\ Z)\ a\ -\textgreater{}\ Vec\ Z\ a}, for
 instance\ldots{}or
-\texttt{tailV\ ::\ Vec\ (S\ (S\ Z))\ a\ -\textgreater{}\ Vec\ (S\ Z)\ a}.
-Just like we want!
+\texttt{tailV\ ::\ Vec\ (S\ (S\ Z))\ a\ -\textgreater{}\ Vec\ (S\ Z)\ a}. Just
+like we want!
 
-If you tried implementing this yourself, you might notice that you
-actually get an \emph{error} from GHC if you even \emph{try} to handle
-the \texttt{Nil} case for \texttt{tailV} or \texttt{headV}. GHC will
-know when you've handled all possible cases, and get mad at you if you
-try to handle a case that doesn't even make sense!
+If you tried implementing this yourself, you might notice that you actually get
+an \emph{error} from GHC if you even \emph{try} to handle the \texttt{Nil} case
+for \texttt{tailV} or \texttt{headV}. GHC will know when you've handled all
+possible cases, and get mad at you if you try to handle a case that doesn't even
+make sense!
 
-\subsection{Type families and
-appending}\label{type-families-and-appending}
+\subsection{Type families and appending}\label{type-families-and-appending}
 
-We can also ``append'' vectors. But we need a way to add \texttt{Nat}s
-together first. For that, we can use a type family, using the
-\emph{TypeFamilies} extension (with \texttt{TypeOperators}):
+We can also ``append'' vectors. But we need a way to add \texttt{Nat}s together
+first. For that, we can use a type family, using the \emph{TypeFamilies}
+extension (with \texttt{TypeOperators}):
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -382,9 +371,8 @@ together first. For that, we can use a type family, using the
 \end{Highlighting}
 \end{Shaded}
 
-A ``type family'' is like a type level function. Compare this to
-defining \texttt{(+)} on the value level to the \texttt{Nat} \emph{data}
-type:
+A ``type family'' is like a type level function. Compare this to defining
+\texttt{(+)} on the value level to the \texttt{Nat} \emph{data} type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -395,10 +383,10 @@ type:
 \end{Highlighting}
 \end{Shaded}
 
-Basically, we're defining a new type-level function \texttt{(+)} on two
-types \texttt{x} and \texttt{y}, both of kind \texttt{Nat}\ldots{}and
-the result is their ``sum''. Convince yourself that this ``addition'' is
-actually addition. Now, let's use it for \texttt{appendV}:
+Basically, we're defining a new type-level function \texttt{(+)} on two types
+\texttt{x} and \texttt{y}, both of kind \texttt{Nat}\ldots{}and the result is
+their ``sum''. Convince yourself that this ``addition'' is actually addition.
+Now, let's use it for \texttt{appendV}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -422,10 +410,9 @@ actually addition. Now, let's use it for \texttt{appendV}:
 
 \subsection{Generating}\label{generating}
 
-It'd be nice to have type-safe methods of \emph{generating} these
-things, too\ldots{}functions like \texttt{iterate}, or
-\texttt{enumFrom}. One of the ways to do this is by using a typeclass.
-(Available in a
+It'd be nice to have type-safe methods of \emph{generating} these things,
+too\ldots{}functions like \texttt{iterate}, or \texttt{enumFrom}. One of the
+ways to do this is by using a typeclass. (Available in a
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs}{separate
 file} to try out).
 
@@ -438,10 +425,9 @@ file} to try out).
 \end{Shaded}
 
 We're going to call \texttt{v} an \texttt{Unfoldable} if you can build a
-\texttt{v} from an ``unfolding function'' and an ``initial state''. Run
-the function on the initial value and get the first item and a new
-state. Run the function on the new state and get the second item and the
-next state.
+\texttt{v} from an ``unfolding function'' and an ``initial state''. Run the
+function on the initial value and get the first item and a new state. Run the
+function on the new state and get the second item and the next state.
 
 The list instance should make it more clear:
 
@@ -461,9 +447,8 @@ The list instance should make it more clear:
 \end{Highlighting}
 \end{Shaded}
 
-Note that we can have an instance for any fixed-length vector
-type\ldots{}where the thing ``cuts off'' after it's filled the entire
-vector:
+Note that we can have an instance for any fixed-length vector type\ldots{}where
+the thing ``cuts off'' after it's filled the entire vector:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -479,27 +464,25 @@ vector:
 
 Take a moment to think about what these instances are doing.
 
-You can create a \texttt{Vec\ Z\ a} from an unfolding function pretty
-easily, because the only thing with type \texttt{Vec\ Z\ a} is
-\texttt{Nil}. So just ignore the function/initial state and return
-\texttt{Nil}.
+You can create a \texttt{Vec\ Z\ a} from an unfolding function pretty easily,
+because the only thing with type \texttt{Vec\ Z\ a} is \texttt{Nil}. So just
+ignore the function/initial state and return \texttt{Nil}.
 
-The instance for \texttt{Vec\ (S\ n)} is slightly more involved. To make
-a \texttt{Vec\ (S\ n)\ a}, you need an \texttt{a} and a
-\texttt{Vec\ n\ a}. You can get the \texttt{a} from the unfolding
-function\ldots{}but where will you get the \texttt{Vec\ n\ a} from?
-Well, you can use \texttt{unfold} to make a \texttt{Vec\ n\ a}! But that
-only makes sense if \texttt{Vec\ n} is an \texttt{Unfoldable}.
+The instance for \texttt{Vec\ (S\ n)} is slightly more involved. To make a
+\texttt{Vec\ (S\ n)\ a}, you need an \texttt{a} and a \texttt{Vec\ n\ a}. You
+can get the \texttt{a} from the unfolding function\ldots{}but where will you get
+the \texttt{Vec\ n\ a} from? Well, you can use \texttt{unfold} to make a
+\texttt{Vec\ n\ a}! But that only makes sense if \texttt{Vec\ n} is an
+\texttt{Unfoldable}.
 
-So, that's why in the instance for \texttt{Vec\ (S\ n)}, we constrain
-that \texttt{Vec\ n} must also be an \texttt{Unfoldable}. We make our
-result by using our function to create an \texttt{a} and \texttt{unfold}
-to create a \texttt{Vec\ n\ a} (provided \texttt{Vec\ n} is an
-\texttt{Unfoldable}).
+So, that's why in the instance for \texttt{Vec\ (S\ n)}, we constrain that
+\texttt{Vec\ n} must also be an \texttt{Unfoldable}. We make our result by using
+our function to create an \texttt{a} and \texttt{unfold} to create a
+\texttt{Vec\ n\ a} (provided \texttt{Vec\ n} is an \texttt{Unfoldable}).
 
-Note that this style of declaration looks a lot like induction. We
-define our instance for zero\ldots{}and then we say, ``if \texttt{n} is
-an instance, then so is \texttt{S\ n}''. Induction!
+Note that this style of declaration looks a lot like induction. We define our
+instance for zero\ldots{}and then we say, ``if \texttt{n} is an instance, then
+so is \texttt{S\ n}''. Induction!
 
 Let's see this in action.
 
@@ -534,18 +517,17 @@ Let's see this in action.
 \end{Highlighting}
 \end{Shaded}
 
-Note that \texttt{replicateU} doesn't need to take in an \texttt{Int}
-parameter, like the on in Prelude, to say how many items to have. It
-just replicates enough to fill the entire vector we want!
+Note that \texttt{replicateU} doesn't need to take in an \texttt{Int} parameter,
+like the on in Prelude, to say how many items to have. It just replicates enough
+to fill the entire vector we want!
 
 \subsection{Common Typeclasses}\label{common-typeclasses}
 
-We can go in and implement common typeclasses, too. All the ones you'd
-expect.
+We can go in and implement common typeclasses, too. All the ones you'd expect.
 
 We can actually use the \emph{DeriveFunctor} extension to write a
-\texttt{Functor} instance, but let's write one on our own just for
-learning purposes:
+\texttt{Functor} instance, but let's write one on our own just for learning
+purposes:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -556,9 +538,9 @@ learning purposes:
 \end{Highlighting}
 \end{Shaded}
 
-For \texttt{Applicative}, it isn't so simple. The Applicative instance
-is going to be the ``ZipList'' instance\ldots{}so we have to be able to
-make a \texttt{pure} that depends on the type, and a
+For \texttt{Applicative}, it isn't so simple. The Applicative instance is going
+to be the ``ZipList'' instance\ldots{}so we have to be able to make a
+\texttt{pure} that depends on the type, and a
 \texttt{(\textless{}*\textgreater{})} that depends on the type, too.
 
 \begin{Shaded}
@@ -574,24 +556,22 @@ make a \texttt{pure} that depends on the type, and a
 \end{Highlighting}
 \end{Shaded}
 
-For \texttt{Vec\ Z}, it's just \texttt{Nil}. For
-\texttt{Vec\ (S\ n)}\ldots{}for pure, you need \texttt{x\ :\#}
-something\ldots{}and that something has to be a \texttt{Vec\ n\ a}.
-That's just \texttt{pure} for \texttt{Vec\ n}! Remember, we can't assume
-that \texttt{Vec\ n} is an \texttt{Applicative} just because
-\texttt{Vec\ (S\ n)} is. So we need to add a constraint, that
-\texttt{Vec\ n} an Applicative. Induction, again!
+For \texttt{Vec\ Z}, it's just \texttt{Nil}. For \texttt{Vec\ (S\ n)}\ldots{}for
+pure, you need \texttt{x\ :\#} something\ldots{}and that something has to be a
+\texttt{Vec\ n\ a}. That's just \texttt{pure} for \texttt{Vec\ n}! Remember, we
+can't assume that \texttt{Vec\ n} is an \texttt{Applicative} just because
+\texttt{Vec\ (S\ n)} is. So we need to add a constraint, that \texttt{Vec\ n} an
+Applicative. Induction, again!
 
-For \texttt{(\textless{}*\textgreater{})}, we can get the first item
-easily, it's just \texttt{f\ x}. But for the next item, we need a
-\texttt{Vec\ n\ a}. Luckily\ldots{}we have exactly that with the
+For \texttt{(\textless{}*\textgreater{})}, we can get the first item easily,
+it's just \texttt{f\ x}. But for the next item, we need a \texttt{Vec\ n\ a}.
+Luckily\ldots{}we have exactly that with the
 \texttt{(\textless{}*\textgreater{})} for \texttt{Vec\ n}!
 
-Remember, at the end, we're saying ``We have an \texttt{Applicative}
-instance for \emph{any} type \texttt{Vec\ n}''. The instance for
-\texttt{Vec\ Z} has \texttt{pure\ \_\ =\ Nil}. The instance for
-\texttt{Vec\ (S\ Z)} has \texttt{pure\ x\ =\ x\ :\#\ Nil}. The instance
-for \texttt{Vec\ (S\ (S\ Z))} has
+Remember, at the end, we're saying ``We have an \texttt{Applicative} instance
+for \emph{any} type \texttt{Vec\ n}''. The instance for \texttt{Vec\ Z} has
+\texttt{pure\ \_\ =\ Nil}. The instance for \texttt{Vec\ (S\ Z)} has
+\texttt{pure\ x\ =\ x\ :\#\ Nil}. The instance for \texttt{Vec\ (S\ (S\ Z))} has
 \texttt{pure\ x\ =\ x\ :\#\ x\ :\#\ Nil}, etc. etc.
 
 \begin{Shaded}
@@ -605,15 +585,14 @@ for \texttt{Vec\ (S\ (S\ Z))} has
 \end{Highlighting}
 \end{Shaded}
 
-I'll leave the \texttt{Monad} instance as an exercise, but it's in the
-source files for this post. \texttt{join} for this instance should be a
-``diagonal'' --- the first item of the first vector, the second item of
-the second vector, the third item of the third vector, etc.
+I'll leave the \texttt{Monad} instance as an exercise, but it's in the source
+files for this post. \texttt{join} for this instance should be a ``diagonal''
+--- the first item of the first vector, the second item of the second vector,
+the third item of the third vector, etc.
 
-We can define \texttt{Foldable} and \texttt{Traversable} the same way.
-Like for \texttt{Functor}, GHC can derive these with
-\emph{DeriveFoldable} and \emph{DeriveTraversable}\ldots{}but we'll do
-it again here just to demonstrate.
+We can define \texttt{Foldable} and \texttt{Traversable} the same way. Like for
+\texttt{Functor}, GHC can derive these with \emph{DeriveFoldable} and
+\emph{DeriveTraversable}\ldots{}but we'll do it again here just to demonstrate.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -632,14 +611,13 @@ it again here just to demonstrate.
 \end{Highlighting}
 \end{Shaded}
 
-Note that we can only use \texttt{foldMap\ f\ xs} on
-\texttt{xs\ ::\ Vec\ n\ a}, if \texttt{Vec\ n} is a \texttt{Foldable}.
-So that's why we add that constraint.
+Note that we can only use \texttt{foldMap\ f\ xs} on \texttt{xs\ ::\ Vec\ n\ a},
+if \texttt{Vec\ n} is a \texttt{Foldable}. So that's why we add that constraint.
 
 Again,
 \texttt{liftA2\ (:\#)\ ::\ Applicative\ f\ =\textgreater{}\ f\ a\ -\textgreater{}\ f\ (Vec\ n\ a)\ -\textgreater{}\ f\ (Vec\ (S\ n)\ a)}\ldots{}so
-this only makes sense if \texttt{traverse\ f\ s} gives us a
-\texttt{Vec\ n\ a}. So we have to add that as a constraint.
+this only makes sense if \texttt{traverse\ f\ s} gives us a \texttt{Vec\ n\ a}.
+So we have to add that as a constraint.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -657,8 +635,8 @@ this only makes sense if \texttt{traverse\ f\ s} gives us a
 \end{Highlighting}
 \end{Shaded}
 
-\texttt{Traversable} of course opens a whole lot of doors. For example,
-we can write a ``safe \texttt{fromList}'':
+\texttt{Traversable} of course opens a whole lot of doors. For example, we can
+write a ``safe \texttt{fromList}'':
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -679,15 +657,14 @@ we can write a ``safe \texttt{fromList}'':
 \end{Highlighting}
 \end{Shaded}
 
-And, if you're on GHC 7.8+, you have access to the
-\emph{OverloadedLists} language extension, where you can interpret list
-literals as if they were other structures.
+And, if you're on GHC 7.8+, you have access to the \emph{OverloadedLists}
+language extension, where you can interpret list literals as if they were other
+structures.
 
-We've already already implemented both \texttt{fromList} and
-\texttt{toList}, in a way, already, so this should be a breeze. The only
-trick you might see is that the \texttt{IsList} typeclass asks for a
-type family to return the \emph{type of the element in the container}
-from the container type.
+We've already already implemented both \texttt{fromList} and \texttt{toList}, in
+a way, already, so this should be a breeze. The only trick you might see is that
+the \texttt{IsList} typeclass asks for a type family to return the \emph{type of
+the element in the container} from the container type.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -713,37 +690,33 @@ from the container type.
 \end{Highlighting}
 \end{Shaded}
 
-Neat! All of the benefits of list literals that \emph{OverloadedLists}
-offers is now available to us.\footnote{By the way, the GHC wiki seems
-  to claim that
+Neat! All of the benefits of list literals that \emph{OverloadedLists} offers is
+now available to us.\footnote{By the way, the GHC wiki seems to claim that
   \href{https://ghc.haskell.org/trac/ghc/wiki/OverloadedLists\#Length-indexedobservedVectors}{using
-  \emph{OverloadedLists} this way is impossible}. Anyone know what's
-  going on here? Did we move fast and break everything?} Unfortunately,
-you now open yourself up to runtime errors, so\ldots{}it's actually a
-really bad idea for safety purposes unless you stick to only using it
-with infinite lists or are very disciplined. (Unless you really want to
-use list syntax, \texttt{fromListU} is probably a safer choice for
-finite lists!)
+  \emph{OverloadedLists} this way is impossible}. Anyone know what's going on
+  here? Did we move fast and break everything?} Unfortunately, you now open
+yourself up to runtime errors, so\ldots{}it's actually a really bad idea for
+safety purposes unless you stick to only using it with infinite lists or are
+very disciplined. (Unless you really want to use list syntax, \texttt{fromListU}
+is probably a safer choice for finite lists!)
 
 \subsection{Indexing}\label{indexing}
 
-It'd be nice to be able to index into these, of course. For type-safe
-indexing, we can take advantage of a trick using the \texttt{Proxy}
-type.
+It'd be nice to be able to index into these, of course. For type-safe indexing,
+we can take advantage of a trick using the \texttt{Proxy} type.
 
-Many might remember having to get a \texttt{TypeRep} for a
-\texttt{Typeable} instance by doing something like
-\texttt{typeOf\ (undefined\ ::\ IO\ Double)}. That's because
+Many might remember having to get a \texttt{TypeRep} for a \texttt{Typeable}
+instance by doing something like \texttt{typeOf\ (undefined\ ::\ IO\ Double)}.
+That's because
 \texttt{typeOf\ ::\ Typeable\ a\ =\textgreater{}\ a\ -\textgreater{}\ TypeRep}.
-If you wanted to get the \texttt{typeRep} for an \texttt{IO\ Double}
-using \texttt{typeOf}, you have to pass in an \texttt{IO\ Double}. But
-if you don't have one at hand, you can just use \texttt{undefined} with
-a type annotation. It's a bit of a dirty hack, but it works because
-\texttt{typeOf} doesn't care about the first argument's
-value\ldots{}just its type.
+If you wanted to get the \texttt{typeRep} for an \texttt{IO\ Double} using
+\texttt{typeOf}, you have to pass in an \texttt{IO\ Double}. But if you don't
+have one at hand, you can just use \texttt{undefined} with a type annotation.
+It's a bit of a dirty hack, but it works because \texttt{typeOf} doesn't care
+about the first argument's value\ldots{}just its type.
 
-These days, we like to be a bit less embarrassing and use something
-called \texttt{Proxy}:
+These days, we like to be a bit less embarrassing and use something called
+\texttt{Proxy}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -751,23 +724,22 @@ called \texttt{Proxy}:
 \end{Highlighting}
 \end{Shaded}
 
-\texttt{Proxy\ a} is a bit like \texttt{()}. It only has one
-constructor, and doesn't take any arguments. But we can use the type
-signature to ``pass in types'' to functions, as ``arguments''.
+\texttt{Proxy\ a} is a bit like \texttt{()}. It only has one constructor, and
+doesn't take any arguments. But we can use the type signature to ``pass in
+types'' to functions, as ``arguments''.
 
-We have a couple of options here. One is to make a typeclass for type
-level nats to turn them into an \texttt{Integer} or a value-level
-\texttt{Nat}, and then do an ``unsafe indexing'' after verifying,
-through types, that the index is smaller than the length.
+We have a couple of options here. One is to make a typeclass for type level nats
+to turn them into an \texttt{Integer} or a value-level \texttt{Nat}, and then do
+an ``unsafe indexing'' after verifying, through types, that the index is smaller
+than the length.
 
-However, this is a little bit silly because we're just doing an unsafe
-indexing in the end anyway, so the compiler can't help us at all.
-Wouldn't it be nice if we could get the compiler on our side and write a
-\emph{real} safe index?
+However, this is a little bit silly because we're just doing an unsafe indexing
+in the end anyway, so the compiler can't help us at all. Wouldn't it be nice if
+we could get the compiler on our side and write a \emph{real} safe index?
 
-There are many ways to approach this problem, but one way is to make a
-specific \texttt{Index} typeclass: (or make another typeclass like
-\texttt{Take}, and write \texttt{index} in terms of it)
+There are many ways to approach this problem, but one way is to make a specific
+\texttt{Index} typeclass: (or make another typeclass like \texttt{Take}, and
+write \texttt{index} in terms of it)
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -779,29 +751,25 @@ specific \texttt{Index} typeclass: (or make another typeclass like
 
 Here, we can say that \texttt{n} and \texttt{v} are instances of
 \texttt{Index\ n\ v} if and only if you can safely (totally) index into
-\texttt{v\ a} at index \texttt{n}. That is, if every value of type
-\texttt{v\ a} ever has an index at \texttt{n}, a \texttt{Nat}. (By the
-way, we need \emph{MultiParamTypeClasses} to be able to make a type
-class with two parameters)
+\texttt{v\ a} at index \texttt{n}. That is, if every value of type \texttt{v\ a}
+ever has an index at \texttt{n}, a \texttt{Nat}. (By the way, we need
+\emph{MultiParamTypeClasses} to be able to make a type class with two
+parameters)
 
 So, \texttt{n\ \textasciitilde{}\ S\ Z} and
-\texttt{v\ \textasciitilde{}\ Vec\ (S\ (S\ Z))\ a} has an instance,
-because you can get the \(n = 1\) element (the second element) from
-\emph{any} value of type \texttt{Vec\ (S\ (S\ Z))\ a} (a length-two
-vector).
+\texttt{v\ \textasciitilde{}\ Vec\ (S\ (S\ Z))\ a} has an instance, because you
+can get the \(n = 1\) element (the second element) from \emph{any} value of type
+\texttt{Vec\ (S\ (S\ Z))\ a} (a length-two vector).
 
 But \texttt{n\ \textasciitilde{}\ S\ Z} and
 \texttt{v\ \textasciitilde{}\ Vec\ (S\ Z)\ a} does \emph{not}. There are
-actually \emph{no} length-1 vectors that have a \(1\) index (second
-element).
+actually \emph{no} length-1 vectors that have a \(1\) index (second element).
 
-Note that we use the \texttt{Proxy} trick we discussed, so that we can
-indicate somehow what index we really want. It is a trick that basically
-allows us to pass a \emph{type} (\texttt{S\ Z}, \texttt{S\ (S\ Z)},
-etc.) as a ``value''.
+Note that we use the \texttt{Proxy} trick we discussed, so that we can indicate
+somehow what index we really want. It is a trick that basically allows us to
+pass a \emph{type} (\texttt{S\ Z}, \texttt{S\ (S\ Z)}, etc.) as a ``value''.
 
-Let's write our instances --- but only the instances that \emph{make
-sense}.
+Let's write our instances --- but only the instances that \emph{make sense}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -814,27 +782,27 @@ sense}.
 \end{Highlighting}
 \end{Shaded}
 
-The first case instance makes sense. We can definitely index at index
-\texttt{Z} (zero) of \emph{any} \texttt{Vec\ (S\ n)\ a} --- the only
-thing we can't index \texttt{Z} into is \texttt{Vec\ Z\ a}. So, if our
-vector is of length 1 or higher, we can index at position 0.
+The first case instance makes sense. We can definitely index at index \texttt{Z}
+(zero) of \emph{any} \texttt{Vec\ (S\ n)\ a} --- the only thing we can't index
+\texttt{Z} into is \texttt{Vec\ Z\ a}. So, if our vector is of length 1 or
+higher, we can index at position 0.
 
 The second case says that, if we can index into \texttt{n} of a
-\texttt{Vec\ m\ a}, then of course we can index into an \texttt{S\ n} of
-a \texttt{Vec\ (S\ m)\ a}. To index into \texttt{S\ n} of a
-\texttt{Vec\ (S\ m)\ a}, all we need to do is index into \texttt{n} of
-the \texttt{Vec\ m\ a} tail!
+\texttt{Vec\ m\ a}, then of course we can index into an \texttt{S\ n} of a
+\texttt{Vec\ (S\ m)\ a}. To index into \texttt{S\ n} of a
+\texttt{Vec\ (S\ m)\ a}, all we need to do is index into \texttt{n} of the
+\texttt{Vec\ m\ a} tail!
 
-We have to use the \emph{ScopedTypeVariables} extension to enable us to
-use, with the \texttt{forall} statement, the \texttt{n} in our instance
-when we are writing our type for \texttt{Proxy}. If we didn't, the
-\texttt{n} in \texttt{Proxy\ n} in our \texttt{index} definition would
-be considered unrelated by GHC to the \texttt{n} in the instance
-statement, \texttt{Index\ (S\ n)\ (Vec\ (S\ m))}. (This is the only
-reason we need the \texttt{forall})
+We have to use the \emph{ScopedTypeVariables} extension to enable us to use,
+with the \texttt{forall} statement, the \texttt{n} in our instance when we are
+writing our type for \texttt{Proxy}. If we didn't, the \texttt{n} in
+\texttt{Proxy\ n} in our \texttt{index} definition would be considered unrelated
+by GHC to the \texttt{n} in the instance statement,
+\texttt{Index\ (S\ n)\ (Vec\ (S\ m))}. (This is the only reason we need the
+\texttt{forall})
 
-In any case, note the similarity of this algorithm to the actual
-indexing function on lists:
+In any case, note the similarity of this algorithm to the actual indexing
+function on lists:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -854,17 +822,17 @@ trying it out\ldots{}
 \end{Highlighting}
 \end{Shaded}
 
-It's an error, but remember, it's a \emph{compiler} error, that happens
-before any code is ever even run! No more indexing errors at runtime!
-Kiss your days of hunting segfault errors in C goodbye!
+It's an error, but remember, it's a \emph{compiler} error, that happens before
+any code is ever even run! No more indexing errors at runtime! Kiss your days of
+hunting segfault errors in C goodbye!
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 \textbf{Aside}
 
-This is something I haven't really been able to find a good answer too.
-But notice that we actually could have written a ``bad'' instance of the
-second instance of \texttt{Index}:
+This is something I haven't really been able to find a good answer too. But
+notice that we actually could have written a ``bad'' instance of the second
+instance of \texttt{Index}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -873,35 +841,33 @@ second instance of \texttt{Index}:
 \end{Highlighting}
 \end{Shaded}
 
-And this compiles fine\ldots{}but gives the wrong behavior, or at least
-the behavior we don't want!
+And this compiles fine\ldots{}but gives the wrong behavior, or at least the
+behavior we don't want!
 
-Does anybody know a way to state the type of \texttt{Index} or
-\texttt{index} in a way that implementations like this are impossible?
+Does anybody know a way to state the type of \texttt{Index} or \texttt{index} in
+a way that implementations like this are impossible?
 
-There's a ``fundamental'' problem here, it seems, because we can't
-really demand or specify anything by the return type, like we could in
-the other examples. In the other examples, we sort of restricted the
-implementation by choosing our return type carefully\ldots{}but for
-here, it's just \texttt{a}. I'd love to hear if anyone has any thoughts
-on this.
+There's a ``fundamental'' problem here, it seems, because we can't really demand
+or specify anything by the return type, like we could in the other examples. In
+the other examples, we sort of restricted the implementation by choosing our
+return type carefully\ldots{}but for here, it's just \texttt{a}. I'd love to
+hear if anyone has any thoughts on this.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 You might notice that it's a bit of a plain to write
-\texttt{S\ (S\ (S\ (S\ Z)))}, etc., especially for large numbers. And I
-wouldn't even think about writing it for the hundreds.
+\texttt{S\ (S\ (S\ (S\ Z)))}, etc., especially for large numbers. And I wouldn't
+even think about writing it for the hundreds.
 
-We'll ``fix'' this in the next section. However, even before this, you
-actually can generate these ``automatically'' with template haskell,
-using techniques from
-\href{http://www.cs.rutgers.edu/~ccshan/prepose/prepose.pdf}{Functional
+We'll ``fix'' this in the next section. However, even before this, you actually
+can generate these ``automatically'' with template haskell, using techniques
+from \href{http://www.cs.rutgers.edu/~ccshan/prepose/prepose.pdf}{Functional
 Pearls: Implicit Configurations}, and the
 \href{http://hackage.haskell.org/package/linear-1.18.0.1/docs/Linear-V.html}{linear}
-package does just this. (This path slipped my mind before I posted
-because I didn't really consider template Haskell, and I think I'll edit
-in a section here soon). With this in mind, I still don't really
-consider Template Haskell an optimal or clean approach :)
+package does just this. (This path slipped my mind before I posted because I
+didn't really consider template Haskell, and I think I'll edit in a section here
+soon). With this in mind, I still don't really consider Template Haskell an
+optimal or clean approach :)
 
 \section{Using TypeLits and Type Checker
 Plugins}\label{using-typelits-and-type-checker-plugins}
@@ -910,27 +876,24 @@ Plugins}\label{using-typelits-and-type-checker-plugins}
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs}{also
 available online}, as well!)
 
-Using a custom \texttt{Nat} kind and \emph{DataKinds} is nice and all,
-but it's a bit of a hassle to express large numbers like 100, 1000, etc.
-However, as of GHC 7.8, we've had the ability to actually \emph{use}
-numeric (integer) literals in our types. Instead of writing
-\texttt{S\ (S\ Z)}, we can write \texttt{2}.
+Using a custom \texttt{Nat} kind and \emph{DataKinds} is nice and all, but it's
+a bit of a hassle to express large numbers like 100, 1000, etc. However, as of
+GHC 7.8, we've had the ability to actually \emph{use} numeric (integer) literals
+in our types. Instead of writing \texttt{S\ (S\ Z)}, we can write \texttt{2}.
 
-GHC can't yet quite work with that well by default. It has trouble
-proving statements about variables, like
-\texttt{(n\ +\ 1)\ \textasciitilde{}\ (1\ +\ n)} (that \texttt{n\ +\ 1}
-is ``the same as'' \texttt{1\ +\ n}). Fortunately for us, since GHC
-7.10, we have a way to ``extend'' the type checker with custom plugins
-that \emph{can} prove things like this for us. (Note that this
-\texttt{+} is the one from \texttt{GHC.TypeLits}\ldots{}not the one we
-defined earlier.)
+GHC can't yet quite work with that well by default. It has trouble proving
+statements about variables, like
+\texttt{(n\ +\ 1)\ \textasciitilde{}\ (1\ +\ n)} (that \texttt{n\ +\ 1} is ``the
+same as'' \texttt{1\ +\ n}). Fortunately for us, since GHC 7.10, we have a way
+to ``extend'' the type checker with custom plugins that \emph{can} prove things
+like this for us. (Note that this \texttt{+} is the one from
+\texttt{GHC.TypeLits}\ldots{}not the one we defined earlier.)
 
 The
 \emph{\href{https://hackage.haskell.org/package/ghc-typelits-natnormalise}{ghc-typelits-natnormalise}}
-package is a package providing such a plugin. We can have GHC use it to
-extend its type checking by passing in
-\texttt{-fplugin\ GHC.TypeLits.Normalise} when we execute our code, or
-by adding a pragma:
+package is a package providing such a plugin. We can have GHC use it to extend
+its type checking by passing in \texttt{-fplugin\ GHC.TypeLits.Normalise} when
+we execute our code, or by adding a pragma:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -939,8 +902,8 @@ by adding a pragma:
 \end{Highlighting}
 \end{Shaded}
 
-to the top of our file, along with our \texttt{LANGUAGE} pragmas.
-(Assuming, of course, a GHC 7.10+)
+to the top of our file, along with our \texttt{LANGUAGE} pragmas. (Assuming, of
+course, a GHC 7.10+)
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -956,8 +919,8 @@ to the top of our file, along with our \texttt{LANGUAGE} pragmas.
 
 GHC now uses the plugin to prove that the two are really equivalent.
 
-If you wanted to play along or try out the code samples, I recommend you
-use a sandbox:
+If you wanted to play along or try out the code samples, I recommend you use a
+sandbox:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -969,8 +932,8 @@ use a sandbox:
 \end{Highlighting}
 \end{Shaded}
 
-With that in mind, let's start restating everything in terms of
-\emph{TypeLits} and see what it gains us.
+With that in mind, let's start restating everything in terms of \emph{TypeLits}
+and see what it gains us.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -987,22 +950,21 @@ With that in mind, let's start restating everything in terms of
 \end{Shaded}
 
 A little nicer, right? \texttt{Nil} is a \texttt{Vec\ 0\ a}, and
-\texttt{x\ :\#\ xs} is an element with a \texttt{Vec\ (n\ -\ 1)\ a},
-which overall is a \texttt{Vec\ n\ a}. Let's go over everything again to
-see how it'd look in the new regime. (Note that the kind of the type
-number literals is also called \texttt{Nat}\ldots{}unrelated to our
-\texttt{Nat} we used before.)
+\texttt{x\ :\#\ xs} is an element with a \texttt{Vec\ (n\ -\ 1)\ a}, which
+overall is a \texttt{Vec\ n\ a}. Let's go over everything again to see how it'd
+look in the new regime. (Note that the kind of the type number literals is also
+called \texttt{Nat}\ldots{}unrelated to our \texttt{Nat} we used before.)
 
 \section{A new look}\label{a-new-look}
 
-First of all, we're going to have to define \emph{TypeLit} comparison
-operators, as they aren't built in in a useful way.
+First of all, we're going to have to define \emph{TypeLit} comparison operators,
+as they aren't built in in a useful way.
 
-We have the type family (remember those?) \texttt{CmpNat\ x\ y}, which
-returns an \texttt{Ordering} (\texttt{LT}, \texttt{EQ}, or \texttt{GT})
-type (of kind \texttt{Ordering}, using \emph{DataKinds}\ldots{}lifting a
-type and its value constructors to a kind and its types), which is
-provided and defined for us by GHC in \texttt{GHC.TypeLits}.
+We have the type family (remember those?) \texttt{CmpNat\ x\ y}, which returns
+an \texttt{Ordering} (\texttt{LT}, \texttt{EQ}, or \texttt{GT}) type (of kind
+\texttt{Ordering}, using \emph{DataKinds}\ldots{}lifting a type and its value
+constructors to a kind and its types), which is provided and defined for us by
+GHC in \texttt{GHC.TypeLits}.
 
 So defining a \texttt{x\ \textgreater{}\ y} constraint is pretty
 straightforward:
@@ -1014,8 +976,8 @@ straightforward:
 \end{Highlighting}
 \end{Shaded}
 
-Note that we need the \emph{ConstraintKinds} extension for this to work,
-as \texttt{1\ \textgreater{}\ 2} is now a \emph{constraint}, of kind
+Note that we need the \emph{ConstraintKinds} extension for this to work, as
+\texttt{1\ \textgreater{}\ 2} is now a \emph{constraint}, of kind
 \texttt{Constraint}.
 
 Given this, let's do our favorite list functions, \texttt{headV} and
@@ -1041,26 +1003,23 @@ Magnificent!
 \end{Highlighting}
 \end{Shaded}
 
-Neat! The error, remember, is at \emph{compile time}, and not at
-runtime. If we ever tried to do an unsafe head, our code wouldn't even
-\emph{compile}! The error message comes from the fact that we need
-\(n > 0\), but we have \(n = 0\) instead. We have \texttt{EQ}, but we
-need \texttt{GT}.
+Neat! The error, remember, is at \emph{compile time}, and not at runtime. If we
+ever tried to do an unsafe head, our code wouldn't even \emph{compile}! The
+error message comes from the fact that we need \(n > 0\), but we have \(n = 0\)
+instead. We have \texttt{EQ}, but we need \texttt{GT}.
 
-There is one problem here, though --- GHC gives us a warning for not
-pattern matching on \texttt{Nil}. But, if we do try to pattern match on
-\texttt{Nil}, we get a type error, like the same one we got when using
-our custom type nats. I think this is probably something that a plugin
-or sufficiently smart \texttt{CmpNat} might be able to handle\ldots{}but
-I'm not totally sure. Right now, the best thing I can think of is just
-to do a wildcard match, \texttt{headV\ \_\ =\ error\ "What?"}, knowing
-that that case will never be reached if your program compiles
-successfully.
+There is one problem here, though --- GHC gives us a warning for not pattern
+matching on \texttt{Nil}. But, if we do try to pattern match on \texttt{Nil}, we
+get a type error, like the same one we got when using our custom type nats. I
+think this is probably something that a plugin or sufficiently smart
+\texttt{CmpNat} might be able to handle\ldots{}but I'm not totally sure. Right
+now, the best thing I can think of is just to do a wildcard match,
+\texttt{headV\ \_\ =\ error\ "What?"}, knowing that that case will never be
+reached if your program compiles successfully.
 
-Moving on, we see that we don't even have to do any extra work to define
-our own type family \texttt{x\ +\ y}\ldots{}because
-\texttt{GHC.TypeLits} already defines it for us! So, we can instantly
-write\ldots{}.
+Moving on, we see that we don't even have to do any extra work to define our own
+type family \texttt{x\ +\ y}\ldots{}because \texttt{GHC.TypeLits} already
+defines it for us! So, we can instantly write\ldots{}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1096,14 +1055,13 @@ And our list generating typeclasses ---
 \end{Highlighting}
 \end{Shaded}
 
-The translation is pretty mechanical, but I think that this new
-formulation looks\ldots{}really nice, and really powerful. ``If you can
-build a list from \(n - 1\) and \(n > 0\), then you can build a list for
-\(n\)!
+The translation is pretty mechanical, but I think that this new formulation
+looks\ldots{}really nice, and really powerful. ``If you can build a list from
+\(n - 1\) and \(n > 0\), then you can build a list for \(n\)!
 
-Note that because our definitions of \texttt{replicateU},
-\texttt{iterateU}, and \texttt{fromListMaybes} was polymorphic over all
-\texttt{Unfoldable}, we can actually re-use them from before:
+Note that because our definitions of \texttt{replicateU}, \texttt{iterateU}, and
+\texttt{fromListMaybes} was polymorphic over all \texttt{Unfoldable}, we can
+actually re-use them from before:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1116,14 +1074,14 @@ Note that because our definitions of \texttt{replicateU},
 \end{Highlighting}
 \end{Shaded}
 
-The actual types are much nicer, too --- we can write
-\texttt{Vec\ 10\ Int} instead of
-\texttt{Vec\ (S\ (S\ (S\ (S\ (S\ (S\ (S\ (S\ (S\ (S\ Z))))))))))\ Int}
-without resorting to template haskell.
+The actual types are much nicer, too --- we can write \texttt{Vec\ 10\ Int}
+instead of
+\texttt{Vec\ (S\ (S\ (S\ (S\ (S\ (S\ (S\ (S\ (S\ (S\ Z))))))))))\ Int} without
+resorting to template haskell.
 
 Going through all of our other typeclasses/functions and making the
-adjustments\ldots{} (remembering that we can also derive
-\texttt{Functor}, \texttt{Traversable}, and \texttt{Foldable} using GHC)
+adjustments\ldots{} (remembering that we can also derive \texttt{Functor},
+\texttt{Traversable}, and \texttt{Foldable} using GHC)
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1170,10 +1128,9 @@ adjustments\ldots{} (remembering that we can also derive
 \end{Highlighting}
 \end{Shaded}
 
-(Remember, we use the \texttt{forall} here with
-\emph{ScopedTypeVariables} to be able to say that the \texttt{n} in the
-type signature is the same \texttt{n} that is in the type of
-\texttt{Proxy})
+(Remember, we use the \texttt{forall} here with \emph{ScopedTypeVariables} to be
+able to say that the \texttt{n} in the type signature is the same \texttt{n}
+that is in the type of \texttt{Proxy})
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1195,30 +1152,28 @@ type signature is the same \texttt{n} that is in the type of
 \end{Highlighting}
 \end{Shaded}
 
-I think, overall, this formulation gives a much nicer interface. Being
-able to just write \(10\) is pretty powerful. The usage with
-\emph{OverloadedLists} is pretty clean, too, especially when you can do
-things like \texttt{{[}1,3..{]}\ ::\ Vec\ 10\ Int} and take full
-advantage of list syntax and succinct vector types. (Minding your
-runtime errors, of course)
+I think, overall, this formulation gives a much nicer interface. Being able to
+just write \(10\) is pretty powerful. The usage with \emph{OverloadedLists} is
+pretty clean, too, especially when you can do things like
+\texttt{{[}1,3..{]}\ ::\ Vec\ 10\ Int} and take full advantage of list syntax
+and succinct vector types. (Minding your runtime errors, of course)
 
 However, you do again get the problem that GHC is not able to do real
 completeness checking and asks for the \texttt{Nil} cases still of
-everything\ldots{}but adding a \texttt{Nil} case will cause a type
-error. The only solution is to add a \texttt{\_} wildcard chase,
-but\ldots{}again, this isn't quite satisfactory.\footnote{Interestingly
-  enough, I think this is something where you could have the best of
-  both situations with the Template Haskell method. But I'd hope for
-  something that works on the beautiful TypeLits :'(} If anybody has a
-way to get around this, I'd love to know :)
+everything\ldots{}but adding a \texttt{Nil} case will cause a type error. The
+only solution is to add a \texttt{\_} wildcard chase, but\ldots{}again, this
+isn't quite satisfactory.\footnote{Interestingly enough, I think this is
+  something where you could have the best of both situations with the Template
+  Haskell method. But I'd hope for something that works on the beautiful
+  TypeLits :'(} If anybody has a way to get around this, I'd love to know :)
 
 \section{Alternative Underlying
 Representations}\label{alternative-underlying-representations}
 
-Recall that our \texttt{Vec} was basically identically the normal list
-type, with an extra field in the type. Due to type erasure, the two are
-represented exactly the same in memory. So we have \(O(n)\) appends,
-\(O(n)\) indexing, etc. Our type is essentially equal to
+Recall that our \texttt{Vec} was basically identically the normal list type,
+with an extra field in the type. Due to type erasure, the two are represented
+exactly the same in memory. So we have \(O(n)\) appends, \(O(n)\) indexing, etc.
+Our type is essentially equal to
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1227,11 +1182,10 @@ represented exactly the same in memory. So we have \(O(n)\) appends,
 \end{Highlighting}
 \end{Shaded}
 
-For this type, though, we'd need to use ``smart constructors'' and
-extractors instead of \texttt{1\ :\#\ 2\ :\#\ Nil} etc.
+For this type, though, we'd need to use ``smart constructors'' and extractors
+instead of \texttt{1\ :\#\ 2\ :\#\ Nil} etc.
 
-We could, however, chose a more efficient type, like \texttt{Vector}
-from the
+We could, however, chose a more efficient type, like \texttt{Vector} from the
 \emph{\href{http://hackage.haskell.org/package/vector-0.10.12.2/docs/Data-Vector.html\#t:Vector}{vector}}
 package:
 
@@ -1242,8 +1196,8 @@ package:
 \end{Highlighting}
 \end{Shaded}
 
-And, if you made sure to wrap everything with smart constructors, you
-now have \emph{type safe} \(O(1)\) random indexing!
+And, if you made sure to wrap everything with smart constructors, you now have
+\emph{type safe} \(O(1)\) random indexing!
 
 (This is representation is similar to the one used by the
 \emph{\href{http://hackage.haskell.org/package/linear-1.18.0.1/docs/Linear-V.html}{linear}}
@@ -1251,23 +1205,22 @@ package.)
 
 \section{More Operations}\label{more-operations}
 
-One really weird quirk with this is that many functions you'd normally
-write using pattern matching you'd now might start writing using
-typeclasses. One example would be our implementation of indexing, using
-an \texttt{IndexV} typeclass.
+One really weird quirk with this is that many functions you'd normally write
+using pattern matching you'd now might start writing using typeclasses. One
+example would be our implementation of indexing, using an \texttt{IndexV}
+typeclass.
 
-A bunch of one-shot typeclasses is sort of unideal, as typeclasses are
-sort of ugly and non-first-class. Ideally you'd only have a few
-typeclasses for as generic an interface as possible, and then be able to
-do everything from those. Sometimes this just isn't practical. I did
-mention one way around it, which was to make a typeclass to ``reify'' or
-turn your type into actual data, and then manipulate your data in an
-``unsafe'' way knowing that the type checker checked that the data
-matched.
+A bunch of one-shot typeclasses is sort of unideal, as typeclasses are sort of
+ugly and non-first-class. Ideally you'd only have a few typeclasses for as
+generic an interface as possible, and then be able to do everything from those.
+Sometimes this just isn't practical. I did mention one way around it, which was
+to make a typeclass to ``reify'' or turn your type into actual data, and then
+manipulate your data in an ``unsafe'' way knowing that the type checker checked
+that the data matched.
 
-We'll demonstrate with \texttt{SomeNat} from \texttt{GHC.TypeLits}, but
-you can also make our own for our inductive \texttt{Nat} type we used in
-the first half, too.
+We'll demonstrate with \texttt{SomeNat} from \texttt{GHC.TypeLits}, but you can
+also make our own for our inductive \texttt{Nat} type we used in the first half,
+too.
 
 If we use our ``wrapped \texttt{Vector} approach'', we can just do:
 
@@ -1282,48 +1235,43 @@ If we use our ``wrapped \texttt{Vector} approach'', we can just do:
 \end{Shaded}
 
 That is, \texttt{index} internally uses \texttt{(!)}, an unsafe
-operator\ldots{}but only after we assure properly that it's safe to use
-by stating \texttt{m\ \textgreater{}\ n} in the constraint. We can be
-sure that GHC will catch any instance where someone tries to index into
-a \texttt{Vec\ m\ a} whose \texttt{m} is \emph{not} greater than the
-index desired.
+operator\ldots{}but only after we assure properly that it's safe to use by
+stating \texttt{m\ \textgreater{}\ n} in the constraint. We can be sure that GHC
+will catch any instance where someone tries to index into a \texttt{Vec\ m\ a}
+whose \texttt{m} is \emph{not} greater than the index desired.
 
-The rest is up to you, though --- to prove that indexing into a number
-smaller than \texttt{m} will always provide an answer. We have to make
-sure our smart constructors are okay and that \texttt{(!)} behaves like
-we think it does.
+The rest is up to you, though --- to prove that indexing into a number smaller
+than \texttt{m} will always provide an answer. We have to make sure our smart
+constructors are okay and that \texttt{(!)} behaves like we think it does.
 
 \section{Singletons}\label{singletons}
 
 Another answer to these sort of ad-hoc typeclasses is to use techniques
-involving singletons. Going all into how to use singletons to work with
-these is an article on its own\ldots{}luckily, this article has already
-been written as
+involving singletons. Going all into how to use singletons to work with these is
+an article on its own\ldots{}luckily, this article has already been written as
 \href{https://www.fpcomplete.com/user/konn/prove-your-haskell-for-great-safety/dependent-types-in-haskell}{Part
-1: Dependent Types in Haskell} by Hiromi ISHII. A major advantage is
-that you replace typeclasses with type families and more parameterized
-types. You'll have to work with an understanding of how singletons work,
-and accept using some template haskell to generate singleton types for
-your data types (or write them yourself!). But it's a powerful way to
-bring something like dependent types into Haskell, and there's already a
-lot of infrastructure of support on it on hackage and in the haskell dev
-ecosystem in general. I recommend looking at the linked article!
+1: Dependent Types in Haskell} by Hiromi ISHII. A major advantage is that you
+replace typeclasses with type families and more parameterized types. You'll have
+to work with an understanding of how singletons work, and accept using some
+template haskell to generate singleton types for your data types (or write them
+yourself!). But it's a powerful way to bring something like dependent types into
+Haskell, and there's already a lot of infrastructure of support on it on hackage
+and in the haskell dev ecosystem in general. I recommend looking at the linked
+article!
 
 \section{Conclusion}\label{conclusion}
 
-Hopefully you'll see that we are able to apply the full type-safety of
-the Haskell compiler to our programs regarding lists by encoding the
-length of the list in its type and limiting its operations by
-specifically typed functions and choice of instances. I also hope that
-you've been able to become familiar with seeing a lot of GHC's basic
-type extensions in real applications :)
+Hopefully you'll see that we are able to apply the full type-safety of the
+Haskell compiler to our programs regarding lists by encoding the length of the
+list in its type and limiting its operations by specifically typed functions and
+choice of instances. I also hope that you've been able to become familiar with
+seeing a lot of GHC's basic type extensions in real applications :)
 
 Feel free to
 \href{https://github.com/mstksg/inCode/blob/master/code-samples/fixvec}{download
 and run} any of the samples
 
-Please let me know if I got anything wrong, or if there are any
-techniques that I should mention here that are out and in the wild today
-:)
+Please let me know if I got anything wrong, or if there are any techniques that
+I should mention here that are out and in the wild today :)
 
 \end{document}
