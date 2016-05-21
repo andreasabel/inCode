@@ -136,7 +136,7 @@ is a language that’s inspired by Haskell, with a lot of Haskell features we us
 every day, and throws in things we all wish we had in Haskell, like extensible
 records!
 
-(Note — I did rewrite all of my fay in GHCJS at first. This resulted in a
+(Note — I *did* rewrite all of my fay in GHCJS at first. This resulted in a
 javascript blob that was *1.4 MB* in size for just a bunch of small DOM
 manipulation scripts. Definitely not practical, unfortunately!)
 
