@@ -3,7 +3,7 @@ Introducing “in Code”!
 
 [Read online!](https://blog.jle.im/entry/introducing-in-code.html)
 
-*Posted by [Justin Le](https://blog.jle.im/) on September 17, 2013*
+*Originally posted by [Justin Le](https://blog.jle.im/) on September 17, 2013*
 
 Throughout my time programming and developing, I’ve noticed that there
 are few legitimately useful sources of practical and beneficial

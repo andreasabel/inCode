@@ -3,7 +3,7 @@ Auto: A Todo GUI application with Auto (on GHCJS, etc.)
 
 [Read online!](https://blog.jle.im/entry/auto-a-todo-gui-application-with-auto-on.html)
 
-*Posted by [Justin Le](https://blog.jle.im/) on April 23, 2015*
+*Originally posted by [Justin Le](https://blog.jle.im/) on April 23, 2015*
 
 Continuing along with [All About
 Auto](http://blog.jle.im/entries/series/+all-about-auto), let’s look at

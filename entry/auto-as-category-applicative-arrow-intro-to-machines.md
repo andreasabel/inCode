@@ -3,7 +3,7 @@ Auto as Category, Applicative & Arrow (Intro to Machines/Arrows Part 2)
 
 [Read online!](https://blog.jle.im/entry/auto-as-category-applicative-arrow-intro-to-machines.html)
 
-*Posted by [Justin Le](https://blog.jle.im/) on July 14, 2014*
+*Originally posted by [Justin Le](https://blog.jle.im/) on July 14, 2014*
 
 Welcome back! It’s been a while since the last post, admittedly; sorry!
 In this post we’ll be continuing on from [the previous

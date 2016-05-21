@@ -3,7 +3,7 @@ A Non-Unique Monad Instance
 
 [Read online!](https://blog.jle.im/entry/a-non-unique-monad-instance.html)
 
-*Posted by [Justin Le](https://blog.jle.im/) on January 28, 2015*
+*Originally posted by [Justin Le](https://blog.jle.im/) on January 28, 2015*
 
 Just stopping in for a short post before continuing with a long-overdue
 series or two :) This post is a bit of a short fun one that describes a

@@ -3,7 +3,7 @@ Practical Fun with Monads — Introducing: MonadPlus!
 
 [Read online!](https://blog.jle.im/entry/practical-fun-with-monads-introducing-monadplus.html)
 
-*Posted by [Justin Le](https://blog.jle.im/) on December 9, 2013*
+*Originally posted by [Justin Le](https://blog.jle.im/) on December 9, 2013*
 
 Monads. Haskell’s famous for them, but they are one of the most
 ill-understood concepts to the public. They are mostly shrouded in

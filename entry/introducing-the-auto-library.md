@@ -3,7 +3,7 @@ Introducing: the Auto library!
 
 [Read online!](https://blog.jle.im/entry/introducing-the-auto-library.html)
 
-*Posted by [Justin Le](https://blog.jle.im/) on March 24, 2015*
+*Originally posted by [Justin Le](https://blog.jle.im/) on March 24, 2015*
 
 **Auto**: [README](https://github.com/mstksg/auto/blob/master/README.md)
 (with examples) / [hackage](http://hackage.haskell.org/package/auto) /

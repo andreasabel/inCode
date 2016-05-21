@@ -3,7 +3,7 @@ An open list of functions to compose functions in Haskell
 
 [Read online!](https://blog.jle.im/entry/an-open-list-of-functions-to-compose-functions.html)
 
-*Posted by [Justin Le](https://blog.jle.im/)*
+*Originally posted by [Justin Le](https://blog.jle.im/)*
 
 Hi all, just a fun post here :) I’ve been telling myself for a long time
 to compile a list of all the ways you can compose two functions,

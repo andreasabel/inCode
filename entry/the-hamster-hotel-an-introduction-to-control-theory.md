@@ -3,7 +3,7 @@ The Hamster Hotel: An Introduction to Control Theory (Part 1)
 
 [Read online!](https://blog.jle.im/entry/the-hamster-hotel-an-introduction-to-control-theory.html)
 
-*Posted by [Justin Le](https://blog.jle.im/) on September 26, 2013*
+*Originally posted by [Justin Le](https://blog.jle.im/) on September 26, 2013*
 
 Over this summer my work has been in the field of control theory. I must
 admit that I at first found it a little odd that the idea of
