@@ -199,8 +199,8 @@ randomNet i (h:hs) o = (:&~) <$> randomWeights i h <*> randomNet h hs o
 *[MonadRandom](http://hackage.haskell.org/package/MonadRandom)* library, which
 uses the mechanisms in
 *[System.Random](http://hackage.haskell.org/package/random-1.1/docs/System-Random.html)*
-and gives us a monad for chaining operations on random values we get with
-`getRandom`, etc.)
+and gives us a generic way of working with monads where we can get random values
+with `getRandom`, etc.)
 
 ([`randomVector`](http://hackage.haskell.org/package/hmatrix-0.17.0.1/docs/Numeric-LinearAlgebra.html#v:randomVector)
 and
@@ -716,7 +716,7 @@ run-time checks.
 ### Running with it
 
 So now, you can use `randomNet :: IO (Network 5 '[4,3] 2)` to get a random
-network of the desired dimensions!
+network of the desired dimensions! (`IO` is an instance of `MonadRandom`)
 
 Can we just pause right here to just appreciate how awesome it is that we can
 generate random networks of whatever size we want by *just requesting something
