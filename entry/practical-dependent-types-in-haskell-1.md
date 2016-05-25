@@ -30,7 +30,7 @@ process of learning this all, myself :)
 
 The first project in this series will build up to a type-safe **[artificial
 neural network](https://en.wikipedia.org/wiki/Artificial_neural_network)**
-implementation with back-propagation.
+implementation with back-propagation training.
 
 #### Setup
 
