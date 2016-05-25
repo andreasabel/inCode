@@ -78,7 +78,7 @@
 \hypersetup{breaklinks=true,
             bookmarks=true,
             pdfauthor={Justin Le},
-            pdftitle={Practical Dependent Types in Haskell: Type-Safe Neural Networks},
+            pdftitle={Practical Dependent Types in Haskell: Type-Safe Neural Networks (Part 1)},
             colorlinks=true,
             citecolor=blue,
             urlcolor=blue,
@@ -92,7 +92,7 @@
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
 
-\title{Practical Dependent Types in Haskell: Type-Safe Neural Networks}
+\title{Practical Dependent Types in Haskell: Type-Safe Neural Networks (Part 1)}
 \author{Justin Le}
 
 \begin{document}
@@ -102,13 +102,13 @@
 \textbf{\href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html}{in
 Code}}.}
 
-Whether you like it or not, programming with dependent types in Haskell moving
-slowly but steadily to the mainstream of Haskell programming. In the current
-state of Haskell education, dependent types are often considered topics for
-``advanced'' Haskell users. However, I can definitely foresee a day where the
-ease of use of modern Haskell libraries relying on dependent types forces
-programming with dependent types to be an integral part of regular intermediate
-(or even beginner) Haskell education, as much as Traversable or Maps.
+It seems these days like programming with dependent types in Haskell (and its
+advantages) is moving slowly but steadily to the mainstream of Haskell
+programming. In the current state of Haskell education, dependent types are
+often considered topics for ``advanced'' Haskell users. However, I can foresee a
+day where the ease of use of modern Haskell libraries relying on dependent types
+forces programming with dependent types to be an integral part of normal
+intermediate (or even beginner) Haskell education.
 
 There are \href{https://www.youtube.com/watch?v=rhWMhTjQzsU}{more} and
 \href{http://www.well-typed.com/blog/2015/11/implementing-a-minimal-version-of-haskell-servant/}{more}
@@ -126,9 +126,9 @@ current programs. The intended audience of this post is for intermediate Haskell
 programmers in general, with no required knowledge of dependently typed
 programming.
 
-The first project in this series will build up to type-safe
+The first project in this series will build up to a type-safe
 \textbf{\href{https://en.wikipedia.org/wiki/Artificial_neural_network}{artificial
-neural network}} implementations. Hooray!
+neural network}} implementation with back-propagation.
 
 \subsubsection{Setup}\label{setup}
 
@@ -137,8 +137,7 @@ snapshot \emph{\href{https://www.stackage.org/lts-5.17}{lts-5.17}}, but uses an
 unreleased version of \emph{hmatrix},
 \emph{\href{https://github.com/albertoruiz/hmatrix/tree/42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1}{hmatrix-0.18
 (commit 42a88fb)}}. I \href{http://mstksg.github.io/hmatrix/}{maintain my own
-documentation} for reference. You can add this to the \texttt{packages} field of
-your directory or global \emph{stack.yaml}:
+documentation} for reference. You can add this:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -151,24 +150,25 @@ your directory or global \emph{stack.yaml}:
 \end{Highlighting}
 \end{Shaded}
 
-and \emph{stack} will know what version of \emph{hmatrix} to use when you use
-\texttt{stack\ runghc} or \texttt{stack\ ghc}, etc. to build your files!
+to the \texttt{packages} field of your directory or global \emph{stack.yaml} and
+\emph{stack} will know what version of \emph{hmatrix} to use when you use
+\texttt{stack\ runghc} or \texttt{stack\ ghc}, etc. to build your files.
 
 \section{Neural Networks}\label{neural-networks}
 
 \href{https://en.wikipedia.org/wiki/Artificial_neural_network}{Artificial neural
-networks} have been somewhat of a hot topic in computing recently. At their core
-they involve matrix multiplication and manipulation, so they do seem like a good
-candidate for a dependent types. Most importantly, implementations of training
-algorithms (like back-propagation) are tricky to implement correctly --- despite
-being simple, there are many locations where accidental bugs might pop up when
-multiplying the wrong matrices, for example.
+networks} have been somewhat of a hot topic in computing recently.
+Implementations of training algorithms (like back-propagation) are tricky to
+implement correctly --- despite being simple, there are many locations where
+accidental bugs might pop up when multiplying the wrong matrices, for example.
 
-It's not always easy to gauge before-the-fact what would or would not be a good
-candidate for adding dependent types to, and often times, it can be considered
-premature to start off with ``as powerful types as you can''. So let's walk
-through programming things with as ``dumb'' types as possible, and see where
-types can help.
+Though some might recognize that complicated matrix and vector arithmetic is a
+common application of phantom type-based dependent types, it's not necessarily
+always easy to gauge before-the-fact what would or would not be a good candidate
+for adding dependent types to. Often times, it can even be considered premature
+to start off with ``as powerful types as you can''. So let's walk through
+programming things with as ``dumb'' types as possible, and see where types can
+help.
 
 We'll be following a process called ``type-driven development'' --- start with
 general and non-descriptive types, write the implementation and recognize
@@ -207,6 +207,10 @@ matrix, we can write it a little cleaner:
 \[
 \mathbf{y} = \mathbf{b} + W \mathbf{x}
 \]
+
+The result, the \(n\)-vector of nodes \(\mathbf{y}\), is computed from the
+\(n\)-vector of biases \(\mathbf{b}\) and the \(n \times m\) weight matrix \(W\)
+multiplied with the \(m\)-vector input, \(\mathbf{x}\).
 
 To ``scale'' the result (and to give the system the magical powers of
 nonlinearity), we actually apply an ``activation function'' to the output before
@@ -299,6 +303,13 @@ We can write simple procedures, like generating random networks:
 \NormalTok{randomNet i (h}\FunctionTok{:}\NormalTok{hs) o }\FunctionTok{=} \NormalTok{(}\FunctionTok{:&~}\NormalTok{) }\FunctionTok{<$>} \NormalTok{randomWeights i h }\FunctionTok{<*>} \NormalTok{randomNet h hs o}
 \end{Highlighting}
 \end{Shaded}
+
+(We're using the \texttt{MonadRandom} typeclass from the
+\emph{\href{http://hackage.haskell.org/package/MonadRandom}{MonadRandom}}
+library, which uses the mechanisms in
+\emph{\href{http://hackage.haskell.org/package/random-1.1/docs/System-Random.html}{System.Random}}
+and gives us a monad for chaining operations on random values we get with
+\texttt{getRandom}, etc.)
 
 (\href{http://hackage.haskell.org/package/hmatrix-0.17.0.1/docs/Numeric-LinearAlgebra.html\#v:randomVector}{\texttt{randomVector}}
 and
@@ -440,11 +451,13 @@ Haskell programmer. There must be a better way!\footnote{This sentence is the
 Pretty much the only way you can verify this code is to test it out on example
 cases. In the
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs}{source
-file} I have \texttt{main} test out the backprop, training a network on a 2D
-function that was ``on'' for two small circles and ``off'' everywhere else (A
-nice cute non-linearly-separable function to test our network on). We basically
-train the network to be able to recognize the two-circle pattern. I implemented
-a simple printing function and tested the trained network on a grid:
+file}, I have
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs\#L128-136}{\texttt{main}}
+test out the backprop, training a network on a 2D function that was ``on'' for
+two small circles and ``off'' everywhere else (A nice cute
+non-linearly-separable function to test our network on). We basically train the
+network to be able to recognize the two-circle pattern. I implemented a simple
+printing function and tested the trained network on a grid:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -502,10 +515,10 @@ Looking back at our untyped implementation, we notice some things:
 \def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
-  Literally every single function we wrote is partial.\footnote{Okay, maybe not
-    \emph{literally} every one. But, pretty much every one.} If we had passed in
-  the incorrectly sized matrix/vector, or stored mismatched vectors in our
-  network, everything would fall apart.
+  Literally every single function we wrote is partial. Like, actually.\footnote{Okay,
+    maybe not \emph{literally} every one. But, pretty much every one.} If we had
+  passed in the incorrectly sized matrix/vector, or stored mismatched vectors in
+  our network, everything would fall apart.
 \item
   There are billions of ways we could have implemented our functions where they
   would still typechecked. We could multiply mismatched matrices, or forget to
@@ -539,21 +552,25 @@ of 6 nodes:
 
 The type constructor \texttt{Weights} has the kind
 \texttt{Weights\ ::\ Nat\ -\textgreater{}\ Nat\ -\textgreater{}\ *} --- it takes
-two types of kind \texttt{Nat} (which the integer type literals give us with
+two types of kind \texttt{Nat} (from the
+\emph{\href{http://hackage.haskell.org/package/base-4.8.2.0/docs/GHC-TypeLits.html}{GHC.TypeLits}}
+module, which the integer type literals give us with
 \emph{\href{https://www.schoolofhaskell.com/user/konn/prove-your-haskell-for-great-safety/dependent-types-in-haskell\#type-level-naturals}{DataKinds}}
 enabled) and returns a \texttt{*} --- a ``normal type''.
 
-We're using the \texttt{Numeric.LinearAlgebra.Static} module from
-\emph{\href{http://hackage.haskell.org/package/hmatrix}{hmatrix}}, which offers
-matrix and vector types with their size in their types: an \texttt{R\ 5} is a
-vector of Doubles with 5 elements, and a \texttt{L\ 3\ 6} is a 3x6 vector of
-Doubles.
+We're using the
+\emph{\href{http://mstksg.github.io/hmatrix/Numeric-LinearAlgebra-Static.html}{Numeric.LinearAlgebra.Static}}
+module from \emph{\href{http://hackage.haskell.org/package/hmatrix}{hmatrix}},
+which offers matrix and vector types with their size in their types: an
+\texttt{R\ 5} is a vector of Doubles with 5 elements, and a \texttt{L\ 3\ 6} is
+a 3x6 vector of Doubles.
 
 These types are called ``dependent'' types because the type itself
 \emph{depends} on its value. If an \texttt{R\ n} contains a 5-element vector,
 its type is \texttt{R\ 5}.
 
-The \texttt{Static} module in \emph{hmatrix} relies on the \texttt{KnownNat}
+The \emph{Static} module in \emph{hmatrix} relies on the
+\href{http://hackage.haskell.org/package/base-4.8.2.0/docs/GHC-TypeLits.html\#t:KnownNat}{\texttt{KnownNat}}
 mechanism that GHC offers. Almost all operations in the library require a
 \texttt{KnownNat} constraint on the type-level Nats --- for example, you can
 take the dot product of two vectors with
@@ -656,20 +673,22 @@ Generating random weights and networks is even nicer now:
 \end{Highlighting}
 \end{Shaded}
 
-Notice that the \texttt{Static} versions of
+Notice that the \emph{Static} versions of
 \href{http://mstksg.github.io/hmatrix/Numeric-LinearAlgebra-Static.html\#v:randomVector}{\texttt{randomVector}}
 and
 \href{http://mstksg.github.io/hmatrix/Numeric-LinearAlgebra-Static.html\#v:uniformSample}{\texttt{uniformSample}}
 don't actually require the size of the vector/matrix you want as an input --
-they just use type inference to figure out what size you want! This is the same
-process that \texttt{read} uses to figure out what type of thing you want to
-return. You would use \texttt{randomVector\ s\ Uniform\ ::\ R\ 10}, and type
-inference would give you a 10-element vector the same way
-\texttt{read\ "hello"\ ::\ Int} would give you an \texttt{Int}.
+they just use \emph{type inference} to figure out what size you want! This is
+the same process that
+\href{http://hackage.haskell.org/package/base-4.8.2.0/docs/Prelude.html\#v:read}{\texttt{read}}
+uses to figure out what type of thing you want to return. You would use
+\texttt{randomVector\ s\ Uniform\ ::\ R\ 10}, and type inference would give you
+a 10-element vector the same way \texttt{read\ "hello"\ ::\ Int} would give you
+an \texttt{Int}.
 
-Here's something important: note that it's much harder to implement this
-incorrectly. Before, you could give the matrix the wrong dimensions (maybe you
-flipped the parameters?), or gave the wrong parameter to the vector generator.
+It's important to note that it's much harder to implement this incorrectly.
+Before, you could give the matrix the wrong dimensions (maybe you flipped the
+parameters?), or gave the wrong parameter to the vector generator.
 
 But here, you are guaranteed/forced to return the correctly sized vectors and
 matrices. In fact, you \emph{don't even have to worry} about it --- it's handled
@@ -723,17 +742,17 @@ it's just a better style of defining functions/offering an API!
 \subsection{Singletons and Induction}\label{singletons-and-induction}
 
 The code for the updated \texttt{randomNet} takes a bit of background to
-understand, so let's take a quick detour through the concepts of singletons and
-induction on data types.
+understand, so let's take a quick detour through the concepts of singletons,
+dependent pattern matching, and induction on dependent data types.
 
-Let's say we want to construct a
-\texttt{Network\ 4\ \textquotesingle{}{[}3,2{]}\ 1} by implementing an algorithm
-that can create any \texttt{Network\ i\ hs\ o}. In true Haskell fashion, we do
-this recursively (``inductively''). After all, we know how to make a
-\texttt{Network\ i\ \textquotesingle{}{[}{]}\ o} (just
+Let's say we want to implement an algorithm that can create any
+\texttt{Network\ i\ hs\ o}, so that we can construct a
+\texttt{Network\ 4\ \textquotesingle{}{[}3,2{]}\ 1} or something. In true
+Haskell fashion, we want do this recursively (``inductively''). After all, we
+know how to make a \texttt{Network\ i\ \textquotesingle{}{[}{]}\ o} (just
 \texttt{O\ \textless{}\$\textgreater{}\ randomWieights}), and we know how to
 create a \texttt{Network\ i\ (h\ \textquotesingle{}:\ hs)\ o} if we had a
-\texttt{Network\ h\ hs\ o} (just use \texttt{(:\&\textasciitilde{})} with a
+\texttt{Network\ h\ hs\ o} (just use \texttt{(:\&\textasciitilde{})} with
 \texttt{randomWeights}). Now all we have to do is just ``pattern match'' on the
 type-level list, and\ldots{}
 
@@ -744,10 +763,10 @@ runtime. We need to have a way to ``access'' the type (at run-time) as a
 
 In Haskell, the popular way to deal with this is by using \emph{singletons} ---
 (parameterized) types which only have valid constructor. The
-\emph{\href{http://hackage.haskell.org/package/typelits-witnesses}{typelits-witnesses}}
+\emph{\href{http://hackage.haskell.org/package/typelits-witnesses-0.2.2.0}{typelits-witnesses}}
 library offers a handy singleton for just this job. If you have a type level
-list of nats, you get a \texttt{KnowNats\ ns} constraint. This lets you create a
-\texttt{NatList}:
+list of nats, you get a \texttt{KnownNats\ ns} constraint. This lets you create
+a \texttt{NatList}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -760,11 +779,12 @@ list of nats, you get a \texttt{KnowNats\ ns} constraint. This lets you create a
 \end{Highlighting}
 \end{Shaded}
 
-Basically, a \texttt{NatList\ \textquotesingle{}{[}1,2,3{]}} is
+Basically, the \emph{only} value of type
+\texttt{NatList\ \textquotesingle{}{[}1,2,3{]}} is
 \texttt{p1\ :\textless{}\#\ p2\ :\textless{}\#\ p3\ :\textless{}\#\ ØNL}, where
 \texttt{p1\ ::\ Proxy\ 1}, \texttt{p2\ ::\ Proxy\ 2}, and
 \texttt{p3\ ::\ Proxy\ 3}. (Remember, \texttt{data\ Proxy\ a\ =\ Proxy};
-\texttt{Proxy} is like \texttt{()} but with an extra phantom type parameter)
+\texttt{Proxy} is like \texttt{()} but with an extra phantom type parameter).
 
 We use singletons like this by \emph{pattern matching} on the polymorphic type
 (a \texttt{NatList\ ns}) and consequentially learning about the type parameter
@@ -823,8 +843,8 @@ It's a part of the GADT declaration. If you ever pattern match on
 uses).
 
 This is a common pattern in dependent Haskell: ``building up'' a value-level
-singleton \emph{structure} from a type that we want (either explicitly passed
-in, or provided through a typeclass like \texttt{KnownNats}) and then
+singleton \emph{structure} from a type that we want (either explicitly given as
+an argument, or provided through a typeclass like \texttt{KnownNats}) and then
 inductively piggybacking on that structure's constructors to build the thing you
 \emph{really} want (called ``elimination''). Here, we use \texttt{KnownNats\ hs}
 to build our \texttt{NatList\ hs} structure, and use/``eliminate'' that
@@ -861,11 +881,13 @@ an \texttt{Integer\ -\textgreater{}\ ..} (because all the typeclass is is a way
 to get an \texttt{Integer} out of it with \texttt{natVal}).
 \texttt{(:\textless{}\#)} requiring a \texttt{KnownNat\ n\ =\textgreater{}} put
 into it is really the same as requiring an \texttt{Integer} in it, which the act
-of pattern-matching can then take out.
+of pattern-matching can then take out. A \texttt{NatList\ ns} is no different at
+run-time than an \texttt{{[}Integer{]}}, and \texttt{KnownNats\ =\textgreater{}}
+is no different than \texttt{{[}Integer{]}\ -\textgreater{}}.
 
-The difference is that GHC and the compiler can now ``track'' these at
-compile-time to give you checks on how your Nat's act together on the type
-level, allowing it to catch mismatches with compile-time checks instead of
+The difference is that GHC and the compiler can now \emph{track} these at
+compile-time to give you \emph{checks} on how your Nat's act together on the
+type level, allowing it to catch mismatches with compile-time checks instead of
 run-time checks.
 
 \subsection{Running with it}\label{running-with-it}
@@ -877,12 +899,11 @@ a random network of the desired dimensions!
 Can we just pause right here to just appreciate how awesome it is that we can
 generate random networks of whatever size we want by \emph{just requesting
 something by its type}? Our implementation is also \emph{guaranteed} to have the
-right sized matrices\ldots{}no worrying about using the right size parameters
-for the right matrix in the right oder. GHC does it for you automatically! And,
-for the person who \emph{uses} \texttt{randomNet}, they don't have to bungle
-around with figuring out what function argument indicates what, and in what
-order, and they don't have to play a guessing game about the shape of the
-returned matrix.
+right sized matrices --- no worrying about using the right size parameters for
+the right matrix in the right order. GHC does it for you automatically! And, for
+the person who \emph{uses} \texttt{randomNet}, they don't have to bungle around
+with figuring out what function argument indicates what, and in what order, and
+they don't have to play a guessing game about the shape of the returned matrix.
 
 The code for \emph{running} the nets is actually literally identical from
 before:
@@ -989,12 +1010,10 @@ version was no fun at all. But, with the types, writing the implementation
 became a \emph{joy} again. And, you have the help of \emph{hole driven
 development}, too.
 
-If you need, say, an \texttt{R\ n}, there might be only one way go get it ---
-only one function that returns it.
-
-If you have something that you need to combine with something you don't know
-about, you can use typed holes (\texttt{\_}) and GHC will give you a list of all
-the values you have in scope that can fit there. Your programs basically write
+If you need, say, an \texttt{R\ n}, there might be only one way get it! And if
+you have something that you need to combine with something you don't know about,
+you can use typed holes (\texttt{\_}) and GHC will give you a list of all the
+values you have in scope that can fit there. Your programs basically write
 themselves!
 
 The more you can restrict the implementations of your functions with your types,
@@ -1005,17 +1024,19 @@ compiler will nudge you gently into the correct direction.
 The most stressful part of programming happens when you have to tenuously hold a
 complex and fragile network of ideas and constraints in your brain, and any
 slight distraction or break in focus causes everything to crash down in your
-mind. Over time, people have begun to believe that this is ``normal'', and a
-sign of a good programming experience. Don't believe this lie --- it's not! A
-good programming experience involves maintaining as \emph{little} in your head
-as possible, and letting the compiler handle remembering/checking the rest!
+mind. Over time, people have begun to believe that this is ``normal'' in
+programming. Don't believe this lie --- it's \emph{not}! A good programming
+experience involves maintaining as \emph{little} in your head as possible, and
+letting the compiler handle remembering/checking the rest.
 
 \subsubsection{The final test}\label{the-final-test}
 
 You can download the
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs}{typed
-network} source code and run it yourself. Again, the \texttt{main} method is
-written identically to that of the other file, and tests the identical function.
+network} source code and run it yourself. Again, the
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L147-155}{\texttt{main}}
+method is written identically to that of the other file and tests the identical
+function.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1052,8 +1073,12 @@ potential implementations}.
 
 We followed our well-tuned Haskell guts, listened to our hearts, and introduced
 extra power in our types to remove all partial functions and eliminate
-\emph{most} potential implementations (not all, yet). We removed entire swaths
-of programmer concern. We found joy again in programming.
+\emph{most} potential implementations (though not all, yet).
+
+Though we might have been able to find the bugs we avoided ``eventually'', we
+were able to remove entire \emph{dimensions} of programmer concern and also
+leverage parametric polymorphism to help write our programs for us. We found joy
+again in programming.
 
 In the process, however, we encountered some unexpected resistance from Haskell
 (the language). We couldn't directly pattern match on our types, so we ended up
@@ -1070,8 +1095,9 @@ know? How can we manipulate our networks in a ``dynamic'' and generic way that
 still gives us all of the benefits of type-safe programming?
 
 What we're looking at here is a world where \emph{types} can depend on run-time
-values \ldots{} and values can depend on types. A world where types become as
-much of a manipulatable citizen of as values are.
+values \ldots{} and values can depend on types. A world where types can be
+returned from functions and where types become as much of a manipulatable
+citizen of as values are.
 
 The art of working with types like this is \emph{dependently typed programming}.
 We're going to feel a bit of push back from Haskell at first, but after we hit
