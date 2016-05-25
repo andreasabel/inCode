@@ -1,7 +1,7 @@
 Practical Dependent Types in Haskell: Type-Safe Neural Networks (Part 1)
 ========================================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on May 25, 2016.
 > [Read online!](https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html)
 
 It seems these days like programming with dependent types in Haskell (and its
@@ -704,8 +704,8 @@ see `KnownNat n => ..`, you can think of it as an `Integer -> ..` (because all
 the typeclass is is a way to get an `Integer` out of it with `natVal`). `(:<#)`
 requiring a `KnownNat n =>` put into it is really the same as requiring an
 `Integer` in it, which the act of pattern-matching can then take out. A
-`NatList ns` is no different at run-time than an `[Integer]`, and `KnownNats =>`
-is no different than `[Integer] ->`.
+`NatList ns` is no different at run-time than an `[Integer]`, and
+`KnownNats ns =>` is no different than `[Integer] ->`.
 
 The difference is that GHC and the compiler can now *track* these at
 compile-time to give you *checks* on how your Nat’s act together on the type
