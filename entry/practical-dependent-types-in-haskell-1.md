@@ -702,7 +702,9 @@ pattern match on it, you also “pattern match” out that instance, too.
 
 Another way you can think of it is that the *creation* of `SNat :: Sing n`
 requires the presence of `KnownNat n`. So if you ever pattern match on a validly
-created `SNat`, that means that that instance has to exist, and we can use it!
+created `SNat`, the fact that that `SNat` constructor even exists (instead of,
+say, being `undefined`) is a *witness* to that `KnownNat` instance, and the type
+system lets us use this.
 
 Now we have enough pieces of the puzzle:
 
