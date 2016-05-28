@@ -822,7 +822,7 @@ on.
 \end{Shaded}
 
 \emph{singletons} actually provides a whole bunch of singleton constructors for
-different types, like for \texttt{Bool}:
+different types and kinds, like for \texttt{Bool}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -835,9 +835,9 @@ different types, like for \texttt{Bool}:
 \texttt{Bool})
 
 So, if we ever are given a \texttt{Sing\ b} with some type-level \texttt{Bool}
-we don't know about, we can pattern match on it. And in the branch that
-\texttt{STrue} matches on, \texttt{b} is \texttt{\textquotesingle{}True}, and in
-the branch that \texttt{SFalse} matches on, \texttt{b} is \texttt{False}.
+we don't know, we can pattern match on it. And in the branch that \texttt{STrue}
+matches on, \texttt{b} is \texttt{\textquotesingle{}True}, and in the branch
+that \texttt{SFalse} matches on, \texttt{b} is \texttt{False}.
 
 Singletons give us a way to pattern match on types by having an actual
 term-level value we can pattern match on. So, we \emph{could} implement:
@@ -852,11 +852,12 @@ term-level value we can pattern match on. So, we \emph{could} implement:
 And \texttt{randomNet} gets to directly pattern match and deconstruct on
 \texttt{Sing\ hs}.
 
-However, for actual API's, it's usually much more convenient to \emph{not}
-require the extra parameter, and have it be ``inferred'' in the way we've been
-doing it before. So the \emph{singletons} library offers a typeclass we can use
-to implicitly conjure up values of a singleton type -- \texttt{SingI}. We can
-use \texttt{sing\ ::\ SingI\ s\ =\textgreater{}\ Sing\ s} to generate the
+However, for actual API's, it's often more convenient to \emph{not} require the
+extra parameter, and have it be ``inferred'' in the way we've been doing it
+before. That way the \emph{user} doesn't have the burden of supplying it. The
+\emph{singletons} library offers a typeclass we can use to implicitly conjure up
+values of a singleton type -- \texttt{SingI}. We can use
+\texttt{sing\ ::\ SingI\ s\ =\textgreater{}\ Sing\ s} to generate the
 ``inferred'' singleton:
 
 \begin{Shaded}
@@ -869,6 +870,11 @@ use \texttt{sing\ ::\ SingI\ s\ =\textgreater{}\ Sing\ s} to generate the
 \DataTypeTok{STrue} \OtherTok{`SCons`} \DataTypeTok{SFalse} \OtherTok{`SCons`} \DataTypeTok{STrue} \OtherTok{`SCons`} \DataTypeTok{SNil}
 \end{Highlighting}
 \end{Shaded}
+
+So if you have a function \texttt{SingI\ hs\ =\textgreater{}\ ...}, it's really
+no different than \texttt{Sing\ hs\ -\textgreater{}\ ...}. The function itself
+gets to use a \texttt{Sing\ hs} either way \ldots{} but for the first, the
+argument is implicit.
 
 The final piece of the puzzle is the singleton for a type-level \texttt{Nat}.
 It's a little different because when you pattern match on it, instead of
@@ -890,17 +896,13 @@ you can use.
 \end{Shaded}
 
 Essentially, the data constructor comes ``packaged'' with a \texttt{KnownNat\ n}
-instance. In order to create a \texttt{SNat\ ::\ Sing\ n}, you need a
-\texttt{KnownNat\ n} instance in scope. GHC packs up the evidence that that
-instance exists, and, when you pattern match on it, you also ``pattern match''
-out that instance, too.
-
-Another way you can think of it is that the \emph{creation} of
-\texttt{SNat\ ::\ Sing\ n} requires the presence of \texttt{KnownNat\ n}. So if
-you ever pattern match on a validly created \texttt{SNat}, the fact that that
-\texttt{SNat} constructor even exists (instead of, say, being
-\texttt{undefined}) is a \emph{witness} to that \texttt{KnownNat} instance, and
-the type system lets us use this.
+instance. The \emph{creation} of \texttt{SNat\ ::\ Sing\ n} requires the
+presence of \texttt{KnownNat\ n}. So if you ever pattern match on a validly
+created \texttt{SNat}, the fact that that \texttt{SNat} constructor even exists
+(instead of, say, being \texttt{undefined}) is a \emph{witness} to that very
+\texttt{KnownNat} instance, and the type system lets us use this. It's as if you
+``pattern match'' out the instance itself, like any other value the constructor
+might have.
 
 Now we have enough pieces of the puzzle:
 
@@ -931,9 +933,9 @@ return a \texttt{Network\ i\ hs\ o}, so it's safely inferable that we want
 
 When possible, we like to write functions like \texttt{go} that take
 \emph{explicit} singletons. In a lot of situations, we'll actually write our
-\emph{logic} itself using explicit singletons, and only use \texttt{SingI} and
-implicit singletons at the \emph{external} boundaries of our API (like
-\texttt{randomNet}) for convenience.
+internal \emph{logic} itself using explicit singletons, and only use
+\texttt{SingI} and implicit singletons at the \emph{external} boundaries of our
+API (like \texttt{randomNet}) for convenience to the user.
 
 We've stumbled upon common pattern in dependent Haskell: ``building up'' a
 value-level singleton \emph{structure} from a type that we want (either
@@ -969,19 +971,20 @@ So, the constructor:
 \end{Highlighting}
 \end{Shaded}
 
-Is \emph{really} kind of like:
+Is really \emph{kind} of like:
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \DataTypeTok{SNat}\OtherTok{ ::} \DataTypeTok{Integer} \OtherTok{->} \DataTypeTok{Sing} \NormalTok{n}
-\CommentTok{-- or}
+\CommentTok{-- or, in normal data type notation}
 \DataTypeTok{SNat} \DataTypeTok{Integer}
+\CommentTok{-- kinda!}
 \end{Highlighting}
 \end{Shaded}
 
 The GADT constructor for \texttt{SNat} requires a \texttt{KnownNat\ n} instance
-in scope to produce. That instance is essentially stored inside the constructor,
-as if it were just an \texttt{Integer}. Then, later, when you pattern match on
+in scope to produce. That instance is essentially stored inside the constructor
+(as if it were just an \texttt{Integer}). Then, later, when you pattern match on
 it, you pattern match out the instance that was originally put in there, and you
 can use it!
 
