@@ -39,7 +39,17 @@ This post is written on *[stack](http://www.haskellstack.org)* snapshot
 of *hmatrix*, *[hmatrix-0.18 (commit
 42a88fb)](https://github.com/albertoruiz/hmatrix/tree/42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1)*.
 I [maintain my own documentation](http://mstksg.github.io/hmatrix/) for
-reference. You can add this:
+reference.
+
+There is also a bug in
+*[singletons-2.0.1](http://hackage.haskell.org/package/singletons-2.0.1)*
+package that’s fixed in
+*[singletons-2.1](http://hackage.haskell.org/package/singletons-2.1)*, but *2.1*
+is not available with GHC 7.10 – I have a [github
+fork](https://github.com/mstksg/singletons/releases/tag/v2.0.2) that fixes the
+bug if you want to stay on GHC 7.10.
+
+You can add this:
 
 ``` {.yaml}
 packages:
@@ -48,11 +58,14 @@ packages:
     commit: 42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1
   subdirs:
     - packages/base
+- location:
+    git: git@github.com:mstksg/singletons.git
+    commit: v2.0.2
 ```
 
 to the `packages` field of your directory or global *stack.yaml* and *stack*
-will know what version of *hmatrix* to use when you use `stack runghc` or
-`stack ghc`, etc. to build your files.
+will know what version of *hmatrix* and *singletons* to use when you use
+`stack runghc` or `stack ghc`, etc. to build your files.
 
 Neural Networks
 ---------------
@@ -413,7 +426,7 @@ from a layer of 10 nodes to a layer of 5 nodes. `w :: Weights 4 6` would take
 you from a layer of 4 nodes to a layer of 6 nodes:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L22-24
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L23-25
 data Weights i o = W { wBiases :: !(R o)
                      , wNodes  :: !(L o i)
                      }
@@ -451,7 +464,7 @@ the optional `'` apostrophe is just for our own benefit to distinguish it from a
 value-level list of integers.)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L26-33
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L27-34
 data Network :: Nat -> [Nat] -> Nat -> * where
     O     :: !(Weights i o)
           -> Network i '[] o
@@ -513,7 +526,7 @@ this case, the compiler actually enforces your documentation’s statements!)
 Generating random weights and networks is even nicer now:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L57-64
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L58-65
 randomWeights :: (MonadRandom m, KnownNat i, KnownNat o)
               => m (Weights i o)
 randomWeights = do
@@ -585,7 +598,7 @@ a better style of defining functions/offering an API!
 
 The code for the updated `randomNet` takes a bit of background to understand, so
 let’s take a quick detour through the concepts of singletons, dependent pattern
-matching, and induction on dependent data types.
+matching, and induction on dependent data types.[^4]
 
 Let’s say we want to implement an algorithm that can create any
 `Network i hs o`, so that we can construct a `Network 4 '[3,2] 1` or something.
@@ -595,120 +608,166 @@ know how to create a `Network i (h ': hs) o` if we had a `Network h hs o` (just
 use `(:&~)` with `randomWeights`). Now all we have to do is just “pattern match”
 on the type-level list, and…
 
-Oh wait. We can’t pattern match on types like that in Haskell. This is due to
-one of Haskell’s fundamental design decisions: types are **erased** at runtime.
-We need to have a way to “access” the type (at run-time) as a *value*, so we can
-pattern match on it and do things with it.
+Oh wait. We can’t pattern match on types like that in Haskell. This is a
+consequence of one of Haskell’s fundamental design decisions: types are
+**erased** at runtime. We need to have a way to “access” the type (at run-time)
+as a *value* so we can pattern match on it and do things with it.
 
 In Haskell, the popular way to deal with this is by using *singletons* —
-(parameterized) types which only have valid constructor. The
-*[typelits-witnesses](http://hackage.haskell.org/package/typelits-witnesses-0.2.2.0)*
-library[^4] offers a handy singleton for just this job. If you have a type level
-list of nats, you get a `KnownNats ns` constraint. This lets you create a
-`NatList`:
+(parameterized) types which only have valid constructor. The canonical method of
+working with singletons in Haskell is with the
+*[singletons](https://hackage.haskell.org/package/singletons)* library, which
+provides a uniform interface for all sorts of singletons of types you’ll
+encounter in everyday use.
+
+We want to “pattern match” on a type-level list, so we want a singleton for
+lists. The *singletons* library provides them:
 
 ``` {.haskell}
-data NatList :: [Nat] -> * where
-    ØNL   :: NatList '[]
-    (:<#) :: (KnownNat n, KnownNats ns)
-          => !(Proxy n) -> !(NatList ns) -> NatList (n ': ns)
-
-infixr 5 :<#
+SNil  :: Sing '[]
+SCons :: Sing a -> Sing as -> Sing (a ': as)
 ```
 
-Basically, the *only* value of type `NatList '[1,2,3]` is
-`p1 :<# p2 :<# p3 :<# ØNL`, where `p1 :: Proxy 1`, `p2 :: Proxy 2`, and
-`p3 :: Proxy 3`. (Remember, `data Proxy a = Proxy`; `Proxy` is like `()` but
-with an extra phantom type parameter).
-
-We use singletons like this by *pattern matching* on the polymorphic type (a
-`NatList ns`) and consequentially learning about the type parameter `ns`. If we
-match on the `ØNL` constructor, we (and by we, I mean GHC) knows we have a
-`NatList '[]`, and we match on the `:<#` constructor, we know we have
-`NatList (n ': ns)`
-
-This is called *dependent pattern matching* — the constructor we match on yields
-information about the type of the value.
-
-We can spontaneously generate a `NatList` for any type-level Nat list with
-`natList :: KnownNats ns => NatList ns`:
+This means that if we ever get value of type `Sing as` (and `as` is a type-level
+list), we can pattern match on it. If we match on the `SNil` constructor, we
+*know* it’s a `Sing '[]` in that branch, and if we match on the `SCons`
+constructor, we *know* it’s a `Sing (a ': as)` – a non-empty list. This is
+called *dependent pattern matching*. Every “branch” of your case statement has a
+different inferred type of the arguments, depending on the constructor you match
+on.
 
 ``` {.haskell}
-ghci> natList :: NatList '[1,2,3]
-Proxy :<# Proxy :<# Proxy :<# ØNL
--- ^         ^         ^
--- `-- :: Pro|xy 1     |
---           `-- :: Pro|xy 2
---                     `-- :: Proxy 3
+case foo of
+  SNil      -> ...   -- here, GHC knows `foo :: Sing '[]`
+  SCons _ _ -> ...   -- here, GHC knows `foo :: Sing (a ': as)`
 ```
 
-Essentially, the `KnownNats ns` typeclass constraint lets us turn `ns` into the
-`NatList ns` that we can pattern match on. (In a sense, `KnownNats ns =>` is
-really equivalent to `NatList ns ->`) Now that we have an actual value-level
-*structure* (the list of `Proxy`s), we can now morally “pattern match” on `hs`,
-the type — if it’s empty, we’ll get the `ØNL` constructor when we use `natList`,
-otherwise we’ll get the `(:<#)` constructor, etc.
+*singletons* actually provides a whole bunch of singleton constructors for
+different types, like for `Bool`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L66-70
-randomNet :: forall m i hs o. (MonadRandom m, KnownNat i, KnownNats hs, KnownNat o)
+STrue  :: Sing 'True
+SFalse :: Sing 'False
+```
+
+(That’s the *type* `'True`, of *kind* `Bool`)
+
+So, if we ever are given a `Sing b` with some type-level `Bool` we don’t know
+about, we can pattern match on it. And in the branch that `STrue` matches on,
+`b` is `'True`, and in the branch that `SFalse` matches on, `b` is `False`.
+
+Singletons give us a way to pattern match on types by having an actual
+term-level value we can pattern match on. So, we *could* implement:
+
+``` {.haskell}
+randomNet :: (MonadRandom m, KnownNat i, KnownNat o)
+          => Sing hs -> m (Network i hs o)
+```
+
+And `randomNet` gets to directly pattern match and deconstruct on `Sing hs`.
+
+However, for actual API’s, it’s usually much more convenient to *not* require
+the extra parameter, and have it be “inferred” in the way we’ve been doing it
+before. So the *singletons* library offers a typeclass we can use to implicitly
+conjure up values of a singleton type – `SingI`. We can use
+`sing :: SingI s => Sing s` to generate the “inferred” singleton:
+
+``` {.haskell}
+ghci> sing :: Sing '[]
+SNil
+ghci> sing :: Sing 'True
+STrue
+ghci> sing :: Sing '['True, 'False, 'True]
+STrue `SCons` SFalse `SCons` STrue `SCons` SNil
+```
+
+The final piece of the puzzle is the singleton for a type-level `Nat`. It’s a
+little different because when you pattern match on it, instead of directly
+learning about the type, you “receive” a `KnownNat` instance you can use.
+
+``` {.haskell}
+SNat :: KnownNat n => Sing n
+```
+
+``` {.haskell}
+-- `foo :: Sing n`, but we don't know what `n` it is
+case foo of
+  SNat -> ...   -- in this branch, we have a `KnownNat n` instance
+```
+
+Essentially, the data constructor comes “packaged” with a `KnownNat n` instance.
+In order to create a `SNat :: Sing n`, you need a `KnownNat n` instance in
+scope. GHC packs up the evidence that that instance exists, and, when you
+pattern match on it, you also “pattern match” out that instance, too.
+
+Another way you can think of it is that the *creation* of `SNat :: Sing n`
+requires the presence of `KnownNat n`. So if you ever pattern match on a validly
+created `SNat`, that means that that instance has to exist, and we can use it!
+
+Now we have enough pieces of the puzzle:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L67-76
+randomNet :: forall m i hs o. (MonadRandom m, KnownNat i, SingI hs, KnownNat o)
           => m (Network i hs o)
-randomNet = case natsList :: NatList hs of
-              ØNL     -> O     <$> randomWeights
-              _ :<# _ -> (:&~) <$> randomWeights <*> randomNet
+randomNet = go sing
+  where
+    go :: forall h hs'. KnownNat h
+       => Sing hs'
+       -> m (Network h hs' o)
+    go hs = case hs of
+              SNil            ->     O <$> randomWeights
+              SNat `SCons` ss -> (:&~) <$> randomWeights <*> go ss
 
 ```
 
-(Note that we need `ScopedTypeVariables` and explicit `forall` so that can say
-`NatList hs` in the body of the declaration.)
-
-The reason why `NatList` and `:<#` works for this is that its constructors *come
-with “proofs”* that the head’s type has a `KnownNat` constraint and the tail’s
-type has a `KnownNats` one. It’s a part of the GADT declaration. If you ever
-pattern match on `p :<# ns`, you get a `KnownNat n` constraint (that
-`randomWeights` uses) for the `p :: Proxy n`, and also a `KnownNats ns`
-constraint (that the recursive call to `randomNet` uses).
+The real heavy lifting is done by `go`, which takes the singleton structure it
+needs and recursively calls it until it reaches the base case (`SNil`, an output
+layer). We just call `go sing` to give it the initial structure it needs. Note
+there, `sing :: Sing hs`, but this is inferred, because `go` is
+`Sing hs -> Network i hs o`, and it’s being asked to return a `Network i hs o`,
+so it’s safely inferable that we want `Sing hs`.
 
 This is a common pattern in dependent Haskell: “building up” a value-level
 singleton *structure* from a type that we want (either explicitly given as an
-argument, or provided through a typeclass like `KnownNats`) and then inductively
+argument, or provided through a typeclass like `SingI`) and then inductively
 piggybacking on that structure’s constructors to build the thing you *really*
-want (called “elimination”). Here, we use `KnownNats hs` to build our
-`NatList hs` structure, and use/“eliminate” that structure to create our
-`Network i hs o`.
+want (called “elimination”). Here, we use `SingI hs` to build our `NatList hs`
+structure, and use/“eliminate” that structure to create our `Network i hs o`.
 
-Along the way, the singletons and the typeclasses and the types play an
-intricate dance. `randomWeights` needed a `KnownNat` constraint. Where did it
-*come* from?
+#### On Typeclasses and Dictionaries
 
-#### On Typeclasses
+One of the more bizarre things here, to me, is that `SNat` somehow gave us a
+`KnownNat n` instance that we can use and pass off to `randomWeights`. However,
+once you realize that typeclasses in Haskell really aren’t any more than a way
+to pass in implicit arguments, it starts to make sense.
 
-`natList` uses the `KnownNat n` to construct the `NatList ns` (because any time
-you use `(:<#)`, you have/need a `KnownNat` instance in scope). Then, when you
-pattern match on the `(:<#)` in `randomNet`, you “release” the `KnownNat n` that
-was stuffed in there by `natList`.
+The only thing you can really do from a `KnownNat` is to get an `Integer` from
+it with `natVal`. So really, `KnownNat n => ...` is more or less the same as
+`Integer -> ...`. That’s right — at runtime, a `KnownNat n` constraint is more
+or less just an `Integer` that GHC passes around automatically for you, to save
+you the hassle of manually passing it in yourself. (We say that the “dictionary”
+of `KnownNat` is `Integer`.)
 
-People say that pattern matching on `(:<#)` gives you a “context” in that
-case-statement-branch where `KnownNat n` is in scope and satisfied. But
-sometimes it helps to think of it in the way we just did — the instance *itself*
-is actually a “thing” that gets passed around through GADT
-constructors/deconstructors. The `KnownNat` *instance* gets put *into* `:<#` by
-`natList`, and is then taken *out* in the pattern match so that `randomWeights`
-can use it. (When we match on `_ :<# _`, we really are saying that we don’t care
-about the “normal” contents — we just want the typeclass instances that the
-constructor is hiding!)
+So, the constructor:
 
-At a high-level, you can see that this is really no different than just having a
-plain old `Integer` that you “put in” to the constructor (as an extra field),
-and which you then take out if you pattern match on it. Really, every time you
-see `KnownNat n => ..`, you can think of it as an `Integer -> ..` (because all
-the typeclass is is a way to get an `Integer` out of it with `natVal`). `(:<#)`
-requiring a `KnownNat n =>` put into it is really the same as requiring an
-`Integer` in it, which the act of pattern-matching can then take out. A
-`NatList ns` is no different at run-time than an `[Integer]`, and
-`KnownNats ns =>` is no different than `[Integer] ->`.
+``` {.haskell}
+SNat :: KnownNat n => Sing n
+```
 
-The difference is that GHC and the compiler can now *track* these at
+Is *really* kind of like:
+
+``` {.haskell}
+SNat :: Integer -> Sing n
+```
+
+The GADT constructor for `SNat` requires a `KnownNat n` instance in scope to
+produce. That instance is essentially stored inside the constructor, as if it
+were just an `Integer`. Then, later, when you pattern match on it, you pattern
+match out the instance that was originally put in there, and you can use it!
+
+So what’s the big deal, why not just ditch `KnownNat` and just pass around
+integers? The difference is that GHC and the compiler can now *track* these at
 compile-time to give you *checks* on how your Nat’s act together on the type
 level, allowing it to catch mismatches with compile-time checks instead of
 run-time checks.
@@ -730,7 +789,7 @@ have to play a guessing game about the shape of the returned matrix.
 The code for *running* the nets is actually literally identical from before:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L43-55
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L44-56
 runLayer :: (KnownNat i, KnownNat o)
          => Weights i o
          -> R i
@@ -769,7 +828,7 @@ extra work — they’re free!
 Our back-prop algorithm is ported pretty nicely too:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L72-112
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L78-118
 train :: forall i hs o. (KnownNat i, KnownNat o)
       => Double           -- ^ learning rate
       -> R i              -- ^ input vector
@@ -849,12 +908,12 @@ compiler handle remembering/checking the rest.
 You can download the [typed
 network](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs)
 source code and run it yourself. Again, the
-[`main`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L147-155)
+[`main`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L153-161)
 method is written identically to that of the other file and tests the identical
 function.
 
 ``` {.bash}
-$ stack install hmatrix MonadRandom typelits-witnesses
+$ stack install hmatrix MonadRandom singletons
 $ stack ghc -- -O2 ./NetworkTyped.hs
 $ ./NetworkTyped
 # Training network...
@@ -925,5 +984,11 @@ of potential!
 
 [^3]: Thank you based Hindley-Milner.
 
-[^4]: [Why don’t we use the canonical *singletons*
-    library?](https://www.reddit.com/r/haskell/comments/4l199z/practical_dependent_types_in_haskell_type_safe/d3jkslv)
+[^4]: This entire section was previously written to use the
+    [typelits-witnesses](http://hackage.haskell.org/package/typelits-witnesses)
+    library, but has now been re-written to use the canonical
+    [singletons](https://hackage.haskell.org/package/singletons) library after a
+    [conversation](https://www.reddit.com/r/haskell/comments/4l199z/practical_dependent_types_in_haskell_type_safe/d3jkslv)
+    with Andras Kovacs. The [old
+    version](https://github.com/mstksg/inCode/blob/697c1f726b9ab9c3f9830ed5521bfeee6ec10727/entry/practical-dependent-types-in-haskell-1.md#singletons-and-induction)
+    is still online at github, if you want to look at it or compare!

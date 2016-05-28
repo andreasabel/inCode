@@ -139,7 +139,17 @@ snapshot \emph{\href{https://www.stackage.org/lts-5.17}{lts-5.17}}, but uses an
 unreleased version of \emph{hmatrix},
 \emph{\href{https://github.com/albertoruiz/hmatrix/tree/42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1}{hmatrix-0.18
 (commit 42a88fb)}}. I \href{http://mstksg.github.io/hmatrix/}{maintain my own
-documentation} for reference. You can add this:
+documentation} for reference.
+
+There is also a bug in
+\emph{\href{http://hackage.haskell.org/package/singletons-2.0.1}{singletons-2.0.1}}
+package that's fixed in
+\emph{\href{http://hackage.haskell.org/package/singletons-2.1}{singletons-2.1}},
+but \emph{2.1} is not available with GHC 7.10 -- I have a
+\href{https://github.com/mstksg/singletons/releases/tag/v2.0.2}{github fork}
+that fixes the bug if you want to stay on GHC 7.10.
+
+You can add this:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -149,12 +159,16 @@ documentation} for reference. You can add this:
     \FunctionTok{commit:} \NormalTok{42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1}
   \FunctionTok{subdirs:}
     \KeywordTok{-} \NormalTok{packages/base}
+\KeywordTok{-} \FunctionTok{location:}
+    \FunctionTok{git:} \NormalTok{git@github.com:mstksg/singletons.git}
+    \FunctionTok{commit:} \NormalTok{v2.0.2}
 \end{Highlighting}
 \end{Shaded}
 
 to the \texttt{packages} field of your directory or global \emph{stack.yaml} and
-\emph{stack} will know what version of \emph{hmatrix} to use when you use
-\texttt{stack\ runghc} or \texttt{stack\ ghc}, etc. to build your files.
+\emph{stack} will know what version of \emph{hmatrix} and \emph{singletons} to
+use when you use \texttt{stack\ runghc} or \texttt{stack\ ghc}, etc. to build
+your files.
 
 \section{Neural Networks}\label{neural-networks}
 
@@ -545,7 +559,7 @@ of 6 nodes:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L22-24}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L23-25}
 \KeywordTok{data} \DataTypeTok{Weights} \NormalTok{i o }\FunctionTok{=} \DataTypeTok{W} \NormalTok{\{}\OtherTok{ wBiases ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{R} \NormalTok{o)}
                      \NormalTok{,}\OtherTok{ wNodes  ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{L} \NormalTok{o i)}
                      \NormalTok{\}}
@@ -589,7 +603,7 @@ distinguish it from a value-level list of integers.)
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L26-33}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L27-34}
 \KeywordTok{data} \DataTypeTok{Network}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \NormalTok{[}\DataTypeTok{Nat}\NormalTok{] }\OtherTok{->} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
     \DataTypeTok{O}\OtherTok{     ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Weights} \NormalTok{i o)}
           \OtherTok{->} \DataTypeTok{Network} \NormalTok{i }\CharTok{'[] o}
@@ -663,7 +677,7 @@ Generating random weights and networks is even nicer now:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L57-64}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L58-65}
 \OtherTok{randomWeights ::} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
               \OtherTok{=>} \NormalTok{m (}\DataTypeTok{Weights} \NormalTok{i o)}
 \NormalTok{randomWeights }\FunctionTok{=} \KeywordTok{do}
@@ -745,7 +759,16 @@ it's just a better style of defining functions/offering an API!
 
 The code for the updated \texttt{randomNet} takes a bit of background to
 understand, so let's take a quick detour through the concepts of singletons,
-dependent pattern matching, and induction on dependent data types.
+dependent pattern matching, and induction on dependent data types.\footnote{This
+  entire section was previously written to use the
+  \href{http://hackage.haskell.org/package/typelits-witnesses}{typelits-witnesses}
+  library, but has now been re-written to use the canonical
+  \href{https://hackage.haskell.org/package/singletons}{singletons} library
+  after a
+  \href{https://www.reddit.com/r/haskell/comments/4l199z/practical_dependent_types_in_haskell_type_safe/d3jkslv}{conversation}
+  with Andras Kovacs. The
+  \href{https://github.com/mstksg/inCode/blob/697c1f726b9ab9c3f9830ed5521bfeee6ec10727/entry/practical-dependent-types-in-haskell-1.md\#singletons-and-induction}{old
+  version} is still online at github, if you want to look at it or compare!}
 
 Let's say we want to implement an algorithm that can create any
 \texttt{Network\ i\ hs\ o}, so that we can construct a
@@ -758,141 +781,205 @@ create a \texttt{Network\ i\ (h\ \textquotesingle{}:\ hs)\ o} if we had a
 \texttt{randomWeights}). Now all we have to do is just ``pattern match'' on the
 type-level list, and\ldots{}
 
-Oh wait. We can't pattern match on types like that in Haskell. This is due to
-one of Haskell's fundamental design decisions: types are \textbf{erased} at
-runtime. We need to have a way to ``access'' the type (at run-time) as a
-\emph{value}, so we can pattern match on it and do things with it.
+Oh wait. We can't pattern match on types like that in Haskell. This is a
+consequence of one of Haskell's fundamental design decisions: types are
+\textbf{erased} at runtime. We need to have a way to ``access'' the type (at
+run-time) as a \emph{value} so we can pattern match on it and do things with it.
 
 In Haskell, the popular way to deal with this is by using \emph{singletons} ---
-(parameterized) types which only have valid constructor. The
-\emph{\href{http://hackage.haskell.org/package/typelits-witnesses-0.2.2.0}{typelits-witnesses}}
-library\footnote{\href{https://www.reddit.com/r/haskell/comments/4l199z/practical_dependent_types_in_haskell_type_safe/d3jkslv}{Why
-  don't we use the canonical \emph{singletons} library?}} offers a handy
-singleton for just this job. If you have a type level list of nats, you get a
-\texttt{KnownNats\ ns} constraint. This lets you create a \texttt{NatList}:
+(parameterized) types which only have valid constructor. The canonical method of
+working with singletons in Haskell is with the
+\emph{\href{https://hackage.haskell.org/package/singletons}{singletons}}
+library, which provides a uniform interface for all sorts of singletons of types
+you'll encounter in everyday use.
+
+We want to ``pattern match'' on a type-level list, so we want a singleton for
+lists. The \emph{singletons} library provides them:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{NatList}\OtherTok{ ::} \NormalTok{[}\DataTypeTok{Nat}\NormalTok{] }\OtherTok{->} \FunctionTok{*} \KeywordTok{where}
-    \NormalTok{Ø}\DataTypeTok{NL}\OtherTok{   ::} \DataTypeTok{NatList} \CharTok{'[]}
-\OtherTok{    (:<#) ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{n, }\DataTypeTok{KnownNats} \NormalTok{ns)}
-          \OtherTok{=>} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Proxy} \NormalTok{n) }\OtherTok{->} \FunctionTok{!}\NormalTok{(}\DataTypeTok{NatList} \NormalTok{ns) }\OtherTok{->} \DataTypeTok{NatList} \NormalTok{(n }\CharTok{': ns)}
-
-\KeywordTok{infixr} \DecValTok{5} \FunctionTok{:<#}
+\DataTypeTok{SNil}\OtherTok{  ::} \DataTypeTok{Sing} \CharTok{'[]}
+\DataTypeTok{SCons}\OtherTok{ ::} \DataTypeTok{Sing} \NormalTok{a }\OtherTok{->} \DataTypeTok{Sing} \NormalTok{as }\OtherTok{->} \DataTypeTok{Sing} \NormalTok{(a }\CharTok{': as)}
 \end{Highlighting}
 \end{Shaded}
 
-Basically, the \emph{only} value of type
-\texttt{NatList\ \textquotesingle{}{[}1,2,3{]}} is
-\texttt{p1\ :\textless{}\#\ p2\ :\textless{}\#\ p3\ :\textless{}\#\ ØNL}, where
-\texttt{p1\ ::\ Proxy\ 1}, \texttt{p2\ ::\ Proxy\ 2}, and
-\texttt{p3\ ::\ Proxy\ 3}. (Remember, \texttt{data\ Proxy\ a\ =\ Proxy};
-\texttt{Proxy} is like \texttt{()} but with an extra phantom type parameter).
-
-We use singletons like this by \emph{pattern matching} on the polymorphic type
-(a \texttt{NatList\ ns}) and consequentially learning about the type parameter
-\texttt{ns}. If we match on the \texttt{ØNL} constructor, we (and by we, I mean
-GHC) knows we have a \texttt{NatList\ \textquotesingle{}{[}{]}}, and we match on
-the \texttt{:\textless{}\#} constructor, we know we have
-\texttt{NatList\ (n\ \textquotesingle{}:\ ns)}
-
-This is called \emph{dependent pattern matching} --- the constructor we match on
-yields information about the type of the value.
-
-We can spontaneously generate a \texttt{NatList} for any type-level Nat list
-with \texttt{natList\ ::\ KnownNats\ ns\ =\textgreater{}\ NatList\ ns}:
+This means that if we ever get value of type \texttt{Sing\ as} (and \texttt{as}
+is a type-level list), we can pattern match on it. If we match on the
+\texttt{SNil} constructor, we \emph{know} it's a
+\texttt{Sing\ \textquotesingle{}{[}{]}} in that branch, and if we match on the
+\texttt{SCons} constructor, we \emph{know} it's a
+\texttt{Sing\ (a\ \textquotesingle{}:\ as)} -- a non-empty list. This is called
+\emph{dependent pattern matching}. Every ``branch'' of your case statement has a
+different inferred type of the arguments, depending on the constructor you match
+on.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\OtherTok{ natList ::} \DataTypeTok{NatList} \CharTok{'[1,2,3]}
-\DataTypeTok{Proxy} \FunctionTok{:<#} \DataTypeTok{Proxy} \FunctionTok{:<#} \DataTypeTok{Proxy} \FunctionTok{:<#} \NormalTok{Ø}\DataTypeTok{NL}
-\CommentTok{-- ^         ^         ^}
-\CommentTok{-- `-- :: Pro|xy 1     |}
-\CommentTok{--           `-- :: Pro|xy 2}
-\CommentTok{--                     `-- :: Proxy 3}
+\KeywordTok{case} \NormalTok{foo }\KeywordTok{of}
+  \DataTypeTok{SNil}      \OtherTok{->} \FunctionTok{...}   \CommentTok{-- here, GHC knows `foo :: Sing '[]`}
+  \DataTypeTok{SCons} \NormalTok{_ _ }\OtherTok{->} \FunctionTok{...}   \CommentTok{-- here, GHC knows `foo :: Sing (a ': as)`}
 \end{Highlighting}
 \end{Shaded}
 
-Essentially, the \texttt{KnownNats\ ns} typeclass constraint lets us turn
-\texttt{ns} into the \texttt{NatList\ ns} that we can pattern match on. (In a
-sense, \texttt{KnownNats\ ns\ =\textgreater{}} is really equivalent to
-\texttt{NatList\ ns\ -\textgreater{}}) Now that we have an actual value-level
-\emph{structure} (the list of \texttt{Proxy}s), we can now morally ``pattern
-match'' on \texttt{hs}, the type --- if it's empty, we'll get the \texttt{ØNL}
-constructor when we use \texttt{natList}, otherwise we'll get the
-\texttt{(:\textless{}\#)} constructor, etc.
+\emph{singletons} actually provides a whole bunch of singleton constructors for
+different types, like for \texttt{Bool}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L66-70}
-\OtherTok{randomNet ::} \NormalTok{forall m i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNats} \NormalTok{hs, }\DataTypeTok{KnownNat} \NormalTok{o)}
+\DataTypeTok{STrue}\OtherTok{  ::} \DataTypeTok{Sing} \CharTok{'True}
+\DataTypeTok{SFalse}\OtherTok{ ::} \DataTypeTok{Sing} \CharTok{'False}
+\end{Highlighting}
+\end{Shaded}
+
+(That's the \emph{type} \texttt{\textquotesingle{}True}, of \emph{kind}
+\texttt{Bool})
+
+So, if we ever are given a \texttt{Sing\ b} with some type-level \texttt{Bool}
+we don't know about, we can pattern match on it. And in the branch that
+\texttt{STrue} matches on, \texttt{b} is \texttt{\textquotesingle{}True}, and in
+the branch that \texttt{SFalse} matches on, \texttt{b} is \texttt{False}.
+
+Singletons give us a way to pattern match on types by having an actual
+term-level value we can pattern match on. So, we \emph{could} implement:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{randomNet ::} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+          \OtherTok{=>} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \NormalTok{m (}\DataTypeTok{Network} \NormalTok{i hs o)}
+\end{Highlighting}
+\end{Shaded}
+
+And \texttt{randomNet} gets to directly pattern match and deconstruct on
+\texttt{Sing\ hs}.
+
+However, for actual API's, it's usually much more convenient to \emph{not}
+require the extra parameter, and have it be ``inferred'' in the way we've been
+doing it before. So the \emph{singletons} library offers a typeclass we can use
+to implicitly conjure up values of a singleton type -- \texttt{SingI}. We can
+use \texttt{sing\ ::\ SingI\ s\ =\textgreater{}\ Sing\ s} to generate the
+``inferred'' singleton:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\OtherTok{ sing ::} \DataTypeTok{Sing} \CharTok{'[]}
+\DataTypeTok{SNil}
+\NormalTok{ghci}\FunctionTok{>}\OtherTok{ sing ::} \DataTypeTok{Sing} \CharTok{'True}
+\DataTypeTok{STrue}
+\NormalTok{ghci}\FunctionTok{>}\OtherTok{ sing ::} \DataTypeTok{Sing} \CharTok{'['}\DataTypeTok{True}\NormalTok{, }\CharTok{'False, '}\DataTypeTok{True}\NormalTok{]}
+\DataTypeTok{STrue} \OtherTok{`SCons`} \DataTypeTok{SFalse} \OtherTok{`SCons`} \DataTypeTok{STrue} \OtherTok{`SCons`} \DataTypeTok{SNil}
+\end{Highlighting}
+\end{Shaded}
+
+The final piece of the puzzle is the singleton for a type-level \texttt{Nat}.
+It's a little different because when you pattern match on it, instead of
+directly learning about the type, you ``receive'' a \texttt{KnownNat} instance
+you can use.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{SNat}\OtherTok{ ::} \DataTypeTok{KnownNat} \NormalTok{n }\OtherTok{=>} \DataTypeTok{Sing} \NormalTok{n}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- `foo :: Sing n`, but we don't know what `n` it is}
+\KeywordTok{case} \NormalTok{foo }\KeywordTok{of}
+  \DataTypeTok{SNat} \OtherTok{->} \FunctionTok{...}   \CommentTok{-- in this branch, we have a `KnownNat n` instance}
+\end{Highlighting}
+\end{Shaded}
+
+Essentially, the data constructor comes ``packaged'' with a \texttt{KnownNat\ n}
+instance. In order to create a \texttt{SNat\ ::\ Sing\ n}, you need a
+\texttt{KnownNat\ n} instance in scope. GHC packs up the evidence that that
+instance exists, and, when you pattern match on it, you also ``pattern match''
+out that instance, too.
+
+Another way you can think of it is that the \emph{creation} of
+\texttt{SNat\ ::\ Sing\ n} requires the presence of \texttt{KnownNat\ n}. So if
+you ever pattern match on a validly created \texttt{SNat}, that means that that
+instance has to exist, and we can use it!
+
+Now we have enough pieces of the puzzle:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L67-76}
+\OtherTok{randomNet ::} \NormalTok{forall m i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{SingI} \NormalTok{hs, }\DataTypeTok{KnownNat} \NormalTok{o)}
           \OtherTok{=>} \NormalTok{m (}\DataTypeTok{Network} \NormalTok{i hs o)}
-\NormalTok{randomNet }\FunctionTok{=} \KeywordTok{case}\OtherTok{ natsList ::} \DataTypeTok{NatList} \NormalTok{hs }\KeywordTok{of}
-              \NormalTok{Ø}\DataTypeTok{NL}     \OtherTok{->} \DataTypeTok{O}     \FunctionTok{<$>} \NormalTok{randomWeights}
-              \NormalTok{_ }\FunctionTok{:<#} \NormalTok{_ }\OtherTok{->} \NormalTok{(}\FunctionTok{:&~}\NormalTok{) }\FunctionTok{<$>} \NormalTok{randomWeights }\FunctionTok{<*>} \NormalTok{randomNet}
+\NormalTok{randomNet }\FunctionTok{=} \NormalTok{go sing}
+  \KeywordTok{where}
+\OtherTok{    go ::} \NormalTok{forall h hs'}\FunctionTok{.} \DataTypeTok{KnownNat} \NormalTok{h}
+       \OtherTok{=>} \DataTypeTok{Sing} \NormalTok{hs'}
+       \OtherTok{->} \NormalTok{m (}\DataTypeTok{Network} \NormalTok{h hs' o)}
+    \NormalTok{go hs }\FunctionTok{=} \KeywordTok{case} \NormalTok{hs }\KeywordTok{of}
+              \DataTypeTok{SNil}            \OtherTok{->}     \DataTypeTok{O} \FunctionTok{<$>} \NormalTok{randomWeights}
+              \DataTypeTok{SNat} \OtherTok{`SCons`} \NormalTok{ss }\OtherTok{->} \NormalTok{(}\FunctionTok{:&~}\NormalTok{) }\FunctionTok{<$>} \NormalTok{randomWeights }\FunctionTok{<*>} \NormalTok{go ss}
 \end{Highlighting}
 \end{Shaded}
 
-(Note that we need \texttt{ScopedTypeVariables} and explicit \texttt{forall} so
-that can say \texttt{NatList\ hs} in the body of the declaration.)
-
-The reason why \texttt{NatList} and \texttt{:\textless{}\#} works for this is
-that its constructors \emph{come with ``proofs''} that the head's type has a
-\texttt{KnownNat} constraint and the tail's type has a \texttt{KnownNats} one.
-It's a part of the GADT declaration. If you ever pattern match on
-\texttt{p\ :\textless{}\#\ ns}, you get a \texttt{KnownNat\ n} constraint (that
-\texttt{randomWeights} uses) for the \texttt{p\ ::\ Proxy\ n}, and also a
-\texttt{KnownNats\ ns} constraint (that the recursive call to \texttt{randomNet}
-uses).
+The real heavy lifting is done by \texttt{go}, which takes the singleton
+structure it needs and recursively calls it until it reaches the base case
+(\texttt{SNil}, an output layer). We just call \texttt{go\ sing} to give it the
+initial structure it needs. Note there, \texttt{sing\ ::\ Sing\ hs}, but this is
+inferred, because \texttt{go} is
+\texttt{Sing\ hs\ -\textgreater{}\ Network\ i\ hs\ o}, and it's being asked to
+return a \texttt{Network\ i\ hs\ o}, so it's safely inferable that we want
+\texttt{Sing\ hs}.
 
 This is a common pattern in dependent Haskell: ``building up'' a value-level
 singleton \emph{structure} from a type that we want (either explicitly given as
-an argument, or provided through a typeclass like \texttt{KnownNats}) and then
+an argument, or provided through a typeclass like \texttt{SingI}) and then
 inductively piggybacking on that structure's constructors to build the thing you
-\emph{really} want (called ``elimination''). Here, we use \texttt{KnownNats\ hs}
-to build our \texttt{NatList\ hs} structure, and use/``eliminate'' that
-structure to create our \texttt{Network\ i\ hs\ o}.
+\emph{really} want (called ``elimination''). Here, we use \texttt{SingI\ hs} to
+build our \texttt{NatList\ hs} structure, and use/``eliminate'' that structure
+to create our \texttt{Network\ i\ hs\ o}.
 
-Along the way, the singletons and the typeclasses and the types play an
-intricate dance. \texttt{randomWeights} needed a \texttt{KnownNat} constraint.
-Where did it \emph{come} from?
+\subsubsection{On Typeclasses and
+Dictionaries}\label{on-typeclasses-and-dictionaries}
 
-\subsubsection{On Typeclasses}\label{on-typeclasses}
+One of the more bizarre things here, to me, is that \texttt{SNat} somehow gave
+us a \texttt{KnownNat\ n} instance that we can use and pass off to
+\texttt{randomWeights}. However, once you realize that typeclasses in Haskell
+really aren't any more than a way to pass in implicit arguments, it starts to
+make sense.
 
-\texttt{natList} uses the \texttt{KnownNat\ n} to construct the
-\texttt{NatList\ ns} (because any time you use \texttt{(:\textless{}\#)}, you
-have/need a \texttt{KnownNat} instance in scope). Then, when you pattern match
-on the \texttt{(:\textless{}\#)} in \texttt{randomNet}, you ``release'' the
-\texttt{KnownNat\ n} that was stuffed in there by \texttt{natList}.
+The only thing you can really do from a \texttt{KnownNat} is to get an
+\texttt{Integer} from it with \texttt{natVal}. So really,
+\texttt{KnownNat\ n\ =\textgreater{}\ ...} is more or less the same as
+\texttt{Integer\ -\textgreater{}\ ...}. That's right --- at runtime, a
+\texttt{KnownNat\ n} constraint is more or less just an \texttt{Integer} that
+GHC passes around automatically for you, to save you the hassle of manually
+passing it in yourself. (We say that the ``dictionary'' of \texttt{KnownNat} is
+\texttt{Integer}.)
 
-People say that pattern matching on \texttt{(:\textless{}\#)} gives you a
-``context'' in that case-statement-branch where \texttt{KnownNat\ n} is in scope
-and satisfied. But sometimes it helps to think of it in the way we just did ---
-the instance \emph{itself} is actually a ``thing'' that gets passed around
-through GADT constructors/deconstructors. The \texttt{KnownNat} \emph{instance}
-gets put \emph{into} \texttt{:\textless{}\#} by \texttt{natList}, and is then
-taken \emph{out} in the pattern match so that \texttt{randomWeights} can use it.
-(When we match on \texttt{\_\ :\textless{}\#\ \_}, we really are saying that we
-don't care about the ``normal'' contents --- we just want the typeclass
-instances that the constructor is hiding!)
+So, the constructor:
 
-At a high-level, you can see that this is really no different than just having a
-plain old \texttt{Integer} that you ``put in'' to the constructor (as an extra
-field), and which you then take out if you pattern match on it. Really, every
-time you see \texttt{KnownNat\ n\ =\textgreater{}\ ..}, you can think of it as
-an \texttt{Integer\ -\textgreater{}\ ..} (because all the typeclass is is a way
-to get an \texttt{Integer} out of it with \texttt{natVal}).
-\texttt{(:\textless{}\#)} requiring a \texttt{KnownNat\ n\ =\textgreater{}} put
-into it is really the same as requiring an \texttt{Integer} in it, which the act
-of pattern-matching can then take out. A \texttt{NatList\ ns} is no different at
-run-time than an \texttt{{[}Integer{]}}, and
-\texttt{KnownNats\ ns\ =\textgreater{}} is no different than
-\texttt{{[}Integer{]}\ -\textgreater{}}.
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{SNat}\OtherTok{ ::} \DataTypeTok{KnownNat} \NormalTok{n }\OtherTok{=>} \DataTypeTok{Sing} \NormalTok{n}
+\end{Highlighting}
+\end{Shaded}
 
-The difference is that GHC and the compiler can now \emph{track} these at
-compile-time to give you \emph{checks} on how your Nat's act together on the
-type level, allowing it to catch mismatches with compile-time checks instead of
-run-time checks.
+Is \emph{really} kind of like:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{SNat}\OtherTok{ ::} \DataTypeTok{Integer} \OtherTok{->} \DataTypeTok{Sing} \NormalTok{n}
+\end{Highlighting}
+\end{Shaded}
+
+The GADT constructor for \texttt{SNat} requires a \texttt{KnownNat\ n} instance
+in scope to produce. That instance is essentially stored inside the constructor,
+as if it were just an \texttt{Integer}. Then, later, when you pattern match on
+it, you pattern match out the instance that was originally put in there, and you
+can use it!
+
+So what's the big deal, why not just ditch \texttt{KnownNat} and just pass
+around integers? The difference is that GHC and the compiler can now
+\emph{track} these at compile-time to give you \emph{checks} on how your Nat's
+act together on the type level, allowing it to catch mismatches with
+compile-time checks instead of run-time checks.
 
 \subsection{Running with it}\label{running-with-it}
 
@@ -915,7 +1002,7 @@ before:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L43-55}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L44-56}
 \OtherTok{runLayer ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
          \OtherTok{=>} \DataTypeTok{Weights} \NormalTok{i o}
          \OtherTok{->} \DataTypeTok{R} \NormalTok{i}
@@ -957,7 +1044,7 @@ Our back-prop algorithm is ported pretty nicely too:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L72-112}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L78-118}
 \OtherTok{train ::} \NormalTok{forall i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
       \OtherTok{=>} \DataTypeTok{Double}           \CommentTok{-- ^ learning rate}
       \OtherTok{->} \DataTypeTok{R} \NormalTok{i              }\CommentTok{-- ^ input vector}
@@ -1039,13 +1126,13 @@ letting the compiler handle remembering/checking the rest.
 You can download the
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs}{typed
 network} source code and run it yourself. Again, the
-\href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L147-155}{\texttt{main}}
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L153-161}{\texttt{main}}
 method is written identically to that of the other file and tests the identical
 function.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{$ }\KeywordTok{stack} \NormalTok{install hmatrix MonadRandom typelits-witnesses}
+\NormalTok{$ }\KeywordTok{stack} \NormalTok{install hmatrix MonadRandom singletons}
 \NormalTok{$ }\KeywordTok{stack} \NormalTok{ghc -- -O2 ./NetworkTyped.hs}
 \NormalTok{$ }\KeywordTok{./NetworkTyped}
 \CommentTok{# Training network...}
