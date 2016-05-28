@@ -767,6 +767,8 @@ Is *really* kind of like:
 
 ``` {.haskell}
 SNat :: Integer -> Sing n
+-- or
+SNat Integer
 ```
 
 The GADT constructor for `SNat` requires a `KnownNat n` instance in scope to
