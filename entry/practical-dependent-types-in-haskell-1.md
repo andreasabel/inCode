@@ -496,7 +496,8 @@ input, hidden layers, and output sizes). Let’s go over the two constructors.
 
     We add a `KnownNat` constraint on the `h`, so that whenever you pattern
     match on `w :&~ net`, you automatically get a `KnownNat` constraint for the
-    input size of `net` that the *hmatrix* library can use.
+    input size of `net` (and the output of `w`) that the *hmatrix* library
+    can use.
 
 We can still construct them the same way:
 
@@ -711,7 +712,7 @@ constructor might have.
 Now we have enough pieces of the puzzle:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L67-76
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L67-75
 randomNet :: forall m i hs o. (MonadRandom m, KnownNat i, SingI hs, KnownNat o)
           => m (Network i hs o)
 randomNet = go sing
@@ -719,18 +720,18 @@ randomNet = go sing
     go :: forall h hs'. KnownNat h
        => Sing hs'
        -> m (Network h hs' o)
-    go hs = case hs of
-              SNil            ->     O <$> randomWeights
-              SNat `SCons` ss -> (:&~) <$> randomWeights <*> go ss
+    go = \case SNil            ->     O <$> randomWeights
+               SNat `SCons` ss -> (:&~) <$> randomWeights <*> go ss
 
 ```
 
-The real heavy lifting is done by `go`, which takes the singleton structure it
-needs and recursively calls it until it reaches the base case (`SNil`, an output
-layer). We just call `go sing` to give it the initial structure it needs. Note
-there, `sing :: Sing hs`, but this is inferred, because `go` is
-`Sing hs -> Network i hs o`, and it’s being asked to return a `Network i hs o`,
-so it’s safely inferable that we want `Sing hs`.
+The real heavy lifting is done by `go` (written with
+[LambdaCase](https://www.schoolofhaskell.com/school/to-infinity-and-beyond/pick-of-the-week/guide-to-ghc-extensions/basic-syntax-extensions#lambdacase)),
+which takes the singleton structure it needs and recursively calls it until it
+reaches the base case (`SNil`, an output layer). We just call `go sing` to give
+it the initial structure it needs. Note there, `sing :: Sing hs`, but this is
+inferred, because `go` is `Sing hs -> Network i hs o`, and it’s being asked to
+return a `Network i hs o`, so it’s safely inferable that we want `Sing hs`.
 
 Remember that we can write `O <$> randomWeights` because `randomWeights`, like
 `read`, adapts to whatever type we want from it — in this case, we ask for a
@@ -846,7 +847,7 @@ extra work — they’re free!
 Our back-prop algorithm is ported pretty nicely too:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L78-118
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L77-117
 train :: forall i hs o. (KnownNat i, KnownNat o)
       => Double           -- ^ learning rate
       -> R i              -- ^ input vector
@@ -926,7 +927,7 @@ compiler handle remembering/checking the rest.
 You can download the [typed
 network](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs)
 source code and run it yourself. Again, the
-[`main`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L153-161)
+[`main`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L152-160)
 method is written identically to that of the other file and tests the identical
 function.
 

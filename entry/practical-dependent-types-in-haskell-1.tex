@@ -641,8 +641,8 @@ sizes). Let's go over the two constructors.
 
   We add a \texttt{KnownNat} constraint on the \texttt{h}, so that whenever you
   pattern match on \texttt{w\ :\&\textasciitilde{}\ net}, you automatically get
-  a \texttt{KnownNat} constraint for the input size of \texttt{net} that the
-  \emph{hmatrix} library can use.
+  a \texttt{KnownNat} constraint for the input size of \texttt{net} (and the
+  output of \texttt{w}) that the \emph{hmatrix} library can use.
 \end{itemize}
 
 We can still construct them the same way:
@@ -908,7 +908,7 @@ Now we have enough pieces of the puzzle:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L67-76}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L67-75}
 \OtherTok{randomNet ::} \NormalTok{forall m i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{SingI} \NormalTok{hs, }\DataTypeTok{KnownNat} \NormalTok{o)}
           \OtherTok{=>} \NormalTok{m (}\DataTypeTok{Network} \NormalTok{i hs o)}
 \NormalTok{randomNet }\FunctionTok{=} \NormalTok{go sing}
@@ -916,17 +916,17 @@ Now we have enough pieces of the puzzle:
 \OtherTok{    go ::} \NormalTok{forall h hs'}\FunctionTok{.} \DataTypeTok{KnownNat} \NormalTok{h}
        \OtherTok{=>} \DataTypeTok{Sing} \NormalTok{hs'}
        \OtherTok{->} \NormalTok{m (}\DataTypeTok{Network} \NormalTok{h hs' o)}
-    \NormalTok{go hs }\FunctionTok{=} \KeywordTok{case} \NormalTok{hs }\KeywordTok{of}
-              \DataTypeTok{SNil}            \OtherTok{->}     \DataTypeTok{O} \FunctionTok{<$>} \NormalTok{randomWeights}
-              \DataTypeTok{SNat} \OtherTok{`SCons`} \NormalTok{ss }\OtherTok{->} \NormalTok{(}\FunctionTok{:&~}\NormalTok{) }\FunctionTok{<$>} \NormalTok{randomWeights }\FunctionTok{<*>} \NormalTok{go ss}
+    \NormalTok{go }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{SNil}            \OtherTok{->}     \DataTypeTok{O} \FunctionTok{<$>} \NormalTok{randomWeights}
+               \DataTypeTok{SNat} \OtherTok{`SCons`} \NormalTok{ss }\OtherTok{->} \NormalTok{(}\FunctionTok{:&~}\NormalTok{) }\FunctionTok{<$>} \NormalTok{randomWeights }\FunctionTok{<*>} \NormalTok{go ss}
 \end{Highlighting}
 \end{Shaded}
 
-The real heavy lifting is done by \texttt{go}, which takes the singleton
-structure it needs and recursively calls it until it reaches the base case
-(\texttt{SNil}, an output layer). We just call \texttt{go\ sing} to give it the
-initial structure it needs. Note there, \texttt{sing\ ::\ Sing\ hs}, but this is
-inferred, because \texttt{go} is
+The real heavy lifting is done by \texttt{go} (written with
+\href{https://www.schoolofhaskell.com/school/to-infinity-and-beyond/pick-of-the-week/guide-to-ghc-extensions/basic-syntax-extensions\#lambdacase}{LambdaCase}),
+which takes the singleton structure it needs and recursively calls it until it
+reaches the base case (\texttt{SNil}, an output layer). We just call
+\texttt{go\ sing} to give it the initial structure it needs. Note there,
+\texttt{sing\ ::\ Sing\ hs}, but this is inferred, because \texttt{go} is
 \texttt{Sing\ hs\ -\textgreater{}\ Network\ i\ hs\ o}, and it's being asked to
 return a \texttt{Network\ i\ hs\ o}, so it's safely inferable that we want
 \texttt{Sing\ hs}.
@@ -1063,7 +1063,7 @@ Our back-prop algorithm is ported pretty nicely too:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L78-118}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L77-117}
 \OtherTok{train ::} \NormalTok{forall i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
       \OtherTok{=>} \DataTypeTok{Double}           \CommentTok{-- ^ learning rate}
       \OtherTok{->} \DataTypeTok{R} \NormalTok{i              }\CommentTok{-- ^ input vector}
@@ -1145,7 +1145,7 @@ letting the compiler handle remembering/checking the rest.
 You can download the
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs}{typed
 network} source code and run it yourself. Again, the
-\href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L153-161}{\texttt{main}}
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L152-160}{\texttt{main}}
 method is written identically to that of the other file and tests the identical
 function.
 

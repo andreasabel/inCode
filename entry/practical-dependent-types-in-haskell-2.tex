@@ -21,6 +21,44 @@
 % use microtype if available
 \IfFileExists{microtype.sty}{\usepackage{microtype}}{}
 \usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\newenvironment{Shaded}{}{}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{{#1}}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{{#1}}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{{#1}}}
+\newcommand{\ImportTok}[1]{{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{{#1}}}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{{#1}}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{{#1}}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{{#1}}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{{#1}}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{{#1}}}
+\newcommand{\BuiltInTok}[1]{{#1}}
+\newcommand{\ExtensionTok}[1]{{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{{#1}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{{#1}}}
+\newcommand{\RegionMarkerTok}[1]{{#1}}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+\newcommand{\NormalTok}[1]{{#1}}
 \ifxetex
   \usepackage[setpagesize=false, % page size defined by xetex
               unicode=false, % unicode breaks when used with xetex
@@ -54,5 +92,251 @@
 \emph{Originally posted on
 \textbf{\href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-2.html}{in
 Code}}.}
+
+We're back to continue on
+\href{https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html}{our
+journey} in using practical dependent types to write type-safe neural networks!
+In
+\href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html}{Part
+1}, we wrote things out in normal, untyped Haskell, and looked at red flags and
+general design principles that nudged us in the direction of adding dependent
+types to our program. We learned to appreciate what dependent types offered in
+terms of guiding us in writing our code, helping the compiler check our
+correctness, providing a better interface for users, and more.
+
+We also learned how to use singletons to work around some of Haskell's
+fundamental limitations to let us ``pattern match'' on the structure of types,
+and how to use typeclasses to generate singletons reflecting the structure of
+types we are dealing with.
+
+(If you read
+\href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html}{Part
+1} \emph{before} the singletons section was re-written to use the
+\href{https://hackage.haskell.org/package/singletons}{singletons} library,
+\href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html\#singletons-and-induction}{here's
+a link to the section} in specific. This tutorial will assume familiarity with
+what is discussed there!)
+
+All of what we've dealt with so far has essentially been with types that are
+fixed at compile-time. All the networks we've made have had ``static'' types,
+with their sizes in their types indicated directly in the source code.
+
+Today, we're going to dive into the world of types that \emph{depend} on factors
+unknown until runtime, and see how dependent types in a strongly typed language
+like Haskell helps us write safer, more correct, and more maintainable code.
+Along the way, we'll encounter and learn first-hand about techniques and guiding
+high-level principles that we can apply to our other dependently typed coding
+endeavours.
+
+\section{Serializing Networks}\label{serializing-networks}
+
+To warm up, let's talk about serializing networks: writing them to binary and
+re-reading them.
+
+\subsection{Binary}\label{binary}
+
+Serializing networks of \emph{known} size --- whose sizes are statically in
+their types --- is pretty straightforward. I'm going to be using the
+\emph{\href{https://hackage.haskell.org/package/binary}{binary}} library, which
+offers a very standard typeclass-based approach for serializing and
+deserializing data. There are a lot of tutorials online (and I even
+\href{https://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-2-binary.html}{wrote
+a small one} myself a few years ago), but a very high-level view is that the
+library offers a typeclass for describing serialization schemes for different
+types.
+
+For example, for serializing lists, you have:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{putList ::} \DataTypeTok{Binary} \NormalTok{a }\OtherTok{=>} \NormalTok{[a] }\OtherTok{->} \DataTypeTok{Put}
+\NormalTok{putList []     }\FunctionTok{=}
+    \NormalTok{put }\DataTypeTok{False}           \CommentTok{-- signal the end}
+\NormalTok{putList (x}\FunctionTok{:}\NormalTok{xs) }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{put }\DataTypeTok{True}            \CommentTok{-- signal a cons}
+    \NormalTok{put x}
+    \NormalTok{putList xs}
+\end{Highlighting}
+\end{Shaded}
+
+Where \texttt{put\ ::\ Binary\ a\ =\textgreater{}\ a\ -\textgreater{}\ Put} is a
+polymorphic way of describing serialization of things with a \texttt{Binary}
+instance --- every type provides its own \texttt{put}. Sequencing \texttt{Put}s
+using do notation is saying ``put this, then that, then that''.
+
+We can deserialize by describing a monadic \texttt{Get} plan:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{getList ::} \DataTypeTok{Binary} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Get} \NormalTok{[a]}
+\NormalTok{getList }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{isCons }\OtherTok{<-} \NormalTok{get}
+    \KeywordTok{if} \NormalTok{isCons}
+      \KeywordTok{then} \KeywordTok{do}
+        \NormalTok{x  }\OtherTok{<-} \NormalTok{get}
+        \NormalTok{xs }\OtherTok{<-} \NormalTok{getList}
+        \NormalTok{return (x}\FunctionTok{:}\NormalTok{xs)}
+      \KeywordTok{else}
+        \NormalTok{return []}
+\end{Highlighting}
+\end{Shaded}
+
+And \texttt{get\ ::\ Binary\ a\ =\textgreater{}\ Get\ a} is a polymorphic way of
+describing a strategy of deserializing things with a \texttt{Binary} instance
+--- again, every type provides its own \texttt{get}. Sequencing \texttt{Get}s is
+again simply ``do-this-then-that''.
+
+We can write our own instances for our own types by providing \texttt{put} and
+\texttt{get} together:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{instance} \DataTypeTok{Binary} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Binary} \NormalTok{[a] }\KeywordTok{where}
+    \NormalTok{put }\FunctionTok{=} \NormalTok{putList}
+    \NormalTok{get }\FunctionTok{=} \NormalTok{getList}
+\end{Highlighting}
+\end{Shaded}
+
+In practice, we usually don't write our own instances from scratch, and use
+GHC's generics features to give us instances for free:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L16-30}
+\KeywordTok{data} \DataTypeTok{Weights} \NormalTok{i o }\FunctionTok{=} \DataTypeTok{W} \NormalTok{\{}\OtherTok{ wBiases ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{R} \NormalTok{o)}
+                     \NormalTok{,}\OtherTok{ wNodes  ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{L} \NormalTok{o i)}
+                     \NormalTok{\}}
+  \KeywordTok{deriving} \NormalTok{(}\DataTypeTok{Generic}\NormalTok{)}
+
+\KeywordTok{instance} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o) }\OtherTok{=>} \DataTypeTok{Binary} \NormalTok{(}\DataTypeTok{Weights} \NormalTok{i o)}
+\end{Highlighting}
+\end{Shaded}
+
+For simple types like \texttt{Weights}, which simply ``contain'' serializable
+things, the \emph{binary} is smart enough to write your instances automatically!
+
+\subsection{\texorpdfstring{\texttt{Binary} for
+\texttt{Network}}{Binary for Network}}\label{binary-for-network}
+
+Writing \texttt{putNet} and \texttt{getNet} is pretty nice because the entire
+structure is already known ahead of time, and we don't need to do any tricks
+with flags like for lists.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L32-36}
+\OtherTok{putNet ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+       \OtherTok{=>} \DataTypeTok{Network} \NormalTok{i hs o}
+       \OtherTok{->} \DataTypeTok{Put}
+\NormalTok{putNet }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{O} \NormalTok{w     }\OtherTok{->} \NormalTok{put w}
+               \NormalTok{w }\FunctionTok{:&~} \NormalTok{n }\OtherTok{->} \NormalTok{put w }\FunctionTok{*>} \NormalTok{putNet n}
+\end{Highlighting}
+\end{Shaded}
+
+Even simpler than for lists! If it's an \texttt{O\ w}, just serialize the
+\texttt{w}. If it's a \texttt{w\ :\&\textasciitilde{}\ net}, serialize the
+\texttt{w} then the rest of the \texttt{net}. The reason we can get away without
+any flags is because we already \emph{know} how many
+\texttt{:\&\textasciitilde{}} layers to expect \emph{just from the type}. If we
+want to deserialize/load a
+\texttt{Network\ 5\ \textquotesingle{}{[}10,6,3{]}\ 2}, we \emph{know} we want
+three \texttt{(:\&\textasciitilde{})}'s and one \texttt{O} --- no need for
+dynamically sized networks like we had to handle for lists.
+
+We'll write \texttt{getNet} the similarly to how wrote
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs\#L54-56}{\texttt{randomNet}}
+from the last post:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L38-42}
+\OtherTok{getNet ::} \NormalTok{forall i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+       \OtherTok{=>} \DataTypeTok{Sing} \NormalTok{hs}
+       \OtherTok{->} \DataTypeTok{Get} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i hs o)}
+\NormalTok{getNet }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{SNil}            \OtherTok{->}     \DataTypeTok{O} \FunctionTok{<$>} \NormalTok{get}
+               \DataTypeTok{SNat} \OtherTok{`SCons`} \NormalTok{ss }\OtherTok{->} \NormalTok{(}\FunctionTok{:&~}\NormalTok{) }\FunctionTok{<$>} \NormalTok{get }\FunctionTok{<*>} \NormalTok{getNet ss}
+\end{Highlighting}
+\end{Shaded}
+
+Now would be a good time to refresh on the
+\href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html\#singletons-and-induction}{singletons
+section} of my last post again. To deserialize a \texttt{Network\ i\ hs\ o}, we
+have to ``pattern match'' on \texttt{hs} to see what constructor we are
+expecting to deserialize, and we do that by using singletons with constructors
+we \emph{can} literally pattern match on (\texttt{SNil} and \texttt{SCons}),
+which tell GHC what type to expect through ``dependent pattern matching''.
+
+If you see a \texttt{SNil\ ::\ Sing\ \textquotesingle{}{[}{]}}, that means that
+\texttt{hs} is \texttt{\textquotesingle{}{[}{]}}, so expect a \texttt{O}
+constructor. If you see
+\texttt{SCons\ s\ ss\ ::\ Sing\ (h\ \textquotesingle{}:\ hs)}, that means that
+\texttt{hs} is \texttt{h\ \textquotesingle{}:\ h\textquotesingle{}}, so expect a
+\texttt{(:\&\textasciitilde{})} constructor. (If this is a little confusing
+still, try re-reading the
+\href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html\#singletons-and-induction}{singleton
+section} from the last post again for a more thorough description!)
+
+Note that here we decide to implement \texttt{getNet} by asking for an explicit
+singleton input (\texttt{Sing\ hs\ -\textgreater{}}) instead of an implicit one
+(\texttt{SingI\ hs\ =\textgreater{}}) like we did for \texttt{randomNet}.
+Remember that the two methods are technically equivalent, really, and compile to
+the same thing at runtime. We need one or the other because of type erasure ---
+so either we pass in \texttt{Sing\ hs}, or provide a \texttt{SingI\ hs}
+constraint so that we can use \texttt{sing\ ::\ Sing\ hs} to construct the
+\texttt{Sing\ hs}.
+
+There's a trade-off either way, and it can be a bit annoying because switching
+between different modes can potentially be diverse. For the most part, always
+try to \emph{take explicit singleton arguments} where you can, especially for
+internal functions. The simple reason is because in Haskell, we like to really
+only do typeclass-level programming as a last, last resort. Typeclasses in
+Haskell are very magical and not really first-class in a satisfying way. Normal
+values (like singletons) \emph{are} first-class and easily passed.
+
+Explicit singleton arguments can sometimes pose a burden for the caller, so my
+personal approach is to \emph{always} use explicit \texttt{Sing\ a} whenever
+possible for \emph{internal functions}, and to expose a
+\texttt{SingI\ a\ =\textgreater{}} interface for \emph{user-facing functions}
+(including for typeclass instances)
+
+So, we're going to write our \texttt{Binary} instance for \texttt{Network}. Of
+course, we can't have \texttt{put} or \texttt{get} take a \texttt{Sing\ hs}
+(that'd change the arity/type of the function), so what we can do is have their
+\texttt{Binary} instances require a \texttt{SingI\ hs} constraint, essentially
+doing the same thing:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L44-46}
+\KeywordTok{instance} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{SingI} \NormalTok{hs, }\DataTypeTok{KnownNat} \NormalTok{o) }\OtherTok{=>} \DataTypeTok{Binary} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i hs o) }\KeywordTok{where}
+    \NormalTok{put }\FunctionTok{=} \NormalTok{putNet}
+    \NormalTok{get }\FunctionTok{=} \NormalTok{getNet sing}
+\end{Highlighting}
+\end{Shaded}
+
+To go from ``\texttt{SingI} world'' to ``\texttt{Sing} world'', we use
+\texttt{sing} to generate the explicit \texttt{Sing\ hs} from
+\texttt{SingI\ hs\ =\textgreater{}}.
+
+We can go ``backwards'' too by using
+\texttt{withSingI\ ::\ Sing\ a\ -\textgreater{}\ (SingI\ a\ =\textgreater{}\ r)\ -\textgreater{}\ r}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L48-51}
+\OtherTok{sillyGetNet ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+            \OtherTok{=>} \DataTypeTok{Sing} \NormalTok{hs}
+            \OtherTok{->} \DataTypeTok{Get} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i hs o)}
+\NormalTok{sillyGetNet ss }\FunctionTok{=} \NormalTok{withSingI ss get}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{withSingI} takes a \texttt{Sing\ a} and a ``thing you can evaluate if
+only you had a \texttt{SingI\ a} instance available'', and evaluates it. We can
+only evaluate
+\texttt{get\ ::\ (KnownNat\ i,\ SingI\ hs,\ KnownNat\ o)\ =\textgreater{}\ Get\ (Network\ i\ hs\ o)}
+if we have that \texttt{SingI} instance, so we can pass it into
+\texttt{withSingI} as the second argument, and, voilà --- we get that
+\texttt{Get\ (Network\ i\ hs\ o)} right out.
 
 \end{document}
