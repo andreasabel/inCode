@@ -142,7 +142,7 @@ expect *just from the type*. If we want to deserialize/load a
 for dynamically sized networks like we had to handle for lists.
 
 We’ll write `getNet` the similarly to how wrote
-[`randomNet`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L54-56)
+[`randomNet`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L67-75)
 from the last post:
 
 ``` {.haskell}
