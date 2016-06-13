@@ -22,8 +22,8 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>All of what we’ve dealt with so far has essentially been with types that are fixed at compile-time. All the networks we’ve made have had “static” types, with their sizes in their types indicated directly in the source code.</p>
 <p>Today, we’re going to dive into the world of types that <em>depend</em> on factors unknown until runtime, and see how dependent types in a strongly typed language like Haskell helps us write safer, more correct, and more maintainable code. Along the way, we’ll encounter and learn first-hand about techniques and guiding high-level principles that we can apply to our other dependently typed coding endeavours.</p>
 <h2 id="serializing-networks">Serializing Networks</h2>
-<p>To warm up, let’s talk about serializing networks: writing them to binary and re-reading them.</p>
-<h3 id="binary">Binary</h3>
+<p>Just to warm up, let’s talk about serializing networks: writing them to binary and re-reading them.</p>
+<h3 id="recap-on-the-binary-library">Recap on the Binary Library</h3>
 <p>Serializing networks of <em>known</em> size — whose sizes are statically in their types — is pretty straightforward. I’m going to be using the <em><a href="https://hackage.haskell.org/package/binary">binary</a></em> library, which offers a very standard typeclass-based approach for serializing and deserializing data. There are a lot of tutorials online (and I even <a href="https://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-2-binary.html">wrote a small one</a> myself a few years ago), but a very high-level view is that the library offers a typeclass for describing serialization schemes for different types.</p>
 <p>For example, for serializing lists, you have:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">putList ::</span> <span class="dt">Binary</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Put</span>
@@ -51,7 +51,7 @@ getList <span class="fu">=</span> <span class="kw">do</span>
     put <span class="fu">=</span> putList
     get <span class="fu">=</span> getList</code></pre></div>
 <p>In practice, we usually don’t write our own instances from scratch, and use GHC’s generics features to give us instances for free:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L16-30</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L18-32</span>
 <span class="kw">data</span> <span class="dt">Weights</span> i o <span class="fu">=</span> <span class="dt">W</span> {<span class="ot"> wBiases ::</span> <span class="fu">!</span>(<span class="dt">R</span> o)
                      ,<span class="ot"> wNodes  ::</span> <span class="fu">!</span>(<span class="dt">L</span> o i)
                      }
@@ -61,7 +61,7 @@ getList <span class="fu">=</span> <span class="kw">do</span>
 <p>For simple types like <code>Weights</code>, which simply “contain” serializable things, the <em>binary</em> is smart enough to write your instances automatically!</p>
 <h3 id="binary-for-network"><code>Binary</code> for <code>Network</code></h3>
 <p>Writing <code>putNet</code> and <code>getNet</code> is pretty nice because the entire structure is already known ahead of time, and we don’t need to do any tricks with flags like for lists.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L32-36</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L34-38</span>
 <span class="ot">putNet ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
        <span class="ot">=&gt;</span> <span class="dt">Network</span> i hs o
        <span class="ot">-&gt;</span> <span class="dt">Put</span>
@@ -69,7 +69,7 @@ putNet <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">
                w <span class="fu">:&amp;~</span> n <span class="ot">-&gt;</span> put w <span class="fu">*&gt;</span> putNet n</code></pre></div>
 <p>Even simpler than for lists! If it’s an <code>O w</code>, just serialize the <code>w</code>. If it’s a <code>w :&amp;~ net</code>, serialize the <code>w</code> then the rest of the <code>net</code>. The reason we can get away without any flags is because we already <em>know</em> how many <code>:&amp;~</code> layers to expect <em>just from the type</em>. If we want to deserialize/load a <code>Network 5 '[10,6,3] 2</code>, we <em>know</em> we want three <code>(:&amp;~)</code>’s and one <code>O</code> — no need for dynamically sized networks like we had to handle for lists.</p>
 <p>We’ll write <code>getNet</code> the similarly to how wrote <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L67-75"><code>randomNet</code></a> from the last post:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L38-42</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L40-44</span>
 <span class="ot">getNet ::</span> forall i hs o<span class="fu">.</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
        <span class="ot">=&gt;</span> <span class="dt">Sing</span> hs
        <span class="ot">-&gt;</span> <span class="dt">Get</span> (<span class="dt">Network</span> i hs o)
@@ -81,28 +81,99 @@ getNet <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">
 <p>There’s a trade-off either way, and it can be a bit annoying because switching between different modes can potentially be diverse. For the most part, always try to <em>take explicit singleton arguments</em> where you can, especially for internal functions. The simple reason is because in Haskell, we like to really only do typeclass-level programming as a last, last resort. Typeclasses in Haskell are very magical and not really first-class in a satisfying way. Normal values (like singletons) <em>are</em> first-class and easily passed.</p>
 <p>Explicit singleton arguments can sometimes pose a burden for the caller, so my personal approach is to <em>always</em> use explicit <code>Sing a</code> whenever possible for <em>internal functions</em>, and to expose a <code>SingI a =&gt;</code> interface for <em>user-facing functions</em> (including for typeclass instances)</p>
 <p>So, we’re going to write our <code>Binary</code> instance for <code>Network</code>. Of course, we can’t have <code>put</code> or <code>get</code> take a <code>Sing hs</code> (that’d change the arity/type of the function), so what we can do is have their <code>Binary</code> instances require a <code>SingI hs</code> constraint, essentially doing the same thing:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L44-46</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L46-48</span>
 <span class="kw">instance</span> (<span class="dt">KnownNat</span> i, <span class="dt">SingI</span> hs, <span class="dt">KnownNat</span> o) <span class="ot">=&gt;</span> <span class="dt">Binary</span> (<span class="dt">Network</span> i hs o) <span class="kw">where</span>
     put <span class="fu">=</span> putNet
     get <span class="fu">=</span> getNet sing</code></pre></div>
 <p>To go from “<code>SingI</code> world” to “<code>Sing</code> world”, we use <code>sing</code> to generate the explicit <code>Sing hs</code> from <code>SingI hs =&gt;</code>.</p>
-<p>We can go “backwards” too by using <code>withSingI :: Sing a -&gt; (SingI a =&gt; r) -&gt; r</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L48-51</span>
-<span class="ot">sillyGetNet ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
-            <span class="ot">=&gt;</span> <span class="dt">Sing</span> hs
-            <span class="ot">-&gt;</span> <span class="dt">Get</span> (<span class="dt">Network</span> i hs o)
-sillyGetNet ss <span class="fu">=</span> withSingI ss get</code></pre></div>
-<p><code>withSingI</code> takes a <code>Sing a</code> and a “thing you can evaluate if only you had a <code>SingI a</code> instance available”, and evaluates it. We can only evaluate <code>get :: (KnownNat i, SingI hs, KnownNat o) =&gt; Get (Network i hs o)</code> if we have that <code>SingI</code> instance, so we can pass it into <code>withSingI</code> as the second argument, and, voilà — we get that <code>Get (Network i hs o)</code> right out.</p>
-<!-- At the Boundary -->
-<!-- --------------- -->
-<!-- There's a sort of mode of thinking that comes with -->
-<!-- You can see in the last post a definite demarcation of two "worlds": the world -->
-<!-- of "untyped", non-dependently typed programming, and the world of typed, -->
-<!-- dependently typed programming. -->
-<!-- So far we've worked completely -->
-<!-- When I first heard about types that depend on runtime values, my mind -->
-<!-- immediately jumped to the idea of dynamic types ... which is, of course, the -->
-<!-- thing that all Haskellers are indoctrinated to hate from day 1.  But -->
+<!-- #### `Sing` to `SingI` -->
+<!-- As a quick aside, note that we can go "backwards" too by using `withSingI :: -->
+<!-- Sing a -> (SingI a => r) -> r`: -->
+<!-- ~~~haskell -->
+<!-- !!!dependent-haskell/NetworkTyped2.hs "sillyGetNet ::" -->
+<!-- ~~~ -->
+<!-- `withSingI` takes a `Sing a` and a "thing you can evaluate if only you had a -->
+<!-- `SingI a` instance available", and evaluates it.  We can only evaluate `get :: -->
+<!-- (KnownNat i, SingI hs, KnownNat o) => Get (Network i hs o)` if we have that -->
+<!-- `SingI` instance, so we can pass it into `withSingI` as the second argument, -->
+<!-- and, voilà --- we get that `Get (Network i hs o)` right out. -->
+<h2 id="existential-crisis">Existential Crisis</h2>
+<p>Now, having the entire structure of your neural network in the type is nice and all for cool tricks like <code>randomNet</code>…but do you <em>really</em> want to work with this directly? After all, from the user’s perspective, the user really only ever needs to know <code>i</code> and <code>o</code>: What vectors the network <em>expects</em>, and what vectors the network <em>outputs</em>. In the end, all a (feed-forward) Neural Network really is is an abstraction over a function <code>R i -&gt; R o</code>.</p>
+<p>Remember, the main benefits of having the entire structure in the type was to help us <em>implement</em> our functions more safely, with the compiler’s help, and also for cute return type polymorphism tricks like <code>randomNet</code> and <code>getNet</code>. The <em>first</em> type of benefit really doesn’t benefit the <em>user</em> of the network. So let’s talk about a way to “abstract” away the internal structure of hidden nodes from the type, and maybe even have it depend on runtime values!</p>
+<p>The big key to “hiding” parts of types and letting them depend on runtime values is called the <em>existential type</em>. Existential types are sort of the “opposite” of the normal polymorphic (universally quantified) types you normally see in Haskell.</p>
+<p>For a function like</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">map<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]</code></pre></div>
+<p><code>a</code> and <code>b</code> are universally quantified, which means that the person who <em>uses</em> <code>map</code> gets to <em>decide</em> what <code>a</code> and <code>b</code> are. To be more explicit, that type signature can be written as:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">map<span class="ot"> ::</span> forall a b<span class="fu">.</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]</code></pre></div>
+<p>For a universally quantified type, the <em>caller</em> gets to decide what is what…and the function has to <em>adapt</em> to handle it.</p>
+<p>For the <em>existentially</em> quantified type, the <em>function</em> gets to decide what is what, and the <em>caller</em> has to adapt to handle it.</p>
+<p>There are two main ways to work with existential types in Haskell, and we’ll go over both of them now and talk about their relative strengths and weaknesses and what situations to use either of them in. It pays to be aware of both!</p>
+<h3 id="existential-data-type">Existential Data Type</h3>
+<p>Arguably the more natural way in Haskell to work with existential types is to wrap them in a data type:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L55-56</span>
+<span class="kw">data</span> <span class="dt">OpaqueNet</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
+    <span class="dt">ONet</span><span class="ot"> ::</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">OpaqueNet</span> i o</code></pre></div>
+<p>So, if you have <code>net :: Network 6 '[10,6,3] 2</code>, you can create <code>ONet sing net :: OpaqueNet 6 2</code>. When you use the <code>ONet</code> constructor, the structure of the hidden layers disappears from the type!</p>
+<p>How do we use this type? When we <em>pattern match</em> on <code>ONet</code>, we get the singleton and the net back!</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L58-63</span>
+<span class="ot">numHiddens ::</span> <span class="dt">OpaqueNet</span> i o <span class="ot">-&gt;</span> <span class="dt">Int</span>
+numHiddens <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">ONet</span> ss _ <span class="ot">-&gt;</span> lengthSing ss
+  <span class="kw">where</span>
+<span class="ot">    lengthSing ::</span> <span class="dt">Sing</span> (<span class="ot">hs ::</span> [<span class="dt">Nat</span>]) <span class="ot">-&gt;</span> <span class="dt">Int</span>
+    lengthSing <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">SNil</span>         <span class="ot">-&gt;</span> <span class="dv">0</span>
+                       _ <span class="ot">`SCons`</span> ss <span class="ot">-&gt;</span> <span class="dv">1</span> <span class="fu">+</span> lengthSing ss</code></pre></div>
+<p>Note that it’s important for us to stuff in the singleton in addition to the network itself, because of type erasure. If we didn’t pop the singleton in, there’d be no way for us to recover the original <code>hs</code>! (Note that we could have had <code>ONet :: SingI hs =&gt; Network i hs o -&gt; OpaqueNet i o</code>, which is essentially the same thing)</p>
+<!-- Typically, for an existential type to be *useful*, we usually have to add a -->
+<!-- typeclass constraint or a singleton so that whoever pattern matches on the -->
+<!-- constructor has *something* to work with. -->
+<p>Once you <em>do</em> pattern match on <code>ONet</code>, you have to handle the <code>hs</code> in a <em>completely polymorphic way</em>. You’re not allowed to assume anything about <code>hs</code>…you have to provide a completely parametrically polymorphic way of dealing with it!</p>
+<p>Note that this function is completely not ok:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">bad ::</span> <span class="dt">OpaqueNet</span> i o <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o
+bad <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">ONet</span> _ n <span class="ot">-&gt;</span> n</code></pre></div>
+<p>Why not? Because a type signature like <code>OpaqueNet i o -&gt; Network i hs o</code> means that the <em>caller</em> can decide what <code>hs</code> can be — just like <code>read :: Read a =&gt; String -&gt; a</code>, where the caller decides what <code>a</code> is.</p>
+<p>Of course, this <em>isn’t</em> the case with the way we’ve written the function…the function only returns a <em>specific</em> <code>hs</code> that the <em>function</em> decides. The <em>caller</em> has to accommodate whatever is inside <code>ONet</code>.</p>
+<h4 id="binary">Binary</h4>
+<p>Now, let’s find out a way to serialize this type! Now, the structure of our network is <em>not</em> known in the type, so we do have to plant flags in our data somehow. We need to store a witness to the structure of the network, as well.</p>
+<p>To do this, we can move <code>hs</code> from the type level to the value level. In Haskell, this is called <strong>reflection</strong>. The <em>singletons</em> library provides the <code>fromSing</code> function for this purpose:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> fromSing (<span class="ot">sing ::</span> <span class="dt">Sing</span> <span class="ch">&#39;[1,2,3])</span>
+[<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>]
+ghci<span class="fu">&gt;</span> fromSing (<span class="ot">sing ::</span> <span class="dt">Sing</span> <span class="ch">&#39;[True, False])</span>
+[<span class="dt">True</span>, <span class="dt">False</span>]</code></pre></div>
+<p>And with that, we can write a serializer for <code>OpaqueNet</code>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L65-70</span>
+<span class="ot">putONet ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
+        <span class="ot">=&gt;</span> <span class="dt">OpaqueNet</span> i o
+        <span class="ot">-&gt;</span> <span class="dt">Put</span>
+putONet <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">ONet</span> ss net <span class="ot">-&gt;</span> <span class="kw">do</span>
+                  put (fromSing ss)
+                  putNet net</code></pre></div>
+<p>Put the structure (as a flag), and then put the network itself.</p>
+<p>Now, to deserialize, we want to <em>load</em> the list of <code>Integer</code>s and move that <em>back</em> into the type level. In Haskell, this is called <strong>reification</strong>, the dual of reflection.</p>
+<p>The <em>singletons</em> library provides the <code>toSing</code> function, which returns a <code>SomeSing</code> (an existentially quantified <code>Sing</code> wrapped in a constructor that we can pattern match on):</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L72-79</span>
+<span class="ot">getONet ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
+        <span class="ot">=&gt;</span> <span class="dt">Get</span> (<span class="dt">OpaqueNet</span> i o)
+getONet <span class="fu">=</span> <span class="kw">do</span>
+    hs <span class="ot">&lt;-</span> get
+    <span class="kw">case</span> toSing hs <span class="kw">of</span>
+      <span class="dt">SomeSing</span> ss <span class="ot">-&gt;</span> <span class="kw">do</span>
+        n <span class="ot">&lt;-</span> getNet ss
+        return (<span class="dt">ONet</span> ss n)</code></pre></div>
+<p>We first <code>get</code> the <code>[Integer]</code>, then <em>reify</em> the list of integers into the type level by getting our <code>ss :: Sing hs</code>. Then we <code>getNet ss</code>, remembering that <code>getNet</code> takes a singleton to figure out what structure to get. Then we wrap it all up in the <code>ONet</code> constructor.</p>
+<p>Phew! We load our flag, reify it, and once we’re back in the typed land again, we can do our normal business!</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L81-83</span>
+<span class="kw">instance</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o) <span class="ot">=&gt;</span> <span class="dt">Binary</span> (<span class="dt">OpaqueNet</span> i o) <span class="kw">where</span>
+    put <span class="fu">=</span> putONet
+    get <span class="fu">=</span> getONet</code></pre></div>
+<h4 id="the-boundary">The Boundary</h4>
+<p>Did you notice what we just did there? The <em>type</em> of <code>Sing hs</code> was <em>dynamically generated</em> based on the <em>value</em> of the <code>[Integer]</code> we load at runtime. We just worked with types that <em>depended</em> on runtime values.</p>
+<p>With the power of existentially quantified types (like in <code>SomeSing</code>), we essentially gained the ability to work with types that depend on runtime results.</p>
+<p>In a way, you can consider the <code>toSing</code> and the <code>SomeSing</code> as our “boundary” between the “untyped world” and the “typed world”. This layer (and the process of reification) cleanly separates the two.</p>
+<p>This “boundary” can be thought of as a lot like the boundary we talk about between “pure” functions and values and “impure” (IO, etc.) ones. We say to always write as much of your program as possible in the “pure” world, and to separate and pull out as much logic as you can to be pure logic. That’s sort of one of the first things you learn about as a Haskell programmer: how to separate logic that <em>can</em> be pure from logic that is “impure” (IO, etc.), and then “combine them” at the very end, as late as possible.</p>
+<p>Well, if the final program is going to be IO in the end anyway, why bother separating out pure and impure parts of your logic? Separation of concerns, the increased ability to reason with your code and analyze what it does, the compiler’s ability to check what you write, the limitation of implementations, and etc. are all reasons any Haskeller should be familiar with reciting.</p>
+<p>You can think of the general philosophy of working with typed/untyped worlds as being the same thing. You can write as much of your program as possible in the “typed” world, like we did in Part 1. Take advantage of the increased ability to reason with your code, parametric polymorphism helping you <em>write</em> your code, limit your implementations, nab you compiler help, etc. All of those are benefits of working in the typed world.</p>
+<p>Then, write what you must in your “untyped” world, such as dealing with values that pop up at runtime like the <code>[Integer]</code> above.</p>
+<p>Finally, at the end, <em>unite</em> them at the boundary.</p>
 <!-- sameNat and existentials --></div><footer><ul class="entry-series"><li><div>This entry is a part of a series called <b>&quot;Practical Dependent Types in Haskell&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html" class="tag-a-series" title="+Practical Dependent Types in Haskell"> series history</a>.</div></li></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/artificial-neural-networks.html" class="tag-a-tag">#artificial neural networks</a></li><li><a href="https://blog.jle.im/entries/tagged/dependent-types.html" class="tag-a-tag">#dependent types</a></li><li><a href="https://blog.jle.im/entries/tagged/functional-programming.html" class="tag-a-tag">#functional programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/linear-algebra.html" class="tag-a-tag">#linear algebra</a></li><li><a href="https://blog.jle.im/entries/tagged/machine-learning.html" class="tag-a-tag">#machine learning</a></li><li><a href="https://blog.jle.im/entries/tagged/numerical.html" class="tag-a-tag">#numerical</a></li><li><a href="https://blog.jle.im/entries/tagged/singletons.html" class="tag-a-tag">#singletons</a></li><li><a href="https://blog.jle.im/entries/tagged/types.html" class="tag-a-tag">#types</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@ramblings.html" class="tag-a-category">@RAMBLINGS</a></li><li><a href="https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html" class="tag-a-series">+Practical Dependent Types in Haskell</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing “in Code”!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/practical-dependent-types-in-haskell-2.html';
     this.page.identifier = 'dependent-haskell-2';
