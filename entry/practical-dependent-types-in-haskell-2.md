@@ -432,5 +432,109 @@ that pop up at runtime like the `[Integer]` above.
 
 Finally, at the end, *unite* them at the boundary.
 
+### Continuation-Based Existentials
+
+There’s another way in Haskell that we work with existential types that can be
+more natural and easy to work with in a lot of cases.
+
+Note that when we pattern match on an existential data type, you have to work
+with the values in the constructor in a parametrically polymorphic way. For
+example, if we had:
+
+``` {.haskell}
+toONet :: OpaqueNet i o -> Foo
+toONet = \case ONet s n -> f s n
+```
+
+What does the type of `f` have to be? It has to take a `Sing hs` and a
+`Network i hs o`, but deal with it in a way that works *for all* `hs`. It has to
+be:
+
+``` {.haskell}
+f :: forall (hs :: [Nat]). Sing hs -> Network i hs o -> Foo
+```
+
+That is, it can’t be written for *only* `Sing '[5]` or *only* `Sing '[6,3]`…it
+has to work for *any* `hs`.
+
+Well, we could really also just skip the data type together and represent an
+existential type as something *taking* the continuation `f` and giving it what
+it needs.
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L85-85
+type OpaqueNet' i o r = (forall hs. Sing hs -> Network i hs o -> r) -> r
+
+```
+
+This “continuation transformation” is known as formally **skolemization**.[^1]
+
+We can “wrap” a `Network i hs o` into an `OpaqueNet' i o r` pretty
+straightforwardly:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L87-88
+oNet' :: Sing hs -> Network i hs o -> OpaqueNet' i o r
+oNet' s n = \f -> f s n
+
+```
+
+To prove that the two `OpaqueNet`s are the same (and to help us see more about
+how they relate), we can write functions that convert back and forth from them:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L90-95
+-- withONet :: OpaqueNet i o -> (forall hs. Sing hs -> Network i hs o -> r) -> r
+withONet :: OpaqueNet i o -> OpaqueNet' i o r
+withONet = \case ONet s n -> (\f -> f s n)
+
+toONet :: OpaqueNet' i o (OpaqueNet i o) -> OpaqueNet i o
+toONet oN' = oN' (\s n -> ONet s n)
+
+```
+
+Note that `withONet` is *really*:
+
+``` {.haskell}
+withONet :: OpaqueNet i o
+         -> (forall hs. Sing hs -> Network i hs o -> r)
+         -> r
+```
+
+Which you can sort of interpret as, “do *this function* on the existentially
+quantified contents of an `OpaqueNet`.”
+
+#### Binary again
+
+To sort of compare how the two methods look like in practice, we’re going to
+Rosetta stone it up and re-implement serialization with the continuation-based
+existentials:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L97-110
+putONet' :: (KnownNat i, KnownNat o)
+         => OpaqueNet' i o Put
+         -> Put
+putONet' oN = oN $ \ss net -> do
+                      put (fromSing ss)
+                      putNet net
+
+getONet' :: (KnownNat i, KnownNat o)
+         => OpaqueNet' i o (Get r)
+getONet' f = do
+    hs <- get
+    withSomeSing (hs :: [Integer]) $ \ss -> do
+      n <- getNet ss
+      f ss n
+
+```
+
+### A Tale of Two Existentials
+
 <!-- sameNat and existentials -->
 
+[^1]: Skolemization is probably one of the coolest words you’ll encounter
+    working with dependent types in Haskell, and sometimes just knowing that
+    you’re “skolemizing” something makes you feel cooler. Thank you [Thoralf
+    Skolem](https://en.wikipedia.org/wiki/Thoralf_Skolem). If you ever see a
+    “rigid, skolem” error in GHC, you can thank him too!

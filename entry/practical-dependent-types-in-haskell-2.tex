@@ -551,4 +551,122 @@ that pop up at runtime like the \texttt{{[}Integer{]}} above.
 
 Finally, at the end, \emph{unite} them at the boundary.
 
+\subsection{Continuation-Based
+Existentials}\label{continuation-based-existentials}
+
+There's another way in Haskell that we work with existential types that can be
+more natural and easy to work with in a lot of cases.
+
+Note that when we pattern match on an existential data type, you have to work
+with the values in the constructor in a parametrically polymorphic way. For
+example, if we had:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{toONet ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{Foo}
+\NormalTok{toONet }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{s n }\OtherTok{->} \NormalTok{f s n}
+\end{Highlighting}
+\end{Shaded}
+
+What does the type of \texttt{f} have to be? It has to take a \texttt{Sing\ hs}
+and a \texttt{Network\ i\ hs\ o}, but deal with it in a way that works \emph{for
+all} \texttt{hs}. It has to be:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{f ::} \NormalTok{forall (}\OtherTok{hs ::} \NormalTok{[}\DataTypeTok{Nat}\NormalTok{])}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{Foo}
+\end{Highlighting}
+\end{Shaded}
+
+That is, it can't be written for \emph{only}
+\texttt{Sing\ \textquotesingle{}{[}5{]}} or \emph{only}
+\texttt{Sing\ \textquotesingle{}{[}6,3{]}}\ldots{}it has to work for \emph{any}
+\texttt{hs}.
+
+Well, we could really also just skip the data type together and represent an
+existential type as something \emph{taking} the continuation \texttt{f} and
+giving it what it needs.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L85-85}
+\KeywordTok{type} \DataTypeTok{OpaqueNet'} \NormalTok{i o r }\FunctionTok{=} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \NormalTok{r) }\OtherTok{->} \NormalTok{r}
+\end{Highlighting}
+\end{Shaded}
+
+This ``continuation transformation'' is known as formally
+\textbf{skolemization}.\footnote{Skolemization is probably one of the coolest
+  words you'll encounter working with dependent types in Haskell, and sometimes
+  just knowing that you're ``skolemizing'' something makes you feel cooler.
+  Thank you \href{https://en.wikipedia.org/wiki/Thoralf_Skolem}{Thoralf Skolem}.
+  If you ever see a ``rigid, skolem'' error in GHC, you can thank him too!}
+
+We can ``wrap'' a \texttt{Network\ i\ hs\ o} into an
+\texttt{OpaqueNet\textquotesingle{}\ i\ o\ r} pretty straightforwardly:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L87-88}
+\OtherTok{oNet' ::} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{OpaqueNet'} \NormalTok{i o r}
+\NormalTok{oNet' s n }\FunctionTok{=} \NormalTok{\textbackslash{}f }\OtherTok{->} \NormalTok{f s n}
+\end{Highlighting}
+\end{Shaded}
+
+To prove that the two \texttt{OpaqueNet}s are the same (and to help us see more
+about how they relate), we can write functions that convert back and forth from
+them:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L90-95}
+\CommentTok{-- withONet :: OpaqueNet i o -> (forall hs. Sing hs -> Network i hs o -> r) -> r}
+\OtherTok{withONet ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{OpaqueNet'} \NormalTok{i o r}
+\NormalTok{withONet }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{s n }\OtherTok{->} \NormalTok{(\textbackslash{}f }\OtherTok{->} \NormalTok{f s n)}
+
+\OtherTok{toONet ::} \DataTypeTok{OpaqueNet'} \NormalTok{i o (}\DataTypeTok{OpaqueNet} \NormalTok{i o) }\OtherTok{->} \DataTypeTok{OpaqueNet} \NormalTok{i o}
+\NormalTok{toONet oN' }\FunctionTok{=} \NormalTok{oN' (\textbackslash{}s n }\OtherTok{->} \DataTypeTok{ONet} \NormalTok{s n)}
+\end{Highlighting}
+\end{Shaded}
+
+Note that \texttt{withONet} is \emph{really}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{withONet ::} \DataTypeTok{OpaqueNet} \NormalTok{i o}
+         \OtherTok{->} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \NormalTok{r)}
+         \OtherTok{->} \NormalTok{r}
+\end{Highlighting}
+\end{Shaded}
+
+Which you can sort of interpret as, ``do \emph{this function} on the
+existentially quantified contents of an \texttt{OpaqueNet}.''
+
+\subsubsection{Binary again}\label{binary-again}
+
+To sort of compare how the two methods look like in practice, we're going to
+Rosetta stone it up and re-implement serialization with the continuation-based
+existentials:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L97-110}
+\OtherTok{putONet' ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+         \OtherTok{=>} \DataTypeTok{OpaqueNet'} \NormalTok{i o }\DataTypeTok{Put}
+         \OtherTok{->} \DataTypeTok{Put}
+\NormalTok{putONet' oN }\FunctionTok{=} \NormalTok{oN }\FunctionTok{$} \NormalTok{\textbackslash{}ss net }\OtherTok{->} \KeywordTok{do}
+                      \NormalTok{put (fromSing ss)}
+                      \NormalTok{putNet net}
+
+\OtherTok{getONet' ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+         \OtherTok{=>} \DataTypeTok{OpaqueNet'} \NormalTok{i o (}\DataTypeTok{Get} \NormalTok{r)}
+\NormalTok{getONet' f }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{hs }\OtherTok{<-} \NormalTok{get}
+    \NormalTok{withSomeSing (}\OtherTok{hs ::} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]) }\FunctionTok{$} \NormalTok{\textbackslash{}ss }\OtherTok{->} \KeywordTok{do}
+      \NormalTok{n }\OtherTok{<-} \NormalTok{getNet ss}
+      \NormalTok{f ss n}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{A Tale of Two Existentials}\label{a-tale-of-two-existentials}
+
 \end{document}
