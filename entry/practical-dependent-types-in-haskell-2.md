@@ -105,11 +105,11 @@ In practice, we usually don’t write our own instances from scratch, and use
 GHC’s generics features to give us instances for free:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L19-33
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L20-36
 data Weights i o = W { wBiases :: !(R o)
                      , wNodes  :: !(L o i)
                      }
-  deriving (Generic)
+  deriving (Show, Generic)
 
 instance (KnownNat i, KnownNat o) => Binary (Weights i o)
 
@@ -125,7 +125,7 @@ already known ahead of time, and we don’t need to do any tricks with flags lik
 for lists.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L54-58
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L57-61
 putNet :: (KnownNat i, KnownNat o)
        => Network i hs o
        -> Put
@@ -146,7 +146,7 @@ We’ll write `getNet` the similarly to how wrote
 from the last post:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L60-64
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L63-67
 getNet :: forall i hs o. (KnownNat i, KnownNat o)
        => Sing hs
        -> Get (Network i hs o)
@@ -197,7 +197,7 @@ function), so what we can do is have their `Binary` instances require a
 `SingI hs` constraint, essentially doing the same thing:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L66-68
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L69-71
 instance (KnownNat i, SingI hs, KnownNat o) => Binary (Network i hs o) where
     put = putNet
     get = getNet sing
@@ -270,7 +270,7 @@ Arguably the more natural way in Haskell to work with existential types is to
 wrap them in a data type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L75-76
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L73-74
 data OpaqueNet :: Nat -> Nat -> * where
     ONet :: Sing hs -> Network i hs o -> OpaqueNet i o
 
@@ -284,7 +284,7 @@ How do we use this type? When we *pattern match* on `ONet`, we get the singleton
 and the net back!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L78-83
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L76-81
 numHiddens :: OpaqueNet i o -> Int
 numHiddens = \case ONet ss _ -> lengthSing ss
   where
@@ -300,9 +300,6 @@ there’d be no way for us to recover the original `hs`! (Note that we could hav
 had `ONet :: SingI hs => Network i hs o -> OpaqueNet i o`, which is essentially
 the same thing)
 
-<!-- Typically, for an existential type to be *useful*, we usually have to add a -->
-<!-- typeclass constraint or a singleton so that whoever pattern matches on the -->
-<!-- constructor has *something* to work with. -->
 Once you *do* pattern match on `ONet`, you have to handle the `hs` in a
 *completely polymorphic way*. You’re not allowed to assume anything about
 `hs`…you have to provide a completely parametrically polymorphic way of dealing
@@ -343,7 +340,7 @@ ghci> fromSing (sing :: Sing '[True, False])
 And with that, we can write a serializer for `OpaqueNet`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L85-90
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L83-88
 putONet :: (KnownNat i, KnownNat o)
         => OpaqueNet i o
         -> Put
@@ -364,7 +361,7 @@ The *singletons* library provides the `toSing` function, which returns a
 can pattern match on):
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L92-99
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L90-97
 getONet :: (KnownNat i, KnownNat o)
         => Get (OpaqueNet i o)
 getONet = do
@@ -385,7 +382,7 @@ Phew! We load our flag, reify it, and once we’re back in the typed land again,
 we can do our normal business!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L108-110
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L107-109
 instance (KnownNat i, KnownNat o) => Binary (OpaqueNet i o) where
     put = putONet
     get = getONet
@@ -430,7 +427,78 @@ benefits of working in the typed world.
 Then, write what you must in your “untyped” world, such as dealing with values
 that pop up at runtime like the `[Integer]` above.
 
-Finally, at the end, *unite* them at the boundary.
+Finally, at the end, *unite* them at the boundary. Pass the control football
+from the untyped world to the typed world!
+
+#### Reifying for Fun and Profit
+
+Before we move on, let’s see a more direct example of reification: creating
+networks with variable internal structure based on runtime input, like
+configuration files.
+
+Maybe you’re reading the internal size from a configuration file, or maybe you
+want it to be determined by user input. Our old `randomNet` won’t work:
+
+``` {.haskell}
+randomNet :: (MonadRandom m, SingI hs)
+          => m (Network i hs o)
+```
+
+Because we need a static type signature to use it directly. But, we can return
+an `OpaqueNet`!
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L99-105
+randomONet :: (MonadRandom m, KnownNat i, KnownNat o)
+           => [Integer]
+           -> m (OpaqueNet i o)
+randomONet hs = case toSing hs of
+                  SomeSing ss -> case singInstance ss of
+                    SingInstance ->
+                      ONet ss <$> randomNet
+
+```
+
+Note that the implementation is slightly awkward because we had the lack of
+foresight to implement `randomNet` using `SingI hs =>` instead of `Sing hs ->`,
+so we have to “go from `Sing` to `SingI`”.
+
+You go from the `SingI` style to the `Sing` style with `sing`, like we saw
+earlier, and you can go backwards with `singInstance`:
+
+``` {.haskell}
+singInstance :: Sing a -> SingInstance a
+```
+
+Where the data type `SingInstance` has a single constructor that’s a lot like
+`SNat` from the last part:
+
+``` {.haskell}
+data SingInstance a where
+    SingInstance :: SingI a => SingInstance a
+```
+
+Basically, it’s impossible to *use* the `SingInstance` constructor unless you
+have a `SingI a` instance in scope, so if you ever *pattern match* on it, it’s a
+“proof” that `SingI a` exists. It’s the same as how, for the constructor
+`SNat :: KnownNat n => Sing n`, if you pattern match on `SNat` and see that it’s
+not something silly like `undefined`/`error`/bottom, GHC knows that there is a
+`KnownNat n` instance. It’s sort of like pattern matching out the instance
+itself.
+
+Now you can get from your untyped world into the world of dependent types —
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L150-156
+main :: IO ()
+main = do
+    putStrLn "What size random net?"
+    hs <- readLn
+    ONet ss (net :: Network 10 hs 3) <- randomONet hs
+    print net
+    -- blah blah stuff with our dynamically generated net
+
+```
 
 ### Continuation-Based Existentials
 
@@ -462,7 +530,7 @@ existential type as something *taking* the continuation `f` and giving it what
 it needs.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L112-112
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L111-111
 type OpaqueNet' i o r = (forall hs. Sing hs -> Network i hs o -> r) -> r
 
 ```
@@ -473,7 +541,7 @@ We can “wrap” a `Network i hs o` into an `OpaqueNet' i o r` pretty
 straightforwardly:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L114-115
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L113-114
 oNet' :: Sing hs -> Network i hs o -> OpaqueNet' i o r
 oNet' s n = \f -> f s n
 
@@ -483,7 +551,7 @@ To prove that the two `OpaqueNet`s are the same (and to help us see more about
 how they relate), we can write functions that convert back and forth from them:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L117-122
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L116-121
 -- withONet :: OpaqueNet i o -> (forall hs. Sing hs -> Network i hs o -> r) -> r
 withONet :: OpaqueNet i o -> OpaqueNet' i o r
 withONet = \case ONet s n -> (\f -> f s n)
@@ -504,14 +572,14 @@ withONet :: OpaqueNet i o
 Which you can sort of interpret as, “do *this function* on the existentially
 quantified contents of an `OpaqueNet`.”
 
-#### Binary again
+#### Trying it out
 
 To sort of compare how the two methods look like in practice, we’re going to
 Rosetta stone it up and re-implement serialization with the continuation-based
 existentials:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L124-137
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L123-138
 putONet' :: (KnownNat i, KnownNat o)
          => OpaqueNet' i o Put
          -> Put
@@ -520,7 +588,9 @@ putONet' oN = oN $ \ss net -> do
                       putNet net
 
 getONet' :: (KnownNat i, KnownNat o)
-         => OpaqueNet' i o (Get r)
+         => (forall hs. Sing hs -> Network i hs o -> Get r)
+         -> Get r
+--  aka, => OpaqueNet' i o (Get r)
 getONet' f = do
     hs <- get
     withSomeSing (hs :: [Integer]) $ \ss -> do
@@ -529,7 +599,76 @@ getONet' f = do
 
 ```
 
-### A Tale of Two Existentials
+To be cute, I used the skolemized partners of `toSing` and `SomeSing`:
+
+``` {.haskell}
+withSomeSing :: [Integer]
+             -> (forall (hs :: [Nat]). Sing hs -> r)
+             -> r
+```
+
+Instead of returning a `SomeSing` like `toSing` does, `withSomeSing` returns the
+continuation-based existential.
+
+I expanded out the type signature of `getONet'`, because you’ll see the explicit
+form more often. It’s:
+
+``` {.haskell}
+getONet' :: (forall hs. Sing hs -> Network i hs o -> Get r)
+         -> Get r
+```
+
+Which basically says “Give what you would do if you *had* a `Sing hs` and a
+`Network i hs o`”, and I’ll get them for you and give you the result."
+
+And let’s also see how we’d return a random network with a continuation:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L140-148
+withRandomONet' :: (MonadRandom m, KnownNat i, KnownNat o)
+                => [Integer]
+                -> (forall hs. Sing hs -> Network i hs o -> m r)
+                -> m r
+--         aka, => OpaqueNet' i o (m r)
+withRandomONet' hs f = withSomeSing hs $ \ss ->
+                       withSingI ss    $ do
+                         net <- randomNet
+                         f ss net
+
+```
+
+Again, to be cute, I used the continuation-based version of `singInstance`,
+`withSingI`:
+
+``` {.haskell}
+withSingI :: Sing a -> (SingI a => r) -> r
+```
+
+The signature, in English, is “give me a `Sing a` and a value that you could
+make *if only you had* a `SingI` instance, and I’ll give you that value as if
+you had the instance, magically!”
+
+Of course, we know it’s not magic:[^2]
+
+``` {.haskell}
+withSingI :: Sing a -> (SingI a => r) -> r
+withSingI s x = case singInstance s of
+                  SingInstance -> x
+```
+
+And we see another way we can “move past the untyped/typed boundary”:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L158-164
+main' :: IO ()
+main' = do
+    putStrLn "What size random net?"
+    hs <- readLn
+    withRandomONet' hs $ \ss (net :: Network 10 hs 3) -> do
+      print net
+      -- blah blah stuff with our dynamically generated net
+
+```
 
 <!-- sameNat and existentials -->
 
@@ -537,4 +676,7 @@ getONet' f = do
     working with dependent types in Haskell, and sometimes just knowing that
     you’re “skolemizing” something makes you feel cooler. Thank you [Thoralf
     Skolem](https://en.wikipedia.org/wiki/Thoralf_Skolem). If you ever see a
-    “rigid, skolem” error in GHC, you can thank him too!
+    “rigid, skolem” error in GHC, you can thank him for that too!
+
+[^2]: Actually, it kind of *is* magic, because `singInstance` is implemented
+    with `unsafeCoerce`. But don’t tell anyone ;)

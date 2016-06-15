@@ -202,11 +202,11 @@ GHC's generics features to give us instances for free:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L19-33}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L20-36}
 \KeywordTok{data} \DataTypeTok{Weights} \NormalTok{i o }\FunctionTok{=} \DataTypeTok{W} \NormalTok{\{}\OtherTok{ wBiases ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{R} \NormalTok{o)}
                      \NormalTok{,}\OtherTok{ wNodes  ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{L} \NormalTok{o i)}
                      \NormalTok{\}}
-  \KeywordTok{deriving} \NormalTok{(}\DataTypeTok{Generic}\NormalTok{)}
+  \KeywordTok{deriving} \NormalTok{(}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Generic}\NormalTok{)}
 
 \KeywordTok{instance} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o) }\OtherTok{=>} \DataTypeTok{Binary} \NormalTok{(}\DataTypeTok{Weights} \NormalTok{i o)}
 \end{Highlighting}
@@ -224,7 +224,7 @@ with flags like for lists.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L54-58}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L57-61}
 \OtherTok{putNet ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
        \OtherTok{=>} \DataTypeTok{Network} \NormalTok{i hs o}
        \OtherTok{->} \DataTypeTok{Put}
@@ -249,7 +249,7 @@ from the last post:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L60-64}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L63-67}
 \OtherTok{getNet ::} \NormalTok{forall i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
        \OtherTok{=>} \DataTypeTok{Sing} \NormalTok{hs}
        \OtherTok{->} \DataTypeTok{Get} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i hs o)}
@@ -307,7 +307,7 @@ doing the same thing:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L66-68}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L69-71}
 \KeywordTok{instance} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{SingI} \NormalTok{hs, }\DataTypeTok{KnownNat} \NormalTok{o) }\OtherTok{=>} \DataTypeTok{Binary} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i hs o) }\KeywordTok{where}
     \NormalTok{put }\FunctionTok{=} \NormalTok{putNet}
     \NormalTok{get }\FunctionTok{=} \NormalTok{getNet sing}
@@ -376,7 +376,7 @@ wrap them in a data type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L75-76}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L73-74}
 \KeywordTok{data} \DataTypeTok{OpaqueNet}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
     \DataTypeTok{ONet}\OtherTok{ ::} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{OpaqueNet} \NormalTok{i o}
 \end{Highlighting}
@@ -392,7 +392,7 @@ the singleton and the net back!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L78-83}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L76-81}
 \OtherTok{numHiddens ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{Int}
 \NormalTok{numHiddens }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{ss _ }\OtherTok{->} \NormalTok{lengthSing ss}
   \KeywordTok{where}
@@ -458,7 +458,7 @@ And with that, we can write a serializer for \texttt{OpaqueNet}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L85-90}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L83-88}
 \OtherTok{putONet ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
         \OtherTok{=>} \DataTypeTok{OpaqueNet} \NormalTok{i o}
         \OtherTok{->} \DataTypeTok{Put}
@@ -480,7 +480,7 @@ in a constructor that we can pattern match on):
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L92-99}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L90-97}
 \OtherTok{getONet ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
         \OtherTok{=>} \DataTypeTok{Get} \NormalTok{(}\DataTypeTok{OpaqueNet} \NormalTok{i o)}
 \NormalTok{getONet }\FunctionTok{=} \KeywordTok{do}
@@ -503,7 +503,7 @@ we can do our normal business!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L108-110}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L107-109}
 \KeywordTok{instance} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o) }\OtherTok{=>} \DataTypeTok{Binary} \NormalTok{(}\DataTypeTok{OpaqueNet} \NormalTok{i o) }\KeywordTok{where}
     \NormalTok{put }\FunctionTok{=} \NormalTok{putONet}
     \NormalTok{get }\FunctionTok{=} \NormalTok{getONet}
@@ -549,7 +549,91 @@ benefits of working in the typed world.
 Then, write what you must in your ``untyped'' world, such as dealing with values
 that pop up at runtime like the \texttt{{[}Integer{]}} above.
 
-Finally, at the end, \emph{unite} them at the boundary.
+Finally, at the end, \emph{unite} them at the boundary. Pass the control
+football from the untyped world to the typed world!
+
+\subsubsection{Reifying for Fun and Profit}\label{reifying-for-fun-and-profit}
+
+Before we move on, let's see a more direct example of reification: creating
+networks with variable internal structure based on runtime input, like
+configuration files.
+
+Maybe you're reading the internal size from a configuration file, or maybe you
+want it to be determined by user input. Our old \texttt{randomNet} won't work:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{randomNet ::} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{SingI} \NormalTok{hs)}
+          \OtherTok{=>} \NormalTok{m (}\DataTypeTok{Network} \NormalTok{i hs o)}
+\end{Highlighting}
+\end{Shaded}
+
+Because we need a static type signature to use it directly. But, we can return
+an \texttt{OpaqueNet}!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L99-105}
+\OtherTok{randomONet ::} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+           \OtherTok{=>} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
+           \OtherTok{->} \NormalTok{m (}\DataTypeTok{OpaqueNet} \NormalTok{i o)}
+\NormalTok{randomONet hs }\FunctionTok{=} \KeywordTok{case} \NormalTok{toSing hs }\KeywordTok{of}
+                  \DataTypeTok{SomeSing} \NormalTok{ss }\OtherTok{->} \KeywordTok{case} \NormalTok{singInstance ss }\KeywordTok{of}
+                    \DataTypeTok{SingInstance} \OtherTok{->}
+                      \DataTypeTok{ONet} \NormalTok{ss }\FunctionTok{<$>} \NormalTok{randomNet}
+\end{Highlighting}
+\end{Shaded}
+
+Note that the implementation is slightly awkward because we had the lack of
+foresight to implement \texttt{randomNet} using
+\texttt{SingI\ hs\ =\textgreater{}} instead of
+\texttt{Sing\ hs\ -\textgreater{}}, so we have to ``go from \texttt{Sing} to
+\texttt{SingI}''.
+
+You go from the \texttt{SingI} style to the \texttt{Sing} style with
+\texttt{sing}, like we saw earlier, and you can go backwards with
+\texttt{singInstance}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{singInstance ::} \DataTypeTok{Sing} \NormalTok{a }\OtherTok{->} \DataTypeTok{SingInstance} \NormalTok{a}
+\end{Highlighting}
+\end{Shaded}
+
+Where the data type \texttt{SingInstance} has a single constructor that's a lot
+like \texttt{SNat} from the last part:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{SingInstance} \NormalTok{a }\KeywordTok{where}
+    \DataTypeTok{SingInstance}\OtherTok{ ::} \DataTypeTok{SingI} \NormalTok{a }\OtherTok{=>} \DataTypeTok{SingInstance} \NormalTok{a}
+\end{Highlighting}
+\end{Shaded}
+
+Basically, it's impossible to \emph{use} the \texttt{SingInstance} constructor
+unless you have a \texttt{SingI\ a} instance in scope, so if you ever
+\emph{pattern match} on it, it's a ``proof'' that \texttt{SingI\ a} exists. It's
+the same as how, for the constructor
+\texttt{SNat\ ::\ KnownNat\ n\ =\textgreater{}\ Sing\ n}, if you pattern match
+on \texttt{SNat} and see that it's not something silly like
+\texttt{undefined}/\texttt{error}/bottom, GHC knows that there is a
+\texttt{KnownNat\ n} instance. It's sort of like pattern matching out the
+instance itself.
+
+Now you can get from your untyped world into the world of dependent types ---
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L150-156}
+\OtherTok{main ::} \DataTypeTok{IO} \NormalTok{()}
+\NormalTok{main }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{putStrLn }\StringTok{"What size random net?"}
+    \NormalTok{hs }\OtherTok{<-} \NormalTok{readLn}
+    \DataTypeTok{ONet} \NormalTok{ss (}\OtherTok{net ::} \DataTypeTok{Network} \DecValTok{10} \NormalTok{hs }\DecValTok{3}\NormalTok{) }\OtherTok{<-} \NormalTok{randomONet hs}
+    \NormalTok{print net}
+    \CommentTok{-- blah blah stuff with our dynamically generated net}
+\end{Highlighting}
+\end{Shaded}
 
 \subsection{Continuation-Based
 Existentials}\label{continuation-based-existentials}
@@ -589,7 +673,7 @@ giving it what it needs.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L112-112}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L111-111}
 \KeywordTok{type} \DataTypeTok{OpaqueNet'} \NormalTok{i o r }\FunctionTok{=} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \NormalTok{r) }\OtherTok{->} \NormalTok{r}
 \end{Highlighting}
 \end{Shaded}
@@ -599,14 +683,15 @@ This ``continuation transformation'' is known as formally
   words you'll encounter working with dependent types in Haskell, and sometimes
   just knowing that you're ``skolemizing'' something makes you feel cooler.
   Thank you \href{https://en.wikipedia.org/wiki/Thoralf_Skolem}{Thoralf Skolem}.
-  If you ever see a ``rigid, skolem'' error in GHC, you can thank him too!}
+  If you ever see a ``rigid, skolem'' error in GHC, you can thank him for that
+  too!}
 
 We can ``wrap'' a \texttt{Network\ i\ hs\ o} into an
 \texttt{OpaqueNet\textquotesingle{}\ i\ o\ r} pretty straightforwardly:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L114-115}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L113-114}
 \OtherTok{oNet' ::} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{OpaqueNet'} \NormalTok{i o r}
 \NormalTok{oNet' s n }\FunctionTok{=} \NormalTok{\textbackslash{}f }\OtherTok{->} \NormalTok{f s n}
 \end{Highlighting}
@@ -618,7 +703,7 @@ them:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L117-122}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L116-121}
 \CommentTok{-- withONet :: OpaqueNet i o -> (forall hs. Sing hs -> Network i hs o -> r) -> r}
 \OtherTok{withONet ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{OpaqueNet'} \NormalTok{i o r}
 \NormalTok{withONet }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{s n }\OtherTok{->} \NormalTok{(\textbackslash{}f }\OtherTok{->} \NormalTok{f s n)}
@@ -641,7 +726,7 @@ Note that \texttt{withONet} is \emph{really}:
 Which you can sort of interpret as, ``do \emph{this function} on the
 existentially quantified contents of an \texttt{OpaqueNet}.''
 
-\subsubsection{Binary again}\label{binary-again}
+\subsubsection{Trying it out}\label{trying-it-out}
 
 To sort of compare how the two methods look like in practice, we're going to
 Rosetta stone it up and re-implement serialization with the continuation-based
@@ -649,7 +734,7 @@ existentials:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L124-137}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L123-138}
 \OtherTok{putONet' ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
          \OtherTok{=>} \DataTypeTok{OpaqueNet'} \NormalTok{i o }\DataTypeTok{Put}
          \OtherTok{->} \DataTypeTok{Put}
@@ -658,7 +743,9 @@ existentials:
                       \NormalTok{putNet net}
 
 \OtherTok{getONet' ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
-         \OtherTok{=>} \DataTypeTok{OpaqueNet'} \NormalTok{i o (}\DataTypeTok{Get} \NormalTok{r)}
+         \OtherTok{=>} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{Get} \NormalTok{r)}
+         \OtherTok{->} \DataTypeTok{Get} \NormalTok{r}
+\CommentTok{--  aka, => OpaqueNet' i o (Get r)}
 \NormalTok{getONet' f }\FunctionTok{=} \KeywordTok{do}
     \NormalTok{hs }\OtherTok{<-} \NormalTok{get}
     \NormalTok{withSomeSing (}\OtherTok{hs ::} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]) }\FunctionTok{$} \NormalTok{\textbackslash{}ss }\OtherTok{->} \KeywordTok{do}
@@ -667,6 +754,89 @@ existentials:
 \end{Highlighting}
 \end{Shaded}
 
-\subsection{A Tale of Two Existentials}\label{a-tale-of-two-existentials}
+To be cute, I used the skolemized partners of \texttt{toSing} and
+\texttt{SomeSing}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{withSomeSing ::} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
+             \OtherTok{->} \NormalTok{(forall (}\OtherTok{hs ::} \NormalTok{[}\DataTypeTok{Nat}\NormalTok{])}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \NormalTok{r)}
+             \OtherTok{->} \NormalTok{r}
+\end{Highlighting}
+\end{Shaded}
+
+Instead of returning a \texttt{SomeSing} like \texttt{toSing} does,
+\texttt{withSomeSing} returns the continuation-based existential.
+
+I expanded out the type signature of \texttt{getONet\textquotesingle{}}, because
+you'll see the explicit form more often. It's:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{getONet' ::} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{Get} \NormalTok{r)}
+         \OtherTok{->} \DataTypeTok{Get} \NormalTok{r}
+\end{Highlighting}
+\end{Shaded}
+
+Which basically says ``Give what you would do if you \emph{had} a
+\texttt{Sing\ hs} and a \texttt{Network\ i\ hs\ o}'', and I'll get them for you
+and give you the result."
+
+And let's also see how we'd return a random network with a continuation:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L140-148}
+\OtherTok{withRandomONet' ::} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+                \OtherTok{=>} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
+                \OtherTok{->} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \NormalTok{m r)}
+                \OtherTok{->} \NormalTok{m r}
+\CommentTok{--         aka, => OpaqueNet' i o (m r)}
+\NormalTok{withRandomONet' hs f }\FunctionTok{=} \NormalTok{withSomeSing hs }\FunctionTok{$} \NormalTok{\textbackslash{}ss }\OtherTok{->}
+                       \NormalTok{withSingI ss    }\FunctionTok{$} \KeywordTok{do}
+                         \NormalTok{net }\OtherTok{<-} \NormalTok{randomNet}
+                         \NormalTok{f ss net}
+\end{Highlighting}
+\end{Shaded}
+
+Again, to be cute, I used the continuation-based version of
+\texttt{singInstance}, \texttt{withSingI}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{withSingI ::} \DataTypeTok{Sing} \NormalTok{a }\OtherTok{->} \NormalTok{(}\DataTypeTok{SingI} \NormalTok{a }\OtherTok{=>} \NormalTok{r) }\OtherTok{->} \NormalTok{r}
+\end{Highlighting}
+\end{Shaded}
+
+The signature, in English, is ``give me a \texttt{Sing\ a} and a value that you
+could make \emph{if only you had} a \texttt{SingI} instance, and I'll give you
+that value as if you had the instance, magically!''
+
+Of course, we know it's not magic:\footnote{Actually, it kind of \emph{is}
+  magic, because \texttt{singInstance} is implemented with
+  \texttt{unsafeCoerce}. But don't tell anyone ;)}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{withSingI ::} \DataTypeTok{Sing} \NormalTok{a }\OtherTok{->} \NormalTok{(}\DataTypeTok{SingI} \NormalTok{a }\OtherTok{=>} \NormalTok{r) }\OtherTok{->} \NormalTok{r}
+\NormalTok{withSingI s x }\FunctionTok{=} \KeywordTok{case} \NormalTok{singInstance s }\KeywordTok{of}
+                  \DataTypeTok{SingInstance} \OtherTok{->} \NormalTok{x}
+\end{Highlighting}
+\end{Shaded}
+
+And we see another way we can ``move past the untyped/typed boundary'':
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L158-164}
+\OtherTok{main' ::} \DataTypeTok{IO} \NormalTok{()}
+\NormalTok{main' }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{putStrLn }\StringTok{"What size random net?"}
+    \NormalTok{hs }\OtherTok{<-} \NormalTok{readLn}
+    \NormalTok{withRandomONet' hs }\FunctionTok{$} \NormalTok{\textbackslash{}ss (}\OtherTok{net ::} \DataTypeTok{Network} \DecValTok{10} \NormalTok{hs }\DecValTok{3}\NormalTok{) }\OtherTok{->} \KeywordTok{do}
+      \NormalTok{print net}
+      \CommentTok{-- blah blah stuff with our dynamically generated net}
+\end{Highlighting}
+\end{Shaded}
 
 \end{document}
