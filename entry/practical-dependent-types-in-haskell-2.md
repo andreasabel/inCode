@@ -105,7 +105,7 @@ In practice, we usually don’t write our own instances from scratch, and use
 GHC’s generics features to give us instances for free:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L18-32
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L19-33
 data Weights i o = W { wBiases :: !(R o)
                      , wNodes  :: !(L o i)
                      }
@@ -125,7 +125,7 @@ already known ahead of time, and we don’t need to do any tricks with flags lik
 for lists.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L34-38
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L54-58
 putNet :: (KnownNat i, KnownNat o)
        => Network i hs o
        -> Put
@@ -146,7 +146,7 @@ We’ll write `getNet` the similarly to how wrote
 from the last post:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L40-44
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L60-64
 getNet :: forall i hs o. (KnownNat i, KnownNat o)
        => Sing hs
        -> Get (Network i hs o)
@@ -197,7 +197,7 @@ function), so what we can do is have their `Binary` instances require a
 `SingI hs` constraint, essentially doing the same thing:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L46-48
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L66-68
 instance (KnownNat i, SingI hs, KnownNat o) => Binary (Network i hs o) where
     put = putNet
     get = getNet sing
@@ -270,7 +270,7 @@ Arguably the more natural way in Haskell to work with existential types is to
 wrap them in a data type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L55-56
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L75-76
 data OpaqueNet :: Nat -> Nat -> * where
     ONet :: Sing hs -> Network i hs o -> OpaqueNet i o
 
@@ -284,7 +284,7 @@ How do we use this type? When we *pattern match* on `ONet`, we get the singleton
 and the net back!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L58-63
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L78-83
 numHiddens :: OpaqueNet i o -> Int
 numHiddens = \case ONet ss _ -> lengthSing ss
   where
@@ -343,7 +343,7 @@ ghci> fromSing (sing :: Sing '[True, False])
 And with that, we can write a serializer for `OpaqueNet`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L65-70
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L85-90
 putONet :: (KnownNat i, KnownNat o)
         => OpaqueNet i o
         -> Put
@@ -364,7 +364,7 @@ The *singletons* library provides the `toSing` function, which returns a
 can pattern match on):
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L72-79
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L92-99
 getONet :: (KnownNat i, KnownNat o)
         => Get (OpaqueNet i o)
 getONet = do
@@ -385,7 +385,7 @@ Phew! We load our flag, reify it, and once we’re back in the typed land again,
 we can do our normal business!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L81-83
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L108-110
 instance (KnownNat i, KnownNat o) => Binary (OpaqueNet i o) where
     put = putONet
     get = getONet
@@ -462,7 +462,7 @@ existential type as something *taking* the continuation `f` and giving it what
 it needs.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L85-85
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L112-112
 type OpaqueNet' i o r = (forall hs. Sing hs -> Network i hs o -> r) -> r
 
 ```
@@ -473,7 +473,7 @@ We can “wrap” a `Network i hs o` into an `OpaqueNet' i o r` pretty
 straightforwardly:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L87-88
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L114-115
 oNet' :: Sing hs -> Network i hs o -> OpaqueNet' i o r
 oNet' s n = \f -> f s n
 
@@ -483,7 +483,7 @@ To prove that the two `OpaqueNet`s are the same (and to help us see more about
 how they relate), we can write functions that convert back and forth from them:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L90-95
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L117-122
 -- withONet :: OpaqueNet i o -> (forall hs. Sing hs -> Network i hs o -> r) -> r
 withONet :: OpaqueNet i o -> OpaqueNet' i o r
 withONet = \case ONet s n -> (\f -> f s n)
@@ -511,7 +511,7 @@ Rosetta stone it up and re-implement serialization with the continuation-based
 existentials:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L97-110
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L124-137
 putONet' :: (KnownNat i, KnownNat o)
          => OpaqueNet' i o Put
          -> Put
