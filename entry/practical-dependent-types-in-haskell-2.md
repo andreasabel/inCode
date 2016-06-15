@@ -444,8 +444,8 @@ randomNet :: (MonadRandom m, SingI hs)
           => m (Network i hs o)
 ```
 
-Because we need a static type signature to use it directly. But, we can return
-an `OpaqueNet`!
+Because we need a static type signature to use it directly. But we can return an
+`OpaqueNet`!
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L99-105
@@ -510,8 +510,8 @@ with the values in the constructor in a parametrically polymorphic way. For
 example, if we had:
 
 ``` {.haskell}
-toONet :: OpaqueNet i o -> Foo
-toONet = \case ONet s n -> f s n
+oNetToFoo :: OpaqueNet i o -> Foo
+oNetToFoo = \case ONet s n -> f s n
 ```
 
 What does the type of `f` have to be? It has to take a `Sing hs` and a
@@ -535,8 +535,10 @@ type OpaqueNet' i o r = (forall hs. Sing hs -> Network i hs o -> r) -> r
 
 ```
 
-This “continuation transformation” is known as formally **skolemization**.[^1]
+“Tell me how you would make an `r` if you had a `Sing hs` and a
+`Network i hs o`, and I’ll make it for you!”
 
+This “continuation transformation” is known as formally **skolemization**.[^1]
 We can “wrap” a `Network i hs o` into an `OpaqueNet' i o r` pretty
 straightforwardly:
 
@@ -561,16 +563,9 @@ toONet oN' = oN' (\s n -> ONet s n)
 
 ```
 
-Note that `withONet` is *really*:
-
-``` {.haskell}
-withONet :: OpaqueNet i o
-         -> (forall hs. Sing hs -> Network i hs o -> r)
-         -> r
-```
-
-Which you can sort of interpret as, “do *this function* on the existentially
-quantified contents of an `OpaqueNet`.”
+Note the expanded type signature of `withONet`, which you can sort of interpret
+as, “do *this function* on the existentially quantified contents of an
+`OpaqueNet`.”
 
 #### Trying it out
 
@@ -610,18 +605,17 @@ withSomeSing :: [Integer]
 Instead of returning a `SomeSing` like `toSing` does, `withSomeSing` returns the
 continuation-based existential.
 
-I expanded out the type signature of `getONet'`, because you’ll see the explicit
-form more often. It’s:
+<!-- I expanded out the type signature of `getONet'`, because you'll see the -->
+<!-- explicit form more often.  It's: -->
+<!-- ~~~haskell -->
+<!-- getONet' :: (forall hs. Sing hs -> Network i hs o -> Get r) -->
+<!--          -> Get r -->
+<!-- ~~~ -->
+The expanded type signature of `getONet'` can be read: “Give what you would do
+if you *had* a `Sing hs` and a `Network i hs o`”, and I’ll get them for you and
+give you the result."
 
-``` {.haskell}
-getONet' :: (forall hs. Sing hs -> Network i hs o -> Get r)
-         -> Get r
-```
-
-Which basically says “Give what you would do if you *had* a `Sing hs` and a
-`Network i hs o`”, and I’ll get them for you and give you the result."
-
-And let’s also see how we’d return a random network with a continuation:
+Let’s also see how we’d return a random network with a continuation:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L140-148

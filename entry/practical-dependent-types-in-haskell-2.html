@@ -176,7 +176,7 @@ getONet <span class="fu">=</span> <span class="kw">do</span>
 <p>Maybe you’re reading the internal size from a configuration file, or maybe you want it to be determined by user input. Our old <code>randomNet</code> won’t work:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">randomNet ::</span> (<span class="dt">MonadRandom</span> m, <span class="dt">SingI</span> hs)
           <span class="ot">=&gt;</span> m (<span class="dt">Network</span> i hs o)</code></pre></div>
-<p>Because we need a static type signature to use it directly. But, we can return an <code>OpaqueNet</code>!</p>
+<p>Because we need a static type signature to use it directly. But we can return an <code>OpaqueNet</code>!</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L99-105</span>
 <span class="ot">randomONet ::</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
            <span class="ot">=&gt;</span> [<span class="dt">Integer</span>]
@@ -204,16 +204,16 @@ main <span class="fu">=</span> <span class="kw">do</span>
 <h3 id="continuation-based-existentials">Continuation-Based Existentials</h3>
 <p>There’s another way in Haskell that we work with existential types that can be more natural and easy to work with in a lot of cases.</p>
 <p>Note that when we pattern match on an existential data type, you have to work with the values in the constructor in a parametrically polymorphic way. For example, if we had:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">toONet ::</span> <span class="dt">OpaqueNet</span> i o <span class="ot">-&gt;</span> <span class="dt">Foo</span>
-toONet <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">ONet</span> s n <span class="ot">-&gt;</span> f s n</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">oNetToFoo ::</span> <span class="dt">OpaqueNet</span> i o <span class="ot">-&gt;</span> <span class="dt">Foo</span>
+oNetToFoo <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">ONet</span> s n <span class="ot">-&gt;</span> f s n</code></pre></div>
 <p>What does the type of <code>f</code> have to be? It has to take a <code>Sing hs</code> and a <code>Network i hs o</code>, but deal with it in a way that works <em>for all</em> <code>hs</code>. It has to be:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">f ::</span> forall (<span class="ot">hs ::</span> [<span class="dt">Nat</span>])<span class="fu">.</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">Foo</span></code></pre></div>
 <p>That is, it can’t be written for <em>only</em> <code>Sing '[5]</code> or <em>only</em> <code>Sing '[6,3]</code>…it has to work for <em>any</em> <code>hs</code>.</p>
 <p>Well, we could really also just skip the data type together and represent an existential type as something <em>taking</em> the continuation <code>f</code> and giving it what it needs.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L111-111</span>
 <span class="kw">type</span> <span class="dt">OpaqueNet&#39;</span> i o r <span class="fu">=</span> (forall hs<span class="fu">.</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r</code></pre></div>
-<p>This “continuation transformation” is known as formally <strong>skolemization</strong>.<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a></p>
-<p>We can “wrap” a <code>Network i hs o</code> into an <code>OpaqueNet' i o r</code> pretty straightforwardly:</p>
+<p>“Tell me how you would make an <code>r</code> if you had a <code>Sing hs</code> and a <code>Network i hs o</code>, and I’ll make it for you!”</p>
+<p>This “continuation transformation” is known as formally <strong>skolemization</strong>.<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> We can “wrap” a <code>Network i hs o</code> into an <code>OpaqueNet' i o r</code> pretty straightforwardly:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L113-114</span>
 <span class="ot">oNet&#39; ::</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">OpaqueNet&#39;</span> i o r
 oNet&#39; s n <span class="fu">=</span> \f <span class="ot">-&gt;</span> f s n</code></pre></div>
@@ -225,11 +225,7 @@ withONet <span class="fu">=</span> \<span class="kw">case</span> <span class="dt
 
 <span class="ot">toONet ::</span> <span class="dt">OpaqueNet&#39;</span> i o (<span class="dt">OpaqueNet</span> i o) <span class="ot">-&gt;</span> <span class="dt">OpaqueNet</span> i o
 toONet oN&#39; <span class="fu">=</span> oN&#39; (\s n <span class="ot">-&gt;</span> <span class="dt">ONet</span> s n)</code></pre></div>
-<p>Note that <code>withONet</code> is <em>really</em>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">withONet ::</span> <span class="dt">OpaqueNet</span> i o
-         <span class="ot">-&gt;</span> (forall hs<span class="fu">.</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> r)
-         <span class="ot">-&gt;</span> r</code></pre></div>
-<p>Which you can sort of interpret as, “do <em>this function</em> on the existentially quantified contents of an <code>OpaqueNet</code>.”</p>
+<p>Note the expanded type signature of <code>withONet</code>, which you can sort of interpret as, “do <em>this function</em> on the existentially quantified contents of an <code>OpaqueNet</code>.”</p>
 <h4 id="trying-it-out">Trying it out</h4>
 <p>To sort of compare how the two methods look like in practice, we’re going to Rosetta stone it up and re-implement serialization with the continuation-based existentials:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L123-138</span>
@@ -254,11 +250,14 @@ getONet&#39; f <span class="fu">=</span> <span class="kw">do</span>
              <span class="ot">-&gt;</span> (forall (<span class="ot">hs ::</span> [<span class="dt">Nat</span>])<span class="fu">.</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> r)
              <span class="ot">-&gt;</span> r</code></pre></div>
 <p>Instead of returning a <code>SomeSing</code> like <code>toSing</code> does, <code>withSomeSing</code> returns the continuation-based existential.</p>
-<p>I expanded out the type signature of <code>getONet'</code>, because you’ll see the explicit form more often. It’s:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">getONet&#39; ::</span> (forall hs<span class="fu">.</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">Get</span> r)
-         <span class="ot">-&gt;</span> <span class="dt">Get</span> r</code></pre></div>
-<p>Which basically says “Give what you would do if you <em>had</em> a <code>Sing hs</code> and a <code>Network i hs o</code>”, and I’ll get them for you and give you the result.&quot;</p>
-<p>And let’s also see how we’d return a random network with a continuation:</p>
+<!-- I expanded out the type signature of `getONet'`, because you'll see the -->
+<!-- explicit form more often.  It's: -->
+<!-- ~~~haskell -->
+<!-- getONet' :: (forall hs. Sing hs -> Network i hs o -> Get r) -->
+<!--          -> Get r -->
+<!-- ~~~ -->
+<p>The expanded type signature of <code>getONet'</code> can be read: “Give what you would do if you <em>had</em> a <code>Sing hs</code> and a <code>Network i hs o</code>”, and I’ll get them for you and give you the result.&quot;</p>
+<p>Let’s also see how we’d return a random network with a continuation:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L140-148</span>
 <span class="ot">withRandomONet&#39; ::</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
                 <span class="ot">=&gt;</span> [<span class="dt">Integer</span>]

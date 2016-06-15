@@ -568,8 +568,8 @@ want it to be determined by user input. Our old \texttt{randomNet} won't work:
 \end{Highlighting}
 \end{Shaded}
 
-Because we need a static type signature to use it directly. But, we can return
-an \texttt{OpaqueNet}!
+Because we need a static type signature to use it directly. But we can return an
+\texttt{OpaqueNet}!
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -647,8 +647,8 @@ example, if we had:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{toONet ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{Foo}
-\NormalTok{toONet }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{s n }\OtherTok{->} \NormalTok{f s n}
+\OtherTok{oNetToFoo ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{Foo}
+\NormalTok{oNetToFoo }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{s n }\OtherTok{->} \NormalTok{f s n}
 \end{Highlighting}
 \end{Shaded}
 
@@ -678,15 +678,16 @@ giving it what it needs.
 \end{Highlighting}
 \end{Shaded}
 
+``Tell me how you would make an \texttt{r} if you had a \texttt{Sing\ hs} and a
+\texttt{Network\ i\ hs\ o}, and I'll make it for you!''
+
 This ``continuation transformation'' is known as formally
 \textbf{skolemization}.\footnote{Skolemization is probably one of the coolest
   words you'll encounter working with dependent types in Haskell, and sometimes
   just knowing that you're ``skolemizing'' something makes you feel cooler.
   Thank you \href{https://en.wikipedia.org/wiki/Thoralf_Skolem}{Thoralf Skolem}.
   If you ever see a ``rigid, skolem'' error in GHC, you can thank him for that
-  too!}
-
-We can ``wrap'' a \texttt{Network\ i\ hs\ o} into an
+  too!} We can ``wrap'' a \texttt{Network\ i\ hs\ o} into an
 \texttt{OpaqueNet\textquotesingle{}\ i\ o\ r} pretty straightforwardly:
 
 \begin{Shaded}
@@ -713,18 +714,9 @@ them:
 \end{Highlighting}
 \end{Shaded}
 
-Note that \texttt{withONet} is \emph{really}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{withONet ::} \DataTypeTok{OpaqueNet} \NormalTok{i o}
-         \OtherTok{->} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \NormalTok{r)}
-         \OtherTok{->} \NormalTok{r}
-\end{Highlighting}
-\end{Shaded}
-
-Which you can sort of interpret as, ``do \emph{this function} on the
-existentially quantified contents of an \texttt{OpaqueNet}.''
+Note the expanded type signature of \texttt{withONet}, which you can sort of
+interpret as, ``do \emph{this function} on the existentially quantified contents
+of an \texttt{OpaqueNet}.''
 
 \subsubsection{Trying it out}\label{trying-it-out}
 
@@ -768,21 +760,12 @@ To be cute, I used the skolemized partners of \texttt{toSing} and
 Instead of returning a \texttt{SomeSing} like \texttt{toSing} does,
 \texttt{withSomeSing} returns the continuation-based existential.
 
-I expanded out the type signature of \texttt{getONet\textquotesingle{}}, because
-you'll see the explicit form more often. It's:
+The expanded type signature of \texttt{getONet\textquotesingle{}} can be read:
+``Give what you would do if you \emph{had} a \texttt{Sing\ hs} and a
+\texttt{Network\ i\ hs\ o}'', and I'll get them for you and give you the
+result."
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{getONet' ::} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{Get} \NormalTok{r)}
-         \OtherTok{->} \DataTypeTok{Get} \NormalTok{r}
-\end{Highlighting}
-\end{Shaded}
-
-Which basically says ``Give what you would do if you \emph{had} a
-\texttt{Sing\ hs} and a \texttt{Network\ i\ hs\ o}'', and I'll get them for you
-and give you the result."
-
-And let's also see how we'd return a random network with a continuation:
+Let's also see how we'd return a random network with a continuation:
 
 \begin{Shaded}
 \begin{Highlighting}[]
