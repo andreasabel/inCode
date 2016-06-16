@@ -86,17 +86,6 @@ getNet <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">
     put <span class="fu">=</span> putNet
     get <span class="fu">=</span> getNet sing</code></pre></div>
 <p>To go from “<code>SingI</code> world” to “<code>Sing</code> world”, we use <code>sing</code> to generate the explicit <code>Sing hs</code> from <code>SingI hs =&gt;</code>.</p>
-<!-- #### `Sing` to `SingI` -->
-<!-- As a quick aside, note that we can go "backwards" too by using `withSingI :: -->
-<!-- Sing a -> (SingI a => r) -> r`: -->
-<!-- ~~~haskell -->
-<!-- !!!dependent-haskell/NetworkTyped2.hs "sillyGetNet ::" -->
-<!-- ~~~ -->
-<!-- `withSingI` takes a `Sing a` and a "thing you can evaluate if only you had a -->
-<!-- `SingI a` instance available", and evaluates it.  We can only evaluate `get :: -->
-<!-- (KnownNat i, SingI hs, KnownNat o) => Get (Network i hs o)` if we have that -->
-<!-- `SingI` instance, so we can pass it into `withSingI` as the second argument, -->
-<!-- and, voilà --- we get that `Get (Network i hs o)` right out. -->
 <h2 id="existential-crisis">Existential Crisis</h2>
 <p>Now, having the entire structure of your neural network in the type is nice and all for cool tricks like <code>randomNet</code>…but do you <em>really</em> want to work with this directly? After all, from the user’s perspective, the user really only ever needs to know <code>i</code> and <code>o</code>: What vectors the network <em>expects</em>, and what vectors the network <em>outputs</em>. In the end, all a (feed-forward) Neural Network really is is an abstraction over a function <code>R i -&gt; R o</code>.</p>
 <p>Remember, the main benefits of having the entire structure in the type was to help us <em>implement</em> our functions more safely, with the compiler’s help, and also for cute return type polymorphism tricks like <code>randomNet</code> and <code>getNet</code>. The <em>first</em> type of benefit really doesn’t benefit the <em>user</em> of the network. So let’s talk about a way to “abstract” away the internal structure of hidden nodes from the type, and maybe even have it depend on runtime values!</p>
@@ -250,12 +239,6 @@ getONet&#39; f <span class="fu">=</span> <span class="kw">do</span>
              <span class="ot">-&gt;</span> (forall (<span class="ot">hs ::</span> [<span class="dt">Nat</span>])<span class="fu">.</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> r)
              <span class="ot">-&gt;</span> r</code></pre></div>
 <p>Instead of returning a <code>SomeSing</code> like <code>toSing</code> does, <code>withSomeSing</code> returns the continuation-based existential.</p>
-<!-- I expanded out the type signature of `getONet'`, because you'll see the -->
-<!-- explicit form more often.  It's: -->
-<!-- ~~~haskell -->
-<!-- getONet' :: (forall hs. Sing hs -> Network i hs o -> Get r) -->
-<!--          -> Get r -->
-<!-- ~~~ -->
 <p>The expanded type signature of <code>getONet'</code> can be read: “Give what you would do if you <em>had</em> a <code>Sing hs</code> and a <code>Network i hs o</code>”, and I’ll get them for you and give you the result.&quot;</p>
 <p>Let’s also see how we’d return a random network with a continuation:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L140-148</span>
@@ -284,6 +267,7 @@ main&#39; <span class="fu">=</span> <span class="kw">do</span>
     withRandomONet&#39; hs <span class="fu">$</span> \ss (<span class="ot">net ::</span> <span class="dt">Network</span> <span class="dv">10</span> hs <span class="dv">3</span>) <span class="ot">-&gt;</span> <span class="kw">do</span>
       print net
       <span class="co">-- blah blah stuff with our dynamically generated net</span></code></pre></div>
+<h2 id="a-tale-of-two-styles">A Tale of Two Styles</h2>
 <!-- sameNat and existentials -->
 <section class="footnotes">
 <hr />

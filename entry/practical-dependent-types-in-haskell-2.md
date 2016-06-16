@@ -207,17 +207,6 @@ instance (KnownNat i, SingI hs, KnownNat o) => Binary (Network i hs o) where
 To go from “`SingI` world” to “`Sing` world”, we use `sing` to generate the
 explicit `Sing hs` from `SingI hs =>`.
 
-<!-- #### `Sing` to `SingI` -->
-<!-- As a quick aside, note that we can go "backwards" too by using `withSingI :: -->
-<!-- Sing a -> (SingI a => r) -> r`: -->
-<!-- ~~~haskell -->
-<!-- !!!dependent-haskell/NetworkTyped2.hs "sillyGetNet ::" -->
-<!-- ~~~ -->
-<!-- `withSingI` takes a `Sing a` and a "thing you can evaluate if only you had a -->
-<!-- `SingI a` instance available", and evaluates it.  We can only evaluate `get :: -->
-<!-- (KnownNat i, SingI hs, KnownNat o) => Get (Network i hs o)` if we have that -->
-<!-- `SingI` instance, so we can pass it into `withSingI` as the second argument, -->
-<!-- and, voilà --- we get that `Get (Network i hs o)` right out. -->
 Existential Crisis
 ------------------
 
@@ -605,12 +594,6 @@ withSomeSing :: [Integer]
 Instead of returning a `SomeSing` like `toSing` does, `withSomeSing` returns the
 continuation-based existential.
 
-<!-- I expanded out the type signature of `getONet'`, because you'll see the -->
-<!-- explicit form more often.  It's: -->
-<!-- ~~~haskell -->
-<!-- getONet' :: (forall hs. Sing hs -> Network i hs o -> Get r) -->
-<!--          -> Get r -->
-<!-- ~~~ -->
 The expanded type signature of `getONet'` can be read: “Give what you would do
 if you *had* a `Sing hs` and a `Network i hs o`”, and I’ll get them for you and
 give you the result."
@@ -663,6 +646,9 @@ main' = do
       -- blah blah stuff with our dynamically generated net
 
 ```
+
+A Tale of Two Styles
+--------------------
 
 <!-- sameNat and existentials -->
 
