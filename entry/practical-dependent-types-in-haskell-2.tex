@@ -128,699 +128,204 @@ Along the way, we'll encounter and learn first-hand about techniques and guiding
 high-level principles that we can apply to our other dependently typed coding
 endeavours.
 
-\section{Serializing Networks}\label{serializing-networks}
+\section{Run-time Types}\label{run-time-types}
 
-Just to warm up, let's talk about serializing networks: writing them to binary
-and re-reading them.
-
-\subsection{Recap on the Binary Library}\label{recap-on-the-binary-library}
-
-Serializing networks of \emph{known} size --- whose sizes are statically in
-their types --- is pretty straightforward. I'm going to be using the
-\emph{\href{https://hackage.haskell.org/package/binary}{binary}} library, which
-offers a very standard typeclass-based approach for serializing and
-deserializing data. There are a lot of tutorials online (and I even
-\href{https://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-2-binary.html}{wrote
-a small one} myself a few years ago), but a very high-level view is that the
-library offers a typeclass for describing serialization schemes for different
-types.
-
-For example, for serializing lists, you have:
+Recall the type we had for our neural networks:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{putList ::} \DataTypeTok{Binary} \NormalTok{a }\OtherTok{=>} \NormalTok{[a] }\OtherTok{->} \DataTypeTok{Put}
-\NormalTok{putList []     }\FunctionTok{=}
-    \NormalTok{put }\DataTypeTok{False}           \CommentTok{-- signal the end}
-\NormalTok{putList (x}\FunctionTok{:}\NormalTok{xs) }\FunctionTok{=} \KeywordTok{do}
-    \NormalTok{put }\DataTypeTok{True}            \CommentTok{-- signal a cons}
-    \NormalTok{put x}
-    \NormalTok{putList xs}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{Network}
+\DataTypeTok{Network}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \NormalTok{[}\DataTypeTok{Nat}\NormalTok{] }\OtherTok{->} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*}
 \end{Highlighting}
 \end{Shaded}
 
-Where \texttt{put\ ::\ Binary\ a\ =\textgreater{}\ a\ -\textgreater{}\ Put} is a
-polymorphic way of describing serialization of things with a \texttt{Binary}
-instance --- every type provides its own \texttt{put}. Sequencing \texttt{Put}s
-using do notation is saying ``put this, then that, then that''.
+They're of the form \texttt{Network\ i\ hs\ o}, where \texttt{i} is the size of
+the input vector it expects, \texttt{hs} is the list of hidden layer sizes, and
+\texttt{o} is the size of the output vector it produces. Something of type
+\texttt{Network\ 10\ \textquotesingle{}{[}6,\ 4{]}\ 3} is a network with 10
+input nodes, two input layers of size 6 and 4, and 3 output nodes.
 
-We can deserialize by describing a monadic \texttt{Get} plan:
+This is great and all, but there's an apparent severe limitation to this:
+Haskell is a statically typed language, right? So doesn't this mean that using a
+network requires that you know the entire structure of the network at
+compile-time?
+
+It's conceivable that you might be able to have the input and output sizes known
+at compile-time, but it's probably likely that you \emph{don't} know the what
+you want your hidden layer structure to be in advance. You might want to load it
+from a configuration file, or have it depend on user input. But can a type
+really depend on things that you can't know until runtime?
+
+To illustrate more clearly:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{getList ::} \DataTypeTok{Binary} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Get} \NormalTok{[a]}
-\NormalTok{getList }\FunctionTok{=} \KeywordTok{do}
-    \NormalTok{isCons }\OtherTok{<-} \NormalTok{get}
-    \KeywordTok{if} \NormalTok{isCons}
-      \KeywordTok{then} \KeywordTok{do}
-        \NormalTok{x  }\OtherTok{<-} \NormalTok{get}
-        \NormalTok{xs }\OtherTok{<-} \NormalTok{getList}
-        \NormalTok{return (x}\FunctionTok{:}\NormalTok{xs)}
-      \KeywordTok{else}
-        \NormalTok{return []}
+\OtherTok{main ::} \DataTypeTok{IO} \NormalTok{()}
+\NormalTok{main }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{putStrLn }\StringTok{"What hidden layer structure do you want?"}
+    \NormalTok{hs  }\OtherTok{<- readLn        ::} \DataTypeTok{IO} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
+    \NormalTok{net }\OtherTok{<- randomNetwork ::} \DataTypeTok{IO} \DecValTok{10} \FunctionTok{???} \DecValTok{3}   \CommentTok{-- what is ???}
+    \CommentTok{-- ...?}
 \end{Highlighting}
 \end{Shaded}
 
-And \texttt{get\ ::\ Binary\ a\ =\textgreater{}\ Get\ a} is a polymorphic way of
-describing a strategy of deserializing things with a \texttt{Binary} instance
---- again, every type provides its own \texttt{get}. Sequencing \texttt{Get}s is
-again simply ``do-this-then-that''.
+You would \emph{want} to put \texttt{hs} there where \texttt{???} is,
+but\ldots{}\texttt{???} has to be a type (of kind \texttt{{[}Nat{]}}).
+\texttt{hs} is a value (of type \texttt{{[}Integer{]}}). It's clear here that
+the \emph{type} of our network depends on something we can't write down or
+decide until runtime.
 
-We can write our own instances for our own types by providing \texttt{put} and
-\texttt{get} together:
+\subsection{A Story of Parametricity}\label{a-story-of-parametricity}
+
+Let's look at the type of \texttt{randomNet} again:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{instance} \DataTypeTok{Binary} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Binary} \NormalTok{[a] }\KeywordTok{where}
-    \NormalTok{put }\FunctionTok{=} \NormalTok{putList}
-    \NormalTok{get }\FunctionTok{=} \NormalTok{getList}
+\OtherTok{randomNet ::} \NormalTok{m (}\DataTypeTok{Network} \NormalTok{i hs o)}
+             \CommentTok{-- plus some constraints yadda yadda}
 \end{Highlighting}
 \end{Shaded}
 
-In practice, we usually don't write our own instances from scratch. Instead, we
-use GHC's generics features to give us instances for free:
+To get more insight onto what the type is really saying, let's see the same
+signature with the explicit forall's:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L20-36}
-\KeywordTok{data} \DataTypeTok{Weights} \NormalTok{i o }\FunctionTok{=} \DataTypeTok{W} \NormalTok{\{}\OtherTok{ wBiases ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{R} \NormalTok{o)}
-                     \NormalTok{,}\OtherTok{ wNodes  ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{L} \NormalTok{o i)}
-                     \NormalTok{\}}
-  \KeywordTok{deriving} \NormalTok{(}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Generic}\NormalTok{)}
-
-\KeywordTok{instance} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o) }\OtherTok{=>} \DataTypeTok{Binary} \NormalTok{(}\DataTypeTok{Weights} \NormalTok{i o)}
+\OtherTok{randomNet ::} \NormalTok{forall m i hs o}\FunctionTok{.} \NormalTok{m (}\DataTypeTok{Network} \NormalTok{i hs o)}
+             \CommentTok{-- plus some constraints yadda yadda}
 \end{Highlighting}
 \end{Shaded}
 
-For simple types like \texttt{Weights}, which simply ``contain'' serializable
-things, the \emph{binary} library is smart enough to write your instances
-automatically for you!
+In English, this means that \texttt{randomNet} lets you produce a
+\texttt{Network\ i\ hs\ o} for \emph{any} \texttt{i} you want, for \emph{any}
+\texttt{hs} you want, for \emph{any} \texttt{o} you want. It's implemented in a
+\emph{parametrically polymorphic way}, meaning that it's implemented in a
+uniform way to handle \emph{any} \texttt{i}, \texttt{hs}, or \texttt{o} the
+caller could possibly ask for. (Provided that they satisfy the typeclass
+constraints, of course)
 
-\subsection{\texorpdfstring{\texttt{Binary} for
-\texttt{Network}}{Binary for Network}}\label{binary-for-network}
-
-Writing \texttt{putNet} and \texttt{getNet} to put/get \texttt{Network}s is
-pretty nice because the entire structure is already known ahead of time, and we
-don't need to do any tricks with flags like for lists.
+We have some other functions we defined in the last part, as well, that are
+defined in such a parametrically polymorphic way:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L57-61}
-\OtherTok{putNet ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+\OtherTok{runNet ::} \NormalTok{forall i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
        \OtherTok{=>} \DataTypeTok{Network} \NormalTok{i hs o}
-       \OtherTok{->} \DataTypeTok{Put}
-\NormalTok{putNet }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{O} \NormalTok{w     }\OtherTok{->} \NormalTok{put w}
-               \NormalTok{w }\FunctionTok{:&~} \NormalTok{n }\OtherTok{->} \NormalTok{put w }\FunctionTok{*>} \NormalTok{putNet n}
+       \OtherTok{->} \DataTypeTok{R} \NormalTok{i}
+       \OtherTok{->} \DataTypeTok{R} \NormalTok{o}
+
+\OtherTok{train  ::} \NormalTok{forall i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+       \OtherTok{=>} \DataTypeTok{Double}
+       \OtherTok{->} \DataTypeTok{R} \NormalTok{i}
+       \OtherTok{->} \DataTypeTok{R} \NormalTok{o}
+       \OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o}
+       \OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o}
 \end{Highlighting}
 \end{Shaded}
 
-Even simpler than for lists! If it's an \texttt{O\ w}, just serialize the
-\texttt{w}. If it's a \texttt{w\ :\&\textasciitilde{}\ net}, serialize the
-\texttt{w} then the rest of the \texttt{net}. The reason we can get away without
-any flags is because we already \emph{know} how many
-\texttt{:\&\textasciitilde{}} layers to expect \emph{just from the type}. If we
-want to deserialize/load a
-\texttt{Network\ 5\ \textquotesingle{}{[}10,6,3{]}\ 2}, we \emph{know} we want
-three \texttt{(:\&\textasciitilde{})}'s and one \texttt{O} --- no need for
-dynamically sized networks like we had to handle for lists.
+\texttt{runNet} is written a way that it can work for \emph{any} \texttt{i} or
+\emph{any} \texttt{hs} or \emph{any} \texttt{o} you want or need (provided they
+satisfy the typeclass constraints). It takes a \texttt{Network\ i\ hs\ o} for
+any \texttt{i}, \texttt{hs}, or \texttt{o}, and an \texttt{R\ i} for the same
+\texttt{i}, and returns an \texttt{R\ o} for the same \texttt{o}. The way they
+are implemented does not depend on the specific structure of the network.
 
-We'll write \texttt{getNet} similarly to how wrote
-\href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L67-75}{\texttt{randomNet}}
-from the last post:
+Contrast this to:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L63-67}
-\OtherTok{getNet ::} \NormalTok{forall i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
-       \OtherTok{=>} \DataTypeTok{Sing} \NormalTok{hs}
-       \OtherTok{->} \DataTypeTok{Get} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i hs o)}
-\NormalTok{getNet }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{SNil}            \OtherTok{->}     \DataTypeTok{O} \FunctionTok{<$>} \NormalTok{get}
-               \DataTypeTok{SNat} \OtherTok{`SCons`} \NormalTok{ss }\OtherTok{->} \NormalTok{(}\FunctionTok{:&~}\NormalTok{) }\FunctionTok{<$>} \NormalTok{get }\FunctionTok{<*>} \NormalTok{getNet ss}
+\OtherTok{foo ::} \DataTypeTok{Network} \DecValTok{10} \CharTok{'[6,4] 3 -> R 3}
 \end{Highlighting}
 \end{Shaded}
 
-To deserialize a \texttt{Network\ i\ hs\ o}, we have to ``pattern match'' on
-\texttt{hs} to see what constructor we are expecting to deserialize. We use
-singletons (with constructors we \emph{can} literally pattern match on) to tell
-GHC what types we are handling, in a process called ``dependent pattern
-matching''.
+This is specifically implemented to \emph{only} work on networks with 10 inputs,
+6 and 4-node hidden layers, and 3 outputs. It \emph{does} care about the
+structure of the network you put in.
 
-If you see a \texttt{SNil\ ::\ Sing\ \textquotesingle{}{[}{]}}, that means that
-\texttt{hs} is \texttt{\textquotesingle{}{[}{]}}, so expect a \texttt{O}
-constructor. If you see
-\texttt{SCons\ s\ ss\ ::\ Sing\ (h\ \textquotesingle{}:\ hs)}, that means that
-\texttt{hs} is \texttt{h\ \textquotesingle{}:\ h\textquotesingle{}}, so expect a
-\texttt{(:\&\textasciitilde{})} constructor. (If this is a little confusing
-still, try re-reading the
-\href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html\#singletons-and-induction}{singleton
-section} from the last post again for a more thorough description!)
+Now, the concept of ``types that depend on run-time'' seems to jive with this
+concept. If we want to write functions that work on types that depend on
+run-time, it would make sense that they have to be able to anticipate and work
+for \emph{any} type that the run-time processes might demand.
 
-Note that here we decide to implement \texttt{getNet} by asking for an explicit
-singleton input (\texttt{Sing\ hs\ -\textgreater{}}) instead of an implicit one
-(\texttt{SingI\ hs\ =\textgreater{}}) like we did for \texttt{randomNet}.
-Remember that the two methods are technically equivalent, really, and compile to
-the same thing at runtime. Because of type erasure in Haskell, we need one or
-the other, at least. We either pass in \texttt{Sing\ hs}, or provide a
-\texttt{SingI\ hs} constraint so that we can use \texttt{sing\ ::\ Sing\ hs} to
-construct the \texttt{Sing\ hs}.
+And that's sort of the secret to working with ``types that depend on run-time''
+in Haskell --- you have to deal with them in a way that adapts to any type that
+can come at you!
 
-There's a trade-off either way, and it can be a bit annoying because switching
-between different modes can potentially be diverse. For the most part, always
-try to \emph{take explicit singleton arguments} where you can, especially for
-internal functions. The simple reason is because in Haskell, we like to really
-only do typeclass-level programming as a last, last resort. Typeclasses in
-Haskell are very magical, but normal values (like singletons) \emph{are}
-first-class and easily passed and manipulable.
+\subsection{Reification}\label{reification}
 
-Explicit singleton arguments can sometimes pose a burden for the caller, though,
-so my personal approach is to always use explicit \texttt{Sing\ a} whenever
-possible for \emph{internal functions}, and to expose a
-\texttt{SingI\ a\ =\textgreater{}} interface for \emph{user-facing functions}
-(including for typeclass instances)
+So we know that \texttt{randomNet} is such a function that works with \emph{any}
+\texttt{hs} you could possibly throw at it. The last missing piece is a function
+can \emph{run} \texttt{randomNet} with an \texttt{hs} that depends on run-time
+factors.
 
-Let's write our \texttt{Binary} instance for \texttt{Network}. Of course, we
-can't have \texttt{put} or \texttt{get} take a \texttt{Sing\ hs} (that'd change
-the arity/type of the function), so what we can do is have their \texttt{Binary}
-instances require a \texttt{SingI\ hs} constraint, essentially doing the same
-thing:
+Enter \texttt{withSomeSing}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L69-71}
-\KeywordTok{instance} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{SingI} \NormalTok{hs, }\DataTypeTok{KnownNat} \NormalTok{o) }\OtherTok{=>} \DataTypeTok{Binary} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i hs o) }\KeywordTok{where}
-    \NormalTok{put }\FunctionTok{=} \NormalTok{putNet}
-    \NormalTok{get }\FunctionTok{=} \NormalTok{getNet sing}
+\NormalTok{withSomeSing}
+\OtherTok{    ::} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
+    \OtherTok{->} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{hs ::} \NormalTok{[}\DataTypeTok{Nat}\NormalTok{]) }\OtherTok{->} \NormalTok{r)}
+    \OtherTok{->} \NormalTok{r}
 \end{Highlighting}
 \end{Shaded}
 
-To go from ``\texttt{SingI} style'' to ``\texttt{Sing} style'', we use
-\texttt{sing} to generate the explicit \texttt{Sing\ hs} from
-\texttt{SingI\ hs\ =\textgreater{}}.
+(I've specialized it there to work with \texttt{{[}Integer{]}} and
+\texttt{{[}Nat{]}}, but it works in general with any singleton and the values it
+represents)
 
-\section{Existential Crisis}\label{existential-crisis}
+The type signature says ``Give me an \texttt{{[}Integer{]}} and a function that
+is ready to take \emph{any} \texttt{hs}, and I'll run it with the \texttt{hs}
+from the \texttt{{[}Integer{]}} for you''.
 
-Now, having the entire structure of your neural network in the type is nice and
-all for cool tricks like \texttt{randomNet}\ldots{}but do you \emph{really} want
-to work with this directly? After all, from the user's perspective, the user
-really only ever needs to know \texttt{i} and \texttt{o}: What vectors the
-network \emph{expects}, and what vectors the network \emph{outputs}. In the end,
-all a (feed-forward) Neural Network really is is an abstraction over a function
-\texttt{R\ i\ -\textgreater{}\ R\ o}.
+For example, if we had \texttt{foo\ ::\ Sing\ hs\ -\textgreater{}\ Int}, and we
+pass it to \texttt{withSomeSing\ {[}1,2,3{]}}, it'll \emph{run} \texttt{foo},
+setting with \texttt{hs} to be \texttt{\textquotesingle{}{[}1,2,3{]}}.
 
-Remember, the main benefits of having the entire structure in the type was to
-help us \emph{implement} our functions more safely, with the compiler's help,
-and also for cute return type polymorphism tricks like \texttt{randomNet} and
-\texttt{getNet}. The \emph{first} type of benefit really doesn't benefit the
-\emph{user} of the network. So let's talk about a way to ``abstract'' away the
-internal structure of hidden nodes from the type, and maybe even have it depend
-on runtime values!
-
-The big key to ``hiding'' parts of types and letting them depend on runtime
-values is called the \emph{existential type}. Existential types are sort of the
-``opposite'' of the normal polymorphic (universally quantified) types you
-normally see in Haskell.
-
-For a function like
+We can re-write \texttt{randomNet} to take a \texttt{Sing\ hs\ -\textgreater{}}
+instead of a \texttt{SingI\ hs\ =\textgreater{}} (remember, the two are just two
+ways of writing the same thing. Re-read the
+\href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html\#singletons-and-induction}{singletons
+section} for a review!) to make things more clear:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{map}\OtherTok{ ::} \NormalTok{(a }\OtherTok{->} \NormalTok{b) }\OtherTok{->} \NormalTok{[a] }\OtherTok{->} \NormalTok{[b]}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L47-50}
+\OtherTok{randomNet' ::} \NormalTok{forall m i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+           \OtherTok{=>} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \NormalTok{m (}\DataTypeTok{Network} \NormalTok{i hs o)}
+\NormalTok{randomNet' }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{SNil}            \OtherTok{->}     \DataTypeTok{O} \FunctionTok{<$>} \NormalTok{randomWeights}
+                   \DataTypeTok{SNat} \OtherTok{`SCons`} \NormalTok{ss }\OtherTok{->} \NormalTok{(}\FunctionTok{:&~}\NormalTok{) }\FunctionTok{<$>} \NormalTok{randomWeights }\FunctionTok{<*>} \NormalTok{randomNet' ss}
 \end{Highlighting}
 \end{Shaded}
 
-\texttt{a} and \texttt{b} are universally quantified, which means that the
-person who \emph{uses} \texttt{map} gets to \emph{decide} what \texttt{a} and
-\texttt{b} are. To be more explicit, that type signature can be written as:
+And we can implement the concept we had before:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{map}\OtherTok{ ::} \NormalTok{forall a b}\FunctionTok{.} \NormalTok{(a }\OtherTok{->} \NormalTok{b) }\OtherTok{->} \NormalTok{[a] }\OtherTok{->} \NormalTok{[b]}
-\end{Highlighting}
-\end{Shaded}
-
-For a universally quantified type, the \emph{caller} gets to decide what is
-what\ldots{}and the function has to \emph{adapt} to handle it.
-
-For the \emph{existentially} quantified type, the \emph{function} gets to decide
-what is what, and the \emph{caller} has to adapt to handle it.
-
-There are two main ways to work with existential types in Haskell, and we'll go
-over both of them now and talk about their relative strengths and weaknesses and
-what situations to use either of them in. It pays to be aware of both!
-
-\subsection{Existential Data Type}\label{existential-data-type}
-
-Arguably the more natural way in Haskell to work with existential types is to
-wrap them in a data type:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L73-74}
-\KeywordTok{data} \DataTypeTok{OpaqueNet}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
-    \DataTypeTok{ONet}\OtherTok{ ::} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{OpaqueNet} \NormalTok{i o}
-\end{Highlighting}
-\end{Shaded}
-
-So, if you have \texttt{net\ ::\ Network\ 6\ \textquotesingle{}{[}10,6,3{]}\ 2},
-you can create \texttt{ONet\ sing\ net\ ::\ OpaqueNet\ 6\ 2}. When you use the
-\texttt{ONet} constructor, the structure of the hidden layers disappears from
-the type!
-
-How do we use this type? When we \emph{pattern match} on \texttt{ONet}, we get
-the singleton and the net back!
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L76-81}
-\OtherTok{numHiddens ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{Int}
-\NormalTok{numHiddens }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{ss _ }\OtherTok{->} \NormalTok{lengthSing ss}
-  \KeywordTok{where}
-\OtherTok{    lengthSing ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{hs ::} \NormalTok{[}\DataTypeTok{Nat}\NormalTok{]) }\OtherTok{->} \DataTypeTok{Int}
-    \NormalTok{lengthSing }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{SNil}         \OtherTok{->} \DecValTok{0}
-                       \NormalTok{_ }\OtherTok{`SCons`} \NormalTok{ss }\OtherTok{->} \DecValTok{1} \FunctionTok{+} \NormalTok{lengthSing ss}
-\end{Highlighting}
-\end{Shaded}
-
-Note that it's important for us to stuff in the singleton in addition to the
-network itself, because of type erasure. If we didn't pop the singleton in,
-there'd be no way for us to recover the original \texttt{hs}! (Note that we
-could have had
-\texttt{ONet\ ::\ SingI\ hs\ =\textgreater{}\ Network\ i\ hs\ o\ -\textgreater{}\ OpaqueNet\ i\ o},
-which is essentially the same thing)
-
-Once you \emph{do} pattern match on \texttt{ONet}, you have to handle the
-\texttt{hs} in a \emph{completely polymorphic way}. You're not allowed to assume
-anything about \texttt{hs}\ldots{}you have to provide a completely
-parametrically polymorphic way of dealing with it!
-
-Note that this function is completely not ok:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{bad ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o}
-\NormalTok{bad }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{_ n }\OtherTok{->} \NormalTok{n}
-\end{Highlighting}
-\end{Shaded}
-
-Why not? Because a type signature like
-\texttt{OpaqueNet\ i\ o\ -\textgreater{}\ Network\ i\ hs\ o} means that the
-\emph{caller} can decide what \texttt{hs} can be --- just like
-\texttt{read\ ::\ Read\ a\ =\textgreater{}\ String\ -\textgreater{}\ a}, where
-the caller decides what \texttt{a} is.
-
-Of course, this \emph{isn't} the case with the way we've written the
-function\ldots{}the function only returns a \emph{specific} \texttt{hs} that the
-\emph{function} decides. The \emph{caller} has to accommodate whatever is inside
-\texttt{ONet}.
-
-\subsubsection{Binary}\label{binary}
-
-Now, let's find out a way to serialize this type! Now, the structure of our
-network is \emph{not} known in the type, so we do have to plant flags in our
-data somehow. We need to store a witness to the structure of the network, as
-well.
-
-To do this, we can move \texttt{hs} from the type level to the value level. In
-Haskell, this is called \textbf{reflection}. The \emph{singletons} library
-provides the \texttt{fromSing} function for this purpose:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \NormalTok{fromSing (}\OtherTok{sing ::} \DataTypeTok{Sing} \CharTok{'[1,2,3])}
-\NormalTok{[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>} \NormalTok{fromSing (}\OtherTok{sing ::} \DataTypeTok{Sing} \CharTok{'[True, False])}
-\NormalTok{[}\DataTypeTok{True}\NormalTok{, }\DataTypeTok{False}\NormalTok{]}
-\end{Highlighting}
-\end{Shaded}
-
-And with that, we can write a serializer for \texttt{OpaqueNet}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L83-88}
-\OtherTok{putONet ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
-        \OtherTok{=>} \DataTypeTok{OpaqueNet} \NormalTok{i o}
-        \OtherTok{->} \DataTypeTok{Put}
-\NormalTok{putONet }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{ss net }\OtherTok{->} \KeywordTok{do}
-                  \NormalTok{put (fromSing ss)}
-                  \NormalTok{putNet net}
-\end{Highlighting}
-\end{Shaded}
-
-Put the structure (as a flag), and then put the network itself.
-
-Now, to deserialize, we want to \emph{load} the list of \texttt{Integer}s and
-move that \emph{back} into the type level. In Haskell, this is called
-\textbf{reification}, the dual of reflection.
-
-The \emph{singletons} library provides the \texttt{toSing} function, which
-returns a \texttt{SomeSing} (an existentially quantified \texttt{Sing} wrapped
-in a constructor that we can pattern match on):
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L90-97}
-\OtherTok{getONet ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
-        \OtherTok{=>} \DataTypeTok{Get} \NormalTok{(}\DataTypeTok{OpaqueNet} \NormalTok{i o)}
-\NormalTok{getONet }\FunctionTok{=} \KeywordTok{do}
-    \NormalTok{hs }\OtherTok{<-} \NormalTok{get}
-    \KeywordTok{case} \NormalTok{toSing hs }\KeywordTok{of}
-      \DataTypeTok{SomeSing} \NormalTok{ss }\OtherTok{->} \KeywordTok{do}
-        \NormalTok{n }\OtherTok{<-} \NormalTok{getNet ss}
-        \NormalTok{return (}\DataTypeTok{ONet} \NormalTok{ss n)}
-\end{Highlighting}
-\end{Shaded}
-
-We first \texttt{get} the \texttt{{[}Integer{]}}, then \emph{reify} the list of
-integers into the type level by getting our \texttt{ss\ ::\ Sing\ hs}. Then we
-\texttt{getNet\ ss}, remembering that \texttt{getNet} takes a singleton to
-figure out what structure to get. Then we wrap it all up in the \texttt{ONet}
-constructor.
-
-Phew! We load our flag, reify it, and once we're back in the typed land again,
-we can do our normal business!
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L107-109}
-\KeywordTok{instance} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o) }\OtherTok{=>} \DataTypeTok{Binary} \NormalTok{(}\DataTypeTok{OpaqueNet} \NormalTok{i o) }\KeywordTok{where}
-    \NormalTok{put }\FunctionTok{=} \NormalTok{putONet}
-    \NormalTok{get }\FunctionTok{=} \NormalTok{getONet}
-\end{Highlighting}
-\end{Shaded}
-
-\subsubsection{The Boundary}\label{the-boundary}
-
-Did you notice what we just did there? The \emph{type} of \texttt{Sing\ hs} was
-\emph{dynamically generated} based on the \emph{value} of the
-\texttt{{[}Integer{]}} we load at runtime. We just worked with types that
-\emph{depended} on runtime values.
-
-With the power of existentially quantified types (like in \texttt{SomeSing}), we
-essentially gained the ability to work with types that depend on runtime
-results.
-
-In a way, you can consider the \texttt{toSing} and the \texttt{SomeSing} as our
-``boundary'' between the ``untyped world'' and the ``typed world''. This layer
-(and the process of reification) cleanly separates the two.
-
-This ``boundary'' can be thought of as a lot like the boundary we talk about
-between ``pure'' functions and values and ``impure'' (IO, etc.) ones. We say to
-always write as much of your program as possible in the ``pure'' world, and to
-separate and pull out as much logic as you can to be pure logic. That's sort of
-one of the first things you learn about as a Haskell programmer: how to separate
-logic that \emph{can} be pure from logic that is ``impure'' (IO, etc.), and then
-``combine them'' at the very end, as late as possible.
-
-Well, if the final program is going to be IO in the end anyway, why bother
-separating out pure and impure parts of your logic? Separation of concerns, the
-increased ability to reason with your code and analyze what it does, the
-compiler's ability to check what you write, the limitation of implementations,
-and etc. are all reasons any Haskeller should be familiar with reciting.
-
-You can think of the general philosophy of working with typed/untyped worlds as
-being the same thing. You can write as much of your program as possible in the
-``typed'' world, like we did in Part 1. Take advantage of the increased ability
-to reason with your code, parametric polymorphism helping you \emph{write} your
-code, limit your implementations, nab you compiler help, etc. All of those are
-benefits of working in the typed world.
-
-Then, write what you must in your ``untyped'' world, such as dealing with values
-that pop up at runtime like the \texttt{{[}Integer{]}} above.
-
-Finally, at the end, \emph{unite} them at the boundary. Pass the control
-football from the untyped world to the typed world!
-
-\subsubsection{Reifying for Fun and Profit}\label{reifying-for-fun-and-profit}
-
-Before we move on, let's see a more direct example of reification: creating
-networks with variable internal structure based on runtime input, like
-configuration files.
-
-Maybe you're reading the internal size from a configuration file, or maybe you
-want it to be determined by user input. Our old \texttt{randomNet} won't work:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{randomNet ::} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{SingI} \NormalTok{hs)}
-          \OtherTok{=>} \NormalTok{m (}\DataTypeTok{Network} \NormalTok{i hs o)}
-\end{Highlighting}
-\end{Shaded}
-
-Because we need a static type signature to use it directly. But we can return an
-\texttt{OpaqueNet}!
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L99-105}
-\OtherTok{randomONet ::} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
-           \OtherTok{=>} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
-           \OtherTok{->} \NormalTok{m (}\DataTypeTok{OpaqueNet} \NormalTok{i o)}
-\NormalTok{randomONet hs }\FunctionTok{=} \KeywordTok{case} \NormalTok{toSing hs }\KeywordTok{of}
-                  \DataTypeTok{SomeSing} \NormalTok{ss }\OtherTok{->} \KeywordTok{case} \NormalTok{singInstance ss }\KeywordTok{of}
-                    \DataTypeTok{SingInstance} \OtherTok{->}
-                      \DataTypeTok{ONet} \NormalTok{ss }\FunctionTok{<$>} \NormalTok{randomNet}
-\end{Highlighting}
-\end{Shaded}
-
-Note that the implementation is slightly awkward because we had the lack of
-foresight to implement \texttt{randomNet} using
-\texttt{SingI\ hs\ =\textgreater{}} instead of
-\texttt{Sing\ hs\ -\textgreater{}}, so we have to ``go from \texttt{Sing} to
-\texttt{SingI}''.
-
-You go from the \texttt{SingI} style to the \texttt{Sing} style with
-\texttt{sing}, like we saw earlier, and you can go backwards with
-\texttt{singInstance}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{singInstance ::} \DataTypeTok{Sing} \NormalTok{a }\OtherTok{->} \DataTypeTok{SingInstance} \NormalTok{a}
-\end{Highlighting}
-\end{Shaded}
-
-Where the data type \texttt{SingInstance} has a single constructor that's a lot
-like \texttt{SNat} from the last part:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{SingInstance} \NormalTok{a }\KeywordTok{where}
-    \DataTypeTok{SingInstance}\OtherTok{ ::} \DataTypeTok{SingI} \NormalTok{a }\OtherTok{=>} \DataTypeTok{SingInstance} \NormalTok{a}
-\end{Highlighting}
-\end{Shaded}
-
-Basically, it's impossible to \emph{use} the \texttt{SingInstance} constructor
-unless you have a \texttt{SingI\ a} instance in scope, so if you ever
-\emph{pattern match} on it, it's a ``proof'' that \texttt{SingI\ a} exists. It's
-the same as how, for the constructor
-\texttt{SNat\ ::\ KnownNat\ n\ =\textgreater{}\ Sing\ n}, if you pattern match
-on \texttt{SNat} and see that it's not something silly like
-\texttt{undefined}/\texttt{error}/bottom, GHC knows that there is a
-\texttt{KnownNat\ n} instance. It's sort of like pattern matching out the
-instance itself.
-
-Now you can get from your untyped world into the world of dependent types ---
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L150-156}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L149-156}
 \OtherTok{main ::} \DataTypeTok{IO} \NormalTok{()}
 \NormalTok{main }\FunctionTok{=} \KeywordTok{do}
     \NormalTok{putStrLn }\StringTok{"What size random net?"}
-    \NormalTok{hs }\OtherTok{<-} \NormalTok{readLn}
-    \DataTypeTok{ONet} \NormalTok{ss (}\OtherTok{net ::} \DataTypeTok{Network} \DecValTok{10} \NormalTok{hs }\DecValTok{3}\NormalTok{) }\OtherTok{<-} \NormalTok{randomONet hs}
-    \NormalTok{print net}
-    \CommentTok{-- blah blah stuff with our dynamically generated net}
-\end{Highlighting}
-\end{Shaded}
-
-\subsection{Continuation-Based
-Existentials}\label{continuation-based-existentials}
-
-There's another way in Haskell that we work with existential types that can be
-more natural and easy to work with in a lot of cases.
-
-Note that when we pattern match on an existential data type, you have to work
-with the values in the constructor in a parametrically polymorphic way. For
-example, if we had:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{oNetToFoo ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{Foo}
-\NormalTok{oNetToFoo }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{s n }\OtherTok{->} \NormalTok{f s n}
-\end{Highlighting}
-\end{Shaded}
-
-What does the type of \texttt{f} have to be? It has to take a \texttt{Sing\ hs}
-and a \texttt{Network\ i\ hs\ o}, but deal with it in a way that works \emph{for
-all} \texttt{hs}. It has to be:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{f ::} \NormalTok{forall (}\OtherTok{hs ::} \NormalTok{[}\DataTypeTok{Nat}\NormalTok{])}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{Foo}
-\end{Highlighting}
-\end{Shaded}
-
-That is, it can't be written for \emph{only}
-\texttt{Sing\ \textquotesingle{}{[}5{]}} or \emph{only}
-\texttt{Sing\ \textquotesingle{}{[}6,3{]}}\ldots{}it has to work for \emph{any}
-\texttt{hs}.
-
-Well, we could really also just skip the data type together and represent an
-existential type as something \emph{taking} the continuation \texttt{f} and
-giving it what it needs.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L111-111}
-\KeywordTok{type} \DataTypeTok{OpaqueNet'} \NormalTok{i o r }\FunctionTok{=} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \NormalTok{r) }\OtherTok{->} \NormalTok{r}
-\end{Highlighting}
-\end{Shaded}
-
-``Tell me how you would make an \texttt{r} if you had a \texttt{Sing\ hs} and a
-\texttt{Network\ i\ hs\ o}, and I'll make it for you!''
-
-This ``continuation transformation'' is known as formally
-\textbf{skolemization}.\footnote{Skolemization is probably one of the coolest
-  words you'll encounter working with dependent types in Haskell, and sometimes
-  just knowing that you're ``skolemizing'' something makes you feel cooler.
-  Thank you \href{https://en.wikipedia.org/wiki/Thoralf_Skolem}{Thoralf Skolem}.
-  If you ever see a ``rigid, skolem'' error in GHC, you can thank him for that
-  too!} We can ``wrap'' a \texttt{Network\ i\ hs\ o} into an
-\texttt{OpaqueNet\textquotesingle{}\ i\ o\ r} pretty straightforwardly:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L113-114}
-\OtherTok{oNet' ::} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{OpaqueNet'} \NormalTok{i o r}
-\NormalTok{oNet' s n }\FunctionTok{=} \NormalTok{\textbackslash{}f }\OtherTok{->} \NormalTok{f s n}
-\end{Highlighting}
-\end{Shaded}
-
-To prove that the two \texttt{OpaqueNet}s are the same (and to help us see more
-about how they relate), we can write functions that convert back and forth from
-them:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L116-121}
-\CommentTok{-- withONet :: OpaqueNet i o -> (forall hs. Sing hs -> Network i hs o -> r) -> r}
-\OtherTok{withONet ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{OpaqueNet'} \NormalTok{i o r}
-\NormalTok{withONet }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{s n }\OtherTok{->} \NormalTok{(\textbackslash{}f }\OtherTok{->} \NormalTok{f s n)}
-
-\OtherTok{toONet ::} \DataTypeTok{OpaqueNet'} \NormalTok{i o (}\DataTypeTok{OpaqueNet} \NormalTok{i o) }\OtherTok{->} \DataTypeTok{OpaqueNet} \NormalTok{i o}
-\NormalTok{toONet oN' }\FunctionTok{=} \NormalTok{oN' (\textbackslash{}s n }\OtherTok{->} \DataTypeTok{ONet} \NormalTok{s n)}
-\end{Highlighting}
-\end{Shaded}
-
-Note the expanded type signature of \texttt{withONet}, which you can sort of
-interpret as, ``do \emph{this function} on the existentially quantified contents
-of an \texttt{OpaqueNet}.''
-
-\subsubsection{Trying it out}\label{trying-it-out}
-
-To sort of compare how the two methods look like in practice, we're going to
-Rosetta stone it up and re-implement serialization with the continuation-based
-existentials:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L123-138}
-\OtherTok{putONet' ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
-         \OtherTok{=>} \DataTypeTok{OpaqueNet'} \NormalTok{i o }\DataTypeTok{Put}
-         \OtherTok{->} \DataTypeTok{Put}
-\NormalTok{putONet' oN }\FunctionTok{=} \NormalTok{oN }\FunctionTok{$} \NormalTok{\textbackslash{}ss net }\OtherTok{->} \KeywordTok{do}
-                      \NormalTok{put (fromSing ss)}
-                      \NormalTok{putNet net}
-
-\OtherTok{getONet' ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
-         \OtherTok{=>} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{Get} \NormalTok{r)}
-         \OtherTok{->} \DataTypeTok{Get} \NormalTok{r}
-\CommentTok{--  aka, => OpaqueNet' i o (Get r)}
-\NormalTok{getONet' f }\FunctionTok{=} \KeywordTok{do}
-    \NormalTok{hs }\OtherTok{<-} \NormalTok{get}
-    \NormalTok{withSomeSing (}\OtherTok{hs ::} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]) }\FunctionTok{$} \NormalTok{\textbackslash{}ss }\OtherTok{->} \KeywordTok{do}
-      \NormalTok{n }\OtherTok{<-} \NormalTok{getNet ss}
-      \NormalTok{f ss n}
-\end{Highlighting}
-\end{Shaded}
-
-To be cute, I used the skolemized partners of \texttt{toSing} and
-\texttt{SomeSing}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{withSomeSing ::} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
-             \OtherTok{->} \NormalTok{(forall (}\OtherTok{hs ::} \NormalTok{[}\DataTypeTok{Nat}\NormalTok{])}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \NormalTok{r)}
-             \OtherTok{->} \NormalTok{r}
-\end{Highlighting}
-\end{Shaded}
-
-Instead of returning a \texttt{SomeSing} like \texttt{toSing} does,
-\texttt{withSomeSing} returns the continuation-based existential.
-
-The expanded type signature of \texttt{getONet\textquotesingle{}} can be read:
-``Give what you would do if you \emph{had} a \texttt{Sing\ hs} and a
-\texttt{Network\ i\ hs\ o}'', and I'll get them for you and give you the
-result."
-
-Let's also see how we'd return a random network with a continuation:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L140-148}
-\OtherTok{withRandomONet' ::} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
-                \OtherTok{=>} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
-                \OtherTok{->} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \NormalTok{m r)}
-                \OtherTok{->} \NormalTok{m r}
-\CommentTok{--         aka, => OpaqueNet' i o (m r)}
-\NormalTok{withRandomONet' hs f }\FunctionTok{=} \NormalTok{withSomeSing hs }\FunctionTok{$} \NormalTok{\textbackslash{}ss }\OtherTok{->}
-                       \NormalTok{withSingI ss    }\FunctionTok{$} \KeywordTok{do}
-                         \NormalTok{net }\OtherTok{<-} \NormalTok{randomNet}
-                         \NormalTok{f ss net}
-\end{Highlighting}
-\end{Shaded}
-
-Again, to be cute, I used the continuation-based version of
-\texttt{singInstance}, \texttt{withSingI}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{withSingI ::} \DataTypeTok{Sing} \NormalTok{a }\OtherTok{->} \NormalTok{(}\DataTypeTok{SingI} \NormalTok{a }\OtherTok{=>} \NormalTok{r) }\OtherTok{->} \NormalTok{r}
-\end{Highlighting}
-\end{Shaded}
-
-The signature, in English, is ``give me a \texttt{Sing\ a} and a value that you
-could make \emph{if only you had} a \texttt{SingI} instance, and I'll give you
-that value as if you had the instance, magically!''
-
-Of course, we know it's not magic:\footnote{Actually, it kind of \emph{is}
-  magic, because \texttt{singInstance} is implemented with
-  \texttt{unsafeCoerce}. But don't tell anyone ;)}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{withSingI ::} \DataTypeTok{Sing} \NormalTok{a }\OtherTok{->} \NormalTok{(}\DataTypeTok{SingI} \NormalTok{a }\OtherTok{=>} \NormalTok{r) }\OtherTok{->} \NormalTok{r}
-\NormalTok{withSingI s x }\FunctionTok{=} \KeywordTok{case} \NormalTok{singInstance s }\KeywordTok{of}
-                  \DataTypeTok{SingInstance} \OtherTok{->} \NormalTok{x}
-\end{Highlighting}
-\end{Shaded}
-
-And we see another way we can ``move past the untyped/typed boundary'':
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L158-164}
-\OtherTok{main' ::} \DataTypeTok{IO} \NormalTok{()}
-\NormalTok{main' }\FunctionTok{=} \KeywordTok{do}
-    \NormalTok{putStrLn }\StringTok{"What size random net?"}
-    \NormalTok{hs }\OtherTok{<-} \NormalTok{readLn}
-    \NormalTok{withRandomONet' hs }\FunctionTok{$} \NormalTok{\textbackslash{}ss (}\OtherTok{net ::} \DataTypeTok{Network} \DecValTok{10} \NormalTok{hs }\DecValTok{3}\NormalTok{) }\OtherTok{->} \KeywordTok{do}
+    \NormalTok{xs }\OtherTok{<-} \NormalTok{readLn}
+    \NormalTok{withSomeSing xs }\FunctionTok{$} \NormalTok{\textbackslash{}(}\OtherTok{ss ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{hs ::} \NormalTok{[}\DataTypeTok{Nat}\NormalTok{])) }\OtherTok{->} \KeywordTok{do}
+      \NormalTok{net }\OtherTok{<-} \NormalTok{randomNet'}\OtherTok{ ss ::} \DataTypeTok{IO} \NormalTok{(}\DataTypeTok{Network} \DecValTok{10} \NormalTok{hs }\DecValTok{3}\NormalTok{)}
       \NormalTok{print net}
       \CommentTok{-- blah blah stuff with our dynamically generated net}
 \end{Highlighting}
 \end{Shaded}
 
-\section{A Tale of Two Styles}\label{a-tale-of-two-styles}
+\texttt{someSing\ xs\ ::\ (forall\ hs.\ Sing\ hs\ -\textgreater{}\ r)\ -\textgreater{}\ r}
+is a function that's waiting for a \texttt{Sing\ hs\ -\textgreater{}\ r} that
+works for \emph{any} \texttt{hs}. It'll ``run'' the function with the
+\texttt{hs} corresponding to \texttt{xs\ ::\ {[}Integer{]}}.
+
+In our case, we gave it a function
+\texttt{forall\ hs.\ Sing\ hs\ -\textgreater{}\ IO\ ()}, and it \emph{runs} that
+function \emph{with} the \texttt{hs} corresponding to list we give it.
+
+So, if we gave \texttt{withSomeSing} the list \texttt{{[}6,3{]}}, I'll
+\emph{run} our action as if it had
+\texttt{hs\ \textasciitilde{}\ \textquotesingle{}{[}6,3{]}}. And remember ---
+because our function is parametrically polymorphic to work with any \texttt{hs},
+it'll happily accept it!
 
 \end{document}
