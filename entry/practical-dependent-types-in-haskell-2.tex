@@ -217,7 +217,7 @@ actually:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L72-73}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L74-75}
 \KeywordTok{data} \DataTypeTok{OpaqueNet}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
     \DataTypeTok{ONet}\OtherTok{ ::} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{OpaqueNet} \NormalTok{i o}
 \end{Highlighting}
@@ -228,12 +228,12 @@ you can create \texttt{ONet\ sing\ net\ ::\ OpaqueNet\ 6\ 2}. When you use the
 \texttt{ONet} constructor, the structure of the hidden layers disappears from
 the type!
 
-But, how do we \emph{use} this type? When we \emph{pattern match} on
-\texttt{ONet}, we get the singleton and the net back, so we can use it!
+How do we use this type? We \emph{pattern match} on \texttt{ONet} to get the
+singleton and the net back, and we can use them:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L75-80}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L77-82}
 \OtherTok{numHiddens ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{Int}
 \NormalTok{numHiddens }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{ss _ }\OtherTok{->} \NormalTok{lengthSing ss}
   \KeywordTok{where}
@@ -246,9 +246,9 @@ But, how do we \emph{use} this type? When we \emph{pattern match} on
 With the \texttt{ScopedTypeVariables} extension, we can even bring \texttt{hs}
 back into scope, as in \texttt{ONet\ (ss\ ::\ Sing\ hs)\ \_\ -\textgreater{}}.
 
-Note that it's important for us to stuff in the singleton in addition to the
+Note that it's important for us to include the singleton in addition to the
 network itself, because of type erasure (our best friend). If we didn't pop the
-singleton in, there'd be no way for us to recover the original \texttt{hs}!
+singleton in, we'd have to do some work to recover the original \texttt{hs}.
 
 Another way we could have counter-acted type erasure would be to have:
 
@@ -259,15 +259,17 @@ Another way we could have counter-acted type erasure would be to have:
 \end{Highlighting}
 \end{Shaded}
 
-And, like we learned last time, the \texttt{Sing\ hs\ -\textgreater{}} and
+Like we learned last time, the \texttt{Sing\ hs\ -\textgreater{}} and
 \texttt{SingI\ hs\ =\textgreater{}} styles are just two ways of doing the same
 thing.
 
-This pattern is known as the \textbf{dependent pair}: pair \texttt{hs} with some
-type that includes \texttt{hs}, and pattern match on the \texttt{Sing\ hs} to
-reveal both! And that's the key to making this all work: once you \emph{do}
-pattern match on \texttt{ONet}, you have to handle the \texttt{hs} in a
-\emph{completely polymorphic way}. You're not allowed to assume anything about
+This pattern is known as the \textbf{dependent pair}: pair a representation of
+\texttt{hs} with some type that includes \texttt{hs}, and pattern match on the
+\texttt{Sing\ hs} to reveal both!
+
+And here's the key to making this all work: once you \emph{do} pattern match on
+\texttt{ONet}, you have to handle the \texttt{hs} in a \emph{completely
+polymorphic way}. You're not allowed to assume anything about
 \texttt{hs}\ldots{}you have to provide a completely parametrically polymorphic
 way of dealing with it!
 
@@ -295,10 +297,11 @@ function\ldots{}the function only returns a \emph{specific} \texttt{hs} that the
 Existential}\label{the-universal-and-the-existential}
 
 We just brushed here on something at the heart of using existential types in
-Haskell: the issue of who has the power to decide what the types will be.
+Haskell: the issue of who has the power to decide what the types will be
+instantiated as.
 
-Most functions you work with in Haskell are ``universally qualified''. For
-example, for a function like
+Most polymorphic functions you work with in Haskell are ``universally
+qualified''. For example, for a function like
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -408,7 +411,7 @@ a fancy \texttt{Either}:
                            \DataTypeTok{Either} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i }\CharTok{'[2] o) (}
                              \DataTypeTok{Either} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i }\CharTok{'[2,1] o) (}
                                \DataTypeTok{Either} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i }\CharTok{'[2,2] o) (}
-                                 \CommentTok{-- ..}
+                                 \CommentTok{-- .. literally infinitely ..}
                                \NormalTok{)}
                              \NormalTok{)}
                            \NormalTok{)}
@@ -419,7 +422,7 @@ a fancy \texttt{Either}:
 \end{Shaded}
 
 In other words, an infinite sum of all of the different combinations of hidden
-layer structures!
+layer structures.
 
 And, remember that the basic way of handling an \texttt{Either} you get and
 figuring out what the type of the value is inside is by \emph{pattern matching}
@@ -430,5 +433,92 @@ For \texttt{OpaqueNet\ i\ o}, it's the same! You don't know what the actual type
 of the \texttt{Network\ i\ hs\ o} it contains is until you \emph{pattern match}
 on the \texttt{Sing\ hs}! (Or potentially, the network itself) But, once you
 pattern match on it, all is revealed.
+
+\subsection{Reification}\label{reification}
+
+Let's pull it all together!
+
+For simplicity, let's re-write \texttt{randomNet} the more sensible way --- with
+the explicit singleton input style:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L49-56}
+\OtherTok{randomNet' ::} \NormalTok{forall m i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+           \OtherTok{=>} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \NormalTok{m (}\DataTypeTok{Network} \NormalTok{i hs o)}
+\NormalTok{randomNet' }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{SNil}            \OtherTok{->}     \DataTypeTok{O} \FunctionTok{<$>} \NormalTok{randomWeights}
+                   \DataTypeTok{SNat} \OtherTok{`SCons`} \NormalTok{ss }\OtherTok{->} \NormalTok{(}\FunctionTok{:&~}\NormalTok{) }\FunctionTok{<$>} \NormalTok{randomWeights }\FunctionTok{<*>} \NormalTok{randomNet' ss}
+
+\OtherTok{randomNet ::} \NormalTok{forall m i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{SingI} \NormalTok{hs, }\DataTypeTok{KnownNat} \NormalTok{o)}
+          \OtherTok{=>} \NormalTok{m (}\DataTypeTok{Network} \NormalTok{i hs o)}
+\NormalTok{randomNet }\FunctionTok{=} \NormalTok{randomNet' sing}
+\end{Highlighting}
+\end{Shaded}
+
+Remember earlier that I recommend (personally, and subjectively) a style where
+your external API functions are implemented in
+\texttt{SingI\ a\ =\textgreater{}} style, and your internal ones in
+\texttt{Sing\ a\ -\textgreater{}} style. This lets all of your internal
+functions fit together more nicely (\texttt{Sing\ a\ -\textgreater{}} style
+tends to be easier to write in, especially if you stay in it the entire time)
+while at the same time removing the burden of calling with explicit singletons
+from people using the functionality externally.\footnote{This is a completely
+  personal style, and I can't claim to speak for all of the Haskell dependent
+  typing community. In fact, I'm not even sure that you could even say that
+  there is a consensus at all. But this is the style that has worked personally
+  for me in both writing and using libraries! And hey, some libraries I've seen
+  in the wild even offer \emph{both} styles in their external API.}
+
+Now, we still need to somehow get our list of integers to the type level
+somehow, so we can create a \texttt{Network\ i\ hs\ o} to stuff into our
+\texttt{ONet}. And for that, the \emph{singletons} library offers the proper
+tooling. It gives us \texttt{SomeSing}, which is a lot like our
+\texttt{OpaqueNet} above, wrapping the \texttt{Sing\ a} inside an existential
+data constructor. \texttt{toSing} takes the term-level value (for us, an
+\texttt{{[}Integer{]}}) and returns a \texttt{SomeSing} wrapping the type-level
+value (for us, a \texttt{{[}Nat{]}}). When we pattern match on the
+\texttt{SomeSing} constructor, we get \texttt{a} in scope!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{main ::} \DataTypeTok{IO} \NormalTok{()}
+\NormalTok{main }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{putStrLn }\StringTok{"How many cats do you own?"}
+    \NormalTok{c }\OtherTok{<- readLn ::} \DataTypeTok{IO} \DataTypeTok{Integer}
+    \KeywordTok{case} \NormalTok{toSing c }\KeywordTok{of}
+      \DataTypeTok{SomeSing} \NormalTok{(}\DataTypeTok{SNat}\OtherTok{ ::} \DataTypeTok{Sing} \NormalTok{n) }\OtherTok{->} \CommentTok{-- ...}
+\end{Highlighting}
+\end{Shaded}
+
+Now, inside the case statement branch (the \texttt{...}), we have \emph{type}
+\texttt{n\ ::\ Nat} in scope! We now have enough to write our
+\texttt{randomONet}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L100-104}
+\OtherTok{randomONet ::} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+           \OtherTok{=>} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
+           \OtherTok{->} \NormalTok{m (}\DataTypeTok{OpaqueNet} \NormalTok{i o)}
+\NormalTok{randomONet hs }\FunctionTok{=} \KeywordTok{case} \NormalTok{toSing hs }\KeywordTok{of}
+                  \DataTypeTok{SomeSing} \NormalTok{ss }\OtherTok{->} \DataTypeTok{ONet} \NormalTok{ss }\FunctionTok{<$>} \NormalTok{randomNet' ss}
+\end{Highlighting}
+\end{Shaded}
+
+And our original goal is finally within reach:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L149-156}
+\CommentTok{-- main :: IO ()}
+\CommentTok{-- main = do}
+\CommentTok{--     putStrLn "What size random net?"}
+\CommentTok{--     xs <- readLn}
+\CommentTok{--     withSomeSing xs $ \textbackslash{}(ss :: Sing (hs :: [Nat])) -> do}
+\CommentTok{--       net <- randomNet' ss :: IO (Network 10 hs 3)}
+\CommentTok{--       print net}
+\CommentTok{--       -- blah blah stuff with our dynamically generated net}
+\end{Highlighting}
+\end{Shaded}
 
 \end{document}

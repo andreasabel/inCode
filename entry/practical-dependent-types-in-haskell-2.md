@@ -116,7 +116,7 @@ internal structure is.
 We can implement it as an “existential” wrapper over `Network`, actually:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L72-73
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L74-75
 data OpaqueNet :: Nat -> Nat -> * where
     ONet :: Sing hs -> Network i hs o -> OpaqueNet i o
 
@@ -126,11 +126,11 @@ So, if you have `net :: Network 6 '[10,6,3] 2`, you can create
 `ONet sing net :: OpaqueNet 6 2`. When you use the `ONet` constructor, the
 structure of the hidden layers disappears from the type!
 
-But, how do we *use* this type? When we *pattern match* on `ONet`, we get the
-singleton and the net back, so we can use it!
+How do we use this type? We *pattern match* on `ONet` to get the singleton and
+the net back, and we can use them:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L75-80
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L77-82
 numHiddens :: OpaqueNet i o -> Int
 numHiddens = \case ONet ss _ -> lengthSing ss
   where
@@ -143,9 +143,9 @@ numHiddens = \case ONet ss _ -> lengthSing ss
 With the `ScopedTypeVariables` extension, we can even bring `hs` back into
 scope, as in `ONet (ss :: Sing hs) _ ->`.
 
-Note that it’s important for us to stuff in the singleton in addition to the
+Note that it’s important for us to include the singleton in addition to the
 network itself, because of type erasure (our best friend). If we didn’t pop the
-singleton in, there’d be no way for us to recover the original `hs`!
+singleton in, we’d have to do some work to recover the original `hs`.
 
 Another way we could have counter-acted type erasure would be to have:
 
@@ -154,15 +154,17 @@ data OpaqueNet :: * -> * where
     ONet :: SingI hs => Network i hs o -> OpaqueNet i o
 ```
 
-And, like we learned last time, the `Sing hs ->` and `SingI hs =>` styles are
-just two ways of doing the same thing.
+Like we learned last time, the `Sing hs ->` and `SingI hs =>` styles are just
+two ways of doing the same thing.
 
-This pattern is known as the **dependent pair**: pair `hs` with some type that
-includes `hs`, and pattern match on the `Sing hs` to reveal both! And that’s the
-key to making this all work: once you *do* pattern match on `ONet`, you have to
-handle the `hs` in a *completely polymorphic way*. You’re not allowed to assume
-anything about `hs`…you have to provide a completely parametrically polymorphic
-way of dealing with it!
+This pattern is known as the **dependent pair**: pair a representation of `hs`
+with some type that includes `hs`, and pattern match on the `Sing hs` to reveal
+both!
+
+And here’s the key to making this all work: once you *do* pattern match on
+`ONet`, you have to handle the `hs` in a *completely polymorphic way*. You’re
+not allowed to assume anything about `hs`…you have to provide a completely
+parametrically polymorphic way of dealing with it!
 
 For example, this function is completely *not* ok:
 
@@ -182,10 +184,11 @@ function only returns a *specific* `hs` that the *function* decides. The
 #### The Universal and the Existential
 
 We just brushed here on something at the heart of using existential types in
-Haskell: the issue of who has the power to decide what the types will be.
+Haskell: the issue of who has the power to decide what the types will be
+instantiated as.
 
-Most functions you work with in Haskell are “universally qualified”. For
-example, for a function like
+Most polymorphic functions you work with in Haskell are “universally qualified”.
+For example, for a function like
 
 ``` {.haskell}
 map :: (a -> b) -> [a] -> [b]
@@ -275,7 +278,7 @@ type OpaqueNet i o = Either (Network i '[] o) (
                            Either (Network i '[2] o) (
                              Either (Network i '[2,1] o) (
                                Either (Network i '[2,2] o) (
-                                 -- ..
+                                 -- .. literally infinitely ..
                                )
                              )
                            )
@@ -285,7 +288,7 @@ type OpaqueNet i o = Either (Network i '[] o) (
 ```
 
 In other words, an infinite sum of all of the different combinations of hidden
-layer structures!
+layer structures.
 
 And, remember that the basic way of handling an `Either` you get and figuring
 out what the type of the value is inside is by *pattern matching* on it. You
@@ -296,6 +299,80 @@ For `OpaqueNet i o`, it’s the same! You don’t know what the actual type of t
 `Network i hs o` it contains is until you *pattern match* on the `Sing hs`! (Or
 potentially, the network itself) But, once you pattern match on it, all is
 revealed.
+
+### Reification
+
+Let’s pull it all together!
+
+For simplicity, let’s re-write `randomNet` the more sensible way — with the
+explicit singleton input style:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L49-56
+randomNet' :: forall m i hs o. (MonadRandom m, KnownNat i, KnownNat o)
+           => Sing hs -> m (Network i hs o)
+randomNet' = \case SNil            ->     O <$> randomWeights
+                   SNat `SCons` ss -> (:&~) <$> randomWeights <*> randomNet' ss
+
+randomNet :: forall m i hs o. (MonadRandom m, KnownNat i, SingI hs, KnownNat o)
+          => m (Network i hs o)
+randomNet = randomNet' sing
+
+```
+
+Remember earlier that I recommend (personally, and subjectively) a style where
+your external API functions are implemented in `SingI a =>` style, and your
+internal ones in `Sing a ->` style. This lets all of your internal functions fit
+together more nicely (`Sing a ->` style tends to be easier to write in,
+especially if you stay in it the entire time) while at the same time removing
+the burden of calling with explicit singletons from people using the
+functionality externally.[^1]
+
+Now, we still need to somehow get our list of integers to the type level
+somehow, so we can create a `Network i hs o` to stuff into our `ONet`. And for
+that, the *singletons* library offers the proper tooling. It gives us
+`SomeSing`, which is a lot like our `OpaqueNet` above, wrapping the `Sing a`
+inside an existential data constructor. `toSing` takes the term-level value (for
+us, an `[Integer]`) and returns a `SomeSing` wrapping the type-level value (for
+us, a `[Nat]`). When we pattern match on the `SomeSing` constructor, we get `a`
+in scope!
+
+``` {.haskell}
+main :: IO ()
+main = do
+    putStrLn "How many cats do you own?"
+    c <- readLn :: IO Integer
+    case toSing c of
+      SomeSing (SNat :: Sing n) -> -- ...
+```
+
+Now, inside the case statement branch (the `...`), we have *type* `n :: Nat` in
+scope! We now have enough to write our `randomONet`:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L100-104
+randomONet :: (MonadRandom m, KnownNat i, KnownNat o)
+           => [Integer]
+           -> m (OpaqueNet i o)
+randomONet hs = case toSing hs of
+                  SomeSing ss -> ONet ss <$> randomNet' ss
+
+```
+
+And our original goal is finally within reach:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L149-156
+-- main :: IO ()
+-- main = do
+--     putStrLn "What size random net?"
+--     xs <- readLn
+--     withSomeSing xs $ \(ss :: Sing (hs :: [Nat])) -> do
+--       net <- randomNet' ss :: IO (Network 10 hs 3)
+--       print net
+--       -- blah blah stuff with our dynamically generated net
+
+```
 
 <!-- ### A Story of Parametricity -->
 <!-- Let's look at the type of `randomNet` again: -->
@@ -783,3 +860,9 @@ revealed.
 <!-- -------------------- -->
 <!-- sameNat and existentials -->
 
+[^1]: This is a completely personal style, and I can’t claim to speak for all of
+    the Haskell dependent typing community. In fact, I’m not even sure that you
+    could even say that there is a consensus at all. But this is the style that
+    has worked personally for me in both writing and using libraries! And hey,
+    some libraries I’ve seen in the wild even offer *both* styles in their
+    external API.
