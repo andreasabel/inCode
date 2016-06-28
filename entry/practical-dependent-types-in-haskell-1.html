@@ -203,7 +203,7 @@ $ <span class="kw">./NetworkUntyped</span>
 <h3 id="networks">Networks</h3>
 <p>Gauging our potential problems, it seems like the first major class of bugs we can address is improperly sized and incompatible matrices. If the compiler always made sure we used compatible matrices, we can avoid bugs at compile-time, and we also can get a friendly helper when we write programs (by knowing what works with what, and what we need were, and helping us organize our logic)</p>
 <p>Let’s write a <code>Weights</code> type that tells you the size of its output and the input it expects. Let’s have, say, a <code>Weights 10 5</code> be a set of weights that takes you from a layer of 10 nodes to a layer of 5 nodes. <code>w :: Weights 4 6</code> would take you from a layer of 4 nodes to a layer of 6 nodes:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L23-25</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L21-23</span>
 <span class="kw">data</span> <span class="dt">Weights</span> i o <span class="fu">=</span> <span class="dt">W</span> {<span class="ot"> wBiases ::</span> <span class="fu">!</span>(<span class="dt">R</span> o)
                      ,<span class="ot"> wNodes  ::</span> <span class="fu">!</span>(<span class="dt">L</span> o i)
                      }</code></pre></div>
@@ -212,7 +212,7 @@ $ <span class="kw">./NetworkUntyped</span>
 <p>These types are called “dependent” types because the type itself <em>depends</em> on its value. If an <code>R n</code> contains a 5-element vector, its type is <code>R 5</code>.</p>
 <p>The <em>Static</em> module in <em>hmatrix</em> relies on the <a href="http://hackage.haskell.org/package/base-4.8.2.0/docs/GHC-TypeLits.html#t:KnownNat"><code>KnownNat</code></a> mechanism that GHC offers. Almost all operations in the library require a <code>KnownNat</code> constraint on the type-level Nats — for example, you can take the dot product of two vectors with <code>dot :: KnownNat n =&gt; R n -&gt; R n -&gt; Double</code>. It lets the library use the information in the <code>n</code> at runtime as an <code>Integer</code>. (More on this later!)</p>
 <p>Moving on, our network type for this post will be something like <code>Network 10 '[7,5,3] 2</code>: Take 10 inputs, return 2 outputs — and internally, have hidden layers of size 7, 5, and 3. (The <code>'[7,5,3]</code> is a type-level list of Nats; the optional <code>'</code> apostrophe is just for our own benefit to distinguish it from a value-level list of integers.)</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L27-34</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L25-32</span>
 <span class="kw">data</span> <span class="dt">Network</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> [<span class="dt">Nat</span>] <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
     <span class="dt">O</span><span class="ot">     ::</span> <span class="fu">!</span>(<span class="dt">Weights</span> i o)
           <span class="ot">-&gt;</span> <span class="dt">Network</span> i <span class="ch">&#39;[] o</span>
@@ -240,7 +240,7 @@ ih <span class="fu">:&amp;~</span> hh <span class="fu">:&amp;~</span> <span clas
 <p>Note that the shape of the constructors requires all of the weight vectors to “fit together”. <code>ih :&amp;~ O ho</code> would be a type error (feeding a 7-output layer to a 4-input layer). Also, if we ever pattern match on <code>:&amp;~</code>, we know that the resulting matrices and vectors are compatible!</p>
 <p>One neat thing is that this approach is also self-documenting. I don’t need to specify what the dimensions are in the docs and trust the users to read it and obey it. The types tell them! And if they don’t listen, they get a compiler error! (You should, of course, still provide reasonable documentation. But, in this case, the compiler actually enforces your documentation’s statements!)</p>
 <p>Generating random weights and networks is even nicer now:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L58-65</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L56-63</span>
 <span class="ot">randomWeights ::</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
               <span class="ot">=&gt;</span> m (<span class="dt">Weights</span> i o)
 randomWeights <span class="fu">=</span> <span class="kw">do</span>
@@ -301,7 +301,7 @@ ghci<span class="fu">&gt;</span><span class="ot"> sing ::</span> <span class="dt
   <span class="dt">SNat</span> <span class="ot">-&gt;</span> <span class="fu">...</span>   <span class="co">-- in this branch, we have a `KnownNat n` instance</span></code></pre></div>
 <p>Essentially, the data constructor comes “packaged” with a <code>KnownNat n</code> instance. The <em>creation</em> of <code>SNat :: Sing n</code> requires the presence of <code>KnownNat n</code>. So if you ever pattern match on a validly created <code>SNat</code>, the fact that that <code>SNat</code> constructor even exists (instead of, say, being <code>undefined</code>) is a <em>witness</em> to that very <code>KnownNat</code> instance, and the type system lets us use this. It’s as if you “pattern match” out the instance itself, like any other value the constructor might have.</p>
 <p>Now we have enough pieces of the puzzle:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L67-75</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L65-73</span>
 <span class="ot">randomNet ::</span> forall m i hs o<span class="fu">.</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">SingI</span> hs, <span class="dt">KnownNat</span> o)
           <span class="ot">=&gt;</span> m (<span class="dt">Network</span> i hs o)
 randomNet <span class="fu">=</span> go sing
@@ -331,7 +331,7 @@ randomNet <span class="fu">=</span> go sing
 <p>So now, you can use <code>randomNet :: IO (Network 5 '[4,3] 2)</code> to get a random network of the desired dimensions! (<code>IO</code> is an instance of <code>MonadRandom</code>)</p>
 <p>Can we just pause right here to just appreciate how awesome it is that we can generate random networks of whatever size we want by <em>just requesting something by its type</em>? Our implementation is also <em>guaranteed</em> to have the right sized matrices — no worrying about using the right size parameters for the right matrix in the right order. GHC does it for you automatically! And, for the person who <em>uses</em> <code>randomNet</code>, they don’t have to bungle around with figuring out what function argument indicates what, and in what order, and they don’t have to play a guessing game about the shape of the returned matrix.</p>
 <p>The code for <em>running</em> the nets is actually literally identical from before:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L44-56</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L42-54</span>
 <span class="ot">runLayer ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
          <span class="ot">=&gt;</span> <span class="dt">Weights</span> i o
          <span class="ot">-&gt;</span> <span class="dt">R</span> i
@@ -355,7 +355,7 @@ runNet (w <span class="fu">:&amp;~</span> n&#39;) <span class="fu">!</span>v <sp
          <span class="ot">=&gt;</span> <span class="dt">R</span> n <span class="ot">-&gt;</span> <span class="dt">R</span> n</code></pre></div>
 <p>The source code is the same from before, so there isn’t any extra overhead in annotation. The correctness proofs and guarantees basically come without any extra work — they’re free!</p>
 <p>Our back-prop algorithm is ported pretty nicely too:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L77-117</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L75-115</span>
 <span class="ot">train ::</span> forall i hs o<span class="fu">.</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
       <span class="ot">=&gt;</span> <span class="dt">Double</span>           <span class="co">-- ^ learning rate</span>
       <span class="ot">-&gt;</span> <span class="dt">R</span> i              <span class="co">-- ^ input vector</span>
@@ -404,7 +404,7 @@ train rate x0 target <span class="fu">=</span> fst <span class="fu">.</span> go 
 <p>The more you can restrict the implementations of your functions with your types, the more of a joy programming in Haskell is. Things fit together and fall together before your eyes…and the best part is that if they’re wrong, the compiler will nudge you gently into the correct direction.</p>
 <p>The most stressful part of programming happens when you have to tenuously hold a complex and fragile network of ideas and constraints in your brain, and any slight distraction or break in focus causes everything to crash down in your mind. Over time, people have begun to believe that this is “normal” in programming. Don’t believe this lie — it’s <em>not</em>! A good programming experience involves maintaining as <em>little</em> in your head as possible, and letting the compiler handle remembering/checking the rest.</p>
 <h4 id="the-final-test">The final test</h4>
-<p>You can download the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs">typed network</a> source code and run it yourself. Again, the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L152-160"><code>main</code></a> method is written identically to that of the other file and tests the identical function.</p>
+<p>You can download the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs">typed network</a> source code and run it yourself. Again, the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L150-158"><code>main</code></a> method is written identically to that of the other file and tests the identical function.</p>
 <div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">stack</span> install hmatrix MonadRandom singletons
 $ <span class="kw">stack</span> ghc -- -O2 ./NetworkTyped.hs
 $ <span class="kw">./NetworkTyped</span>
