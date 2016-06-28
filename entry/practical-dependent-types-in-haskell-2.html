@@ -52,34 +52,34 @@ main <span class="fu">=</span> <span class="kw">do</span>
 <p>But, how do we <em>use</em> this type? When we <em>pattern match</em> on <code>ONet</code>, we get the singleton and the net back, so we can use it!</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L75-80</span>
 <span class="ot">numHiddens ::</span> <span class="dt">OpaqueNet</span> i o <span class="ot">-&gt;</span> <span class="dt">Int</span>
-numHiddens <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">ONet</span> (<span class="ot">ss ::</span> <span class="dt">Sing</span> hs) _ <span class="ot">-&gt;</span> lengthSing ss
+numHiddens <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">ONet</span> ss _ <span class="ot">-&gt;</span> lengthSing ss
   <span class="kw">where</span>
 <span class="ot">    lengthSing ::</span> <span class="dt">Sing</span> (<span class="ot">hs ::</span> [<span class="dt">Nat</span>]) <span class="ot">-&gt;</span> <span class="dt">Int</span>
     lengthSing <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">SNil</span>         <span class="ot">-&gt;</span> <span class="dv">0</span>
                        _ <span class="ot">`SCons`</span> ss <span class="ot">-&gt;</span> <span class="dv">1</span> <span class="fu">+</span> lengthSing ss</code></pre></div>
 <p>With the <code>ScopedTypeVariables</code> extension, we can even bring <code>hs</code> back into scope, as in <code>ONet (ss :: Sing hs) _ -&gt;</code>.</p>
-<p>Note that it’s important for us to stuff in the singleton in addition to the network itself, because of our best friend type erasure. If we didn’t pop the singleton in, there’d be no way for us to recover the original <code>hs</code>! This pattern is known as the <strong>dependent pair</strong>. Pair <code>hs</code> with some type <code>f hs</code>, and pattern match on the <code>Sing hs</code> to reveal both!</p>
+<p>Note that it’s important for us to stuff in the singleton in addition to the network itself, because of type erasure (our best friend). If we didn’t pop the singleton in, there’d be no way for us to recover the original <code>hs</code>!</p>
 <p>Another way we could have counter-acted type erasure would be to have:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">OpaqueNet</span><span class="ot"> ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
     <span class="dt">ONet</span><span class="ot"> ::</span> <span class="dt">SingI</span> hs <span class="ot">=&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">OpaqueNet</span> i o</code></pre></div>
 <p>And, like we learned last time, the <code>Sing hs -&gt;</code> and <code>SingI hs =&gt;</code> styles are just two ways of doing the same thing.</p>
-<p>Here’s the key to making this all work: once you <em>do</em> pattern match on <code>ONet</code>, you have to handle the <code>hs</code> in a <em>completely polymorphic way</em>. You’re not allowed to assume anything about <code>hs</code>…you have to provide a completely parametrically polymorphic way of dealing with it!</p>
+<p>This pattern is known as the <strong>dependent pair</strong>: pair <code>hs</code> with some type that includes <code>hs</code>, and pattern match on the <code>Sing hs</code> to reveal both! And that’s the key to making this all work: once you <em>do</em> pattern match on <code>ONet</code>, you have to handle the <code>hs</code> in a <em>completely polymorphic way</em>. You’re not allowed to assume anything about <code>hs</code>…you have to provide a completely parametrically polymorphic way of dealing with it!</p>
 <p>For example, this function is completely <em>not</em> ok:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">bad ::</span> <span class="dt">OpaqueNet</span> i o <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o
-bad <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">ONet</span> _ n <span class="ot">-&gt;</span> n</code></pre></div>
-<p>Why not? Because a type signature like <code>OpaqueNet i o -&gt; Network i hs o</code> means that the <em>caller</em> can decide what <code>hs</code> can be — just like <code>read :: Read a =&gt; String -&gt; a</code>, where the caller decides what <code>a</code> is.</p>
+bad <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">ONet</span> _ n <span class="ot">-&gt;</span> n          <span class="co">-- nope, not ok at all.</span></code></pre></div>
+<p>Why not? Well, a type signature like <code>OpaqueNet i o -&gt; Network i hs o</code> means that the <em>caller</em> can decide what <code>hs</code> can be — just like <code>read :: Read a =&gt; String -&gt; a</code>, where the caller decides what <code>a</code> is.</p>
 <p>Of course, this <em>isn’t</em> the case with the way we’ve written the function…the function only returns a <em>specific</em> <code>hs</code> that the <em>function</em> decides. The <em>caller</em> has to accommodate whatever is inside <code>ONet</code>.</p>
-<h4 id="universal-vs.existential">Universal vs. Existential</h4>
+<h4 id="the-universal-and-the-existential">The Universal and the Existential</h4>
 <p>We just brushed here on something at the heart of using existential types in Haskell: the issue of who has the power to decide what the types will be.</p>
 <p>Most functions you work with in Haskell are “universally qualified”. For example, for a function like</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">map<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]</code></pre></div>
-<p><code>a</code> and <code>b</code> are universally quantified, which means that the person who <em>uses</em> <code>map</code> gets to <em>decide</em> what <code>a</code> and <code>b</code> are. To be more explicit, that type signature can be written as:</p>
+<p><code>a</code> and <code>b</code> are universally quantified, which means that the person who <em>uses</em> <code>map</code> gets to decide what <code>a</code> and <code>b</code> are. To be more explicit, that type signature can be written as:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">map<span class="ot"> ::</span> forall a b<span class="fu">.</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]</code></pre></div>
 <p>This means that <code>map</code> is defined in a way that will work for <em>any</em> <code>a</code> and <code>b</code> that the <em>caller</em> wants. As a caller, you can request:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">map<span class="ot"> ::</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)    <span class="ot">-&gt;</span> [<span class="dt">Int</span>]    <span class="ot">-&gt;</span> [<span class="dt">Bool</span>]
 map<span class="ot"> ::</span> (<span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Void</span>) <span class="ot">-&gt;</span> [<span class="dt">Double</span>] <span class="ot">-&gt;</span> [<span class="dt">Void</span>]
 map<span class="ot"> ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> (<span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Char</span>)) <span class="ot">-&gt;</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> [<span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Char</span>]</code></pre></div>
-<p>And the function has to be implemented in a way that will work for <em>any</em> <code>a</code> and <code>b</code>. The function’s implementation has the burden of being flexible enough to handle whatever the caller asks for.</p>
+<p>Consequentially, the function has to be implemented in a way that will work for <em>any</em> <code>a</code> and <code>b</code>. The function’s implementation has the burden of being flexible enough to handle whatever the caller asks for.</p>
 <p>But, for a function like:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">foo ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">OpaqueNet</span> i o</code></pre></div>
 <p>While the caller can choose what <code>i</code> and <code>o</code> are, the <em>function</em> gets to choose what <code>hs</code> (in the hidden <code>Network i hs o</code>) is.</p>
@@ -92,7 +92,7 @@ map<span class="ot"> ::</span> (<span class="dt">String</span> <span class="ot">
 <p>Indeed, we saw earlier that if we ever wanted to <em>use</em> the <code>Network i hs o</code> inside the <code>OpaqueNet i o</code>, we were forced to deal with it in a parametrically polymorphic way. We had to be able to handle <em>any</em> <code>hs</code> that the <code>ONet</code> could throw at us!</p>
 <h4 id="a-familiar-friend">A familiar friend</h4>
 <p>I called <code>OpaqueNet i o</code> a “dependent pair” earlier, which existentially quantifies over <code>hs</code>. But there’s another common term for it: a <strong>dependent sum</strong>.</p>
-<p>People familiar with Haskell might recognize that “sum types” are <code>Either</code>-like types, that can be one thing or another. Sum types are one of the first things you learn about in Haskell — heck, even <code>Maybe a</code> is the sum of <code>a</code> and <code>()</code>.</p>
+<p>People familiar with Haskell might recognize that “sum types” are <code>Either</code>-like types that can be one thing or another. Sum types are one of the first things you learn about in Haskell — heck, even <code>Maybe a</code> is the sum of <code>a</code> and <code>()</code>.</p>
 <p>Dependent pairs/existential types actually are very similar to <code>Either</code>/sum types, in spirit, and it might help to see the parallel so that you can see that they’re nothing scary, and that the fundamentals/intuition of working with existential types in Haskell is no different than working with <code>Either</code>!</p>
 <p>If I had:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">foo ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Bool</span></code></pre></div>
@@ -112,6 +112,8 @@ map<span class="ot"> ::</span> (<span class="dt">String</span> <span class="ot">
                        )
                      )</code></pre></div>
 <p>In other words, an infinite sum of all of the different combinations of hidden layer structures!</p>
+<p>And, remember that the basic way of handling an <code>Either</code> you get and figuring out what the type of the value is inside is by <em>pattern matching</em> on it. You can’t know if an <code>Either Int Bool</code> contains an <code>Int</code> or <code>Bool</code> until you pattern match. But, once you do, all is revealed.</p>
+<p>For <code>OpaqueNet i o</code>, it’s the same! You don’t know what the actual type of the <code>Network i hs o</code> it contains is until you <em>pattern match</em> on the <code>Sing hs</code>! (Or potentially, the network itself) But, once you pattern match on it, all is revealed.</p>
 <!-- ### A Story of Parametricity -->
 <!-- Let's look at the type of `randomNet` again: -->
 <!-- ~~~haskell -->

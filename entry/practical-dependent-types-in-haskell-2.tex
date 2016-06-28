@@ -235,7 +235,7 @@ But, how do we \emph{use} this type? When we \emph{pattern match} on
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L75-80}
 \OtherTok{numHiddens ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{Int}
-\NormalTok{numHiddens }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{(}\OtherTok{ss ::} \DataTypeTok{Sing} \NormalTok{hs) _ }\OtherTok{->} \NormalTok{lengthSing ss}
+\NormalTok{numHiddens }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{ss _ }\OtherTok{->} \NormalTok{lengthSing ss}
   \KeywordTok{where}
 \OtherTok{    lengthSing ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{hs ::} \NormalTok{[}\DataTypeTok{Nat}\NormalTok{]) }\OtherTok{->} \DataTypeTok{Int}
     \NormalTok{lengthSing }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{SNil}         \OtherTok{->} \DecValTok{0}
@@ -247,10 +247,8 @@ With the \texttt{ScopedTypeVariables} extension, we can even bring \texttt{hs}
 back into scope, as in \texttt{ONet\ (ss\ ::\ Sing\ hs)\ \_\ -\textgreater{}}.
 
 Note that it's important for us to stuff in the singleton in addition to the
-network itself, because of our best friend type erasure. If we didn't pop the
-singleton in, there'd be no way for us to recover the original \texttt{hs}! This
-pattern is known as the \textbf{dependent pair}. Pair \texttt{hs} with some type
-\texttt{f\ hs}, and pattern match on the \texttt{Sing\ hs} to reveal both!
+network itself, because of type erasure (our best friend). If we didn't pop the
+singleton in, there'd be no way for us to recover the original \texttt{hs}!
 
 Another way we could have counter-acted type erasure would be to have:
 
@@ -265,9 +263,11 @@ And, like we learned last time, the \texttt{Sing\ hs\ -\textgreater{}} and
 \texttt{SingI\ hs\ =\textgreater{}} styles are just two ways of doing the same
 thing.
 
-Here's the key to making this all work: once you \emph{do} pattern match on
-\texttt{ONet}, you have to handle the \texttt{hs} in a \emph{completely
-polymorphic way}. You're not allowed to assume anything about
+This pattern is known as the \textbf{dependent pair}: pair \texttt{hs} with some
+type that includes \texttt{hs}, and pattern match on the \texttt{Sing\ hs} to
+reveal both! And that's the key to making this all work: once you \emph{do}
+pattern match on \texttt{ONet}, you have to handle the \texttt{hs} in a
+\emph{completely polymorphic way}. You're not allowed to assume anything about
 \texttt{hs}\ldots{}you have to provide a completely parametrically polymorphic
 way of dealing with it!
 
@@ -276,11 +276,11 @@ For example, this function is completely \emph{not} ok:
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{bad ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o}
-\NormalTok{bad }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{_ n }\OtherTok{->} \NormalTok{n}
+\NormalTok{bad }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{_ n }\OtherTok{->} \NormalTok{n          }\CommentTok{-- nope, not ok at all.}
 \end{Highlighting}
 \end{Shaded}
 
-Why not? Because a type signature like
+Why not? Well, a type signature like
 \texttt{OpaqueNet\ i\ o\ -\textgreater{}\ Network\ i\ hs\ o} means that the
 \emph{caller} can decide what \texttt{hs} can be --- just like
 \texttt{read\ ::\ Read\ a\ =\textgreater{}\ String\ -\textgreater{}\ a}, where
@@ -291,7 +291,8 @@ function\ldots{}the function only returns a \emph{specific} \texttt{hs} that the
 \emph{function} decides. The \emph{caller} has to accommodate whatever is inside
 \texttt{ONet}.
 
-\subsubsection{Universal vs.~Existential}\label{universal-vs.existential}
+\subsubsection{The Universal and the
+Existential}\label{the-universal-and-the-existential}
 
 We just brushed here on something at the heart of using existential types in
 Haskell: the issue of who has the power to decide what the types will be.
@@ -306,7 +307,7 @@ example, for a function like
 \end{Shaded}
 
 \texttt{a} and \texttt{b} are universally quantified, which means that the
-person who \emph{uses} \texttt{map} gets to \emph{decide} what \texttt{a} and
+person who \emph{uses} \texttt{map} gets to decide what \texttt{a} and
 \texttt{b} are. To be more explicit, that type signature can be written as:
 
 \begin{Shaded}
@@ -327,9 +328,9 @@ request:
 \end{Highlighting}
 \end{Shaded}
 
-And the function has to be implemented in a way that will work for \emph{any}
-\texttt{a} and \texttt{b}. The function's implementation has the burden of being
-flexible enough to handle whatever the caller asks for.
+Consequentially, the function has to be implemented in a way that will work for
+\emph{any} \texttt{a} and \texttt{b}. The function's implementation has the
+burden of being flexible enough to handle whatever the caller asks for.
 
 But, for a function like:
 
@@ -372,7 +373,7 @@ existentially quantifies over \texttt{hs}. But there's another common term for
 it: a \textbf{dependent sum}.
 
 People familiar with Haskell might recognize that ``sum types'' are
-\texttt{Either}-like types, that can be one thing or another. Sum types are one
+\texttt{Either}-like types that can be one thing or another. Sum types are one
 of the first things you learn about in Haskell --- heck, even \texttt{Maybe\ a}
 is the sum of \texttt{a} and \texttt{()}.
 
@@ -419,5 +420,15 @@ a fancy \texttt{Either}:
 
 In other words, an infinite sum of all of the different combinations of hidden
 layer structures!
+
+And, remember that the basic way of handling an \texttt{Either} you get and
+figuring out what the type of the value is inside is by \emph{pattern matching}
+on it. You can't know if an \texttt{Either\ Int\ Bool} contains an \texttt{Int}
+or \texttt{Bool} until you pattern match. But, once you do, all is revealed.
+
+For \texttt{OpaqueNet\ i\ o}, it's the same! You don't know what the actual type
+of the \texttt{Network\ i\ hs\ o} it contains is until you \emph{pattern match}
+on the \texttt{Sing\ hs}! (Or potentially, the network itself) But, once you
+pattern match on it, all is revealed.
 
 \end{document}

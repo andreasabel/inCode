@@ -132,7 +132,7 @@ singleton and the net back, so we can use it!
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L75-80
 numHiddens :: OpaqueNet i o -> Int
-numHiddens = \case ONet (ss :: Sing hs) _ -> lengthSing ss
+numHiddens = \case ONet ss _ -> lengthSing ss
   where
     lengthSing :: Sing (hs :: [Nat]) -> Int
     lengthSing = \case SNil         -> 0
@@ -144,10 +144,8 @@ With the `ScopedTypeVariables` extension, we can even bring `hs` back into
 scope, as in `ONet (ss :: Sing hs) _ ->`.
 
 Note that it’s important for us to stuff in the singleton in addition to the
-network itself, because of our best friend type erasure. If we didn’t pop the
-singleton in, there’d be no way for us to recover the original `hs`! This
-pattern is known as the **dependent pair**. Pair `hs` with some type `f hs`, and
-pattern match on the `Sing hs` to reveal both!
+network itself, because of type erasure (our best friend). If we didn’t pop the
+singleton in, there’d be no way for us to recover the original `hs`!
 
 Another way we could have counter-acted type erasure would be to have:
 
@@ -159,19 +157,21 @@ data OpaqueNet :: * -> * where
 And, like we learned last time, the `Sing hs ->` and `SingI hs =>` styles are
 just two ways of doing the same thing.
 
-Here’s the key to making this all work: once you *do* pattern match on `ONet`,
-you have to handle the `hs` in a *completely polymorphic way*. You’re not
-allowed to assume anything about `hs`…you have to provide a completely
-parametrically polymorphic way of dealing with it!
+This pattern is known as the **dependent pair**: pair `hs` with some type that
+includes `hs`, and pattern match on the `Sing hs` to reveal both! And that’s the
+key to making this all work: once you *do* pattern match on `ONet`, you have to
+handle the `hs` in a *completely polymorphic way*. You’re not allowed to assume
+anything about `hs`…you have to provide a completely parametrically polymorphic
+way of dealing with it!
 
 For example, this function is completely *not* ok:
 
 ``` {.haskell}
 bad :: OpaqueNet i o -> Network i hs o
-bad = \case ONet _ n -> n
+bad = \case ONet _ n -> n          -- nope, not ok at all.
 ```
 
-Why not? Because a type signature like `OpaqueNet i o -> Network i hs o` means
+Why not? Well, a type signature like `OpaqueNet i o -> Network i hs o` means
 that the *caller* can decide what `hs` can be — just like
 `read :: Read a => String -> a`, where the caller decides what `a` is.
 
@@ -179,7 +179,7 @@ Of course, this *isn’t* the case with the way we’ve written the function…t
 function only returns a *specific* `hs` that the *function* decides. The
 *caller* has to accommodate whatever is inside `ONet`.
 
-#### Universal vs. Existential
+#### The Universal and the Existential
 
 We just brushed here on something at the heart of using existential types in
 Haskell: the issue of who has the power to decide what the types will be.
@@ -192,7 +192,7 @@ map :: (a -> b) -> [a] -> [b]
 ```
 
 `a` and `b` are universally quantified, which means that the person who *uses*
-`map` gets to *decide* what `a` and `b` are. To be more explicit, that type
+`map` gets to decide what `a` and `b` are. To be more explicit, that type
 signature can be written as:
 
 ``` {.haskell}
@@ -208,9 +208,9 @@ map :: (Double -> Void) -> [Double] -> [Void]
 map :: (String -> (Bool -> Char)) -> [String] -> [Bool -> Char]
 ```
 
-And the function has to be implemented in a way that will work for *any* `a` and
-`b`. The function’s implementation has the burden of being flexible enough to
-handle whatever the caller asks for.
+Consequentially, the function has to be implemented in a way that will work for
+*any* `a` and `b`. The function’s implementation has the burden of being
+flexible enough to handle whatever the caller asks for.
 
 But, for a function like:
 
@@ -246,7 +246,7 @@ quantifies over `hs`. But there’s another common term for it: a **dependent
 sum**.
 
 People familiar with Haskell might recognize that “sum types” are `Either`-like
-types, that can be one thing or another. Sum types are one of the first things
+types that can be one thing or another. Sum types are one of the first things
 you learn about in Haskell — heck, even `Maybe a` is the sum of `a` and `()`.
 
 Dependent pairs/existential types actually are very similar to `Either`/sum
@@ -286,6 +286,16 @@ type OpaqueNet i o = Either (Network i '[] o) (
 
 In other words, an infinite sum of all of the different combinations of hidden
 layer structures!
+
+And, remember that the basic way of handling an `Either` you get and figuring
+out what the type of the value is inside is by *pattern matching* on it. You
+can’t know if an `Either Int Bool` contains an `Int` or `Bool` until you pattern
+match. But, once you do, all is revealed.
+
+For `OpaqueNet i o`, it’s the same! You don’t know what the actual type of the
+`Network i hs o` it contains is until you *pattern match* on the `Sing hs`! (Or
+potentially, the network itself) But, once you pattern match on it, all is
+revealed.
 
 <!-- ### A Story of Parametricity -->
 <!-- Let's look at the type of `randomNet` again: -->
