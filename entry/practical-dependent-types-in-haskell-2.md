@@ -140,7 +140,7 @@ numHiddens = \case ONet n -> go n
 
 ```
 
-With the `ScopedTypeVariables` extension, we can even bring `hs` back into
+With the *ScopedTypeVariables* extension, we can even bring `hs` back into
 scope, as in `ONet (n :: Network i hs o) -> ...`
 
 This pattern is sometimes called the **dependent pair**, because pattern
@@ -322,7 +322,7 @@ bar :: SomeSing Nat
 bar = SomeSing (SNat :: Sing 10)
 ```
 
-But because *singletons* was implemented before the `TypeInType` extension in
+But because *singletons* was implemented before the *TypeInType* extension in
 GHC 8, it has to be implemented with clunky “Kind Proxies”. In a future version
 of *singletons*, they’ll be implemented this way. Right now, in the current
 system, `SomeSing STrue :: SomeSing (KProxy :: KProxy Bool)`, and
@@ -358,7 +358,7 @@ courtesy of Oliver Charles.)
 We now have enough to write our `randomONet`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L112-116
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L119-123
 randomONet :: (MonadRandom m, KnownNat i, KnownNat o)
            => [Integer]
            -> m (OpaqueNet i o)
@@ -372,7 +372,7 @@ Haskell as **reification**. With this, our original goal is (finally) within
 reach:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L161-167
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L168-174
 main :: IO ()
 main = do
     putStrLn "What hidden layer structure do you want?"
@@ -452,7 +452,7 @@ existential type as something *taking* the continuation `f` and giving it what
 it needs.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L122-122
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L129-129
 type OpaqueNet' i o r = (forall hs. Network i hs o -> r) -> r
 
 ```
@@ -470,7 +470,7 @@ We can “wrap” a `Network i hs o` into an `OpaqueNet' i o r` pretty
 straightforwardly:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L124-125
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L131-132
 oNet' :: Network i hs o -> OpaqueNet' i o r
 oNet' n = \f -> f n
 
@@ -505,7 +505,7 @@ withSomeSing :: [Integer]
 Because why not? Skolemize all the things!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L151-159
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L158-166
 withRandomONet' :: (MonadRandom m, KnownNat i, KnownNat o)
                 => [Integer]
                 -> (forall hs. Network i hs o -> m r)
@@ -519,10 +519,10 @@ withRandomONet' hs f = withSomeSing hs $ \ss -> do
 ```
 
 We can use it to do the same things we used the constructor-based existential
-for, as well…and, in a way, it actually seems oddly more natural.
+for, as well…and, in a way, it actually seems (oddly) more natural.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L169-175
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L176-182
 main' :: IO ()
 main' = do
     putStrLn "What hidden layer structure do you want?"
@@ -533,10 +533,160 @@ main' = do
 
 ```
 
-Where the case statement pattern match represented the lexical “wall”/“boundary”
-between the untyped and typed world for the constructor style, that
-`... $ \n -> ...` can be thought of the “wall” for the existential style.
+You can sort of see that, like the case statement pattern match represented the
+lexical “wall”/“boundary” between the untyped and typed world when using
+constructor-style existentials, the `... $ \net -> ...` can be thought of the
+“wall” for the continuation-style existentials.
 
+A Tale of Two Styles
+--------------------
+
+So, we’ve just discussed two ways of doing the same thing, essentially. Two
+styles of representing/working with existential types. The two are equivalent,
+in that you can always “convert” between one or the other, but the choice of
+which one you use/reach for/offer can make a difference in code clarity.
+
+I don’t have much general advice for which one to provide. After working with
+both styles a lot (sometimes, libraries only offer one style), you sort of start
+to get a feel for which one you like more in which situations. In the end, I
+don’t think there are any hard or fast rules. Just use whichever one you feel is
+more readable!
+
+That being said, here are some general Pros and Cons that I’ve encountered over
+the years. This list is by no means exhaustive.
+
+-   Most obviously, continuation-style doesn’t require you to define a throwaway
+    data type/constructor. While new types are cheap in Haskell, they force your
+    users to learn a new set of types and constructors for every single
+    existential type you return. If you or the library you’re writing
+    uses/returns a *lot* of different existentially qualified types, all those
+    extra dumb wrappers are a huge hassle.
+
+-   When you have to use several existentials at once, continuation-style is
+    much better because each nested existential doesn’t force another level of
+    indentation:
+
+    ``` {.haskell}
+    foo = withSomeSing x $ \sx ->
+          withSomeSing y $ \sy ->
+          withSomeSing z $ \sz ->
+            -- ...
+    ```
+
+    vs.
+
+    ``` {.haskell}
+    foo = case toSing x of
+            SomeSing sx ->
+              case toSing y of
+                SomeSing sy ->
+                  case toSing z of
+                    SomeSing sz ->
+                      -- ...
+    ```
+
+    Every time you nest a case statement, you actually need two levels of
+    indentation, which can be annoying even at 2-space indentation. But you
+    don’t need *any* for the continuation style!
+
+-   If you’re working monadically, though, you can take advantage of do notation
+    and *ScopedTypeVariables* for a nicer style that doesn’t require any nesting
+    at all:
+
+    ``` {.haskell}
+    main = do
+        ONet n1 <- randomONet [7,5,3] :: IO (OpaqueNet 10 1)
+        ONet n2 <- randomONet [5,5,5] :: IO (OpaqueNet 10 1)
+        ONet n3 <- randomONet [5,4,3] :: IO (OpaqueNet 10 1)
+        hs <- readLn
+        ONet (n4 :: Network 10 hs 1) <- randomONet hs
+        -- ...
+    ```
+
+    Which is arguably nicer than
+
+    ``` {.haskell}
+    main = withRandomONet' [7,5,3] $ \n1 ->
+           withRandomONet' [5,5,5] $ \n2 ->
+           withRandomONet' [5,4,3] $ \n3 -> do
+             hs <- readLn
+             withRandomONet' hs $ \(n4 :: Network 10 hs 1) -> do
+               -- ...
+    ```
+
+    A lot of libraries return existentials in `Maybe`’s, so it can be useful for
+    those, too!
+
+    This is much less useful for things like `toSing` where things are *not*
+    returned in a Monad. You could wrap it in Identity, but that’s kind of
+    silly:
+
+    ``` {.haskell}
+    foo = runIdentity $ do
+            SomeSing sx <- Identity $ toSing x
+            SomeSing sy <- Identity $ toSing y
+            SomeSing sz <- Identity $ toSing z
+            return $ -- ...
+    ```
+
+-   Constructor-style is necessary for writing typeclass instances. You can’t
+    write a `Show` instance for `(forall hs. Network i hs o -> r) -> r`, but you
+    can write one for `OpaqueNet i o`. We’ll also be writing `Binary` instances
+    later for serialization/deserialization, and we’ll need the wrapper
+    for sure.
+
+-   When writing functions that *take* existentials as inputs, the
+    constructor-style is a lot more natural.
+
+    For example, we wrote a function to find the number of hidden layers in a
+    network earlier:
+
+    ``` {.haskell}
+    numHiddens :: OpaqueNet i o -> Int
+    ```
+
+    But the continuation-style version would have a slightly messier type:
+
+    ``` {.haskell}
+    numHiddens' :: ((forall hs. Network i hs o -> Int) -> Int)
+                -> Int
+    ```
+
+    Even with with the type synonym, it’s a little weird.
+
+    ``` {.haskell}
+    numHiddens' :: OpaqueNet' i o Int -> Int
+    ```
+
+    This is why you’ll encounter more functions *returning* continuation-style
+    existentials than *taking* them in the wild, for the most part.
+
+These are just general principals, and they’re not hard-fast rules. This list
+isn’t exhaustive, and reflects my current progress in my journey towards a
+dependently typed lifestyle and also the things I can think of as I’m writing.
+If you come back in a month, you might see more things listed here!
+
+All said, I do find myself very happy when I see that a library I’m using offers
+*both* styles for me to use. And I’ve been known to submit PR’s to a library to
+have it offer one style or another, if it’s lacking.
+
+Be judicious. If you’re writing a library, don’t spam it with too many throwaway
+constructors. If you’re writing an application, be wary of indentation creep.
+After a while, you’ll begin to intuitively see which style shines in which
+situations. And, in some case, there might not even be a clearly better style to
+use!
+
+<!-- Existential Typeclasses -->
+<!-- ----------------------- -->
+<!-- Before moving on, let's also briefly take a look at using existentials with the -->
+<!-- other singletons style: `Sing a =>`, instead of `Sing a ->`. -->
+<!-- Recall in the last post that pattern matching on constructors can actually -->
+<!-- bring typeclass instances into scope.  For example, the constructor `SNat :: -->
+<!-- KnownNat n => Sing n` can only be used/created if there's a `KnownNat n` -->
+<!-- instance in scope.  So, if you get a `Sing (n :: Nat)` and *pattern match* on -->
+<!-- the `SNat` constructor, in that case statement branch, GHC knows that there is -->
+<!-- a `KnownNat n` instance.  We also talked about this being sort of like `SNat` -->
+<!-- actually contains an extra implicit hidden field storing the instance itself. -->
 <!-- #### Trying it out -->
 <!-- To sort of compare how the two methods look like in practice, we're going to -->
 <!-- Rosetta stone it up and re-implement serialization with the continuation-based -->
