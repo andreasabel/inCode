@@ -35,8 +35,8 @@ implementation with back-propagation training.
 #### Setup
 
 This post is written on *[stack](http://www.haskellstack.org)* snapshot
-*\[nightly-2016-06-26\]\[\]*, but uses an unreleased version of *hmatrix*,
-*[hmatrix-0.18 (commit
+*[nightly-2016-06-26](https://www.stackage.org/nightly-2016-06-28)*, but uses an
+unreleased version of *hmatrix*, *[hmatrix-0.18 (commit
 42a88fb)](https://github.com/albertoruiz/hmatrix/tree/42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1)*.
 I [maintain my own documentation](http://mstksg.github.io/hmatrix/) for
 reference.
