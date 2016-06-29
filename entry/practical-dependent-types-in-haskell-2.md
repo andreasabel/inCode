@@ -116,7 +116,7 @@ internal structure is.
 We can implement it as an “existential” wrapper over `Network`, actually:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L73-74
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L77-78
 data OpaqueNet :: Nat -> Nat -> * where
     ONet :: Sing hs -> Network i hs o -> OpaqueNet i o
 
@@ -130,7 +130,7 @@ How do we use this type? We *pattern match* on `ONet` to get the singleton and
 the net back, and we can use them:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L76-81
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L80-85
 numHiddens :: OpaqueNet i o -> Int
 numHiddens = \case ONet ss _ -> lengthSing ss
   where
@@ -145,7 +145,7 @@ scope, as in `ONet (ss :: Sing hs) _ ->`.
 
 Note that it’s important for us to include the singleton in addition to the
 network itself, because of type erasure (our best friend). If we didn’t pop the
-singleton in, we’d have to do some work to recover the original `hs`.
+singleton in, we’d have to do some work to recover the original `hs`.[^1]
 
 Another way we could have counter-acted type erasure would be to have:
 
@@ -326,7 +326,7 @@ internal ones in `Sing a ->` style. This lets all of your internal functions fit
 together more nicely (`Sing a ->` style tends to be easier to write in,
 especially if you stay in it the entire time) while at the same time removing
 the burden of calling with explicit singletons from people using the
-functionality externally.[^1]
+functionality externally.[^2]
 
 Now, we still need to somehow get our list of integers to the type level
 somehow, so we can create a `Network i hs o` to stuff into our `ONet`. And for
@@ -359,7 +359,7 @@ GHC 8, it has to be implemented with clunky “Kind Proxies”. In a future vers
 of *singletons*, they’ll be implemented this way. But for now, the usage is more
 or less identical. It’s just right now, in the current system,
 `SomeSing STrue :: SomeSing (KProxy :: KProxy Bool)`, and
-`bar :: SomeSing (KProxy :: KProxy Nat)`.[^2]
+`bar :: SomeSing (KProxy :: KProxy Nat)`.[^3]
 
 Pattern matching looks like:
 
@@ -378,7 +378,7 @@ scope! And by pattern matching on the `SNat` constructor, we also have a
 have enough to write our `randomONet`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L99-103
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L103-107
 randomONet :: (MonadRandom m, KnownNat i, KnownNat o)
            => [Integer]
            -> m (OpaqueNet i o)
@@ -392,7 +392,7 @@ Haskell as **reification**. Witht his, our original goal is (finally) within
 reach:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L148-154
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L151-157
 main :: IO ()
 main = do
     putStrLn "What hidden layer structure do you want?"
@@ -471,7 +471,7 @@ existential type as something *taking* the continuation `f` and giving it what
 it needs.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L109-109
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L113-113
 type OpaqueNet' i o r = (forall hs. Sing hs -> Network i hs o -> r) -> r
 
 ```
@@ -479,25 +479,17 @@ type OpaqueNet' i o r = (forall hs. Sing hs -> Network i hs o -> r) -> r
 “Tell me how you would make an `r` if you had a `Sing hs` and a
 `Network i hs o`, and I’ll make it for you!”
 
-This “continuation transformation” is known as formally **skolemization**.[^3]
+This “continuation transformation” is known as formally **skolemization**.[^4]
 We can “wrap” a `Network i hs o` into an `OpaqueNet' i o r` pretty
 straightforwardly:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L111-112
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L115-116
 oNet' :: Sing hs -> Network i hs o -> OpaqueNet' i o r
 oNet' s n = \f -> f s n
 
 ```
 
-<!-- To prove that the two `OpaqueNet`s are the same (and to help us see more about -->
-<!-- how they relate), we can write functions that convert back and forth from them: -->
-<!-- ~~~haskell -->
-<!-- !!!dependent-haskell/NetworkTyped2.hs "withONet ::" "toONet ::" -->
-<!-- ~~~ -->
-<!-- Note the expanded type signature of `withONet`, which you can sort of interpret -->
-<!-- as, "do *this function* on the existentially quantified contents of an -->
-<!-- `OpaqueNet`." -->
 <!-- #### Trying it out -->
 <!-- To sort of compare how the two methods look like in practice, we're going to -->
 <!-- Rosetta stone it up and re-implement serialization with the continuation-based -->
@@ -1026,19 +1018,25 @@ oNet' s n = \f -> f s n
 <!-- -------------------- -->
 <!-- sameNat and existentials -->
 
-[^1]: This is a completely personal style, and I can’t claim to speak for all of
+[^1]: A fun exercise would be to implement a `Network i hs o -> Sing hs`, to get
+    `Sing hs` back. There’s a
+    [solution](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L73-75)
+    in the source code!
+
+[^2]: This is a completely personal style, and I can’t claim to speak for all of
     the Haskell dependent typing community. In fact, I’m not even sure that you
     could even say that there is a consensus at all. But this is the style that
     has worked personally for me in both writing and using libraries! And hey,
     some libraries I’ve seen in the wild even offer *both* styles in their
     external API.
 
-[^2]: Gross, right? Hopefully some day this will be as far behind us as that
+[^3]: Gross, right? Hopefully some day this will be as far behind us as that
     whole Monad/Functor debacle is now!
 
-[^3]: Skolemization is probably one of the coolest words you’ll encounter
+[^4]: Skolemization is probably one of the coolest words you’ll encounter
     working with dependent types in Haskell, and sometimes just knowing that
     you’re “skolemizing” something makes you feel cooler. Thank you [Thoralf
     Skolem](https://en.wikipedia.org/wiki/Thoralf_Skolem). If you ever see a
     “rigid, skolem” error in GHC, you can thank him for that too! He also
-    inspired me to decide to name my first son Thoralf.\[\^curry\]
+    inspired me to decide to name my first son Thoralf. (My second son’s name
+    will be Curry)

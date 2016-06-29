@@ -217,7 +217,7 @@ actually:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L73-74}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L77-78}
 \KeywordTok{data} \DataTypeTok{OpaqueNet}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
     \DataTypeTok{ONet}\OtherTok{ ::} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{OpaqueNet} \NormalTok{i o}
 \end{Highlighting}
@@ -233,7 +233,7 @@ singleton and the net back, and we can use them:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L76-81}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L80-85}
 \OtherTok{numHiddens ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{Int}
 \NormalTok{numHiddens }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{ss _ }\OtherTok{->} \NormalTok{lengthSing ss}
   \KeywordTok{where}
@@ -248,7 +248,12 @@ back into scope, as in \texttt{ONet\ (ss\ ::\ Sing\ hs)\ \_\ -\textgreater{}}.
 
 Note that it's important for us to include the singleton in addition to the
 network itself, because of type erasure (our best friend). If we didn't pop the
-singleton in, we'd have to do some work to recover the original \texttt{hs}.
+singleton in, we'd have to do some work to recover the original
+\texttt{hs}.\footnote{A fun exercise would be to implement a
+  \texttt{Network\ i\ hs\ o\ -\textgreater{}\ Sing\ hs}, to get
+  \texttt{Sing\ hs} back. There's a
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L73-75}{solution}
+  in the source code!}
 
 Another way we could have counter-acted type erasure would be to have:
 
@@ -530,7 +535,7 @@ constructor, we also have a \texttt{Knownnat\ n} instance (As discussed in
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L99-103}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L103-107}
 \OtherTok{randomONet ::} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
            \OtherTok{=>} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
            \OtherTok{->} \NormalTok{m (}\DataTypeTok{OpaqueNet} \NormalTok{i o)}
@@ -545,7 +550,7 @@ within reach:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L148-154}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L151-157}
 \OtherTok{main ::} \DataTypeTok{IO} \NormalTok{()}
 \NormalTok{main }\FunctionTok{=} \KeywordTok{do}
     \NormalTok{putStrLn }\StringTok{"What hidden layer structure do you want?"}
@@ -632,7 +637,7 @@ giving it what it needs.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L109-109}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L113-113}
 \KeywordTok{type} \DataTypeTok{OpaqueNet'} \NormalTok{i o r }\FunctionTok{=} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \NormalTok{r) }\OtherTok{->} \NormalTok{r}
 \end{Highlighting}
 \end{Shaded}
@@ -646,13 +651,13 @@ This ``continuation transformation'' is known as formally
   just knowing that you're ``skolemizing'' something makes you feel cooler.
   Thank you \href{https://en.wikipedia.org/wiki/Thoralf_Skolem}{Thoralf Skolem}.
   If you ever see a ``rigid, skolem'' error in GHC, you can thank him for that
-  too! He also inspired me to decide to name my first son
-  Thoralf.{[}\^{}curry{]}} We can ``wrap'' a \texttt{Network\ i\ hs\ o} into an
-\texttt{OpaqueNet\textquotesingle{}\ i\ o\ r} pretty straightforwardly:
+  too! He also inspired me to decide to name my first son Thoralf. (My second
+  son's name will be Curry)} We can ``wrap'' a \texttt{Network\ i\ hs\ o} into
+an \texttt{OpaqueNet\textquotesingle{}\ i\ o\ r} pretty straightforwardly:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L111-112}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L115-116}
 \OtherTok{oNet' ::} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{OpaqueNet'} \NormalTok{i o r}
 \NormalTok{oNet' s n }\FunctionTok{=} \NormalTok{\textbackslash{}f }\OtherTok{->} \NormalTok{f s n}
 \end{Highlighting}
