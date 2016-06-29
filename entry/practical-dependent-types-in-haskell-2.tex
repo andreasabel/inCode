@@ -217,7 +217,7 @@ actually:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L74-75}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L73-74}
 \KeywordTok{data} \DataTypeTok{OpaqueNet}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
     \DataTypeTok{ONet}\OtherTok{ ::} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{OpaqueNet} \NormalTok{i o}
 \end{Highlighting}
@@ -233,7 +233,7 @@ singleton and the net back, and we can use them:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L77-82}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L76-81}
 \OtherTok{numHiddens ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{Int}
 \NormalTok{numHiddens }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{ss _ }\OtherTok{->} \NormalTok{lengthSing ss}
   \KeywordTok{where}
@@ -443,7 +443,7 @@ the explicit singleton input style:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L49-56}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L48-55}
 \OtherTok{randomNet' ::} \NormalTok{forall m i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
            \OtherTok{=>} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \NormalTok{m (}\DataTypeTok{Network} \NormalTok{i hs o)}
 \NormalTok{randomNet' }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{SNil}            \OtherTok{->}     \DataTypeTok{O} \FunctionTok{<$>} \NormalTok{randomWeights}
@@ -479,6 +479,38 @@ data constructor. \texttt{toSing} takes the term-level value (for us, an
 value (for us, a \texttt{{[}Nat{]}}). When we pattern match on the
 \texttt{SomeSing} constructor, we get \texttt{a} in scope!
 
+In an ideal world, \texttt{SomeSing} would look like this:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{SomeSing}\OtherTok{ ::} \FunctionTok{*} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
+    \DataTypeTok{SomeSing}\OtherTok{ ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{a ::} \NormalTok{k) }\OtherTok{->} \DataTypeTok{SomeSing} \NormalTok{k}
+\end{Highlighting}
+\end{Shaded}
+
+And you can have
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{foo ::} \DataTypeTok{SomeSing} \DataTypeTok{Bool}
+\NormalTok{foo }\FunctionTok{=} \DataTypeTok{SomeSing} \DataTypeTok{STrue}
+
+\OtherTok{bar ::} \DataTypeTok{SomeSing} \DataTypeTok{Nat}
+\NormalTok{bar }\FunctionTok{=} \DataTypeTok{SomeSing} \NormalTok{(}\DataTypeTok{SNat}\OtherTok{ ::} \DataTypeTok{Sing} \DecValTok{10}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+But because \emph{singletons} was implemented before the \texttt{TypeInType}
+extension in GHC 8, it has to be implemented with clunky ``Kind Proxies''. In a
+future version of \emph{singletons}, they'll be implemented this way. But for
+now, the usage is more or less identical. It's just right now, in the current
+system, \texttt{SomeSing\ STrue\ ::\ SomeSing\ (KProxy\ ::\ KProxy\ Bool)}, and
+\texttt{bar\ ::\ SomeSing\ (KProxy\ ::\ KProxy\ Nat)}.\footnote{Gross, right?
+  Hopefully some day this will be as far behind us as that whole Monad/Functor
+  debacle is now!}
+
+Pattern matching looks like:
+
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{main ::} \DataTypeTok{IO} \NormalTok{()}
@@ -491,12 +523,14 @@ value (for us, a \texttt{{[}Nat{]}}). When we pattern match on the
 \end{Shaded}
 
 Now, inside the case statement branch (the \texttt{...}), we have \emph{type}
-\texttt{n\ ::\ Nat} in scope! We now have enough to write our
+\texttt{n\ ::\ Nat} in scope! And by pattern matching on the \texttt{SNat}
+constructor, we also have a \texttt{Knownnat\ n} instance (As discussed in
+{[}previous part{]}{[}new-section){]}. We now have enough to write our
 \texttt{randomONet}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L100-104}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L99-103}
 \OtherTok{randomONet ::} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
            \OtherTok{=>} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
            \OtherTok{->} \NormalTok{m (}\DataTypeTok{OpaqueNet} \NormalTok{i o)}
@@ -509,7 +543,7 @@ And our original goal is finally within reach:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L149-156}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L148-155}
 \CommentTok{-- main :: IO ()}
 \CommentTok{-- main = do}
 \CommentTok{--     putStrLn "What size random net?"}

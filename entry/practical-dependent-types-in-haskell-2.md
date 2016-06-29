@@ -116,7 +116,7 @@ internal structure is.
 We can implement it as an “existential” wrapper over `Network`, actually:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L74-75
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L73-74
 data OpaqueNet :: Nat -> Nat -> * where
     ONet :: Sing hs -> Network i hs o -> OpaqueNet i o
 
@@ -130,7 +130,7 @@ How do we use this type? We *pattern match* on `ONet` to get the singleton and
 the net back, and we can use them:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L77-82
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L76-81
 numHiddens :: OpaqueNet i o -> Int
 numHiddens = \case ONet ss _ -> lengthSing ss
   where
@@ -308,7 +308,7 @@ For simplicity, let’s re-write `randomNet` the more sensible way — with the
 explicit singleton input style:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L49-56
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L48-55
 randomNet' :: forall m i hs o. (MonadRandom m, KnownNat i, KnownNat o)
            => Sing hs -> m (Network i hs o)
 randomNet' = \case SNil            ->     O <$> randomWeights
@@ -337,6 +337,32 @@ us, an `[Integer]`) and returns a `SomeSing` wrapping the type-level value (for
 us, a `[Nat]`). When we pattern match on the `SomeSing` constructor, we get `a`
 in scope!
 
+In an ideal world, `SomeSing` would look like this:
+
+``` {.haskell}
+data SomeSing :: * -> * where
+    SomeSing :: Sing (a :: k) -> SomeSing k
+```
+
+And you can have
+
+``` {.haskell}
+foo :: SomeSing Bool
+foo = SomeSing STrue
+
+bar :: SomeSing Nat
+bar = SomeSing (SNat :: Sing 10)
+```
+
+But because *singletons* was implemented before the `TypeInType` extension in
+GHC 8, it has to be implemented with clunky “Kind Proxies”. In a future version
+of *singletons*, they’ll be implemented this way. But for now, the usage is more
+or less identical. It’s just right now, in the current system,
+`SomeSing STrue :: SomeSing (KProxy :: KProxy Bool)`, and
+`bar :: SomeSing (KProxy :: KProxy Nat)`.[^2]
+
+Pattern matching looks like:
+
 ``` {.haskell}
 main :: IO ()
 main = do
@@ -347,10 +373,12 @@ main = do
 ```
 
 Now, inside the case statement branch (the `...`), we have *type* `n :: Nat` in
-scope! We now have enough to write our `randomONet`:
+scope! And by pattern matching on the `SNat` constructor, we also have a
+`Knownnat n` instance (As discussed in \[previous part\]\[new-section)\]. We now
+have enough to write our `randomONet`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L100-104
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L99-103
 randomONet :: (MonadRandom m, KnownNat i, KnownNat o)
            => [Integer]
            -> m (OpaqueNet i o)
@@ -362,7 +390,7 @@ randomONet hs = case toSing hs of
 And our original goal is finally within reach:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L149-156
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L148-155
 -- main :: IO ()
 -- main = do
 --     putStrLn "What size random net?"
@@ -866,3 +894,6 @@ And our original goal is finally within reach:
     has worked personally for me in both writing and using libraries! And hey,
     some libraries I’ve seen in the wild even offer *both* styles in their
     external API.
+
+[^2]: Gross, right? Hopefully some day this will be as far behind us as that
+    whole Monad/Functor debacle is now!
