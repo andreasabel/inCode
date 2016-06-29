@@ -405,39 +405,24 @@ where I get an \texttt{Int} and the case where I get a \texttt{Bool}. The
 \texttt{Bool}), and \emph{I} have to adapt to whatever it returns. Sound
 familiar?
 
-In fact, you can even imagine that \texttt{OpaqueNet\ i\ o} is implemented like
-a fancy \texttt{Either}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{OpaqueNet} \NormalTok{i o }\FunctionTok{=} \DataTypeTok{Either} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i }\CharTok{'[] o) (}
-                       \DataTypeTok{Either} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i }\CharTok{'[1] o) (}
-                         \DataTypeTok{Either} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i }\CharTok{'[1,1] o) (}
-                           \DataTypeTok{Either} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i }\CharTok{'[2] o) (}
-                             \DataTypeTok{Either} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i }\CharTok{'[2,1] o) (}
-                               \DataTypeTok{Either} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i }\CharTok{'[2,2] o) (}
-                                 \CommentTok{-- .. literally infinitely ..}
-                               \NormalTok{)}
-                             \NormalTok{)}
-                           \NormalTok{)}
-                         \NormalTok{)}
-                       \NormalTok{)}
-                     \NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-In other words, an infinite sum of all of the different combinations of hidden
-layer structures.
+In fact, you can even imagine that \texttt{OpaqueNet\ i\ o} as being just a
+recursive \texttt{Either} over \texttt{\textquotesingle{}{[}{]}},
+\texttt{\textquotesingle{}{[}1{]}},
+\texttt{\textquotesingle{}{[}1,2{]}\textquotesingle{}}, etc. (A bit of a
+stretch, because the set of all \texttt{{[}Nat{]}}s is non-enumerable and
+uncountable, but you get the picture, right?)
 
 And, remember that the basic way of handling an \texttt{Either} you get and
 figuring out what the type of the value is inside is by \emph{pattern matching}
 on it. You can't know if an \texttt{Either\ Int\ Bool} contains an \texttt{Int}
-or \texttt{Bool} until you pattern match. But, once you do, all is revealed.
+or \texttt{Bool} until you pattern match. But, once you do, all is revealed, and
+GHC lets you take advantage of knowing the type.
 
 For \texttt{OpaqueNet\ i\ o}, it's the same! You don't know what the actual type
 of the \texttt{Network\ i\ hs\ o} it contains is until you \emph{pattern match}
 on the \texttt{Sing\ hs}! (Or potentially, the network itself) But, once you
-pattern match on it, all is revealed.
+pattern match on it, all is revealed\ldots{}and GHC lets you take advantage of
+knowing the type!
 
 \subsection{Reification}\label{reification}
 
@@ -529,9 +514,20 @@ Pattern matching looks like:
 
 Now, inside the case statement branch (the \texttt{...}), we have \emph{type}
 \texttt{n\ ::\ Nat} in scope! And by pattern matching on the \texttt{SNat}
-constructor, we also have a \texttt{Knownnat\ n} instance (As discussed in
-{[}previous part{]}{[}new-section){]}. We now have enough to write our
-\texttt{randomONet}:
+constructor, we also have a \texttt{KnownNat\ n} instance (As discussed in
+\href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html\#singletons-and-induction}{previous
+part}).
+
+(\texttt{toSing} works using a simple typeclass (``kindclass'', heh) mechanism
+with associated types whose job is to associate \emph{value}'s types with the
+kinds of their singletons. It associates \texttt{Bool} the type with
+\texttt{Bool} the kind, \texttt{Integer} the type with \texttt{Nat} the kind,
+\texttt{{[}Integer{]}} the type with \texttt{{[}Nat{]}} the kind, etc., and it
+does it with straightforward plane jane applications of type families --- here's
+a \href{https://ocharles.org.uk/blog/posts/2014-12-12-type-families.html}{nice
+tutorial on type families} courtesy of Oliver Charles.)
+
+We now have enough to write our \texttt{randomONet}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -550,7 +546,7 @@ within reach:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L151-157}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L152-158}
 \OtherTok{main ::} \DataTypeTok{IO} \NormalTok{()}
 \NormalTok{main }\FunctionTok{=} \KeywordTok{do}
     \NormalTok{putStrLn }\StringTok{"What hidden layer structure do you want?"}
@@ -660,6 +656,68 @@ an \texttt{OpaqueNet\textquotesingle{}\ i\ o\ r} pretty straightforwardly:
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L115-116}
 \OtherTok{oNet' ::} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{OpaqueNet'} \NormalTok{i o r}
 \NormalTok{oNet' s n }\FunctionTok{=} \NormalTok{\textbackslash{}f }\OtherTok{->} \NormalTok{f s n}
+\end{Highlighting}
+\end{Shaded}
+
+Let's write a version of \texttt{randomONet} that returns a continuation-style
+existential, instead:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{withRandomONet' ::} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+                \OtherTok{=>} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
+                \OtherTok{->} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \NormalTok{m r)}
+                \OtherTok{->} \NormalTok{m r}
+\CommentTok{--         aka, => [Integer]}
+\CommentTok{--              -> OpaqueNet' i o (m r)}
+\NormalTok{withRandomONet' hs f }\FunctionTok{=} \KeywordTok{case} \NormalTok{toSing hs }\KeywordTok{of}
+                         \DataTypeTok{SomeSing} \NormalTok{ss }\OtherTok{->} \KeywordTok{do}
+                           \NormalTok{net }\OtherTok{<-} \NormalTok{randomNet' ss}
+                           \NormalTok{f ss net}
+\end{Highlighting}
+\end{Shaded}
+
+But, hey, because we're skolemizing everything, let's do it with the skolemized
+version of \texttt{toSing}, \texttt{withSomeSing}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{withSomeSing ::} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
+             \OtherTok{->} \NormalTok{(forall (}\OtherTok{hs ::} \NormalTok{[}\DataTypeTok{Nat}\NormalTok{])}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \NormalTok{r)}
+             \OtherTok{->} \NormalTok{r}
+\end{Highlighting}
+\end{Shaded}
+
+Because why not? Skolemize all the things!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L142-150}
+\OtherTok{withRandomONet' ::} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+                \OtherTok{=>} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
+                \OtherTok{->} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \NormalTok{m r)}
+                \OtherTok{->} \NormalTok{m r}
+\CommentTok{--         aka, => [Integer]}
+\CommentTok{--              -> OpaqueNet' i o (m r)}
+\NormalTok{withRandomONet' hs f }\FunctionTok{=} \NormalTok{withSomeSing hs }\FunctionTok{$} \NormalTok{\textbackslash{}ss }\OtherTok{->} \KeywordTok{do}
+                         \NormalTok{net }\OtherTok{<-} \NormalTok{randomNet' ss}
+                         \NormalTok{f ss net}
+\end{Highlighting}
+\end{Shaded}
+
+We can use it to do the same thing we used the constructor-based existential
+for, as well\ldots{}and, in a way, it seems oddly more natural, in a way.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L160-166}
+\OtherTok{main' ::} \DataTypeTok{IO} \NormalTok{()}
+\NormalTok{main' }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{putStrLn }\StringTok{"What hidden layer structure do you want?"}
+    \NormalTok{hs }\OtherTok{<-} \NormalTok{readLn}
+    \NormalTok{withRandomONet' hs }\FunctionTok{$} \NormalTok{\textbackslash{}ss (}\OtherTok{net ::} \DataTypeTok{Network} \DecValTok{10} \NormalTok{hs }\DecValTok{3}\NormalTok{) }\OtherTok{->} \KeywordTok{do}
+      \NormalTok{print net}
+      \CommentTok{-- blah blah stuff with our dynamically generated net}
 \end{Highlighting}
 \end{Shaded}
 

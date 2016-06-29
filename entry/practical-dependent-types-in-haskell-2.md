@@ -268,37 +268,21 @@ get an `Int` and the case where I get a `Bool`. The *function* gets to pick what
 type I have to handle (`Int` or `Bool`), and *I* have to adapt to whatever it
 returns. Sound familiar?
 
-In fact, you can even imagine that `OpaqueNet i o` is implemented like a fancy
-`Either`:
-
-``` {.haskell}
-type OpaqueNet i o = Either (Network i '[] o) (
-                       Either (Network i '[1] o) (
-                         Either (Network i '[1,1] o) (
-                           Either (Network i '[2] o) (
-                             Either (Network i '[2,1] o) (
-                               Either (Network i '[2,2] o) (
-                                 -- .. literally infinitely ..
-                               )
-                             )
-                           )
-                         )
-                       )
-                     )
-```
-
-In other words, an infinite sum of all of the different combinations of hidden
-layer structures.
+In fact, you can even imagine that `OpaqueNet i o` as being just a recursive
+`Either` over `'[]`, `'[1]`, `'[1,2]'`, etc. (A bit of a stretch, because the
+set of all `[Nat]`s is non-enumerable and uncountable, but you get the picture,
+right?)
 
 And, remember that the basic way of handling an `Either` you get and figuring
 out what the type of the value is inside is by *pattern matching* on it. You
 can’t know if an `Either Int Bool` contains an `Int` or `Bool` until you pattern
-match. But, once you do, all is revealed.
+match. But, once you do, all is revealed, and GHC lets you take advantage of
+knowing the type.
 
 For `OpaqueNet i o`, it’s the same! You don’t know what the actual type of the
 `Network i hs o` it contains is until you *pattern match* on the `Sing hs`! (Or
 potentially, the network itself) But, once you pattern match on it, all is
-revealed.
+revealed…and GHC lets you take advantage of knowing the type!
 
 ### Reification
 
@@ -374,8 +358,19 @@ main = do
 
 Now, inside the case statement branch (the `...`), we have *type* `n :: Nat` in
 scope! And by pattern matching on the `SNat` constructor, we also have a
-`Knownnat n` instance (As discussed in \[previous part\]\[new-section)\]. We now
-have enough to write our `randomONet`:
+`KnownNat n` instance (As discussed in [previous
+part](https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html#singletons-and-induction)).
+
+(`toSing` works using a simple typeclass (“kindclass”, heh) mechanism with
+associated types whose job is to associate *value*’s types with the kinds of
+their singletons. It associates `Bool` the type with `Bool` the kind, `Integer`
+the type with `Nat` the kind, `[Integer]` the type with `[Nat]` the kind, etc.,
+and it does it with straightforward plane jane applications of type families —
+here’s a [nice tutorial on type
+families](https://ocharles.org.uk/blog/posts/2014-12-12-type-families.html)
+courtesy of Oliver Charles.)
+
+We now have enough to write our `randomONet`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L103-107
@@ -392,7 +387,7 @@ Haskell as **reification**. Witht his, our original goal is (finally) within
 reach:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L151-157
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L152-158
 main :: IO ()
 main = do
     putStrLn "What hidden layer structure do you want?"
@@ -487,6 +482,62 @@ straightforwardly:
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L115-116
 oNet' :: Sing hs -> Network i hs o -> OpaqueNet' i o r
 oNet' s n = \f -> f s n
+
+```
+
+Let’s write a version of `randomONet` that returns a continuation-style
+existential, instead:
+
+``` {.haskell}
+withRandomONet' :: (MonadRandom m, KnownNat i, KnownNat o)
+                => [Integer]
+                -> (forall hs. Sing hs -> Network i hs o -> m r)
+                -> m r
+--         aka, => [Integer]
+--              -> OpaqueNet' i o (m r)
+withRandomONet' hs f = case toSing hs of
+                         SomeSing ss -> do
+                           net <- randomNet' ss
+                           f ss net
+```
+
+But, hey, because we’re skolemizing everything, let’s do it with the skolemized
+version of `toSing`, `withSomeSing`:
+
+``` {.haskell}
+withSomeSing :: [Integer]
+             -> (forall (hs :: [Nat]). Sing hs -> r)
+             -> r
+```
+
+Because why not? Skolemize all the things!
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L142-150
+withRandomONet' :: (MonadRandom m, KnownNat i, KnownNat o)
+                => [Integer]
+                -> (forall hs. Sing hs -> Network i hs o -> m r)
+                -> m r
+--         aka, => [Integer]
+--              -> OpaqueNet' i o (m r)
+withRandomONet' hs f = withSomeSing hs $ \ss -> do
+                         net <- randomNet' ss
+                         f ss net
+
+```
+
+We can use it to do the same thing we used the constructor-based existential
+for, as well…and, in a way, it seems oddly more natural, in a way.
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L160-166
+main' :: IO ()
+main' = do
+    putStrLn "What hidden layer structure do you want?"
+    hs <- readLn
+    withRandomONet' hs $ \ss (net :: Network 10 hs 3) -> do
+      print net
+      -- blah blah stuff with our dynamically generated net
 
 ```
 

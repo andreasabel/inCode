@@ -98,23 +98,9 @@ map<span class="ot"> ::</span> (<span class="dt">String</span> <span class="ot">
 <p>If I had:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">foo ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Bool</span></code></pre></div>
 <p>I have to handle the result…but I have to handle it for both the case where I get an <code>Int</code> and the case where I get a <code>Bool</code>. The <em>function</em> gets to pick what type I have to handle (<code>Int</code> or <code>Bool</code>), and <em>I</em> have to adapt to whatever it returns. Sound familiar?</p>
-<p>In fact, you can even imagine that <code>OpaqueNet i o</code> is implemented like a fancy <code>Either</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">OpaqueNet</span> i o <span class="fu">=</span> <span class="dt">Either</span> (<span class="dt">Network</span> i <span class="ch">&#39;[] o) (</span>
-                       <span class="dt">Either</span> (<span class="dt">Network</span> i <span class="ch">&#39;[1] o) (</span>
-                         <span class="dt">Either</span> (<span class="dt">Network</span> i <span class="ch">&#39;[1,1] o) (</span>
-                           <span class="dt">Either</span> (<span class="dt">Network</span> i <span class="ch">&#39;[2] o) (</span>
-                             <span class="dt">Either</span> (<span class="dt">Network</span> i <span class="ch">&#39;[2,1] o) (</span>
-                               <span class="dt">Either</span> (<span class="dt">Network</span> i <span class="ch">&#39;[2,2] o) (</span>
-                                 <span class="co">-- .. literally infinitely ..</span>
-                               )
-                             )
-                           )
-                         )
-                       )
-                     )</code></pre></div>
-<p>In other words, an infinite sum of all of the different combinations of hidden layer structures.</p>
-<p>And, remember that the basic way of handling an <code>Either</code> you get and figuring out what the type of the value is inside is by <em>pattern matching</em> on it. You can’t know if an <code>Either Int Bool</code> contains an <code>Int</code> or <code>Bool</code> until you pattern match. But, once you do, all is revealed.</p>
-<p>For <code>OpaqueNet i o</code>, it’s the same! You don’t know what the actual type of the <code>Network i hs o</code> it contains is until you <em>pattern match</em> on the <code>Sing hs</code>! (Or potentially, the network itself) But, once you pattern match on it, all is revealed.</p>
+<p>In fact, you can even imagine that <code>OpaqueNet i o</code> as being just a recursive <code>Either</code> over <code>'[]</code>, <code>'[1]</code>, <code>'[1,2]'</code>, etc. (A bit of a stretch, because the set of all <code>[Nat]</code>s is non-enumerable and uncountable, but you get the picture, right?)</p>
+<p>And, remember that the basic way of handling an <code>Either</code> you get and figuring out what the type of the value is inside is by <em>pattern matching</em> on it. You can’t know if an <code>Either Int Bool</code> contains an <code>Int</code> or <code>Bool</code> until you pattern match. But, once you do, all is revealed, and GHC lets you take advantage of knowing the type.</p>
+<p>For <code>OpaqueNet i o</code>, it’s the same! You don’t know what the actual type of the <code>Network i hs o</code> it contains is until you <em>pattern match</em> on the <code>Sing hs</code>! (Or potentially, the network itself) But, once you pattern match on it, all is revealed…and GHC lets you take advantage of knowing the type!</p>
 <h3 id="reification">Reification</h3>
 <p>Let’s pull it all together!</p>
 <p>For simplicity, let’s re-write <code>randomNet</code> the more sensible way — with the explicit singleton input style:</p>
@@ -146,7 +132,9 @@ main <span class="fu">=</span> <span class="kw">do</span>
     c <span class="ot">&lt;- readLn ::</span> <span class="dt">IO</span> <span class="dt">Integer</span>
     <span class="kw">case</span> toSing c <span class="kw">of</span>
       <span class="dt">SomeSing</span> (<span class="dt">SNat</span><span class="ot"> ::</span> <span class="dt">Sing</span> n) <span class="ot">-&gt;</span> <span class="co">-- ...</span></code></pre></div>
-<p>Now, inside the case statement branch (the <code>...</code>), we have <em>type</em> <code>n :: Nat</code> in scope! And by pattern matching on the <code>SNat</code> constructor, we also have a <code>Knownnat n</code> instance (As discussed in [previous part][new-section)]. We now have enough to write our <code>randomONet</code>:</p>
+<p>Now, inside the case statement branch (the <code>...</code>), we have <em>type</em> <code>n :: Nat</code> in scope! And by pattern matching on the <code>SNat</code> constructor, we also have a <code>KnownNat n</code> instance (As discussed in <a href="https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html#singletons-and-induction">previous part</a>).</p>
+<p>(<code>toSing</code> works using a simple typeclass (“kindclass”, heh) mechanism with associated types whose job is to associate <em>value</em>’s types with the kinds of their singletons. It associates <code>Bool</code> the type with <code>Bool</code> the kind, <code>Integer</code> the type with <code>Nat</code> the kind, <code>[Integer]</code> the type with <code>[Nat]</code> the kind, etc., and it does it with straightforward plane jane applications of type families — here’s a <a href="https://ocharles.org.uk/blog/posts/2014-12-12-type-families.html">nice tutorial on type families</a> courtesy of Oliver Charles.)</p>
+<p>We now have enough to write our <code>randomONet</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L103-107</span>
 <span class="ot">randomONet ::</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
            <span class="ot">=&gt;</span> [<span class="dt">Integer</span>]
@@ -154,7 +142,7 @@ main <span class="fu">=</span> <span class="kw">do</span>
 randomONet hs <span class="fu">=</span> <span class="kw">case</span> toSing hs <span class="kw">of</span>
                   <span class="dt">SomeSing</span> ss <span class="ot">-&gt;</span> <span class="dt">ONet</span> ss <span class="fu">&lt;$&gt;</span> randomNet&#39; ss</code></pre></div>
 <p>This process of bringing a term-level value into the type level is known in Haskell as <strong>reification</strong>. Witht his, our original goal is (finally) within reach:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L151-157</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L152-158</span>
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
     putStrLn <span class="st">&quot;What hidden layer structure do you want?&quot;</span>
@@ -186,6 +174,41 @@ oNetToFoo <span class="fu">=</span> \<span class="kw">case</span> <span class="d
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L115-116</span>
 <span class="ot">oNet&#39; ::</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">OpaqueNet&#39;</span> i o r
 oNet&#39; s n <span class="fu">=</span> \f <span class="ot">-&gt;</span> f s n</code></pre></div>
+<p>Let’s write a version of <code>randomONet</code> that returns a continuation-style existential, instead:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">withRandomONet&#39; ::</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
+                <span class="ot">=&gt;</span> [<span class="dt">Integer</span>]
+                <span class="ot">-&gt;</span> (forall hs<span class="fu">.</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> m r)
+                <span class="ot">-&gt;</span> m r
+<span class="co">--         aka, =&gt; [Integer]</span>
+<span class="co">--              -&gt; OpaqueNet&#39; i o (m r)</span>
+withRandomONet&#39; hs f <span class="fu">=</span> <span class="kw">case</span> toSing hs <span class="kw">of</span>
+                         <span class="dt">SomeSing</span> ss <span class="ot">-&gt;</span> <span class="kw">do</span>
+                           net <span class="ot">&lt;-</span> randomNet&#39; ss
+                           f ss net</code></pre></div>
+<p>But, hey, because we’re skolemizing everything, let’s do it with the skolemized version of <code>toSing</code>, <code>withSomeSing</code>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">withSomeSing ::</span> [<span class="dt">Integer</span>]
+             <span class="ot">-&gt;</span> (forall (<span class="ot">hs ::</span> [<span class="dt">Nat</span>])<span class="fu">.</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> r)
+             <span class="ot">-&gt;</span> r</code></pre></div>
+<p>Because why not? Skolemize all the things!</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L142-150</span>
+<span class="ot">withRandomONet&#39; ::</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
+                <span class="ot">=&gt;</span> [<span class="dt">Integer</span>]
+                <span class="ot">-&gt;</span> (forall hs<span class="fu">.</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> m r)
+                <span class="ot">-&gt;</span> m r
+<span class="co">--         aka, =&gt; [Integer]</span>
+<span class="co">--              -&gt; OpaqueNet&#39; i o (m r)</span>
+withRandomONet&#39; hs f <span class="fu">=</span> withSomeSing hs <span class="fu">$</span> \ss <span class="ot">-&gt;</span> <span class="kw">do</span>
+                         net <span class="ot">&lt;-</span> randomNet&#39; ss
+                         f ss net</code></pre></div>
+<p>We can use it to do the same thing we used the constructor-based existential for, as well…and, in a way, it seems oddly more natural, in a way.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L160-166</span>
+<span class="ot">main&#39; ::</span> <span class="dt">IO</span> ()
+main&#39; <span class="fu">=</span> <span class="kw">do</span>
+    putStrLn <span class="st">&quot;What hidden layer structure do you want?&quot;</span>
+    hs <span class="ot">&lt;-</span> readLn
+    withRandomONet&#39; hs <span class="fu">$</span> \ss (<span class="ot">net ::</span> <span class="dt">Network</span> <span class="dv">10</span> hs <span class="dv">3</span>) <span class="ot">-&gt;</span> <span class="kw">do</span>
+      print net
+      <span class="co">-- blah blah stuff with our dynamically generated net</span></code></pre></div>
 <!-- #### Trying it out -->
 <!-- To sort of compare how the two methods look like in practice, we're going to -->
 <!-- Rosetta stone it up and re-implement serialization with the continuation-based -->
