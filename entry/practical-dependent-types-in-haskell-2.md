@@ -519,7 +519,7 @@ withRandomONet' hs f = withSomeSing hs $ \ss -> do
 ```
 
 We can use it to do the same things we used the constructor-based existential
-for, as well…and, in a way, it seems oddly more natural.
+for, as well…and, in a way, it actually seems oddly more natural.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L169-175
