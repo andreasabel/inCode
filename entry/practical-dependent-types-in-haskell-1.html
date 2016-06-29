@@ -20,8 +20,8 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>There are <a href="https://www.youtube.com/watch?v=rhWMhTjQzsU">more</a> and <a href="http://www.well-typed.com/blog/2015/11/implementing-a-minimal-version-of-haskell-servant/">more</a> and <a href="https://www.schoolofhaskell.com/user/konn/prove-your-haskell-for-great-safety">more</a> and <a href="http://jozefg.bitbucket.org/posts/2014-08-25-dep-types-part-1.html">more</a> great resources and tutorials and introductions to integrating dependent types into your Haskell every day. The point of this series is to show more some practical examples of using dependent types in guiding your programming, and to also walk through the “why” and high-level philosophy of the way you structure your Haskell programs. It’ll also hopefully instill an intuition of a dependently typed work flow of “exploring” how dependent types can help your current programs. The intended audience of this post is for intermediate Haskell programmers in general, with no required knowledge of dependently typed programming. I should also point out that I’m no expert — I’m still in the process of learning this all, myself :)</p>
 <p>The first project in this series will build up to a type-safe <strong><a href="https://en.wikipedia.org/wiki/Artificial_neural_network">artificial neural network</a></strong> implementation with back-propagation training.</p>
 <h4 id="setup">Setup</h4>
-<p>This post is written on <em><a href="http://www.haskellstack.org">stack</a></em> snapshot <em><a href="https://www.stackage.org/lts-5.17">lts-5.17</a></em>, but uses an unreleased version of <em>hmatrix</em>, <em><a href="https://github.com/albertoruiz/hmatrix/tree/42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1">hmatrix-0.18 (commit 42a88fb)</a></em>. I <a href="http://mstksg.github.io/hmatrix/">maintain my own documentation</a> for reference.</p>
-<p>There is also a bug in <em><a href="http://hackage.haskell.org/package/singletons-2.0.1">singletons-2.0.1</a></em> package that’s fixed in <em><a href="http://hackage.haskell.org/package/singletons-2.1">singletons-2.1</a></em>, but <em>2.1</em> is not available with GHC 7.10 – I have a <a href="https://github.com/mstksg/singletons/releases/tag/v2.0.2">github fork</a> that fixes the bug if you want to stay on GHC 7.10.</p>
+<p>This post is written on <em><a href="http://www.haskellstack.org">stack</a></em> snapshot <em>[nightly-2016-06-26][]</em>, but uses an unreleased version of <em>hmatrix</em>, <em><a href="https://github.com/albertoruiz/hmatrix/tree/42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1">hmatrix-0.18 (commit 42a88fb)</a></em>. I <a href="http://mstksg.github.io/hmatrix/">maintain my own documentation</a> for reference.</p>
+<p>If you’re forced to use GHC 7.10 for some reason, there’s also a bug in <em><a href="http://hackage.haskell.org/package/singletons-2.0.1">singletons-2.0.1</a></em> package that’s fixed in <em><a href="http://hackage.haskell.org/package/singletons-2.1">singletons-2.1</a></em>, but <em>2.1</em> is not available with GHC 7.10 – I have a <a href="https://github.com/mstksg/singletons/releases/tag/v2.0.2">github fork</a> that fixes the bug if you want to stay on GHC 7.10.</p>
 <p>You can add this:</p>
 <div class="sourceCode"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span class="fu">packages:</span>
 <span class="kw">-</span> <span class="fu">location:</span>
@@ -29,9 +29,10 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
     <span class="fu">commit:</span> 42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1
   <span class="fu">subdirs:</span>
     <span class="kw">-</span> packages/base
-<span class="kw">-</span> <span class="fu">location:</span>
-    <span class="fu">git:</span> git@github.com:mstksg/singletons.git
-    <span class="fu">commit:</span> v2.0.2</code></pre></div>
+<span class="co"># # If stuck on GHC 7.10:</span>
+<span class="co"># - location:</span>
+<span class="co">#     git: git@github.com:mstksg/singletons.git</span>
+<span class="co">#     commit: v2.0.2</span></code></pre></div>
 <p>to the <code>packages</code> field of your directory or global <em>stack.yaml</em> and <em>stack</em> will know what version of <em>hmatrix</em> and <em>singletons</em> to use when you use <code>stack runghc</code> or <code>stack ghc</code>, etc. to build your files.</p>
 <h2 id="neural-networks">Neural Networks</h2>
 <p><a href="https://en.wikipedia.org/wiki/Artificial_neural_network">Artificial neural networks</a> have been somewhat of a hot topic in computing recently. Implementations of training algorithms (like back-propagation) are tricky to implement correctly — despite being simple, there are many locations where accidental bugs might pop up when multiplying the wrong matrices, for example.</p>
