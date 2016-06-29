@@ -45,29 +45,24 @@ main <span class="fu">=</span> <span class="kw">do</span>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">OpaqueNet</span> i o</code></pre></div>
 <p>Recall that our issue earlier was that we had to write <code>Network i ??? o</code>, but we had no idea what to put in for <code>???</code>. But, what if we worked with an <code>OpaqueNet i o</code>, we wouldn’t even care! We wouldn’t have to tell GHC what the internal structure is.</p>
 <p>We can implement it as an “existential” wrapper over <code>Network</code>, actually:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L77-78</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L86-87</span>
 <span class="kw">data</span> <span class="dt">OpaqueNet</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
-    <span class="dt">ONet</span><span class="ot"> ::</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">OpaqueNet</span> i o</code></pre></div>
-<p>So, if you have <code>net :: Network 6 '[10,6,3] 2</code>, you can create <code>ONet sing net :: OpaqueNet 6 2</code>. When you use the <code>ONet</code> constructor, the structure of the hidden layers disappears from the type!</p>
-<p>How do we use this type? We <em>pattern match</em> on <code>ONet</code> to get the singleton and the net back, and we can use them:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L80-85</span>
+    <span class="dt">ONet</span><span class="ot"> ::</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">OpaqueNet</span> i o</code></pre></div>
+<p>So, if you have <code>net :: Network 6 '[10,6,3] 2</code>, you can create <code>ONet net :: OpaqueNet 6 2</code>. When you use the <code>ONet</code> constructor, the structure of the hidden layers disappears from the type!</p>
+<p>How do we use this type? We <em>pattern match</em> on <code>ONet</code> to get the net back, and we can use them:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L89-94</span>
 <span class="ot">numHiddens ::</span> <span class="dt">OpaqueNet</span> i o <span class="ot">-&gt;</span> <span class="dt">Int</span>
-numHiddens <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">ONet</span> ss _ <span class="ot">-&gt;</span> lengthSing ss
+numHiddens <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">ONet</span> n <span class="ot">-&gt;</span> go n
   <span class="kw">where</span>
-<span class="ot">    lengthSing ::</span> <span class="dt">Sing</span> (<span class="ot">hs ::</span> [<span class="dt">Nat</span>]) <span class="ot">-&gt;</span> <span class="dt">Int</span>
-    lengthSing <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">SNil</span>         <span class="ot">-&gt;</span> <span class="dv">0</span>
-                       _ <span class="ot">`SCons`</span> ss <span class="ot">-&gt;</span> <span class="dv">1</span> <span class="fu">+</span> lengthSing ss</code></pre></div>
-<p>With the <code>ScopedTypeVariables</code> extension, we can even bring <code>hs</code> back into scope, as in <code>ONet (ss :: Sing hs) _ -&gt;</code>.</p>
-<p>Note that it’s important for us to include the singleton in addition to the network itself, because of type erasure (our best friend). If we didn’t pop the singleton in, we’d have to do some work to recover the original <code>hs</code>.<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a></p>
-<p>Another way we could have counter-acted type erasure would be to have:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">OpaqueNet</span><span class="ot"> ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
-    <span class="dt">ONet</span><span class="ot"> ::</span> <span class="dt">SingI</span> hs <span class="ot">=&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">OpaqueNet</span> i o</code></pre></div>
-<p>Like we learned last time, the <code>Sing hs -&gt;</code> and <code>SingI hs =&gt;</code> styles are just two ways of doing the same thing.</p>
-<p>This pattern is known as the <strong>dependent pair</strong>: pair a representation of <code>hs</code> with some type that includes <code>hs</code>, and pattern match on the <code>Sing hs</code> to reveal both!</p>
+<span class="ot">    go ::</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">Int</span>
+    go <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">O</span> _      <span class="ot">-&gt;</span> <span class="dv">0</span>
+               _ <span class="fu">:&amp;~</span> n&#39; <span class="ot">-&gt;</span> <span class="dv">1</span> <span class="fu">+</span> go n&#39;</code></pre></div>
+<p>With the <code>ScopedTypeVariables</code> extension, we can even bring <code>hs</code> back into scope, as in <code>ONet (n :: Network i hs o) -&gt; ...</code></p>
+<p>This pattern is sometimes called the <strong>dependent pair</strong>, because pattern matching on <code>ONet</code> gives yields the hidden existential (<code>hs</code>) and also a type that is based on it (<code>Network i hs o</code>). It’s like <code>hs</code> “paired” with <code>Network i hs o</code>. Pattern match on the results to give both the type (<code>hs</code>) <em>and</em> the data structure. (If we had implemented it as <code>ONet :: Sing hs -&gt; Network i hs o -&gt; OpaqueNet i o</code>, this would be slightly clearer!)</p>
 <p>And here’s the key to making this all work: once you <em>do</em> pattern match on <code>ONet</code>, you have to handle the <code>hs</code> in a <em>completely polymorphic way</em>. You’re not allowed to assume anything about <code>hs</code>…you have to provide a completely parametrically polymorphic way of dealing with it!</p>
 <p>For example, this function is completely <em>not</em> ok:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">bad ::</span> <span class="dt">OpaqueNet</span> i o <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o
-bad <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">ONet</span> _ n <span class="ot">-&gt;</span> n          <span class="co">-- nope, not ok at all.</span></code></pre></div>
+bad <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">ONet</span> n <span class="ot">-&gt;</span> n          <span class="co">-- nope, not ok at all.</span></code></pre></div>
 <p>Why not? Well, a type signature like <code>OpaqueNet i o -&gt; Network i hs o</code> means that the <em>caller</em> can decide what <code>hs</code> can be — just like <code>read :: Read a =&gt; String -&gt; a</code>, where the caller decides what <code>a</code> is.</p>
 <p>Of course, this <em>isn’t</em> the case with the way we’ve written the function…the function only returns a <em>specific</em> <code>hs</code> that the <em>function</em> decides. The <em>caller</em> has to accommodate whatever is inside <code>ONet</code>.</p>
 <h4 id="the-universal-and-the-existential">The Universal and the Existential</h4>
@@ -93,16 +88,14 @@ map<span class="ot"> ::</span> (<span class="dt">String</span> <span class="ot">
 <p>Indeed, we saw earlier that if we ever wanted to <em>use</em> the <code>Network i hs o</code> inside the <code>OpaqueNet i o</code>, we were forced to deal with it in a parametrically polymorphic way. We had to be able to handle <em>any</em> <code>hs</code> that the <code>ONet</code> could throw at us!</p>
 <h4 id="a-familiar-friend">A familiar friend</h4>
 <p>I called <code>OpaqueNet i o</code> a “dependent pair” earlier, which existentially quantifies over <code>hs</code>. But there’s another common term for it: a <strong>dependent sum</strong>.</p>
-<p>People familiar with Haskell might recognize that “sum types” are <code>Either</code>-like types that can be one thing or another. Sum types are one of the first things you learn about in Haskell — heck, even <code>Maybe a</code> is the sum of <code>a</code> and <code>()</code>.</p>
-<p>Dependent pairs/existential types actually are very similar to <code>Either</code>/sum types, in spirit, and it might help to see the parallel so that you can see that they’re nothing scary, and that the fundamentals/intuition of working with existential types in Haskell is no different than working with <code>Either</code>!</p>
+<p>People familiar with Haskell might recognize that “sum types” are <code>Either</code>-like types that can be one thing or another. Sum types are one of the first things you learn about in Haskell — heck, even <code>Maybe a</code> is the sum of <code>a</code> and <code>()</code>. Dependent pairs/existential types actually are very similar to <code>Either</code>/sum types, in spirit, and it might help to see the parallel so that you can see that they’re nothing scary, and that the fundamentals/intuition of working with existential types in Haskell is no different than working with <code>Either</code>!</p>
 <p>If I had:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">foo ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Bool</span></code></pre></div>
-<p>I have to handle the result…but I have to handle it for both the case where I get an <code>Int</code> and the case where I get a <code>Bool</code>. The <em>function</em> gets to pick what type I have to handle (<code>Int</code> or <code>Bool</code>), and <em>I</em> have to adapt to whatever it returns. Sound familiar?</p>
-<p>In fact, you can even imagine that <code>OpaqueNet i o</code> as being just a recursive <code>Either</code> over <code>'[]</code>, <code>'[1]</code>, <code>'[1,2]'</code>, etc. (A bit of a stretch, because the set of all <code>[Nat]</code>s is non-enumerable and uncountable, but you get the picture, right?)</p>
-<p>And, remember that the basic way of handling an <code>Either</code> you get and figuring out what the type of the value is inside is by <em>pattern matching</em> on it. You can’t know if an <code>Either Int Bool</code> contains an <code>Int</code> or <code>Bool</code> until you pattern match. But, once you do, all is revealed, and GHC lets you take advantage of knowing the type.</p>
-<p>For <code>OpaqueNet i o</code>, it’s the same! You don’t know what the actual type of the <code>Network i hs o</code> it contains is until you <em>pattern match</em> on the <code>Sing hs</code>! (Or potentially, the network itself) But, once you pattern match on it, all is revealed…and GHC lets you take advantage of knowing the type!</p>
+<p>I have to handle the result…but I have to handle it for both the case where I get an <code>Int</code> and the case where I get a <code>Bool</code>. The <em>function</em> gets to pick what type I have to handle (<code>Int</code> or <code>Bool</code>), and <em>I</em> have to adapt to whatever it returns. Sound familiar? In fact, you can even imagine that <code>OpaqueNet i o</code> as being just a recursive <em>Either</em> over <code>'[]</code>, <code>'[1]</code>, <code>'[1,2]</code>, etc.<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a></p>
+<p>And, remember that the basic way of handling an <code>Either</code> and figuring out what the type of the value is inside is through <em>pattern matching</em> on it. You can’t know if an <code>Either Int Bool</code> contains an <code>Int</code> or <code>Bool</code> until you pattern match. But, once you do, all is revealed, and GHC lets you take advantage of knowing the type.</p>
+<p>For <code>OpaqueNet i o</code>, it’s the same! You don’t know the actual type of the <code>Network i hs o</code> it contains until you <em>pattern match</em> on the <code>Sing hs</code>! (Or potentially, the network itself) But, once you pattern match on it, all is revealed…and GHC lets you take advantage of knowing the type!</p>
 <h3 id="reification">Reification</h3>
-<p>Let’s pull it all together!</p>
+<p>Time to pull it all together.</p>
 <p>For simplicity, let’s re-write <code>randomNet</code> the more sensible way — with the explicit singleton input style:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L48-55</span>
 <span class="ot">randomNet&#39; ::</span> forall m i hs o<span class="fu">.</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
@@ -113,8 +106,8 @@ randomNet&#39; <span class="fu">=</span> \<span class="kw">case</span> <span cla
 <span class="ot">randomNet ::</span> forall m i hs o<span class="fu">.</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">SingI</span> hs, <span class="dt">KnownNat</span> o)
           <span class="ot">=&gt;</span> m (<span class="dt">Network</span> i hs o)
 randomNet <span class="fu">=</span> randomNet&#39; sing</code></pre></div>
-<p>Remember earlier that I recommend (personally, and subjectively) a style where your external API functions are implemented in <code>SingI a =&gt;</code> style, and your internal ones in <code>Sing a -&gt;</code> style. This lets all of your internal functions fit together more nicely (<code>Sing a -&gt;</code> style tends to be easier to write in, especially if you stay in it the entire time) while at the same time removing the burden of calling with explicit singletons from people using the functionality externally.<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
-<p>Now, we still need to somehow get our list of integers to the type level somehow, so we can create a <code>Network i hs o</code> to stuff into our <code>ONet</code>. And for that, the <em>singletons</em> library offers the proper tooling. It gives us <code>SomeSing</code>, which is a lot like our <code>OpaqueNet</code> above, wrapping the <code>Sing a</code> inside an existential data constructor. <code>toSing</code> takes the term-level value (for us, an <code>[Integer]</code>) and returns a <code>SomeSing</code> wrapping the type-level value (for us, a <code>[Nat]</code>). When we pattern match on the <code>SomeSing</code> constructor, we get <code>a</code> in scope!</p>
+<p>Recall that I recommend (personally, and subjectively) a style where your external API functions are implemented in <code>SingI a =&gt;</code> style, and your internal ones in <code>Sing a -&gt;</code> style. This lets all of your internal functions fit together more nicely (<code>Sing a -&gt;</code> style tends to be easier to write in, especially if you stay in it the entire time) while at the same time removing the burden of calling with explicit singletons from people using the functionality externally.<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
+<p>Now, we still need to somehow get our list of integers to the type level, so we can create a <code>Network i hs o</code> to stuff into our <code>ONet</code>. And for that, the <em>singletons</em> library offers the necessary tooling. It gives us <code>SomeSing</code>, which is a lot like our <code>OpaqueNet</code> above, wrapping the <code>Sing a</code> inside an existential data constructor. <code>toSing</code> takes the term-level value (for us, an <code>[Integer]</code>) and returns a <code>SomeSing</code> wrapping the type-level value (for us, a <code>[Nat]</code>). When we pattern match on the <code>SomeSing</code> constructor, we get <code>a</code> in scope!</p>
 <p>In an ideal world, <code>SomeSing</code> would look like this:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
     <span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="dt">Sing</span> (<span class="ot">a ::</span> k) <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> k</code></pre></div>
@@ -124,7 +117,7 @@ foo <span class="fu">=</span> <span class="dt">SomeSing</span> <span class="dt">
 
 <span class="ot">bar ::</span> <span class="dt">SomeSing</span> <span class="dt">Nat</span>
 bar <span class="fu">=</span> <span class="dt">SomeSing</span> (<span class="dt">SNat</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="dv">10</span>)</code></pre></div>
-<p>But because <em>singletons</em> was implemented before the <code>TypeInType</code> extension in GHC 8, it has to be implemented with clunky “Kind Proxies”. In a future version of <em>singletons</em>, they’ll be implemented this way. But for now, the usage is more or less identical. It’s just right now, in the current system, <code>SomeSing STrue :: SomeSing (KProxy :: KProxy Bool)</code>, and <code>bar :: SomeSing (KProxy :: KProxy Nat)</code>.<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a></p>
+<p>But because <em>singletons</em> was implemented before the <code>TypeInType</code> extension in GHC 8, it has to be implemented with clunky “Kind Proxies”. In a future version of <em>singletons</em>, they’ll be implemented this way. Right now, in the current system, <code>SomeSing STrue :: SomeSing (KProxy :: KProxy Bool)</code>, and <code>bar :: SomeSing (KProxy :: KProxy Nat)</code>.<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a> However, for the most part, the usage is identical, so we can ignore this slight wart when we are actually writing code.</p>
 <p>Pattern matching looks like:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
@@ -133,47 +126,49 @@ main <span class="fu">=</span> <span class="kw">do</span>
     <span class="kw">case</span> toSing c <span class="kw">of</span>
       <span class="dt">SomeSing</span> (<span class="dt">SNat</span><span class="ot"> ::</span> <span class="dt">Sing</span> n) <span class="ot">-&gt;</span> <span class="co">-- ...</span></code></pre></div>
 <p>Now, inside the case statement branch (the <code>...</code>), we have <em>type</em> <code>n :: Nat</code> in scope! And by pattern matching on the <code>SNat</code> constructor, we also have a <code>KnownNat n</code> instance (As discussed in <a href="https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html#singletons-and-induction">previous part</a>).</p>
-<p>(<code>toSing</code> works using a simple typeclass (“kindclass”, heh) mechanism with associated types whose job is to associate <em>value</em>’s types with the kinds of their singletons. It associates <code>Bool</code> the type with <code>Bool</code> the kind, <code>Integer</code> the type with <code>Nat</code> the kind, <code>[Integer]</code> the type with <code>[Nat]</code> the kind, etc., and it does it with straightforward plane jane applications of type families — here’s a <a href="https://ocharles.org.uk/blog/posts/2014-12-12-type-families.html">nice tutorial on type families</a> courtesy of Oliver Charles.)</p>
+<p>(<code>toSing</code> works using a simple typeclass mechanism with associated types whose job is to associate <em>value</em>’s types with the kinds of their singletons. It associates <code>Bool</code> the type with <code>Bool</code> the kind, <code>Integer</code> the type with <code>Nat</code> the kind, <code>[Integer]</code> the type with <code>[Nat]</code> the kind, etc., and it does it with straightforward plane jane applications of type families — here’s a <a href="https://ocharles.org.uk/blog/posts/2014-12-12-type-families.html">nice tutorial on type families</a> courtesy of Oliver Charles.)</p>
 <p>We now have enough to write our <code>randomONet</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L103-107</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L112-116</span>
 <span class="ot">randomONet ::</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
            <span class="ot">=&gt;</span> [<span class="dt">Integer</span>]
            <span class="ot">-&gt;</span> m (<span class="dt">OpaqueNet</span> i o)
 randomONet hs <span class="fu">=</span> <span class="kw">case</span> toSing hs <span class="kw">of</span>
-                  <span class="dt">SomeSing</span> ss <span class="ot">-&gt;</span> <span class="dt">ONet</span> ss <span class="fu">&lt;$&gt;</span> randomNet&#39; ss</code></pre></div>
-<p>This process of bringing a term-level value into the type level is known in Haskell as <strong>reification</strong>. Witht his, our original goal is (finally) within reach:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L152-158</span>
+                  <span class="dt">SomeSing</span> ss <span class="ot">-&gt;</span> <span class="dt">ONet</span> <span class="fu">&lt;$&gt;</span> randomNet&#39; ss</code></pre></div>
+<p>This process of bringing a term-level value into the type level is known in Haskell as <strong>reification</strong>. With this, our original goal is (finally) within reach:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L161-167</span>
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
     putStrLn <span class="st">&quot;What hidden layer structure do you want?&quot;</span>
     hs <span class="ot">&lt;-</span> readLn
-    <span class="dt">ONet</span> ss (<span class="ot">net ::</span> <span class="dt">Network</span> <span class="dv">10</span> hs <span class="dv">3</span>) <span class="ot">&lt;-</span> randomONet hs
+    <span class="dt">ONet</span> (<span class="ot">net ::</span> <span class="dt">Network</span> <span class="dv">10</span> hs <span class="dv">3</span>) <span class="ot">&lt;-</span> randomONet hs
     print net
     <span class="co">-- blah blah stuff with our dynamically generated net</span></code></pre></div>
 <h4 id="the-boundary">The Boundary</h4>
 <p>With the power of existentially quantified types (like in <code>SomeSing</code>), we essentially gained the ability to work with types that depend on runtime results.</p>
 <p>In a way, you can consider the <code>toSing</code> and the <code>SomeSing</code> as our “boundary” between the “untyped world” and the “typed world”. This layer (and the process of reification) cleanly separates the two.</p>
 <p>This “boundary” can be thought of as a lot like the boundary we talk about between “pure” functions and values and “impure” (IO, etc.) ones. We say to always write as much of your program as possible in the “pure” world, and to separate and pull out as much logic as you can to be pure logic. That’s sort of one of the first things you learn about as a Haskell programmer: how to separate logic that <em>can</em> be pure from logic that is “impure” (IO, etc.), and then “combine them” at the very end, as late as possible.</p>
-<p>Well, if the final program is going to be IO in the end anyway, why bother separating out pure and impure parts of your logic? You gain separation of concerns, the increased ability to reason with your code and analyze what it does, the compiler’s ability to check what you write, the limitation of implementations, and etc. are all reasons any Haskeller should be familiar with reciting.</p>
+<p>The common response to this is: “Well, if the final program is going to be IO in the end anyway, why bother separating out pure and impure parts of your logic?”</p>
+<p>But, we know that we gain separation of concerns, the increased ability to reason with your code and analyze what it does, the compiler’s ability to check what you write, the limitation of implementations, etc. … all reasons any Haskeller should be familiar with reciting.</p>
 <p>You can think of the general philosophy of working with typed/untyped worlds as being the same thing. You can write as much of your program as possible in the “typed” world, like we did in Part 1. Take advantage of the increased ability to reason with your code, parametric polymorphism helping you <em>write</em> your code, limit your implementations, nab you compiler help, etc. All of those are benefits of working in the typed world.</p>
 <p>Then, write what you must in your “untyped” world, such as dealing with values that pop up at runtime like the <code>[Integer]</code> above.</p>
 <p>Finally, at the end, <em>unite</em> them at the boundary. Pass the control football from the untyped world to the typed world!</p>
 <h3 id="continuation-based-existentials">Continuation-Based Existentials</h3>
 <p>There’s another way in Haskell that we work with existential types that can be more natural and easy to work with in a lot of cases.</p>
-<p>Note that when we pattern match on an existential data type, you have to work with the values in the constructor in a parametrically polymorphic way. For example, if we had:</p>
+<p>Remember that when we pattern match on an existential data type, you have to work with the values in the constructor in a parametrically polymorphic way. For example, if we had:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">oNetToFoo ::</span> <span class="dt">OpaqueNet</span> i o <span class="ot">-&gt;</span> <span class="dt">Foo</span>
-oNetToFoo <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">ONet</span> s n <span class="ot">-&gt;</span> f s n</code></pre></div>
-<p>What does the type of <code>f</code> have to be? It has to take a <code>Sing hs</code> and a <code>Network i hs o</code>, but deal with it in a way that works <em>for all</em> <code>hs</code>. It has to be:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">f ::</span> forall (<span class="ot">hs ::</span> [<span class="dt">Nat</span>])<span class="fu">.</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">Foo</span></code></pre></div>
-<p>That is, it can’t be written for <em>only</em> <code>Sing '[5]</code> or <em>only</em> <code>Sing '[6,3]</code>…it has to work for <em>any</em> <code>hs</code>.</p>
+oNetToFoo <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">ONet</span> n <span class="ot">-&gt;</span> f n</code></pre></div>
+<p><code>f</code> has to take a <code>Sing hs</code> and a <code>Network i hs o</code>, but deal with it in a way that works <em>for all</em> <code>hs</code>. It has to be:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">f ::</span> forall hs<span class="fu">.</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">Foo</span></code></pre></div>
+<p>That is, it can’t be written for <em>only</em> <code>'[5]</code> or <em>only</em> <code>'[6,3]</code>…it has to work for <em>any</em> <code>hs</code>. That’s the whole “existential vs. universal quantification” thing we just talked about.</p>
 <p>Well, we could really also just skip the data type together and represent an existential type as something <em>taking</em> the continuation <code>f</code> and giving it what it needs.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L113-113</span>
-<span class="kw">type</span> <span class="dt">OpaqueNet&#39;</span> i o r <span class="fu">=</span> (forall hs<span class="fu">.</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r</code></pre></div>
-<p>“Tell me how you would make an <code>r</code> if you had a <code>Sing hs</code> and a <code>Network i hs o</code>, and I’ll make it for you!”</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L122-122</span>
+<span class="kw">type</span> <span class="dt">OpaqueNet&#39;</span> i o r <span class="fu">=</span> (forall hs<span class="fu">.</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r</code></pre></div>
+<p>“Tell me how you would make an <code>r</code> if you had a <code>Network i hs o</code> (that works for any <code>hs</code>) and I’ll make it for you!”</p>
+<p>(This takes advantage of Rank-N types. If you’re unfamiliar with it, Gregor Riegler has a <a href="http://sleepomeno.github.io/blog/2014/02/12/Explaining-Haskell-RankNTypes-for-all/">nice tutorial</a> on it.)</p>
 <p>This “continuation transformation” is known as formally <strong>skolemization</strong>.<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a> We can “wrap” a <code>Network i hs o</code> into an <code>OpaqueNet' i o r</code> pretty straightforwardly:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L115-116</span>
-<span class="ot">oNet&#39; ::</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">OpaqueNet&#39;</span> i o r
-oNet&#39; s n <span class="fu">=</span> \f <span class="ot">-&gt;</span> f s n</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L124-125</span>
+<span class="ot">oNet&#39; ::</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">OpaqueNet&#39;</span> i o r
+oNet&#39; n <span class="fu">=</span> \f <span class="ot">-&gt;</span> f n</code></pre></div>
 <p>Let’s write a version of <code>randomONet</code> that returns a continuation-style existential, instead:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">withRandomONet&#39; ::</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
                 <span class="ot">=&gt;</span> [<span class="dt">Integer</span>]
@@ -186,29 +181,31 @@ withRandomONet&#39; hs f <span class="fu">=</span> <span class="kw">case</span> 
                            net <span class="ot">&lt;-</span> randomNet&#39; ss
                            f ss net</code></pre></div>
 <p>But, hey, because we’re skolemizing everything, let’s do it with the skolemized version of <code>toSing</code>, <code>withSomeSing</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">withSomeSing ::</span> [<span class="dt">Integer</span>]
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- the skolemized `toSing`/`SomeSing`:</span>
+<span class="ot">withSomeSing ::</span> [<span class="dt">Integer</span>]
              <span class="ot">-&gt;</span> (forall (<span class="ot">hs ::</span> [<span class="dt">Nat</span>])<span class="fu">.</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> r)
              <span class="ot">-&gt;</span> r</code></pre></div>
 <p>Because why not? Skolemize all the things!</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L142-150</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L151-159</span>
 <span class="ot">withRandomONet&#39; ::</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
                 <span class="ot">=&gt;</span> [<span class="dt">Integer</span>]
-                <span class="ot">-&gt;</span> (forall hs<span class="fu">.</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> m r)
+                <span class="ot">-&gt;</span> (forall hs<span class="fu">.</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> m r)
                 <span class="ot">-&gt;</span> m r
 <span class="co">--         aka, =&gt; [Integer]</span>
 <span class="co">--              -&gt; OpaqueNet&#39; i o (m r)</span>
 withRandomONet&#39; hs f <span class="fu">=</span> withSomeSing hs <span class="fu">$</span> \ss <span class="ot">-&gt;</span> <span class="kw">do</span>
                          net <span class="ot">&lt;-</span> randomNet&#39; ss
-                         f ss net</code></pre></div>
-<p>We can use it to do the same thing we used the constructor-based existential for, as well…and, in a way, it seems oddly more natural, in a way.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L160-166</span>
+                         f net</code></pre></div>
+<p>We can use it to do the same things we used the constructor-based existential for, as well…and, in a way, it seems oddly more natural.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L169-175</span>
 <span class="ot">main&#39; ::</span> <span class="dt">IO</span> ()
 main&#39; <span class="fu">=</span> <span class="kw">do</span>
     putStrLn <span class="st">&quot;What hidden layer structure do you want?&quot;</span>
     hs <span class="ot">&lt;-</span> readLn
-    withRandomONet&#39; hs <span class="fu">$</span> \ss (<span class="ot">net ::</span> <span class="dt">Network</span> <span class="dv">10</span> hs <span class="dv">3</span>) <span class="ot">-&gt;</span> <span class="kw">do</span>
+    withRandomONet&#39; hs <span class="fu">$</span> \(<span class="ot">net ::</span> <span class="dt">Network</span> <span class="dv">10</span> hs <span class="dv">3</span>) <span class="ot">-&gt;</span> <span class="kw">do</span>
       print net
       <span class="co">-- blah blah stuff with our dynamically generated net</span></code></pre></div>
+<p>Where the case statement pattern match represented the lexical “wall”/“boundary” between the untyped and typed world for the constructor style, that <code>... $ \n -&gt; ...</code> can be thought of the “wall” for the existential style.</p>
 <!-- #### Trying it out -->
 <!-- To sort of compare how the two methods look like in practice, we're going to -->
 <!-- Rosetta stone it up and re-implement serialization with the continuation-based -->
@@ -739,7 +736,7 @@ main&#39; <span class="fu">=</span> <span class="kw">do</span>
 <section class="footnotes">
 <hr />
 <ol>
-<li id="fn1"><p>A fun exercise would be to implement a <code>Network i hs o -&gt; Sing hs</code>, to get <code>Sing hs</code> back. There’s a <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L73-75">solution</a> in the source code!<a href="#fnref1">↩</a></p></li>
+<li id="fn1"><p>A bit of a stretch, because the set of all <code>[Nat]</code>s is non-enumerable and uncountable, but you get the picture, right?<a href="#fnref1">↩</a></p></li>
 <li id="fn2"><p>This is a completely personal style, and I can’t claim to speak for all of the Haskell dependent typing community. In fact, I’m not even sure that you could even say that there is a consensus at all. But this is the style that has worked personally for me in both writing and using libraries! And hey, some libraries I’ve seen in the wild even offer <em>both</em> styles in their external API.<a href="#fnref2">↩</a></p></li>
 <li id="fn3"><p>Gross, right? Hopefully some day this will be as far behind us as that whole Monad/Functor debacle is now!<a href="#fnref3">↩</a></p></li>
 <li id="fn4"><p>Skolemization is probably one of the coolest words you’ll encounter working with dependent types in Haskell, and sometimes just knowing that you’re “skolemizing” something makes you feel cooler. Thank you <a href="https://en.wikipedia.org/wiki/Thoralf_Skolem">Thoralf Skolem</a>. If you ever see a “rigid, skolem” error in GHC, you can thank him for that too! He also inspired me to decide to name my first son Thoralf. (My second son’s name will be Curry)<a href="#fnref4">↩</a></p></li>
