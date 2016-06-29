@@ -872,19 +872,22 @@ Links are to the solutions.
 2.  Work with an existential wrapper over the *entire* network structure (inputs
     and outputs, too):
 
-    ``` {.haskell}
-    !!!dependent-haskell/NetworkTyped2.hs "data SomeNet"
-    ```
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L176-179
+data SomeNet :: * where
+    SNet :: (KnownNat i, KnownNat o)
+         => Network i hs o
+         -> SomeNet
 
-    (We need the `KnownNat` constraints because of type erasure, to recover the
-    original input/output dimensions back once we pattern match)
+```
+
+    (We need the `KnownNat` constraints because of type erasure, to recover
+    the original input/output dimensions back once we pattern match)
 
     And write:
 
-    -   [`randomSNet`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L181-190)
-    -   The [binary
-        instance](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L192-206)
-        for `SomeNet`
+    *   [`randomSNet`][randomSNet]
+    *   The [binary instance][Binary SomeNet] for `SomeNet`
 
     Hint: Remember that `toSomeSing` also works for `Integer`s, to get `Sing`s
     for `Nat`s, too!
