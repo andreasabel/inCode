@@ -367,8 +367,8 @@ to deal with it in a parametrically polymorphic way. We had to be able to handle
 
 \subsubsection{A familiar friend}\label{a-familiar-friend}
 
-I called \texttt{OpaqueNet\ i\ o} a ``dependent pair'' earlier, which
-existentially quantifies over \texttt{hs}. But there's another common term for
+I called \texttt{OpaqueNet\ i\ o} a ``dependent pair'' earlier, pairing
+\texttt{hs} with \texttt{Network\ i\ hs\ o}. But there's another common term for
 it: a \textbf{dependent sum}.
 
 People familiar with Haskell might recognize that ``sum types'' are
@@ -388,17 +388,17 @@ If I had:
 \end{Highlighting}
 \end{Shaded}
 
-I have to handle the result\ldots{}but I have to handle it for both the case
-where I get an \texttt{Int} and the case where I get a \texttt{Bool}. The
-\emph{function} gets to pick what type I have to handle (\texttt{Int} or
-\texttt{Bool}), and \emph{I} have to adapt to whatever it returns. Sound
-familiar? In fact, you can even imagine that \texttt{OpaqueNet\ i\ o} as being
-just a recursive \emph{Either} over \texttt{\textquotesingle{}{[}{]}},
-\texttt{\textquotesingle{}{[}1{]}}, \texttt{\textquotesingle{}{[}1,2{]}},
-etc.\footnote{A bit of a stretch, because the set of all \texttt{{[}Nat{]}}s is
-  non-enumerable and uncountable, but you get the picture, right?}
+I have to handle the result for both the case where I get an \texttt{Int} and
+the case where I get a \texttt{Bool}. The \emph{function} gets to pick what type
+I have to handle (\texttt{Int} or \texttt{Bool}), and \emph{I} have to adapt to
+whatever it returns. Sound familiar? In fact, you can even imagine that
+\texttt{OpaqueNet\ i\ o} as being just a recursive \emph{Either} over
+\texttt{\textquotesingle{}{[}{]}}, \texttt{\textquotesingle{}{[}1{]}},
+\texttt{\textquotesingle{}{[}1,2{]}}, etc.\footnote{A bit of a stretch, because
+  the set of all \texttt{{[}Nat{]}}s is non-enumerable and uncountable, but
+  hopefully you get the picture!}
 
-And, remember that the basic way of handling an \texttt{Either} and figuring out
+And remember that the basic way of handling an \texttt{Either} and figuring out
 what the type of the value is inside is through \emph{pattern matching} on it.
 You can't know if an \texttt{Either\ Int\ Bool} contains an \texttt{Int} or
 \texttt{Bool} until you pattern match. But, once you do, all is revealed, and
@@ -406,9 +406,8 @@ GHC lets you take advantage of knowing the type.
 
 For \texttt{OpaqueNet\ i\ o}, it's the same! You don't know the actual type of
 the \texttt{Network\ i\ hs\ o} it contains until you \emph{pattern match} on the
-\texttt{Sing\ hs}! (Or potentially, the network itself) But, once you pattern
-match on it, all is revealed\ldots{}and GHC lets you take advantage of knowing
-the type!
+network! Once you pattern match on it, all is revealed\ldots{}and GHC lets you
+take advantage of knowing the type!
 
 \subsection{Reification}\label{reification}
 
@@ -436,24 +435,23 @@ We use \texttt{sing\ ::\ SingI\ hs\ =\textgreater{}\ Sing\ hs} to go call the
 \texttt{SingI\ hs\ =\textgreater{}} one.
 
 Recall that I recommend (personally, and subjectively) a style where your
-external API functions (and typeclass instances) are implemented in
+external API functions and typeclass instances are implemented in
 \texttt{SingI\ a\ =\textgreater{}} style, and your internal ones in
 \texttt{Sing\ a\ -\textgreater{}} style. This lets all of your internal
 functions fit together more nicely (\texttt{Sing\ a\ -\textgreater{}} style
-tends to be easier to write in, especially if you stay in it the entire time)
-while at the same time removing the burden of calling with explicit singletons
-from people using the functionality externally.\footnote{This is a completely
-  personal style, and I can't claim to speak for all of the Haskell dependent
-  typing community. In fact, I'm not even sure that you could even say that
-  there is a consensus at all. But this is the style that has worked personally
-  for me in both writing and using libraries! And hey, some libraries I've seen
-  in the wild even offer \emph{both} styles in their external API.} A
-\texttt{Sing\ a} is a normal Haskell value, but \texttt{SingI\ hs} is a
-typeclass instance, and typeclasses in Haskell are magical, global, potentially
-incoherent, and not really fun to work with!
+tends to be easier to write in, especially if you stay in it the entire time,
+because \texttt{Sing}s are normal first-class values, unlike those global and
+magical typeclasses) while at the same time removing the burden of calling with
+explicit singletons from people using the functionality externally.\footnote{This
+  is a completely personal style, and I can't claim to speak for all of the
+  Haskell dependent typing community. In fact, I'm not even sure that you could
+  even say that there is a consensus at all. But this is the style that has
+  worked personally for me in both writing and using libraries! And hey, some
+  libraries I've seen in the wild even offer \emph{both} styles in their
+  external API.}
 
-Now, we still need to somehow get our list of integers to the type level, so we
-can create a \texttt{Network\ i\ hs\ o} to stuff into our \texttt{ONet}. And for
+Now, we still need to somehow get our list of integers to the type level so that
+we can create a \texttt{Network\ i\ hs\ o} to stuff into our \texttt{ONet}. For
 that, the \emph{singletons} library offers the necessary tooling. It gives us
 \texttt{SomeSing}, which is a lot like our \texttt{OpaqueNet} above, wrapping
 the \texttt{Sing\ a} inside an existential data constructor. \texttt{toSing}
@@ -462,7 +460,11 @@ takes the term-level value (for us, an \texttt{{[}Integer{]}}) and returns a
 When we pattern match on the \texttt{SomeSing} constructor, we get \texttt{a} in
 scope!
 
-In an ideal world, \texttt{SomeSing} would look like this:
+As of \emph{singletons-2.2} and GHC 8\footnote{In older versions of singletons,
+  before GHC 8 and \emph{TypeInType}, we had to implement it using ``kind
+  proxies''. Don't worry if you're following along in 7.8; the basic usage of
+  \texttt{SomeSing} is essentially identical either way.}, \texttt{SomeSing} is
+implemented as:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -471,7 +473,7 @@ In an ideal world, \texttt{SomeSing} would look like this:
 \end{Highlighting}
 \end{Shaded}
 
-And you can have
+And you have:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -482,17 +484,6 @@ And you can have
 \NormalTok{bar }\FunctionTok{=} \DataTypeTok{SomeSing} \NormalTok{(}\DataTypeTok{SNat}\OtherTok{ ::} \DataTypeTok{Sing} \DecValTok{10}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
-
-But because \emph{singletons} was implemented before the \emph{TypeInType}
-extension in GHC 8, it has to be implemented with clunky ``Kind Proxies''. In a
-future version of \emph{singletons}, they'll be implemented this way. Right now,
-in the current system,
-\texttt{SomeSing\ STrue\ ::\ SomeSing\ (KProxy\ ::\ KProxy\ Bool)}, and
-\texttt{bar\ ::\ SomeSing\ (KProxy\ ::\ KProxy\ Nat)}.\footnote{Gross, right?
-  Hopefully some day this will be as far behind us as that whole Monad/Functor
-  debacle is now!} However, for the most part, the actual \emph{usage} of
-\texttt{SomeSing}, so we can ignore this slight wart when we are actually
-writing code.
 
 Pattern matching looks like:
 
@@ -515,10 +506,10 @@ part}).
 
 (\texttt{toSing} works using a simple typeclass mechanism with associated types
 whose job is to associate \emph{value}'s types with the kinds of their
-singletons. It associates \texttt{Bool} the type with \texttt{Bool} the kind,
-\texttt{Integer} the type with \texttt{Nat} the kind, \texttt{{[}Integer{]}} the
-type with \texttt{{[}Nat{]}} the kind, etc., and it does it with straightforward
-plane jane applications of type families --- here's a
+singletons. It associates \texttt{Bool} (the type) with \texttt{Bool} (the
+kind), \texttt{Integer} (the type) with \texttt{Nat} (the kind),
+\texttt{{[}Integer{]}} (the type) with \texttt{{[}Nat{]}} (the kind), etc., and
+it does it with simple applications of type families --- here's a
 \href{https://ocharles.org.uk/blog/posts/2014-12-12-type-families.html}{nice
 tutorial on type families} courtesy of Oliver Charles.)
 
@@ -565,19 +556,19 @@ In a way, you can consider the \texttt{toSing} and the \texttt{SomeSing} as our
 This ``boundary'' can be thought of as a lot like the boundary we talk about
 between ``pure'' functions and values and ``impure'' (IO, etc.) ones. We say to
 always write as much of your program as possible in the ``pure'' world, and to
-separate and pull out as much logic as you can to be pure logic. That's sort of
-one of the first things you learn about as a Haskell programmer: how to separate
-logic that \emph{can} be pure from logic that is ``impure'' (IO, etc.), and then
+separate and pull out as much logic as you can to be pure logic. That's one of
+the first things you learn about as a Haskell programmer: how to separate logic
+that \emph{can} be pure from logic that is ``impure'' (IO, etc.), and then
 ``combine them'' at the very end, as late as possible.
 
 The common response to this is: ``Well, if the final program is going to be IO
 in the end anyway, why bother separating out pure and impure parts of your
 logic?''
 
-But, we know that we gain separation of concerns, the increased ability to
-reason with your code and analyze what it does, the compiler's ability to check
-what you write, the limitation of implementations, etc. \ldots{} all reasons any
-Haskeller should be familiar with reciting.
+But, of course, we know that we gain separation of concerns, the increased
+ability to reason with your code and analyze what it does, the compiler's
+ability to check what you write, the limitation of implementations, etc.
+\ldots{} all reasons any Haskeller should be familiar with reciting.
 
 You can think of the general philosophy of working with typed/untyped worlds as
 being the same thing. You can write as much of your program as possible in the
@@ -596,7 +587,7 @@ football from the untyped world to the typed world!
 Existentials}\label{continuation-based-existentials}
 
 There's another way in Haskell that we work with existential types that can be
-more natural and easy to work with in a lot of cases.
+more natural to use in a lot of cases.
 
 Remember that when we pattern match on an existential data type, you have to
 work with the values in the constructor in a parametrically polymorphic way. For
@@ -609,8 +600,8 @@ example, if we had:
 \end{Highlighting}
 \end{Shaded}
 
-\texttt{f} has to take a \texttt{Sing\ hs} and a \texttt{Network\ i\ hs\ o}, but
-deal with it in a way that works \emph{for all} \texttt{hs}. It has to be:
+\texttt{f} has to take a \texttt{Network\ i\ hs\ o} but deal with it in a way
+that works \emph{for all} \texttt{hs}. It has to be:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -638,10 +629,10 @@ giving it what it needs.
 \texttt{Network\ i\ hs\ o} (that works for any \texttt{hs}) and I'll make it for
 you!''
 
-(This takes advantage of Rank-N types. If you're unfamiliar with it, Gregor
+(This takes advantage of Rank-N types. If you're unfamiliar with them, Gregor
 Riegler has a
 \href{http://sleepomeno.github.io/blog/2014/02/12/Explaining-Haskell-RankNTypes-for-all/}{nice
-tutorial} on it.)
+tutorial} on the subject.)
 
 This ``continuation transformation'' is known as formally
 \textbf{skolemization}.\footnote{Skolemization is probably one of the coolest
@@ -651,8 +642,8 @@ This ``continuation transformation'' is known as formally
   ever see a ``rigid, skolem'' error in GHC, you can thank him for that too! He
   is also the inspiration behind my decision to name my first-born son Thoralf.
   (My second son's name will be Curry)} We can ``wrap'' a
-\texttt{Network\ i\ hs\ o} into an \texttt{OpaqueNet\textquotesingle{}\ i\ o\ r}
-pretty straightforwardly:
+\texttt{Network\ i\ hs\ o} into an
+\texttt{OpaqueNet\textquotesingle{}\ i\ o\ r}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -733,16 +724,16 @@ the ``wall'' for the continuation-style existentials.
 
 \section{A Tale of Two Styles}\label{a-tale-of-two-styles}
 
-So, we've just discussed two ways of doing the same thing, essentially. Two
-styles of representing/working with existential types. The two are equivalent,
-in that you can always ``convert'' between one or the other, but the choice of
-which one you use/reach for/offer can make a difference in code clarity.
+We've just discussed two ways of doing the same thing. Two styles of
+representing/working with existential types. The two are equivalent, in that you
+can always ``convert'' between one or the other, but the choice of which one you
+use/reach for/offer can make a difference in code clarity.
 
 I don't have much general advice for which one to provide. After working with
-both styles a lot (sometimes, libraries only offer one style), you sort of start
-to get a feel for which one you like more in which situations. In the end, I
-don't think there are any hard or fast rules. Just use whichever one you feel is
-more readable!
+both styles a lot (sometimes, libraries only offer one style), you start to get
+a feel for which one you like more in which situations. In the end, I don't
+think there are any hard or fast rules. Just use whichever one you feel is more
+readable!
 
 That being said, here are some general Pros and Cons that I've encountered over
 the years. This list is by no means exhaustive.
@@ -841,6 +832,14 @@ the years. This list is by no means exhaustive.
   \texttt{Binary} instances later for serialization/deserialization, and we'll
   need the wrapper for sure.
 \item
+  Haskell doesn't allow you to use Rank-N types as arguments to type
+  constructors, so you can have \texttt{Maybe\ (OpaqueNet\ i\ o)}, but
+  \emph{not} \texttt{Maybe\ (OpaqueNet\textquotesingle{}\ i\ o\ r)} or
+  \texttt{Maybe\ ((forall\ hs.\ Network\ i\ hs\ o\ -\textgreater{}\ r)\ -\textgreater{}\ r)}.
+  The latter are known as impredicative types, which are a big no-no in GHC
+  Haskell. Don't even go there! The constructor style is necessary in these
+  situations.
+\item
   When writing functions that \emph{take} existentials as inputs, the
   constructor-style is arguably more natural.
 
@@ -898,7 +897,8 @@ simple application: serialization.
 \subsection{Recap on the Binary Library}\label{recap-on-the-binary-library}
 
 Serializing networks of \emph{known} size --- whose sizes are statically in
-their types --- is pretty straightforward. I'm going to be using the
+their types --- is pretty straightforward, and its ease is one of the advantages
+of having sizes in your types. I'm going to be using the
 \emph{\href{https://hackage.haskell.org/package/binary}{binary}} library, which
 offers a very standard typeclass-based approach for serializing and
 deserializing data. There are a lot of tutorials online (and I even

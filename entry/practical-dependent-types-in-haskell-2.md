@@ -240,9 +240,8 @@ throw at us!
 
 #### A familiar friend
 
-I called `OpaqueNet i o` a “dependent pair” earlier, which existentially
-quantifies over `hs`. But there’s another common term for it: a **dependent
-sum**.
+I called `OpaqueNet i o` a “dependent pair” earlier, pairing `hs` with
+`Network i hs o`. But there’s another common term for it: a **dependent sum**.
 
 People familiar with Haskell might recognize that “sum types” are `Either`-like
 types that can be one thing or another. Sum types are one of the first things
@@ -258,22 +257,22 @@ If I had:
 foo :: String -> Either Int Bool
 ```
 
-I have to handle the result…but I have to handle it for both the case where I
-get an `Int` and the case where I get a `Bool`. The *function* gets to pick what
-type I have to handle (`Int` or `Bool`), and *I* have to adapt to whatever it
-returns. Sound familiar? In fact, you can even imagine that `OpaqueNet i o` as
-being just a recursive *Either* over `'[]`, `'[1]`, `'[1,2]`, etc.[^1]
+I have to handle the result for both the case where I get an `Int` and the case
+where I get a `Bool`. The *function* gets to pick what type I have to handle
+(`Int` or `Bool`), and *I* have to adapt to whatever it returns. Sound familiar?
+In fact, you can even imagine that `OpaqueNet i o` as being just a recursive
+*Either* over `'[]`, `'[1]`, `'[1,2]`, etc.[^1]
 
-And, remember that the basic way of handling an `Either` and figuring out what
+And remember that the basic way of handling an `Either` and figuring out what
 the type of the value is inside is through *pattern matching* on it. You can’t
 know if an `Either Int Bool` contains an `Int` or `Bool` until you pattern
 match. But, once you do, all is revealed, and GHC lets you take advantage of
 knowing the type.
 
 For `OpaqueNet i o`, it’s the same! You don’t know the actual type of the
-`Network i hs o` it contains until you *pattern match* on the `Sing hs`! (Or
-potentially, the network itself) But, once you pattern match on it, all is
-revealed…and GHC lets you take advantage of knowing the type!
+`Network i hs o` it contains until you *pattern match* on the network! Once you
+pattern match on it, all is revealed…and GHC lets you take advantage of knowing
+the type!
 
 ### Reification
 
@@ -299,31 +298,30 @@ We use `sing :: SingI hs => Sing hs` to go call the `Sing hs ->`-style function
 from the `SingI hs =>` one.
 
 Recall that I recommend (personally, and subjectively) a style where your
-external API functions (and typeclass instances) are implemented in `SingI a =>`
+external API functions and typeclass instances are implemented in `SingI a =>`
 style, and your internal ones in `Sing a ->` style. This lets all of your
 internal functions fit together more nicely (`Sing a ->` style tends to be
-easier to write in, especially if you stay in it the entire time) while at the
-same time removing the burden of calling with explicit singletons from people
-using the functionality externally.[^2] A `Sing a` is a normal Haskell value,
-but `SingI hs` is a typeclass instance, and typeclasses in Haskell are magical,
-global, potentially incoherent, and not really fun to work with!
+easier to write in, especially if you stay in it the entire time, because
+`Sing`s are normal first-class values, unlike those global and magical
+typeclasses) while at the same time removing the burden of calling with explicit
+singletons from people using the functionality externally.[^2]
 
-Now, we still need to somehow get our list of integers to the type level, so we
-can create a `Network i hs o` to stuff into our `ONet`. And for that, the
+Now, we still need to somehow get our list of integers to the type level so that
+we can create a `Network i hs o` to stuff into our `ONet`. For that, the
 *singletons* library offers the necessary tooling. It gives us `SomeSing`, which
 is a lot like our `OpaqueNet` above, wrapping the `Sing a` inside an existential
 data constructor. `toSing` takes the term-level value (for us, an `[Integer]`)
 and returns a `SomeSing` wrapping the type-level value (for us, a `[Nat]`). When
 we pattern match on the `SomeSing` constructor, we get `a` in scope!
 
-In an ideal world, `SomeSing` would look like this:
+As of *singletons-2.2* and GHC 8[^3], `SomeSing` is implemented as:
 
 ``` {.haskell}
 data SomeSing :: * -> * where
     SomeSing :: Sing (a :: k) -> SomeSing k
 ```
 
-And you can have
+And you have:
 
 ``` {.haskell}
 foo :: SomeSing Bool
@@ -332,14 +330,6 @@ foo = SomeSing STrue
 bar :: SomeSing Nat
 bar = SomeSing (SNat :: Sing 10)
 ```
-
-But because *singletons* was implemented before the *TypeInType* extension in
-GHC 8, it has to be implemented with clunky “Kind Proxies”. In a future version
-of *singletons*, they’ll be implemented this way. Right now, in the current
-system, `SomeSing STrue :: SomeSing (KProxy :: KProxy Bool)`, and
-`bar :: SomeSing (KProxy :: KProxy Nat)`.[^3] However, for the most part, the
-actual *usage* of `SomeSing`, so we can ignore this slight wart when we are
-actually writing code.
 
 Pattern matching looks like:
 
@@ -359,11 +349,10 @@ part](https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html#sing
 
 (`toSing` works using a simple typeclass mechanism with associated types whose
 job is to associate *value*’s types with the kinds of their singletons. It
-associates `Bool` the type with `Bool` the kind, `Integer` the type with `Nat`
-the kind, `[Integer]` the type with `[Nat]` the kind, etc., and it does it with
-straightforward plane jane applications of type families — here’s a [nice
-tutorial on type
-families](https://ocharles.org.uk/blog/posts/2014-12-12-type-families.html)
+associates `Bool` (the type) with `Bool` (the kind), `Integer` (the type) with
+`Nat` (the kind), `[Integer]` (the type) with `[Nat]` (the kind), etc., and it
+does it with simple applications of type families — here’s a [nice tutorial on
+type families](https://ocharles.org.uk/blog/posts/2014-12-12-type-families.html)
 courtesy of Oliver Charles.)
 
 We now have enough to write our `randomONet`:
@@ -407,18 +396,18 @@ of reification) cleanly separates the two.
 This “boundary” can be thought of as a lot like the boundary we talk about
 between “pure” functions and values and “impure” (IO, etc.) ones. We say to
 always write as much of your program as possible in the “pure” world, and to
-separate and pull out as much logic as you can to be pure logic. That’s sort of
-one of the first things you learn about as a Haskell programmer: how to separate
-logic that *can* be pure from logic that is “impure” (IO, etc.), and then
-“combine them” at the very end, as late as possible.
+separate and pull out as much logic as you can to be pure logic. That’s one of
+the first things you learn about as a Haskell programmer: how to separate logic
+that *can* be pure from logic that is “impure” (IO, etc.), and then “combine
+them” at the very end, as late as possible.
 
 The common response to this is: “Well, if the final program is going to be IO in
 the end anyway, why bother separating out pure and impure parts of your logic?”
 
-But, we know that we gain separation of concerns, the increased ability to
-reason with your code and analyze what it does, the compiler’s ability to check
-what you write, the limitation of implementations, etc. … all reasons any
-Haskeller should be familiar with reciting.
+But, of course, we know that we gain separation of concerns, the increased
+ability to reason with your code and analyze what it does, the compiler’s
+ability to check what you write, the limitation of implementations, etc. … all
+reasons any Haskeller should be familiar with reciting.
 
 You can think of the general philosophy of working with typed/untyped worlds as
 being the same thing. You can write as much of your program as possible in the
@@ -436,7 +425,7 @@ from the untyped world to the typed world!
 ### Continuation-Based Existentials
 
 There’s another way in Haskell that we work with existential types that can be
-more natural and easy to work with in a lot of cases.
+more natural to use in a lot of cases.
 
 Remember that when we pattern match on an existential data type, you have to
 work with the values in the constructor in a parametrically polymorphic way. For
@@ -447,8 +436,8 @@ oNetToFoo :: OpaqueNet i o -> Foo
 oNetToFoo = \case ONet n -> f n
 ```
 
-`f` has to take a `Sing hs` and a `Network i hs o`, but deal with it in a way
-that works *for all* `hs`. It has to be:
+`f` has to take a `Network i hs o` but deal with it in a way that works *for
+all* `hs`. It has to be:
 
 ``` {.haskell}
 f :: forall hs. Network i hs o -> Foo
@@ -471,14 +460,13 @@ type OpaqueNet' i o r = (forall hs. Network i hs o -> r) -> r
 “Tell me how you would make an `r` if you had a `Network i hs o` (that works for
 any `hs`) and I’ll make it for you!”
 
-(This takes advantage of Rank-N types. If you’re unfamiliar with it, Gregor
+(This takes advantage of Rank-N types. If you’re unfamiliar with them, Gregor
 Riegler has a [nice
 tutorial](http://sleepomeno.github.io/blog/2014/02/12/Explaining-Haskell-RankNTypes-for-all/)
-on it.)
+on the subject.)
 
 This “continuation transformation” is known as formally **skolemization**.[^4]
-We can “wrap” a `Network i hs o` into an `OpaqueNet' i o r` pretty
-straightforwardly:
+We can “wrap” a `Network i hs o` into an `OpaqueNet' i o r`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L127-128
@@ -552,16 +540,16 @@ constructor-style existentials, the `... $ \net -> ...` can be thought of the
 A Tale of Two Styles
 --------------------
 
-So, we’ve just discussed two ways of doing the same thing, essentially. Two
-styles of representing/working with existential types. The two are equivalent,
-in that you can always “convert” between one or the other, but the choice of
-which one you use/reach for/offer can make a difference in code clarity.
+We’ve just discussed two ways of doing the same thing. Two styles of
+representing/working with existential types. The two are equivalent, in that you
+can always “convert” between one or the other, but the choice of which one you
+use/reach for/offer can make a difference in code clarity.
 
 I don’t have much general advice for which one to provide. After working with
-both styles a lot (sometimes, libraries only offer one style), you sort of start
-to get a feel for which one you like more in which situations. In the end, I
-don’t think there are any hard or fast rules. Just use whichever one you feel is
-more readable!
+both styles a lot (sometimes, libraries only offer one style), you start to get
+a feel for which one you like more in which situations. In the end, I don’t
+think there are any hard or fast rules. Just use whichever one you feel is more
+readable!
 
 That being said, here are some general Pros and Cons that I’ve encountered over
 the years. This list is by no means exhaustive.
@@ -646,6 +634,13 @@ the years. This list is by no means exhaustive.
     later for serialization/deserialization, and we’ll need the wrapper
     for sure.
 
+-   Haskell doesn’t allow you to use Rank-N types as arguments to type
+    constructors, so you can have `Maybe (OpaqueNet i o)`, but *not*
+    `Maybe (OpaqueNet' i o r)` or
+    `Maybe ((forall hs. Network i hs o -> r) -> r)`. The latter are known as
+    impredicative types, which are a big no-no in GHC Haskell. Don’t even go
+    there! The constructor style is necessary in these situations.
+
 -   When writing functions that *take* existentials as inputs, the
     constructor-style is arguably more natural.
 
@@ -696,7 +691,8 @@ simple application: serialization.
 ### Recap on the Binary Library
 
 Serializing networks of *known* size — whose sizes are statically in their types
-— is pretty straightforward. I’m going to be using the
+— is pretty straightforward, and its ease is one of the advantages of having
+sizes in your types. I’m going to be using the
 *[binary](https://hackage.haskell.org/package/binary)* library, which offers a
 very standard typeclass-based approach for serializing and deserializing data.
 There are a lot of tutorials online (and I even [wrote a small
@@ -885,7 +881,7 @@ Dealing with Runtime Types
 <!-- sameNat and existentials -->
 
 [^1]: A bit of a stretch, because the set of all `[Nat]`s is non-enumerable and
-    uncountable, but you get the picture, right?
+    uncountable, but hopefully you get the picture!
 
 [^2]: This is a completely personal style, and I can’t claim to speak for all of
     the Haskell dependent typing community. In fact, I’m not even sure that you
@@ -894,8 +890,9 @@ Dealing with Runtime Types
     some libraries I’ve seen in the wild even offer *both* styles in their
     external API.
 
-[^3]: Gross, right? Hopefully some day this will be as far behind us as that
-    whole Monad/Functor debacle is now!
+[^3]: In older versions of singletons, before GHC 8 and *TypeInType*, we had to
+    implement it using “kind proxies”. Don’t worry if you’re following along in
+    7.8; the basic usage of `SomeSing` is essentially identical either way.
 
 [^4]: Skolemization is probably one of the coolest words you’ll encounter when
     learning/using Haskell, and sometimes just knowing that you’re “skolemizing”
