@@ -107,7 +107,7 @@ randomNet&#39; <span class="fu">=</span> \<span class="kw">case</span> <span cla
           <span class="ot">=&gt;</span> m (<span class="dt">Network</span> i hs o)
 randomNet <span class="fu">=</span> randomNet&#39; sing</code></pre></div>
 <p>We use <code>sing :: SingI hs =&gt; Sing hs</code> to go call the <code>Sing hs -&gt;</code>-style function from the <code>SingI hs =&gt;</code> one.</p>
-<p>Recall that I recommend (personally, and subjectively) a style where your external API functions are implemented in <code>SingI a =&gt;</code> style, and your internal ones in <code>Sing a -&gt;</code> style. This lets all of your internal functions fit together more nicely (<code>Sing a -&gt;</code> style tends to be easier to write in, especially if you stay in it the entire time) while at the same time removing the burden of calling with explicit singletons from people using the functionality externally.<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a> A <code>Sing a</code> is a normal Haskell value, but <code>SingI hs</code> is a typeclass instance, and typeclasses in Haskell are magical, global, potentially incoherent, and not really fun to work with!</p>
+<p>Recall that I recommend (personally, and subjectively) a style where your external API functions (and typeclass instances) are implemented in <code>SingI a =&gt;</code> style, and your internal ones in <code>Sing a -&gt;</code> style. This lets all of your internal functions fit together more nicely (<code>Sing a -&gt;</code> style tends to be easier to write in, especially if you stay in it the entire time) while at the same time removing the burden of calling with explicit singletons from people using the functionality externally.<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a> A <code>Sing a</code> is a normal Haskell value, but <code>SingI hs</code> is a typeclass instance, and typeclasses in Haskell are magical, global, potentially incoherent, and not really fun to work with!</p>
 <p>Now, we still need to somehow get our list of integers to the type level, so we can create a <code>Network i hs o</code> to stuff into our <code>ONet</code>. And for that, the <em>singletons</em> library offers the necessary tooling. It gives us <code>SomeSing</code>, which is a lot like our <code>OpaqueNet</code> above, wrapping the <code>Sing a</code> inside an existential data constructor. <code>toSing</code> takes the term-level value (for us, an <code>[Integer]</code>) and returns a <code>SomeSing</code> wrapping the type-level value (for us, a <code>[Nat]</code>). When we pattern match on the <code>SomeSing</code> constructor, we get <code>a</code> in scope!</p>
 <p>In an ideal world, <code>SomeSing</code> would look like this:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
@@ -242,7 +242,7 @@ main&#39; <span class="fu">=</span> <span class="kw">do</span>
          hs <span class="ot">&lt;-</span> readLn
          withRandomONet&#39; hs <span class="fu">$</span> \(<span class="ot">n4 ::</span> <span class="dt">Network</span> <span class="dv">10</span> hs <span class="dv">1</span>) <span class="ot">-&gt;</span> <span class="kw">do</span>
            <span class="co">-- ...</span></code></pre></div>
-<p>A lot of libraries return existentials in <code>Maybe</code>’s, so it can be useful for those, too!</p>
+<p>A lot of libraries return existentials in <code>Maybe</code>’s (<a href="http://hackage.haskell.org/package/base-4.9.0.0/docs/GHC-TypeLits.html#v:someNatVal">base is guilty</a>), so it can be useful for those, too!</p>
 <p>This is less useful for things like <code>toSing</code> where things are <em>not</em> returned in a monad. You could wrap it in Identity, but that’s kind of silly:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">foo <span class="fu">=</span> runIdentity <span class="fu">$</span> <span class="kw">do</span>
         <span class="dt">SomeSing</span> sx <span class="ot">&lt;-</span> <span class="dt">Identity</span> <span class="fu">$</span> toSing x
@@ -285,7 +285,7 @@ main&#39; <span class="fu">=</span> <span class="kw">do</span>
 putNet <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">O</span> w     <span class="ot">-&gt;</span> put w
                w <span class="fu">:&amp;~</span> n <span class="ot">-&gt;</span> put w <span class="fu">*&gt;</span> putNet n</code></pre></div>
 <p>If it’s an <code>O w</code>, just serialize the <code>w</code>. If it’s a <code>w :&amp;~ net</code>, serialize the <code>w</code> then the rest of the <code>net</code>. The reason we can get away without any flags is because we already <em>know</em> how many <code>:&amp;~</code> layers to expect <em>just from the type</em>. If we want to deserialize/load a <code>Network 5 '[10,6,3] 2</code>, we <em>know</em> we want three <code>(:&amp;~)</code>’s and one <code>O</code> — no need for dynamically sized networks like we had to handle for lists.</p>
-<p>We’ll write <code>getNet</code> similarly to how wrote <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L65-73"><code>randomNet</code></a> from the last post:</p>
+<p>We’ll write <code>getNet</code> similarly to how wrote <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L49-52"><code>randomNet'</code></a>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L64-68</span>
 <span class="ot">getNet ::</span> forall i hs o<span class="fu">.</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
        <span class="ot">=&gt;</span> <span class="dt">Sing</span> hs
@@ -293,23 +293,23 @@ putNet <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">
 getNet <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">SNil</span>            <span class="ot">-&gt;</span>     <span class="dt">O</span> <span class="fu">&lt;$&gt;</span> get
                <span class="dt">SNat</span> <span class="ot">`SCons`</span> ss <span class="ot">-&gt;</span> (<span class="fu">:&amp;~</span>) <span class="fu">&lt;$&gt;</span> get <span class="fu">&lt;*&gt;</span> getNet ss</code></pre></div>
 <p>We have to “pattern match” on <code>hs</code> using singletons to see what constructor we are expecting to deserialize.</p>
-<p>Let’s write our <code>Binary</code> instance for <code>Network</code>. Of course, we can’t have <code>put</code> or <code>get</code> take a <code>Sing hs</code> (that’d change the arity/type of the function), so what we can do is have their <code>Binary</code> instances require a <code>SingI hs</code> constraint, essentially doing the same thing:</p>
+<p>Let’s write our <code>Binary</code> instance for <code>Network</code>. Of course, we can’t have <code>put</code> or <code>get</code> take a <code>Sing hs</code> (that’d change the arity/type of the function), so we have to switch to <code>SingI</code>-style had have their <code>Binary</code> instances require a <code>SingI hs</code> constraint.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L70-72</span>
 <span class="kw">instance</span> (<span class="dt">KnownNat</span> i, <span class="dt">SingI</span> hs, <span class="dt">KnownNat</span> o) <span class="ot">=&gt;</span> <span class="dt">Binary</span> (<span class="dt">Network</span> i hs o) <span class="kw">where</span>
     put <span class="fu">=</span> putNet
     get <span class="fu">=</span> getNet sing</code></pre></div>
 <h3 id="serializating-opaquenet">Serializating <code>OpaqueNet</code></h3>
-<p>Armed with all that we learned during our long and winding journey through “run-time types”, writing a serializing plan for <code>OpaqueNet</code> is straightforward. (We are doing it for <code>OpaqueNet</code>, the constructor-style existential, because we can’t directly write instances for the continuation-style one) The only difference is that, because the complete structure of the network is not in the type, you have to encode it as a flag in the binary serialization.</p>
-<p>We can write a simple function to get the <code>[Integer]</code> of a network’s structure:</p>
+<p>Armed with all that we learned during our long and winding journey through “run-time types”, writing a serializing plan for <code>OpaqueNet</code> is straightforward. (We are doing it for <code>OpaqueNet</code>, the constructor-style existential, because we can’t directly write instances for the continuation-style one)</p>
+<p>Because the complete structure of the network is not in the type, we have to encode it as a flag in the binary serialization. We can write a simple function to get the <code>[Integer]</code> of a network’s structure:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L78-82</span>
 <span class="ot">hiddenStruct ::</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> [<span class="dt">Integer</span>]
 hiddenStruct <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">O</span> _    <span class="ot">-&gt;</span> []
                      _ <span class="fu">:&amp;~</span> (<span class="ot">n&#39; ::</span> <span class="dt">Network</span> h hs&#39; o)
                             <span class="ot">-&gt;</span> natVal (<span class="dt">Proxy</span> <span class="fu">@</span>h)
                              <span class="fu">:</span> hiddenStruct n&#39;</code></pre></div>
-<p>Recall that <code>natVal :: KnownNat n =&gt; Proxy n -&gt; Integer</code> returns the value-level <code>Integer</code> corresponding to the type-level <code>n :: Nat</code>. (I’m also using GHC 8’s fancy <em>TypeApplications</em> syntax, and <code>Proxy @h@</code> is the same as <code>Proxy :: Proxy h</code>).</p>
-<p>It is sort of interesting to note that <code>natVal</code> and <code>hiddenStruct</code> take type-level information (<code>n</code>, <code>hs</code>) and turns them into term-level values (<code>Integer</code>s, <code>[Integer]</code>s). In fact, they are kind of the opposites of our reification functions like <code>toSing</code>. Going from the “type level” to the “value level” is known in Haskell as <strong>reflection</strong>, and it’s the dual concept of reification.</p>
-<p>And that’s all we need:</p>
+<p>Recall that <code>natVal :: KnownNat n =&gt; Proxy n -&gt; Integer</code> returns the value-level <code>Integer</code> corresponding to the type-level <code>n :: Nat</code>. (I’m also using GHC 8’s fancy <em>TypeApplications</em> syntax, and <code>Proxy @h</code> is the same as <code>Proxy :: Proxy h</code>).</p>
+<p>It is interesting to note that <code>natVal</code> and <code>hiddenStruct</code> take type-level information (<code>n</code>, <code>hs</code>) and turns them into term-level values (<code>Integer</code>s, <code>[Integer]</code>s). In fact, they are kind of the opposites of our reification functions like <code>toSing</code>. Going from the “type level” to the “value level” is known in Haskell as <strong>reflection</strong>, and is the dual concept of reification. (The <em>singletons</em> library offers reflectors for all of its singletons, as <code>fromSing</code>.)</p>
+<p>And that’s all we need!</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L101-106</span>
 <span class="ot">putONet ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
         <span class="ot">=&gt;</span> <span class="dt">OpaqueNet</span> i o
@@ -333,6 +333,7 @@ getONet <span class="fu">=</span> <span class="kw">do</span>
 <span class="kw">instance</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o) <span class="ot">=&gt;</span> <span class="dt">Binary</span> (<span class="dt">OpaqueNet</span> i o) <span class="kw">where</span>
     put <span class="fu">=</span> putONet
     get <span class="fu">=</span> getONet</code></pre></div>
+<h2 id="living-life-on-the-run-time-edge">Living Life on the Run-Time Edge</h2>
 <!-- sameNat and existentials -->
 <section class="footnotes">
 <hr />

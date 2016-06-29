@@ -429,21 +429,21 @@ We use \texttt{sing\ ::\ SingI\ hs\ =\textgreater{}\ Sing\ hs} to go call the
 \texttt{SingI\ hs\ =\textgreater{}} one.
 
 Recall that I recommend (personally, and subjectively) a style where your
-external API functions are implemented in \texttt{SingI\ a\ =\textgreater{}}
-style, and your internal ones in \texttt{Sing\ a\ -\textgreater{}} style. This
-lets all of your internal functions fit together more nicely
-(\texttt{Sing\ a\ -\textgreater{}} style tends to be easier to write in,
-especially if you stay in it the entire time) while at the same time removing
-the burden of calling with explicit singletons from people using the
-functionality externally.\footnote{This is a completely personal style, and I
-  can't claim to speak for all of the Haskell dependent typing community. In
-  fact, I'm not even sure that you could even say that there is a consensus at
-  all. But this is the style that has worked personally for me in both writing
-  and using libraries! And hey, some libraries I've seen in the wild even offer
-  \emph{both} styles in their external API.} A \texttt{Sing\ a} is a normal
-Haskell value, but \texttt{SingI\ hs} is a typeclass instance, and typeclasses
-in Haskell are magical, global, potentially incoherent, and not really fun to
-work with!
+external API functions (and typeclass instances) are implemented in
+\texttt{SingI\ a\ =\textgreater{}} style, and your internal ones in
+\texttt{Sing\ a\ -\textgreater{}} style. This lets all of your internal
+functions fit together more nicely (\texttt{Sing\ a\ -\textgreater{}} style
+tends to be easier to write in, especially if you stay in it the entire time)
+while at the same time removing the burden of calling with explicit singletons
+from people using the functionality externally.\footnote{This is a completely
+  personal style, and I can't claim to speak for all of the Haskell dependent
+  typing community. In fact, I'm not even sure that you could even say that
+  there is a consensus at all. But this is the style that has worked personally
+  for me in both writing and using libraries! And hey, some libraries I've seen
+  in the wild even offer \emph{both} styles in their external API.} A
+\texttt{Sing\ a} is a normal Haskell value, but \texttt{SingI\ hs} is a
+typeclass instance, and typeclasses in Haskell are magical, global, potentially
+incoherent, and not really fun to work with!
 
 Now, we still need to somehow get our list of integers to the type level, so we
 can create a \texttt{Network\ i\ hs\ o} to stuff into our \texttt{ONet}. And for
@@ -809,8 +809,9 @@ the years. This list is by no means exhaustive.
 \end{Highlighting}
 \end{Shaded}
 
-  A lot of libraries return existentials in \texttt{Maybe}'s, so it can be
-  useful for those, too!
+  A lot of libraries return existentials in \texttt{Maybe}'s
+  (\href{http://hackage.haskell.org/package/base-4.9.0.0/docs/GHC-TypeLits.html\#v:someNatVal}{base
+  is guilty}), so it can be useful for those, too!
 
   This is less useful for things like \texttt{toSing} where things are
   \emph{not} returned in a monad. You could wrap it in Identity, but that's kind
@@ -945,8 +946,7 @@ three \texttt{(:\&\textasciitilde{})}'s and one \texttt{O} --- no need for
 dynamically sized networks like we had to handle for lists.
 
 We'll write \texttt{getNet} similarly to how wrote
-\href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L65-73}{\texttt{randomNet}}
-from the last post:
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L49-52}{\texttt{randomNet\textquotesingle{}}}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -964,9 +964,9 @@ constructor we are expecting to deserialize.
 
 Let's write our \texttt{Binary} instance for \texttt{Network}. Of course, we
 can't have \texttt{put} or \texttt{get} take a \texttt{Sing\ hs} (that'd change
-the arity/type of the function), so what we can do is have their \texttt{Binary}
-instances require a \texttt{SingI\ hs} constraint, essentially doing the same
-thing:
+the arity/type of the function), so we have to switch to \texttt{SingI}-style
+had have their \texttt{Binary} instances require a \texttt{SingI\ hs}
+constraint.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -984,12 +984,11 @@ Armed with all that we learned during our long and winding journey through
 ``run-time types'', writing a serializing plan for \texttt{OpaqueNet} is
 straightforward. (We are doing it for \texttt{OpaqueNet}, the constructor-style
 existential, because we can't directly write instances for the
-continuation-style one) The only difference is that, because the complete
-structure of the network is not in the type, you have to encode it as a flag in
-the binary serialization.
+continuation-style one)
 
-We can write a simple function to get the \texttt{{[}Integer{]}} of a network's
-structure:
+Because the complete structure of the network is not in the type, we have to
+encode it as a flag in the binary serialization. We can write a simple function
+to get the \texttt{{[}Integer{]}} of a network's structure:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1006,16 +1005,18 @@ Recall that
 \texttt{natVal\ ::\ KnownNat\ n\ =\textgreater{}\ Proxy\ n\ -\textgreater{}\ Integer}
 returns the value-level \texttt{Integer} corresponding to the type-level
 \texttt{n\ ::\ Nat}. (I'm also using GHC 8's fancy \emph{TypeApplications}
-syntax, and \texttt{Proxy\ @h@} is the same as \texttt{Proxy\ ::\ Proxy\ h}).
+syntax, and \texttt{Proxy\ @h} is the same as \texttt{Proxy\ ::\ Proxy\ h}).
 
-It is sort of interesting to note that \texttt{natVal} and \texttt{hiddenStruct}
-take type-level information (\texttt{n}, \texttt{hs}) and turns them into
-term-level values (\texttt{Integer}s, \texttt{{[}Integer{]}}s). In fact, they
-are kind of the opposites of our reification functions like \texttt{toSing}.
-Going from the ``type level'' to the ``value level'' is known in Haskell as
-\textbf{reflection}, and it's the dual concept of reification.
+It is interesting to note that \texttt{natVal} and \texttt{hiddenStruct} take
+type-level information (\texttt{n}, \texttt{hs}) and turns them into term-level
+values (\texttt{Integer}s, \texttt{{[}Integer{]}}s). In fact, they are kind of
+the opposites of our reification functions like \texttt{toSing}. Going from the
+``type level'' to the ``value level'' is known in Haskell as
+\textbf{reflection}, and is the dual concept of reification. (The
+\emph{singletons} library offers reflectors for all of its singletons, as
+\texttt{fromSing}.)
 
-And that's all we need:
+And that's all we need!
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1061,5 +1062,8 @@ Our final instance:
     \NormalTok{get }\FunctionTok{=} \NormalTok{getONet}
 \end{Highlighting}
 \end{Shaded}
+
+\section{Living Life on the Run-Time
+Edge}\label{living-life-on-the-run-time-edge}
 
 \end{document}

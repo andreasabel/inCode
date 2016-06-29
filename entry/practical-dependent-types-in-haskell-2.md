@@ -293,14 +293,14 @@ We use `sing :: SingI hs => Sing hs` to go call the `Sing hs ->`-style function
 from the `SingI hs =>` one.
 
 Recall that I recommend (personally, and subjectively) a style where your
-external API functions are implemented in `SingI a =>` style, and your internal
-ones in `Sing a ->` style. This lets all of your internal functions fit together
-more nicely (`Sing a ->` style tends to be easier to write in, especially if you
-stay in it the entire time) while at the same time removing the burden of
-calling with explicit singletons from people using the functionality
-externally.[^2] A `Sing a` is a normal Haskell value, but `SingI hs` is a
-typeclass instance, and typeclasses in Haskell are magical, global, potentially
-incoherent, and not really fun to work with!
+external API functions (and typeclass instances) are implemented in `SingI a =>`
+style, and your internal ones in `Sing a ->` style. This lets all of your
+internal functions fit together more nicely (`Sing a ->` style tends to be
+easier to write in, especially if you stay in it the entire time) while at the
+same time removing the burden of calling with explicit singletons from people
+using the functionality externally.[^2] A `Sing a` is a normal Haskell value,
+but `SingI hs` is a typeclass instance, and typeclasses in Haskell are magical,
+global, potentially incoherent, and not really fun to work with!
 
 Now, we still need to somehow get our list of integers to the type level, so we
 can create a `Network i hs o` to stuff into our `ONet`. And for that, the
@@ -619,8 +619,9 @@ the years. This list is by no means exhaustive.
                -- ...
     ```
 
-    A lot of libraries return existentials in `Maybe`’s, so it can be useful for
-    those, too!
+    A lot of libraries return existentials in `Maybe`’s ([base is
+    guilty](http://hackage.haskell.org/package/base-4.9.0.0/docs/GHC-TypeLits.html#v:someNatVal)),
+    so it can be useful for those, too!
 
     This is less useful for things like `toSing` where things are *not* returned
     in a monad. You could wrap it in Identity, but that’s kind of silly:
@@ -737,8 +738,7 @@ three `(:&~)`’s and one `O` — no need for dynamically sized networks like we
 to handle for lists.
 
 We’ll write `getNet` similarly to how wrote
-[`randomNet`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L65-73)
-from the last post:
+[`randomNet'`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L49-52):
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L64-68
@@ -754,9 +754,9 @@ We have to “pattern match” on `hs` using singletons to see what constructor 
 are expecting to deserialize.
 
 Let’s write our `Binary` instance for `Network`. Of course, we can’t have `put`
-or `get` take a `Sing hs` (that’d change the arity/type of the function), so
-what we can do is have their `Binary` instances require a `SingI hs` constraint,
-essentially doing the same thing:
+or `get` take a `Sing hs` (that’d change the arity/type of the function), so we
+have to switch to `SingI`-style had have their `Binary` instances require a
+`SingI hs` constraint.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L70-72
@@ -771,11 +771,11 @@ instance (KnownNat i, SingI hs, KnownNat o) => Binary (Network i hs o) where
 Armed with all that we learned during our long and winding journey through
 “run-time types”, writing a serializing plan for `OpaqueNet` is straightforward.
 (We are doing it for `OpaqueNet`, the constructor-style existential, because we
-can’t directly write instances for the continuation-style one) The only
-difference is that, because the complete structure of the network is not in the
-type, you have to encode it as a flag in the binary serialization.
+can’t directly write instances for the continuation-style one)
 
-We can write a simple function to get the `[Integer]` of a network’s structure:
+Because the complete structure of the network is not in the type, we have to
+encode it as a flag in the binary serialization. We can write a simple function
+to get the `[Integer]` of a network’s structure:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L78-82
@@ -789,17 +789,18 @@ hiddenStruct = \case O _    -> []
 
 Recall that `natVal :: KnownNat n => Proxy n -> Integer` returns the value-level
 `Integer` corresponding to the type-level `n :: Nat`. (I’m also using GHC 8’s
-fancy *TypeApplications* syntax, and `Proxy @h@` is the same as
+fancy *TypeApplications* syntax, and `Proxy @h` is the same as
 `Proxy :: Proxy h`).
 
-It is sort of interesting to note that `natVal` and `hiddenStruct` take
-type-level information (`n`, `hs`) and turns them into term-level values
-(`Integer`s, `[Integer]`s). In fact, they are kind of the opposites of our
-reification functions like `toSing`. Going from the “type level” to the “value
-level” is known in Haskell as **reflection**, and it’s the dual concept of
-reification.
+It is interesting to note that `natVal` and `hiddenStruct` take type-level
+information (`n`, `hs`) and turns them into term-level values (`Integer`s,
+`[Integer]`s). In fact, they are kind of the opposites of our reification
+functions like `toSing`. Going from the “type level” to the “value level” is
+known in Haskell as **reflection**, and is the dual concept of reification. (The
+*singletons* library offers reflectors for all of its singletons, as
+`fromSing`.)
 
-And that’s all we need:
+And that’s all we need!
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L101-106
@@ -841,6 +842,9 @@ instance (KnownNat i, KnownNat o) => Binary (OpaqueNet i o) where
     get = getONet
 
 ```
+
+Living Life on the Run-Time Edge
+--------------------------------
 
 <!-- sameNat and existentials -->
 
