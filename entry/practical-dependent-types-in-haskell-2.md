@@ -116,7 +116,7 @@ internal structure is.
 We can implement it as an “existential” wrapper over `Network`, actually:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L84-85
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L88-89
 data OpaqueNet :: Nat -> Nat -> * where
     ONet :: Network i hs o -> OpaqueNet i o
 
@@ -130,7 +130,7 @@ How do we use this type? We *pattern match* on `ONet` to get the net back, and
 we can use them:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L87-92
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L91-96
 numHiddens :: OpaqueNet i o -> Int
 numHiddens = \case ONet n -> go n
   where
@@ -277,7 +277,7 @@ For simplicity, let’s re-write `randomNet` the more sensible way — with the
 explicit singleton input style:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L49-56
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L60-67
 randomNet' :: forall m i hs o. (MonadRandom m, KnownNat i, KnownNat o)
            => Sing hs -> m (Network i hs o)
 randomNet' = \case SNil            ->     O <$> randomWeights
@@ -363,7 +363,7 @@ courtesy of Oliver Charles.)
 We now have enough to write our `randomONet`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L116-120
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L98-102
 randomONet :: (MonadRandom m, KnownNat i, KnownNat o)
            => [Integer]
            -> m (OpaqueNet i o)
@@ -377,7 +377,7 @@ Haskell as **reification**. With this, our original goal is (finally) within
 reach:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L158-164
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L157-163
 main :: IO ()
 main = do
     putStrLn "What hidden layer structure do you want?"
@@ -457,7 +457,7 @@ existential type as something *taking* the continuation `f` and giving it what
 it needs.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L126-126
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L125-125
 type OpaqueNet' i o r = (forall hs. Network i hs o -> r) -> r
 
 ```
@@ -475,7 +475,7 @@ We can “wrap” a `Network i hs o` into an `OpaqueNet' i o r` pretty
 straightforwardly:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L128-129
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L127-128
 oNet' :: Network i hs o -> OpaqueNet' i o r
 oNet' n = \f -> f n
 
@@ -510,7 +510,7 @@ withSomeSing :: [Integer]
 Because why not? Skolemize all the things!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L148-156
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L130-138
 withRandomONet' :: (MonadRandom m, KnownNat i, KnownNat o)
                 => [Integer]
                 -> (forall hs. Network i hs o -> m r)
@@ -527,7 +527,7 @@ We can use it to do the same things we used the constructor-based existential
 for, as well…and, in a way, it actually seems (oddly) more natural.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L166-172
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L165-171
 main' :: IO ()
 main' = do
     putStrLn "What hidden layer structure do you want?"
@@ -702,7 +702,7 @@ In practice, we usually don’t write our own instances from scratch. Instead, w
 use GHC’s generics features to give us instances for free:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L22-38
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L24-29
 data Weights i o = W { wBiases :: !(R o)
                      , wNodes  :: !(L o i)
                      }
@@ -721,7 +721,7 @@ Writing `putNet` and `getNet` to put/get `Network`s is pretty nice because the
 entire structure is already known ahead of time:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L58-62
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L69-73
 putNet :: (KnownNat i, KnownNat o)
        => Network i hs o
        -> Put
@@ -738,10 +738,10 @@ three `(:&~)`’s and one `O` — no need for dynamically sized networks like we
 to handle for lists.
 
 We’ll write `getNet` similarly to how wrote
-[`randomNet'`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L49-52):
+[`randomNet'`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L60-63):
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L64-68
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L75-79
 getNet :: forall i hs o. (KnownNat i, KnownNat o)
        => Sing hs
        -> Get (Network i hs o)
@@ -759,7 +759,7 @@ have to switch to `SingI`-style had have their `Binary` instances require a
 `SingI hs` constraint.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L70-72
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L81-83
 instance (KnownNat i, SingI hs, KnownNat o) => Binary (Network i hs o) where
     put = putNet
     get = getNet sing
@@ -778,7 +778,7 @@ encode it as a flag in the binary serialization. We can write a simple function
 to get the `[Integer]` of a network’s structure:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L78-82
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L54-58
 hiddenStruct :: Network i hs o -> [Integer]
 hiddenStruct = \case O _    -> []
                      _ :&~ (n' :: Network h hs' o)
@@ -803,7 +803,7 @@ known in Haskell as **reflection**, and is the dual concept of reification. (The
 And that’s all we need!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L101-106
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L104-109
 putONet :: (KnownNat i, KnownNat o)
         => OpaqueNet i o
         -> Put
@@ -819,14 +819,13 @@ Now, to deserialize, we want to *load* the list of `Integer`s and reify it back
 to the type level to know what type of network we’re expecting to load:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L108-114
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L111-116
 getONet :: (KnownNat i, KnownNat o)
         => Get (OpaqueNet i o)
 getONet = do
     hs <- get
     withSomeSing hs $ \ss ->
-      n <- getNet ss
-      return (ONet n)
+      ONet <$> getNet ss
 
 ```
 
@@ -836,15 +835,46 @@ do our normal business.
 Our final instance:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L122-124
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L118-120
 instance (KnownNat i, KnownNat o) => Binary (OpaqueNet i o) where
     put = putONet
     get = getONet
 
 ```
 
-Living Life on the Run-Time Edge
---------------------------------
+#### Exercises
+
+Here are some fun exercises you can try, if you want to test your understanding!
+Links are to the solutions.
+
+1.  Implement
+    [`putONet'`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L140-145)
+    and
+    [`getONet'`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L147-155)
+    using the continuation-style existentials, instead.
+
+2.  Work with an existential wrapper over the *entire* network structure (inputs
+    and outputs, too):
+
+    ``` {.haskell}
+    !!!dependent-haskell/NetworkTyped2.hs "data SomeNet"
+    ```
+
+    (We need the `KnownNat` constraints because of type erasure, to recover the
+    original input/output dimensions back once we pattern match)
+
+    And write:
+
+    -   [`randomSNet`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L181-190)
+    -   The [binary
+        instance](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L192-206)
+        for `SomeNet`
+
+    Hint: Remember that `toSomeSing` also works for `Integer`s, to get `Sing`s
+    for `Nat`s, too!
+
+Dealing with Runtime Types
+--------------------------
 
 <!-- sameNat and existentials -->
 
