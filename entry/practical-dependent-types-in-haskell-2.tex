@@ -539,19 +539,122 @@ constructor, we also have a \texttt{Knownnat\ n} instance (As discussed in
 \end{Highlighting}
 \end{Shaded}
 
-And our original goal is finally within reach:
+This process of bringing a term-level value into the type level is known in
+Haskell as \textbf{reification}. Witht his, our original goal is (finally)
+within reach:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L148-155}
-\CommentTok{-- main :: IO ()}
-\CommentTok{-- main = do}
-\CommentTok{--     putStrLn "What size random net?"}
-\CommentTok{--     xs <- readLn}
-\CommentTok{--     withSomeSing xs $ \textbackslash{}(ss :: Sing (hs :: [Nat])) -> do}
-\CommentTok{--       net <- randomNet' ss :: IO (Network 10 hs 3)}
-\CommentTok{--       print net}
-\CommentTok{--       -- blah blah stuff with our dynamically generated net}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L148-154}
+\OtherTok{main ::} \DataTypeTok{IO} \NormalTok{()}
+\NormalTok{main }\FunctionTok{=} \KeywordTok{do}
+    \NormalTok{putStrLn }\StringTok{"What hidden layer structure do you want?"}
+    \NormalTok{hs }\OtherTok{<-} \NormalTok{readLn}
+    \DataTypeTok{ONet} \NormalTok{ss (}\OtherTok{net ::} \DataTypeTok{Network} \DecValTok{10} \NormalTok{hs }\DecValTok{3}\NormalTok{) }\OtherTok{<-} \NormalTok{randomONet hs}
+    \NormalTok{print net}
+    \CommentTok{-- blah blah stuff with our dynamically generated net}
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{The Boundary}\label{the-boundary}
+
+With the power of existentially quantified types (like in \texttt{SomeSing}), we
+essentially gained the ability to work with types that depend on runtime
+results.
+
+In a way, you can consider the \texttt{toSing} and the \texttt{SomeSing} as our
+``boundary'' between the ``untyped world'' and the ``typed world''. This layer
+(and the process of reification) cleanly separates the two.
+
+This ``boundary'' can be thought of as a lot like the boundary we talk about
+between ``pure'' functions and values and ``impure'' (IO, etc.) ones. We say to
+always write as much of your program as possible in the ``pure'' world, and to
+separate and pull out as much logic as you can to be pure logic. That's sort of
+one of the first things you learn about as a Haskell programmer: how to separate
+logic that \emph{can} be pure from logic that is ``impure'' (IO, etc.), and then
+``combine them'' at the very end, as late as possible.
+
+Well, if the final program is going to be IO in the end anyway, why bother
+separating out pure and impure parts of your logic? You gain separation of
+concerns, the increased ability to reason with your code and analyze what it
+does, the compiler's ability to check what you write, the limitation of
+implementations, and etc. are all reasons any Haskeller should be familiar with
+reciting.
+
+You can think of the general philosophy of working with typed/untyped worlds as
+being the same thing. You can write as much of your program as possible in the
+``typed'' world, like we did in Part 1. Take advantage of the increased ability
+to reason with your code, parametric polymorphism helping you \emph{write} your
+code, limit your implementations, nab you compiler help, etc. All of those are
+benefits of working in the typed world.
+
+Then, write what you must in your ``untyped'' world, such as dealing with values
+that pop up at runtime like the \texttt{{[}Integer{]}} above.
+
+Finally, at the end, \emph{unite} them at the boundary. Pass the control
+football from the untyped world to the typed world!
+
+\subsection{Continuation-Based
+Existentials}\label{continuation-based-existentials}
+
+There's another way in Haskell that we work with existential types that can be
+more natural and easy to work with in a lot of cases.
+
+Note that when we pattern match on an existential data type, you have to work
+with the values in the constructor in a parametrically polymorphic way. For
+example, if we had:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{oNetToFoo ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{Foo}
+\NormalTok{oNetToFoo }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{s n }\OtherTok{->} \NormalTok{f s n}
+\end{Highlighting}
+\end{Shaded}
+
+What does the type of \texttt{f} have to be? It has to take a \texttt{Sing\ hs}
+and a \texttt{Network\ i\ hs\ o}, but deal with it in a way that works \emph{for
+all} \texttt{hs}. It has to be:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{f ::} \NormalTok{forall (}\OtherTok{hs ::} \NormalTok{[}\DataTypeTok{Nat}\NormalTok{])}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{Foo}
+\end{Highlighting}
+\end{Shaded}
+
+That is, it can't be written for \emph{only}
+\texttt{Sing\ \textquotesingle{}{[}5{]}} or \emph{only}
+\texttt{Sing\ \textquotesingle{}{[}6,3{]}}\ldots{}it has to work for \emph{any}
+\texttt{hs}.
+
+Well, we could really also just skip the data type together and represent an
+existential type as something \emph{taking} the continuation \texttt{f} and
+giving it what it needs.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L109-109}
+\KeywordTok{type} \DataTypeTok{OpaqueNet'} \NormalTok{i o r }\FunctionTok{=} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \NormalTok{r) }\OtherTok{->} \NormalTok{r}
+\end{Highlighting}
+\end{Shaded}
+
+``Tell me how you would make an \texttt{r} if you had a \texttt{Sing\ hs} and a
+\texttt{Network\ i\ hs\ o}, and I'll make it for you!''
+
+This ``continuation transformation'' is known as formally
+\textbf{skolemization}.\footnote{Skolemization is probably one of the coolest
+  words you'll encounter working with dependent types in Haskell, and sometimes
+  just knowing that you're ``skolemizing'' something makes you feel cooler.
+  Thank you \href{https://en.wikipedia.org/wiki/Thoralf_Skolem}{Thoralf Skolem}.
+  If you ever see a ``rigid, skolem'' error in GHC, you can thank him for that
+  too! He also inspired me to decide to name my first son
+  Thoralf.{[}\^{}curry{]}} We can ``wrap'' a \texttt{Network\ i\ hs\ o} into an
+\texttt{OpaqueNet\textquotesingle{}\ i\ o\ r} pretty straightforwardly:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L111-112}
+\OtherTok{oNet' ::} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{OpaqueNet'} \NormalTok{i o r}
+\NormalTok{oNet' s n }\FunctionTok{=} \NormalTok{\textbackslash{}f }\OtherTok{->} \NormalTok{f s n}
 \end{Highlighting}
 \end{Shaded}
 
