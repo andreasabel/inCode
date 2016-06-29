@@ -205,6 +205,12 @@ and also for cute return type polymorphism tricks like \texttt{randomNet} and
 \texttt{getNet}. The first type of benefit really doesn't benefit the
 \emph{user} of the network.
 
+Another downside of having the structure in the type is that we can't store all
+of them in the same list or data structure. A
+\texttt{Network\ 10\ \textquotesingle{}{[}5,3{]}\ 1} won't share a list with a
+\texttt{Network\ 10\ \textquotesingle{}{[}5,2{]}\ 1}, despite having the same
+inputs/outputs.
+
 Imagine that we had written a \texttt{Network} type that \emph{didn't} have the
 internal structure in the type ---
 
@@ -809,9 +815,9 @@ the years. This list is by no means exhaustive.
 
   A lot of libraries return existentials in \texttt{Maybe}'s
   (\href{http://hackage.haskell.org/package/base-4.9.0.0/docs/GHC-TypeLits.html\#v:someNatVal}{base
-  is guilty}), so it can be useful for those, too!
+  is guilty}), so this trick can be useful for those, too!
 
-  This is less useful for things like \texttt{toSing} where things are
+  This trick is less useful for functions like \texttt{toSing} where things are
   \emph{not} returned in a monad. You could wrap it in Identity, but that's kind
   of silly:
 
@@ -833,9 +839,9 @@ the years. This list is by no means exhaustive.
   need the wrapper for sure.
 \item
   Haskell doesn't allow you to use Rank-N types as arguments to type
-  constructors, so you can have \texttt{Maybe\ (OpaqueNet\ i\ o)}, but
-  \emph{not} \texttt{Maybe\ (OpaqueNet\textquotesingle{}\ i\ o\ r)} or
-  \texttt{Maybe\ ((forall\ hs.\ Network\ i\ hs\ o\ -\textgreater{}\ r)\ -\textgreater{}\ r)}.
+  constructors, so you can have \texttt{{[}OpaqueNet\ i\ o{]}}, but \emph{not}
+  \texttt{{[}OpaqueNet\textquotesingle{}\ i\ o\ r{]}} or
+  \texttt{{[}(forall\ hs.\ Network\ i\ hs\ o\ -\textgreater{}\ r)\ -\textgreater{}\ r{]}}.
   The latter are known as impredicative types, which are a big no-no in GHC
   Haskell. Don't even go there! The constructor style is necessary in these
   situations.
@@ -861,7 +867,7 @@ the years. This list is by no means exhaustive.
 \end{Highlighting}
 \end{Shaded}
 
-  Even with with the type synonym, it's a little weird.
+  Even with with the type synonym, it's a little awkward.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -874,7 +880,7 @@ the years. This list is by no means exhaustive.
   most part.
 \end{itemize}
 
-These are just general principals, not hard-fast rules. This list reflects my
+These are just general principles, not hard-fast rules. This list reflects my
 current progress in my journey towards a dependently typed lifestyle and also
 the things come to mind as I write this blog post. If you come back in a month,
 you might see more things listed here!
@@ -897,15 +903,16 @@ simple application: serialization.
 \subsection{Recap on the Binary Library}\label{recap-on-the-binary-library}
 
 Serializing networks of \emph{known} size --- whose sizes are statically in
-their types --- is pretty straightforward, and its ease is one of the advantages
-of having sizes in your types. I'm going to be using the
+their types --- is pretty straightforward, and its ease is one of the
+often-quoted advantages of having sizes in your types. I'm going to be using the
 \emph{\href{https://hackage.haskell.org/package/binary}{binary}} library, which
 offers a very standard typeclass-based approach for serializing and
 deserializing data. There are a lot of tutorials online (and I even
 \href{https://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-2-binary.html}{wrote
 a small one} myself a few years ago), but a very high-level view is that the
-library offers a typeclass for describing serialization schemes for different
-types.
+library offers monads (\texttt{Get}, \texttt{Put}) for describing serialization
+schemes and also a typeclass used to provide serialization instructions for
+different types.
 
 In practice, we usually don't write our own instances from scratch. Instead, we
 use GHC's generics features to give us instances for free:
@@ -922,7 +929,7 @@ use GHC's generics features to give us instances for free:
 \end{Highlighting}
 \end{Shaded}
 
-For simple types like \texttt{Weights}, which simply ``contain'' serializable
+For simple types like \texttt{Weights}, which simply contain serializable
 things, the \emph{binary} library is smart enough to write your instances
 automatically for you!
 
@@ -949,10 +956,9 @@ the \texttt{net}. The reason we can get away without any flags is because we
 already \emph{know} how many \texttt{:\&\textasciitilde{}} layers to expect
 \emph{just from the type}. If we want to deserialize/load a
 \texttt{Network\ 5\ \textquotesingle{}{[}10,6,3{]}\ 2}, we \emph{know} we want
-three \texttt{(:\&\textasciitilde{})}'s and one \texttt{O} --- no need for
-dynamically sized networks like we had to handle for lists.
+three \texttt{(:\&\textasciitilde{})}'s and one \texttt{O}.
 
-We'll write \texttt{getNet} similarly to how wrote
+We'll write \texttt{getNet} similarly to how we wrote
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L60-63}{\texttt{randomNet\textquotesingle{}}}:
 
 \begin{Shaded}
@@ -966,14 +972,15 @@ We'll write \texttt{getNet} similarly to how wrote
 \end{Highlighting}
 \end{Shaded}
 
-We have to ``pattern match'' on \texttt{hs} using singletons to see what
-constructor we are expecting to deserialize.
+We have to ``pattern match'' on \texttt{hs} using singletons to see the
+constructor we are expecting to deserialize and then just follow what the
+singleton's structure tells us.
 
-Let's write our \texttt{Binary} instance for \texttt{Network}. Of course, we
-can't have \texttt{put} or \texttt{get} take a \texttt{Sing\ hs} (that'd change
-the arity/type of the function), so we have to switch to \texttt{SingI}-style
-had have their \texttt{Binary} instances require a \texttt{SingI\ hs}
-constraint.
+We can try to write a \texttt{Binary} instance for \texttt{Network}. Of course,
+we can't have \texttt{put} or \texttt{get} take a \texttt{Sing\ hs} input
+(that'd change the arity/type of the function), so we have to switch to
+\texttt{SingI}-style had have their \texttt{Binary} instances require a
+\texttt{SingI\ hs} constraint.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -993,9 +1000,19 @@ straightforward. (We are doing it for \texttt{OpaqueNet}, the constructor-style
 existential, because we can't directly write instances for the
 continuation-style one)
 
-Because the complete structure of the network is not in the type, we have to
-encode it as a flag in the binary serialization. We can write a simple function
-to get the \texttt{{[}Integer{]}} of a network's structure:
+It's arguably more useful to serialize \texttt{OpaqueNet}s, because between
+different iterations, you might want to try out/store trained networks of
+different internal structures. You can't even \emph{load} a \texttt{Network}
+without knowing its internal structure. You want all your networks to be
+mutually compatible and loadable\ldots{}so it makes more sense to
+serialize/deserialize \texttt{OpaqueNet}s than \texttt{Network}s. You can load
+them without knowing their internal structure, and you can keep them all in the
+same list.
+
+But because the complete structure of the network is not in the type, to
+serialize, we have to encode it as a flag in the binary serialization. We can
+write a simple function to get the \texttt{{[}Integer{]}} of a network's
+structure:
 
 \begin{Shaded}
 \begin{Highlighting}[]

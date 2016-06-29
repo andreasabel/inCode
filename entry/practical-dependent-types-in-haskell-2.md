@@ -107,6 +107,10 @@ help us *implement* our functions more safely, with the compiler’s help, and
 also for cute return type polymorphism tricks like `randomNet` and `getNet`. The
 first type of benefit really doesn’t benefit the *user* of the network.
 
+Another downside of having the structure in the type is that we can’t store all
+of them in the same list or data structure. A `Network 10 '[5,3] 1` won’t share
+a list with a `Network 10 '[5,2] 1`, despite having the same inputs/outputs.
+
 Imagine that we had written a `Network` type that *didn’t* have the internal
 structure in the type —
 
@@ -615,10 +619,11 @@ the years. This list is by no means exhaustive.
 
     A lot of libraries return existentials in `Maybe`’s ([base is
     guilty](http://hackage.haskell.org/package/base-4.9.0.0/docs/GHC-TypeLits.html#v:someNatVal)),
-    so it can be useful for those, too!
+    so this trick can be useful for those, too!
 
-    This is less useful for things like `toSing` where things are *not* returned
-    in a monad. You could wrap it in Identity, but that’s kind of silly:
+    This trick is less useful for functions like `toSing` where things are *not*
+    returned in a monad. You could wrap it in Identity, but that’s kind of
+    silly:
 
     ``` {.haskell}
     foo = runIdentity $ do
@@ -635,11 +640,11 @@ the years. This list is by no means exhaustive.
     for sure.
 
 -   Haskell doesn’t allow you to use Rank-N types as arguments to type
-    constructors, so you can have `Maybe (OpaqueNet i o)`, but *not*
-    `Maybe (OpaqueNet' i o r)` or
-    `Maybe ((forall hs. Network i hs o -> r) -> r)`. The latter are known as
-    impredicative types, which are a big no-no in GHC Haskell. Don’t even go
-    there! The constructor style is necessary in these situations.
+    constructors, so you can have `[OpaqueNet i o]`, but *not*
+    `[OpaqueNet' i o r]` or `[(forall hs. Network i hs o -> r) -> r]`. The
+    latter are known as impredicative types, which are a big no-no in
+    GHC Haskell. Don’t even go there! The constructor style is necessary in
+    these situations.
 
 -   When writing functions that *take* existentials as inputs, the
     constructor-style is arguably more natural.
@@ -658,7 +663,7 @@ the years. This list is by no means exhaustive.
                 -> Int
     ```
 
-    Even with with the type synonym, it’s a little weird.
+    Even with with the type synonym, it’s a little awkward.
 
     ``` {.haskell}
     numHiddens' :: OpaqueNet' i o Int -> Int
@@ -667,7 +672,7 @@ the years. This list is by no means exhaustive.
     This is why you’ll encounter more functions *returning* continuation-style
     existentials than *taking* them in the wild, for the most part.
 
-These are just general principals, not hard-fast rules. This list reflects my
+These are just general principles, not hard-fast rules. This list reflects my
 current progress in my journey towards a dependently typed lifestyle and also
 the things come to mind as I write this blog post. If you come back in a month,
 you might see more things listed here!
@@ -691,14 +696,15 @@ simple application: serialization.
 ### Recap on the Binary Library
 
 Serializing networks of *known* size — whose sizes are statically in their types
-— is pretty straightforward, and its ease is one of the advantages of having
-sizes in your types. I’m going to be using the
+— is pretty straightforward, and its ease is one of the often-quoted advantages
+of having sizes in your types. I’m going to be using the
 *[binary](https://hackage.haskell.org/package/binary)* library, which offers a
 very standard typeclass-based approach for serializing and deserializing data.
 There are a lot of tutorials online (and I even [wrote a small
 one](https://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-2-binary.html)
-myself a few years ago), but a very high-level view is that the library offers a
-typeclass for describing serialization schemes for different types.
+myself a few years ago), but a very high-level view is that the library offers
+monads (`Get`, `Put`) for describing serialization schemes and also a typeclass
+used to provide serialization instructions for different types.
 
 In practice, we usually don’t write our own instances from scratch. Instead, we
 use GHC’s generics features to give us instances for free:
@@ -714,7 +720,7 @@ instance (KnownNat i, KnownNat o) => Binary (Weights i o)
 
 ```
 
-For simple types like `Weights`, which simply “contain” serializable things, the
+For simple types like `Weights`, which simply contain serializable things, the
 *binary* library is smart enough to write your instances automatically for you!
 
 ### Serializing `Network`
@@ -736,10 +742,9 @@ If it’s an `O w`, just serialize the `w`. If it’s a `w :&~ net`, serialize t
 `w` then the rest of the `net`. The reason we can get away without any flags is
 because we already *know* how many `:&~` layers to expect *just from the type*.
 If we want to deserialize/load a `Network 5 '[10,6,3] 2`, we *know* we want
-three `(:&~)`’s and one `O` — no need for dynamically sized networks like we had
-to handle for lists.
+three `(:&~)`’s and one `O`.
 
-We’ll write `getNet` similarly to how wrote
+We’ll write `getNet` similarly to how we wrote
 [`randomNet'`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L60-63):
 
 ``` {.haskell}
@@ -752,13 +757,14 @@ getNet = \case SNil            ->     O <$> get
 
 ```
 
-We have to “pattern match” on `hs` using singletons to see what constructor we
-are expecting to deserialize.
+We have to “pattern match” on `hs` using singletons to see the constructor we
+are expecting to deserialize and then just follow what the singleton’s structure
+tells us.
 
-Let’s write our `Binary` instance for `Network`. Of course, we can’t have `put`
-or `get` take a `Sing hs` (that’d change the arity/type of the function), so we
-have to switch to `SingI`-style had have their `Binary` instances require a
-`SingI hs` constraint.
+We can try to write a `Binary` instance for `Network`. Of course, we can’t have
+`put` or `get` take a `Sing hs` input (that’d change the arity/type of the
+function), so we have to switch to `SingI`-style had have their `Binary`
+instances require a `SingI hs` constraint.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L81-83
@@ -775,9 +781,17 @@ Armed with all that we learned during our long and winding journey through
 (We are doing it for `OpaqueNet`, the constructor-style existential, because we
 can’t directly write instances for the continuation-style one)
 
-Because the complete structure of the network is not in the type, we have to
-encode it as a flag in the binary serialization. We can write a simple function
-to get the `[Integer]` of a network’s structure:
+It’s arguably more useful to serialize `OpaqueNet`s, because between different
+iterations, you might want to try out/store trained networks of different
+internal structures. You can’t even *load* a `Network` without knowing its
+internal structure. You want all your networks to be mutually compatible and
+loadable…so it makes more sense to serialize/deserialize `OpaqueNet`s than
+`Network`s. You can load them without knowing their internal structure, and you
+can keep them all in the same list.
+
+But because the complete structure of the network is not in the type, to
+serialize, we have to encode it as a flag in the binary serialization. We can
+write a simple function to get the `[Integer]` of a network’s structure:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L54-58
