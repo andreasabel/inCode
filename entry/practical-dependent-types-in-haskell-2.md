@@ -501,7 +501,7 @@ But, hey, because we’re skolemizing everything, let’s do it with the skolemi
 version of `toSing`, `withSomeSing`:
 
 ``` {.haskell}
--- the skolemized `toSing`/`SomeSing`:
+-- a version of `toSing` that returns a skolemized `SomeSing`
 withSomeSing :: [Integer]
              -> (forall (hs :: [Nat]). Sing hs -> r)
              -> r
