@@ -109,7 +109,8 @@ first type of benefit really doesn’t benefit the *user* of the network.
 
 Another downside of having the structure in the type is that we can’t store all
 of them in the same list or data structure. A `Network 10 '[5,3] 1` won’t share
-a list with a `Network 10 '[5,2] 1`, despite having the same inputs/outputs.
+a list with a `Network 10 '[5,2] 1`, despite having the same inputs/outputs. You
+should
 
 Imagine that we had written a `Network` type that *didn’t* have the internal
 structure in the type —
@@ -123,7 +124,19 @@ had no idea what to put in for `???`. But, what if we worked with an
 `OpaqueNet i o`, we wouldn’t even care! We wouldn’t have to tell GHC what the
 internal structure is.
 
-We can implement it as an “existential” wrapper over `Network`, actually:
+In fact, I’d actually argue that `OpaqueNet` is the real type you should be
+offering to your users or using yourself, because it only exposes the types that
+are a part of its usage/API. You can store them in a list or MVar —
+`[OpaqueNet 10 3]` and `MVar (OpaqueNet 10 3)`, serialize/deserialize them
+without knowing their internal structure in advance
+(`loadNet :: FilePath -> IO (OpaqueNet 10 3)`), etc. (if you wanted to load a
+`Network`, you would need to know exactly what internal structure was stored, in
+advance). Though `Network` is a much easier type when writing the
+*implementation*, `OpaqueNet` is a much more ideal type to *use*, in a lot of
+situations.
+
+We can implement our vision for `OpaqueNet` as an “existential” wrapper over
+`Network`, actually:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L88-89
@@ -723,7 +736,7 @@ instance (KnownNat i, KnownNat o) => Binary (Weights i o)
 For simple types like `Weights`, which simply contain serializable things, the
 *binary* library is smart enough to write your instances automatically for you!
 
-### Serializing `Network`
+#### Serializing `Network`
 
 Writing `putNet` and `getNet` to put/get `Network`s is pretty nice because the
 entire structure is already known ahead of time:
@@ -781,17 +794,16 @@ Armed with all that we learned during our long and winding journey through
 (We are doing it for `OpaqueNet`, the constructor-style existential, because we
 can’t directly write instances for the continuation-style one)
 
-It’s arguably more useful to serialize `OpaqueNet`s, because between different
-iterations, you might want to try out/store trained networks of different
-internal structures. You can’t even *load* a `Network` without knowing its
-internal structure. You want all your networks to be mutually compatible and
-loadable…so it makes more sense to serialize/deserialize `OpaqueNet`s than
-`Network`s. You can load them without knowing their internal structure, and you
-can keep them all in the same list.
+It’s arguably much more useful to serialize/deserialize `OpaqueNet`s. Between
+different iterations of your program, you might have the same inputs/outputs,
+but want to try out different internal structures. You’d want to store them and
+access them uniformly, or send them over a network without requiring the
+receiver to know the internal structure beforehand. Remember, you can’t even
+*load* a `Network i hs o` without knowing its complete structure!
 
-But because the complete structure of the network is not in the type, to
-serialize, we have to encode it as a flag in the binary serialization. We can
-write a simple function to get the `[Integer]` of a network’s structure:
+Because the complete structure of the network is not in the type, to serialize
+them, we have to encode it as a flag in the binary serialization. We can write a
+simple function to get the `[Integer]` of a network’s structure:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L54-58
