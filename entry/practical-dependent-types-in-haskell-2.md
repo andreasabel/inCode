@@ -1228,9 +1228,9 @@ use!
 [^3]: Gross, right? Hopefully some day this will be as far behind us as that
     whole Monad/Functor debacle is now!
 
-[^4]: Skolemization is probably one of the coolest words you’ll encounter
-    working with dependent types in Haskell, and sometimes just knowing that
-    you’re “skolemizing” something makes you feel cooler. Thank you [Thoralf
+[^4]: Skolemization is probably one of the coolest words you’ll encounter when
+    learning/using Haskell, and sometimes just knowing that you’re “skolemizing”
+    something makes you feel cooler. Thank you [Thoralf
     Skolem](https://en.wikipedia.org/wiki/Thoralf_Skolem). If you ever see a
     “rigid, skolem” error in GHC, you can thank him for that too! He also
     inspired me to decide to name my first son Thoralf. (My second son’s name
