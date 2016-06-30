@@ -47,6 +47,11 @@ All of the code in this post is [downloadable as a standalone source
 file](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs)
 so you can follow along!
 
+A fair warning: a lot of this post doesn’t actually directly deal with machine
+learning or neural networks. Most of it will be learning general principles for
+working with dependent types through implementing things you’d want to do with
+neural networks. More stuff with ML will come in the next posts!
+
 Types at Runtime
 ----------------
 

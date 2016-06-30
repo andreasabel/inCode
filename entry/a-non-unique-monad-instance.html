@@ -87,7 +87,7 @@ ghci<span class="fu">&gt;</span> runFlipIO <span class="fu">$</span> liftA2 (,) 
 <span class="kw">instance</span> <span class="dt">Applicative</span> f <span class="ot">=&gt;</span> <span class="dt">Applicative</span> (<span class="dt">Flipped</span> f) <span class="kw">where</span>
     pure <span class="fu">=</span> <span class="dt">Flipped</span> <span class="fu">.</span> pure
     <span class="dt">Flipped</span> f <span class="fu">&lt;*&gt;</span> <span class="dt">Flipped</span> x <span class="fu">=</span> <span class="dt">Flipped</span> <span class="fu">$</span> liftA2 (flip (<span class="fu">$</span>)) x f</code></pre></div>
-<p>So cool. Types that have <code>Functor</code> instances only have one. Types that have <code>Applicative</code> instances very often have more than one.</p>
+<p>Cool. Types that have <code>Functor</code> instances only have one. Types that have <code>Applicative</code> instances very often have more than one.</p>
 <p>So, the obvious next question is…what about <code>Monad</code>s? Is a <code>Monad</code> instance uniquely determined by its type?</p>
 <h2 id="monad">Monad</h2>
 <p>The answer wasn’t that simple, for me. Yes, <em>most</em> <code>Applicative</code>s in the wild are non-unique, and there was a generating rule. But not so for <code>Monad</code>s. You can’t have a <code>Monad</code> where the effects are switched, because for <code>(&gt;&gt;=)</code>, you need the effects of the first action in order to even decide what the effects of the next action are.</p>
@@ -108,7 +108,7 @@ ghci<span class="fu">&gt;</span> runFlipIO <span class="fu">$</span> liftA2 (,) 
 <span class="ot">        join&#39; ::</span> <span class="dt">Stream</span> (<span class="dt">Stream</span> a) <span class="ot">-&gt;</span> <span class="dt">Stream</span> a
         join&#39; ((x <span class="fu">:~</span> _) <span class="fu">:~</span> yss) <span class="fu">=</span> x <span class="fu">:~</span> join&#39; (fmap tail&#39; yss)
         tail&#39; (_ <span class="fu">:~</span> xs) <span class="fu">=</span> xs</code></pre></div>
-<p>The <code>Monad</code> instance itself is actually interesting enough to write about. It all revolves <code>join</code>, where <code>join</code> takes a stream of streams and creates a stream <em>of the diagonals</em>. So it takes the first element of the first stream, the second element of the second stream, the third element of the third stream, etc.</p>
+<p>The <code>Monad</code> instance itself is actually interesting enough to write about. It all revolves around <code>join</code>, where <code>join</code> takes a stream of streams and creates a stream <em>of the diagonals</em>. So it takes the first element of the first stream, the second element of the second stream, the third element of the third stream, etc.</p>
 <p>This is actually a special case of the <code>Monad</code> instance for all fixed-sized ordered containers. A length 5 vector, for example, will have the same <code>Applicative</code> and <code>Monad</code> instance as described here: <code>(&lt;*&gt;)</code> with “zipping”, and <code>join</code> with grabbing the diagonal of the 5-vector of 5-vectors.</p>
 <p>This was a promising lead, but, it doesn’t take <em>too</em> much thought to see that neither lists nor <code>Stream</code> are appropriate for <em>both</em> instances.</p>
 <div class="note">
