@@ -927,11 +927,13 @@ Links are to the solutions.
         constructor-style, too, for funsies.)
     -   [`randomSNet`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L212-221),
         returning `m SomeNet`.
-    -   While you’re at it, write it to return [a continuation-style `SomeNet`,
-        too!](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L223-234).
+    -   While you’re at it, write it to return [a random continuation-style
+        `SomeNet`,
+        too](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L223-234)!
     -   The [binary
         instance](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L236-250)
-        for `SomeNet`
+        for `SomeNet`. Remember that you can use
+        `natVal :: KnownNat n => Proxy n -> Integer`.
 
     Hint: Remember that `toSomeSing` also works for `Integer`s, to get `Sing`s
     for `Nat`s, too!
