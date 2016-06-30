@@ -1,6 +1,6 @@
-Practical Dependent Types in Haskell: Existential Neural Networks and Types at
+Practical Dependent Types in Haskell 2: Existential Neural Networks and Types at
 Runtime
-======================================================================================
+========================================================================================
 
 > Originally posted by [Justin Le](https://blog.jle.im/) on June 30, 2016.
 > [Read online!](https://blog.jle.im/entry/practical-dependent-types-in-haskell-2.html)
