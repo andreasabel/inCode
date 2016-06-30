@@ -431,7 +431,7 @@ you from a layer of 4 nodes to a layer of 6 nodes:
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L21-23
 data Weights i o = W { wBiases :: !(R o)
                      , wNodes  :: !(L o i)
-                     }
+                     }                      -- an "o x i" layer
 
 ```
 
