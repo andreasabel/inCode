@@ -1,0 +1,123 @@
+<!DOCTYPE HTML>
+<html><head><title>Practical Dependent Types in Haskell: Type-Safe Neural Networks (Part 3) · in Code</title><meta name="description" content="Weblog of Justin Le, covering his various adventures in programming and explorations in the vast worlds of computation physics, and knowledge."><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta property="og:site_name" content="in Code"><meta property="og:description" content="&lt;!-- Uniting Existential Contexts --&gt; &lt;!-- ---------------------------- --&gt; &lt;!-- In the last exercise, we introduced `SomeNet`: --&gt; &lt;!-- ~~~haskell --&gt; &lt;!-- !!!dependent-haskell/NetworkTyped2.hs &quot;data SomeNet&quot; --&gt; &lt;!-- ~~~ --&gt;"><meta property="og:type" content="article"><meta property="og:title" content="Practical Dependent Types in Haskell: Type-Safe Neural Networks (Part 3)"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/practical-dependent-types-in-haskell-3.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/practical-dependent-types-in-haskell-3.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
+var disqus_shortname='incode';
+</script><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-443711-8', 'jle.im');
+ga('send', 'pageview');
+</script><script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script><script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5234d67a6b68dcd4"></script><script type="text/javascript" src="https://blog.jle.im/js/page/entry_toc.js"></script><script type="text/javascript" src="https://blog.jle.im/js/disqus_count.js"></script><script type="text/javascript" src="https://blog.jle.im/js/social.js"></script><script type="text/javascript" src="https://blog.jle.im/js/jquery/jquery.toc.js"></script><script type="text/javascript" src="https://blog.jle.im/purescript/entry.js"></script></head><body><div id="fb-root"><script>(function(d, s, id) {
+ var js, fjs = d.getElementsByTagName(s)[0];
+ if (d.getElementById(id)) return;
+ js = d.createElement(s); js.id = id;
+ js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=641852699171929";
+ fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));
+</script></div><div id="header-container"><div id="navbar-container" class="tile"><nav id="navbar-content"><div class="nav-info"><h1 class="site-title"><a href="https://blog.jle.im/" class="nav-title">in Code</a></h1><span class="nav-author">Justin Le</span></div><ul class="nav-links"><li><a href="https://blog.jle.im/">home</a></li><li><a href="https://blog.jle.im/entries.html">archives</a></li><div class="clear"></div></ul></nav></div><div id="header-content"></div></div><div id="body-container" class="container"><div id="main-container" class="grid"><div class="entry-section unit span-grid" role="main"><article class="tile article"><header><div class="unposted-banner">Unposted entry</div><h1 id="title">Practical Dependent Types in Haskell: Type-Safe Neural Networks (Part 3)</h1><p class="entry-info">by <a class="author" href="https://blog.jle.im/">Justin Le</a></p><p><span class="source-info"><a class="source-link" href="https://github.com/mstksg/inCode/tree/master/copy/entries/dependent-haskell-3.md">Source</a><span class="info-separator"> &diams; </span><a class="source-link" href="https://github.com/mstksg/inCode/tree/gh-pages/entry/practical-dependent-types-in-haskell-3.md">Markdown</a><span class="info-separator"> &diams; </span><a class="source-link" href="https://blog.jle.im/entry/practical-dependent-types-in-haskell-3.tex">LaTeX</a><span class="info-separator"> &diams; </span></span>Posted in <a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category" title="Functional, pure, non-strict, statically and strongly typed, natively
+compiled…really just the king of great languages.">Haskell</a>, <a href="https://blog.jle.im/entries/category/@ramblings.html" class="tag-a-category" title="My slight ramblings on subjects of interest (to me and hopefully to you too!).
+Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-separator"> &diams; </span><a class="comment-link" href="#disqus_thread">Comments</a></p></header><hr><aside class="contents-container"><h5 id="contents-header">Contents</h5><div id="toc"></div></aside><div class="main-content copy-content"><!-- Uniting Existential Contexts -->
+<!-- ---------------------------- -->
+<!-- In the last exercise, we introduced `SomeNet`: -->
+<!-- ~~~haskell -->
+<!-- !!!dependent-haskell/NetworkTyped2.hs "data SomeNet" -->
+<!-- ~~~ -->
+<!-- `SomeNet` is actually a big step above `OpaqueNet` because now its external API -->
+<!-- (the size of vectors that it takes/outputs) is now existentially quantified, so -->
+<!-- this presents some unique challenges. -->
+<!-- Recall that we was able to write `runOpaqueNet` without much problems, because -->
+<!-- the types guaranteed that everything made sense: -->
+<!-- ~~~haskell -->
+<!-- !!!dependent-haskell/NetworkTyped2.hs "runOpaqueNet ::" -->
+<!-- ~~~ -->
+<!-- In fact, GHC actually enforces that everything works out --- it knows that you -->
+<!-- run a `n'` with an `R i`, and sees that `x` is an `R i`, and also knows that -->
+<!-- whatever the internal structure is, an `R o` is always what pops out regardless -->
+<!-- if `hs` is `'[]`, `'[5,3]` or `'[100,200,4]`. -->
+<!-- But can we write a sensible `runSomeNet`?  What would the type even be?  Let's -->
+<!-- try an initial attempt: -->
+<!-- ~~~haskell -->
+<!-- runSomeNet :: (KnownNat i, KnownNat o) -->
+<!--            => SomeNet -->
+<!--            -> R i -->
+<!--            -> R o -->
+<!-- runSomeNet n x = case n of -->
+<!--                    SNet n' -> runNet n' x -->
+<!-- ~~~ -->
+<!-- Hm.  This clearly won't work, because the network inside `SomeNet` might not -->
+<!-- even take the `R i` that we give it.  What if it takes a `R 5`, but we pass in -->
+<!-- an `R 10`?  Remember, because of universal quantification, `runSomeNet` has to -->
+<!-- work with *any* `i`, be it 5, 10, or 100.  But the internal network might not -->
+<!-- be so accommodating.  If we try to write it, GHC will complain immediately.  In -->
+<!-- short, `runSomeNet` should be *partial*, and return a `Maybe`. -->
+<!-- ~~~haskell -->
+<!-- runSomeNet :: (KnownNat i, KnownNat o) -->
+<!--            => SomeNet -->
+<!--            -> R i -->
+<!--            -> Maybe (R o) -->
+<!-- ~~~ -->
+<!-- We can see another problem here --- We can't have it return `R o`, of course, -->
+<!-- because `o` is universally quantified here, so the user can decide `o`.  But -->
+<!-- `o` isn't free for the user to pick...it's determined by the network inside -->
+<!-- `SNet`.  So, the `o` has to be existentially quantified.  We'll return a -->
+<!-- continuation-style existentially quantified `o` here, because *hmatrix* doesn't -->
+<!-- come with a built-in constructor-style quantifier: -->
+<!-- ~~~haskell -->
+<!-- runSomeNet :: KnownNat i -->
+<!--            => SomeNet -->
+<!--            -> R i -->
+<!--            -> (forall o. KnownNat o => R o -> r) -->
+<!--            -> Maybe r -->
+<!-- ~~~ -->
+<!-- And finally, we have a type signature that makes sense: give a `SomeNet` and an -->
+<!-- `R i`, and possibly get in return an existentially quantified `R o`.  If the `R -->
+<!-- i` doesn't fit into the `SomeNet`, the result will be `Nothing`. -->
+<!-- Now that we have a type, let's try implementing it: -->
+<!-- ~~~haskell -->
+<!-- runSomeNet :: KnownNat i -->
+<!--            => SomeNet -->
+<!--            -> R i -->
+<!--            -> (forall o. KnownNat o => R o -> r) -->
+<!--            -> Maybe r -->
+<!-- runSomeNet n x f = case n of -->
+<!--                      SNet (n' :: Network i' hs o) -> -->
+<!--                        if natVal (Proxy @i') == natVal (Proxy @i) -->
+<!--                          then Just (f (runNet n' x)) -->
+<!--                          else Nothing -->
+<!-- ~~~ -->
+<!-- First, we open it and check if the `i'` inside the `SNet` is the same as the -->
+<!-- `i` we get as input.  If it is, we return `Just`, and if not, `Nothing`. -->
+<!-- Unfortunately, this doesn't really work.  That's because our silly little `==` -->
+<!-- doesn't actually prove to GHC that the two lengths are equal.  GHC will still -->
+<!-- believe that `i` and `i'` are different, in general. -->
+<!-- And why should it believe that `i ~ i'`, just because of `==`?  Remember that -->
+<!-- `==` is a user-defined function, and can return anything.  Why should the type -->
+<!-- checker be ~~fooled~~ convinced by a silly user-defined function? -->
+<!-- The problem is that the `Bool` returned doesn't really tell the compiler -->
+<!-- anything.  It's just a bit of information, and doesn't really come with any -->
+<!-- proof that the two types are actually equal.  What we need is a way to *prove* -->
+<!-- to the compiler (and the typechecker) that the two are equal. -->
+<!-- ### Proofs -->
+<!-- We got far without talking about proofs, but really, you can only expect to -->
+<!-- get so far when talking about dependently typed programming without talking -->
+<!-- about proofs!  Proofs are, in a way, essential to the very essence of -->
+<!-- dependently typed programming.[^proofs] -->
+<!-- [^proofs]: One thing I've noticed, however, is that a lot of dependently typed -->
+<!-- programming introductions *begin* with proofs, and go to applications later. -->
+<!-- Here, I hope I can change that trend by starting with the applications, and -->
+<!-- bringing proofs later after being able to see their motivation! --></div><footer><ul class="entry-series"><li><div>This entry is a part of a series called <b>&quot;Practical Dependent Types in Haskell&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html" class="tag-a-series" title="+Practical Dependent Types in Haskell"> series history</a>.</div></li></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/artificial-neural-networks.html" class="tag-a-tag">#artificial neural networks</a></li><li><a href="https://blog.jle.im/entries/tagged/dependent-types.html" class="tag-a-tag">#dependent types</a></li><li><a href="https://blog.jle.im/entries/tagged/functional-programming.html" class="tag-a-tag">#functional programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/linear-algebra.html" class="tag-a-tag">#linear algebra</a></li><li><a href="https://blog.jle.im/entries/tagged/machine-learning.html" class="tag-a-tag">#machine learning</a></li><li><a href="https://blog.jle.im/entries/tagged/numerical.html" class="tag-a-tag">#numerical</a></li><li><a href="https://blog.jle.im/entries/tagged/singletons.html" class="tag-a-tag">#singletons</a></li><li><a href="https://blog.jle.im/entries/tagged/types.html" class="tag-a-tag">#types</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@ramblings.html" class="tag-a-category">@RAMBLINGS</a></li><li><a href="https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html" class="tag-a-series">+Practical Dependent Types in Haskell</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing “in Code”!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
+    this.page.url = 'https://blog.jle.im/entry/practical-dependent-types-in-haskell-3.html';
+    this.page.identifier = 'dependent-haskell-3';
+};
+(function() {
+    var d = document, s = d.createElement('script');
+    s.src = '//incode.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+})();
+</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a><br></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></div></div></div><div id="footer-container"><div id="footer-content"><div class="tile"><div class="footer-copyright">&copy; 2016 Justin Le</div><div class="footer-follow social-follows"><ul class="social-follows-list"><li><ul class="social-follows-list-social"><li><a class="social-follow-twitter" title="Follow me on Twitter!" href="https://twitter.com/intent/user?user_id=mstk" onclick="window.open(
+  &#39;http://twitter.com/intent/user?user_id=907281&#39;,
+  &#39;facebook-share-dialog&#39;,
+  &#39;width=550,height=520&#39;);
+return false;
+">Twitter</a></li><li><a class="social-follow-gplus" title="Add me on Google+!" href="https://plus.google.com/+JustinLe">Google+</a></li><li><a class="social-follow-linkedin" title="Connect with me on LinkedIn!" href="https://linkedin.com/in/lejustin">LinkedIn</a></li><li><a class="social-follow-github" title="Fork me on Github!" href="https://github.com/mstksg">Github</a></li><li><a class="social-follow-keybase" title="Track me on Keybase!" href="https://keybase.io/mstksg">Keybase</a></li><li><a class="social-follow-bitcoin" title="Donate via bitcoin!" href="https://coinbase.com/mstksg">Bitcoin</a></li></ul></li><li><ul class="social-follows-list-site"><li><a class="social-follow-rss" title="Subscribe to my RSS Feed!" href="http://feeds.feedburner.com/incodeblog">RSS</a></li><li><a class="social-follow-email" title="Subscribe to the mailing list!" href="https://feedburner.google.com/fb/a/mailverify?loc=en_US&amp;uri=incodeblog">Mailing list</a></li></ul></li></ul></div></div></div></div></body></html>

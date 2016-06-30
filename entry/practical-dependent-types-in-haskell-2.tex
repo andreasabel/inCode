@@ -241,7 +241,7 @@ over \texttt{Network}, actually:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L88-89}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L106-107}
 \KeywordTok{data} \DataTypeTok{OpaqueNet}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
     \DataTypeTok{ONet}\OtherTok{ ::} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{OpaqueNet} \NormalTok{i o}
 \end{Highlighting}
@@ -257,7 +257,14 @@ back, and we can use them:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L91-96}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L109-121}
+\OtherTok{runOpaqueNet ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
+             \OtherTok{=>} \DataTypeTok{OpaqueNet} \NormalTok{i o}
+             \OtherTok{->} \DataTypeTok{R} \NormalTok{i}
+             \OtherTok{->} \DataTypeTok{R} \NormalTok{o}
+\NormalTok{runOpaqueNet n x }\FunctionTok{=} \KeywordTok{case} \NormalTok{n }\KeywordTok{of}
+                     \DataTypeTok{ONet} \NormalTok{n' }\OtherTok{->} \NormalTok{runNet n' x}
+
 \OtherTok{numHiddens ::} \DataTypeTok{OpaqueNet} \NormalTok{i o }\OtherTok{->} \DataTypeTok{Int}
 \NormalTok{numHiddens }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{ONet} \NormalTok{n }\OtherTok{->} \NormalTok{go n}
   \KeywordTok{where}
@@ -303,8 +310,8 @@ the caller decides what \texttt{a} is.
 
 Of course, this \emph{isn't} the case with the way we've written the
 function\ldots{}the function only returns a \emph{specific} \texttt{hs} that the
-\emph{function} decides. The \emph{caller} has to accommodate whatever is inside
-\texttt{ONet}.
+\texttt{OpaqueNet} decides. The \emph{caller} has to accommodate whatever is
+inside \texttt{ONet}.
 
 \subsubsection{The Universal and the
 Existential}\label{the-universal-and-the-existential}
@@ -435,7 +442,7 @@ the explicit singleton input style:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L60-67}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L78-85}
 \OtherTok{randomNet' ::} \NormalTok{forall m i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
            \OtherTok{=>} \DataTypeTok{Sing} \NormalTok{hs }\OtherTok{->} \NormalTok{m (}\DataTypeTok{Network} \NormalTok{i hs o)}
 \NormalTok{randomNet' }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{SNil}            \OtherTok{->}     \DataTypeTok{O} \FunctionTok{<$>} \NormalTok{randomWeights}
@@ -534,7 +541,7 @@ We now have enough to write our \texttt{randomONet}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L98-102}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L123-127}
 \OtherTok{randomONet ::} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
            \OtherTok{=>} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
            \OtherTok{->} \NormalTok{m (}\DataTypeTok{OpaqueNet} \NormalTok{i o)}
@@ -549,7 +556,7 @@ within reach:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L157-163}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L182-188}
 \OtherTok{main ::} \DataTypeTok{IO} \NormalTok{()}
 \NormalTok{main }\FunctionTok{=} \KeywordTok{do}
     \NormalTok{putStrLn }\StringTok{"What hidden layer structure do you want?"}
@@ -578,14 +585,12 @@ the first things you learn about as a Haskell programmer: how to separate logic
 that \emph{can} be pure from logic that is ``impure'' (IO, etc.), and then
 ``combine them'' at the very end, as late as possible.
 
-The common response to this is: ``Well, if the final program is going to be IO
-in the end anyway, why bother separating out pure and impure parts of your
-logic?''
-
-But, of course, we know that we gain separation of concerns, the increased
-ability to reason with your code and analyze what it does, the compiler's
-ability to check what you write, the limitation of implementations, etc.
-\ldots{} all reasons any Haskeller should be familiar with reciting.
+It's easy to think that just because the final program is going to ``be in IO in
+the end anyway'', there isn't any point in separating out pure and impure parts
+of your program logic. But we know that we gain separation of concerns, the
+increased ability to reason with your code and analyze what it does, the
+compiler's ability to check what you write, the limitation of implementations,
+etc.
 
 You can think of the general philosophy of working with typed/untyped worlds as
 being the same thing. You can write as much of your program as possible in the
@@ -599,6 +604,10 @@ that pop up at runtime like the \texttt{{[}Integer{]}} above.
 
 Finally, at the end, \emph{unite} them at the boundary. Pass the control
 football from the untyped world to the typed world!
+
+The great part about this all is that GHC and the type system is there at every
+step holding your hand, guiding you as you implement your programs and making
+sure everything is type-safe and fits together!
 
 \subsection{Continuation-Based
 Existentials}\label{continuation-based-existentials}
@@ -637,7 +646,7 @@ giving it what it needs.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L125-125}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L150-150}
 \KeywordTok{type} \DataTypeTok{OpaqueNet'} \NormalTok{i o r }\FunctionTok{=} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \NormalTok{r) }\OtherTok{->} \NormalTok{r}
 \end{Highlighting}
 \end{Shaded}
@@ -664,7 +673,7 @@ This ``continuation transformation'' is known as formally
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L127-128}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L152-153}
 \OtherTok{oNet' ::} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \DataTypeTok{OpaqueNet'} \NormalTok{i o r}
 \NormalTok{oNet' n }\FunctionTok{=} \NormalTok{\textbackslash{}f }\OtherTok{->} \NormalTok{f n}
 \end{Highlighting}
@@ -704,7 +713,7 @@ Because why not? Skolemize all the things!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L130-138}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L155-163}
 \OtherTok{withRandomONet' ::} \NormalTok{(}\DataTypeTok{MonadRandom} \NormalTok{m, }\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
                 \OtherTok{=>} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
                 \OtherTok{->} \NormalTok{(forall hs}\FunctionTok{.} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \NormalTok{m r)}
@@ -722,7 +731,7 @@ for, as well\ldots{}and, in a way, it actually seems (oddly) more natural.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L165-171}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L190-196}
 \OtherTok{main' ::} \DataTypeTok{IO} \NormalTok{()}
 \NormalTok{main' }\FunctionTok{=} \KeywordTok{do}
     \NormalTok{putStrLn }\StringTok{"What hidden layer structure do you want?"}
@@ -930,7 +939,7 @@ use GHC's generics features to give us instances for free:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L24-29}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L25-30}
 \KeywordTok{data} \DataTypeTok{Weights} \NormalTok{i o }\FunctionTok{=} \DataTypeTok{W} \NormalTok{\{}\OtherTok{ wBiases ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{R} \NormalTok{o)}
                      \NormalTok{,}\OtherTok{ wNodes  ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{L} \NormalTok{o i)}
                      \NormalTok{\}}
@@ -952,7 +961,7 @@ pretty nice because the entire structure is already known ahead of time:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L69-73}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L87-91}
 \OtherTok{putNet ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
        \OtherTok{=>} \DataTypeTok{Network} \NormalTok{i hs o}
        \OtherTok{->} \DataTypeTok{Put}
@@ -970,11 +979,11 @@ already \emph{know} how many \texttt{:\&\textasciitilde{}} layers to expect
 three \texttt{(:\&\textasciitilde{})}'s and one \texttt{O}.
 
 We'll write \texttt{getNet} similarly to how we wrote
-\href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L60-63}{\texttt{randomNet\textquotesingle{}}}:
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L78-81}{\texttt{randomNet\textquotesingle{}}}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L75-79}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L93-97}
 \OtherTok{getNet ::} \NormalTok{forall i hs o}\FunctionTok{.} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
        \OtherTok{=>} \DataTypeTok{Sing} \NormalTok{hs}
        \OtherTok{->} \DataTypeTok{Get} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i hs o)}
@@ -995,7 +1004,7 @@ we can't have \texttt{put} or \texttt{get} take a \texttt{Sing\ hs} input
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L81-83}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L99-101}
 \KeywordTok{instance} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{SingI} \NormalTok{hs, }\DataTypeTok{KnownNat} \NormalTok{o) }\OtherTok{=>} \DataTypeTok{Binary} \NormalTok{(}\DataTypeTok{Network} \NormalTok{i hs o) }\KeywordTok{where}
     \NormalTok{put }\FunctionTok{=} \NormalTok{putNet}
     \NormalTok{get }\FunctionTok{=} \NormalTok{getNet sing}
@@ -1025,7 +1034,7 @@ simple function to get the \texttt{{[}Integer{]}} of a network's structure:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L54-58}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L72-76}
 \OtherTok{hiddenStruct ::} \DataTypeTok{Network} \NormalTok{i hs o }\OtherTok{->} \NormalTok{[}\DataTypeTok{Integer}\NormalTok{]}
 \NormalTok{hiddenStruct }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case} \DataTypeTok{O} \NormalTok{_    }\OtherTok{->} \NormalTok{[]}
                      \NormalTok{_ }\FunctionTok{:&~} \NormalTok{(}\OtherTok{n' ::} \DataTypeTok{Network} \NormalTok{h hs' o)}
@@ -1053,7 +1062,7 @@ And that's all we need!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L104-109}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L129-134}
 \OtherTok{putONet ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
         \OtherTok{=>} \DataTypeTok{OpaqueNet} \NormalTok{i o}
         \OtherTok{->} \DataTypeTok{Put}
@@ -1071,7 +1080,7 @@ load:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L111-116}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L136-141}
 \OtherTok{getONet ::} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o)}
         \OtherTok{=>} \DataTypeTok{Get} \NormalTok{(}\DataTypeTok{OpaqueNet} \NormalTok{i o)}
 \NormalTok{getONet }\FunctionTok{=} \KeywordTok{do}
@@ -1084,16 +1093,45 @@ load:
 We load our flag, reify it, and once we're back in the typed land again, we can
 do our normal business.
 
+Isn't it nice that GHC is also there at every step to make sure we make the
+transition safely?
+
 Our final instance:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L118-120}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L143-145}
 \KeywordTok{instance} \NormalTok{(}\DataTypeTok{KnownNat} \NormalTok{i, }\DataTypeTok{KnownNat} \NormalTok{o) }\OtherTok{=>} \DataTypeTok{Binary} \NormalTok{(}\DataTypeTok{OpaqueNet} \NormalTok{i o) }\KeywordTok{where}
     \NormalTok{put }\FunctionTok{=} \NormalTok{putONet}
     \NormalTok{get }\FunctionTok{=} \NormalTok{getONet}
 \end{Highlighting}
 \end{Shaded}
+
+\section{An Existance For All}\label{an-existance-for-all}
+
+We've learned about how to ``cross'' from the untyped world to the typed world
+and bring about contexts involving types that can depend on runtime factors. To
+me, this is really where dependently typed programming starts --- when you start
+having to work with types that depend on run-time factors.
+
+We've already been able to reap a lot of benefits. All of the type safety we
+discovered in the last part is now available to us in a fully dynamic world, as
+well. We also learned the advantages of \emph{separating} the typed world from
+the untyped world, and how the compiler helps us make the transition safely.
+
+But, notice that I said that this is the \emph{start} of dependently typed
+programming. This is where things \emph{really} start to get fun. For the most
+part, except for what is basically syntactic sugar, everything we learned in the
+first part is mostly standard, non-dependent Haskell.
+
+Stepping into this new world can be disorienting at first. There's a lot of
+unexpected things that come up when we start working more with these fancy new
+types. We have to deal with types coming from multiple different sources,
+convincing the type system about relationships between them, and a whole bunch
+of other concerns that just don't happen when you program only at the value
+level. But, like all things, it comes more naturally with practice.
+
+Until next time!
 
 \subsubsection{Exercises}\label{exercises}
 
@@ -1104,9 +1142,9 @@ Links are to the solutions.
 \def\labelenumi{\arabic{enumi}.}
 \item
   Implement
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L140-145}{\texttt{putONet\textquotesingle{}}}
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L165-170}{\texttt{putONet\textquotesingle{}}}
   and
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L147-155}{\texttt{getONet\textquotesingle{}}}
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L172-180}{\texttt{getONet\textquotesingle{}}}
   using the continuation-style existentials, instead.
 \item
   Work with an existential wrapper over the \emph{entire} network structure
@@ -1129,17 +1167,22 @@ Links are to the solutions.
   \begin{itemize}
   \tightlist
   \item
-    \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L181-190}{\texttt{randomSNet}}
+    A function to
+    \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L206-210}{convert
+    \texttt{SomeNet}s to \texttt{OpaqueNet}s}. Return the \texttt{OpaqueNet}
+    with existentially quantified \texttt{i} and \texttt{o} in
+    continuation-style. (You can write a data type to return it in
+    constructor-style, too, for funsies.)
+  \item
+    \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L230-239}{\texttt{randomSNet}}
   \item
     The
-    \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L192-206}{binary
+    \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L241-255}{binary
     instance} for \texttt{SomeNet}
   \end{itemize}
 
   Hint: Remember that \texttt{toSomeSing} also works for \texttt{Integer}s, to
   get \texttt{Sing}s for \texttt{Nat}s, too!
 \end{enumerate}
-
-\section{Dealing with Runtime Types}\label{dealing-with-runtime-types}
 
 \end{document}
