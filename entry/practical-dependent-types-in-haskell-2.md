@@ -574,6 +574,11 @@ years:
     uses/returns a *lot* of different existentially qualified types, all those
     extra dumb wrappers are a huge hassle.
 
+-   Continuation-style existentials are in general smoother to use than
+    constructor-style ones when functions *return* existentials. Especially if
+    you intend to immediately use them, continuation-style basically saves you
+    an extraneous pattern match.
+
 -   When you have to use several existentials at once, continuation-style is
     much better because each nested existential doesn’t force another level of
     indentation:
