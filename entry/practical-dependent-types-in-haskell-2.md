@@ -436,7 +436,8 @@ from the untyped world to the typed world!
 
 The great part about this all is that GHC and the type system is there at every
 step holding your hand, guiding you as you implement your programs and making
-sure everything is type-safe and fits together!
+sure everything is type-safe and fits together! (This, after all, is what
+separates dependently typed programming from *dynamically* typed programming.)
 
 ### Continuation-Based Existentials
 
