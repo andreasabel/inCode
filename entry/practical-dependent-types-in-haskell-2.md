@@ -930,10 +930,14 @@ Links are to the solutions.
     -   While you’re at it, write it to return [a random continuation-style
         `SomeNet`,
         too](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L223-234)!
+        (See the type of
+        [`withRandomONet'`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L155-163)
+        for reference on how to write the type)
     -   The [binary
         instance](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L236-250)
-        for `SomeNet`. Remember that you can use
-        `natVal :: KnownNat n => Proxy n -> Integer`.
+        for `SomeNet`.
+
+        Hint: Remember `natVal :: KnownNat n => Proxy n -> Integer`!
 
     Hint: Remember that `toSomeSing` also works for `Integer`s, to get `Sing`s
     for `Nat`s, too!
