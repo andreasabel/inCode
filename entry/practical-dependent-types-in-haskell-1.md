@@ -1015,8 +1015,8 @@ some of the concepts! The links are to the solutions in the source file.
 2.  Writer a [function that takes two networks of the same dimensions and adds
     together their
     weights](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L169-184).
-    Remember that `L m n` has a `Num` instance that adds the matrices together
-    element-by-element!
+    Remember that `L m n` has a `Num` instance that adds the matrices
+    together element-by-element.
 
     Could this function ever be accidentally called on two networks that have
     different internal structures?
