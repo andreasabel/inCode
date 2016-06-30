@@ -435,6 +435,22 @@ $ <span class="kw">./NetworkTyped</span>
 <p>In practice, using types as powerful and descriptive as these begin to require a whole new set of tools once you get past the simplest use cases here. For example, our <code>Network</code> types so far required you to specify their size in the program itself (<code>Network 2 '[16, 8] 1</code> in the example source code, for instance). But what if we wanted to generate a network that has runtime-determined size (For example, getting the size from user input)? What if we wanted to load a pre-trained network whose size we don’t know? How can we manipulate our networks in a “dynamic” and generic way that still gives us all of the benefits of type-safe programming? We’ll found out next post!</p>
 <p>What we’re looking at here is a world where <em>types</em> can depend on run-time values … and values can depend on types. A world where types can be returned from functions and where types become as much of a manipulatable citizen of as values are.</p>
 <p>The art of working with types like this is <em>dependently typed programming</em>. We’re going to feel a bit of push back from Haskell at first, but after we hit our stride and tame the tools we need, we’re going to open up a whole new world of potential!</p>
+<h3 id="exercises">Exercises</h3>
+<p>Here are some exercises you can do for fun to test your understanding and apply some of the concepts! The links are to the solutions in the source file.</p>
+<ol type="1">
+<li><p>Write a function that <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L166-167">“pops” the input layer</a> off of a <code>Network</code>, returning both the input layer’s weights and the rest of the network, <code>(Weights i h, Network h hs o)</code>.</p>
+<p>Think about what its type would have to be. Could it possibly be called with a network that cannot be popped? (that is, that has only one layer?)</p></li>
+<li><p>Writer a <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L169-184">function that takes two networks of the same dimensions and adds together their weights</a>. Remember that <code>L m n</code> has a <code>Num</code> instance that adds the matrices together element-by-element!</p>
+<p>Could this function ever be accidentally called on two networks that have different internal structures?</p></li>
+<li><p>Write a function that takes a <code>Network i hs o</code> and <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L186-188">returns the singleton representing its hidden layer structure</a> — <code>Sing hs</code>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">hiddenSing ::</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">Sing</span> hs</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> n <span class="ot">&lt;- randomNet ::</span> <span class="dt">IO</span> (<span class="dt">Network</span> <span class="dv">10</span> <span class="ch">&#39;[5,3] 1)</span>
+ghci<span class="fu">&gt;</span> <span class="kw">let</span> s <span class="fu">=</span> hiddenSing n
+ghci<span class="fu">&gt;</span> <span class="fu">:</span>t s
+<span class="ot">s ::</span> <span class="dt">Sing</span> <span class="ch">&#39;[5,3]</span>
+ghci<span class="fu">&gt;</span> s
+<span class="dt">SNat</span> <span class="ot">`SCons`</span> <span class="dt">SNat</span> <span class="ot">`SCons`</span> <span class="dt">SNil</span></code></pre></div></li>
+</ol>
 <section class="footnotes">
 <hr />
 <ol>

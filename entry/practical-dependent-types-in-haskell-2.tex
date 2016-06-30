@@ -68,8 +68,8 @@
 \fi
 \hypersetup{breaklinks=true,
             bookmarks=true,
-            pdfauthor={Justin Le},
-            pdftitle={Practical Dependent Types in Haskell: Type-Safe Neural Networks (Part 2)},
+            pdfauthor={},
+            pdftitle={Practical Dependent Types in Haskell: Existential Neural Networks and Types at},
             colorlinks=true,
             citecolor=blue,
             urlcolor=blue,
@@ -83,11 +83,12 @@
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
 
-\title{Practical Dependent Types in Haskell: Type-Safe Neural Networks (Part 2)}
-\author{Justin Le}
+\title{Practical Dependent Types in Haskell: Existential Neural Networks and Types at}
 
 \begin{document}
 \maketitle
+
+Runtime \% Justin Le
 
 \emph{Originally posted on
 \textbf{\href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-2.html}{in
@@ -95,8 +96,7 @@ Code}}.}
 
 We're back to continue on
 \href{https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html}{our
-journey} in using practical dependent types to write type-safe neural networks!
-In
+journey} in using dependent types to write type-safe neural networks! In
 \href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html}{Part
 1}, we wrote things out in normal, untyped Haskell, and looked at red flags and
 general design principles that nudged us in the direction of adding dependent
@@ -131,11 +131,16 @@ endeavours.
 This post was written for GHC 8 on stackage snapshot
 \href{https://www.stackage.org/nightly-2016-06-28}{nightly-2016-06-28}, but
 should work with GHC 7.10 for the most part. All of the set-up instructions and
-caveats are the same as for
+caveats (like the \emph{singletons-2.0.1} bug affecting GHC 7.10 users and the
+unreleased \emph{hmatrix} version) are the same as for
 \href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html\#setup}{part
 1's setup}.
 
-\section{Run-time Types}\label{run-time-types}
+All of the code in this post is
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs}{downloadable
+as a standalone source file} so you can follow along!
+
+\section{Types at Runtime}\label{types-at-runtime}
 
 Recall the type we had for our neural networks:
 
@@ -152,16 +157,16 @@ the input vector it expects, \texttt{hs} is the list of hidden layer sizes, and
 \texttt{Network\ 10\ \textquotesingle{}{[}6,\ 4{]}\ 3} is a network with 10
 input nodes, two input layers of size 6 and 4, and 3 output nodes.
 
-This is great and all, but there's an apparent severe limitation to this:
-Haskell is a statically typed language, right? So doesn't this mean that using a
-network requires that you know the entire structure of the network at
-compile-time?
+This is great and all, but there's an severe limitation to this: Haskell is a
+statically typed language, right? So doesn't this mean that using a network
+requires that you know the entire structure of the network at compile-time?
 
 It's conceivable that you might be able to have the input and output sizes known
-at compile-time, but it's probably likely that you \emph{don't} know the what
-you want your hidden layer structure to be in advance. You might want to load it
-from a configuration file, or have it depend on user input. But can a type
-really depend on things that you can't know until runtime?
+at compile-time, but it's possible that you don't care or know your hidden layer
+structure. You might load it from a configuration file, or have it depend on
+user input. You might even want to receive one over a network channel without
+knowing what the internal structure is. But can a type really depend on things
+that you can't know until runtime?
 
 To illustrate more clearly:
 
@@ -176,7 +181,7 @@ To illustrate more clearly:
 \end{Highlighting}
 \end{Shaded}
 
-You would \emph{want} to put \texttt{hs} there where \texttt{???} is,
+We \emph{want} to put \texttt{hs} there where \texttt{???} is,
 but\ldots{}\texttt{???} has to be a type (of kind \texttt{{[}Nat{]}}).
 \texttt{hs} is a value (of type \texttt{{[}Integer{]}}). It's clear here that
 the \emph{type} of our network depends on something we can't write down or
@@ -184,9 +189,9 @@ decide until runtime.
 
 \subsection{An Existential Crisis}\label{an-existential-crisis}
 
-There are a couple of ways to go about this, actually --- we'll go through them,
-and we'll also see at the end how they are all really fundamentally the same
-thing.
+There are two main ways to go about solving this issue in Haskell. We'll look at
+both, and then see that they are really actually just two styles of doing the
+same thing.
 
 \subsubsection{Types hiding behind
 constructors}\label{types-hiding-behind-constructors}
@@ -209,7 +214,7 @@ Another downside of having the structure in the type is that we can't store all
 of them in the same list or data structure. A
 \texttt{Network\ 10\ \textquotesingle{}{[}5,3{]}\ 1} won't share a list with a
 \texttt{Network\ 10\ \textquotesingle{}{[}5,2{]}\ 1}, despite having the same
-inputs/outputs. You should
+inputs/outputs and API.
 
 Imagine that we had written a \texttt{Network} type that \emph{didn't} have the
 internal structure in the type ---
@@ -225,16 +230,16 @@ Recall that our issue earlier was that we had to write
 But, what if we worked with an \texttt{OpaqueNet\ i\ o}, we wouldn't even care!
 We wouldn't have to tell GHC what the internal structure is.
 
-In fact, I'd actually argue that \texttt{OpaqueNet} is the real type you should
-be offering to your users or using yourself, because it only exposes the types
-that are a part of its usage/API. You can store them in a list or MVar ---
+In fact, I'd actually argue that \texttt{OpaqueNet} is the type you should be
+offering to your users or using yourself, because it only exposes the types that
+are a part of its usage/API. You can store them in a list or MVar ---
 \texttt{{[}OpaqueNet\ 10\ 3{]}} and \texttt{MVar\ (OpaqueNet\ 10\ 3)},
 serialize/deserialize them without knowing their internal structure in advance
 (\texttt{loadNet\ ::\ FilePath\ -\textgreater{}\ IO\ (OpaqueNet\ 10\ 3)}), etc.
 (if you wanted to load a \texttt{Network}, you would need to know exactly what
 internal structure was stored, in advance). Though \texttt{Network} is a much
-easier type when writing the \emph{implementation}, \texttt{OpaqueNet} is a much
-more ideal type to \emph{use}, in a lot of situations.
+easier type when writing the \emph{implementation}, \texttt{OpaqueNet} is a
+often much more ideal type to \emph{use}.
 
 We can implement our vision for \texttt{OpaqueNet} as an ``existential'' wrapper
 over \texttt{Network}, actually:
@@ -279,11 +284,11 @@ back into scope, as in
 \texttt{ONet\ (n\ ::\ Network\ i\ hs\ o)\ -\textgreater{}\ ...}
 
 This pattern is sometimes called the \textbf{dependent pair}, because pattern
-matching on \texttt{ONet} gives yields the hidden existential (\texttt{hs}) and
-also a type that is based on it (\texttt{Network\ i\ hs\ o}). It's like
-\texttt{hs} ``paired'' with \texttt{Network\ i\ hs\ o}. Pattern match on the
-results to give both the type (\texttt{hs}) \emph{and} the data structure. (If
-we had implemented it as
+matching on \texttt{ONet} gives yields the hidden \textbf{existentially
+quantified} type (\texttt{hs}) and also a type that is based on it
+(\texttt{Network\ i\ hs\ o}). It's like \texttt{hs} ``paired'' with
+\texttt{Network\ i\ hs\ o}. Pattern match on the results to give both the type
+(\texttt{hs}) \emph{and} the data structure. (If we had implemented it as
 \texttt{ONet\ ::\ Sing\ hs\ -\textgreater{}\ Network\ i\ hs\ o\ -\textgreater{}\ OpaqueNet\ i\ o},
 this would be slightly clearer!)
 
@@ -308,20 +313,17 @@ Why not? Well, a type signature like
 \texttt{read\ ::\ Read\ a\ =\textgreater{}\ String\ -\textgreater{}\ a}, where
 the caller decides what \texttt{a} is.
 
-Of course, this \emph{isn't} the case with the way we've written the
-function\ldots{}the function only returns a \emph{specific} \texttt{hs} that the
-\texttt{OpaqueNet} decides. The \emph{caller} has to accommodate whatever is
-inside \texttt{ONet}.
+Of course, this isn't the case in the way we've written the function\ldots{}the
+function only returns a \emph{specific} \texttt{hs} that the \texttt{OpaqueNet}
+decides. The \emph{caller} has to accommodate whatever is inside \texttt{ONet}.
 
 \subsubsection{The Universal and the
 Existential}\label{the-universal-and-the-existential}
 
 We just brushed here on something at the heart of using existential types in
 Haskell: the issue of who has the power to decide what the types will be
-instantiated as.
-
-Most polymorphic functions you work with in Haskell are ``universally
-qualified''. For example, for a function like
+instantiated as. Most polymorphic functions you work with in Haskell are
+``universally qualified''. For example, for a function like
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -365,11 +367,9 @@ But, for a function like:
 
 While the caller can choose what \texttt{i} and \texttt{o} are, the
 \emph{function} gets to choose what \texttt{hs} (in the hidden
-\texttt{Network\ i\ hs\ o}) is.
-
-If I want to \emph{use} the thing that \texttt{foo} returns\ldots{}then \emph{I}
-have to be flexible. \emph{I} have the burden of being flexible enough to handle
-whatever the \emph{function} returns.
+\texttt{Network\ i\ hs\ o}) is. If I want to \emph{use} the thing that
+\texttt{foo} returns\ldots{}then \emph{I} have to be flexible. \emph{I} have the
+burden of being flexible enough to handle whatever the \emph{function} returns.
 
 In summary:
 
@@ -422,9 +422,9 @@ whatever it returns. Sound familiar? In fact, you can even imagine that
   the set of all \texttt{{[}Nat{]}}s is non-enumerable and uncountable, but
   hopefully you get the picture!}
 
-And remember that the basic way of handling an \texttt{Either} and figuring out
-what the type of the value is inside is through \emph{pattern matching} on it.
-You can't know if an \texttt{Either\ Int\ Bool} contains an \texttt{Int} or
+Remember that the basic way of handling an \texttt{Either} and figuring out what
+the type of the value is inside is through \emph{pattern matching} on it. You
+can't know if an \texttt{Either\ Int\ Bool} contains an \texttt{Int} or
 \texttt{Bool} until you pattern match. But, once you do, all is revealed, and
 GHC lets you take advantage of knowing the type.
 
@@ -434,8 +434,6 @@ network! Once you pattern match on it, all is revealed\ldots{}and GHC lets you
 take advantage of knowing the type!
 
 \subsection{Reification}\label{reification}
-
-Time to pull it all together.
 
 For simplicity, let's re-write \texttt{randomNet} the more sensible way --- with
 the explicit singleton input style:
@@ -456,23 +454,16 @@ the explicit singleton input style:
 
 We use \texttt{sing\ ::\ SingI\ hs\ =\textgreater{}\ Sing\ hs} to go call the
 \texttt{Sing\ hs\ -\textgreater{}}-style function from the
-\texttt{SingI\ hs\ =\textgreater{}} one.
-
-Recall that I recommend (personally, and subjectively) a style where your
-external API functions and typeclass instances are implemented in
-\texttt{SingI\ a\ =\textgreater{}} style, and your internal ones in
-\texttt{Sing\ a\ -\textgreater{}} style. This lets all of your internal
-functions fit together more nicely (\texttt{Sing\ a\ -\textgreater{}} style
-tends to be easier to write in, especially if you stay in it the entire time,
-because \texttt{Sing}s are normal first-class values, unlike those global and
-magical typeclasses) while at the same time removing the burden of calling with
-explicit singletons from people using the functionality externally.\footnote{This
-  is a completely personal style, and I can't claim to speak for all of the
-  Haskell dependent typing community. In fact, I'm not even sure that you could
-  even say that there is a consensus at all. But this is the style that has
-  worked personally for me in both writing and using libraries! And hey, some
-  libraries I've seen in the wild even offer \emph{both} styles in their
-  external API.}
+\texttt{SingI\ hs\ =\textgreater{}} one.\footnote{Recall that I recommend
+  (personally, and subjectively) a style where your external API functions and
+  typeclass instances are implemented in \texttt{SingI\ a\ =\textgreater{}}
+  style, and your internal ones in \texttt{Sing\ a\ -\textgreater{}} style. This
+  lets all of your internal functions fit together more nicely
+  (\texttt{Sing\ a\ -\textgreater{}} style tends to be easier to write in,
+  especially if you stay in it the entire time, because \texttt{Sing}s are
+  normal first-class values, unlike those global and magical typeclasses) while
+  at the same time removing the burden of calling with explicit singletons from
+  people using the functionality externally.}
 
 Now, we still need to somehow get our list of integers to the type level so that
 we can create a \texttt{Network\ i\ hs\ o} to stuff into our \texttt{ONet}. For
@@ -528,14 +519,14 @@ constructor, we also have a \texttt{KnownNat\ n} instance (As discussed in
 \href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html\#singletons-and-induction}{previous
 part}).
 
-(\texttt{toSing} works using a simple typeclass mechanism with associated types
+\texttt{toSing} works using a simple typeclass mechanism with associated types
 whose job is to associate \emph{value}'s types with the kinds of their
 singletons. It associates \texttt{Bool} (the type) with \texttt{Bool} (the
 kind), \texttt{Integer} (the type) with \texttt{Nat} (the kind),
 \texttt{{[}Integer{]}} (the type) with \texttt{{[}Nat{]}} (the kind), etc., and
 it does it with simple applications of type families --- here's a
 \href{https://ocharles.org.uk/blog/posts/2014-12-12-type-families.html}{nice
-tutorial on type families} courtesy of Oliver Charles.)
+tutorial on type families} courtesy of Oliver Charles.
 
 We now have enough to write our \texttt{randomONet}:
 
@@ -578,11 +569,11 @@ In a way, you can consider the \texttt{toSing} and the \texttt{SomeSing} as our
 (and the process of reification) cleanly separates the two.
 
 This ``boundary'' can be thought of as a lot like the boundary we talk about
-between ``pure'' functions and values and ``impure'' (IO, etc.) ones. We say to
-always write as much of your program as possible in the ``pure'' world, and to
-separate and pull out as much logic as you can to be pure logic. That's one of
-the first things you learn about as a Haskell programmer: how to separate logic
-that \emph{can} be pure from logic that is ``impure'' (IO, etc.), and then
+between ``pure'' functions and values and ``impure'' (IO, etc.) ones. People say
+to always write as much of your program as possible in the ``pure'' world, and
+to separate and pull out as much logic as you can to be pure logic. That's one
+of the first things you learn about as a Haskell programmer: how to separate
+logic that \emph{can} be pure from logic that is ``impure'' (IO, etc.), and then
 ``combine them'' at the very end, as late as possible.
 
 It's easy to think that just because the final program is going to ``be in IO in
@@ -613,11 +604,9 @@ sure everything is type-safe and fits together!
 Existentials}\label{continuation-based-existentials}
 
 There's another way in Haskell that we work with existential types that can be
-more natural to use in a lot of cases.
-
-Remember that when we pattern match on an existential data type, you have to
-work with the values in the constructor in a parametrically polymorphic way. For
-example, if we had:
+more natural to use in a lot of cases. Remember that when we pattern match on an
+existential data type, you have to work with the values in the constructor in a
+parametrically polymorphic way. For example, if we had:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -753,16 +742,14 @@ the ``wall'' for the continuation-style existentials.
 We've just discussed two ways of doing the same thing. Two styles of
 representing/working with existential types. The two are equivalent, in that you
 can always ``convert'' between one or the other, but the choice of which one you
-use/reach for/offer can make a difference in code clarity.
-
-I don't have much general advice for which one to provide. After working with
+use/reach for/offer can make a difference in code clarity. After working with
 both styles a lot (sometimes, libraries only offer one style), you start to get
 a feel for which one you like more in which situations. In the end, I don't
 think there are any hard or fast rules. Just use whichever one you feel is more
 readable!
 
-That being said, here are some general Pros and Cons that I've encountered over
-the years. This list is by no means exhaustive.
+That being said, here are some general Pros and Cons that I've noticed over the
+years:
 
 \begin{itemize}
 \item
@@ -855,22 +842,25 @@ the years. This list is by no means exhaustive.
   write a \texttt{Show} instance for
   \texttt{(forall\ hs.\ Network\ i\ hs\ o\ -\textgreater{}\ r)\ -\textgreater{}\ r},
   but you can write one for \texttt{OpaqueNet\ i\ o}. We'll also be writing
-  \texttt{Binary} instances later for serialization/deserialization, and we'll
-  need the wrapper for sure.
+  \texttt{Binary} instances later for serialization/deserialization, and it only
+  works with constructor-style.
 \item
   Haskell doesn't allow you to use Rank-N types as arguments to type
   constructors, so you can have \texttt{{[}OpaqueNet\ i\ o{]}}, but \emph{not}
   \texttt{{[}OpaqueNet\textquotesingle{}\ i\ o\ r{]}} or
   \texttt{{[}(forall\ hs.\ Network\ i\ hs\ o\ -\textgreater{}\ r)\ -\textgreater{}\ r{]}}.
-  The latter are known as impredicative types, which are a big no-no in GHC
+  You can have \texttt{IO\ (OpaqueNet\ i\ o)}, but not
+  \texttt{IO\ ((forall\ hs.\ Network\ i\ hs\ o\ -\textgreater{}\ r)\ -\textgreater{}\ r)}.
+  These are known as \emph{impredicative} types, which are a big no-no in GHC
   Haskell. Don't even go there! The constructor style is necessary in these
-  situations.
+  situations unless you want to do a ContT-style skolemization, like
+  \texttt{(forall\ hs.\ Network\ i\ hs\ o\ -\textgreater{}\ {[}r{]})\ -\textgreater{}\ {[}r{]}}
+  and
+  \texttt{(forall\ hs.\ Network\ i\ hs\ o\ -\textgreater{}\ IO\ r)\ -\textgreater{}\ IO\ r}.
 \item
   When writing functions that \emph{take} existentials as inputs, the
-  constructor-style is arguably more natural.
-
-  For example, we wrote a function to find the number of hidden layers in a
-  network earlier:
+  constructor-style is arguably more natural. For example, we wrote a function
+  to find the number of hidden layers in a network earlier:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -900,20 +890,19 @@ the years. This list is by no means exhaustive.
   most part.
 \end{itemize}
 
-These are just general principles, not hard-fast rules. This list reflects my
-current progress in my journey towards a dependently typed lifestyle and also
-the things come to mind as I write this blog post. If you come back in a month,
-you might see more things listed here!
+These are just general principles, not hard-fast rules. This list is nowhere
+near exhaustive and reflects my current progress in my journey towards a
+dependently typed lifestyle and also the things come to mind as I write this
+blog post. If you come back in a month, you might see more things listed here!
 
 All said, I do find myself very happy when I see that a library I'm using offers
 \emph{both} styles for me to use. And I've been known to submit PR's to a
 library to have it offer one style or another, if it's lacking.
 
 Be judicious. If you're writing a library, don't spam it with too many throwaway
-constructors. If you're writing an application, be wary of indentation creep.
-After a while, you'll begin to intuitively see which style shines in which
-situations! (And, in some case, there might not even be a definitive ``better''
-style to use.)
+constructors. After a while, you'll begin to intuitively see which style shines
+in which situations! (And, in some case, there might not even be a definitive
+``better'' style to use.)
 
 \section{Serializing Networks}\label{serializing-networks}
 
@@ -951,13 +940,14 @@ use GHC's generics features to give us instances for free:
 
 For simple types like \texttt{Weights}, which simply contain serializable
 things, the \emph{binary} library is smart enough to write your instances
-automatically for you!
+automatically for you! However, for GADTs like \texttt{Network}, we have to
+things manually.
 
 \subsubsection{\texorpdfstring{Serializing
 \texttt{Network}}{Serializing Network}}\label{serializing-network}
 
-Writing \texttt{putNet} and \texttt{getNet} to put/get \texttt{Network}s is
-pretty nice because the entire structure is already known ahead of time:
+Writing \texttt{putNet} and \texttt{getNet} to put/get \texttt{Network}s is nice
+because the entire structure is already known ahead of time:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -974,7 +964,7 @@ If it's an \texttt{O\ w}, just serialize the \texttt{w}. If it's a
 \texttt{w\ :\&\textasciitilde{}\ net}, serialize the \texttt{w} then the rest of
 the \texttt{net}. The reason we can get away without any flags is because we
 already \emph{know} how many \texttt{:\&\textasciitilde{}} layers to expect
-\emph{just from the type}. If we want to deserialize/load a
+\emph{just from the type}. If we want to deserialize a
 \texttt{Network\ 5\ \textquotesingle{}{[}10,6,3{]}\ 2}, we \emph{know} we want
 three \texttt{(:\&\textasciitilde{})}'s and one \texttt{O}.
 
@@ -996,11 +986,10 @@ We have to ``pattern match'' on \texttt{hs} using singletons to see the
 constructor we are expecting to deserialize and then just follow what the
 singleton's structure tells us.
 
-We can try to write a \texttt{Binary} instance for \texttt{Network}. Of course,
-we can't have \texttt{put} or \texttt{get} take a \texttt{Sing\ hs} input
-(that'd change the arity/type of the function), so we have to switch to
-\texttt{SingI}-style had have their \texttt{Binary} instances require a
-\texttt{SingI\ hs} constraint.
+To write a \texttt{Binary} instance for \texttt{Network}, we can't have
+\texttt{get} take a \texttt{Sing\ hs} input --- that'd change the arity/type of
+the function. We have to switch to \texttt{SingI}-style had have their
+\texttt{Binary} instances require a \texttt{SingI\ hs} constraint.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1049,14 +1038,13 @@ returns the value-level \texttt{Integer} corresponding to the type-level
 \texttt{n\ ::\ Nat}. (I'm also using GHC 8's fancy \emph{TypeApplications}
 syntax, and \texttt{Proxy\ @h} is the same as \texttt{Proxy\ ::\ Proxy\ h}).
 
-It is interesting to note that \texttt{natVal} and \texttt{hiddenStruct} take
-type-level information (\texttt{n}, \texttt{hs}) and turns them into term-level
-values (\texttt{Integer}s, \texttt{{[}Integer{]}}s). In fact, they are kind of
-the opposites of our reification functions like \texttt{toSing}. Going from the
-``type level'' to the ``value level'' is known in Haskell as
-\textbf{reflection}, and is the dual concept of reification. (The
-\emph{singletons} library offers reflectors for all of its singletons, as
-\texttt{fromSing}.)
+Note that \texttt{natVal} and \texttt{hiddenStruct} take type-level information
+(\texttt{n}, \texttt{hs}) and turns them into term-level values
+(\texttt{Integer}s, \texttt{{[}Integer{]}}s). They are kind of the opposites of
+our reification functions like \texttt{toSing}. Going from the ``type level'' to
+the ``value level'' is known in Haskell as \textbf{reflection}, and is the dual
+concept of reification. (The \emph{singletons} library offers reflectors for all
+of its singletons, as \texttt{fromSing}.)
 
 And that's all we need!
 
@@ -1072,7 +1060,7 @@ And that's all we need!
 \end{Highlighting}
 \end{Shaded}
 
-Put the structure (as a flag), and then put the network itself.
+``Put the structure (as a flag), and then put the network itself.''
 
 Now, to deserialize, we want to \emph{load} the list of \texttt{Integer}s and
 reify it back to the type level to know what type of network we're expecting to
@@ -1091,10 +1079,8 @@ load:
 \end{Shaded}
 
 We load our flag, reify it, and once we're back in the typed land again, we can
-do our normal business.
-
-Isn't it nice that GHC is also there at every step to make sure we make the
-transition safely?
+do our normal business. Isn't it nice that GHC is also there at every step to
+make sure we make the transition safely?
 
 Our final instance:
 
@@ -1117,21 +1103,22 @@ having to work with types that depend on run-time factors.
 We've already been able to reap a lot of benefits. All of the type safety we
 discovered in the last part is now available to us in a fully dynamic world, as
 well. We also learned the advantages of \emph{separating} the typed world from
-the untyped world, and how the compiler helps us make the transition safely.
+the untyped world and how the compiler helps us make the transition safely.
 
-But, notice that I said that this is the \emph{start} of dependently typed
-programming. This is where things \emph{really} start to get fun. For the most
-part, except for what is basically syntactic sugar, everything we learned in the
-first part is mostly standard, non-dependent Haskell.
+But really, this is all just the \emph{start} of dependently typed programming.
+This is where things \emph{really} start to get fun. For the most part, except
+for what is basically syntactic sugar, everything we learned in the first part
+is mostly standard, non-dependent Haskell, after all.
 
 Stepping into this new world can be disorienting at first. There's a lot of
 unexpected things that come up when we start working more with these fancy new
 types. We have to deal with types coming from multiple different sources,
-convincing the type system about relationships between them, and a whole bunch
-of other concerns that just don't happen when you program only at the value
-level. But, like all things, it comes more naturally with practice.
+convincing the type system about their properties and relationships between
+them, and a whole bunch of other concerns that just don't happen when you
+program only at the value level. But, like all things, it comes more naturally
+with practice.
 
-Until next time!
+We'll see where our journey takes us next time!
 
 \subsubsection{Exercises}\label{exercises}
 
@@ -1174,10 +1161,10 @@ Links are to the solutions.
     continuation-style. (You can write a data type to return it in
     constructor-style, too, for funsies.)
   \item
-    \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L230-239}{\texttt{randomSNet}}
+    \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L212-221}{\texttt{randomSNet}}
   \item
     The
-    \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L241-255}{binary
+    \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L223-237}{binary
     instance} for \texttt{SomeNet}
   \end{itemize}
 

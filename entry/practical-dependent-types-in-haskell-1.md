@@ -999,6 +999,46 @@ We’re going to feel a bit of push back from Haskell at first, but after we hit
 our stride and tame the tools we need, we’re going to open up a whole new world
 of potential!
 
+### Exercises
+
+Here are some exercises you can do for fun to test your understanding and apply
+some of the concepts! The links are to the solutions in the source file.
+
+1.  Write a function that [“pops” the input
+    layer](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L166-167)
+    off of a `Network`, returning both the input layer’s weights and the rest of
+    the network, `(Weights i h, Network h hs o)`.
+
+    Think about what its type would have to be. Could it possibly be called with
+    a network that cannot be popped? (that is, that has only one layer?)
+
+2.  Writer a [function that takes two networks of the same dimensions and adds
+    together their
+    weights](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L169-184).
+    Remember that `L m n` has a `Num` instance that adds the matrices together
+    element-by-element!
+
+    Could this function ever be accidentally called on two networks that have
+    different internal structures?
+
+3.  Write a function that takes a `Network i hs o` and [returns the singleton
+    representing its hidden layer
+    structure](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L186-188)
+    — `Sing hs`:
+
+    ``` {.haskell}
+    hiddenSing :: Network i hs o -> Sing hs
+    ```
+
+    ``` {.haskell}
+    ghci> n <- randomNet :: IO (Network 10 '[5,3] 1)
+    ghci> let s = hiddenSing n
+    ghci> :t s
+    s :: Sing '[5,3]
+    ghci> s
+    SNat `SCons` SNat `SCons` SNil
+    ```
+
 [^1]: This sentence is the story of my Haskell life.
 
 [^2]: Okay, maybe not *literally* every one. But, pretty much every one.
