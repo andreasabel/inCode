@@ -925,9 +925,12 @@ Links are to the solutions.
         Return the `OpaqueNet` with existentially quantified `i` and `o`
         in continuation-style. (You can write a data type to return it in
         constructor-style, too, for funsies.)
-    -   [`randomSNet`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L212-221)
+    -   [`randomSNet`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L212-221),
+        returning `m SomeNet`.
+    -   While you’re at it, write it to return [a continuation-style `SomeNet`,
+        too!](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L223-234).
     -   The [binary
-        instance](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L223-237)
+        instance](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L236-250)
         for `SomeNet`
 
     Hint: Remember that `toSomeSing` also works for `Integer`s, to get `Sing`s
