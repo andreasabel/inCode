@@ -2,7 +2,7 @@ Practical Dependent Types in Haskell: Existential Neural Networks and Types at
 Runtime
 ======================================================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on June 30, 2016.
 > [Read online!](https://blog.jle.im/entry/practical-dependent-types-in-haskell-2.html)
 
 We’re back to continue on [our
@@ -909,7 +909,7 @@ And, of course, we used the constructor-style existential this whole time
 instead of the continuation-style one because we can’t directly write typeclass
 instances for the latter.
 
-An Existance For All
+An Existence For All
 --------------------
 
 We’ve learned about how to “cross” from the untyped world to the typed world and
@@ -923,9 +923,7 @@ well. We also learned the advantages of *separating* the typed world from the
 untyped world and how the compiler helps us make the transition safely.
 
 But really, this is all just the *start* of dependently typed programming. This
-is where things *really* start to get fun. (After all, for the most part, except
-for what is basically syntactic sugar, everything we learned in the first part
-is mostly standard, non-dependent Haskell.)
+is where things *really* start to get fun.
 
 Stepping into this new world can be disorienting at first. There’s a lot of
 unexpected things that come up when we start working more with these fancy new
