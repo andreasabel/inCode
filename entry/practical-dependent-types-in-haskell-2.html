@@ -80,7 +80,7 @@ numHiddens <span class="fu">=</span> \<span class="kw">case</span> <span class="
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">bad ::</span> <span class="dt">OpaqueNet</span> i o <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o
 bad <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">ONet</span> n <span class="ot">-&gt;</span> n          <span class="co">-- nope, not ok at all.</span></code></pre></div>
 <p>Why not? Well, a type signature like <code>OpaqueNet i o -&gt; Network i hs o</code> means that the <em>caller</em> can decide what <code>hs</code> can be — just like <code>read :: Read a =&gt; String -&gt; a</code>, where the caller decides what <code>a</code> is.</p>
-<p>Of course, this isn’t the case in the way we’ve written the function…the function can only return a <em>specific</em> <code>hs</code> (namely, the <code>hs</code> of the network that <code>ONet</code> hides). <em>caller</em> has to accommodate whatever is inside <code>ONet</code>.</p>
+<p>Of course, this isn’t the case in the way we’ve written the function…the function can only return a <em>specific</em> <code>hs</code> (namely, the <code>hs</code> of the network that <code>ONet</code> hides). The <em>caller</em> has to accommodate whatever is inside <code>ONet</code>.</p>
 <h4 id="the-universal-and-the-existential">The Universal and the Existential</h4>
 <p>We just brushed here on something at the heart of using existential types in Haskell: the issue of who has the power to decide what the types will be instantiated as. Most polymorphic functions you work with in Haskell are “universally qualified”. For example, for a function like</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">map<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]</code></pre></div>
@@ -199,14 +199,14 @@ oNet&#39; n <span class="fu">=</span> \f <span class="ot">-&gt;</span> f n</code
 <p>Let’s write a version of <code>randomONet</code> that returns a continuation-style existential:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">withRandomONet&#39; ::</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
                 <span class="ot">=&gt;</span> [<span class="dt">Integer</span>]
-                <span class="ot">-&gt;</span> (forall hs<span class="fu">.</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> m r)
+                <span class="ot">-&gt;</span> (forall hs<span class="fu">.</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> m r)
                 <span class="ot">-&gt;</span> m r
 <span class="co">--         aka, =&gt; [Integer]</span>
 <span class="co">--              -&gt; OpaqueNet&#39; i o (m r)</span>
 withRandomONet&#39; hs f <span class="fu">=</span> <span class="kw">case</span> toSing hs <span class="kw">of</span>
                          <span class="dt">SomeSing</span> ss <span class="ot">-&gt;</span> <span class="kw">do</span>
                            net <span class="ot">&lt;-</span> randomNet&#39; ss
-                           f ss net</code></pre></div>
+                           f net</code></pre></div>
 <p>But, hey, because we’re skolemizing everything, let’s do it with the skolemized version of <code>toSing</code>/<code>SomeSing</code>, <code>withSomeSing</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- a version of `toSing` that returns a skolemized `SomeSing`</span>
 <span class="ot">withSomeSing ::</span> [<span class="dt">Integer</span>]

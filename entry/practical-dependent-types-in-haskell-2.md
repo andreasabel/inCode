@@ -208,7 +208,7 @@ that the *caller* can decide what `hs` can be — just like
 
 Of course, this isn’t the case in the way we’ve written the function…the
 function can only return a *specific* `hs` (namely, the `hs` of the network that
-`ONet` hides). *caller* has to accommodate whatever is inside `ONet`.
+`ONet` hides). The *caller* has to accommodate whatever is inside `ONet`.
 
 #### The Universal and the Existential
 
@@ -520,14 +520,14 @@ existential:
 ``` {.haskell}
 withRandomONet' :: (MonadRandom m, KnownNat i, KnownNat o)
                 => [Integer]
-                -> (forall hs. Sing hs -> Network i hs o -> m r)
+                -> (forall hs. Network i hs o -> m r)
                 -> m r
 --         aka, => [Integer]
 --              -> OpaqueNet' i o (m r)
 withRandomONet' hs f = case toSing hs of
                          SomeSing ss -> do
                            net <- randomNet' ss
-                           f ss net
+                           f net
 ```
 
 But, hey, because we’re skolemizing everything, let’s do it with the skolemized
