@@ -302,8 +302,8 @@ the type.
 
 For `OpaqueNet i o`, it’s the same! You don’t know the actual type of the
 `Network i hs o` it contains until you *pattern match* on the network (This
-time, called also **dependent pattern matching**[^2]). Once you pattern match on
-it, all is revealed…and GHC lets you take advantage of knowing the type!
+time, it’s a “dependent pattern match”). Once you pattern match on it, all is
+revealed…and GHC lets you take advantage of knowing the type!
 
 ### Reification
 
@@ -324,7 +324,7 @@ randomNet = randomNet' sing
 ```
 
 We use `sing :: SingI hs => Sing hs` to go call the `Sing hs ->`-style function
-from the `SingI hs =>` one.[^3]
+from the `SingI hs =>` one.[^2]
 
 Now, we still need to somehow get our list of integers to the type level so that
 we can create a `Network i hs o` to stuff into our `ONet`. For that, the
@@ -334,7 +334,7 @@ data constructor. `toSing` takes the term-level value (for us, an `[Integer]`)
 and returns a `SomeSing` wrapping the type-level value (for us, a `[Nat]`). When
 we pattern match on the `SomeSing` constructor, we get `a` in scope!
 
-As of *singletons-2.2* and GHC 8[^4], `SomeSing` is implemented as:
+As of *singletons-2.2* and GHC 8[^3], `SomeSing` is implemented as:
 
 ``` {.haskell}
 data SomeSing :: * -> * where
@@ -503,7 +503,7 @@ numHiddens' oN = oN go
 
 ```
 
-This “continuation transformation” is formally known as **skolemization**.[^5]
+This “continuation transformation” is formally known as **skolemization**.[^4]
 
 We can “wrap” a `Network i hs o` into an `OpaqueNet' i o r`:
 
@@ -742,7 +742,7 @@ reification to another simple application: serialization.
 
 Serializing networks of *known* size — whose sizes are statically in their types
 — is pretty straightforward, and its ease is one of the often-quoted advantages
-of having sizes in your types.[^6] I’m going to be using the
+of having sizes in your types.[^5] I’m going to be using the
 *[binary](https://hackage.haskell.org/package/binary)* library, which offers a
 very standard typeclass-based approach for serializing and deserializing data.
 There are a lot of tutorials online (and I even [wrote a small
@@ -992,10 +992,7 @@ Links are to the solutions.
 [^1]: A bit of a stretch, because the set of all `[Nat]`s is non-enumerable and
     uncountable, but hopefully you get the picture!
 
-[^2]: Yes, the people who thought of this weren’t super creative with their
-    naming choices.
-
-[^3]: Recall that I recommend (personally, and subjectively) a style where your
+[^2]: Recall that I recommend (personally, and subjectively) a style where your
     external API functions and typeclass instances are implemented in
     `SingI a =>` style, and your internal ones in `Sing a ->` style. This lets
     all of your internal functions fit together more nicely (`Sing a ->` style
@@ -1004,11 +1001,11 @@ Links are to the solutions.
     magical typeclasses) while at the same time removing the burden of calling
     with explicit singletons from people using the functionality externally.
 
-[^4]: In older versions of singletons, before GHC 8 and *TypeInType*, we had to
+[^3]: In older versions of singletons, before GHC 8 and *TypeInType*, we had to
     implement it using “kind proxies”. Don’t worry if you’re following along in
     7.10; the basic usage of `SomeSing` is essentially identical either way.
 
-[^5]: Skolemization is probably one of the coolest words you’ll encounter when
+[^4]: Skolemization is probably one of the coolest words you’ll encounter when
     learning/using Haskell, and sometimes just knowing that you’re “skolemizing”
     something makes you feel cooler. Thank you [Thoralf
     Skolem](https://en.wikipedia.org/wiki/Thoralf_Skolem). If you ever see a
@@ -1016,4 +1013,4 @@ Links are to the solutions.
     inspiration behind my decision to name my first-born son Thoralf. (My second
     son’s name will be Curry)
 
-[^6]: It even lets you write `Storable` instances!
+[^5]: It even lets you write `Storable` instances!
