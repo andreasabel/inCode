@@ -291,7 +291,7 @@ foo :: String -> Either Int Bool
 I have to handle the result for both the case where I get an `Int` and the case
 where I get a `Bool`. The *function* gets to pick what type I have to handle
 (`Int` or `Bool`), and *I* have to adapt to whatever it returns. Sound familiar?
-In fact, you can even imagine that `OpaqueNet i o` as being just a recursive
+In fact, you can even imagine that `OpaqueNet i o` as being just a infinite
 *Either* over `'[]`, `'[1]`, `'[1,2]`, etc.[^1]
 
 Remember that the basic way of handling an `Either` and figuring out what the
