@@ -714,7 +714,7 @@ constructor might have.
 Now we have enough pieces of the puzzle:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L65-73
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L65-74
 randomNet :: forall m i hs o. (MonadRandom m, KnownNat i, SingI hs, KnownNat o)
           => m (Network i hs o)
 randomNet = go sing
@@ -722,8 +722,9 @@ randomNet = go sing
     go :: forall h hs'. KnownNat h
        => Sing hs'
        -> m (Network h hs' o)
-    go = \case SNil            ->     O <$> randomWeights
-               SNat `SCons` ss -> (:&~) <$> randomWeights <*> go ss
+    go = \case
+        SNil            ->     O <$> randomWeights
+        SNat `SCons` ss -> (:&~) <$> randomWeights <*> go ss
 
 ```
 
@@ -849,7 +850,7 @@ extra work — they’re free!
 Our back-prop algorithm is ported pretty nicely too:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L75-115
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L76-116
 train :: forall i hs o. (KnownNat i, KnownNat o)
       => Double           -- ^ learning rate
       -> R i              -- ^ input vector
@@ -929,7 +930,7 @@ compiler handle remembering/checking the rest.
 You can download the [typed
 network](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs)
 source code and run it yourself. Again, the
-[`main`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L150-158)
+[`main`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L151-159)
 method is written identically to that of the other file and tests the identical
 function.
 
@@ -1005,7 +1006,7 @@ Here are some exercises you can do for fun to test your understanding and apply
 some of the concepts! The links are to the solutions in the source file.
 
 1.  Write a function that [“pops” the input
-    layer](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L166-167)
+    layer](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L167-168)
     off of a `Network`, returning both the input layer’s weights and the rest of
     the network, `(Weights i h, Network h hs o)`.
 
@@ -1014,7 +1015,7 @@ some of the concepts! The links are to the solutions in the source file.
 
 2.  Writer a [function that takes two networks of the same dimensions and adds
     together their
-    weights](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L169-184).
+    weights](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L170-184).
     Remember that `L m n` has a `Num` instance that adds the matrices
     together element-by-element.
 
@@ -1023,7 +1024,7 @@ some of the concepts! The links are to the solutions in the source file.
 
 3.  Write a function that takes a `Network i hs o` and [returns the singleton
     representing its hidden layer
-    structure](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L186-188)
+    structure](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L186-189)
     — `Sing hs`:
 
     ``` {.haskell}
