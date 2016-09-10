@@ -750,9 +750,8 @@ We’ve stumbled upon common pattern in dependent Haskell: “building up” a
 value-level singleton *structure* from a type that we want (either explicitly
 given as an argument, or provided through a typeclass like `SingI`) and then
 inductively piggybacking on that structure’s constructors to build the thing you
-*really* want (called “elimination”). Here, we use `SingI hs` to build our
-`NatList hs` structure, and use/“eliminate” that structure to create our
-`Network i hs o`.
+*really* want (called “elimination”). Here, we use `SingI hs` and “eliminate”
+that structure to create our `Network i hs o`.
 
 #### On Typeclasses and Dictionaries
 
@@ -1013,7 +1012,7 @@ some of the concepts! The links are to the solutions in the source file.
     Think about what its type would have to be. Could it possibly be called with
     a network that cannot be popped? (that is, that has only one layer?)
 
-2.  Writer a [function that takes two networks of the same dimensions and adds
+2.  Write a [function that takes two networks of the same dimensions and adds
     together their
     weights](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L170-184).
     Remember that `L m n` has a `Num` instance that adds the matrices
