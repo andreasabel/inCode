@@ -394,7 +394,7 @@ Haskell as **reification**. With this, our original goal is (finally) within
 reach:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L200-208
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L205-213
 main :: IO ()
 main = do
     putStrLn "What hidden layer structure do you want?"
@@ -489,12 +489,15 @@ on the subject.)
 *Using* these types is very similar to using the constructor-style ones:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L159-171
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L159-176
 runOpaqueNet' :: (KnownNat i, KnownNat o)
               => OpaqueNet' i o (R o)
               -> R i
               -> R o
 runOpaqueNet' oN x = oN (\n -> runNet n x)
+--            :: ((forall hs. Network i hs o -> R o) -> R o)
+--            -> R i
+--            -> R o
 
 numHiddens' :: OpaqueNet' i o Int -> Int
 numHiddens' oN = oN go
@@ -503,6 +506,8 @@ numHiddens' oN = oN go
     go = \case
         O _      -> 0
         _ :&~ n' -> 1 + go n'
+--          :: ((forall hs. Network i hs o -> Int) -> Int)
+--          -> Int
 
 ```
 
@@ -546,7 +551,7 @@ withSomeSing :: [Integer]
 Because why not? Skolemize all the things!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L173-181
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L178-186
 withRandomONet' :: (MonadRandom m, KnownNat i, KnownNat o)
                 => [Integer]
                 -> (forall hs. Network i hs o -> m r)
@@ -563,7 +568,7 @@ We can use it to do the same things we used the constructor-based existential
 for, as well…and, in a way, it actually seems (oddly) more natural.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L210-216
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L215-221
 main' :: IO ()
 main' = do
     putStrLn "What hidden layer structure do you want?"
@@ -953,9 +958,9 @@ Here are some fun exercises you can try, if you want to test your understanding!
 Links are to the solutions.
 
 1.  Implement
-    [`putONet'`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L183-188)
+    [`putONet'`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L188-193)
     and
-    [`getONet'`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L190-198)
+    [`getONet'`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L195-203)
     using the continuation-style existentials, instead.
 
 2.  Work with an existential wrapper over the *entire* network structure (inputs
@@ -974,20 +979,20 @@ Links are to the solutions.
     And write:
 
     -   A function to [convert `SomeNet`s to
-        `OpaqueNet`s](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L226-229).
+        `OpaqueNet`s](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L231-234).
         Return the `OpaqueNet` with existentially quantified `i` and `o`
         in continuation-style. (You can write a data type to return it in
         constructor-style, too, for funsies.)
-    -   [`randomSNet`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L231-240),
+    -   [`randomSNet`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L236-245),
         returning `m SomeNet`.
     -   While you’re at it, write it to return [a random continuation-style
         `SomeNet`,
-        too](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L242-253)!
+        too](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L247-258)!
         (See the type of
-        [`withRandomONet'`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L173-181)
+        [`withRandomONet'`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L178-186)
         for reference on how to write the type)
     -   The [binary
-        instance](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L255-269)
+        instance](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L260-274)
         for `SomeNet`.
 
         Hint: Remember `natVal :: KnownNat n => Proxy n -> Integer`!

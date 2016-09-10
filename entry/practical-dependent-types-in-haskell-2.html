@@ -149,7 +149,7 @@ main <span class="fu">=</span> <span class="kw">do</span>
 randomONet hs <span class="fu">=</span> <span class="kw">case</span> toSing hs <span class="kw">of</span>
                   <span class="dt">SomeSing</span> ss <span class="ot">-&gt;</span> <span class="dt">ONet</span> <span class="fu">&lt;$&gt;</span> randomNet&#39; ss</code></pre></div>
 <p>This process of bringing a term-level value into the type level is known in Haskell as <strong>reification</strong>. With this, our original goal is (finally) within reach:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L200-208</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L205-213</span>
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
     putStrLn <span class="st">&quot;What hidden layer structure do you want?&quot;</span>
@@ -179,12 +179,15 @@ oNetToFoo (<span class="dt">ONet</span> n) <span class="fu">=</span> f n</code><
 <p>“Tell me how you would make an <code>r</code> if you had a <code>Network i hs o</code> (that works for any <code>hs</code>) and I’ll make it for you!”</p>
 <p>(This takes advantage of Rank-N types. If you’re unfamiliar with them, Gregor Riegler has a <a href="http://sleepomeno.github.io/blog/2014/02/12/Explaining-Haskell-RankNTypes-for-all/">nice tutorial</a> on the subject.)</p>
 <p><em>Using</em> these types is very similar to using the constructor-style ones:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L159-171</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L159-176</span>
 <span class="ot">runOpaqueNet&#39; ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
               <span class="ot">=&gt;</span> <span class="dt">OpaqueNet&#39;</span> i o (<span class="dt">R</span> o)
               <span class="ot">-&gt;</span> <span class="dt">R</span> i
               <span class="ot">-&gt;</span> <span class="dt">R</span> o
 runOpaqueNet&#39; oN x <span class="fu">=</span> oN (\n <span class="ot">-&gt;</span> runNet n x)
+<span class="co">--            :: ((forall hs. Network i hs o -&gt; R o) -&gt; R o)</span>
+<span class="co">--            -&gt; R i</span>
+<span class="co">--            -&gt; R o</span>
 
 <span class="ot">numHiddens&#39; ::</span> <span class="dt">OpaqueNet&#39;</span> i o <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>
 numHiddens&#39; oN <span class="fu">=</span> oN go
@@ -192,7 +195,9 @@ numHiddens&#39; oN <span class="fu">=</span> oN go
 <span class="ot">    go ::</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">Int</span>
     go <span class="fu">=</span> \<span class="kw">case</span>
         <span class="dt">O</span> _      <span class="ot">-&gt;</span> <span class="dv">0</span>
-        _ <span class="fu">:&amp;~</span> n&#39; <span class="ot">-&gt;</span> <span class="dv">1</span> <span class="fu">+</span> go n&#39;</code></pre></div>
+        _ <span class="fu">:&amp;~</span> n&#39; <span class="ot">-&gt;</span> <span class="dv">1</span> <span class="fu">+</span> go n&#39;
+<span class="co">--          :: ((forall hs. Network i hs o -&gt; Int) -&gt; Int)</span>
+<span class="co">--          -&gt; Int</span></code></pre></div>
 <p>This “continuation transformation” is formally known as <strong>skolemization</strong>.<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a></p>
 <p>We can “wrap” a <code>Network i hs o</code> into an <code>OpaqueNet' i o r</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L156-157</span>
@@ -215,7 +220,7 @@ withRandomONet&#39; hs f <span class="fu">=</span> <span class="kw">case</span> 
              <span class="ot">-&gt;</span> (forall (<span class="ot">hs ::</span> [<span class="dt">Nat</span>])<span class="fu">.</span> <span class="dt">Sing</span> hs <span class="ot">-&gt;</span> r)
              <span class="ot">-&gt;</span> r</code></pre></div>
 <p>Because why not? Skolemize all the things!</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L173-181</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L178-186</span>
 <span class="ot">withRandomONet&#39; ::</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
                 <span class="ot">=&gt;</span> [<span class="dt">Integer</span>]
                 <span class="ot">-&gt;</span> (forall hs<span class="fu">.</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> m r)
@@ -226,7 +231,7 @@ withRandomONet&#39; hs f <span class="fu">=</span> withSomeSing hs <span class="
                          net <span class="ot">&lt;-</span> randomNet&#39; ss
                          f net</code></pre></div>
 <p>We can use it to do the same things we used the constructor-based existential for, as well…and, in a way, it actually seems (oddly) more natural.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L210-216</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L215-221</span>
 <span class="ot">main&#39; ::</span> <span class="dt">IO</span> ()
 main&#39; <span class="fu">=</span> <span class="kw">do</span>
     putStrLn <span class="st">&quot;What hidden layer structure do you want?&quot;</span>
@@ -382,7 +387,7 @@ getONet <span class="fu">=</span> <span class="kw">do</span>
 <h4 id="exercises">Exercises</h4>
 <p>Here are some fun exercises you can try, if you want to test your understanding! Links are to the solutions.</p>
 <ol type="1">
-<li><p>Implement <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L183-188"><code>putONet'</code></a> and <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L190-198"><code>getONet'</code></a> using the continuation-style existentials, instead.</p></li>
+<li><p>Implement <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L188-193"><code>putONet'</code></a> and <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L195-203"><code>getONet'</code></a> using the continuation-style existentials, instead.</p></li>
 <li><p>Work with an existential wrapper over the <em>entire</em> network structure (inputs and outputs, too):</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">SomeNet</span> <span class="kw">where</span>
     <span class="dt">SNet</span><span class="ot"> ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
@@ -391,10 +396,10 @@ getONet <span class="fu">=</span> <span class="kw">do</span>
 <p>(We need the <code>KnownNat</code> constraints because of type erasure, to recover the original input/output dimensions back once we pattern match)</p>
 <p>And write:</p>
 <ul>
-<li>A function to <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L226-229">convert <code>SomeNet</code>s to <code>OpaqueNet</code>s</a>. Return the <code>OpaqueNet</code> with existentially quantified <code>i</code> and <code>o</code> in continuation-style. (You can write a data type to return it in constructor-style, too, for funsies.)</li>
-<li><a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L231-240"><code>randomSNet</code></a>, returning <code>m SomeNet</code>.</li>
-<li>While you’re at it, write it to return <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L242-253">a random continuation-style <code>SomeNet</code>, too</a>! (See the type of <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L173-181"><code>withRandomONet'</code></a> for reference on how to write the type)</li>
-<li><p>The <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L255-269">binary instance</a> for <code>SomeNet</code>.</p>
+<li>A function to <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L231-234">convert <code>SomeNet</code>s to <code>OpaqueNet</code>s</a>. Return the <code>OpaqueNet</code> with existentially quantified <code>i</code> and <code>o</code> in continuation-style. (You can write a data type to return it in constructor-style, too, for funsies.)</li>
+<li><a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L236-245"><code>randomSNet</code></a>, returning <code>m SomeNet</code>.</li>
+<li>While you’re at it, write it to return <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L247-258">a random continuation-style <code>SomeNet</code>, too</a>! (See the type of <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L178-186"><code>withRandomONet'</code></a> for reference on how to write the type)</li>
+<li><p>The <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L260-274">binary instance</a> for <code>SomeNet</code>.</p>
 <p>Hint: Remember <code>natVal :: KnownNat n =&gt; Proxy n -&gt; Integer</code>!</p></li>
 </ul>
 <p>Hint: Remember that <code>toSomeSing</code> also works for <code>Integer</code>s, to get <code>Sing</code>s for <code>Nat</code>s, too!</p></li>
