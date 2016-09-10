@@ -374,7 +374,8 @@ associates `Bool` (the type) with `Bool` (the kind), `Integer` (the type) with
 `Nat` (the kind), `[Integer]` (the type) with `[Nat]` (the kind), etc., and it
 does it with simple applications of type families (here’s a [nice tutorial on
 type families](https://ocharles.org.uk/blog/posts/2014-12-12-type-families.html)
-courtesy of Oliver Charles, as a refresher).
+courtesy of Oliver Charles, as a refresher). With it, we can convert any normal
+value `x` of type `a` to a singleton representing type `x` with kind `a`.
 
 We now have enough to write our `randomONet`:
 
