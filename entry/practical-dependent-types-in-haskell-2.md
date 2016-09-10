@@ -368,8 +368,8 @@ scope! And by pattern matching on the `SNat` constructor, we also have a
 `KnownNat n` instance (As discussed in [previous
 part](https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html#on-typeclasses-and-dictionaries)).
 
-`toSing` works using a simple typeclass mechanism with associated types whose
-job is to associate types of values with the kinds of their singletons. It
+`toSing` works using a simple typeclass mechanism with an associated type whose
+job is to connect the types of values with the kinds of their singletons. It
 associates `Bool` (the type) with `Bool` (the kind), `Integer` (the type) with
 `Nat` (the kind), `[Integer]` (the type) with `[Nat]` (the kind), etc., and it
 does it with simple applications of type families (here’s a [nice tutorial on
