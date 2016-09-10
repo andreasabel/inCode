@@ -366,7 +366,7 @@ main = do
 Now, inside the case statement branch (the `...`), we have *type* `n :: Nat` in
 scope! And by pattern matching on the `SNat` constructor, we also have a
 `KnownNat n` instance (As discussed in [previous
-part](https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html#singletons-and-induction)).
+part](https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html#on-typeclasses-and-dictionaries)).
 
 `toSing` works using a simple typeclass mechanism with associated types whose
 job is to associate types of values with the kinds of their singletons. It
