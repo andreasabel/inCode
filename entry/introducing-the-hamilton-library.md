@@ -5,7 +5,7 @@ Introducing the Hamilton library
 > [Read online!](https://blog.jle.im/entry/introducing-the-hamilton-library.html)
 
 [![My name is William Rowan
-Hamilton](http://i.imgur.com/Vaaa2EC.gif "My name is William Rowan Hamilton")](http://i.imgur.com/Vaaa2EC.gifv)
+Hamilton](img/entries/hamilton/double-pendulum.gif "My name is William Rowan Hamilton")](http://i.imgur.com/Vaaa2EC.gifv)
 
 **Hamilton**: [README](https://github.com/mstksg/hamilton#readme) /
 [hackage](http://hackage.haskell.org/package/hamilton) /
@@ -35,6 +35,10 @@ of this information is also found in the
 
 ### Hamiltonian Mechanics
 
+*(This section goes briefly over some relevant part of the physics behind
+Hamiltonian dynamics, but feel free to skip it if you want to go straight to the
+Haskell)*
+
 Hamiltonian mechanics is a brilliant, radical, and beautiful re-imagination of
 the physics of mechanics and dynamics. It was adapted for statistical mechanics
 and thermodynamics, and it was through the lens of Hamiltonian mechanics that
@@ -51,6 +55,9 @@ system exists as a point in *[phase
 space](https://en.wikipedia.org/wiki/Phase_space)*, and that the system evolves
 based on geometric properties of the system’s *Hamiltonian* over that phase
 space.
+
+![Phase
+space](/img/entries/hamilton/phase-space.gif "Animation of particles traveling in phase space (top) over time, from Wikipedia")
 
 In other words, define the Hamiltonian of the system, and you see the
 step-by-step evolution and dynamics of the system. You can imagine mechanics as
@@ -92,11 +99,14 @@ We have two coordinates here ($\theta_1$ and $\theta_2$), which will be encoding
 the positions of the two pendulums:
 
 $$
-\langle x_1, y_1 \rangle = \langle \sin (\theta_1), - \cos (\theta_1) \rangle
+\langle x_1, y_1 \rangle =
+  \left\langle \sin (\theta_1), - \cos (\theta_1) \right\rangle
 $$
 
 $$
-\langle x_2, y_2 \rangle = \langle \sin (\theta_1) + \frac{1}{2} \sin (\theta_2), - \cos (\theta_1) - \frac{1}{2} \cos (\theta_2) \rangle
+\langle x_2, y_2 \rangle =
+  \left\langle \sin (\theta_1) + \frac{1}{2} \sin (\theta_2),
+    - \cos (\theta_1) - \frac{1}{2} \cos (\theta_2) \right\rangle
 $$
 
 The inertias of $x_1$, $y_1$, $x_2$, and $y_2$ are the “masses” attached to
@@ -132,21 +142,11 @@ doublePendulum = mkSystem' masses coordinates potential
         -> a
     potential (V4 _ y1 _ y2) = (y1 + 2 * y2) * 5    -- assuming g = 5
 
-
-
--- some helper patterns to pattern match on sized vectors
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L27-35
-pattern V2 :: a -> a -> V.Vector 2 a
-pattern V2 x y <- (V.toList->[x,y])
-  where
-    V2 x y = fromJust (V.fromList [x,y])
-
-pattern V4 :: a -> a -> a -> a -> V.Vector 4 a
-pattern V4 x y z a <- (V.toList->[x,y,z,a])
-  where
-    V4 x y z a = fromJust (V.fromList [x,y,z,a])
-
 ```
+
+(with some [helper
+patterns](https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L27-35)
+defined here)
 
 Ta dah. That’s literally all we need.
 
@@ -220,7 +220,7 @@ positions = phsPositions <$> evolution'
 
 ```
 
-Where `underlingPos :: System m n -> Phase n -> R n`.
+Where `underlyingPos :: System m n -> Phase n -> R m`.
 
 And you can print out now the full progression of the system’s positions:
 
@@ -296,10 +296,11 @@ $$
 Where $r_1 = \frac{m_2}{m_1 + m_2}$ and $r_2 = - \frac{m_1}{m_1 + m_2}$ (solving
 from the center of mass).
 
-Our potential energy function is Newton’s famous law of universal gravitation:
+Our potential energy function is Newton’s famous [law of universal
+gravitation](https://en.wikipedia.org/wiki/Newton's_law_of_universal_gravitation):
 
 $$
-U(r, \theta) = - G \frac{m_1 m_2}{r}
+U(r, \theta) = - \frac{G m_1 m_2}{r}
 $$
 
 And, this should be enough to go for *hamilton*.
@@ -311,7 +312,9 @@ acceleration from the fact that $d \theta$ is non-uniform and depends on $r$?”
 Well, I’m glad you asked! And the answer is, nope. We don’t have to account for
 any weird interplay from non-uniform coordinate systems because *hamilton*
 arrives at the proper solution simply from the geometry of the generalized
-coordinates.
+coordinates. (And it does this using
+[ad](https://hackage.haskell.org/package/ad), but more on that for a later
+post!)
 
 Anyway, here we go:
 
@@ -335,13 +338,16 @@ twoBody = mkSystem masses coordinates potential
         :: Fractional a
         => V.Vector 2 a
         -> a
-    potential (V2 r _) = - 10 / r
+    potential (V2 r _) = - 10 / r       -- G = 1
 
 config0 :: Config 2
 config0 = Cfg (vec2 2   0)  -- initial positions
               (vec2 0 0.5)  -- initial velocities
 
 ```
+
+(we use `mkSystem` instead of `mkSystem'` because we want to state the potential
+energy in terms of our generalized coordinates $r$ and $\theta$)
 
 Let’s take a peek:
 
@@ -386,7 +392,7 @@ go!
 Here’s an animation of the same situation with some different masses:
 
 [![The two-body
-solution](http://i.imgur.com/TDEHTcb.gif)](http://i.imgur.com/TDEHTcb.gifv)
+solution](img/entries/hamilton/two-body.gif)](http://i.imgur.com/TDEHTcb.gifv)
 
 ### Just you wait
 
@@ -398,7 +404,7 @@ non-uniform time parameter to the bezier curve.)
 
 I’ve included more examples in the [example app
 launcher](https://github.com/mstksg/hamilton#example-app-runner) included in the
-library, including:
+library (which generated those animations you see above), including:
 
 1.  A spring hanging from a block sliding along a horizontal rail (a favorite of
     many physics students, of course)

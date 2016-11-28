@@ -102,7 +102,7 @@
 \textbf{\href{https://blog.jle.im/entry/introducing-the-hamilton-library.html}{in
 Code}}.}
 
-\href{http://i.imgur.com/Vaaa2EC.gifv}{\includegraphics{http://i.imgur.com/Vaaa2EC.gif}}
+\href{http://i.imgur.com/Vaaa2EC.gifv}{\includegraphics{img/entries/hamilton/double-pendulum.gif}}
 
 \textbf{Hamilton}: \href{https://github.com/mstksg/hamilton\#readme}{README} /
 \href{http://hackage.haskell.org/package/hamilton}{hackage} /
@@ -136,6 +136,10 @@ of this information is also found in the
 
 \subsection{Hamiltonian Mechanics}\label{hamiltonian-mechanics}
 
+\emph{(This section goes briefly over some relevant part of the physics behind
+Hamiltonian dynamics, but feel free to skip it if you want to go straight to the
+Haskell)}
+
 Hamiltonian mechanics is a brilliant, radical, and beautiful re-imagination of
 the physics of mechanics and dynamics. It was adapted for statistical mechanics
 and thermodynamics, and it was through the lens of Hamiltonian mechanics that
@@ -152,6 +156,12 @@ system exists as a point in
 \emph{\href{https://en.wikipedia.org/wiki/Phase_space}{phase space}}, and that
 the system evolves based on geometric properties of the system's
 \emph{Hamiltonian} over that phase space.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics{/img/entries/hamilton/phase-space.gif}
+\caption{Phase space}
+\end{figure}
 
 In other words, define the Hamiltonian of the system, and you see the
 step-by-step evolution and dynamics of the system. You can imagine mechanics as
@@ -198,11 +208,14 @@ We have two coordinates here (\(\theta_1\) and \(\theta_2\)), which will be
 encoding the positions of the two pendulums:
 
 \[
-\langle x_1, y_1 \rangle = \langle \sin (\theta_1), - \cos (\theta_1) \rangle
+\langle x_1, y_1 \rangle =
+  \left\langle \sin (\theta_1), - \cos (\theta_1) \right\rangle
 \]
 
 \[
-\langle x_2, y_2 \rangle = \langle \sin (\theta_1) + \frac{1}{2} \sin (\theta_2), - \cos (\theta_1) - \frac{1}{2} \cos (\theta_2) \rangle
+\langle x_2, y_2 \rangle =
+  \left\langle \sin (\theta_1) + \frac{1}{2} \sin (\theta_2),
+    - \cos (\theta_1) - \frac{1}{2} \cos (\theta_2) \right\rangle
 \]
 
 The inertias of \(x_1\), \(y_1\), \(x_2\), and \(y_2\) are the ``masses''
@@ -238,22 +251,12 @@ Turns out that this is a complete enough description of our system to let
         \OtherTok{=>} \DataTypeTok{V.Vector} \DecValTok{4} \NormalTok{a}
         \OtherTok{->} \NormalTok{a}
     \NormalTok{potential (}\DataTypeTok{V4} \NormalTok{_ y1 _ y2) }\FunctionTok{=} \NormalTok{(y1 }\FunctionTok{+} \DecValTok{2} \FunctionTok{*} \NormalTok{y2) }\FunctionTok{*} \DecValTok{5}    \CommentTok{-- assuming g = 5}
-
-
-
-\CommentTok{-- some helper patterns to pattern match on sized vectors}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L27-35}
-\NormalTok{pattern }\DataTypeTok{V2}\OtherTok{ ::} \NormalTok{a }\OtherTok{->} \NormalTok{a }\OtherTok{->} \DataTypeTok{V.Vector} \DecValTok{2} \NormalTok{a}
-\NormalTok{pattern }\DataTypeTok{V2} \NormalTok{x y }\OtherTok{<-} \NormalTok{(V.toList}\OtherTok{->}\NormalTok{[x,y])}
-  \KeywordTok{where}
-    \DataTypeTok{V2} \NormalTok{x y }\FunctionTok{=} \NormalTok{fromJust (V.fromList [x,y])}
-
-\NormalTok{pattern }\DataTypeTok{V4}\OtherTok{ ::} \NormalTok{a }\OtherTok{->} \NormalTok{a }\OtherTok{->} \NormalTok{a }\OtherTok{->} \NormalTok{a }\OtherTok{->} \DataTypeTok{V.Vector} \DecValTok{4} \NormalTok{a}
-\NormalTok{pattern }\DataTypeTok{V4} \NormalTok{x y z a }\OtherTok{<-} \NormalTok{(V.toList}\OtherTok{->}\NormalTok{[x,y,z,a])}
-  \KeywordTok{where}
-    \DataTypeTok{V4} \NormalTok{x y z a }\FunctionTok{=} \NormalTok{fromJust (V.fromList [x,y,z,a])}
 \end{Highlighting}
 \end{Shaded}
+
+(with some
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs\#L27-35}{helper
+patterns} defined here)
 
 Ta dah. That's literally all we need.
 
@@ -335,7 +338,7 @@ And the position in the underlying cartesian space as:
 \end{Shaded}
 
 Where
-\texttt{underlingPos\ ::\ System\ m\ n\ -\textgreater{}\ Phase\ n\ -\textgreater{}\ R\ n}.
+\texttt{underlyingPos\ ::\ System\ m\ n\ -\textgreater{}\ Phase\ n\ -\textgreater{}\ R\ m}.
 
 And you can print out now the full progression of the system's positions:
 
@@ -415,10 +418,12 @@ If we assume that the center of mass of the system is at
 Where \(r_1 = \frac{m_2}{m_1 + m_2}\) and \(r_2 = - \frac{m_1}{m_1 + m_2}\)
 (solving from the center of mass).
 
-Our potential energy function is Newton's famous law of universal gravitation:
+Our potential energy function is Newton's famous
+\href{https://en.wikipedia.org/wiki/Newton's_law_of_universal_gravitation}{law
+of universal gravitation}:
 
 \[
-U(r, \theta) = - G \frac{m_1 m_2}{r}
+U(r, \theta) = - \frac{G m_1 m_2}{r}
 \]
 
 And, this should be enough to go for \emph{hamilton}.
@@ -431,7 +436,9 @@ acceleration from the fact that \(d \theta\) is non-uniform and depends on
 Well, I'm glad you asked! And the answer is, nope. We don't have to account for
 any weird interplay from non-uniform coordinate systems because \emph{hamilton}
 arrives at the proper solution simply from the geometry of the generalized
-coordinates.
+coordinates. (And it does this using
+\href{https://hackage.haskell.org/package/ad}{ad}, but more on that for a later
+post!)
 
 Anyway, here we go:
 
@@ -456,13 +463,17 @@ Anyway, here we go:
 \OtherTok{        ::} \DataTypeTok{Fractional} \NormalTok{a}
         \OtherTok{=>} \DataTypeTok{V.Vector} \DecValTok{2} \NormalTok{a}
         \OtherTok{->} \NormalTok{a}
-    \NormalTok{potential (}\DataTypeTok{V2} \NormalTok{r _) }\FunctionTok{=} \FunctionTok{-} \DecValTok{10} \FunctionTok{/} \NormalTok{r}
+    \NormalTok{potential (}\DataTypeTok{V2} \NormalTok{r _) }\FunctionTok{=} \FunctionTok{-} \DecValTok{10} \FunctionTok{/} \NormalTok{r       }\CommentTok{-- G = 1}
 
 \OtherTok{config0 ::} \DataTypeTok{Config} \DecValTok{2}
 \NormalTok{config0 }\FunctionTok{=} \DataTypeTok{Cfg} \NormalTok{(vec2 }\DecValTok{2}   \DecValTok{0}\NormalTok{)  }\CommentTok{-- initial positions}
               \NormalTok{(vec2 }\DecValTok{0} \FloatTok{0.5}\NormalTok{)  }\CommentTok{-- initial velocities}
 \end{Highlighting}
 \end{Shaded}
+
+(we use \texttt{mkSystem} instead of \texttt{mkSystem\textquotesingle{}} because
+we want to state the potential energy in terms of our generalized coordinates
+\(r\) and \(\theta\))
 
 Let's take a peek:
 
@@ -509,7 +520,7 @@ at it go!
 
 Here's an animation of the same situation with some different masses:
 
-\href{http://i.imgur.com/TDEHTcb.gifv}{\includegraphics{http://i.imgur.com/TDEHTcb.gif}}
+\href{http://i.imgur.com/TDEHTcb.gifv}{\includegraphics{img/entries/hamilton/two-body.gif}}
 
 \subsection{Just you wait}\label{just-you-wait}
 
@@ -521,7 +532,8 @@ non-uniform time parameter to the bezier curve.)
 
 I've included more examples in the
 \href{https://github.com/mstksg/hamilton\#example-app-runner}{example app
-launcher} included in the library, including:
+launcher} included in the library (which generated those animations you see
+above), including:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}

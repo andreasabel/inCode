@@ -17,7 +17,7 @@ ga('send', 'pageview');
 </script></div><div id="header-container"><div id="navbar-container" class="tile"><nav id="navbar-content"><div class="nav-info"><h1 class="site-title"><a href="https://blog.jle.im/" class="nav-title">in Code</a></h1><span class="nav-author">Justin Le</span></div><ul class="nav-links"><li><a href="https://blog.jle.im/">home</a></li><li><a href="https://blog.jle.im/entries.html">archives</a></li><div class="clear"></div></ul></nav></div><div id="header-content"></div></div><div id="body-container" class="container"><div id="main-container" class="grid"><div class="entry-section unit span-grid" role="main"><article class="tile article"><header><div class="unposted-banner">Unposted entry</div><h1 id="title">Introducing the Hamilton library</h1><p class="entry-info">by <a class="author" href="https://blog.jle.im/">Justin Le</a></p><p><span class="source-info"><a class="source-link" href="https://github.com/mstksg/inCode/tree/master/copy/entries/hamilton.md">Source</a><span class="info-separator"> &diams; </span><a class="source-link" href="https://github.com/mstksg/inCode/tree/gh-pages/entry/introducing-the-hamilton-library.md">Markdown</a><span class="info-separator"> &diams; </span><a class="source-link" href="https://blog.jle.im/entry/introducing-the-hamilton-library.tex">LaTeX</a><span class="info-separator"> &diams; </span></span>Posted in <a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category" title="Functional, pure, non-strict, statically and strongly typed, natively
 compiled…really just the king of great languages.">Haskell</a>, <a href="https://blog.jle.im/entries/category/@projects.html" class="tag-a-category" title="Progress or presentations of completed or ongoing open source projects I have
 worked/am working on. Hopefully either the development process or the end
-product can be useful to someone!">Projects</a><span class="info-separator"> &diams; </span><a class="comment-link" href="#disqus_thread">Comments</a></p></header><hr><aside class="contents-container"><h5 id="contents-header">Contents</h5><div id="toc"></div></aside><div class="main-content copy-content"><p><a href="http://i.imgur.com/Vaaa2EC.gifv"><img src="http://i.imgur.com/Vaaa2EC.gif" title="My name is William Rowan Hamilton" alt="My name is William Rowan Hamilton" /></a></p>
+product can be useful to someone!">Projects</a><span class="info-separator"> &diams; </span><a class="comment-link" href="#disqus_thread">Comments</a></p></header><hr><aside class="contents-container"><h5 id="contents-header">Contents</h5><div id="toc"></div></aside><div class="main-content copy-content"><p><a href="http://i.imgur.com/Vaaa2EC.gifv"><img src="img/entries/hamilton/double-pendulum.gif" title="My name is William Rowan Hamilton" alt="My name is William Rowan Hamilton" /></a></p>
 <p><strong>Hamilton</strong>: <a href="https://github.com/mstksg/hamilton#readme">README</a> / <a href="http://hackage.haskell.org/package/hamilton">hackage</a> / <a href="https://github.com/mstksg/hamilton">github</a></p>
 <p>The <em><a href="http://hackage.haskell.org/package/hamilton">hamilton</a></em> library is on hackage! It was mostly a proof-of-concept toy experiment to simulate motion on bezier curves, but it became usable enough and accurate enough (to my surprise, admittedly) that I finished up some final touches to make it complete and put it on hackage as a general-purpose physics simulator.</p>
 <p>I was going to write a Haskell post on the implementation, which was what interested me at first. I wanted to go over –</p>
@@ -27,8 +27,12 @@ product can be useful to someone!">Projects</a><span class="info-separator"> &di
 </ol>
 <p>And fun stuff like that. But that post might be a bit of a while away, so I’m just going to write a post about the usage of the library. (Fair warning, most of this information is also found in the <a href="https://github.com/mstksg/hamilton#readme">readme</a>.)</p>
 <h3 id="hamiltonian-mechanics">Hamiltonian Mechanics</h3>
+<p><em>(This section goes briefly over some relevant part of the physics behind Hamiltonian dynamics, but feel free to skip it if you want to go straight to the Haskell)</em></p>
 <p>Hamiltonian mechanics is a brilliant, radical, and beautiful re-imagination of the physics of mechanics and dynamics. It was adapted for statistical mechanics and thermodynamics, and it was through the lens of Hamiltonian mechanics that Schroedinger and Heisenberg to independently unlock the secrets of quantum mechanics. While Newton’s interpretation of mechanics (in terms of forces and accelerations) was cute, it simply didn’t generalize to quantum mechanics. Hamiltonian’s interpretation of mechanics <em>did</em>, and we have a century of physics revolutions to thank for it. Hamiltonian mechanics also generalize without any extra work to relativity – another case where newtonian mechanics tends to fall apart.</p>
 <p>Hamiltonian mechanics, in a classical sense, imagines that the state of the system exists as a point in <em><a href="https://en.wikipedia.org/wiki/Phase_space">phase space</a></em>, and that the system evolves based on geometric properties of the system’s <em>Hamiltonian</em> over that phase space.</p>
+<figure>
+<img src="/img/entries/hamilton/phase-space.gif" title="Animation of particles traveling in phase space (top) over time, from Wikipedia" alt="Phase space" /><figcaption>Phase space</figcaption>
+</figure>
 <p>In other words, define the Hamiltonian of the system, and you see the step-by-step evolution and dynamics of the system. You can imagine mechanics as a series of streams of flow over phase space…and the state of the system just goes along for the ride.</p>
 <p>One nice thing about phase space is that it can be stated in terms of any arbitrary parameterization/coordinate system of your system. For example, for a <a href="https://en.wikipedia.org/wiki/Double_pendulum">double pendulum</a> system, you can imagine the system as traveling about in the phase space of the angles of the bobs (instead of their actual positions in cartesian space). If you can find <em>any</em> way to parameterize your system, in any sort of type of coordinates, then Hamiltonian mechanics will describe how it evolves in those coordinates.</p>
 <p>State some fundamental geometric properties about your coordinate system, and the Hamiltonian figures out the rest. It’s the key to unlocking the dynamical properties of the system.</p>
@@ -42,15 +46,21 @@ product can be useful to someone!">Projects</a><span class="info-separator"> &di
 <li><p>A potential energy function (in our case, just the potential energy induced by gravity)</p></li>
 </ol>
 <p>We have two coordinates here (<img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Ctheta_1" alt="\theta_1" title="\theta_1" /> and <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Ctheta_2" alt="\theta_2" title="\theta_2" />), which will be encoding the positions of the two pendulums:</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%0A%5Clangle%20x_1%2C%20y_1%20%5Crangle%20%3D%20%5Clangle%20%5Csin%20%28%5Ctheta_1%29%2C%20-%20%5Ccos%20%28%5Ctheta_1%29%20%5Crangle%0A" alt="
-\langle x_1, y_1 \rangle = \langle \sin (\theta_1), - \cos (\theta_1) \rangle
+<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%0A%5Clangle%20x_1%2C%20y_1%20%5Crangle%20%3D%0A%20%20%5Cleft%5Clangle%20%5Csin%20%28%5Ctheta_1%29%2C%20-%20%5Ccos%20%28%5Ctheta_1%29%20%5Cright%5Crangle%0A" alt="
+\langle x_1, y_1 \rangle =
+  \left\langle \sin (\theta_1), - \cos (\theta_1) \right\rangle
 " title="
-\langle x_1, y_1 \rangle = \langle \sin (\theta_1), - \cos (\theta_1) \rangle
+\langle x_1, y_1 \rangle =
+  \left\langle \sin (\theta_1), - \cos (\theta_1) \right\rangle
 " /><br /></p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%0A%5Clangle%20x_2%2C%20y_2%20%5Crangle%20%3D%20%5Clangle%20%5Csin%20%28%5Ctheta_1%29%20%2B%20%5Cfrac%7B1%7D%7B2%7D%20%5Csin%20%28%5Ctheta_2%29%2C%20-%20%5Ccos%20%28%5Ctheta_1%29%20-%20%5Cfrac%7B1%7D%7B2%7D%20%5Ccos%20%28%5Ctheta_2%29%20%5Crangle%0A" alt="
-\langle x_2, y_2 \rangle = \langle \sin (\theta_1) + \frac{1}{2} \sin (\theta_2), - \cos (\theta_1) - \frac{1}{2} \cos (\theta_2) \rangle
+<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%0A%5Clangle%20x_2%2C%20y_2%20%5Crangle%20%3D%0A%20%20%5Cleft%5Clangle%20%5Csin%20%28%5Ctheta_1%29%20%2B%20%5Cfrac%7B1%7D%7B2%7D%20%5Csin%20%28%5Ctheta_2%29%2C%0A%20%20%20%20-%20%5Ccos%20%28%5Ctheta_1%29%20-%20%5Cfrac%7B1%7D%7B2%7D%20%5Ccos%20%28%5Ctheta_2%29%20%5Cright%5Crangle%0A" alt="
+\langle x_2, y_2 \rangle =
+  \left\langle \sin (\theta_1) + \frac{1}{2} \sin (\theta_2),
+    - \cos (\theta_1) - \frac{1}{2} \cos (\theta_2) \right\rangle
 " title="
-\langle x_2, y_2 \rangle = \langle \sin (\theta_1) + \frac{1}{2} \sin (\theta_2), - \cos (\theta_1) - \frac{1}{2} \cos (\theta_2) \rangle
+\langle x_2, y_2 \rangle =
+  \left\langle \sin (\theta_1) + \frac{1}{2} \sin (\theta_2),
+    - \cos (\theta_1) - \frac{1}{2} \cos (\theta_2) \right\rangle
 " /><br /></p>
 <p>The inertias of <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?x_1" alt="x_1" title="x_1" />, <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?y_1" alt="y_1" title="y_1" />, <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?x_2" alt="x_2" title="x_2" />, and <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?y_2" alt="y_2" title="y_2" /> are the “masses” attached to them. Let’s pick that the first bob has mass <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?1" alt="1" title="1" /> and the second bob has mass <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?2" alt="2" title="2" />, so then our masses are <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Clangle%201%2C%201%2C%202%2C%202%20%5Crangle" alt="\langle 1, 1, 2, 2 \rangle" title="\langle 1, 1, 2, 2 \rangle" />.</p>
 <p>Finally, the potential energy of our system is just the potential energy of gravity, <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?m%20%5Ctimes%20g%20%5Ctimes%20y" alt="m \times g \times y" title="m \times g \times y" /> for each of our points:</p>
@@ -76,21 +86,8 @@ doublePendulum <span class="fu">=</span> mkSystem&#39; masses coordinates potent
 <span class="ot">        ::</span> <span class="dt">Num</span> a
         <span class="ot">=&gt;</span> <span class="dt">V.Vector</span> <span class="dv">4</span> a
         <span class="ot">-&gt;</span> a
-    potential (<span class="dt">V4</span> _ y1 _ y2) <span class="fu">=</span> (y1 <span class="fu">+</span> <span class="dv">2</span> <span class="fu">*</span> y2) <span class="fu">*</span> <span class="dv">5</span>    <span class="co">-- assuming g = 5</span>
-
-
-
-<span class="co">-- some helper patterns to pattern match on sized vectors</span>
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L27-35</span>
-pattern <span class="dt">V2</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> <span class="dv">2</span> a
-pattern <span class="dt">V2</span> x y <span class="ot">&lt;-</span> (V.toList<span class="ot">-&gt;</span>[x,y])
-  <span class="kw">where</span>
-    <span class="dt">V2</span> x y <span class="fu">=</span> fromJust (V.fromList [x,y])
-
-pattern <span class="dt">V4</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> <span class="dv">4</span> a
-pattern <span class="dt">V4</span> x y z a <span class="ot">&lt;-</span> (V.toList<span class="ot">-&gt;</span>[x,y,z,a])
-  <span class="kw">where</span>
-    <span class="dt">V4</span> x y z a <span class="fu">=</span> fromJust (V.fromList [x,y,z,a])</code></pre></div>
+    potential (<span class="dt">V4</span> _ y1 _ y2) <span class="fu">=</span> (y1 <span class="fu">+</span> <span class="dv">2</span> <span class="fu">*</span> y2) <span class="fu">*</span> <span class="dv">5</span>    <span class="co">-- assuming g = 5</span></code></pre></div>
+<p>(with some <a href="https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L27-35">helper patterns</a> defined here)</p>
 <p>Ta dah. That’s literally all we need.</p>
 <p>A <code>System m n</code> represents a description of a physical system (without its state) described with <code>n</code> parameters/generalized coordinates. The <code>m</code> represents the dimension of its underlying cartesian coordinate system (<code>4</code> for us, with <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Clangle%20x_1%2C%20y_1%2C%20x_2%2C%20y_2%20%5Crangle" alt="\langle x_1, y_1, x_2, y_2 \rangle" title="\langle x_1, y_1, x_2, y_2 \rangle" />). The <code>m</code> should be more or less irrelevant to the actual <em>usage</em> of <code>System m n</code> and the <em>hamilton</em> api…but it’s mostly useful only if we eventually want to plot the system in normal cartesian space.</p>
 <p>Now, let’s run the simulation. First we have to pick a starting configuration:</p>
@@ -120,7 +117,7 @@ evolution&#39; <span class="fu">=</span> iterate (stepHam <span class="fl">0.1</
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L50-51</span>
 <span class="ot">positions ::</span> [<span class="dt">R</span> <span class="dv">2</span>]
 positions <span class="fu">=</span> phsPositions <span class="fu">&lt;$&gt;</span> evolution&#39;</code></pre></div>
-<p>Where <code>underlingPos :: System m n -&gt; Phase n -&gt; R n</code>.</p>
+<p>Where <code>underlyingPos :: System m n -&gt; Phase n -&gt; R m</code>.</p>
 <p>And you can print out now the full progression of the system’s positions:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L53-54</span>
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
@@ -169,15 +166,15 @@ main <span class="fu">=</span> withRows (take <span class="dv">25</span> positio
 \langle x_2, y_2 \rangle = \langle r_2 \cos (\theta), r_2 \sin (\theta) \rangle
 " /><br /></p>
 <p>Where <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?r_1%20%3D%20%5Cfrac%7Bm_2%7D%7Bm_1%20%2B%20m_2%7D" alt="r_1 = \frac{m_2}{m_1 + m_2}" title="r_1 = \frac{m_2}{m_1 + m_2}" /> and <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?r_2%20%3D%20-%20%5Cfrac%7Bm_1%7D%7Bm_1%20%2B%20m_2%7D" alt="r_2 = - \frac{m_1}{m_1 + m_2}" title="r_2 = - \frac{m_1}{m_1 + m_2}" /> (solving from the center of mass).</p>
-<p>Our potential energy function is Newton’s famous law of universal gravitation:</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%0AU%28r%2C%20%5Ctheta%29%20%3D%20-%20G%20%5Cfrac%7Bm_1%20m_2%7D%7Br%7D%0A" alt="
-U(r, \theta) = - G \frac{m_1 m_2}{r}
+<p>Our potential energy function is Newton’s famous <a href="https://en.wikipedia.org/wiki/Newton&#39;s_law_of_universal_gravitation">law of universal gravitation</a>:</p>
+<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%0AU%28r%2C%20%5Ctheta%29%20%3D%20-%20%5Cfrac%7BG%20m_1%20m_2%7D%7Br%7D%0A" alt="
+U(r, \theta) = - \frac{G m_1 m_2}{r}
 " title="
-U(r, \theta) = - G \frac{m_1 m_2}{r}
+U(r, \theta) = - \frac{G m_1 m_2}{r}
 " /><br /></p>
 <p>And, this should be enough to go for <em>hamilton</em>.</p>
 <p>“But wait,” I hear you say. “If we’re doing a change-of-coordinate-system into polar coordinates, don’t we have to account for artifacts like centrifugal acceleration from the fact that <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?d%20%5Ctheta" alt="d \theta" title="d \theta" /> is non-uniform and depends on <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?r" alt="r" title="r" />?”</p>
-<p>Well, I’m glad you asked! And the answer is, nope. We don’t have to account for any weird interplay from non-uniform coordinate systems because <em>hamilton</em> arrives at the proper solution simply from the geometry of the generalized coordinates.</p>
+<p>Well, I’m glad you asked! And the answer is, nope. We don’t have to account for any weird interplay from non-uniform coordinate systems because <em>hamilton</em> arrives at the proper solution simply from the geometry of the generalized coordinates. (And it does this using <a href="https://hackage.haskell.org/package/ad">ad</a>, but more on that for a later post!)</p>
 <p>Anyway, here we go:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/TwoBody.hs#L10-42</span>
 <span class="ot">twoBody ::</span> <span class="dt">System</span> <span class="dv">4</span> <span class="dv">2</span>
@@ -198,11 +195,12 @@ twoBody <span class="fu">=</span> mkSystem masses coordinates potential
 <span class="ot">        ::</span> <span class="dt">Fractional</span> a
         <span class="ot">=&gt;</span> <span class="dt">V.Vector</span> <span class="dv">2</span> a
         <span class="ot">-&gt;</span> a
-    potential (<span class="dt">V2</span> r _) <span class="fu">=</span> <span class="fu">-</span> <span class="dv">10</span> <span class="fu">/</span> r
+    potential (<span class="dt">V2</span> r _) <span class="fu">=</span> <span class="fu">-</span> <span class="dv">10</span> <span class="fu">/</span> r       <span class="co">-- G = 1</span>
 
 <span class="ot">config0 ::</span> <span class="dt">Config</span> <span class="dv">2</span>
 config0 <span class="fu">=</span> <span class="dt">Cfg</span> (vec2 <span class="dv">2</span>   <span class="dv">0</span>)  <span class="co">-- initial positions</span>
               (vec2 <span class="dv">0</span> <span class="fl">0.5</span>)  <span class="co">-- initial velocities</span></code></pre></div>
+<p>(we use <code>mkSystem</code> instead of <code>mkSystem'</code> because we want to state the potential energy in terms of our generalized coordinates <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?r" alt="r" title="r" /> and <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Ctheta" alt="\theta" title="\theta" />)</p>
 <p>Let’s take a peek:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/TwoBody.hs#L56-57</span>
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
@@ -235,10 +233,10 @@ main <span class="fu">=</span> withRows (take <span class="dv">25</span> positio
 1.9479  6.3923</code></pre>
 <p>Neat! We see that <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?r" alt="r" title="r" /> starts big and gets smaller, and then gets big again. And it’s clear that when <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?r" alt="r" title="r" /> is smallest, <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Ctheta" alt="\theta" title="\theta" /> changes the fastest. Look at it go!</p>
 <p>Here’s an animation of the same situation with some different masses:</p>
-<p><a href="http://i.imgur.com/TDEHTcb.gifv"><img src="http://i.imgur.com/TDEHTcb.gif" alt="The two-body solution" /></a></p>
+<p><a href="http://i.imgur.com/TDEHTcb.gifv"><img src="img/entries/hamilton/two-body.gif" alt="The two-body solution" /></a></p>
 <h3 id="just-you-wait">Just you wait</h3>
 <p>Now, this isn’t all just useful for physics. You can state a lot of animation/dynamics problems as motion along coordinates that aren’t always trivial. This project started, after all, as a way to simulate constant-velocity motion along a bezier curve. (In that case, the single coordinate is the non-uniform time parameter to the bezier curve.)</p>
-<p>I’ve included more examples in the <a href="https://github.com/mstksg/hamilton#example-app-runner">example app launcher</a> included in the library, including:</p>
+<p>I’ve included more examples in the <a href="https://github.com/mstksg/hamilton#example-app-runner">example app launcher</a> included in the library (which generated those animations you see above), including:</p>
 <ol type="1">
 <li>A spring hanging from a block sliding along a horizontal rail (a favorite of many physics students, of course)</li>
 <li>A ball bouncing around a room, showing that you can represent bouncy walls as potential energy functions</li>
