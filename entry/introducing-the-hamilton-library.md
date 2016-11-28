@@ -5,7 +5,7 @@ Introducing the Hamilton library
 > [Read online!](https://blog.jle.im/entry/introducing-the-hamilton-library.html)
 
 [![My name is William Rowan
-Hamilton](img/entries/hamilton/double-pendulum.gif "My name is William Rowan Hamilton")](http://i.imgur.com/Vaaa2EC.gifv)
+Hamilton](/img/entries/hamilton/double-pendulum.gif "My name is William Rowan Hamilton")](http://i.imgur.com/Vaaa2EC.gifv)
 
 **Hamilton**: [README](https://github.com/mstksg/hamilton#readme) /
 [hackage](http://hackage.haskell.org/package/hamilton) /
@@ -392,7 +392,7 @@ go!
 Here’s an animation of the same situation with some different masses:
 
 [![The two-body
-solution](img/entries/hamilton/two-body.gif)](http://i.imgur.com/TDEHTcb.gifv)
+solution](/img/entries/hamilton/two-body.gif)](http://i.imgur.com/TDEHTcb.gifv)
 
 ### Just you wait
 
