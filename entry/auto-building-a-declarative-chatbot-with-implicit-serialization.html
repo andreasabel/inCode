@@ -50,10 +50,10 @@ that I’ve struggled through in the past.">Tutorials</a><span class="info-separ
 <span class="kw">type</span> <span class="dt">Channel</span> <span class="fu">=</span> <span class="dt">String</span>
 <span class="kw">type</span> <span class="dt">Message</span> <span class="fu">=</span> <span class="dt">String</span>
 
-<span class="kw">data</span> <span class="dt">InMessage</span> <span class="fu">=</span> <span class="dt">InMessage</span> { _<span class="ot">inMessageNick   ::</span> <span class="dt">Nick</span>
-                           , _<span class="ot">inMessageBody   ::</span> <span class="dt">Message</span>
-                           , _<span class="ot">inMessageSource ::</span> <span class="dt">Channel</span>
-                           , _<span class="ot">inMessageTime   ::</span> <span class="dt">UTCTime</span>
+<span class="kw">data</span> <span class="dt">InMessage</span> <span class="fu">=</span> <span class="dt">InMessage</span> {<span class="ot"> _inMessageNick   ::</span> <span class="dt">Nick</span>
+                           ,<span class="ot"> _inMessageBody   ::</span> <span class="dt">Message</span>
+                           ,<span class="ot"> _inMessageSource ::</span> <span class="dt">Channel</span>
+                           ,<span class="ot"> _inMessageTime   ::</span> <span class="dt">UTCTime</span>
                            } <span class="kw">deriving</span> <span class="dt">Show</span>
 
 <span class="kw">newtype</span> <span class="dt">OutMessages</span> <span class="fu">=</span> <span class="dt">OutMessages</span> (<span class="dt">Map</span> <span class="dt">Channel</span> [<span class="dt">Message</span>]) <span class="kw">deriving</span> <span class="dt">Show</span>
@@ -68,7 +68,7 @@ that I’ve struggled through in the past.">Tutorials</a><span class="info-separ
 <span class="kw">type</span> <span class="dt">ChatBot</span> m <span class="fu">=</span> <span class="dt">Auto</span> m <span class="dt">InMessage</span> <span class="dt">OutMessages</span></code></pre></div>
 <p>A <code>ChatBot</code> takes a stream of <code>InMessage</code>s and returns a stream of <code>OutMessages</code>s…and might have effects in <code>m</code> as it does so.</p>
 <p>Note that we get a free instance of <code>Monoid</code> on <code>ChatBot m</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mappend ::</span> <span class="dt">ChatBot</span> m <span class="ot">-&gt;</span> <span class="dt">ChatBot</span> m <span class="ot">-&gt;</span> <span class="dt">ChatBot</span> m</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">mappend<span class="ot"> ::</span> <span class="dt">ChatBot</span> m <span class="ot">-&gt;</span> <span class="dt">ChatBot</span> m <span class="ot">-&gt;</span> <span class="dt">ChatBot</span> m</code></pre></div>
 <p>That takes two <code>ChatBot</code>s and creates a new <code>ChatBot</code> that forks the input stream (sends all <code>InMessage</code>s) to both of the original ones, and <code>mappend</code>s the results. So the new <code>ChatBot</code> will send message to both original ones and return a “combined” <code>OutMessages</code>.</p>
 <p>However, not all modules really have to “care” about the room of the outputs…they might just always reply directly to the room they received the message on. So it’ll help us to also make another sort of <code>Auto</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L69-69</span>

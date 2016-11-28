@@ -252,8 +252,8 @@ Enter command! &#39;A descr&#39; or &#39;[D/C/U/P/M] [id/*]&#39;
 <h3 id="as-a-gui">As a GUI</h3>
 <p>To build a GUI, we must build an <code>Auto</code> that takes in inputs from events and output everything the front-end renderer needs to render the interface.</p>
 <p>For a typical todomvc gui, we need to be able to filter and select things. So that means we need to be extend our input type with filtering and selecting events. And our output has to also indicate the current filter selected, and the current task selected, as well.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">GUIOpts</span> <span class="fu">=</span> <span class="dt">GUI</span> { _<span class="ot">currFilter   ::</span> <span class="dt">Filter</span>        <span class="co">-- currently applied filter</span>
-                   , _<span class="ot">currSelected ::</span> <span class="dt">Maybe</span> <span class="dt">TaskID</span>  <span class="co">-- currently selected task</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">GUIOpts</span> <span class="fu">=</span> <span class="dt">GUI</span> {<span class="ot"> _currFilter   ::</span> <span class="dt">Filter</span>        <span class="co">-- currently applied filter</span>
+                   ,<span class="ot"> _currSelected ::</span> <span class="dt">Maybe</span> <span class="dt">TaskID</span>  <span class="co">-- currently selected task</span>
                    }
 
 <span class="kw">data</span> <span class="dt">GUIInp</span> <span class="fu">=</span> <span class="dt">GIFilter</span> <span class="dt">Filter</span>
@@ -290,11 +290,11 @@ todoAppGUI <span class="fu">=</span> proc inp <span class="ot">-&gt;</span> <spa
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">todoAppGUI ::</span> <span class="dt">Auto&#39;</span> (<span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span>) (<span class="dt">IntMap</span> <span class="dt">Task</span>, <span class="dt">GUIOpts</span>)
 todoAppGUI <span class="fu">=</span> proc inp <span class="ot">-&gt;</span> <span class="kw">do</span>
     filt  <span class="ot">&lt;-</span> holdWith <span class="dt">All</span>
-           <span class="fu">.</span> emitJusts (preview (_<span class="dt">Right</span> <span class="fu">.</span> _<span class="dt">GIFilter</span>)) <span class="fu">-&lt;</span> inp
+           <span class="fu">.</span> emitJusts (preview (_Right <span class="fu">.</span> _GIFilter)) <span class="fu">-&lt;</span> inp
     selc  <span class="ot">&lt;-</span> holdWith <span class="dt">Nothing</span>
-           <span class="fu">.</span> emitJusts (preview (_<span class="dt">Right</span> <span class="fu">.</span> _<span class="dt">GISelect</span>)) <span class="fu">-&lt;</span> inp
+           <span class="fu">.</span> emitJusts (preview (_Right <span class="fu">.</span> _GISelect)) <span class="fu">-&lt;</span> inp
     tasks <span class="ot">&lt;-</span> holdWith mempty <span class="fu">.</span> perBlip todoApp
-           <span class="fu">.</span> emitJusts (preview _<span class="dt">Left</span>)                <span class="fu">-&lt;</span> inp
+           <span class="fu">.</span> emitJusts (preview _Left)                <span class="fu">-&lt;</span> inp
 
     id <span class="fu">-&lt;</span> (tasks, <span class="dt">GUI</span> filt selc)</code></pre></div>
 <p>(assuming we defined the prisms for <code>GUIInp</code> or used <code>''mkPrisms</code>)</p>
