@@ -1,7 +1,7 @@
 Introducing the Hamilton library
 ================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on November 28, 2016.
 > [Read online!](https://blog.jle.im/entry/introducing-the-hamilton-library.html)
 
 [![My name is William Rowan
@@ -16,6 +16,10 @@ hackage! It was mostly a proof-of-concept toy experiment to simulate motion on
 bezier curves, but it became usable enough and accurate enough (to my surprise,
 admittedly) that I finished up some final touches to make it complete and put it
 on hackage as a general-purpose physics simulator.
+
+The library is, in short, a way to simulate a physical system by stating nothing
+more than an arbitrary parameterization of a system (a “generalized coordinate”)
+and a potential energy function.
 
 I was going to write a Haskell post on the implementation, which was what
 interested me at first. I wanted to go over –
