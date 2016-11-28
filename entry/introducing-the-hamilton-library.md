@@ -56,8 +56,8 @@ space](https://en.wikipedia.org/wiki/Phase_space)*, and that the system evolves
 based on geometric properties of the system’s *Hamiltonian* over that phase
 space.
 
-![Phase
-space](/img/entries/hamilton/phase-space.gif "Animation of particles traveling in phase space (top) over time, from Wikipedia")
+![Animation of particles traveling in phase space (top) over time, from
+Wikipedia](/img/entries/hamilton/phase-space.gif)
 
 In other words, define the Hamiltonian of the system, and you see the
 step-by-step evolution and dynamics of the system. You can imagine mechanics as
