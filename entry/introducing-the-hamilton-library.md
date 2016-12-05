@@ -369,7 +369,7 @@ phase0 = toPhase twoBody config0
 evolution' :: [Phase 2]
 evolution' = iterate (stepHam 0.1 twoBody) phase0
 
-positions :: [R 4]
+positions :: [R 2]
 positions = phsPositions <$> evolution'
 
 main :: IO ()
