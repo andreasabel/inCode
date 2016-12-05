@@ -111,20 +111,19 @@ evolution <span class="fu">=</span> evolveHam&#39; doublePendulum phase0 [<span 
 <span class="ot">evolution&#39; ::</span> [<span class="dt">Phase</span> <span class="dv">2</span>]
 evolution&#39; <span class="fu">=</span> iterate (stepHam <span class="fl">0.1</span> doublePendulum) phase0</code></pre></div>
 <p>And you can get the position of the coordinates as:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L47-48</span>
-<span class="ot">evolution&#39; ::</span> [<span class="dt">Phase</span> <span class="dv">2</span>]
-evolution&#39; <span class="fu">=</span> iterate (stepHam <span class="fl">0.1</span> doublePendulum) phase0</code></pre></div>
-<p>With <code>phsPositions :: Phase n -&gt; R n</code></p>
-<p>And the position in the underlying cartesian space as:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L50-51</span>
 <span class="ot">positions ::</span> [<span class="dt">R</span> <span class="dv">2</span>]
 positions <span class="fu">=</span> phsPositions <span class="fu">&lt;$&gt;</span> evolution&#39;</code></pre></div>
+<p>With <code>phsPositions :: Phase n -&gt; R n</code></p>
+<p>And the position in the underlying cartesian space as:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L0-0</span>
+<span class="dt">Key</span> not found<span class="fu">:</span><span class="ot"> positions&#39; ::</span></code></pre></div>
 <p>Where <code>underlyingPos :: System m n -&gt; Phase n -&gt; R m</code>.</p>
-<p>And you can print out now the full progression of the system’s positions:</p>
+<p>Let’s ignore the underlying position for now, and print out now the full progression of the system’s positions:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L53-54</span>
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> withRows (take <span class="dv">25</span> positions) (disp <span class="dv">4</span>)</code></pre></div>
-<p>(<code>withRows</code> is from <em>hmatrix</em>, which treats a list of vectors as a matrix with each vector as a row)</p>
+<p>(<code>withRows</code> is from <em>hmatrix</em>, which treats a list of vectors as a matrix with each vector as a row, and <code>disp 5</code> from <em>hmatrix</em> pretty-prints our matrix with 5 decimal places of precision)</p>
 <pre><code>L 25 2
  1.0000   0.0000
  0.9727   0.0800
@@ -156,7 +155,7 @@ main <span class="fu">=</span> withRows (take <span class="dv">25</span> positio
 <p>Here’s one more situation where generalized coordinates describe things in a lot nicer way than cartesian coordinates: the classic two-body problem.</p>
 <p>Really, you can describe the state of a two-body system with only two parameters: the distance between the two bodies, and their current angle of rotation.</p>
 <p>In this framework, Kepler tells us that for bodies in orbit, the distance will grow smaller and larger again over time, and that the angle of rotation will constantly increase…and increase at a faster rate when the distance is smaller (which is <a href="https://en.wikipedia.org/wiki/Kepler&#39;s_laws_of_planetary_motion#Second_law">Kepler’s second law</a>).</p>
-<p>If we assume that the center of mass of the system is at <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Clangle%200%2C%200%20%5Crangle" alt="\langle 0, 0 \rangle" title="\langle 0, 0 \rangle" />, then we can say that these coordinates as</p>
+<p>If we assume that the center of mass of the system is at <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Clangle%200%2C%200%20%5Crangle" alt="\langle 0, 0 \rangle" title="\langle 0, 0 \rangle" />, then we can state these coordinates as</p>
 <p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%0A%5Clangle%20x_1%2C%20y_1%20%5Crangle%20%3D%20%5Clangle%20r_1%20%5Ccos%20%28%5Ctheta%29%2C%20r_1%20%5Csin%20%28%5Ctheta%29%20%5Crangle%0A" alt="
 \langle x_1, y_1 \rangle = \langle r_1 \cos (\theta), r_1 \sin (\theta) \rangle
 " title="
@@ -167,7 +166,7 @@ main <span class="fu">=</span> withRows (take <span class="dv">25</span> positio
 " title="
 \langle x_2, y_2 \rangle = \langle r_2 \cos (\theta), r_2 \sin (\theta) \rangle
 " /><br /></p>
-<p>Where <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?r_1%20%3D%20%5Cfrac%7Bm_2%7D%7Bm_1%20%2B%20m_2%7D" alt="r_1 = \frac{m_2}{m_1 + m_2}" title="r_1 = \frac{m_2}{m_1 + m_2}" /> and <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?r_2%20%3D%20-%20%5Cfrac%7Bm_1%7D%7Bm_1%20%2B%20m_2%7D" alt="r_2 = - \frac{m_1}{m_1 + m_2}" title="r_2 = - \frac{m_1}{m_1 + m_2}" /> (solving from the center of mass).</p>
+<p>Where <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?r_1%20%3D%20%5Cfrac%7Bm_2%7D%7Bm_1%20%2B%20m_2%7D" alt="r_1 = \frac{m_2}{m_1 + m_2}" title="r_1 = \frac{m_2}{m_1 + m_2}" /> and <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?r_2%20%3D%20-%20%5Cfrac%7Bm_1%7D%7Bm_1%20%2B%20m_2%7D" alt="r_2 = - \frac{m_1}{m_1 + m_2}" title="r_2 = - \frac{m_1}{m_1 + m_2}" /> (solving from the center of mass).<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a></p>
 <p>Our potential energy function is Newton’s famous <a href="https://en.wikipedia.org/wiki/Newton&#39;s_law_of_universal_gravitation">law of universal gravitation</a>:</p>
 <p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%0AU%28r%2C%20%5Ctheta%29%20%3D%20-%20%5Cfrac%7BG%20m_1%20m_2%7D%7Br%7D%0A" alt="
 U(r, \theta) = - \frac{G m_1 m_2}{r}
@@ -204,7 +203,16 @@ config0 <span class="fu">=</span> <span class="dt">Cfg</span> (vec2 <span class=
               (vec2 <span class="dv">0</span> <span class="fl">0.5</span>)  <span class="co">-- initial velocities</span></code></pre></div>
 <p>(we use <code>mkSystem</code> instead of <code>mkSystem'</code> because we want to state the potential energy in terms of our generalized coordinates <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?r" alt="r" title="r" /> and <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Ctheta" alt="\theta" title="\theta" />)</p>
 <p>Let’s take a peek:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/TwoBody.hs#L56-57</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/TwoBody.hs#L44-60</span>
+<span class="ot">phase0 ::</span> <span class="dt">Phase</span> <span class="dv">2</span>
+phase0 <span class="fu">=</span> toPhase twoBody config0
+
+<span class="ot">evolution&#39; ::</span> [<span class="dt">Phase</span> <span class="dv">2</span>]
+evolution&#39; <span class="fu">=</span> iterate (stepHam <span class="fl">0.1</span> twoBody) phase0
+
+<span class="ot">positions ::</span> [<span class="dt">R</span> <span class="dv">4</span>]
+positions <span class="fu">=</span> phsPositions <span class="fu">&lt;$&gt;</span> evolution&#39;
+
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> withRows (take <span class="dv">25</span> positions) (disp <span class="dv">4</span>)</code></pre></div>
 <pre><code>L 25 2
@@ -245,7 +253,13 @@ main <span class="fu">=</span> withRows (take <span class="dv">25</span> positio
 <li>The bezier curve example.</li>
 </ol>
 <p>Let me know in the comments if you think of any interesting systems to apply this to, or if you have any interesting applications in physical or non-physical ways! I’d love to hear :D</p>
-<p>And if you’re interested in the implementation using some of those Haskell tricks I mentioned above, stay tuned :)</p></div><footer><ul class="entry-series"></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/functional-programming.html" class="tag-a-tag">#functional programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/numerical-methods.html" class="tag-a-tag">#numerical methods</a></li><li><a href="https://blog.jle.im/entries/tagged/physics.html" class="tag-a-tag">#physics</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@projects.html" class="tag-a-category">@PROJECTS</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="prev-entry-link">&larr; <a href="https://blog.jle.im/entry/practical-dependent-types-in-haskell-2.html">Practical Dependent Types in Haskell 2: Existential Neural Networks and Types at
+<p>And if you’re interested in the implementation using some of those Haskell tricks I mentioned above, stay tuned :)</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Alternatively, we could assume that the halfway point (or even the first body) is always at <img style="vertical-align:middle" src="https://latex.codecogs.com/gif.latex?%5Clangle%200%2C%200%20%5Crangle" alt="\langle 0, 0 \rangle" title="\langle 0, 0 \rangle" />, but this doesn’t give us as pretty of plots. The center of mass is a nice reference point because newton’s third law implies that it remains stationary forever.<a href="#fnref1">↩</a></p></li>
+</ol>
+</section></div><footer><ul class="entry-series"></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/functional-programming.html" class="tag-a-tag">#functional programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/numerical-methods.html" class="tag-a-tag">#numerical methods</a></li><li><a href="https://blog.jle.im/entries/tagged/physics.html" class="tag-a-tag">#physics</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@projects.html" class="tag-a-category">@PROJECTS</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="prev-entry-link">&larr; <a href="https://blog.jle.im/entry/practical-dependent-types-in-haskell-2.html">Practical Dependent Types in Haskell 2: Existential Neural Networks and Types at
 Runtime</a> (Previous)</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/introducing-the-hamilton-library.html';
     this.page.identifier = 'hamilton';

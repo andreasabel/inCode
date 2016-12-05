@@ -328,9 +328,9 @@ And you can get the position of the coordinates as:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L47-48}
-\OtherTok{evolution' ::} \NormalTok{[}\DataTypeTok{Phase} \DecValTok{2}\NormalTok{]}
-\NormalTok{evolution' }\FunctionTok{=} \NormalTok{iterate (stepHam }\FloatTok{0.1} \NormalTok{doublePendulum) phase0}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L50-51}
+\OtherTok{positions ::} \NormalTok{[}\DataTypeTok{R} \DecValTok{2}\NormalTok{]}
+\NormalTok{positions }\FunctionTok{=} \NormalTok{phsPositions }\FunctionTok{<$>} \NormalTok{evolution'}
 \end{Highlighting}
 \end{Shaded}
 
@@ -340,16 +340,16 @@ And the position in the underlying cartesian space as:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L50-51}
-\OtherTok{positions ::} \NormalTok{[}\DataTypeTok{R} \DecValTok{2}\NormalTok{]}
-\NormalTok{positions }\FunctionTok{=} \NormalTok{phsPositions }\FunctionTok{<$>} \NormalTok{evolution'}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L0-0}
+\DataTypeTok{Key} \NormalTok{not found}\FunctionTok{:}\OtherTok{ positions' ::}
 \end{Highlighting}
 \end{Shaded}
 
 Where
 \texttt{underlyingPos\ ::\ System\ m\ n\ -\textgreater{}\ Phase\ n\ -\textgreater{}\ R\ m}.
 
-And you can print out now the full progression of the system's positions:
+Let's ignore the underlying position for now, and print out now the full
+progression of the system's positions:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -360,7 +360,8 @@ And you can print out now the full progression of the system's positions:
 \end{Shaded}
 
 (\texttt{withRows} is from \emph{hmatrix}, which treats a list of vectors as a
-matrix with each vector as a row)
+matrix with each vector as a row, and \texttt{disp\ 5} from \emph{hmatrix}
+pretty-prints our matrix with 5 decimal places of precision)
 
 \begin{verbatim}
 L 25 2
@@ -414,7 +415,7 @@ smaller (which is
 second law}).
 
 If we assume that the center of mass of the system is at
-\(\langle 0, 0 \rangle\), then we can say that these coordinates as
+\(\langle 0, 0 \rangle\), then we can state these coordinates as
 
 \[
 \langle x_1, y_1 \rangle = \langle r_1 \cos (\theta), r_1 \sin (\theta) \rangle
@@ -425,7 +426,11 @@ If we assume that the center of mass of the system is at
 \]
 
 Where \(r_1 = \frac{m_2}{m_1 + m_2}\) and \(r_2 = - \frac{m_1}{m_1 + m_2}\)
-(solving from the center of mass).
+(solving from the center of mass).\footnote{Alternatively, we could assume that
+  the halfway point (or even the first body) is always at
+  \(\langle 0, 0 \rangle\), but this doesn't give us as pretty of plots. The
+  center of mass is a nice reference point because newton's third law implies
+  that it remains stationary forever.}
 
 Our potential energy function is Newton's famous
 \href{https://en.wikipedia.org/wiki/Newton's_law_of_universal_gravitation}{law
@@ -488,7 +493,16 @@ Let's take a peek:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/TwoBody.hs#L56-57}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/TwoBody.hs#L44-60}
+\OtherTok{phase0 ::} \DataTypeTok{Phase} \DecValTok{2}
+\NormalTok{phase0 }\FunctionTok{=} \NormalTok{toPhase twoBody config0}
+
+\OtherTok{evolution' ::} \NormalTok{[}\DataTypeTok{Phase} \DecValTok{2}\NormalTok{]}
+\NormalTok{evolution' }\FunctionTok{=} \NormalTok{iterate (stepHam }\FloatTok{0.1} \NormalTok{twoBody) phase0}
+
+\OtherTok{positions ::} \NormalTok{[}\DataTypeTok{R} \DecValTok{4}\NormalTok{]}
+\NormalTok{positions }\FunctionTok{=} \NormalTok{phsPositions }\FunctionTok{<$>} \NormalTok{evolution'}
+
 \OtherTok{main ::} \DataTypeTok{IO} \NormalTok{()}
 \NormalTok{main }\FunctionTok{=} \NormalTok{withRows (take }\DecValTok{25} \NormalTok{positions) (disp }\DecValTok{4}\NormalTok{)}
 \end{Highlighting}

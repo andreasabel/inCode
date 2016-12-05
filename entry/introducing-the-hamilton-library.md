@@ -210,9 +210,9 @@ evolution' = iterate (stepHam 0.1 doublePendulum) phase0
 And you can get the position of the coordinates as:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L47-48
-evolution' :: [Phase 2]
-evolution' = iterate (stepHam 0.1 doublePendulum) phase0
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L50-51
+positions :: [R 2]
+positions = phsPositions <$> evolution'
 
 ```
 
@@ -221,15 +221,14 @@ With `phsPositions :: Phase n -> R n`
 And the position in the underlying cartesian space as:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L50-51
-positions :: [R 2]
-positions = phsPositions <$> evolution'
-
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L0-0
+Key not found: positions' ::
 ```
 
 Where `underlyingPos :: System m n -> Phase n -> R m`.
 
-And you can print out now the full progression of the system’s positions:
+Let’s ignore the underlying position for now, and print out now the full
+progression of the system’s positions:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L53-54
@@ -239,7 +238,8 @@ main = withRows (take 25 positions) (disp 4)
 ```
 
 (`withRows` is from *hmatrix*, which treats a list of vectors as a matrix with
-each vector as a row)
+each vector as a row, and `disp 5` from *hmatrix* pretty-prints our matrix with
+5 decimal places of precision)
 
     L 25 2
      1.0000   0.0000
@@ -290,7 +290,7 @@ constantly increase…and increase at a faster rate when the distance is smaller
 law](https://en.wikipedia.org/wiki/Kepler's_laws_of_planetary_motion#Second_law)).
 
 If we assume that the center of mass of the system is at $\langle 0, 0 \rangle$,
-then we can say that these coordinates as
+then we can state these coordinates as
 
 $$
 \langle x_1, y_1 \rangle = \langle r_1 \cos (\theta), r_1 \sin (\theta) \rangle
@@ -301,7 +301,7 @@ $$
 $$
 
 Where $r_1 = \frac{m_2}{m_1 + m_2}$ and $r_2 = - \frac{m_1}{m_1 + m_2}$ (solving
-from the center of mass).
+from the center of mass).[^1]
 
 Our potential energy function is Newton’s famous [law of universal
 gravitation](https://en.wikipedia.org/wiki/Newton's_law_of_universal_gravitation):
@@ -359,7 +359,16 @@ energy in terms of our generalized coordinates $r$ and $\theta$)
 Let’s take a peek:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/TwoBody.hs#L56-57
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/TwoBody.hs#L44-60
+phase0 :: Phase 2
+phase0 = toPhase twoBody config0
+
+evolution' :: [Phase 2]
+evolution' = iterate (stepHam 0.1 twoBody) phase0
+
+positions :: [R 4]
+positions = phsPositions <$> evolution'
+
 main :: IO ()
 main = withRows (take 25 positions) (disp 4)
 
@@ -425,3 +434,8 @@ ways! I’d love to hear :D
 
 And if you’re interested in the implementation using some of those Haskell
 tricks I mentioned above, stay tuned :)
+
+[^1]: Alternatively, we could assume that the halfway point (or even the first
+    body) is always at $\langle 0, 0 \rangle$, but this doesn’t give us as
+    pretty of plots. The center of mass is a nice reference point because
+    newton’s third law implies that it remains stationary forever.
