@@ -43,16 +43,18 @@ of this information is also found in the
 Hamiltonian dynamics, but feel free to skip it if you want to go straight to the
 Haskell)*
 
-Hamiltonian mechanics is a brilliant, radical, and beautiful re-imagination of
-the physics of mechanics and dynamics. It was adapted for statistical mechanics
-and thermodynamics, and it was through the lens of Hamiltonian mechanics that
-Schroedinger and Heisenberg independently found insight that unlocked the
-secrets of quantum mechanics. While Newton’s interpretation of mechanics (in
-terms of forces and accelerations) was cute, it simply didn’t generalize to
-quantum mechanics. Hamiltonian’s interpretation of mechanics *did*, and we have
-a century of physics revolutions to thank for it. Hamiltonian mechanics also
-generalize without any extra work to relativity – another case where newtonian
-mechanics tends to fall apart.
+[Hamiltonian mechanics](https://en.wikipedia.org/wiki/Hamiltonian_mechanics) is
+a brilliant, radical, and beautiful re-imagination of the physics of mechanics
+and dynamics by [William Rowan
+Hamilton](https://www.youtube.com/watch?v=SZXHoWwBcDc). It was adapted for
+statistical mechanics and thermodynamics, and it was through the lens of
+Hamiltonian mechanics that Schroedinger and Heisenberg independently found
+insight that unlocked the secrets of quantum mechanics. While Newton’s
+interpretation of mechanics (in terms of forces and accelerations) was cute, it
+simply didn’t generalize to quantum mechanics. Hamiltonian’s interpretation of
+mechanics *did*, and we have a century of physics revolutions to thank for it.
+Hamiltonian mechanics also generalize without any extra work to relativity –
+another case where newtonian mechanics tends to fall apart.
 
 Hamiltonian mechanics, in a classical sense, imagines that the state of the
 system exists as a point in *[phase
@@ -153,7 +155,8 @@ doublePendulum = mkSystem' masses coordinates potential
 
 (with some [helper
 patterns](https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L27-35)
-defined here)
+defined here – `V2` and `V4` – that lets us pattern match on and construct sized
+`Vector`s and their 2 (or 4) elements)
 
 Ta dah. That’s literally all we need.
 
