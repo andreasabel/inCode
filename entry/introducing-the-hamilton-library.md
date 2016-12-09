@@ -224,8 +224,10 @@ With `phsPositions :: Phase n -> R n`
 And the position in the underlying cartesian space as:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L0-0
-Key not found: positions' ::
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L53-54
+positions' :: [R 4]
+positions' = underlyingPos doublePendulum <$> positions
+
 ```
 
 Where `underlyingPos :: System m n -> Phase n -> R m`.
@@ -234,7 +236,7 @@ Let’s ignore the underlying position for now, and print out now the full
 progression of the system’s positions:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L53-54
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L56-57
 main :: IO ()
 main = withRows (take 25 positions) (disp 4)
 
