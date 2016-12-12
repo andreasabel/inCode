@@ -131,7 +131,13 @@ $$
 $$
 
 Which holds for every generalized coordinate $q$, where $p_q$ is the monentum
-conjugate to that coordinate.
+conjugate to that coordinate. $\dot{q}$ is the rate of change of $q$, and
+$\dot{p_q}$ is the rate of change of $p_q$.
+
+Essentially, these give you “updating functions” for $q$ and $p_q$ – given
+$\mathcal{H}(\mathbf{q},\mathbf{p})$, you have a way to “update” the particle’s
+position in phase space. Just take the partial derivatives of $\mathcal{H}$ at
+every step in time!
 
 [^1]: The picture with a time-dependent Hamiltonian is different, but only
     slightly. In the time-dependent case, the system still *tries* to move along
