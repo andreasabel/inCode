@@ -47,8 +47,10 @@ parameterizing your system) to $\mathbb{R}$. And, for a time-independent system,
 the picture is quite simple: the system moves along the *contour lines* of the
 *Hamiltonian* – the lines of equal “height”.
 
-![Contour
-Lines](/img/entries/hamilton/contour-lines.jpg "Example of contour lines of a $\mathbb{R}^2 \rightarrow \mathbb{R}$ function -- the elevation of land. From the [Ordinace Survey][] website")
+![Example of contour lines of a $\mathbb{R}^2 \rightarrow \mathbb{R}$ function –
+the elevation of land. From the [Ordinace
+Survey](https://www.ordnancesurvey.co.uk/blog/2015/11/map-reading-skills-making-sense-of-contour-lines/)
+website](/img/entries/hamilton/contour-lines.jpg "Contour lines")
 
 In the example above, if we imagine that phase space is the 2D location, then
 the *Hamiltonian* is the mountain. And for a system dropped anywhere on the
