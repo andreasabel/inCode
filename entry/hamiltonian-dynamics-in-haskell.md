@@ -42,9 +42,9 @@ space*, and that the system’s dynamics is its motion through phase space that 
 dictated by the geometry of the *Hamiltonian* of that phase space.
 
 The system’s *Hamiltonian* is a $\mathbb{R}^{2n} \rightarrow \mathbb{R}$
-function on the phase space (where $n$ is the number of coordinates
-parameterizing your system) to $\mathbb{R}$. And, for a time-independent system,
-the picture is quite simple: the system moves along the *contour lines* of the
+function on phase space (where $n$ is the number of coordinates parameterizing
+your system) to $\mathbb{R}$. For a time-independent system, the picture of the
+dynamics is pretty simple: the system moves along the *contour lines* of the
 *Hamiltonian* – the lines of equal “height”.
 
 ![Example of contour lines of a $\mathbb{R}^2 \rightarrow \mathbb{R}$ function –
