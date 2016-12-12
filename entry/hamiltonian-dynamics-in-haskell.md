@@ -110,8 +110,8 @@ to”) certain sets of familiar coordinates yield things that we typically call
     first semester physics.
 
 2.  The momentum conjugate to the angle $\theta$ in polar coordinates is
-    *angular momentum* ($\mathbf{l} = m \mathbf{r} \times \mathbf{v}$, or
-    $\mathbf{l} = m r \mathbf{\omega}$) from first semester physics.
+    *angular momentum* ($\mathbf{L} = m \mathbf{r} \times \mathbf{v}$, or
+    $L = m r \mathbf{\omega}$) from first semester physics.
 
 So maybe this can help you feel comfortable with calling it “generalized
 momenta”, in the sense that it’s our normal momentum (for linear and polar
