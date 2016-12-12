@@ -41,16 +41,16 @@ posits that the full state of the system exists in something called *phase
 space*, and that the system’s dynamics is its motion through phase space that is
 dictated by the geometry of the *Hamiltonian* of that phase space.
 
-The system’s *Hamiltonian* is a $\mathbb{R}^{2n} -> \mathbb{R}$ function on the
-phase space ($\mathbb{R}^{2n}$, where $n$ is the number of coordinates
-parameterizing your system) to $\mathbb{R}$. And, for a time-independent system,
-the picture is quite simple: the system moves along the *contour lines* of the
-*Hamiltonian* – the lines of equal “height”.
+The system’s *Hamiltonian* is a $\mathbb{R}^{2n} \rightarrow \mathbb{R}$
+function on the phase space ($\mathbb{R}^{2n}$, where $n$ is the number of
+coordinates parameterizing your system) to $\mathbb{R}$. And, for a
+time-independent system, the picture is quite simple: the system moves along the
+*contour lines* of the *Hamiltonian* – the lines of equal “height”.
 
 ![Example of contour lines of a $\mathbb{R}^2 \rightarrow \mathbb{R}$ function –
 the elevation of land. From the [Ordinace
 Survey](https://www.ordnancesurvey.co.uk/blog/2015/11/map-reading-skills-making-sense-of-contour-lines/)
-website](/img/entries/hamilton/contour-lines.jpg "Contour lines")
+website.](/img/entries/hamilton/contour-lines.jpg "Contour lines")
 
 In the example above, if we imagine that phase space is the 2D location, then
 the *Hamiltonian* is the mountain. And for a system dropped anywhere on the
