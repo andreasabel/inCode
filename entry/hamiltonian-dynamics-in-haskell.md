@@ -125,7 +125,7 @@ you’ll know that the line of “steepest ascent” is the gradient. If we call
 Hamiltonian $\mathcal{H}(\mathbf{q},\mathbf{p})$ (where $\mathbf{q}$ is the
 vector of positions and $\mathbf{p}$ is the vector of momenta), then the
 direction of steepest ascent is
-$\left \langle \frac{\partial}{\partial \mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p}), \frac{\partial}{\partial \mathbf{p}} \mathcal{H}(\mathbf{q},\mathbf{p}) \right \rangle$
+$\left \langle \frac{\partial}{\partial \mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p}), \frac{\partial}{\partial \mathbf{p}} \mathcal{H}(\mathbf{q},\mathbf{p}) \right \rangle$.
 
 But we want to move along the *contour lines*…and these are the lines
 *perpendicular* to the direction of steepest descent. The vector perpendicular
