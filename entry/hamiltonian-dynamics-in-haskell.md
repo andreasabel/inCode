@@ -152,6 +152,13 @@ $\frac{\partial}{\partial p_q} \mathcal{H}(\mathbf{q},\mathbf{p})$. To update
 $p_q$, nudge it by
 $\frac{\partial}{\partial q} \mathcal{H}(\mathbf{q},\mathbf{p})$!
 
+This picture is appealing to me in a visceral way because it sort of seems like
+the system is “surfing” along the Hamilton’s contour lines. It’s being “pushed”
+*faster* when the Hamiltonian is steeper, and slower when it’s more shallow. If
+you have super steep Hamiltonians, you’ll just zip right through phase space,
+but if you have smooth, shallow Hamiltonians, you’ll take a comfy glide along
+that contour line you are on.
+
 [^1]: The picture with a time-dependent Hamiltonian is different, but only
     slightly. In the time-dependent case, the system still *tries* to move along
     contour lines at every point in time, but the mountain is constantly
