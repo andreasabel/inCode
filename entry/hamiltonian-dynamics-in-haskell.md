@@ -130,7 +130,7 @@ $$
 \dot{p_q} = - \frac{\partial}{\partial q} \mathcal{H}(\mathbf{q},\mathbf{p})
 $$
 
-Which holds for every generalized coordinate $q$, where $p_q$ is the monentum
+Which holds for every generalized coordinate $q$, where $p_q$ is the momentum
 conjugate to that coordinate. $\mathcal{H}$ is the Hamiltonian function,
 $\dot{q}$ is the rate of change of $q$, and $\dot{p_q}$ is the rate of change of
 $p_q$.
