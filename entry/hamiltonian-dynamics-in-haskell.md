@@ -47,7 +47,7 @@ parameterizing your system) to $\mathbb{R}$. And, for a time-independent system,
 the picture is quite simple: the system moves along the *contour lines* of the
 *Hamiltonian* – the lines of equal “height”.
 
-[Contour
+![Contour
 Lines](/img/entries/hamilton/contour-lines.jpg "Example of contour lines of a $\mathbb{R}^2 \rightarrow \mathbb{R}$ function -- the elevation of land. From the [Ordinace Survey][] website")
 
 In the example above, if we imagine that phase space is the 2D location, then
@@ -131,8 +131,9 @@ $$
 $$
 
 Which holds for every generalized coordinate $q$, where $p_q$ is the monentum
-conjugate to that coordinate. $\dot{q}$ is the rate of change of $q$, and
-$\dot{p_q}$ is the rate of change of $p_q$.
+conjugate to that coordinate. $\mathcal{H}$ is the Hamiltonian function,
+$\dot{q}$ is the rate of change of $q$, and $\dot{p_q}$ is the rate of change of
+$p_q$.
 
 Essentially, these give you “updating functions” for $q$ and $p_q$ – given
 $\mathcal{H}(\mathbf{q},\mathbf{p})$, you have a way to “update” the particle’s
