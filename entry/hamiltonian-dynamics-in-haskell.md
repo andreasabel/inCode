@@ -78,12 +78,10 @@ contour lines” on that Hamiltonian!
 
 ### Phase Space
 
-I’ve sort of hand-waved away describing what phase space is. The only thing I’ve
-really said in detail is that if your system’s state has $n$ parameters, then
-the corresponding phase space is $2n$-dimensional (and that Hamiltonian
-mechanics is somehow about systems moving around in phase space).
-
-*Phase space* is a $2n$-dimensional space consisting of:
+So far the only thing I’ve really said in detail is that if your system’s state
+has $n$ parameters, then the corresponding phase space is $2n$-dimensional (and
+that Hamiltonian mechanics is somehow about systems moving around in phase
+space). *Phase space* is a $2n$-dimensional space parameterized by:
 
 1.  All of the current values of the $n$ parameters (“generalized coordinates”)
 2.  All of the current “generalized momenta” of those $n$ parameters
@@ -91,19 +89,14 @@ mechanics is somehow about systems moving around in phase space).
 So if you were parameterizing your pendulum system by, say, the angle of the
 pendulum, the phase space would be the current angle of the pendulum along with
 the current “generalized momentum” associated with the angle of the pendulum.
-
-What exactly *is* generalized momentum? Well, we’ll go over calculating it
-eventually. But what does it represent…*physically*?
+What exactly *is* generalized momentum? We’ll go over calculating it eventually,
+but what does it represent…*physically*?
 
 I could give you some spiel here about the underlying Lie algebra of the Lie
 group associated with the generalized coordinates, but I don’t think that it
-would be very intuitively appealing in a physical sense. It’d also be out of the
-scope of the math prerequisites that I promised I’d stick to going into this
-post!
-
-But, what I can say is that the generalized momenta associated with (“conjugate
-to”) certain sets of familiar coordinates yield things that we typically call
-“momenta”:
+would be very intuitively appealing in a physical sense. But what I *can* say is
+that the generalized momenta associated with (“conjugate to”) certain sets of
+familiar coordinates yield things that we typically call “momenta”:
 
 1.  The momentum conjugate to normal Cartesian coordinates is just our normal
     run-of-the-mill *linear momentum* (in the $\mathbf{p} = m \mathbf{v}$) from
@@ -111,11 +104,13 @@ to”) certain sets of familiar coordinates yield things that we typically call
 
 2.  The momentum conjugate to the angle $\theta$ in polar coordinates is
     *angular momentum* ($\mathbf{L} = m \mathbf{r} \times \mathbf{v}$, or
-    $L = m r \mathbf{\omega}$) from first semester physics.
+    $L = m r^2 \dot{\theta}$) from first semester physics.
 
-So maybe this can help you feel comfortable with calling it “generalized
-momenta”, in the sense that it’s our normal momentum (for linear and polar
-coordinates) generalized to arbitrary coordinates.
+    The momentum conjugate to the radial coordinate $r$ in polar coordinates is
+    also just boring old linear momentum $p_r = m \dot{r}$.
+
+So, it’s our normal momentum (for linear and polar coordinates) *generalized* to
+arbitrary coordinates.
 
 ### Hamiltonian Dynamics
 
@@ -153,14 +148,71 @@ $p_q$, nudge it by
 $\frac{\partial}{\partial q} \mathcal{H}(\mathbf{q},\mathbf{p})$!
 
 This picture is appealing to me in a visceral way because it sort of seems like
-the system is “surfing” along the Hamilton’s contour lines. It’s being “pushed”
-*faster* when the Hamiltonian is steeper, and slower when it’s more shallow. If
-you have super steep Hamiltonians, you’ll just zip right through phase space,
-but if you have smooth, shallow Hamiltonians, you’ll take a comfy glide along
-that contour line you are on.
+the system is “surfing” along the Hamiltonian’s contour lines. It’s being
+“pushed” *faster* when the Hamiltonian is steeper, and slower when it’s more
+shallow. If you have super steep Hamiltonians, you’ll just zip right through
+phase space, but if you have shallow Hamiltonians, you’ll take a comfy glide
+along that contour line you’re on. I can apply all my intuition as a surfer[^2]
+to Hamiltonian mechanics!
+
+Hamiltonian Dynamics and Physical Systems
+-----------------------------------------
+
+Earlier I mentioned that the two steps for applying Hamiltonian mechanics to
+your system was figuring out your system’s conjugate momenta and the appropriate
+Hamiltonian. Let’s get onto that. I’m going to make a couple of simplifying
+assumptions that make the job easier for the purposes of this article:
+
+1.  Your coordinates and potential energy are time-independent.
+2.  Your potential energy function only depends on *positions*, and not
+    *velocities*. (So nothing like friction or wind resistance or magnetic field
+    vector potentials)
+
+With these assumptions, I’m going to skip over discussing the
+[Lagrangian](https://en.wikipedia.org/wiki/Lagrangian_mechanics) of the system,
+which is the traditional way to do this. You can think of this section as me
+presenting derived conclusions and skipping the derivations.
+
+### Conjugate Momenta
+
+We’ll define the momentum conjugate to coordinate $q$ as
+
+$$
+\frac{\partial}{\partial \dot{q}} KE(\dot{\mathbf{q}})
+$$
+
+Where $KE(\dot{\mathbf{q}))$ is the kinetic energy of the system, which is an
+explicit function on the rate of changes of the coordinates. For example, for
+normal Cartesian coordinates in one dimension,
+$KE(\dot{x}) = \frac{1}{2} m \dot{x}^2$. So the momentum conjugate to $x$ is:
+
+$$
+p_x = \frac{\partial}{\partial \dot{x}} \frac{1}{2} m \dot{x}^2 = m \dot{x}
+$$
+
+Just linear momentum, like I claimed before!
+
+Alright, now let’s generalize this to arbitrary coordinates. In general, for
+*Cartesian* coordinates, the kinetic energy will always be
+
+$$
+KE(\dot{\mathbf{x}}) = \frac{1}{2} \left[ m_1 x_1^2 + m_2 x_2^2 + m_3 x_3^2 \dots \right]
+$$
+
+Where $m$ is the inertia associated with each coordinate…for example, if there’s
+an object of mass $m$ at $\langle x_1, x_2 \rangle$, then $m_1 = m_2 = m$.
+
+To make things more convenient, we’ll treat this as a quadratic form over an
+inertia matrix:
+
+$$
+KE(\dot{\mathbf{x}}) = \frac{1}{2} \mathbf{x}^T \hat{M} \mathbf{x}
+$$
 
 [^1]: The picture with a time-dependent Hamiltonian is different, but only
     slightly. In the time-dependent case, the system still *tries* to move along
     contour lines at every point in time, but the mountain is constantly
     changing underneath it and the contour lines keep on shifting underneath it.
     Sounds like life!
+
+[^2]: Disclaimer: I am not a surfer
