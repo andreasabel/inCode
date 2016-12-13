@@ -253,7 +253,7 @@ And we can plug it in (remembering that $(A B)^T = A^T B^T$) to our kinetic
 energy equation to get:
 
 $$
-KE(\dot{\mathbf{q}}) = \frac{1}{2} \dot{\mathbf{q}} \hat{J}_f^T
+KE(\dot{\mathbf{q}}) = \frac{1}{2} \dot{\mathbf{q}}^T \hat{J}_f^T
     \hat{M} \hat{J}_f \dot{\mathbf{q}}
 $$
 
