@@ -178,7 +178,7 @@ $$
 \frac{\partial}{\partial \dot{q}} KE(\dot{\mathbf{q}})
 $$
 
-Where $KE(\dot{\mathbf{q})$ is the kinetic energy of the system, which is an
+Where $KE(\dot{\mathbf{q}})$ is the kinetic energy of the system, which is an
 explicit function on the rate of changes of all of the coordinates,
 $\dot{\mathbf{q}}$. For example, for normal Cartesian coordinates in one
 dimension, $KE(\dot{x}) = \frac{1}{2} m \dot{x}^2$. So the momentum conjugate to
@@ -254,7 +254,7 @@ energy equation to get:
 
 $$
 KE(\dot{\mathbf{q}}) = \frac{1}{2} \dot{\mathbf{q}} \hat{J}_f(\mathbf{q})^T
-    \hat{M} \hat{J}_f(\mathbf{q}}) \dot{\mathbf{q}}
+    \hat{M} \hat{J}_f(\mathbf{q}) \dot{\mathbf{q}}
 $$
 
 [^1]: The picture with a time-dependent Hamiltonian is different, but only
