@@ -238,23 +238,23 @@ $$
 \dot{x_i} = \sum_{j = 1}^n \frac{\partial f_i}{\partial q_j} \dot{q_j}
 $$
 
-But, hey, this looks a lot like a matrix multiplication. If we call
-$\hat{J}_f(\mathbf{q})$ the [Jacobian
+But, hey, this looks a lot like a matrix multiplication. If we call $\hat{J}_f$
+the [Jacobian
 matrix](https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant), the
-$m \times n$ matrix of partial derivatives of $f$ ($\hat{J}_{fij}$ =
-\frac{\partial f_i}{\partial q_j}\$) at \$\mathbf{q}, then we have a nice
+$m \times n$ matrix of partial derivatives of $f$
+($\hat{J}_{fij} = \frac{\partial f_i}{\partial q_j}$), then we have a nice
 expression for $\dot{\mathbf{x}}$:
 
 $$
-\dot{\mathbf{x}} = \hat{J}_f(\mathbf{q}) \dot{\mathbf{q}}
+\dot{\mathbf{x}} = \hat{J}_f \dot{\mathbf{q}}
 $$
 
 And we can plug it in (remembering that $(A B)^T = A^T B^T$) to our kinetic
 energy equation to get:
 
 $$
-KE(\dot{\mathbf{q}}) = \frac{1}{2} \dot{\mathbf{q}} \hat{J}_f(\mathbf{q})^T
-    \hat{M} \hat{J}_f(\mathbf{q}) \dot{\mathbf{q}}
+KE(\dot{\mathbf{q}}) = \frac{1}{2} \dot{\mathbf{q}} \hat{J}_f^T
+    \hat{M} \hat{J}_f \dot{\mathbf{q}}
 $$
 
 [^1]: The picture with a time-dependent Hamiltonian is different, but only
