@@ -204,7 +204,57 @@ To make things more convenient, we’ll treat this as a quadratic form over an
 inertia matrix:
 
 $$
-KE(\dot{\mathbf{x}}) = \frac{1}{2} \mathbf{x}^T \hat{M} \mathbf{x}
+KE(\dot{\mathbf{x}}) = \frac{1}{2} \dot{\mathbf{x}^T} \hat{M} \dot{\mathbf{x}}
+$$
+
+Where $\hat{M}$ is the [diagonal
+matrix](https://en.wikipedia.org/wiki/Diagonal_matrix) whose entries are the
+masses of each coordinate, and $\dot{\mathbf{x}}$ is the column vector of all of
+the (Cartesian) coordinates,
+$\left[ \dot{x_1} \dot{x_2} \dot{x_3} \dots \right]^T$.
+
+Now! How to generalize this to arbitrary coordinates? Well, if we have $n$
+generalized coordinates $\mathbf{q}$ mapping to $m$-dimensional Cartesian
+coordinates, we can specify them as $\mathbf{x} = f(\mathbf{q})$, where
+$f : n \rightarrow m$, taking the vector of generalized coordinates and
+returning a vector for the position in Cartesian space. For example, for polar
+coordinates,
+$f(r, \theta) = \left \langle r \cos(\theta), r \sin(\theta) right \rangle$.
+
+So we can get $\mathbf{x}$ from $\mathbf{q}$ with $f$, but how can we get
+$\dot{\mathbf{x}}$, the vector of rate of changes? Well, if
+$x_1 = f_1(q_1, q_2 \dots)$, then the $\dot{x_1}$ is the [total
+derivative](https://en.wikipedia.org/wiki/Total_derivative) of $x_1$ with
+respect to time:
+
+$$
+\dot{x_1} = \frac{\partial f_1}{\partial q_1} \dot{q_1} +
+    \frac{\partial f_1}{\partial q_2} \dot{q_2} + \dots
+$$
+
+Or, in short:
+
+$$
+\dot{x_i} = \sum_{j = 1}^n \frac{\partial f_i}{\partial q_j} \dot{q_j}
+$$
+
+But, hey, this looks a lot like a matrix multiplication. If we call
+$\hat{J}_f(\mathbf{q})$ the [Jacobian
+matrix](https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant), the
+$m \times n$ matrix of partial derivatives of $f$ ($\hat{J}_{fij}$ =
+\frac{\partial f_i}{\partial q_j}\$) at \$\mathbf{q}, then we have a nice
+expression for $\dot{\mathbf{x}}$:
+
+$$
+\dot{\mathbf{x}} = \hat{J}_f(\mathbf{q}) \dot{\mathbf{q}}
+$$
+
+And we can plug it in (remembering that $(A B)^T = A^T B^T$) to our kinetic
+energy equation to get:
+
+$$
+KE(\dot{\mathbf{q}}) = \frac{1}{2} \dot{\mathbf{q}} \hat{J}_f(\mathbf{q})^T
+    \hat{M} \hat{J}_f(\mathbf{q}}) \dot{\mathbf{q}}
 $$
 
 [^1]: The picture with a time-dependent Hamiltonian is different, but only
