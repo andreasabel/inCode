@@ -219,7 +219,7 @@ coordinates, we can specify them as $\mathbf{x} = f(\mathbf{q})$, where
 $f : n \rightarrow m$, taking the vector of generalized coordinates and
 returning a vector for the position in Cartesian space. For example, for polar
 coordinates,
-$f(r, \theta) = \left \langle r \cos(\theta), r \sin(\theta) right \rangle$.
+$f(r, \theta) = \left \langle r \cos(\theta), r \sin(\theta) \right \rangle$.
 
 So we can get $\mathbf{x}$ from $\mathbf{q}$ with $f$, but how can we get
 $\dot{\mathbf{x}}$, the vector of rate of changes? Well, if
