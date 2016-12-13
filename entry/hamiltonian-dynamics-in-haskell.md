@@ -150,10 +150,7 @@ $\frac{\partial}{\partial q} \mathcal{H}(\mathbf{q},\mathbf{p})$!
 This picture is appealing to me in a visceral way because it sort of seems like
 the system is “surfing” along the Hamiltonian’s contour lines. It’s being
 “pushed” *faster* when the Hamiltonian is steeper, and slower when it’s more
-shallow. If you have super steep Hamiltonians, you’ll just zip right through
-phase space, but if you have shallow Hamiltonians, you’ll take a comfy glide
-along that contour line you’re on. I can apply all my intuition as a surfer[^2]
-to Hamiltonian mechanics!
+shallow. I can apply all my intuition as a surfer[^2] to Hamiltonian mechanics!
 
 Hamiltonian Dynamics and Physical Systems
 -----------------------------------------
@@ -175,19 +172,20 @@ presenting derived conclusions and skipping the derivations.
 
 ### Conjugate Momenta
 
-We’ll define the momentum conjugate to coordinate $q$ as
+It can be shown that the momentum conjugate to coordinate $q$ as
 
 $$
 \frac{\partial}{\partial \dot{q}} KE(\dot{\mathbf{q}})
 $$
 
-Where $KE(\dot{\mathbf{q}))$ is the kinetic energy of the system, which is an
-explicit function on the rate of changes of the coordinates. For example, for
-normal Cartesian coordinates in one dimension,
-$KE(\dot{x}) = \frac{1}{2} m \dot{x}^2$. So the momentum conjugate to $x$ is:
+Where $KE(\dot{\mathbf{q})$ is the kinetic energy of the system, which is an
+explicit function on the rate of changes of all of the coordinates,
+$\dot{\mathbf{q}}$. For example, for normal Cartesian coordinates in one
+dimension, $KE(\dot{x}) = \frac{1}{2} m \dot{x}^2$. So the momentum conjugate to
+$x$ is:
 
 $$
-p_x = \frac{\partial}{\partial \dot{x}} \frac{1}{2} m \dot{x}^2 = m \dot{x}
+p_x = \frac{\partial}{\partial \dot{x}} \left[ \frac{1}{2} m \dot{x}^2 \right] = m \dot{x}
 $$
 
 Just linear momentum, like I claimed before!
@@ -196,7 +194,7 @@ Alright, now let’s generalize this to arbitrary coordinates. In general, for
 *Cartesian* coordinates, the kinetic energy will always be
 
 $$
-KE(\dot{\mathbf{x}}) = \frac{1}{2} \left[ m_1 x_1^2 + m_2 x_2^2 + m_3 x_3^2 \dots \right]
+KE(\dot{\mathbf{x}}) = \frac{1}{2} \left[ m_1 x_1^2 + m_2 x_2^2 + m_3 x_3^2 + \dots \right]
 $$
 
 Where $m$ is the inertia associated with each coordinate…for example, if there’s
