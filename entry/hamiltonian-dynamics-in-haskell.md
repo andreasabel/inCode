@@ -225,13 +225,14 @@ $f(r, \theta) = \left \langle r \cos(\theta), r \sin(\theta) \right \rangle$.
 
 So we can get $\mathbf{x}$ from $\mathbf{q}$ with $f$, but how can we get
 $\dot{\mathbf{x}}$, the vector of rate of changes? Well, if
-$x_1 = f_1(q_1, q_2 \dots)$, then the $\dot{x_1}$ is the [total
+$x_1 = f_1(q_1, q_2, q_3 \dots)$, then the $\dot{x_1}$ is the [total
 derivative](https://en.wikipedia.org/wiki/Total_derivative) of $x_1$ with
 respect to time:
 
 $$
 \dot{x_1} = \frac{\partial f_1}{\partial q_1} \dot{q_1} +
-    \frac{\partial f_1}{\partial q_2} \dot{q_2} + \dots
+    \frac{\partial f_1}{\partial q_2} \dot{q_2} +
+    \frac{\partial f_1}{\partial q_3} \dot{q_3} + \dots
 $$
 
 Or, in short:
