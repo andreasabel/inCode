@@ -218,9 +218,9 @@ $\left[ \dot{x_1}\, \dot{x_2}\, \dot{x_3}\, \dots \right]^T$.
 Now! How to generalize this to arbitrary coordinates? Well, if we have $n$
 generalized coordinates $\mathbf{q}$ mapping to $m$-dimensional Cartesian
 coordinates, we can specify them as $\mathbf{x} = f(\mathbf{q})$, where
-$f : n \rightarrow m$, taking the vector of generalized coordinates and
-returning a vector for the position in Cartesian space. For example, for polar
-coordinates,
+$f : \mathbb{R}^n \rightarrow \mathbb{R}^m$, taking the vector of generalized
+coordinates and returning a vector for the position in Cartesian space. For
+example, for polar coordinates,
 $f(r, \theta) = \left \langle r \cos(\theta), r \sin(\theta) \right \rangle$.
 
 So we can get $\mathbf{x}$ from $\mathbf{q}$ with $f$, but how can we get
