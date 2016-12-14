@@ -78,10 +78,11 @@ contour lines” on that Hamiltonian!
 
 ### Phase Space
 
-So far the only thing I’ve really said in detail is that if your system’s state
-has $n$ parameters, then the corresponding phase space is $2n$-dimensional (and
-that Hamiltonian mechanics is somehow about systems moving around in phase
-space). *Phase space* is a $2n$-dimensional space parameterized by:
+The only thing I’ve really said in detail about phase space is that if your
+system’s state has $n$ parameters, then the corresponding phase space is
+$2n$-dimensional (and that Hamiltonian mechanics is somehow about systems moving
+around in phase space). Let me clear it up now: *Phase space* is a
+$2n$-dimensional space parameterized by:
 
 1.  All of the current values of the $n$ parameters (“generalized coordinates”)
 2.  All of the current “generalized momenta” of those $n$ parameters
@@ -126,7 +127,7 @@ But we want to move along the *contour lines*…and these are the lines
 *perpendicular* to the direction of steepest descent. The vector perpendicular
 to $\langle x, y \rangle$ is $\langle y, -x \rangle$, so we just derived the
 actual Hamiltonian equations of motion: just move in the direction perpendicular
-to the steepest descent!
+to the steepest ascent!
 
 $$
 \dot{q} = \frac{\partial}{\partial p_q} \mathcal{H}(\mathbf{q},\mathbf{p})
@@ -157,7 +158,7 @@ Hamiltonian Dynamics and Physical Systems
 
 Earlier I mentioned that the two steps for applying Hamiltonian mechanics to
 your system was figuring out your system’s conjugate momenta and the appropriate
-Hamiltonian. Let’s get onto that. I’m going to make a couple of simplifying
+Hamiltonian. To explain this, I’m going to make a couple of simplifying
 assumptions that make the job easier for the purposes of this article:
 
 1.  Your coordinates and potential energy are time-independent.
@@ -172,14 +173,14 @@ presenting derived conclusions and skipping the derivations.
 
 ### Conjugate Momenta
 
-It can be shown that the momentum conjugate to coordinate $q$ as
+It can be shown that the momentum conjugate to coordinate $q$ is
 
 $$
 \frac{\partial}{\partial \dot{q}} KE(\mathbf{q}, \dot{\mathbf{q}})
 $$
 
-Where $KE(\dot{\mathbf{q}})$ is the kinetic energy of the system, which is a
-function on the coordinates $\mathbf{q}$ and their rates of change,
+Where $KE(\mathbf{q},\dot{\mathbf{q}})$ is the kinetic energy of the system,
+which is a function on the coordinates $\mathbf{q}$ and their rates of change,
 $\dot{\mathbf{q}}$. For example, for normal Cartesian coordinates in one
 dimension, $KE(x, \dot{x}) = \frac{1}{2} m \dot{x}^2$. So the momentum conjugate
 to $x$ is:
@@ -212,7 +213,7 @@ Where $\hat{M}$ is the [diagonal
 matrix](https://en.wikipedia.org/wiki/Diagonal_matrix) whose entries are the
 masses of each coordinate, and $\dot{\mathbf{x}}$ is the column vector of all of
 the (Cartesian) coordinates,
-$\left[ \dot{x_1} \dot{x_2} \dot{x_3} \dots \right]^T$.
+$\left[ \dot{x_1}\, \dot{x_2}\, \dot{x_3}\, \dots \right]^T$.
 
 Now! How to generalize this to arbitrary coordinates? Well, if we have $n$
 generalized coordinates $\mathbf{q}$ mapping to $m$-dimensional Cartesian
