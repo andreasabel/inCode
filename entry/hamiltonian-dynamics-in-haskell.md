@@ -280,7 +280,9 @@ then $\hat{K}$ is a symmetric, positive-definite, invertible matrix (by
 construction). It’s important to also remember that it’s an explicit function of
 $\mathbf{q}$, because $\hat{J}_f$ is a matrix of partial derivatives at a given
 $\mathbf{q}$. We now have a simple expression for the vector of conjugate
-momenta, then: $\mathbf{p} = \hat{K} \dot{\mathbf{q}}$
+momenta, then ($\mathbf{p} = \hat{K} \dot{\mathbf{q}}$), and also for kinetic
+energy
+($KE(\mathbf{q},\dot{\mathbf{q}}) = \frac{1}{2} \dot{\mathbf{q}}^T \hat{K} \dot{\mathbf{q}}$).
 
 Now, we’re going to see that it’s going to be important for us to also be able
 to go backwards (to get $\dot{\mathbf{q}}$ from $\mathbf{p}$). Luckily, because
@@ -320,11 +322,8 @@ stays the same, as well! Energy is conserved because the Hamiltonian stays the
 same!
 
 Anyway, we want to build our system’s Hamiltonian from properties of the
-coordinate system, so plugging in our expression for $KE$:
-
-$$
-\mathcal{H}(\mathbf{q},\dot{\mathbf{q}}) = \frac{1}{2} \dot{\mathbf{q}}^T \hat{K} \dot{\mathbf{q}} + PE(\mathbf{q})
-$$
+coordinate system, so plugging in our expression for $KE$, we get
+$\mathcal{H}(\mathbf{q},\dot{\mathbf{q}}) = \frac{1}{2} \dot{\mathbf{q}}^T \hat{K} \dot{\mathbf{q}} + PE(\mathbf{q})$
 
 Oh, but oops, the Hamiltonian has to be a function of $\mathbf{p}$, not of
 $\dot{\mathbf{q}}$. Let’s remember that
