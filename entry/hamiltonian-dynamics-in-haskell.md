@@ -323,7 +323,7 @@ same!
 
 Anyway, we want to build our system’s Hamiltonian from properties of the
 coordinate system, so plugging in our expression for $KE$, we get
-$\mathcal{H}(\mathbf{q},\dot{\mathbf{q}}) = \frac{1}{2} \dot{\mathbf{q}}^T \hat{K} \dot{\mathbf{q}} + PE(\mathbf{q})$
+$\mathcal{H}(\mathbf{q},\dot{\mathbf{q}}) = \frac{1}{2} \dot{\mathbf{q}}^T \hat{K} \dot{\mathbf{q}} + PE(\mathbf{q})$.
 
 Oh, but oops, the Hamiltonian has to be a function of $\mathbf{p}$, not of
 $\dot{\mathbf{q}}$. Let’s remember that
