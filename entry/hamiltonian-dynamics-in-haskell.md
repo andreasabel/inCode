@@ -330,7 +330,7 @@ $\dot{\mathbf{q}} = \hat{P}^{-1} \mathbf{p}$ and find the final form of our
 Hamiltonian (after a bit of simplification):
 
 $$
-\mathcal{H}(\mathbf{q},\mathbf{p}) = \frac{1}{2} \mathbf{p}^T (\hat{P}^{-1})^T \mathbf{p} + PE(\mathbf{q})
+\mathcal{H}(\mathbf{q},\mathbf{p}) = \frac{1}{2} \mathbf{p}^T \hat{P}^{-1} \mathbf{p} + PE(\mathbf{q})
 $$
 
 [^1]: The picture with a time-dependent Hamiltonian is different, but only
