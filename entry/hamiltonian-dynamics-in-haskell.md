@@ -273,8 +273,9 @@ libraries that give us vector and matrix multiplication.
 
 We’re going to be using $\hat{J}_f^T \hat{M} \hat{J}_f$ a lot, so let’s give it
 a name, $\hat{P}$. $\hat{P}$ is a symmetric matrix (by construction), and it’s
-important to remember that it’s an explicit function of $\mathbf{q}$ (because
-$\hat{J}_f$ is a matrix of partial derivatives at a given $\mathbf{q}$). So,
+important to remember that it’s an explicit function of $\mathbf{q}$, because
+$\hat{J}_f$ is a matrix of partial derivatives at a given $\mathbf{q}$ (So, if I
+ever write $\hat{P}$, know that I really mean $\hat{P}(\mathbf{q})$). So,
 $\mathbf{p} = \hat{P} \dot{\mathbf{q}}$
 
 Now, we’re going to see that it’s going to be important for us to also be able
