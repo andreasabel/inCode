@@ -253,8 +253,8 @@ And we can plug it in (remembering that $(A B)^T = A^T B^T$) to our kinetic
 energy equation to get:
 
 $$
-KE(\mathbf{q},\dot{\mathbf{q}}) = \frac{1}{2} \dot{\mathbf{q}}^T \hat{J}_f^T|_\mathbf{q}
-    \hat{M} \hat{J}_f|_\mathbf{q} \dot{\mathbf{q}}
+KE(\dot{\mathbf{q}}) = \frac{1}{2} \dot{\mathbf{q}}^T \hat{J}_f^T
+    \hat{M} \hat{J}_f \dot{\mathbf{q}}
 $$
 
 And for the final step, we differentiate with respect to $\dot{\mathbf{q}}$ to
