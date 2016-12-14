@@ -277,9 +277,8 @@ a name, $\hat{P}$. If the masses are all positive and $\hat{J}_f$ is full-rank,
 then $\hat{P}$ is a symmetric, positive-definite, invertible matrix (by
 construction). It’s important to also remember that it’s an explicit function of
 $\mathbf{q}$, because $\hat{J}_f$ is a matrix of partial derivatives at a given
-$\mathbf{q}$ (So if I ever write $\hat{P}$, know that I really mean
-$\hat{P}(\mathbf{q})$). We now have a simple expression for the vector of
-conjugate momenta, then: $\mathbf{p} = \hat{P} \dot{\mathbf{q}}$
+$\mathbf{q}$. We now have a simple expression for the vector of conjugate
+momenta, then: $\mathbf{p} = \hat{P} \dot{\mathbf{q}}$
 
 Now, we’re going to see that it’s going to be important for us to also be able
 to go backwards (to get $\dot{\mathbf{q}}$ from $\mathbf{p}$). Luckily, because
@@ -291,6 +290,47 @@ $$
 $$
 
 The power of linear algebra!
+
+### Hamiltonians of Physical Systems
+
+Ok, that’s step one. How about step two – finding the Hamiltonian for your
+system?
+
+The *real* Hamiltonian is actually the [Poisson
+bracket](https://en.wikipedia.org/wiki/Poisson_bracket) of the system’s
+[Lagrangian](https://en.wikipedia.org/wiki/Lagrangian_mechanics), but I did some
+of the work for you can for the case of time-independent coordinates where the
+potential energy depends *only* on positions (so, no friction, wind resistance,
+etc.), the Hamiltonian of a system is precisely the system’s total [mechanical
+energy](https://en.wikipedia.org/wiki/Mechanical_energy), or its kinetic energy
+plus the potential energy:
+
+$$
+\mathcal{H}(\mathbf{q},\mathbf{p}) = KE(\mathbf{q},\mathbf{p}) + PE(\mathbf{q})
+$$
+
+Which makes a lot of intuitive sense, because you might recall that total
+mechanical energy is always conserved for certain types of systems.
+Incidentally, Hamiltonian dynamics makes sure that the value of the system’s
+Hamiltonian stays the same (because it moves along contour lines). So, the
+system’s Hamiltonian always stays the same, and so its total mechanical energy
+stays the same, as well! Energy is conserved because the Hamiltonian stays the
+same!
+
+Anyway, we want to build our system’s Hamiltonian from properties of the
+coordinate system, so plugging in our expression for $KE$:
+
+$$
+\mathcal{H}(\mathbf{q},\mathbf{p}) = \frac{1}{2} \dot{\mathbf{q}}^T \hat{P} \dot{\mathbf{q}} + PE(\mathbf{q})
+$$
+
+Oh, but oops, the Hamiltonian has to be a function of $\mathbf{p}$, not of
+$\dot{\mathbf{q}}$. Let’s remember that $\mathbf{q} = \hat{P}^{-1} \mathbf{p}$
+and find the final form of our Hamiltonian (after a bit of simplification):
+
+$$
+\mathcal{H}(\mathbf{q},\mathbf{p}) = \frac{1}{2} \mathbf{p}^T (\hat{P}^{-1})^T \mathbf{p} + PE(\mathbf{q})
+$$
 
 [^1]: The picture with a time-dependent Hamiltonian is different, but only
     slightly. In the time-dependent case, the system still *tries* to move along
