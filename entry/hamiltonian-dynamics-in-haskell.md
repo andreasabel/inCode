@@ -327,7 +327,8 @@ $$
 Oh, but oops, the Hamiltonian has to be a function of $\mathbf{p}$, not of
 $\dot{\mathbf{q}}$. Let’s remember that
 $\dot{\mathbf{q}} = \hat{P}^{-1} \mathbf{p}$ and find the final form of our
-Hamiltonian (after a bit of simplification):
+Hamiltonian (after a bit of simplification, remembering that the inverse of a
+symmetric matrix is also symmetric):
 
 $$
 \mathcal{H}(\mathbf{q},\mathbf{p}) = \frac{1}{2} \mathbf{p}^T \hat{P}^{-1} \mathbf{p} + PE(\mathbf{q})
