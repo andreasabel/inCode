@@ -197,8 +197,9 @@ $$
 KE(\mathbf{x}, \dot{\mathbf{x}}) = \frac{1}{2} \left[ m_1 \dot{x}_1^2 + m_2 \dot{x}_2^2 + m_3 \dot{x}_3^2 + \dots \right]
 $$
 
-Where $m$ is the inertia associated with each coordinate…for example, if there’s
-an object of mass $m$ at $\langle x_1, x_2 \rangle$, then $m_1 = m_2 = m$.
+Where $m$ is the inertia associated with each coordinate…for example, if
+$\langle x_1, x_2 \rangle$ describes the location of an object of mass $m$, then
+$m_1 = m_2 = m$.
 
 To make things more convenient, we’ll treat this as a quadratic form over an
 inertia matrix:
@@ -249,7 +250,7 @@ $$
 \dot{\mathbf{x}} = \hat{J}_f \dot{\mathbf{q}}
 $$
 
-And we can plug it in (remembering that $(A B)^T = A^T B^T$) to our kinetic
+And we can plug it in (remembering that $(A B)^T = B^T A^T$) to our kinetic
 energy equation to get:
 
 $$
