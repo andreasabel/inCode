@@ -194,7 +194,7 @@ Alright, now let’s generalize this to arbitrary coordinates. In general, for
 *Cartesian* coordinates, the kinetic energy will always be
 
 $$
-KE(\mathbf{x}, \dot{\mathbf{x}}) = \frac{1}{2} \left[ m_1 x_1^2 + m_2 x_2^2 + m_3 x_3^2 + \dots \right]
+KE(\mathbf{x}, \dot{\mathbf{x}}) = \frac{1}{2} \left[ m_1 \dot{x}_1^2 + m_2 \dot{x}_2^2 + m_3 \dot{x}_3^2 + \dots \right]
 $$
 
 Where $m$ is the inertia associated with each coordinate…for example, if there’s
@@ -253,7 +253,7 @@ And we can plug it in (remembering that $(A B)^T = A^T B^T$) to our kinetic
 energy equation to get:
 
 $$
-KE(\dot{\mathbf{q}}) = \frac{1}{2} \dot{\mathbf{q}}^T \hat{J}_f^T
+KE(\mathbf{q},\dot{\mathbf{q}}) = \frac{1}{2} \dot{\mathbf{q}}^T \hat{J}_f^T
     \hat{M} \hat{J}_f \dot{\mathbf{q}}
 $$
 
@@ -272,17 +272,18 @@ programmatically, instead of doing indexing by hand – there are plenty of
 libraries that give us vector and matrix multiplication.
 
 We’re going to be using $\hat{J}_f^T \hat{M} \hat{J}_f$ a lot, so let’s give it
-a name, $\hat{P}$. $\hat{P}$ is a symmetric matrix (by construction), and it’s
-important to remember that it’s an explicit function of $\mathbf{q}$, because
-$\hat{J}_f$ is a matrix of partial derivatives at a given $\mathbf{q}$ (So if I
-ever write $\hat{P}$, know that I really mean $\hat{P}(\mathbf{q})$). We have a
-simple expression for the vector of conjugate momenta, then:
-$\mathbf{p} = \hat{P} \dot{\mathbf{q}}$
+a name, $\hat{P}$. If the masses are all positive and $\hat{J}_f$ is full-rank,
+then $\hat{P}$ is a symmetric, positive-definite, invertible matrix (by
+construction). It’s important to also remember that it’s an explicit function of
+$\mathbf{q}$, because $\hat{J}_f$ is a matrix of partial derivatives at a given
+$\mathbf{q}$ (So if I ever write $\hat{P}$, know that I really mean
+$\hat{P}(\mathbf{q})$). We now have a simple expression for the vector of
+conjugate momenta, then: $\mathbf{p} = \hat{P} \dot{\mathbf{q}}$
 
 Now, we’re going to see that it’s going to be important for us to also be able
 to go backwards (to get $\dot{\mathbf{q}}$ from $\mathbf{p}$). Luckily, because
 we wrote the whole thing as a matrix operation, going backwards is easy – just
-take the matrix inverse:
+take the matrix inverse, which we know exists!
 
 $$
 \dot{\mathbf{q}} = \hat{P}^{-1} \mathbf{p}
