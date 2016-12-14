@@ -299,7 +299,7 @@ system?
 The *real* Hamiltonian is actually the [Poisson
 bracket](https://en.wikipedia.org/wiki/Poisson_bracket) of the system’s
 [Lagrangian](https://en.wikipedia.org/wiki/Lagrangian_mechanics), but I did some
-of the work for you can for the case of time-independent coordinates where the
+of the work for you for the case of time-independent coordinates where the
 potential energy depends *only* on positions (so, no friction, wind resistance,
 etc.), the Hamiltonian of a system is precisely the system’s total [mechanical
 energy](https://en.wikipedia.org/wiki/Mechanical_energy), or its kinetic energy
