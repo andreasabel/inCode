@@ -280,8 +280,8 @@ then $\hat{K}$ is a symmetric, positive-definite, invertible matrix (by
 construction). It’s important to also remember that it’s an explicit function of
 $\mathbf{q}$, because $\hat{J}_f$ is a matrix of partial derivatives at a given
 $\mathbf{q}$. We now have a simple expression for the vector of conjugate
-momenta, then ($\mathbf{p} = \hat{K} \dot{\mathbf{q}}$), and also for kinetic
-energy ($KE = \frac{1}{2} \dot{\mathbf{q}}^T \hat{K} \dot{\mathbf{q}}$).
+momenta ($\mathbf{p} = \hat{K} \dot{\mathbf{q}}$), and also for kinetic energy
+($KE = \frac{1}{2} \dot{\mathbf{q}}^T \hat{K} \dot{\mathbf{q}}$).
 
 Now, we’re going to see that it’s going to be important for us to also be able
 to go backwards (to get $\dot{\mathbf{q}}$ from $\mathbf{p}$). Luckily, because
