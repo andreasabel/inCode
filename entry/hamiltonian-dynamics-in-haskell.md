@@ -392,6 +392,6 @@ That’s it. We’re done. Have a nice day, thanks for reading!
 
 [^2]: Disclaimer: I am not a surfer
 
-[^3]: hey $\hat{J_f}$ is full-rank (meaning $\hat{K}$ is invertible) if its rows
-    are linearly independent. This should be the case as you don’t have any
+[^3]: $\hat{J_f}$ is full-rank (meaning $\hat{K}$ is invertible) if its rows are
+    linearly independent. This should be the case as you don’t have any
     redundant or duplicate coordinates in your general coordinate system.
