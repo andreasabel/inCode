@@ -138,7 +138,9 @@ $$
 $$
 
 Which holds for every generalized coordinate $q$, where $p_q$ is the momentum
-conjugate to that coordinate.
+conjugate to that coordinate. (For the rest of this post, $\mathbf{q}$ refers to
+the vector of coordinates, $q$ refers to a single specific coordinate, and $p_q$
+refers to the momentum conjugate to that coordinate).
 
 Essentially, these give you “updating functions” for $q$ and $p_q$ – given
 $\mathcal{H}(\mathbf{q},\mathbf{p})$, you have a way to “update” the particle’s
