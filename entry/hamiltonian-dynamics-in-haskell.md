@@ -354,14 +354,15 @@ finding the gradient of the $KE$ term
 $\frac{1}{2} \mathbf{p}^T \hat{K}^{-1} \mathbf{p}$. Because $\mathbf{p}$ is an
 independent input to $\mathcal{H}$, we can just look at the gradient of
 $\hat{K}^{-1}$. We can simplify that even more by realizing that
-$\frac{\partial}{\partial t} A^{-1} = - A^{-1} (\frac{\partial}{\partial t} A) A^{-1}$,
+$\frac{\partial}{\partial t} A^{-1} = - A^{-1} \left( \frac{\partial}{\partial t} A \right) A^{-1}$,
 so now we just need to find the gradient of $\hat{K}$, or
 $\hat{J}_f^T \hat{M} \hat{J}_f}$. $\hat{M}$ is a constant term, so, using the
 good ol’ product rule over $\hat{J}_f^T$ and $\hat{J}_f$, we see that, after
 some simplification:
 
 $$
-\frac{\partial}{\partial q} \hat{J}_f^T \hat{M} \hat{J}_f = \hat{J}_f^T \hat{M} (\frac{\partial}{\partial q} \hat{J}_f)
+\frac{\partial}{\partial q} \hat{J}_f^T \hat{M} \hat{J}_f = \hat{J}_f^T \hat{M}
+    \left( \frac{\partial}{\partial q} \hat{J}_f \right)
 $$
 
 $\frac{\partial}{\partial q} \hat{J}_f$ represents the *second derivatives* of
@@ -371,7 +372,7 @@ for $\nabla_{\mathbf{q}} \mathcal{H}$:
 $$
 \frac{\partial}{\partial q} \mathcal{H}(\mathbf{q},\mathbf{p}) =
     - \frac{1}{2} \mathbf{p} \hat{K}^{-1} \hat{J}_f^T \hat{M}
-        (\frac{\partial}{\partial q} \hat{J}_f) \hat{K}^{-1} \mathbf{p}
+        \left( \frac{\partial}{\partial q} \hat{J}_f \right) \hat{K}^{-1} \mathbf{p}
     + \frac{\partial}{\partial q} PE(\mathbf{q})
 $$
 
