@@ -366,8 +366,8 @@ $$
 $$
 
 $\frac{\partial}{\partial q} \hat{J}_f$ represents the *second derivatives* of
-$f$ – the derivative of the derivatives. And with that, we have our final form
-for $\nabla_{\mathbf{q}} \mathcal{H}$:
+$f$ – the derivative of the derivatives. And with that, we have our final
+expression for $\nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p})$:
 
 $$
 \frac{\partial}{\partial q} \mathcal{H}(\mathbf{q},\mathbf{p}) =
