@@ -367,9 +367,9 @@ $$
     2 \hat{J}_f^T \hat{M} \left[ \frac{\partial}{\partial q} \hat{J}_f \right]
 $$
 
-$\frac{\partial}{\partial q} \hat{J}_f$ (an $m \times n$ matrix) represents the
-*second derivatives* of $f$ – the derivative of the derivatives. And with that,
-we have our final expression for
+$\frac{\partial}{\partial q} \hat{J}_f$ (an $m \times n$ matrix, like
+$\hat{J}_f$) represents the *second derivatives* of $f$ – the derivative of the
+derivatives. And with that, we have our final expression for
 $\nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p})$:
 
 $$
