@@ -260,23 +260,24 @@ KE(\mathbf{q},\dot{\mathbf{q}}) = \frac{1}{2} \dot{\mathbf{q}}^T \hat{J}_f^T
     \hat{M} \hat{J}_f \dot{\mathbf{q}}
 $$
 
-And for the final step, we differentiate with respect to $\dot{\mathbf{q}}$ to
-get $\mathbf{p}$, the vector of conjugate momenta:
+And for the final step, we differentiate with respect to the $\dot{\mathbf{q}}$s
+(which is just the gradient) to get $\mathbf{p}$, the vector of conjugate
+momenta:
 
 $$
-\mathbf{p} = \frac{\partial}{\partial \dot{\mathbf{q}}} \left[
+\mathbf{p} = \nabla_{\dot{\mathbf{q}}} \left[
     \frac{1}{2} \dot{\mathbf{q}}^T \hat{J}_f^T \hat{M} \hat{J}_f \dot{\mathbf{q}}
   \right]
   = \hat{J}_f^T \hat{M} \hat{J}_f \dot{\mathbf{q}}
 $$
 
-That’s it![^3] Writing it in matrix/vector form makes it easy for us to write
+That’s it! Writing it in matrix/vector form makes it easy for us to write
 programmatically, instead of doing indexing by hand – there are plenty of
 libraries that give us vector and matrix multiplication.
 
 We’re going to be using $\hat{J}_f^T \hat{M} \hat{J}_f$ a lot, so let’s give it
 a name, $\hat{K}$. If the masses are all positive and $\hat{J}_f$ is
-full-rank[^4], then $\hat{K}$ is a symmetric, positive-definite, invertible
+full-rank[^3], then $\hat{K}$ is a symmetric, positive-definite, invertible
 matrix (by construction). It’s important to also remember that it’s an explicit
 function of $\mathbf{q}$, because $\hat{J}_f$ is a matrix of partial derivatives
 at a given $\mathbf{q}$. We now have a simple expression for the vector of
@@ -334,6 +335,51 @@ $$
 \mathcal{H}(\mathbf{q},\mathbf{p}) = \frac{1}{2} \mathbf{p}^T \hat{K}^{-1} \mathbf{p} + PE(\mathbf{q})
 $$
 
+### Hamiltonian Equations
+
+We got our Hamiltonian! Now just to find our updating functions (the partial
+derivatives of the Hamiltonian), and we’re done with the math.
+
+Because we are assuming the case (with loss of generality) $PE$ doesn’t depend
+on $\mathbf{p}$, the partial derivatives of $\mathcal{H}$ with respect to
+$\mathbf{p}$ is:
+
+$$
+\nabla_{\mathbf{p}} \mathcal{H}(\mathbf{q},\mathbf{p}) = \hat{K}^{-1} \mathbf{p}
+$$
+
+Easy peasy. But the partial derivatives with respect to $\mathbf{q}$ is a little
+trickier. The gradient is a linear operator, so we can break that down to just
+finding the gradient of the $KE$ term
+$\frac{1}{2} \mathbf{p}^T \hat{K}^{-1} \mathbf{p}$. Because $\mathbf{p}$ is an
+independent input to $\mathcal{H}$, we can just look at the gradient of
+$\hat{K}^{-1}$. We can simplify that even more by realizing that
+$\frac{\partial}{\partial t} A^{-1} = - A^{-1} (\frac{\partial}{\partial t} A) A^{-1}$,
+so now we just need to find the gradient of $\hat{K}$, or
+$\hat{J}_f^T \hat{M} \hat{J}_f}$. $\hat{M}$ is a constant term, so, using the
+good ol’ product rule over $\hat{J}_f^T$ and $\hat{J}_f$, we see that, after
+some simplification:
+
+$$
+\frac{\partial}{\partial q} \hat{J}_f^T \hat{M} \hat{J}_f = \hat{J}_f^T \hat{M} (\frac{\partial}{\partial q} \hat{J}_f)
+$$
+
+$\frac{\partial}{\partial q} \hat{J}_f$ represents the *second derivatives* of
+$f$ – the derivative of the derivatives. And with that, we have our final form
+for $\nabla_{\mathbf{q}} \mathcal{H}$:
+
+$$
+\frac{\partial}{\partial q} \mathcal{H}(\mathbf{q},\mathbf{p}) =
+    - \frac{1}{2} \mathbf{p} \hat{K}^{-1} \hat{J}_f^T \hat{M}
+        (\frac{\partial}{\partial q} \hat{J}_f) \hat{K}^{-1} \mathbf{p}
+    + \frac{\partial}{\partial q} PE(\mathbf{q})
+$$
+
+Where $\frac{\partial}{\partial q} PE(\mathbf{q})$ is just the components of the
+gradient of $PE$.
+
+That’s it. We’re done. Have a nice day, thanks for reading!
+
 [^1]: The picture with a time-dependent Hamiltonian is different, but only
     slightly. In the time-dependent case, the system still *tries* to move along
     contour lines at every point in time, but the mountain is constantly
@@ -342,10 +388,6 @@ $$
 
 [^2]: Disclaimer: I am not a surfer
 
-[^3]: Oh hey, maybe you’re upset because I just casually took a derivative with
-    respect to a vector and didn’t justify what I meant. That’s cool, I’d be
-    miffed too.
-
-[^4]: $\hat{J}_f$ is full-rank (meaning $\hat{K}$ is invertible) if its rows are
-    linearly independent. This should be the case as you don’t have any
+[^3]: hey $\hat{J_f}$ is full-rank (meaning $\hat{K}$ is invertible) if its rows
+    are linearly independent. This should be the case as you don’t have any
     redundant or duplicate coordinates in your general coordinate system.
