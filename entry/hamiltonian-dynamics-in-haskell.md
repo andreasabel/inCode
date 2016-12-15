@@ -364,7 +364,7 @@ some simplification:
 
 $$
 \frac{\partial}{\partial q} \left[ \hat{J}_f^T \hat{M} \hat{J}_f \right] =
-    \hat{J}_f^T \hat{M} \left[ \frac{\partial}{\partial q} \hat{J}_f \right]
+    2 \hat{J}_f^T \hat{M} \left[ \frac{\partial}{\partial q} \hat{J}_f \right]
 $$
 
 $\frac{\partial}{\partial q} \hat{J}_f$ (an $m \times n$ matrix) represents the
@@ -374,7 +374,7 @@ $\nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p})$:
 
 $$
 \frac{\partial}{\partial q} \mathcal{H}(\mathbf{q},\mathbf{p}) =
-    - \frac{1}{2} \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
+    - \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
         \left[ \frac{\partial}{\partial q} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
     + \frac{\partial}{\partial q} PE(\mathbf{q})
 $$
