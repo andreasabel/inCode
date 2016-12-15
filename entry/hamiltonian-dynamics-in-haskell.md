@@ -350,9 +350,9 @@ $$
 \nabla_{\mathbf{p}} \mathcal{H}(\mathbf{q},\mathbf{p}) = \hat{K}^{-1} \mathbf{p}
 $$
 
-Easy peasy. But the partial derivatives with respect to $\mathbf{q}$ is a little
-trickier. The gradient is a linear operator, so we can break that down to just
-finding the gradient of the $KE$ term
+Easy peasy. But finding the partial derivatives with respect to $\mathbf{q}$ is
+a little trickier. The gradient is a linear operator, so we can break that down
+to just finding the gradient of the $KE$ term
 $\frac{1}{2} \mathbf{p}^T \hat{K}^{-1} \mathbf{p}$. Because $\mathbf{p}$ is an
 independent input to $\mathcal{H}$, we can just look at the gradient of
 $\hat{K}^{-1}$. We can simplify that even more by realizing that
