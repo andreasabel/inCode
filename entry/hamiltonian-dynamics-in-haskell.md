@@ -58,7 +58,7 @@ mountain, its motion would be along the contour lines. For example, if a system
 started somewhere along the 10 contour line, it would begin to oscillate the
 entire phase space along the 10 contour line.[^1]
 
-*Every* [smooth](https://en.wikipedia.org/wiki/Smooth_jazz)
+*Every* [smooth](https://www.youtube.com/watch?v=izGwDsrQ1eQ)
 $\mathbb{R}^{2n} \rightarrow \mathbb{R}$ function on phase space can be used as
 a Hamiltonian to describe the physics of some system. So, given any “mountain
 range” on phase space, any “elevation map” or real-valued function on phase
@@ -175,10 +175,11 @@ presenting derived conclusions and skipping the derivations.
 
 ### Conjugate Momenta
 
-It can be shown that the momentum conjugate to coordinate $q$ is
+For systems with velocity-independent potential energies, it can be shown that
+the momentum conjugate to coordinate $q$ is
 
 $$
-\frac{\partial}{\partial \dot{q}} KE(\mathbf{q}, \dot{\mathbf{q}})
+p_q = \frac{\partial}{\partial \dot{q}} KE(\mathbf{q}, \dot{\mathbf{q}})
 $$
 
 Where $KE(\mathbf{q},\dot{\mathbf{q}})$ is the kinetic energy of the system,
@@ -273,12 +274,8 @@ $$
   = \hat{J}_f^T \hat{M} \hat{J}_f \dot{\mathbf{q}}
 $$
 
-That’s it! Writing it in matrix/vector form makes it easy for us to write
-programmatically, instead of doing indexing by hand – there are plenty of
-libraries that give us vector and matrix multiplication.
-
-We’re going to be using $\hat{J}_f^T \hat{M} \hat{J}_f$ a lot, so let’s give it
-a name, $\hat{K}$. If the masses are all positive and $\hat{J}_f$ is
+Now, we’re going to be using $\hat{J}_f^T \hat{M} \hat{J}_f$ a lot, so let’s
+give it a name, $\hat{K}$. If the masses are all positive and $\hat{J}_f$ is
 full-rank[^3], then $\hat{K}$ is a symmetric, positive-definite, invertible
 matrix (by construction). It’s important to also remember that it’s an explicit
 function of $\mathbf{q}$, because $\hat{J}_f$ is a matrix of partial derivatives
@@ -286,10 +283,10 @@ at a given $\mathbf{q}$. We now have a simple expression for the vector of
 conjugate momenta ($\mathbf{p} = \hat{K} \dot{\mathbf{q}}$), and also for
 kinetic energy ($KE = \frac{1}{2} \dot{\mathbf{q}}^T \hat{K} \dot{\mathbf{q}}$).
 
-Now, we’re going to see that it’s going to be important for us to also be able
-to go backwards (to get $\dot{\mathbf{q}}$ from $\mathbf{p}$). Luckily, because
-we wrote the whole thing as a matrix operation, going backwards is easy – just
-take the matrix inverse, which we know exists!
+It’s going to be important for us to also be able to go backwards (to get
+$\dot{\mathbf{q}}$ from $\mathbf{p}$). Luckily, because we wrote the whole thing
+as a matrix operation, going backwards is easy – just take the matrix inverse,
+which we know exists!
 
 $$
 \dot{\mathbf{q}} = \hat{K}^{-1} \mathbf{p}
@@ -383,6 +380,19 @@ Where $\frac{\partial}{\partial q} PE(\mathbf{q})$ is just the components of the
 gradient of $PE$.
 
 That’s it. We’re done. Have a nice day, thanks for reading!
+
+The Haskell
+-----------
+
+Just kidding, now it’s time for the fun stuff :)
+
+We’re going to be using the sized-typed vectors from the
+*[vector-sized](http://hackage.haskell.org/package/vector-sized)* package, from
+the
+[Data.Vector.Sized](http://hackage.haskell.org/package/vector-sized/docs/Data-Vector-Sized.html)
+module. This package is really nice because it exports the same interface as the
+classic *vector* package, except with the size of the vector in the type. A
+`Vector n a` is a vector of length `n` containing values of type `a`.
 
 [^1]: The picture with a time-dependent Hamiltonian is different, but only
     slightly. In the time-dependent case, the system still *tries* to move along
