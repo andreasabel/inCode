@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>Verified Typeclass Instances in Haskell using Singletons · in Code</title><meta name="description" content="Weblog of Justin Le, covering his various adventures in programming and explorations in the vast worlds of computation physics, and knowledge."><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta property="og:site_name" content="in Code"><meta property="og:description" content="One of the most common gripes people have when learning Haskell is the fact that typeclass laws are only laws by convention, and aren’t enforced by the language and compiler. When asked why, the typical response is Haskell can’t do that, followed by a well-intentioned redirection to quickcheck or some other fuzzing library. But, to any experienced Haskeller, Haskell’s type system can’t express X is always interpreted as a (personal) challenge. GHC Haskell’s type system has been advanced enough to provide verified typeclasses for a long time, since the introduction of data kinds and associated types. And with the singletons library, it’s now as easy as ever."><meta property="og:type" content="article"><meta property="og:title" content="Verified Typeclass Instances in Haskell using Singletons"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/verified-instances-in-haskell.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/verified-instances-in-haskell.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
+<html><head><title>Verified Typeclass Instances in Haskell using Singletons · in Code</title><meta name="description" content="Weblog of Justin Le, covering his various adventures in programming and explorations in the vast worlds of computation physics, and knowledge."><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta property="og:site_name" content="in Code"><meta property="og:description" content="One of the most common gripes people have when learning Haskell is the fact that typeclass laws are only laws by convention, and aren’t enforced by the language and compiler. When asked why, the typical response is Haskell can’t do that, followed by a well-intentioned redirection to quickcheck or some other fuzzing library. But, to any experienced Haskeller, Haskell’s type system can’t express X is always interpreted as a (personal) challenge. GHC Haskell’s type system has been advanced enough to provide verified typeclasses for a long time, since the introduction of data kinds and associated types. And with the singletons library, it’s now as easy as ever. The code for this post is available here if you want to follow along!"><meta property="og:type" content="article"><meta property="og:title" content="Verified Typeclass Instances in Haskell using Singletons"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/verified-instances-in-haskell.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/verified-instances-in-haskell.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
 var disqus_shortname='incode';
 </script><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
 (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -18,6 +18,7 @@ ga('send', 'pageview');
 compiled…really just the king of great languages.">Haskell</a><span class="info-separator"> &diams; </span><a class="comment-link" href="#disqus_thread">Comments</a></p></header><hr><aside class="contents-container"><h5 id="contents-header">Contents</h5><div id="toc"></div></aside><div class="main-content copy-content"><p>One of the most common gripes people have when learning Haskell is the fact that typeclass “laws” are only laws by convention, and aren’t enforced by the language and compiler. When asked why, the typical response is “Haskell can’t do that”, followed by a well-intentioned redirection to quickcheck or some other fuzzing library.</p>
 <p>But, to any experienced Haskeller, “Haskell’s type system can’t express X” is always interpreted as a (personal) challenge.</p>
 <p>GHC Haskell’s type system has been advanced enough to provide verified typeclasses for a long time, since the introduction of data kinds and associated types. And with the <em><a href="http://hackage.haskell.org/package/singletons">singletons</a></em> library, it’s now as easy as ever.</p>
+<p>The code for this post is available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/verified-instances/VerifiedInstances.hs">here</a> if you want to follow along!</p>
 <h2 id="semigroups">Semigroups</h2>
 <p>Let’s start simple – everyone’s favorite structural addition to magmas, <a href="http://hackage.haskell.org/package/base-4.9.1.0/docs/Data-Semigroup.html">semigroups</a>. A semigroup is a type with an associative binary operation, <code>(&lt;&gt;)</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Semigroup</span> a <span class="kw">where</span>
@@ -40,7 +41,7 @@ ghci<span class="fu">&gt;</span> (<span class="dv">1</span> <span class="ot">`Co
 <span class="dv">1</span> <span class="ot">`Cons`</span> <span class="dv">3</span> <span class="ot">`Cons`</span> <span class="dv">2</span> <span class="ot">`Cons`</span> <span class="dv">5</span> <span class="ot">`Cons`</span> <span class="dv">4</span> <span class="ot">`Cons`</span> <span class="dv">6</span> <span class="ot">`Cons`</span> <span class="dt">Nil</span></code></pre></div>
 <p>But if you try to compile it, GHC doesn’t complain at all. Is this an error on the part of Haskell? Not quite; it’s an error on the part of the <code>Semigroup</code> typeclass not requiring proofs that the instance is indeed associative.</p>
 <p>Let’s try again.</p>
-<h2 id="verify-me-captain">Verify me, Captain</h2>
+<h3 id="verify-me-captain">Verify me, Captain</h3>
 <p>We will now define <code>Semigroup</code> on the <em>kind</em> <code>List</code>, using <code>-XDataKinds</code>, instead of the type. But, technically, because of <code>TypeInType</code>, the <code>List</code> kind is also a <code>List</code> type so w/e</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Semigroup</span> a <span class="kw">where</span>
     <span class="kw">type</span> (<span class="ot">x ::</span> a) <span class="fu">&lt;&gt;</span> (<span class="ot">y ::</span> a)<span class="ot"> ::</span> a
@@ -101,7 +102,7 @@ append x y <span class="fu">=</span> withSomeSing x <span class="fu">$</span> \s
 <p>So, the problem reduces to proving that <code>(xs &lt;&gt; ys) &lt;&gt; zs</code> is equal to <code>xs &lt;&gt; (ys &lt;&gt; zs)</code>. If we can do that, then we can prove that the whole things are equal. We generate that proof using <code>appendAssoc xs ys zs</code>, and, wit that proof in scope…QED!</p></li>
 </ol>
 <p>And, we’re done!</p>
-<h3 id="automatic-singletons">Automatic Singletons</h3>
+<h4 id="automatic-singletons">Automatic Singletons</h4>
 <p>Deriving <code>Sing</code> and <code>SingKind</code> and both versions of append is kind of tedious, so it’s useful to use template haskell to do it all for us:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$</span>(singletons [d|
   data List a = Nil | Cons a (List a)
@@ -128,7 +129,7 @@ append x y <span class="fu">=</span> withSomeSing x <span class="fu">$</span> \s
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> print <span class="fu">$</span> append <span class="fu">@</span>(<span class="dt">List</span> <span class="dt">Nat</span>) (<span class="dv">1</span> <span class="ot">`Cons`</span> <span class="dv">2</span> <span class="ot">`Cons`</span> <span class="dt">Nil</span>) (<span class="dv">3</span> <span class="ot">`Cons`</span> <span class="dv">4</span> <span class="ot">`Cons`</span> <span class="dt">Nil</span>)
 <span class="dv">1</span> <span class="ot">`Cons`</span> <span class="dv">2</span> <span class="ot">`Cons`</span> <span class="dv">3</span> <span class="ot">`Cons`</span> <span class="dv">4</span> <span class="ot">`Cons`</span> <span class="dt">Nil</span></code></pre></div>
 <p>Ta dah!</p>
-<h2 id="naturally-maybe">Naturally, Maybe</h2>
+<h3 id="naturally-maybe">Naturally, Maybe</h3>
 <p>Now, we stop there? Let’s implement some other famous semigroups:</p>
 <p>First, the inductive nats, <code>data N = Z | S N:</code></p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$</span>(singletons [d|
@@ -149,7 +150,7 @@ append x y <span class="fu">=</span> withSomeSing x <span class="fu">$</span> \s
       <span class="dt">SS</span> x <span class="ot">-&gt;</span> \y z <span class="ot">-&gt;</span>
         <span class="kw">case</span> appendAssoc x y z <span class="kw">of</span>
           <span class="dt">Refl</span> <span class="ot">-&gt;</span> <span class="dt">Refl</span></code></pre></div>
-<p>And everyone’s favorite instance for <code>Maybe</code>, which lifts the underlying semigroup:</p>
+<p>And the standard instance for <code>Maybe</code>, which lifts the underlying semigroup:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$</span>(singletons [d|
   data Option a = None | Some a
       deriving (Show)
@@ -177,7 +178,7 @@ append x y <span class="fu">=</span> withSomeSing x <span class="fu">$</span> \s
 <span class="dt">S</span> (<span class="dt">S</span> (<span class="dt">S</span> <span class="dt">Z</span>))
 ghci<span class="fu">&gt;</span> print <span class="fu">$</span> append <span class="fu">@</span>(<span class="dt">Option</span> <span class="dt">N</span>) (<span class="dt">Some</span> (<span class="dt">S</span> <span class="dt">Z</span>)) (<span class="dt">Some</span> (<span class="dt">S</span> (<span class="dt">S</span> (<span class="dt">S</span> <span class="dt">Z</span>))))
 <span class="dt">Some</span> (<span class="dt">S</span> (<span class="dt">S</span> (<span class="dt">S</span> (<span class="dt">S</span> <span class="dt">Z</span>))))</code></pre></div>
-<h1 id="going-monoidal">Going Monoidal</h1>
+<h2 id="going-monoidal">Going Monoidal</h2>
 <p>Of course, we can now introduce the <code>Monoid</code> typeclass, which introduces a new element <code>empty</code>, along with the laws that appending with empty leaves things unchanged:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Semigroup</span> a <span class="ot">=&gt;</span> <span class="dt">Monoid</span> a <span class="kw">where</span>
     <span class="kw">type</span> <span class="dt">Empty</span><span class="ot"> a ::</span> a
@@ -225,8 +226,8 @@ empty <span class="fu">=</span> fromSing (sEmpty <span class="fu">@</span>m)</co
     sEmpty <span class="fu">=</span> <span class="dt">SNone</span>
     emptyIdentLeft  _ <span class="fu">=</span> <span class="dt">Refl</span>
     emptyIdentRight _ <span class="fu">=</span> <span class="dt">Refl</span></code></pre></div>
-<h1 id="play-that-funcy-music">Play that Funcy Music</h1>
-<p>You knew we weren’t going to stop there, right? What’s every Haskeller’s favorite lawful typeclass?</p>
+<h2 id="play-that-funcy-music">Play that Funcy Music</h2>
+<p>You knew we weren’t going to stop there, right? How about higher-kinded typeclasses?</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Functor</span> f <span class="kw">where</span>
     <span class="kw">type</span> <span class="dt">Fmap</span> a b (<span class="ot">g ::</span> a <span class="fu">~&gt;</span> b) (<span class="ot">x ::</span> f a)<span class="ot"> ::</span> f b
 
@@ -407,8 +408,10 @@ distribConcatMap g <span class="fu">=</span> \<span class="kw">case</span>
               cmgys <span class="fu">=</span> sConcatMapList g ys
           <span class="kw">in</span>  <span class="kw">case</span> appendAssoc gx cmgxs cmgys <span class="kw">of</span>
                 <span class="dt">Refl</span> <span class="ot">-&gt;</span> <span class="dt">Refl</span></code></pre></div>
-<h1 id="disclaimer">Disclaimer</h1>
+<h2 id="disclaimer">Disclaimer</h2>
 <p>Don’t do this in actual code please.</p>
+<p>But definitely do it for fun!</p>
+<p>The code in this post is available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/verified-instances/VerifiedInstances.hs">here</a> if you want to play around!</p>
 <section class="footnotes">
 <hr />
 <ol>
