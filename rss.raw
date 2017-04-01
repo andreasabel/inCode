@@ -1,4 +1,430 @@
-<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/"><channel><title>in Code — Entries</title><link>https://blog.jle.im/</link><description>Weblog of Justin Le, covering his various adventures in programming and explorations in the vast worlds of computation physics, and knowledge.</description><item><title>Placeholder Entry</title><link>https://blog.jle.im/entry/placeholder-entry.html</link><description>&lt;p&gt;Placeholder entry.&lt;/p&gt;
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/"><channel><title>in Code — Entries</title><link>https://blog.jle.im/</link><description>Weblog of Justin Le, covering his various adventures in programming and explorations in the vast worlds of computation physics, and knowledge.</description><item><title>Verified Typeclass Instances in Haskell using Singletons</title><link>https://blog.jle.im/entry/verified-instances-in-haskell.html</link><description>&lt;p&gt;One of the most common gripes people have when learning Haskell is the fact that typeclass “laws” are only laws by convention, and aren’t enforced by the language and compiler. When asked why, the typical response is “Haskell can’t do that”, followed by a well-intentioned redirection to quickcheck or some other fuzzing library.&lt;/p&gt;
+&lt;p&gt;But, to any experienced Haskeller, “Haskell’s type system can’t express X” is always interpreted as a (personal) challenge.&lt;/p&gt;
+&lt;p&gt;GHC Haskell’s type system has been advanced enough to provide verified typeclasses for a long time, since the introduction of data kinds and associated types. And with the &lt;em&gt;&lt;a href=&quot;http://hackage.haskell.org/package/singletons&quot;&gt;singletons&lt;/a&gt;&lt;/em&gt; library, it’s now as easy as ever.&lt;/p&gt;
+&lt;p&gt;(The code for this post is available &lt;a href=&quot;https://github.com/mstksg/inCode/tree/master/code-samples/verified-instances/VerifiedInstances.hs&quot;&gt;here&lt;/a&gt; if you want to follow along! Some of the examples here involving &lt;code&gt;Demote&lt;/code&gt; and relying on its injectivity will only work with &lt;a href=&quot;https://github.com/goldfirere/singletons&quot;&gt;singletons HEAD&lt;/a&gt;, even though the necessary patches were made seven months ago&lt;a href=&quot;#fn1&quot; class=&quot;footnoteRef&quot; id=&quot;fnref1&quot;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt;)&lt;/p&gt;
+&lt;h2 id=&quot;semigroups&quot;&gt;Semigroups&lt;/h2&gt;
+&lt;p&gt;Let’s start simple – everyone’s favorite structural addition to magmas, &lt;a href=&quot;http://hackage.haskell.org/package/base-4.9.1.0/docs/Data-Semigroup.html&quot;&gt;semigroups&lt;/a&gt;. A semigroup is a type with an associative binary operation, &lt;code&gt;(&amp;lt;&amp;gt;)&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;kw&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Semigroup&lt;/span&gt; a &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+&lt;span class=&quot;ot&quot;&gt;    (&amp;lt;&amp;gt;) ::&lt;/span&gt; a &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; a &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; a&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Its one law is associativity:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;(x &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; y) &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; z &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; x &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; (y &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; z)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;But, this class stinks, because it’s super easy to write bad instances:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;kw&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;List&lt;/span&gt; a &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Cons&lt;/span&gt; a (&lt;span class=&quot;dt&quot;&gt;List&lt;/span&gt; a)
+    &lt;span class=&quot;kw&quot;&gt;deriving&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Show&lt;/span&gt;
+
+&lt;span class=&quot;kw&quot;&gt;infixr&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt;
+
+&lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Semigroup&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;List&lt;/span&gt; a) &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;       &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; ys &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; ys
+    &lt;span class=&quot;dt&quot;&gt;Cons&lt;/span&gt; x xs &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; ys &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Cons&lt;/span&gt; x (ys &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; xs)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This instance isn’t associative:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;ghci&lt;span class=&quot;fu&quot;&gt;&amp;gt;&lt;/span&gt; ((&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; (&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;4&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;)) &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; (&lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;6&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;)
+&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;6&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;4&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;
+ghci&lt;span class=&quot;fu&quot;&gt;&amp;gt;&lt;/span&gt; (&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; ((&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;4&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; (&lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;6&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;))
+&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;4&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;6&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;But if you try to compile it, GHC doesn’t complain at all. Is this an error on the part of Haskell? Not quite; it’s an error on the part of the &lt;code&gt;Semigroup&lt;/code&gt; typeclass not requiring proofs that the instance is indeed associative.&lt;/p&gt;
+&lt;p&gt;Let’s try again.&lt;/p&gt;
+&lt;h3 id=&quot;verify-me-captain&quot;&gt;Verify me, Captain&lt;/h3&gt;
+&lt;p&gt;We will now define &lt;code&gt;Semigroup&lt;/code&gt; on the &lt;em&gt;kind&lt;/em&gt; &lt;code&gt;List&lt;/code&gt;, using &lt;code&gt;-XDataKinds&lt;/code&gt;, instead of the type.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;kw&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Semigroup&lt;/span&gt; a &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;x ::&lt;/span&gt; a) &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;y ::&lt;/span&gt; a)&lt;span class=&quot;ot&quot;&gt; ::&lt;/span&gt; a
+
+&lt;span class=&quot;ot&quot;&gt;    (%&amp;lt;&amp;gt;) ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;x ::&lt;/span&gt; a) &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;y ::&lt;/span&gt; a) &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (x &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; y)
+
+    appendAssoc
+&lt;span class=&quot;ot&quot;&gt;        ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;x ::&lt;/span&gt; a)
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;y ::&lt;/span&gt; a)
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;z ::&lt;/span&gt; a)
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; ((x &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; y) &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; z) &lt;span class=&quot;fu&quot;&gt;:~:&lt;/span&gt; (x &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; (y &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; z))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Now, &lt;code&gt;&amp;lt;&amp;gt;&lt;/code&gt; exists not as a function on &lt;em&gt;values&lt;/em&gt;, but as a function on &lt;em&gt;types&lt;/em&gt;. &lt;code&gt;%&amp;lt;&amp;gt;&lt;/code&gt; is a function that performs &lt;code&gt;&amp;lt;&amp;gt;&lt;/code&gt; at the value level, written to work with singletons representing the input types, so that GHC can verify that it is identical to the type family &lt;code&gt;&amp;lt;&amp;gt;&lt;/code&gt;. (it’s 100% boilerplate and should pretty much exactly match the &lt;code&gt;&amp;lt;&amp;gt;&lt;/code&gt; type family).&lt;a href=&quot;#fn2&quot; class=&quot;footnoteRef&quot; id=&quot;fnref2&quot;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/a&gt; Finally, &lt;code&gt;appendAssoc&lt;/code&gt; is a proof that the type family &lt;code&gt;&amp;lt;&amp;gt;&lt;/code&gt; is associative, using &lt;code&gt;:~:&lt;/code&gt; (type equality witness) from &lt;code&gt;Data.Type.Equality&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;This means that, if a type is an instance of &lt;code&gt;Semigroup&lt;/code&gt;, it not only has to provide &lt;code&gt;&amp;lt;&amp;gt;&lt;/code&gt;/&lt;code&gt;%&amp;lt;&amp;gt;&lt;/code&gt;, but also a &lt;em&gt;proof that they are associative&lt;/em&gt;. You can’t write the full instance without it!&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Semigroup&lt;/code&gt; is be a “kind-class”, because it is a bunch of methods and types associated with a certain kind. Which &lt;code&gt;&amp;lt;&amp;gt;&lt;/code&gt; is dispatched when you do something like &lt;code&gt;x &amp;lt;&amp;gt; y&lt;/code&gt; depends on the &lt;em&gt;kind&lt;/em&gt; of &lt;code&gt;x&lt;/code&gt; and &lt;code&gt;y&lt;/code&gt;. GHC does “kind inference” and uses the &lt;code&gt;&amp;lt;&amp;gt;&lt;/code&gt; corresponding to the kinds of &lt;code&gt;x&lt;/code&gt; and &lt;code&gt;y&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Using the &lt;code&gt;SingKind&lt;/code&gt; typeclass from the singletons library, we can move back and forth from &lt;code&gt;Sing x&lt;/code&gt; and &lt;code&gt;x&lt;/code&gt;, and get our original (value-level) &lt;code&gt;&amp;lt;&amp;gt;&lt;/code&gt; back:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;(&lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt;)
+&lt;span class=&quot;ot&quot;&gt;    ::&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;SingKind&lt;/span&gt; m, &lt;span class=&quot;dt&quot;&gt;Semigroup&lt;/span&gt; m)
+    &lt;span class=&quot;ot&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Demote&lt;/span&gt; m
+    &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Demote&lt;/span&gt; m
+    &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Demote&lt;/span&gt; m
+x &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; y &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; withSomeSing x &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; \sX &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt;
+           withSomeSing y &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; \sY &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt;
+             fromSing (sX &lt;span class=&quot;fu&quot;&gt;%&amp;lt;&amp;gt;&lt;/span&gt; sY)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;(This works best with singletons HEAD at the moment, because &lt;code&gt;Demote&lt;/code&gt; is injective. On 2.2 or lower, using this would require an explicit type application or annotation at any place you use &lt;code&gt;&amp;lt;&amp;gt;&lt;/code&gt; or &lt;code&gt;%&amp;lt;&amp;gt;&lt;/code&gt;)&lt;/p&gt;
+&lt;p&gt;Now, let’s write the instance for &lt;code&gt;List&lt;/code&gt;. First, we need to define the singletons:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;kw&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;xs ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;List&lt;/span&gt; a) &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;dt&quot;&gt;SNil&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;  ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;
+    &lt;span class=&quot;dt&quot;&gt;SCons&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt; ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; x &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; xs &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Cons&lt;/span&gt; x xs)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Then, we can define the instance, using the traditional &lt;code&gt;(++)&lt;/code&gt; appending that lists famously have:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Semigroup&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;List&lt;/span&gt; a) &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;       &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; ys &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; ys
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Cons&lt;/span&gt; x xs &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; ys &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; ys
+
+    &lt;span class=&quot;dt&quot;&gt;SNil&lt;/span&gt;       &lt;span class=&quot;fu&quot;&gt;%&amp;lt;&amp;gt;&lt;/span&gt; ys &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; ys
+    &lt;span class=&quot;dt&quot;&gt;SCons&lt;/span&gt; x xs &lt;span class=&quot;fu&quot;&gt;%&amp;lt;&amp;gt;&lt;/span&gt; ys &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;SCons&lt;/span&gt; x (xs &lt;span class=&quot;fu&quot;&gt;%&amp;lt;&amp;gt;&lt;/span&gt; ys)
+
+    appendAssoc &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SNil&lt;/span&gt;       &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; \_ _ &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SCons&lt;/span&gt; x xs &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; \ys zs &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; appendAssoc xs ys zs &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+          &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Like I promised, &lt;code&gt;%&amp;lt;&amp;gt;&lt;/code&gt; is a boilerplate re-implementation of &lt;code&gt;&amp;lt;&amp;gt;&lt;/code&gt;, to manipulate value-level witnesses. &lt;code&gt;appendAssoc&lt;/code&gt; is the interesting bit: It’s our proof. It reads like this:&lt;/p&gt;
+&lt;ol type=&quot;1&quot;&gt;
+&lt;li&gt;&lt;p&gt;If the first list is &lt;code&gt;Nil&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;co&quot;&gt;-- left hand side&lt;/span&gt;
+(&lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; ys) &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; zs
+  &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; ys &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; zs        &lt;span class=&quot;co&quot;&gt;-- definition of `(Nil &amp;lt;&amp;gt;)`&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;-- right hand side&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; (ys &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; zs)
+  &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; ys &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; zs        &lt;span class=&quot;co&quot;&gt;-- definition of `(Nil &amp;lt;&amp;gt;)`&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;So, no work needed. QED! (Or, as we say in Haskell, &lt;code&gt;Refl&lt;/code&gt;!)&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;If the first list is &lt;code&gt;Cons x xs&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;co&quot;&gt;-- left hand side&lt;/span&gt;
+(&lt;span class=&quot;dt&quot;&gt;Cons&lt;/span&gt; x xs &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; ys) &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; zs
+  &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Cons&lt;/span&gt; x (xs &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; ys)) &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; zs   &lt;span class=&quot;co&quot;&gt;-- definition of `(Cons x xs &amp;lt;&amp;gt;)`&lt;/span&gt;
+  &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Cons&lt;/span&gt; x ((xs &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; ys) &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; zs)   &lt;span class=&quot;co&quot;&gt;-- definition of `(Cons x xs &amp;lt;&amp;gt;)`&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;-- right hand side&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;Cons&lt;/span&gt; x xs &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; (ys &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; zs)
+  &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Cons&lt;/span&gt; x (xs &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; (ys &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; zs))   &lt;span class=&quot;co&quot;&gt;-- definition of `(Cons x xs &amp;lt;&amp;gt;)`&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;So, the problem reduces to proving that &lt;code&gt;(xs &amp;lt;&amp;gt; ys) &amp;lt;&amp;gt; zs&lt;/code&gt; is equal to &lt;code&gt;xs &amp;lt;&amp;gt; (ys &amp;lt;&amp;gt; zs)&lt;/code&gt;. If we can do that, then we can prove that the whole things are equal. We generate that proof using &lt;code&gt;appendAssoc xs ys zs&lt;/code&gt;, and, wit that proof in scope…QED!&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;And, we’re done!&lt;/p&gt;
+&lt;p&gt;Note that if you had tried any &lt;em&gt;non-associative&lt;/em&gt; implementation of &lt;code&gt;&amp;lt;&amp;gt;&lt;/code&gt; (and &lt;code&gt;%&amp;lt;&amp;gt;&lt;/code&gt;), GHC would reject it because you wouldn’t have been able to write the proof!&lt;/p&gt;
+&lt;h4 id=&quot;automatic-singletons&quot;&gt;Automatic Singletons&lt;/h4&gt;
+&lt;p&gt;Deriving &lt;code&gt;Sing&lt;/code&gt; and &lt;code&gt;SingKind&lt;/code&gt; and both versions of &lt;code&gt;&amp;lt;&amp;gt;&lt;/code&gt; is kind of tedious, so it’s useful to use template haskell to do it all for us:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt;(singletons [d|
+  data List a = Nil | Cons a (List a)
+      deriving (Show)
+
+  infixr 5 `Cons`
+
+  appendList :: List a -&amp;gt; List a -&amp;gt; List a
+  appendList Nil         ys = ys
+  appendList (Cons x xs) ys = Cons x (appendList xs ys)
+  |])
+
+&lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Semigroup&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;List&lt;/span&gt; a) &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; xs &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; ys &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;AppendList&lt;/span&gt; xs ys
+    (&lt;span class=&quot;fu&quot;&gt;%&amp;lt;&amp;gt;&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; sAppendList
+
+    appendAssoc &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SNil&lt;/span&gt;       &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; \_ _ &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SCons&lt;/span&gt; _ xs &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; \ys zs &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; appendAssoc xs ys zs &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+          &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The boilerplate of re-defining &lt;code&gt;&amp;lt;&amp;gt;&lt;/code&gt; as &lt;code&gt;%&amp;lt;&amp;gt;&lt;/code&gt; goes away!&lt;/p&gt;
+&lt;p&gt;And now, we we can do:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;ghci&lt;span class=&quot;fu&quot;&gt;&amp;gt;&lt;/span&gt; print &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; ((&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;Integer&lt;/span&gt;) &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; (&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;4&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;)
+&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;4&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;`Cons`&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Ta dah!&lt;/p&gt;
+&lt;h3 id=&quot;naturally-maybe&quot;&gt;Naturally, Maybe&lt;/h3&gt;
+&lt;p&gt;Now, we stop there? Let’s implement some other famous semigroups:&lt;/p&gt;
+&lt;p&gt;First, the inductive nats, &lt;code&gt;data N = Z | S N:&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt;(singletons [d|
+  data N = Z | S N
+    deriving (Show)
+
+  plus :: N -&amp;gt; N -&amp;gt; N
+  plus Z     y = y
+  plus (S x) y = S (plus x y)
+  |])
+
+&lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Semigroup&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;N&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; xs &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; ys &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Plus&lt;/span&gt; xs ys
+    (&lt;span class=&quot;fu&quot;&gt;%&amp;lt;&amp;gt;&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; sPlus
+
+    appendAssoc &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SZ&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; \_ _ &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SS&lt;/span&gt; x &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; \y z &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; appendAssoc x y z &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+          &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;And the standard instance for &lt;code&gt;Maybe&lt;/code&gt;, which lifts the underlying semigroup:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt;(singletons [d|
+  data Option a = None | Some a
+      deriving (Show)
+  |])
+
+&lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Semigroup&lt;/span&gt; a &lt;span class=&quot;ot&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Semigroup&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Option&lt;/span&gt; a) &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;None&lt;/span&gt;   &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; y      &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; y
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; x      &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;None&lt;/span&gt;   &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; x
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Some&lt;/span&gt; x &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Some&lt;/span&gt; y &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Some&lt;/span&gt; (x &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; y)
+
+    &lt;span class=&quot;dt&quot;&gt;SNone&lt;/span&gt;   &lt;span class=&quot;fu&quot;&gt;%&amp;lt;&amp;gt;&lt;/span&gt; y       &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; y
+    x       &lt;span class=&quot;fu&quot;&gt;%&amp;lt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;SNone&lt;/span&gt;   &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; x
+    &lt;span class=&quot;dt&quot;&gt;SSome&lt;/span&gt; x &lt;span class=&quot;fu&quot;&gt;%&amp;lt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;SSome&lt;/span&gt; y &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;SSome&lt;/span&gt; (x &lt;span class=&quot;fu&quot;&gt;%&amp;lt;&amp;gt;&lt;/span&gt; y)
+
+    appendAssoc &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+        &lt;span class=&quot;dt&quot;&gt;SNone&lt;/span&gt;   &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; \_ _ &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+        &lt;span class=&quot;dt&quot;&gt;SSome&lt;/span&gt; x &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+          &lt;span class=&quot;dt&quot;&gt;SNone&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; \_ &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+          &lt;span class=&quot;dt&quot;&gt;SSome&lt;/span&gt; y &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+            &lt;span class=&quot;dt&quot;&gt;SNone&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+            &lt;span class=&quot;dt&quot;&gt;SSome&lt;/span&gt; z &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt;
+              &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; appendAssoc x y z &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+                &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;ghci&lt;span class=&quot;fu&quot;&gt;&amp;gt;&lt;/span&gt; print &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Z&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Z&lt;/span&gt;
+&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Z&lt;/span&gt;))
+ghci&lt;span class=&quot;fu&quot;&gt;&amp;gt;&lt;/span&gt; print &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Some&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Z&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Some&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Z&lt;/span&gt;)))
+&lt;span class=&quot;dt&quot;&gt;Some&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Z&lt;/span&gt;))))
+ghci&lt;span class=&quot;fu&quot;&gt;&amp;gt;&lt;/span&gt; print &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;None&lt;/span&gt;       &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Some&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Z&lt;/span&gt;)))
+&lt;span class=&quot;dt&quot;&gt;Some&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;S&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Z&lt;/span&gt;)))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;h2 id=&quot;going-monoidal&quot;&gt;Going Monoidal&lt;/h2&gt;
+&lt;p&gt;Of course, we can now introduce the &lt;code&gt;Monoid&lt;/code&gt; typeclass, which introduces a new element &lt;code&gt;empty&lt;/code&gt;, along with the laws that appending with empty leaves things unchanged:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;kw&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Semigroup&lt;/span&gt; a &lt;span class=&quot;ot&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Monoid&lt;/span&gt; a &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Empty&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt; a ::&lt;/span&gt; a
+
+&lt;span class=&quot;ot&quot;&gt;    sEmpty ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Empty&lt;/span&gt; a)
+
+    emptyIdentLeft
+&lt;span class=&quot;ot&quot;&gt;        ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; x
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Empty&lt;/span&gt; a &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; x) &lt;span class=&quot;fu&quot;&gt;:~:&lt;/span&gt; x
+
+    emptyIdentRight
+&lt;span class=&quot;ot&quot;&gt;        ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; x
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; (x &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Empty&lt;/span&gt; a) &lt;span class=&quot;fu&quot;&gt;:~:&lt;/span&gt; x
+
+empty
+&lt;span class=&quot;ot&quot;&gt;    ::&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;SingKind&lt;/span&gt; m, &lt;span class=&quot;dt&quot;&gt;Monoid&lt;/span&gt; m)
+    &lt;span class=&quot;ot&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Demote&lt;/span&gt; m
+empty &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; fromSing sEmpty&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Because working implicitly return-type polymorphism at the type level can be annoying sometimes, we have &lt;code&gt;Empty&lt;/code&gt; take the &lt;em&gt;kind&lt;/em&gt; &lt;code&gt;a&lt;/code&gt; as a parameter, instead of having it be inferred through kind inference like we did for &lt;code&gt;&amp;lt;&amp;gt;&lt;/code&gt;. That is, &lt;code&gt;Empty (List a)&lt;/code&gt; is &lt;code&gt;Empty&lt;/code&gt; for the &lt;em&gt;kind&lt;/em&gt; &lt;code&gt;List a&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;As usual in Haskell, the instances write themselves!&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Monoid&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;List&lt;/span&gt; a) &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Empty&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;List&lt;/span&gt; a) &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;
+
+    sEmpty &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;SNil&lt;/span&gt;
+    emptyIdentLeft _ &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+    emptyIdentRight  &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SNil&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SCons&lt;/span&gt; _ xs &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; emptyIdentRight xs &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+          &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+
+&lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Monoid&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;N&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Empty&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;N&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Z&lt;/span&gt;
+
+    sEmpty &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;SZ&lt;/span&gt;
+    emptyIdentLeft _ &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+    emptyIdentRight  &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SZ&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SS&lt;/span&gt; x &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; emptyIdentRight x &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+        &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+
+&lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Semigroup&lt;/span&gt; a &lt;span class=&quot;ot&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Monoid&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Option&lt;/span&gt; a) &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Empty&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Option&lt;/span&gt; a) &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;None&lt;/span&gt;
+
+    sEmpty &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;SNone&lt;/span&gt;
+    emptyIdentLeft  _ &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+    emptyIdentRight _ &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;h2 id=&quot;play-that-funcy-music&quot;&gt;Play that Funcy Music&lt;/h2&gt;
+&lt;p&gt;How about some higher-kinded typeclasses?&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;kw&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Functor&lt;/span&gt; f &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Fmap&lt;/span&gt; a b (&lt;span class=&quot;ot&quot;&gt;g ::&lt;/span&gt; a &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; b) (&lt;span class=&quot;ot&quot;&gt;x ::&lt;/span&gt; f a)&lt;span class=&quot;ot&quot;&gt; ::&lt;/span&gt; f b
+
+    sFmap
+&lt;span class=&quot;ot&quot;&gt;        ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;g            ::&lt;/span&gt; a &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; b)
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;x            ::&lt;/span&gt; f a   )
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Fmap&lt;/span&gt; a b g&lt;span class=&quot;ot&quot;&gt; x ::&lt;/span&gt; f b   )
+
+    &lt;span class=&quot;co&quot;&gt;-- | fmap id x == x&lt;/span&gt;
+    fmapId
+&lt;span class=&quot;ot&quot;&gt;        ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;x ::&lt;/span&gt; f a)
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Fmap&lt;/span&gt; a a &lt;span class=&quot;dt&quot;&gt;IdSym0&lt;/span&gt; x &lt;span class=&quot;fu&quot;&gt;:~:&lt;/span&gt; x
+
+    &lt;span class=&quot;co&quot;&gt;-- | fmap f (fmap g x) = fmap (f . g) x&lt;/span&gt;
+    fmapCompose
+&lt;span class=&quot;ot&quot;&gt;        ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;g ::&lt;/span&gt; b &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; c)
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;h ::&lt;/span&gt; a &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; b)
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;x ::&lt;/span&gt; f a   )
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Fmap&lt;/span&gt; b c g (&lt;span class=&quot;dt&quot;&gt;Fmap&lt;/span&gt; a b h x) &lt;span class=&quot;fu&quot;&gt;:~:&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Fmap&lt;/span&gt; a c (((&lt;span class=&quot;fu&quot;&gt;:.$&lt;/span&gt;) &lt;span class=&quot;fu&quot;&gt;@@&lt;/span&gt; g) &lt;span class=&quot;fu&quot;&gt;@@&lt;/span&gt; h) x&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;&lt;code&gt;Fmap a b g x&lt;/code&gt; maps the &lt;em&gt;type-level function&lt;/em&gt; &lt;code&gt;g :: a ~&amp;gt; b&lt;/code&gt; over &lt;code&gt;x :: f a&lt;/code&gt;, and returns a type of kind &lt;code&gt;f b&lt;/code&gt;. Like with &lt;code&gt;Empty&lt;/code&gt;, to help with kind inference, we have &lt;code&gt;Fmap&lt;/code&gt; explicitly requre the &lt;em&gt;kinds&lt;/em&gt; of the input and results of &lt;code&gt;g&lt;/code&gt; (&lt;code&gt;a&lt;/code&gt; and &lt;code&gt;b&lt;/code&gt;) so GHC doesn’t have to struggle to infer it implicitly.&lt;/p&gt;
+&lt;p&gt;And, of course, along with &lt;code&gt;sFmap&lt;/code&gt; (the singleton mirror of &lt;code&gt;Fmap&lt;/code&gt;), we have our laws: &lt;code&gt;fmap id x = x&lt;/code&gt;, and &lt;code&gt;fmap g (fmap h) x = fmap (g . h) x&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;But, what are &lt;code&gt;a ~&amp;gt; b&lt;/code&gt;, &lt;code&gt;IdSym0&lt;/code&gt;, &lt;code&gt;:.$&lt;/code&gt;, and &lt;code&gt;@@&lt;/code&gt;? They’re a part of the &lt;em&gt;defunctionalization&lt;/em&gt; system that the singletons library uses. A &lt;code&gt;g :: a ~&amp;gt; b&lt;/code&gt; means that &lt;code&gt;g&lt;/code&gt; represents a type-level function taking a type of kind &lt;code&gt;a&lt;/code&gt; to a type of kind &lt;code&gt;b&lt;/code&gt;, but, importantly, encodes it in a way that makes Haskell happy. This hack is required because you can’t partially apply type families in Haskell. If &lt;code&gt;g&lt;/code&gt; was a regular old &lt;code&gt;a -&amp;gt; b&lt;/code&gt; type family, you wouldn’t be able to pass just &lt;code&gt;g&lt;/code&gt; into &lt;code&gt;Fmap a b g&lt;/code&gt; (because it’d be partially applied, and type families always have to appear fully saturated).&lt;/p&gt;
+&lt;p&gt;You can convert a &lt;code&gt;g :: a ~&amp;gt; b&lt;/code&gt; back into a regular old &lt;code&gt;g :: a -&amp;gt; b&lt;/code&gt; using &lt;code&gt;Apply&lt;/code&gt;, or its convenient infix synonym &lt;code&gt;@@&lt;/code&gt;, like &lt;code&gt;g @@ (x :: a) :: b&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;The singletons library provides &lt;code&gt;type Family Id a where Id a = a&lt;/code&gt;, but we can’t pass in &lt;code&gt;Id&lt;/code&gt; directly into &lt;code&gt;Fmap&lt;/code&gt;. We have to pass in its “defunctionalized” encoding, &lt;code&gt;IdSym0 :: TyFun a a -&amp;gt; Type&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;For the composition law, we use &lt;code&gt;(:.$)&lt;/code&gt; (which is a defunctionalized type-level &lt;code&gt;.&lt;/code&gt;) and apply it to &lt;code&gt;g&lt;/code&gt; and &lt;code&gt;h&lt;/code&gt; to get, essentially, &lt;code&gt;g :. h&lt;/code&gt;, where &lt;code&gt;:.&lt;/code&gt; is type-level function composition.&lt;/p&gt;
+&lt;p&gt;Now we Haskell.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt;(singletons [d|
+  mapOption :: (a -&amp;gt; b) -&amp;gt; Option a -&amp;gt; Option b
+  mapOption _ None     = None
+  mapOption f (Some x) = Some (f x)
+
+  mapList :: (a -&amp;gt; b) -&amp;gt; List a -&amp;gt; List b
+  mapList _ Nil         = Nil
+  mapList f (Cons x xs) = Cons (f x) (mapList f xs)
+  |])
+
+&lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Functor&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Option&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Fmap&lt;/span&gt; a b g x &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;MapOption&lt;/span&gt; g x
+
+    sFmap &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; sMapOption
+    fmapId &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SNone&lt;/span&gt;   &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SSome&lt;/span&gt; _ &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+
+    fmapCompose _ _ &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SNone&lt;/span&gt;   &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SSome&lt;/span&gt; _ &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+
+&lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Functor&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;List&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Fmap&lt;/span&gt; a b g x &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;MapList&lt;/span&gt; g x
+
+    sFmap &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; sMapList
+    fmapId &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SNil&lt;/span&gt;       &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SCons&lt;/span&gt; _ xs &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; fmapId xs &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+          &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+
+    fmapCompose g h &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SNil&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SCons&lt;/span&gt; _ xs &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; fmapCompose g h xs &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+          &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;And there you have it. A verified &lt;code&gt;Functor&lt;/code&gt; typeclass, ensuring that all instances are lawful. Never tell me that Haskell’s type system can’t do anything ever again!&lt;/p&gt;
+&lt;p&gt;Note that any mistakes in implementation (like, for example, having &lt;code&gt;mapOption _ _ = None&lt;/code&gt;) will cause a compile-time error now, because the proofs are impossible to provide.&lt;/p&gt;
+&lt;p&gt;As a side note, I’m not quite sure how to implement the value-level &lt;code&gt;fmap&lt;/code&gt; from this, since I can’t figure out how to promote functions nicely. Using &lt;code&gt;sFmap&lt;/code&gt; is the only way to work with this at the value level that I can see, but it’s probably because of my own lack of understanding. If anyone knows how to do this, please let me know!&lt;/p&gt;
+&lt;p&gt;Anyway, what an exciting journey and a wonderful conclusion. I hope you enjoyed this and will begin using this in your normal day-to-day Haskell. Goodbye, until next time!&lt;/p&gt;
+&lt;h2 id=&quot;just-kidding&quot;&gt;Just Kidding!&lt;/h2&gt;
+&lt;p&gt;Hah! Of course we aren’t done. I wouldn’t let you down like that. I know that you probably saw that the entire last section’s only purpose was to build up to the pièce de résistance: the crown jewel of every Haskell article, the Monad.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;kw&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Functor&lt;/span&gt; f &lt;span class=&quot;ot&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Monad&lt;/span&gt; f &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Return&lt;/span&gt; a   (&lt;span class=&quot;ot&quot;&gt;x ::&lt;/span&gt; a)&lt;span class=&quot;ot&quot;&gt;                   ::&lt;/span&gt; f a
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Bind&lt;/span&gt;   a b (&lt;span class=&quot;ot&quot;&gt;m ::&lt;/span&gt; f a) (&lt;span class=&quot;ot&quot;&gt;g ::&lt;/span&gt; a &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; f b)&lt;span class=&quot;ot&quot;&gt; ::&lt;/span&gt; f b
+
+    sReturn
+&lt;span class=&quot;ot&quot;&gt;        ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;x ::&lt;/span&gt; a)
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Return&lt;/span&gt; a&lt;span class=&quot;ot&quot;&gt; x ::&lt;/span&gt; f a)
+
+    sBind
+&lt;span class=&quot;ot&quot;&gt;        ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;m ::&lt;/span&gt; f a)
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;g ::&lt;/span&gt; a &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; f b)
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Bind&lt;/span&gt; a b m g)
+
+    &lt;span class=&quot;co&quot;&gt;-- | (return x &amp;gt;&amp;gt;= f) == f x&lt;/span&gt;
+    returnIdentLeft
+&lt;span class=&quot;ot&quot;&gt;        ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;x ::&lt;/span&gt; a)
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;g ::&lt;/span&gt; a &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; f b)
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Bind&lt;/span&gt; a b (&lt;span class=&quot;dt&quot;&gt;Return&lt;/span&gt; a x) g &lt;span class=&quot;fu&quot;&gt;:~:&lt;/span&gt; (g &lt;span class=&quot;fu&quot;&gt;@@&lt;/span&gt; x)
+
+    &lt;span class=&quot;co&quot;&gt;-- | (m &amp;gt;&amp;gt;= return) == m&lt;/span&gt;
+    returnIdentRight
+&lt;span class=&quot;ot&quot;&gt;        ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;m ::&lt;/span&gt; f a)
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Bind&lt;/span&gt; a a m &lt;span class=&quot;dt&quot;&gt;ReturnSym0&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;:~:&lt;/span&gt; m
+
+    &lt;span class=&quot;co&quot;&gt;-- | m &amp;gt;&amp;gt;= (\x -&amp;gt; f x &amp;gt;&amp;gt;= h) == (m &amp;gt;&amp;gt;= f) &amp;gt;&amp;gt;= h&lt;/span&gt;
+    bindCompose
+&lt;span class=&quot;ot&quot;&gt;        ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;m ::&lt;/span&gt; f a)
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;g ::&lt;/span&gt; a &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; f b)
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;h ::&lt;/span&gt; b &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; f c)
+        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Bind&lt;/span&gt; a c m (&lt;span class=&quot;dt&quot;&gt;KCompSym2&lt;/span&gt; a b c g h) &lt;span class=&quot;fu&quot;&gt;:~:&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Bind&lt;/span&gt; b c (&lt;span class=&quot;dt&quot;&gt;Bind&lt;/span&gt; a b m g) h
+
+&lt;span class=&quot;kw&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;ReturnSym0&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt; ::&lt;/span&gt; a &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; f a
+&lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Apply&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;ReturnSym0&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt; ::&lt;/span&gt; a &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; f a) (&lt;span class=&quot;ot&quot;&gt;x ::&lt;/span&gt; a) &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Return&lt;/span&gt; a x
+
+&lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;KComp&lt;/span&gt; a b c (&lt;span class=&quot;ot&quot;&gt;g ::&lt;/span&gt; a &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; f b) (&lt;span class=&quot;ot&quot;&gt;h ::&lt;/span&gt; b &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; f c) (&lt;span class=&quot;ot&quot;&gt;x ::&lt;/span&gt; a) &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Bind&lt;/span&gt; b c (g &lt;span class=&quot;fu&quot;&gt;@@&lt;/span&gt; x) h
+&lt;span class=&quot;kw&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;KCompSym2&lt;/span&gt; a b c g&lt;span class=&quot;ot&quot;&gt; h ::&lt;/span&gt; (a &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; f c)
+&lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Apply&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;KCompSym2&lt;/span&gt; a b c g&lt;span class=&quot;ot&quot;&gt; h ::&lt;/span&gt; a &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; f c) (&lt;span class=&quot;ot&quot;&gt;x ::&lt;/span&gt; a) &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;KComp&lt;/span&gt; a b c g h x
+
+return
+&lt;span class=&quot;ot&quot;&gt;    ::&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;SingKind&lt;/span&gt; a, &lt;span class=&quot;dt&quot;&gt;SingKind&lt;/span&gt; (f a), &lt;span class=&quot;dt&quot;&gt;Monad&lt;/span&gt; f)
+    &lt;span class=&quot;ot&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Demote&lt;/span&gt; a
+    &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Demote&lt;/span&gt; (f a)
+return x &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; withSomeSing x &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; \sX &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt;
+             fromSing (sReturn sX)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;To help with kind inference, again, we provide explicit kind arguments for &lt;code&gt;Return&lt;/code&gt; (the kind of the thing that is being lifted) and &lt;code&gt;Bind&lt;/code&gt; (the original &lt;code&gt;a&lt;/code&gt; and the resulting &lt;code&gt;b&lt;/code&gt;).&lt;/p&gt;
+&lt;p&gt;Some boilerplate exists there at the bottom — it’s the plumbing for the defunctionalization system. &lt;code&gt;returnIdentRight&lt;/code&gt; requires a defunctionalized version of &lt;code&gt;Return&lt;/code&gt;, so we can provide that by defining &lt;code&gt;ReturnSym0&lt;/code&gt;, and writing an &lt;code&gt;Apply&lt;/code&gt; instance for it (which “applies” it the parameter &lt;code&gt;x&lt;/code&gt;).&lt;/p&gt;
+&lt;p&gt;We introduce &lt;code&gt;KComp&lt;/code&gt; (kleisli composition) and its defunctionalized version in order to express the third law, because we don’t yet have type-level lambdas in Haskell. The actual function it is expressing is &lt;code&gt;\x -&amp;gt; f x &amp;gt;&amp;gt;= g&lt;/code&gt;, and that definition is given on the &lt;code&gt;type KComp a b c ... = Bind ...&lt;/code&gt; line. &lt;code&gt;KCompSym2&lt;/code&gt; is the defunctioanlized version, which is not a &lt;code&gt;a -&amp;gt; f c&lt;/code&gt; but rather an &lt;code&gt;a ~&amp;gt; f c&lt;/code&gt;, which allows it to be partially applied (like we do for &lt;code&gt;composeBind&lt;/code&gt;). And, finally, to hook all of this up into the defunctionalization system, we write an &lt;code&gt;Apply&lt;/code&gt; instance yet again.&lt;/p&gt;
+&lt;p&gt;And, again, if anyone knows how I can write a value-level &lt;code&gt;Bind&lt;/code&gt;, I’d definitely appreciate hearing!&lt;/p&gt;
+&lt;p&gt;Let’s see some sample implementations.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt;(singletons [d|
+  bindOption :: Option a -&amp;gt; (a -&amp;gt; Option b) -&amp;gt; Option b
+  bindOption None     _ = None
+  bindOption (Some x) f = f x
+  |])
+
+
+&lt;span class=&quot;ot&quot;&gt;  concatMapList ::&lt;/span&gt; (a &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;List&lt;/span&gt; b) &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;List&lt;/span&gt; a &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;List&lt;/span&gt; b
+  concatMapList _ &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;         &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nil&lt;/span&gt;
+  concatMapList f (&lt;span class=&quot;dt&quot;&gt;Cons&lt;/span&gt; x xs) &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; f x &lt;span class=&quot;ot&quot;&gt;`appendList`&lt;/span&gt; concatMapList f xs
+
+&lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Monad&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Option&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Return&lt;/span&gt; a   x   &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Some&lt;/span&gt; x
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Bind&lt;/span&gt;   a b m g &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;BindOption&lt;/span&gt; m g
+
+    sReturn &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;SSome&lt;/span&gt;
+    sBind   &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; sBindOption
+
+    returnIdentLeft _ _ &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+    returnIdentRight &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SNone&lt;/span&gt;   &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SSome&lt;/span&gt; x &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; sReturn x &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+        &lt;span class=&quot;dt&quot;&gt;SSome&lt;/span&gt; _ &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+    bindCompose &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SNone&lt;/span&gt;   &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; \_ _ &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SSome&lt;/span&gt; _ &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; \_ _ &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+
+&lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Monad&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;List&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Return&lt;/span&gt; a   x   &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;PureList&lt;/span&gt; x
+    &lt;span class=&quot;kw&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Bind&lt;/span&gt;   a b m g &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;ConcatMapList&lt;/span&gt; g m
+
+    sReturn   &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; sPureList
+    sBind x f &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; sConcatMapList f x
+
+    returnIdentLeft x g &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; sReturn x &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SCons&lt;/span&gt; y &lt;span class=&quot;dt&quot;&gt;SNil&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; emptyIdentRight (unSingFun1 &lt;span class=&quot;dt&quot;&gt;Proxy&lt;/span&gt; g y) &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+        &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+
+    returnIdentRight &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SNil&lt;/span&gt;       &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SCons&lt;/span&gt; _ xs &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; returnIdentRight xs &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+        &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+
+    bindCompose &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SNil&lt;/span&gt;       &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; \_ _ &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+      &lt;span class=&quot;dt&quot;&gt;SCons&lt;/span&gt; x xs &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; \g h &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; bindCompose xs g h &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+        &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; unSingFun1 &lt;span class=&quot;dt&quot;&gt;Proxy&lt;/span&gt; g x &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+          &lt;span class=&quot;dt&quot;&gt;SNil&lt;/span&gt;       &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+          &lt;span class=&quot;dt&quot;&gt;SCons&lt;/span&gt; y ys &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt;
+            &lt;span class=&quot;kw&quot;&gt;let&lt;/span&gt; gxs  &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; sConcatMapList g xs
+                hgxs &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; sConcatMapList h gxs
+                hy   &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; unSingFun1 &lt;span class=&quot;dt&quot;&gt;Proxy&lt;/span&gt; h y
+                hys  &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; sConcatMapList h ys
+            &lt;span class=&quot;kw&quot;&gt;in&lt;/span&gt;  &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; distribConcatMap h ys gxs &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+                  &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; appendAssoc hy hys hgxs &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+                    &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+
+&lt;span class=&quot;co&quot;&gt;-- | Proving that concatMap distributes over &amp;lt;&amp;gt;&lt;/span&gt;
+distribConcatMap
+&lt;span class=&quot;ot&quot;&gt;    ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;g ::&lt;/span&gt; a &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;List&lt;/span&gt; b)
+    &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;xs ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;List&lt;/span&gt; a)
+    &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;ys ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;List&lt;/span&gt; a)
+    &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;ConcatMapList&lt;/span&gt; g (xs &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; ys) &lt;span class=&quot;fu&quot;&gt;:~:&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;ConcatMapList&lt;/span&gt; g xs &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;ConcatMapList&lt;/span&gt; g ys)
+distribConcatMap g &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; \&lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt;
+    &lt;span class=&quot;dt&quot;&gt;SNil&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; \_ &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;
+    &lt;span class=&quot;dt&quot;&gt;SCons&lt;/span&gt; x xs &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; \ys &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; distribConcatMap g xs ys &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+        &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt;
+          &lt;span class=&quot;kw&quot;&gt;let&lt;/span&gt; gx    &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; unSingFun1 &lt;span class=&quot;dt&quot;&gt;Proxy&lt;/span&gt; g x
+              cmgxs &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; sConcatMapList g xs
+              cmgys &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; sConcatMapList g ys
+          &lt;span class=&quot;kw&quot;&gt;in&lt;/span&gt;  &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; appendAssoc gx cmgxs cmgys &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
+                &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Refl&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Here we use &lt;code&gt;unSingFun1&lt;/code&gt;, which converts a singleton of a type-level function into a value-level function on singletons:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;unSingFun1
+&lt;span class=&quot;ot&quot;&gt;    ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Proxy&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;f      ::&lt;/span&gt; a &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; b)
+    &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt;  (&lt;span class=&quot;ot&quot;&gt;f      ::&lt;/span&gt; a &lt;span class=&quot;fu&quot;&gt;~&amp;gt;&lt;/span&gt; b)
+    &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt;  (&lt;span class=&quot;ot&quot;&gt;x      ::&lt;/span&gt; a)
+    &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Sing&lt;/span&gt;  (f &lt;span class=&quot;fu&quot;&gt;@@&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt; x ::&lt;/span&gt; b)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The &lt;code&gt;Proxy&lt;/code&gt; argument only exists for historical reasons, I believe. But, the crux is that, given a &lt;code&gt;Sing (f :: a ~&amp;gt; b)&lt;/code&gt; and a &lt;code&gt;Sing (x :: a)&lt;/code&gt;, we can “apply” them to get &lt;code&gt;Sing (f @@ x :: b)&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;The proofs for the list instance is admittedly ugly to write, due to the fact that &lt;code&gt;List&lt;/code&gt; is a recursive type. It’s also tricky because Haskell has poor to little support for theorem proving and no real tools to help you write them efficiently. But, the proofs for &lt;code&gt;Option&lt;/code&gt; are really something, aren’t they? It’s kind of amazing how much GHC can do on its own without requiring any manual proving on the part of the user.&lt;/p&gt;
+&lt;h2 id=&quot;disclaimer&quot;&gt;Disclaimer&lt;/h2&gt;
+&lt;p&gt;Don’t do this in actual code, please. This post started off as an April Fools joke that accidentally compiled correctly for reasons which I cannot explain.&lt;/p&gt;
+&lt;p&gt;Don’t do this in actual code, but definitely do it for fun! The code in this post is available &lt;a href=&quot;https://github.com/mstksg/inCode/tree/master/code-samples/verified-instances/VerifiedInstances.hs&quot;&gt;here&lt;/a&gt; if you want to play around!&lt;/p&gt;
+&lt;section class=&quot;footnotes&quot;&gt;
+&lt;hr /&gt;
+&lt;ol&gt;
+&lt;li id=&quot;fn1&quot;&gt;&lt;p&gt;Not sure why it’s not on hackage yet, but I will update when it gets there!&lt;a href=&quot;#fnref1&quot;&gt;↩&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;li id=&quot;fn2&quot;&gt;&lt;p&gt;In full &lt;em&gt;singletons&lt;/em&gt; style, this should actually be expressed in terms of the the &lt;em&gt;partially applied&lt;/em&gt; (defunctionalized) &lt;code&gt;&amp;lt;&amp;gt;&lt;/code&gt;. However, I’m giving the non-defunctionalized versions here for clarity.&lt;a href=&quot;#fnref2&quot;&gt;↩&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/section&gt;</description><author>Justin Le</author><category>Haskell</category><guid isPermaLink="true">https://blog.jle.im/entry/verified-instances-in-haskell.html</guid><pubDate>Sat,  1 Apr 2017 19:25:04 UTC</pubDate><dc:creator>Justin Le</dc:creator><dc:subject>Haskell</dc:subject><dc:date>2017-04-01</dc:date></item><item><title>Placeholder Entry</title><link>https://blog.jle.im/entry/placeholder-entry.html</link><description>&lt;p&gt;Placeholder entry.&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;Markdown supported&lt;/li&gt;
 &lt;li&gt;Inline HTML supported&lt;/li&gt;
@@ -2102,307 +2528,4 @@ index p (&lt;span class=&quot;dt&quot;&gt;Vec&lt;/span&gt; v) &lt;span class=&qu
 &lt;p&gt;So, let’s work together to dispel the myth that &lt;em&gt;mtl&lt;/em&gt; is a monad transformer library. It really has nothing to do with monad transformers at all…any more than &lt;code&gt;Control.Monad&lt;/code&gt; is an “IO module”, or &lt;code&gt;Control.Monoid&lt;/code&gt; is a “list module”. Transformers don’t even come from the &lt;em&gt;mtl&lt;/em&gt; library!&lt;/p&gt;
 &lt;p&gt;Together, we can overcome this myth. We can show people that we can live in a world where we can combine effects, work generically in Monads with &lt;em&gt;multiple types of effects&lt;/em&gt; by writing functions generic over many different &lt;em&gt;mtl&lt;/em&gt; typeclasses at once! (&lt;code&gt;MonadState&lt;/code&gt; + &lt;code&gt;MonadIO&lt;/code&gt;, maybe?)&lt;/p&gt;
 &lt;p&gt;We don’t &lt;em&gt;have to&lt;/em&gt; reach for Monad transformers to work with combined effects. We can write our own combined effects monads and just write the instances…or we can write generically and not even care about what Monad we actually use in the end. We don’t have to teach people to be afraid of monad transformers as if they were the only way to get things done, and &lt;em&gt;mtl&lt;/em&gt; is tied to them like a ball and chain.&lt;/p&gt;
-&lt;p&gt;&lt;em&gt;mtl&lt;/em&gt; is not a Monad transformer library. How liberating!&lt;/p&gt;</description><author>Justin Le</author><category>Haskell</category><category>Ramblings</category><guid isPermaLink="true">https://blog.jle.im/entry/mtl-is-not-a-monad-transformer-library.html</guid><pubDate>Mon, 18 May 2015 17:07:36 UTC</pubDate><dc:creator>Justin Le</dc:creator><dc:subject>Haskell, Ramblings</dc:subject><dc:date>2015-05-18</dc:date></item><item><title>Auto: A Todo GUI application with Auto (on GHCJS, etc.)</title><link>https://blog.jle.im/entry/auto-a-todo-gui-application-with-auto-on.html</link><description>&lt;p&gt;Continuing along with &lt;a href=&quot;http://blog.jle.im/entries/series/+all-about-auto&quot;&gt;All About Auto&lt;/a&gt;, let’s look at another exciting and useful application of the &lt;em&gt;&lt;a href=&quot;http://hackage.haskell.org/package/auto&quot;&gt;auto&lt;/a&gt;&lt;/em&gt; library: GUI’s. We’re going to look at the canonical “hello world” of GUI apps these days — the todo app. We’re going to be using the specs of &lt;a href=&quot;http://todomvc.com/&quot;&gt;todoMVC&lt;/a&gt; to build a todoMVC “candidate” that follows the specs…and along the way see what &lt;em&gt;auto&lt;/em&gt; offers in its tools of managing isolated state components and modeling GUI logic. We’re really going to be focusing on application logic — “control” and “model” — and not looking too close on “views”, which &lt;em&gt;auto&lt;/em&gt; doesn’t quite try to offer and where you can really pick your own view rendering system, making this adaptable to really any platform — javascript/web, desktop, command line, etc.&lt;/p&gt;
-&lt;p&gt;A live version of our end-product &lt;a href=&quot;https://mstksg.github.com/auto-examples/todo&quot;&gt;is hosted and online&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;This post does assume &lt;em&gt;some&lt;/em&gt; concepts from the &lt;a href=&quot;https://github.com/mstksg/auto/blob/master/tutorial/tutorial.md&quot;&gt;tutorial&lt;/a&gt;…if not all, then at least those in the &lt;a href=&quot;http://blog.jle.im/entry/introducing-the-auto-library&quot;&gt;introductory post&lt;/a&gt; or the &lt;a href=&quot;https://github.com/mstksg/auto/blob/master/README.md&quot;&gt;README&lt;/a&gt;. If you ever find yourself thinking that these concepts are completely new and crazy, you might want to try looking through the &lt;a href=&quot;https://github.com/mstksg/auto/blob/master/tutorial/tutorial.md&quot;&gt;tutorial&lt;/a&gt; or &lt;a href=&quot;http://hackage.haskell.org/package/auto&quot;&gt;docs&lt;/a&gt; to refresh your mind. As always, comments are welcome, and I’m also usually on &lt;em&gt;#haskell-auto&lt;/em&gt; as &lt;em&gt;jle`&lt;/em&gt;, and also on &lt;a href=&quot;https://twitter.com/mstk&quot; title=&quot;Twitter&quot;&gt;twitter&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;(Fair warning…this is not quite a “ghcjs tutorial”, if that’s what you’re looking for; it’s an auto tutorial that uses some rudimentary ghcjs. Hopefully you can learn from that too!)&lt;/p&gt;
-&lt;h2 id=&quot;overall-layout&quot;&gt;Overall Layout&lt;/h2&gt;
-&lt;p&gt;At the highest level, &lt;em&gt;auto&lt;/em&gt; is a library that provides us tools to build and work with stream transformers on streams of values. Transform a stream of input values to a stream of output values. So, let’s try to phrase our Todo app problem in that perspective. What are our inputs, and what are our outputs?&lt;/p&gt;
-&lt;p&gt;For a Todo app, the outputs are probably going to be a &lt;em&gt;todo list&lt;/em&gt; itself. If we’re building a GUI, then having the todo list itself is going to be enough to build our front-end display. The stream of &lt;em&gt;inputs&lt;/em&gt; is a little less obvious, but, well, what does an app really take as inputs? Commands! Our stream of inputs will be commands sent by a GUI or by whatever front-end we choose. Our todo app then is a transformer of a stream of commands to a stream of todo lists…where the todo list we get changes as we process more commands.&lt;/p&gt;
-&lt;p&gt;So the “overall loop” will be:&lt;/p&gt;
-&lt;ol type=&quot;1&quot;&gt;
-&lt;li&gt;A front-end rendered by &lt;em&gt;ghcjs-dom&lt;/em&gt; (or whatever) with event handlers that drop commands into a concurrent &lt;code&gt;Chan&lt;/code&gt; queue. This just handles rendering.&lt;/li&gt;
-&lt;li&gt;Our &lt;code&gt;Auto&lt;/code&gt; launched with &lt;code&gt;runOnChan&lt;/code&gt;, which waits on the &lt;code&gt;Chan&lt;/code&gt; queue, runs the inputs through the &lt;code&gt;Auto&lt;/code&gt;, and renders the result. This handles all of the logic.&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;We like types in Haskell, so let’s begin by laying out our types!&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;co&quot;&gt;-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L19-46&lt;/span&gt;
-&lt;span class=&quot;kw&quot;&gt;import &lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;Control.Auto&lt;/span&gt;
-&lt;span class=&quot;kw&quot;&gt;import &lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;Control.Auto.Collection&lt;/span&gt;
-&lt;span class=&quot;kw&quot;&gt;import &lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;Control.Monad.Fix&lt;/span&gt;
-&lt;span class=&quot;kw&quot;&gt;import &lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;Data.IntMap&lt;/span&gt;             (&lt;span class=&quot;dt&quot;&gt;IntMap&lt;/span&gt;)
-&lt;span class=&quot;kw&quot;&gt;import &lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;Data.Serialize&lt;/span&gt;
-&lt;span class=&quot;kw&quot;&gt;import &lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;GHC.Generics&lt;/span&gt;
-&lt;span class=&quot;kw&quot;&gt;import &lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;Prelude&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;hiding&lt;/span&gt;          ((.), id)
-&lt;span class=&quot;kw&quot;&gt;import qualified&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Data.IntMap&lt;/span&gt;   &lt;span class=&quot;kw&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;IM&lt;/span&gt;
-
-&lt;span class=&quot;kw&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TodoInp&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;IAdd&lt;/span&gt;  &lt;span class=&quot;dt&quot;&gt;String&lt;/span&gt;           &lt;span class=&quot;co&quot;&gt;-- new task with description&lt;/span&gt;
-             &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;ITask&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TaskID&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TaskCmd&lt;/span&gt;   &lt;span class=&quot;co&quot;&gt;-- send command to task by ID&lt;/span&gt;
-             &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;IAll&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TaskCmd&lt;/span&gt;           &lt;span class=&quot;co&quot;&gt;-- send command to all tasks&lt;/span&gt;
-             &lt;span class=&quot;kw&quot;&gt;deriving&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Show&lt;/span&gt;
-
-&lt;span class=&quot;kw&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TaskCmd&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;CDelete&lt;/span&gt;          &lt;span class=&quot;co&quot;&gt;-- delete&lt;/span&gt;
-             &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;CPrune&lt;/span&gt;           &lt;span class=&quot;co&quot;&gt;-- delete if completed&lt;/span&gt;
-             &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;CComplete&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Bool&lt;/span&gt;   &lt;span class=&quot;co&quot;&gt;-- set completed status&lt;/span&gt;
-             &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;CModify&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;String&lt;/span&gt;   &lt;span class=&quot;co&quot;&gt;-- modify description&lt;/span&gt;
-             &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;CNop&lt;/span&gt;             &lt;span class=&quot;co&quot;&gt;-- do nothing&lt;/span&gt;
-             &lt;span class=&quot;kw&quot;&gt;deriving&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Show&lt;/span&gt;
-
-&lt;span class=&quot;kw&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Task&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Task&lt;/span&gt; {&lt;span class=&quot;ot&quot;&gt; taskDescr     ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;String&lt;/span&gt;
-                 ,&lt;span class=&quot;ot&quot;&gt; taskCompleted ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Bool&lt;/span&gt;
-                 } &lt;span class=&quot;kw&quot;&gt;deriving&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Show&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;Generic&lt;/span&gt;)
-
-&lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Serialize&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Task&lt;/span&gt; &lt;span class=&quot;co&quot;&gt;-- from Data.Serialize, from the cereal library&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;We have a type to represent our inputs, &lt;code&gt;TodoInp&lt;/code&gt;, which can be an “add” command with a &lt;code&gt;String&lt;/code&gt;, a “task” command with a &lt;code&gt;TaskId&lt;/code&gt; (&lt;code&gt;Int&lt;/code&gt;) and a &lt;code&gt;TaskCmd&lt;/code&gt;, and an “all” command with a &lt;code&gt;TaskCmd&lt;/code&gt; that is supposed to represent sending that command to all tasks.&lt;/p&gt;
-&lt;p&gt;Our &lt;code&gt;TaskCmd&lt;/code&gt; represents commands we can send to individual tasks – we can delete, prune (delete if completed), set the “completed” flag, or modify the description.&lt;/p&gt;
-&lt;p&gt;We’re going to represent our task list, &lt;code&gt;TaskMap&lt;/code&gt;, as not a &lt;code&gt;[]&lt;/code&gt; list, but as an &lt;code&gt;IntMap&lt;/code&gt; from &lt;em&gt;containers&lt;/em&gt;, which associates an &lt;code&gt;Int&lt;/code&gt; to a &lt;code&gt;Task&lt;/code&gt; that we can look up with the &lt;code&gt;IntMap&lt;/code&gt; API. What would a &lt;code&gt;TaskMap&lt;/code&gt; store other than a bunch of &lt;code&gt;Task&lt;/code&gt;s, which we are defining as jus a tupling of a &lt;code&gt;String&lt;/code&gt; description and a &lt;code&gt;Bool&lt;/code&gt; completed/uncompleted status.&lt;/p&gt;
-&lt;h2 id=&quot;the-todo-auto&quot;&gt;The Todo Auto&lt;/h2&gt;
-&lt;p&gt;Time to go over the logic portion! The part that &lt;em&gt;auto&lt;/em&gt; is meant for! We’re going to structure the logic of our app (also known as the “model”) by using principles of local statefulness to avoid ever working with a “global state”, and working in a declarative, high-level manner.&lt;/p&gt;
-&lt;h3 id=&quot;tasks&quot;&gt;Tasks&lt;/h3&gt;
-&lt;p&gt;It’s clear that the core of our entire thing is going to be the “task list” construct itself…something that can dynamically add or remove tasks.&lt;/p&gt;
-&lt;p&gt;In &lt;em&gt;auto&lt;/em&gt;, there is a construct created just for this kind of situation: dynamic collections indexed by a key (a “task id”), where you can add or subtract &lt;code&gt;Auto&lt;/code&gt;s from dynamically — they are &lt;code&gt;dynMap&lt;/code&gt; and &lt;code&gt;dynMapF&lt;/code&gt; from &lt;em&gt;&lt;a href=&quot;http://hackage.haskell.org/package/auto/docs/Control-Auto-Collection.html&quot;&gt;Control.Auto.Collection&lt;/a&gt;&lt;/em&gt;. We’ll be using &lt;code&gt;dynMapF&lt;/code&gt; because it’s serializable, and we don’t need the extra power that &lt;code&gt;dynMap&lt;/code&gt; offers.&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;ot&quot;&gt;dynMapF ::&lt;/span&gt; (k &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Interval&lt;/span&gt; m a b)    &lt;span class=&quot;co&quot;&gt;-- ^ function to initialize new `Auto`s&lt;/span&gt;
-        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; a                        &lt;span class=&quot;co&quot;&gt;-- ^ default inputs&lt;/span&gt;
-        &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Auto&lt;/span&gt; m ( &lt;span class=&quot;dt&quot;&gt;IntMap&lt;/span&gt; a        &lt;span class=&quot;co&quot;&gt;-- ^ input for each internal `Auto`, indexed by key&lt;/span&gt;
-                  , &lt;span class=&quot;dt&quot;&gt;Blip&lt;/span&gt; [k]        &lt;span class=&quot;co&quot;&gt;-- ^ blip stream to initialize new `Auto`s&lt;/span&gt;
-                  )
-                  (&lt;span class=&quot;dt&quot;&gt;IntMap&lt;/span&gt; b)        &lt;span class=&quot;co&quot;&gt;-- ^ `Auto` outputs, by key&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;&lt;code&gt;dynMapF&lt;/code&gt; keeps a “dynamic collection” of &lt;code&gt;Interval m a b&lt;/code&gt;s, indexed by an &lt;code&gt;Int&lt;/code&gt; key, or an “ID”. It takes as input a stream of &lt;code&gt;IntMap a&lt;/code&gt;…basically a bunch of &lt;code&gt;(Int, a)&lt;/code&gt; pairs. &lt;code&gt;dynMapF&lt;/code&gt; routes each input to the &lt;code&gt;Interval&lt;/code&gt; at that ID/address (with a suitable “default” &lt;code&gt;a&lt;/code&gt; if none was sent in), and then outputs all of the results as an &lt;code&gt;IntMap b&lt;/code&gt; — a bunch of &lt;code&gt;(Int, b)&lt;/code&gt; pairs, each output with the address of the &lt;code&gt;Auto&lt;/code&gt; that made it.&lt;/p&gt;
-&lt;p&gt;For example, &lt;code&gt;IM.singleton 5 True&lt;/code&gt; would send &lt;code&gt;True&lt;/code&gt; to the &lt;code&gt;Auto&lt;/code&gt; stored at &lt;code&gt;5&lt;/code&gt;. It’ll then output something that includes &lt;code&gt;(5, &amp;quot;received True!&amp;quot;)&lt;/code&gt; — the output of the &lt;code&gt;Auto&lt;/code&gt; at slot 5.&lt;/p&gt;
-&lt;p&gt;Whenever an &lt;code&gt;Interval&lt;/code&gt; turns “off” (is &lt;code&gt;Nothing&lt;/code&gt;), it is removed from the collection. In this way we can have &lt;code&gt;Auto&lt;/code&gt;s “remove themselves”.&lt;/p&gt;
-&lt;p&gt;It also takes as input a blip stream of &lt;code&gt;[k]&lt;/code&gt;s. We use each emitted &lt;code&gt;k&lt;/code&gt; to “initialize a new &lt;code&gt;Interval&lt;/code&gt;” and throw it into the collection, creating a new unique key for it. Every time a new &lt;code&gt;Auto&lt;/code&gt; is initialized, &lt;code&gt;dynMapF&lt;/code&gt; creates a new key for it.&lt;/p&gt;
-&lt;p&gt;Read over the &lt;a href=&quot;https://github.com/mstksg/auto/blob/master/tutorial/tutorial.md#semantic-tools&quot;&gt;tutorial section on blip streams and &lt;code&gt;Interval&lt;/code&gt;s&lt;/a&gt; if you are still unfamiliar with them.&lt;/p&gt;
-&lt;p&gt;This pretty much fits exactly what we want for our task collection. If we imagined that we had our &lt;code&gt;Task&lt;/code&gt; as an &lt;code&gt;Auto&lt;/code&gt;:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;ot&quot;&gt;initTask ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Monad&lt;/span&gt; m &lt;span class=&quot;ot&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;String&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Interval&lt;/span&gt; m &lt;span class=&quot;dt&quot;&gt;TaskCmd&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Task&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;&lt;code&gt;initTask&lt;/code&gt; takes a string (a starting description) and initializes an &lt;code&gt;Interval&lt;/code&gt; that takes in a stream of task commands, and has a stream of new, updated &lt;code&gt;Task&lt;/code&gt;s as its output stream. At every step, it processes the command and outputs the new appropriate &lt;code&gt;Task&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;We can then use this as our “initializer” for &lt;code&gt;dynMapF&lt;/code&gt;…and now we have a dynamic collection of tasks!&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;co&quot;&gt;-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L48-50&lt;/span&gt;
-&lt;span class=&quot;ot&quot;&gt;taskCollection ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Monad&lt;/span&gt; m
-               &lt;span class=&quot;ot&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Auto&lt;/span&gt; m (&lt;span class=&quot;dt&quot;&gt;IntMap&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TaskCmd&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;Blip&lt;/span&gt; [&lt;span class=&quot;dt&quot;&gt;String&lt;/span&gt;]) (&lt;span class=&quot;dt&quot;&gt;IntMap&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Task&lt;/span&gt;)
-taskCollection &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; dynMapF initTask &lt;span class=&quot;dt&quot;&gt;CNop&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;If we wanted to send in the command &lt;code&gt;CModify &amp;quot;hey!&amp;quot;&lt;/code&gt; to the task whose id/key/address is &lt;code&gt;12&lt;/code&gt;, I’d feed in &lt;code&gt;IM.singleton 12 (CModify &amp;quot;hey!&amp;quot;)&lt;/code&gt;. The output would then contain the output of feeding that &lt;code&gt;CModify&lt;/code&gt; to the &lt;code&gt;Auto&lt;/code&gt; at that slot 12, associated with slot 12 on the output &lt;code&gt;IntMap&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;Writing &lt;code&gt;initTask&lt;/code&gt; and the task &lt;code&gt;Auto&lt;/code&gt; is straightforward with &lt;code&gt;accum&lt;/code&gt;, which is basically like &lt;code&gt;foldl&lt;/code&gt; on the inputs and a “current state”. (The current state is of course the &lt;code&gt;Task&lt;/code&gt;).&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;co&quot;&gt;-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L52-62&lt;/span&gt;
-&lt;span class=&quot;ot&quot;&gt;initTask ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Monad&lt;/span&gt; m &lt;span class=&quot;ot&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;String&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Interval&lt;/span&gt; m &lt;span class=&quot;dt&quot;&gt;TaskCmd&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Task&lt;/span&gt;
-initTask descr &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; accum f (&lt;span class=&quot;dt&quot;&gt;Just&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Task&lt;/span&gt; descr &lt;span class=&quot;dt&quot;&gt;False&lt;/span&gt;))
-  &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
-    f (&lt;span class=&quot;dt&quot;&gt;Just&lt;/span&gt; t) tc &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;case&lt;/span&gt; tc &lt;span class=&quot;kw&quot;&gt;of&lt;/span&gt;
-                      &lt;span class=&quot;dt&quot;&gt;CDelete&lt;/span&gt;                  &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nothing&lt;/span&gt;
-                      &lt;span class=&quot;dt&quot;&gt;CPrune&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt; taskCompleted t &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nothing&lt;/span&gt;
-                             &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt; otherwise       &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Just&lt;/span&gt; t
-                      &lt;span class=&quot;dt&quot;&gt;CComplete&lt;/span&gt; s              &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Just&lt;/span&gt; t { taskCompleted &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; s }
-                      &lt;span class=&quot;dt&quot;&gt;CModify&lt;/span&gt; descr            &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Just&lt;/span&gt; t { taskDescr &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; descr }
-                      &lt;span class=&quot;dt&quot;&gt;CNop&lt;/span&gt;                     &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Just&lt;/span&gt; t
-    f &lt;span class=&quot;dt&quot;&gt;Nothing&lt;/span&gt; _   &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nothing&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;See that our &lt;code&gt;Auto&lt;/code&gt; “turns off” by outputting &lt;code&gt;Nothing&lt;/code&gt;. That’s interval semantics, and it’s what &lt;code&gt;dynMapF&lt;/code&gt; relies on for its internal &lt;code&gt;Auto&lt;/code&gt;s!&lt;/p&gt;
-&lt;h3 id=&quot;routing-the-inputs&quot;&gt;Routing the inputs&lt;/h3&gt;
-&lt;p&gt;The only thing left, then, is just to route our input stream to send everything to the correct &lt;code&gt;Auto&lt;/code&gt; in &lt;code&gt;taskCollection&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;Our input stream is going to be a stream of &lt;code&gt;TodoInp&lt;/code&gt;, which can be “add”, “send command to a single task”, or “send command to all tasks”. Really, though, you can think of it three separate streams all “jammed” into one stream.&lt;/p&gt;
-&lt;p&gt;This is a common pattern that we can use &lt;em&gt;blip streams&lt;/em&gt; for. Instead of working with one big fatty stream, we can work with several blip streams that only emit when the input that we care about comes in.&lt;/p&gt;
-&lt;p&gt;Typically, we’d do this with &lt;code&gt;emitJusts&lt;/code&gt;:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;ot&quot;&gt;emitJusts ::&lt;/span&gt; (a &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Maybe&lt;/span&gt; b) &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Auto&lt;/span&gt; m a (&lt;span class=&quot;dt&quot;&gt;Blip&lt;/span&gt; b)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;You can imagine &lt;code&gt;emitJusts&lt;/code&gt; is a “siphon” off of the input stream of &lt;code&gt;a&lt;/code&gt;s…and pulling out only the values that we care about, as a blip stream of &lt;code&gt;b&lt;/code&gt;’s.&lt;/p&gt;
-&lt;p&gt;We can build our “siphoners”:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;co&quot;&gt;-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L95-105&lt;/span&gt;
-&lt;span class=&quot;ot&quot;&gt;getAddEvts ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TodoInp&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Maybe&lt;/span&gt; [&lt;span class=&quot;dt&quot;&gt;String&lt;/span&gt;]
-getAddEvts (&lt;span class=&quot;dt&quot;&gt;IAdd&lt;/span&gt; descr) &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Just&lt;/span&gt; [descr]
-getAddEvts _            &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nothing&lt;/span&gt;
-
-&lt;span class=&quot;ot&quot;&gt;getModEvts ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TodoInp&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Maybe&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;IntMap&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TaskCmd&lt;/span&gt;)
-getModEvts (&lt;span class=&quot;dt&quot;&gt;ITask&lt;/span&gt; n te) &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Just&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; IM.singleton n te
-getModEvts _            &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nothing&lt;/span&gt;
-
-&lt;span class=&quot;ot&quot;&gt;getMassEvts ::&lt;/span&gt; ([&lt;span class=&quot;dt&quot;&gt;TaskID&lt;/span&gt;], &lt;span class=&quot;dt&quot;&gt;TodoInp&lt;/span&gt;) &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Maybe&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;IntMap&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TaskCmd&lt;/span&gt;)
-getMassEvts (allIds, &lt;span class=&quot;dt&quot;&gt;IAll&lt;/span&gt; te) &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Just&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; IM.fromList (map (,te) allIds)
-getMassEvts _                 &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nothing&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;&lt;code&gt;getAddEvts&lt;/code&gt;, when used with &lt;code&gt;emitJusts&lt;/code&gt;, will siphon off all &lt;code&gt;IAdd&lt;/code&gt; commands as a blip stream of &lt;code&gt;[String]&lt;/code&gt;s, emitting descriptions of new tasks to add.&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;getModEvts&lt;/code&gt;, when used with &lt;code&gt;emitJusts&lt;/code&gt;, will siphon off all &lt;code&gt;ITask&lt;/code&gt; commands as a blip stream of &lt;code&gt;IntMap TaskCmd&lt;/code&gt;, which will be fed into &lt;code&gt;taskCollection&lt;/code&gt; and &lt;code&gt;dynMapF&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;getMassEvts&lt;/code&gt; is pretty much the same thing…siphoning off all &lt;code&gt;IAll&lt;/code&gt; commands as a blip stream of &lt;code&gt;IntMap TaskCmd&lt;/code&gt;. It needs a list of all &lt;code&gt;TaskID&lt;/code&gt;s though, to do its job…because it needs to make an &lt;code&gt;IntMap&lt;/code&gt; targeting all of the current tasks.&lt;/p&gt;
-&lt;p&gt;Remember, we interace with tasks through an &lt;code&gt;IntMap TaskCmd&lt;/code&gt;…which is a map of task id-task command pairs. The &lt;code&gt;TaskCmd&lt;/code&gt; stored at key &lt;code&gt;1&lt;/code&gt; will be the command we want to send to task id 1.&lt;/p&gt;
-&lt;p&gt;Let’s see it all work together!&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;co&quot;&gt;-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L64-93&lt;/span&gt;
-&lt;span class=&quot;ot&quot;&gt;todoApp ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;MonadFix&lt;/span&gt; m &lt;span class=&quot;ot&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Auto&lt;/span&gt; m &lt;span class=&quot;dt&quot;&gt;TodoInp&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;IntMap&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Task&lt;/span&gt;)
-todoApp &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; proc inpEvt &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
-
-    rec &lt;span class=&quot;co&quot;&gt;-- all id&amp;#39;s currently alive&lt;/span&gt;
-        allIds &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; arrD IM.keys [] &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; taskMap
-
-        &lt;span class=&quot;co&quot;&gt;-- &amp;quot;forking&amp;quot; `inpEvt` into three blip streams:&lt;/span&gt;
-        &lt;span class=&quot;co&quot;&gt;-- newTaskB :: Blip [String]&lt;/span&gt;
-        newTaskB  &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; emitJusts getAddEvts  &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; inpEvt
-        &lt;span class=&quot;co&quot;&gt;-- modTaskB :: Blip (IntMap TaskCmd)&lt;/span&gt;
-        modTaskB  &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; emitJusts getModEvts  &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; inpEvt
-        &lt;span class=&quot;co&quot;&gt;-- massTaskB :: Blip (IntMap TaskCmd)&lt;/span&gt;
-        massTaskB &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; emitJusts getMassEvts &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; (allIds, inpEvt)
-
-        &lt;span class=&quot;co&quot;&gt;-- merge the two streams together to get &amp;quot;all&amp;quot; inputs, single and&lt;/span&gt;
-        &lt;span class=&quot;co&quot;&gt;-- mass.&lt;/span&gt;
-        &lt;span class=&quot;kw&quot;&gt;let&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt; allInpB ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Blip&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;IntMap&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TaskCmd&lt;/span&gt;)
-            allInpB &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; modTaskB &lt;span class=&quot;fu&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; massTaskB
-
-        &lt;span class=&quot;co&quot;&gt;-- from a blip stream to an `IntMap` stream that is empty when the&lt;/span&gt;
-        &lt;span class=&quot;co&quot;&gt;-- stream doesn&amp;#39;t emit&lt;/span&gt;
-        &lt;span class=&quot;co&quot;&gt;-- taskCommands :: IntMap TaskCmd&lt;/span&gt;
-        taskCommands &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; fromBlips IM.empty &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; allInpB
-
-        &lt;span class=&quot;co&quot;&gt;-- feed the commands and the new tasks to `taskMap`...the result is&lt;/span&gt;
-        &lt;span class=&quot;co&quot;&gt;-- the `IntMap` of tasks.&lt;/span&gt;
-        &lt;span class=&quot;co&quot;&gt;-- taskMap :: IntMap Task&lt;/span&gt;
-        taskMap &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; taskCollection &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; (taskCommands, newTaskB)
-
-    id &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; taskMap&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;To read the proc block, it does help to sort of see all of the lines as english statements of what things “are”.&lt;/p&gt;
-&lt;ol type=&quot;1&quot;&gt;
-&lt;li&gt;&lt;p&gt;&lt;code&gt;allIds&lt;/code&gt; is a list of keys (id’s) currently in the task map &lt;code&gt;taskMap&lt;/code&gt;. All of the id’s of the tasks currently alive.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Now, we fork into blip streams:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;newTaskB&lt;/code&gt; is a blip stream that emits with task descriptions whenever &lt;code&gt;inpEvt&lt;/code&gt; calls for one.&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;modTaskB&lt;/code&gt; is a blip stream that emits with a command to a specific task whenever &lt;code&gt;inpEvt&lt;/code&gt; calls for one.&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;massTaskB&lt;/code&gt; is a blip stream that emits commands to every single task in &lt;code&gt;allIds&lt;/code&gt; whenever &lt;code&gt;inpEvt&lt;/code&gt; calls for it.&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;allInpB&lt;/code&gt; is a blip stream with addressed commands whenever either &lt;code&gt;modTaskB&lt;/code&gt; or &lt;code&gt;massTaskB&lt;/code&gt; emits.&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;&lt;code&gt;taskCommands&lt;/code&gt; is a map of addressed commands for each task. It’s whatever &lt;code&gt;allInpB&lt;/code&gt; emits, when it does emit…or just &lt;code&gt;IM.empty&lt;/code&gt; (an empty map) when it doesn’t.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;&lt;code&gt;taskMap&lt;/code&gt; is the map of tasks that we get from our &lt;code&gt;taskCollection&lt;/code&gt; updater, which manages a collection of tasks. &lt;code&gt;taskCollection&lt;/code&gt; needs the commands for each task and the new tasks we want to do its job.&lt;/p&gt;&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;We state things as an interplay of streams. And in the end, the result is what we want — an indexed list of tasks.&lt;/p&gt;
-&lt;p&gt;Note that we needed the &lt;code&gt;rec&lt;/code&gt; block because we referred to &lt;code&gt;taskMap&lt;/code&gt; at the beginning (to get &lt;code&gt;allIds&lt;/code&gt;), but we don’t define &lt;code&gt;taskMap&lt;/code&gt; until the end.&lt;/p&gt;
-&lt;p&gt;Note that we use &lt;code&gt;arrD&lt;/code&gt; for &lt;code&gt;allIds&lt;/code&gt;. What we really “meant” was something like:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;allIds &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; arr IM.keys &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; taskMap&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;But…this doesn’t really work out, because when the whole thing “starts”, we don’t know what &lt;code&gt;taskMap&lt;/code&gt; is. We need to know &lt;code&gt;massTaskB&lt;/code&gt; to know &lt;code&gt;taskMap&lt;/code&gt;, and we need to know &lt;code&gt;allIds&lt;/code&gt; to know &lt;code&gt;massTaskB&lt;/code&gt;, and…recursive dependency!&lt;/p&gt;
-&lt;p&gt;We can use &lt;code&gt;arrD&lt;/code&gt; to specify an “initial output” to “close the loop” (in technical terms). We want &lt;code&gt;allIds&lt;/code&gt; to initially be &lt;code&gt;[]&lt;/code&gt; (we can assume we start with no task id’s), so instead of&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;allIds &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; arr IM.keys &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; taskMap&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;we have&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;allIds &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; arrD IM.keys [] &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; taskMap&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;Where &lt;code&gt;[]&lt;/code&gt; is the “initial output”, so when we first try to do anything, we don’t need &lt;code&gt;taskMap&lt;/code&gt; — we just pop out &lt;code&gt;[]&lt;/code&gt;!&lt;/p&gt;
-&lt;p&gt;This is just a small thing to worry about whenever you have recursive bindings. There is a small cognitive price to pay, but in return, you have something that really just looks like laying out relationships between different quantities :)&lt;/p&gt;
-&lt;h2 id=&quot;interfacing-with-the-world&quot;&gt;Interfacing with the world&lt;/h2&gt;
-&lt;p&gt;Our application logic is done; let’s explore ways to interface with it!&lt;/p&gt;
-&lt;h3 id=&quot;testingcommand-line&quot;&gt;Testing/command line&lt;/h3&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;co&quot;&gt;-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/todo-cmd.hs#L25-62&lt;/span&gt;
-&lt;span class=&quot;ot&quot;&gt;parseInp ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;String&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Maybe&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TodoInp&lt;/span&gt;
-parseInp &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; p &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; words
-  &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
-    p (&lt;span class=&quot;st&quot;&gt;&amp;quot;A&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;xs)   &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Just&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;IAdd&lt;/span&gt; (unwords xs))
-    p (&lt;span class=&quot;st&quot;&gt;&amp;quot;D&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;n&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;_)  &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; onId n &lt;span class=&quot;dt&quot;&gt;CDelete&lt;/span&gt;
-    p (&lt;span class=&quot;st&quot;&gt;&amp;quot;C&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;n&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;_)  &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; onId n (&lt;span class=&quot;dt&quot;&gt;CComplete&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;True&lt;/span&gt;)
-    p (&lt;span class=&quot;st&quot;&gt;&amp;quot;U&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;n&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;_)  &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; onId n (&lt;span class=&quot;dt&quot;&gt;CComplete&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;False&lt;/span&gt;)
-    p (&lt;span class=&quot;st&quot;&gt;&amp;quot;P&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;n&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;_)  &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; onId n &lt;span class=&quot;dt&quot;&gt;CPrune&lt;/span&gt;
-    p (&lt;span class=&quot;st&quot;&gt;&amp;quot;M&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;n&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;xs) &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; onId n (&lt;span class=&quot;dt&quot;&gt;CModify&lt;/span&gt; (unwords xs))
-    p _          &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nothing&lt;/span&gt;
-
-&lt;span class=&quot;ot&quot;&gt;    onId ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;String&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TaskCmd&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Maybe&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TodoInp&lt;/span&gt;
-    onId &lt;span class=&quot;st&quot;&gt;&amp;quot;*&amp;quot;&lt;/span&gt; te &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Just&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;IAll&lt;/span&gt; te)
-    onId n   te &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; (&lt;span class=&quot;ot&quot;&gt;`ITask`&lt;/span&gt; te) &lt;span class=&quot;fu&quot;&gt;&amp;lt;$&amp;gt;&lt;/span&gt; readMaybe n
-
-&lt;span class=&quot;ot&quot;&gt;formatTodo ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;IntMap&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Task&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;String&lt;/span&gt;
-formatTodo &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; unlines &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; map format &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; IM.toList
-  &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
-    format (n, &lt;span class=&quot;dt&quot;&gt;Task&lt;/span&gt; desc compl) &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; concat [ show n
-                                         , &lt;span class=&quot;st&quot;&gt;&amp;quot;. [&amp;quot;&lt;/span&gt;
-                                         , &lt;span class=&quot;kw&quot;&gt;if&lt;/span&gt; compl &lt;span class=&quot;kw&quot;&gt;then&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;X&amp;quot;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot; &amp;quot;&lt;/span&gt;
-                                         , &lt;span class=&quot;st&quot;&gt;&amp;quot;] &amp;quot;&lt;/span&gt;
-                                         , desc
-                                         ]
-
-&lt;span class=&quot;ot&quot;&gt;main ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;IO&lt;/span&gt; ()
-main &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
-    putStrLn &lt;span class=&quot;st&quot;&gt;&amp;quot;Enter command! &amp;#39;A descr&amp;#39; or &amp;#39;[D/C/U/P/M] [id/*]&amp;#39;&amp;quot;&lt;/span&gt;
-    void &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; interactAuto &lt;span class=&quot;fu&quot;&gt;$&lt;/span&gt; &lt;span class=&quot;co&quot;&gt;-- interactAuto takes an Interval; `toOn` gives&lt;/span&gt;
-                          &lt;span class=&quot;co&quot;&gt;--   one that runs forever&lt;/span&gt;
-                          toOn
-                          &lt;span class=&quot;co&quot;&gt;-- default output value on bad command&lt;/span&gt;
-                        &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; fromBlips &lt;span class=&quot;st&quot;&gt;&amp;quot;Bad command!&amp;quot;&lt;/span&gt;
-                          &lt;span class=&quot;co&quot;&gt;-- run `formatTodo &amp;lt;$&amp;gt; todoApp` on emitted commands&lt;/span&gt;
-                        &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; perBlip (formatTodo &lt;span class=&quot;fu&quot;&gt;&amp;lt;$&amp;gt;&lt;/span&gt; todoApp)
-                          &lt;span class=&quot;co&quot;&gt;-- emit when input is parseable&lt;/span&gt;
-                        &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; emitJusts parseInp&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;&lt;code&gt;interactAuto&lt;/code&gt; runs an &lt;code&gt;Interval&lt;/code&gt; by feeding it in strings from stdin printing the output to stdout, until the output is “off”/&lt;code&gt;Nothing&lt;/code&gt; — then stops. Here we use &lt;code&gt;parseInp&lt;/code&gt; to emit input events whenever there is a parse, run &lt;code&gt;todoApp&lt;/code&gt; (formatted) on the emitted events, and then condense it all with &lt;code&gt;fromBlips&lt;/code&gt; and wrap it in an “always on” &lt;code&gt;toOn&lt;/code&gt;.&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ cabal sandbox init
-$ cabal install auto
-$ cabal exec runghc todo-cmd.hs
-Enter command! &amp;#39;A descr&amp;#39; or &amp;#39;[D/C/U/P/M] [id/*]&amp;#39;
-&amp;gt; A take out the trash
-0. [ ] take out the trash
-
-&amp;gt; A do the dishes
-0. [ ] take out the trash
-1. [ ] do the dishes
-
-&amp;gt; C 1
-0. [ ] take out the trash
-1. [X] do the dishes
-
-&amp;gt; U 1
-0. [ ] take out the trash
-1. [ ] do the dishes
-
-&amp;gt; C 0
-0. [X] take out the trash
-1. [ ] do the dishes
-
-&amp;gt; P *
-1. [ ] do the dishes&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;You can &lt;a href=&quot;https://github.com/mstksg/inCode/tree/master/code-samples/auto/todo-cmd.hs&quot;&gt;download and run this yourself&lt;/a&gt;!&lt;/p&gt;
-&lt;p&gt;Looks like the logic works! Time to take it to GUI!&lt;/p&gt;
-&lt;h3 id=&quot;as-a-gui&quot;&gt;As a GUI&lt;/h3&gt;
-&lt;p&gt;To build a GUI, we must build an &lt;code&gt;Auto&lt;/code&gt; that takes in inputs from events and output everything the front-end renderer needs to render the interface.&lt;/p&gt;
-&lt;p&gt;For a typical todomvc gui, we need to be able to filter and select things. So that means we need to be extend our input type with filtering and selecting events. And our output has to also indicate the current filter selected, and the current task selected, as well.&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;kw&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GUIOpts&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GUI&lt;/span&gt; {&lt;span class=&quot;ot&quot;&gt; _currFilter   ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Filter&lt;/span&gt;        &lt;span class=&quot;co&quot;&gt;-- currently applied filter&lt;/span&gt;
-                   ,&lt;span class=&quot;ot&quot;&gt; _currSelected ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Maybe&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TaskID&lt;/span&gt;  &lt;span class=&quot;co&quot;&gt;-- currently selected task&lt;/span&gt;
-                   }
-
-&lt;span class=&quot;kw&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GUIInp&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GIFilter&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Filter&lt;/span&gt;
-            &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GISelect&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Maybe&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TaskID&lt;/span&gt;)
-
-&lt;span class=&quot;kw&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Filter&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;All&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Active&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Completed&lt;/span&gt;
-            &lt;span class=&quot;kw&quot;&gt;deriving&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Show&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;Generic&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;Enum&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;Eq&lt;/span&gt;)
-
-&lt;span class=&quot;kw&quot;&gt;instance&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Serialize&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Filter&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;Instead of defining a new input mega-type with all input events and the todo map with the options, we can use good ol’ fashioned &lt;code&gt;Either&lt;/code&gt; and &lt;code&gt;(,)&lt;/code&gt;. So now, instead of:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;ot&quot;&gt;todoApp ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Auto&lt;/span&gt; m &lt;span class=&quot;dt&quot;&gt;TodoInp&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;IntMap&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Task&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;We have:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;ot&quot;&gt;todoAppGUI ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Auto&lt;/span&gt; m (&lt;span class=&quot;dt&quot;&gt;Either&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TodoInp&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GUIInp&lt;/span&gt;) (&lt;span class=&quot;dt&quot;&gt;IntMap&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Task&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;GUIOpts&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;Now we take &lt;em&gt;either&lt;/em&gt; &lt;code&gt;TodoInp&lt;/code&gt; or &lt;code&gt;GUIInp&lt;/code&gt; and then return &lt;em&gt;both&lt;/em&gt; &lt;code&gt;IntMap Task&lt;/code&gt; &lt;em&gt;and&lt;/em&gt; &lt;code&gt;GUIOpts&lt;/code&gt;.&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;ot&quot;&gt;todoAppGUI ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Auto&amp;#39;&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Either&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TodoInp&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GUIInp&lt;/span&gt;) (&lt;span class=&quot;dt&quot;&gt;IntMap&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Task&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;GUIOpts&lt;/span&gt;)
-todoAppGUI &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; proc inp &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
-    filt  &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; holdWith &lt;span class=&quot;dt&quot;&gt;All&lt;/span&gt;                      &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; emitJusts filtInps &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; inp
-    selc  &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; holdWith &lt;span class=&quot;dt&quot;&gt;Nothing&lt;/span&gt;                  &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; emitJusts selcInps &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; inp
-    tasks &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; holdWith mempty &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; perBlip todoApp &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; emitJusts todoInps &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; inp
-
-    id &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; (tasks, &lt;span class=&quot;dt&quot;&gt;GUI&lt;/span&gt; filt selc)
-  &lt;span class=&quot;kw&quot;&gt;where&lt;/span&gt;
-&lt;span class=&quot;ot&quot;&gt;    todoInps ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Either&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TodoInp&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GUIInp&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Maybe&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TodoInp&lt;/span&gt;
-    todoInps (&lt;span class=&quot;dt&quot;&gt;Left&lt;/span&gt; ti) &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Just&lt;/span&gt; ti
-    todoInps _         &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nothing&lt;/span&gt;
-&lt;span class=&quot;ot&quot;&gt;    filtInps ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Either&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TodoInp&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GUIInp&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Maybe&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Filter&lt;/span&gt;
-    filtInps (&lt;span class=&quot;dt&quot;&gt;Right&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;GIFilter&lt;/span&gt; filt)) &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Just&lt;/span&gt; filt
-    filtInps _                       &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nothing&lt;/span&gt;
-&lt;span class=&quot;ot&quot;&gt;    selcInps ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Either&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TodoInp&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GUIInp&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Maybe&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Maybe&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TaskID&lt;/span&gt;)
-    selcInps (&lt;span class=&quot;dt&quot;&gt;Right&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;GISelect&lt;/span&gt; sec))  &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Just&lt;/span&gt; selc
-    selcInps _                       &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Nothing&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;Here we have the same idea as before. One input stream of &lt;code&gt;Either TodoInp GUIInp&lt;/code&gt; comes through, and we fork it into three blip streams that each do what we want. &lt;code&gt;holdWith x :: Auto m (Blip b) b&lt;/code&gt; is always the value of the last emitted item…but starts off as &lt;code&gt;x&lt;/code&gt; first.&lt;/p&gt;
-&lt;p&gt;By the way, the above code is much more succinct if you are willing to use &lt;em&gt;&lt;a href=&quot;http://lens.github.com&quot;&gt;lens&lt;/a&gt;&lt;/em&gt;…&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;ot&quot;&gt;todoAppGUI ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Auto&amp;#39;&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Either&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TodoInp&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GUIInp&lt;/span&gt;) (&lt;span class=&quot;dt&quot;&gt;IntMap&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Task&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;GUIOpts&lt;/span&gt;)
-todoAppGUI &lt;span class=&quot;fu&quot;&gt;=&lt;/span&gt; proc inp &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;
-    filt  &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; holdWith &lt;span class=&quot;dt&quot;&gt;All&lt;/span&gt;
-           &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; emitJusts (preview (_Right &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; _GIFilter)) &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; inp
-    selc  &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; holdWith &lt;span class=&quot;dt&quot;&gt;Nothing&lt;/span&gt;
-           &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; emitJusts (preview (_Right &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; _GISelect)) &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; inp
-    tasks &lt;span class=&quot;ot&quot;&gt;&amp;lt;-&lt;/span&gt; holdWith mempty &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; perBlip todoApp
-           &lt;span class=&quot;fu&quot;&gt;.&lt;/span&gt; emitJusts (preview _Left)                &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; inp
-
-    id &lt;span class=&quot;fu&quot;&gt;-&amp;lt;&lt;/span&gt; (tasks, &lt;span class=&quot;dt&quot;&gt;GUI&lt;/span&gt; filt selc)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;(assuming we defined the prisms for &lt;code&gt;GUIInp&lt;/code&gt; or used &lt;code&gt;&#39;&#39;mkPrisms&lt;/code&gt;)&lt;/p&gt;
-&lt;p&gt;Neat, right? In a way, you can say that &lt;code&gt;emitJusts&lt;/code&gt; and &lt;code&gt;Prisms&lt;/code&gt;/lens was a match made in heaven :)&lt;/p&gt;
-&lt;h3 id=&quot;giving-it-life&quot;&gt;Giving it life&lt;/h3&gt;
-&lt;p&gt;The last step is to hook everything up together —&lt;/p&gt;
-&lt;ol type=&quot;1&quot;&gt;
-&lt;li&gt;Setting up events in our GUI to feed inputs to a queue&lt;/li&gt;
-&lt;li&gt;Setting up the queue to wait on inputs, and output the task map/gui status on every one using &lt;code&gt;todoAppGUI&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;Rendering the output into the GUI framework of your choice&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;The second step in particular can be handled with good ol’ &lt;code&gt;[runOnChan][]&lt;/code&gt;:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;ot&quot;&gt;runOnChan ::&lt;/span&gt; (b &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;IO&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Bool&lt;/span&gt;) &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Chan&lt;/span&gt; a &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Auto&amp;#39;&lt;/span&gt; a b &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;IO&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Auto&amp;#39;&lt;/span&gt; a b)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;We know and love &lt;code&gt;runOnChan&lt;/code&gt; from when we used it to make our &lt;a href=&quot;http://blog.jle.im/entry/auto-building-a-declarative-chatbot-with-implicit-serialization#irc-backend-the-ugly-part&quot;&gt;chatbot&lt;/a&gt;. It runs an &lt;code&gt;Auto&#39; a b&lt;/code&gt; “on a &lt;code&gt;Chan&lt;/code&gt;” (concurrent queue). The first argument is an “output hander” — it handles the &lt;code&gt;b&lt;/code&gt;s that the &lt;code&gt;Auto&#39;&lt;/code&gt; pops out. It decides whether to stop the whole thing or keep on listening based on the &lt;code&gt;Bool&lt;/code&gt; result of the handler. The second argument is the &lt;code&gt;Chan a&lt;/code&gt; to listen for inputs on. Whenever something is dropped into that &lt;code&gt;Chan&lt;/code&gt;, it runs the &lt;code&gt;Auto&#39;&lt;/code&gt; with the &lt;code&gt;a&lt;/code&gt; and processes the output &lt;code&gt;b&lt;/code&gt; with the handler.&lt;/p&gt;
-&lt;p&gt;Our final runner is then just:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;runOnChan renderGUI inputChan todoAppGUI&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;where&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode haskell&quot;&gt;&lt;code class=&quot;sourceCode haskell&quot;&gt;&lt;span class=&quot;ot&quot;&gt;renderGUI ::&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;IntMap&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Task&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;GUIOpts&lt;/span&gt;) &lt;span class=&quot;ot&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;IO&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Bool&lt;/span&gt;
-&lt;span class=&quot;ot&quot;&gt;inputChan ::&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;Chan&lt;/span&gt; (&lt;span class=&quot;dt&quot;&gt;Either&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;TodoInp&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;GUIInp&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;The rendering is done with &lt;code&gt;renderGUI&lt;/code&gt;…and it really depends on your framework here. That’s #3 from the list above.&lt;/p&gt;
-&lt;p&gt;All you need after that is just to have your GUI hook up event handlers to drop the appropriate &lt;code&gt;Either TodoInp GUIInp&lt;/code&gt; into &lt;code&gt;inputChan&lt;/code&gt;…and you’re golden!&lt;/p&gt;
-&lt;h2 id=&quot;seeing-it-in-action&quot;&gt;Seeing it in action&lt;/h2&gt;
-&lt;p&gt;We’ve reached the end of our tutorial — the parts about &lt;code&gt;auto&lt;/code&gt;. It is my hope that whatever GUI front-end you want to work with, it’ll be simple enough to “plug in” our &lt;code&gt;Auto&lt;/code&gt; logic.&lt;/p&gt;
-&lt;p&gt;A &lt;a href=&quot;https://mstksg.github.com/auto-examples/todo&quot;&gt;live demo&lt;/a&gt; is online too; you can see &lt;a href=&quot;https://github.com/mstksg/auto-examples/blob/master/src/TodoJS.hs&quot;&gt;the source of the front-end bindings&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;This is a bare-bons &lt;em&gt;ghcjs&lt;/em&gt; implementation using &lt;em&gt;ghcjs-dom&lt;/em&gt;, which uses direct dom manipulation.&lt;/p&gt;
-&lt;p&gt;User &lt;a href=&quot;https://github.com/eryx67&quot;&gt;eryx67&lt;/a&gt; has been kind enough to provide &lt;a href=&quot;https://github.com/eryx67/auto-examples/blob/master/src/TodoJS.hs&quot;&gt;an implementation in &lt;em&gt;ghcjs&lt;/em&gt;&lt;/a&gt; with the &lt;em&gt;&lt;a href=&quot;https://github.com/ocharles/virtual-dom&quot;&gt;virtual-dom&lt;/a&gt;&lt;/em&gt; library (&lt;a href=&quot;https://github.com/mstksg/auto-examples/commit/246133a89fbca6a2ec7ea276d8536701f6ab8d2c?diff=split&quot;&gt;side-by-side comparison&lt;/a&gt;), so there is a slightly less uglier implementation with abstraction :)&lt;/p&gt;
-&lt;p&gt;As always, feel free to ask questions in the comments, hop over to &lt;em&gt;#haskell-game&lt;/em&gt; or &lt;em&gt;#haskell-auto&lt;/em&gt; on freenode, or send me a &lt;a href=&quot;https://twitter.com/mstk&quot; title=&quot;Twitter&quot;&gt;tweet&lt;/a&gt;! And look forward to more tutorials as the &lt;a href=&quot;http://blog.jle.im/entries/series/+all-about-auto&quot;&gt;All About Auto&lt;/a&gt; series progresses!&lt;/p&gt;</description><author>Justin Le</author><category>Haskell</category><category>Auto</category><category>Tutorials</category><guid isPermaLink="true">https://blog.jle.im/entry/auto-a-todo-gui-application-with-auto-on.html</guid><pubDate>Thu, 23 Apr 2015 17:04:10 UTC</pubDate><dc:creator>Justin Le</dc:creator><dc:subject>Haskell, Auto, Tutorials</dc:subject><dc:date>2015-04-23</dc:date></item><language>en</language><copyright>Copyright 2016 Justin Le</copyright><managingEditor>justin@jle.im (Justin Le)</managingEditor><webMaster>justin@jle.im (Justin Le)</webMaster><lastBuildDate>Sat,  1 Apr 2017 19:20:00 UTC</lastBuildDate><generator>feed-0.3.11.1 (Sigbjorn Finne)</generator><image><url>https://blog.jle.im/img/site_logo.jpg</url><title>in Code</title><link>https://blog.jle.im/</link></image><dc:creator>Justin Le</dc:creator><dc:language>en</dc:language><dc:rights>Copyright 2016 Justin Le</dc:rights><dc:date>2017-04-01</dc:date><dc:description>Weblog of Justin Le, covering his various adventures in programming and explorations in the vast worlds of computation physics, and knowledge.</dc:description></channel></rss>
+&lt;p&gt;&lt;em&gt;mtl&lt;/em&gt; is not a Monad transformer library. How liberating!&lt;/p&gt;</description><author>Justin Le</author><category>Haskell</category><category>Ramblings</category><guid isPermaLink="true">https://blog.jle.im/entry/mtl-is-not-a-monad-transformer-library.html</guid><pubDate>Mon, 18 May 2015 17:07:36 UTC</pubDate><dc:creator>Justin Le</dc:creator><dc:subject>Haskell, Ramblings</dc:subject><dc:date>2015-05-18</dc:date></item><language>en</language><copyright>Copyright 2016 Justin Le</copyright><managingEditor>justin@jle.im (Justin Le)</managingEditor><webMaster>justin@jle.im (Justin Le)</webMaster><lastBuildDate>Sat,  1 Apr 2017 19:20:17 UTC</lastBuildDate><generator>feed-0.3.11.1 (Sigbjorn Finne)</generator><image><url>https://blog.jle.im/img/site_logo.jpg</url><title>in Code</title><link>https://blog.jle.im/</link></image><dc:creator>Justin Le</dc:creator><dc:language>en</dc:language><dc:rights>Copyright 2016 Justin Le</dc:rights><dc:date>2017-04-01</dc:date><dc:description>Weblog of Justin Le, covering his various adventures in programming and explorations in the vast worlds of computation physics, and knowledge.</dc:description></channel></rss>
