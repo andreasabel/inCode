@@ -73,7 +73,7 @@ x <span class="fu">&lt;&gt;</span> y <span class="fu">=</span> withSomeSing x <s
 <p>Then, we can define the instance, using the traditional <code>(++)</code> appending that lists famously have:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Semigroup</span> (<span class="dt">List</span> a) <span class="kw">where</span>
     <span class="kw">type</span> <span class="dt">Nil</span>       <span class="fu">&lt;&gt;</span> ys <span class="fu">=</span> ys
-    <span class="kw">type</span> <span class="dt">Cons</span> x xs <span class="fu">&lt;&gt;</span> ys <span class="fu">=</span> ys
+    <span class="kw">type</span> <span class="dt">Cons</span> x xs <span class="fu">&lt;&gt;</span> ys <span class="fu">=</span> <span class="dt">Cons</span> x (xs <span class="fu">&lt;&gt;</span> ys)
 
     <span class="dt">SNil</span>       <span class="fu">%&lt;&gt;</span> ys <span class="fu">=</span> ys
     <span class="dt">SCons</span> x xs <span class="fu">%&lt;&gt;</span> ys <span class="fu">=</span> <span class="dt">SCons</span> x (xs <span class="fu">%&lt;&gt;</span> ys)
@@ -256,7 +256,7 @@ empty <span class="fu">=</span> fromSing sEmpty</code></pre></div>
 <p>And, of course, along with <code>sFmap</code> (the singleton mirror of <code>Fmap</code>), we have our laws: <code>fmap id x = x</code>, and <code>fmap g (fmap h) x = fmap (g . h) x</code>.</p>
 <p>But, what are <code>a ~&gt; b</code>, <code>IdSym0</code>, <code>:.$</code>, and <code>@@</code>? They’re a part of the <em>defunctionalization</em> system that the singletons library uses. A <code>g :: a ~&gt; b</code> means that <code>g</code> represents a type-level function taking a type of kind <code>a</code> to a type of kind <code>b</code>, but, importantly, encodes it in a way that makes Haskell happy. This hack is required because you can’t partially apply type families in Haskell. If <code>g</code> was a regular old <code>a -&gt; b</code> type family, you wouldn’t be able to pass just <code>g</code> into <code>Fmap a b g</code> (because it’d be partially applied, and type families always have to appear fully saturated).</p>
 <p>You can convert a <code>g :: a ~&gt; b</code> back into a regular old <code>g :: a -&gt; b</code> using <code>Apply</code>, or its convenient infix synonym <code>@@</code>, like <code>g @@ (x :: a) :: b</code></p>
-<p>The singletons library provides <code>type Family Id a where Id a = a</code>, but we can’t pass in <code>Id</code> directly into <code>Fmap</code>. We have to pass in its “defunctionalized” encoding, <code>IdSym0 :: TyFun a a -&gt; Type</code>.</p>
+<p>The singletons library provides <code>type family Id a where Id a = a</code>, but we can’t pass in <code>Id</code> directly into <code>Fmap</code>. We have to pass in its “defunctionalized” encoding, <code>IdSym0 :: TyFun a a -&gt; Type</code>.</p>
 <p>For the composition law, we use <code>(:.$)</code> (which is a defunctionalized type-level <code>.</code>) and apply it to <code>g</code> and <code>h</code> to get, essentially, <code>g :. h</code>, where <code>:.</code> is type-level function composition.</p>
 <p>Now we Haskell.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$</span>(singletons [d|
