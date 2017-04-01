@@ -50,12 +50,12 @@ ghci<span class="fu">&gt;</span> (<span class="dv">1</span> <span class="ot">`Co
 
     appendAssoc
 <span class="ot">        ::</span> <span class="dt">Sing</span> (<span class="ot">x ::</span> a)
-        <span class="ot">-&gt;</span> <span class="dt">Sing</span> y
-        <span class="ot">-&gt;</span> <span class="dt">Sing</span> z
+        <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ot">y ::</span> a)
+        <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ot">z ::</span> a)
         <span class="ot">-&gt;</span> ((x <span class="fu">&lt;&gt;</span> y) <span class="fu">&lt;&gt;</span> z) <span class="fu">:~:</span> (x <span class="fu">&lt;&gt;</span> (y <span class="fu">&lt;&gt;</span> z))</code></pre></div>
-<p>Now, <code>&lt;&gt;</code> exists not as a function on <em>values</em>, but as a function on <em>types</em>. <code>%&lt;&gt;</code> is a function that lets us manipulate witnesses of those types at runtime and perform the <code>&lt;&gt;</code> at the value level, but written in a way that GHC can verify that the value-level function is identical to the type-level function (it’s 100% boilerplate and should pretty much exactly match the <code>&lt;&gt;</code> type family).<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> And, <code>appendAssoc</code> is a proof that the type family <code>Append</code> is associative, using <code>:~:</code> (type equality witness) from <code>Data.Type.Equality</code>.</p>
+<p>Now, <code>&lt;&gt;</code> exists not as a function on <em>values</em>, but as a function on <em>types</em>. <code>%&lt;&gt;</code> is a function that performs <code>&lt;&gt;</code> at the value level, written to work with singletons representing the input types, so that GHC can verify that it is identical to the type family <code>&lt;&gt;</code>. (it’s 100% boilerplate and should pretty much exactly match the <code>&lt;&gt;</code> type family).<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> Finally, <code>appendAssoc</code> is a proof that the type family <code>&lt;&gt;</code> is associative, using <code>:~:</code> (type equality witness) from <code>Data.Type.Equality</code>.</p>
 <p>This means that, if a type is an instance of <code>Semigroup</code>, it not only has to provide <code>&lt;&gt;</code>/<code>%&lt;&gt;</code>, but also a <em>proof that they are associative</em>. You can’t write the full instance without it!</p>
-<p>Using the <code>SingKind</code> typeclass from singletons, we can move back and forth from <code>Sing x</code> and <code>x</code>, and get our original <code>&lt;&gt;</code> back. Let’s call it <code>append</code>:</p>
+<p>Using the <code>SingKind</code> typeclass from singletons, we can move back and forth from <code>Sing x</code> and <code>x</code>, and get our original (value-level) <code>&lt;&gt;</code> back. Let’s call it <code>append</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">append
 <span class="ot">    ::</span> forall m<span class="fu">.</span> (<span class="dt">SingKind</span> m, <span class="dt">Semigroup</span> m)
     <span class="ot">=&gt;</span> <span class="dt">DemoteRep</span> m
@@ -67,7 +67,7 @@ append x y <span class="fu">=</span> withSomeSing x <span class="fu">$</span> \s
 <p>Now, let’s write the instance for <code>List</code>. First, we need to define the singletons:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="kw">instance</span> <span class="dt">Sing</span> (<span class="ot">xs ::</span> <span class="dt">List</span> a) <span class="kw">where</span>
     <span class="dt">SNil</span><span class="ot">  ::</span> <span class="dt">Sing</span> <span class="dt">Nil</span>
-    <span class="dt">SCons</span><span class="ot"> ::</span> <span class="dt">Sing</span> (<span class="ot">x ::</span> a) <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="dt">Cons</span> x xs)</code></pre></div>
+    <span class="dt">SCons</span><span class="ot"> ::</span> <span class="dt">Sing</span> x <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="dt">Cons</span> x xs)</code></pre></div>
 <p>Then, we can define the instance, using the traditional <code>(++)</code> appending that lists famously have:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Semigroup</span> (<span class="dt">List</span> a) <span class="kw">where</span>
     <span class="kw">type</span> <span class="dt">Nil</span>       <span class="fu">&lt;&gt;</span> ys <span class="fu">=</span> ys
@@ -83,14 +83,14 @@ append x y <span class="fu">=</span> withSomeSing x <span class="fu">$</span> \s
           <span class="dt">Refl</span> <span class="ot">-&gt;</span> <span class="dt">Refl</span></code></pre></div>
 <p>Like I promised, <code>%&lt;&gt;</code> is a boilerplate re-implementation of <code>&lt;&gt;</code>, to manipulate value-level witnesses. <code>appendAssoc</code> is the interesting bit: It’s our proof. It reads like this:</p>
 <ol type="1">
-<li><p>If <code>xs</code> is <code>Nil</code>:</p>
+<li><p>If the first list is <code>Nil</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- left hand side</span>
 (<span class="dt">Nil</span> <span class="fu">&lt;&gt;</span> ys) <span class="fu">&lt;&gt;</span> zs
   <span class="fu">=</span> ys <span class="fu">&lt;&gt;</span> zs        <span class="co">-- definition of `(Nil &lt;&gt;)`</span>
 <span class="co">-- right hand side</span>
 <span class="dt">Nil</span> <span class="fu">&lt;&gt;</span> (ys <span class="fu">&lt;&gt;</span> zs)
   <span class="fu">=</span> ys <span class="fu">&lt;&gt;</span> zs        <span class="co">-- definition of `(Nil &lt;&gt;)`</span></code></pre></div>
-<p>So, QED! (Or, as we say in Haskell, <code>Refl</code>!)</p></li>
+<p>So, no work needed. QED! (Or, as we say in Haskell, <code>Refl</code>!)</p></li>
 <li><p>If the first list is <code>Cons x xs</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- left hand side</span>
 (<span class="dt">Cons</span> x xs <span class="fu">&lt;&gt;</span> ys) <span class="fu">&lt;&gt;</span> zs
@@ -102,8 +102,9 @@ append x y <span class="fu">=</span> withSomeSing x <span class="fu">$</span> \s
 <p>So, the problem reduces to proving that <code>(xs &lt;&gt; ys) &lt;&gt; zs</code> is equal to <code>xs &lt;&gt; (ys &lt;&gt; zs)</code>. If we can do that, then we can prove that the whole things are equal. We generate that proof using <code>appendAssoc xs ys zs</code>, and, wit that proof in scope…QED!</p></li>
 </ol>
 <p>And, we’re done!</p>
+<p>Note that if you had tried any <em>non-associative</em> implementation of <code>&lt;&gt;</code> (and <code>%&lt;&gt;</code>), GHC would reject it because you wouldn’t have been able to write the proof!</p>
 <h4 id="automatic-singletons">Automatic Singletons</h4>
-<p>Deriving <code>Sing</code> and <code>SingKind</code> and both versions of append is kind of tedious, so it’s useful to use template haskell to do it all for us:</p>
+<p>Deriving <code>Sing</code> and <code>SingKind</code> and both versions of <code>&lt;&gt;</code> is kind of tedious, so it’s useful to use template haskell to do it all for us:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$</span>(singletons [d|
   data List a = Nil | Cons a (List a)
       deriving (Show)
@@ -124,7 +125,7 @@ append x y <span class="fu">=</span> withSomeSing x <span class="fu">$</span> \s
       <span class="dt">SCons</span> _ xs <span class="ot">-&gt;</span> \ys zs <span class="ot">-&gt;</span>
         <span class="kw">case</span> appendAssoc xs ys zs <span class="kw">of</span>
           <span class="dt">Refl</span> <span class="ot">-&gt;</span> <span class="dt">Refl</span></code></pre></div>
-<p>The boilerplate of re-defining <code>&lt;&gt;</code> as <code>%&lt;&gt;</code> goes away.</p>
+<p>The boilerplate of re-defining <code>&lt;&gt;</code> as <code>%&lt;&gt;</code> goes away!</p>
 <p>And now, we we can do:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> print <span class="fu">$</span> append <span class="fu">@</span>(<span class="dt">List</span> <span class="dt">Nat</span>) (<span class="dv">1</span> <span class="ot">`Cons`</span> <span class="dv">2</span> <span class="ot">`Cons`</span> <span class="dt">Nil</span>) (<span class="dv">3</span> <span class="ot">`Cons`</span> <span class="dv">4</span> <span class="ot">`Cons`</span> <span class="dt">Nil</span>)
 <span class="dv">1</span> <span class="ot">`Cons`</span> <span class="dv">2</span> <span class="ot">`Cons`</span> <span class="dv">3</span> <span class="ot">`Cons`</span> <span class="dv">4</span> <span class="ot">`Cons`</span> <span class="dt">Nil</span></code></pre></div>
@@ -177,7 +178,9 @@ append x y <span class="fu">=</span> withSomeSing x <span class="fu">$</span> \s
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> print <span class="fu">$</span> append <span class="fu">@</span><span class="dt">N</span> (<span class="dt">S</span> (<span class="dt">S</span> <span class="dt">Z</span>)) (<span class="dt">S</span> <span class="dt">Z</span>)
 <span class="dt">S</span> (<span class="dt">S</span> (<span class="dt">S</span> <span class="dt">Z</span>))
 ghci<span class="fu">&gt;</span> print <span class="fu">$</span> append <span class="fu">@</span>(<span class="dt">Option</span> <span class="dt">N</span>) (<span class="dt">Some</span> (<span class="dt">S</span> <span class="dt">Z</span>)) (<span class="dt">Some</span> (<span class="dt">S</span> (<span class="dt">S</span> (<span class="dt">S</span> <span class="dt">Z</span>))))
-<span class="dt">Some</span> (<span class="dt">S</span> (<span class="dt">S</span> (<span class="dt">S</span> (<span class="dt">S</span> <span class="dt">Z</span>))))</code></pre></div>
+<span class="dt">Some</span> (<span class="dt">S</span> (<span class="dt">S</span> (<span class="dt">S</span> (<span class="dt">S</span> <span class="dt">Z</span>))))
+ghci<span class="fu">&gt;</span> print <span class="fu">$</span> append <span class="fu">@</span>(<span class="dt">Option</span> <span class="dt">N</span>) <span class="dt">None</span>         (<span class="dt">Some</span> (<span class="dt">S</span> (<span class="dt">S</span> (<span class="dt">S</span> <span class="dt">Z</span>))))
+<span class="dt">Some</span> (<span class="dt">S</span> (<span class="dt">S</span> (<span class="dt">S</span> <span class="dt">Z</span>)))</code></pre></div>
 <h2 id="going-monoidal">Going Monoidal</h2>
 <p>Of course, we can now introduce the <code>Monoid</code> typeclass, which introduces a new element <code>empty</code>, along with the laws that appending with empty leaves things unchanged:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Semigroup</span> a <span class="ot">=&gt;</span> <span class="dt">Monoid</span> a <span class="kw">where</span>
@@ -197,7 +200,7 @@ empty
 <span class="ot">    ::</span> forall m<span class="fu">.</span> (<span class="dt">SingKind</span> m, <span class="dt">Monoid</span> m)
     <span class="ot">=&gt;</span> <span class="dt">DemoteRep</span> m
 empty <span class="fu">=</span> fromSing (sEmpty <span class="fu">@</span>m)</code></pre></div>
-<p>Because GHC has some issues with return-type polymorphism at the type level, we have <code>Empty</code> take the <em>kind</em> <code>a</code> as a parameter, instead of having it be inferred through kind inference like we did for <code>&lt;&gt;</code>. That is, <code>Empty (List a)</code> is <code>Empty</code> for the <em>kind</em> <code>List a</code>.</p>
+<p>Because working implicitly return-type polymorphism at the type level can be annoying sometimes, we have <code>Empty</code> take the <em>kind</em> <code>a</code> as a parameter, instead of having it be inferred through kind inference like we did for <code>&lt;&gt;</code>. That is, <code>Empty (List a)</code> is <code>Empty</code> for the <em>kind</em> <code>List a</code>.</p>
 <p>As usual in Haskell, the instances write themselves!</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Monoid</span> (<span class="dt">List</span> a) <span class="kw">where</span>
     <span class="kw">type</span> <span class="dt">Empty</span> (<span class="dt">List</span> a) <span class="fu">=</span> <span class="dt">Nil</span>
@@ -249,9 +252,10 @@ empty <span class="fu">=</span> fromSing (sEmpty <span class="fu">@</span>m)</co
         <span class="ot">-&gt;</span> <span class="dt">Fmap</span> b c g (<span class="dt">Fmap</span> a b h x) <span class="fu">:~:</span> <span class="dt">Fmap</span> a c (((<span class="fu">:.$</span>) <span class="fu">@@</span> g) <span class="fu">@@</span> h) x</code></pre></div>
 <p><code>Fmap a b g x</code> maps the <em>type-level function</em> <code>g :: a ~&gt; b</code> over <code>x :: f a</code>, and returns a type of kind <code>f b</code>. Like with <code>Empty</code>, to help with kind inference, we have <code>Fmap</code> explicitly requre the <em>kinds</em> of the input and results of <code>g</code> (<code>a</code> and <code>b</code>) so GHC doesn’t have to struggle to infer it implicitly.</p>
 <p>And, of course, along with <code>sFmap</code> (the singleton mirror of <code>Fmap</code>), we have our laws: <code>fmap id x = x</code>, and <code>fmap g (fmap h) x = fmap (g . h) x</code>.</p>
-<p>But, what are <code>a ~&gt; b</code>, <code>IdSym0</code>, <code>:.$</code>, and <code>@@</code>? They’re a part of the <strong>defunctionalization</strong> system that the singletons library uses. A <code>g :: a ~&gt; b</code> means that <code>g</code> represents a type-level function taking a type of kind <code>a</code> to a type of kind <code>b</code>, but, importantly, encodes it in a way that makes Haskell happy. This hack is required because you can’t partially apply type families in Haskell. If <code>g</code> was a regular old <code>a -&gt; b</code> type family, you wouldn’t be able to pass just <code>g</code> into <code>Fmap a b g</code> (because it’d be partially applied, and type families always have to appear fully saturated).</p>
+<p>But, what are <code>a ~&gt; b</code>, <code>IdSym0</code>, <code>:.$</code>, and <code>@@</code>? They’re a part of the <em>defunctionalization</em> system that the singletons library uses. A <code>g :: a ~&gt; b</code> means that <code>g</code> represents a type-level function taking a type of kind <code>a</code> to a type of kind <code>b</code>, but, importantly, encodes it in a way that makes Haskell happy. This hack is required because you can’t partially apply type families in Haskell. If <code>g</code> was a regular old <code>a -&gt; b</code> type family, you wouldn’t be able to pass just <code>g</code> into <code>Fmap a b g</code> (because it’d be partially applied, and type families always have to appear fully saturated).</p>
+<p>You can convert a <code>g :: a ~&gt; b</code> back into a regular old <code>g :: a -&gt; b</code> using <code>Apply</code>, or its convenient infix synonym <code>@@</code>, like <code>g @@ (x :: a) :: b</code></p>
 <p>The singletons library provides <code>type Family Id a where Id a = a</code>, but we can’t pass in <code>Id</code> directly into <code>Fmap</code>. We have to pass in its “defunctionalized” encoding, <code>IdSym0 :: TyFun a a -&gt; Type</code>.</p>
-<p><code>@@</code> lets us “apply” the <code>a ~&gt; b</code> on an <code>a</code> and a <code>b</code>. So we use <code>(:.$)</code> (which is a defunctionalized type-level <code>.</code>) and apply it to <code>g</code> and <code>h</code> to get, essentially, <code>g :. h</code>, where <code>:.</code> is type-level function composition.</p>
+<p>For the composition law, we use <code>(:.$)</code> (which is a defunctionalized type-level <code>.</code>) and apply it to <code>g</code> and <code>h</code> to get, essentially, <code>g :. h</code>, where <code>:.</code> is type-level function composition.</p>
 <p>Now we Haskell.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$</span>(singletons [d|
   mapOption :: (a -&gt; b) -&gt; Option a -&gt; Option b
@@ -291,11 +295,12 @@ empty <span class="fu">=</span> fromSing (sEmpty <span class="fu">@</span>m)</co
         <span class="kw">case</span> fmapCompose g h xs <span class="kw">of</span>
           <span class="dt">Refl</span> <span class="ot">-&gt;</span> <span class="dt">Refl</span></code></pre></div>
 <p>And there you have it. A verified <code>Functor</code> typeclass, ensuring that all instances are lawful. Never tell me that Haskell’s type system can’t do anything ever again!</p>
-<p>We’re done here!</p>
+<p>Note that any mistakes in implementation (like, for example, having <code>mapOption _ _ = None</code>) will cause a compile-time error now, because the proofs are impossible to provide.</p>
+<p>What an exciting journey and a wonderful conclusion. I hope you enjoyed this and will begin using this in your normal day-to-day Haskell. Goodbye, until next time!</p>
 <h1 id="not-done-yet">Not Done Yet</h1>
-<p>Hah! Of course we aren’t done. Of course, you could probably have seen that I was doing all of that to build up to the pièces de résistance: the crown jewel of every Haskell article, the Monad.</p>
+<p>Hah! Just kidding. Of course we aren’t done. I wouldn’t let you down like that. I know that you probably saw that I was doing all of that to build up to the pièce de résistance: the crown jewel of every Haskell article, the Monad.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> <span class="dt">Monad</span> f <span class="kw">where</span>
-    <span class="kw">type</span> <span class="dt">Return</span> a (<span class="ot">x ::</span> a)<span class="ot"> ::</span> f a
+    <span class="kw">type</span> <span class="dt">Return</span> a   (<span class="ot">x ::</span> a)<span class="ot"> ::</span> f a
     <span class="kw">type</span> <span class="dt">Bind</span>   a b (<span class="ot">m ::</span> f a) (<span class="ot">g ::</span> a <span class="fu">~&gt;</span> f b)<span class="ot"> ::</span> f b
 
     sReturn
@@ -334,7 +339,7 @@ empty <span class="fu">=</span> fromSing (sEmpty <span class="fu">@</span>m)</co
 <p>To help with kind inference, again, we provide explicit kind arguments for <code>Return</code> (the kind of the thing that is being lifted) and <code>Bind</code> (the original <code>a</code> and the resulting <code>b</code>).</p>
 <p>Some boilerplate exists there at the bottom — it’s the plumbing for the defunctionalization system. <code>returnIdentRight</code> requires a defunctionalized version of <code>Return</code>, so we can provide that by defining <code>ReturnSym0</code>, and writing an <code>Apply</code> instance for it (which “applies” it the parameter <code>x</code>).</p>
 <p>We introduce <code>KComp</code> (kleisli composition) and its defunctionalized version in order to express the third law, because we don’t yet have type-level lambdas in Haskell. The actual function it is expressing is <code>\x -&gt; f x &gt;&gt;= g</code>, and that definition is given on the <code>type KComp a b c ... = Bind ...</code> line. <code>KCompSym2</code> is the defunctioanlized version, which is not a <code>a -&gt; f c</code> but rather an <code>a ~&gt; f c</code>, which allows it to be partially applied. The rest (including the <code>Apply</code>) instance is how you hook it into the defunctionalization process.</p>
-<p>Without further ado, let’s see some sample implementations.</p>
+<p>Let’s see some sample implementations.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$</span>(singletons [d|
   bindOption :: Option a -&gt; (a -&gt; Option b) -&gt; Option b
   bindOption None     _ = None
@@ -392,12 +397,12 @@ empty <span class="fu">=</span> fromSing (sEmpty <span class="fu">@</span>m)</co
                   <span class="dt">Refl</span> <span class="ot">-&gt;</span> <span class="kw">case</span> appendAssoc hy hys hgxs <span class="kw">of</span>
                     <span class="dt">Refl</span> <span class="ot">-&gt;</span> <span class="dt">Refl</span>
 
-<span class="co">-- | Proving that concatMap distributes over Append</span>
+<span class="co">-- | Proving that concatMap distributes over &lt;&gt;</span>
 distribConcatMap
 <span class="ot">    ::</span> <span class="dt">Sing</span> (<span class="ot">g ::</span> a <span class="fu">~&gt;</span> <span class="dt">List</span> b)
     <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ot">xs ::</span> <span class="dt">List</span> a)
     <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ot">ys ::</span> <span class="dt">List</span> a)
-    <span class="ot">-&gt;</span> <span class="dt">ConcatMapList</span> g (<span class="dt">AppendList</span> xs ys) <span class="fu">:~:</span> <span class="dt">AppendList</span> (<span class="dt">ConcatMapList</span> g xs) (<span class="dt">ConcatMapList</span> g ys)
+    <span class="ot">-&gt;</span> <span class="dt">ConcatMapList</span> g (xs <span class="fu">&lt;&gt;</span> ys) <span class="fu">:~:</span> (<span class="dt">ConcatMapList</span> g xs <span class="fu">&lt;&gt;</span> <span class="dt">ConcatMapList</span> g ys)
 distribConcatMap g <span class="fu">=</span> \<span class="kw">case</span>
     <span class="dt">SNil</span> <span class="ot">-&gt;</span> \_ <span class="ot">-&gt;</span> <span class="dt">Refl</span>
     <span class="dt">SCons</span> x xs <span class="ot">-&gt;</span> \ys <span class="ot">-&gt;</span>
@@ -408,10 +413,17 @@ distribConcatMap g <span class="fu">=</span> \<span class="kw">case</span>
               cmgys <span class="fu">=</span> sConcatMapList g ys
           <span class="kw">in</span>  <span class="kw">case</span> appendAssoc gx cmgxs cmgys <span class="kw">of</span>
                 <span class="dt">Refl</span> <span class="ot">-&gt;</span> <span class="dt">Refl</span></code></pre></div>
+<p>Here we use <code>unSingFun1</code>, which converts a singleton of a type-level function into a value level function on singletons:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">unSingFun1
+<span class="ot">    ::</span> <span class="dt">Proxy</span> (<span class="ot">f      ::</span> a <span class="fu">~&gt;</span> b)
+    <span class="ot">-&gt;</span> <span class="dt">Sing</span>  (<span class="ot">f      ::</span> a <span class="fu">~&gt;</span> b)
+    <span class="ot">-&gt;</span> <span class="dt">Sing</span>  (<span class="ot">x      ::</span> a)
+    <span class="ot">-&gt;</span> <span class="dt">Sing</span>  (f <span class="fu">@@</span><span class="ot"> x ::</span> b)</code></pre></div>
+<p>The <code>Proxy</code> argument only exists for historical reasons, I believe. But, the crux is that, given a <code>Sing (f :: a ~&gt; b)</code> and a <code>Sing (x :: a)</code>, we can “apply” them to get <code>Sing (f @@ x :: b)</code></p>
+<p>The proofs for the list instance is admittedly a bit awful, due to the fact that <code>List</code> is a recursive type. But, the proofs for <code>Option</code> are really something, aren’t they? It’s kind of amazing how much GHC can do on its own without requiring any manual proving on the part of the user.</p>
 <h2 id="disclaimer">Disclaimer</h2>
 <p>Don’t do this in actual code please.</p>
-<p>But definitely do it for fun!</p>
-<p>The code in this post is available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/verified-instances/VerifiedInstances.hs">here</a> if you want to play around!</p>
+<p>But definitely do it for fun! The code in this post is available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/verified-instances/VerifiedInstances.hs">here</a> if you want to play around!</p>
 <section class="footnotes">
 <hr />
 <ol>

@@ -182,26 +182,26 @@ We will now define \texttt{Semigroup} on the \emph{kind} \texttt{List}, using
 
     \NormalTok{appendAssoc}
 \OtherTok{        ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{x ::} \NormalTok{a)}
-        \OtherTok{->} \DataTypeTok{Sing} \NormalTok{y}
-        \OtherTok{->} \DataTypeTok{Sing} \NormalTok{z}
+        \OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{y ::} \NormalTok{a)}
+        \OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{z ::} \NormalTok{a)}
         \OtherTok{->} \NormalTok{((x }\FunctionTok{<>} \NormalTok{y) }\FunctionTok{<>} \NormalTok{z) }\FunctionTok{:~:} \NormalTok{(x }\FunctionTok{<>} \NormalTok{(y }\FunctionTok{<>} \NormalTok{z))}
 \end{Highlighting}
 \end{Shaded}
 
 Now, \texttt{\textless{}\textgreater{}} exists not as a function on
 \emph{values}, but as a function on \emph{types}.
-\texttt{\%\textless{}\textgreater{}} is a function that lets us manipulate
-witnesses of those types at runtime and perform the
-\texttt{\textless{}\textgreater{}} at the value level, but written in a way that
-GHC can verify that the value-level function is identical to the type-level
-function (it's 100\% boilerplate and should pretty much exactly match the
+\texttt{\%\textless{}\textgreater{}} is a function that performs
+\texttt{\textless{}\textgreater{}} at the value level, written to work with
+singletons representing the input types, so that GHC can verify that it is
+identical to the type family \texttt{\textless{}\textgreater{}}. (it's 100\%
+boilerplate and should pretty much exactly match the
 \texttt{\textless{}\textgreater{}} type family).\footnote{In full
   \emph{singletons} style, this should actually be expressed in terms of the the
   \emph{partially applied} (defunctionalized)
   \texttt{\textless{}\textgreater{}}. However, I'm giving the
-  non-defunctionalized versions here for clarity.} And, \texttt{appendAssoc} is
-a proof that the type family \texttt{Append} is associative, using
-\texttt{:\textasciitilde{}:} (type equality witness) from
+  non-defunctionalized versions here for clarity.} Finally, \texttt{appendAssoc}
+is a proof that the type family \texttt{\textless{}\textgreater{}} is
+associative, using \texttt{:\textasciitilde{}:} (type equality witness) from
 \texttt{Data.Type.Equality}.
 
 This means that, if a type is an instance of \texttt{Semigroup}, it not only has
@@ -211,7 +211,7 @@ also a \emph{proof that they are associative}. You can't write the full instance
 without it!
 
 Using the \texttt{SingKind} typeclass from singletons, we can move back and
-forth from \texttt{Sing\ x} and \texttt{x}, and get our original
+forth from \texttt{Sing\ x} and \texttt{x}, and get our original (value-level)
 \texttt{\textless{}\textgreater{}} back. Let's call it \texttt{append}:
 
 \begin{Shaded}
@@ -234,7 +234,7 @@ singletons:
 \begin{Highlighting}[]
 \KeywordTok{data} \KeywordTok{instance} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{xs ::} \DataTypeTok{List} \NormalTok{a) }\KeywordTok{where}
     \DataTypeTok{SNil}\OtherTok{  ::} \DataTypeTok{Sing} \DataTypeTok{Nil}
-    \DataTypeTok{SCons}\OtherTok{ ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{x ::} \NormalTok{a) }\OtherTok{->} \DataTypeTok{Sing} \NormalTok{xs }\OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\DataTypeTok{Cons} \NormalTok{x xs)}
+    \DataTypeTok{SCons}\OtherTok{ ::} \DataTypeTok{Sing} \NormalTok{x }\OtherTok{->} \DataTypeTok{Sing} \NormalTok{xs }\OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\DataTypeTok{Cons} \NormalTok{x xs)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -266,7 +266,7 @@ proof. It reads like this:
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
-  If \texttt{xs} is \texttt{Nil}:
+  If the first list is \texttt{Nil}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -279,7 +279,7 @@ proof. It reads like this:
 \end{Highlighting}
 \end{Shaded}
 
-  So, QED! (Or, as we say in Haskell, \texttt{Refl}!)
+  So, no work needed. QED! (Or, as we say in Haskell, \texttt{Refl}!)
 \item
   If the first list is \texttt{Cons\ x\ xs}:
 
@@ -306,10 +306,15 @@ proof. It reads like this:
 
 And, we're done!
 
+Note that if you had tried any \emph{non-associative} implementation of
+\texttt{\textless{}\textgreater{}} (and \texttt{\%\textless{}\textgreater{}}),
+GHC would reject it because you wouldn't have been able to write the proof!
+
 \subsubsection{Automatic Singletons}\label{automatic-singletons}
 
-Deriving \texttt{Sing} and \texttt{SingKind} and both versions of append is kind
-of tedious, so it's useful to use template haskell to do it all for us:
+Deriving \texttt{Sing} and \texttt{SingKind} and both versions of
+\texttt{\textless{}\textgreater{}} is kind of tedious, so it's useful to use
+template haskell to do it all for us:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -337,7 +342,7 @@ of tedious, so it's useful to use template haskell to do it all for us:
 \end{Shaded}
 
 The boilerplate of re-defining \texttt{\textless{}\textgreater{}} as
-\texttt{\%\textless{}\textgreater{}} goes away.
+\texttt{\%\textless{}\textgreater{}} goes away!
 
 And now, we we can do:
 
@@ -416,6 +421,8 @@ semigroup:
 \DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))}
 \NormalTok{ghci}\FunctionTok{>} \NormalTok{print }\FunctionTok{$} \NormalTok{append }\FunctionTok{@}\NormalTok{(}\DataTypeTok{Option} \DataTypeTok{N}\NormalTok{) (}\DataTypeTok{Some} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)) (}\DataTypeTok{Some} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))))}
 \DataTypeTok{Some} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))))}
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{print }\FunctionTok{$} \NormalTok{append }\FunctionTok{@}\NormalTok{(}\DataTypeTok{Option} \DataTypeTok{N}\NormalTok{) }\DataTypeTok{None}         \NormalTok{(}\DataTypeTok{Some} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))))}
+\DataTypeTok{Some} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)))}
 \end{Highlighting}
 \end{Shaded}
 
@@ -447,10 +454,10 @@ leaves things unchanged:
 \end{Highlighting}
 \end{Shaded}
 
-Because GHC has some issues with return-type polymorphism at the type level, we
-have \texttt{Empty} take the \emph{kind} \texttt{a} as a parameter, instead of
-having it be inferred through kind inference like we did for
-\texttt{\textless{}\textgreater{}}. That is, \texttt{Empty\ (List\ a)} is
+Because working implicitly return-type polymorphism at the type level can be
+annoying sometimes, we have \texttt{Empty} take the \emph{kind} \texttt{a} as a
+parameter, instead of having it be inferred through kind inference like we did
+for \texttt{\textless{}\textgreater{}}. That is, \texttt{Empty\ (List\ a)} is
 \texttt{Empty} for the \emph{kind} \texttt{List\ a}.
 
 As usual in Haskell, the instances write themselves!
@@ -528,8 +535,8 @@ And, of course, along with \texttt{sFmap} (the singleton mirror of
 \texttt{fmap\ g\ (fmap\ h)\ x\ =\ fmap\ (g\ .\ h)\ x}.
 
 But, what are \texttt{a\ \textasciitilde{}\textgreater{}\ b}, \texttt{IdSym0},
-\texttt{:.\$}, and \texttt{@@}? They're a part of the
-\textbf{defunctionalization} system that the singletons library uses. A
+\texttt{:.\$}, and \texttt{@@}? They're a part of the \emph{defunctionalization}
+system that the singletons library uses. A
 \texttt{g\ ::\ a\ \textasciitilde{}\textgreater{}\ b} means that \texttt{g}
 represents a type-level function taking a type of kind \texttt{a} to a type of
 kind \texttt{b}, but, importantly, encodes it in a way that makes Haskell happy.
@@ -539,17 +546,21 @@ family, you wouldn't be able to pass just \texttt{g} into \texttt{Fmap\ a\ b\ g}
 (because it'd be partially applied, and type families always have to appear
 fully saturated).
 
+You can convert a \texttt{g\ ::\ a\ \textasciitilde{}\textgreater{}\ b} back
+into a regular old \texttt{g\ ::\ a\ -\textgreater{}\ b} using \texttt{Apply},
+or its convenient infix synonym \texttt{@@}, like
+\texttt{g\ @@\ (x\ ::\ a)\ ::\ b}
+
 The singletons library provides
 \texttt{type\ Family\ Id\ a\ where\ Id\ a\ =\ a}, but we can't pass in
 \texttt{Id} directly into \texttt{Fmap}. We have to pass in its
 ``defunctionalized'' encoding,
 \texttt{IdSym0\ ::\ TyFun\ a\ a\ -\textgreater{}\ Type}.
 
-\texttt{@@} lets us ``apply'' the \texttt{a\ \textasciitilde{}\textgreater{}\ b}
-on an \texttt{a} and a \texttt{b}. So we use \texttt{(:.\$)} (which is a
-defunctionalized type-level \texttt{.}) and apply it to \texttt{g} and
-\texttt{h} to get, essentially, \texttt{g\ :.\ h}, where \texttt{:.} is
-type-level function composition.
+For the composition law, we use \texttt{(:.\$)} (which is a defunctionalized
+type-level \texttt{.}) and apply it to \texttt{g} and \texttt{h} to get,
+essentially, \texttt{g\ :.\ h}, where \texttt{:.} is type-level function
+composition.
 
 Now we Haskell.
 
@@ -599,18 +610,24 @@ And there you have it. A verified \texttt{Functor} typeclass, ensuring that all
 instances are lawful. Never tell me that Haskell's type system can't do anything
 ever again!
 
-We're done here!
+Note that any mistakes in implementation (like, for example, having
+\texttt{mapOption\ \_\ \_\ =\ None}) will cause a compile-time error now,
+because the proofs are impossible to provide.
+
+What an exciting journey and a wonderful conclusion. I hope you enjoyed this and
+will begin using this in your normal day-to-day Haskell. Goodbye, until next
+time!
 
 \section{Not Done Yet}\label{not-done-yet}
 
-Hah! Of course we aren't done. Of course, you could probably have seen that I
-was doing all of that to build up to the pièces de résistance: the crown jewel
-of every Haskell article, the Monad.
+Hah! Just kidding. Of course we aren't done. I wouldn't let you down like that.
+I know that you probably saw that I was doing all of that to build up to the
+pièce de résistance: the crown jewel of every Haskell article, the Monad.
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{class} \DataTypeTok{Functor} \NormalTok{f }\OtherTok{=>} \DataTypeTok{Monad} \NormalTok{f }\KeywordTok{where}
-    \KeywordTok{type} \DataTypeTok{Return} \NormalTok{a (}\OtherTok{x ::} \NormalTok{a)}\OtherTok{ ::} \NormalTok{f a}
+    \KeywordTok{type} \DataTypeTok{Return} \NormalTok{a   (}\OtherTok{x ::} \NormalTok{a)}\OtherTok{ ::} \NormalTok{f a}
     \KeywordTok{type} \DataTypeTok{Bind}   \NormalTok{a b (}\OtherTok{m ::} \NormalTok{f a) (}\OtherTok{g ::} \NormalTok{a }\FunctionTok{~>} \NormalTok{f b)}\OtherTok{ ::} \NormalTok{f b}
 
     \NormalTok{sReturn}
@@ -670,7 +687,7 @@ rather an \texttt{a\ \textasciitilde{}\textgreater{}\ f\ c}, which allows it to
 be partially applied. The rest (including the \texttt{Apply}) instance is how
 you hook it into the defunctionalization process.
 
-Without further ado, let's see some sample implementations.
+Let's see some sample implementations.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -731,12 +748,12 @@ Without further ado, let's see some sample implementations.
                   \DataTypeTok{Refl} \OtherTok{->} \KeywordTok{case} \NormalTok{appendAssoc hy hys hgxs }\KeywordTok{of}
                     \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Refl}
 
-\CommentTok{-- | Proving that concatMap distributes over Append}
+\CommentTok{-- | Proving that concatMap distributes over <>}
 \NormalTok{distribConcatMap}
 \OtherTok{    ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{g ::} \NormalTok{a }\FunctionTok{~>} \DataTypeTok{List} \NormalTok{b)}
     \OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{xs ::} \DataTypeTok{List} \NormalTok{a)}
     \OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{ys ::} \DataTypeTok{List} \NormalTok{a)}
-    \OtherTok{->} \DataTypeTok{ConcatMapList} \NormalTok{g (}\DataTypeTok{AppendList} \NormalTok{xs ys) }\FunctionTok{:~:} \DataTypeTok{AppendList} \NormalTok{(}\DataTypeTok{ConcatMapList} \NormalTok{g xs) (}\DataTypeTok{ConcatMapList} \NormalTok{g ys)}
+    \OtherTok{->} \DataTypeTok{ConcatMapList} \NormalTok{g (xs }\FunctionTok{<>} \NormalTok{ys) }\FunctionTok{:~:} \NormalTok{(}\DataTypeTok{ConcatMapList} \NormalTok{g xs }\FunctionTok{<>} \DataTypeTok{ConcatMapList} \NormalTok{g ys)}
 \NormalTok{distribConcatMap g }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case}
     \DataTypeTok{SNil} \OtherTok{->} \NormalTok{\textbackslash{}_ }\OtherTok{->} \DataTypeTok{Refl}
     \DataTypeTok{SCons} \NormalTok{x xs }\OtherTok{->} \NormalTok{\textbackslash{}ys }\OtherTok{->}
@@ -750,13 +767,35 @@ Without further ado, let's see some sample implementations.
 \end{Highlighting}
 \end{Shaded}
 
+Here we use \texttt{unSingFun1}, which converts a singleton of a type-level
+function into a value level function on singletons:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{unSingFun1}
+\OtherTok{    ::} \DataTypeTok{Proxy} \NormalTok{(}\OtherTok{f      ::} \NormalTok{a }\FunctionTok{~>} \NormalTok{b)}
+    \OtherTok{->} \DataTypeTok{Sing}  \NormalTok{(}\OtherTok{f      ::} \NormalTok{a }\FunctionTok{~>} \NormalTok{b)}
+    \OtherTok{->} \DataTypeTok{Sing}  \NormalTok{(}\OtherTok{x      ::} \NormalTok{a)}
+    \OtherTok{->} \DataTypeTok{Sing}  \NormalTok{(f }\FunctionTok{@@}\OtherTok{ x ::} \NormalTok{b)}
+\end{Highlighting}
+\end{Shaded}
+
+The \texttt{Proxy} argument only exists for historical reasons, I believe. But,
+the crux is that, given a
+\texttt{Sing\ (f\ ::\ a\ \textasciitilde{}\textgreater{}\ b)} and a
+\texttt{Sing\ (x\ ::\ a)}, we can ``apply'' them to get
+\texttt{Sing\ (f\ @@\ x\ ::\ b)}
+
+The proofs for the list instance is admittedly a bit awful, due to the fact that
+\texttt{List} is a recursive type. But, the proofs for \texttt{Option} are
+really something, aren't they? It's kind of amazing how much GHC can do on its
+own without requiring any manual proving on the part of the user.
+
 \section{Disclaimer}\label{disclaimer}
 
 Don't do this in actual code please.
 
-But definitely do it for fun!
-
-The code in this post is available
+But definitely do it for fun! The code in this post is available
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/verified-instances/VerifiedInstances.hs}{here}
 if you want to play around!
 

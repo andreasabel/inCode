@@ -83,25 +83,26 @@ class Semigroup a where
 
     appendAssoc
         :: Sing (x :: a)
-        -> Sing y
-        -> Sing z
+        -> Sing (y :: a)
+        -> Sing (z :: a)
         -> ((x <> y) <> z) :~: (x <> (y <> z))
 ```
 
 Now, `<>` exists not as a function on *values*, but as a function on *types*.
-`%<>` is a function that lets us manipulate witnesses of those types at runtime
-and perform the `<>` at the value level, but written in a way that GHC can
-verify that the value-level function is identical to the type-level function
-(it’s 100% boilerplate and should pretty much exactly match the `<>` type
-family).[^1] And, `appendAssoc` is a proof that the type family `Append` is
-associative, using `:~:` (type equality witness) from `Data.Type.Equality`.
+`%<>` is a function that performs `<>` at the value level, written to work with
+singletons representing the input types, so that GHC can verify that it is
+identical to the type family `<>`. (it’s 100% boilerplate and should pretty much
+exactly match the `<>` type family).[^1] Finally, `appendAssoc` is a proof that
+the type family `<>` is associative, using `:~:` (type equality witness) from
+`Data.Type.Equality`.
 
 This means that, if a type is an instance of `Semigroup`, it not only has to
 provide `<>`/`%<>`, but also a *proof that they are associative*. You can’t
 write the full instance without it!
 
 Using the `SingKind` typeclass from singletons, we can move back and forth from
-`Sing x` and `x`, and get our original `<>` back. Let’s call it `append`:
+`Sing x` and `x`, and get our original (value-level) `<>` back. Let’s call it
+`append`:
 
 ``` {.haskell}
 append
@@ -120,7 +121,7 @@ singletons:
 ``` {.haskell}
 data instance Sing (xs :: List a) where
     SNil  :: Sing Nil
-    SCons :: Sing (x :: a) -> Sing xs -> Sing (Cons x xs)
+    SCons :: Sing x -> Sing xs -> Sing (Cons x xs)
 ```
 
 Then, we can define the instance, using the traditional `(++)` appending that
@@ -145,7 +146,7 @@ Like I promised, `%<>` is a boilerplate re-implementation of `<>`, to manipulate
 value-level witnesses. `appendAssoc` is the interesting bit: It’s our proof. It
 reads like this:
 
-1.  If `xs` is `Nil`:
+1.  If the first list is `Nil`:
 
     ``` {.haskell}
     -- left hand side
@@ -156,7 +157,7 @@ reads like this:
       = ys <> zs        -- definition of `(Nil <>)`
     ```
 
-    So, QED! (Or, as we say in Haskell, `Refl`!)
+    So, no work needed. QED! (Or, as we say in Haskell, `Refl`!)
 
 2.  If the first list is `Cons x xs`:
 
@@ -177,10 +178,14 @@ reads like this:
 
 And, we’re done!
 
+Note that if you had tried any *non-associative* implementation of `<>` (and
+`%<>`), GHC would reject it because you wouldn’t have been able to write the
+proof!
+
 #### Automatic Singletons
 
-Deriving `Sing` and `SingKind` and both versions of append is kind of tedious,
-so it’s useful to use template haskell to do it all for us:
+Deriving `Sing` and `SingKind` and both versions of `<>` is kind of tedious, so
+it’s useful to use template haskell to do it all for us:
 
 ``` {.haskell}
 $(singletons [d|
@@ -205,7 +210,7 @@ instance Semigroup (List a) where
           Refl -> Refl
 ```
 
-The boilerplate of re-defining `<>` as `%<>` goes away.
+The boilerplate of re-defining `<>` as `%<>` goes away!
 
 And now, we we can do:
 
@@ -276,6 +281,8 @@ ghci> print $ append @N (S (S Z)) (S Z)
 S (S (S Z))
 ghci> print $ append @(Option N) (Some (S Z)) (Some (S (S (S Z))))
 Some (S (S (S (S Z))))
+ghci> print $ append @(Option N) None         (Some (S (S (S Z))))
+Some (S (S (S Z)))
 ```
 
 Going Monoidal
@@ -305,10 +312,10 @@ empty
 empty = fromSing (sEmpty @m)
 ```
 
-Because GHC has some issues with return-type polymorphism at the type level, we
-have `Empty` take the *kind* `a` as a parameter, instead of having it be
-inferred through kind inference like we did for `<>`. That is, `Empty (List a)`
-is `Empty` for the *kind* `List a`.
+Because working implicitly return-type polymorphism at the type level can be
+annoying sometimes, we have `Empty` take the *kind* `a` as a parameter, instead
+of having it be inferred through kind inference like we did for `<>`. That is,
+`Empty (List a)` is `Empty` for the *kind* `List a`.
 
 As usual in Haskell, the instances write themselves!
 
@@ -379,7 +386,7 @@ And, of course, along with `sFmap` (the singleton mirror of `Fmap`), we have our
 laws: `fmap id x = x`, and `fmap g (fmap h) x = fmap (g . h) x`.
 
 But, what are `a ~> b`, `IdSym0`, `:.$`, and `@@`? They’re a part of the
-**defunctionalization** system that the singletons library uses. A `g :: a ~> b`
+*defunctionalization* system that the singletons library uses. A `g :: a ~> b`
 means that `g` represents a type-level function taking a type of kind `a` to a
 type of kind `b`, but, importantly, encodes it in a way that makes Haskell
 happy. This hack is required because you can’t partially apply type families in
@@ -387,13 +394,16 @@ Haskell. If `g` was a regular old `a -> b` type family, you wouldn’t be able t
 pass just `g` into `Fmap a b g` (because it’d be partially applied, and type
 families always have to appear fully saturated).
 
+You can convert a `g :: a ~> b` back into a regular old `g :: a -> b` using
+`Apply`, or its convenient infix synonym `@@`, like `g @@ (x :: a) :: b`
+
 The singletons library provides `type Family Id a where Id a = a`, but we can’t
 pass in `Id` directly into `Fmap`. We have to pass in its “defunctionalized”
 encoding, `IdSym0 :: TyFun a a -> Type`.
 
-`@@` lets us “apply” the `a ~> b` on an `a` and a `b`. So we use `(:.$)` (which
-is a defunctionalized type-level `.`) and apply it to `g` and `h` to get,
-essentially, `g :. h`, where `:.` is type-level function composition.
+For the composition law, we use `(:.$)` (which is a defunctionalized type-level
+`.`) and apply it to `g` and `h` to get, essentially, `g :. h`, where `:.` is
+type-level function composition.
 
 Now we Haskell.
 
@@ -441,18 +451,24 @@ And there you have it. A verified `Functor` typeclass, ensuring that all
 instances are lawful. Never tell me that Haskell’s type system can’t do anything
 ever again!
 
-We’re done here!
+Note that any mistakes in implementation (like, for example, having
+`mapOption _ _ = None`) will cause a compile-time error now, because the proofs
+are impossible to provide.
+
+What an exciting journey and a wonderful conclusion. I hope you enjoyed this and
+will begin using this in your normal day-to-day Haskell. Goodbye, until next
+time!
 
 Not Done Yet
 ============
 
-Hah! Of course we aren’t done. Of course, you could probably have seen that I
-was doing all of that to build up to the pièces de résistance: the crown jewel
-of every Haskell article, the Monad.
+Hah! Just kidding. Of course we aren’t done. I wouldn’t let you down like that.
+I know that you probably saw that I was doing all of that to build up to the
+pièce de résistance: the crown jewel of every Haskell article, the Monad.
 
 ``` {.haskell}
 class Functor f => Monad f where
-    type Return a (x :: a) :: f a
+    type Return a   (x :: a) :: f a
     type Bind   a b (m :: f a) (g :: a ~> f b) :: f b
 
     sReturn
@@ -507,7 +523,7 @@ is the defunctioanlized version, which is not a `a -> f c` but rather an
 `a ~> f c`, which allows it to be partially applied. The rest (including the
 `Apply`) instance is how you hook it into the defunctionalization process.
 
-Without further ado, let’s see some sample implementations.
+Let’s see some sample implementations.
 
 ``` {.haskell}
 $(singletons [d|
@@ -567,12 +583,12 @@ instance Monad List where
                   Refl -> case appendAssoc hy hys hgxs of
                     Refl -> Refl
 
--- | Proving that concatMap distributes over Append
+-- | Proving that concatMap distributes over <>
 distribConcatMap
     :: Sing (g :: a ~> List b)
     -> Sing (xs :: List a)
     -> Sing (ys :: List a)
-    -> ConcatMapList g (AppendList xs ys) :~: AppendList (ConcatMapList g xs) (ConcatMapList g ys)
+    -> ConcatMapList g (xs <> ys) :~: (ConcatMapList g xs <> ConcatMapList g ys)
 distribConcatMap g = \case
     SNil -> \_ -> Refl
     SCons x xs -> \ys ->
@@ -585,14 +601,32 @@ distribConcatMap g = \case
                 Refl -> Refl
 ```
 
+Here we use `unSingFun1`, which converts a singleton of a type-level function
+into a value level function on singletons:
+
+``` {.haskell}
+unSingFun1
+    :: Proxy (f      :: a ~> b)
+    -> Sing  (f      :: a ~> b)
+    -> Sing  (x      :: a)
+    -> Sing  (f @@ x :: b)
+```
+
+The `Proxy` argument only exists for historical reasons, I believe. But, the
+crux is that, given a `Sing (f :: a ~> b)` and a `Sing (x :: a)`, we can “apply”
+them to get `Sing (f @@ x :: b)`
+
+The proofs for the list instance is admittedly a bit awful, due to the fact that
+`List` is a recursive type. But, the proofs for `Option` are really something,
+aren’t they? It’s kind of amazing how much GHC can do on its own without
+requiring any manual proving on the part of the user.
+
 Disclaimer
 ----------
 
 Don’t do this in actual code please.
 
-But definitely do it for fun!
-
-The code in this post is available
+But definitely do it for fun! The code in this post is available
 [here](https://github.com/mstksg/inCode/tree/master/code-samples/verified-instances/VerifiedInstances.hs)
 if you want to play around!
 
