@@ -230,14 +230,14 @@ empty <span class="fu">=</span> fromSing (sEmpty <span class="fu">@</span>m)</co
     emptyIdentLeft  _ <span class="fu">=</span> <span class="dt">Refl</span>
     emptyIdentRight _ <span class="fu">=</span> <span class="dt">Refl</span></code></pre></div>
 <h2 id="play-that-funcy-music">Play that Funcy Music</h2>
-<p>You knew we weren’t going to stop there, right? How about higher-kinded typeclasses?</p>
+<p>How about some higher-kinded typeclasses?</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Functor</span> f <span class="kw">where</span>
     <span class="kw">type</span> <span class="dt">Fmap</span> a b (<span class="ot">g ::</span> a <span class="fu">~&gt;</span> b) (<span class="ot">x ::</span> f a)<span class="ot"> ::</span> f b
 
     sFmap
-<span class="ot">        ::</span> <span class="dt">Sing</span> (<span class="ot">g ::</span> a <span class="fu">~&gt;</span> b)
-        <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ot">x ::</span> f a)
-        <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="dt">Fmap</span> a b g x)
+<span class="ot">        ::</span> <span class="dt">Sing</span> (<span class="ot">g            ::</span> a <span class="fu">~&gt;</span> b)
+        <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ot">x            ::</span> f a   )
+        <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="dt">Fmap</span> a b g<span class="ot"> x ::</span> f b   )
 
     <span class="co">-- | fmap id x == x</span>
     fmapId
@@ -248,7 +248,7 @@ empty <span class="fu">=</span> fromSing (sEmpty <span class="fu">@</span>m)</co
     fmapCompose
 <span class="ot">        ::</span> <span class="dt">Sing</span> (<span class="ot">g ::</span> b <span class="fu">~&gt;</span> c)
         <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ot">h ::</span> a <span class="fu">~&gt;</span> b)
-        <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ot">x ::</span> f a)
+        <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ot">x ::</span> f a   )
         <span class="ot">-&gt;</span> <span class="dt">Fmap</span> b c g (<span class="dt">Fmap</span> a b h x) <span class="fu">:~:</span> <span class="dt">Fmap</span> a c (((<span class="fu">:.$</span>) <span class="fu">@@</span> g) <span class="fu">@@</span> h) x</code></pre></div>
 <p><code>Fmap a b g x</code> maps the <em>type-level function</em> <code>g :: a ~&gt; b</code> over <code>x :: f a</code>, and returns a type of kind <code>f b</code>. Like with <code>Empty</code>, to help with kind inference, we have <code>Fmap</code> explicitly requre the <em>kinds</em> of the input and results of <code>g</code> (<code>a</code> and <code>b</code>) so GHC doesn’t have to struggle to infer it implicitly.</p>
 <p>And, of course, along with <code>sFmap</code> (the singleton mirror of <code>Fmap</code>), we have our laws: <code>fmap id x = x</code>, and <code>fmap g (fmap h) x = fmap (g . h) x</code>.</p>

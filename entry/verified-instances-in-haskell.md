@@ -352,17 +352,16 @@ instance Semigroup a => Monoid (Option a) where
 Play that Funcy Music
 ---------------------
 
-You knew we weren’t going to stop there, right? How about higher-kinded
-typeclasses?
+How about some higher-kinded typeclasses?
 
 ``` {.haskell}
 class Functor f where
     type Fmap a b (g :: a ~> b) (x :: f a) :: f b
 
     sFmap
-        :: Sing (g :: a ~> b)
-        -> Sing (x :: f a)
-        -> Sing (Fmap a b g x)
+        :: Sing (g            :: a ~> b)
+        -> Sing (x            :: f a   )
+        -> Sing (Fmap a b g x :: f b   )
 
     -- | fmap id x == x
     fmapId
@@ -373,7 +372,7 @@ class Functor f where
     fmapCompose
         :: Sing (g :: b ~> c)
         -> Sing (h :: a ~> b)
-        -> Sing (x :: f a)
+        -> Sing (x :: f a   )
         -> Fmap b c g (Fmap a b h x) :~: Fmap a c (((:.$) @@ g) @@ h) x
 ```
 
