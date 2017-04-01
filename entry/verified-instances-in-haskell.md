@@ -1,5 +1,5 @@
-Verified Typeclass Instances in Haskell using Singletons
-========================================================
+Verify your Typeclass Instances in Haskell Today!
+=================================================
 
 > Originally posted by [Justin Le](https://blog.jle.im/) on April 1, 2017.
 > [Read online!](https://blog.jle.im/entry/verified-instances-in-haskell.html)
