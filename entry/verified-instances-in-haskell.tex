@@ -1,0 +1,753 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+    \usepackage{xltxtra,xunicode}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{\usepackage{microtype}}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\newenvironment{Shaded}{}{}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{{#1}}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{{#1}}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{{#1}}}
+\newcommand{\ImportTok}[1]{{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{{#1}}}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{{#1}}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{{#1}}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{{#1}}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{{#1}}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{{#1}}}
+\newcommand{\BuiltInTok}[1]{{#1}}
+\newcommand{\ExtensionTok}[1]{{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{{#1}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{{#1}}}
+\newcommand{\RegionMarkerTok}[1]{{#1}}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+\newcommand{\NormalTok}[1]{{#1}}
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex]{hyperref}
+\else
+  \usepackage[unicode=true]{hyperref}
+\fi
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            pdfauthor={Justin Le},
+            pdftitle={Verified Typeclass Instances in Haskell using Singletons},
+            colorlinks=true,
+            citecolor=blue,
+            urlcolor=blue,
+            linkcolor=magenta,
+            pdfborder={0 0 0}}
+\urlstyle{same}  % don't use monospace font for urls
+% Make links footnotes instead of hotlinks:
+\renewcommand{\href}[2]{#2\footnote{\url{#1}}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\setcounter{secnumdepth}{0}
+
+\title{Verified Typeclass Instances in Haskell using Singletons}
+\author{Justin Le}
+
+\begin{document}
+\maketitle
+
+\emph{Originally posted on
+\textbf{\href{https://blog.jle.im/entry/verified-instances-in-haskell.html}{in
+Code}}.}
+
+One of the most common gripes people have when learning Haskell is the fact that
+typeclass ``laws'' are only laws by convention, and aren't enforced by the
+language and compiler. When asked why, the typical response is ``Haskell can't
+do that'', followed by a well-intentioned redirection to quickcheck or some
+other fuzzing library.
+
+But, to any experienced Haskeller, ``Haskell's type system can't express X'' is
+always interpreted as a (personal) challenge.
+
+GHC Haskell's type system has been advanced enough to provide verified
+typeclasses for a long time, since the introduction of data kinds and associated
+types. And with the
+\emph{\href{http://hackage.haskell.org/package/singletons}{singletons}} library,
+it's now as easy as ever.
+
+\section{Semigroups}\label{semigroups}
+
+Let's start simple -- everyone's favorite structural addition to magmas,
+\href{http://hackage.haskell.org/package/base-4.9.1.0/docs/Data-Semigroup.html}{semigroups}.
+A semigroup is a type with an associative binary operation,
+\texttt{(\textless{}\textgreater{})}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{Semigroup} \NormalTok{a }\KeywordTok{where}
+\OtherTok{    (<>) ::} \NormalTok{a }\OtherTok{->} \NormalTok{a }\OtherTok{->} \NormalTok{a}
+\end{Highlighting}
+\end{Shaded}
+
+Its one law is associativity:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{(x }\FunctionTok{<>} \NormalTok{y) }\FunctionTok{<>} \NormalTok{z }\FunctionTok{=} \NormalTok{x }\FunctionTok{<>} \NormalTok{(y }\FunctionTok{<>} \NormalTok{z)}
+\end{Highlighting}
+\end{Shaded}
+
+But, this class stinks, because it's super easy to write bad instances:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{List} \NormalTok{a }\FunctionTok{=} \DataTypeTok{Nil} \FunctionTok{|} \DataTypeTok{Cons} \NormalTok{a (}\DataTypeTok{List} \NormalTok{a)}
+    \KeywordTok{deriving} \DataTypeTok{Show}
+
+\KeywordTok{infixr} \DecValTok{5} \OtherTok{`Cons`}
+
+\KeywordTok{instance} \DataTypeTok{Semigroup} \NormalTok{(}\DataTypeTok{List} \NormalTok{a) }\KeywordTok{where}
+    \DataTypeTok{Nil}       \FunctionTok{<>} \NormalTok{ys }\FunctionTok{=} \NormalTok{ys}
+    \DataTypeTok{Cons} \NormalTok{x xs }\FunctionTok{<>} \NormalTok{ys }\FunctionTok{=} \DataTypeTok{Cons} \NormalTok{x (ys }\FunctionTok{<>} \NormalTok{xs)}
+\end{Highlighting}
+\end{Shaded}
+
+This instance isn't associative:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{((}\DecValTok{1} \OtherTok{`Cons`} \DecValTok{2} \OtherTok{`Cons`} \DataTypeTok{Nil}\NormalTok{) }\FunctionTok{<>} \NormalTok{(}\DecValTok{3} \OtherTok{`Cons`} \DecValTok{4} \OtherTok{`Cons`} \DataTypeTok{Nil}\NormalTok{)) }\FunctionTok{<>} \NormalTok{(}\DecValTok{5} \OtherTok{`Cons`} \DecValTok{6} \OtherTok{`Cons`} \DataTypeTok{Nil}\NormalTok{)}
+\DecValTok{1} \OtherTok{`Cons`} \DecValTok{5} \OtherTok{`Cons`} \DecValTok{3} \OtherTok{`Cons`} \DecValTok{6} \OtherTok{`Cons`} \DecValTok{2} \OtherTok{`Cons`} \DecValTok{4} \OtherTok{`Cons`} \DataTypeTok{Nil}
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{(}\DecValTok{1} \OtherTok{`Cons`} \DecValTok{2} \OtherTok{`Cons`} \DataTypeTok{Nil}\NormalTok{) }\FunctionTok{<>} \NormalTok{((}\DecValTok{3} \OtherTok{`Cons`} \DecValTok{4} \OtherTok{`Cons`} \DataTypeTok{Nil}\NormalTok{) }\FunctionTok{<>} \NormalTok{(}\DecValTok{5} \OtherTok{`Cons`} \DecValTok{6} \OtherTok{`Cons`} \DataTypeTok{Nil}\NormalTok{))}
+\DecValTok{1} \OtherTok{`Cons`} \DecValTok{3} \OtherTok{`Cons`} \DecValTok{2} \OtherTok{`Cons`} \DecValTok{5} \OtherTok{`Cons`} \DecValTok{4} \OtherTok{`Cons`} \DecValTok{6} \OtherTok{`Cons`} \DataTypeTok{Nil}
+\end{Highlighting}
+\end{Shaded}
+
+But if you try to compile it, GHC doesn't complain at all. Is this an error on
+the part of Haskell? Not quite; it's an error on the part of the
+\texttt{Semigroup} typeclass not requiring proofs that the instance is indeed
+associative.
+
+Let's try again.
+
+\section{Verify me, Captain}\label{verify-me-captain}
+
+We will now define \texttt{Semigroup} on the \emph{kind} \texttt{List}, using
+\texttt{-XDataKinds}, instead of the type. But, technically, because of
+\texttt{TypeInType}, the \texttt{List} kind is also a \texttt{List} type so w/e
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{Semigroup} \NormalTok{a }\KeywordTok{where}
+    \KeywordTok{type} \NormalTok{(}\OtherTok{x ::} \NormalTok{a) }\FunctionTok{<>} \NormalTok{(}\OtherTok{y ::} \NormalTok{a)}\OtherTok{ ::} \NormalTok{a}
+
+\OtherTok{    (%<>) ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{x ::} \NormalTok{a) }\OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{y ::} \NormalTok{a) }\OtherTok{->} \DataTypeTok{Sing} \NormalTok{(x }\FunctionTok{<>} \NormalTok{y)}
+
+    \NormalTok{appendAssoc}
+\OtherTok{        ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{x ::} \NormalTok{a)}
+        \OtherTok{->} \DataTypeTok{Sing} \NormalTok{y}
+        \OtherTok{->} \DataTypeTok{Sing} \NormalTok{z}
+        \OtherTok{->} \NormalTok{((x }\FunctionTok{<>} \NormalTok{y) }\FunctionTok{<>} \NormalTok{z) }\FunctionTok{:~:} \NormalTok{(x }\FunctionTok{<>} \NormalTok{(y }\FunctionTok{<>} \NormalTok{z))}
+\end{Highlighting}
+\end{Shaded}
+
+Now, \texttt{\textless{}\textgreater{}} exists not as a function on
+\emph{values}, but as a function on \emph{types}.
+\texttt{\%\textless{}\textgreater{}} is a function that lets us manipulate
+witnesses of those types at runtime and perform the
+\texttt{\textless{}\textgreater{}} at the value level, but written in a way that
+GHC can verify that the value-level function is identical to the type-level
+function (it's 100\% boilerplate and should pretty much exactly match the
+\texttt{\textless{}\textgreater{}} type family).\footnote{In full
+  \emph{singletons} style, this should actually be expressed in terms of the the
+  \emph{partially applied} (defunctionalized)
+  \texttt{\textless{}\textgreater{}}. However, I'm giving the
+  non-defunctionalized versions here for clarity.} And, \texttt{appendAssoc} is
+a proof that the type family \texttt{Append} is associative, using
+\texttt{:\textasciitilde{}:} (type equality witness) from
+\texttt{Data.Type.Equality}.
+
+This means that, if a type is an instance of \texttt{Semigroup}, it not only has
+to provide
+\texttt{\textless{}\textgreater{}}/\texttt{\%\textless{}\textgreater{}}, but
+also a \emph{proof that they are associative}. You can't write the full instance
+without it!
+
+Using the \texttt{SingKind} typeclass from singletons, we can move back and
+forth from \texttt{Sing\ x} and \texttt{x}, and get our original
+\texttt{\textless{}\textgreater{}} back. Let's call it \texttt{append}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{append}
+\OtherTok{    ::} \NormalTok{forall m}\FunctionTok{.} \NormalTok{(}\DataTypeTok{SingKind} \NormalTok{m, }\DataTypeTok{Semigroup} \NormalTok{m)}
+    \OtherTok{=>} \DataTypeTok{DemoteRep} \NormalTok{m}
+    \OtherTok{->} \DataTypeTok{DemoteRep} \NormalTok{m}
+    \OtherTok{->} \DataTypeTok{DemoteRep} \NormalTok{m}
+\NormalTok{append x y }\FunctionTok{=} \NormalTok{withSomeSing x }\FunctionTok{$} \NormalTok{\textbackslash{}sX }\OtherTok{->}
+             \NormalTok{withSomeSing y }\FunctionTok{$} \NormalTok{\textbackslash{}sY }\OtherTok{->}
+               \NormalTok{fromSing (sAppend }\FunctionTok{@}\NormalTok{m sX sY)}
+\end{Highlighting}
+\end{Shaded}
+
+Now, let's write the instance for \texttt{List}. First, we need to define the
+singletons:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \KeywordTok{instance} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{xs ::} \DataTypeTok{List} \NormalTok{a) }\KeywordTok{where}
+    \DataTypeTok{SNil}\OtherTok{  ::} \DataTypeTok{Sing} \DataTypeTok{Nil}
+    \DataTypeTok{SCons}\OtherTok{ ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{x ::} \NormalTok{a) }\OtherTok{->} \DataTypeTok{Sing} \NormalTok{xs }\OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\DataTypeTok{Cons} \NormalTok{x xs)}
+\end{Highlighting}
+\end{Shaded}
+
+Then, we can define the instance, using the traditional \texttt{(++)} appending
+that lists famously have:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{instance} \DataTypeTok{Semigroup} \NormalTok{(}\DataTypeTok{List} \NormalTok{a) }\KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Nil}       \FunctionTok{<>} \NormalTok{ys }\FunctionTok{=} \NormalTok{ys}
+    \KeywordTok{type} \DataTypeTok{Cons} \NormalTok{x xs }\FunctionTok{<>} \NormalTok{ys }\FunctionTok{=} \NormalTok{ys}
+
+    \DataTypeTok{SNil}       \FunctionTok{%<>} \NormalTok{ys }\FunctionTok{=} \NormalTok{ys}
+    \DataTypeTok{SCons} \NormalTok{x xs }\FunctionTok{%<>} \NormalTok{ys }\FunctionTok{=} \DataTypeTok{SCons} \NormalTok{x (xs }\FunctionTok{%<>} \NormalTok{ys)}
+
+    \NormalTok{appendAssoc }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNil}       \OtherTok{->} \NormalTok{\textbackslash{}_ _ }\OtherTok{->} \DataTypeTok{Refl}
+      \DataTypeTok{SCons} \NormalTok{x xs }\OtherTok{->} \NormalTok{\textbackslash{}ys zs }\OtherTok{->}
+        \KeywordTok{case} \NormalTok{appendAssoc xs ys zs }\KeywordTok{of}
+          \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Refl}
+\end{Highlighting}
+\end{Shaded}
+
+Like I promised, \texttt{\%\textless{}\textgreater{}} is a boilerplate
+re-implementation of \texttt{\textless{}\textgreater{}}, to manipulate
+value-level witnesses. \texttt{appendAssoc} is the interesting bit: It's our
+proof. It reads like this:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  If \texttt{xs} is \texttt{Nil}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- left hand side}
+\NormalTok{(}\DataTypeTok{Nil} \FunctionTok{<>} \NormalTok{ys) }\FunctionTok{<>} \NormalTok{zs}
+  \FunctionTok{=} \NormalTok{ys }\FunctionTok{<>} \NormalTok{zs        }\CommentTok{-- definition of `(Nil <>)`}
+\CommentTok{-- right hand side}
+\DataTypeTok{Nil} \FunctionTok{<>} \NormalTok{(ys }\FunctionTok{<>} \NormalTok{zs)}
+  \FunctionTok{=} \NormalTok{ys }\FunctionTok{<>} \NormalTok{zs        }\CommentTok{-- definition of `(Nil <>)`}
+\end{Highlighting}
+\end{Shaded}
+
+  So, QED! (Or, as we say in Haskell, \texttt{Refl}!)
+\item
+  If the first list is \texttt{Cons\ x\ xs}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- left hand side}
+\NormalTok{(}\DataTypeTok{Cons} \NormalTok{x xs }\FunctionTok{<>} \NormalTok{ys) }\FunctionTok{<>} \NormalTok{zs}
+  \FunctionTok{=} \NormalTok{(}\DataTypeTok{Cons} \NormalTok{x (xs }\FunctionTok{<>} \NormalTok{ys)) }\FunctionTok{<>} \NormalTok{zs   }\CommentTok{-- definition of `(Cons x xs <>)`}
+  \FunctionTok{=} \DataTypeTok{Cons} \NormalTok{x ((xs }\FunctionTok{<>} \NormalTok{ys) }\FunctionTok{<>} \NormalTok{zs)   }\CommentTok{-- definition of `(Cons x xs <>)`}
+\CommentTok{-- right hand side}
+\DataTypeTok{Cons} \NormalTok{x xs }\FunctionTok{<>} \NormalTok{(ys }\FunctionTok{<>} \NormalTok{zs)}
+  \FunctionTok{=} \DataTypeTok{Cons} \NormalTok{x (xs }\FunctionTok{<>} \NormalTok{(ys }\FunctionTok{<>} \NormalTok{zs))   }\CommentTok{-- definition of `(Cons x xs <>)`}
+\end{Highlighting}
+\end{Shaded}
+
+  So, the problem reduces to proving that
+  \texttt{(xs\ \textless{}\textgreater{}\ ys)\ \textless{}\textgreater{}\ zs} is
+  equal to
+  \texttt{xs\ \textless{}\textgreater{}\ (ys\ \textless{}\textgreater{}\ zs)}.
+  If we can do that, then we can prove that the whole things are equal. We
+  generate that proof using \texttt{appendAssoc\ xs\ ys\ zs}, and, wit that
+  proof in scope\ldots{}QED!
+\end{enumerate}
+
+And, we're done!
+
+\subsection{Automatic Singletons}\label{automatic-singletons}
+
+Deriving \texttt{Sing} and \texttt{SingKind} and both versions of append is kind
+of tedious, so it's useful to use template haskell to do it all for us:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{$}\NormalTok{(singletons [d|}
+  \NormalTok{data List a = Nil | Cons a (List a)}
+      \NormalTok{deriving (Show)}
+
+  \NormalTok{infixr 5 `Cons`}
+
+  \NormalTok{appendList :: List a -> List a -> List a}
+  \NormalTok{appendList Nil         ys = ys}
+  \NormalTok{appendList (Cons x xs) ys = Cons x (appendList xs ys)}
+  \NormalTok{|])}
+
+\KeywordTok{instance} \DataTypeTok{Semigroup} \NormalTok{(}\DataTypeTok{List} \NormalTok{a) }\KeywordTok{where}
+    \KeywordTok{type} \NormalTok{xs }\FunctionTok{<>} \NormalTok{ys }\FunctionTok{=} \DataTypeTok{AppendList} \NormalTok{xs ys}
+    \NormalTok{(}\FunctionTok{%<>}\NormalTok{) }\FunctionTok{=} \NormalTok{sAppendList}
+
+    \NormalTok{appendAssoc }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNil}       \OtherTok{->} \NormalTok{\textbackslash{}_ _ }\OtherTok{->} \DataTypeTok{Refl}
+      \DataTypeTok{SCons} \NormalTok{_ xs }\OtherTok{->} \NormalTok{\textbackslash{}ys zs }\OtherTok{->}
+        \KeywordTok{case} \NormalTok{appendAssoc xs ys zs }\KeywordTok{of}
+          \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Refl}
+\end{Highlighting}
+\end{Shaded}
+
+The boilerplate of re-defining \texttt{\textless{}\textgreater{}} as
+\texttt{\%\textless{}\textgreater{}} goes away.
+
+And now, we we can do:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{print }\FunctionTok{$} \NormalTok{append }\FunctionTok{@}\NormalTok{(}\DataTypeTok{List} \DataTypeTok{Nat}\NormalTok{) (}\DecValTok{1} \OtherTok{`Cons`} \DecValTok{2} \OtherTok{`Cons`} \DataTypeTok{Nil}\NormalTok{) (}\DecValTok{3} \OtherTok{`Cons`} \DecValTok{4} \OtherTok{`Cons`} \DataTypeTok{Nil}\NormalTok{)}
+\DecValTok{1} \OtherTok{`Cons`} \DecValTok{2} \OtherTok{`Cons`} \DecValTok{3} \OtherTok{`Cons`} \DecValTok{4} \OtherTok{`Cons`} \DataTypeTok{Nil}
+\end{Highlighting}
+\end{Shaded}
+
+Ta dah!
+
+\section{Naturally, Maybe}\label{naturally-maybe}
+
+Now, we stop there? Let's implement some other famous semigroups:
+
+First, the inductive nats, \texttt{data\ N\ =\ Z\ \textbar{}\ S\ N:}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{$}\NormalTok{(singletons [d|}
+  \NormalTok{data N = Z | S N}
+    \NormalTok{deriving (Show)}
+
+  \NormalTok{plus :: N -> N -> N}
+  \NormalTok{plus Z     y = y}
+  \NormalTok{plus (S x) y = S (plus x y)}
+  \NormalTok{|])}
+
+\KeywordTok{instance} \DataTypeTok{Semigroup} \DataTypeTok{N} \KeywordTok{where}
+    \KeywordTok{type} \NormalTok{xs }\FunctionTok{<>} \NormalTok{ys }\FunctionTok{=} \DataTypeTok{Plus} \NormalTok{xs ys}
+    \NormalTok{(}\FunctionTok{%<>}\NormalTok{) }\FunctionTok{=} \NormalTok{sPlus}
+
+    \NormalTok{appendAssoc }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SZ} \OtherTok{->} \NormalTok{\textbackslash{}_ _ }\OtherTok{->} \DataTypeTok{Refl}
+      \DataTypeTok{SS} \NormalTok{x }\OtherTok{->} \NormalTok{\textbackslash{}y z }\OtherTok{->}
+        \KeywordTok{case} \NormalTok{appendAssoc x y z }\KeywordTok{of}
+          \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Refl}
+\end{Highlighting}
+\end{Shaded}
+
+And everyone's favorite instance for \texttt{Maybe}, which lifts the underlying
+semigroup:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{$}\NormalTok{(singletons [d|}
+  \NormalTok{data Option a = None | Some a}
+      \NormalTok{deriving (Show)}
+  \NormalTok{|])}
+
+\KeywordTok{instance} \DataTypeTok{Semigroup} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Semigroup} \NormalTok{(}\DataTypeTok{Option} \NormalTok{a) }\KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{None}   \FunctionTok{<>} \NormalTok{y      }\FunctionTok{=} \NormalTok{y}
+    \KeywordTok{type} \NormalTok{x      }\FunctionTok{<>} \DataTypeTok{None}   \FunctionTok{=} \NormalTok{x}
+    \KeywordTok{type} \DataTypeTok{Some} \NormalTok{x }\FunctionTok{<>} \DataTypeTok{Some} \NormalTok{y }\FunctionTok{=} \DataTypeTok{Some} \NormalTok{(x }\FunctionTok{<>} \NormalTok{y)}
+
+    \DataTypeTok{SNone}   \FunctionTok{%<>} \NormalTok{y       }\FunctionTok{=} \NormalTok{y}
+    \NormalTok{x       }\FunctionTok{%<>} \DataTypeTok{SNone}   \FunctionTok{=} \NormalTok{x}
+    \DataTypeTok{SSome} \NormalTok{x }\FunctionTok{%<>} \DataTypeTok{SSome} \NormalTok{y }\FunctionTok{=} \DataTypeTok{SSome} \NormalTok{(x }\FunctionTok{%<>} \NormalTok{y)}
+
+    \NormalTok{appendAssoc }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{SNone}   \OtherTok{->} \NormalTok{\textbackslash{}_ _ }\OtherTok{->} \DataTypeTok{Refl}
+        \DataTypeTok{SSome} \NormalTok{x }\OtherTok{->} \NormalTok{\textbackslash{}}\KeywordTok{case}
+          \DataTypeTok{SNone} \OtherTok{->} \NormalTok{\textbackslash{}_ }\OtherTok{->} \DataTypeTok{Refl}
+          \DataTypeTok{SSome} \NormalTok{y }\OtherTok{->} \NormalTok{\textbackslash{}}\KeywordTok{case}
+            \DataTypeTok{SNone} \OtherTok{->} \DataTypeTok{Refl}
+            \DataTypeTok{SSome} \NormalTok{z }\OtherTok{->}
+              \KeywordTok{case} \NormalTok{appendAssoc x y z }\KeywordTok{of}
+                \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Refl}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{print }\FunctionTok{$} \NormalTok{append }\FunctionTok{@}\DataTypeTok{N} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)) (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)}
+\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))}
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{print }\FunctionTok{$} \NormalTok{append }\FunctionTok{@}\NormalTok{(}\DataTypeTok{Option} \DataTypeTok{N}\NormalTok{) (}\DataTypeTok{Some} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)) (}\DataTypeTok{Some} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))))}
+\DataTypeTok{Some} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))))}
+\end{Highlighting}
+\end{Shaded}
+
+\section{Going Monoidal}\label{going-monoidal}
+
+Of course, we can now introduce the \texttt{Monoid} typeclass, which introduces
+a new element \texttt{empty}, along with the laws that appending with empty
+leaves things unchanged:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{Semigroup} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Monoid} \NormalTok{a }\KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Empty}\OtherTok{ a ::} \NormalTok{a}
+
+\OtherTok{    sEmpty ::} \DataTypeTok{Sing} \NormalTok{(}\DataTypeTok{Empty} \NormalTok{a)}
+
+    \NormalTok{emptyIdentLeft}
+\OtherTok{        ::} \DataTypeTok{Sing} \NormalTok{x}
+        \OtherTok{->} \NormalTok{(}\DataTypeTok{Empty} \NormalTok{a }\FunctionTok{<>} \NormalTok{x) }\FunctionTok{:~:} \NormalTok{x}
+
+    \NormalTok{emptyIdentRight}
+\OtherTok{        ::} \DataTypeTok{Sing} \NormalTok{x}
+        \OtherTok{->} \NormalTok{(x }\FunctionTok{<>} \DataTypeTok{Empty} \NormalTok{a) }\FunctionTok{:~:} \NormalTok{x}
+
+\NormalTok{empty}
+\OtherTok{    ::} \NormalTok{forall m}\FunctionTok{.} \NormalTok{(}\DataTypeTok{SingKind} \NormalTok{m, }\DataTypeTok{Monoid} \NormalTok{m)}
+    \OtherTok{=>} \DataTypeTok{DemoteRep} \NormalTok{m}
+\NormalTok{empty }\FunctionTok{=} \NormalTok{fromSing (sEmpty }\FunctionTok{@}\NormalTok{m)}
+\end{Highlighting}
+\end{Shaded}
+
+Because GHC has some issues with return-type polymorphism at the type level, we
+have \texttt{Empty} take the \emph{kind} \texttt{a} as a parameter, instead of
+having it be inferred through kind inference like we did for
+\texttt{\textless{}\textgreater{}}. That is, \texttt{Empty\ (List\ a)} is
+\texttt{Empty} for the \emph{kind} \texttt{List\ a}.
+
+As usual in Haskell, the instances write themselves!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{instance} \DataTypeTok{Monoid} \NormalTok{(}\DataTypeTok{List} \NormalTok{a) }\KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Empty} \NormalTok{(}\DataTypeTok{List} \NormalTok{a) }\FunctionTok{=} \DataTypeTok{Nil}
+
+    \NormalTok{sEmpty }\FunctionTok{=} \DataTypeTok{SNil}
+    \NormalTok{emptyIdentLeft _ }\FunctionTok{=} \DataTypeTok{Refl}
+    \NormalTok{emptyIdentRight  }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNil} \OtherTok{->} \DataTypeTok{Refl}
+      \DataTypeTok{SCons} \NormalTok{_ xs }\OtherTok{->}
+        \KeywordTok{case} \NormalTok{emptyIdentRight xs }\KeywordTok{of}
+          \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Refl}
+
+\KeywordTok{instance} \DataTypeTok{Monoid} \DataTypeTok{N} \KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Empty} \DataTypeTok{N} \FunctionTok{=} \DataTypeTok{Z}
+
+    \NormalTok{sEmpty }\FunctionTok{=} \DataTypeTok{SZ}
+    \NormalTok{emptyIdentLeft _ }\FunctionTok{=} \DataTypeTok{Refl}
+    \NormalTok{emptyIdentRight  }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SZ} \OtherTok{->} \DataTypeTok{Refl}
+      \DataTypeTok{SS} \NormalTok{x }\OtherTok{->} \KeywordTok{case} \NormalTok{emptyIdentRight x }\KeywordTok{of}
+        \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Refl}
+
+\KeywordTok{instance} \DataTypeTok{Semigroup} \NormalTok{a }\OtherTok{=>} \DataTypeTok{Monoid} \NormalTok{(}\DataTypeTok{Option} \NormalTok{a) }\KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Empty} \NormalTok{(}\DataTypeTok{Option} \NormalTok{a) }\FunctionTok{=} \DataTypeTok{None}
+
+    \NormalTok{sEmpty }\FunctionTok{=} \DataTypeTok{SNone}
+    \NormalTok{emptyIdentLeft  _ }\FunctionTok{=} \DataTypeTok{Refl}
+    \NormalTok{emptyIdentRight _ }\FunctionTok{=} \DataTypeTok{Refl}
+\end{Highlighting}
+\end{Shaded}
+
+\section{Play that Funcy Music}\label{play-that-funcy-music}
+
+You knew we weren't going to stop there, right? What's every Haskeller's
+favorite lawful typeclass?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{Functor} \NormalTok{f }\KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Fmap} \NormalTok{a b (}\OtherTok{g ::} \NormalTok{a }\FunctionTok{~>} \NormalTok{b) (}\OtherTok{x ::} \NormalTok{f a)}\OtherTok{ ::} \NormalTok{f b}
+
+    \NormalTok{sFmap}
+\OtherTok{        ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{g ::} \NormalTok{a }\FunctionTok{~>} \NormalTok{b)}
+        \OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{x ::} \NormalTok{f a)}
+        \OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\DataTypeTok{Fmap} \NormalTok{a b g x)}
+
+    \CommentTok{-- | fmap id x == x}
+    \NormalTok{fmapId}
+\OtherTok{        ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{x ::} \NormalTok{f a)}
+        \OtherTok{->} \DataTypeTok{Fmap} \NormalTok{a a }\DataTypeTok{IdSym0} \NormalTok{x }\FunctionTok{:~:} \NormalTok{x}
+
+    \CommentTok{-- | fmap f (fmap g x) = fmap (f . g) x}
+    \NormalTok{fmapCompose}
+\OtherTok{        ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{g ::} \NormalTok{b }\FunctionTok{~>} \NormalTok{c)}
+        \OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{h ::} \NormalTok{a }\FunctionTok{~>} \NormalTok{b)}
+        \OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{x ::} \NormalTok{f a)}
+        \OtherTok{->} \DataTypeTok{Fmap} \NormalTok{b c g (}\DataTypeTok{Fmap} \NormalTok{a b h x) }\FunctionTok{:~:} \DataTypeTok{Fmap} \NormalTok{a c (((}\FunctionTok{:.$}\NormalTok{) }\FunctionTok{@@} \NormalTok{g) }\FunctionTok{@@} \NormalTok{h) x}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{Fmap\ a\ b\ g\ x} maps the \emph{type-level function}
+\texttt{g\ ::\ a\ \textasciitilde{}\textgreater{}\ b} over \texttt{x\ ::\ f\ a},
+and returns a type of kind \texttt{f\ b}. Like with \texttt{Empty}, to help with
+kind inference, we have \texttt{Fmap} explicitly requre the \emph{kinds} of the
+input and results of \texttt{g} (\texttt{a} and \texttt{b}) so GHC doesn't have
+to struggle to infer it implicitly.
+
+And, of course, along with \texttt{sFmap} (the singleton mirror of
+\texttt{Fmap}), we have our laws: \texttt{fmap\ id\ x\ =\ x}, and
+\texttt{fmap\ g\ (fmap\ h)\ x\ =\ fmap\ (g\ .\ h)\ x}.
+
+But, what are \texttt{a\ \textasciitilde{}\textgreater{}\ b}, \texttt{IdSym0},
+\texttt{:.\$}, and \texttt{@@}? They're a part of the
+\textbf{defunctionalization} system that the singletons library uses. A
+\texttt{g\ ::\ a\ \textasciitilde{}\textgreater{}\ b} means that \texttt{g}
+represents a type-level function taking a type of kind \texttt{a} to a type of
+kind \texttt{b}, but, importantly, encodes it in a way that makes Haskell happy.
+This hack is required because you can't partially apply type families in
+Haskell. If \texttt{g} was a regular old \texttt{a\ -\textgreater{}\ b} type
+family, you wouldn't be able to pass just \texttt{g} into \texttt{Fmap\ a\ b\ g}
+(because it'd be partially applied, and type families always have to appear
+fully saturated).
+
+The singletons library provides
+\texttt{type\ Family\ Id\ a\ where\ Id\ a\ =\ a}, but we can't pass in
+\texttt{Id} directly into \texttt{Fmap}. We have to pass in its
+``defunctionalized'' encoding,
+\texttt{IdSym0\ ::\ TyFun\ a\ a\ -\textgreater{}\ Type}.
+
+\texttt{@@} lets us ``apply'' the \texttt{a\ \textasciitilde{}\textgreater{}\ b}
+on an \texttt{a} and a \texttt{b}. So we use \texttt{(:.\$)} (which is a
+defunctionalized type-level \texttt{.}) and apply it to \texttt{g} and
+\texttt{h} to get, essentially, \texttt{g\ :.\ h}, where \texttt{:.} is
+type-level function composition.
+
+Now we Haskell.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{$}\NormalTok{(singletons [d|}
+  \NormalTok{mapOption :: (a -> b) -> Option a -> Option b}
+  \NormalTok{mapOption _ None     = None}
+  \NormalTok{mapOption f (Some x) = Some (f x)}
+
+  \NormalTok{mapList :: (a -> b) -> List a -> List b}
+  \NormalTok{mapList _ Nil         = Nil}
+  \NormalTok{mapList f (Cons x xs) = Cons (f x) (mapList f xs)}
+  \NormalTok{|])}
+
+\KeywordTok{instance} \DataTypeTok{Functor} \DataTypeTok{Option} \KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Fmap} \NormalTok{a b g x }\FunctionTok{=} \DataTypeTok{MapOption} \NormalTok{g x}
+
+    \NormalTok{sFmap }\FunctionTok{=} \NormalTok{sMapOption}
+    \NormalTok{fmapId }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNone}   \OtherTok{->} \DataTypeTok{Refl}
+      \DataTypeTok{SSome} \NormalTok{_ }\OtherTok{->} \DataTypeTok{Refl}
+
+    \NormalTok{fmapCompose _ _ }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNone}   \OtherTok{->} \DataTypeTok{Refl}
+      \DataTypeTok{SSome} \NormalTok{_ }\OtherTok{->} \DataTypeTok{Refl}
+
+\KeywordTok{instance} \DataTypeTok{Functor} \DataTypeTok{List} \KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Fmap} \NormalTok{a b g x }\FunctionTok{=} \DataTypeTok{MapList} \NormalTok{g x}
+
+    \NormalTok{sFmap }\FunctionTok{=} \NormalTok{sMapList}
+    \NormalTok{fmapId }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNil}       \OtherTok{->} \DataTypeTok{Refl}
+      \DataTypeTok{SCons} \NormalTok{_ xs }\OtherTok{->}
+        \KeywordTok{case} \NormalTok{fmapId xs }\KeywordTok{of}
+          \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Refl}
+
+    \NormalTok{fmapCompose g h }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNil} \OtherTok{->} \DataTypeTok{Refl}
+      \DataTypeTok{SCons} \NormalTok{_ xs }\OtherTok{->}
+        \KeywordTok{case} \NormalTok{fmapCompose g h xs }\KeywordTok{of}
+          \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Refl}
+\end{Highlighting}
+\end{Shaded}
+
+And there you have it. A verified \texttt{Functor} typeclass, ensuring that all
+instances are lawful. Never tell me that Haskell's type system can't do anything
+ever again!
+
+We're done here!
+
+\section{Not Done Yet}\label{not-done-yet}
+
+Hah! Of course we aren't done. Of course, you could probably have seen that I
+was doing all of that to build up to the pièces de résistance: the crown jewel
+of every Haskell article, the Monad.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{Functor} \NormalTok{f }\OtherTok{=>} \DataTypeTok{Monad} \NormalTok{f }\KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Return} \NormalTok{a (}\OtherTok{x ::} \NormalTok{a)}\OtherTok{ ::} \NormalTok{f a}
+    \KeywordTok{type} \DataTypeTok{Bind}   \NormalTok{a b (}\OtherTok{m ::} \NormalTok{f a) (}\OtherTok{g ::} \NormalTok{a }\FunctionTok{~>} \NormalTok{f b)}\OtherTok{ ::} \NormalTok{f b}
+
+    \NormalTok{sReturn}
+\OtherTok{        ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{x ::} \NormalTok{a)}
+        \OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\DataTypeTok{Return} \NormalTok{a}\OtherTok{ x ::} \NormalTok{f a)}
+
+    \NormalTok{sBind}
+\OtherTok{        ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{m ::} \NormalTok{f a)}
+        \OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{g ::} \NormalTok{a }\FunctionTok{~>} \NormalTok{f b)}
+        \OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\DataTypeTok{Bind}   \NormalTok{a b m g)}
+
+    \CommentTok{-- | (return x >>= f) == f x}
+    \NormalTok{returnIdentLeft}
+\OtherTok{        ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{x ::} \NormalTok{a)}
+        \OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{g ::} \NormalTok{a }\FunctionTok{~>} \NormalTok{f b)}
+        \OtherTok{->} \DataTypeTok{Bind} \NormalTok{a b (}\DataTypeTok{Return} \NormalTok{a x) g }\FunctionTok{:~:} \NormalTok{(g }\FunctionTok{@@} \NormalTok{x)}
+
+    \CommentTok{-- | (m >>= return) == m}
+    \NormalTok{returnIdentRight}
+\OtherTok{        ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{m ::} \NormalTok{f a)}
+        \OtherTok{->} \DataTypeTok{Bind} \NormalTok{a a m }\DataTypeTok{ReturnSym0} \FunctionTok{:~:} \NormalTok{m}
+
+    \CommentTok{-- | m >>= (\textbackslash{}x -> f x >>= h) == (m >>= f) >>= h}
+    \NormalTok{bindCompose}
+\OtherTok{        ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{m ::} \NormalTok{f a)}
+        \OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{g ::} \NormalTok{a }\FunctionTok{~>} \NormalTok{f b)}
+        \OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{h ::} \NormalTok{b }\FunctionTok{~>} \NormalTok{f c)}
+        \OtherTok{->} \DataTypeTok{Bind} \NormalTok{a c m (}\DataTypeTok{KCompSym2} \NormalTok{a b c g h) }\FunctionTok{:~:} \DataTypeTok{Bind} \NormalTok{b c (}\DataTypeTok{Bind} \NormalTok{a b m g) h}
+
+\KeywordTok{data} \DataTypeTok{ReturnSym0}\OtherTok{ ::} \NormalTok{a }\FunctionTok{~>} \NormalTok{f a}
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply} \NormalTok{(}\DataTypeTok{ReturnSym0}\OtherTok{ ::} \NormalTok{a }\FunctionTok{~>} \NormalTok{f a) (}\OtherTok{x ::} \NormalTok{a) }\FunctionTok{=} \DataTypeTok{Return} \NormalTok{a x}
+
+\KeywordTok{type} \DataTypeTok{KComp} \NormalTok{a b c (}\OtherTok{g ::} \NormalTok{a }\FunctionTok{~>} \NormalTok{f b) (}\OtherTok{h ::} \NormalTok{b }\FunctionTok{~>} \NormalTok{f c) (}\OtherTok{x ::} \NormalTok{a) }\FunctionTok{=} \DataTypeTok{Bind} \NormalTok{b c (g }\FunctionTok{@@} \NormalTok{x) h}
+\KeywordTok{data} \DataTypeTok{KCompSym2} \NormalTok{a b c g}\OtherTok{ h ::} \NormalTok{(a }\FunctionTok{~>} \NormalTok{f c)}
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply} \NormalTok{(}\DataTypeTok{KCompSym2} \NormalTok{a b c g}\OtherTok{ h ::} \NormalTok{a }\FunctionTok{~>} \NormalTok{f c) (}\OtherTok{x ::} \NormalTok{a) }\FunctionTok{=} \DataTypeTok{KComp} \NormalTok{a b c g h x}
+\end{Highlighting}
+\end{Shaded}
+
+To help with kind inference, again, we provide explicit kind arguments for
+\texttt{Return} (the kind of the thing that is being lifted) and \texttt{Bind}
+(the original \texttt{a} and the resulting \texttt{b}).
+
+Some boilerplate exists there at the bottom --- it's the plumbing for the
+defunctionalization system. \texttt{returnIdentRight} requires a
+defunctionalized version of \texttt{Return}, so we can provide that by defining
+\texttt{ReturnSym0}, and writing an \texttt{Apply} instance for it (which
+``applies'' it the parameter \texttt{x}).
+
+We introduce \texttt{KComp} (kleisli composition) and its defunctionalized
+version in order to express the third law, because we don't yet have type-level
+lambdas in Haskell. The actual function it is expressing is
+\texttt{\textbackslash{}x\ -\textgreater{}\ f\ x\ \textgreater{}\textgreater{}=\ g},
+and that definition is given on the
+\texttt{type\ KComp\ a\ b\ c\ ...\ =\ Bind\ ...} line. \texttt{KCompSym2} is the
+defunctioanlized version, which is not a \texttt{a\ -\textgreater{}\ f\ c} but
+rather an \texttt{a\ \textasciitilde{}\textgreater{}\ f\ c}, which allows it to
+be partially applied. The rest (including the \texttt{Apply}) instance is how
+you hook it into the defunctionalization process.
+
+Without further ado, let's see some sample implementations.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{$}\NormalTok{(singletons [d|}
+  \NormalTok{bindOption :: Option a -> (a -> Option b) -> Option b}
+  \NormalTok{bindOption None     _ = None}
+  \NormalTok{bindOption (Some x) f = f x}
+  \NormalTok{|])}
+
+
+\OtherTok{  concatMapList ::} \NormalTok{(a }\OtherTok{->} \DataTypeTok{List} \NormalTok{b) }\OtherTok{->} \DataTypeTok{List} \NormalTok{a }\OtherTok{->} \DataTypeTok{List} \NormalTok{b}
+  \NormalTok{concatMapList _ }\DataTypeTok{Nil}         \FunctionTok{=} \DataTypeTok{Nil}
+  \NormalTok{concatMapList f (}\DataTypeTok{Cons} \NormalTok{x xs) }\FunctionTok{=} \NormalTok{f x }\OtherTok{`appendList`} \NormalTok{concatMapList f xs}
+
+\KeywordTok{instance} \DataTypeTok{Monad} \DataTypeTok{Option} \KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Return} \NormalTok{a   x   }\FunctionTok{=} \DataTypeTok{Some} \NormalTok{x}
+    \KeywordTok{type} \DataTypeTok{Bind}   \NormalTok{a b m g }\FunctionTok{=} \DataTypeTok{BindOption} \NormalTok{m g}
+
+    \NormalTok{sReturn }\FunctionTok{=} \DataTypeTok{SSome}
+    \NormalTok{sBind   }\FunctionTok{=} \NormalTok{sBindOption}
+
+    \NormalTok{returnIdentLeft _ _ }\FunctionTok{=} \DataTypeTok{Refl}
+    \NormalTok{returnIdentRight }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNone}   \OtherTok{->} \DataTypeTok{Refl}
+      \DataTypeTok{SSome} \NormalTok{x }\OtherTok{->} \KeywordTok{case} \NormalTok{sReturn x }\KeywordTok{of}
+        \DataTypeTok{SSome} \NormalTok{_ }\OtherTok{->} \DataTypeTok{Refl}
+    \NormalTok{bindCompose }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNone}   \OtherTok{->} \NormalTok{\textbackslash{}_ _ }\OtherTok{->} \DataTypeTok{Refl}
+      \DataTypeTok{SSome} \NormalTok{_ }\OtherTok{->} \NormalTok{\textbackslash{}_ _ }\OtherTok{->} \DataTypeTok{Refl}
+
+\KeywordTok{instance} \DataTypeTok{Monad} \DataTypeTok{List} \KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Return} \NormalTok{a   x   }\FunctionTok{=} \DataTypeTok{PureList} \NormalTok{x}
+    \KeywordTok{type} \DataTypeTok{Bind}   \NormalTok{a b m g }\FunctionTok{=} \DataTypeTok{ConcatMapList} \NormalTok{g m}
+
+    \NormalTok{sReturn   }\FunctionTok{=} \NormalTok{sPureList}
+    \NormalTok{sBind x f }\FunctionTok{=} \NormalTok{sConcatMapList f x}
+
+    \NormalTok{returnIdentLeft x g }\FunctionTok{=} \KeywordTok{case} \NormalTok{sReturn x }\KeywordTok{of}
+      \DataTypeTok{SCons} \NormalTok{y }\DataTypeTok{SNil} \OtherTok{->} \KeywordTok{case} \NormalTok{emptyIdentRight (unSingFun1 }\DataTypeTok{Proxy} \NormalTok{g y) }\KeywordTok{of}
+        \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Refl}
+
+    \NormalTok{returnIdentRight }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNil}       \OtherTok{->} \DataTypeTok{Refl}
+      \DataTypeTok{SCons} \NormalTok{_ xs }\OtherTok{->} \KeywordTok{case} \NormalTok{returnIdentRight xs }\KeywordTok{of}
+        \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Refl}
+
+    \NormalTok{bindCompose }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNil}       \OtherTok{->} \NormalTok{\textbackslash{}_ _ }\OtherTok{->} \DataTypeTok{Refl}
+      \DataTypeTok{SCons} \NormalTok{x xs }\OtherTok{->} \NormalTok{\textbackslash{}g h }\OtherTok{->} \KeywordTok{case} \NormalTok{bindCompose xs g h }\KeywordTok{of}
+        \DataTypeTok{Refl} \OtherTok{->} \KeywordTok{case} \NormalTok{unSingFun1 }\DataTypeTok{Proxy} \NormalTok{g x }\KeywordTok{of}
+          \DataTypeTok{SNil}       \OtherTok{->} \DataTypeTok{Refl}
+          \DataTypeTok{SCons} \NormalTok{y ys }\OtherTok{->}
+            \KeywordTok{let} \NormalTok{gxs  }\FunctionTok{=} \NormalTok{sConcatMapList g xs}
+                \NormalTok{hgxs }\FunctionTok{=} \NormalTok{sConcatMapList h gxs}
+                \NormalTok{hy   }\FunctionTok{=} \NormalTok{unSingFun1 }\DataTypeTok{Proxy} \NormalTok{h y}
+                \NormalTok{hys  }\FunctionTok{=} \NormalTok{sConcatMapList h ys}
+            \KeywordTok{in}  \KeywordTok{case} \NormalTok{distribConcatMap h ys gxs }\KeywordTok{of}
+                  \DataTypeTok{Refl} \OtherTok{->} \KeywordTok{case} \NormalTok{appendAssoc hy hys hgxs }\KeywordTok{of}
+                    \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Refl}
+
+\CommentTok{-- | Proving that concatMap distributes over Append}
+\NormalTok{distribConcatMap}
+\OtherTok{    ::} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{g ::} \NormalTok{a }\FunctionTok{~>} \DataTypeTok{List} \NormalTok{b)}
+    \OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{xs ::} \DataTypeTok{List} \NormalTok{a)}
+    \OtherTok{->} \DataTypeTok{Sing} \NormalTok{(}\OtherTok{ys ::} \DataTypeTok{List} \NormalTok{a)}
+    \OtherTok{->} \DataTypeTok{ConcatMapList} \NormalTok{g (}\DataTypeTok{AppendList} \NormalTok{xs ys) }\FunctionTok{:~:} \DataTypeTok{AppendList} \NormalTok{(}\DataTypeTok{ConcatMapList} \NormalTok{g xs) (}\DataTypeTok{ConcatMapList} \NormalTok{g ys)}
+\NormalTok{distribConcatMap g }\FunctionTok{=} \NormalTok{\textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{SNil} \OtherTok{->} \NormalTok{\textbackslash{}_ }\OtherTok{->} \DataTypeTok{Refl}
+    \DataTypeTok{SCons} \NormalTok{x xs }\OtherTok{->} \NormalTok{\textbackslash{}ys }\OtherTok{->}
+      \KeywordTok{case} \NormalTok{distribConcatMap g xs ys }\KeywordTok{of}
+        \DataTypeTok{Refl} \OtherTok{->}
+          \KeywordTok{let} \NormalTok{gx    }\FunctionTok{=} \NormalTok{unSingFun1 }\DataTypeTok{Proxy} \NormalTok{g x}
+              \NormalTok{cmgxs }\FunctionTok{=} \NormalTok{sConcatMapList g xs}
+              \NormalTok{cmgys }\FunctionTok{=} \NormalTok{sConcatMapList g ys}
+          \KeywordTok{in}  \KeywordTok{case} \NormalTok{appendAssoc gx cmgxs cmgys }\KeywordTok{of}
+                \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Refl}
+\end{Highlighting}
+\end{Shaded}
+
+\section{Disclaimer}\label{disclaimer}
+
+Don't do this in actual code please.
+
+\end{document}
