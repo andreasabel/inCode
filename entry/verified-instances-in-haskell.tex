@@ -108,9 +108,13 @@ types. And with the
 \emph{\href{http://hackage.haskell.org/package/singletons}{singletons}} library,
 it's now as easy as ever.
 
-The code for this post is available
+(The code for this post is available
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/verified-instances/VerifiedInstances.hs}{here}
-if you want to follow along!
+if you want to follow along! Some of the examples here involving \texttt{Demote}
+and relying on its injectivity will only work with
+\href{https://github.com/goldfirere/singletons}{singletons HEAD}, even though
+the necessary patches were made seven months ago\footnote{Not sure why it's not
+  on hackage yet, but I will update when it gets there!})
 
 \section{Semigroups}\label{semigroups}
 
@@ -170,8 +174,7 @@ Let's try again.
 \subsection{Verify me, Captain}\label{verify-me-captain}
 
 We will now define \texttt{Semigroup} on the \emph{kind} \texttt{List}, using
-\texttt{-XDataKinds}, instead of the type. But, technically, because of
-\texttt{TypeInType}, the \texttt{List} kind is also a \texttt{List} type so w/e
+\texttt{-XDataKinds}, instead of the type.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -210,22 +213,35 @@ to provide
 also a \emph{proof that they are associative}. You can't write the full instance
 without it!
 
-Using the \texttt{SingKind} typeclass from singletons, we can move back and
-forth from \texttt{Sing\ x} and \texttt{x}, and get our original (value-level)
-\texttt{\textless{}\textgreater{}} back. Let's call it \texttt{append}:
+\texttt{Semigroup} is be a ``kind-class'', because it is a bunch of methods and
+types associated with a certain kind. Which \texttt{\textless{}\textgreater{}}
+is dispatched when you do something like
+\texttt{x\ \textless{}\textgreater{}\ y} depends on the \emph{kind} of
+\texttt{x} and \texttt{y}. GHC does ``kind inference'' and uses the
+\texttt{\textless{}\textgreater{}} corresponding to the kinds of \texttt{x} and
+\texttt{y}.
+
+Using the \texttt{SingKind} typeclass from the singletons library, we can move
+back and forth from \texttt{Sing\ x} and \texttt{x}, and get our original
+(value-level) \texttt{\textless{}\textgreater{}} back:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{append}
-\OtherTok{    ::} \NormalTok{forall m}\FunctionTok{.} \NormalTok{(}\DataTypeTok{SingKind} \NormalTok{m, }\DataTypeTok{Semigroup} \NormalTok{m)}
-    \OtherTok{=>} \DataTypeTok{DemoteRep} \NormalTok{m}
-    \OtherTok{->} \DataTypeTok{DemoteRep} \NormalTok{m}
-    \OtherTok{->} \DataTypeTok{DemoteRep} \NormalTok{m}
-\NormalTok{append x y }\FunctionTok{=} \NormalTok{withSomeSing x }\FunctionTok{$} \NormalTok{\textbackslash{}sX }\OtherTok{->}
-             \NormalTok{withSomeSing y }\FunctionTok{$} \NormalTok{\textbackslash{}sY }\OtherTok{->}
-               \NormalTok{fromSing (sAppend }\FunctionTok{@}\NormalTok{m sX sY)}
+\NormalTok{(}\FunctionTok{<>}\NormalTok{)}
+\OtherTok{    ::} \NormalTok{(}\DataTypeTok{SingKind} \NormalTok{m, }\DataTypeTok{Semigroup} \NormalTok{m)}
+    \OtherTok{=>} \DataTypeTok{Demote} \NormalTok{m}
+    \OtherTok{->} \DataTypeTok{Demote} \NormalTok{m}
+    \OtherTok{->} \DataTypeTok{Demote} \NormalTok{m}
+\NormalTok{x }\FunctionTok{<>} \NormalTok{y }\FunctionTok{=} \NormalTok{withSomeSing x }\FunctionTok{$} \NormalTok{\textbackslash{}sX }\OtherTok{->}
+           \NormalTok{withSomeSing y }\FunctionTok{$} \NormalTok{\textbackslash{}sY }\OtherTok{->}
+             \NormalTok{fromSing (sX }\FunctionTok{%<>} \NormalTok{sY)}
 \end{Highlighting}
 \end{Shaded}
+
+(This works best with singletons HEAD at the moment, because \texttt{Demote} is
+injective. On 2.2 or lower, using this would require an explicit type
+application or annotation at any place you use
+\texttt{\textless{}\textgreater{}} or \texttt{\%\textless{}\textgreater{}})
 
 Now, let's write the instance for \texttt{List}. First, we need to define the
 singletons:
@@ -348,7 +364,7 @@ And now, we we can do:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \NormalTok{print }\FunctionTok{$} \NormalTok{append }\FunctionTok{@}\NormalTok{(}\DataTypeTok{List} \DataTypeTok{Nat}\NormalTok{) (}\DecValTok{1} \OtherTok{`Cons`} \DecValTok{2} \OtherTok{`Cons`} \DataTypeTok{Nil}\NormalTok{) (}\DecValTok{3} \OtherTok{`Cons`} \DecValTok{4} \OtherTok{`Cons`} \DataTypeTok{Nil}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{print }\FunctionTok{$} \NormalTok{((}\DecValTok{1}\OtherTok{::}\DataTypeTok{Integer}\NormalTok{) }\OtherTok{`Cons`} \DecValTok{2} \OtherTok{`Cons`} \DataTypeTok{Nil}\NormalTok{) }\FunctionTok{<>} \NormalTok{(}\DecValTok{3} \OtherTok{`Cons`} \DecValTok{4} \OtherTok{`Cons`} \DataTypeTok{Nil}\NormalTok{)}
 \DecValTok{1} \OtherTok{`Cons`} \DecValTok{2} \OtherTok{`Cons`} \DecValTok{3} \OtherTok{`Cons`} \DecValTok{4} \OtherTok{`Cons`} \DataTypeTok{Nil}
 \end{Highlighting}
 \end{Shaded}
@@ -417,11 +433,11 @@ semigroup:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \NormalTok{print }\FunctionTok{$} \NormalTok{append }\FunctionTok{@}\DataTypeTok{N} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)) (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{print }\FunctionTok{$} \DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{) }\FunctionTok{<>} \DataTypeTok{S} \DataTypeTok{Z}
 \DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))}
-\NormalTok{ghci}\FunctionTok{>} \NormalTok{print }\FunctionTok{$} \NormalTok{append }\FunctionTok{@}\NormalTok{(}\DataTypeTok{Option} \DataTypeTok{N}\NormalTok{) (}\DataTypeTok{Some} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)) (}\DataTypeTok{Some} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))))}
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{print }\FunctionTok{$} \DataTypeTok{Some} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{) }\FunctionTok{<>} \DataTypeTok{Some} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)))}
 \DataTypeTok{Some} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))))}
-\NormalTok{ghci}\FunctionTok{>} \NormalTok{print }\FunctionTok{$} \NormalTok{append }\FunctionTok{@}\NormalTok{(}\DataTypeTok{Option} \DataTypeTok{N}\NormalTok{) }\DataTypeTok{None}         \NormalTok{(}\DataTypeTok{Some} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))))}
+\NormalTok{ghci}\FunctionTok{>} \NormalTok{print }\FunctionTok{$} \DataTypeTok{None}       \FunctionTok{<>} \DataTypeTok{Some} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)))}
 \DataTypeTok{Some} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \NormalTok{(}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)))}
 \end{Highlighting}
 \end{Shaded}
@@ -448,9 +464,9 @@ leaves things unchanged:
         \OtherTok{->} \NormalTok{(x }\FunctionTok{<>} \DataTypeTok{Empty} \NormalTok{a) }\FunctionTok{:~:} \NormalTok{x}
 
 \NormalTok{empty}
-\OtherTok{    ::} \NormalTok{forall m}\FunctionTok{.} \NormalTok{(}\DataTypeTok{SingKind} \NormalTok{m, }\DataTypeTok{Monoid} \NormalTok{m)}
-    \OtherTok{=>} \DataTypeTok{DemoteRep} \NormalTok{m}
-\NormalTok{empty }\FunctionTok{=} \NormalTok{fromSing (sEmpty }\FunctionTok{@}\NormalTok{m)}
+\OtherTok{    ::} \NormalTok{(}\DataTypeTok{SingKind} \NormalTok{m, }\DataTypeTok{Monoid} \NormalTok{m)}
+    \OtherTok{=>} \DataTypeTok{Demote} \NormalTok{m}
+\NormalTok{empty }\FunctionTok{=} \NormalTok{fromSing sEmpty}
 \end{Highlighting}
 \end{Shaded}
 
@@ -613,16 +629,21 @@ Note that any mistakes in implementation (like, for example, having
 \texttt{mapOption\ \_\ \_\ =\ None}) will cause a compile-time error now,
 because the proofs are impossible to provide.
 
-What an exciting journey and a wonderful conclusion. I hope you enjoyed this and
-will begin using this in your normal day-to-day Haskell. Goodbye, until next
-time!
+As a side note, I'm not quite sure how to implement the value-level
+\texttt{fmap} from this, since I can't figure out how to promote functions
+nicely. Using \texttt{sFmap} is the only way to work with this at the value
+level that I can see, but it's probably because of my own lack of understanding.
+If anyone knows how to do this, please let me know!
 
-\section{Not Done Yet}\label{not-done-yet}
+Anyway, what an exciting journey and a wonderful conclusion. I hope you enjoyed
+this and will begin using this in your normal day-to-day Haskell. Goodbye, until
+next time!
 
-Hah! Just kidding. Of course we aren't done. I wouldn't let you down like that.
-I know that you probably saw that the entire last section's only purpose was to
-build up to the pièce de résistance: the crown jewel of every Haskell article,
-the Monad.
+\section{Just Kidding!}\label{just-kidding}
+
+Hah! Of course we aren't done. I wouldn't let you down like that. I know that
+you probably saw that the entire last section's only purpose was to build up to
+the pièce de résistance: the crown jewel of every Haskell article, the Monad.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -663,6 +684,13 @@ the Monad.
 \KeywordTok{type} \DataTypeTok{KComp} \NormalTok{a b c (}\OtherTok{g ::} \NormalTok{a }\FunctionTok{~>} \NormalTok{f b) (}\OtherTok{h ::} \NormalTok{b }\FunctionTok{~>} \NormalTok{f c) (}\OtherTok{x ::} \NormalTok{a) }\FunctionTok{=} \DataTypeTok{Bind} \NormalTok{b c (g }\FunctionTok{@@} \NormalTok{x) h}
 \KeywordTok{data} \DataTypeTok{KCompSym2} \NormalTok{a b c g}\OtherTok{ h ::} \NormalTok{(a }\FunctionTok{~>} \NormalTok{f c)}
 \KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply} \NormalTok{(}\DataTypeTok{KCompSym2} \NormalTok{a b c g}\OtherTok{ h ::} \NormalTok{a }\FunctionTok{~>} \NormalTok{f c) (}\OtherTok{x ::} \NormalTok{a) }\FunctionTok{=} \DataTypeTok{KComp} \NormalTok{a b c g h x}
+
+\NormalTok{return}
+\OtherTok{    ::} \NormalTok{(}\DataTypeTok{SingKind} \NormalTok{a, }\DataTypeTok{SingKind} \NormalTok{(f a), }\DataTypeTok{Monad} \NormalTok{f)}
+    \OtherTok{=>} \DataTypeTok{Demote} \NormalTok{a}
+    \OtherTok{->} \DataTypeTok{Demote} \NormalTok{(f a)}
+\NormalTok{return x }\FunctionTok{=} \NormalTok{withSomeSing x }\FunctionTok{$} \NormalTok{\textbackslash{}sX }\OtherTok{->}
+             \NormalTok{fromSing (sReturn sX)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -687,6 +715,9 @@ rather an \texttt{a\ \textasciitilde{}\textgreater{}\ f\ c}, which allows it to
 be partially applied (like we do for \texttt{composeBind}). And, finally, to
 hook all of this up into the defunctionalization system, we write an
 \texttt{Apply} instance yet again.
+
+And, again, if anyone knows how I can write a value-level \texttt{Bind}, I'd
+definitely appreciate hearing!
 
 Let's see some sample implementations.
 
@@ -796,9 +827,11 @@ requiring any manual proving on the part of the user.
 
 \section{Disclaimer}\label{disclaimer}
 
-Don't do this in actual code please.
+Don't do this in actual code, please. This post started off as an April Fools
+joke that accidentally compiled correctly for reasons which I cannot explain.
 
-But definitely do it for fun! The code in this post is available
+Don't do this in actual code, but definitely do it for fun! The code in this
+post is available
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/verified-instances/VerifiedInstances.hs}{here}
 if you want to play around!
 
