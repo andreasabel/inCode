@@ -460,15 +460,16 @@ will begin using this in your normal day-to-day Haskell. Goodbye, until next
 time!
 
 Not Done Yet
-============
+------------
 
 Hah! Just kidding. Of course we aren’t done. I wouldn’t let you down like that.
-I know that you probably saw that I was doing all of that to build up to the
-pièce de résistance: the crown jewel of every Haskell article, the Monad.
+I know that you probably saw that the entire last section’s only purpose was to
+build up to the pièce de résistance: the crown jewel of every Haskell article,
+the Monad.
 
 ``` {.haskell}
 class Functor f => Monad f where
-    type Return a   (x :: a) :: f a
+    type Return a   (x :: a)                   :: f a
     type Bind   a b (m :: f a) (g :: a ~> f b) :: f b
 
     sReturn
@@ -478,7 +479,7 @@ class Functor f => Monad f where
     sBind
         :: Sing (m :: f a)
         -> Sing (g :: a ~> f b)
-        -> Sing (Bind   a b m g)
+        -> Sing (Bind a b m g)
 
     -- | (return x >>= f) == f x
     returnIdentLeft
@@ -520,8 +521,9 @@ order to express the third law, because we don’t yet have type-level lambdas i
 Haskell. The actual function it is expressing is `\x -> f x >>= g`, and that
 definition is given on the `type KComp a b c ... = Bind ...` line. `KCompSym2`
 is the defunctioanlized version, which is not a `a -> f c` but rather an
-`a ~> f c`, which allows it to be partially applied. The rest (including the
-`Apply`) instance is how you hook it into the defunctionalization process.
+`a ~> f c`, which allows it to be partially applied (like we do for
+`composeBind`). And, finally, to hook all of this up into the
+defunctionalization system, we write an `Apply` instance yet again.
 
 Let’s see some sample implementations.
 
@@ -602,7 +604,7 @@ distribConcatMap g = \case
 ```
 
 Here we use `unSingFun1`, which converts a singleton of a type-level function
-into a value level function on singletons:
+into a value-level function on singletons:
 
 ``` {.haskell}
 unSingFun1
@@ -616,10 +618,12 @@ The `Proxy` argument only exists for historical reasons, I believe. But, the
 crux is that, given a `Sing (f :: a ~> b)` and a `Sing (x :: a)`, we can “apply”
 them to get `Sing (f @@ x :: b)`
 
-The proofs for the list instance is admittedly a bit awful, due to the fact that
-`List` is a recursive type. But, the proofs for `Option` are really something,
-aren’t they? It’s kind of amazing how much GHC can do on its own without
-requiring any manual proving on the part of the user.
+The proofs for the list instance is admittedly ugly to write, due to the fact
+that `List` is a recursive type. It’s also tricky because Haskell has poor to
+little support for theorem proving and no real tools to help you write them
+efficiently. But, the proofs for `Option` are really something, aren’t they?
+It’s kind of amazing how much GHC can do on its own without requiring any manual
+proving on the part of the user.
 
 Disclaimer
 ----------

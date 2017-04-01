@@ -297,10 +297,10 @@ empty <span class="fu">=</span> fromSing (sEmpty <span class="fu">@</span>m)</co
 <p>And there you have it. A verified <code>Functor</code> typeclass, ensuring that all instances are lawful. Never tell me that Haskell’s type system can’t do anything ever again!</p>
 <p>Note that any mistakes in implementation (like, for example, having <code>mapOption _ _ = None</code>) will cause a compile-time error now, because the proofs are impossible to provide.</p>
 <p>What an exciting journey and a wonderful conclusion. I hope you enjoyed this and will begin using this in your normal day-to-day Haskell. Goodbye, until next time!</p>
-<h1 id="not-done-yet">Not Done Yet</h1>
-<p>Hah! Just kidding. Of course we aren’t done. I wouldn’t let you down like that. I know that you probably saw that I was doing all of that to build up to the pièce de résistance: the crown jewel of every Haskell article, the Monad.</p>
+<h2 id="not-done-yet">Not Done Yet</h2>
+<p>Hah! Just kidding. Of course we aren’t done. I wouldn’t let you down like that. I know that you probably saw that the entire last section’s only purpose was to build up to the pièce de résistance: the crown jewel of every Haskell article, the Monad.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> <span class="dt">Monad</span> f <span class="kw">where</span>
-    <span class="kw">type</span> <span class="dt">Return</span> a   (<span class="ot">x ::</span> a)<span class="ot"> ::</span> f a
+    <span class="kw">type</span> <span class="dt">Return</span> a   (<span class="ot">x ::</span> a)<span class="ot">                   ::</span> f a
     <span class="kw">type</span> <span class="dt">Bind</span>   a b (<span class="ot">m ::</span> f a) (<span class="ot">g ::</span> a <span class="fu">~&gt;</span> f b)<span class="ot"> ::</span> f b
 
     sReturn
@@ -310,7 +310,7 @@ empty <span class="fu">=</span> fromSing (sEmpty <span class="fu">@</span>m)</co
     sBind
 <span class="ot">        ::</span> <span class="dt">Sing</span> (<span class="ot">m ::</span> f a)
         <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ot">g ::</span> a <span class="fu">~&gt;</span> f b)
-        <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="dt">Bind</span>   a b m g)
+        <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="dt">Bind</span> a b m g)
 
     <span class="co">-- | (return x &gt;&gt;= f) == f x</span>
     returnIdentLeft
@@ -338,7 +338,7 @@ empty <span class="fu">=</span> fromSing (sEmpty <span class="fu">@</span>m)</co
 <span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">KCompSym2</span> a b c g<span class="ot"> h ::</span> a <span class="fu">~&gt;</span> f c) (<span class="ot">x ::</span> a) <span class="fu">=</span> <span class="dt">KComp</span> a b c g h x</code></pre></div>
 <p>To help with kind inference, again, we provide explicit kind arguments for <code>Return</code> (the kind of the thing that is being lifted) and <code>Bind</code> (the original <code>a</code> and the resulting <code>b</code>).</p>
 <p>Some boilerplate exists there at the bottom — it’s the plumbing for the defunctionalization system. <code>returnIdentRight</code> requires a defunctionalized version of <code>Return</code>, so we can provide that by defining <code>ReturnSym0</code>, and writing an <code>Apply</code> instance for it (which “applies” it the parameter <code>x</code>).</p>
-<p>We introduce <code>KComp</code> (kleisli composition) and its defunctionalized version in order to express the third law, because we don’t yet have type-level lambdas in Haskell. The actual function it is expressing is <code>\x -&gt; f x &gt;&gt;= g</code>, and that definition is given on the <code>type KComp a b c ... = Bind ...</code> line. <code>KCompSym2</code> is the defunctioanlized version, which is not a <code>a -&gt; f c</code> but rather an <code>a ~&gt; f c</code>, which allows it to be partially applied. The rest (including the <code>Apply</code>) instance is how you hook it into the defunctionalization process.</p>
+<p>We introduce <code>KComp</code> (kleisli composition) and its defunctionalized version in order to express the third law, because we don’t yet have type-level lambdas in Haskell. The actual function it is expressing is <code>\x -&gt; f x &gt;&gt;= g</code>, and that definition is given on the <code>type KComp a b c ... = Bind ...</code> line. <code>KCompSym2</code> is the defunctioanlized version, which is not a <code>a -&gt; f c</code> but rather an <code>a ~&gt; f c</code>, which allows it to be partially applied (like we do for <code>composeBind</code>). And, finally, to hook all of this up into the defunctionalization system, we write an <code>Apply</code> instance yet again.</p>
 <p>Let’s see some sample implementations.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$</span>(singletons [d|
   bindOption :: Option a -&gt; (a -&gt; Option b) -&gt; Option b
@@ -413,14 +413,14 @@ distribConcatMap g <span class="fu">=</span> \<span class="kw">case</span>
               cmgys <span class="fu">=</span> sConcatMapList g ys
           <span class="kw">in</span>  <span class="kw">case</span> appendAssoc gx cmgxs cmgys <span class="kw">of</span>
                 <span class="dt">Refl</span> <span class="ot">-&gt;</span> <span class="dt">Refl</span></code></pre></div>
-<p>Here we use <code>unSingFun1</code>, which converts a singleton of a type-level function into a value level function on singletons:</p>
+<p>Here we use <code>unSingFun1</code>, which converts a singleton of a type-level function into a value-level function on singletons:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">unSingFun1
 <span class="ot">    ::</span> <span class="dt">Proxy</span> (<span class="ot">f      ::</span> a <span class="fu">~&gt;</span> b)
     <span class="ot">-&gt;</span> <span class="dt">Sing</span>  (<span class="ot">f      ::</span> a <span class="fu">~&gt;</span> b)
     <span class="ot">-&gt;</span> <span class="dt">Sing</span>  (<span class="ot">x      ::</span> a)
     <span class="ot">-&gt;</span> <span class="dt">Sing</span>  (f <span class="fu">@@</span><span class="ot"> x ::</span> b)</code></pre></div>
 <p>The <code>Proxy</code> argument only exists for historical reasons, I believe. But, the crux is that, given a <code>Sing (f :: a ~&gt; b)</code> and a <code>Sing (x :: a)</code>, we can “apply” them to get <code>Sing (f @@ x :: b)</code></p>
-<p>The proofs for the list instance is admittedly a bit awful, due to the fact that <code>List</code> is a recursive type. But, the proofs for <code>Option</code> are really something, aren’t they? It’s kind of amazing how much GHC can do on its own without requiring any manual proving on the part of the user.</p>
+<p>The proofs for the list instance is admittedly ugly to write, due to the fact that <code>List</code> is a recursive type. It’s also tricky because Haskell has poor to little support for theorem proving and no real tools to help you write them efficiently. But, the proofs for <code>Option</code> are really something, aren’t they? It’s kind of amazing how much GHC can do on its own without requiring any manual proving on the part of the user.</p>
 <h2 id="disclaimer">Disclaimer</h2>
 <p>Don’t do this in actual code please.</p>
 <p>But definitely do it for fun! The code in this post is available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/verified-instances/VerifiedInstances.hs">here</a> if you want to play around!</p>
