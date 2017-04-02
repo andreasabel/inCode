@@ -300,7 +300,7 @@ empty <span class="fu">=</span> fromSing sEmpty</code></pre></div>
 <p>Note that any mistakes in implementation (like, for example, having <code>mapOption _ _ = None</code>) will cause a compile-time error now, because the proofs are impossible to provide.</p>
 <p>As a side note, I’m not quite sure how to implement the value-level <code>fmap</code> from this, since I can’t figure out how to promote functions nicely. Using <code>sFmap</code> is the only way to work with this at the value level that I can see, but it’s probably because of my own lack of understanding. If anyone knows how to do this, please let me know!</p>
 <p>Anyway, what an exciting journey and a wonderful conclusion. I hope you enjoyed this and will begin using this in your normal day-to-day Haskell. Goodbye, until next time!</p>
-<h2 id="just-kidding">Just Kidding!</h2>
+<h2 id="just-one-more">Just one more</h2>
 <p>Hah! Of course we aren’t done. I wouldn’t let you down like that. I know that you probably saw that the entire last section’s only purpose was to build up to the pièce de résistance: the crown jewel of every Haskell article, the Monad.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> <span class="dt">Monad</span> f <span class="kw">where</span>
     <span class="kw">type</span> <span class="dt">Return</span> a   (<span class="ot">x ::</span> a)<span class="ot">                   ::</span> f a
@@ -355,12 +355,11 @@ return x <span class="fu">=</span> withSomeSing x <span class="fu">$</span> \sX 
   bindOption :: Option a -&gt; (a -&gt; Option b) -&gt; Option b
   bindOption None     _ = None
   bindOption (Some x) f = f x
+
+  concatMapList :: (a -&gt; List b) -&gt; List a -&gt; List b
+  concatMapList _ Nil         = Nil
+  concatMapList f (Cons x xs) = f x `appendList` concatMapList f xs
   |])
-
-
-<span class="ot">  concatMapList ::</span> (a <span class="ot">-&gt;</span> <span class="dt">List</span> b) <span class="ot">-&gt;</span> <span class="dt">List</span> a <span class="ot">-&gt;</span> <span class="dt">List</span> b
-  concatMapList _ <span class="dt">Nil</span>         <span class="fu">=</span> <span class="dt">Nil</span>
-  concatMapList f (<span class="dt">Cons</span> x xs) <span class="fu">=</span> f x <span class="ot">`appendList`</span> concatMapList f xs
 
 <span class="kw">instance</span> <span class="dt">Monad</span> <span class="dt">Option</span> <span class="kw">where</span>
     <span class="kw">type</span> <span class="dt">Return</span> a   x   <span class="fu">=</span> <span class="dt">Some</span> x
