@@ -689,7 +689,7 @@ Be sure to come back as we go deeper into more advanced techniques for
 programming with singletons for phantom types, and then also into the wonderful
 world that is type-level programming!
 
-To me, before I began using the singletons library, I had all sorts of ad-hoc
+For me, before I began using the singletons library, I had all sorts of ad-hoc
 trickery everywhere, and every single thing I did at the type level was a bunch
 of one-off hacks and tricks. Once I found singletons, however, everything was
 revealed, and all became unified, neat, and tidy, utilizing the same mechanisms
