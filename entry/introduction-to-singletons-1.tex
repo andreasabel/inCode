@@ -132,6 +132,8 @@ pattern, uses the following extensions:
 \item
   KindSignatures
 \item
+  RankNTypes
+\item
   TypeInType
 \end{itemize}
 
@@ -184,7 +186,7 @@ DSL for a type-safe door:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L12-15}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L13-16}
 \KeywordTok{data} \DataTypeTok{DoorState} \FunctionTok{=} \DataTypeTok{Opened} \FunctionTok{|} \DataTypeTok{Closed} \FunctionTok{|} \DataTypeTok{Locked}
   \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Eq}\NormalTok{)}
 
@@ -276,7 +278,7 @@ of \texttt{Door}, and return a specific type of \texttt{Door}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L17-18}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L18-19}
 \OtherTok{closeDoor ::} \DataTypeTok{Door} \CharTok{'Opened -> Door '}\DataTypeTok{Closed}
 \NormalTok{closeDoor }\DataTypeTok{UnsafeMkDoor} \FunctionTok{=} \DataTypeTok{UnsafeMkDoor}
 \end{Highlighting}
@@ -323,7 +325,7 @@ typechecked to all be legal:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L20-24}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L21-25}
 \OtherTok{lockDoor ::} \DataTypeTok{Door} \CharTok{'Closed -> Door '}\DataTypeTok{Locked}
 \NormalTok{lockDoor }\DataTypeTok{UnsafeMkDoor} \FunctionTok{=} \DataTypeTok{UnsafeMkDoor}
 
@@ -417,7 +419,7 @@ matched on) reveals its type.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L26-29}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L27-30}
 \KeywordTok{data} \DataTypeTok{SingDS}\OtherTok{ ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{SOpened}\OtherTok{ ::} \DataTypeTok{SingDS} \CharTok{'Opened}
     \DataTypeTok{SClosed}\OtherTok{ ::} \DataTypeTok{SingDS} \CharTok{'Closed}
@@ -448,7 +450,7 @@ essentially.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L31-38}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L32-39}
 \OtherTok{doorStatus ::} \DataTypeTok{SingDS}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{DoorState}
 \NormalTok{doorStatus }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{SOpened} \OtherTok{->} \CommentTok{-- in this branch, `s` is `'Opened`}
@@ -477,7 +479,7 @@ of it. In the scope of the case statement branch, GHC \emph{knows} what
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L17-44}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L18-45}
 \OtherTok{closeDoor ::} \DataTypeTok{Door} \CharTok{'Opened -> Door '}\DataTypeTok{Closed}
 
 \OtherTok{lockDoor ::} \DataTypeTok{Door} \CharTok{'Closed -> Door '}\DataTypeTok{Locked}
@@ -513,7 +515,7 @@ typeclasses:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L46-54}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L47-55}
 \KeywordTok{class} \DataTypeTok{SingDSI}\NormalTok{ s }\KeywordTok{where}
 \OtherTok{    singDS ::} \DataTypeTok{SingDS}\NormalTok{ s}
 
@@ -530,7 +532,7 @@ And so now we can do:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L56-60}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L57-61}
 \OtherTok{doorStatus_ ::} \DataTypeTok{SingDSI}\NormalTok{ s }\OtherTok{=>} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{DoorState}
 \NormalTok{doorStatus_ }\FunctionTok{=}\NormalTok{ doorStatus singDS}
 
@@ -558,13 +560,56 @@ Earlier, I disparaged the ``ad-hoc typeclass'' approach. But, here, the
 typeclass isn't quite ad-hoc; it's basically exactly carrying around an implicit
 witness of \texttt{s} that we can grab at any time.
 
-\subsection{Fun with Witnesses}\label{fun-with-witnesses}
+So, it's important to remember that \texttt{doorStatus} and
+\texttt{doorStatus\_} are the ``same function'', with the same power. They are
+just written in different styles -- \texttt{doorStatus} is written in explicit
+style, and \texttt{doorStatus\_} is written in implicit style.
 
-We can write a nice version of \texttt{mkDoor} this way:
+\subsubsection{Going backwards}\label{going-backwards}
+
+Going from \texttt{SingDSI\ s\ =\textgreater{}} to
+\texttt{SingDS\ s\ -\textgreater{}} (implicit to explicit) is very easy -- just
+use \texttt{singDS} to get a \texttt{SingDS\ s} if you have a
+\texttt{SingDSI\ s} constraint available.
+
+Going from \texttt{SingDS\ s\ -\textgreater{}} to
+\texttt{SingDSI\ s\ =\textgreater{}} (explicit to implicit) in Haskell is
+actually a little trickier. The typical way to do this is with a CPS-like
+utility function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L62-66}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L63-67}
+\OtherTok{withSingDSI ::} \DataTypeTok{SingDS}\NormalTok{ s }\OtherTok{->}\NormalTok{ (}\DataTypeTok{SingDSI}\NormalTok{ s }\OtherTok{=>}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
+\NormalTok{withSingDSI s x }\FunctionTok{=} \KeywordTok{case}\NormalTok{ s }\KeywordTok{of}
+    \DataTypeTok{SOpened} \OtherTok{->}\NormalTok{ x}
+    \DataTypeTok{SClosed} \OtherTok{->}\NormalTok{ x}
+    \DataTypeTok{SLocked} \OtherTok{->}\NormalTok{ x}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{withSingDSI} takes a \texttt{SingDS\ s}, and a value (of type
+\texttt{r}) that requires a \texttt{SingDSI\ s} instance to be created. And it
+creates that value for you!
+
+So now we can run our implicit functions (like \texttt{lockAnyDoor\_}) by giving
+them explicit inputs:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L69-70}
+\OtherTok{lockAnyDoor__ ::} \DataTypeTok{SingDS}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Door} \CharTok{'Locked}
+\NormalTok{lockAnyDoor__ s d }\FunctionTok{=}\NormalTok{ withSingDSI s (lockAnyDoor_ d)}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Fun with Witnesses}\label{fun-with-witnesses}
+
+We can write a nice version of \texttt{mkDoor} using singletons:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L72-76}
 \OtherTok{mkDoor ::} \DataTypeTok{SingDS}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s}
 \NormalTok{mkDoor }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{SOpened} \OtherTok{->} \DataTypeTok{UnsafeMkDoor}
@@ -685,15 +730,15 @@ using this conversion function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{closeSomeDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{SomeDoor}
+\OtherTok{closeSomeDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Door} \CharTok{'Closed)}
 \NormalTok{closeSomeDoor sd }\FunctionTok{=}\NormalTok{ withSomeDoor sd }\FunctionTok{$}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-    \DataTypeTok{SOpened} \OtherTok{->}\NormalTok{ \textbackslash{}d }\OtherTok{->} \DataTypeTok{Just} \FunctionTok{$}\NormalTok{ mkSomeDoor }\DataTypeTok{SClosed}\NormalTok{ (closeDoor d)}
+    \DataTypeTok{SOpened} \OtherTok{->}\NormalTok{ \textbackslash{}d }\OtherTok{->} \DataTypeTok{Just} \FunctionTok{$}\NormalTok{ closeDoor d}
     \DataTypeTok{SClosed} \OtherTok{->}\NormalTok{ \textbackslash{}_ }\OtherTok{->} \DataTypeTok{Nothing}
     \DataTypeTok{SLocked} \OtherTok{->}\NormalTok{ \textbackslash{}_ }\OtherTok{->} \DataTypeTok{Nothing}
 
-\OtherTok{lockAnySomeDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{SomeDoor}
+\OtherTok{lockAnySomeDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{Door} \CharTok{'Locked}
 \NormalTok{lockAnySomeDoor sd }\FunctionTok{=}\NormalTok{ withSomeDoor sd }\FunctionTok{$}\NormalTok{ \textbackslash{}s d }\OtherTok{->}
-\NormalTok{    mkSomeDoor }\DataTypeTok{SLocked}\NormalTok{ (lockAnyDoor s d)}
+\NormalTok{    lockAnyDoor s d}
 \end{Highlighting}
 \end{Shaded}
 
@@ -709,7 +754,7 @@ existential data type!
 \KeywordTok{data} \DataTypeTok{SomeDoor} \FunctionTok{=}\NormalTok{ forall s}\FunctionTok{.} \DataTypeTok{MkSomeDoor}\NormalTok{ (}\DataTypeTok{SingDS}\NormalTok{ s) (}\DataTypeTok{Door}\NormalTok{ s)}
 
 \CommentTok{-- or, using GADT syntax}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L68-69}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L78-79}
 \KeywordTok{data} \DataTypeTok{SomeDoor}\OtherTok{ ::} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{MkSomeDoor}\OtherTok{ ::} \DataTypeTok{SingDS}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{SomeDoor}
 \end{Highlighting}
@@ -729,15 +774,15 @@ type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L71-78}
-\OtherTok{closeSomeDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{SomeDoor}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L81-88}
+\OtherTok{closeSomeDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Door} \CharTok{'Closed)}
 \NormalTok{closeSomeDoor }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-    \DataTypeTok{MkSomeDoor} \DataTypeTok{SOpened}\NormalTok{ d }\OtherTok{->} \DataTypeTok{Just} \FunctionTok{$} \DataTypeTok{MkSomeDoor} \DataTypeTok{SClosed}\NormalTok{ (closeDoor d)}
+    \DataTypeTok{MkSomeDoor} \DataTypeTok{SOpened}\NormalTok{ d }\OtherTok{->} \DataTypeTok{Just}\NormalTok{ (closeDoor d)}
     \DataTypeTok{MkSomeDoor} \DataTypeTok{SClosed}\NormalTok{ _ }\OtherTok{->} \DataTypeTok{Nothing}
     \DataTypeTok{MkSomeDoor} \DataTypeTok{SLocked}\NormalTok{ _ }\OtherTok{->} \DataTypeTok{Nothing}
 
-\OtherTok{lockAnySomeDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{SomeDoor}
-\NormalTok{lockAnySomeDoor (}\DataTypeTok{MkSomeDoor}\NormalTok{ s d) }\FunctionTok{=} \DataTypeTok{MkSomeDoor} \DataTypeTok{SLocked}\NormalTok{ (lockAnyDoor s d)}
+\OtherTok{lockAnySomeDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{Door} \CharTok{'Locked}
+\NormalTok{lockAnySomeDoor (}\DataTypeTok{MkSomeDoor}\NormalTok{ s d) }\FunctionTok{=}\NormalTok{ lockAnyDoor s d}
 \end{Highlighting}
 \end{Shaded}
 
@@ -788,7 +833,7 @@ door with the status unknown until runtime:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L80-84}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L90-94}
 \OtherTok{mkSomeDoor ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{SomeDoor}
 \NormalTok{mkSomeDoor }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{Opened} \OtherTok{->} \DataTypeTok{MkSomeDoor} \DataTypeTok{SOpened}\NormalTok{ (mkDoor }\DataTypeTok{SOpened}\NormalTok{)}
@@ -833,7 +878,7 @@ First, there's Template Haskell for generating our singletons given our type:
 \NormalTok{genSingletons [}\CharTok{''}\DataTypeTok{DoorState}\NormalTok{]}
 
 \CommentTok{-- or}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L16-19}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L17-20}
 \FunctionTok{$}\NormalTok{(singletons [d|}
 \NormalTok{  data DoorState = Opened | Closed | Locked}
 \NormalTok{    deriving (Show, Eq)}
@@ -892,6 +937,9 @@ The great thing about the library is that these types and instances are
 generated, that they're correct (note that I could have implemented
 \texttt{SingDSI} incorrectly\ldots{}using the library guarantees that I don't),
 and that they all work together.
+
+We also have \texttt{withSingI}, which is equivalent to our \texttt{withSingDSI}
+function earlier.
 
 Note that if you have singletons for a kind \texttt{k}, you also have instances
 for kind \texttt{Maybe\ k}, as well. And also for \texttt{{[}k{]}}, even!
@@ -990,6 +1038,11 @@ It does this by defining a type class (actually, a ``kind class''),
 datakinds-generated kind. The \texttt{SingKind} instance for \texttt{DoorState}
 links the type \texttt{DoorState} to the kind \texttt{DoorState}.
 
+The library also defines a neat type synonym,
+\texttt{type\ SDoorState\ =\ Sing}, so you can do
+\texttt{SDoorState\ \textquotesingle{}Opened} instead of
+\texttt{Sing\ \textquotesingle{}Opened}, if you wish!
+
 There are definitely more useful utility functions, but we will investigate
 these later on in the series! For now, you can look at the
 \href{http://hackage.haskell.org/package/singletons/docs/Data-Singletons.html}{documentation}
@@ -1018,5 +1071,61 @@ unification of a lot of concepts.
 As always, let me know in the comments if you have any questions! You can also
 usually find me idling on the freenode \texttt{\#haskell} channel, as well, as
 \emph{jle`}. Happy haskelling!
+
+\section{Exercises}\label{exercises}
+
+Click on the links in the corner of the text boxes for solutions!
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  Write a function to unlock a door, but only if the user enters an odd number
+  (a password).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{!!!}\NormalTok{singletons}\FunctionTok{/}\NormalTok{DoorSingletons.hs }\StringTok{"unlockDoor ::"}\DecValTok{1}
+\end{Highlighting}
+\end{Shaded}
+
+  It should return a closed door in \texttt{Just} if the caller gives an odd
+  number, or \texttt{Nothing} otherwise.
+\item
+  Write a function that can open any door, taking an optional password.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{!!!}\NormalTok{singletons}\FunctionTok{/}\NormalTok{DoorSingletons.hs }\StringTok{"openAnyDoor ::"}\DecValTok{1}
+\end{Highlighting}
+\end{Shaded}
+
+  This should be written in terms of \texttt{unlockDoor} and \texttt{openDoor}.
+
+  If the door is already unlocked or opened, it should ignore the \texttt{Int}
+  input.
+\item
+  Implement \texttt{withSomeDoor} for our ``new'' existentially quantified
+  \texttt{SomeDoor} type.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{!!!}\NormalTok{singletons}\FunctionTok{/}\NormalTok{DoorSingletons.hs }\StringTok{"withSomeDoor ::"}\DecValTok{1}
+\end{Highlighting}
+\end{Shaded}
+\item
+  Implement \texttt{openAnySomeDoor}, which should work like
+  \texttt{lockAnySomeDoor}, just wrapping an application of \texttt{openAnyDoor}
+  inside a \texttt{SomeDoor}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{!!!}\NormalTok{singletons}\FunctionTok{/}\NormalTok{DoorSingletons.hs }\StringTok{"openAnySomeDoor ::"}\DecValTok{1}
+\end{Highlighting}
+\end{Shaded}
+
+  Note that because we wrote \texttt{openAnyDoor} in ``implicit style'', we
+  might have to convert between \texttt{SingI\ s\ =\textgreater{}} and
+  \texttt{Sing\ s\ -\textgreater{}} style, using \texttt{withSingI}.
+\end{enumerate}
 
 \end{document}
