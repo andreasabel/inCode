@@ -419,6 +419,13 @@ withSingDSI s x = case s of
 `withSingDSI` takes a `SingDS s`, and a value (of type `r`) that requires a
 `SingDSI s` instance to be created. And it creates that value for you!
 
+It works because in each branch, `s` is now a *specific*, monomorphic, “conrete”
+`s`, and GHC knows that such an instance exists for every branch. In the
+`SOpened` branch, `s ~ 'Opened`,[^3] so GHC knows that there is a
+`SingDSI 'Opened` instance, and gives it to you. In the `SCloed` branch,
+`s ~ 'Closed`, so GHC knows that there is a `SingDSI 'Closed` instance, and
+gives *that* to you, etc.
+
 So now we can run our implicit functions (like `lockAnyDoor_`) by giving them
 explicit inputs:
 
@@ -894,3 +901,6 @@ for a comparison, if you are still unfamiliar.
 [^2]: The `'` ticks are technically optional, but I find that it’s good style,
     at this point in Haskell, to use them whenever you can. It’ll prevent a lot
     of confusion, trust me!
+
+[^3]: `~` here refers to “type equality”, or the constraint that the types on
+    both sides are equal. `s ~ 'Opened` can be read as “`s` is `'Opened`”.
