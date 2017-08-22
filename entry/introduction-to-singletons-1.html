@@ -49,9 +49,10 @@ ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">MkF
 <span class="kw">data</span> <span class="dt">DoorState</span> <span class="fu">=</span> <span class="dt">Opened</span> <span class="fu">|</span> <span class="dt">Closed</span> <span class="fu">|</span> <span class="dt">Locked</span>
   <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)
 
-<span class="kw">data</span> <span class="dt">Door</span> (<span class="ot">s ::</span> <span class="dt">DoorState</span>) <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span></code></pre></div>
+<span class="kw">data</span> <span class="dt">Door</span> (<span class="ot">s ::</span> <span class="dt">DoorState</span>) <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="dt">String</span></code></pre></div>
 <p>A couple things going on here:</p>
 <ol type="1">
+<li><p>Our type we are going to be playing with is a <code>Door</code>, which contains a single field describing, say, the material that the door is made out of. (<code>UnsafeMkDoor &quot;Oak&quot;</code> would be an oak door)</p></li>
 <li><p>We’re using the <code>DataKinds</code> extension to create both the <em>type</em> <code>DoorState</code> as well as the <em>kind</em> <code>DoorState</code>.</p>
 <p>Normally, <code>data DoorState = Opened | Closed | Locked</code> in Haskell defines the type <code>DoorState</code> and the value constructors <code>Opened</code>, <code>Closed</code>, and <code>Locked</code>.</p>
 <p>However, with <code>DataKinds</code>, that statement also defines a new <em>kind</em> <code>DoorState</code>, with <em>type</em> constructors <code>'Opened</code>, <code>'Closed</code>, and <code>'Locked</code>. (note the <code>'</code> ticks!)<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
@@ -61,30 +62,30 @@ ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="ch">&#3
 <span class="dt">DoorState</span></code></pre></div></li>
 </ol>
 <!-- -->
-<ol start="2" type="1">
+<ol start="3" type="1">
 <li><p>We’re defining the <code>Door</code> type with a <em>phantom parameter</em> <code>s</code>. It’s a phantom type because we don’t actually have any <em>values</em> of type <code>s</code> in our data type…the <code>s</code> is only just there as a dummy parameter for the type.</p>
 <p>We can use <code>UnsafeMkDoor</code> without ever using anything of type <code>s</code>. In reality, a real <code>Door</code> type would be a bit more complicated (and the direct <code>MkDoor</code> constructor would be hidden).</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">UnsafeMkDoor</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Opened</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">UnsafeMkDoor</span> <span class="st">&quot;Birch&quot;</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Opened</span>
 <span class="dt">Door</span> <span class="ch">&#39;Opened</span>
-ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">UnsafeMkDoor</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
+ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">UnsafeMkDoor</span> <span class="st">&quot;Iron&quot;</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
 <span class="dt">Door</span> <span class="ch">&#39;Locked</span></code></pre></div></li>
 </ol>
-<p>We’ll take a <code>Door s</code> to mean the type of a door with that current status. So a <code>Door 'Opened</code> is the type of an opened door, a <code>Door 'Closed</code> is the type of a closed (and unlocked) door, etc.</p>
+<p>We’ll take a <code>Door s</code> to mean the type of a door with that current status. So a <code>Door 'Opened</code> is the type of an opened door, a <code>Door 'Closed</code> is the type of a closed (and unlocked) door, etc. The <code>String</code> that the <code>Door</code> contains represents its material (oak, birch, spruce, etc.).</p>
 <p>Alternatively, we can define <code>Door</code> using <a href="https://en.wikibooks.org/wiki/Haskell/GADT#Syntax"><em>GADT</em> syntax</a> (which requires the <code>GADTs</code> extension).</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Door</span><span class="ot"> ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span>
-    <span class="dt">UnsafeMkDoor</span><span class="ot"> ::</span> <span class="dt">Door</span> s</code></pre></div>
+    <span class="dt">UnsafeMkDoor</span><span class="ot"> ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s</code></pre></div>
 <p>This is defining the exact same type in the alternate “GADT syntax” style of data type declaration – here, we define types by giving the type of its constructors.</p>
 <h3 id="phantoms-in-action">Phantoms in Action</h3>
 <p>At first, this seems a bit silly. Why even have the extra type parameter if you don’t ever use it?</p>
 <p>Well, right off the bat, we can write functions that expect only a certain type of <code>Door</code>, and return a specific type of <code>Door</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L18-19</span>
 <span class="ot">closeDoor ::</span> <span class="dt">Door</span> <span class="ch">&#39;Opened -&gt; Door &#39;</span><span class="dt">Closed</span>
-closeDoor <span class="dt">UnsafeMkDoor</span> <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span></code></pre></div>
+closeDoor (<span class="dt">UnsafeMkDoor</span> m) <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> m</code></pre></div>
 <p>So, the <code>closeDoor</code> function will <em>only</em> take a <code>Door 'Opened</code> (an opened door). And it will return a <code>Door 'Closed</code> (a closed door).</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="kw">let</span> myDoor <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Opened</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="kw">let</span> myDoor <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="st">&quot;Spruce&quot;</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Opened</span>
 ghci<span class="fu">&gt;</span> <span class="fu">:</span>t closeDoor myDoor
 <span class="dt">Door</span> <span class="ch">&#39;Closed</span>
-ghci<span class="fu">&gt;</span> <span class="kw">let</span> yourDoor <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Closed</span>
+ghci<span class="fu">&gt;</span> <span class="kw">let</span> yourDoor <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="st">&quot;Acacia&quot;</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Closed</span>
 ghci<span class="fu">&gt;</span> <span class="fu">:</span>t closeDoor yourDoor
 <span class="dt">TYPE</span> <span class="dt">ERROR</span><span class="fu">!</span>  <span class="dt">TYPE</span> <span class="dt">ERROR</span><span class="fu">!</span></code></pre></div>
 <p>You can think of this as a nice way of catching <em>logic errors</em> at compile-time. If your door type did not have its status in the type, the <code>closeDoor</code> could have been given a closed or locked door, and you’d have to reject it at runtime!</p>
@@ -96,10 +97,10 @@ ghci<span class="fu">&gt;</span> <span class="fu">:</span>t closeDoor yourDoor
 <p>With a couple of state transitions, we can write compositions that are typechecked to all be legal:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L21-25</span>
 <span class="ot">lockDoor ::</span> <span class="dt">Door</span> <span class="ch">&#39;Closed -&gt; Door &#39;</span><span class="dt">Locked</span>
-lockDoor <span class="dt">UnsafeMkDoor</span> <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span>
+lockDoor (<span class="dt">UnsafeMkDoor</span> m) <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> m
 
 <span class="ot">openDoor ::</span> <span class="dt">Door</span> <span class="ch">&#39;Closed -&gt; Door &#39;</span><span class="dt">Opened</span>
-openDoor <span class="dt">UnsafeMkDoor</span> <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span></code></pre></div>
+openDoor (<span class="dt">UnsafeMkDoor</span> m) <span class="fu">=</span> (<span class="dt">UnsafeMkDoor</span> m)</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t closeDoor <span class="fu">.</span> openDoor
 <span class="dt">Door</span> <span class="ch">&#39;Closed -&gt; Door &#39;</span><span class="dt">Closed</span>
 ghci<span class="fu">&gt;</span> <span class="fu">:</span>t lockDoor <span class="fu">.</span> closeDoor <span class="fu">.</span> openDoor
@@ -110,19 +111,20 @@ ghci<span class="fu">&gt;</span> <span class="fu">:</span>t lockDoor <span class
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">doorStatus ::</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">DoorState</span>
 doorStatos _ <span class="fu">=</span> <span class="co">-- ?</span></code></pre></div>
 <p>(It can be done with an ad-hoc typeclass, but it’s not simple, and it’s prone to implementation bugs)</p>
-<p>And, perhaps even more important, how can you create a <code>Door</code> with a given state that isn’t known until runtime? If we know the type of our doors at compile-time, we can just explicitly write <code>UnsafeMkDoor :: Door 'Opened</code>. But what if we wanted to make a door based on a <code>DoorState</code> input?</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mkDoor ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s
+<p>And, perhaps even more important, how can you create a <code>Door</code> with a given state that isn’t known until runtime? If we know the type of our doors at compile-time, we can just explicitly write <code>UnsafeMkDoor &quot;Iron&quot; :: Door 'Opened</code>. But what if we wanted to make a door based on a <code>DoorState</code> input?</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mkDoor ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s
 mkDoor <span class="dt">Opened</span> <span class="fu">=</span> <span class="co">-- ?</span>
 mkDoor <span class="dt">Closed</span> <span class="fu">=</span> <span class="co">-- ?</span>
 mkDoor <span class="dt">Locked</span> <span class="fu">=</span> <span class="co">-- ?</span></code></pre></div>
 <p>Ah hah, you say. That’s easy!</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mkDoor ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mkDoor ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s
 mkDoor <span class="dt">Opened</span> <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span>
 mkDoor <span class="dt">Closed</span> <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span>
 mkDoor <span class="dt">Locked</span> <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span></code></pre></div>
-<p>Unfortunately, that’s not how types work in Haskell. Remember that for a polymorphic type <code>forall s. DoorState -&gt; Door s</code>, the <em>caller</em> picks the type variable.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t mkDoor <span class="dt">Opened</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Closed</span>
+<p>Unfortunately, that’s not how types work in Haskell. Remember that for a polymorphic type <code>forall s. DoorState -&gt; String -&gt; Door s</code>, the <em>caller</em> picks the type variable.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t mkDoor <span class="dt">Opened</span> <span class="st">&quot;Acacia&quot;</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Closed</span>
 <span class="dt">Door</span> <span class="ch">&#39;Closed</span></code></pre></div>
+<p>Oops!</p>
 <h3 id="the-fundamental-issue-in-haskell">The Fundamental Issue in Haskell</h3>
 <p>We’ve hit upon a fundamental issue in Haskell’s type system: <strong>type erasure</strong>. In Haskell, types only exist <em>at compiletime</em>, for help with typechecking. They are completely erased at runtime.</p>
 <p>This is usually what we want. It’s great for performance, and you can bypass things like the ad-hoc runtime type checking that you have to deal with in dynamic languages like python.</p>
@@ -209,43 +211,43 @@ lockAnyDoor__ s d <span class="fu">=</span> withSingDSI s (lockAnyDoor_ d)</code
 <h3 id="fun-with-witnesses">Fun with Witnesses</h3>
 <p>We can write a nice version of <code>mkDoor</code> using singletons:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L72-76</span>
-<span class="ot">mkDoor ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s
+<span class="ot">mkDoor ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s
 mkDoor <span class="fu">=</span> \<span class="kw">case</span>
     <span class="dt">SOpened</span> <span class="ot">-&gt;</span> <span class="dt">UnsafeMkDoor</span>
     <span class="dt">SClosed</span> <span class="ot">-&gt;</span> <span class="dt">UnsafeMkDoor</span>
     <span class="dt">SLocked</span> <span class="ot">-&gt;</span> <span class="dt">UnsafeMkDoor</span></code></pre></div>
 <p>So we can call it values of <code>SingDS</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t mkDoor <span class="dt">SOpened</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t mkDoor <span class="dt">SOpened</span> <span class="st">&quot;Oak&quot;</span>
 <span class="dt">Door</span> <span class="ch">&#39;Opened</span>
-ghci<span class="fu">&gt;</span> <span class="fu">:</span>t mkDoor <span class="dt">SLocked</span>
+ghci<span class="fu">&gt;</span> <span class="fu">:</span>t mkDoor <span class="dt">SLocked</span> <span class="st">&quot;Spruce&quot;</span>
 <span class="dt">Door</span> <span class="ch">&#39;Locked</span></code></pre></div>
 <p>And now we can’t do something silly like pass in <code>SLocked</code> to get a <code>Door 'Opened</code>!</p>
 <p>However, this is still a step away from a <code>Door</code> whose status can vary at runtime.</p>
 <h2 id="ditching-the-phantom">Ditching the Phantom</h2>
 <p>Now, sometimes we don’t actually care about the state of the door, and we don’t <em>want</em> the state of the door in its type. Our <code>closeAnyDoor</code> function earlier was an example.</p>
 <p>We have a couple of options here — we can create a new type <code>SomeDoor</code>, that doesn’t have the opened/closed status in its type, but rather as a runtime value:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">SomeDoor</span> <span class="fu">=</span> <span class="dt">UnsafeMkSomeDoor</span> <span class="dt">DoorState</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">SomeDoor</span> <span class="fu">=</span> <span class="dt">UnsafeMkSomeDoor</span> <span class="dt">DoorState</span> <span class="dt">String</span></code></pre></div>
 <p>Now, we could have actually been using this type the entire time, if we didn’t care about type safety. In the real world and in real applications, we might have actually written <code>SomeDoor</code> before we ever thought about <code>Door</code> with a phantom type. It’s definitely the more typical Haskell thing.</p>
 <p>We can “construct” this from a normal <code>Door</code>, using the smart constructor:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">fromDoor ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span>
-fromDoor <span class="dt">SOpened</span> _ <span class="fu">=</span> <span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Opened</span>
-formDoor <span class="dt">SClosed</span> _ <span class="fu">=</span> <span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Closed</span>
-formDoor <span class="dt">SLocked</span> _ <span class="fu">=</span> <span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Locked</span></code></pre></div>
+fromDoor <span class="dt">SOpened</span> (<span class="dt">UnsafeMkDoor</span> m) <span class="fu">=</span> <span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Opened</span> m
+formDoor <span class="dt">SClosed</span> (<span class="dt">UnsafeMkDoor</span> m) <span class="fu">=</span> <span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Closed</span> m
+formDoor <span class="dt">SLocked</span> (<span class="dt">UnsafeMkDoor</span> m) <span class="fu">=</span> <span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Locked</span> m</code></pre></div>
 <h3 id="somedoor-to-door">SomeDoor to Door</h3>
 <p>Now, <code>SomeDoor</code> is great. But isn’t it annoying that we might potentially have to write the same function for both <code>Door</code> and <code>SomeDoor</code>, because they have different implementations. For example:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">closeSomeDoor ::</span> <span class="dt">SomeDoor</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">SomeDoor</span>
-closeSomeDoor (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Opened</span>) <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Closed</span>)
-closeSomeDoor (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Closed</span>) <span class="fu">=</span> <span class="dt">Nothing</span>
-closeSomeDoor (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Locked</span>) <span class="fu">=</span> <span class="dt">Nothing</span></code></pre></div>
+closeSomeDoor (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Opened</span> m) <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Closed</span> m)
+closeSomeDoor (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Closed</span> m) <span class="fu">=</span> <span class="dt">Nothing</span>
+closeSomeDoor (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Locked</span> m) <span class="fu">=</span> <span class="dt">Nothing</span></code></pre></div>
 <p>Wouldn’t it be nice if we can re-use our original <code>closeDoor</code>? This is a toy example, and in real life, closing a door might have some complicated runtime logic, and it’d be annoying to re-implement it for both <code>SomeDoor</code> and <code>Door</code>.</p>
 <p>One thing we can do is write a function to convert a <code>SomeDoor</code> into a <code>Door</code>, so we can re-use our original <code>closeDoor</code>.</p>
 <h4 id="converting-into-an-existential">Converting into an existential</h4>
 <p>Going from <code>SomeDoor</code> to <code>Door s</code> is slightly trickier in Haskell than going the other way around. One trick we often use is the <em>skolemized existential</em>, or a CPS-style existential type.</p>
 <p>The essential concept is that normal Haskell type variables are universally qualified, meaning that the <em>caller</em> can pick how to instantiate <code>s</code>. However, we want a function where the <em>function</em> can pick the <code>s</code>, and the caller must handle whatever <code>s</code> is given by the function:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">withSomeDoor ::</span> <span class="dt">SomeDoor</span> <span class="ot">-&gt;</span> (forall s<span class="fu">.</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r
-withSomeDoor (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Opened</span>) f <span class="fu">=</span> f <span class="dt">SOpened</span> <span class="dt">UnsafeMkDoor</span>
-withSomeDoor (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Closed</span>) f <span class="fu">=</span> f <span class="dt">SClosed</span> <span class="dt">UnsafeMkDoor</span>
-withSomeDoor (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Locked</span>) f <span class="fu">=</span> f <span class="dt">SLocked</span> <span class="dt">UnsafeMkDoor</span></code></pre></div>
+withSomeDoor (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Opened</span> m) f <span class="fu">=</span> f <span class="dt">SOpened</span> (<span class="dt">UnsafeMkDoor</span> m)
+withSomeDoor (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Closed</span> m) f <span class="fu">=</span> f <span class="dt">SClosed</span> (<span class="dt">UnsafeMkDoor</span> m)
+withSomeDoor (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Locked</span> m) f <span class="fu">=</span> f <span class="dt">SLocked</span> (<span class="dt">UnsafeMkDoor</span> m)</code></pre></div>
 <p>Notice the funky CPS-like type signature of <code>withSomeDoor</code>. To use <code>withSomeDoor</code> and access the <code>Door</code>, you have to pass in a function to handle <em>any possible <code>s</code></em>. And, as you can see, the function passed in might be given an <code>SOpened</code>, an <code>SClosed</code>, or an <code>SLocked</code>. It has to be able to handle all three!</p>
 <p>Here, we call <code>s</code> <em>existentially quantified</em>. The <code>withSomeDoor</code> function gets to pick which <code>s</code> to give <code>f</code>. So, the <code>s</code> type variable is chosen by the <em>function</em>, and not by the caller.</p>
 <p>So we can implement <code>closeSomeDoor</code> (and even a <code>lockAnySomeDoor</code>) using this conversion function:</p>
@@ -292,12 +294,12 @@ lockAnySomeDoor (<span class="dt">MkSomeDoor</span> s d) <span class="fu">=</spa
 <h3 id="types-at-runtime">Types at Runtime</h3>
 <p>With this last tool, we finally have enough to build a function to “make” a door with the status unknown until runtime:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L90-94</span>
-<span class="ot">mkSomeDoor ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span>
+<span class="ot">mkSomeDoor ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span>
 mkSomeDoor <span class="fu">=</span> \<span class="kw">case</span>
-    <span class="dt">Opened</span> <span class="ot">-&gt;</span> <span class="dt">MkSomeDoor</span> <span class="dt">SOpened</span> (mkDoor <span class="dt">SOpened</span>)
-    <span class="dt">Closed</span> <span class="ot">-&gt;</span> <span class="dt">MkSomeDoor</span> <span class="dt">SClosed</span> (mkDoor <span class="dt">SClosed</span>)
-    <span class="dt">Locked</span> <span class="ot">-&gt;</span> <span class="dt">MkSomeDoor</span> <span class="dt">SLocked</span> (mkDoor <span class="dt">SLocked</span>)</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="kw">let</span> mySomeDoor <span class="fu">=</span> mkSomeDoor <span class="dt">Opened</span>
+    <span class="dt">Opened</span> <span class="ot">-&gt;</span> <span class="dt">MkSomeDoor</span> <span class="dt">SOpened</span> <span class="fu">.</span> mkDoor <span class="dt">SOpened</span>
+    <span class="dt">Closed</span> <span class="ot">-&gt;</span> <span class="dt">MkSomeDoor</span> <span class="dt">SClosed</span> <span class="fu">.</span> mkDoor <span class="dt">SClosed</span>
+    <span class="dt">Locked</span> <span class="ot">-&gt;</span> <span class="dt">MkSomeDoor</span> <span class="dt">SLocked</span> <span class="fu">.</span> mkDoor <span class="dt">SLocked</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="kw">let</span> mySomeDoor <span class="fu">=</span> mkSomeDoor <span class="dt">Opened</span> <span class="st">&quot;Birch&quot;</span>
 ghci<span class="fu">&gt;</span> <span class="fu">:</span>t mySomeDoor
 <span class="dt">SomeDoor</span>
 ghci<span class="fu">&gt;</span> putStrLn <span class="fu">$</span> <span class="kw">case</span> mySomeDoor <span class="kw">of</span>
@@ -394,16 +396,16 @@ ghci<span class="fu">&gt;</span> putStrLn <span class="fu">$</span> <span class=
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L85-85</span>
 <span class="ot">unlockDoor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked -&gt; Maybe (Door &#39;</span><span class="dt">Closed</span>)</code></pre></div>
 <p>It should return a closed door in <code>Just</code> if the caller gives an odd number, or <code>Nothing</code> otherwise.</p></li>
-<li><p>Write a function that can open any door, taking an optional password.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L89-89</span>
+<li><p>Write a function that can open any door, taking a password.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L90-90</span>
 <span class="ot">openAnyDoor ::</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> <span class="ch">&#39;Opened)</span></code></pre></div>
 <p>This should be written in terms of <code>unlockDoor</code> and <code>openDoor</code>.</p>
 <p>If the door is already unlocked or opened, it should ignore the <code>Int</code> input.</p></li>
 <li><p>Implement <code>withSomeDoor</code> for our “new” existentially quantified <code>SomeDoor</code> type.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L102-102</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L103-103</span>
 <span class="ot">withSomeDoor ::</span> <span class="dt">SomeDoor</span> <span class="ot">-&gt;</span> (forall s<span class="fu">.</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r</code></pre></div></li>
 <li><p>Implement <code>openAnySomeDoor</code>, which should work like <code>lockAnySomeDoor</code>, just wrapping an application of <code>openAnyDoor</code> inside a <code>SomeDoor</code>.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L98-98</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L99-99</span>
 <span class="ot">openAnySomeDoor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> <span class="ch">&#39;Opened)</span></code></pre></div>
 <p>Note that because we wrote <code>openAnyDoor</code> in “implicit style”, we might have to convert between <code>SingI s =&gt;</code> and <code>Sing s -&gt;</code> style, using <code>withSingI</code>.</p></li>
 </ol>
