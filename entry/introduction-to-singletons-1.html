@@ -19,7 +19,20 @@ compiled…really just the king of great languages.">Haskell</a><span class="inf
 <p>If you’ve ever run into dependently typed programming in Haskell, you’ve probably encountered mentions of singletons (and the <em>singletons</em> library). This series of articles will be my attempt at giving you the story of the library, the problems it solves, the power that it gives to you, and how you can integrate it into your code today!<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> (Also, after <a href="https://blog.jle.im/entry/verified-instances-in-haskell.html">my previous April Fools post</a>, people have been asking me for an actual non-joke singletons post.)</p>
 <h3 id="prerequisites">Prerequisites</h3>
 <p>These posts will assume no knowledge of dependent types, and, for now, only basic to intermediate Haskell knowledge. (Types, kinds, typeclasses, data types, functions)</p>
-<p>All code is built on <em>GHC 8.2.1</em> and with the <em><a href="https://www.stackage.org/nightly-2017-07-31">nightly-2017-07-30</a></em> snapshot (so, singletons-2.3). However, there are negligible changes in the GHC type system between GHC 8.0 and 8.2 (the only difference is in the libraries, more or less), so everything should work on GHC 8.0 as well!</p>
+<p>All code is built on <em>GHC 8.2.1</em> and with the <em><a href="https://www.stackage.org/nightly-2017-08-20">nightly-2017-08-20</a></em> snapshot (so, singletons-2.3). However, there are negligible changes in the GHC type system between GHC 8.0 and 8.2 (the only difference is in the libraries, more or less), so everything should work on GHC 8.0 as well!</p>
+<p>The content in the first section of this post, describing the singleton design pattern, uses the following extensions:</p>
+<ul>
+<li>DataKinds</li>
+<li>GADTs</li>
+<li>KindSignatures</li>
+<li>TypeInType</li>
+</ul>
+<p>And the second section, introducing the library itself, uses, on top of these:</p>
+<ul>
+<li>TypeFamilies</li>
+<li>TemplateHaskell</li>
+</ul>
+<p>These extension will be explained when they are used or become relevant.</p>
 <h2 id="the-phantom-of-the-types">The Phantom of the Types</h2>
 <p>Let’s start with a very common Haskell trick that most learn early in their Haskelling journey: the <a href="https://wiki.haskell.org/Phantom_type">phantom type</a>.</p>
 <p>Phantom types in Haskell are a very easy way to add a layer of “type safety” for your types and DSL’s. It helps you restrict what values functions can take and encode pre- and post-conditions directly into your types.</p>
@@ -297,7 +310,7 @@ genSingletons [<span class="ch">&#39;&#39;</span><span class="dt">DoorState</spa
     <span class="dt">SOpened</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;Opened</span>
     <span class="dt">SClosed</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;Closed</span>
     <span class="dt">SLocked</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;Locked</span></code></pre></div>
-<p><code>Sing</code> is a poly-kinded type constructor (family). <code>STrue :: Sing 'True</code> is the singleton for <code>'True</code>, <code>SJust SOpened :: Sing ('Just 'Opened)</code> is the singleton for <code>'Just 'Opened</code>, etc.</p>
+<p><code>Sing</code> is a poly-kinded type constructor (a “data family”). <code>STrue :: Sing 'True</code> is the singleton for <code>'True</code>, <code>SJust SOpened :: Sing ('Just 'Opened)</code> is the singleton for <code>'Just 'Opened</code>, etc.</p>
 <p>It also generates us instances for <code>SingI</code>, a poly-kinded typeclass:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">SingI</span> <span class="ch">&#39;Opened where</span>
     sing <span class="fu">=</span> <span class="dt">SOpened</span>
@@ -350,10 +363,9 @@ ghci<span class="fu">&gt;</span> putStrLn <span class="fu">$</span> <span class=
 <p>It does this by defining a type class (actually, a “kind class”), <code>SingKind</code>, associating each type to the corresponding datakinds-generated kind. The <code>SingKind</code> instance for <code>DoorState</code> links the type <code>DoorState</code> to the kind <code>DoorState</code>.</p>
 <p>There are definitely more useful utility functions, but we will investigate these later on in the series! For now, you can look at the <a href="http://hackage.haskell.org/package/singletons/docs/Data-Singletons.html">documentation</a> for the library to see more interesting utility functions!</p>
 <h2 id="the-singularity">The Singularity</h2>
-<p>In this post, we looked the opportunity for using the singleton pattern to give us more power when using phantom types, enabling us to do things that we normally couldn’t do. Then, we looked at how the <em>singletons</em> library makes using this pattern extremely easy and smooth to integrate into your existing code.</p>
+<p>In this post, at shortcomings in the usage of phantom types, and then saw how singletons could help us with these. Then, we looked at how the <em>singletons</em> <strong>library</strong> makes using this pattern extremely easy and smooth to integrate into your existing code.</p>
 <p>You can see all of the “manual singletons” code in this post <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs">here</a>, and then see the code re-implemented using the <em>singletons</em> library <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs">here</a>.</p>
-<p>Today we almost exclusively looked at programming with phantom types. However, you also might have heard about singletons enabling “type-level programming”, as well, and providing tools for writing writing full programs at the type level.</p>
-<p>Be sure to come back as we go deeper into more advanced techniques for programming with singletons for phantom types, more sophisticated type-level constraints and logic, and then also into the wonderful world that is type-level programming! And we’ll see how the singletons library is a very clean unification of a lot of concepts.</p>
+<p>However, full expressively with phantom types is still out of our reach. If we want to express more complicated relationships and to be able to treat phantom types (and <em>types</em>, in general) as first-class values, and delve into the frighteningly beautiful world of “type-level programming”, we are going to have to dig a bit deeper. Come back for the next post to see how! Singletons will be our tool, and we’ll also see how the singletons library is a very clean unification of a lot of concepts.</p>
 <p>As always, let me know in the comments if you have any questions! You can also usually find me idling on the freenode <code>#haskell</code> channel, as well, as <em>jle`</em>. Happy haskelling!</p>
 <section class="footnotes">
 <hr />

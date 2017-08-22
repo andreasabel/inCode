@@ -22,10 +22,25 @@ basic to intermediate Haskell knowledge. (Types, kinds, typeclasses, data types,
 functions)
 
 All code is built on *GHC 8.2.1* and with the
-*[nightly-2017-07-30](https://www.stackage.org/nightly-2017-07-31)* snapshot
+*[nightly-2017-08-20](https://www.stackage.org/nightly-2017-08-20)* snapshot
 (so, singletons-2.3). However, there are negligible changes in the GHC type
 system between GHC 8.0 and 8.2 (the only difference is in the libraries, more or
 less), so everything should work on GHC 8.0 as well!
+
+The content in the first section of this post, describing the singleton design
+pattern, uses the following extensions:
+
+-   DataKinds
+-   GADTs
+-   KindSignatures
+-   TypeInType
+
+And the second section, introducing the library itself, uses, on top of these:
+
+-   TypeFamilies
+-   TemplateHaskell
+
+These extension will be explained when they are used or become relevant.
 
 The Phantom of the Types
 ------------------------
@@ -637,9 +652,10 @@ data Sing :: DoorState -> Type where
     SLocked :: Sing 'Locked
 ```
 
-`Sing` is a poly-kinded type constructor (family). `STrue :: Sing 'True` is the
-singleton for `'True`, `SJust SOpened :: Sing ('Just 'Opened)` is the singleton
-for `'Just 'Opened`, etc.
+`Sing` is a poly-kinded type constructor (a “data family”).
+`STrue :: Sing 'True` is the singleton for `'True`,
+`SJust SOpened :: Sing ('Just 'Opened)` is the singleton for `'Just 'Opened`,
+etc.
 
 It also generates us instances for `SingI`, a poly-kinded typeclass:
 
@@ -749,25 +765,22 @@ for the library to see more interesting utility functions!
 The Singularity
 ---------------
 
-In this post, we looked the opportunity for using the singleton pattern to give
-us more power when using phantom types, enabling us to do things that we
-normally couldn’t do. Then, we looked at how the *singletons* library makes
-using this pattern extremely easy and smooth to integrate into your existing
-code.
+In this post, at shortcomings in the usage of phantom types, and then saw how
+singletons could help us with these. Then, we looked at how the *singletons*
+**library** makes using this pattern extremely easy and smooth to integrate into
+your existing code.
 
 You can see all of the “manual singletons” code in this post
 [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs),
 and then see the code re-implemented using the *singletons* library
 [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs).
 
-Today we almost exclusively looked at programming with phantom types. However,
-you also might have heard about singletons enabling “type-level programming”, as
-well, and providing tools for writing writing full programs at the type level.
-
-Be sure to come back as we go deeper into more advanced techniques for
-programming with singletons for phantom types, more sophisticated type-level
-constraints and logic, and then also into the wonderful world that is type-level
-programming! And we’ll see how the singletons library is a very clean
+However, full expressively with phantom types is still out of our reach. If we
+want to express more complicated relationships and to be able to treat phantom
+types (and *types*, in general) as first-class values, and delve into the
+frighteningly beautiful world of “type-level programming”, we are going to have
+to dig a bit deeper. Come back for the next post to see how! Singletons will be
+our tool, and we’ll also see how the singletons library is a very clean
 unification of a lot of concepts.
 
 As always, let me know in the comments if you have any questions! You can also
