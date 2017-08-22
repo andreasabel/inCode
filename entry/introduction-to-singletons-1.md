@@ -426,7 +426,7 @@ It works because in each branch, `s` is now a *specific*, monomorphic, “conret
 `s ~ 'Closed`, so GHC knows that there is a `SingDSI 'Closed` instance, and
 gives *that* to you, etc.
 
-So now we can run our implicit functions (like `lockAnyDoor_`) by giving them
+So now, we can run our implicit functions (like `lockAnyDoor_`) by giving them
 explicit inputs:
 
 ``` {.haskell}
