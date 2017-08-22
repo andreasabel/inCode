@@ -390,28 +390,22 @@ ghci<span class="fu">&gt;</span> putStrLn <span class="fu">$</span> <span class=
 <p>These should be written in the singletons library style, with <code>Sing</code> instead of <code>SingDS</code> and <code>SingI</code> instead of <code>SingDSI</code>. Review the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs">singletons file</a> for a comparison, if you are still unfamiliar.</p>
 <ol type="1">
 <li><p>Write a function to unlock a door, but only if the user enters an odd number (a password).</p>
-<p>It should return a closed door in <code>Just</code> if the caller gives an odd number, or <code>Nothing</code> otherwise.</p></li>
-</ol>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L85-85</span>
 <span class="ot">unlockDoor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked -&gt; Maybe (Door &#39;</span><span class="dt">Closed</span>)</code></pre></div>
-<ol start="2" type="1">
+<p>It should return a closed door in <code>Just</code> if the caller gives an odd number, or <code>Nothing</code> otherwise.</p></li>
 <li><p>Write a function that can open any door, taking an optional password.</p>
-<p>This should be written in terms of <code>unlockDoor</code> and <code>openDoor</code>.</p>
-<p>If the door is already unlocked or opened, it should ignore the <code>Int</code> input.</p></li>
-</ol>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L89-89</span>
 <span class="ot">openAnyDoor ::</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> <span class="ch">&#39;Opened)</span></code></pre></div>
-<ol start="3" type="1">
-<li>Implement <code>withSomeDoor</code> for our “new” existentially quantified <code>SomeDoor</code> type.</li>
-</ol>
+<p>This should be written in terms of <code>unlockDoor</code> and <code>openDoor</code>.</p>
+<p>If the door is already unlocked or opened, it should ignore the <code>Int</code> input.</p></li>
+<li><p>Implement <code>withSomeDoor</code> for our “new” existentially quantified <code>SomeDoor</code> type.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L102-102</span>
-<span class="ot">withSomeDoor ::</span> <span class="dt">SomeDoor</span> <span class="ot">-&gt;</span> (forall s<span class="fu">.</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r</code></pre></div>
-<ol start="4" type="1">
+<span class="ot">withSomeDoor ::</span> <span class="dt">SomeDoor</span> <span class="ot">-&gt;</span> (forall s<span class="fu">.</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r</code></pre></div></li>
 <li><p>Implement <code>openAnySomeDoor</code>, which should work like <code>lockAnySomeDoor</code>, just wrapping an application of <code>openAnyDoor</code> inside a <code>SomeDoor</code>.</p>
-<p>Note that because we wrote <code>openAnyDoor</code> in “implicit style”, we might have to convert between <code>SingI s =&gt;</code> and <code>Sing s -&gt;</code> style, using <code>withSingI</code>.</p></li>
-</ol>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L98-98</span>
 <span class="ot">openAnySomeDoor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> <span class="ch">&#39;Opened)</span></code></pre></div>
+<p>Note that because we wrote <code>openAnyDoor</code> in “implicit style”, we might have to convert between <code>SingI s =&gt;</code> and <code>Sing s -&gt;</code> style, using <code>withSingI</code>.</p></li>
+</ol>
 <section class="footnotes">
 <hr />
 <ol>
