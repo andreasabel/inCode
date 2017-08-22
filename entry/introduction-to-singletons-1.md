@@ -870,9 +870,10 @@ for a comparison, if you are still unfamiliar.
     type.
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L102-102
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L0-102
     withSomeDoor :: SomeDoor -> (forall s. Sing s -> Door s -> r) -> r
 
+    Key not found: poop butt
     ```
 
 4.  Implement `openAnySomeDoor`, which should work like `lockAnySomeDoor`, just
