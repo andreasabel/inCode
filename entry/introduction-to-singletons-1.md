@@ -837,42 +837,55 @@ Exercises
 
 Click on the links in the corner of the text boxes for solutions!
 
+These should be written in the singletons library style, with `Sing` instead of
+`SingDS` and `SingI` instead of `SingDSI`. Review the [singletons
+file](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs)
+for a comparison, if you are still unfamiliar.
+
 1.  Write a function to unlock a door, but only if the user enters an odd number
     (a password).
-
-    ``` {.haskell}
-    !!!singletons/DoorSingletons.hs "unlockDoor ::"1
-    ```
 
     It should return a closed door in `Just` if the caller gives an odd number,
     or `Nothing` otherwise.
 
-2.  Write a function that can open any door, taking an optional password.
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L85-85
+unlockDoor :: Int -> Door 'Locked -> Maybe (Door 'Closed)
 
-    ``` {.haskell}
-    !!!singletons/DoorSingletons.hs "openAnyDoor ::"1
-    ```
+```
+
+2.  Write a function that can open any door, taking an optional password.
 
     This should be written in terms of `unlockDoor` and `openDoor`.
 
     If the door is already unlocked or opened, it should ignore the `Int` input.
 
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L89-89
+openAnyDoor :: SingI s => Int -> Door s -> Maybe (Door 'Opened)
+
+```
+
 3.  Implement `withSomeDoor` for our “new” existentially quantified `SomeDoor`
     type.
 
-    ``` {.haskell}
-    !!!singletons/DoorSingletons.hs "withSomeDoor ::"1
-    ```
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L102-102
+withSomeDoor :: SomeDoor -> (forall s. Sing s -> Door s -> r) -> r
+
+```
 
 4.  Implement `openAnySomeDoor`, which should work like `lockAnySomeDoor`, just
     wrapping an application of `openAnyDoor` inside a `SomeDoor`.
 
-    ``` {.haskell}
-    !!!singletons/DoorSingletons.hs "openAnySomeDoor ::"1
-    ```
-
     Note that because we wrote `openAnyDoor` in “implicit style”, we might have
     to convert between `SingI s =>` and `Sing s ->` style, using `withSingI`.
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L98-98
+openAnySomeDoor :: Int -> SomeDoor -> Maybe (Door 'Opened)
+
+```
 
 [^1]: This series will be based on [a
     talk](http://talks.jle.im/lambdaconf-2017/singletons/) I gave over the
