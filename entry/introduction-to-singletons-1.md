@@ -8,20 +8,12 @@ Real dependent types are coming to Haskell soon! Until then, we have the great
 *[singletons](http://hackage.haskell.org/package/singletons)* library :)
 
 If you’ve ever run into dependently typed programming in Haskell, you’ve
-probably encountered mentions of singletons (and the *singletons* library).
+probably encountered mentions of singletons (and the *singletons* library). This
+series of articles will be my attempt at giving you the story of the library,
+the problems it solves, the power that it gives to you, and how you can
+integrate it into your code today![^1]
 
-I’ve noticed that there aren’t very many comprehensive tutorials or
-introductions on the motivation and usage of the singletons library, as well as
-integration of it into your programs and how to find ways to use it. (But the
-haddocks provide very thorough documentation on how to use it once you already
-know what to use it for!) So this series of articles will be my attempt at
-giving you the rundown of the library, why you’d want it, and how to start using
-it in your Haskell programming today! And maybe also be a nice introduction to
-the concept as a whole if you just want to learn.
-
-This series will be based on [a
-talk](http://talks.jle.im/lambdaconf-2017/singletons/) I gave over the summer,
-and will expand on it eventually.
+### Prerequisites
 
 These posts will assume no knowledge of dependent types, and, for now, only
 basic to intermediate Haskell knowledge. (Types, kinds, typeclasses, data types,
@@ -82,7 +74,7 @@ A couple things going on here:
 
     However, with `DataKinds`, that statement also defines a new *kind*
     `DoorState`, with *type* constructors `'Opened`, `'Closed`, and `'Locked`.
-    (note the `'` ticks!)
+    (note the `'` ticks!)[^2]
 
     ``` {.haskell}
     ghci> :k 'Opened
@@ -90,6 +82,8 @@ A couple things going on here:
     ghci> :k 'Locked
     DoorState
     ```
+
+<!-- -->
 
 2.  We’re defining the `Door` type with a *phantom parameter* `s`. It’s a
     phantom type because we don’t actually have any *values* of type `s` in our
@@ -111,15 +105,17 @@ We’ll take a `Door s` to mean the type of a door with that current status. So 
 closed (and unlocked) door, etc.
 
 Alternatively, we can define `Door` using [*GADT*
-syntax](https://en.wikibooks.org/wiki/Haskell/GADT#Syntax).
+syntax](https://en.wikibooks.org/wiki/Haskell/GADT#Syntax) (which requires the
+`GADTs` extension).
 
 ``` {.haskell}
 data Door :: DoorState -> Type where
     UnsafeMkDoor :: Door s
 ```
 
-This is defining the exact same type in the alternate GADT syntax – here, we
-define types by giving the type of its constructors.
+This is defining the exact same type in the alternate “GADT syntax” style of
+data type declaration – here, we define types by giving the type of its
+constructors.
 
 ### Phantoms in Action
 
@@ -152,7 +148,7 @@ have been given a closed or locked door, and you’d have to reject it at runtim
 
 By adding the state of the door into its type, we can encode our pre-conditions
 and post-conditions directly into the type. And any opportunity to move runtime
-errors to compiletime errors should be celebrated with a little party!
+errors to compile-time errors should be celebrated with a little party!
 
 This would also stop you from doing silly things like closing a door twice in a
 row:
@@ -198,9 +194,9 @@ doorStatos _ = -- ?
 implementation bugs)
 
 And, perhaps even more important, how can you create a `Door` with a given state
-that isn’t known until runtime? If we know the type of our doors at compiletime,
-we can just explicitly write `UnsafeMkDoor :: Door 'Opened`. But what if we
-wanted to make a door based on a `DoorState` input?
+that isn’t known until runtime? If we know the type of our doors at
+compile-time, we can just explicitly write `UnsafeMkDoor :: Door 'Opened`. But
+what if we wanted to make a door based on a `DoorState` input?
 
 ``` {.haskell}
 mkDoor :: DoorState -> Door s
@@ -218,7 +214,7 @@ mkDoor Closed = UnsafeMkDoor
 mkDoor Locked = UnsafeMkDoor
 ```
 
-Unfortunately, that’s not how types work in haskell. Remember that for a
+Unfortunately, that’s not how types work in Haskell. Remember that for a
 polymorphic type `forall s. DoorState -> Door s`, the *caller* picks the type
 variable.
 
@@ -226,20 +222,6 @@ variable.
 ghci> :t mkDoor Opened :: Door 'Closed
 Door 'Closed
 ```
-
-Oops. What about
-
-``` {.haskell}
-mkDoor :: DoorState -> Door s
-mkDoor Opened = UnsafeMkDoor :: Door 'Opened
-mkDoor Closed = UnsafeMkDoor :: Door 'Closed
-mkDoor Locked = UnsafeMkDoor :: Door 'Locked
-```
-
-Here, you get a similar problem. The type variable `s` *must be able to be
-freely chosen* by the caller. And for all of those branches, we return an `s`
-that is potentially different than one asked for by the caller. In fact, this
-one doesn’t even compile.
 
 ### The Fundamental Issue in Haskell
 
@@ -257,8 +239,9 @@ Or, does it?
 The Singleton Pattern
 ---------------------
 
-A singleton in Haskell is a type that has exactly one inhabitant, and whose
-constructor (when pattern matched on) reveals its type.
+A singleton in Haskell is a type that, for each instantiation its type
+variables, has exactly one inhabitant, and whose constructor (when pattern
+matched on) reveals its type.
 
 ``` {.haskell}
 data SingDS :: DoorState -> Type where
@@ -267,8 +250,8 @@ data SingDS :: DoorState -> Type where
     SLocked :: SingDS 'Locked
 ```
 
-Here we’re using GADT syntax again. Note that, if we use `SOpened`, we will get
-a `SingDS 'Opened`. And if we have a `SingDS 'Opened`, we know that it was
+Here we’re using *GADT syntax* again. Note that, if we use `SOpened`, we will
+get a `SingDS 'Opened`. And if we have a `SingDS 'Opened`, we know that it was
 constructed using `SOpened`. Essentially, this gives us three values:
 
 ``` {.haskell}
@@ -297,6 +280,7 @@ doorStatus = \case
 
 We can rewrite `doorStats` to take an additional `SingDS`, which we can use to
 figure out what `s` is. When we pattern match on it, we reveal what `s` is.
+Essentially, the gain the ability to “pattern match” on the `s` type variable.
 
 The singleton property of `SingDS` ensures us that whatever `s` the `SingDS` has
 is the *same* `s` that the `Door` has.
@@ -323,7 +307,7 @@ Similar for the `SLocked -> id` branch — `id` is only a valid response if `s` 
 `'Locked` (and so `id :: Door 'Locked -> Door 'Locked`). But, because we pattern
 matched on `SLocked`, GHC knows that this is legal!
 
-We say that `SOpened` is a runtime *witness* to `s` being `'Opened`.
+We say that `SOpened` is a “runtime witness” to `s` being `'Opened`.
 
 ### Recovering Implicit Passing
 
@@ -349,12 +333,15 @@ And so now we can do:
 doorStatus_ :: SingDSI s => Door s -> DoorState
 doorStatus_ = doorStatus singDS
 
-lockAnyDoor :: SingDSI s => Door s -> Door 'Locked
+lockAnyDoor_ :: SingDSI s => Door s -> Door 'Locked
 lockAnyDoor_ = lockAnyDoor singDS
 ```
 
 Here, type inference will tell GHC that you want `singDS :: Sing s`, and it will
 pull out the proper singleton for the door you want to check!
+
+(By the way, If you program Haskell regularly, it should slightly bug you that
+it’s super easy to write a bad instance of `SingDSI`. More about this later.)
 
 #### The Same Power
 
@@ -401,81 +388,144 @@ Now, sometimes we don’t actually care about the state of the door, and we don�
 *want* the state of the door in its type. Our `closeAnyDoor` function earlier
 was an example.
 
-We can make a new type, `SomeDoor`, that contains a door of *some* status.
+We have a couple of options here — we can create a new type `SomeDoor`, that
+doesn’t have the opened/closed status in its type, but rather as a runtime
+value:
 
 ``` {.haskell}
-data SomeDoor :: Type where
-    MkSomeDoor :: Door s -> SomeDoor
+data SomeDoor = UnsafeMkSomeDoor DoorStatus
 ```
 
+Now, we could have actually been using this type the entire time, if we didn’t
+care about type safety. In the real world and in real applications, we might
+have actually written `SomeDoor` before we ever thought about `Door` with a
+phantom type. It’s definitely the more typical Haskell thing.
+
+We can “construct” this from a normal `Door`, using the smart constructor:
+
 ``` {.haskell}
-ghci> let myDoor = MkSomeDoor (mkDoor SClosed)
-ghci> :t myDoor
-myDoor :: SomeDoor
+mkSomeDoor :: SingDS s -> Door s -> SomeDoor
+mkSomeDoor SOpened _ = UnsafeMkSomeDoor Opened
+mkSomeDoor SClosed _ = UnsafeMkSomeDoor Closed
+mkSomeDoor SLocked _ = UnsafeMkSomeDoor Locked
 ```
 
-But, this isn’t too ideal. This is because when we pattern match on the
-`MkSomeDoor` constructor, we have no idea what the original actual status of the
-door actually was. This is because of, again, type erasure — once we put a
-`Door s` into `MkSomeDoor :: Door s -> SomeDoor`, the `s` is lost to the
-typechecker forever.
+### SomeDoor to Door
+
+Now, `SomeDoor` is great. But isn’t it annoying that we might potentially have
+to write the same function for both `Door` and `SomeDoor`, because they have
+different implementations. For example:
 
 ``` {.haskell}
-ghci> :t case myDoor of
-           MkSomeDoor d -> lockDoor d
-TYPE ERROR!  TYPE ERROR!  Is d a closed door?  Who knows!
+closeSomeDoor :: SomeDoor -> Maybe SomeDoor
+closeSomeDoor (UnsafeMkSomeDoor Opened) = Just (UnsafeMkSomeDoor Closed)
+closeSomeDoor (UnsafeMkSomeDoor Closed) = Nothing
+closeSomeDoor (UnsafeMkSomeDoor Locked) = Nothing
 ```
 
-Even though we know we created `myDoor` with `SClosed`, once it becomes a
-`SomeDoor`, it’s basically indistinguishable from any other door type, and has
-to be treated as if we didn’t know what the original door type was.
+Wouldn’t it be nice if we can re-use our original `closeDoor`? This is a toy
+example, and in real life, closing a door might have some complicated runtime
+logic, and it’d be annoying to re-implement it for both `SomeDoor` and `Door`.
 
-### Can I get a witness?
+One thing we can do is write a function to convert a `SomeDoor` into a `Door`,
+so we can re-use our original `closeDoor`.
 
-Luckily for us, though, we now have a way to “store” `s` and “pattern match” on
-it later, using a runtime witness. So, here is our new `SomeDoor`:
+#### Converting into an existential
+
+Going from `SomeDoor` to `Door s` is slightly trickier in Haskell than going the
+other way around. One trick we often use is the *skolemized existential*, or a
+CPS-style existential type.
+
+The essential concept is that normal Haskell type variables are universally
+qualified, meaning that the *caller* can pick how to instantiate `s`. However,
+we want a function where the *function* can pick the `s`, and the caller must
+handle whatever `s` is given by the function:
 
 ``` {.haskell}
+withSomeDoor :: SomeDoor -> (forall s. SingDS s -> Door s -> r) -> r
+withSomeDoor (UnsafeMkSomeDoor Opened) f = f SOpened UnsafeMkDoor
+withSomeDoor (UnsafeMkSomeDoor Closed) f = f SClosed UnsafeMkDoor
+withSomeDoor (UnsafeMkSomeDoor Locked) f = f SLocked UnsafeMkDoor
+```
+
+Notice the funky CPS-like type signature of `withSomeDoor`. To use
+`withSomeDoor` and access the `Door`, you have to pass in a function to handle
+*any possible `s`*. And, as you can see, the function passed in might be given
+an `SOpened`, an `SClosed`, or an `SLocked`. It has to be able to handle all
+three!
+
+Here, we call `s` *existentially quantified*. The `withSomeDoor` function gets
+to pick which `s` to give `f`. So, the `s` type variable is chosen by the
+*function*, and not by the caller.
+
+So we can implement `closeSomeDoor` (and even a `lockAnySomeDoor`) using this
+conversion function:
+
+``` {.haskell}
+closeSomeDoor :: SomeDoor -> Maybe SomeDoor
+closeSomeDoor sd = withSomeDoor sd $ \case
+    SOpened -> \d -> Just $ mkSomeDoor SClosed (closeDoor d)
+    SClosed -> \_ -> Nothing
+    SLocked -> \_ -> Nothing
+
+lockAnySomeDoor :: SomeDoor -> SomeDoor
+lockAnySomeDoor sd = withSomeDoor sd $ \s d ->
+    mkSomeDoor SLocked (lockAnyDoor s d)
+```
+
+#### The Existential Datatype
+
+However, there’s another path we can take. With the power of singletons, we can
+actually implement `SomeDoor` *in terms of* `Door`, using an existential data
+type!
+
+``` {.haskell}
+-- using existential constructor syntax
+data SomeDoor = forall s. MkSomeDoor (SingDS s) (Door s)
+
+-- or, using GADT syntax
 data SomeDoor :: Type where
     MkSomeDoor :: SingDS s -> Door s -> SomeDoor
 ```
 
+`MkSomeDoor` is a constructor for an existential data type, meaning that the
+data type “hides” a type variable `s`.
+
+Hopefully you can see the similarities between our original `SomeDoor` and this
+one. The key difference is that original `SomeDoor` contains a `DoorStatus`, and
+this new `SomeDoor` contains a `SingDS` (a *singleton* for the `DoorStatus`).
+
+In Haskell, existential data types are pretty nice, syntactically, to work with.
+For a comparison, let’s re-implement our previous functions with our new data
+type:
+
 ``` {.haskell}
-ghci> let myDoor = MkSomeDoor SClosed (mkDoor SClosed)
-ghci> :t myDoor
-myDoor :: SomeDoor
-ghci> :t case myDoor of
-           MkSomeDoor SOpened d -> lockDoor (closeDoor d)
-           MkSomeDoor SClosed d -> lockDoor d
-           MkSomeDoor SLocked d -> d
-Door 'Locked
--- alternatively
-ghci> :t case myDoor of
-           MkSomeDoor sd d -> lockAnyDoor sd d
-Door 'Locked
+mkSomeDoor :: SingDS s -> Door s -> SomeDoor
+mkSomeDoor = MkSomeDoor
+
+closeSomeDoor :: SomeDoor -> Maybe SomeDoor
+closeSomeDoor = \case
+    MkSomeDoor SOpened d -> Just $ MkSomeDoor SClosed (closeDoor d)
+    MkSomeDoor SClosed _ -> Nothing
+    MkSomeDoor SLocked _ -> Nothing
+
+lockAnySomeDoor :: SomeDoor -> SomeDoor
+lockAnySomeDoor (MkSomeDoor s d) = MkSomeDoor SLocked (lockAnyDoor s d)
 ```
 
-By storing the witness of the state of the door inside `MkSomeDoor`, we have a
-way to recover the original type information!
+It’s important to remember that our original separate-implementation `SomeDoor`
+is, functionally, identical to the new reusing-`Door` `SomeDoor`. The key?
+*Having an existentially quantified singleton is the same as having a value of
+the corresponding type.* Having an existentially quantified `SingDS` is the same
+as having a value of type `DoorStatus`.
 
-### An Existential Quandary
+If they’re identical, why use a `SingDS`? Why use the new `SomeDoor` at all? The
+main reason is that *using the singleton lets us recover the type*. Essentially,
+a `SingDS s` not only contains whether it is Opened/Closed/Locked…it contains it
+in a way that GHC can use to bring it all back to the type level.
 
-Those who have been exposed to dependent types before might recognize
-`MkSomeDoor` as an existential type constructor. It “hides” a type variable
-inside it. In our case, using `MkSomeDoor :: SingDS s -> Door s -> SomeDoor`
-essentially hides the type variable `s` from the outside world. To the type
-system, a `SomeDoor` is the same type as any other `SomeDoor`. We say that
-`SomeDoor` is a `Door s` that is *existentially quantified* over `s`.
-
-By pattern matching into `MkSomeDoor sd d`, we get the value of the door (`d`)
-back. However, you can’t know the *type* of the door (the `s` in `d :: Door s`)
-because its source could have been *any* type. The type system requires you to
-treat `d` as if it could be a door of *any* status.
-
-However, because we have `sd`, we can pattern match on it to recover the
-original *type* of the door, as well. This is because whatever type `d`
-originally had, `sd` *had* to use the constructor corresponding to it. So if `d`
-was originally a `Door 'Opened`, `sd` would have to be `SOpened`.
+Basically, `SingDS` allows us to re-use our original `Door s` implementation,
+because we store both the `Door`…*and* the `s` at the type level.
 
 #### Some Lingo
 
@@ -523,6 +573,8 @@ mySomeDoor was opened!
 Using `mkSomeDoor`, we can truly pass in a `DoorState` that we generate at
 runtime (from IO, or a user prompt, or a configuration file, maybe), and create
 a `Door` based on it.
+
+Take *that*, type erasure! :D
 
 The Singletons Library
 ----------------------
@@ -676,26 +728,28 @@ using this pattern extremely easy and smooth to integrate into your existing
 code.
 
 You can see all of the “manual singletons” code in this post
-[here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs),
+[here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs),
 and then see the code re-implemented using the *singletons* library
-\[here\]\[singletons-door\].
+[here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs).
 
-Today we almost exclusively looked at using the *singletons* package and the
-singleton pattern as it applies to programming with phantom types. However, you
-also might have heard about singletons enabling “type-level programming”, as
+Today we almost exclusively looked at programming with phantom types. However,
+you also might have heard about singletons enabling “type-level programming”, as
 well, and providing tools for writing writing full programs at the type level.
 
 Be sure to come back as we go deeper into more advanced techniques for
-programming with singletons for phantom types, and then also into the wonderful
-world that is type-level programming!
-
-For me, before I began using the singletons library, I had all sorts of ad-hoc
-trickery everywhere, and every single thing I did at the type level was a bunch
-of one-off hacks and tricks. Once I found singletons, however, everything was
-revealed, and all became unified, neat, and tidy, utilizing the same mechanisms
-for everything. I hope you could see this during this post, but if you didn’t,
-it will definitely become a recurring theme in this series!
+programming with singletons for phantom types, more sophisticated type-level
+constraints and logic, and then also into the wonderful world that is type-level
+programming! And we’ll see how the singletons library is a very clean
+unification of a lot of concepts.
 
 As always, let me know in the comments if you have any questions! You can also
 usually find me idling on the freenode `#haskell` channel, as well, as *jle\`*.
 Happy haskelling!
+
+[^1]: This series will be based on [a
+    talk](http://talks.jle.im/lambdaconf-2017/singletons/) I gave over the
+    summer, and will expand on it eventually.
+
+[^2]: The `'` ticks are technically optional, but I find that it’s good style,
+    at this point in Haskell, to use them whenever you can. It’ll prevent a lot
+    of confusion, trust me!
