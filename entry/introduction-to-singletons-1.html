@@ -171,7 +171,7 @@ doorStatus_ <span class="fu">=</span> doorStatus singDS
 
 <span class="ot">lockAnyDoor_ ::</span> <span class="dt">SingDSI</span> s <span class="ot">=&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
 lockAnyDoor_ <span class="fu">=</span> lockAnyDoor singDS</code></pre></div>
-<p>Here, type inference will tell GHC that you want <code>singDS :: Sing s</code>, and it will pull out the proper singleton for the door you want to check!</p>
+<p>Here, type inference will tell GHC that you want <code>singDS :: SingDS s</code>, and it will pull out the proper singleton for the door you want to check!</p>
 <p>(By the way, If you program Haskell regularly, it should slightly bug you that it’s super easy to write a bad instance of <code>SingDSI</code>. More about this later.)</p>
 <h4 id="the-same-power">The Same Power</h4>
 <p>In Haskell, a constraint <code>SingDSI s =&gt;</code> is essentially the same as passing in <code>SingDS s</code> explicitly. Either way, you are passing in a runtime witness that your function can use. You can think of <code>SingDSI s =&gt;</code> as passing it in <em>implicitly</em>, and <code>SingDS s -&gt;</code> as passing it in <em>explicitly</em>.</p>
@@ -286,7 +286,7 @@ mySomeDoor was opened<span class="fu">!</span></code></pre></div>
 genSingletons [<span class="ch">&#39;&#39;</span><span class="dt">DoorState</span>]
 
 <span class="co">-- or</span>
-
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L16-19</span>
 <span class="fu">$</span>(singletons [d|
   data DoorState = Opened | Closed | Locked
     deriving (Show, Eq)
@@ -297,7 +297,7 @@ genSingletons [<span class="ch">&#39;&#39;</span><span class="dt">DoorState</spa
     <span class="dt">SOpened</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;Opened</span>
     <span class="dt">SClosed</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;Closed</span>
     <span class="dt">SLocked</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;Locked</span></code></pre></div>
-<p><code>Sing</code> is a poly-kinded type constructor (family). <code>STrue :: Sing 'True</code> is the singleton for <code>True</code>, <code>SJust SOpened :: Sing ('Just 'Opened)</code> is the singleton for <code>Just Opened</code>, etc.</p>
+<p><code>Sing</code> is a poly-kinded type constructor (family). <code>STrue :: Sing 'True</code> is the singleton for <code>'True</code>, <code>SJust SOpened :: Sing ('Just 'Opened)</code> is the singleton for <code>'Just 'Opened</code>, etc.</p>
 <p>It also generates us instances for <code>SingI</code>, a poly-kinded typeclass:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">SingI</span> <span class="ch">&#39;Opened where</span>
     sing <span class="fu">=</span> <span class="dt">SOpened</span>
@@ -339,7 +339,7 @@ ghci<span class="fu">&gt;</span> putStrLn <span class="fu">$</span> <span class=
         <span class="dt">SomeSing</span> <span class="dt">SClosed</span> <span class="ot">-&gt;</span> <span class="st">&quot;SClosed.&quot;</span>
         <span class="dt">SomeSing</span> <span class="dt">SLocked</span> <span class="ot">-&gt;</span> <span class="st">&quot;SLocked.&quot;</span>
 <span class="st">&quot;Opened.&quot;</span></code></pre></div>
-<p><code>SomeSing</code> is like <code>SomeDoor</code>, an existentially quantified singleton:</p>
+<p><code>SomeSing</code> is like <code>SomeDoor</code> in that it is an existentially quantified singleton:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">SomeSing</span> <span class="dt">DoorState</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="kw">where</span>
     <span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">DoorState</span>
 

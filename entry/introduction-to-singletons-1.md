@@ -358,8 +358,8 @@ lockAnyDoor_ = lockAnyDoor singDS
 
 ```
 
-Here, type inference will tell GHC that you want `singDS :: Sing s`, and it will
-pull out the proper singleton for the door you want to check!
+Here, type inference will tell GHC that you want `singDS :: SingDS s`, and it
+will pull out the proper singleton for the door you want to check!
 
 (By the way, If you program Haskell regularly, it should slightly bug you that
 it’s super easy to write a bad instance of `SingDSI`. More about this later.)
@@ -619,11 +619,12 @@ data DoorState = Opened | Closed | Locked
 genSingletons [''DoorState]
 
 -- or
-
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L16-19
 $(singletons [d|
   data DoorState = Opened | Closed | Locked
     deriving (Show, Eq)
   |])
+
 ```
 
 This generates, for us:
@@ -637,8 +638,8 @@ data Sing :: DoorState -> Type where
 ```
 
 `Sing` is a poly-kinded type constructor (family). `STrue :: Sing 'True` is the
-singleton for `True`, `SJust SOpened :: Sing ('Just 'Opened)` is the singleton
-for `Just Opened`, etc.
+singleton for `'True`, `SJust SOpened :: Sing ('Just 'Opened)` is the singleton
+for `'Just 'Opened`, etc.
 
 It also generates us instances for `SingI`, a poly-kinded typeclass:
 
@@ -723,7 +724,8 @@ generated for us:
     "Opened."
     ```
 
-    `SomeSing` is like `SomeDoor`, an existentially quantified singleton:
+    `SomeSing` is like `SomeDoor` in that it is an existentially quantified
+    singleton:
 
     ``` {.haskell}
     data SomeSing DoorState :: Type where
