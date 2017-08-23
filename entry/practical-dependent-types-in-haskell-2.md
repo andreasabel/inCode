@@ -258,8 +258,8 @@ flexible enough to handle whatever `hs` the *function* returns.
 In summary:
 
 -   For universally quantified types, the *caller* chooses the type being
-    instanced, and the *function’s implementation* has to accommodate
-    any choice.
+    instanced, and the *function’s implementation* has to accommodate any
+    choice.
 
 -   For existentially quantified types, the *function’s implementation* chooses
     the type being instanced, and the *caller* has to accommodate any choice.
@@ -682,8 +682,8 @@ years:
 -   Constructor-style is necessary for writing typeclass instances. You can’t
     write a `Show` instance for `(forall hs. Network i hs o -> r) -> r`, but you
     can write one for `OpaqueNet i o`. We’ll also be writing `Binary` instances
-    later for serialization/deserialization, and it all only works
-    in constructor-style.
+    later for serialization/deserialization, and it all only works in
+    constructor-style.
 
 -   Haskell doesn’t allow you to use Rank-N types as arguments to type
     constructors, so you can have `[OpaqueNet i o]`, but *not*
@@ -696,8 +696,8 @@ years:
     If the type constructor is a Monad, you can get away with a ContT-style
     skolemization, like `(forall hs. Network i hs o -> [r]) -> [r]` and
     `(forall hs. Network i hs o -> IO r) -> IO r`. But this doesn’t work for
-    `MVar` and other useful type constructors you might want to put
-    `OpaqueNet` in.
+    `MVar` and other useful type constructors you might want to put `OpaqueNet`
+    in.
 
 -   When writing functions that *take* existentials as inputs, the
     constructor-style is arguably more natural. But barely.
@@ -980,8 +980,8 @@ Links are to the solutions.
 
     -   A function to [convert `SomeNet`s to
         `OpaqueNet`s](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L231-234).
-        Return the `OpaqueNet` with existentially quantified `i` and `o`
-        in continuation-style. (You can write a data type to return it in
+        Return the `OpaqueNet` with existentially quantified `i` and `o` in
+        continuation-style. (You can write a data type to return it in
         constructor-style, too, for funsies.)
     -   [`randomSNet`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L236-245),
         returning `m SomeNet`.
