@@ -1,0 +1,429 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+    \usepackage{xltxtra,xunicode}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{\usepackage{microtype}}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\newenvironment{Shaded}{}{}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{#1}}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{#1}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{#1}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex]{hyperref}
+\else
+  \usepackage[unicode=true]{hyperref}
+\fi
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            pdfauthor={Justin Le},
+            pdftitle={Fixed-Length Vector Types in Haskell (an Update for 2017)},
+            colorlinks=true,
+            citecolor=blue,
+            urlcolor=blue,
+            linkcolor=magenta,
+            pdfborder={0 0 0}}
+\urlstyle{same}  % don't use monospace font for urls
+% Make links footnotes instead of hotlinks:
+\renewcommand{\href}[2]{#2\footnote{\url{#1}}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\setcounter{secnumdepth}{0}
+
+\title{Fixed-Length Vector Types in Haskell (an Update for 2017)}
+\author{Justin Le}
+
+\begin{document}
+\maketitle
+
+\emph{Originally posted on
+\textbf{\href{https://blog.jle.im/entry/fixed-length-vector-types-in-haskell.html}{in
+Code}}.}
+
+This post is a follow-up to my
+\href{https://blog.jle.im/entry/fixed-length-vector-types-in-haskell-2015.html}{fixed-length
+vectors in haskell in 2015} post! When I was writing the post originally, I was
+new to the whole type-level game in Haskell; I didn't know what I was talking
+about, and that post was a way for me to push myself to learn more.
+
+Immediately after it was posted, people taught me where I went wrong in the
+idioms I explained, and better and more idiomatic ways to do things.
+Unfortunately, I have noticed people referring to the post in a
+canonical/authoritative way\ldots{}so the post became an immediate regret to me.
+I tried correcting things with my
+\href{https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html}{practical
+dependent types in haskell} series the next year, which incorporated what I had
+learned. But I still saw my 2015 post being used as a reference, so I figured
+that writing a direct replacement/follow-up as the only way I would ever fix
+this!
+
+So here we are in 2017. What's the ``right'' way to do fixed-length vectors in
+Haskell?
+
+\section{As a Wrapper with Smart
+Constructors}\label{as-a-wrapper-with-smart-constructors}
+
+In most situations, if you use vectors, you want some sort of constant-time
+indexed data structure. The best way to do this in Haskell is to wrap the
+heavily optimized
+\emph{\href{http://hackage.haskell.org/package/vector}{vector}} library with a
+newtype wrapper that contains its length as a phantom type parameter.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{import qualified} \DataTypeTok{Data.Vector} \KeywordTok{as} \DataTypeTok{V}
+
+\KeywordTok{data} \DataTypeTok{Vec}\NormalTok{ (}\OtherTok{n ::} \DataTypeTok{Nat}\NormalTok{) a }\FunctionTok{=} \DataTypeTok{UnsafeMkVec}\NormalTok{ \{}\OtherTok{ getVector ::} \DataTypeTok{V.Vector}\NormalTok{ a \}}
+    \KeywordTok{deriving} \DataTypeTok{Show}
+\end{Highlighting}
+\end{Shaded}
+
+A \texttt{Vec\ n\ a} will represent an \texttt{n}-element vector of \texttt{a}s.
+So, a \texttt{Vec\ 5\ Int} will be a vector of five \texttt{Int}s, a
+\texttt{Vec\ 10\ String} is a vector of 10 \texttt{String}s, etc.
+
+For our numeric types, we're using the fancy ``type literals'' that GHC offers
+us with the \texttt{DataKinds} extension. Basically, alongside the normal kinds
+\texttt{*}, \texttt{*\ -\textgreater{}\ *}, etc., we also have the \texttt{Nat}
+kind; type literals \texttt{1}, \texttt{5}, \texttt{100}, etc. are all
+\emph{types} with the \emph{kind} \texttt{Nat}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DecValTok{5}
+\DataTypeTok{Nat}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{Vec}
+\DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \OtherTok{->} \FunctionTok{*}
+\end{Highlighting}
+\end{Shaded}
+
+You can ``reflect'' the type-level numeral as a value using the
+\texttt{KnownNat} typeclass, provided by GHC, which lets you gain back the
+number as a run-time value using \texttt{natVal}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{natVal ::} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>}\NormalTok{ p n }\OtherTok{->} \DataTypeTok{Integer}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ natVal (}\DataTypeTok{Proxy} \FunctionTok{@}\DecValTok{10}\NormalTok{)   }\CommentTok{-- or, natVal (Proxy :: Proxy 10)}
+\DecValTok{10}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ natVal (}\DataTypeTok{Proxy} \FunctionTok{@}\DecValTok{7}\NormalTok{)}
+\DecValTok{7}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{The Smart Constructor}\label{the-smart-constructor}
+
+We can use \texttt{natVal} with the \texttt{KnownNat} typeclass to write a
+``smart constructor'' for our type -- make a \texttt{Vec} from a
+\texttt{Vector}, but only if the length is the correct type:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{mkVec ::}\NormalTok{ forall n}\FunctionTok{.} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a)}
+\NormalTok{mkVec v }\FunctionTok{|}\NormalTok{ V.length v }\FunctionTok{==}\NormalTok{ l }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (}\DataTypeTok{UnsafeMkVec}\NormalTok{ v)}
+        \FunctionTok{|}\NormalTok{ otherwise       }\FunctionTok{=} \DataTypeTok{Nothing}
+  \KeywordTok{where}
+\NormalTok{    l }\FunctionTok{=}\NormalTok{ natVal (}\DataTypeTok{Proxy} \FunctionTok{@}\NormalTok{n)}
+\end{Highlighting}
+\end{Shaded}
+
+Here, we use \texttt{ScopedTypeVariables} so we can refer to the \texttt{n} in
+the type signature in the function body (for \texttt{natVal\ (Proxy\ @n)}). We
+need to use an explicit forall, then, to bring the \texttt{n} into scope.
+
+\subsection{Indexing}\label{indexing}
+
+We need an appropriate type for indexing these, but we'd like a type where
+indexing is ``safe'' -- that is, that you can't compile a program that will
+result in an index error.
+
+For this, we can use the
+\emph{\href{http://hackage.haskell.org/package/finite-typelits}{finite-typelits}}
+package, which provides the \texttt{Finite\ n} type.
+
+A \texttt{Finite\ n} type is a type with exactly \texttt{n} distinct
+inhabitants/values. For example, \texttt{Finite\ 4} contains four ``anonymous''
+inhabitants. For convenience, sometimes we like to name them 0, 1, 2, and 3. In
+general, we sometimes refer to the values of type \texttt{Finite\ n} as 0
+\ldots{} (n - 1).
+
+So, we can imagine that \texttt{Finite\ 6} has inhabitants corresponding to 0,
+1, 2, 3, 4, and 5. We can convert back and forth between a \texttt{Finite\ n}
+and its \texttt{Integer} representation using \texttt{packFinite} and
+\texttt{getFinite}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{packFinite ::} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{Integer}  \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Finite}\NormalTok{ n)}
+\OtherTok{getFinite  ::}               \DataTypeTok{Finite}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Integer}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ map packFinite [}\DecValTok{0}\FunctionTok{..}\DecValTok{3}\NormalTok{]}\OtherTok{ ::}\NormalTok{ [}\DataTypeTok{Finite} \DecValTok{3}\NormalTok{]}
+\NormalTok{[}\DataTypeTok{Just}\NormalTok{ (finite }\DecValTok{0}\NormalTok{), }\DataTypeTok{Just}\NormalTok{ (finite }\DecValTok{1}\NormalTok{), }\DataTypeTok{Just}\NormalTok{ (finite }\DecValTok{2}\NormalTok{), }\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ getFinite (finite }\DecValTok{2}\OtherTok{ ::} \DataTypeTok{Finite} \DecValTok{5}\NormalTok{)}
+\DecValTok{2}
+\end{Highlighting}
+\end{Shaded}
+
+We can use a \texttt{Finite\ n} to ``index'' a \texttt{Vector\ n\ a}. A
+\texttt{Vector\ n\ a} has exactly \texttt{n} slots, and a \texttt{Finite\ n} has
+\texttt{n} possible values. Clearly, \texttt{Finite\ n} only contains valid
+indices into our vector!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{index}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Finite}\NormalTok{ n }\OtherTok{->}\NormalTok{ a}
+\NormalTok{index v i }\FunctionTok{=}\NormalTok{ getVector v }\FunctionTok{V.!}\NormalTok{ fromIntegral (getFinite i)}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{index} will never fail at runtime due to a bad index --- do you see why?
+Valid indices of a \texttt{Vector\ 5\ a} are the integers 0 to 4, and that is
+precisely the exact things that \texttt{Finite\ 5} can store!
+
+\subsection{Appending and type-level
+arithmetic}\label{appending-and-type-level-arithmetic}
+
+Another operation we might want to do with vectors is append them and do things
+with them that might change their length. We might want the type of our vectors
+to describe the nature of the operations they are undergoing. For example, if
+you saw a function:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{someFunc ::} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ (n }\FunctionTok{+}\NormalTok{ m) a}
+\end{Highlighting}
+\end{Shaded}
+
+You can see that it takes a vector of length \texttt{n} and a vector of length
+\texttt{m}, and returns a vector of length \texttt{n\ +\ m}. Clearly, this
+function must be appending/concatenating the two input vectors!
+
+In this situation, we can write such an appending function in an ``unsafe'' way,
+and then give it our type signature as a form of documentation.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{append ::} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ (n }\FunctionTok{+}\NormalTok{ m) a}
+\NormalTok{append v w }\FunctionTok{=} \DataTypeTok{UnsafeMkVec} \FunctionTok{$}\NormalTok{ getVector v }\FunctionTok{V.++}\NormalTok{ getVector w}
+\end{Highlighting}
+\end{Shaded}
+
+The compiler didn't help us write this function, and we have to be pretty
+careful that the guarantees we specify in our types are reflected in the actual
+unsafe operations. This is because our types don't \emph{structurally} enforce
+their type-level lengths.
+
+So, why bother? For us, here, our fixed-length vector types basically act as
+``active documentation'', in a way. Compare:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- | Appends a vector of length n with a vector of length m to get a vector of}
+\NormalTok{length (n }\FunctionTok{+}\NormalTok{ m)}\FunctionTok{.}
+\OtherTok{append ::} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->} \DataTypeTok{V.Vector}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+We have to rely on the documentation to \emph{tell} us what the length of the
+final resulting vector is, even though it can be known statically if you know
+the length of the input vectors. The vectors have a \emph{static relationship}
+in their length, but this isn't specified in a way that the compiler can take
+advantage of.
+
+By having our
+\texttt{append\ ::\ Vec\ n\ a\ -\textgreater{}\ Vec\ m\ a\ -\textgreater{}\ Vec\ (n\ +\ m)\ a},
+the relationship between the input lengths and output length is right there in
+the types, when you \emph{use} \texttt{append}, GHC is aware of the
+relationships and can give you help in the form of typed hole suggestions and
+informative type errors. You can even catch errors in logic at compile-time
+instead of runtime!
+
+Here, \texttt{(+)} comes from GHC, which provides it as a type family
+(type-level function) we can use, with proper meaning and semantics.
+
+Some other examples include:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- the end vector has the same length as the starting vector}
+\NormalTok{map}\OtherTok{ ::}\NormalTok{ (a }\OtherTok{->}\NormalTok{ b) }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n b}
+\CommentTok{-- you must zip two vectors of the same length}
+\NormalTok{zip}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n b }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n (a, b)}
+\CommentTok{-- type-level arithmetic to let us 'take'}
+\NormalTok{take}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ (n }\FunctionTok{+}\NormalTok{ m) a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
+\CommentTok{-- splitAt, as well}
+\NormalTok{splitAt}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ (n }\FunctionTok{+}\NormalTok{ m) a }\OtherTok{->}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a, }\DataTypeTok{Vec}\NormalTok{ m a)}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Generating}\label{generating}
+
+We can directly generate these vectors in interesting ways. Using return-type
+polymorphism, we can have the user \emph{directly} request a vector length,
+\emph{just} by using type inference or a type annotation. (kind of like
+\texttt{read})
+
+For example, we can write a version of \texttt{replicate}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{replicate}\OtherTok{ ::}\NormalTok{ forall n a}\FunctionTok{.} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
+\NormalTok{replicate x }\FunctionTok{=} \DataTypeTok{UnsafeMkVec} \FunctionTok{$}\NormalTok{ V.replicate l x}
+  \KeywordTok{where}
+\NormalTok{    l }\FunctionTok{=}\NormalTok{ fromIntegral }\FunctionTok{$}\NormalTok{ natVal (}\DataTypeTok{Proxy} \FunctionTok{@}\NormalTok{n)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ replicate }\CharTok{'a'}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{5} \DataTypeTok{Char}
+\DataTypeTok{UnsafeMkVec}\NormalTok{ (V.fromList [}\CharTok{'a'}\NormalTok{,}\CharTok{'a'}\NormalTok{,}\CharTok{'a'}\NormalTok{,}\CharTok{'a'}\NormalTok{,}\CharTok{'a'}\NormalTok{])}
+\end{Highlighting}
+\end{Shaded}
+
+Note that normally, \texttt{replicate} takes an \texttt{Int} argument so that
+the user can give how long the resulting vector needs to be. However, with our
+new \texttt{replicate}, we don't need that \texttt{Int} argument --- the size of
+the vector we want can more often than not be inferred automatigically using
+type inference!
+
+With this new cleaner type signature, we can actually see that
+\texttt{replicate}'s type is something very similar. Look at it carefuly:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{replicate}\OtherTok{ ::} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
+\end{Highlighting}
+\end{Shaded}
+
+You might recognize it as the haskellism \texttt{pure}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pure}\OtherTok{ ::} \DataTypeTok{Applicative}\NormalTok{ f }\OtherTok{=>}\NormalTok{ a }\OtherTok{->}\NormalTok{ f a}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{replicate} is actually \texttt{pure} for the Applicative instance of
+\texttt{Vec\ n}! As an extra challenge, what would
+\texttt{\textless{}*\textgreater{}} be?
+
+\subsubsection{Generating with indices}\label{generating-with-indices}
+
+We can be a little more fancy with \texttt{replicate}, to get what we normally
+call \texttt{generate}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{generate ::}\NormalTok{ forall n}\FunctionTok{.} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>}\NormalTok{ (}\DataTypeTok{Finite}\NormalTok{ n }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
+\NormalTok{generate f }\FunctionTok{=} \DataTypeTok{UnsafeMkVec} \FunctionTok{$}\NormalTok{ V.generate l (f }\FunctionTok{.}\NormalTok{ finite)}
+  \KeywordTok{where}
+\NormalTok{    l }\FunctionTok{=}\NormalTok{ fromIntegral }\FunctionTok{$}\NormalTok{ natVal (}\DataTypeTok{Proxy} \FunctionTok{@}\NormalTok{n)}
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{A discussion on the advantages of
+type-safety}\label{a-discussion-on-the-advantages-of-type-safety}
+
+I think it's an interesting point that we're using \texttt{Finite\ n} in a
+different sense here than in \texttt{index}, for different reasons. In
+\texttt{index}, \texttt{Finite} is in the ``negative'' position --- it's
+something that the function ``takes''. In \texttt{generate}, \texttt{Finite} is
+in the ``positive'' position --- it's something that the function ``gives'' (to
+the \texttt{f} in \texttt{generate\ f}).
+
+In the negative position, \texttt{Finite\ n} and type-safety is useful because:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  It tells the user what sort of values that the function expects. The user
+  \emph{knows}, just from the type, that indexing a \texttt{Vec\ 5\ a} requires
+  a \texttt{Finite\ 5}, or a number between 0 and 4.
+\item
+  It guarantees that whatever \texttt{Finite\ n} index you give to
+  \texttt{index} is a \emph{valid one}. It's impossible to give \texttt{index}
+  an ``invalid index'', so \texttt{index} is allowed to use ``unsafe indexing''
+  in its implementation, knowing that nothing bad can be given.
+\item
+  It lets you develop code in ``typed-hole'' style: if a function requires a
+  \texttt{Finite\ 4}, put an underscore there, and GHC will tell you about all
+  the \texttt{Finite\ 4}s you have in scope. It can help you write your code for
+  you!
+\end{enumerate}
+
+In the positive position, \texttt{Finite\ n} and the type-safety have different
+uses and advantages: it tells the user what sort of values the function can
+return, and also also the type of values that the user has to be expected to
+handle. For example, in \texttt{generate}, the fact that the user has to provide
+a \texttt{Finite\ n\ -\textgreater{}\ a} tells the user that they have to handle
+every number between 0 and n-1, and nothing else.
+
+\subsection{Between Static and Dynamic}\label{between-static-and-dynamic}
+
+So
+
+\end{document}
