@@ -1250,9 +1250,6 @@ use fixed-length vectors effectively in Haskell…hopefully after reading this,
 you have confidence to work with these things directly, and to know what to
 google if anything else comes up :)
 
-I hope also that the completion and release of this article will assuage my ill
-conscience that has been plagued with guilt since 2015 :)
-
 Feel free as always to leave a comment or a [tweet](https://twitter.com/mstk),
 or find me the freenode `#haskell` channel, as *jle\`*. I always welcome
 feedback, suggestions, or questions!
