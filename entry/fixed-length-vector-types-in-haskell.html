@@ -72,7 +72,8 @@ mapVec f v <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> <span c
 <p>So, why bother? For us, here, our fixed-length vector types basically act as “active documentation”, in a way. Compare:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- | Maps the function over the items in the vector, returning a vector of the</span>
 <span class="co">-- same length</span>
-<span class="ot">mapVec ::</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> a</code></pre></div>
+V.map<span class="ot"> ::</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> a</code></pre></div>
+<p>Which is the type signature we’d have to write for a map of an “unsized” vector (like from the <em>Data.Vector</em> module)</p>
 <p>We have to rely on the documentation to <em>tell</em> us what the length of the final resulting vector is, even though it can be known statically if you know the length of the input vectors. The vectors have a <em>static relationship</em> in their length, but this isn’t specified in a way that the compiler can take advantage of.</p>
 <p>By having our <code>mapVec :: (a -&gt; b) -&gt; Vec n a -&gt; Vec m b</code>, the relationship between the input lengths and output length is right there in the types, when you <em>use</em> <code>mapVec</code>, GHC is aware of the relationships and can give you help in the form of typed hole suggestions and informative type errors. You can even catch errors in logic at compile-time instead of runtime!</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- the resulting vector&#39;s length is the sum of the input vectors&#39; lengths</span>
