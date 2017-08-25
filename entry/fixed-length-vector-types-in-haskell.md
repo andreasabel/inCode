@@ -34,14 +34,17 @@ situations where performance matters. We’ll see how to implement them using th
 universal native `KnownNat` mechanisms, and also how we can implement them using
 *[singletons](http://hackage.haskell.org/package/singletons)* to help us make
 things a bit smoother and more well-integrated. For most people, this is all
-they actually need.
+they actually need. (I claim the canonical haskell ecosystem source to be the
+*[vector-sized](http://hackage.haskell.org/package/vector-sized)* library)
 
 The second method is a *structural* fixed-length inductive vector. It’s…actually
 more like a fixed-length (lazily linked) *list* than a vector. The length of the
 list is enforced by the very structure of the data type. This type is more
 useful as a streaming data type, and also in situations where you want take
 advantage of the structural characteristics of lengths in the context of a
-dependently typed program.
+dependently typed program. (I claim the canonical haskell ecosystem source to be
+the *[type-combinators](http://hackage.haskell.org/package/type-combinators)*
+library)
 
 The Non-Structural Way
 ----------------------
@@ -1091,7 +1094,7 @@ ecosystem remains inductive.
 Now, to write `replicate`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L85-88
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L90-93
 replicate_ :: Sing n -> a -> Vec n a
 replicate_ = \case
     SZ   -> \_ -> VNil
@@ -1102,7 +1105,7 @@ And we can recover our original “implicit” style, with type-inference-driven
 lengths, using `SingI` and `sing :: SingI n => Sing n`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L85-88
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L90-93
 replicate_ :: Sing n -> a -> Vec n a
 replicate_ = \case
     SZ   -> \_ -> VNil
@@ -1126,7 +1129,7 @@ reader – click the link at the top corner of the text box to see the solution,
 and see how it compares to your own :)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L93-99
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L98-104
 generate_ :: Sing n -> (Fin n -> a) -> Vec n a
 
 generate :: SingI n => (Fin n -> a) -> Vec n a
@@ -1145,10 +1148,17 @@ expects…these clues will help you get your bearings!
 
 ### Between Sized and Unsized
 
-Our the API of converting unsized to sized vectors will be the same:
+Converting from sized to unsized vectors (to lists) is something that is pretty
+straightforward, and can be done by just pattern matching on the vector and
+recursing on the tail. I’ve [left it as an
+excercise](https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L85-88)
+to write `Vec n a -> [a]`.
+
+More interesting is the other way around; our the API of converting unsized to
+sized vectors will be the same:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L101-101
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L106-106
 withVec :: [a] -> (forall n. Sing n -> Vec n a -> r) -> r
 ```
 
@@ -1161,7 +1171,7 @@ Ready?
 Welcome back! Hope you had a fun time :) Here’s the solution!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L101-105
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L106-110
 withVec :: [a] -> (forall n. Sing n -> Vec n a -> r) -> r
 withVec = \case
     []   -> \f -> f SZ VNil
@@ -1188,7 +1198,7 @@ First, it’d be nice to get a witness for the length of a given vector just fro
 the vector itself:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L107-110
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L112-115
 vecLength :: Vec n a -> Sing n
 vecLength = \case
     VNil    -> SZ
@@ -1205,7 +1215,7 @@ Now, our code will be identical to the code for our wrapped/non-structural
 vectors, using `%~` and `Decision` and `Refl`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L112-118
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L117-123
 exactLength_ :: Sing m -> Vec n a -> Maybe (Vec m a)
 exactLength_ sM v = case sM %~ vecLength v of
     Proved Refl -> Just v
@@ -1223,7 +1233,7 @@ We can write `exactLength` in a cute way by inducting on the length we want and
 the vector, so it might be fun to look at this version instead –
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L120-130
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L125-135
 exactLengthInductive_ :: Sing m -> Vec n a -> Maybe (Vec m a)
 exactLengthInductive_ = \case
     SZ -> \case
@@ -1251,7 +1261,7 @@ For example, we can make a witness that `n` is less than or equal to `m`, as
 well as a way to construct such a witness:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L132-144
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L137-149
 data LTE :: Nat -> Nat -> Type where
     LEZ :: LTE 'Z n
     LES :: LTE n m -> LTE ('S n) ('S m)
@@ -1273,7 +1283,7 @@ equal to `m`. I dare you to try!
 We can write code to check for this property in our vectors:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L146-152
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L151-157
 atLeast_ :: Sing n -> Vec m a -> Maybe (LTE n m, Vec m a)
 atLeast_ sN v = case isLTE sN (vecLength v) of
     Proved l    -> Just (l, v)
@@ -1291,7 +1301,7 @@ We can write a function that can “take” an arbitrary amount from a vector, g
 (via proof) that the vector has at least that many elements:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L154-158
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L159-163
 takeVec :: LTE n m -> Vec m a -> Vec n a
 takeVec = \case
     LEZ   -> \_ -> VNil
@@ -1303,13 +1313,33 @@ And, we can combine that with our `atLeast` function, to be able to take
 (maybe)[^3] from any vector:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L160-164
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L165-169
 takeVecMaybe_ :: Sing n -> Vec m a -> Maybe (Vec n a)
 takeVecMaybe_ sN v = uncurry takeVec <$> atLeast_ sN v
 
 takeVecMaybe :: SingI n => Vec m a -> Maybe (Vec n a)
 takeVecMaybe v = uncurry takeVec <$> atLeast v
 ```
+
+### In the Real World
+
+This type is more like a list than a vector, so it’s in a bit of an awkward
+position, utility-wise. You usually chose a list over a vector in Haskell when
+you want some sort of lazy streaming, but the cases where you want to lazily
+stream something *and* you know exactly how many items you want to stream are
+admittedly a bit rare. GHC can’t handle infinite `Vec`s, so there’s that, too.
+For “containers”, *vector* is great, so the non-structural `Vec` is seen a lot
+more.
+
+However, if you are working with a lot of other inductive types, `Vec` works
+very naturally alongside it. So it makes sense that a “canonical” package
+offering `Vec` is
+*[type-combinators](http://hackage.haskell.org/package/type-combinators)*, an
+actively maintained library with loads of useful inductive types for type-level
+programming, exporting its own `Nat` and `Sing`s. If I am doing the sort of
+type-level programming that `Vec` is useful for, chances are I already have
+*type-combinators* imported. This is the library that I personally suggest if
+you want to use this `Vec` in the real world.
 
 Wrapping up
 -----------
