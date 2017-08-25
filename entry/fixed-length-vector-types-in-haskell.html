@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>Fixed-Length Vector Types in Haskell (an Update for 2017) · in Code</title><meta name="description" content="Weblog of Justin Le, covering his various adventures in programming and explorations in the vast worlds of computation physics, and knowledge."><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta property="og:site_name" content="in Code"><meta property="og:description" content="This post is a follow-up to my fixed-length vectors in haskell in 2015 post! When I was writing the post originally, I was new to the whole type-level game in Haskell; I didn’t know what I was talking about, and that post was a way for me to push myself to learn more. Immediately after it was posted, people taught me where I went wrong in the idioms I explained, and better and more idiomatic ways to do things. Unfortunately, I have noticed people referring to the post in a canonical/authoritative way…so the post became an immediate regret to me. I tried correcting things with my practical dependent types in haskell series the next year, which incorporated what I had learned. But I still saw my 2015 post being used as a reference, so I figured that writing a direct replacement/follow-up as the only way I would ever fix this! So here we are in 2017. What’s the right way to do fixed-length vectors in Haskell?"><meta property="og:type" content="article"><meta property="og:title" content="Fixed-Length Vector Types in Haskell (an Update for 2017)"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/fixed-length-vector-types-in-haskell.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/fixed-length-vector-types-in-haskell.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
+<html><head><title>Fixed-Length Vector Types in Haskell (an Update for 2017) · in Code</title><meta name="description" content="Weblog of Justin Le, covering his various adventures in programming and explorations in the vast worlds of computation physics, and knowledge."><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta property="og:site_name" content="in Code"><meta property="og:description" content="This post is a follow-up to my fixed-length vectors in haskell in 2015 post! When I was writing the post originally, I was new to the whole type-level game in Haskell; I didn’t know what I was talking about, and that post was a way for me to push myself to learn more. Immediately after it was posted, people taught me where I went wrong in the idioms I explained, and better and more idiomatic ways to do things. Unfortunately, I have noticed people referring to the post in a canonical/authoritative way…so the post became an immediate regret to me. I tried correcting things with my practical dependent types in haskell series the next year, which incorporated what I had learned. But I still saw my 2015 post being used as a reference, so I figured that writing a direct replacement/follow-up as the only way I would ever fix this! So here we are in 2017. What’s the right way to do fixed-length vectors in Haskell? We’ll be looking at two methods here: The first one we will be looking at is a performant fixed-length vector that you will probably be using for any code that requires a fixed-length container — especially for tight numeric code and situations where performance matters. The second one we will be looking at is a structural fixed-length inductive vector. It’s…actually more like a fixed-length list (lazily linked list) than a vector, but it’s just called a vector because of tradition. The length of the list is enforced by the very structure of the data type (similar to how Identity is a container that is structurally enforced to have exactly one item). This type is more useful as a streaming data type, and also in situations where you want take advantage of the structural characteristics of lengths in the context of a dependently typed program. It’s also very useful as an introduction to dependently typed programming with inductive proofs."><meta property="og:type" content="article"><meta property="og:title" content="Fixed-Length Vector Types in Haskell (an Update for 2017)"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/fixed-length-vector-types-in-haskell.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/fixed-length-vector-types-in-haskell.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
 var disqus_shortname='incode';
 </script><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
 (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -19,7 +19,9 @@ compiled…really just the king of great languages.">Haskell</a>, <a href="https
 that I’ve struggled through in the past.">Tutorials</a><span class="info-separator"> &diams; </span><a class="comment-link" href="#disqus_thread">Comments</a></p></header><hr><aside class="contents-container"><h5 id="contents-header">Contents</h5><div id="toc"></div></aside><div class="main-content copy-content"><p>This post is a follow-up to my <a href="https://blog.jle.im/entry/fixed-length-vector-types-in-haskell-2015.html">fixed-length vectors in haskell in 2015</a> post! When I was writing the post originally, I was new to the whole type-level game in Haskell; I didn’t know what I was talking about, and that post was a way for me to push myself to learn more.</p>
 <p>Immediately after it was posted, people taught me where I went wrong in the idioms I explained, and better and more idiomatic ways to do things. Unfortunately, I have noticed people referring to the post in a canonical/authoritative way…so the post became an immediate regret to me. I tried correcting things with my <a href="https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html">practical dependent types in haskell</a> series the next year, which incorporated what I had learned. But I still saw my 2015 post being used as a reference, so I figured that writing a direct replacement/follow-up as the only way I would ever fix this!</p>
 <p>So here we are in 2017. What’s the “right” way to do fixed-length vectors in Haskell?</p>
-<h2 id="as-a-wrapper-with-smart-constructors">As a Wrapper with Smart Constructors</h2>
+<p>We’ll be looking at two methods here: The first one we will be looking at is a <em>performant</em> fixed-length vector that you will probably be using for any code that requires a fixed-length container — especially for tight numeric code and situations where performance matters.</p>
+<p>The second one we will be looking at is a <em>structural</em> fixed-length inductive vector. It’s…actually more like a fixed-length <em>list</em> (lazily linked list) than a vector, but it’s just called a vector because of tradition. The length of the list is enforced by the very structure of the data type (similar to how <code>Identity</code> is a container that is structurally enforced to have exactly one item). This type is more useful as a streaming data type, and also in situations where you want take advantage of the structural characteristics of lengths in the context of a dependently typed program. It’s also very useful as an “introduction” to dependently typed programming with inductive proofs.</p>
+<h2 id="the-non-structural-way">The Non-Structural Way</h2>
 <p>In most situations, if you use vectors, you want some sort of constant-time indexed data structure. The best way to do this in Haskell is to wrap the heavily optimized <em><a href="http://hackage.haskell.org/package/vector">vector</a></em> library with a newtype wrapper that contains its length as a phantom type parameter.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import qualified</span> <span class="dt">Data.Vector</span> <span class="kw">as</span> <span class="dt">V</span>
 
@@ -31,20 +33,49 @@ that I’ve struggled through in the past.">Tutorials</a><span class="info-separ
 <span class="dt">Nat</span>
 ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="dt">Vec</span>
 <span class="dt">Vec</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span></code></pre></div>
-<p>You can “reflect” the type-level numeral as a value using the <code>KnownNat</code> typeclass, provided by GHC, which lets you gain back the number as a run-time value using <code>natVal</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">natVal ::</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> p n <span class="ot">-&gt;</span> <span class="dt">Integer</span></code></pre></div>
+<p>You can “reflect” the type-level numeral as a value using the <code>KnownNat</code> typeclass, provided by GHC, which lets you gain back the number as a run-time value using <code>natVal</code>: (This process is called “reflection”)</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">natVal ::</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> p n <span class="ot">-&gt;</span> <span class="dt">Natural</span></code></pre></div>
+<p>(Where <code>Natural</code>, from <em><a href="http://hackage.haskell.org/package/base-4.10.0.0/docs/Numeric-Natural.html">Numeric.Natural</a></em>, is a non-negative <code>Integer</code> type.)</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> natVal (<span class="dt">Proxy</span> <span class="fu">@</span><span class="dv">10</span>)   <span class="co">-- or, natVal (Proxy :: Proxy 10)</span>
 <span class="dv">10</span>
 ghci<span class="fu">&gt;</span> natVal (<span class="dt">Proxy</span> <span class="fu">@</span><span class="dv">7</span>)
 <span class="dv">7</span></code></pre></div>
+<p>Super low-level utility functions for the <code>Nat</code> kind (like <code>natVal</code>) are found in the <em><a href="http://hackage.haskell.org/package/base/docs/GHC-TypeNats.html">GHC.TypeNats</a></em> module (and also in <em><a href="http://hackage.haskell.org/package/base/docs/GHC-TypeLits.html">GHC.TypeLits</a></em> for a slightly different API)</p>
 <h3 id="the-smart-constructor">The Smart Constructor</h3>
 <p>We can use <code>natVal</code> with the <code>KnownNat</code> typeclass to write a “smart constructor” for our type – make a <code>Vec</code> from a <code>Vector</code>, but only if the length is the correct type:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mkVec ::</span> forall n<span class="fu">.</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> n a)
 mkVec v <span class="fu">|</span> V.length v <span class="fu">==</span> l <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">UnsafeMkVec</span> v)
         <span class="fu">|</span> otherwise       <span class="fu">=</span> <span class="dt">Nothing</span>
   <span class="kw">where</span>
-    l <span class="fu">=</span> natVal (<span class="dt">Proxy</span> <span class="fu">@</span>n)</code></pre></div>
+    l <span class="fu">=</span> fromIntegral (natVal (<span class="dt">Proxy</span> <span class="fu">@</span>n))</code></pre></div>
 <p>Here, we use <code>ScopedTypeVariables</code> so we can refer to the <code>n</code> in the type signature in the function body (for <code>natVal (Proxy @n)</code>). We need to use an explicit forall, then, to bring the <code>n</code> into scope.</p>
+<h3 id="utilizing-type-level-guarantees">Utilizing type-level guarantees</h3>
+<p>Another operation we might want to do with vectors is do things with them that might change their length in a predetermined way. We might want the type of our vectors to describe the nature of the operations they are undergoing. For example, if you saw a function:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">someFunc ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n b</code></pre></div>
+<p>You can see that it takes a function and a vector of length <code>n</code>, and returns another vector of length <code>n</code>. Clearly, this function might be a “map” function, which applies the function to all of the values in the <code>Vec</code>! We know that it must have the same length, so it can’t drop or add items. (However, it could still be shuffling or duplicating or permuting the items, as long as the resulting length is the same)</p>
+<p>In this situation, we can write such a mapping function in an “unsafe” way, and then give it our type signature as a form of documentation:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mapVec ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n b
+mapVec f v <span class="fu">=</span> <span class="dt">UnsafeMakeVec</span> <span class="fu">$</span> V.map f (getVector v)
+
+<span class="co">-- just for fun</span>
+<span class="kw">instance</span> <span class="dt">Functor</span> (<span class="dt">Vec</span> n) <span class="kw">where</span>
+    fmap <span class="fu">=</span> mapVec</code></pre></div>
+<p>The compiler didn’t help us write this function, and we have to be pretty careful that the guarantees we specify in our types are reflected in the actual unsafe operations. This is because our types don’t <em>structurally</em> enforce their type-level lengths.</p>
+<p>So, why bother? For us, here, our fixed-length vector types basically act as “active documentation”, in a way. Compare:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- | Maps the function over the items in the vector, returning a vector of the</span>
+<span class="co">-- same length</span>
+<span class="ot">mapVec ::</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> a</code></pre></div>
+<p>We have to rely on the documentation to <em>tell</em> us what the length of the final resulting vector is, even though it can be known statically if you know the length of the input vectors. The vectors have a <em>static relationship</em> in their length, but this isn’t specified in a way that the compiler can take advantage of.</p>
+<p>By having our <code>mapVec :: (a -&gt; b) -&gt; Vec n a -&gt; Vec m b</code>, the relationship between the input lengths and output length is right there in the types, when you <em>use</em> <code>mapVec</code>, GHC is aware of the relationships and can give you help in the form of typed hole suggestions and informative type errors. You can even catch errors in logic at compile-time instead of runtime!</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- the resulting vector&#39;s length is the sum of the input vectors&#39; lengths</span>
+<span class="ot">(++) ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (n <span class="fu">+</span> m) a
+<span class="co">-- you must zip two vectors of the same length</span>
+<span class="ot">zipVec ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n b <span class="ot">-&gt;</span> <span class="dt">Vec</span> n (a, b)
+<span class="co">-- type-level arithmetic to let us &#39;take&#39;</span>
+take<span class="ot"> ::</span> <span class="dt">Vec</span> (n <span class="fu">+</span> m) a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
+<span class="co">-- splitAt, as well</span>
+splitAt<span class="ot"> ::</span> <span class="dt">Vec</span> (n <span class="fu">+</span> m) a <span class="ot">-&gt;</span> (<span class="dt">Vec</span> n a, <span class="dt">Vec</span> m a)</code></pre></div>
+<p>Here, <code>(+)</code> comes from GHC, which provides it as a type family (type-level function) we can use, with proper meaning and semantics.</p>
 <h3 id="indexing">Indexing</h3>
 <p>We need an appropriate type for indexing these, but we’d like a type where indexing is “safe” – that is, that you can’t compile a program that will result in an index error.</p>
 <p>For this, we can use the <em><a href="http://hackage.haskell.org/package/finite-typelits">finite-typelits</a></em> package, which provides the <code>Finite n</code> type.</p>
@@ -60,30 +91,6 @@ ghci<span class="fu">&gt;</span> getFinite (finite <span class="dv">2</span><spa
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">index<span class="ot"> ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Finite</span> n <span class="ot">-&gt;</span> a
 index v i <span class="fu">=</span> getVector v <span class="fu">V.!</span> fromIntegral (getFinite i)</code></pre></div>
 <p><code>index</code> will never fail at runtime due to a bad index — do you see why? Valid indices of a <code>Vector 5 a</code> are the integers 0 to 4, and that is precisely the exact things that <code>Finite 5</code> can store!</p>
-<h3 id="appending-and-type-level-arithmetic">Appending and type-level arithmetic</h3>
-<p>Another operation we might want to do with vectors is append them and do things with them that might change their length. We might want the type of our vectors to describe the nature of the operations they are undergoing. For example, if you saw a function:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">someFunc ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (n <span class="fu">+</span> m) a</code></pre></div>
-<p>You can see that it takes a vector of length <code>n</code> and a vector of length <code>m</code>, and returns a vector of length <code>n + m</code>. Clearly, this function must be appending/concatenating the two input vectors!</p>
-<p>In this situation, we can write such an appending function in an “unsafe” way, and then give it our type signature as a form of documentation.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">append ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (n <span class="fu">+</span> m) a
-append v w <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> <span class="fu">$</span> getVector v <span class="fu">V.++</span> getVector w</code></pre></div>
-<p>The compiler didn’t help us write this function, and we have to be pretty careful that the guarantees we specify in our types are reflected in the actual unsafe operations. This is because our types don’t <em>structurally</em> enforce their type-level lengths.</p>
-<p>So, why bother? For us, here, our fixed-length vector types basically act as “active documentation”, in a way. Compare:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- | Appends a vector of length n with a vector of length m to get a vector of</span>
-length (n <span class="fu">+</span> m)<span class="fu">.</span>
-<span class="ot">append ::</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> a</code></pre></div>
-<p>We have to rely on the documentation to <em>tell</em> us what the length of the final resulting vector is, even though it can be known statically if you know the length of the input vectors. The vectors have a <em>static relationship</em> in their length, but this isn’t specified in a way that the compiler can take advantage of.</p>
-<p>By having our <code>append :: Vec n a -&gt; Vec m a -&gt; Vec (n + m) a</code>, the relationship between the input lengths and output length is right there in the types, when you <em>use</em> <code>append</code>, GHC is aware of the relationships and can give you help in the form of typed hole suggestions and informative type errors. You can even catch errors in logic at compile-time instead of runtime!</p>
-<p>Here, <code>(+)</code> comes from GHC, which provides it as a type family (type-level function) we can use, with proper meaning and semantics.</p>
-<p>Some other examples include:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- the end vector has the same length as the starting vector</span>
-map<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n b
-<span class="co">-- you must zip two vectors of the same length</span>
-zip<span class="ot"> ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n b <span class="ot">-&gt;</span> <span class="dt">Vec</span> n (a, b)
-<span class="co">-- type-level arithmetic to let us &#39;take&#39;</span>
-take<span class="ot"> ::</span> <span class="dt">Vec</span> (n <span class="fu">+</span> m) a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
-<span class="co">-- splitAt, as well</span>
-splitAt<span class="ot"> ::</span> <span class="dt">Vec</span> (n <span class="fu">+</span> m) a <span class="ot">-&gt;</span> (<span class="dt">Vec</span> n a, <span class="dt">Vec</span> m a)</code></pre></div>
 <h3 id="generating">Generating</h3>
 <p>We can directly generate these vectors in interesting ways. Using return-type polymorphism, we can have the user <em>directly</em> request a vector length, <em>just</em> by using type inference or a type annotation. (kind of like <code>read</code>)</p>
 <p>For example, we can write a version of <code>replicate</code>:</p>
@@ -114,8 +121,314 @@ generate f <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> <span c
 <li>It lets you develop code in “typed-hole” style: if a function requires a <code>Finite 4</code>, put an underscore there, and GHC will tell you about all the <code>Finite 4</code>s you have in scope. It can help you write your code for you!</li>
 </ol>
 <p>In the positive position, <code>Finite n</code> and the type-safety have different uses and advantages: it tells the user what sort of values the function can return, and also also the type of values that the user has to be expected to handle. For example, in <code>generate</code>, the fact that the user has to provide a <code>Finite n -&gt; a</code> tells the user that they have to handle every number between 0 and n-1, and nothing else.</p>
-<h3 id="between-static-and-dynamic">Between Static and Dynamic</h3>
-<p>So</p></div><footer><ul class="entry-series"></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/types.html" class="tag-a-tag">#types</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@reference.html" class="tag-a-category">@REFERENCE</a></li><li><a href="https://blog.jle.im/entries/category/@tutorials.html" class="tag-a-category">@TUTORIALS</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing “in Code”!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
+<h3 id="between-sized-and-unsized">Between Sized and Unsized</h3>
+<p>One key part of our API is missing: how to convert seamlessly between “sized” and “unsized” vectors.</p>
+<p>Converting from sized to unsized is easy, and we already have it:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">getVector ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> a</code></pre></div>
+<p>Converting from unsized to sized is harder. We already saw a “shoe-horning” method, if we know the size we want at compile-time:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mkVec ::</span> forall n<span class="fu">.</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> n a)</code></pre></div>
+<p>But what if we don’t know what size <code>n</code> we want? What if we want <code>n</code> to be whatever the actual size of the input vector is?</p>
+<p>In general we can’t predict the size of our input vector at compile-time, so we can’t just directly put in a size we want. What we want is a method to return a <code>Vec n</code>, where <code>n</code> is the length of the input vector, determined at runtime.</p>
+<p>I’m going to try to convince you that a plausible API is:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">withVec
+<span class="ot">    ::</span> <span class="dt">V.Vector</span> a
+    <span class="ot">-&gt;</span> (forall n<span class="fu">.</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> r)
+    <span class="ot">-&gt;</span> r</code></pre></div>
+<p>People familiar with dependent types might recognized it as a CPS-style existential. Basically, give the function a vector, and a way to “handle” a <code>Vec n</code> of <em>any possible size</em>. The function will then give your handler a <code>Vec n</code> of the proper type/size.</p>
+<p>Within your continuation/handler, you can take advantage of the size, and do take advantage of all of the type-level guarantees and benefits of a length-indexed vector. In a way, it is its own “world” where your vector has a fixed size. However, the caveat is that you have to treat the size <em>universally</em> — you have to be able to handle any possible size given to you, in a parametrically polymorphic way.</p>
+<p>For example:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> myVector <span class="fu">=</span> V.fromList [<span class="dv">10</span>,<span class="dv">5</span>,<span class="dv">8</span>]<span class="ot"> ::</span> <span class="dt">V.Vector</span> <span class="dt">Int</span>
+ghci<span class="fu">&gt;</span> withVec myVector <span class="fu">$</span> \(<span class="ot">v ::</span> <span class="dt">Vec</span> n <span class="dt">Int</span>) <span class="ot">-&gt;</span>
+          <span class="co">-- in this function body, `v :: Vec 3 Int`, and `n ~ 3`</span>
+          <span class="co">-- whatever I return here will be the return value of the entire line</span>
+          <span class="kw">case</span> packFinite <span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Maybe</span> (<span class="dt">Finite</span> n) <span class="kw">of</span>      <span class="co">-- Finite 3</span>
+            <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dv">0</span>
+            <span class="dt">Just</span> i  <span class="ot">-&gt;</span> v <span class="ot">`index`</span> i
+<span class="dv">5</span></code></pre></div>
+<p>We could write, say, a function to always safely get the third item:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">getThird ::</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a
+getThird v0 <span class="fu">=</span> withVec v0 <span class="fu">$</span> \v <span class="ot">-&gt;</span> fmap (v <span class="ot">`index`</span>) (packFinite <span class="dv">2</span>)</code></pre></div>
+<p>And we can run it:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> getThird <span class="fu">$</span> V.fromList [<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>]
+<span class="dt">Just</span> <span class="dv">3</span>
+ghci<span class="fu">&gt;</span> getThird <span class="fu">$</span> V.fromList [<span class="dv">1</span>,<span class="dv">2</span>]
+<span class="dt">Nothing</span></code></pre></div>
+<p>We can even do something silly like convert an unsized vector to a sized vector and then back again:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">vectorToVector ::</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> a
+vectorToVector v <span class="fu">=</span> withVec toVector</code></pre></div>
+<p>Now that I’ve (hopefully) convinced you that this function really does convert an unsized vector into a sized vector that you can use, let’s see how we can implement it!</p>
+<p>To do this, we can take advantage of the <code>someNatVal</code> function (from <em><a href="http://hackage.haskell.org/package/base/docs/GHC-TypeNats.html">GHC.TypeNats</a></em>):</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">SomeNat</span> <span class="fu">=</span> forall n<span class="fu">.</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">SomeNat</span> (<span class="dt">Proxy</span> n)
+
+<span class="ot">someNatVal ::</span> <span class="dt">Natural</span> <span class="ot">-&gt;</span> <span class="dt">SomeNat</span></code></pre></div>
+<p><code>SomeNat</code> contains what we call an existentially quantified type, <code>n</code>. Basically, a value of <code>SomeNat</code> contains a <code>Proxy n</code> with <em>some specific <code>n</code></em>, that is hidden “inside” the constructor. The only way to figure it out is to pattern match on the constructor and use it in a generic and parametrically polymorphic way. Sound familiar?</p>
+<p><code>someNatVal</code> converts <code>Natural</code> (a non-negative <code>Integer</code>) into a <code>SomeNat</code> — it “picks” the right <code>n</code> (the one that corresponds to that <code>Natural</code>) and stuffs/hides it into <code>SomeNat</code>. We can leverage this to write our <code>withVec</code>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">withVec ::</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> (forall n<span class="fu">.</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r
+withVec v0 f <span class="fu">=</span> <span class="kw">case</span> someNatVal (fromIntegral (V.length v0)) <span class="kw">of</span>
+    <span class="dt">SomeNat</span> (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> m) <span class="ot">-&gt;</span> f (<span class="dt">UnsafeMkVec</span> <span class="fu">@</span>m v0)</code></pre></div>
+<p>(The <code>TypeApplications</code> syntax <code>@m</code> is used with <code>UnsafeMkVec</code> to specify that we want a <code>Vec m a</code>.)</p>
+<p>This process is actually called “reification” – we take a value-level runtime property (the length) and “reify” it, bringing it up to the type-level.</p>
+<p>And now, we have both of our conversion functions! We can convert from sized to unsized using <code>getVector</code>, and from unsized to sized using <code>withVec</code>.</p>
+<h3 id="verifying-properties">Verifying Properties</h3>
+<p>The final useful API aspect we will be looking at is how to verify properties of our vector lengths at the type level, and let us use those properties.</p>
+<p>One common thing we might want to do is ensure that two vectors have the same length. This might happen when we use <code>withVec</code> from two different vectors, and we get a <code>Vec n a</code> and <code>Vec m a</code> of two (potentially) different lengths.</p>
+<p>We can do this using <code>sameNat</code> from <em><a href="http://hackage.haskell.org/package/base/docs/GHC-TypeNats.html">GHC.TypeNats</a></em>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- `Type` is just a synonym for * from Data.Kind</span>
+<span class="kw">data</span><span class="ot"> (:~:) ::</span> k <span class="ot">-&gt;</span> k <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span>
+    <span class="dt">Refl</span><span class="ot"> ::</span> x <span class="fu">:~:</span> x
+
+sameNat
+<span class="ot">    ::</span> (<span class="dt">KnownNat</span> n, <span class="dt">KnownNat</span> m)
+    <span class="ot">=&gt;</span> <span class="dt">Proxy</span> n
+    <span class="ot">-&gt;</span> <span class="dt">Proxy</span> m
+    <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (n <span class="fu">:~:</span> m)</code></pre></div>
+<p>The only way we can have a non-bottom value of type <code>n :~: m</code> is with the <code>Refl</code> constructor, which can only be used in the case that <code>n</code> and <code>m</code> are equal. <code>sameNat</code> gives us that <code>Refl</code>, if possible — that is, if <code>n</code> and <code>m</code> are equal. If not, it gives us <code>Nothing</code>.</p>
+<p>Now, we can write:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">exactLength ::</span> forall n m<span class="fu">.</span> (<span class="dt">KnownNat</span> n, <span class="dt">KnownNat</span> m) <span class="ot">=&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> m a)
+exactLength v <span class="fu">=</span> <span class="kw">case</span> sameNat (<span class="dt">Proxy</span> <span class="fu">@</span>n) (<span class="dt">Proxy</span> <span class="fu">@</span>m) <span class="kw">of</span>
+    <span class="dt">Just</span> <span class="dt">Refl</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> v     <span class="co">-- here, n ~ m, so a `Vec n a` is a `Vec m a`, too</span>
+    <span class="dt">Nothing</span>   <span class="ot">-&gt;</span> <span class="dt">Nothing</span></code></pre></div>
+<p>(We could also write this by using <code>getVector</code> and <code>mkLength</code>, which wraps and unwraps, but let’s pretend it is expensive to construct and re-construct).</p>
+<p>Now we can do:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">zipVec ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n b <span class="ot">-&gt;</span> <span class="dt">Vec</span> n (a, b)
+
+<span class="ot">zipSame ::</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> b <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">V.Vector</span> (a, b))
+zipSame v1 v2 <span class="fu">=</span> withVec v1 <span class="fu">$</span> \(<span class="ot">v1&#39; ::</span> <span class="dt">Vec</span> n a) <span class="ot">-&gt;</span>
+                withVec v2 <span class="fu">$</span> \(<span class="ot">v2&#39; ::</span> <span class="dt">Vec</span> m a) <span class="ot">-&gt;</span>
+      <span class="kw">case</span> exactLength v1&#39; <span class="kw">of</span>
+        <span class="dt">Just</span> v1Same <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">$</span> getVector
+                          (zipVec v1Same v2&#39;)     <span class="co">-- v1&#39; has the same length as v2&#39;</span>
+        <span class="dt">Nothing</span>     <span class="ot">-&gt;</span> <span class="dt">Nothing</span></code></pre></div>
+<p>Which will zip two unsized vectors, but only if their lengths are the same.</p>
+<h3 id="help-from-singletons">Help from singletons</h3>
+<p>You have probably heard that <code>TypeNats</code> and <code>TypeLits</code> provide a very bare-bones and primitive interface. This is true. Its interface also doesn’t play well with other type-level mechanisms in other libraries. To prepare you for the real world, let’s re-implement these things using the <em><a href="http://hackage.haskell.org/package/singletons">singletons</a></em> library, which provides a unified interface for type-level programming in general.</p>
+<p>Instead of <code>KnownNat</code>, <code>Proxy</code>, <code>natVal</code>, <code>SomeNat</code>, and <code>someNatVal</code>, we can use the singletons equivalents, <code>SingI</code> (or <code>Sing</code>), <code>fromSing</code>, <code>SomeSing</code>, and <code>toSing</code>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- TypeNats style</span>
+<span class="ot">natVal ::</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> p n <span class="ot">-&gt;</span> <span class="dt">Natural</span>
+
+<span class="co">-- Singletons style</span>
+<span class="ot">sing     ::</span> <span class="dt">SingI</span> n <span class="ot">=&gt;</span> <span class="dt">Sing</span> n
+<span class="ot">fromSing ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Natural</span>       <span class="co">-- (for n :: Nat)</span>
+
+<span class="co">-- TypeNats style</span>
+<span class="kw">data</span> <span class="dt">SomeNat</span> <span class="fu">=</span> forall n<span class="fu">.</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">SomeNat</span> (<span class="dt">Proxy</span> n)
+<span class="ot">someNatVal ::</span> <span class="dt">Natural</span> <span class="ot">-&gt;</span> <span class="dt">SomeNat</span>
+
+<span class="co">-- Singletons style</span>
+<span class="kw">data</span> <span class="dt">SomeSing</span> <span class="dt">Nat</span> <span class="fu">=</span> forall n<span class="fu">.</span> <span class="dt">SomeSing</span> (<span class="dt">Sing</span> n)
+<span class="ot">someSing ::</span> <span class="dt">Natural</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">Nat</span>
+
+<span class="ot">withSomeSing ::</span> <span class="dt">Natural</span> <span class="ot">-&gt;</span> (forall n<span class="fu">.</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r</code></pre></div>
+<p>Hopefully the above should give you a nice “key” for translating between the two styles. But here are some practical translations:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- &quot;explicit Sing&quot; style</span>
+<span class="ot">mkVec_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> n a)
+mkVec_ s v <span class="fu">|</span> V.length v <span class="fu">==</span> l <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">UnsafeMkVec</span> v)
+           <span class="fu">|</span> otherwise       <span class="fu">=</span> <span class="dt">Nothing</span>
+  <span class="kw">where</span>
+    l <span class="fu">=</span> fromIntegral (fromSing s)
+
+
+<span class="co">-- &quot;implicit SingI&quot; style</span>
+<span class="ot">mkVec_ ::</span> forall n a<span class="fu">.</span> <span class="dt">SingI</span> n <span class="ot">=&gt;</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> n a)
+mkVec_ v <span class="fu">|</span> V.length v <span class="fu">==</span> l <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">UnsafeMkVec</span> v)
+         <span class="fu">|</span> otherwise       <span class="fu">=</span> <span class="dt">Nothing</span>
+  <span class="kw">where</span>
+    l <span class="fu">=</span> fromIntegral (fromSing (<span class="ot">sing ::</span> <span class="dt">Sing</span> n))
+
+<span class="co">-- alternatively</span>
+<span class="ot">mkVec ::</span> <span class="dt">SingI</span> n <span class="ot">=&gt;</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> n a)
+mkVec <span class="fu">=</span> mkVec_ sing</code></pre></div>
+<p>As you can see, in singletons, we have the luxury of defining our functions in “explicit” style (where the user passes in a <code>Sing</code> token which reveals what length they want) or “implicit” style (where the length is inferred from the return type, requiring a <code>SingI n =&gt;</code> constraint), like we have been writing up to this point. <code>Sing n -&gt;</code> and <code>SingI n =&gt;</code> really have the same power.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">replicate_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
+replicate_ s x <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> <span class="fu">$</span> V.replicate l x
+  <span class="kw">where</span>
+    l <span class="fu">=</span> fromIntegral (fromSing s)
+
+replicate<span class="ot"> ::</span> <span class="dt">SingI</span> n <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
+replicate <span class="fu">=</span> replicate_ sing
+
+<span class="ot">withVec ::</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> (forall n<span class="fu">.</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r
+withVec v0 f <span class="fu">=</span> <span class="kw">case</span> toSing (fromIntegral (V.length v0)) <span class="kw">of</span>
+    <span class="dt">SomeSing</span> (<span class="ot">s ::</span> <span class="dt">Sing</span> m) <span class="ot">-&gt;</span> f (<span class="dt">UnsafeMkVec</span> <span class="fu">@</span>m v0)
+
+<span class="co">-- alternatively, skipping `SomeSing` altogether:</span>
+<span class="ot">withVec ::</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> (forall n<span class="fu">.</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r
+withVec v0 f <span class="fu">=</span> withSomeSing (fromIntegral (V.length v0)<span class="ot"> ::</span> <span class="dt">Natural</span>) <span class="fu">$</span> \(<span class="ot">s ::</span> <span class="dt">Sing</span> m) <span class="ot">-&gt;</span>
+    f (<span class="dt">UnsafeMkVec</span> <span class="fu">@</span>m v0)</code></pre></div>
+<p>One slight bit of friction comes when using libraries that work with <code>KnownNat</code>, like <em>finite-typelits</em> and the <code>Finite</code> type. But we can convert between the two using <code>SNat</code> or <code>withKnownNat</code></p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- SNat can be used to construct a `Sing` if we have a `KnownNat` constraint</span>
+<span class="co">-- It can also be pattern matched on to reveal a `KnownNat constraint`</span>
+<span class="dt">SNat</span><span class="ot"> ::</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">Sing</span> n
+
+<span class="co">-- we can give a `Sing n` and be able to execute something in the context where</span>
+<span class="co">-- that `n` has a `KnownNat` constraint</span>
+<span class="ot">withKnownNat ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> (<span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> r) <span class="ot">-&gt;</span> r</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">generate_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> (<span class="dt">Finite</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
+generate_ s f <span class="fu">=</span> withKnownNat s <span class="fu">$</span>
+    <span class="dt">UnsafeMkVec</span> <span class="fu">$</span> V.generate l (f <span class="fu">.</span> finite)
+  <span class="kw">where</span>
+    l <span class="fu">=</span> fromIntegral <span class="fu">$</span> natVal s
+
+<span class="co">-- alternatively, via pattern matching:</span>
+<span class="ot">generate_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> (<span class="dt">Finite</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
+generate_ <span class="dt">SNat</span> f <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> <span class="fu">$</span> V.generate l (f <span class="fu">.</span> finite)
+  <span class="kw">where</span>
+    l <span class="fu">=</span> fromIntegral <span class="fu">$</span> natVal s
+
+<span class="ot">generate ::</span> <span class="dt">SingI</span> n <span class="ot">=&gt;</span> (<span class="dt">Finite</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
+generate <span class="fu">=</span> generate_ sing</code></pre></div>
+<p>As you can see, singletons-style programming completely subsumes programming with <code>TypeNats</code> and <code>KnownNat</code>. What we don’t see here is that singletons style integrates very well with the rest of the singletons ecosystem…so you might just have to take my word for it :)</p>
+<h3 id="real-world-examples">Real-World Examples</h3>
+<p>This exact pattern is used in many real-world libraries. The canonical fixed-length vector library implemented in this style is <em><a href="http://hackage.haskell.org/package/vector-sized">vector-sized</a></em>, which more or less re-exports the entire <em><a href="http://hackage.haskell.org/package/vector">vector</a></em> library, but with a statically-sized interface. This is the library I use for all my my modern sized-vector needs.</p>
+<p>It’s also used to great benefit by the <em><a href="http://hackage.haskell.org/package/hmatrix">hmatrix</a></em> library, which I take advantage of in my <a href="https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html">dependently typed neural networks</a> tutorial series.</p>
+<p>It’s also provided in the <em><a href="http://hackage.haskell.org/package/linear-1.20.7/docs/Linear-V.html">linear</a></em> library, which was one of the first major libraries to adopt this style. However, it offers an incomplete API, and requires lens — its main purpose is for integration with the rest of the <em><a href="http://hackage.haskell.org/package/linear-1.20.7/docs/Linear-V.html">linear</a></em> library, which it does very well.</p>
+<h2 id="the-structural-way">The Structural Way</h2>
+<p>The problem with <code>TypeNats</code> from GHC is that it has no internal structure. It’s basically the same as the <code>Integer</code> or <code>Natural</code> type — every single value (constructor) is completely structurally unrelated to the next.</p>
+<p>Just like we can imagine</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Int</span> <span class="fu">=</span> <span class="fu">..</span> <span class="fu">-</span><span class="dv">2</span> <span class="fu">|</span> <span class="fu">-</span><span class="dv">1</span> <span class="fu">|</span> <span class="dv">0</span> <span class="fu">|</span> <span class="dv">1</span> <span class="fu">|</span> <span class="dv">2</span> <span class="fu">...</span></code></pre></div>
+<p>We can also think of <code>Nat</code> as just <code>0 | 1 | 2 | 3 | 4 ...</code>. Each constructor is completely distinct.</p>
+<p>This is useful for most practical applications. However, when we want to use our fixed-length types in a more subtle and nuanced way, it might help to work with a length type that is more…structurally aware.</p>
+<p>So, enough of this non-structural blasphemy. We are proper dependent type programmers, dangit! We want structural verification! Compiler verification from the very bottom!</p>
+<p>For this, we’ll dig into <em>inductive</em> type-level nats.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L18-18</span>
+<span class="kw">data</span> <span class="dt">Nat</span> <span class="fu">=</span> <span class="dt">Z</span> <span class="fu">|</span> <span class="dt">S</span> <span class="dt">Nat</span></code></pre></div>
+<p>We’re using the <code>DataKinds</code> extension, so not only does that define the <em>type</em> <code>Nat</code> with the <em>values</em> <code>Z</code> and <code>S :: Nat -&gt; Nat</code>, it also defines the <em>kind</em> <code>Nat</code> with the <em>types</em> <code>'Z</code> and <code>'S :: Nat -&gt; Nat</code>! (note the backticks)</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">S</span> <span class="dt">Z</span>
+<span class="dt">Nat</span>
+ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="ch">&#39;S &#39;</span><span class="dt">Z</span>
+<span class="dt">Nat</span></code></pre></div>
+<p>So <code>'Z</code> represents 0, and <code>'S</code> represents the “successor” function: one plus whatever number it contains. <code>'S 'Z</code> represents 1, <code>'S ('S 'Z)</code> represents 2, etc.</p>
+<p>And now we can define a fixed-length <em>list</em>, which is basically a normal haskell list “zipped” with <code>S</code>s.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L20-24</span>
+<span class="kw">data</span> <span class="dt">Vec</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span>
+    <span class="dt">VNil</span><span class="ot"> ::</span> <span class="dt">Vec</span> <span class="ch">&#39;Z a</span>
+<span class="ot">    (:+) ::</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (<span class="ch">&#39;S n) a</span>
+
+<span class="kw">infixr</span> <span class="dv">5</span> <span class="fu">:+</span></code></pre></div>
+<p>Here, we’re using <code>GADT</code> syntax to define our type using its constructors: the <code>VNil</code> constructor (which creates a <code>Vec 'Z a</code>, or the empty vector, like <code>[]</code>) and the <code>(:+)</code> constructor (like cons, or <code>(:)</code>), which conses an item to a <code>Vec n a</code> to get a <code>Vec ('S n) a</code>, or a vector with one more element.</p>
+<p>Basically, all usage of nil and cons (<code>VNil</code> and <code>:+</code>) keeps track of the current “length” of the vectors in its type. Observe that the only way to construct a <code>Vec ('S ('S 'Z)) a</code> is by using two <code>:+</code>s and a <code>VNil</code>!</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">VNil</span>
+<span class="dt">Vec</span> <span class="ch">&#39;Z a</span>
+ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">True</span> <span class="fu">:+</span> <span class="dt">VNil</span>
+<span class="dt">Vec</span> (<span class="ch">&#39;S &#39;</span><span class="dt">Z</span>) <span class="dt">Bool</span>
+ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">False</span> <span class="fu">:+</span> <span class="dt">True</span> <span class="fu">:+</span> <span class="dt">VNil</span>
+<span class="dt">Vec</span> (<span class="ch">&#39;S (&#39;</span><span class="dt">S</span> <span class="ch">&#39;Z)) Bool</span></code></pre></div>
+<h3 id="type-level-guarantees-are-structurally-free">Type-level Guarantees are Structurally Free</h3>
+<p>One nice thing about this is that there is no “unsafe” way to construct a <code>Vec</code>. Any <code>Vec</code> is <em>inherently of the correct size</em>. The very act of constructing it enforces its length.</p>
+<p>Remember our “unsafe” <code>mapVec</code>? We had to implement it unsafely, and trust that our implementation is correct. Even worse — our <em>users</em> have to trust that our implementation is correct!</p>
+<p>But writing such a <code>mapVec</code> function using <code>Vec</code> is guaranteed to preserve the lengths:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L26-29</span>
+<span class="ot">mapVec ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n b
+mapVec f <span class="fu">=</span> \<span class="kw">case</span>
+    <span class="dt">VNil</span>    <span class="ot">-&gt;</span> <span class="dt">VNil</span>
+    x <span class="fu">:+</span> xs <span class="ot">-&gt;</span> f x <span class="fu">:+</span> mapVec f xs
+
+
+
+<span class="co">-- compare to</span>
+map<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]
+map f <span class="fu">=</span> \<span class="kw">case</span>
+    [] <span class="ot">-&gt;</span> []
+    x<span class="fu">:</span>xs <span class="ot">-&gt;</span> f x <span class="fu">:</span> map f xs</code></pre></div>
+<p>Our implementation is guaranteed to have the correct length. Neat! We get all of the documentation benefits described in our previous discussion of <code>mapVec</code>, plus more.</p>
+<p>We can write <code>zip</code> too:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L31-36</span>
+<span class="ot">zipVec ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n b <span class="ot">-&gt;</span> <span class="dt">Vec</span> n (a, b)
+zipVec <span class="fu">=</span> \<span class="kw">case</span>
+    <span class="dt">VNil</span> <span class="ot">-&gt;</span> \<span class="kw">case</span>
+      <span class="dt">VNil</span> <span class="ot">-&gt;</span> <span class="dt">VNil</span>
+    x <span class="fu">:+</span> xs <span class="ot">-&gt;</span> \<span class="kw">case</span>
+      y <span class="fu">:+</span> ys <span class="ot">-&gt;</span> (x,y) <span class="fu">:+</span> zipVec xs ys</code></pre></div>
+<p>Isn’t it neat how the code reads exactly like the code for map/zip for <em>lists</em>? Because their structure is identical, their only real difference is the type-level tag. All of the functions we write are the same.</p>
+<h4 id="type-level-arithmentic">Type-Level Arithmentic</h4>
+<p>GHC provided our <code>+</code> before, so we have to write it ourselves if we want to be able to use it for our <code>Nat</code>s. We can write it as a type family:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L38-45</span>
+<span class="kw">type</span> family (<span class="ot">n ::</span> <span class="dt">Nat</span>) <span class="fu">+</span> (<span class="ot">m ::</span> <span class="dt">Nat</span>)<span class="ot"> ::</span> <span class="dt">Nat</span> <span class="kw">where</span>
+    <span class="ch">&#39;Z   + m = m</span>
+    <span class="ch">&#39;S n + m = &#39;</span><span class="dt">S</span> (n <span class="fu">+</span> m)
+
+<span class="ot">(++) ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (n <span class="fu">+</span> m) a
+(<span class="fu">++</span>) <span class="fu">=</span> \<span class="kw">case</span>
+    <span class="dt">VNil</span>    <span class="ot">-&gt;</span> \ys <span class="ot">-&gt;</span> ys
+    x <span class="fu">:+</span> xs <span class="ot">-&gt;</span> \ys <span class="ot">-&gt;</span> x <span class="fu">:+</span> (xs <span class="fu">++</span> ys)</code></pre></div>
+<p>This works! However, we have to be careful that GHC can verify that the final vector <em>really does</em> have the length <code>n + m</code>. GHC can do this automatically only in very simple situations. In our situation, it is possible because <code>+</code> and <code>++</code> have the <em>exact same structure</em>.</p>
+<p>Take a moment to stare at the definition of <code>+</code> and <code>++</code> very closely, and then squint really hard. You can see that <code>+</code> and <code>++</code> really describe the “same function”, using the exact same structure. First, if the first item is a Z-y thing, return the second item as-is. If the first item is a consy thing, return the second item consed with the rest of the first item. Roughly speaking, of course.</p>
+<p>For examples where the function we write doesn’t exactly match the structure as the type family we write, this won’t work. However, it works in these simple cases. Conquering the trickier cases is a problem for another blog post!</p>
+<h3 id="indexing-1">Indexing</h3>
+<p>To index our previous type, we used some abstract <code>Finite</code> type, where <code>Finite n</code> conveniently represented the type of all possible indices to a <code>Vec n a</code>. We can do something similar, inductively, as well:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L47-51</span>
+<span class="kw">data</span> <span class="dt">Fin</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span>
+    <span class="dt">FZ</span><span class="ot"> ::</span> <span class="dt">Fin</span> (<span class="ch">&#39;S n)</span>
+    <span class="dt">FS</span><span class="ot"> ::</span> <span class="dt">Fin</span> n <span class="ot">-&gt;</span> <span class="dt">Fin</span> (<span class="ch">&#39;S n)</span>
+
+<span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Show</span> (<span class="dt">Fin</span> n)</code></pre></div>
+<p>I always thought of this inductive definition of <code>Fin</code> as a cute trick, because I don’t think there was any way I could have thought of it on my own. But if you play around it enough, you might be able to convince yourself that there are exactly <code>n</code> inhabitants of <code>Fin n</code>.</p>
+<p>For example, for <code>Fin ('S 'Z)</code> (indices for a one-item vector), there should be only one inhabitant. And there is! It’s <code>FZ</code>. <code>FS FZ</code> is not a valid inhabitant, because it has type <code>Fin ('S ('S m))</code> for some <code>m</code>, so cannot possibly have the type <code>Fin ('S 'Z)</code>.</p>
+<p>Let’s see the inhabitants of <code>Fin ('S ('S ('S 'Z)))</code> (indices for three-item vectors):</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="dt">FZ</span><span class="ot">              ::</span> <span class="dt">Fin</span> (<span class="ch">&#39;S (&#39;</span><span class="dt">S</span> (<span class="ch">&#39;S &#39;</span><span class="dt">Z</span>)))
+<span class="dt">FZ</span>
+ghci<span class="fu">&gt;</span> <span class="dt">FS</span> <span class="dt">FZ</span><span class="ot">           ::</span> <span class="dt">Fin</span> (<span class="ch">&#39;S (&#39;</span><span class="dt">S</span> (<span class="ch">&#39;S &#39;</span><span class="dt">Z</span>)))
+<span class="dt">FS</span> <span class="dt">FZ</span>
+ghci<span class="fu">&gt;</span> <span class="dt">FS</span> (<span class="dt">FS</span> <span class="dt">FZ</span>)<span class="ot">      ::</span> <span class="dt">Fin</span> (<span class="ch">&#39;S (&#39;</span><span class="dt">S</span> (<span class="ch">&#39;S &#39;</span><span class="dt">Z</span>)))
+<span class="dt">FS</span> (<span class="dt">FS</span> <span class="dt">FZ</span>)
+ghci<span class="fu">&gt;</span> <span class="dt">FS</span> (<span class="dt">FS</span> (<span class="dt">FS</span> <span class="dt">FZ</span>))<span class="ot"> ::</span> <span class="dt">Fin</span> (<span class="ch">&#39;S (&#39;</span><span class="dt">S</span> (<span class="ch">&#39;S &#39;</span><span class="dt">Z</span>)))
+<span class="dt">TYPE</span> <span class="dt">ERROR</span><span class="fu">!</span>  <span class="dt">TYPE</span> <span class="dt">ERROR</span><span class="fu">!</span>  <span class="dt">TYPE</span> <span class="dt">ERROR</span><span class="fu">!</span></code></pre></div>
+<p>As GHC informs us, <code>FS (FS (FS FZ))</code> is not an inhabitant of <code>Fin ('S ('S ('S 'Z)))</code>, which is exactly what we wanted. This is because <code>FS (FS (FS FZ))</code> has type <code>Fin ('S ('S ('S ('S m))))</code> for some <code>m</code>, and this can’t fit <code>Fin ('S ('S ('S 'Z)))</code>.</p>
+<p>Also, note that there are no inhabitants of <code>Fin 'Z</code>. There is no constructor or combinations of constructor that can yield that type.</p>
+<p>Armed with this handy <code>Fin</code> type, we can do structural type-safe indexing:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L53-58</span>
+index<span class="ot"> ::</span> <span class="dt">Fin</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> a
+index <span class="fu">=</span> \<span class="kw">case</span>
+    <span class="dt">FZ</span> <span class="ot">-&gt;</span> \<span class="kw">case</span>
+      x <span class="fu">:+</span> _ <span class="ot">-&gt;</span> x
+    <span class="dt">FS</span> i <span class="ot">-&gt;</span> \<span class="kw">case</span>
+      _ <span class="fu">:+</span> xs <span class="ot">-&gt;</span> index i xs</code></pre></div>
+<p>Note that our <code>Fin</code> type structurally precludes us from being able to index into a <code>Vec 'Z a</code> (an empty vector), because to do that, we would have to pass in a <code>Fin 'Z</code>…but there is no such value with that type!</p>
+<h3 id="generating-1">Generating</h3>
+<p>Now, generating these is a bit tricky. Recall that we needed to use a <code>KnownNat n</code> constraint to be able to <em>reflect</em> a <code>n</code> type down to the value level. Alternatively, if we were super slick and used singletons, we could have just used <code>fromSing</code> from the beginning.</p>
+<p>Luckily, we don’t have the baggage of <code>KnownNat</code> on our new <code>Nat</code>. We can do things the right way from the start: using singletons!</p>
+<p>First, we need to get singletons for our <code>Nat</code>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L60-60</span>
+genSingletons [<span class="ch">&#39;&#39;</span><span class="dt">Nat</span>]
+
+
+
+<span class="co">-- this creates:</span>
+<span class="kw">data</span> <span class="kw">instance</span> <span class="dt">Sing</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span>
+    <span class="dt">SZ</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;Z</span>
+    <span class="dt">SS</span><span class="ot"> ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ch">&#39;S n)</span></code></pre></div>
+<p><code>Sing n</code> is a singleton for our <code>Nat</code>, in that there is only one <code>Sing n</code> for every <code>n</code>. So, if we receive a value of type <code>Sing n</code>, we can pattern match on it to figure out what <code>n</code> is. Essentially, we can <em>pattern match</em> on <code>n</code>.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L62-69</span>
+<span class="ot">singSize ::</span> <span class="dt">Sing</span> (<span class="ot">n ::</span> <span class="dt">Nat</span>) <span class="ot">-&gt;</span> <span class="dt">String</span>
+singSize <span class="fu">=</span> \<span class="kw">case</span>
+    <span class="co">-- here, n is &#39;Z</span>
+    <span class="dt">SZ</span>        <span class="ot">-&gt;</span> <span class="st">&quot;Size of zero!&quot;</span>
+    <span class="co">-- here, n is (&#39;S &#39;Z)</span>
+    <span class="dt">SS</span> <span class="dt">SZ</span>     <span class="ot">-&gt;</span> <span class="st">&quot;Size of one!&quot;</span>
+    <span class="co">-- here, n is (&#39;S (&#39;S n))</span>
+    <span class="dt">SS</span> (<span class="dt">SS</span> _) <span class="ot">-&gt;</span> <span class="st">&quot;Wow, so big!&quot;</span></code></pre></div>
+<p>We can now branch depending on what <code>n</code> is!</p>
+<p>Note that because of the inductive nature of our original <code>Nat</code> type, the singletons are also inductive, as well. This is handy, because then our whole ecosystem remains inductive.</p>
+<p>Now, to write <code>replicate</code>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L71-74</span>
+<span class="ot">replicate_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
+replicate_ <span class="fu">=</span> \<span class="kw">case</span>
+    <span class="dt">SZ</span>   <span class="ot">-&gt;</span> \_ <span class="ot">-&gt;</span> <span class="dt">VNil</span>
+    <span class="dt">SS</span> l <span class="ot">-&gt;</span> \x <span class="ot">-&gt;</span> x <span class="fu">:+</span> replicate_ l x</code></pre></div>
+<p>And we can recover our original “implicit” style, with type-inference-driven lengths, using <code>SingI</code> and <code>sing :: SingI n =&gt; Sing n</code>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L71-74</span>
+<span class="ot">replicate_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
+replicate_ <span class="fu">=</span> \<span class="kw">case</span>
+    <span class="dt">SZ</span>   <span class="ot">-&gt;</span> \_ <span class="ot">-&gt;</span> <span class="dt">VNil</span>
+    <span class="dt">SS</span> l <span class="ot">-&gt;</span> \x <span class="ot">-&gt;</span> x <span class="fu">:+</span> replicate_ l x</code></pre></div>
+<p>See how useful the whole singletons ecosystem is? :)</p>
+<h4 id="generating-with-indices-1">Generating with indices</h4>
+<p>Writing <code>generate</code> using the inductive <code>Fin</code> and <code>Nat</code> is an interesting challenge. It’s actually a fairly standard pattern that comes up when working with inductive types like these. I’m going to leave it as an exercise to the reader – click the link at the top corner of the text box to see the solution, and see how it compares to your own :)</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L79-85</span>
+<span class="ot">generate_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> (<span class="dt">Fin</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
+
+<span class="ot">generate ::</span> <span class="dt">SingI</span> n <span class="ot">=&gt;</span> (<span class="dt">Fin</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
+generate <span class="fu">=</span> generate_ sing</code></pre></div></div><footer><ul class="entry-series"></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/types.html" class="tag-a-tag">#types</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@reference.html" class="tag-a-category">@REFERENCE</a></li><li><a href="https://blog.jle.im/entries/category/@tutorials.html" class="tag-a-category">@TUTORIALS</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing “in Code”!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/fixed-length-vector-types-in-haskell.html';
     this.page.identifier = 'fixvec-2';
 };
