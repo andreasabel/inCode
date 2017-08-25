@@ -940,3 +940,27 @@ generate :: SingI n => (Fin n -> a) -> Vec n a
 generate = generate_ sing
 
 ```
+
+The one thing I will point out is that it is very useful that GHC verifies our
+code for us, and that we have typed holes to help us develop our code. If we
+ever don’t know something, we can just use a typed hole `_`, and GHC will tell
+us what type it expects, and what values in scope have that type. It is
+infinitely useful for situations like this, especially when you are new to this
+sort of dependently typed inductive programming!
+
+If you ever get stuck, try throwing in a `_` and seeing what types GHC
+expects…these clues will help you get your bearings!
+
+### Between Sized and Unsized
+
+Our the API of converting unsized to sized vectors will be the same:
+
+``` {.haskell}
+withVec :: [a] -> (forall n. Sing n -> Vec n a -> r) -> r
+```
+
+But implementing it inductively is also an interesting challenge. See my tip
+above about typed holes (`_`). Ok, let’s jump right into it!
+
+``` {.haskell}
+```
