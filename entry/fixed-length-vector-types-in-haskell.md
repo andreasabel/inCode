@@ -1279,8 +1279,8 @@ atLeast :: SingI n => Vec m a -> Maybe (LTE n m, Vec m a)
 atLeast = atLeast_ sing
 ```
 
-`atLeast_ sM` will only return our vector if its length is *at least* the length
-of the length indicated by `sM`. Basically, we check if our vector is “at least”
+`atLeast_ sN` will only return our vector if its length is *at least* the length
+of the length indicated by `sN`. Basically, we check if our vector is “at least”
 a certain length.
 
 We can write a function that can “take” an arbitrary amount from a vector, given
