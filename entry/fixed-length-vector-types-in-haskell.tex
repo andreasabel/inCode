@@ -85,6 +85,7 @@
 
 \title{Fixed-Length Vector Types in Haskell (an Update for 2017)}
 \author{Justin Le}
+\date{August 25, 2017}
 
 \begin{document}
 \maketitle
@@ -97,9 +98,8 @@ This post is a follow-up to my
 \href{https://blog.jle.im/entry/fixed-length-vector-types-in-haskell-2015.html}{fixed-length
 vectors in haskell in 2015} post! When I was writing the post originally, I was
 new to the whole type-level game in Haskell; I didn't know what I was talking
-about, and that post was a way for me to push myself to learn more.
-
-Immediately after it was posted, people taught me where I went wrong in the
+about, and that post was a way for me to push myself to learn more. Immediately
+after it was posted, of course, people taught me where I went wrong in the
 idioms I explained, and better and more idiomatic ways to do things. And that's
 great! Learning is awesome!
 
@@ -107,13 +107,16 @@ Unfortunately, however, to my horror, I began noticing people referring to the
 post in a canonical/authoritative way\ldots{}so the post became an immediate
 source of guilt to me. I tried correcting things with my
 \href{https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html}{practical
-dependent types in haskell} series the next year, which incorporated what I had
-learned. But I still saw my 2015 post being used as a reference even after that
-post, so I figured that writing a direct replacement/follow-up as the only way I
-would ever fix this!
+dependent types in haskell} series the next year. But I still saw my 2015 post
+being used as a reference even after that post, so I figured that writing a
+direct replacement/follow-up as the only way I would ever fix this!
 
 So here we are in 2017. GHC 8.2 is here, and \emph{base} is in version
 \emph{4.10}. What's the ``right'' way to do fixed-length vectors in Haskell?
+
+This post doesn't attempt to present anything groundbreaking or new, but is
+meant to be a sort of \emph{reference/introduction} to fixed-length vectors in
+Haskell, as of GHC 8.2 and the 2017 Haskell ecosystem.
 
 We'll be looking at two methods here: The first one we will be looking at is a
 \emph{performant} fixed-length vector that you will probably be using for any
@@ -122,18 +125,15 @@ code and situations where performance matters. We'll see how to implement them
 using the universal native \texttt{KnownNat} mechanisms, and also how we can
 implement them using
 \emph{\href{http://hackage.haskell.org/package/singletons}{singletons}} to help
-us make things a bit smoother.
+us make things a bit smoother and more well-integrated. For most people, this is
+all they actually need.
 
-The second one we will be looking at is a \emph{structural} fixed-length
-inductive vector. It's\ldots{}actually more like a fixed-length \emph{list}
-(lazily linked list) than a vector, but it's just called a vector because of
-tradition. The length of the list is enforced by the very structure of the data
-type (similar to how \texttt{Identity} is a container that is structurally
-enforced to have exactly one item). This type is more useful as a streaming data
-type, and also in situations where you want take advantage of the structural
-characteristics of lengths in the context of a dependently typed program. It's
-also very useful as an ``introduction'' to dependently typed programming with
-inductive proofs.
+The second method is a \emph{structural} fixed-length inductive vector.
+It's\ldots{}actually more like a fixed-length (lazily linked) \emph{list} than a
+vector. The length of the list is enforced by the very structure of the data
+type. This type is more useful as a streaming data type, and also in situations
+where you want take advantage of the structural characteristics of lengths in
+the context of a dependently typed program.
 
 \section{The Non-Structural Way}\label{the-non-structural-way}
 
@@ -166,7 +166,16 @@ For our numeric types, we're using the fancy ``type literals'' that GHC offers
 us with the \texttt{DataKinds} extension. Basically, alongside the normal kinds
 \texttt{*}, \texttt{*\ -\textgreater{}\ *}, etc., we also have the \texttt{Nat}
 kind; type literals \texttt{1}, \texttt{5}, \texttt{100}, etc. are all
-\emph{types} with the \emph{kind} \texttt{Nat}.
+\emph{types} with the \emph{kind} \texttt{Nat}, from the
+\emph{\href{http://hackage.haskell.org/package/base/docs/GHC-TypeNats.html}{GHC.TypeNats}}
+module\footnote{Users who are used to GHC 8.0 and below might remember
+  \texttt{Nat} coming from
+  \emph{\href{http://hackage.haskell.org/package/base/docs/GHC-TypeLits.html}{GHC.TypeLits}}.
+  Well, GHC 8.2 is here, \texttt{TypeLits} is out, \texttt{TypeNats} is in. The
+  difference is that, in \texttt{TypeLits}, the \texttt{Nat} kind
+  reifies/reflects with \texttt{Integer}. In \texttt{TypeNats}, the \texttt{Nat}
+  kind reifies/reflects with \texttt{Natural} from
+  \emph{\href{http://hackage.haskell.org/package/base/docs/Numeric-Natural.html}{Numeric.Natural}}.}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -189,7 +198,7 @@ number as a run-time value using \texttt{natVal}: (This process is called
 \end{Shaded}
 
 (Where \texttt{Natural}, from
-\emph{\href{http://hackage.haskell.org/package/base-4.10.0.0/docs/Numeric-Natural.html}{Numeric.Natural}},
+\emph{\href{http://hackage.haskell.org/package/base/docs/Numeric-Natural.html}{Numeric.Natural}},
 is a non-negative \texttt{Integer} type.)
 
 \begin{Shaded}
@@ -334,7 +343,11 @@ Here, \texttt{(+)} comes from
 which provides it as a type family (type-level function) we can use, with proper
 meaning and semantics.
 
-\subsubsection{On the typechecker}\label{on-the-typechecker}
+Note the usage of \texttt{(+)} for \texttt{takeVec} and \texttt{splitVec} to let
+the function ensure that the input vector has ``enough'' (at least \texttt{n})
+elements to do the taking.
+
+\subsubsection{Notes on the typechecker}\label{notes-on-the-typechecker}
 
 GHC's typechecker works very well with concrete, monomorphic \texttt{Nat}s. For
 example, \texttt{5\ +\ 3} will always typecheck as \texttt{8}, so you don't have
@@ -364,10 +377,12 @@ package provides such a plugin. If we pass it as a flag to GHC (as
 
 Then GHC will be able to recognize the fact that \texttt{n\ +\ (m\ +\ o)} and
 \texttt{(n\ +\ m)\ +\ o} are the same, and will unify them during typechecking.
+It also provides normalization/unification for many other situations that we
+``expect'' to work when using \texttt{*} and \texttt{+} on type variables.
 
 \subsection{Indexing}\label{indexing}
 
-We need an appropriate type for indexing these, but we'd like a type where
+We need an appropriate type for indexing our vectors, but we'd like a type where
 indexing is ``safe'' -- that is, that you can't compile a program that will
 result in an index error.
 
@@ -423,7 +438,7 @@ precisely the exact things that \texttt{Finite\ 5} can store!
 
 We can directly generate these vectors in interesting ways. Using return-type
 polymorphism, we can have the user \emph{directly} request a vector length,
-\emph{just} by using type inference or a type annotation. (kind of like
+\emph{just} by using type inference or a type annotation. (kind of like with
 \texttt{read})
 
 For example, we can write a version of \texttt{replicate}:
@@ -460,7 +475,7 @@ With this new cleaner type signature, we can actually see that
 \end{Highlighting}
 \end{Shaded}
 
-You might recognize it as the haskellism \texttt{pure}:
+You might recognize it as very similar to haskellism \texttt{pure}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -470,9 +485,9 @@ You might recognize it as the haskellism \texttt{pure}:
 
 \texttt{replicate} is actually \texttt{pure} for the Applicative instance of
 \texttt{Vec\ n}! As an extra challenge, what would
-\texttt{\textless{}*\textgreater{}} be? Check out
+\texttt{\textless{}*\textgreater{}} be? See
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs\#L59-61}{the
-solution} if you want to heck your answer!
+solution} if you want to check your answer!
 
 \subsubsection{Generating with indices}\label{generating-with-indices}
 
@@ -489,8 +504,8 @@ call \texttt{generate}:
 \end{Highlighting}
 \end{Shaded}
 
-\subsubsection{A nuanced discussion on the advantages of
-type-safety}\label{a-nuanced-discussion-on-the-advantages-of-type-safety}
+\subsubsection{Type-Safety and positives and
+negatives}\label{type-safety-and-positives-and-negatives}
 
 I think it's an interesting point that we're using \texttt{Finite\ n} in a
 different sense here than in \texttt{index}, and for different reasons. In
@@ -571,13 +586,15 @@ I'm going to try to convince you that a plausible API is:
 
 (Note: this does require \texttt{RankNTyes})
 
-People familiar with dependent types might recognized it as a CPS-style
-existential. Basically, give the function a vector, and a way to ``handle'' a
-\texttt{Vec\ n} of \emph{any possible size}. The function will then give your
-handler a \texttt{Vec\ n} of the proper type/size.
+People familiar with dependent types might recognize that \texttt{withVec} is a
+function that takes an unsized vector and returns an \emph{existentially
+quantified} sized vector, in CPS-style. Basically, give the function a vector,
+and a way to ``handle'' a \texttt{Vec\ n} of \emph{any possible size}. The
+function will then give your handler a \texttt{Vec\ n} of the proper type/size.
+The \emph{function} gets to chose the \texttt{n} that you must handle.
 
-Within your continuation/handler, you can take advantage of the size, and do
-take advantage of all of the type-level guarantees and benefits of a
+Within your continuation/handler, you can take advantage of the size type, and
+do take advantage of all of the type-level guarantees and benefits of a
 length-indexed vector. In a way, it is its own ``world'' where your vector has a
 fixed size. However, the caveat is that you have to treat the size
 \emph{universally} --- you have to be able to handle any possible size given to
@@ -604,7 +621,7 @@ We could write, say, a function to always safely get the third item:
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L68-69}
 \OtherTok{getThird ::} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a}
-\NormalTok{getThird v0 }\FunctionTok{=}\NormalTok{ withVec v0 }\FunctionTok{$}\NormalTok{ \textbackslash{}v }\OtherTok{->}\NormalTok{ fmap (v }\OtherTok{`index`}\NormalTok{) (packFinite }\DecValTok{2}\NormalTok{)}
+\NormalTok{getThird v }\FunctionTok{=}\NormalTok{ withVec v }\FunctionTok{$}\NormalTok{ \textbackslash{}v' }\OtherTok{->}\NormalTok{ fmap (v' }\OtherTok{`index`}\NormalTok{) (packFinite }\DecValTok{2}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -651,8 +668,8 @@ with \emph{some specific \texttt{n}}, that is hidden ``inside'' the constructor.
 The only way to figure it out is to pattern match on the constructor and use it
 in a generic and parametrically polymorphic way. Sound familiar?
 
-\texttt{someNatVal} converts \texttt{Natural} (a non-negative \texttt{Integer})
-into a \texttt{SomeNat} --- it ``picks'' the right \texttt{n} (the one that
+\texttt{someNatVal} converts \texttt{Natural} (a non-negative Integer type) into
+a \texttt{SomeNat} --- it ``picks'' the right \texttt{n} (the one that
 corresponds to that \texttt{Natural}) and stuffs/hides it into \texttt{SomeNat}.
 We can leverage this to write our \texttt{withVec}:
 
@@ -660,8 +677,8 @@ We can leverage this to write our \texttt{withVec}:
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L74-76}
 \OtherTok{withVec ::} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->}\NormalTok{ (forall n}\FunctionTok{.} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
-\NormalTok{withVec v0 f }\FunctionTok{=} \KeywordTok{case}\NormalTok{ someNatVal (fromIntegral (V.length v0)) }\KeywordTok{of}
-    \DataTypeTok{SomeNat}\NormalTok{ (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy}\NormalTok{ m) }\OtherTok{->}\NormalTok{ f (}\DataTypeTok{UnsafeMkVec} \FunctionTok{@}\NormalTok{m v0)}
+\NormalTok{withVec v f }\FunctionTok{=} \KeywordTok{case}\NormalTok{ someNatVal (fromIntegral (V.length v)) }\KeywordTok{of}
+    \DataTypeTok{SomeNat}\NormalTok{ (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy}\NormalTok{ m) }\OtherTok{->}\NormalTok{ f (}\DataTypeTok{UnsafeMkVec} \FunctionTok{@}\NormalTok{m v)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -721,8 +738,8 @@ Now, we can write:
 \end{Highlighting}
 \end{Shaded}
 
-(We could also write this by using \texttt{getVector} and \texttt{mkLength},
-which wraps and unwraps, but let's pretend it is expensive to construct and
+(We could also write this by using \texttt{getVector} and \texttt{mkVec}, which
+wraps and unwraps, but let's pretend it is expensive to construct and
 re-construct).
 
 Now we can do:
@@ -768,10 +785,10 @@ witnesses that might be useful. But the general process is
 
 \subsection{Help from singletons}\label{help-from-singletons}
 
-You have probably heard that \texttt{TypeNats} and \texttt{TypeLits} provide a
-very bare-bones and primitive interface. This is true. Its interface also
-doesn't play well with other type-level mechanisms in other libraries. To
-prepare you for the real world, let's re-implement these things using the
+You have probably heard that \texttt{TypeNats} provides a very bare-bones and
+primitive interface. This is true. Its interface also sometimes doesn't play
+well with other type-level mechanisms you might want to try. To prepare you for
+the real world, let's re-implement these things using the
 \emph{\href{http://hackage.haskell.org/package/singletons}{singletons}} library,
 which provides a unified interface for type-level programming in general.
 
@@ -799,7 +816,7 @@ and \texttt{someNatVal}, we can use the singletons equivalents, \texttt{Sing},
 \OtherTok{withSomeSing ::} \DataTypeTok{Natural} \OtherTok{->}\NormalTok{ (forall n}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
 
 \CommentTok{-- TypeNats style}
-\OtherTok{exactLength ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m) }\OtherTok{=>} \DataTypeTok{Proxy}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Proxy}\NormalTok{ m }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (n }\FunctionTok{:~:}\NormalTok{ m)}
+\OtherTok{sameNat ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m) }\OtherTok{=>} \DataTypeTok{Proxy}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Proxy}\NormalTok{ m }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (n }\FunctionTok{:~:}\NormalTok{ m)}
 
 \CommentTok{-- Singletons style}
 \CommentTok{-- from Data.Singletons.Decide}
@@ -821,12 +838,6 @@ two styles. But here are some practical translations:
            \FunctionTok{|}\NormalTok{ otherwise       }\FunctionTok{=} \DataTypeTok{Nothing}
   \KeywordTok{where}
 \NormalTok{    l }\FunctionTok{=}\NormalTok{ fromIntegral (fromSing s)}
-\OtherTok{mkVec_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a)}
-\NormalTok{mkVec_ s v }\FunctionTok{|}\NormalTok{ V.length v }\FunctionTok{==}\NormalTok{ l }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (}\DataTypeTok{UnsafeMkVec}\NormalTok{ v)}
-           \FunctionTok{|}\NormalTok{ otherwise       }\FunctionTok{=} \DataTypeTok{Nothing}
-  \KeywordTok{where}
-\NormalTok{    l }\FunctionTok{=}\NormalTok{ fromIntegral (fromSing s)}
-
 
 \CommentTok{-- "implicit" style}
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L26-30}
@@ -853,7 +864,7 @@ think of \texttt{Sing\ n} as a token that carries around
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L32-38}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L32-42}
 \OtherTok{replicate_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{replicate_ s x }\FunctionTok{=} \DataTypeTok{UnsafeMkVec} \FunctionTok{$}\NormalTok{ V.replicate l x}
   \KeywordTok{where}
@@ -862,10 +873,10 @@ think of \texttt{Sing\ n} as a token that carries around
 \NormalTok{replicate}\OtherTok{ ::} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{replicate }\FunctionTok{=}\NormalTok{ replicate_ sing}
 
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L40-42}
 \OtherTok{withVec ::} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->}\NormalTok{ (forall n}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
-\NormalTok{withVec v0 f }\FunctionTok{=} \KeywordTok{case}\NormalTok{ toSing (fromIntegral (V.length v0)) }\KeywordTok{of}
-    \DataTypeTok{SomeSing}\NormalTok{ s }\OtherTok{->}\NormalTok{ f s (}\DataTypeTok{UnsafeMkVec}\NormalTok{ v0)}
+\NormalTok{withVec v f }\FunctionTok{=} \KeywordTok{case}\NormalTok{ toSing (fromIntegral (V.length v)) }\KeywordTok{of}
+    \DataTypeTok{SomeSing}\NormalTok{ s }\OtherTok{->}\NormalTok{ f s (}\DataTypeTok{UnsafeMkVec}\NormalTok{ v)}
+
 \CommentTok{-- alternatively, skipping `SomeSing` altogether:}
 \OtherTok{withVec ::} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->}\NormalTok{ (forall n}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
 \NormalTok{withVec v0 f }\FunctionTok{=}\NormalTok{ withSomeSing (fromIntegral (V.length v0)}\OtherTok{ ::} \DataTypeTok{Natural}\NormalTok{) }\FunctionTok{$}\NormalTok{ \textbackslash{}s }\OtherTok{->}
@@ -888,7 +899,8 @@ Note that you \emph{aren't} required to implement both a \texttt{replicate\_}
 and \texttt{replicate} --- I'm just including them here to show that both API's
 (implicit and explicit) are possible. (You can always just directly use
 \texttt{sing} right away before getting started to get the \texttt{Sing\ n} that
-those functions use)
+those functions use, and so skip \texttt{replicate\_} and other explicit
+variants)
 
 One slight bit of friction comes when using libraries that work with
 \texttt{KnownNat}, like \emph{finite-typelits} and the \texttt{Finite} type. But
@@ -1004,6 +1016,12 @@ Each constructor is completely distinct.
 This is useful for most practical applications. However, when we want to use our
 fixed-length types in a more subtle and nuanced way, it might help to work with
 a length type that is more\ldots{}structurally aware.
+
+We've also noticed that the structure of our \texttt{Vec} and the structure of
+our \texttt{Nat} have nothing in common, so we can't take advantage of any
+shared structure to help us with type-safety in our
+implementation\ldots{}everything we wrote was pretty much implemented using
+``unsafe'' functions.
 
 So, enough of this non-structural blasphemy. We are proper dependent type
 programmers, dangit! We want structural verification! Compiler verification from
@@ -1243,14 +1261,15 @@ Let's see the inhabitants of
 
 As GHC informs us, \texttt{FS\ (FS\ (FS\ FZ))} is not an inhabitant of
 \texttt{Fin\ (\textquotesingle{}S\ (\textquotesingle{}S\ (\textquotesingle{}S\ \textquotesingle{}Z)))},
-which is exactly what we wanted. This is because \texttt{FS\ (FS\ (FS\ FZ))} has
-type
+which is exactly the behavior we wanted. This is because
+\texttt{FS\ (FS\ (FS\ FZ))} has type
 \texttt{Fin\ (\textquotesingle{}S\ (\textquotesingle{}S\ (\textquotesingle{}S\ (\textquotesingle{}S\ m))))}
 for some \texttt{m}, and this can't fit
 \texttt{Fin\ (\textquotesingle{}S\ (\textquotesingle{}S\ (\textquotesingle{}S\ \textquotesingle{}Z)))}.
 
 Also, note that there are no inhabitants of \texttt{Fin\ \textquotesingle{}Z}.
-There is no constructor or combinations of constructor that can yield that type.
+There is no constructor or combination of constructors that can yield a value of
+that type.
 
 Armed with this handy \texttt{Fin} type, we can do structural type-safe
 indexing:
@@ -1274,7 +1293,17 @@ there is no such value with that type!
 
 \subsection{Generating}\label{generating-1}
 
-Now, generating these is a bit tricky. Recall that we needed to use a
+Now, generating these requires some more thought. Naively writing a
+\texttt{replicate\ ::\ a\ -\textgreater{}\ Vec\ n\ a} is not possible; ideally,
+we'd want to ``pattern match'' on our length \texttt{n}, and use \texttt{VNil}
+if it's \texttt{\textquotesingle{}Z}, etc.
+
+However, we can't pattern match on types in Haskell, because types are
+\emph{erased} at runtime. They're just used by the compiler to verify your code,
+but they don't exist at runtime. So, you can't just say ``do this if \texttt{n}
+is \texttt{\textquotesingle{}Z}, otherwise do this''.
+
+Recall that, in our previous vector type, we needed to use a
 \texttt{KnownNat\ n} constraint to be able to \emph{reflect} a \texttt{n} type
 down to the value level. We can do something similar using the \emph{singletons}
 machinery!
@@ -1316,6 +1345,10 @@ Essentially, we can \emph{pattern match} on \texttt{n}.
 \end{Shaded}
 
 We can now branch depending on what \texttt{n} is!
+
+Basically, \emph{we can use a singleton} if we ever want to ``pattern match'' or
+branch our program's output based on the type. This is a general rule you will
+observe as we continue on this article.
 
 Note that because of the inductive nature of our original \texttt{Nat} type, the
 singletons are also inductive, as well. This is handy, because then our whole
@@ -1424,19 +1457,41 @@ correct complete vector (\texttt{x\ :+\ ys})
 \subsection{Verifying properties}\label{verifying-properties-1}
 
 We can create some corresponding example of \texttt{exactLength} using the exact
-same process we did before (using \texttt{\%\textasciitilde{}} and
-\texttt{Decision} and \texttt{Refl}):
+same process we did before
+
+First, it'd be nice to get a witness for the length of a given vector just from
+the vector itself:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L107-113}
-\OtherTok{exactLength_ ::} \DataTypeTok{Sing}\NormalTok{ m }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ m a)}
-\NormalTok{exactLength_ sM sN v }\FunctionTok{=} \KeywordTok{case}\NormalTok{ sM }\FunctionTok{%~}\NormalTok{ sN }\KeywordTok{of}
-    \DataTypeTok{Proved} \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Just}\NormalTok{ v}
-    \DataTypeTok{Disproved}\NormalTok{ _  }\OtherTok{->} \DataTypeTok{Nothing}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L107-110}
+\OtherTok{vecLength ::} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ n}
+\NormalTok{vecLength }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{VNil}    \OtherTok{->} \DataTypeTok{SZ}
+\NormalTok{    _ }\FunctionTok{:+}\NormalTok{ xs }\OtherTok{->} \DataTypeTok{SS}\NormalTok{ (vecLength xs)}
+\end{Highlighting}
+\end{Shaded}
 
-\OtherTok{exactLength ::}\NormalTok{ (}\DataTypeTok{SingI}\NormalTok{ m, }\DataTypeTok{SingI}\NormalTok{ n) }\OtherTok{=>} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ m a)}
-\NormalTok{exactLength }\FunctionTok{=}\NormalTok{ exactLength_ sing sing}
+The type of \texttt{vecLength\ ::\ Vec\ n\ a\ -\textgreater{}\ Sing\ n} says
+that it is possible, from the structure of the vector given, to get a witness to
+its length. And, because the structure of the vector and the structure of the
+length type are so similar, this is possible! (Note that this is not possible
+for our non-structural ``wrapped'' \texttt{Vec}, without some unsafe operations)
+
+Now, our code will be identical to the code for our wrapped/non-structural
+vectors, using \texttt{\%\textasciitilde{}} and \texttt{Decision} and
+\texttt{Refl}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L112-118}
+\OtherTok{exactLength_ ::} \DataTypeTok{Sing}\NormalTok{ m }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ m a)}
+\NormalTok{exactLength_ sM v }\FunctionTok{=} \KeywordTok{case}\NormalTok{ sM }\FunctionTok{%~}\NormalTok{ (vecLength v) }\KeywordTok{of}
+    \DataTypeTok{Proved} \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Just}\NormalTok{ v}
+    \DataTypeTok{Disproved}\NormalTok{ _ }\OtherTok{->} \DataTypeTok{Nothing}
+
+\OtherTok{exactLength ::} \DataTypeTok{SingI}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ m a)}
+\NormalTok{exactLength }\FunctionTok{=}\NormalTok{ exactLength_ sing}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1449,7 +1504,7 @@ want and the vector, so it might be fun to look at this version instead --
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L115-125}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L120-130}
 \OtherTok{exactLengthInductive_ ::} \DataTypeTok{Sing}\NormalTok{ m }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ m a)}
 \NormalTok{exactLengthInductive_ }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{SZ} \OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -1479,7 +1534,7 @@ For example, we can make a witness that \texttt{n} is less than or equal to
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L127-139}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L132-144}
 \KeywordTok{data} \DataTypeTok{LTE}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{LEZ}\OtherTok{ ::} \DataTypeTok{LTE} \CharTok{'Z n}
     \DataTypeTok{LES}\OtherTok{ ::} \DataTypeTok{LTE}\NormalTok{ n m }\OtherTok{->} \DataTypeTok{LTE}\NormalTok{ (}\CharTok{'S n) ('}\DataTypeTok{S}\NormalTok{ m)}
@@ -1503,22 +1558,56 @@ We can write code to check for this property in our vectors:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L141-147}
-\OtherTok{inRange_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ m }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{LTE}\NormalTok{ n m, }\DataTypeTok{Vec}\NormalTok{ n a)}
-\NormalTok{inRange_ sN sM v }\FunctionTok{=} \KeywordTok{case}\NormalTok{ isLTE sN sM }\KeywordTok{of}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L146-152}
+\OtherTok{atLeast_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{LTE}\NormalTok{ n m, }\DataTypeTok{Vec}\NormalTok{ m a)}
+\NormalTok{atLeast_ sN v }\FunctionTok{=} \KeywordTok{case}\NormalTok{ isLTE sN (vecLength v) }\KeywordTok{of}
     \DataTypeTok{Proved}\NormalTok{ l    }\OtherTok{->} \DataTypeTok{Just}\NormalTok{ (l, v)}
     \DataTypeTok{Disproved}\NormalTok{ _ }\OtherTok{->} \DataTypeTok{Nothing}
 
-\NormalTok{inRange}\OtherTok{ ::} \DataTypeTok{SingI}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{Sing}\NormalTok{ m }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{LTE}\NormalTok{ n m, }\DataTypeTok{Vec}\NormalTok{ n a)}
-\NormalTok{inRange }\FunctionTok{=}\NormalTok{ inRange_ sing}
+\OtherTok{atLeast ::} \DataTypeTok{SingI}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{LTE}\NormalTok{ n m, }\DataTypeTok{Vec}\NormalTok{ m a)}
+\NormalTok{atLeast }\FunctionTok{=}\NormalTok{ atLeast_ sing}
 \end{Highlighting}
 \end{Shaded}
 
-\texttt{inRange\ sM} will only return our vector \emph{if} its length is
-\emph{less than or euqal to} the length indicated by \texttt{sM}. And it returns
-a proof that this is true!
+\texttt{atLeast\_\ sM} will only return our vector if its length is \emph{at
+least} the length of the length indicated by \texttt{sM}. Basically, we check if
+our vector is ``at least'' a certain length.
 
-\section{Conclusion}\label{conclusion}
+We can write a function that can ``take'' an arbitrary amount from a vector,
+given (via proof) that the vector has at least that many elements:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L154-158}
+\OtherTok{takeVec ::} \DataTypeTok{LTE}\NormalTok{ n m }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
+\NormalTok{takeVec }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{LEZ}   \OtherTok{->}\NormalTok{ \textbackslash{}_ }\OtherTok{->} \DataTypeTok{VNil}
+    \DataTypeTok{LES}\NormalTok{ l }\OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+\NormalTok{      x }\FunctionTok{:+}\NormalTok{ xs }\OtherTok{->}\NormalTok{ x }\FunctionTok{:+}\NormalTok{ takeVec l xs}
+\end{Highlighting}
+\end{Shaded}
+
+And, we can combine that with our \texttt{atLeast} function, to be able to take
+(maybe)\footnote{Remember the whole point of this exercise --- that the
+  \texttt{Maybe} is required only in the completely polymorphic case, where we
+  get our lengths at runtime and don't know them at compile-time. If we
+  \emph{knew} \texttt{n} and \texttt{m} at compile-time, and knew that
+  \texttt{n} was less than or equal to \texttt{m}, we could construct an
+  \texttt{LTE\ n\ m} and call \texttt{takeVec} directly, and not return a
+  \texttt{Maybe}.} from any vector:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L160-164}
+\OtherTok{takeVecMaybe_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a)}
+\NormalTok{takeVecMaybe_ sN v }\FunctionTok{=}\NormalTok{ uncurry takeVec }\FunctionTok{<$>}\NormalTok{ atLeast_ sN v}
+
+\OtherTok{takeVecMaybe ::} \DataTypeTok{SingI}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a)}
+\NormalTok{takeVecMaybe v }\FunctionTok{=}\NormalTok{ uncurry takeVec }\FunctionTok{<$>}\NormalTok{ atLeast v}
+\end{Highlighting}
+\end{Shaded}
+
+\section{Wrapping up}\label{wrapping-up}
 
 There's obviously more to look at, and much more we can do with fixed-length
 vectors and inductive types. And, there will definitely be more issues that come

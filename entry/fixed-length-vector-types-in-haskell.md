@@ -1,29 +1,31 @@
 Fixed-Length Vector Types in Haskell (an Update for 2017)
 =========================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on August 25, 2017.
 > [Read online!](https://blog.jle.im/entry/fixed-length-vector-types-in-haskell.html)
 
 This post is a follow-up to my [fixed-length vectors in haskell in
 2015](https://blog.jle.im/entry/fixed-length-vector-types-in-haskell-2015.html)
 post! When I was writing the post originally, I was new to the whole type-level
 game in Haskell; I didn’t know what I was talking about, and that post was a way
-for me to push myself to learn more.
-
-Immediately after it was posted, people taught me where I went wrong in the
-idioms I explained, and better and more idiomatic ways to do things. And that’s
-great! Learning is awesome!
+for me to push myself to learn more. Immediately after it was posted, of course,
+people taught me where I went wrong in the idioms I explained, and better and
+more idiomatic ways to do things. And that’s great! Learning is awesome!
 
 Unfortunately, however, to my horror, I began noticing people referring to the
 post in a canonical/authoritative way…so the post became an immediate source of
 guilt to me. I tried correcting things with my [practical dependent types in
 haskell](https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html)
-series the next year, which incorporated what I had learned. But I still saw my
-2015 post being used as a reference even after that post, so I figured that
-writing a direct replacement/follow-up as the only way I would ever fix this!
+series the next year. But I still saw my 2015 post being used as a reference
+even after that post, so I figured that writing a direct replacement/follow-up
+as the only way I would ever fix this!
 
 So here we are in 2017. GHC 8.2 is here, and *base* is in version *4.10*. What’s
 the “right” way to do fixed-length vectors in Haskell?
+
+This post doesn’t attempt to present anything groundbreaking or new, but is
+meant to be a sort of *reference/introduction* to fixed-length vectors in
+Haskell, as of GHC 8.2 and the 2017 Haskell ecosystem.
 
 We’ll be looking at two methods here: The first one we will be looking at is a
 *performant* fixed-length vector that you will probably be using for any code
@@ -31,17 +33,15 @@ that requires a fixed-length container — especially for tight numeric code and
 situations where performance matters. We’ll see how to implement them using the
 universal native `KnownNat` mechanisms, and also how we can implement them using
 *[singletons](http://hackage.haskell.org/package/singletons)* to help us make
-things a bit smoother.
+things a bit smoother and more well-integrated. For most people, this is all
+they actually need.
 
-The second one we will be looking at is a *structural* fixed-length inductive
-vector. It’s…actually more like a fixed-length *list* (lazily linked list) than
-a vector, but it’s just called a vector because of tradition. The length of the
-list is enforced by the very structure of the data type (similar to how
-`Identity` is a container that is structurally enforced to have exactly one
-item). This type is more useful as a streaming data type, and also in situations
-where you want take advantage of the structural characteristics of lengths in
-the context of a dependently typed program. It’s also very useful as an
-“introduction” to dependently typed programming with inductive proofs.
+The second method is a *structural* fixed-length inductive vector. It’s…actually
+more like a fixed-length (lazily linked) *list* than a vector. The length of the
+list is enforced by the very structure of the data type. This type is more
+useful as a streaming data type, and also in situations where you want take
+advantage of the structural characteristics of lengths in the context of a
+dependently typed program.
 
 The Non-Structural Way
 ----------------------
@@ -69,7 +69,9 @@ be a vector of five `Int`s, a `Vec 10 String` is a vector of 10 `String`s, etc.
 For our numeric types, we’re using the fancy “type literals” that GHC offers us
 with the `DataKinds` extension. Basically, alongside the normal kinds `*`,
 `* -> *`, etc., we also have the `Nat` kind; type literals `1`, `5`, `100`, etc.
-are all *types* with the *kind* `Nat`.
+are all *types* with the *kind* `Nat`, from the
+*[GHC.TypeNats](http://hackage.haskell.org/package/base/docs/GHC-TypeNats.html)*
+module[^1].
 
 ``` {.haskell}
 ghci> :k 5
@@ -87,7 +89,7 @@ natVal :: KnownNat n => p n -> Natural
 ```
 
 (Where `Natural`, from
-*[Numeric.Natural](http://hackage.haskell.org/package/base-4.10.0.0/docs/Numeric-Natural.html)*,
+*[Numeric.Natural](http://hackage.haskell.org/package/base/docs/Numeric-Natural.html)*,
 is a non-negative `Integer` type.)
 
 ``` {.haskell}
@@ -216,7 +218,10 @@ Here, `(+)` comes from
 which provides it as a type family (type-level function) we can use, with proper
 meaning and semantics.
 
-#### On the typechecker
+Note the usage of `(+)` for `takeVec` and `splitVec` to let the function ensure
+that the input vector has “enough” (at least `n`) elements to do the taking.
+
+#### Notes on the typechecker
 
 GHC’s typechecker works very well with concrete, monomorphic `Nat`s. For
 example, `5 + 3` will always typecheck as `8`, so you don’t have to worry at all
@@ -242,11 +247,13 @@ package provides such a plugin. If we pass it as a flag to GHC (as
 ```
 
 Then GHC will be able to recognize the fact that `n + (m + o)` and `(n + m) + o`
-are the same, and will unify them during typechecking.
+are the same, and will unify them during typechecking. It also provides
+normalization/unification for many other situations that we “expect” to work
+when using `*` and `+` on type variables.
 
 ### Indexing
 
-We need an appropriate type for indexing these, but we’d like a type where
+We need an appropriate type for indexing our vectors, but we’d like a type where
 indexing is “safe” – that is, that you can’t compile a program that will result
 in an index error.
 
@@ -293,7 +300,7 @@ exact things that `Finite 5` can store!
 
 We can directly generate these vectors in interesting ways. Using return-type
 polymorphism, we can have the user *directly* request a vector length, *just* by
-using type inference or a type annotation. (kind of like `read`)
+using type inference or a type annotation. (kind of like with `read`)
 
 For example, we can write a version of `replicate`:
 
@@ -322,16 +329,16 @@ type is something very similar. Look at it carefuly:
 replicate :: KnownNat n => a -> Vec n a
 ```
 
-You might recognize it as the haskellism `pure`:
+You might recognize it as very similar to haskellism `pure`:
 
 ``` {.haskell}
 pure :: Applicative f => a -> f a
 ```
 
 `replicate` is actually `pure` for the Applicative instance of `Vec n`! As an
-extra challenge, what would `<*>` be? Check out [the
+extra challenge, what would `<*>` be? See [the
 solution](https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L59-61)
-if you want to heck your answer!
+if you want to check your answer!
 
 #### Generating with indices
 
@@ -346,7 +353,7 @@ generate f = UnsafeMkVec $ V.generate l (f . fromIntegral)
     l = fromIntegral (natVal (Proxy @n))
 ```
 
-#### A nuanced discussion on the advantages of type-safety
+#### Type-Safety and positives and negatives
 
 I think it’s an interesting point that we’re using `Finite n` in a different
 sense here than in `index`, and for different reasons. In `index`, `Finite` is
@@ -410,13 +417,15 @@ withVec
 
 (Note: this does require `RankNTyes`)
 
-People familiar with dependent types might recognized it as a CPS-style
-existential. Basically, give the function a vector, and a way to “handle” a
-`Vec n` of *any possible size*. The function will then give your handler a
-`Vec n` of the proper type/size.
+People familiar with dependent types might recognize that `withVec` is a
+function that takes an unsized vector and returns an *existentially quantified*
+sized vector, in CPS-style. Basically, give the function a vector, and a way to
+“handle” a `Vec n` of *any possible size*. The function will then give your
+handler a `Vec n` of the proper type/size. The *function* gets to chose the `n`
+that you must handle.
 
-Within your continuation/handler, you can take advantage of the size, and do
-take advantage of all of the type-level guarantees and benefits of a
+Within your continuation/handler, you can take advantage of the size type, and
+do take advantage of all of the type-level guarantees and benefits of a
 length-indexed vector. In a way, it is its own “world” where your vector has a
 fixed size. However, the caveat is that you have to treat the size *universally*
 — you have to be able to handle any possible size given to you, in a
@@ -440,7 +449,7 @@ We could write, say, a function to always safely get the third item:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L68-69
 getThird :: V.Vector a -> Maybe a
-getThird v0 = withVec v0 $ \v -> fmap (v `index`) (packFinite 2)
+getThird v = withVec v $ \v' -> fmap (v' `index`) (packFinite 2)
 ```
 
 And we can run it:
@@ -480,15 +489,15 @@ that is hidden “inside” the constructor. The only way to figure it out is to
 pattern match on the constructor and use it in a generic and parametrically
 polymorphic way. Sound familiar?
 
-`someNatVal` converts `Natural` (a non-negative `Integer`) into a `SomeNat` — it
-“picks” the right `n` (the one that corresponds to that `Natural`) and
+`someNatVal` converts `Natural` (a non-negative Integer type) into a `SomeNat` —
+it “picks” the right `n` (the one that corresponds to that `Natural`) and
 stuffs/hides it into `SomeNat`. We can leverage this to write our `withVec`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L74-76
 withVec :: V.Vector a -> (forall n. KnownNat n => Vec n a -> r) -> r
-withVec v0 f = case someNatVal (fromIntegral (V.length v0)) of
-    SomeNat (Proxy :: Proxy m) -> f (UnsafeMkVec @m v0)
+withVec v f = case someNatVal (fromIntegral (V.length v)) of
+    SomeNat (Proxy :: Proxy m) -> f (UnsafeMkVec @m v)
 ```
 
 (The `TypeApplications` syntax `@m` is used with `UnsafeMkVec` to specify that
@@ -540,7 +549,7 @@ exactLength v = case sameNat (Proxy @n) (Proxy @m) of
     Nothing   -> Nothing
 ```
 
-(We could also write this by using `getVector` and `mkLength`, which wraps and
+(We could also write this by using `getVector` and `mkVec`, which wraps and
 unwraps, but let’s pretend it is expensive to construct and re-construct).
 
 Now we can do:
@@ -577,9 +586,9 @@ witnesses that might be useful. But the general process is
 
 ### Help from singletons
 
-You have probably heard that `TypeNats` and `TypeLits` provide a very bare-bones
-and primitive interface. This is true. Its interface also doesn’t play well with
-other type-level mechanisms in other libraries. To prepare you for the real
+You have probably heard that `TypeNats` provides a very bare-bones and primitive
+interface. This is true. Its interface also sometimes doesn’t play well with
+other type-level mechanisms you might want to try. To prepare you for the real
 world, let’s re-implement these things using the
 *[singletons](http://hackage.haskell.org/package/singletons)* library, which
 provides a unified interface for type-level programming in general.
@@ -606,7 +615,7 @@ someSing :: Natural -> SomeSing Nat
 withSomeSing :: Natural -> (forall n. Sing n -> r) -> r
 
 -- TypeNats style
-exactLength :: (KnownNat n, KnownNat m) => Proxy n -> Proxy m -> Maybe (n :~: m)
+sameNat :: (KnownNat n, KnownNat m) => Proxy n -> Proxy m -> Maybe (n :~: m)
 
 -- Singletons style
 -- from Data.Singletons.Decide
@@ -626,12 +635,6 @@ mkVec_ s v | V.length v == l = Just (UnsafeMkVec v)
            | otherwise       = Nothing
   where
     l = fromIntegral (fromSing s)
-mkVec_ :: Sing n -> V.Vector a -> Maybe (Vec n a)
-mkVec_ s v | V.length v == l = Just (UnsafeMkVec v)
-           | otherwise       = Nothing
-  where
-    l = fromIntegral (fromSing s)
-
 
 -- "implicit" style
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L26-30
@@ -655,7 +658,7 @@ You can think of `Sing n` as a token that carries around `KnownNat n =>`, in a
 way.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L32-38
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L32-42
 replicate_ :: Sing n -> a -> Vec n a
 replicate_ s x = UnsafeMkVec $ V.replicate l x
   where
@@ -664,10 +667,10 @@ replicate_ s x = UnsafeMkVec $ V.replicate l x
 replicate :: KnownNat n => a -> Vec n a
 replicate = replicate_ sing
 
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L40-42
 withVec :: V.Vector a -> (forall n. Sing n -> Vec n a -> r) -> r
-withVec v0 f = case toSing (fromIntegral (V.length v0)) of
-    SomeSing s -> f s (UnsafeMkVec v0)
+withVec v f = case toSing (fromIntegral (V.length v)) of
+    SomeSing s -> f s (UnsafeMkVec v)
+
 -- alternatively, skipping `SomeSing` altogether:
 withVec :: V.Vector a -> (forall n. Sing n -> Vec n a -> r) -> r
 withVec v0 f = withSomeSing (fromIntegral (V.length v0) :: Natural) $ \s ->
@@ -688,7 +691,8 @@ exactLength = exactLength_ sing sing
 Note that you *aren’t* required to implement both a `replicate_` and `replicate`
 — I’m just including them here to show that both API’s (implicit and explicit)
 are possible. (You can always just directly use `sing` right away before getting
-started to get the `Sing n` that those functions use)
+started to get the `Sing n` that those functions use, and so skip `replicate_`
+and other explicit variants)
 
 One slight bit of friction comes when using libraries that work with `KnownNat`,
 like *finite-typelits* and the `Finite` type. But we can convert between the two
@@ -794,6 +798,11 @@ completely distinct.
 This is useful for most practical applications. However, when we want to use our
 fixed-length types in a more subtle and nuanced way, it might help to work with
 a length type that is more…structurally aware.
+
+We’ve also noticed that the structure of our `Vec` and the structure of our
+`Nat` have nothing in common, so we can’t take advantage of any shared structure
+to help us with type-safety in our implementation…everything we wrote was pretty
+much implemented using “unsafe” functions.
 
 So, enough of this non-structural blasphemy. We are proper dependent type
 programmers, dangit! We want structural verification! Compiler verification from
@@ -997,12 +1006,12 @@ TYPE ERROR!  TYPE ERROR!  TYPE ERROR!
 ```
 
 As GHC informs us, `FS (FS (FS FZ))` is not an inhabitant of
-`Fin ('S ('S ('S 'Z)))`, which is exactly what we wanted. This is because
-`FS (FS (FS FZ))` has type `Fin ('S ('S ('S ('S m))))` for some `m`, and this
-can’t fit `Fin ('S ('S ('S 'Z)))`.
+`Fin ('S ('S ('S 'Z)))`, which is exactly the behavior we wanted. This is
+because `FS (FS (FS FZ))` has type `Fin ('S ('S ('S ('S m))))` for some `m`, and
+this can’t fit `Fin ('S ('S ('S 'Z)))`.
 
 Also, note that there are no inhabitants of `Fin 'Z`. There is no constructor or
-combinations of constructor that can yield that type.
+combination of constructors that can yield a value of that type.
 
 Armed with this handy `Fin` type, we can do structural type-safe indexing:
 
@@ -1022,9 +1031,18 @@ a `Vec 'Z a` (an empty vector), because to do that, we would have to pass in a
 
 ### Generating
 
-Now, generating these is a bit tricky. Recall that we needed to use a
-`KnownNat n` constraint to be able to *reflect* a `n` type down to the value
-level. We can do something similar using the *singletons* machinery!
+Now, generating these requires some more thought. Naively writing a
+`replicate :: a -> Vec n a` is not possible; ideally, we’d want to “pattern
+match” on our length `n`, and use `VNil` if it’s `'Z`, etc.
+
+However, we can’t pattern match on types in Haskell, because types are *erased*
+at runtime. They’re just used by the compiler to verify your code, but they
+don’t exist at runtime. So, you can’t just say “do this if `n` is `'Z`,
+otherwise do this”.
+
+Recall that, in our previous vector type, we needed to use a `KnownNat n`
+constraint to be able to *reflect* a `n` type down to the value level. We can do
+something similar using the *singletons* machinery!
 
 First, we need to get singletons for our `Nat`:
 
@@ -1058,6 +1076,10 @@ singSize = \case
 ```
 
 We can now branch depending on what `n` is!
+
+Basically, *we can use a singleton* if we ever want to “pattern match” or branch
+our program’s output based on the type. This is a general rule you will observe
+as we continue on this article.
 
 Note that because of the inductive nature of our original `Nat` type, the
 singletons are also inductive, as well. This is handy, because then our whole
@@ -1153,17 +1175,37 @@ and then we give `f` the “correct” length singleton of our complete vector
 ### Verifying properties
 
 We can create some corresponding example of `exactLength` using the exact same
-process we did before (using `%~` and `Decision` and `Refl`):
+process we did before
+
+First, it’d be nice to get a witness for the length of a given vector just from
+the vector itself:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L107-113
-exactLength_ :: Sing m -> Sing n -> Vec n a -> Maybe (Vec m a)
-exactLength_ sM sN v = case sM %~ sN of
-    Proved Refl -> Just v
-    Disproved _  -> Nothing
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L107-110
+vecLength :: Vec n a -> Sing n
+vecLength = \case
+    VNil    -> SZ
+    _ :+ xs -> SS (vecLength xs)
+```
 
-exactLength :: (SingI m, SingI n) => Vec n a -> Maybe (Vec m a)
-exactLength = exactLength_ sing sing
+The type of `vecLength :: Vec n a -> Sing n` says that it is possible, from the
+structure of the vector given, to get a witness to its length. And, because the
+structure of the vector and the structure of the length type are so similar,
+this is possible! (Note that this is not possible for our non-structural
+“wrapped” `Vec`, without some unsafe operations)
+
+Now, our code will be identical to the code for our wrapped/non-structural
+vectors, using `%~` and `Decision` and `Refl`:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L112-118
+exactLength_ :: Sing m -> Vec n a -> Maybe (Vec m a)
+exactLength_ sM v = case sM %~ (vecLength v) of
+    Proved Refl -> Just v
+    Disproved _ -> Nothing
+
+exactLength :: SingI m => Vec n a -> Maybe (Vec m a)
+exactLength = exactLength_ sing
 ```
 
 It’s nice that this is exactly the same as before, and that’s a testament to how
@@ -1174,7 +1216,7 @@ We can write `exactLength` in a cute way by inducting on the length we want and
 the vector, so it might be fun to look at this version instead –
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L115-125
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L120-130
 exactLengthInductive_ :: Sing m -> Vec n a -> Maybe (Vec m a)
 exactLengthInductive_ = \case
     SZ -> \case
@@ -1202,7 +1244,7 @@ For example, we can make a witness that `n` is less than or equal to `m`, as
 well as a way to construct such a witness:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L127-139
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L132-144
 data LTE :: Nat -> Nat -> Type where
     LEZ :: LTE 'Z n
     LES :: LTE n m -> LTE ('S n) ('S m)
@@ -1224,21 +1266,46 @@ equal to `m`. I dare you to try!
 We can write code to check for this property in our vectors:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L141-147
-inRange_ :: Sing n -> Sing m -> Vec n a -> Maybe (LTE n m, Vec n a)
-inRange_ sN sM v = case isLTE sN sM of
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L146-152
+atLeast_ :: Sing n -> Vec m a -> Maybe (LTE n m, Vec m a)
+atLeast_ sN v = case isLTE sN (vecLength v) of
     Proved l    -> Just (l, v)
     Disproved _ -> Nothing
 
-inRange :: SingI n => Sing m -> Vec n a -> Maybe (LTE n m, Vec n a)
-inRange = inRange_ sing
+atLeast :: SingI n => Vec m a -> Maybe (LTE n m, Vec m a)
+atLeast = atLeast_ sing
 ```
 
-`inRange sM` will only return our vector *if* its length is *less than or euqal
-to* the length indicated by `sM`. And it returns a proof that this is true!
+`atLeast_ sM` will only return our vector if its length is *at least* the length
+of the length indicated by `sM`. Basically, we check if our vector is “at least”
+a certain length.
 
-Conclusion
-----------
+We can write a function that can “take” an arbitrary amount from a vector, given
+(via proof) that the vector has at least that many elements:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L154-158
+takeVec :: LTE n m -> Vec m a -> Vec n a
+takeVec = \case
+    LEZ   -> \_ -> VNil
+    LES l -> \case
+      x :+ xs -> x :+ takeVec l xs
+```
+
+And, we can combine that with our `atLeast` function, to be able to take
+(maybe)[^2] from any vector:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L160-164
+takeVecMaybe_ :: Sing n -> Vec m a -> Maybe (Vec n a)
+takeVecMaybe_ sN v = uncurry takeVec <$> atLeast_ sN v
+
+takeVecMaybe :: SingI n => Vec m a -> Maybe (Vec n a)
+takeVecMaybe v = uncurry takeVec <$> atLeast v
+```
+
+Wrapping up
+-----------
 
 There’s obviously more to look at, and much more we can do with fixed-length
 vectors and inductive types. And, there will definitely be more issues that come
@@ -1253,3 +1320,17 @@ google if anything else comes up :)
 Feel free as always to leave a comment or a [tweet](https://twitter.com/mstk),
 or find me the freenode `#haskell` channel, as *jle\`*. I always welcome
 feedback, suggestions, or questions!
+
+[^1]: Users who are used to GHC 8.0 and below might remember `Nat` coming from
+    *[GHC.TypeLits](http://hackage.haskell.org/package/base/docs/GHC-TypeLits.html)*.
+    Well, GHC 8.2 is here, `TypeLits` is out, `TypeNats` is in. The difference
+    is that, in `TypeLits`, the `Nat` kind reifies/reflects with `Integer`. In
+    `TypeNats`, the `Nat` kind reifies/reflects with `Natural` from
+    *[Numeric.Natural](http://hackage.haskell.org/package/base/docs/Numeric-Natural.html)*.
+
+[^2]: Remember the whole point of this exercise — that the `Maybe` is required
+    only in the completely polymorphic case, where we get our lengths at runtime
+    and don’t know them at compile-time. If we *knew* `n` and `m` at
+    compile-time, and knew that `n` was less than or equal to `m`, we could
+    construct an `LTE n m` and call `takeVec` directly, and not return a
+    `Maybe`.
