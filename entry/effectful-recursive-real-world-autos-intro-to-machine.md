@@ -129,7 +129,6 @@ Let’s jump straight to abstracting over this and explore a new type, shall we?
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L27-27
 newtype AutoM m a b = AConsM { runAutoM :: a -> m (b, AutoM m a b) }
-
 ```
 
 We already explained earlier the new power of this type. Let’s see if we can
@@ -158,7 +157,6 @@ instance Monad m => Category (AutoM m) where
               (y, f') <- runAutoM f x
               (z, g') <- runAutoM g y
               return (z, g' . f')
-
 ```
 
 Does it look familiar?
@@ -173,7 +171,6 @@ instance Category Auto where
               let (y, f') = runAuto f x
                   (z, g') = runAuto g y
               in  (z, g' . f')
-
 ```
 
 It’s basically *identical* and exactly the same :O The only difference is that
@@ -211,7 +208,6 @@ instance Arrow Auto where
                   let (y1, a1') = runAuto a1 x
                       (y2, a2') = runAuto a2 x
                   in  ((y1, y2), a1' &&& a2')
-
 ```
 
 ``` {.haskell}
@@ -237,7 +233,6 @@ instance Monad m => Arrow (AutoM m) where
                   (y1, a1') <- runAutoM a1 x
                   (y2, a2') <- runAutoM a2 x
                   return ((y1, y2), a1' &&& a2')
-
 ```
 
 (I’ve left the rest of the instances from the previous part as an exercise; the
@@ -294,7 +289,6 @@ arrM :: Monad m => (a -> m b) -> AutoM m a b
 arrM f = AConsM $ \x -> do
                     y <- f x
                     return (y, arrM f)
-
 ```
 
 We will need to of course re-write our trusty
@@ -313,7 +307,6 @@ testAutoM a (x:xs)  = do
 
 testAutoM_ :: Monad m => AutoM m a b -> [a] -> m [b]
 testAutoM_ a = liftM fst . testAutoM a
-
 ```
 
 First, let’s test `arrM` —
@@ -345,7 +338,6 @@ replicateGets = proc n -> do
     ioString <- arrM (\_ -> getLine) -< ()
     let inpStr = concat (replicate n ioString)
     autoM monoidAccum -< inpStr
-
 ```
 
 So, `replicateGets` uses
@@ -379,7 +371,6 @@ logging a = proc x -> do
     y <- autoM a -< x
     arrM (appendFile "log.txt") -< show y ++ "\n"
     id -< y
-
 ```
 
 Here, `logging a` will “run” `a` with the input like normal (no side-channel
@@ -510,7 +501,6 @@ stuff = proc x -> do
                  else id         -< Just (x * 3)
     sumSqD  <- sumSqDiff -< x
     id -< (doubled, tripled, sumSqD)
-
 ```
 
 ``` {.haskell}
@@ -590,7 +580,6 @@ fancyCalculus = proc x -> do
     deriv2 <- fromMaybe 0 <$> derivative -< deriv
     intdev <-                 integral 0 -< deriv
     id -< (deriv2, intdev)
-
 ```
 
 Now, we are treating our input stream as time-varying values, and the “Reader
@@ -698,7 +687,6 @@ runStateAuto :: AutoM (State s) a b -> Auto (a, s) (b, s)
 runStateAuto a = ACons $ \(x, s) ->
                    let ((y, a'), s') = runState (runAutoM a x) s
                    in  ((y, s'), runStateAuto a')
-
 ```
 
 `sealStateAuto` does exactly this. Give it an initial state, and the `Auto` will
@@ -750,7 +738,6 @@ runReaderAuto :: AutoM (Reader r) a b -> Auto (a, r) b
 runReaderAuto a = ACons $ \(x, e) ->
                     let (y, a') = runReader (runAutoM a x) e
                     in  (y, runReaderAuto a')
-
 ```
 
 Now you can use a `Reader` — composed with “global environment” semantics —
@@ -810,8 +797,8 @@ only running `input` through `id`).
 
 Here is the “logic”, or the relationships between the values:
 
-1.  The error value `err` is the difference between the control and
-    the response.
+1.  The error value `err` is the difference between the control and the
+    response.
 2.  The sum of errors `errSums` is the cumulative sum of all of the error values
     so far.
 3.  The input `input` is the cumulative sum of all of the correction terms: a
@@ -860,7 +847,6 @@ piTargeter = proc control -> do
     id -< response
   where
     blackBoxSystem = id     -- to simplify things :)
-
 ```
 
 The key here is the *rec* keyword. Basically, we require that we write an
@@ -928,7 +914,6 @@ laggingSummer = sumFrom 0
   where
     sumFrom :: Num a => a -> Auto a a
     sumFrom x0 = ACons $ \x -> (x0, sumFrom (x0 + x))
-
 ```
 
 `laggingSummer` is like `summer`, except all of the sums are delayed. Every
@@ -1010,7 +995,6 @@ instance ArrowLoop Auto where
     loop a = ACons $ \x ->
                let ((y, d), a') = runAuto a (x, d)
                in  (y, loop a')
-
 ```
 
 So what does this mean? When will we be able to “get a `y`”?
@@ -1042,7 +1026,6 @@ instance MonadFix m => ArrowLoop (AutoM m) where
     loop a = AConsM $ \x -> do
                rec ((y, d), a') <- runAutoM a (x, d)
                return (y, loop a')
-
 ```
 
 </div>
@@ -1071,7 +1054,6 @@ We can imagine “baking this in” to our Auto type:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L19-19
 newtype AutoOn a b = AConsOn { runAutoOn :: a -> (Maybe b, AutoOn a b) }
-
 ```
 
 Where the semantics of composition are: if you get a `Nothing` as an input, just
@@ -1088,7 +1070,6 @@ instance Category AutoOn where
                               Just _y -> runAutoOn g _y
                               Nothing -> (Nothing, g)
               in  (z, g' . f')
-
 ```
 
 The other instances are on the file linked above, but I won’t post them here, so
@@ -1206,7 +1187,6 @@ instance Alternative (AutoOn a) where
                   let (y1, a1') = runAutoOn a1 x
                       (y2, a2') = runAutoOn a2 x
                   in  (y1 <|> y2, a1' <|> a2')
-
 ```
 
 Unexpectedly, we also get the handy `empty`, which is a “always off” `AutoOn`.
@@ -1229,7 +1209,6 @@ a1 --> a2 = AConsOn $ \x ->
                      Just _  -> (y1, a1' --> a2)
                      Nothing -> runAutoOn a2 x
 infixr 1 -->
-
 ```
 
 ### Usages
@@ -1251,7 +1230,6 @@ fromAutoOn :: AutoOn a b -> Auto a (Maybe b)
 fromAutoOn a = ACons $ \x ->
                  let (y, a') = runAutoOn a x
                  in  (y, fromAutoOn a')
-
 ```
 
 `autoOn` turns an `Auto a b` into an `AutoOn a b`, where the result is always
@@ -1283,8 +1261,6 @@ untilA p = proc x -> do
     if stopped
       then empty -< x       -- fail
       else id    -< x       -- succeed
-
-
 -- alternatively, using explicit recursion:
 -- untilA p = AConsOn $ \x ->
 --              if p x
@@ -1308,7 +1284,6 @@ shortCircuit2 = proc x -> do
     onFor 3      -< ()
     filterA even -< x
     id           -< x * 10
-
 ```
 
 If either the `filterA` or the `onFor` are off, then the whole thing is off. How
@@ -1340,7 +1315,6 @@ stages = stage1 --> stage2 --> stage3 --> stages
     stage1 = onFor 2 . arr negate
     stage2 = untilA (> 15) . autoOn summer
     stage3 = onFor 3 . (pure 100 . filterA even <|> pure 200)
-
 ```
 
 ``` {.haskell}
@@ -1375,7 +1349,6 @@ you’ll have to go deeper:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs#L10-10
 newtype AutoOn2 a b = ACons2 { runAutoOn2 :: Maybe a -> (Maybe b, AutoOn2 a b) }
-
 ```
 
 So now, you can write something like `onFor`, which keeps on “ticking on” even
@@ -1386,7 +1359,6 @@ if it receives a `Nothing` from upstream:
 onFor :: Int -> AutoOn2 a a
 onFor 0 = ACons2 $ \_ -> (Nothing, onFor 0)
 onFor n = ACons2 $ \x -> (x, onFor (n - 1))
-
 ```
 
 You can of course translate all of your `AutoOn`s into this new type:
@@ -1401,7 +1373,6 @@ autoOn a = ACons2 $ \x ->
                  in  (y, autoOn a')
                Nothing ->
                  (Nothing, autoOn a)
-
 ```
 
 Or you can use the smart constructor method detailed immediately following.
@@ -1417,7 +1388,6 @@ Of course, we can always literally throw everything we can add together into our
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L18-18
 newtype AutoX m a b = AConsX { runAutoX :: a -> m (Maybe b, AutoX m a b) }
-
 ```
 
 (Again, instances are in the source file, but not here in the post directly)
@@ -1457,7 +1427,6 @@ aConsOn :: Monad m => (a -> (Maybe b, AutoX m a b)) -> AutoX m a b
 aConsOn a = AConsX $ \x ->
               let (y, aX) = a x
               in  return (y, aX)
-
 ```
 
 Compare these definitions of `summer`, `arrM`, and `untilA` from their “specific
@@ -1473,22 +1442,17 @@ summer = sumFrom 0
     sumFrom n = ACons $ \input ->
       let s = n + input
       in  ( s , sumFrom s )
-
-
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L104-107
 arrM :: Monad m => (a -> m b) -> AutoM m a b
 arrM f = AConsM $ \x -> do
                     y <- f x
                     return (y, arrM f)
-
-
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L154-158
 untilA' :: (a -> Bool) -> AutoOn a a
 untilA' p = AConsOn $ \x ->
               if p x
                 then (Just x , untilA p)
                 else (Nothing, empty   )
-
 ```
 
 ``` {.haskell}
@@ -1510,7 +1474,6 @@ untilA p = aConsOn $ \x ->
              if p x
                then (Just x , untilA p)
                else (Nothing, empty   )
-
 ```
 
 They are literally exactly the same…we just change the constructor to the smart
@@ -1522,7 +1485,6 @@ and `AutoX` by making the type polymorphic over all monads:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L106-106
 summer :: (Monad m, Num a) => AutoX m a a
-
 ```
 
 An `Auto` with a type like this says, “I cannot perform any effects during
@@ -1545,7 +1507,6 @@ By the way, here’s a “smart constructor” for `AutoM`.
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L112-113
 aCons :: Monad m => (a -> (b, AutoM m a b)) -> AutoM m a b
 aCons f = AConsM $ \x -> return (f x)
-
 ```
 
 Closing Remarks

@@ -264,8 +264,8 @@ There is a vocabulary we can use so we can talk about all MonadPlus’s in a
 general way:
 
 -   We call a success a “return”. Yeah…the name is super confusing because of
-    how the word “return” is used in almost every other context in
-    computer science. But hey. Oh well.
+    how the word “return” is used in almost every other context in computer
+    science. But hey. Oh well.
 -   We call a failure an “mzero”. Yes, this name is pretty lame too.
 
 For Maybe, a “return” with the value `x` is `Just x`, and an “mzero” is a
@@ -331,8 +331,8 @@ would be the value returned if you just exited at that step.
     Maybe object, means `Nothing`.
 3.  Now from here on, nothing else even matters…the entire block is a failure!
 4.  If possible, succeed with the value in `z`. This is supposed to be a `Just`
-    with the value of `z`. Unfortunately, the entire block failed a long
-    time ago. So sad!
+    with the value of `z`. Unfortunately, the entire block failed a long time
+    ago. So sad!
 
 <div class="note">
 
@@ -485,7 +485,6 @@ hit' currHealth = guard (newHealth > 0) >> return newHealth
 -- increase the player's health from its previous health
 powerup :: Int -> Maybe Int
 powerup currHealth = return $ currHealth + 1
-
 ```
 
 ``` {.haskell}

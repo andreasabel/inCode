@@ -44,7 +44,6 @@ We left off in our last post having looked at `Auto`:
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-12
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 newtype Auto a b = ACons { runAuto :: a -> (b, Auto a b) }
-
 ```
 
 which we saw as a stream that had an influencing input of type `a`, an internal,
@@ -207,7 +206,6 @@ Enough talk, let’s code! We’ll call our composition operator `(~.~)`.
 g ~.~ f = ACons $ \x -> let (y, f') = runAuto f x
                             (z, g') = runAuto g y
                         in  (z, g' ~.~ f')
-
 ```
 
 And…that should be it! We run the input through first `f` then `g`, collecting
@@ -221,7 +219,6 @@ out on:
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 toAuto :: (a -> b) -> Auto a b
 toAuto f = ACons $ \x -> (f x, toAuto f)
-
 ```
 
 `toAuto` basically turns a function `a -> b` into a stateless `Auto a b`.
@@ -264,7 +261,6 @@ Well, wait. We need one last thing: the identity Auto:
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 idA :: Auto a a
 idA = ACons $ \x -> (x, idA)
-
 ```
 
 ``` {.haskell}
@@ -334,7 +330,6 @@ instance Category Auto where
               let (y, f') = runAuto f x
                   (z, g') = runAuto g y
               in  (z, g' . f')
-
 ```
 
 And now… we can work with both `(->)` and `Auto` as if they were the “same
@@ -345,7 +340,6 @@ thing” :)
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 doTwice :: Category r => r a a -> r a a
 doTwice f = f . f
-
 ```
 
 ``` {.haskell}
@@ -422,7 +416,6 @@ instance Functor (Auto r) where
     fmap f a = ACons $ \x ->
                  let (y, a') = runAuto a x
                  in  (f y, fmap f a')
-
 ```
 
 ``` {.haskell}
@@ -483,7 +476,6 @@ instance Applicative (Auto r) where
                   let (f, af') = runAuto af x
                       (y, ay') = runAuto ay x
                   in  (f y, af' <*> ay')
-
 ```
 
 Note that `pure` gives us a “constant Auto” — an `Auto` that ignores its input
@@ -585,7 +577,6 @@ instance Arrow Auto where
                   let (y1, a1') = runAuto a1 x
                       (y2, a2') = runAuto a2 x
                   in  ((y1, y2), a1' &&& a2')
-
 ```
 
 <div class="note">
@@ -683,7 +674,6 @@ instance ArrowChoice Auto where
                      in  (Left l', left a')
                    Right r ->
                      (Right r, left a)
-
 ```
 
 We’ll see `ArrowChoice` used in the upcoming syntactic sugar construct, enabling
@@ -760,7 +750,6 @@ dualCounterR = dualCounterWith (0, 0)
                                             Left i  -> (x + i, y)
                                             Right i -> (x, y + 1)
                                in  (newC, dualCounterWith newC)
-
 ```
 
 But we all know in Haskell that explicit recursion is usually a sign of bad
@@ -776,7 +765,6 @@ dualCounterC = (summer *** summer) . arr wrap
   where
     wrap (Left i)  = (i, 0)
     wrap (Right i) = (0, i)
-
 ```
 
 That’s a bit more succinct, but I think the proc notation is much nicer!
@@ -793,7 +781,6 @@ dualCounterP = proc inp -> do
     sum2 <- summer -< add2
 
     id -< (sum1, sum2)
-
 ```
 
 It’s a bit more verbose…but I think it’s much clearer what’s going on, right?
@@ -834,7 +821,6 @@ dualCounterSkipP = proc inp -> do
     sum2 <- summer -< add2
 
     id -< (sum1, sum2)
-
 ```
 
 ``` {.haskell}
@@ -868,7 +854,6 @@ dualCounterSkipR = counterFrom ((0, 0), 1)
                               | otherwise -> ((x    , y), s + 1)
                       Right i             -> ((x, y + i), s    )
         in  (fst newCS, counterFrom newCS)
-
 ```
 
 Not only is it a real mess and pain — and somewhere where bugs are rife to pop
@@ -976,8 +961,8 @@ before Part 3 :)
 
 1.  Write the
     [Profunctor](https://ocharles.org.uk/blog/guest-posts/2013-12-22-24-days-of-hackage-profunctors.html)
-    instance mentioned above; look at the Functor instance we wrote as
-    a reference. And hey, how about `Strong` and `Choice`, too?
+    instance mentioned above; look at the Functor instance we wrote as a
+    reference. And hey, how about `Strong` and `Choice`, too?
 
 2.  Try writing the various Autos we wrote last time at the end using
     composition and proc notation instead of explicit recursion. Feel free to

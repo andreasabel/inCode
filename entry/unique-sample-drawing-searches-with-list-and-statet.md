@@ -37,7 +37,8 @@ ghci> do x <- "abc"
 "abc","acb","bac","bca","cab","cba"]
 ```
 
-This is a little bit awkward…and it definitely gets a lot worse ($O(n^2)$) when
+This is a little bit awkward…and it definitely gets a lot worse
+(![O(n\^2)](https://latex.codecogs.com/gif.latex?O%28n%5E2%29 "O(n^2)")) when
 you have more items. Also, it relies on an `Eq` constraint — what if our thing
 doesn’t have an `Eq` instance? And this also falls apart when our list contains
 duplicate items. If we had used `"aabc"` instead of `"abc"`, the result would be
@@ -132,7 +133,6 @@ for some reason:
 select :: [a] -> [(a, [a])]
 select []     = []
 select (x:xs) = (x,xs) : [(y,x:ys) | (y,ys) <- select xs]
-
 ```
 
 (Implementation thanks to Cale, who has fought valiantly yet fruitlessly to get
@@ -184,7 +184,6 @@ main = print . flip evalStateT [0..9] $ do
         money = asNumber [m,o,n,e,y]
     guard $ send + more == money
     return (send, more, money)
-
 ```
 
 Remember, `StateT` here operates with an underlying state of `[Int]`, a list of
@@ -240,7 +239,6 @@ main' = print . flip evalStateT [0..9] $ do
         money = asNumber [m,o,n,e,y]
     guard $ send + more == money
     return (send, more, money)
-
 ```
 
 This is a more performant version of `select` [courtesy of Simon

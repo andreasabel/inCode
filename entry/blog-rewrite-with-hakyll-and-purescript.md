@@ -226,8 +226,8 @@ My main takeways —
 3.  Refactoring Haskell is an amazing experience; I would recommend it to anyone
     to try it out at least once in their lives
 4.  *Purescript* is an amazing and beautiful technology that I had the pleasure
-    of learning during this process, and generates elegant, readable
-    javascript scripts.
+    of learning during this process, and generates elegant, readable javascript
+    scripts.
 
 This reflection post has been to help me organize my thoughts, but I hope they
 can be useful for those of you looking for new technologies to learn and ways to

@@ -76,7 +76,6 @@ halve :: Int -> Maybe Int
 halve n = do
     guard $ even n
     return $ n `div` 2
-
 ```
 
 ``` {.haskell}
@@ -104,7 +103,6 @@ halve' :: Int -> [Int]
 halve' n = do
     guard $ even n
     return $ n `div` 2
-
 ```
 
 This is…the exact same function body. We didn’t do anything but change the type
@@ -151,7 +149,6 @@ genericHalve :: MonadPlus m => Int -> m Int
 genericHalve n = do
     guard $ even n
     return $ n `div` 2
-
 ```
 
 ``` {.haskell}
@@ -226,7 +223,6 @@ path to success if you are odd: doubling. In this way it is slightly racist.
 halveOrDouble :: Int -> [Int]
 halveOrDouble n | even n    = [n `div` 2, n * 2]
                 | otherwise = [n * 2]
-
 ```
 
 ``` {.haskell}
@@ -285,7 +281,6 @@ halveOrDoubleTwice :: Int -> [Int]
 halveOrDoubleTwice n = do
     x <- halveOrDouble n
     halveOrDouble x
-
 ```
 
 Do notation describes **a single path of a value**. This is slightly confusing
@@ -321,8 +316,6 @@ for `x` for the entire rest of the journey. In fact, let’s see it in action:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L29-29
 hod2PlusOne :: Int -> [Int]
-
-
 hod2PlusOne n = do              -- hod2PlusOne 6
     x <- halveOrDouble n        -- x <-     Just 3          Just 12
     halveOrDouble x             --      Nothing  Just 6  Just 6  Just 24
@@ -485,7 +478,6 @@ triplesUnder n = do
     c <- [b..n]
     guard $ a^2 + b^2 == c^2
     return (a,b,c)
-
 ```
 
 ([Download it and try it out
@@ -494,8 +486,8 @@ yourself!](https://github.com/mstksg/inCode/blob/master/code-samples/monad-plus/
 1.  Our journey begins with picking a number between 1 and `n` and setting it to
     `a`.
 2.  Next, we pick a number between `a` and `n` and set it to `b`. We start from
-    `a` because if we don’t, we are probably going to be testing the same
-    tuple twice.
+    `a` because if we don’t, we are probably going to be testing the same tuple
+    twice.
 3.  Next, we pick a number between `b` and `n`. This is our hypotenuse, and of
     course all hypontenii are larger than either side.
 4.  Now, we mercilessly and ruthlessly end all journeys who were unfortunate
@@ -507,8 +499,8 @@ yourself!](https://github.com/mstksg/inCode/blob/master/code-samples/monad-plus/
 Let’s try “following” this path with some arbitrary choices, looking at
 arbitrary journeys for `n = 10`:
 
--   We pick `a` as 2, `b` as 3, and `c` as 9. All is good until we get to
-    the guard. `a^2 + b^2` is 10, which is not `c^2` (81), unfortunately. This
+-   We pick `a` as 2, `b` as 3, and `c` as 9. All is good until we get to the
+    guard. `a^2 + b^2` is 10, which is not `c^2` (81), unfortunately. This
     `(2,3,10)` journey ends here.
 -   We pick `a` as 3, `b` as 4, and `c` as 5. On the guard, we succeed:
     `a^2 + b^2` is 25, which indeed is `c^2`. Our journey passes the guard, and
@@ -521,10 +513,10 @@ Paths like `a = 5` and `b = 3` do not even happen. This is because if we pick
 
 Remember, the final result is the accumulation of **all such successful
 journeys**. A little bit of combinatorics will show that there are
-$\frac{1}{6} \times \frac{(n+2)!}{(n-1)!}$ possible journeys to attempt. Only
-the ones that do not fail (at the guard) will make it to the end. Remember how
-MonadPlus works — one failure along the journey means that the *entire journey*
-is a failure.
+![\\frac{1}{6} \\times \\frac{(n+2)!}{(n-1)!}](https://latex.codecogs.com/gif.latex?%5Cfrac%7B1%7D%7B6%7D%20%5Ctimes%20%5Cfrac%7B%28n%2B2%29%21%7D%7B%28n-1%29%21%7D "\frac{1}{6} \times \frac{(n+2)!}{(n-1)!}")
+possible journeys to attempt. Only the ones that do not fail (at the guard) will
+make it to the end. Remember how MonadPlus works — one failure along the journey
+means that the *entire journey* is a failure.
 
 Let’s see what we get when we try it at the prompt:
 
@@ -544,7 +536,9 @@ in `triplesUnder 25`, only eight of them made it to the end. The rest
 cruel and unforgiving world.
 
 While the full diagram of `triplesUnder 5` has 35 branches, here is a diagram
-for those branches with $a > 2$, which has 10:
+for those branches with
+![a &gt; 2](https://latex.codecogs.com/gif.latex?a%20%3E%202 "a > 2"), which has
+10:
 
 ![*triplesUnder 5*, all journeys (where a &gt; 2)
 illustrated](/img/entries/monad-plus/triplesunder.png "triplesUnder 5")
@@ -565,9 +559,9 @@ Let’s do a quick review:
     entire path is a failure and doesn’t show up in the list of successes.
     *This* is the “MonadPlus”ness of it all.
 -   When you use a do block (or reason about paths), it helps to think of each
-    do block as representing one specific path in a Maybe monad, with
-    arbitrary choices. Your `<-` binds all represent *one specific element*,
-    *just* like for Maybe.
+    do block as representing one specific path in a Maybe monad, with arbitrary
+    choices. Your `<-` binds all represent *one specific element*, *just* like
+    for Maybe.
 
 The last point is particularly important and is pretty pivotal in understanding
 what is coming up next. Remember that all Maybe blocks and List blocks really
@@ -585,7 +579,6 @@ triplesUnder n = do
     c <- [b..n]
     guard $ a^2 + b^2 == c^2
     return (a,b,c)
-
 ```
 
 and see that it is structurally identical to
@@ -611,7 +604,6 @@ genericHalve :: MonadPlus m => Int -> m Int
 genericHalve n = do
     guard $ even n
     return $ n `div` 2
-
 ```
 
 is general enough that it works for both.

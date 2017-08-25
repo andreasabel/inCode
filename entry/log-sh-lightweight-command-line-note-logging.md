@@ -31,8 +31,8 @@ Here’s introducing ***[log.sh](https://github.com/mstksg/log.sh)***.
     -   Quick links to resources, references
     -   Small local project TODO’s
     -   Reminders and gotchas
-    -   Logging progress, short micro-journaling to record check points
-        in progress.
+    -   Logging progress, short micro-journaling to record check points in
+        progress.
 -   Simple quick references (in the home directory)
     -   Reminders on system configuration todo’s
     -   Refreshers on simple tasks that you only do a few times a year

@@ -83,7 +83,6 @@ data DoorState = Opened | Closed | Locked
   deriving (Show, Eq)
 
 data Door (s :: DoorState) = UnsafeMkDoor String
-
 ```
 
 A couple things going on here:
@@ -157,7 +156,6 @@ of `Door`, and return a specific type of `Door`:
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L18-19
 closeDoor :: Door 'Opened -> Door 'Closed
 closeDoor (UnsafeMkDoor m) = UnsafeMkDoor m
-
 ```
 
 So, the `closeDoor` function will *only* take a `Door 'Opened` (an opened door).
@@ -200,7 +198,6 @@ lockDoor (UnsafeMkDoor m) = UnsafeMkDoor m
 
 openDoor :: Door 'Closed -> Door 'Opened
 openDoor (UnsafeMkDoor m) = (UnsafeMkDoor m)
-
 ```
 
 ``` {.haskell}
@@ -284,7 +281,6 @@ data SingDS :: DoorState -> Type where
     SOpened :: SingDS 'Opened
     SClosed :: SingDS 'Closed
     SLocked :: SingDS 'Locked
-
 ```
 
 Here we’re using *GADT syntax* again. (Also note that `Type` a synonym for the
@@ -314,7 +310,6 @@ doorStatus = \case
         \_ -> Closed
     SLocked -> -- in this branch, `s` is `'Locked`
         \_ -> Locked
-
 ```
 
 (using LambdaCase syntax)
@@ -340,7 +335,6 @@ lockAnyDoor = \case
     SOpened -> lockDoor . closeDoor
     SClosed -> lockDoor
     SLocked -> id
-
 ```
 
 Note that `lockDoor . closeDoor :: Door 'Opened -> Door 'Locked`. GHC will only
@@ -370,7 +364,6 @@ instance SingDSI 'Closed where
     singDS = SClosed
 instance SingDSI 'Locked where
     singDS = SLocked
-
 ```
 
 And so now we can do:
@@ -382,7 +375,6 @@ doorStatus_ = doorStatus singDS
 
 lockAnyDoor_ :: SingDSI s => Door s -> Door 'Locked
 lockAnyDoor_ = lockAnyDoor singDS
-
 ```
 
 Here, type inference will tell GHC that you want `singDS :: SingDS s`, and it
@@ -424,7 +416,6 @@ withSingDSI s x = case s of
     SOpened -> x
     SClosed -> x
     SLocked -> x
-
 ```
 
 `withSingDSI` takes a `SingDS s`, and a value (of type `r`) that requires a
@@ -444,7 +435,6 @@ explicit inputs:
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L69-70
 lockAnyDoor__ :: SingDS s -> Door s -> Door 'Locked
 lockAnyDoor__ s d = withSingDSI s (lockAnyDoor_ d)
-
 ```
 
 ### Fun with Witnesses
@@ -458,7 +448,6 @@ mkDoor = \case
     SOpened -> UnsafeMkDoor
     SClosed -> UnsafeMkDoor
     SLocked -> UnsafeMkDoor
-
 ```
 
 So we can call it values of `SingDS`:
@@ -582,7 +571,6 @@ data SomeDoor = forall s. MkSomeDoor (SingDS s) (Door s)
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L78-79
 data SomeDoor :: Type where
     MkSomeDoor :: SingDS s -> Door s -> SomeDoor
-
 ```
 
 `MkSomeDoor` is a constructor for an existential data type, meaning that the
@@ -606,7 +594,6 @@ closeSomeDoor = \case
 
 lockAnySomeDoor :: SomeDoor -> Door 'Locked
 lockAnySomeDoor (MkSomeDoor s d) = lockAnyDoor s d
-
 ```
 
 It’s important to remember that our original separate-implementation `SomeDoor`
@@ -655,7 +642,6 @@ mkSomeDoor = \case
     Opened -> MkSomeDoor SOpened . mkDoor SOpened
     Closed -> MkSomeDoor SClosed . mkDoor SClosed
     Locked -> MkSomeDoor SLocked . mkDoor SLocked
-
 ```
 
 ``` {.haskell}
@@ -697,7 +683,6 @@ $(singletons [d|
   data DoorState = Opened | Closed | Locked
     deriving (Show, Eq)
   |])
-
 ```
 
 This generates, for us:
@@ -867,7 +852,6 @@ for a comparison, if you are still unfamiliar.
     ``` {.haskell}
     -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L85-85
     unlockDoor :: Int -> Door 'Locked -> Maybe (Door 'Closed)
-
     ```
 
     It should return a closed door in `Just` if the caller gives an odd number,
@@ -878,7 +862,6 @@ for a comparison, if you are still unfamiliar.
     ``` {.haskell}
     -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L90-90
     openAnyDoor :: SingI s => Int -> Door s -> Maybe (Door 'Opened)
-
     ```
 
     This should be written in terms of `unlockDoor` and `openDoor`.
@@ -891,7 +874,6 @@ for a comparison, if you are still unfamiliar.
     ``` {.haskell}
     -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L103-103
     withSomeDoor :: SomeDoor -> (forall s. Sing s -> Door s -> r) -> r
-
     ```
 
 4.  Implement `openAnySomeDoor`, which should work like `lockAnySomeDoor`, just
@@ -900,7 +882,6 @@ for a comparison, if you are still unfamiliar.
     ``` {.haskell}
     -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L99-99
     openAnySomeDoor :: Int -> SomeDoor -> Maybe (Door 'Opened)
-
     ```
 
     Note that because we wrote `openAnyDoor` in “implicit style”, we might have

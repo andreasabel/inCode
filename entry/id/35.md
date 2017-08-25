@@ -62,7 +62,6 @@ import Data.Time
 import Network.SimpleIRC
 import Prelude hiding           ((.), id)   -- we use (.) and id from `Control.Category`
 import qualified Data.Map       as M
-
 ```
 
 ``` {.haskell}
@@ -83,7 +82,6 @@ instance Monoid OutMessages where
     mempty  = OutMessages M.empty
     mappend (OutMessages m1) (OutMessages m2)
             = OutMessages (M.unionWith (++) m1 m2)
-
 ```
 
 We make some type aliases to make things a bit clearer. Our inputs are going to
@@ -97,7 +95,6 @@ The type for a chat bot over a monad `m` would then be:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L68-68
 type ChatBot m = Auto m InMessage OutMessages
-
 ```
 
 A `ChatBot` takes a stream of `InMessage`s and returns a stream of
@@ -121,7 +118,6 @@ message on. So it’ll help us to also make another sort of `Auto`:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L69-69
 type RoomBot m = Auto m InMessage (Blip [Message])
-
 ```
 
 A `RoomBot` doesn’t care where its messages go…it just replies to the same room
@@ -146,7 +142,6 @@ perRoom :: Monad m => RoomBot m -> ChatBot m
 perRoom rb = proc inp@(InMessage _ _ src _) -> do
     messages <- fromBlips [] . rb -< inp
     id -< OutMessages $ M.singleton src messages
-
 ```
 
 (This example uses proc notation; see this [proc notation
@@ -314,7 +309,6 @@ main :: IO ()
 main = do
     withIrcConf conf chatBot
     forever (threadDelay 1000000000)
-
 ```
 
 That should be it…don’t worry if you don’t understand all of it, most of it is
@@ -395,7 +389,6 @@ instance Serialize UTCTime where
 instance Serialize Day where
     get = ModifiedJulianDay <$> get
     put = put . toModifiedJulianDay
-
 ```
 
 The next component is just to respond to requests. We want to do something on
@@ -439,7 +432,6 @@ seenBot = proc (InMessage nick msg _ time) -> do
       where
         getRequest ("@seen":nick:_) = Just nick
         getRequest _                = Nothing
-
 ```
 
 Here we define `respond` as a function that takes a `Nick` and returns the
@@ -567,7 +559,6 @@ repBot = proc (InMessage nick msg _ _) -> do
       where
         getRequest ("@rep":nick:_) = Just nick
         getRequest _                = Nothing
-
 ```
 
 Again note that we take advantage of the `Functor` instance of blip streams to
@@ -681,7 +672,6 @@ announceBot chans = proc (InMessage nick msg src time) -> do
     newDayBlips = onChange
     trackAnns :: Monad m => Auto m (Blip Nick) (Map Nick Int)
     trackAnns = scanB (\mp nick -> M.insertWith (+) nick 1 mp) M.empty
-
 ```
 
 Only slightly more involved, but still pretty readable, right? We find out if
@@ -717,7 +707,6 @@ chatBot = serializing' "chatbot.dat"
                     , perRoom repBot
                     , announceBot channels
                     ]
-
 ```
 
 Or, to future-proof, in case we foresee adding new modules:
@@ -729,7 +718,6 @@ chatBot' = mconcat [ perRoom . serializing' "seens.dat" $ seenBot
                    , perRoom . serializing' "reps.dat"  $ repBot
                    ,           serializing' "anns.dat"  $ announceBot channels
                    ]
-
 ```
 
 And…that’s it!
@@ -761,7 +749,6 @@ isolatedRooms :: Monad m => RoomBot m -> ChatBot m
 isolatedRooms rb = proc inp@(InMessage _ _ src _) -> do
     messages <- fromBlips [] . mux (const rb) -< (src, inp)
     id -< OutMessages $ M.singleton src messages
-
 ```
 
 `mux` is an “`Auto` multiplexer”:

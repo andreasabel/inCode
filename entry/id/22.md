@@ -186,7 +186,6 @@ data ParArrow a b =                     Pure  (a -> b)
                                               (ParArrow a1 b1)
                                               (ParArrow a2 b2)
                                               ((b1, b2) -> b)
-
 ```
 
 So a `ParArrow a b` represents a (pure) paralleizable, forkable computation that
@@ -225,7 +224,6 @@ Okay, let’s define a Category instance, that lets us compose `ParArrow`s:
 instance Category ParArrow where
     id    = Pure id
     f . g = Seq g f
-
 ```
 
 No surprises there, hopefully! Now an Arrow instance:
@@ -238,7 +236,6 @@ instance Arrow ParArrow where
     second g = id *** g
     f &&& g  = Par (id &&& id) f g id
     f *** g  = Par id          f g id
-
 ```
 
 Also simple enough. Note that `first` and `second` are defined in terms of
@@ -273,7 +270,6 @@ collapse (Seq f g)       =
                                      pp2 = collapse (p2 >>> arr p2f >>> p2')
                                  in  Par l pp1 pp2 r'
 collapse p = p
-
 ```
 
 There are probably a couple of redundant calls to `collapse` in there, but the
@@ -305,7 +301,6 @@ data Graph = GPure                  -- Pure function
            | Graph :->: Graph       -- Sequenced arrows
            | Graph :/: Graph        -- Parallel arrows
            deriving Show
-
 ```
 
 And we can convert a given `ParArrow` into its internal graph:
@@ -319,7 +314,6 @@ analyze' (Par _ f g _) = analyze' f :/: analyze' g
 
 analyze :: ParArrow a b -> Graph
 analyze = analyze' . collapse
-
 ```
 
 ### Sample ParArrows
@@ -399,7 +393,6 @@ runPar' = go
 
 runPar :: ParArrow a b -> (a -> IO b)
 runPar = runPar' . collapse
-
 ```
 
 (Note that I left in debug traces)
@@ -529,7 +522,6 @@ analyze_ = analyze' . collapse_
 
 runPar_ :: ParArrow a b -> (a -> IO b)
 runPar_ = runPar' . collapse_
-
 ```
 
 Then we have:

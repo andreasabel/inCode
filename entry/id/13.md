@@ -110,8 +110,8 @@ data Position = West | East                     -- 5
     be working with: the farmer, the wolf, the goat, and the cabbage.
 2.  Next, we define a simple `Move` container, which just contains a character.
     A `MoveThe Farmer` will represent a movement of only the farmer, a
-    `MoveThe Wolf` will represent the movement of both the farmer and the
-    wolf, etc.
+    `MoveThe Wolf` will represent the movement of both the farmer and the wolf,
+    etc.
 3.  For the purposes of easy debugging, we’re going to define our own instance
     of `Show` for moves so that we can use `print` on them.
 4.  A simple type synonym; a `Plan` is just a list of `Move`s. Note that we are
@@ -196,8 +196,8 @@ findSolutions n = do
     `makeNMoves` is itself a journey — a sub-journey. So `p` is a single plan
     that has *already gone through* the `makeNMoves` journey. We are continuing
     that journey.
-4.  End the journey unless `p` is a solution (all characters are on the
-    east side)
+4.  End the journey unless `p` is a solution (all characters are on the east
+    side)
 5.  Succeed with `p` if the journey has not yet ended.
 
 Hm. Sounds good! We’re done!

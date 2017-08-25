@@ -286,7 +286,6 @@ import qualified Data.ByteString.Lazy as BL
 import Huffman
 import PQueue
 import PreTree
-
 ```
 
 It’s a doozy, admittedly!
@@ -308,7 +307,6 @@ main = do
                         Nothing     -> error "Empty File"
 
     encodeFile inp out len tree
-
 ```
 
 Just straight-forward, more or less. The error handling is kind of not too
@@ -337,7 +335,6 @@ analyzeFile fp = withFile fp ReadMode $ \hIn -> do
     freqs = PP.fold f M.empty id
       where
         f m x = M.insertWith (+) x 1 m
-
 ```
 
 First, we use
@@ -357,7 +354,6 @@ of `ByteString`s — and chaining it to `bsToBytes`, a pipe that takes incoming
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L96-97
 bsToBytes :: Monad m => Pipe ByteString Word8 m r
 bsToBytes = PP.mapFoldable B.unpack
-
 ```
 
 Our implementation uses `B.unpack :: ByteString -> [Word8]` from
@@ -380,7 +376,6 @@ listFreq :: Ord a => [a] -> FreqTable a
 listFreq = foldr f M.empty
   where
     f x m = M.insertWith (+) x 1 m
-
 ```
 
 Except instead of folding over a list, we fold over the elements of the
@@ -418,7 +413,6 @@ encodeFile inp out len tree =
       runEffect pipeline
   where
     encTable  = ptTable tree
-
 ```
 
 First, we open our file handles for our input and output files. Then, we use
@@ -453,7 +447,6 @@ encodeByte :: (Ord a, Monad m)
            => Map a Encoding
            -> Pipe a Direction m r
 encodeByte encTable = PP.mapFoldable (encTable !)
-
 ```
 
 instead of using `mapFoldable` with a `ByteString -> [Word8]`, we use
@@ -481,7 +474,6 @@ dirsBytes p = do
         yield byte
         dirsBytes leftovers
       Nothing   -> return ()
-
 ```
 
 `dirsBytes` turns out `Direction` producer into a `Word8` producer by running
@@ -533,7 +525,6 @@ dirsBytesP = do
         Just DLeft  -> go     b            (i + 1)
         Just DRight -> go     (setBit b i) (i + 1)
         Nothing     -> return b
-
 ```
 
 This implementation is pretty straightforward — “if the producer is empty,
@@ -559,7 +550,6 @@ transforming our bytes stream:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L86-86
           bsOut     = view PB.pack . dirsBytes $ dirsOut
-
 ```
 
 #### All together
@@ -615,16 +605,15 @@ before. What components do we need?
 
 1.  First, a component producing decoded `Word8`s (that will be `view PB.pack`’d
     into a component producing decoded `ByteString`s with smart chunking)
-    1.  A producer that reads in `ByteString`s from a file and sends
-        them downstream.
-    2.  A pipe that unpacks those `ByteString`s into `Word8`s and sends each
-        one down.
-    3.  A pipe that “unpacks” those `Word8`s into `Direction`s and sends
-        *those* down.
+    1.  A producer that reads in `ByteString`s from a file and sends them
+        downstream.
+    2.  A pipe that unpacks those `ByteString`s into `Word8`s and sends each one
+        down.
+    3.  A pipe that “unpacks” those `Word8`s into `Direction`s and sends *those*
+        down.
     4.  A pipe that traverses down the Huffman encoding tree following the
         incoming `Direction`s, and emits a decoded `Word8` every time it decodes
         a value.
-
 2.  A component consuming the incoming `ByteString`s, and writing them to our
     output file.
 
@@ -656,7 +645,6 @@ import qualified Data.ByteString as B
 
 -- Huffman imports
 import PreTree
-
 ```
 
 `main` should seem very familiar:
@@ -670,7 +658,6 @@ main = do
                         i:o:_      -> (i,o)
                         _          -> error "Give input and output files."
     decodeFile inp out
-
 ```
 
 And now on to the juicy parts:
@@ -699,7 +686,6 @@ decodeFile inp out =
                       >-> PB.toHandle hOut
 
           runEffect pipeline
-
 ```
 
 #### Loading metadata
@@ -754,7 +740,6 @@ bytesToDirs = PP.mapFoldable byteToDirList
       where
         f i | testBit b i = DRight
             | otherwise   = DLeft
-
 ```
 
 It uses the *bits* package to turn an incoming `Word8` into a list of its
@@ -823,7 +808,6 @@ searchPT t = searchPT' t >~ cat
         searchPT' $ case dir of
                       DLeft  -> pt1
                       DRight -> pt2
-
 ```
 
 The logic is slightly cleaner; the gain isn’t that much, but just being able to
@@ -976,7 +960,6 @@ Basically, we don’t ever need `bsToBytes`; instead of
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L65-65
     let byteProducer = PB.fromHandle hIn >-> bsToBytes
-
 ```
 
 We can just write

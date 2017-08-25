@@ -25,7 +25,6 @@ data RandF a where
     FromRandomR  :: Random r => r -> r -> ( r  -> a) -> RandF a
     FromRandoms  :: Random r =>           ([r] -> a) -> RandF a
     FromRandomRs :: Random r => r -> r -> ([r] -> a) -> RandF a
-
 ```
 
 For those of you unfamiliar with GADT syntax, this is just basically specifying
@@ -91,7 +90,6 @@ runRandomF (FromRandom f)         = f . fst . random
 runRandomF (FromRandomR r0 r1 f)  = f . fst . randomR (r0, r1)
 runRandomF (FromRandoms f)        = f . randoms
 runRandomF (FromRandomRs r0 r1 f) = f . randomRs (r0, r1)
-
 ```
 
 We can try some of these out:
@@ -124,7 +122,6 @@ instance Functor RandF where
         FromRandomR r0 r1  f -> FromRandomR r0 r1  (h . f)
         FromRandoms        f -> FromRandoms        (h . f)
         FromRandomRs r0 r1 f -> FromRandomRs r0 r1 (h . f)
-
 ```
 
 ``` {.haskell}

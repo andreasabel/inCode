@@ -79,7 +79,6 @@ way is to use the simple inductive `Nat`:
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L26-27
 data Nat = Z | S Nat
          deriving Show
-
 ```
 
 You might have seen this type before…it gives us value-level natural numbers,
@@ -137,7 +136,6 @@ infixr 5 :#
 
 deriving instance Show a => Show (Vec n a)
 deriving instance Eq a => Eq (Vec n a)
-
 ```
 
 If you’ve never seen GADTs before, think of it as a way of declaring a type by
@@ -191,7 +189,6 @@ headV (x :# _)  = x
 
 tailV :: Vec (S n) a -> Vec n a
 tailV (_ :# xs) = xs
-
 ```
 
 Ah, the classic `head`/`tail` duo from the days pre-dating Haskell. `head` and
@@ -229,7 +226,6 @@ For that, we can use a type family, using the *TypeFamilies* extension (with
 type family (x :: Nat) + (y :: Nat) where
     'Z   + y = y
     'S x + y = 'S (x + y)
-
 ```
 
 A “type family” is like a type level function. Compare this to defining `(+)` on
@@ -240,7 +236,6 @@ the value level to the `Nat` *data* type:
 (+#) :: Nat -> Nat -> Nat       -- types!
 Z   +# y = y
 S x +# y = S (x +# y)
-
 ```
 
 Basically, we’re defining a new type-level function `(+)` on two types `x` and
@@ -252,7 +247,6 @@ this “addition” is actually addition. Now, let’s use it for `appendV`:
 appendV :: Vec n a -> Vec m a -> Vec (n + m) a
 appendV Nil       ys = ys
 appendV (x :# xs) ys = x :# appendV xs ys
-
 ```
 
 ``` {.haskell}
@@ -276,7 +270,6 @@ to try out).
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L7-8
 class Unfoldable v where
     unfold :: (b -> (a, b)) -> b -> v a
-
 ```
 
 We’re going to call `v` an `Unfoldable` if you can build a `v` from an
@@ -291,7 +284,6 @@ The list instance should make it more clear:
 instance Unfoldable [] where
     unfold f x0 = let (y, x1) = f x0
                   in  y : unfold f x1
-
 ```
 
 ``` {.haskell}
@@ -310,7 +302,6 @@ instance Unfoldable (Vec Z) where
 instance Unfoldable (Vec n) => Unfoldable (Vec (S n)) where
     unfold f x0 = let (y, x1) = f x0
                   in  y :# unfold f x1
-
 ```
 
 Take a moment to think about what these instances are doing.
@@ -346,7 +337,6 @@ fromListMaybes :: Unfoldable v => [a] -> v (Maybe a)
 fromListMaybes = unfold $ \l -> case l of
                                   []   -> (Nothing, [])
                                   x:xs -> (Just x , xs)
-
 ```
 
 ``` {.haskell}
@@ -378,7 +368,6 @@ but let’s write one on our own just for learning purposes:
 instance Functor (Vec n) where
     fmap _ Nil       = Nil
     fmap f (x :# xs) = f x :# fmap f xs
-
 ```
 
 For `Applicative`, it isn’t so simple. The Applicative instance is going to be
@@ -394,7 +383,6 @@ instance Applicative (Vec Z) where
 instance Applicative (Vec n) => Applicative (Vec (S n)) where
     pure x = x :# pure x
     (f :# fs) <*> (x :# xs) = f x :# (fs <*> xs)
-
 ```
 
 For `Vec Z`, it’s just `Nil`. For `Vec (S n)`…for pure, you need `x :#`
@@ -443,7 +431,6 @@ instance Traversable (Vec Z) where
 
 instance Traversable (Vec n) => Traversable (Vec (S n)) where
     traverse f (x :# xs) = liftA2 (:#) (f x) (traverse f xs)
-
 ```
 
 Note that we can only use `foldMap f xs` on `xs :: Vec n a`, if `Vec n` is a
@@ -475,7 +462,6 @@ Nothing
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L26-27
 fromListU :: (Unfoldable v, Traversable v) => [a] -> Maybe (v a)
 fromListU = sequence . fromListMaybes
-
 ```
 
 ``` {.haskell}
@@ -504,7 +490,6 @@ instance (Unfoldable (Vec n), Traversable (Vec n)) => L.IsList (Vec n a) where
                     Nothing -> error "Demanded vector from a list that was too short."
                     Just ys -> ys
     toList      = Data.Foldable.toList
-
 ```
 
 ``` {.haskell}
@@ -564,7 +549,6 @@ terms of it)
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L77-78
 class Index (n :: Nat) v where
     index :: Proxy n -> v a -> a
-
 ```
 
 Here, we can say that `n` and `v` are instances of `Index n v` if and only if
@@ -573,11 +557,13 @@ of type `v a` ever has an index at `n`, a `Nat`. (By the way, we need
 *MultiParamTypeClasses* to be able to make a type class with two parameters)
 
 So, `n ~ S Z` and `v ~ Vec (S (S Z)) a` has an instance, because you can get the
-$n = 1$ element (the second element) from *any* value of type `Vec (S (S Z)) a`
-(a length-two vector).
+![n = 1](https://latex.codecogs.com/gif.latex?n%20%3D%201 "n = 1") element (the
+second element) from *any* value of type `Vec (S (S Z)) a` (a length-two
+vector).
 
 But `n ~ S Z` and `v ~ Vec (S Z) a` does *not*. There are actually *no* length-1
-vectors that have a $1$ index (second element).
+vectors that have a ![1](https://latex.codecogs.com/gif.latex?1 "1") index
+(second element).
 
 Note that we use the `Proxy` trick we discussed, so that we can indicate somehow
 what index we really want. It is a trick that basically allows us to pass a
@@ -592,7 +578,6 @@ instance Index Z (Vec (S n)) where
 
 instance forall n m. Index n (Vec m) => Index (S n) (Vec (S m)) where
     index _ (_ :# xs) = index (Proxy :: Proxy n) xs
-
 ```
 
 The first case instance makes sense. We can definitely index at index `Z` (zero)
@@ -698,7 +683,6 @@ execute our code, or by adding a pragma:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L14-14
 {-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-}
-
 ```
 
 to the top of our file, along with our `LANGUAGE` pragmas. (Assuming, of course,
@@ -740,7 +724,6 @@ infixr 5 :#
 
 deriving instance Show a => Show (Vec n a)
 deriving instance Eq a => Eq (Vec n a)
-
 ```
 
 A little nicer, right? `Nil` is a `Vec 0 a`, and `x :# xs` is an element with a
@@ -764,7 +747,6 @@ So defining a `x > y` constraint is pretty straightforward:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L31-31
 type x > y = CmpNat x y ~ 'GT
-
 ```
 
 Note that we need the *ConstraintKinds* extension for this to work, as `1 > 2`
@@ -779,7 +761,6 @@ headV (x :# _)  = x
 
 tailV :: (n > 0) => Vec n a -> Vec (n - 1) a
 tailV (_ :# xs) = xs
-
 ```
 
 Magnificent!
@@ -791,8 +772,10 @@ ghci> headV (Nil :: Vec 0 ())
 
 Neat! The error, remember, is at *compile time*, and not at runtime. If we ever
 tried to do an unsafe head, our code wouldn’t even *compile*! The error message
-comes from the fact that we need $n > 0$, but we have $n = 0$ instead. We have
-`EQ`, but we need `GT`.
+comes from the fact that we need
+![n &gt; 0](https://latex.codecogs.com/gif.latex?n%20%3E%200 "n > 0"), but we
+have ![n = 0](https://latex.codecogs.com/gif.latex?n%20%3D%200 "n = 0") instead.
+We have `EQ`, but we need `GT`.
 
 There is one problem here, though — GHC gives us a warning for not pattern
 matching on `Nil`. But, if we do try to pattern match on `Nil`, we get a type
@@ -811,7 +794,6 @@ instantly write….
 appendV :: Vec n a -> Vec m a -> Vec (n + m) a
 appendV Nil       ys = ys
 appendV (x :# xs) ys = x :# appendV xs ys
-
 ```
 
 ``` {.haskell}
@@ -833,12 +815,13 @@ instance Unfoldable (Vec 0) where
 instance (Unfoldable (Vec (n - 1)), n > 0) => Unfoldable (Vec n) where
     unfold f x0 = let (y, x1) = f x0
                   in  y :# unfold f x1
-
 ```
 
 The translation is pretty mechanical, but I think that this new formulation
-looks…really nice, and really powerful. “If you can build a list from $n - 1$
-and $n > 0$, then you can build a list for $n$!
+looks…really nice, and really powerful. “If you can build a list from
+![n - 1](https://latex.codecogs.com/gif.latex?n%20-%201 "n - 1") and
+![n &gt; 0](https://latex.codecogs.com/gif.latex?n%20%3E%200 "n > 0"), then you
+can build a list for ![n](https://latex.codecogs.com/gif.latex?n "n")!
 
 Note that because our definitions of `replicateU`, `iterateU`, and
 `fromListMaybes` was polymorphic over all `Unfoldable`, we can actually re-use
@@ -902,7 +885,6 @@ instance (Unfoldable (Vec n), Traversable (Vec n)) => L.IsList (Vec n a) where
                     Nothing -> error "Demanded vector from a list that was too short."
                     Just ys -> ys
     toList      = Data.Foldable.toList
-
 ```
 
 (Remember, we use the `forall` here with *ScopedTypeVariables* to be able to say
@@ -928,10 +910,10 @@ ghci> [1,3..] :: Vec 5 Int
 ```
 
 I think, overall, this formulation gives a much nicer interface. Being able to
-just write $10$ is pretty powerful. The usage with *OverloadedLists* is pretty
-clean, too, especially when you can do things like `[1,3..] :: Vec 10 Int` and
-take full advantage of list syntax and succinct vector types. (Minding your
-runtime errors, of course)
+just write ![10](https://latex.codecogs.com/gif.latex?10 "10") is pretty
+powerful. The usage with *OverloadedLists* is pretty clean, too, especially when
+you can do things like `[1,3..] :: Vec 10 Int` and take full advantage of list
+syntax and succinct vector types. (Minding your runtime errors, of course)
 
 However, you do again get the problem that GHC is not able to do real
 completeness checking and asks for the `Nil` cases still of everything…but
@@ -944,8 +926,10 @@ Alternative Underlying Representations
 
 Recall that our `Vec` was basically identically the normal list type, with an
 extra field in the type. Due to type erasure, the two are represented exactly
-the same in memory. So we have $O(n)$ appends, $O(n)$ indexing, etc. Our type is
-essentially equal to
+the same in memory. So we have
+![O(n)](https://latex.codecogs.com/gif.latex?O%28n%29 "O(n)") appends,
+![O(n)](https://latex.codecogs.com/gif.latex?O%28n%29 "O(n)") indexing, etc. Our
+type is essentially equal to
 
 ``` {.haskell}
 newtype Vec :: Nat -> * -> * where
@@ -965,7 +949,8 @@ newtype Vec :: Nat -> * -> * where
 ```
 
 And, if you made sure to wrap everything with smart constructors, you now have
-*type safe* $O(1)$ random indexing!
+*type safe* ![O(1)](https://latex.codecogs.com/gif.latex?O%281%29 "O(1)") random
+indexing!
 
 (This is representation is similar to the one used by the
 *[linear](http://hackage.haskell.org/package/linear-1.18.0.1/docs/Linear-V.html)*

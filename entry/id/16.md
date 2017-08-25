@@ -82,7 +82,6 @@ Compare that with the linked list data type, which is a Stream with an Ending
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L7-7
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 data List a = Cons (a, List a) | Nil
-
 ```
 
 or, as is more traditionally written:
@@ -98,7 +97,6 @@ It’s pretty easy to build lists:
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 myList :: List Int
 myList = Cons ( 1, Cons ( 2, Cons (3, Nil) ) )
-
 ```
 
 which is just, in the more traditional (infix) form:
@@ -108,7 +106,6 @@ which is just, in the more traditional (infix) form:
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 myList' :: [Int]
 myList' = 1:(2:(3:[]))
-
 ```
 
 Let’s see if `myList` does what we want: (a list from 1 to 3):
@@ -157,7 +154,6 @@ myStream = streamFrom 1
   where
     streamFrom :: Int -> Stream Int
     streamFrom n = SCons ( n, streamFrom (n+1) )
-
 ```
 
 Cool! Let’s see if this `myStream` really does what we want, the same way we
@@ -215,7 +211,6 @@ but which the compiler can more easily optimize:
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L10-10
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 newtype Stream b = SCons { runStream :: (b, Stream b) }
-
 ```
 
 #### Automating Traversal
@@ -232,7 +227,6 @@ conversion into an infinite list.
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 streamToList :: Stream b -> [b]
 streamToList (SCons (x, xs)) = x : streamToList xs
-
 ```
 
 So now we can do:
@@ -259,7 +253,6 @@ testStream strm n = (y:ys, final)
 
 testStream_ :: Stream b -> Int -> [b]
 testStream_ = (fst .) . testStream
-
 ```
 
 ``` {.haskell}
@@ -288,7 +281,6 @@ This is made very apparent in our definition of `streamFrom`:
 -- interactive: https://www.fpcomplete.com/user/jle/machines
     streamFrom :: Int -> Stream Int
     streamFrom n = SCons ( n, streamFrom (n+1) )
-
 ```
 
 The “current state” whenever we call `streamFrom n` is `n`…the “next state” (the
@@ -313,7 +305,6 @@ charStream = charStreamFrom 65
   where
     charStreamFrom :: Int -> Stream Char
     charStreamFrom n = SCons ( chr n, charStreamFrom (n+1) )
-
 ```
 
 ``` {.haskell}
@@ -364,7 +355,6 @@ Let’s call it an Auto.
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-12
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 newtype Auto a b = ACons { runAuto :: a -> (b, Auto a b) }
-
 ```
 
 Now, instead of an `SCons` containing just a tuple (a head-tails), an `ACons`
@@ -396,7 +386,6 @@ myStreamAuto = streamAutoFrom 1
   where
     streamAutoFrom :: Int -> Auto a Int
     streamAutoFrom n = ACons $ \_ -> ( n, streamAutoFrom (n+1) )
-
 ```
 
 This is kind of a dumb example, but `myStreamAuto` is just the exact same as
@@ -449,7 +438,6 @@ settableAuto = counterFrom 1
     counterFrom n = ACons $ \reset ->
       let c = fromMaybe n reset
       in  ( c, counterFrom (c + 1) )
-
 ```
 
 Remember that `fromMaybe :: a -> Maybe a -> a` takes a “default” value, a Maybe
@@ -511,7 +499,6 @@ testAuto auto (x:xs)  = (y:ys, final)
 
 testAuto_ :: Auto a b -> [a] -> [b]
 testAuto_ a = fst . testAuto a
-
 ```
 
 Trying it out on `settableAuto`:
@@ -533,7 +520,6 @@ interactAuto a0 = do
     let (x,a1) = runAuto a0 (read inp)
     print x
     interactAuto a1
-
 ```
 
 ``` {.haskell}
@@ -593,7 +579,6 @@ isEvenAuto = isEvenAutoFrom 1
     isEvenAutoFrom n = ACons $ \reset ->
       let c = fromMaybe n reset
       in  ( even c, isEvenAutoFrom (c + 1) )
-
 ```
 
 So `isEvenAuto` is the same as `settableCounterFrom`, except instead of
@@ -623,8 +608,8 @@ clear.
 -   The “output” here is now a `Bool` that says whether or not the internal
     state is even.
 -   The “state” here is still that `n` (an `Int`), and was the same as in the
-    last example. But here it is more clear that the state is inaccessible
-    in general. We can only modify it in ways that the Auto *itself* allows our
+    last example. But here it is more clear that the state is inaccessible in
+    general. We can only modify it in ways that the Auto *itself* allows our
     “input” (in this case, a setter) to modify it. And we certainly can’t
     arbitrarily “read” it.
 
@@ -676,7 +661,6 @@ summer = sumFrom 0
     sumFrom n = ACons $ \input ->
       let s = n + input
       in  ( s , sumFrom s )
-
 ```
 
 ``` {.haskell}
@@ -709,7 +693,6 @@ autoFold op init = foldFrom init
     foldFrom x = ACons $ \input ->
       let y = x `op` input
       in  ( y, foldFrom y )
-
 ```
 
 (the `forall` is used with the [Scoped Type
@@ -738,7 +721,6 @@ accumulateStrings = autoFold (++) ""
 
 monoidAccum :: Monoid a => Auto a a
 monoidAccum = autoFold mappend mempty
-
 ```
 
 Cool, huh?
@@ -847,16 +829,16 @@ ghci> testAuto_ (onFor even 3) [1,1,2,1,1,1,1,4,1,6,1,1,1,1]
     holds a
     [Map](http://hackage.haskell.org/package/containers-0.5.4.0/docs/Data-Map.html)
     (a key-value store) — you can give it `[Command][]` data types that tell it
-    to insert, lookup, and delete values. However, it enforces a maximum
-    of items.
+    to insert, lookup, and delete values. However, it enforces a maximum of
+    items.
 
     The main thing to note here is that you get to completely encapsulate your
-    “state”, and allow it only to be “modified” or “viewed” under your
-    own terms. In OOP terms, it is like exposing only a few public methods to
-    modify your private state with discrimination. If you were passed an
-    `autoMap` with items already inside, you would have no way to have full
-    “access” to the map — you would never be able to perform general operations
-    (such as getting a list of all of the keys).
+    “state”, and allow it only to be “modified” or “viewed” under your own
+    terms. In OOP terms, it is like exposing only a few public methods to modify
+    your private state with discrimination. If you were passed an `autoMap` with
+    items already inside, you would have no way to have full “access” to the map
+    — you would never be able to perform general operations (such as getting a
+    list of all of the keys).
 
 ``` {.haskell}
 ghci> testAuto_ (autoMap 3)
@@ -896,7 +878,6 @@ prefix form of `(->)` a lot from now on)
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L181-182
 maybeIsEven :: (->) (Maybe Int) Bool
 maybeIsEven = even . fromMaybe 1
-
 ```
 
 `maybeIsEven` returns `True` when value inside the `Just` is even, or `False` if

@@ -199,17 +199,17 @@ In case you were wondering, here is an elaboration :D
     forget the `Monad` instance, too.
 
 -   Streams give you no luck, either. The easiest way to see is by considering
-    the analogous `Monad` instance, where `join` is the
-    straight-up concatenation. `m >>= return == m` is clearly violated. If `m`
-    is an infinite list, `fmap return` gives you an infinite list of infinite
-    lists, “joining”/concatenating them back will just give you an infinite list
-    of the first item in `m`.
+    the analogous `Monad` instance, where `join` is the straight-up
+    concatenation. `m >>= return == m` is clearly violated. If `m` is an
+    infinite list, `fmap return` gives you an infinite list of infinite lists,
+    “joining”/concatenating them back will just give you an infinite list of the
+    first item in `m`.
 
     To put succincently, for `Stream`, `concat == head`.
 
--   Lists can have the `Applicative` instance fine, but not the
-    `Monad` instance. Here we assume that zipping and “getting the diagonal” go
-    only as “far as possible”, and stop when one of the lists is too short.
+-   Lists can have the `Applicative` instance fine, but not the `Monad`
+    instance. Here we assume that zipping and “getting the diagonal” go only as
+    “far as possible”, and stop when one of the lists is too short.
 
     This one is a little trickier, but the weakness is when you have lists of
     lists of lists of different lengths.

@@ -208,8 +208,8 @@ Nothing
 
 **Aside**
 
-1.  Remember, we specify/construct parsers as `P f`, where `f` is the
-    parsing function.
+1.  Remember, we specify/construct parsers as `P f`, where `f` is the parsing
+    function.
 2.  `_` is a wildcard in Haskell; `returnNothing` is a function that takes
     *anything* and returns `Nothing`.
 
@@ -499,8 +499,8 @@ make sense that our Parser object is a functor? The `Parser Int` object doesn’
 Well…it kind of “does”…in two ways, sorta kinda maybe.
 
 1.  You could say that a `Parser Int` “contains” the to-be-parsed integer.
-2.  You could say that a `Parser Int` “contains” the **idea** of
-    an integer…abstractly. Like, whoa, man.
+2.  You could say that a `Parser Int` “contains” the **idea** of an
+    integer…abstractly. Like, whoa, man.
 
 So…does it make sense to apply a function “inside” a `Parser a`? The answer is
 yes!
@@ -569,11 +569,10 @@ What just happened here?
     of a succesful parse. Basically, `digitToInt <$> digit` is a *new parser*
     that succeeds on digit characters, returning an integer.
 3.  `(*2) <$> (digitToInt <$> digit)` is the result of applying `(*2)` (the
-    doubling function) to `digitToInt <$> digit`, the
-    return-digit-as-int parser. The `(*2) <$>` doubles the result of the
-    return-digit-as-int parser. Essentially, the entire expression is a *new
-    parser* that succeeds on digit character, returning the doubled integer as
-    the parse result.
+    doubling function) to `digitToInt <$> digit`, the return-digit-as-int
+    parser. The `(*2) <$>` doubles the result of the return-digit-as-int parser.
+    Essentially, the entire expression is a *new parser* that succeeds on digit
+    character, returning the doubled integer as the parse result.
 
 \*Phew\*. That was a conceptual doozy. But this seems like a good path. Do you
 see what we did? We turned old, boring parsers into new, interesting parsers by

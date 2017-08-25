@@ -80,7 +80,6 @@ putPT (PTNode pt1 pt2) = do
     put False                   -- signify we have a node
     put pt1
     put pt2
-
 ```
 
 This all should be fairly readable and self-explanatory.
@@ -114,7 +113,6 @@ getPT = do
     if isLeaf
       then PTLeaf <$> get
       else PTNode <$> get <*> get
-
 ```
 
 This also shouldn’t be too bad!
@@ -156,7 +154,6 @@ And finally, to tie it all together:
 instance Binary a => Binary (PreTree a) where
     put = putPT
     get = getPT
-
 ```
 
 ### Testing it out
@@ -233,7 +230,6 @@ data Direction = DLeft
                deriving (Show, Eq, Generic)
 
 type Encoding = [Direction]
-
 ```
 
 Eventually, an `Encoding` will be turned into a `ByteString`, with `DLeft`
@@ -259,7 +255,6 @@ findPT pt0 x = go pt0 []
                             | otherwise = Nothing
     go (PTNode pt1 pt2) enc = go pt1 (DLeft  : enc) <|>
                               go pt2 (DRight : enc)
-
 ```
 
 The algorithm goes:
@@ -313,7 +308,6 @@ ptTable pt = go pt []
     go (PTLeaf x) enc       = x `M.singleton` reverse enc
     go (PTNode pt1 pt2) enc = go pt1 (DLeft  : enc) <>
                               go pt2 (DRight : enc)
-
 ```
 
 We do some sort of fancy depth-first “map” over all of the leaves, keeping track
@@ -331,7 +325,6 @@ findPT pt0 x = go pt0 []
                             | otherwise = Nothing
     go (PTNode pt1 pt2) enc = go pt1 (DLeft  : enc) <|>
                               go pt2 (DRight : enc)
-
 ```
 
 Except instead of doing a “short-circuit combination” with `(<|>)`, we do a
@@ -347,7 +340,6 @@ simple and performant:
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 lookupPTTable :: Ord a => Map a Encoding -> a -> Maybe Encoding
 lookupPTTable = flip M.lookup
-
 ```
 
 given, of course, that we generate our table first.
@@ -379,7 +371,6 @@ encodeAll :: Ord a => PreTree a -> [a] -> Maybe Encoding
 encodeAll pt xs = concat <$> sequence (map (lookupPTTable tb) xs)
   where
     tb = ptTable pt
-
 ```
 
 This is a bit dense! But I’m sure that you are up for it.
@@ -438,7 +429,6 @@ decodePT (PTNode pt1 pt2) (d:ds) = case d of
                                      DLeft  -> decodePT pt1 ds
                                      DRight -> decodePT pt2 ds
 decodePT (PTNode _ _)     []     = Nothing
-
 ```
 
 The logic should seem pretty familiar. The main algorithm involves going down
@@ -485,7 +475,6 @@ Using `unfoldr`, we can write a `decodeAll`:
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 decodeAll :: PreTree a -> Encoding -> [a]
 decodeAll pt = unfoldr (decodePT pt)
-
 ```
 
 ``` {.haskell}
@@ -512,7 +501,6 @@ testTree xs = decoded
       pt  <- runBuildTree xs
       enc <- encodeAll pt xs
       return (decodeAll pt enc)
-
 ```
 
 (Again, refer to my
@@ -579,7 +567,6 @@ singleton tree. We can write a “safe” `decodeAll`:
 decodeAll' :: PreTree a -> Encoding -> Maybe [a]
 decodeAll' (PTLeaf _) _   = Nothing
 decodeAll' pt         enc = Just $ unfoldr (decodePT pt) enc
-
 ```
 
 In doing this, we don’t exactly “fix” the problem…we only defer responsibility.
@@ -600,7 +587,6 @@ testTree' xs = do
     pt  <- runBuildTree xs
     enc <- encodeAll pt xs
     decodeAll' pt enc
-
 ```
 
 So we can now quickcheck:

@@ -148,7 +148,6 @@ We can implement our vision for `OpaqueNet` as an “existential” wrapper over
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L110-111
 data OpaqueNet :: Nat -> Nat -> * where
     ONet :: Network i hs o -> OpaqueNet i o
-
 ```
 
 So, if you have `net :: Network 6 '[10,6,3] 2`, you can create
@@ -172,7 +171,6 @@ numHiddens (ONet n) = go n
     go = \case
         O _      -> 0
         _ :&~ n' -> 1 + go n'
-
 ```
 
 With the *ScopedTypeVariables* extension, we can even bring `hs` back into
@@ -321,7 +319,6 @@ randomNet' = \case
 randomNet :: forall m i hs o. (MonadRandom m, KnownNat i, SingI hs, KnownNat o)
           => m (Network i hs o)
 randomNet = randomNet' sing
-
 ```
 
 We use `sing :: SingI hs => Sing hs` to go call the `Sing hs ->`-style function
@@ -386,7 +383,6 @@ randomONet :: (MonadRandom m, KnownNat i, KnownNat o)
            -> m (OpaqueNet i o)
 randomONet hs = case toSing hs of
                   SomeSing ss -> ONet <$> randomNet' ss
-
 ```
 
 This process of bringing a term-level value into the type level is known in
@@ -404,7 +400,6 @@ main = do
       ONet (net :: Network 10 hs 3) -> do
         print net
         -- blah blah stuff with our dynamically generated net
-
 ```
 
 #### The Boundary
@@ -475,7 +470,6 @@ it needs.
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L154-154
 type OpaqueNet' i o r = (forall hs. Network i hs o -> r) -> r
-
 ```
 
 “Tell me how you would make an `r` if you had a `Network i hs o` (that works for
@@ -508,7 +502,6 @@ numHiddens' oN = oN go
         _ :&~ n' -> 1 + go n'
 --          :: ((forall hs. Network i hs o -> Int) -> Int)
 --          -> Int
-
 ```
 
 This “continuation transformation” is formally known as **skolemization**.[^4]
@@ -519,7 +512,6 @@ We can “wrap” a `Network i hs o` into an `OpaqueNet' i o r`:
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L156-157
 oNet' :: Network i hs o -> OpaqueNet' i o r
 oNet' n = \f -> f n
-
 ```
 
 Let’s write a version of `randomONet` that returns a continuation-style
@@ -561,7 +553,6 @@ withRandomONet' :: (MonadRandom m, KnownNat i, KnownNat o)
 withRandomONet' hs f = withSomeSing hs $ \ss -> do
                          net <- randomNet' ss
                          f net
-
 ```
 
 We can use it to do the same things we used the constructor-based existential
@@ -576,7 +567,6 @@ main' = do
     withRandomONet' hs $ \(net :: Network 10 hs 3) -> do
       print net
       -- blah blah stuff with our dynamically generated net
-
 ```
 
 Like the case statement pattern match represented the lexical “wall”/“boundary”
@@ -770,7 +760,6 @@ data Weights i o = W { wBiases :: !(R o)
   deriving (Show, Generic)
 
 instance (KnownNat i, KnownNat o) => Binary (Weights i o)
-
 ```
 
 For simple types like `Weights`, which simply contain serializable things, the
@@ -800,7 +789,6 @@ putNet :: (KnownNat i, KnownNat o)
 putNet = \case
     O w     -> put w
     w :&~ n -> put w *> putNet n
-
 ```
 
 If it’s an `O w`, just serialize the `w`. If it’s a `w :&~ net`, serialize the
@@ -816,7 +804,6 @@ getNet :: forall i hs o. (KnownNat i, KnownNat o)
 getNet = \case
     SNil            ->     O <$> get
     SNat `SCons` ss -> (:&~) <$> get <*> getNet ss
-
 ```
 
 `getNet` doesn’t need flags because we already *know* how many `:&~` layers to
@@ -838,7 +825,6 @@ input — that’d change the arity/type of the function. We have to switch to
 instance (KnownNat i, SingI hs, KnownNat o) => Binary (Network i hs o) where
     put = putNet
     get = getNet sing
-
 ```
 
 ### Serializating `OpaqueNet`
@@ -863,7 +849,6 @@ hiddenStruct = \case
     _ :&~ (n' :: Network h hs' o)
            -> natVal (Proxy @h)
             : hiddenStruct n'
-
 ```
 
 Recall that `natVal :: KnownNat n => Proxy n -> Integer` returns the value-level
@@ -888,7 +873,6 @@ putONet :: (KnownNat i, KnownNat o)
 putONet (ONet net) = do
     put (hiddenStruct net)
     putNet net
-
 ```
 
 “Put the structure (as a binary flag), and then put the network itself.”
@@ -904,7 +888,6 @@ getONet = do
     hs <- get
     withSomeSing hs $ \ss ->
       ONet <$> getNet ss
-
 ```
 
 We load our flag, reify it, and once we’re back in the typed land again, we can
@@ -918,7 +901,6 @@ Our final instance:
 instance (KnownNat i, KnownNat o) => Binary (OpaqueNet i o) where
     put = putONet
     get = getONet
-
 ```
 
 And, of course, we used the constructor-style existential this whole time

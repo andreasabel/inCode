@@ -209,9 +209,9 @@ Some side notes
     ever directly work with the IO type itself.
 
 -   For those confused at this point there are some appropriate times to use
-    “the X monad”. It’s in the cases where you take advantage of the
-    monadic interface. Just like you call an array an iterator when you use the
-    Iterator interface. Here are some examples:
+    “the X monad”. It’s in the cases where you take advantage of the monadic
+    interface. Just like you call an array an iterator when you use the Iterator
+    interface. Here are some examples:
 
     -   “I have to print a string”: No; use the “primitive” `putStrLn`.
     -   “I have to turn an IO action returning an `Int` into an IO action
@@ -228,8 +228,8 @@ Some side notes
     -   “I have to do line-by-line constant-memory text processing of a large
         file”: No; please use a streaming combinator library like *pipes* or
         *conduit*. (Working directly with) the `IO` type is actually notoriously
-        bad at this. Don’t use it; and of course, don’t use its monad
-        instance either.
+        bad at this. Don’t use it; and of course, don’t use its monad instance
+        either.
     -   “I have to directly use the result of one IO action in order to decide
         which IO action should happen next”: Yes, this is a use case for IO’s
         monadic interface.
@@ -241,6 +241,7 @@ Some side notes
         something like that.
     -   “What is a word that begins with I and rhymes with ‘Bio Monad’?”: Yes,
         IO Monad.
+
 -   **Edit**: So a lot of people seem to be getting the impression that I
     advocate not using the word “monad” to describe things like “binding”
     expressions, do blocks, using `(>>=)` with `IO`, etc. I am not really quite

@@ -91,8 +91,8 @@ with a few updates.
     [vagrant-haskell-heroku](https://bitbucket.org/puffnfresh/vagrant-haskell-heroku)
     project from BitBucket. This is the vagrant project that will set up
     everything you need to build and deploy to Heroku — an installation of GHC,
-    the Haskell Platform, and the Heroku Toolbelt, all on a 64 bit Ubuntu
-    10.04 image.
+    the Haskell Platform, and the Heroku Toolbelt, all on a 64 bit Ubuntu 10.04
+    image.
 
 4.  Edit the `Vagrantfile`; on the line starting with `chef.json.merge!`, change
     the values to the versions of [GHC](http://www.haskell.org/ghc/) and
@@ -154,8 +154,8 @@ go about it.
         This is really handy for transferring things like ssh keys, but you can
         also use this to get your project files onto your guest machine. Simply
         copy them over somehow onto a folder in the vagrant directory, and you
-        can then access them on your virtual machine and do what you want
-        with them.
+        can then access them on your virtual machine and do what you want with
+        them.
 
         However, if you want to keep your files up to date, you’ll have to do
         this manually.
@@ -205,8 +205,8 @@ Heroku?
 
 1.  First, you have to commit your binary to version control. Some people
     recommend using a separate branch for this, but because your guest machine’s
-    project directory is kind of a transient thing, this really isn’t
-    that necessary.
+    project directory is kind of a transient thing, this really isn’t that
+    necessary.
 
     You can simply forcefully add the file to git as it is, because chances are
     you have it already in your `.gitignore`:
@@ -294,8 +294,8 @@ arise, here are some things that it might be important to pay attention to.
 
     Your basic workflow should consist of pushing your project files to your
     repository on your host machine, and `vagrant ssh`-ing onto your guest
-    machine and executing one or two commands to automate the entire
-    re-deploy process.
+    machine and executing one or two commands to automate the entire re-deploy
+    process.
 
 -   Be aware of good virtual machine management practices. Suspend your machine
     whenever you are not using it:

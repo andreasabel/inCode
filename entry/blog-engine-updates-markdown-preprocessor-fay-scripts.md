@@ -44,7 +44,6 @@ makeMove p = do
         p' = p ++ [next]
     guard $ safePlan p'
     return p'
-
 ```
 
 (If you’re reading this on the actual website, mouse over or click them to see
@@ -109,7 +108,6 @@ sampleSpec = do
     return $ SampleSpec filePath live' keywords
   where
     noSpaces = manyTill anyChar (space <|> ' ' <$ eof)
-
 ```
 
 The code to actually find the right code block to paste was complicated and
@@ -165,7 +163,6 @@ appendTopLinks = do
   return ()
   where
     topLink = "<a href='#title' class='top-link'>top</a>"
-
 ```
 
 As you can see, some of the method calls in fay-jquery seem a bit backwards…I

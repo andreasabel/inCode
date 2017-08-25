@@ -90,7 +90,6 @@ data Task = Task { taskDescr     :: String
                  } deriving (Show, Generic)
 
 instance Serialize Task -- from Data.Serialize, from the cereal library
-
 ```
 
 We have a type to represent our inputs, `TodoInp`, which can be an “add” command
@@ -180,7 +179,6 @@ dynamic collection of tasks!
 taskCollection :: Monad m
                => Auto m (IntMap TaskCmd, Blip [String]) (IntMap Task)
 taskCollection = dynMapF initTask CNop
-
 ```
 
 If we wanted to send in the command `CModify "hey!"` to the task whose
@@ -205,7 +203,6 @@ initTask descr = accum f (Just (Task descr False))
                       CModify descr            -> Just t { taskDescr = descr }
                       CNop                     -> Just t
     f Nothing _   = Nothing
-
 ```
 
 See that our `Auto` “turns off” by outputting `Nothing`. That’s interval
@@ -248,7 +245,6 @@ getModEvts _            = Nothing
 getMassEvts :: ([TaskID], TodoInp) -> Maybe (IntMap TaskCmd)
 getMassEvts (allIds, IAll te) = Just $ IM.fromList (map (,te) allIds)
 getMassEvts _                 = Nothing
-
 ```
 
 `getAddEvts`, when used with `emitJusts`, will siphon off all `IAdd` commands as
@@ -301,7 +297,6 @@ todoApp = proc inpEvt -> do
         taskMap <- taskCollection -< (taskCommands, newTaskB)
 
     id -< taskMap
-
 ```
 
 To read the proc block, it does help to sort of see all of the lines as english
@@ -322,8 +317,8 @@ statements of what things “are”.
         `modTaskB` or `massTaskB` emits.
 
 3.  `taskCommands` is a map of addressed commands for each task. It’s whatever
-    `allInpB` emits, when it does emit…or just `IM.empty` (an empty map) when
-    it doesn’t.
+    `allInpB` emits, when it does emit…or just `IM.empty` (an empty map) when it
+    doesn’t.
 
 4.  `taskMap` is the map of tasks that we get from our `taskCollection` updater,
     which manages a collection of tasks. `taskCollection` needs the commands for
@@ -412,7 +407,6 @@ main = do
                         . perBlip (formatTodo <$> todoApp)
                           -- emit when input is parseable
                         . emitJusts parseInp
-
 ```
 
 `interactAuto` runs an `Interval` by feeding it in strings from stdin printing

@@ -61,7 +61,6 @@ sounds like the perfect candidate for an Algebraic Data Structure.
 data PreTree a = PTLeaf a
                | PTNode (PreTree a) (PreTree a)
                deriving (Show, Eq, Generic)
-
 ```
 
 We leave the type parameterized on `a` (which is like a template/generic in
@@ -92,7 +91,6 @@ simplify it as:
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 makePT :: a -> PreTree a
 makePT = PTLeaf
-
 ```
 
 Which does the same thing. Basically, `PTLeaf` is already a function
@@ -124,7 +122,6 @@ Which, from what we saw before, can just be written as:
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 mergePT :: PreTree a -> PreTree a -> PreTree a
 mergePT = PTNode
-
 ```
 
 ``` {.haskell}
@@ -153,7 +150,6 @@ includes both a `PreTree` and an (integer) weight.
 data Weighted a = WPair { _wWeight :: Int
                         , _wItem   :: a
                         } deriving (Show, Functor)
-
 ```
 
 (Code for the Weighted module is [available for
@@ -175,7 +171,6 @@ This weighted `PreTree` is pretty useful, let’s give it an alias/typedef:
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L54-54
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 type WeightedPT a = Weighted (PreTree a)
-
 ```
 
 Let’s make the same functions for `WeightedPT` as we did for `PreTree`:
@@ -185,7 +180,6 @@ Let’s make the same functions for `WeightedPT` as we did for `PreTree`:
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 makeWPT :: Int -> a -> WeightedPT a
 makeWPT w = WPair w . makePT
-
 ```
 
 The above basically says “to make a `WeightedPT` with weight `w`, first `makePT`
@@ -207,7 +201,6 @@ We will also want to merge two `WeightedPT`s:
 mergeWPT :: WeightedPT a -> WeightedPT a -> WeightedPT a
 mergeWPT (WPair w1 pt1) (WPair w2 pt2)
     = WPair (w1 + w2) (mergePT pt1 pt2)
-
 ```
 
 so that the total weight is the sum of the weights of the two subtrees.
@@ -224,7 +217,6 @@ instance Eq (Weighted a) where
 
 instance Ord (Weighted a) where
     compare (WPair w1 _) (WPair w2 _) = compare w1 w2
-
 ```
 
 Which says that `Weighted a` is an `Ord` (is orderable/comparable), and to
@@ -284,7 +276,6 @@ This is a new type of binary tree, so let’s define a new data type:
 data SkewHeap a = SEmpty
                 | SNode a (SkewHeap a) (SkewHeap a)
                 deriving (Show, Eq, Foldable)
-
 ```
 
 Creating a new `SkewHeap` with one item:
@@ -294,7 +285,6 @@ Creating a new `SkewHeap` with one item:
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 makeSH :: a -> SkewHeap a
 makeSH x = SNode x SEmpty SEmpty
-
 ```
 
 Popping the root off of a skew tree:
@@ -305,7 +295,6 @@ Popping the root off of a skew tree:
 popSH :: Ord a => SkewHeap a -> (Maybe a, SkewHeap a)
 popSH SEmpty          = (Nothing, SEmpty)
 popSH (SNode r h1 h2) = (Just r , mergeSH h1 h2)
-
 ```
 
 We make it return a potential result (`Maybe a`), and the resulting new popped
@@ -324,7 +313,6 @@ mergeSH h SEmpty = h
 mergeSH hA@(SNode xA lA rA) hB@(SNode xB lB rB)
     | xA < xB    = SNode xA (mergeSH rA hB) lA
     | otherwise  = SNode xB (mergeSH rB hA) lB
-
 ```
 
 Hopefully this is very pleasing to read — it reads a lot like a specification,
@@ -333,8 +321,8 @@ or a math formula:
 1.  Merging any skew heap with an empty heap is that same skew heap.
 2.  When merging two heaps, the new heap is an `SNode` with the smaller root,
     whose children are the merge of the smaller tree and the original children.
-    (Admittedly, the math/code is a bit more expressive than English in
-    this case)
+    (Admittedly, the math/code is a bit more expressive than English in this
+    case)
 
 (Remember that in our case, the *lower* value/weight is the *higher* priority.)
 
@@ -365,7 +353,6 @@ popPQ (PQ h) = (res, PQ h')
 
 sizePQ :: PQueue a -> Int
 sizePQ (PQ h) = length (toList h)
-
 ```
 
 (Notice `toList`, from the
@@ -398,7 +385,6 @@ First, we need to have some sort of frequency table. We will use
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L19-19
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 type FreqTable a = Map a Int
-
 ```
 
 and we’ll import the operations from `Data.Map.Strict` qualified:
@@ -417,7 +403,6 @@ listFreq :: Ord a => [a] -> FreqTable a
 listFreq = foldr f M.empty
   where
     f x m = M.insertWith (+) x 1 m
-
 ```
 
 This says that `listFreq` is a fold, where you start with `M.empty` (an empty
@@ -443,7 +428,6 @@ listQueue :: Ord a => [a] -> PQueue (Weighted a)
 listQueue = M.foldrWithKey f emptyPQ . listFreq
   where
     f k v pq = insertPQ (WPair v k) pq
-
 ```
 
 ``` {.haskell}
@@ -665,7 +649,6 @@ runListFreq xs = execState listFreqState M.empty
 
     addFreq :: a -> State (FreqTable a) ()
     addFreq x = modify (M.insertWith (+) x 1)
-
 ```
 
 `execState` runs the given `State` computation with the given initial state, and
@@ -690,7 +673,6 @@ listQueueState xs = M.traverseWithKey addNode (listFreq xs) >> return ()
 
 runListQueue :: Ord a => [a] -> PQueue (WeightedPT a)
 runListQueue xs = execState (listQueueState xs) emptyPQ
-
 ```
 
 In these cases, the monadic usage isn’t quite necessary or useful on its own. A
@@ -786,7 +768,6 @@ buildTree = do
 
 runBuildTree :: Ord a => [a] -> (Maybe (PreTree a))
 runBuildTree xs = evalState (listQueueState xs >> buildTree) emptyPQ
-
 ```
 
 Note that due to our uncanny foresight,

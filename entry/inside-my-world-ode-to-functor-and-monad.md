@@ -69,7 +69,6 @@ headMaybe (x:_) = Just x
 halveMaybe :: Int -> Maybe Int
 halveMaybe x | x `mod` 2 == 0 = Just (x `div` 2)
              | otherwise      = Nothing
-
 ```
 
 <div class="note">
@@ -130,7 +129,6 @@ square = (^ 2)
 
 showInt :: Int -> String
 showInt = show
-
 ```
 
 But…I can’t do these things on `Maybe Int`!
@@ -177,7 +175,6 @@ certaintify Nothing  = error "Nothing was there, you fool!"
 certaintifyWithDefault :: a -> Maybe a -> a
 certaintifyWithDefault _ (Just x) = x
 certaintifyWithDefault d Nothing  = d
-
 ```
 
 And then you can just willy-nilly use your normal `Int -> Int` functions on what
@@ -252,7 +249,6 @@ inMaybe f = liftedF
   where
     liftedF (Just x) = Just (f x)
     liftedF Nothing  = Nothing
-
 ```
 
 What can we do with it?
@@ -279,7 +275,6 @@ We could even write our `ageFromId`:
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
 ageFromId :: ID -> Maybe Int
 ageFromId i = (inMaybe age) (personFromId i)
-
 ```
 
 Now we are no longer afraid of dealing with uncertainty. It’s a scary realm, but
@@ -466,7 +461,6 @@ liftInput f = liftedF
   where
     liftedF Nothing  = Nothing
     liftedF (Just x) = f x
-
 ```
 
 ``` {.haskell}
@@ -488,7 +482,6 @@ in our world*, without leaving our world of uncertainty!
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
 halfOfAge :: ID -> Maybe Int
 halfOfAge i = (liftInput halveMaybe) (ageFromId i)
-
 ```
 
 ### Monad
@@ -684,7 +677,6 @@ futureHead   :: (Reader [a]) a
 -- futureOdd: A future `Bool` that will be whether the `Int` it is waiting
 --      for is odd or not.
 futureOdd    :: (Reader Int) Bool
-
 ```
 
 `futureLength` is a “future `Int`”; an `Int` waiting (for an `[a]`) to be
@@ -740,7 +732,6 @@ futureShorterThan n = fmap (< n) futureLength
 
 futureShorterThan5 :: (Reader [a]) Bool
 futureShorterThan5 = futureShorterThan 5
-
 ```
 
 ``` {.haskell}
@@ -780,7 +771,6 @@ Hm. Let’s try this out on a future `Int` we have…we can use
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
 futureShorterThanHead :: (Reader [Int]) Bool
 futureShorterThanHead = futureShorterThan =<< futureHead
-
 ```
 
 So, we are applying `futureShorterThan` to the `Int` we got from `futureHead`.
@@ -870,7 +860,6 @@ in that file.
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/io.hs#L19-19
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
 wc :: String -> IO Int
-
 ```
 
 So `wc "file.txt"` would evaluate to a computation that, when executed by a
