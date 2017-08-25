@@ -1457,6 +1457,10 @@ corresponding length-singleton (\texttt{l}), and then we give \texttt{f} the
 ``correct'' length singleton of our complete vector (\texttt{SS\ l}) and the
 correct complete vector (\texttt{x\ :+\ ys})
 
+One nice property where (in contrast with our previous non-structural
+\texttt{withVec}) is that GHC ensures that the length of the vector we give to
+\texttt{f} is actually what we claim it is.
+
 \subsection{Verifying properties}\label{verifying-properties-1}
 
 We can create some corresponding example of \texttt{exactLength} using the exact
@@ -1476,10 +1480,11 @@ the vector itself:
 \end{Shaded}
 
 The type of \texttt{vecLength\ ::\ Vec\ n\ a\ -\textgreater{}\ Sing\ n} says
-that it is possible, from the structure of the vector given, to get a witness to
-its length. And, because the structure of the vector and the structure of the
-length type are so similar, this is possible! (Note that this is not possible
-for our non-structural ``wrapped'' \texttt{Vec}, without some unsafe operations)
+that it is possible, from the structure of the vector given alone, to get a
+witness to its length. And, because the structure of the vector and the
+structure of the length type are so similar, this is possible! (Note that this
+is not possible for our non-structural ``wrapped'' \texttt{Vec}, without some
+unsafe operations)
 
 Now, our code will be identical to the code for our wrapped/non-structural
 vectors, using \texttt{\%\textasciitilde{}} and \texttt{Decision} and
@@ -1489,7 +1494,7 @@ vectors, using \texttt{\%\textasciitilde{}} and \texttt{Decision} and
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L112-118}
 \OtherTok{exactLength_ ::} \DataTypeTok{Sing}\NormalTok{ m }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ m a)}
-\NormalTok{exactLength_ sM v }\FunctionTok{=} \KeywordTok{case}\NormalTok{ sM }\FunctionTok{%~}\NormalTok{ (vecLength v) }\KeywordTok{of}
+\NormalTok{exactLength_ sM v }\FunctionTok{=} \KeywordTok{case}\NormalTok{ sM }\FunctionTok{%~}\NormalTok{ vecLength v }\KeywordTok{of}
     \DataTypeTok{Proved} \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Just}\NormalTok{ v}
     \DataTypeTok{Disproved}\NormalTok{ _ }\OtherTok{->} \DataTypeTok{Nothing}
 
@@ -1525,7 +1530,9 @@ want and the vector, so it might be fun to look at this version instead --
 This is another way you can take advantage of the \emph{structure} of the length
 type. Here, we explicitly take advantage of the inductive structure of the
 \texttt{Nat} type and how it matches with the structure of the \texttt{Vec}
-type, and do bold things with it!
+type, and do bold things with it!\footnote{Note, however, that if you unroll the
+  definition of \texttt{\%\textasciitilde{}} for \texttt{Nat}, you pretty much
+  get the exact same thing.}
 
 But I digress. Like in the last section, checking for a given length is
 literally the least interesting property you can check for. But, again, the same

@@ -1175,6 +1175,10 @@ the tail `xs` into a vector (`ys`) and its corresponding length-singleton (`l`),
 and then we give `f` the “correct” length singleton of our complete vector
 (`SS l`) and the correct complete vector (`x :+ ys`)
 
+One nice property where (in contrast with our previous non-structural `withVec`)
+is that GHC ensures that the length of the vector we give to `f` is actually
+what we claim it is.
+
 ### Verifying properties
 
 We can create some corresponding example of `exactLength` using the exact same
@@ -1192,10 +1196,10 @@ vecLength = \case
 ```
 
 The type of `vecLength :: Vec n a -> Sing n` says that it is possible, from the
-structure of the vector given, to get a witness to its length. And, because the
-structure of the vector and the structure of the length type are so similar,
-this is possible! (Note that this is not possible for our non-structural
-“wrapped” `Vec`, without some unsafe operations)
+structure of the vector given alone, to get a witness to its length. And,
+because the structure of the vector and the structure of the length type are so
+similar, this is possible! (Note that this is not possible for our
+non-structural “wrapped” `Vec`, without some unsafe operations)
 
 Now, our code will be identical to the code for our wrapped/non-structural
 vectors, using `%~` and `Decision` and `Refl`:
@@ -1203,7 +1207,7 @@ vectors, using `%~` and `Decision` and `Refl`:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L112-118
 exactLength_ :: Sing m -> Vec n a -> Maybe (Vec m a)
-exactLength_ sM v = case sM %~ (vecLength v) of
+exactLength_ sM v = case sM %~ vecLength v of
     Proved Refl -> Just v
     Disproved _ -> Nothing
 
@@ -1236,7 +1240,7 @@ exactLengthInductive = exactLengthInductive_ sing
 This is another way you can take advantage of the *structure* of the length
 type. Here, we explicitly take advantage of the inductive structure of the `Nat`
 type and how it matches with the structure of the `Vec` type, and do bold things
-with it!
+with it![^2]
 
 But I digress. Like in the last section, checking for a given length is
 literally the least interesting property you can check for. But, again, the same
@@ -1296,7 +1300,7 @@ takeVec = \case
 ```
 
 And, we can combine that with our `atLeast` function, to be able to take
-(maybe)[^2] from any vector:
+(maybe)[^3] from any vector:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L160-164
@@ -1331,7 +1335,10 @@ feedback, suggestions, or questions!
     `TypeNats`, the `Nat` kind reifies/reflects with `Natural` from
     *[Numeric.Natural](http://hackage.haskell.org/package/base/docs/Numeric-Natural.html)*.
 
-[^2]: Remember the whole point of this exercise — that the `Maybe` is required
+[^2]: Note, however, that if you unroll the definition of `%~` for `Nat`, you
+    pretty much get the exact same thing.
+
+[^3]: Remember the whole point of this exercise — that the `Maybe` is required
     only in the completely polymorphic case, where we get our lengths at runtime
     and don’t know them at compile-time. If we *knew* `n` and `m` at
     compile-time, and knew that `n` was less than or equal to `m`, we could
