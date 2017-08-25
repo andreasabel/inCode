@@ -20,13 +20,16 @@ series the next year, which incorporated what I had learned. But I still saw my
 2015 post being used as a reference, so I figured that writing a direct
 replacement/follow-up as the only way I would ever fix this!
 
-So here we are in 2017. What’s the “right” way to do fixed-length vectors in
-Haskell?
+So here we are in 2017. GHC 8.2 is here, and *base* is in version *4.10*. What’s
+the “right” way to do fixed-length vectors in Haskell?
 
 We’ll be looking at two methods here: The first one we will be looking at is a
 *performant* fixed-length vector that you will probably be using for any code
 that requires a fixed-length container — especially for tight numeric code and
-situations where performance matters.
+situations where performance matters. We’ll see how to implement them using the
+universal native `KnownNat` mechanisms, and also how we can implement them using
+*[singletons](http://hackage.haskell.org/package/singletons)* to help us make
+things a bit smoother.
 
 The second one we will be looking at is a *structural* fixed-length inductive
 vector. It’s…actually more like a fixed-length *list* (lazily linked list) than
@@ -41,6 +44,9 @@ the context of a dependently typed program. It’s also very useful as an
 The Non-Structural Way
 ----------------------
 
+(Code for this section (as well as exercise solutions) are [available
+here](https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs))
+
 In most situations, if you use vectors, you want some sort of constant-time
 indexed data structure. The best way to do this in Haskell is to wrap the
 heavily optimized *[vector](http://hackage.haskell.org/package/vector)* library
@@ -48,9 +54,12 @@ with a newtype wrapper that contains its length as a phantom type parameter.
 
 ``` {.haskell}
 import qualified Data.Vector as V
+import           GHC.TypeNats
 
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L19-20
 data Vec (n :: Nat) a = UnsafeMkVec { getVector :: V.Vector a }
     deriving Show
+
 ```
 
 A `Vec n a` will represent an `n`-element vector of `a`s. So, a `Vec 5 Int` will
@@ -101,16 +110,21 @@ for our type – make a `Vec` from a `Vector`, but only if the length is the
 correct type:
 
 ``` {.haskell}
-mkVec :: forall n. KnownNat n => V.Vector a -> Maybe (Vec n a)
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L22-26
+mkVec :: forall n a. KnownNat n => V.Vector a -> Maybe (Vec n a)
 mkVec v | V.length v == l = Just (UnsafeMkVec v)
         | otherwise       = Nothing
   where
     l = fromIntegral (natVal (Proxy @n))
+
 ```
 
 Here, we use `ScopedTypeVariables` so we can refer to the `n` in the type
-signature in the function body (for `natVal (Proxy @n)`). We need to use an
+signature in the function body (for `natVal (Proxy @n)`), and we need to use an
 explicit forall, then, to bring the `n` into scope.
+
+We also use `TypeApplications` syntax (`Proxy @n`) so we can say “We want a
+`Proxy :: Proxy n`” and tell `natVal` that we want the `Natural` for `n`.
 
 ### Utilizing type-level guarantees
 
@@ -134,12 +148,17 @@ In this situation, we can write such a mapping function in an “unsafe” way, 
 then give it our type signature as a form of documentation:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L28-29
 mapVec :: (a -> b) -> Vec n a -> Vec n b
-mapVec f v = UnsafeMakeVec $ V.map f (getVector v)
+mapVec f v = UnsafeMkVec $ V.map f (getVector v)
+
+
 
 -- just for fun
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L31-32
 instance Functor (Vec n) where
     fmap = mapVec
+
 ```
 
 The compiler didn’t help us write this function, and we have to be pretty
@@ -170,17 +189,40 @@ catch errors in logic at compile-time instead of runtime!
 
 ``` {.haskell}
 -- the resulting vector's length is the sum of the input vectors' lengths
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L34-35
 (++) :: Vec n a -> Vec m a -> Vec (n + m) a
+UnsafeMkVec xs ++ UnsafeMkVec ys = UnsafeMkVec (xs V.++ ys)
+
+
 -- you must zip two vectors of the same length
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L37-38
+zipVec :: Vec n a -> Vec n b -> Vec n (a, b)
+zipVec (UnsafeMkVec xs) (UnsafeMkVec ys) = UnsafeMkVec (V.zip xs ys)
+
+
 zipVec :: Vec n a -> Vec n b -> Vec n (a, b)
 -- type-level arithmetic to let us 'take'
-take :: Vec (n + m) a -> Vec n a
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L40-43
+takeVec :: forall n m a. KnownNat n => Vec (n + m) a -> Vec n a
+takeVec (UnsafeMkVec xs) = UnsafeMkVec (V.take l xs)
+  where
+    l = fromIntegral (natVal (Proxy @n))
+
+
 -- splitAt, as well
-splitAt :: Vec (n + m) a -> (Vec n a, Vec m a)
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L45-49
+splitVec :: forall n m a. KnownNat n => Vec (n + m) a -> (Vec n a, Vec m a)
+splitVec (UnsafeMkVec xs) = (UnsafeMkVec ys, UnsafeMkVec zs)
+  where
+    l = fromIntegral (natVal (Proxy @n))
+    (ys, zs) = V.splitAt l xs
+
 ```
 
-Here, `(+)` comes from GHC, which provides it as a type family (type-level
-function) we can use, with proper meaning and semantics.
+Here, `(+)` comes from
+*[GHC.TypeNats](http://hackage.haskell.org/package/base/docs/GHC-TypeNats.html)*,
+which provides it as a type family (type-level function) we can use, with proper
+meaning and semantics.
 
 ### Indexing
 
@@ -218,8 +260,10 @@ We can use a `Finite n` to “index” a `Vector n a`. A `Vector n a` has exactl
 contains valid indices into our vector!
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L51-52
 index :: Vec n a -> Finite n -> a
 index v i = getVector v V.! fromIntegral (getFinite i)
+
 ```
 
 `index` will never fail at runtime due to a bad index — do you see why? Valid
@@ -235,10 +279,12 @@ using type inference or a type annotation. (kind of like `read`)
 For example, we can write a version of `replicate`:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L54-57
 replicate :: forall n a. KnownNat n => a -> Vec n a
 replicate x = UnsafeMkVec $ V.replicate l x
   where
-    l = fromIntegral $ natVal (Proxy @n)
+    l = fromIntegral (natVal (Proxy @n))
+
 ```
 
 ``` {.haskell}
@@ -265,7 +311,9 @@ pure :: Applicative f => a -> f a
 ```
 
 `replicate` is actually `pure` for the Applicative instance of `Vec n`! As an
-extra challenge, what would `<*>` be?
+extra challenge, what would `<*>` be? Check out [the
+solution](https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L59-61)
+if you want to heck your answer!
 
 #### Generating with indices
 
@@ -273,17 +321,19 @@ We can be a little more fancy with `replicate`, to get what we normally call
 `generate`:
 
 ``` {.haskell}
-generate :: forall n. KnownNat n => (Finite n -> a) -> Vec n a
-generate f = UnsafeMkVec $ V.generate l (f . finite)
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L63-66
+generate :: forall n a. KnownNat n => (Finite n -> a) -> Vec n a
+generate f = UnsafeMkVec $ V.generate l (f . fromIntegral)
   where
-    l = fromIntegral $ natVal (Proxy @n)
+    l = fromIntegral (natVal (Proxy @n))
+
 ```
 
-#### A discussion on the advantages of type-safety
+#### A nuanced discussion on the advantages of type-safety
 
 I think it’s an interesting point that we’re using `Finite n` in a different
-sense here than in `index`, for different reasons. In `index`, `Finite` is in
-the “negative” position — it’s something that the function “takes”. In
+sense here than in `index`, and for different reasons. In `index`, `Finite` is
+in the “negative” position — it’s something that the function “takes”. In
 `generate`, `Finite` is in the “positive” position — it’s something that the
 function “gives” (to the `f` in `generate f`).
 
@@ -307,10 +357,10 @@ example, in `generate`, the fact that the user has to provide a `Finite n -> a`
 tells the user that they have to handle every number between 0 and n-1, and
 nothing else.
 
-### Between Sized and Unsized
+### Moving between Sized and Unsized
 
-One key part of our API is missing: how to convert seamlessly between “sized”
-and “unsized” vectors.
+One key part of our API is missing: how to convert between “sized” and “unsized”
+vectors.
 
 Converting from sized to unsized is easy, and we already have it:
 
@@ -341,6 +391,8 @@ withVec
     -> r
 ```
 
+(Note: this does require `RankNTyes`)
+
 People familiar with dependent types might recognized it as a CPS-style
 existential. Basically, give the function a vector, and a way to “handle” a
 `Vec n` of *any possible size*. The function will then give your handler a
@@ -369,8 +421,10 @@ ghci> withVec myVector $ \(v :: Vec n Int) ->
 We could write, say, a function to always safely get the third item:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L68-69
 getThird :: V.Vector a -> Maybe a
 getThird v0 = withVec v0 $ \v -> fmap (v `index`) (packFinite 2)
+
 ```
 
 And we can run it:
@@ -386,8 +440,10 @@ We can even do something silly like convert an unsized vector to a sized vector
 and then back again:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L71-72
 vectorToVector :: V.Vector a -> V.Vector a
-vectorToVector v = withVec toVector
+vectorToVector v = withVec v getVector
+
 ```
 
 Now that I’ve (hopefully) convinced you that this function really does convert
@@ -414,9 +470,11 @@ polymorphic way. Sound familiar?
 stuffs/hides it into `SomeNat`. We can leverage this to write our `withVec`:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L74-76
 withVec :: V.Vector a -> (forall n. KnownNat n => Vec n a -> r) -> r
 withVec v0 f = case someNatVal (fromIntegral (V.length v0)) of
     SomeNat (Proxy :: Proxy m) -> f (UnsafeMkVec @m v0)
+
 ```
 
 (The `TypeApplications` syntax `@m` is used with `UnsafeMkVec` to specify that
@@ -442,6 +500,7 @@ We can do this using `sameNat` from
 
 ``` {.haskell}
 -- `Type` is just a synonym for * from Data.Kind
+-- from the module Data.Type.Equality
 data (:~:) :: k -> k -> Type where
     Refl :: x :~: x
 
@@ -460,10 +519,12 @@ If not, it gives us `Nothing`.
 Now, we can write:
 
 ``` {.haskell}
-exactLength :: forall n m. (KnownNat n, KnownNat m) => Vec n a -> Maybe (Vec m a)
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L78-81
+exactLength :: forall n m a. (KnownNat n, KnownNat m) => Vec n a -> Maybe (Vec m a)
 exactLength v = case sameNat (Proxy @n) (Proxy @m) of
     Just Refl -> Just v     -- here, n ~ m, so a `Vec n a` is a `Vec m a`, too
     Nothing   -> Nothing
+
 ```
 
 (We could also write this by using `getVector` and `mkLength`, which wraps and
@@ -472,18 +533,37 @@ unwraps, but let’s pretend it is expensive to construct and re-construct).
 Now we can do:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L37-37
 zipVec :: Vec n a -> Vec n b -> Vec n (a, b)
 
-zipSame :: V.Vector a -> V.Vector b -> Maybe (V.Vector (a, b))
+
+
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L83-89
+zipSame :: forall a b. V.Vector a -> V.Vector b -> Maybe (V.Vector (a, b))
 zipSame v1 v2 = withVec v1 $ \(v1' :: Vec n a) ->
-                withVec v2 $ \(v2' :: Vec m a) ->
+                withVec v2 $ \(v2' :: Vec m b) ->
       case exactLength v1' of
         Just v1Same -> Just $ getVector
                           (zipVec v1Same v2')     -- v1' has the same length as v2'
         Nothing     -> Nothing
+
 ```
 
 Which will zip two unsized vectors, but only if their lengths are the same.
+
+Now, “checking that the length is a certain length” is literally the least
+interesting property we can test about our vectors. There are definitely more
+interesting properties we can test, like whether or not our lengths are even or
+odd, if they are greater than a certain number, etc.; for these, the process is
+essentially the same: find some way, *at runtime*, to get some sort of witness
+for the property you want. In our course, our witness was `n :~: m`, which
+witnessed the fact that `n ~ m`. Different libraries might provide different
+witnesses that might be useful. But the general process is
+
+1.  Find a way to get your witness, using some runtime function (that will
+    probably return `Maybe`)
+2.  Pattern match on your witness, and see that property realized and usable by
+    GHC/the type checker!
 
 ### Help from singletons
 
@@ -495,15 +575,14 @@ world, let’s re-implement these things using the
 provides a unified interface for type-level programming in general.
 
 Instead of `KnownNat`, `Proxy`, `natVal`, `SomeNat`, and `someNatVal`, we can
-use the singletons equivalents, `SingI` (or `Sing`), `fromSing`, `SomeSing`, and
-`toSing`:
+use the singletons equivalents, `Sing`, `fromSing`, `SomeSing`, and `toSing`:
 
 ``` {.haskell}
 -- TypeNats style
 natVal :: KnownNat n => p n -> Natural
 
 -- Singletons style
-sing     :: SingI n => Sing n
+sing     :: KnownNat n => Sing n
 fromSing :: Sing n -> Natural       -- (for n :: Nat)
 
 -- TypeNats style
@@ -515,6 +594,15 @@ data SomeSing Nat = forall n. SomeSing (Sing n)
 someSing :: Natural -> SomeSing Nat
 
 withSomeSing :: Natural -> (forall n. Sing n -> r) -> r
+
+-- TypeNats style
+exactLength :: (KnownNat n, KnownNat m) => Proxy n -> Proxy m -> Maybe (n :~: m)
+
+-- Singletons style
+-- from Data.Singletons.Decide
+-- for our purposes, Decision is basically a fancy Maybe
+data Decision a = Proved a | Disproved (a -> Void)
+(%~) :: Sing n -> Sing m -> Decision (n :~: m)
 ```
 
 Hopefully the above should give you a nice “key” for translating between the two
@@ -522,6 +610,7 @@ styles. But here are some practical translations:
 
 ``` {.haskell}
 -- "explicit Sing" style
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L24-28
 mkVec_ :: Sing n -> V.Vector a -> Maybe (Vec n a)
 mkVec_ s v | V.length v == l = Just (UnsafeMkVec v)
            | otherwise       = Nothing
@@ -529,42 +618,76 @@ mkVec_ s v | V.length v == l = Just (UnsafeMkVec v)
     l = fromIntegral (fromSing s)
 
 
--- "implicit SingI" style
-mkVec_ :: forall n a. SingI n => V.Vector a -> Maybe (Vec n a)
-mkVec_ v | V.length v == l = Just (UnsafeMkVec v)
-         | otherwise       = Nothing
+mkVec_ :: Sing n -> V.Vector a -> Maybe (Vec n a)
+mkVec_ s v | V.length v == l = Just (UnsafeMkVec v)
+           | otherwise       = Nothing
+  where
+    l = fromIntegral (fromSing s)
+
+
+-- "implicit" style
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L30-34
+mkVec :: forall n a. KnownNat n => V.Vector a -> Maybe (Vec n a)
+mkVec v | V.length v == l = Just (UnsafeMkVec v)
+        | otherwise       = Nothing
   where
     l = fromIntegral (fromSing (sing :: Sing n))
 
--- alternatively
-mkVec :: SingI n => V.Vector a -> Maybe (Vec n a)
+
+
+-- alternatively, re-using `mkVec_`
+mkVec :: KnownNat n => V.Vector a -> Maybe (Vec n a)
 mkVec = mkVec_ sing
 ```
 
 As you can see, in singletons, we have the luxury of defining our functions in
 “explicit” style (where the user passes in a `Sing` token which reveals what
 length they want) or “implicit” style (where the length is inferred from the
-return type, requiring a `SingI n =>` constraint), like we have been writing up
-to this point. `Sing n ->` and `SingI n =>` really have the same power.
+return type, requiring a `KnownNat n =>` constraint), like we have been writing
+up to this point. `Sing n ->` and `KnownNat n =>` really have the same power.
+You can think of `Sing n` as a token that carries around `KnownNat n =>`, in a
+way.
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L36-42
 replicate_ :: Sing n -> a -> Vec n a
 replicate_ s x = UnsafeMkVec $ V.replicate l x
   where
     l = fromIntegral (fromSing s)
 
-replicate :: SingI n => a -> Vec n a
+replicate :: KnownNat n => a -> Vec n a
 replicate = replicate_ sing
 
+
+
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L44-46
 withVec :: V.Vector a -> (forall n. Sing n -> Vec n a -> r) -> r
 withVec v0 f = case toSing (fromIntegral (V.length v0)) of
-    SomeSing (s :: Sing m) -> f (UnsafeMkVec @m v0)
+    SomeSing s -> f s (UnsafeMkVec v0)
+
 
 -- alternatively, skipping `SomeSing` altogether:
 withVec :: V.Vector a -> (forall n. Sing n -> Vec n a -> r) -> r
-withVec v0 f = withSomeSing (fromIntegral (V.length v0) :: Natural) $ \(s :: Sing m) ->
-    f (UnsafeMkVec @m v0)
+withVec v0 f = withSomeSing (fromIntegral (V.length v0) :: Natural) $ \s ->
+    f s (UnsafeMkVec v0)
+-- note: this requires singletons > 2.3.  in singletons 2.3.1 and below, you'd
+-- need to do (fromIntegral (V.length v0) :: Integer)
+
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L48-54
+exactLength_ :: Sing m -> Sing n -> Vec n a -> Maybe (Vec m a)
+exactLength_ sM sN v = case sM %~ sN of
+    Proved Refl -> Just v
+    Disproved _  -> Nothing
+
+exactLength :: (KnownNat m, KnownNat n) => Vec n a -> Maybe (Vec m a)
+exactLength = exactLength_ sing sing
+
 ```
+
+Note that you *aren’t* required to implement both a `replicate_` and `replicate`
+— I’m just including them here to show that both API’s (implicit and explicit)
+are possible. (You can always just directly use `sing` right away before getting
+started to get the `Sing n` that those functions use)
 
 One slight bit of friction comes when using libraries that work with `KnownNat`,
 like *finite-typelits* and the `Finite` type. But we can convert between the two
@@ -581,26 +704,38 @@ withKnownNat :: Sing n -> (KnownNat n => r) -> r
 ```
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L56-60
 generate_ :: Sing n -> (Finite n -> a) -> Vec n a
 generate_ s f = withKnownNat s $
-    UnsafeMkVec $ V.generate l (f . finite)
+    UnsafeMkVec $ V.generate l (f . finite . fromIntegral)
   where
-    l = fromIntegral $ natVal s
+    l = fromIntegral (fromSing s)
+
+
 
 -- alternatively, via pattern matching:
-generate_ :: Sing n -> (Finite n -> a) -> Vec n a
-generate_ SNat f = UnsafeMkVec $ V.generate l (f . finite)
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L63-66
+generate'_ :: Sing n -> (Finite n -> a) -> Vec n a
+generate'_ s@SNat f = UnsafeMkVec $ V.generate l (f . fromIntegral)
   where
-    l = fromIntegral $ natVal s
+    l = fromIntegral (fromSing s)
 
-generate :: SingI n => (Finite n -> a) -> Vec n a
+
+
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L68-69
+generate :: KnownNat n => (Finite n -> a) -> Vec n a
 generate = generate_ sing
+
 ```
 
 As you can see, singletons-style programming completely subsumes programming
 with `TypeNats` and `KnownNat`. What we don’t see here is that singletons style
 integrates very well with the rest of the singletons ecosystem…so you might just
 have to take my word for it :)
+
+You can see most of our original code (with pure `KnownNat`) rewritten to work
+with singletons in [this
+file](https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs).
 
 ### Real-World Examples
 
@@ -625,12 +760,16 @@ for integration with the rest of the
 *[linear](http://hackage.haskell.org/package/linear-1.20.7/docs/Linear-V.html)*
 library, which it does very well.
 
+Anyway, if all you really wanted was performant fixed-size containers, feel free
+to stop reading now (or jump to the conclusion). But if you want to explore a
+bit deeper into the world of inductive dependent types … continue on :)
+
 The Structural Way
 ------------------
 
-The problem with `TypeNats` from GHC is that it has no internal structure. It’s
-basically the same as the `Integer` or `Natural` type — every single value
-(constructor) is completely structurally unrelated to the next.
+So, the (a?) problem with `TypeNats` from GHC is that it has no internal
+structure. It’s basically the same as the `Integer` or `Natural` type — every
+single value (constructor) is completely structurally unrelated to the next.
 
 Just like we can imagine
 
@@ -652,9 +791,8 @@ the very bottom!
 For this, we’ll dig into *inductive* type-level nats.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L18-18
 data Nat = Z | S Nat
-
+  deriving Eq
 ```
 
 We’re using the `DataKinds` extension, so not only does that define the *type*
@@ -676,7 +814,7 @@ And now we can define a fixed-length *list*, which is basically a normal haskell
 list “zipped” with `S`s.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L20-24
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L26-30
 data Vec :: Nat -> Type -> Type where
     VNil :: Vec 'Z a
     (:+) :: a -> Vec n a -> Vec ('S n) a
@@ -717,7 +855,7 @@ But writing such a `mapVec` function using `Vec` is guaranteed to preserve the
 lengths:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L26-29
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L32-35
 mapVec :: (a -> b) -> Vec n a -> Vec n b
 mapVec f = \case
     VNil    -> VNil
@@ -739,7 +877,7 @@ plus more.
 We can write `zip` too:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L31-36
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L37-42
 zipVec :: Vec n a -> Vec n b -> Vec n (a, b)
 zipVec = \case
     VNil -> \case
@@ -759,7 +897,7 @@ GHC provided our `+` before, so we have to write it ourselves if we want to be
 able to use it for our `Nat`s. We can write it as a type family:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L38-45
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L44-51
 type family (n :: Nat) + (m :: Nat) :: Nat where
     'Z   + m = m
     'S n + m = 'S (n + m)
@@ -794,7 +932,7 @@ To index our previous type, we used some abstract `Finite` type, where
 `Vec n a`. We can do something similar, inductively, as well:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L47-51
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L53-57
 data Fin :: Nat -> Type where
     FZ :: Fin ('S n)
     FS :: Fin n -> Fin ('S n)
@@ -838,7 +976,7 @@ combinations of constructor that can yield that type.
 Armed with this handy `Fin` type, we can do structural type-safe indexing:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L53-58
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L59-64
 index :: Fin n -> Vec n a -> a
 index = \case
     FZ -> \case
@@ -856,17 +994,16 @@ a `Vec 'Z a` (an empty vector), because to do that, we would have to pass in a
 
 Now, generating these is a bit tricky. Recall that we needed to use a
 `KnownNat n` constraint to be able to *reflect* a `n` type down to the value
-level. Alternatively, if we were super slick and used singletons, we could have
-just used `fromSing` from the beginning.
-
-Luckily, we don’t have the baggage of `KnownNat` on our new `Nat`. We can do
-things the right way from the start: using singletons!
+level. We can do something similar using the *singletons* machinery!
 
 First, we need to get singletons for our `Nat`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L60-60
-genSingletons [''Nat]
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L21-24
+$(singletons [d|
+  data Nat = Z | S Nat
+    deriving Eq
+  |])
 
 
 
@@ -881,7 +1018,7 @@ every `n`. So, if we receive a value of type `Sing n`, we can pattern match on
 it to figure out what `n` is. Essentially, we can *pattern match* on `n`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L62-69
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L66-73
 singSize :: Sing (n :: Nat) -> String
 singSize = \case
     -- here, n is 'Z
@@ -902,7 +1039,7 @@ ecosystem remains inductive.
 Now, to write `replicate`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L71-74
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L75-78
 replicate_ :: Sing n -> a -> Vec n a
 replicate_ = \case
     SZ   -> \_ -> VNil
@@ -914,13 +1051,19 @@ And we can recover our original “implicit” style, with type-inference-driven
 lengths, using `SingI` and `sing :: SingI n => Sing n`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L71-74
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L75-78
 replicate_ :: Sing n -> a -> Vec n a
 replicate_ = \case
     SZ   -> \_ -> VNil
     SS l -> \x -> x :+ replicate_ l x
 
 ```
+
+You can think of `SingI` as the “generic singletons” equivalent of `KnownNat`.
+`KnownNat` lets us reflect out a `GHC.TypeNats.Nat` to a `Sing`…`SingI` lets us
+reflect any type that has singletons defined to its corresponding `Sing`. Since
+our new `Nat` type has singletons, we basically get a free “`KnownNat`
+equivalent”!
 
 See how useful the whole singletons ecosystem is? :)
 
@@ -933,7 +1076,7 @@ reader – click the link at the top corner of the text box to see the solution,
 and see how it compares to your own :)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L79-85
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L83-89
 generate_ :: Sing n -> (Fin n -> a) -> Vec n a
 
 generate :: SingI n => (Fin n -> a) -> Vec n a
@@ -956,11 +1099,137 @@ expects…these clues will help you get your bearings!
 Our the API of converting unsized to sized vectors will be the same:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L91-91
 withVec :: [a] -> (forall n. Sing n -> Vec n a -> r) -> r
+
 ```
 
 But implementing it inductively is also an interesting challenge. See my tip
-above about typed holes (`_`). Ok, let’s jump right into it!
+above about typed holes (`_`). I recommend taking a break here to try to solve
+it yourself.
+
+Ready?
+
+Welcome back! Hope you had a fun time :) Here’s the solution!
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L91-95
+withVec :: [a] -> (forall n. Sing n -> Vec n a -> r) -> r
+withVec = \case
+    []   -> \f -> f SZ VNil
+    x:xs -> \f -> withVec xs $ \l ys ->
+        f (SS l) (x :+ ys)
+
 ```
+
+To handle the empty list, we just return immediately, giving `f` the proper
+singleton and vector (`SZ` and `VNil`). For the non-empty list, first we convert
+the tail `xs` into a vector (`ys`) and its corresponding length-singleton (`l`),
+and then we give `f` the “correct” length singleton of our complete vector
+(`SS l`) and the correct complete vector (`x :+ ys`)
+
+### Verifying properties
+
+We can create some corresponding example of `exactLength` using the exact same
+process we did before (using `%~` and `Decision` and `Refl`):
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L97-103
+exactLength_ :: Sing m -> Sing n -> Vec n a -> Maybe (Vec m a)
+exactLength_ sM sN v = case sM %~ sN of
+    Proved Refl -> Just v
+    Disproved _  -> Nothing
+
+exactLength :: (SingI m, SingI n) => Vec n a -> Maybe (Vec m a)
+exactLength = exactLength_ sing sing
+
+```
+
+It’s nice that this is exactly the same as before, and that’s a testament to how
+useful the singletons library is at unifying all of these distinct type-level
+stuffs.
+
+We can write `exactLength` in a cute way by inducting on the length we want and
+the vector, so it might be fun to look at this version instead –
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L105-115
+exactLengthInductive_ :: Sing m -> Vec n a -> Maybe (Vec m a)
+exactLengthInductive_ = \case
+    SZ -> \case
+      VNil   -> Just VNil
+      _ :+ _ -> Nothing
+    SS l -> \case
+      VNil    -> Nothing
+      x :+ xs -> (x :+) <$> exactLengthInductive_ l xs
+
+exactLengthInductive :: SingI m => Vec n a -> Maybe (Vec m a)
+exactLengthInductive = exactLengthInductive_ sing
+
+```
+
+But I digress. Like in the last section, checking for a given length is
+literally the least interesting property you can check for. But, again, the same
+process is usable here: find a way to get your witness, and then pattern match
+on that witness.
+
+For example, we can make a witness that `n` is less than or equal to `m`, as
+well as a way to construct such a witness:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L117-129
+data LTE :: Nat -> Nat -> Type where
+    LEZ :: LTE 'Z n
+    LES :: LTE n m -> LTE ('S n) ('S m)
+
+isLTE :: Sing n -> Sing m -> Decision (LTE n m)
+isLTE = \case
+    SZ   -> \_ -> Proved LEZ
+    SS n -> \case
+      SZ -> Disproved $ \case
+      SS m -> case isLTE n m of
+        Proved l    -> Proved $ LES l
+        Disproved p -> Disproved $ \case
+          LES l -> p l
+
+```
+
+So, it is impossible to construct an `LTE n m` if `n` is *not* less than or
+equal to `m`. I dare you to try!
+
+We can write code to check for this property in our vectors:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L131-137
+inRange_ :: Sing n -> Sing m -> Vec n a -> Maybe (LTE n m, Vec n a)
+inRange_ sN sM v = case isLTE sN sM of
+    Proved l    -> Just (l, v)
+    Disproved _ -> Nothing
+
+inRange :: SingI n => Sing m -> Vec n a -> Maybe (LTE n m, Vec n a)
+inRange = inRange_ sing
+
+```
+
+`inRange sM` will only return our vector *if* its length is *less than or euqal
+to* the length indicated by `sM`. And it returns a proof that this is true!
+
+Conclusion
+----------
+
+There’s obviously more to look at, and much more we can do with fixed-length
+vectors and inductive types. And, there will definitely be more issues that come
+up when you start working with these in the real world, with real applications.
+
+If you plan on moving into learning about dependent types, I feel like this
+guide would be a good launching point. But if all you wanted to do was learn how
+to use fixed-length vectors effectively in Haskell…hopefully after reading this,
+you have confidence to work with these things directly, and to know what to
+google if anything else comes up :)
+
+And hopefully the completion and release of this article will assuage my ill
+conscience that has been plagued with guilt since 2015 :)
+
+Feel free as always to leave a comment or a [tweet](https://twitter.com/mstk),
+or find me the freenode `#haskell` channel, as *jle\`*. I always welcome
+feedback, suggestions, or questions!
