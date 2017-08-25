@@ -308,7 +308,6 @@ replicate_ s x <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> <sp
   <span class="kw">where</span>
     l <span class="fu">=</span> fromIntegral (fromSing s)
 
-
 replicate<span class="ot"> ::</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 replicate <span class="fu">=</span> replicate_ sing
 
@@ -328,7 +327,6 @@ withVec v0 f <span class="fu">=</span> withSomeSing (fromIntegral (V.length v0)<
 exactLength_ sM sN v <span class="fu">=</span> <span class="kw">case</span> sM <span class="fu">%~</span> sN <span class="kw">of</span>
     <span class="dt">Proved</span> <span class="dt">Refl</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> v
     <span class="dt">Disproved</span> _  <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
-
 
 <span class="ot">exactLength ::</span> (<span class="dt">KnownNat</span> m, <span class="dt">KnownNat</span> n) <span class="ot">=&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> m a)
 exactLength <span class="fu">=</span> exactLength_ sing sing</code></pre></div>
@@ -390,7 +388,6 @@ ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="ch">&#3
     <span class="dt">VNil</span><span class="ot"> ::</span> <span class="dt">Vec</span> <span class="ch">&#39;Z a</span>
 <span class="ot">    (:+) ::</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (<span class="ch">&#39;S n) a</span>
 
-
 <span class="kw">infixr</span> <span class="dv">5</span> <span class="fu">:+</span></code></pre></div>
 <p>Here, we’re using <code>GADT</code> syntax to define our type using its constructors: the <code>VNil</code> constructor (which creates a <code>Vec 'Z a</code>, or the empty vector, like <code>[]</code>) and the <code>(:+)</code> constructor (like cons, or <code>(:)</code>), which conses an item to a <code>Vec n a</code> to get a <code>Vec ('S n) a</code>, or a vector with one more element.</p>
 <p>Basically, all usage of nil and cons (<code>VNil</code> and <code>:+</code>) keeps track of the current “length” of the vectors in its type. Observe that the only way to construct a <code>Vec ('S ('S 'Z)) a</code> is by using two <code>:+</code>s and a <code>VNil</code>!</p>
@@ -432,7 +429,6 @@ zipVec <span class="fu">=</span> \<span class="kw">case</span>
     <span class="ch">&#39;Z   + m = m</span>
     <span class="ch">&#39;S n + m = &#39;</span><span class="dt">S</span> (n <span class="fu">+</span> m)
 
-
 <span class="ot">(++) ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (n <span class="fu">+</span> m) a
 (<span class="fu">++</span>) <span class="fu">=</span> \<span class="kw">case</span>
     <span class="dt">VNil</span>    <span class="ot">-&gt;</span> \ys <span class="ot">-&gt;</span> ys
@@ -450,7 +446,6 @@ splitVec_ <span class="fu">=</span> \<span class="kw">case</span>
       x <span class="fu">:+</span> xs <span class="ot">-&gt;</span> <span class="kw">case</span> splitVec_ l xs <span class="kw">of</span>
         (ys, zs) <span class="ot">-&gt;</span> (x <span class="fu">:+</span> ys, zs)
 
-
 <span class="ot">splitVec ::</span> <span class="dt">SingI</span> n <span class="ot">=&gt;</span> <span class="dt">Vec</span> (n <span class="fu">+</span> m) a <span class="ot">-&gt;</span> (<span class="dt">Vec</span> n a, <span class="dt">Vec</span> m a)
 splitVec <span class="fu">=</span> splitVec_ sing</code></pre></div>
 <h3 id="indexing-1">Indexing</h3>
@@ -459,7 +454,6 @@ splitVec <span class="fu">=</span> splitVec_ sing</code></pre></div>
 <span class="kw">data</span> <span class="dt">Fin</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span>
     <span class="dt">FZ</span><span class="ot"> ::</span> <span class="dt">Fin</span> (<span class="ch">&#39;S n)</span>
     <span class="dt">FS</span><span class="ot"> ::</span> <span class="dt">Fin</span> n <span class="ot">-&gt;</span> <span class="dt">Fin</span> (<span class="ch">&#39;S n)</span>
-
 
 <span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Show</span> (<span class="dt">Fin</span> n)</code></pre></div>
 <p>I always thought of this inductive definition of <code>Fin</code> as a cute trick, because I don’t think there was any way I could have thought of it on my own. But if you play around it enough, you might be able to convince yourself that there are exactly <code>n</code> inhabitants of <code>Fin n</code>.</p>
@@ -528,7 +522,6 @@ replicate_ <span class="fu">=</span> \<span class="kw">case</span>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L93-99</span>
 <span class="ot">generate_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> (<span class="dt">Fin</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 
-
 <span class="ot">generate ::</span> <span class="dt">SingI</span> n <span class="ot">=&gt;</span> (<span class="dt">Fin</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 generate <span class="fu">=</span> generate_ sing</code></pre></div>
 <p>The one thing I will point out is that it is very useful that GHC verifies our code for us, and that we have typed holes to help us develop our code. If we ever don’t know something, we can just use a typed hole <code>_</code>, and GHC will tell us what type it expects, and what values in scope have that type. It is infinitely useful for situations like this, especially when you are new to this sort of dependently typed inductive programming!</p>
@@ -555,7 +548,6 @@ exactLength_ sM sN v <span class="fu">=</span> <span class="kw">case</span> sM <
     <span class="dt">Proved</span> <span class="dt">Refl</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> v
     <span class="dt">Disproved</span> _  <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
 
-
 <span class="ot">exactLength ::</span> (<span class="dt">SingI</span> m, <span class="dt">SingI</span> n) <span class="ot">=&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> m a)
 exactLength <span class="fu">=</span> exactLength_ sing sing</code></pre></div>
 <p>It’s nice that this is exactly the same as before, and that’s a testament to how useful the singletons library is at unifying all of these distinct type-level stuffs.</p>
@@ -570,7 +562,6 @@ exactLengthInductive_ <span class="fu">=</span> \<span class="kw">case</span>
       <span class="dt">VNil</span>    <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
       x <span class="fu">:+</span> xs <span class="ot">-&gt;</span> (x <span class="fu">:+</span>) <span class="fu">&lt;$&gt;</span> exactLengthInductive_ l xs
 
-
 <span class="ot">exactLengthInductive ::</span> <span class="dt">SingI</span> m <span class="ot">=&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> m a)
 exactLengthInductive <span class="fu">=</span> exactLengthInductive_ sing</code></pre></div>
 <p>This is another way you can take advantage of the <em>structure</em> of the length type. Here, we explicitly take advantage of the inductive structure of the <code>Nat</code> type and how it matches with the structure of the <code>Vec</code> type, and do bold things with it!</p>
@@ -580,7 +571,6 @@ exactLengthInductive <span class="fu">=</span> exactLengthInductive_ sing</code>
 <span class="kw">data</span> <span class="dt">LTE</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span>
     <span class="dt">LEZ</span><span class="ot"> ::</span> <span class="dt">LTE</span> <span class="ch">&#39;Z n</span>
     <span class="dt">LES</span><span class="ot"> ::</span> <span class="dt">LTE</span> n m <span class="ot">-&gt;</span> <span class="dt">LTE</span> (<span class="ch">&#39;S n) (&#39;</span><span class="dt">S</span> m)
-
 
 <span class="ot">isLTE ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Sing</span> m <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">LTE</span> n m)
 isLTE <span class="fu">=</span> \<span class="kw">case</span>
@@ -598,7 +588,6 @@ isLTE <span class="fu">=</span> \<span class="kw">case</span>
 inRange_ sN sM v <span class="fu">=</span> <span class="kw">case</span> isLTE sN sM <span class="kw">of</span>
     <span class="dt">Proved</span> l    <span class="ot">-&gt;</span> <span class="dt">Just</span> (l, v)
     <span class="dt">Disproved</span> _ <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
-
 
 inRange<span class="ot"> ::</span> <span class="dt">SingI</span> n <span class="ot">=&gt;</span> <span class="dt">Sing</span> m <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">LTE</span> n m, <span class="dt">Vec</span> n a)
 inRange <span class="fu">=</span> inRange_ sing</code></pre></div>

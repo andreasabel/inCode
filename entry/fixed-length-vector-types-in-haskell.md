@@ -661,7 +661,6 @@ replicate_ s x = UnsafeMkVec $ V.replicate l x
   where
     l = fromIntegral (fromSing s)
 
-
 replicate :: KnownNat n => a -> Vec n a
 replicate = replicate_ sing
 
@@ -681,7 +680,6 @@ exactLength_ :: Sing m -> Sing n -> Vec n a -> Maybe (Vec m a)
 exactLength_ sM sN v = case sM %~ sN of
     Proved Refl -> Just v
     Disproved _  -> Nothing
-
 
 exactLength :: (KnownNat m, KnownNat n) => Vec n a -> Maybe (Vec m a)
 exactLength = exactLength_ sing sing
@@ -832,7 +830,6 @@ data Vec :: Nat -> Type -> Type where
     VNil :: Vec 'Z a
     (:+) :: a -> Vec n a -> Vec ('S n) a
 
-
 infixr 5 :+
 ```
 
@@ -912,7 +909,6 @@ type family (n :: Nat) + (m :: Nat) :: Nat where
     'Z   + m = m
     'S n + m = 'S (n + m)
 
-
 (++) :: Vec n a -> Vec m a -> Vec (n + m) a
 (++) = \case
     VNil    -> \ys -> ys
@@ -957,7 +953,6 @@ splitVec_ = \case
       x :+ xs -> case splitVec_ l xs of
         (ys, zs) -> (x :+ ys, zs)
 
-
 splitVec :: SingI n => Vec (n + m) a -> (Vec n a, Vec m a)
 splitVec = splitVec_ sing
 ```
@@ -973,7 +968,6 @@ To index our previous type, we used some abstract `Finite` type, where
 data Fin :: Nat -> Type where
     FZ :: Fin ('S n)
     FS :: Fin n -> Fin ('S n)
-
 
 deriving instance Show (Fin n)
 ```
@@ -1110,7 +1104,6 @@ and see how it compares to your own :)
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L93-99
 generate_ :: Sing n -> (Fin n -> a) -> Vec n a
 
-
 generate :: SingI n => (Fin n -> a) -> Vec n a
 generate = generate_ sing
 ```
@@ -1169,7 +1162,6 @@ exactLength_ sM sN v = case sM %~ sN of
     Proved Refl -> Just v
     Disproved _  -> Nothing
 
-
 exactLength :: (SingI m, SingI n) => Vec n a -> Maybe (Vec m a)
 exactLength = exactLength_ sing sing
 ```
@@ -1191,7 +1183,6 @@ exactLengthInductive_ = \case
     SS l -> \case
       VNil    -> Nothing
       x :+ xs -> (x :+) <$> exactLengthInductive_ l xs
-
 
 exactLengthInductive :: SingI m => Vec n a -> Maybe (Vec m a)
 exactLengthInductive = exactLengthInductive_ sing
@@ -1216,7 +1207,6 @@ data LTE :: Nat -> Nat -> Type where
     LEZ :: LTE 'Z n
     LES :: LTE n m -> LTE ('S n) ('S m)
 
-
 isLTE :: Sing n -> Sing m -> Decision (LTE n m)
 isLTE = \case
     SZ   -> \_ -> Proved LEZ
@@ -1239,7 +1229,6 @@ inRange_ :: Sing n -> Sing m -> Vec n a -> Maybe (LTE n m, Vec n a)
 inRange_ sN sM v = case isLTE sN sM of
     Proved l    -> Just (l, v)
     Disproved _ -> Nothing
-
 
 inRange :: SingI n => Sing m -> Vec n a -> Maybe (LTE n m, Vec n a)
 inRange = inRange_ sing
