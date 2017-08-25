@@ -1094,11 +1094,9 @@ ecosystem remains inductive.
 Now, to write `replicate`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L90-93
-replicate_ :: Sing n -> a -> Vec n a
-replicate_ = \case
-    SZ   -> \_ -> VNil
-    SS l -> \x -> x :+ replicate_ l x
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L95-96
+replicate :: SingI n => a -> Vec n a
+replicate = replicate_ sing
 ```
 
 And we can recover our original “implicit” style, with type-inference-driven
