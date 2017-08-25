@@ -1244,13 +1244,13 @@ There’s obviously more to look at, and much more we can do with fixed-length
 vectors and inductive types. And, there will definitely be more issues that come
 up when you start working with these in the real world, with real applications.
 
-If you plan on moving into learning about dependent types, I feel like this
-guide would be a good launching point. But if all you wanted to do was learn how
-to use fixed-length vectors effectively in Haskell…hopefully after reading this,
+If you plan on moving into learning about dependent types, I hope that guide
+would be a good launching point. But if all you wanted to do was learn how to
+use fixed-length vectors effectively in Haskell…hopefully after reading this,
 you have confidence to work with these things directly, and to know what to
 google if anything else comes up :)
 
-And hopefully the completion and release of this article will assuage my ill
+I hope also that the completion and release of this article will assuage my ill
 conscience that has been plagued with guilt since 2015 :)
 
 Feel free as always to leave a comment or a [tweet](https://twitter.com/mstk),
