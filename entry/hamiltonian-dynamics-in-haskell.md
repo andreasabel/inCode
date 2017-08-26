@@ -158,10 +158,12 @@ direction perpendicular to the steepest ascent!
 \\begin{aligned}
 \\dot{q} = \\frac{\\partial}{\\partial p\_q} \\mathcal{H}(\\mathbf{q},\\mathbf{p})
 \\dot{p\_q} = - \\frac{\\partial}{\\partial q} \\mathcal{H}(\\mathbf{q},\\mathbf{p})
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cdot%7Bq%7D%20%3D%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20p_q%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%5Cdot%7Bp_q%7D%20%3D%20-%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A "
+\\end{aligned}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cdot%7Bq%7D%20%3D%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20p_q%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%5Cdot%7Bp_q%7D%20%3D%20-%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
 \dot{q} = \frac{\partial}{\partial p_q} \mathcal{H}(\mathbf{q},\mathbf{p})
 \dot{p_q} = - \frac{\partial}{\partial q} \mathcal{H}(\mathbf{q},\mathbf{p})
+\end{aligned}
 ")
 
 Which holds for every generalized coordinate
