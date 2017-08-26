@@ -530,9 +530,9 @@ derivatives. And with that, we have our final expression for
 ")
 
 Where
-![\\frac{\\partial}{\\partial q} PE(\\mathbf{q})](https://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q%7D%20PE%28%5Cmathbf%7Bq%7D%29 "\frac{\partial}{\partial q} PE(\mathbf{q})")
-is just the components of the gradient of
-![PE](https://latex.codecogs.com/png.latex?PE "PE").
+![\\frac{\\partial}{\\partial q\_i} PE(\\mathbf{q})](https://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20PE%28%5Cmathbf%7Bq%7D%29 "\frac{\partial}{\partial q_i} PE(\mathbf{q})")
+is just the ![i](https://latex.codecogs.com/png.latex?i "i")th component of the
+gradient of ![PE](https://latex.codecogs.com/png.latex?PE "PE").
 
 That’s it. We’re done. Have a nice day, thanks for reading!
 
