@@ -491,15 +491,15 @@ singSize <span class="fu">=</span> \<span class="kw">case</span>
 <p>Basically, <em>we can use a singleton</em> if we ever want to “pattern match” or branch our program’s output based on the type. This is a general rule you will observe as we continue on this article.</p>
 <p>Note that because of the inductive nature of our original <code>Nat</code> type, the singletons are also inductive, as well. This is handy, because then our whole ecosystem remains inductive.</p>
 <p>Now, to write <code>replicate</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L95-96</span>
-replicate<span class="ot"> ::</span> <span class="dt">SingI</span> n <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
-replicate <span class="fu">=</span> replicate_ sing</code></pre></div>
-<p>And we can recover our original “implicit” style, with type-inference-driven lengths, using <code>SingI</code> and <code>sing :: SingI n =&gt; Sing n</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L90-93</span>
 <span class="ot">replicate_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 replicate_ <span class="fu">=</span> \<span class="kw">case</span>
     <span class="dt">SZ</span>   <span class="ot">-&gt;</span> \_ <span class="ot">-&gt;</span> <span class="dt">VNil</span>
     <span class="dt">SS</span> l <span class="ot">-&gt;</span> \x <span class="ot">-&gt;</span> x <span class="fu">:+</span> replicate_ l x</code></pre></div>
+<p>And we can recover our original “implicit” style, with type-inference-driven lengths, using <code>SingI</code> and <code>sing :: SingI n =&gt; Sing n</code>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L95-96</span>
+replicate<span class="ot"> ::</span> <span class="dt">SingI</span> n <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
+replicate <span class="fu">=</span> replicate_ sing</code></pre></div>
 <p>You can think of <code>SingI</code> as the “generic singletons” equivalent of <code>KnownNat</code>. <code>KnownNat</code> lets us reflect out a <code>GHC.TypeNats.Nat</code> to a <code>Sing</code>…<code>SingI</code> lets us reflect any type that has singletons defined to its corresponding <code>Sing</code>. Since our new <code>Nat</code> type has singletons, we basically get a free “<code>KnownNat</code> equivalent”!</p>
 <p>See how useful the whole singletons ecosystem is? :)</p>
 <h4 id="generating-with-indices-1">Generating with indices</h4>
