@@ -117,7 +117,7 @@ ghci<span class="fu">&gt;</span> halveOrDouble <span class="dv">7</span>
 <p>(<a href="https://github.com/mstksg/inCode/blob/master/code-samples/monad-plus/HalveOrDouble.hs">Play with this and other functions this section on your own</a>)</p>
 <p>As you can see in the first case, with the 6, there are two paths to success: the halve, and the double. In the second case, with the 7, there is only one — the double.</p>
 <p>How about we subject a number to this halving-or-doubling journey twice? What do we expect?</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>The path of halve-halve only works if the number is divisible by two twice. So this is only a successful path if the number is divisible by four.</li>
 <li>The path of halve-double only works if the number is even. So this is only a successful path in that case.</li>
 <li>The path of double-halve will work in all cases! It is a success always.</li>
@@ -159,7 +159,7 @@ hod2PlusOne n <span class="fu">=</span> <span class="kw">do</span>              
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> hod2PlusOne <span class="dv">6</span>
 [   <span class="dv">4</span>,<span class="dv">13</span>,<span class="dv">13</span>]</code></pre></div>
 <p>Okay! This is getting interesting now. What’s going on? Well, there are four possible “paths”.</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>In the half-half path, <code>x</code> (the result of the first halving) is 3. However, the half-half path is a failure — 6 cannot be halved twice. Therefore, even though <code>x</code> is three, the path has already failed before we get to the <code>return (x + 1)</code>. Just like in the case with Maybe, once something fails during the process of the journey, the entire journey is a failure.</li>
 <li>In the half-double path, <code>x</code> is also 3. However, this journey doesn’t fail. It survives to the end. After the doubling, the value of the journey at that point is “Just 6”. Afterwards, it “auto-succeeds” and replaces the current value with the value of <code>x</code> on that path (3) plus 1 — 4. This is just like how in the Maybe monad, we return a new value after the guard.</li>
 <li>In the double-halve path, <code>x</code> (the result of the first operation, a double) is 12. The second operation makes the value in the journey a 6; At the end of it all, we succeed with whatever the value of <code>x</code> is on that specific journey (12) is, plus one. 13.</li>
@@ -195,10 +195,9 @@ doubleDoublePlusOne <span class="fu">=</span> <span class="kw">do</span>        
     return <span class="fu">$</span> x <span class="fu">+</span> <span class="dv">1</span>                      <span class="co">-- Just 13</span></code></pre></div>
 <h4 id="a-graphical-look">A graphical look</h4>
 <p>This tree might also be a nice illustration, showing what happens at each stage of the journey.</p>
-<div class="figure">
-<img src="/img/entries/monad-plus/halvedouble.png" title="hod2PlusOne 6" alt="hod2PlusOne 6, all journeys illustrated" />
-<p class="caption"><em>hod2PlusOne 6</em>, all journeys illustrated</p>
-</div>
+<figure>
+<img src="/img/entries/monad-plus/halvedouble.png" title="hod2PlusOne 6" alt="hod2PlusOne 6, all journeys illustrated" /><figcaption><em>hod2PlusOne 6</em>, all journeys illustrated</figcaption>
+</figure>
 <p>Every complete “journey” is a complete path from top to bottom. You can see that the left-left journey (the half-halve journey) fails. The left-right journey (the halve-double journey) passes, and at the end is given the value of <code>x + 1</code> for the <code>x</code> in that particular journey. The other journeys work the same way!</p>
 <h2 id="solving-real-ish-problems">Solving real-ish problems</h2>
 <p>That wasn’t too bad, was it? We’re actually just about ready to start implementing our solution to the Wolf/Goat/Cabbage puzzle!</p>
@@ -274,7 +273,7 @@ triplesUnder n <span class="fu">=</span> <span class="kw">do</span>
     guard <span class="fu">$</span> a<span class="fu">^</span><span class="dv">2</span> <span class="fu">+</span> b<span class="fu">^</span><span class="dv">2</span> <span class="fu">==</span> c<span class="fu">^</span><span class="dv">2</span>
     return (a,b,c)</code></pre></div>
 <p>(<a href="https://github.com/mstksg/inCode/blob/master/code-samples/monad-plus/TriplesUnder.hs">Download it and try it out yourself!</a>)</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>Our journey begins with picking a number between 1 and <code>n</code> and setting it to <code>a</code>.</li>
 <li>Next, we pick a number between <code>a</code> and <code>n</code> and set it to <code>b</code>. We start from <code>a</code> because if we don’t, we are probably going to be testing the same tuple twice.</li>
 <li>Next, we pick a number between <code>b</code> and <code>n</code>. This is our hypotenuse, and of course all hypontenii are larger than either side.</li>
@@ -296,10 +295,9 @@ ghci<span class="fu">&gt;</span> triplesUnder <span class="dv">25</span>
  ,( <span class="dv">8</span>,<span class="dv">15</span>,<span class="dv">17</span>),( <span class="dv">9</span>,<span class="dv">12</span>,<span class="dv">15</span>),(<span class="dv">12</span>,<span class="dv">16</span>,<span class="dv">20</span>),(<span class="dv">15</span>,<span class="dv">20</span>,<span class="dv">25</span>) ]</code></pre></div>
 <p>Perfect! You can probably quickly verify that all of these solutions are indeed Pythagorean triples. Out of the 220 journeys undertaken by <code>triplesUnder 10</code>, only two of them survived to the end to be successful. Out of the 2925 journeys in <code>triplesUnder 25</code>, only eight of them made it to the end. The rest “died”/failed, and as a result we do not even observe their remains. It is a cruel and unforgiving world.</p>
 <p>While the full diagram of <code>triplesUnder 5</code> has 35 branches, here is a diagram for those branches with <embed src="https://latex.codecogs.com/gif.latex?a%20%3E%202" title="a &gt; 2" />, which has 10:</p>
-<div class="figure">
-<img src="/img/entries/monad-plus/triplesunder.png" title="triplesUnder 5" alt="triplesUnder 5, all journeys (where a &gt; 2) illustrated" />
-<p class="caption"><em>triplesUnder 5</em>, all journeys (where a &gt; 2) illustrated</p>
-</div>
+<figure>
+<img src="/img/entries/monad-plus/triplesunder.png" title="triplesUnder 5" alt="triplesUnder 5, all journeys (where a &gt; 2) illustrated" /><figcaption><em>triplesUnder 5</em>, all journeys (where a &gt; 2) illustrated</figcaption>
+</figure>
 <h2 id="almost-there">Almost There!</h2>
 <p>Let’s do a quick review:</p>
 <ul>

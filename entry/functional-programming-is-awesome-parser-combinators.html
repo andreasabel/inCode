@@ -55,7 +55,7 @@ parse (<span class="dt">P</span> f) str <span class="fu">=</span> f str         
 <div class="note">
 <p><strong>Aside</strong></p>
 <p>A bunch of Haskell syntax features here!</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li><p>This first line says “the function <code>parse</code> is a function that takes a <code>Parser a</code> and a <code>String</code> and return something of the value <code>(a, String)</code>”</p></li>
 <li><p>Now to define the function. It has two arguments; the first one is of the form <code>P f</code>, and the second is just a string <code>str</code>. Remember, <code>P f</code> is how you specify a <code>Parser a</code>; the <code>f</code> is the function inside the object. We then call <code>f</code> with <code>str</code>, and that’s what we want.</p></li>
 </ol>
@@ -105,7 +105,7 @@ failure <span class="fu">=</span> <span class="dt">P</span> returnNothing       
 <span class="dt">Nothing</span></code></pre></div>
 <div class="note">
 <p><strong>Aside</strong></p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>Remember, we specify/construct parsers as <code>P f</code>, where <code>f</code> is the parsing function.</li>
 <li><code>_</code> is a wildcard in Haskell; <code>returnNothing</code> is a function that takes <em>anything</em> and returns <code>Nothing</code>.</li>
 </ol>
@@ -151,7 +151,7 @@ anyChar <span class="fu">=</span> <span class="dt">P</span> getFirst
         getFirst []     <span class="fu">=</span> <span class="dt">Nothing</span>               <span class="co">-- 2</span></code></pre></div>
 <div class="note">
 <p><strong>Aside</strong></p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>If you call <code>getFirst</code> on a non-empty list, it will set the <code>x</code> to the first element and <code>xs</code> to the rest of the list. Kind of like in C, a string is just an alias for a list of characters. So <code>getFirst &quot;hello&quot;</code> will return <code>Just ('h', &quot;ello&quot;)</code>.</li>
 <li>If you call <code>getFirst</code> on an empty list, it fails.</li>
 </ol>
@@ -259,12 +259,12 @@ anyChar <span class="fu">=</span> satisfies (const <span class="dt">True</span>)
 <h4 id="what-does-that-even-mean">What does that even mean?</h4>
 <p>Hopefully you saw this coming. Functors seem to be very cool. But does it even make sense that our Parser object is a functor? The <code>Parser Int</code> object doesn’t “contain” any <code>Int</code>s…does it?</p>
 <p>Well…it kind of “does”…in two ways, sorta kinda maybe.</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>You could say that a <code>Parser Int</code> “contains” the to-be-parsed integer.</li>
 <li>You could say that a <code>Parser Int</code> “contains” the <strong>idea</strong> of an integer…abstractly. Like, whoa, man.</li>
 </ol>
 <p>So…does it make sense to apply a function “inside” a <code>Parser a</code>? The answer is yes!</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>If a <code>Parser Int</code> contains a to-be-parsed integer, then applying a function inside a <code>Parser Int</code> would be like applying the function to the to-be-parsed integer!</li>
 <li>If a <code>Parser Int</code> contains the <em>idea</em> of an integer, then applying a function inside a <code>Parser Int</code> would be applying the function to the idea of the integer.</li>
 </ol>
@@ -284,7 +284,7 @@ anyChar <span class="fu">=</span> satisfies (const <span class="dt">True</span>)
 <span class="dt">Just</span> (<span class="dv">2</span>, <span class="st">&quot;&quot;</span>)
 λ<span class="fu">:</span> parse digitInt <span class="st">&quot;a&quot;</span>
 <span class="dt">Nothing</span></code></pre></div>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>Remember, we defined the parser <code>digit</code> earlier, as a parser that only succeeds if the first character is a digit.</li>
 </ol>
 <p>Did you just see that? That sounds genuinely useful! If we manage to implement <code>&lt;$&gt;</code> properly, we just have a way to selectively parse any digit character into a digit, and fail otherwise.</p>
@@ -297,7 +297,7 @@ anyChar <span class="fu">=</span> satisfies (const <span class="dt">True</span>)
 λ<span class="fu">:</span> parse digitIntDoubled <span class="st">&quot;a&quot;</span>
 <span class="dt">Nothing</span></code></pre></div>
 <p>What just happened here?</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li><code>digit</code> is a parser that succeeds only on digit characters.</li>
 <li><code>digitToInt &lt;$&gt; digit</code> is the result of applying <code>digitToInt</code> on the value of a succesful parse. Basically, <code>digitToInt &lt;$&gt; digit</code> is a <em>new parser</em> that succeeds on digit characters, returning an integer.</li>
 <li><code>(*2) &lt;$&gt; (digitToInt &lt;$&gt; digit)</code> is the result of applying <code>(*2)</code> (the doubling function) to <code>digitToInt &lt;$&gt; digit</code>, the return-digit-as-int parser. The <code>(*2) &lt;$&gt;</code> doubles the result of the return-digit-as-int parser. Essentially, the entire expression is a <em>new parser</em> that succeeds on digit character, returning the doubled integer as the parse result.</li>
@@ -322,7 +322,7 @@ anyChar <span class="fu">=</span> satisfies (const <span class="dt">True</span>)
                     <span class="dt">Nothing</span>             <span class="ot">-&gt;</span> <span class="dt">Nothing</span>                  <span class="co">-- 6</span></code></pre></div>
 <div class="note">
 <p><strong>Aside</strong></p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>This line is syntax for “we are declaring that <code>Parser</code> is a functor!”, so that Haskell can treat <code>Parser</code> like a functor (and have <code>&lt;$&gt;</code> work).</li>
 <li>In order to declare something as a functor, we must define the function <code>fmap :: (a -&gt; b) -&gt; Parser a -&gt; Parser b</code>, which takes a function from <code>a</code> to <code>b</code>, a <code>Parser a</code>, and returns the mapped-over parser/parser with the function applied “inside”.</li>
 <li>Grab the result of the parse with the unmapped parser, first.</li>
