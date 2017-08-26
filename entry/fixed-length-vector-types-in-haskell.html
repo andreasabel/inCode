@@ -432,17 +432,6 @@ zipVec <span class="fu">=</span> \<span class="kw">case</span>
 <p>Take a moment to stare at the definition of <code>+</code> and <code>++</code> very closely, and then squint really hard. You can see that <code>+</code> and <code>++</code> really describe the “same function”, using the exact same structure. First, if the first item is a Z-y thing, return the second item as-is. If the first item is a consy thing, return the second item consed with the rest of the first item. Roughly speaking, of course.</p>
 <p>This is a part of what we mean when we say that we can take advantage of the <em>structure</em> of the length type. Here, the structure of <code>Nat</code> aligns so well with the structure of <code>Vec</code> what we can prove structural properties about <code>Nat</code> and the <code>Vec</code> together by exploiting their shared inductive structure.</p>
 <p>Unfortunately, for examples where the function we write doesn’t exactly match the structure as the type family we write, this won’t work. And sometimes, the structural properties might get in the way of what we are trying to prove/produce. An example here would be a <code>snoc</code> function (cons to the end of a list). If you try writing it, you’ll see that the structure of <code>Nat</code> and <code>Vec</code> fight back against you pretty hard. So, exploiting structure isn’t universally useful, but it definitely helps in many situations! Handling tricky cases like this is a subject for a whole other blog post.</p>
-<p>Anyway, before we move on, because this is so fun, here is <code>splitVec</code>, an example where the structure of <code>Nat</code> and <code>Vec</code> work together beautifully:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L44-52</span>
-<span class="ot">splitVec_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> (n <span class="fu">+</span> m) a <span class="ot">-&gt;</span> (<span class="dt">Vec</span> n a, <span class="dt">Vec</span> m a)
-splitVec_ <span class="fu">=</span> \<span class="kw">case</span>
-    <span class="dt">SZ</span>   <span class="ot">-&gt;</span> \xs <span class="ot">-&gt;</span> (<span class="dt">VNil</span>, xs)
-    <span class="dt">SS</span> l <span class="ot">-&gt;</span> \<span class="kw">case</span>
-      x <span class="fu">:+</span> xs <span class="ot">-&gt;</span> <span class="kw">case</span> splitVec_ l xs <span class="kw">of</span>
-        (ys, zs) <span class="ot">-&gt;</span> (x <span class="fu">:+</span> ys, zs)
-
-<span class="ot">splitVec ::</span> <span class="dt">SingI</span> n <span class="ot">=&gt;</span> <span class="dt">Vec</span> (n <span class="fu">+</span> m) a <span class="ot">-&gt;</span> (<span class="dt">Vec</span> n a, <span class="dt">Vec</span> m a)
-splitVec <span class="fu">=</span> splitVec_ sing</code></pre></div>
 <h3 id="indexing-1">Indexing</h3>
 <p>To index our previous type, we used some abstract <code>Finite</code> type, where <code>Finite n</code> conveniently represented the type of all possible indices to a <code>Vec n a</code>. We can do something similar, inductively, as well:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L63-67</span>

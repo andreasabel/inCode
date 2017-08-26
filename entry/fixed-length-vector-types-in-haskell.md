@@ -955,22 +955,6 @@ fight back against you pretty hard. So, exploiting structure isn’t universally
 useful, but it definitely helps in many situations! Handling tricky cases like
 this is a subject for a whole other blog post.
 
-Anyway, before we move on, because this is so fun, here is `splitVec`, an
-example where the structure of `Nat` and `Vec` work together beautifully:
-
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L44-52
-splitVec_ :: Sing n -> Vec (n + m) a -> (Vec n a, Vec m a)
-splitVec_ = \case
-    SZ   -> \xs -> (VNil, xs)
-    SS l -> \case
-      x :+ xs -> case splitVec_ l xs of
-        (ys, zs) -> (x :+ ys, zs)
-
-splitVec :: SingI n => Vec (n + m) a -> (Vec n a, Vec m a)
-splitVec = splitVec_ sing
-```
-
 ### Indexing
 
 To index our previous type, we used some abstract `Finite` type, where
