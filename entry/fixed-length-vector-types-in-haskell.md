@@ -1210,8 +1210,8 @@ It’s nice that this is exactly the same as before, and that’s a testament to
 useful the singletons library is at unifying all of these distinct type-level
 stuffs.
 
-We can write `exactLength` in a cute way by inducting on the length we want and
-the vector, so it might be fun to look at this version instead –
+We could also write `exactLength` in a cute way by inducting on the length we
+want and the vector, so it might be fun to look at this version instead –
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L125-135
