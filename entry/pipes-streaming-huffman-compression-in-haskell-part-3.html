@@ -31,7 +31,7 @@ that I’ve struggled through in the past.">Tutorials</a><span class="info-separ
 <h3 id="before-we-go">Before we go</h3>
 <p>Before you proceed, it is recommended that you read over or are at least somewhat familiar with the excellent <a href="http://hackage.haskell.org/package/pipes-4.1.2/docs/Pipes-Tutorial.html">pipes tutorial</a>, which is a part of the actual pipes documentation. This post does not attempt to be a substitute for it, only a “what’s next?”.</p>
 <p>Now, we are going to be using a bit more than just plain old <em>pipes</em> for our program. In addition to the libraries used in our previous parts, we’re going to be using:</p>
-<ol type="1">
+<ol style="list-style-type: decimal">
 <li><em><a href="http://hackage.haskell.org/package/pipes-parse">pipes-parse</a></em>, for leftover support. We’re going to be using limited leftover handling for this project in a couple of situations.</li>
 <li><em><a href="http://hackage.haskell.org/package/pipes-bytestring">pipes-bytestring</a></em>, which provides lenses for us to manipulate bytestring and byte producers in efficient and expressive ways.</li>
 </ol>
@@ -50,7 +50,7 @@ that I’ve struggled through in the past.">Tutorials</a><span class="info-separ
 <p>We can envision this all as a big single giant pipeline of atomic components.</p>
 <p>As a <em>Producer</em>, we have <code>fromHandle</code>, which emits <code>ByteString</code>s read from a given file handle. As a <em>Consumer</em>, we have <code>toHandle</code>, which takes in <code>ByteString</code>s and writes them to the given file handle.</p>
 <p>Those in hand, we’ll need:</p>
-<ol type="1">
+<ol style="list-style-type: decimal">
 <li>A pipe that turns incoming <code>ByteString</code>s into bytes<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> (<code>Word8</code>s), emitting one at a time.</li>
 <li>A pipe that turns incoming <code>Word8</code>s into <code>Direction</code>s, by looking up each <code>Word8</code> in an encoding table to get a list of <code>Direction</code>s and emitting them one at a time.</li>
 <li>A pipe that takes in <code>Direction</code>s and “chunks them up” 8-at-a-time, and re-emits those chunks of 8 as bytes/<code>Word8</code>’s.</li>
@@ -68,7 +68,7 @@ that I’ve struggled through in the past.">Tutorials</a><span class="info-separ
 <p>Luckily for us, this is precisely the problem that <em>pipes-parse</em> was made to solve.</p>
 <p>We’ll go into more detail about just <em>how</em> it solves this later. At the high level, instead of composing pipes with <code>(&gt;-&gt;)</code>, we’ll <em>transform</em> pipes by using pipe transformers/functions.</p>
 <p>So we’ll modify our plan. We’ll have our “<code>Direction</code> producer”, which consists of:</p>
-<ol type="1">
+<ol style="list-style-type: decimal">
 <li>Our <code>ByteString</code> producer.</li>
 <li>Our <code>ByteString</code> to <code>Word8</code> pipe.</li>
 <li>Our <code>Word8</code> to <code>Direction</code> pipe.</li>
@@ -265,9 +265,9 @@ $ <span class="fu">du</span> -h warandpeace.*
 <p>(Remember again that download <a href="https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs">decode.hs</a> is also available online from github! Again, be sure to also grab <a href="https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs">Huffman.hs</a>, <a href="https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs">PQueue.hs</a>, and <a href="https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs">PreTree.hs</a>, and <a href="https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs">Weighted.hs</a> from posts past.)</p>
 <h3 id="design-1">Design</h3>
 <p>Let’s try to see the plan for our decoding script, applying what we learned before. What components do we need?</p>
-<ol type="1">
+<ol style="list-style-type: decimal">
 <li>First, a component producing decoded <code>Word8</code>s (that will be <code>view PB.pack</code>’d into a component producing decoded <code>ByteString</code>s with smart chunking)
-<ol type="1">
+<ol style="list-style-type: decimal">
 <li>A producer that reads in <code>ByteString</code>s from a file and sends them downstream.</li>
 <li>A pipe that unpacks those <code>ByteString</code>s into <code>Word8</code>s and sends each one down.</li>
 <li>A pipe that “unpacks” those <code>Word8</code>s into <code>Direction</code>s and sends <em>those</em> down.</li>
@@ -471,14 +471,14 @@ pipeline  <span class="fu">=</span> bsOut
 <p>Neat!</p>
 <p>Okay now, good bye, for reals!</p>
 </div>
-<section class="footnotes">
+<div class="footnotes">
 <hr />
 <ol>
 <li id="fn1"><p>Remember, a <code>ByteString</code> is an efficiently packed “chunk”/“list” of <code>Word8</code>/bytes; we can use functions like <code>ByteString.unpack</code> and <code>ByteString.pack</code> to turn a <code>ByteString</code> into a list of <code>Word8</code>s or go backwards.<a href="#fnref1">↩</a></p></li>
 <li id="fn2"><p>It actually works on all <code>Foldable</code>s, not just <code>[]</code>.<a href="#fnref2">↩</a></p></li>
 <li id="fn3"><p>Hopefully you aren’t holding your breath on this one :) This next part is not scheduled any ime soon and might not come for a while, as I’ll be pursuing some other things in the near future — I apologize for any disappointment/inconvenience this may cause.<a href="#fnref3">↩</a></p></li>
 </ol>
-</section></div><footer><ul class="entry-series"><li><div>This entry is a part of a series called <b>&quot;Beginner/Intermediate Haskell Projects&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+beginner-intermediate-haskell-projects.html" class="tag-a-series" title="+Beginner/Intermediate Haskell Projects"> series history</a>.</div></li><li><div>This entry is a part of a series called <b>&quot;Huffman Compression&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+huffman-compression.html" class="tag-a-series" title="+Huffman Compression"> series history</a>.</div></li></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/pipes.html" class="tag-a-tag">#pipes</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@tutorials.html" class="tag-a-category">@TUTORIALS</a></li><li><a href="https://blog.jle.im/entries/series/+beginner-intermediate-haskell-projects.html" class="tag-a-series">+Beginner/Intermediate Haskell Projects</a></li><li><a href="https://blog.jle.im/entries/series/+huffman-compression.html" class="tag-a-series">+Huffman Compression</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="prev-entry-link">&larr; <a href="https://blog.jle.im/entry/looking-forward-a-doctorate-program.html">Looking forward: A Doctorate Program</a> (Previous)</li><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/auto-as-category-applicative-arrow-intro-to-machines.html">Auto as Category, Applicative &amp; Arrow (Intro to Machines/Arrows Part 2)</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
+</div></div><footer><ul class="entry-series"><li><div>This entry is a part of a series called <b>&quot;Beginner/Intermediate Haskell Projects&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+beginner-intermediate-haskell-projects.html" class="tag-a-series" title="+Beginner/Intermediate Haskell Projects"> series history</a>.</div></li><li><div>This entry is a part of a series called <b>&quot;Huffman Compression&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+huffman-compression.html" class="tag-a-series" title="+Huffman Compression"> series history</a>.</div></li></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/pipes.html" class="tag-a-tag">#pipes</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@tutorials.html" class="tag-a-category">@TUTORIALS</a></li><li><a href="https://blog.jle.im/entries/series/+beginner-intermediate-haskell-projects.html" class="tag-a-series">+Beginner/Intermediate Haskell Projects</a></li><li><a href="https://blog.jle.im/entries/series/+huffman-compression.html" class="tag-a-series">+Huffman Compression</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="prev-entry-link">&larr; <a href="https://blog.jle.im/entry/looking-forward-a-doctorate-program.html">Looking forward: A Doctorate Program</a> (Previous)</li><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/auto-as-category-applicative-arrow-intro-to-machines.html">Auto as Category, Applicative &amp; Arrow (Intro to Machines/Arrows Part 2)</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/pipes-streaming-huffman-compression-in-haskell-part-3.html';
     this.page.identifier = 'huffman-3';
 };
