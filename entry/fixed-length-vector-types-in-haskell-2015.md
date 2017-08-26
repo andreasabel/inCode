@@ -4,6 +4,16 @@ Fixed-Length Vector Types in Haskell, 2015
 > Originally posted by [Justin Le](https://blog.jle.im/) on May 5, 2015.
 > [Read online!](https://blog.jle.im/entry/fixed-length-vector-types-in-haskell-2015.html)
 
+***Update***: This post was written by me when I was just starting to learn
+about type-level things in Haskell, and reflects my own inexperience at the time
+of writing it. I have [released an
+update](https://blog.jle.im/entry/fixed-length-vector-types-in-haskell.html),
+which presents what I hope to be an introduction that is more grounded in modern
+Haskell and dependent type idioms.
+
+Original Article (written in 2015)
+----------------------------------
+
 Fixed-length vector types (vector types that indicate the length of the vector
 in the type itself) are one of the more straightforward applications of the
 “super-Haskell” GHC type extensions. There’s a lot of magic you can do with
@@ -557,12 +567,12 @@ of type `v a` ever has an index at `n`, a `Nat`. (By the way, we need
 *MultiParamTypeClasses* to be able to make a type class with two parameters)
 
 So, `n ~ S Z` and `v ~ Vec (S (S Z)) a` has an instance, because you can get the
-![n = 1](https://latex.codecogs.com/gif.latex?n%20%3D%201 "n = 1") element (the
+![n = 1](https://latex.codecogs.com/png.latex?n%20%3D%201 "n = 1") element (the
 second element) from *any* value of type `Vec (S (S Z)) a` (a length-two
 vector).
 
 But `n ~ S Z` and `v ~ Vec (S Z) a` does *not*. There are actually *no* length-1
-vectors that have a ![1](https://latex.codecogs.com/gif.latex?1 "1") index
+vectors that have a ![1](https://latex.codecogs.com/png.latex?1 "1") index
 (second element).
 
 Note that we use the `Proxy` trick we discussed, so that we can indicate somehow
@@ -773,8 +783,8 @@ ghci> headV (Nil :: Vec 0 ())
 Neat! The error, remember, is at *compile time*, and not at runtime. If we ever
 tried to do an unsafe head, our code wouldn’t even *compile*! The error message
 comes from the fact that we need
-![n &gt; 0](https://latex.codecogs.com/gif.latex?n%20%3E%200 "n > 0"), but we
-have ![n = 0](https://latex.codecogs.com/gif.latex?n%20%3D%200 "n = 0") instead.
+![n &gt; 0](https://latex.codecogs.com/png.latex?n%20%3E%200 "n > 0"), but we
+have ![n = 0](https://latex.codecogs.com/png.latex?n%20%3D%200 "n = 0") instead.
 We have `EQ`, but we need `GT`.
 
 There is one problem here, though — GHC gives us a warning for not pattern
@@ -819,9 +829,9 @@ instance (Unfoldable (Vec (n - 1)), n > 0) => Unfoldable (Vec n) where
 
 The translation is pretty mechanical, but I think that this new formulation
 looks…really nice, and really powerful. “If you can build a list from
-![n - 1](https://latex.codecogs.com/gif.latex?n%20-%201 "n - 1") and
-![n &gt; 0](https://latex.codecogs.com/gif.latex?n%20%3E%200 "n > 0"), then you
-can build a list for ![n](https://latex.codecogs.com/gif.latex?n "n")!
+![n - 1](https://latex.codecogs.com/png.latex?n%20-%201 "n - 1") and
+![n &gt; 0](https://latex.codecogs.com/png.latex?n%20%3E%200 "n > 0"), then you
+can build a list for ![n](https://latex.codecogs.com/png.latex?n "n")!
 
 Note that because our definitions of `replicateU`, `iterateU`, and
 `fromListMaybes` was polymorphic over all `Unfoldable`, we can actually re-use
@@ -910,7 +920,7 @@ ghci> [1,3..] :: Vec 5 Int
 ```
 
 I think, overall, this formulation gives a much nicer interface. Being able to
-just write ![10](https://latex.codecogs.com/gif.latex?10 "10") is pretty
+just write ![10](https://latex.codecogs.com/png.latex?10 "10") is pretty
 powerful. The usage with *OverloadedLists* is pretty clean, too, especially when
 you can do things like `[1,3..] :: Vec 10 Int` and take full advantage of list
 syntax and succinct vector types. (Minding your runtime errors, of course)
@@ -927,8 +937,8 @@ Alternative Underlying Representations
 Recall that our `Vec` was basically identically the normal list type, with an
 extra field in the type. Due to type erasure, the two are represented exactly
 the same in memory. So we have
-![O(n)](https://latex.codecogs.com/gif.latex?O%28n%29 "O(n)") appends,
-![O(n)](https://latex.codecogs.com/gif.latex?O%28n%29 "O(n)") indexing, etc. Our
+![O(n)](https://latex.codecogs.com/png.latex?O%28n%29 "O(n)") appends,
+![O(n)](https://latex.codecogs.com/png.latex?O%28n%29 "O(n)") indexing, etc. Our
 type is essentially equal to
 
 ``` {.haskell}
@@ -949,7 +959,7 @@ newtype Vec :: Nat -> * -> * where
 ```
 
 And, if you made sure to wrap everything with smart constructors, you now have
-*type safe* ![O(1)](https://latex.codecogs.com/gif.latex?O%281%29 "O(1)") random
+*type safe* ![O(1)](https://latex.codecogs.com/png.latex?O%281%29 "O(1)") random
 indexing!
 
 (This is representation is similar to the one used by the

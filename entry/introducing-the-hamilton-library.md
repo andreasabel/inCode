@@ -102,14 +102,14 @@ we need three things:
     by gravity)
 
 We have two coordinates here
-(![\\theta\_1](https://latex.codecogs.com/gif.latex?%5Ctheta_1 "\theta_1") and
-![\\theta\_2](https://latex.codecogs.com/gif.latex?%5Ctheta_2 "\theta_2")),
+(![\\theta\_1](https://latex.codecogs.com/png.latex?%5Ctheta_1 "\theta_1") and
+![\\theta\_2](https://latex.codecogs.com/png.latex?%5Ctheta_2 "\theta_2")),
 which will be encoding the positions of the two pendulums:
 
 ![
 \\langle x\_1, y\_1 \\rangle =
   \\left\\langle \\sin (\\theta\_1), - \\cos (\\theta\_1) \\right\\rangle
-](https://latex.codecogs.com/gif.latex?%0A%5Clangle%20x_1%2C%20y_1%20%5Crangle%20%3D%0A%20%20%5Cleft%5Clangle%20%5Csin%20%28%5Ctheta_1%29%2C%20-%20%5Ccos%20%28%5Ctheta_1%29%20%5Cright%5Crangle%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Clangle%20x_1%2C%20y_1%20%5Crangle%20%3D%0A%20%20%5Cleft%5Clangle%20%5Csin%20%28%5Ctheta_1%29%2C%20-%20%5Ccos%20%28%5Ctheta_1%29%20%5Cright%5Crangle%0A "
 \langle x_1, y_1 \rangle =
   \left\langle \sin (\theta_1), - \cos (\theta_1) \right\rangle
 ")
@@ -118,7 +118,7 @@ which will be encoding the positions of the two pendulums:
 \\langle x\_2, y\_2 \\rangle =
   \\left\\langle \\sin (\\theta\_1) + \\frac{1}{2} \\sin (\\theta\_2),
     - \\cos (\\theta\_1) - \\frac{1}{2} \\cos (\\theta\_2) \\right\\rangle
-](https://latex.codecogs.com/gif.latex?%0A%5Clangle%20x_2%2C%20y_2%20%5Crangle%20%3D%0A%20%20%5Cleft%5Clangle%20%5Csin%20%28%5Ctheta_1%29%20%2B%20%5Cfrac%7B1%7D%7B2%7D%20%5Csin%20%28%5Ctheta_2%29%2C%0A%20%20%20%20-%20%5Ccos%20%28%5Ctheta_1%29%20-%20%5Cfrac%7B1%7D%7B2%7D%20%5Ccos%20%28%5Ctheta_2%29%20%5Cright%5Crangle%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Clangle%20x_2%2C%20y_2%20%5Crangle%20%3D%0A%20%20%5Cleft%5Clangle%20%5Csin%20%28%5Ctheta_1%29%20%2B%20%5Cfrac%7B1%7D%7B2%7D%20%5Csin%20%28%5Ctheta_2%29%2C%0A%20%20%20%20-%20%5Ccos%20%28%5Ctheta_1%29%20-%20%5Cfrac%7B1%7D%7B2%7D%20%5Ccos%20%28%5Ctheta_2%29%20%5Cright%5Crangle%0A "
 \langle x_2, y_2 \rangle =
   \left\langle \sin (\theta_1) + \frac{1}{2} \sin (\theta_2),
     - \cos (\theta_1) - \frac{1}{2} \cos (\theta_2) \right\rangle
@@ -126,25 +126,25 @@ which will be encoding the positions of the two pendulums:
 
 (Assuming that the first pendulum has length 1 and the second pendulum has
 length
-![\\frac{1}{2}](https://latex.codecogs.com/gif.latex?%5Cfrac%7B1%7D%7B2%7D "\frac{1}{2}"))
+![\\frac{1}{2}](https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B2%7D "\frac{1}{2}"))
 
-The inertias of ![x\_1](https://latex.codecogs.com/gif.latex?x_1 "x_1"),
-![y\_1](https://latex.codecogs.com/gif.latex?y_1 "y_1"),
-![x\_2](https://latex.codecogs.com/gif.latex?x_2 "x_2"), and
-![y\_2](https://latex.codecogs.com/gif.latex?y_2 "y_2") are the “masses”
+The inertias of ![x\_1](https://latex.codecogs.com/png.latex?x_1 "x_1"),
+![y\_1](https://latex.codecogs.com/png.latex?y_1 "y_1"),
+![x\_2](https://latex.codecogs.com/png.latex?x_2 "x_2"), and
+![y\_2](https://latex.codecogs.com/png.latex?y_2 "y_2") are the “masses”
 attached to them. Let’s pick that the first bob has mass
-![1](https://latex.codecogs.com/gif.latex?1 "1") and the second bob has mass
-![2](https://latex.codecogs.com/gif.latex?2 "2"), so then our masses are
-![\\langle 1, 1, 2, 2 \\rangle](https://latex.codecogs.com/gif.latex?%5Clangle%201%2C%201%2C%202%2C%202%20%5Crangle "\langle 1, 1, 2, 2 \rangle").
+![1](https://latex.codecogs.com/png.latex?1 "1") and the second bob has mass
+![2](https://latex.codecogs.com/png.latex?2 "2"), so then our masses are
+![\\langle 1, 1, 2, 2 \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%201%2C%201%2C%202%2C%202%20%5Crangle "\langle 1, 1, 2, 2 \rangle").
 
 Finally, the potential energy of our system is just the potential energy of
 gravity,
-![m \\times g \\times y](https://latex.codecogs.com/gif.latex?m%20%5Ctimes%20g%20%5Ctimes%20y "m \times g \times y")
+![m \\times g \\times y](https://latex.codecogs.com/png.latex?m%20%5Ctimes%20g%20%5Ctimes%20y "m \times g \times y")
 for each of our points:
 
 ![
 U(x\_1, y\_1, x\_2, y\_2) = ( y\_1 + 2 y\_2 ) g
-](https://latex.codecogs.com/gif.latex?%0AU%28x_1%2C%20y_1%2C%20x_2%2C%20y_2%29%20%3D%20%28%20y_1%20%2B%202%20y_2%20%29%20g%0A "
+](https://latex.codecogs.com/png.latex?%0AU%28x_1%2C%20y_1%2C%20x_2%2C%20y_2%29%20%3D%20%28%20y_1%20%2B%202%20y_2%20%29%20g%0A "
 U(x_1, y_1, x_2, y_2) = ( y_1 + 2 y_2 ) g
 ")
 
@@ -181,7 +181,7 @@ Ta dah. That’s literally all we need.
 A `System m n` represents a description of a physical system (without its state)
 described with `n` parameters/generalized coordinates. The `m` represents the
 dimension of its underlying cartesian coordinate system (`4` for us, with
-![\\langle x\_1, y\_1, x\_2, y\_2 \\rangle](https://latex.codecogs.com/gif.latex?%5Clangle%20x_1%2C%20y_1%2C%20x_2%2C%20y_2%20%5Crangle "\langle x_1, y_1, x_2, y_2 \rangle")).
+![\\langle x\_1, y\_1, x\_2, y\_2 \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20x_1%2C%20y_1%2C%20x_2%2C%20y_2%20%5Crangle "\langle x_1, y_1, x_2, y_2 \rangle")).
 The `m` should be more or less irrelevant to the actual *usage* of `System m n`
 and the *hamilton* api…but it’s mostly useful only if we eventually want to plot
 the system in normal cartesian space.
@@ -286,13 +286,13 @@ each vector as a row, and `disp 5` from *hmatrix* pretty-prints our matrix with
     -0.0381  -0.6640
 
 Neat! We see that the first coordinate
-(![\\theta\_1](https://latex.codecogs.com/gif.latex?%5Ctheta_1 "\theta_1"))
+(![\\theta\_1](https://latex.codecogs.com/png.latex?%5Ctheta_1 "\theta_1"))
 starts at 1 like we asked, and then begins decreasing and falling… And then we
 see the second coordinate
-(![\\theta\_2](https://latex.codecogs.com/gif.latex?%5Ctheta_2 "\theta_2"))
+(![\\theta\_2](https://latex.codecogs.com/png.latex?%5Ctheta_2 "\theta_2"))
 starting at 0 and then “swinging” to the right. The [image the top of this
 post](http://i.imgur.com/Vaaa2EC.gifv) is an animation of such a system (albeit
-with ![m\_2 = 1](https://latex.codecogs.com/gif.latex?m_2%20%3D%201 "m_2 = 1")).
+with ![m\_2 = 1](https://latex.codecogs.com/png.latex?m_2%20%3D%201 "m_2 = 1")).
 
 #### Two-body system
 
@@ -310,25 +310,25 @@ constantly increase…and increase at a faster rate when the distance is smaller
 law](https://en.wikipedia.org/wiki/Kepler's_laws_of_planetary_motion#Second_law)).
 
 If we assume that the center of mass of the system is at
-![\\langle 0, 0 \\rangle](https://latex.codecogs.com/gif.latex?%5Clangle%200%2C%200%20%5Crangle "\langle 0, 0 \rangle"),
+![\\langle 0, 0 \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%200%2C%200%20%5Crangle "\langle 0, 0 \rangle"),
 then we can state these coordinates as
 
 ![
 \\langle x\_1, y\_1 \\rangle = \\langle r\_1 \\cos (\\theta), r\_1 \\sin (\\theta) \\rangle
-](https://latex.codecogs.com/gif.latex?%0A%5Clangle%20x_1%2C%20y_1%20%5Crangle%20%3D%20%5Clangle%20r_1%20%5Ccos%20%28%5Ctheta%29%2C%20r_1%20%5Csin%20%28%5Ctheta%29%20%5Crangle%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Clangle%20x_1%2C%20y_1%20%5Crangle%20%3D%20%5Clangle%20r_1%20%5Ccos%20%28%5Ctheta%29%2C%20r_1%20%5Csin%20%28%5Ctheta%29%20%5Crangle%0A "
 \langle x_1, y_1 \rangle = \langle r_1 \cos (\theta), r_1 \sin (\theta) \rangle
 ")
 
 ![
 \\langle x\_2, y\_2 \\rangle = \\langle r\_2 \\cos (\\theta), r\_2 \\sin (\\theta) \\rangle
-](https://latex.codecogs.com/gif.latex?%0A%5Clangle%20x_2%2C%20y_2%20%5Crangle%20%3D%20%5Clangle%20r_2%20%5Ccos%20%28%5Ctheta%29%2C%20r_2%20%5Csin%20%28%5Ctheta%29%20%5Crangle%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Clangle%20x_2%2C%20y_2%20%5Crangle%20%3D%20%5Clangle%20r_2%20%5Ccos%20%28%5Ctheta%29%2C%20r_2%20%5Csin%20%28%5Ctheta%29%20%5Crangle%0A "
 \langle x_2, y_2 \rangle = \langle r_2 \cos (\theta), r_2 \sin (\theta) \rangle
 ")
 
 Where
-![r\_1 = \\frac{m\_2}{m\_1 + m\_2}](https://latex.codecogs.com/gif.latex?r_1%20%3D%20%5Cfrac%7Bm_2%7D%7Bm_1%20%2B%20m_2%7D "r_1 = \frac{m_2}{m_1 + m_2}")
+![r\_1 = \\frac{m\_2}{m\_1 + m\_2}](https://latex.codecogs.com/png.latex?r_1%20%3D%20%5Cfrac%7Bm_2%7D%7Bm_1%20%2B%20m_2%7D "r_1 = \frac{m_2}{m_1 + m_2}")
 and
-![r\_2 = - \\frac{m\_1}{m\_1 + m\_2}](https://latex.codecogs.com/gif.latex?r_2%20%3D%20-%20%5Cfrac%7Bm_1%7D%7Bm_1%20%2B%20m_2%7D "r_2 = - \frac{m_1}{m_1 + m_2}")
+![r\_2 = - \\frac{m\_1}{m\_1 + m\_2}](https://latex.codecogs.com/png.latex?r_2%20%3D%20-%20%5Cfrac%7Bm_1%7D%7Bm_1%20%2B%20m_2%7D "r_2 = - \frac{m_1}{m_1 + m_2}")
 (solving from the center of mass).[^1]
 
 Our potential energy function is Newton’s famous [law of universal
@@ -336,7 +336,7 @@ gravitation](https://en.wikipedia.org/wiki/Newton's_law_of_universal_gravitation
 
 ![
 U(r, \\theta) = - \\frac{G m\_1 m\_2}{r}
-](https://latex.codecogs.com/gif.latex?%0AU%28r%2C%20%5Ctheta%29%20%3D%20-%20%5Cfrac%7BG%20m_1%20m_2%7D%7Br%7D%0A "
+](https://latex.codecogs.com/png.latex?%0AU%28r%2C%20%5Ctheta%29%20%3D%20-%20%5Cfrac%7BG%20m_1%20m_2%7D%7Br%7D%0A "
 U(r, \theta) = - \frac{G m_1 m_2}{r}
 ")
 
@@ -345,8 +345,8 @@ And, this should be enough to go for *hamilton*.
 “But wait,” I hear you say. “If we’re doing a change-of-coordinate-system into
 polar coordinates, don’t we have to account for artifacts like centrifugal
 acceleration from the fact that
-![d \\theta](https://latex.codecogs.com/gif.latex?d%20%5Ctheta "d \theta") is
-non-uniform and depends on ![r](https://latex.codecogs.com/gif.latex?r "r")?”
+![d \\theta](https://latex.codecogs.com/png.latex?d%20%5Ctheta "d \theta") is
+non-uniform and depends on ![r](https://latex.codecogs.com/png.latex?r "r")?”
 
 Well, I’m glad you asked! And the answer is, nope. We don’t have to account for
 any weird interplay from non-uniform coordinate systems because *hamilton*
@@ -386,8 +386,8 @@ config0 = Cfg (vec2 2   0)  -- initial positions
 
 (we use `mkSystem` instead of `mkSystem'` because we want to state the potential
 energy in terms of our generalized coordinates
-![r](https://latex.codecogs.com/gif.latex?r "r") and
-![\\theta](https://latex.codecogs.com/gif.latex?%5Ctheta "\theta"))
+![r](https://latex.codecogs.com/png.latex?r "r") and
+![\\theta](https://latex.codecogs.com/png.latex?%5Ctheta "\theta"))
 
 Let’s take a peek:
 
@@ -433,10 +433,10 @@ main = withRows (take 25 positions) (disp 4)
     1.9852  6.3407
     1.9479  6.3923
 
-Neat! We see that ![r](https://latex.codecogs.com/gif.latex?r "r") starts big
+Neat! We see that ![r](https://latex.codecogs.com/png.latex?r "r") starts big
 and gets smaller, and then gets big again. And it’s clear that when
-![r](https://latex.codecogs.com/gif.latex?r "r") is smallest,
-![\\theta](https://latex.codecogs.com/gif.latex?%5Ctheta "\theta") changes the
+![r](https://latex.codecogs.com/png.latex?r "r") is smallest,
+![\\theta](https://latex.codecogs.com/png.latex?%5Ctheta "\theta") changes the
 fastest. Look at it go!
 
 Here’s an animation of the same situation with some different masses:
@@ -471,7 +471,7 @@ tricks I mentioned above, stay tuned :)
 
 [^1]: Alternatively, we could assume that the halfway point (or even the first
     body) is always at
-    ![\\langle 0, 0 \\rangle](https://latex.codecogs.com/gif.latex?%5Clangle%200%2C%200%20%5Crangle "\langle 0, 0 \rangle"),
+    ![\\langle 0, 0 \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%200%2C%200%20%5Crangle "\langle 0, 0 \rangle"),
     but this doesn’t give us as pretty of plots. The center of mass is a nice
     reference point because newton’s third law implies that it remains
     stationary forever.

@@ -37,27 +37,27 @@ mean…it’s the study of how things move under forces. How can you get any dee
 to the heart of physics than that?
 
 When most people think of mechanics, they think of
-![F = m a](https://latex.codecogs.com/gif.latex?F%20%3D%20m%20a "F = m a"),
+![F = m a](https://latex.codecogs.com/png.latex?F%20%3D%20m%20a "F = m a"),
 inertia, and that every reaction has an equal and opposite re-action. These are
 Newton’s “Laws of Motion” and they provide what can be referred to as a
 “state-updating function”: Given a state of the world at time
-![t\_0](https://latex.codecogs.com/gif.latex?t_0 "t_0"), Newton’s laws can be
+![t\_0](https://latex.codecogs.com/png.latex?t_0 "t_0"), Newton’s laws can be
 used to “generate” the state of the world at time
-![t\_0 + \\Delta t](https://latex.codecogs.com/gif.latex?t_0%20%2B%20%5CDelta%20t "t_0 + \Delta t").
+![t\_0 + \\Delta t](https://latex.codecogs.com/png.latex?t_0%20%2B%20%5CDelta%20t "t_0 + \Delta t").
 
 This sounds pretty useful, but it wasn’t long before physicists began wishing
 they had other tools with which to study the mechanics of certain systems.
 Newton’s equations worked very well for the cases that made it famous, but were
 surprisingly unuseful, impractical, or clumsy in many others. And when we talk
 about relativity, where things like
-![\\Delta t](https://latex.codecogs.com/gif.latex?%5CDelta%20t "\Delta t") can’t
+![\\Delta t](https://latex.codecogs.com/png.latex?%5CDelta%20t "\Delta t") can’t
 even be trivially defined, it is almost completely useless without complicated
 modifications.
 
 So it was almost exactly one hundred years after Newton’s laws that two people
 named [Lagrange](http://en.wikipedia.org/wiki/Joseph-Louis_Lagrange) and
 [Euler](http://en.wikipedia.org/wiki/Leonhard_Euler) (who is the “e” in
-![e](https://latex.codecogs.com/gif.latex?e "e")) followed a wild hunch that
+![e](https://latex.codecogs.com/png.latex?e "e")) followed a wild hunch that
 ended up paying off.
 
 ### Lagrangian Mechanics
@@ -75,39 +75,39 @@ don’t care why, or how — it just “wants” to. And the steeper the downwar
 the greater the compulsion.
 
 We call this potential field
-![U(\\vec{r})](https://latex.codecogs.com/gif.latex?U%28%5Cvec%7Br%7D%29 "U(\vec{r})"),
-which means “![U](https://latex.codecogs.com/gif.latex?U "U") at the point
-![\\vec{r}](https://latex.codecogs.com/gif.latex?%5Cvec%7Br%7D "\vec{r}")”.
-(![\\vec{r}](https://latex.codecogs.com/gif.latex?%5Cvec%7Br%7D "\vec{r}")
+![U(\\vec{r})](https://latex.codecogs.com/png.latex?U%28%5Cvec%7Br%7D%29 "U(\vec{r})"),
+which means “![U](https://latex.codecogs.com/png.latex?U "U") at the point
+![\\vec{r}](https://latex.codecogs.com/png.latex?%5Cvec%7Br%7D "\vec{r}")”.
+(![\\vec{r}](https://latex.codecogs.com/png.latex?%5Cvec%7Br%7D "\vec{r}")
 denotes a point in space)
 
 Relating this to
-![F = m a](https://latex.codecogs.com/gif.latex?F%20%3D%20m%20a "F = m a"), the
+![F = m a](https://latex.codecogs.com/png.latex?F%20%3D%20m%20a "F = m a"), the
 force on the object is now equal to the steepness of the potential field at the
 point where the object is, and in the direction that would allow the object to
 go downwards in potential. Objects always wish to minimize their potential, and
 do so as fast as they can. In mathematical terminology, we say that
-![F(\\vec{r}) = - \\vec{\\nabla} U(\\vec{r})](https://latex.codecogs.com/gif.latex?F%28%5Cvec%7Br%7D%29%20%3D%20-%20%5Cvec%7B%5Cnabla%7D%20U%28%5Cvec%7Br%7D%29 "F(\vec{r}) = - \vec{\nabla} U(\vec{r})").
+![F(\\vec{r}) = - \\vec{\\nabla} U(\\vec{r})](https://latex.codecogs.com/png.latex?F%28%5Cvec%7Br%7D%29%20%3D%20-%20%5Cvec%7B%5Cnabla%7D%20U%28%5Cvec%7Br%7D%29 "F(\vec{r}) = - \vec{\nabla} U(\vec{r})").
 
 ![An example of a 2D potential
-![U(\\vec{r})](https://latex.codecogs.com/gif.latex?U%28%5Cvec%7Br%7D%29 "U(\vec{r})").](/img/entries/path-integral-intro/potential3d.png "An example of a 2D potential $U(\vec{r})$.")
+![U(\\vec{r})](https://latex.codecogs.com/png.latex?U%28%5Cvec%7Br%7D%29 "U(\vec{r})").](/img/entries/path-integral-intro/potential3d.png "An example of a 2D potential $U(\vec{r})$.")
 
 ![Top-down view of the potential in the previous figure, overlayed with arrows
 indicating the direction and magnitude of
-![F(\\vec{r})](https://latex.codecogs.com/gif.latex?F%28%5Cvec%7Br%7D%29 "F(\vec{r})").](/img/entries/path-integral-intro/gradient.png "Top-down view of the potential in the previous figure, overlayed with arrows indicating the direction and magnitude of $F(\vec{r})$.")
+![F(\\vec{r})](https://latex.codecogs.com/png.latex?F%28%5Cvec%7Br%7D%29 "F(\vec{r})").](/img/entries/path-integral-intro/gradient.png "Top-down view of the potential in the previous figure, overlayed with arrows indicating the direction and magnitude of $F(\vec{r})$.")
 
 Now, for Lagrangian Mechanics:
 
 Let’s say I tell you an object’s location at time
-![t\_0](https://latex.codecogs.com/gif.latex?t_0 "t_0"), and its location later
-at time ![t\_1](https://latex.codecogs.com/gif.latex?t_1 "t_1"), and the
+![t\_0](https://latex.codecogs.com/png.latex?t_0 "t_0"), and its location later
+at time ![t\_1](https://latex.codecogs.com/png.latex?t_1 "t_1"), and the
 potential energy field. What path did that object take to get from point A to
 point B?
 
 A pretty open question, right? You don’t really have that much information to go
 off of. You just know point A and point B. It could have taken any path, for all
 we know! If we only knew
-![F = m a](https://latex.codecogs.com/gif.latex?F%20%3D%20m%20a "F = m a"), not
+![F = m a](https://latex.codecogs.com/png.latex?F%20%3D%20m%20a "F = m a"), not
 only would we be at a complete loss at how to even start, but we wouldn’t even
 know if there was only one or even a hundred valid paths a particle could have
 taken.
@@ -118,9 +118,9 @@ path a number known as the **Action**:
 
 1.  For every point, add up the “Kinetic Energy” at that point, which, for
     classical mechanics, is the square of the object’s speed multiplied by
-    ![\\frac{1}{2} m](https://latex.codecogs.com/gif.latex?%5Cfrac%7B1%7D%7B2%7D%20m "\frac{1}{2} m").
+    ![\\frac{1}{2} m](https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B2%7D%20m "\frac{1}{2} m").
 2.  For every point, add up
-    ![U(\\vec{r})](https://latex.codecogs.com/gif.latex?U%28%5Cvec%7Br%7D%29 "U(\vec{r})")
+    ![U(\\vec{r})](https://latex.codecogs.com/png.latex?U%28%5Cvec%7Br%7D%29 "U(\vec{r})")
     at that point.
 3.  Subtract (2) from (1).
 
@@ -141,7 +141,7 @@ slightly tricky). We also have a formulation that works fine under Special
 Relativity in all frames of reference with almost no tweaks. And yes, if you
 actually do find the path of lowest action, the path will somehow magically
 always follow the state-updating equations
-![F = m a](https://latex.codecogs.com/gif.latex?F%20%3D%20m%20a "F = m a"). It’s
+![F = m a](https://latex.codecogs.com/png.latex?F%20%3D%20m%20a "F = m a"). It’s
 just now we have a much more insighftul and meaningful way to look at the
 universe:
 
@@ -169,16 +169,16 @@ Physicists’ first solutions involved creating a new “state” that did not i
 particles at all. This “state” described the state of the universe, but not in
 terms of particles and positions and velocities. It is a new *abstract* state.
 Then, they invented the equivalent of an
-![F = m a](https://latex.codecogs.com/gif.latex?F%20%3D%20m%20a "F = m a") for
+![F = m a](https://latex.codecogs.com/png.latex?F%20%3D%20m%20a "F = m a") for
 this abstract state — an equation that, for every abstract state at time
-![t\_0](https://latex.codecogs.com/gif.latex?t_0 "t_0"), gives you the abstract
+![t\_0](https://latex.codecogs.com/png.latex?t_0 "t_0"), gives you the abstract
 state at time
-![t\_0 + \\Delta t](https://latex.codecogs.com/gif.latex?t_0%20%2B%20%5CDelta%20t "t_0 + \Delta t").
+![t\_0 + \\Delta t](https://latex.codecogs.com/png.latex?t_0%20%2B%20%5CDelta%20t "t_0 + \Delta t").
 
 This approach is useful…just like
-![F = m a](https://latex.codecogs.com/gif.latex?F%20%3D%20m%20a "F = m a") was
+![F = m a](https://latex.codecogs.com/png.latex?F%20%3D%20m%20a "F = m a") was
 useful. But it inherits all of the problems of
-![F = m a](https://latex.codecogs.com/gif.latex?F%20%3D%20m%20a "F = m a"). How
+![F = m a](https://latex.codecogs.com/png.latex?F%20%3D%20m%20a "F = m a"). How
 can we apply what we learned about actions and Lagrangian mechanics to Quantum
 Mechanics? How do we make Lagrangian mechanics “quantum”?
 
@@ -191,12 +191,12 @@ Instead of saying “the object will chose the path with the least action”, we
 That is, if an electron is shot from point A to point B, the electron picks a
 random path from point A to point B. It is a *weighted random choice* based on
 the action of each path — if Path
-![\\alpha](https://latex.codecogs.com/gif.latex?%5Calpha "\alpha") has lower
+![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha") has lower
 action than Path
-![\\beta](https://latex.codecogs.com/gif.latex?%5Cbeta "\beta"), the electron
+![\\beta](https://latex.codecogs.com/png.latex?%5Cbeta "\beta"), the electron
 will pick path
-![\\alpha](https://latex.codecogs.com/gif.latex?%5Calpha "\alpha") more often
-than path ![\\beta](https://latex.codecogs.com/gif.latex?%5Cbeta "\beta").
+![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha") more often
+than path ![\\beta](https://latex.codecogs.com/png.latex?%5Cbeta "\beta").
 
 There are some small technical differences (the process of calculating the
 action is slightly different, and you end up summing over complex numbers for
@@ -204,8 +204,8 @@ certain reasons), but the fundamental principle remains the same.
 
 So say we have an electron floating around a hydrogen atom (a hydrogen atom
 creates a very pretty and easy to work with potential field). We know it is at
-point A at time ![t\_0](https://latex.codecogs.com/gif.latex?t_0 "t_0"), and
-point B at time ![t\_1](https://latex.codecogs.com/gif.latex?t_1 "t_1"). What
+point A at time ![t\_0](https://latex.codecogs.com/png.latex?t_0 "t_0"), and
+point B at time ![t\_1](https://latex.codecogs.com/png.latex?t_1 "t_1"). What
 path did the electron take to get there?
 
 Simple: We don’t know. But we can say that it *probably* took the path with the
@@ -243,9 +243,9 @@ next installment’s contents.
 
 Let’s go back again to our electron next to an atom. Let’s say that this
 electron will move around and return back to its current position at time
-![t\_0 + \\Delta t](https://latex.codecogs.com/gif.latex?t_0%20%2B%20%5CDelta%20t "t_0 + \Delta t"),
+![t\_0 + \\Delta t](https://latex.codecogs.com/png.latex?t_0%20%2B%20%5CDelta%20t "t_0 + \Delta t"),
 for very large
-![\\Delta t](https://latex.codecogs.com/gif.latex?%5CDelta%20t "\Delta t"). From
+![\\Delta t](https://latex.codecogs.com/png.latex?%5CDelta%20t "\Delta t"). From
 what we learned, this electron can really take any path it wants, going anywhere
 in the universe and back again. Any closed loop that that zig zags or curls
 anywhere is a valid path.

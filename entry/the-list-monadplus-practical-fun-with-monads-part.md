@@ -513,7 +513,7 @@ Paths like `a = 5` and `b = 3` do not even happen. This is because if we pick
 
 Remember, the final result is the accumulation of **all such successful
 journeys**. A little bit of combinatorics will show that there are
-![\\frac{1}{6} \\times \\frac{(n+2)!}{(n-1)!}](https://latex.codecogs.com/gif.latex?%5Cfrac%7B1%7D%7B6%7D%20%5Ctimes%20%5Cfrac%7B%28n%2B2%29%21%7D%7B%28n-1%29%21%7D "\frac{1}{6} \times \frac{(n+2)!}{(n-1)!}")
+![\\frac{1}{6} \\times \\frac{(n+2)!}{(n-1)!}](https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B6%7D%20%5Ctimes%20%5Cfrac%7B%28n%2B2%29%21%7D%7B%28n-1%29%21%7D "\frac{1}{6} \times \frac{(n+2)!}{(n-1)!}")
 possible journeys to attempt. Only the ones that do not fail (at the guard) will
 make it to the end. Remember how MonadPlus works — one failure along the journey
 means that the *entire journey* is a failure.
@@ -537,7 +537,7 @@ cruel and unforgiving world.
 
 While the full diagram of `triplesUnder 5` has 35 branches, here is a diagram
 for those branches with
-![a &gt; 2](https://latex.codecogs.com/gif.latex?a%20%3E%202 "a > 2"), which has
+![a &gt; 2](https://latex.codecogs.com/png.latex?a%20%3E%202 "a > 2"), which has
 10:
 
 ![*triplesUnder 5*, all journeys (where a &gt; 2)

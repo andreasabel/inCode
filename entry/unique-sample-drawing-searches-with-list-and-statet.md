@@ -38,7 +38,7 @@ ghci> do x <- "abc"
 ```
 
 This is a little bit awkward…and it definitely gets a lot worse
-(![O(n\^2)](https://latex.codecogs.com/gif.latex?O%28n%5E2%29 "O(n^2)")) when
+(![O(n\^2)](https://latex.codecogs.com/png.latex?O%28n%5E2%29 "O(n^2)")) when
 you have more items. Also, it relies on an `Eq` constraint — what if our thing
 doesn’t have an `Eq` instance? And this also falls apart when our list contains
 duplicate items. If we had used `"aabc"` instead of `"abc"`, the result would be
