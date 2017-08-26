@@ -251,7 +251,7 @@ zipSame v1 v2 <span class="fu">=</span> withVec v1 <span class="fu">$</span> \(<
 </ol>
 <h3 id="help-from-singletons">Help from singletons</h3>
 <p>You have probably heard that <code>TypeNats</code> provides a very bare-bones and primitive interface. This is true. Its interface also sometimes doesn’t play well with other type-level mechanisms you might want to try. To prepare you for the real world, let’s re-implement these things using the <em><a href="http://hackage.haskell.org/package/singletons">singletons</a></em> library, which provides a unified interface for type-level programming in general.</p>
-<p>Instead of <code>KnownNat</code>, <code>Proxy</code>, <code>natVal</code>, <code>SomeNat</code>, and <code>someNatVal</code>, we can use the singletons equivalents, <code>Sing</code>, <code>fromSing</code>, <code>SomeSing</code>, and <code>toSing</code>:</p>
+<p>Instead of <code>KnownNat</code>, <code>Proxy</code>, <code>natVal</code>, <code>SomeNat</code>, and <code>someNatVal</code>, we can use the singletons equivalents, <code>Sing</code>, <code>fromSing</code>, <code>SomeSing</code>, and <code>toSing</code>:<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- TypeNats style</span>
 <span class="ot">natVal ::</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> p n <span class="ot">-&gt;</span> <span class="dt">Natural</span>
 
@@ -265,7 +265,7 @@ zipSame v1 v2 <span class="fu">=</span> withVec v1 <span class="fu">$</span> \(<
 
 <span class="co">-- Singletons style</span>
 <span class="kw">data</span> <span class="dt">SomeSing</span> <span class="dt">Nat</span> <span class="fu">=</span> forall n<span class="fu">.</span> <span class="dt">SomeSing</span> (<span class="dt">Sing</span> n)
-<span class="ot">someSing ::</span> <span class="dt">Natural</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">Nat</span>
+<span class="ot">toSing ::</span> <span class="dt">Natural</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">Nat</span>
 
 <span class="ot">withSomeSing ::</span> <span class="dt">Natural</span> <span class="ot">-&gt;</span> (forall n<span class="fu">.</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r
 
@@ -312,13 +312,11 @@ withVec v f <span class="fu">=</span> <span class="kw">case</span> toSing (fromI
     <span class="dt">SomeSing</span> s <span class="ot">-&gt;</span> f s (<span class="dt">UnsafeMkVec</span> v)
 
 <span class="co">-- alternatively, skipping `SomeSing` altogether:</span>
-<span class="ot">withVec ::</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> (forall n<span class="fu">.</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r
-withVec v0 f <span class="fu">=</span> withSomeSing (fromIntegral (V.length v0)<span class="ot"> ::</span> <span class="dt">Natural</span>) <span class="fu">$</span> \s <span class="ot">-&gt;</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L44-54</span>
+<span class="ot">withVec&#39; ::</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> (forall n<span class="fu">.</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r
+withVec&#39; v0 f <span class="fu">=</span> withSomeSing (fromIntegral (V.length v0)) <span class="fu">$</span> \s <span class="ot">-&gt;</span>
     f s (<span class="dt">UnsafeMkVec</span> v0)
-<span class="co">-- note: this requires singletons &gt; 2.3.  in singletons 2.3.1 and below, you&#39;d</span>
-<span class="co">-- need to do (fromIntegral (V.length v0) :: Integer)</span>
 
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L44-50</span>
 <span class="ot">exactLength_ ::</span> <span class="dt">Sing</span> m <span class="ot">-&gt;</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> m a)
 exactLength_ sM sN v <span class="fu">=</span> <span class="kw">case</span> sM <span class="fu">%~</span> sN <span class="kw">of</span>
     <span class="dt">Proved</span> <span class="dt">Refl</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> v
@@ -335,7 +333,7 @@ exactLength <span class="fu">=</span> exactLength_ sing sing</code></pre></div>
 <span class="co">-- we can give a `Sing n` and be able to execute something in the context where</span>
 <span class="co">-- that `n` has a `KnownNat` constraint</span>
 <span class="ot">withKnownNat ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> (<span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> r) <span class="ot">-&gt;</span> r</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L52-56</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L56-60</span>
 <span class="ot">generate_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> (<span class="dt">Finite</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 generate_ s f <span class="fu">=</span> withKnownNat s <span class="fu">$</span>
     <span class="dt">UnsafeMkVec</span> <span class="fu">$</span> V.generate l (f <span class="fu">.</span> finite <span class="fu">.</span> fromIntegral)
@@ -343,13 +341,13 @@ generate_ s f <span class="fu">=</span> withKnownNat s <span class="fu">$</span>
     l <span class="fu">=</span> fromIntegral (fromSing s)
 
 <span class="co">-- alternatively, via pattern matching:</span>
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L59-62</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L63-66</span>
 <span class="ot">generate&#39;_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> (<span class="dt">Finite</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 generate&#39;_ s<span class="fu">@</span><span class="dt">SNat</span> f <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> <span class="fu">$</span> V.generate l (f <span class="fu">.</span> fromIntegral)
   <span class="kw">where</span>
     l <span class="fu">=</span> fromIntegral (fromSing s)
 
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L64-65</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L68-69</span>
 <span class="ot">generate ::</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> (<span class="dt">Finite</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 generate <span class="fu">=</span> generate_ sing</code></pre></div>
 <p>You can see most of our original code (with pure <code>KnownNat</code>) rewritten to work with singletons in <a href="https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs">this file</a>.</p>
@@ -572,7 +570,7 @@ exactLengthInductive_ <span class="fu">=</span> \<span class="kw">case</span>
 
 <span class="ot">exactLengthInductive ::</span> <span class="dt">SingI</span> m <span class="ot">=&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> m a)
 exactLengthInductive <span class="fu">=</span> exactLengthInductive_ sing</code></pre></div>
-<p>This is another way you can take advantage of the <em>structure</em> of the length type. Here, we explicitly take advantage of the inductive structure of the <code>Nat</code> type and how it matches with the structure of the <code>Vec</code> type, and do bold things with it!<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
+<p>This is another way you can take advantage of the <em>structure</em> of the length type. Here, we explicitly take advantage of the inductive structure of the <code>Nat</code> type and how it matches with the structure of the <code>Vec</code> type, and do bold things with it!<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a></p>
 <p>But I digress. Like in the last section, checking for a given length is literally the least interesting property you can check for. But, again, the same process is usable here: find a way to get your witness, and then pattern match on that witness.</p>
 <p>For example, we can make a witness that <code>n</code> is less than or equal to <code>m</code>, as well as a way to construct such a witness:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L137-149</span>
@@ -607,7 +605,7 @@ takeVec <span class="fu">=</span> \<span class="kw">case</span>
     <span class="dt">LEZ</span>   <span class="ot">-&gt;</span> \_ <span class="ot">-&gt;</span> <span class="dt">VNil</span>
     <span class="dt">LES</span> l <span class="ot">-&gt;</span> \<span class="kw">case</span>
       x <span class="fu">:+</span> xs <span class="ot">-&gt;</span> x <span class="fu">:+</span> takeVec l xs</code></pre></div>
-<p>And, we can combine that with our <code>atLeast</code> function, to be able to take (maybe)<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a> from any vector:</p>
+<p>And, we can combine that with our <code>atLeast</code> function, to be able to take (maybe)<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a> from any vector:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L165-169</span>
 <span class="ot">takeVecMaybe_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> n a)
 takeVecMaybe_ sN v <span class="fu">=</span> uncurry takeVec <span class="fu">&lt;$&gt;</span> atLeast_ sN v
@@ -625,8 +623,9 @@ takeVecMaybe v <span class="fu">=</span> uncurry takeVec <span class="fu">&lt;$&
 <hr />
 <ol>
 <li id="fn1"><p>Users who are used to GHC 8.0 and below might remember <code>Nat</code> coming from <em><a href="http://hackage.haskell.org/package/base/docs/GHC-TypeLits.html">GHC.TypeLits</a></em>. Well, GHC 8.2 is here, <code>TypeLits</code> is out, <code>TypeNats</code> is in. The difference is that, in <code>TypeLits</code>, the <code>Nat</code> kind reifies/reflects with <code>Integer</code>. In <code>TypeNats</code>, the <code>Nat</code> kind reifies/reflects with <code>Natural</code> from <em><a href="http://hackage.haskell.org/package/base/docs/Numeric-Natural.html">Numeric.Natural</a></em>.<a href="#fnref1">↩</a></p></li>
-<li id="fn2"><p>Note, however, that if you unroll the definition of <code>%~</code> for <code>Nat</code>, you pretty much get the exact same thing.<a href="#fnref2">↩</a></p></li>
-<li id="fn3"><p>Remember the whole point of this exercise — that the <code>Maybe</code> is required only in the completely polymorphic case, where we get our lengths at runtime and don’t know them at compile-time. If we <em>knew</em> <code>n</code> and <code>m</code> at compile-time, and knew that <code>n</code> was less than or equal to <code>m</code>, we could construct an <code>LTE n m</code> and call <code>takeVec</code> directly, and not return a <code>Maybe</code>.<a href="#fnref3">↩</a></p></li>
+<li id="fn2"><p>For singletons &gt; 2.3 <code>fromSing</code> and <code>toSing</code> give and take <code>Natural</code> when going to <code>Nat</code>. However, for 2.3.1 and below, they give/take <code>Integer</code> instead.<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>Note, however, that if you unroll the definition of <code>%~</code> for <code>Nat</code>, you pretty much get the exact same thing.<a href="#fnref3">↩</a></p></li>
+<li id="fn4"><p>Remember the whole point of this exercise — that the <code>Maybe</code> is required only in the completely polymorphic case, where we get our lengths at runtime and don’t know them at compile-time. If we <em>knew</em> <code>n</code> and <code>m</code> at compile-time, and knew that <code>n</code> was less than or equal to <code>m</code>, we could construct an <code>LTE n m</code> and call <code>takeVec</code> directly, and not return a <code>Maybe</code>.<a href="#fnref4">↩</a></p></li>
 </ol>
 </section></div><footer><ul class="entry-series"></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/types.html" class="tag-a-tag">#types</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@reference.html" class="tag-a-category">@REFERENCE</a></li><li><a href="https://blog.jle.im/entries/category/@tutorials.html" class="tag-a-category">@TUTORIALS</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="prev-entry-link">&larr; <a href="https://blog.jle.im/entry/verified-instances-in-haskell.html">Verify your Typeclass Instances in Haskell Today!</a> (Previous)</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/fixed-length-vector-types-in-haskell.html';

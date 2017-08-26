@@ -600,7 +600,8 @@ world, let’s re-implement these things using the
 provides a unified interface for type-level programming in general.
 
 Instead of `KnownNat`, `Proxy`, `natVal`, `SomeNat`, and `someNatVal`, we can
-use the singletons equivalents, `Sing`, `fromSing`, `SomeSing`, and `toSing`:
+use the singletons equivalents, `Sing`, `fromSing`, `SomeSing`, and
+`toSing`:[^2]
 
 ``` {.haskell}
 -- TypeNats style
@@ -616,7 +617,7 @@ someNatVal :: Natural -> SomeNat
 
 -- Singletons style
 data SomeSing Nat = forall n. SomeSing (Sing n)
-someSing :: Natural -> SomeSing Nat
+toSing :: Natural -> SomeSing Nat
 
 withSomeSing :: Natural -> (forall n. Sing n -> r) -> r
 
@@ -678,13 +679,11 @@ withVec v f = case toSing (fromIntegral (V.length v)) of
     SomeSing s -> f s (UnsafeMkVec v)
 
 -- alternatively, skipping `SomeSing` altogether:
-withVec :: V.Vector a -> (forall n. Sing n -> Vec n a -> r) -> r
-withVec v0 f = withSomeSing (fromIntegral (V.length v0) :: Natural) $ \s ->
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L44-54
+withVec' :: V.Vector a -> (forall n. Sing n -> Vec n a -> r) -> r
+withVec' v0 f = withSomeSing (fromIntegral (V.length v0)) $ \s ->
     f s (UnsafeMkVec v0)
--- note: this requires singletons > 2.3.  in singletons 2.3.1 and below, you'd
--- need to do (fromIntegral (V.length v0) :: Integer)
 
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L44-50
 exactLength_ :: Sing m -> Sing n -> Vec n a -> Maybe (Vec m a)
 exactLength_ sM sN v = case sM %~ sN of
     Proved Refl -> Just v
@@ -715,7 +714,7 @@ withKnownNat :: Sing n -> (KnownNat n => r) -> r
 ```
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L52-56
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L56-60
 generate_ :: Sing n -> (Finite n -> a) -> Vec n a
 generate_ s f = withKnownNat s $
     UnsafeMkVec $ V.generate l (f . finite . fromIntegral)
@@ -723,13 +722,13 @@ generate_ s f = withKnownNat s $
     l = fromIntegral (fromSing s)
 
 -- alternatively, via pattern matching:
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L59-62
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L63-66
 generate'_ :: Sing n -> (Finite n -> a) -> Vec n a
 generate'_ s@SNat f = UnsafeMkVec $ V.generate l (f . fromIntegral)
   where
     l = fromIntegral (fromSing s)
 
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L64-65
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L68-69
 generate :: KnownNat n => (Finite n -> a) -> Vec n a
 generate = generate_ sing
 ```
@@ -1248,7 +1247,7 @@ exactLengthInductive = exactLengthInductive_ sing
 This is another way you can take advantage of the *structure* of the length
 type. Here, we explicitly take advantage of the inductive structure of the `Nat`
 type and how it matches with the structure of the `Vec` type, and do bold things
-with it![^2]
+with it![^3]
 
 But I digress. Like in the last section, checking for a given length is
 literally the least interesting property you can check for. But, again, the same
@@ -1308,7 +1307,7 @@ takeVec = \case
 ```
 
 And, we can combine that with our `atLeast` function, to be able to take
-(maybe)[^3] from any vector:
+(maybe)[^4] from any vector:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L165-169
@@ -1363,10 +1362,14 @@ feedback, suggestions, or questions!
     `TypeNats`, the `Nat` kind reifies/reflects with `Natural` from
     *[Numeric.Natural](http://hackage.haskell.org/package/base/docs/Numeric-Natural.html)*.
 
-[^2]: Note, however, that if you unroll the definition of `%~` for `Nat`, you
+[^2]: For singletons &gt; 2.3 `fromSing` and `toSing` give and take `Natural`
+    when going to `Nat`. However, for 2.3.1 and below, they give/take `Integer`
+    instead.
+
+[^3]: Note, however, that if you unroll the definition of `%~` for `Nat`, you
     pretty much get the exact same thing.
 
-[^3]: Remember the whole point of this exercise — that the `Maybe` is required
+[^4]: Remember the whole point of this exercise — that the `Maybe` is required
     only in the completely polymorphic case, where we get our lengths at runtime
     and don’t know them at compile-time. If we *knew* `n` and `m` at
     compile-time, and knew that `n` was less than or equal to `m`, we could

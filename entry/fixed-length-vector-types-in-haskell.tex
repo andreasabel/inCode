@@ -802,7 +802,10 @@ which provides a unified interface for type-level programming in general.
 
 Instead of \texttt{KnownNat}, \texttt{Proxy}, \texttt{natVal}, \texttt{SomeNat},
 and \texttt{someNatVal}, we can use the singletons equivalents, \texttt{Sing},
-\texttt{fromSing}, \texttt{SomeSing}, and \texttt{toSing}:
+\texttt{fromSing}, \texttt{SomeSing}, and \texttt{toSing}:\footnote{For
+  singletons \textgreater{} 2.3 \texttt{fromSing} and \texttt{toSing} give and
+  take \texttt{Natural} when going to \texttt{Nat}. However, for 2.3.1 and
+  below, they give/take \texttt{Integer} instead.}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -819,7 +822,7 @@ and \texttt{someNatVal}, we can use the singletons equivalents, \texttt{Sing},
 
 \CommentTok{-- Singletons style}
 \KeywordTok{data} \DataTypeTok{SomeSing} \DataTypeTok{Nat} \FunctionTok{=}\NormalTok{ forall n}\FunctionTok{.} \DataTypeTok{SomeSing}\NormalTok{ (}\DataTypeTok{Sing}\NormalTok{ n)}
-\OtherTok{someSing ::} \DataTypeTok{Natural} \OtherTok{->} \DataTypeTok{SomeSing} \DataTypeTok{Nat}
+\OtherTok{toSing ::} \DataTypeTok{Natural} \OtherTok{->} \DataTypeTok{SomeSing} \DataTypeTok{Nat}
 
 \OtherTok{withSomeSing ::} \DataTypeTok{Natural} \OtherTok{->}\NormalTok{ (forall n}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
 
@@ -886,13 +889,11 @@ think of \texttt{Sing\ n} as a token that carries around
     \DataTypeTok{SomeSing}\NormalTok{ s }\OtherTok{->}\NormalTok{ f s (}\DataTypeTok{UnsafeMkVec}\NormalTok{ v)}
 
 \CommentTok{-- alternatively, skipping `SomeSing` altogether:}
-\OtherTok{withVec ::} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->}\NormalTok{ (forall n}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
-\NormalTok{withVec v0 f }\FunctionTok{=}\NormalTok{ withSomeSing (fromIntegral (V.length v0)}\OtherTok{ ::} \DataTypeTok{Natural}\NormalTok{) }\FunctionTok{$}\NormalTok{ \textbackslash{}s }\OtherTok{->}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L44-54}
+\OtherTok{withVec' ::} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->}\NormalTok{ (forall n}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
+\NormalTok{withVec' v0 f }\FunctionTok{=}\NormalTok{ withSomeSing (fromIntegral (V.length v0)) }\FunctionTok{$}\NormalTok{ \textbackslash{}s }\OtherTok{->}
 \NormalTok{    f s (}\DataTypeTok{UnsafeMkVec}\NormalTok{ v0)}
-\CommentTok{-- note: this requires singletons > 2.3.  in singletons 2.3.1 and below, you'd}
-\CommentTok{-- need to do (fromIntegral (V.length v0) :: Integer)}
 
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L44-50}
 \OtherTok{exactLength_ ::} \DataTypeTok{Sing}\NormalTok{ m }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ m a)}
 \NormalTok{exactLength_ sM sN v }\FunctionTok{=} \KeywordTok{case}\NormalTok{ sM }\FunctionTok{%~}\NormalTok{ sN }\KeywordTok{of}
     \DataTypeTok{Proved} \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Just}\NormalTok{ v}
@@ -928,7 +929,7 @@ we can convert between the two using \texttt{SNat} or \texttt{withKnownNat}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L52-56}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L56-60}
 \OtherTok{generate_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->}\NormalTok{ (}\DataTypeTok{Finite}\NormalTok{ n }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{generate_ s f }\FunctionTok{=}\NormalTok{ withKnownNat s }\FunctionTok{$}
     \DataTypeTok{UnsafeMkVec} \FunctionTok{$}\NormalTok{ V.generate l (f }\FunctionTok{.}\NormalTok{ finite }\FunctionTok{.}\NormalTok{ fromIntegral)}
@@ -936,13 +937,13 @@ we can convert between the two using \texttt{SNat} or \texttt{withKnownNat}
 \NormalTok{    l }\FunctionTok{=}\NormalTok{ fromIntegral (fromSing s)}
 
 \CommentTok{-- alternatively, via pattern matching:}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L59-62}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L63-66}
 \OtherTok{generate'_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->}\NormalTok{ (}\DataTypeTok{Finite}\NormalTok{ n }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{generate'_ s}\FunctionTok{@}\DataTypeTok{SNat}\NormalTok{ f }\FunctionTok{=} \DataTypeTok{UnsafeMkVec} \FunctionTok{$}\NormalTok{ V.generate l (f }\FunctionTok{.}\NormalTok{ fromIntegral)}
   \KeywordTok{where}
 \NormalTok{    l }\FunctionTok{=}\NormalTok{ fromIntegral (fromSing s)}
 
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L64-65}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L68-69}
 \OtherTok{generate ::} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>}\NormalTok{ (}\DataTypeTok{Finite}\NormalTok{ n }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{generate }\FunctionTok{=}\NormalTok{ generate_ sing}
 \end{Highlighting}
