@@ -549,6 +549,40 @@ module. This package is really nice because it exports the same interface as the
 classic *vector* package, except with the size of the vector in the type. A
 `Vector n a` is a vector of length `n` containing values of type `a`.
 
+Our final goal is to be able to simulate a *system of discrete particles*
+through *arbitrary generalized coordinates*.
+
+To simplify the math, we always assume that, whatever generalized coordinates
+you are using
+(![\\mathbb{R}\^n](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5En "\mathbb{R}^n")),
+your system “actually” exists in some real flat Cartesian coordinate system
+(![\\mathbb{R}\^m](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5Em "\mathbb{R}^m")).
+This allows us to take advantage of all of that math we derived in the previous
+section.
+
+So, in order to fully describe the system, we need:
+
+1.  Each of their masses (or inertias) in their underlying
+    ![m](https://latex.codecogs.com/png.latex?m "m") Cartesian coordinates
+2.  A function
+    ![\\mathbb{R}\^n \\rightarrow \\mathbb{R}\^m](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5Em "\mathbb{R}^n \rightarrow \mathbb{R}^m")
+    to convert the generalized coordinates
+    (![\\mathbb{R\^n}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%5En%7D "\mathbb{R^n}"))
+    to Cartesian coordinates
+    (![\\mathbb{R}\^m](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5Em "\mathbb{R}^m"))
+3.  The potential energy function
+    ![\\mathbb{R}\^n \\rightarrow \\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D "\mathbb{R}^n \rightarrow \mathbb{R}")
+    in the generalized coordinates
+    (![\\mathbb{R\^n}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%5En%7D "\mathbb{R^n}"))
+
+From these alone, we can derive the equations of motion for the particles in
+phase space as a system of first-order ODEs using the process described above.
+Then, given an initial phase space position, we can use any ol’ first order ODE
+integrator (like the great ones from the [GNU Scientific
+Library](https://www.gnu.org/software/gsl/)) to simulate our system’s motion
+through phase space. That is, to “surf the hamiltonian waves in phase space”, so
+to speak.
+
 [^1]: The picture with a time-dependent Hamiltonian is different, but only
     slightly. In the time-dependent case, the system still *tries* to move along
     contour lines at every point in time, but the mountain is constantly
