@@ -1313,14 +1313,14 @@ For “containers”, *vector* is great, so the non-structural `Vec` is seen a l
 more.
 
 However, if you are working with a lot of other inductive types, `Vec` works
-very naturally alongside it. So it makes sense that a “canonical” package
+very naturally alongside them. It makes sense, then, that a “canonical” package
 offering `Vec` is
 *[type-combinators](http://hackage.haskell.org/package/type-combinators)*, an
 actively maintained library with loads of useful inductive types for type-level
-programming, exporting its own `Nat` and `Sing`s. If I am doing the sort of
-type-level programming that `Vec` is useful for, chances are I already have
-*type-combinators* imported. This is the library that I personally suggest if
-you want to use this `Vec` in the real world.
+programming, exporting its own `Nat` and `Sing`-equivalents. If I am doing the
+sort of type-level programming that `Vec` is useful for, chances are I already
+have *type-combinators* imported. This is the library that I personally suggest
+if you want to use this `Vec` in the real world.
 
 Wrapping up
 -----------
