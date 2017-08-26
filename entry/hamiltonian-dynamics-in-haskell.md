@@ -285,7 +285,11 @@ where
 ![f : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^m](https://latex.codecogs.com/png.latex?f%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5Em "f : \mathbb{R}^n \rightarrow \mathbb{R}^m"),
 taking the vector of generalized coordinates and returning a vector for the
 position in Cartesian space. For example, for polar coordinates,
-![f(r, \\theta) = \\left \\langle r \\cos(\\theta), r \\sin(\\theta) \\right \\rangle](https://latex.codecogs.com/png.latex?f%28r%2C%20%5Ctheta%29%20%3D%20%5Cleft%20%5Clangle%20r%20%5Ccos%28%5Ctheta%29%2C%20r%20%5Csin%28%5Ctheta%29%20%5Cright%20%5Crangle "f(r, \theta) = \left \langle r \cos(\theta), r \sin(\theta) \right \rangle").
+![f(r, \\theta) = \\left \\langle r \\cos(\\theta), r \\sin(\\theta) \\right \\rangle](https://latex.codecogs.com/png.latex?f%28r%2C%20%5Ctheta%29%20%3D%20%5Cleft%20%5Clangle%20r%20%5Ccos%28%5Ctheta%29%2C%20r%20%5Csin%28%5Ctheta%29%20%5Cright%20%5Crangle "f(r, \theta) = \left \langle r \cos(\theta), r \sin(\theta) \right \rangle"),
+because, for polar coordinates,
+![x = r \\cos(\\theta)](https://latex.codecogs.com/png.latex?x%20%3D%20r%20%5Ccos%28%5Ctheta%29 "x = r \cos(\theta)")
+and
+![y = r \\sin(\\theta)](https://latex.codecogs.com/png.latex?y%20%3D%20r%20%5Csin%28%5Ctheta%29 "y = r \sin(\theta)").
 
 So we can get
 ![\\mathbf{x}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D "\mathbf{x}")
@@ -482,9 +486,10 @@ is an independent input to
 ![\\mathcal{H}](https://latex.codecogs.com/png.latex?%5Cmathcal%7BH%7D "\mathcal{H}"),
 we can just look at the gradient of
 ![\\hat{K}\^{-1}](https://latex.codecogs.com/png.latex?%5Chat%7BK%7D%5E%7B-1%7D "\hat{K}^{-1}").
-We can simplify that even more by realizing that
+We can simplify that even more by realizing that for any invertible matrix
+![A](https://latex.codecogs.com/png.latex?A "A"),
 ![\\frac{\\partial}{\\partial t} A\^{-1} = - A\^{-1} \\left\[ \\frac{\\partial}{\\partial t} A \\right\] A\^{-1}](https://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20t%7D%20A%5E%7B-1%7D%20%3D%20-%20A%5E%7B-1%7D%20%5Cleft%5B%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20t%7D%20A%20%5Cright%5D%20A%5E%7B-1%7D "\frac{\partial}{\partial t} A^{-1} = - A^{-1} \left[ \frac{\partial}{\partial t} A \right] A^{-1}"),
-so now we just need to find the partials of
+so now we just need to find the partial derivatives of
 ![\\hat{K}](https://latex.codecogs.com/png.latex?%5Chat%7BK%7D "\hat{K}"), or
 ![\\hat{J}\_f\^T \\hat{M} \\hat{J}\_f}](https://latex.codecogs.com/png.latex?%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%20%5Chat%7BJ%7D_f%7D "\hat{J}_f^T \hat{M} \hat{J}_f}").
 ![\\hat{M}](https://latex.codecogs.com/png.latex?%5Chat%7BM%7D "\hat{M}") is a
@@ -513,15 +518,15 @@ derivatives. And with that, we have our final expression for
 ![\\nabla\_{\\mathbf{q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p})](https://latex.codecogs.com/png.latex?%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29 "\nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p})"):
 
 ![
-\\frac{\\partial}{\\partial q} \\mathcal{H}(\\mathbf{q},\\mathbf{p}) =
+\\frac{\\partial}{\\partial q\_i} \\mathcal{H}(\\mathbf{q},\\mathbf{p}) =
     - \\mathbf{p}\^T \\hat{K}\^{-1} \\hat{J}\_f\^T \\hat{M}
-        \\left\[ \\frac{\\partial}{\\partial q} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
-    + \\frac{\\partial}{\\partial q} PE(\\mathbf{q})
-](https://latex.codecogs.com/png.latex?%0A%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%20%3D%0A%20%20%20%20-%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20%2B%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A "
-\frac{\partial}{\partial q} \mathcal{H}(\mathbf{q},\mathbf{p}) =
+        \\left\[ \\frac{\\partial}{\\partial q\_i} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
+    + \\frac{\\partial}{\\partial q\_i} PE(\\mathbf{q})
+](https://latex.codecogs.com/png.latex?%0A%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%20%3D%0A%20%20%20%20-%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20%2B%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A "
+\frac{\partial}{\partial q_i} \mathcal{H}(\mathbf{q},\mathbf{p}) =
     - \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
-        \left[ \frac{\partial}{\partial q} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
-    + \frac{\partial}{\partial q} PE(\mathbf{q})
+        \left[ \frac{\partial}{\partial q_i} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
+    + \frac{\partial}{\partial q_i} PE(\mathbf{q})
 ")
 
 Where
