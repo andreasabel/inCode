@@ -605,7 +605,7 @@ phase space as a system of first-order ODEs using the process described above.
 Then, given an initial phase space position, we can use any ol’ first order ODE
 integrator (like the great ones from the [GNU Scientific
 Library](https://www.gnu.org/software/gsl/)) to simulate our system’s motion
-through phase space. That is, to “surf the hamiltonian waves in phase space”, so
+through phase space. That is, to “surf the Hamiltonian waves in phase space”, so
 to speak.
 
 [^1]: The picture with a time-dependent Hamiltonian is different, but only
