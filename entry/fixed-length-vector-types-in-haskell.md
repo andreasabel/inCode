@@ -717,7 +717,7 @@ withKnownNat :: Sing n -> (KnownNat n => r) -> r
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L56-60
 generate_ :: Sing n -> (Finite n -> a) -> Vec n a
 generate_ s f = withKnownNat s $
-    UnsafeMkVec $ V.generate l (f . finite . fromIntegral)
+    UnsafeMkVec $ V.generate l (f . fromIntegral)
   where
     l = fromIntegral (fromSing s)
 
