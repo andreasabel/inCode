@@ -143,7 +143,16 @@ Hamiltonian
 is the vector of positions and
 ![\\mathbf{p}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bp%7D "\mathbf{p}")
 is the vector of momenta), then the direction of steepest ascent is
-![\\left \\langle \\frac{\\partial}{\\partial \\mathbf{q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p}), \\frac{\\partial}{\\partial \\mathbf{p}} \\mathcal{H}(\\mathbf{q},\\mathbf{p}) \\right \\rangle](https://latex.codecogs.com/png.latex?%5Cleft%20%5Clangle%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%2C%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20%5Cmathbf%7Bp%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%20%5Cright%20%5Crangle "\left \langle \frac{\partial}{\partial \mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p}), \frac{\partial}{\partial \mathbf{p}} \mathcal{H}(\mathbf{q},\mathbf{p}) \right \rangle").
+
+![
+\\left \\langle \\frac{\\partial}{\\partial \\mathbf{q}}
+\\mathcal{H}(\\mathbf{q},\\mathbf{p}), \\frac{\\partial}{\\partial \\mathbf{p}}
+\\mathcal{H}(\\mathbf{q},\\mathbf{p}) \\right \\rangle
+](https://latex.codecogs.com/png.latex?%0A%5Cleft%20%5Clangle%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20%5Cmathbf%7Bq%7D%7D%0A%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%2C%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20%5Cmathbf%7Bp%7D%7D%0A%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%20%5Cright%20%5Crangle%0A "
+\left \langle \frac{\partial}{\partial \mathbf{q}}
+\mathcal{H}(\mathbf{q},\mathbf{p}), \frac{\partial}{\partial \mathbf{p}}
+\mathcal{H}(\mathbf{q},\mathbf{p}) \right \rangle
+")
 
 But we want to move along the *contour lines*…and these are the lines
 *perpendicular* to the direction of steepest descent. The vector perpendicular
@@ -488,7 +497,7 @@ we can just look at the gradient of
 ![\\hat{K}\^{-1}](https://latex.codecogs.com/png.latex?%5Chat%7BK%7D%5E%7B-1%7D "\hat{K}^{-1}").
 We can simplify that even more by realizing that for any invertible matrix
 ![A](https://latex.codecogs.com/png.latex?A "A"),
-![\\frac{\\partial}{\\partial t} A\^{-1} = - A\^{-1} \\left\[ \\frac{\\partial}{\\partial t} A \\right\] A\^{-1}](https://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20t%7D%20A%5E%7B-1%7D%20%3D%20-%20A%5E%7B-1%7D%20%5Cleft%5B%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20t%7D%20A%20%5Cright%5D%20A%5E%7B-1%7D "\frac{\partial}{\partial t} A^{-1} = - A^{-1} \left[ \frac{\partial}{\partial t} A \right] A^{-1}"),
+![\\frac{\\partial}{\\partial q} A\^{-1} = - A\^{-1} \\left\[ \\frac{\\partial}{\\partial q} A \\right\] A\^{-1}](https://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q%7D%20A%5E%7B-1%7D%20%3D%20-%20A%5E%7B-1%7D%20%5Cleft%5B%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q%7D%20A%20%5Cright%5D%20A%5E%7B-1%7D "\frac{\partial}{\partial q} A^{-1} = - A^{-1} \left[ \frac{\partial}{\partial q} A \right] A^{-1}"),
 so now we just need to find the partial derivatives of
 ![\\hat{K}](https://latex.codecogs.com/png.latex?%5Chat%7BK%7D "\hat{K}"), or
 ![\\hat{J}\_f\^T \\hat{M} \\hat{J}\_f}](https://latex.codecogs.com/png.latex?%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%20%5Chat%7BJ%7D_f%7D "\hat{J}_f^T \hat{M} \hat{J}_f}").
@@ -515,25 +524,42 @@ matrix, like
 represents the *second derivatives* of
 ![f](https://latex.codecogs.com/png.latex?f "f") – the derivative with respect
 to ![q\_i](https://latex.codecogs.com/png.latex?q_i "q_i") of the derivatives.
+
+We can write this in a more general way (using the gradient operator
+![\\nabla](https://latex.codecogs.com/png.latex?%5Cnabla "\nabla")) as:
+
+![
+\\nabla\_{\\mathbf{q}} \\left\[ \\hat{J}\_f\^T \\hat{M} \\hat{J}\_f \\right\] =
+    2 \\hat{J}\_f\^T \\hat{M} \\left\[ \\nabla\_{\\mathbf{q}} \\hat{J}\_f \\right\]
+](https://latex.codecogs.com/png.latex?%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cleft%5B%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%3D%0A%20%20%20%202%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%20%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%0A "
+\nabla_{\mathbf{q}} \left[ \hat{J}_f^T \hat{M} \hat{J}_f \right] =
+    2 \hat{J}_f^T \hat{M} \left[ \nabla_{\mathbf{q}} \hat{J}_f \right]
+")
+
+If we define
+![\\nabla\_{\\mathbf{q}} \\hat{J}\_f](https://latex.codecogs.com/png.latex?%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f "\nabla_{\mathbf{q}} \hat{J}_f")
+as an
+![m \\times n \\times n](https://latex.codecogs.com/png.latex?m%20%5Ctimes%20n%20%5Ctimes%20n "m \times n \times n")
+tensor, whose ![n](https://latex.codecogs.com/png.latex?n "n") components are
+the each the
+![m \\times n](https://latex.codecogs.com/png.latex?m%20%5Ctimes%20n "m \times n")
+matrices corresponding to
+![\\frac{\\partial}{\\partial q\_i} \\hat{J}\_f](https://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20%5Chat%7BJ%7D_f "\frac{\partial}{\partial q_i} \hat{J}_f")
+
 And with that, we have our final expression for
 ![\\nabla\_{\\mathbf{q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p})](https://latex.codecogs.com/png.latex?%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29 "\nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p})"):
 
 ![
-\\frac{\\partial}{\\partial q\_i} \\mathcal{H}(\\mathbf{q},\\mathbf{p}) =
+\\nabla\_{\\mathbf{q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p}) =
     - \\mathbf{p}\^T \\hat{K}\^{-1} \\hat{J}\_f\^T \\hat{M}
-        \\left\[ \\frac{\\partial}{\\partial q\_i} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
-    + \\frac{\\partial}{\\partial q\_i} PE(\\mathbf{q})
-](https://latex.codecogs.com/png.latex?%0A%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%20%3D%0A%20%20%20%20-%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20%2B%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A "
-\frac{\partial}{\partial q_i} \mathcal{H}(\mathbf{q},\mathbf{p}) =
+        \\left\[ \\natbla\_{\\mathbf{q}} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
+    + \\nabla\_{\\mathbf{q}} PE(\\mathbf{q})
+](https://latex.codecogs.com/png.latex?%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%20%3D%0A%20%20%20%20-%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cnatbla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20%2B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A "
+\nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p}) =
     - \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
-        \left[ \frac{\partial}{\partial q_i} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
-    + \frac{\partial}{\partial q_i} PE(\mathbf{q})
+        \left[ \natbla_{\mathbf{q}} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
+    + \nabla_{\mathbf{q}} PE(\mathbf{q})
 ")
-
-Where
-![\\frac{\\partial}{\\partial q\_i} PE(\\mathbf{q})](https://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20PE%28%5Cmathbf%7Bq%7D%29 "\frac{\partial}{\partial q_i} PE(\mathbf{q})")
-is just the ![i](https://latex.codecogs.com/png.latex?i "i")th component of the
-gradient of ![PE](https://latex.codecogs.com/png.latex?PE "PE").
 
 And, finally, we have everything we need — we can now construct our equations of
 motion! To progress through phase space
@@ -541,20 +567,20 @@ motion! To progress through phase space
 
 ![
 \\begin{aligned}
-\\dot{q} & = \\frac{\\partial}{\\partial p\_q} \\mathcal{H}(\\mathbf{q},\\mathbf{p})
+\\dot{q} & = \\nabla\_{\\mathbf{p\_q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p})
   && = \\hat{K}\^{-1} \\mathbf{p} \\\\
-\\dot{p\_{q\_i}} & = - \\frac{\\partial}{\\partial q\_i} \\mathcal{H}(\\mathbf{q},\\mathbf{p})
+\\dot{p\_{q\_i}} & = - \\nabla\_{\\mathbf{q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p})
   && = \\mathbf{p}\^T \\hat{K}\^{-1} \\hat{J}\_f\^T \\hat{M}
-        \\left\[ \\frac{\\partial}{\\partial q\_i} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
+        \\left\[ \\nabla\_{\\mathbf{q}} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
     - \\frac{\\partial}{\\partial q\_i} PE(\\mathbf{q})
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cdot%7Bq%7D%20%26%20%3D%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20p_q%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%20%20%26%26%20%3D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%20%5C%5C%0A%5Cdot%7Bp_%7Bq_i%7D%7D%20%26%20%3D%20-%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%20%20%26%26%20%3D%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20-%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cdot%7Bq%7D%20%26%20%3D%20%5Cnabla_%7B%5Cmathbf%7Bp_q%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%20%20%26%26%20%3D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%20%5C%5C%0A%5Cdot%7Bp_%7Bq_i%7D%7D%20%26%20%3D%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%20%20%26%26%20%3D%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20-%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-\dot{q} & = \frac{\partial}{\partial p_q} \mathcal{H}(\mathbf{q},\mathbf{p})
+\dot{q} & = \nabla_{\mathbf{p_q}} \mathcal{H}(\mathbf{q},\mathbf{p})
   && = \hat{K}^{-1} \mathbf{p} \\
-\dot{p_{q_i}} & = - \frac{\partial}{\partial q_i} \mathcal{H}(\mathbf{q},\mathbf{p})
+\dot{p_{q_i}} & = - \nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p})
   && = \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
-        \left[ \frac{\partial}{\partial q_i} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
+        \left[ \nabla_{\mathbf{q}} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
     - \frac{\partial}{\partial q_i} PE(\mathbf{q})
 \end{aligned}
 ")
@@ -588,15 +614,17 @@ section.
 So, in order to fully describe the system, we need:
 
 1.  Each of their masses (or inertias) in their underlying
-    ![m](https://latex.codecogs.com/png.latex?m "m") Cartesian coordinates
+    ![m](https://latex.codecogs.com/png.latex?m "m") Cartesian coordinates,
+    which we’ll call
+    ![\\mathbf{m}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bm%7D "\mathbf{m}").
 2.  A function
-    ![\\mathbb{R}\^n \\rightarrow \\mathbb{R}\^m](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5Em "\mathbb{R}^n \rightarrow \mathbb{R}^m")
+    ![f : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^m](https://latex.codecogs.com/png.latex?f%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5Em "f : \mathbb{R}^n \rightarrow \mathbb{R}^m")
     to convert the generalized coordinates
     (![\\mathbb{R\^n}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%5En%7D "\mathbb{R^n}"))
     to Cartesian coordinates
     (![\\mathbb{R}\^m](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5Em "\mathbb{R}^m"))
 3.  The potential energy function
-    ![\\mathbb{R}\^n \\rightarrow \\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D "\mathbb{R}^n \rightarrow \mathbb{R}")
+    ![U : \\mathbb{R}\^n \\rightarrow \\mathbb{R}](https://latex.codecogs.com/png.latex?U%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D "U : \mathbb{R}^n \rightarrow \mathbb{R}")
     in the generalized coordinates
     (![\\mathbb{R\^n}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%5En%7D "\mathbb{R^n}"))
 
@@ -607,6 +635,17 @@ integrator (like the great ones from the [GNU Scientific
 Library](https://www.gnu.org/software/gsl/)) to simulate our system’s motion
 through phase space. That is, to “surf the Hamiltonian waves in phase space”, so
 to speak.
+
+But, to be explicit, we also are going to need some derivatives for these
+functions, too. If you’ve been following along, the full enumeration of
+functions we need is:
+
+1.  ![\\mathbf{m} : \\mathbb{R}\^m](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bm%7D%20%3A%20%5Cmathbb%7BR%7D%5Em "\mathbf{m} : \mathbb{R}^m")
+2.  ![f : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^m](https://latex.codecogs.com/png.latex?f%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5Em "f : \mathbb{R}^n \rightarrow \mathbb{R}^m")
+3.  ![\\hat{J}\_f : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^{m \\times n}](https://latex.codecogs.com/png.latex?%5Chat%7BJ%7D_f%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5E%7Bm%20%5Ctimes%20n%7D "\hat{J}_f : \mathbb{R}^n \rightarrow \mathbb{R}^{m \times n}")
+4.  ![\\nabla\_{\\mathbf{q}} \\hat{J}\_f : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^{m \\times n \\times n}](https://latex.codecogs.com/png.latex?%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5E%7Bm%20%5Ctimes%20n%20%5Ctimes%20n%7D "\nabla_{\mathbf{q}} \hat{J}_f : \mathbb{R}^n \rightarrow \mathbb{R}^{m \times n \times n}")
+5.  ![U : \\mathbb{R}\^n \\rightarrow \\mathbb{R}](https://latex.codecogs.com/png.latex?U%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D "U : \mathbb{R}^n \rightarrow \mathbb{R}")
+6.  ![\\nabla\_{\\mathbf{q}} U : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^n](https://latex.codecogs.com/png.latex?%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20U%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5En "\nabla_{\mathbf{q}} U : \mathbb{R}^n \rightarrow \mathbb{R}^n")
 
 [^1]: The picture with a time-dependent Hamiltonian is different, but only
     slightly. In the time-dependent case, the system still *tries* to move along
