@@ -552,12 +552,12 @@ And with that, we have our final expression for
 ![
 \\nabla\_{\\mathbf{q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p}) =
     - \\mathbf{p}\^T \\hat{K}\^{-1} \\hat{J}\_f\^T \\hat{M}
-        \\left\[ \\natbla\_{\\mathbf{q}} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
+        \\left\[ \\nabla\_{\\mathbf{q}} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
     + \\nabla\_{\\mathbf{q}} PE(\\mathbf{q})
-](https://latex.codecogs.com/png.latex?%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%20%3D%0A%20%20%20%20-%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cnatbla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20%2B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%20%3D%0A%20%20%20%20-%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20%2B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A "
 \nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p}) =
     - \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
-        \left[ \natbla_{\mathbf{q}} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
+        \left[ \nabla_{\mathbf{q}} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
     + \nabla_{\mathbf{q}} PE(\mathbf{q})
 ")
 
@@ -640,12 +640,25 @@ But, to be explicit, we also are going to need some derivatives for these
 functions, too. If you’ve been following along, the full enumeration of
 functions we need is:
 
-1.  ![\\mathbf{m} : \\mathbb{R}\^m](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bm%7D%20%3A%20%5Cmathbb%7BR%7D%5Em "\mathbf{m} : \mathbb{R}^m")
-2.  ![f : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^m](https://latex.codecogs.com/png.latex?f%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5Em "f : \mathbb{R}^n \rightarrow \mathbb{R}^m")
-3.  ![\\hat{J}\_f : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^{m \\times n}](https://latex.codecogs.com/png.latex?%5Chat%7BJ%7D_f%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5E%7Bm%20%5Ctimes%20n%7D "\hat{J}_f : \mathbb{R}^n \rightarrow \mathbb{R}^{m \times n}")
-4.  ![\\nabla\_{\\mathbf{q}} \\hat{J}\_f : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^{m \\times n \\times n}](https://latex.codecogs.com/png.latex?%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5E%7Bm%20%5Ctimes%20n%20%5Ctimes%20n%7D "\nabla_{\mathbf{q}} \hat{J}_f : \mathbb{R}^n \rightarrow \mathbb{R}^{m \times n \times n}")
-5.  ![U : \\mathbb{R}\^n \\rightarrow \\mathbb{R}](https://latex.codecogs.com/png.latex?U%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D "U : \mathbb{R}^n \rightarrow \mathbb{R}")
-6.  ![\\nabla\_{\\mathbf{q}} U : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^n](https://latex.codecogs.com/png.latex?%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20U%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5En "\nabla_{\mathbf{q}} U : \mathbb{R}^n \rightarrow \mathbb{R}^n")
+![
+\\begin{aligned}
+\\mathbf{m} & : \\mathbb{R}\^m\\
+f & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^m\\
+\\hat{J}\_f & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^{m \\times n}\\
+\\nabla\_{\\mathbf{q}} \\hat{J}\_f & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^{m \\times n \\times n}\\
+U & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\\
+\\nabla\_{\\mathbf{q}} U & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^n
+\\end{aligned}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cmathbf%7Bm%7D%20%26%20%3A%20%5Cmathbb%7BR%7D%5Em%5C%0Af%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5Em%5C%0A%5Chat%7BJ%7D_f%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5E%7Bm%20%5Ctimes%20n%7D%5C%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5E%7Bm%20%5Ctimes%20n%20%5Ctimes%20n%7D%5C%0AU%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5C%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20U%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5En%0A%5Cend%7Baligned%7D%0A "
+\begin{aligned}
+\mathbf{m} & : \mathbb{R}^m\
+f & : \mathbb{R}^n \rightarrow \mathbb{R}^m\
+\hat{J}_f & : \mathbb{R}^n \rightarrow \mathbb{R}^{m \times n}\
+\nabla_{\mathbf{q}} \hat{J}_f & : \mathbb{R}^n \rightarrow \mathbb{R}^{m \times n \times n}\
+U & : \mathbb{R}^n \rightarrow \mathbb{R}\
+\nabla_{\mathbf{q}} U & : \mathbb{R}^n \rightarrow \mathbb{R}^n
+\end{aligned}
+")
 
 [^1]: The picture with a time-dependent Hamiltonian is different, but only
     slightly. In the time-dependent case, the system still *tries* to move along
