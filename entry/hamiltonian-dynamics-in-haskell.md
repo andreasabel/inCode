@@ -572,16 +572,16 @@ motion! To progress through phase space
 \\dot{p\_{q\_i}} & = - \\nabla\_{\\mathbf{q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p})
   && = \\mathbf{p}\^T \\hat{K}\^{-1} \\hat{J}\_f\^T \\hat{M}
         \\left\[ \\nabla\_{\\mathbf{q}} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
-    - \\frac{\\partial}{\\partial q\_i} PE(\\mathbf{q})
+    - \\nabla\_{\\mathbf{q}} PE(\\mathbf{q})
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cdot%7Bq%7D%20%26%20%3D%20%5Cnabla_%7B%5Cmathbf%7Bp_q%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%20%20%26%26%20%3D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%20%5C%5C%0A%5Cdot%7Bp_%7Bq_i%7D%7D%20%26%20%3D%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%20%20%26%26%20%3D%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20-%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cdot%7Bq%7D%20%26%20%3D%20%5Cnabla_%7B%5Cmathbf%7Bp_q%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%20%20%26%26%20%3D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%20%5C%5C%0A%5Cdot%7Bp_%7Bq_i%7D%7D%20%26%20%3D%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%20%20%26%26%20%3D%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
 \dot{q} & = \nabla_{\mathbf{p_q}} \mathcal{H}(\mathbf{q},\mathbf{p})
   && = \hat{K}^{-1} \mathbf{p} \\
 \dot{p_{q_i}} & = - \nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p})
   && = \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
         \left[ \nabla_{\mathbf{q}} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
-    - \frac{\partial}{\partial q_i} PE(\mathbf{q})
+    - \nabla_{\mathbf{q}} PE(\mathbf{q})
 \end{aligned}
 ")
 
@@ -637,8 +637,8 @@ through phase space. That is, to “surf the Hamiltonian waves in phase space”
 to speak.
 
 But, to be explicit, we also are going to need some derivatives for these
-functions, too. If you’ve been following along, the full enumeration of
-functions we need is:
+functions/vectors, too. If you’ve been following along, the full enumeration of
+functions and vectors we need is:
 
 ![
 \\begin{aligned}
@@ -659,6 +659,110 @@ U & : \mathbb{R}^n \rightarrow \mathbb{R} \\
 \nabla_{\mathbf{q}} U & : \mathbb{R}^n \rightarrow \mathbb{R}^n
 \end{aligned}
 ")
+
+But, as we’ll see, with libraries like
+*[ad](http://hackage.haskell.org/package/ad)* in Haskell, we can really just ask
+the user for
+![\\mathbf{m}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bm%7D "\mathbf{m}"),
+![f](https://latex.codecogs.com/png.latex?f "f"), and
+![U](https://latex.codecogs.com/png.latex?U "U") – all of the derivatives can be
+computed automatically!
+
+### Our Data Structures
+
+We can couple together all of these functions in a data type that fully
+describes the physics of our systems (the “shape” of the Hamiltonian):
+
+``` {.haskell}
+data System m n = System
+    { sysInertia       :: R m                           -- ^ 'm' vector
+    , sysCoords        :: R n -> R m                    -- ^ f
+    , sysJacobian      :: R n -> L m n                  -- ^ J_f
+    , sysJacobian2     :: R n -> V.Vector m (Sym n n)   -- ^ grad (J_f)
+    , sysPotential     :: R n -> Double                 -- ^ U
+    , sysPotentialGrad :: R n -> R n                    -- ^ grad U
+    }
+```
+
+A `System m n` will describe a system parameterized by `n` generalized
+coordinates, taking place in an underlying `m`-dimensional Cartesian space.
+
+It’ll also be convenient to have a nice data type to describe the state of our
+system in terms of its generalized positions
+(![\\mathbf{q}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bq%7D "\mathbf{q}"))
+and generalized velocities (the rates of changes of these positions,
+![\\dot{\\mathbf{q}}](https://latex.codecogs.com/png.latex?%5Cdot%7B%5Cmathbf%7Bq%7D%7D "\dot{\mathbf{q}}")),
+which is sometimes called “configuration space”:
+
+``` {.haskell}
+data Config n = Config
+    { confPositions  :: R n
+    , confVelocities :: R n
+    }
+```
+
+And, more importantly, remember that Hamiltonian dynamics is all about surfing
+around on that phase space (generalized positions
+![\\mathbf{q}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bq%7D "\mathbf{q}")
+and their conjugate momenta,
+![\\mathbf{p\_q}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bp_q%7D "\mathbf{p_q}")).
+So let’s make a type to describe the state of our system in phase space:
+
+``` {.haskell}
+data Phase n = Phase
+    { phasePositions :: R n
+    , phaseMomenta   :: R n
+    }
+```
+
+### Getting comfortable with our data types
+
+First of all, assuming we can construct a `System` in a sound way, let’s imagine
+some useful functions.
+
+We can write a function `underlyingPosition`, which allows you to give a
+position in generalized coordinates, and returns the position in the “underlying
+coordinate system”:
+
+``` {.haskell}
+underlyingPosition :: System m n -> R n -> R m
+underlyingPosition = sysCoords
+```
+
+Note that the types in our function helps us know exactly what the function is
+doing — and also helps us implement it correctly. If we have a `System` in `n`
+dimensions, over an underlying `m`-dimensional Cartesian space, then we would
+need to convert an `R n` (an n-dimensional vector of all of the positions) into
+an `R m` (a vector in the underlying Cartesian space).
+
+Okay, that was simple. Let’s maybe try to calculate something more complicated:
+the *momenta* of a system, given its positions and velocities (configuration).
+
+We remember that we have a nice formula for that, up above:
+
+![
+\\mathbf{p} = \\hat{J}\_f\^T \\hat{M} \\hat{J}\_f \\dot{\\mathbf{q}}
+](https://latex.codecogs.com/png.latex?%0A%5Cmathbf%7Bp%7D%20%3D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%20%5Chat%7BJ%7D_f%20%5Cdot%7B%5Cmathbf%7Bq%7D%7D%0A "
+\mathbf{p} = \hat{J}_f^T \hat{M} \hat{J}_f \dot{\mathbf{q}}
+")
+
+We can translate that directly into Haskell code:
+
+``` {.haskell}
+momenta :: System m n -> Config n -> R n
+momenta s (Config _ v) = tr j #> mHat #> j #> v
+  where
+    j    = sysJacobian s
+    mHat = diag (sysInertia s)
+```
+
+With this, we can write a function to convert any state in configuration space
+to its coordinates in phase space:
+
+``` {.haskell}
+toPhase :: System m n -> Config n -> Phase n
+toPhase s c = Phase (confPositions c) (momenta s c)
+```
 
 [^1]: The picture with a time-dependent Hamiltonian is different, but only
     slightly. In the time-dependent case, the system still *tries* to move along
