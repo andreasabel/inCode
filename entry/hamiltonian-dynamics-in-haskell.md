@@ -642,20 +642,20 @@ functions we need is:
 
 ![
 \\begin{aligned}
-\\mathbf{m} & : \\mathbb{R}\^m\\
-f & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^m\\
-\\hat{J}\_f & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^{m \\times n}\\
-\\nabla\_{\\mathbf{q}} \\hat{J}\_f & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^{m \\times n \\times n}\\
-U & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\\
+\\mathbf{m} & : \\mathbb{R}\^m \\\\
+f & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^m \\\\
+\\hat{J}\_f & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^{m \\times n} \\\\
+\\nabla\_{\\mathbf{q}} \\hat{J}\_f & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^{m \\times n \\times n} \\\\
+U & : \\mathbb{R}\^n \\rightarrow \\mathbb{R} \\\\
 \\nabla\_{\\mathbf{q}} U & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^n
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cmathbf%7Bm%7D%20%26%20%3A%20%5Cmathbb%7BR%7D%5Em%5C%0Af%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5Em%5C%0A%5Chat%7BJ%7D_f%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5E%7Bm%20%5Ctimes%20n%7D%5C%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5E%7Bm%20%5Ctimes%20n%20%5Ctimes%20n%7D%5C%0AU%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5C%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20U%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5En%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cmathbf%7Bm%7D%20%26%20%3A%20%5Cmathbb%7BR%7D%5Em%20%5C%5C%0Af%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5Em%20%5C%5C%0A%5Chat%7BJ%7D_f%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5E%7Bm%20%5Ctimes%20n%7D%20%5C%5C%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5E%7Bm%20%5Ctimes%20n%20%5Ctimes%20n%7D%20%5C%5C%0AU%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%20%5C%5C%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20U%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5En%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-\mathbf{m} & : \mathbb{R}^m\
-f & : \mathbb{R}^n \rightarrow \mathbb{R}^m\
-\hat{J}_f & : \mathbb{R}^n \rightarrow \mathbb{R}^{m \times n}\
-\nabla_{\mathbf{q}} \hat{J}_f & : \mathbb{R}^n \rightarrow \mathbb{R}^{m \times n \times n}\
-U & : \mathbb{R}^n \rightarrow \mathbb{R}\
+\mathbf{m} & : \mathbb{R}^m \\
+f & : \mathbb{R}^n \rightarrow \mathbb{R}^m \\
+\hat{J}_f & : \mathbb{R}^n \rightarrow \mathbb{R}^{m \times n} \\
+\nabla_{\mathbf{q}} \hat{J}_f & : \mathbb{R}^n \rightarrow \mathbb{R}^{m \times n \times n} \\
+U & : \mathbb{R}^n \rightarrow \mathbb{R} \\
 \nabla_{\mathbf{q}} U & : \mathbb{R}^n \rightarrow \mathbb{R}^n
 \end{aligned}
 ")
