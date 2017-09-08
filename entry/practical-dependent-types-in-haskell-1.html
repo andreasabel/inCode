@@ -213,11 +213,12 @@ $ <span class="ex">./NetworkUntyped</span>
 <p>These types are called “dependent” types because the type itself <em>depends</em> on its value. If an <code>R n</code> contains a 5-element vector, its type is <code>R 5</code>.</p>
 <p>The <em>Static</em> module in <em>hmatrix</em> relies on the <a href="http://hackage.haskell.org/package/base-4.8.2.0/docs/GHC-TypeLits.html#t:KnownNat"><code>KnownNat</code></a> mechanism that GHC offers. Almost all operations in the library require a <code>KnownNat</code> constraint on the type-level Nats — for example, you can take the dot product of two vectors with <code>dot :: KnownNat n =&gt; R n -&gt; R n -&gt; Double</code>. It lets the library use the information in the <code>n</code> at runtime as an <code>Integer</code>. (More on this later!)</p>
 <p>Moving on, our network type for this post will be something like <code>Network 10 '[7,5,3] 2</code>: Take 10 inputs, return 2 outputs — and internally, have hidden layers of size 7, 5, and 3. (The <code>'[7,5,3]</code> is a type-level list of Nats; the optional <code>'</code> apostrophe is just for our own benefit to distinguish it from a value-level list of integers.)</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L25-31</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L25-32</span>
 <span class="kw">data</span> <span class="dt">Network</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> [<span class="dt">Nat</span>] <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
     <span class="dt">O</span><span class="ot">     ::</span> <span class="fu">!</span>(<span class="dt">Weights</span> i o)
           <span class="ot">-&gt;</span> <span class="dt">Network</span> i <span class="ch">&#39;[] o</span>
-<span class="ot">    (:&amp;~) ::</span> <span class="fu">!</span>(<span class="dt">Weights</span> i h)
+<span class="ot">    (:&amp;~) ::</span> <span class="dt">KnownNat</span> h
+          <span class="ot">=&gt;</span> <span class="fu">!</span>(<span class="dt">Weights</span> i h)
           <span class="ot">-&gt;</span> <span class="fu">!</span>(<span class="dt">Network</span> h hs o)
           <span class="ot">-&gt;</span> <span class="dt">Network</span> i (h <span class="ch">&#39;: hs) o</span>
 <span class="kw">infixr</span> <span class="dv">5</span> <span class="fu">:&amp;~</span></code></pre></div>
@@ -240,7 +241,7 @@ ih <span class="fu">:&amp;~</span> hh <span class="fu">:&amp;~</span> <span clas
 <p>Note that the shape of the constructors requires all of the weight vectors to “fit together”. <code>ih :&amp;~ O ho</code> would be a type error (feeding a 7-output layer to a 4-input layer). Also, if we ever pattern match on <code>:&amp;~</code>, we know that the resulting matrices and vectors are compatible!</p>
 <p>One neat thing is that this approach is also self-documenting. I don’t need to specify what the dimensions are in the docs and trust the users to read it and obey it. The types tell them! And if they don’t listen, they get a compiler error! (You should, of course, still provide reasonable documentation. But, in this case, the compiler actually enforces your documentation’s statements!)</p>
 <p>Generating random weights and networks is even nicer now:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L65-72</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L57-64</span>
 <span class="ot">randomWeights ::</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
               <span class="ot">=&gt;</span> m (<span class="dt">Weights</span> i o)
 randomWeights <span class="fu">=</span> <span class="kw">do</span>
@@ -301,7 +302,7 @@ ghci<span class="fu">&gt;</span><span class="ot"> sing ::</span> <span class="dt
   <span class="dt">SNat</span> <span class="ot">-&gt;</span> <span class="fu">...</span>   <span class="co">-- in this branch, we have a `KnownNat n` instance</span></code></pre></div>
 <p>Essentially, the data constructor comes “packaged” with a <code>KnownNat n</code> instance. The <em>creation</em> of <code>SNat :: Sing n</code> requires the presence of <code>KnownNat n</code>. So if you ever pattern match on a validly created <code>SNat</code>, the fact that that <code>SNat</code> constructor even exists (instead of, say, being <code>undefined</code>) is a <em>witness</em> to that very <code>KnownNat</code> instance, and the type system lets us use this. It’s as if you “pattern match” out the instance itself, like any other value the constructor might have.</p>
 <p>Now we have enough pieces of the puzzle:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L74-83</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L66-75</span>
 <span class="ot">randomNet ::</span> forall m i hs o<span class="fu">.</span> (<span class="dt">MonadRandom</span> m, <span class="dt">KnownNat</span> i, <span class="dt">SingI</span> hs, <span class="dt">KnownNat</span> o)
           <span class="ot">=&gt;</span> m (<span class="dt">Network</span> i hs o)
 randomNet <span class="fu">=</span> go sing
@@ -332,18 +333,21 @@ randomNet <span class="fu">=</span> go sing
 <p>So now, you can use <code>randomNet :: IO (Network 5 '[4,3] 2)</code> to get a random network of the desired dimensions! (<code>IO</code> is an instance of <code>MonadRandom</code>)</p>
 <p>Can we just pause right here to just appreciate how awesome it is that we can generate random networks of whatever size we want by <em>just requesting something by its type</em>? Our implementation is also <em>guaranteed</em> to have the right sized matrices — no worrying about using the right size parameters for the right matrix in the right order. GHC does it for you automatically! And, for the person who <em>uses</em> <code>randomNet</code>, they don’t have to bungle around with figuring out what function argument indicates what, and in what order, and they don’t have to play a guessing game about the shape of the returned matrix.</p>
 <p>The code for <em>running</em> the nets is actually literally identical from before:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L41-51</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L42-55</span>
 <span class="ot">runLayer ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
          <span class="ot">=&gt;</span> <span class="dt">Weights</span> i o
          <span class="ot">-&gt;</span> <span class="dt">R</span> i
          <span class="ot">-&gt;</span> <span class="dt">R</span> o
 runLayer (<span class="dt">W</span> wB wN) v <span class="fu">=</span> wB <span class="fu">+</span> wN <span class="fu">#&gt;</span> v
 
-<span class="ot">runNet ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">SingI</span> hs, <span class="dt">KnownNat</span> o)
+<span class="ot">runNet ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
        <span class="ot">=&gt;</span> <span class="dt">Network</span> i hs o
        <span class="ot">-&gt;</span> <span class="dt">R</span> i
        <span class="ot">-&gt;</span> <span class="dt">R</span> o
-runNet <span class="fu">=</span> runNet&#39; sing</code></pre></div>
+runNet <span class="fu">=</span> \<span class="kw">case</span>
+   <span class="dt">O</span> w <span class="ot">-&gt;</span> \(<span class="fu">!</span>v) <span class="ot">-&gt;</span> logistic (runLayer w v)
+   (w <span class="fu">:&amp;~</span> n&#39;) <span class="ot">-&gt;</span> \(<span class="fu">!</span>v) <span class="ot">-&gt;</span> <span class="kw">let</span> v&#39; <span class="fu">=</span> logistic (runLayer w v)
+                          <span class="kw">in</span> runNet n&#39; v&#39;</code></pre></div>
 <p>But now, we get the assurance that the matrices and vectors all fit each-other, at compile-time. GHC basically writes our code for us. The operations all demand vectors and matrices that “fit together”, so you can only ever multiply a matrix by a properly sized vector.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">(+)  ::</span> <span class="dt">KnownNat</span> n
      <span class="ot">=&gt;</span> <span class="dt">R</span> n <span class="ot">-&gt;</span> <span class="dt">R</span> n <span class="ot">-&gt;</span> <span class="dt">R</span> n
@@ -354,14 +358,47 @@ runNet <span class="fu">=</span> runNet&#39; sing</code></pre></div>
          <span class="ot">=&gt;</span> <span class="dt">R</span> n <span class="ot">-&gt;</span> <span class="dt">R</span> n</code></pre></div>
 <p>The source code is the same from before, so there isn’t any extra overhead in annotation. The correctness proofs and guarantees basically come without any extra work — they’re free!</p>
 <p>Our back-prop algorithm is ported pretty nicely too:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L85-91</span>
-<span class="ot">train ::</span> forall i hs o<span class="fu">.</span> (<span class="dt">KnownNat</span> i, <span class="dt">SingI</span> hs, <span class="dt">KnownNat</span> o)
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L77-116</span>
+<span class="ot">train ::</span> forall i hs o<span class="fu">.</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)
       <span class="ot">=&gt;</span> <span class="dt">Double</span>           <span class="co">-- ^ learning rate</span>
       <span class="ot">-&gt;</span> <span class="dt">R</span> i              <span class="co">-- ^ input vector</span>
       <span class="ot">-&gt;</span> <span class="dt">R</span> o              <span class="co">-- ^ target vector</span>
       <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o   <span class="co">-- ^ network to train</span>
       <span class="ot">-&gt;</span> <span class="dt">Network</span> i hs o
-train rate x0 target <span class="fu">=</span> train&#39; rate x0 target sing</code></pre></div>
+train rate x0 target <span class="fu">=</span> fst <span class="fu">.</span> go x0
+  <span class="kw">where</span>
+<span class="ot">    go  ::</span> forall j js<span class="fu">.</span> <span class="dt">KnownNat</span> j
+        <span class="ot">=&gt;</span> <span class="dt">R</span> j              <span class="co">-- ^ input vector</span>
+        <span class="ot">-&gt;</span> <span class="dt">Network</span> j js o   <span class="co">-- ^ network to train</span>
+        <span class="ot">-&gt;</span> (<span class="dt">Network</span> j js o, <span class="dt">R</span> j)
+    go <span class="fu">!</span>x (<span class="dt">O</span> w<span class="fu">@</span>(<span class="dt">W</span> wB wN))
+        <span class="fu">=</span> <span class="kw">let</span> y    <span class="fu">=</span> runLayer w x
+              o    <span class="fu">=</span> logistic y
+              <span class="co">-- the gradient (how much y affects the error)</span>
+              <span class="co">--   (logistic&#39; is the derivative of logistic)</span>
+              dEdy <span class="fu">=</span> logistic&#39; y <span class="fu">*</span> (o <span class="fu">-</span> target)
+              <span class="co">-- new bias weights and node weights</span>
+              wB&#39;  <span class="fu">=</span> wB <span class="fu">-</span> konst rate <span class="fu">*</span> dEdy
+              wN&#39;  <span class="fu">=</span> wN <span class="fu">-</span> konst rate <span class="fu">*</span> (dEdy <span class="ot">`outer`</span> x)
+              w&#39;   <span class="fu">=</span> <span class="dt">W</span> wB&#39; wN&#39;
+              <span class="co">-- bundle of derivatives for next step</span>
+              dWs  <span class="fu">=</span> tr wN <span class="fu">#&gt;</span> dEdy
+          <span class="kw">in</span>  (<span class="dt">O</span> w&#39;, dWs)
+    <span class="co">-- handle the inner layers</span>
+    go <span class="fu">!</span>x (w<span class="fu">@</span>(<span class="dt">W</span> wB wN) <span class="fu">:&amp;~</span> n)
+        <span class="fu">=</span> <span class="kw">let</span> y          <span class="fu">=</span> runLayer w x
+              o          <span class="fu">=</span> logistic y
+              <span class="co">-- get dWs&#39;, bundle of derivatives from rest of the net</span>
+              (n&#39;, dWs&#39;) <span class="fu">=</span> go o n
+              <span class="co">-- the gradient (how much y affects the error)</span>
+              dEdy       <span class="fu">=</span> logistic&#39; y <span class="fu">*</span> dWs&#39;
+              <span class="co">-- new bias weights and node weights</span>
+              wB&#39;  <span class="fu">=</span> wB <span class="fu">-</span> konst rate <span class="fu">*</span> dEdy
+              wN&#39;  <span class="fu">=</span> wN <span class="fu">-</span> konst rate <span class="fu">*</span> (dEdy <span class="ot">`outer`</span> x)
+              w&#39;   <span class="fu">=</span> <span class="dt">W</span> wB&#39; wN&#39;
+              <span class="co">-- bundle of derivatives for next step</span>
+              dWs  <span class="fu">=</span> tr wN <span class="fu">#&gt;</span> dEdy
+          <span class="kw">in</span>  (w&#39; <span class="fu">:&amp;~</span> n&#39;, dWs)</code></pre></div>
 <p>It’s pretty much again almost an exact copy-and-paste, but now with GHC checking to make sure everything fits together in our implementation.</p>
 <p>One thing that’s hard for me to convey here without walking through the implementation step-by-step is how much the types <em>help you</em> in writing this code.</p>
 <p>Before starting writing a back-prop implementation without the help of types, I’d probably be a bit concerned. I mentioned earlier that writing the untyped version was no fun at all. But, with the types, writing the implementation became a <em>joy</em> again. And, you have the help of <em>hole driven development</em>, too.</p>
@@ -369,7 +406,7 @@ train rate x0 target <span class="fu">=</span> train&#39; rate x0 target sing</c
 <p>The more you can restrict the implementations of your functions with your types, the more of a joy programming in Haskell is. Things fit together and fall together before your eyes…and the best part is that if they’re wrong, the compiler will nudge you gently into the correct direction.</p>
 <p>The most stressful part of programming happens when you have to tenuously hold a complex and fragile network of ideas and constraints in your brain, and any slight distraction or break in focus causes everything to crash down in your mind. Over time, people have begun to believe that this is “normal” in programming. Don’t believe this lie — it’s <em>not</em>! A good programming experience involves maintaining as <em>little</em> in your head as possible, and letting the compiler handle remembering/checking the rest.</p>
 <h4 id="the-final-test">The final test</h4>
-<p>You can download the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs">typed network</a> source code and run it yourself. Again, the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L201-209"><code>main</code></a> method is written identically to that of the other file and tests the identical function.</p>
+<p>You can download the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs">typed network</a> source code and run it yourself. Again, the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L151-159"><code>main</code></a> method is written identically to that of the other file and tests the identical function.</p>
 <div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="ex">stack</span> install hmatrix MonadRandom singletons
 $ <span class="ex">stack</span> ghc -- -O2 ./NetworkTyped.hs
 $ <span class="ex">./NetworkTyped</span>
@@ -402,11 +439,11 @@ $ <span class="ex">./NetworkTyped</span>
 <h3 id="exercises">Exercises</h3>
 <p>Here are some exercises you can do for fun to test your understanding and apply some of the concepts! The links are to the solutions in the source file.</p>
 <ol type="1">
-<li><p>Write a function that <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L217-218">“pops” the input layer</a> off of a <code>Network</code>, returning both the input layer’s weights and the rest of the network, <code>(Weights i h, Network h hs o)</code>.</p>
+<li><p>Write a function that <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L167-168">“pops” the input layer</a> off of a <code>Network</code>, returning both the input layer’s weights and the rest of the network, <code>(Weights i h, Network h hs o)</code>.</p>
 <p>Think about what its type would have to be. Could it possibly be called with a network that cannot be popped? (that is, that has only one layer?)</p></li>
-<li><p>Write a <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L220-237">function that takes two networks of the same dimensions and adds together their weights</a>. Remember that <code>L m n</code> has a <code>Num</code> instance that adds the matrices together element-by-element.</p>
+<li><p>Write a <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L170-187">function that takes two networks of the same dimensions and adds together their weights</a>. Remember that <code>L m n</code> has a <code>Num</code> instance that adds the matrices together element-by-element.</p>
 <p>Could this function ever be accidentally called on two networks that have different internal structures?</p></li>
-<li><p>Write a function that takes a <code>Network i hs o</code> and <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L239-242">returns the singleton representing its hidden layer structure</a> — <code>Sing hs</code>:</p>
+<li><p>Write a function that takes a <code>Network i hs o</code> and <a href="https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L189-192">returns the singleton representing its hidden layer structure</a> — <code>Sing hs</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">hiddenSing ::</span> <span class="dt">Network</span> i hs o <span class="ot">-&gt;</span> <span class="dt">Sing</span> hs</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> n <span class="ot">&lt;- randomNet ::</span> <span class="dt">IO</span> (<span class="dt">Network</span> <span class="dv">10</span> <span class="ch">&#39;[5,3] 1)</span>
 ghci<span class="fu">&gt;</span> <span class="kw">let</span> s <span class="fu">=</span> hiddenSing n

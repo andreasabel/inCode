@@ -613,11 +613,12 @@ distinguish it from a value-level list of integers.)
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L25-31}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L25-32}
 \KeywordTok{data} \DataTypeTok{Network}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->}\NormalTok{ [}\DataTypeTok{Nat}\NormalTok{] }\OtherTok{->} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
     \DataTypeTok{O}\OtherTok{     ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Weights}\NormalTok{ i o)}
           \OtherTok{->} \DataTypeTok{Network}\NormalTok{ i }\CharTok{'[] o}
-\OtherTok{    (:&~) ::} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Weights}\NormalTok{ i h)}
+\OtherTok{    (:&~) ::} \DataTypeTok{KnownNat}\NormalTok{ h}
+          \OtherTok{=>} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Weights}\NormalTok{ i h)}
           \OtherTok{->} \FunctionTok{!}\NormalTok{(}\DataTypeTok{Network}\NormalTok{ h hs o)}
           \OtherTok{->} \DataTypeTok{Network}\NormalTok{ i (h }\CharTok{': hs) o}
 \KeywordTok{infixr} \DecValTok{5} \FunctionTok{:&~}
@@ -686,7 +687,7 @@ Generating random weights and networks is even nicer now:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L65-72}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L57-64}
 \OtherTok{randomWeights ::}\NormalTok{ (}\DataTypeTok{MonadRandom}\NormalTok{ m, }\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
               \OtherTok{=>}\NormalTok{ m (}\DataTypeTok{Weights}\NormalTok{ i o)}
 \NormalTok{randomWeights }\FunctionTok{=} \KeywordTok{do}
@@ -917,7 +918,7 @@ Now we have enough pieces of the puzzle:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L74-83}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L66-75}
 \OtherTok{randomNet ::}\NormalTok{ forall m i hs o}\FunctionTok{.}\NormalTok{ (}\DataTypeTok{MonadRandom}\NormalTok{ m, }\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{SingI}\NormalTok{ hs, }\DataTypeTok{KnownNat}\NormalTok{ o)}
           \OtherTok{=>}\NormalTok{ m (}\DataTypeTok{Network}\NormalTok{ i hs o)}
 \NormalTok{randomNet }\FunctionTok{=}\NormalTok{ go sing}
@@ -1031,18 +1032,21 @@ before:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L41-51}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L42-55}
 \OtherTok{runLayer ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
          \OtherTok{=>} \DataTypeTok{Weights}\NormalTok{ i o}
          \OtherTok{->} \DataTypeTok{R}\NormalTok{ i}
          \OtherTok{->} \DataTypeTok{R}\NormalTok{ o}
 \NormalTok{runLayer (}\DataTypeTok{W}\NormalTok{ wB wN) v }\FunctionTok{=}\NormalTok{ wB }\FunctionTok{+}\NormalTok{ wN }\FunctionTok{#>}\NormalTok{ v}
 
-\OtherTok{runNet ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{SingI}\NormalTok{ hs, }\DataTypeTok{KnownNat}\NormalTok{ o)}
+\OtherTok{runNet ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
        \OtherTok{=>} \DataTypeTok{Network}\NormalTok{ i hs o}
        \OtherTok{->} \DataTypeTok{R}\NormalTok{ i}
        \OtherTok{->} \DataTypeTok{R}\NormalTok{ o}
-\NormalTok{runNet }\FunctionTok{=}\NormalTok{ runNet' sing}
+\NormalTok{runNet }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+   \DataTypeTok{O}\NormalTok{ w }\OtherTok{->}\NormalTok{ \textbackslash{}(}\FunctionTok{!}\NormalTok{v) }\OtherTok{->}\NormalTok{ logistic (runLayer w v)}
+\NormalTok{   (w }\FunctionTok{:&~}\NormalTok{ n') }\OtherTok{->}\NormalTok{ \textbackslash{}(}\FunctionTok{!}\NormalTok{v) }\OtherTok{->} \KeywordTok{let}\NormalTok{ v' }\FunctionTok{=}\NormalTok{ logistic (runLayer w v)}
+                          \KeywordTok{in}\NormalTok{ runNet n' v'}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1071,14 +1075,47 @@ Our back-prop algorithm is ported pretty nicely too:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L85-91}
-\OtherTok{train ::}\NormalTok{ forall i hs o}\FunctionTok{.}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{SingI}\NormalTok{ hs, }\DataTypeTok{KnownNat}\NormalTok{ o)}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L77-116}
+\OtherTok{train ::}\NormalTok{ forall i hs o}\FunctionTok{.}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
       \OtherTok{=>} \DataTypeTok{Double}           \CommentTok{-- ^ learning rate}
       \OtherTok{->} \DataTypeTok{R}\NormalTok{ i              }\CommentTok{-- ^ input vector}
       \OtherTok{->} \DataTypeTok{R}\NormalTok{ o              }\CommentTok{-- ^ target vector}
       \OtherTok{->} \DataTypeTok{Network}\NormalTok{ i hs o   }\CommentTok{-- ^ network to train}
       \OtherTok{->} \DataTypeTok{Network}\NormalTok{ i hs o}
-\NormalTok{train rate x0 target }\FunctionTok{=}\NormalTok{ train' rate x0 target sing}
+\NormalTok{train rate x0 target }\FunctionTok{=}\NormalTok{ fst }\FunctionTok{.}\NormalTok{ go x0}
+  \KeywordTok{where}
+\OtherTok{    go  ::}\NormalTok{ forall j js}\FunctionTok{.} \DataTypeTok{KnownNat}\NormalTok{ j}
+        \OtherTok{=>} \DataTypeTok{R}\NormalTok{ j              }\CommentTok{-- ^ input vector}
+        \OtherTok{->} \DataTypeTok{Network}\NormalTok{ j js o   }\CommentTok{-- ^ network to train}
+        \OtherTok{->}\NormalTok{ (}\DataTypeTok{Network}\NormalTok{ j js o, }\DataTypeTok{R}\NormalTok{ j)}
+\NormalTok{    go }\FunctionTok{!}\NormalTok{x (}\DataTypeTok{O}\NormalTok{ w}\FunctionTok{@}\NormalTok{(}\DataTypeTok{W}\NormalTok{ wB wN))}
+        \FunctionTok{=} \KeywordTok{let}\NormalTok{ y    }\FunctionTok{=}\NormalTok{ runLayer w x}
+\NormalTok{              o    }\FunctionTok{=}\NormalTok{ logistic y}
+              \CommentTok{-- the gradient (how much y affects the error)}
+              \CommentTok{--   (logistic' is the derivative of logistic)}
+\NormalTok{              dEdy }\FunctionTok{=}\NormalTok{ logistic' y }\FunctionTok{*}\NormalTok{ (o }\FunctionTok{-}\NormalTok{ target)}
+              \CommentTok{-- new bias weights and node weights}
+\NormalTok{              wB'  }\FunctionTok{=}\NormalTok{ wB }\FunctionTok{-}\NormalTok{ konst rate }\FunctionTok{*}\NormalTok{ dEdy}
+\NormalTok{              wN'  }\FunctionTok{=}\NormalTok{ wN }\FunctionTok{-}\NormalTok{ konst rate }\FunctionTok{*}\NormalTok{ (dEdy }\OtherTok{`outer`}\NormalTok{ x)}
+\NormalTok{              w'   }\FunctionTok{=} \DataTypeTok{W}\NormalTok{ wB' wN'}
+              \CommentTok{-- bundle of derivatives for next step}
+\NormalTok{              dWs  }\FunctionTok{=}\NormalTok{ tr wN }\FunctionTok{#>}\NormalTok{ dEdy}
+          \KeywordTok{in}\NormalTok{  (}\DataTypeTok{O}\NormalTok{ w', dWs)}
+    \CommentTok{-- handle the inner layers}
+\NormalTok{    go }\FunctionTok{!}\NormalTok{x (w}\FunctionTok{@}\NormalTok{(}\DataTypeTok{W}\NormalTok{ wB wN) }\FunctionTok{:&~}\NormalTok{ n)}
+        \FunctionTok{=} \KeywordTok{let}\NormalTok{ y          }\FunctionTok{=}\NormalTok{ runLayer w x}
+\NormalTok{              o          }\FunctionTok{=}\NormalTok{ logistic y}
+              \CommentTok{-- get dWs', bundle of derivatives from rest of the net}
+\NormalTok{              (n', dWs') }\FunctionTok{=}\NormalTok{ go o n}
+              \CommentTok{-- the gradient (how much y affects the error)}
+\NormalTok{              dEdy       }\FunctionTok{=}\NormalTok{ logistic' y }\FunctionTok{*}\NormalTok{ dWs'}
+              \CommentTok{-- new bias weights and node weights}
+\NormalTok{              wB'  }\FunctionTok{=}\NormalTok{ wB }\FunctionTok{-}\NormalTok{ konst rate }\FunctionTok{*}\NormalTok{ dEdy}
+\NormalTok{              wN'  }\FunctionTok{=}\NormalTok{ wN }\FunctionTok{-}\NormalTok{ konst rate }\FunctionTok{*}\NormalTok{ (dEdy }\OtherTok{`outer`}\NormalTok{ x)}
+\NormalTok{              w'   }\FunctionTok{=} \DataTypeTok{W}\NormalTok{ wB' wN'}
+              \CommentTok{-- bundle of derivatives for next step}
+\NormalTok{              dWs  }\FunctionTok{=}\NormalTok{ tr wN }\FunctionTok{#>}\NormalTok{ dEdy}
+          \KeywordTok{in}\NormalTok{  (w' }\FunctionTok{:&~}\NormalTok{ n', dWs)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1119,7 +1156,7 @@ letting the compiler handle remembering/checking the rest.
 You can download the
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs}{typed
 network} source code and run it yourself. Again, the
-\href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L201-209}{\texttt{main}}
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L151-159}{\texttt{main}}
 method is written identically to that of the other file and tests the identical
 function.
 
@@ -1200,7 +1237,7 @@ some of the concepts! The links are to the solutions in the source file.
 \def\labelenumi{\arabic{enumi}.}
 \item
   Write a function that
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L217-218}{``pops''
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L167-168}{``pops''
   the input layer} off of a \texttt{Network}, returning both the input layer's
   weights and the rest of the network,
   \texttt{(Weights\ i\ h,\ Network\ h\ hs\ o)}.
@@ -1209,7 +1246,7 @@ some of the concepts! The links are to the solutions in the source file.
   network that cannot be popped? (that is, that has only one layer?)
 \item
   Write a
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L220-237}{function
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L170-187}{function
   that takes two networks of the same dimensions and adds together their
   weights}. Remember that \texttt{L\ m\ n} has a \texttt{Num} instance that adds
   the matrices together element-by-element.
@@ -1218,7 +1255,7 @@ some of the concepts! The links are to the solutions in the source file.
   different internal structures?
 \item
   Write a function that takes a \texttt{Network\ i\ hs\ o} and
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L239-242}{returns
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L189-192}{returns
   the singleton representing its hidden layer structure} --- \texttt{Sing\ hs}:
 
 \begin{Shaded}

@@ -471,11 +471,12 @@ the optional `'` apostrophe is just for our own benefit to distinguish it from a
 value-level list of integers.)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L25-31
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L25-32
 data Network :: Nat -> [Nat] -> Nat -> * where
     O     :: !(Weights i o)
           -> Network i '[] o
-    (:&~) :: !(Weights i h)
+    (:&~) :: KnownNat h
+          => !(Weights i h)
           -> !(Network h hs o)
           -> Network i (h ': hs) o
 infixr 5 :&~
@@ -532,7 +533,7 @@ this case, the compiler actually enforces your documentation’s statements!)
 Generating random weights and networks is even nicer now:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L65-72
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L57-64
 randomWeights :: (MonadRandom m, KnownNat i, KnownNat o)
               => m (Weights i o)
 randomWeights = do
@@ -716,7 +717,7 @@ constructor might have.
 Now we have enough pieces of the puzzle:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L74-83
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L66-75
 randomNet :: forall m i hs o. (MonadRandom m, KnownNat i, SingI hs, KnownNat o)
           => m (Network i hs o)
 randomNet = go sing
@@ -811,18 +812,21 @@ have to play a guessing game about the shape of the returned matrix.
 The code for *running* the nets is actually literally identical from before:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L41-51
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L42-55
 runLayer :: (KnownNat i, KnownNat o)
          => Weights i o
          -> R i
          -> R o
 runLayer (W wB wN) v = wB + wN #> v
 
-runNet :: (KnownNat i, SingI hs, KnownNat o)
+runNet :: (KnownNat i, KnownNat o)
        => Network i hs o
        -> R i
        -> R o
-runNet = runNet' sing
+runNet = \case
+   O w -> \(!v) -> logistic (runLayer w v)
+   (w :&~ n') -> \(!v) -> let v' = logistic (runLayer w v)
+                          in runNet n' v'
 ```
 
 But now, we get the assurance that the matrices and vectors all fit each-other,
@@ -847,14 +851,47 @@ extra work — they’re free!
 Our back-prop algorithm is ported pretty nicely too:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L85-91
-train :: forall i hs o. (KnownNat i, SingI hs, KnownNat o)
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L77-116
+train :: forall i hs o. (KnownNat i, KnownNat o)
       => Double           -- ^ learning rate
       -> R i              -- ^ input vector
       -> R o              -- ^ target vector
       -> Network i hs o   -- ^ network to train
       -> Network i hs o
-train rate x0 target = train' rate x0 target sing
+train rate x0 target = fst . go x0
+  where
+    go  :: forall j js. KnownNat j
+        => R j              -- ^ input vector
+        -> Network j js o   -- ^ network to train
+        -> (Network j js o, R j)
+    go !x (O w@(W wB wN))
+        = let y    = runLayer w x
+              o    = logistic y
+              -- the gradient (how much y affects the error)
+              --   (logistic' is the derivative of logistic)
+              dEdy = logistic' y * (o - target)
+              -- new bias weights and node weights
+              wB'  = wB - konst rate * dEdy
+              wN'  = wN - konst rate * (dEdy `outer` x)
+              w'   = W wB' wN'
+              -- bundle of derivatives for next step
+              dWs  = tr wN #> dEdy
+          in  (O w', dWs)
+    -- handle the inner layers
+    go !x (w@(W wB wN) :&~ n)
+        = let y          = runLayer w x
+              o          = logistic y
+              -- get dWs', bundle of derivatives from rest of the net
+              (n', dWs') = go o n
+              -- the gradient (how much y affects the error)
+              dEdy       = logistic' y * dWs'
+              -- new bias weights and node weights
+              wB'  = wB - konst rate * dEdy
+              wN'  = wN - konst rate * (dEdy `outer` x)
+              w'   = W wB' wN'
+              -- bundle of derivatives for next step
+              dWs  = tr wN #> dEdy
+          in  (w' :&~ n', dWs)
 ```
 
 It’s pretty much again almost an exact copy-and-paste, but now with GHC checking
@@ -892,7 +929,7 @@ compiler handle remembering/checking the rest.
 You can download the [typed
 network](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs)
 source code and run it yourself. Again, the
-[`main`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L201-209)
+[`main`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L151-159)
 method is written identically to that of the other file and tests the identical
 function.
 
@@ -968,7 +1005,7 @@ Here are some exercises you can do for fun to test your understanding and apply
 some of the concepts! The links are to the solutions in the source file.
 
 1.  Write a function that [“pops” the input
-    layer](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L217-218)
+    layer](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L167-168)
     off of a `Network`, returning both the input layer’s weights and the rest of
     the network, `(Weights i h, Network h hs o)`.
 
@@ -977,7 +1014,7 @@ some of the concepts! The links are to the solutions in the source file.
 
 2.  Write a [function that takes two networks of the same dimensions and adds
     together their
-    weights](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L220-237).
+    weights](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L170-187).
     Remember that `L m n` has a `Num` instance that adds the matrices together
     element-by-element.
 
@@ -986,7 +1023,7 @@ some of the concepts! The links are to the solutions in the source file.
 
 3.  Write a function that takes a `Network i hs o` and [returns the singleton
     representing its hidden layer
-    structure](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L239-242)
+    structure](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L189-192)
     — `Sing hs`:
 
     ``` {.haskell}
