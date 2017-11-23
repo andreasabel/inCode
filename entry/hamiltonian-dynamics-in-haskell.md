@@ -876,7 +876,6 @@ utility function that only gives us the second-order Jacobian:
 ``` {.haskell}
 -- import qualified Control.Comonad        as C
 -- import qualified Control.Comonad.Cofree as C
-
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L52-60
 jacobian2
     :: (Traversable f, Functor g, RealFloat a)
@@ -912,7 +911,6 @@ So some ugly things – we need to write some functions to convert between
 
 ``` {.haskell}
 -- import qualified Data.Vector.Generic.Sized as VG
-
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L62-69
 vec2r :: KnownNat n => V.Vector n Double -> R n
 vec2r = fromJust . create . VG.fromSized . VG.convert
@@ -2169,7 +2167,6 @@ utility function that only gives us the second-order Jacobian:
 ``` {.haskell}
 -- import qualified Control.Comonad        as C
 -- import qualified Control.Comonad.Cofree as C
-
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L52-60
 jacobian2
     :: (Traversable f, Functor g, RealFloat a)
@@ -2205,7 +2202,6 @@ So some ugly things – we need to write some functions to convert between
 
 ``` {.haskell}
 -- import qualified Data.Vector.Generic.Sized as VG
-
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L62-69
 vec2r :: KnownNat n => V.Vector n Double -> R n
 vec2r = fromJust . create . VG.fromSized . VG.convert
