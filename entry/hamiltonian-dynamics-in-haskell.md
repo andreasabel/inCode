@@ -1040,7 +1040,8 @@ following these rate of changes!
 Numerical Integration
 ---------------------
 
-This process is known as \[Numerical Integration\]\[integration\], and the
+This process is known as [Numerical
+Integration](https://en.wikipedia.org/wiki/Numerical_integration), and the
 “best” way to do it is quite a big field, so for this article we’re going to be
 using the extremely extremely simple [Euler
 method](https://en.wikipedia.org/wiki/Euler_method) to progress our system
@@ -1057,9 +1058,9 @@ The basic idea is that you pick a time-step,
 update each coordinate as:
 
 ![
-x(t + \\Delta t) = x(t) + \\dot{x} \\Delta t
-](https://latex.codecogs.com/png.latex?%0Ax%28t%20%2B%20%5CDelta%20t%29%20%3D%20x%28t%29%20%2B%20%5Cdot%7Bx%7D%20%5CDelta%20t%0A "
-x(t + \Delta t) = x(t) + \dot{x} \Delta t
+x(t + \\Delta t) = x(t) + \\dot{x}(t) \\Delta t
+](https://latex.codecogs.com/png.latex?%0Ax%28t%20%2B%20%5CDelta%20t%29%20%3D%20x%28t%29%20%2B%20%5Cdot%7Bx%7D%28t%29%20%5CDelta%20t%0A "
+x(t + \Delta t) = x(t) + \dot{x}(t) \Delta t
 ")
 
 Which makes sense visually if we imagine
@@ -1076,11 +1077,11 @@ so compound over time)
 
 You can understand this symbolically, as well, by remembering that the
 derivative can be approximated by
-![\\dot{x} \\approx \\frac{x(t + \\Delta t) - x(t)}{\\Delta t}](https://latex.codecogs.com/png.latex?%5Cdot%7Bx%7D%20%5Capprox%20%5Cfrac%7Bx%28t%20%2B%20%5CDelta%20t%29%20-%20x%28t%29%7D%7B%5CDelta%20t%7D "\dot{x} \approx \frac{x(t + \Delta t) - x(t)}{\Delta t}")
+![\\dot{x}(t) \\approx \\frac{x(t + \\Delta t) - x(t)}{\\Delta t}](https://latex.codecogs.com/png.latex?%5Cdot%7Bx%7D%28t%29%20%5Capprox%20%5Cfrac%7Bx%28t%20%2B%20%5CDelta%20t%29%20-%20x%28t%29%7D%7B%5CDelta%20t%7D "\dot{x}(t) \approx \frac{x(t + \Delta t) - x(t)}{\Delta t}")
 for small
 ![\\Delta t](https://latex.codecogs.com/png.latex?%5CDelta%20t "\Delta t"), and
 so we can do a little bit of symbolic manipulation to get
-![x(t + \\Delta t) \\approx \\dot{x} \\Delta t + x(t)](https://latex.codecogs.com/png.latex?x%28t%20%2B%20%5CDelta%20t%29%20%5Capprox%20%5Cdot%7Bx%7D%20%5CDelta%20t%20%2B%20x%28t%29 "x(t + \Delta t) \approx \dot{x} \Delta t + x(t)").
+![x(t + \\Delta t) \\approx \\dot{x}(t) \\Delta t + x(t)](https://latex.codecogs.com/png.latex?x%28t%20%2B%20%5CDelta%20t%29%20%5Capprox%20%5Cdot%7Bx%7D%28t%29%20%5CDelta%20t%20%2B%20x%28t%29 "x(t + \Delta t) \approx \dot{x}(t) \Delta t + x(t)").
 
 We can directly translate this into Haskell:
 
@@ -2259,9 +2260,9 @@ mkSystem m f u = System
     }
 ```
 
-Now, I hesitate to call this “trivial”…but, it really is a straightforward
-direct translation of the definitions, minus some ugly conversions back and
-forth using `r2vec`, `vec2r`, and `vec2l`!
+Now, I hesitate to call this “trivial”…but, I think it really is a
+straightforward direct translation of the definitions, minus some ugly
+conversions back and forth using `r2vec`, `vec2r`, and `vec2l`!
 
 1.  The vector of masses is just `m`
 2.  The coordinate function is just `f`
@@ -2270,10 +2271,10 @@ forth using `r2vec`, `vec2r`, and `vec2l`!
 5.  The potential energy function is just `u`
 6.  The gradient of the potential energy function is just `grad u`
 
-Take a moment to marvel at the fact that the *ad* library automatically
-generated all of these for us and created a perfectly well-formed `System` with
-all of its gradients and Jacobians by giving only the coordinate function and
-the potential energy function, and in such a clean and concise way!
+The *ad* library automatically generated all of these for us and created a
+perfectly well-formed `System` with all of its gradients and Jacobians by giving
+only the coordinate function and the potential energy function, and in such a
+clean and concise way!
 
 ### Equations of Motion
 
@@ -2334,7 +2335,8 @@ following these rate of changes!
 
 ### Numerical Integration
 
-This process is known as \[Numerical Integration\]\[integration\], and the
+This process is known as [Numerical
+Integration](https://en.wikipedia.org/wiki/Numerical_integration), and the
 “best” way to do it is quite a big field, so for this article we’re going to be
 using the extremely extremely simple [Euler
 method](https://en.wikipedia.org/wiki/Euler_method) to progress our system
@@ -2351,9 +2353,9 @@ The basic idea is that you pick a time-step,
 update each coordinate as:
 
 ![
-x(t + \\Delta t) = x(t) + \\dot{x} \\Delta t
-](https://latex.codecogs.com/png.latex?%0Ax%28t%20%2B%20%5CDelta%20t%29%20%3D%20x%28t%29%20%2B%20%5Cdot%7Bx%7D%20%5CDelta%20t%0A "
-x(t + \Delta t) = x(t) + \dot{x} \Delta t
+x(t + \\Delta t) = x(t) + \\dot{x}(t) \\Delta t
+](https://latex.codecogs.com/png.latex?%0Ax%28t%20%2B%20%5CDelta%20t%29%20%3D%20x%28t%29%20%2B%20%5Cdot%7Bx%7D%28t%29%20%5CDelta%20t%0A "
+x(t + \Delta t) = x(t) + \dot{x}(t) \Delta t
 ")
 
 Which makes sense visually if we imagine
@@ -2370,11 +2372,11 @@ so compound over time)
 
 You can understand this symbolically, as well, by remembering that the
 derivative can be approximated by
-![\\dot{x} \\approx \\frac{x(t + \\Delta t) - x(t)}{\\Delta t}](https://latex.codecogs.com/png.latex?%5Cdot%7Bx%7D%20%5Capprox%20%5Cfrac%7Bx%28t%20%2B%20%5CDelta%20t%29%20-%20x%28t%29%7D%7B%5CDelta%20t%7D "\dot{x} \approx \frac{x(t + \Delta t) - x(t)}{\Delta t}")
+![\\dot{x}(t) \\approx \\frac{x(t + \\Delta t) - x(t)}{\\Delta t}](https://latex.codecogs.com/png.latex?%5Cdot%7Bx%7D%28t%29%20%5Capprox%20%5Cfrac%7Bx%28t%20%2B%20%5CDelta%20t%29%20-%20x%28t%29%7D%7B%5CDelta%20t%7D "\dot{x}(t) \approx \frac{x(t + \Delta t) - x(t)}{\Delta t}")
 for small
 ![\\Delta t](https://latex.codecogs.com/png.latex?%5CDelta%20t "\Delta t"), and
 so we can do a little bit of symbolic manipulation to get
-![x(t + \\Delta t) \\approx \\dot{x} \\Delta t + x(t)](https://latex.codecogs.com/png.latex?x%28t%20%2B%20%5CDelta%20t%29%20%5Capprox%20%5Cdot%7Bx%7D%20%5CDelta%20t%20%2B%20x%28t%29 "x(t + \Delta t) \approx \dot{x} \Delta t + x(t)").
+![x(t + \\Delta t) \\approx \\dot{x}(t) \\Delta t + x(t)](https://latex.codecogs.com/png.latex?x%28t%20%2B%20%5CDelta%20t%29%20%5Capprox%20%5Cdot%7Bx%7D%28t%29%20%5CDelta%20t%20%2B%20x%28t%29 "x(t + \Delta t) \approx \dot{x}(t) \Delta t + x(t)").
 
 We can directly translate this into Haskell:
 
