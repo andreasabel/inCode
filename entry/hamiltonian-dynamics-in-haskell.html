@@ -28,7 +28,7 @@ compiled…really just the king of great languages.">Haskell</a><span class="inf
 <p>Normally, we’d describe a system using particles’ x and y coordinates, but our goal is to be able to describe our particles’ positions using any coordinate system we want (polar, distance-along-a-curved-rail, pendulum-angles, etc.) and have Haskell automatically generate equations of motions and time progressions of those coordinates!</p>
 <p>Read <a href="https://blog.jle.im/entry/introducing-the-hamilton-library.html">my hamilton library introduction</a> for more information and examples!</p>
 <p>All of the code in this project can be found <a href="https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs">hosted here</a>, and executable as a stack script (just exec <code>./Hamilton.hs</code>!). It was tested on the <a href="https://www.stackage.org/lts-9.14">Stackage LTS-9.14</a> resolver.</p>
-<h1 id="hamiltonian-mechanics">Hamiltonian Mechanics</h1>
+<h2 id="hamiltonian-mechanics">Hamiltonian Mechanics</h2>
 <p>As mentioned in the previous post, Hamiltonian mechanics is a re-imagining of dynamics and mechanics (think “the world post-<img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?F%20%3D%20m%20a" alt="F = m a" title="F = m a" />”) that not only opened up new doors to solving problems in classical, but also ended up being the right angle of viewing the world to unlock statistical mechanics and thermodynamics, and later even quantum mechanics.</p>
 <p>Hamiltonian mechanics lets you parameterize your system’s “position” in arbitrary ways (like the angle of rotation, for pendulum problems) and then posits that the full state of the system exists in something called <em>phase space</em>, and that the system’s dynamics is its motion through phase space that is dictated by the geometry of the <em>Hamiltonian</em> of that phase space.</p>
 <p>The system’s <em>Hamiltonian</em> is a <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E%7B2n%7D%20%5Crightarrow%20%5Cmathbb%7BR%7D" alt="\mathbb{R}^{2n} \rightarrow \mathbb{R}" title="\mathbb{R}^{2n} \rightarrow \mathbb{R}" /> function on phase space (where <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?n" alt="n" title="n" /> is the number of coordinates parameterizing your system) to <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D" alt="\mathbb{R}" title="\mathbb{R}" />. For a time-independent system, the picture of the dynamics is pretty simple: the system moves along the <em>contour lines</em> of the <em>Hamiltonian</em> – the lines of equal “height”.</p>
@@ -1030,7 +1030,7 @@ hamilEqns s (<span class="dt">Phase</span> q p) <span class="fu">=</span> (dqdt,
 <p>Of course, there is no way to get around the big ugly math term in <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Cdot%7Bp%7D_q" alt="\dot{p}_q" title="\dot{p}_q" />, but at least it is a direct reading of the math!</p>
 <p>The result of <code>hamilEqns</code> gives the rate of change of the components of our <code>Phase n</code>.</p>
 <p>The rest of the processes then is just to “step” <code>Phase n</code>. Gradually update it, following these rate of changes!</p>
-<h2 id="numerical-integration-1">Numerical Integration</h2>
+<h3 id="numerical-integration-1">Numerical Integration</h3>
 <p>This process is known as [Numerical Integration][integration], and the “best” way to do it is quite a big field, so for this article we’re going to be using the extremely extremely simple <a href="https://en.wikipedia.org/wiki/Euler_method">Euler method</a> to progress our system through time.</p>
 <p>Disclaimer – The Euler method is typically a <strong>very very bad</strong> choice for numerical integration (even though, as popularized in the movie <em>Hidden Figures</em>, it was good enough to <a href="http://www.latimes.com/science/sciencenow/la-sci-sn-hidden-figures-katherine-johnson-20170109-story.html">send humans to space?</a>). We are just choosing it for this article because it’s very simple, conceptually!</p>
 <p>The basic idea is that you pick a time-step, <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5CDelta%20t" alt="\Delta t" title="\Delta t" />, and update each coordinate as:</p>
@@ -1063,7 +1063,7 @@ runSystem
 runSystem s dt <span class="fu">=</span> go
   <span class="kw">where</span>
     go p0 <span class="fu">=</span> p0 <span class="fu">:</span> go (stepEuler s dt p0)</code></pre></div>
-<h1 id="the-tests-1">The Tests</h1>
+<h2 id="running-with-it">Running with it!</h2>
 <p>And…that’s it! Granted, in real life, we would be using a less naive integration method, but this is essentially the entire process!</p>
 <p>Let’s generate the boring system, a 5kg particle in 2D Cartesian Coordinates under gravity –</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L131-136</span>
@@ -1173,7 +1173,7 @@ ghci<span class="fu">&gt;</span> pendulumMain
 <p>We see our <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Ctheta" alt="\theta" title="\theta" /> coordinate increasing, then turning around and decreasing, swinging the other way past equilibrium, and then turning around and heading back!</p>
 <p>Clearly our system is gaining some sort of phantom energy, since it rises up to 0.045 on the left, and then all the way up to -0.69 on the right. Rest assured that this is simply from the inaccuracies in Euler’s Method, which we used to integrate!</p>
 <p>But, conceptually, this is a success! We <em>automatically generated equations of motion for a pendulum</em>. Sweet!</p>
-<h1 id="wrap-up-1">Wrap-Up</h1>
+<h2 id="wrap-up-1">Wrap-Up</h2>
 <p>We traveled through the world of physics, math, Haskell, and back again to achieve something that would have initially seemed like a crazy thought experiment. But, utilizing Hamiltonian mechanics, we have a system that can automatically generate equations of motion given your coordinate system and a potential energy function.</p>
 <p>See my <a href="https://blog.jle.im/entry/introducing-the-hamilton-library.html">previous post</a> for even crazier examples – involving multiple objects, double pendulums, and more! And check out my <a href="http://hackage.haskell.org/package/hamilton">hamilton</a> library, which includes demos for exotic interesting systems, rendered graphically on your terminal.</p>
 <p>I realize that this was a lot, so if you have any questions or suggestions for clarifications, feel free to leave a comment, drop me a <a href="https://twitter.com/mstk" title="Twitter">tweet</a>, or find me on the freenode <em>#haskell</em> channel (where I usually idle as <em>jle`</em>!)</p>

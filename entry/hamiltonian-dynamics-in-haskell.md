@@ -49,7 +49,7 @@ and executable as a stack script (just exec `./Hamilton.hs`!). It was tested on
 the [Stackage LTS-9.14](https://www.stackage.org/lts-9.14) resolver.
 
 Hamiltonian Mechanics
-=====================
+---------------------
 
 As mentioned in the previous post, Hamiltonian mechanics is a re-imagining of
 dynamics and mechanics (think “the world
@@ -2332,8 +2332,7 @@ The result of `hamilEqns` gives the rate of change of the components of our
 The rest of the processes then is just to “step” `Phase n`. Gradually update it,
 following these rate of changes!
 
-Numerical Integration
----------------------
+### Numerical Integration
 
 This process is known as \[Numerical Integration\]\[integration\], and the
 “best” way to do it is quite a big field, so for this article we’re going to be
@@ -2407,8 +2406,8 @@ runSystem s dt = go
     go p0 = p0 : go (stepEuler s dt p0)
 ```
 
-The Tests
-=========
+Running with it!
+----------------
 
 And…that’s it! Granted, in real life, we would be using a less naive integration
 method, but this is essentially the entire process!
@@ -2589,7 +2588,7 @@ But, conceptually, this is a success! We *automatically generated equations of
 motion for a pendulum*. Sweet!
 
 Wrap-Up
-=======
+-------
 
 We traveled through the world of physics, math, Haskell, and back again to
 achieve something that would have initially seemed like a crazy thought
