@@ -69,9 +69,8 @@ dictated by the geometry of the *Hamiltonian* of that phase space.
 The system’s *Hamiltonian* is a
 ![\\mathbb{R}\^{2n} \\rightarrow \\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E%7B2n%7D%20%5Crightarrow%20%5Cmathbb%7BR%7D "\mathbb{R}^{2n} \rightarrow \mathbb{R}")
 function on phase space (where ![n](https://latex.codecogs.com/png.latex?n "n")
-is the number of coordinates parameterizing your system) to
-![\\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D "\mathbb{R}").
-For a time-independent system, the picture of the dynamics is pretty simple: the
+is the number of coordinates parameterizing your system) to a scalar number. For
+a time-independent system, the picture of the dynamics is pretty simple: the
 system moves along the *contour lines* of the *Hamiltonian* – the lines of equal
 “height”.
 
@@ -928,11 +927,12 @@ information!
 
 Also, even though *ad* gives our second-order Jacobian as an
 ![m \\times n \\times n](https://latex.codecogs.com/png.latex?m%20%5Ctimes%20n%20%5Ctimes%20n "m \times n \times n")
-tensor, we really want it as a `n`-vector of
+tensor, we really want it as a n-vector of
 ![m \\times n](https://latex.codecogs.com/png.latex?m%20%5Ctimes%20n "m \times n")
 matrices – that’s how we interpreted it in our original math. So we just need to
 write an function to convert what *ad* gives us to the form we expect. It’s
-mostly just fiddling around with the internals of *hmatrix*.
+mostly just fiddling around with the internals of *hmatrix* in a rather
+inelegant way.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L71-74
@@ -948,7 +948,7 @@ Now to make a `System` using just the mass vector, the coordinate conversion
 function, and the potential energy function:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L76-90
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L76-91
 mkSystem
     :: (KnownNat m, KnownNat n)
     => R m
@@ -956,13 +956,14 @@ mkSystem
     -> (forall a. RealFloat a => V.Vector n a -> a)
     -> System m n
 mkSystem m f u = System
-    { sysInertia       =                        m
-    , sysCoords        =      vec2r .           f . r2vec
-    , sysJacobian      =      vec2l . jacobian  f . r2vec
+                  -- < convert from | actual thing | convert to >
+    { sysInertia       =                         m
+    , sysCoords        =      vec2r .            f . r2vec
+    , sysJacobian      =      vec2l .   jacobian f . r2vec
     , sysJacobian2     = rejacobi
-                       . fmap vec2l . jacobian2 f . r2vec
-    , sysPotential     =                        u . r2vec
-    , sysPotentialGrad =      vec2r .      grad u . r2vec
+                       . fmap vec2l .  jacobian2 f . r2vec
+    , sysPotential     =                         u . r2vec
+    , sysPotentialGrad =      vec2r .       grad u . r2vec
     }
 ```
 
@@ -1008,7 +1009,7 @@ translate it into Haskell (using
 ![\\hat{K} = \\hat{J}\_f\^T \\hat{M} \\hat{J}\_f](https://latex.codecogs.com/png.latex?%5Chat%7BK%7D%20%3D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%20%5Chat%7BJ%7D_f "\hat{K} = \hat{J}_f^T \hat{M} \hat{J}_f")):
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L92-109
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L93-110
 hamilEqns
     :: (KnownNat n, KnownNat m)
     => System m n
@@ -1055,8 +1056,8 @@ The result of `hamilEqns` gives the rate of change of the components of our
 `Phase n`. The rest of the processes then is just to “step” `Phase n`. Gradually
 update it, following these rate of changes!
 
-This process is known as [Numerical
-Integration](https://en.wikipedia.org/wiki/Numerical_integration), and the
+This process is known as [numerical
+integration](https://en.wikipedia.org/wiki/Numerical_integration), and the
 “best” way to do it is quite a big field, so for this article we’re going to be
 using the extremely extremely simple [Euler
 method](https://en.wikipedia.org/wiki/Euler_method) to progress our system
@@ -1101,7 +1102,7 @@ so we can do a little bit of symbolic manipulation to get
 We can directly translate this into Haskell:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L111-119
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L112-120
 stepEuler
     :: (KnownNat n, KnownNat m)
     => System m n       -- ^ the system
@@ -1116,7 +1117,7 @@ stepEuler s dt ph@(Phase q p) = Phase (q + konst dt * dq) (p + konst dt * dp)
 And repeatedly evolve this system as a lazy list:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L121-129
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L122-130
 runSystem
     :: (KnownNat n, KnownNat m)
     => System m n       -- ^ the system
@@ -1138,13 +1139,13 @@ Let’s generate the boring system, a 5kg particle in 2D Cartesian Coordinates
 under gravity –
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L131-136
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L132-137
 simpleSystem :: System 2 2
-simpleSystem = mkSystem (vec2 5 5) id pots
+simpleSystem = mkSystem (vec2 5 5) id pot
   where
     -- U(x,y) = 9.8 * y
-    pots :: RealFloat a => V.Vector 2 a -> a
-    pots xy = 9.8 * (xy `V.index` 1)
+    pot :: RealFloat a => V.Vector 2 a -> a
+    pot xy = 9.8 * (xy `V.index` 1)
 ```
 
 If we initialize the particle at position
@@ -1161,17 +1162,18 @@ downwards.
 We can make our initial configuration:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L138-141
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L139-143
 simpleConfig0 :: Config 2
-simpleConfig0 = Config { confPositions  = vec2 0 0
-                       , confVelocities = vec2 1 3
-                       }
+simpleConfig0 = Config
+    { confPositions  = vec2 0 0
+    , confVelocities = vec2 1 3
+    }
 ```
 
 And then…let it run!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L143-147
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L145-149
 simpleMain :: IO ()
 simpleMain =
     mapM_ (disp 2 . phasePositions)  -- position with 2 digits of precision
@@ -1238,9 +1240,9 @@ be at equilibrium, and our initial angular velocity
 will be 0.1 radians/sec (clockwise), as we try to induce harmonic motion:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L150-172
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L152-175
 pendulum :: System 2 1
-pendulum = mkSystem (vec2 5 5) coords pots      -- 5kg particle
+pendulum = mkSystem (vec2 5 5) coords pot      -- 5kg particle
   where
     -- <x,y> = <-0.5 sin(theta), -0.5 cos(theta)>
     -- pendulum of length 0.25
@@ -1249,13 +1251,14 @@ pendulum = mkSystem (vec2 5 5) coords pots      -- 5kg particle
                            . V.fromList
                            $ [- 0.25 * sin theta, - 0.25 * cos theta]
     -- U(x,y) = 9.8 * y
-    pots :: RealFloat a => V.Vector 1 a -> a
-    pots q = 9.8 * (coords q `V.index` 1)
+    pot :: RealFloat a => V.Vector 1 a -> a
+    pot q = 9.8 * (coords q `V.index` 1)
 
 pendulumConfig0 :: Config 1
-pendulumConfig0 = Config { confPositions  = 0
-                         , confVelocities = 0.1
-                         }
+pendulumConfig0 = Config
+    { confPositions  = 0
+    , confVelocities = 0.1
+    }
 
 pendulumMain :: IO ()
 pendulumMain =
@@ -1299,15 +1302,9 @@ ghci> pendulumMain
 
 We see our ![\\theta](https://latex.codecogs.com/png.latex?%5Ctheta "\theta")
 coordinate increasing, then turning around and decreasing, swinging the other
-way past equilibrium, and then turning around and heading back!
+way past equilibrium, and then turning around and heading back![^5]
 
-Clearly our system is gaining some sort of phantom energy, since it rises up to
-0.045 on the left, and then all the way up to -0.69 on the right. Rest assured
-that this is simply from the inaccuracies in Euler’s Method, which we used to
-integrate!
-
-But, conceptually, this is a success! We *automatically generated equations of
-motion for a pendulum*. Sweet!
+We *automatically generated equations of motion for a pendulum*. Sweet!
 
 Wrap-Up
 -------
@@ -1316,7 +1313,8 @@ We traveled through the world of physics, math, Haskell, and back again to
 achieve something that would have initially seemed like a crazy thought
 experiment. But, utilizing Hamiltonian mechanics, we have a system that can
 automatically generate equations of motion given your coordinate system and a
-potential energy function.
+potential energy function. We also learned how to leverage typed vectors for
+more correct code and a smoother development process.
 
 See my [previous
 post](https://blog.jle.im/entry/introducing-the-hamilton-library.html) for even
@@ -1348,3 +1346,7 @@ clarifications, feel free to leave a comment, drop me a
     invertible) if its rows are linearly independent. This should be the case as
     you don’t have any redundant or duplicate coordinates in your general
     coordinate system.
+
+[^5]: Clearly our system is gaining some sort of phantom energy, since it rises
+    up to 0.045 on the left, and then all the way up to -0.69 on the right. Rest
+    assured that this is simply from the inaccuracies in Euler’s Method.

@@ -180,9 +180,8 @@ The system's \emph{Hamiltonian} is a
 \includegraphics{https://latex.codecogs.com/png.latex?\%5Cmathbb\%7BR\%7D\%5E\%7B2n\%7D\%20\%5Crightarrow\%20\%5Cmathbb\%7BR\%7D}
 function on phase space (where
 \includegraphics{https://latex.codecogs.com/png.latex?n} is the number of
-coordinates parameterizing your system) to
-\includegraphics{https://latex.codecogs.com/png.latex?\%5Cmathbb\%7BR\%7D}. For
-a time-independent system, the picture of the dynamics is pretty simple: the
+coordinates parameterizing your system) to a scalar number. For a
+time-independent system, the picture of the dynamics is pretty simple: the
 system moves along the \emph{contour lines} of the \emph{Hamiltonian} -- the
 lines of equal ``height''.
 
@@ -1168,11 +1167,12 @@ preserve their size information!
 
 Also, even though \emph{ad} gives our second-order Jacobian as an
 \includegraphics{https://latex.codecogs.com/png.latex?m\%20\%5Ctimes\%20n\%20\%5Ctimes\%20n}
-tensor, we really want it as a \texttt{n}-vector of
+tensor, we really want it as a n-vector of
 \includegraphics{https://latex.codecogs.com/png.latex?m\%20\%5Ctimes\%20n}
 matrices -- that's how we interpreted it in our original math. So we just need
 to write an function to convert what \emph{ad} gives us to the form we expect.
-It's mostly just fiddling around with the internals of \emph{hmatrix}.
+It's mostly just fiddling around with the internals of \emph{hmatrix} in a
+rather inelegant way.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1192,7 +1192,7 @@ conversion function, and the potential energy function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L76-90}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L76-91}
 \NormalTok{mkSystem}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ m, }\DataTypeTok{KnownNat}\NormalTok{ n)}
     \OtherTok{=>} \DataTypeTok{R}\NormalTok{ m}
@@ -1200,13 +1200,14 @@ conversion function, and the potential energy function:
     \OtherTok{->}\NormalTok{ (forall a}\FunctionTok{.} \DataTypeTok{RealFloat}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{V.Vector}\NormalTok{ n a }\OtherTok{->}\NormalTok{ a)}
     \OtherTok{->} \DataTypeTok{System}\NormalTok{ m n}
 \NormalTok{mkSystem m f u }\FunctionTok{=} \DataTypeTok{System}
-\NormalTok{    \{ sysInertia       }\FunctionTok{=}\NormalTok{                        m}
-\NormalTok{    , sysCoords        }\FunctionTok{=}\NormalTok{      vec2r }\FunctionTok{.}\NormalTok{           f }\FunctionTok{.}\NormalTok{ r2vec}
-\NormalTok{    , sysJacobian      }\FunctionTok{=}\NormalTok{      vec2l }\FunctionTok{.}\NormalTok{ jacobian  f }\FunctionTok{.}\NormalTok{ r2vec}
+                  \CommentTok{-- < convert from | actual thing | convert to >}
+\NormalTok{    \{ sysInertia       }\FunctionTok{=}\NormalTok{                         m}
+\NormalTok{    , sysCoords        }\FunctionTok{=}\NormalTok{      vec2r }\FunctionTok{.}\NormalTok{            f }\FunctionTok{.}\NormalTok{ r2vec}
+\NormalTok{    , sysJacobian      }\FunctionTok{=}\NormalTok{      vec2l }\FunctionTok{.}\NormalTok{   jacobian f }\FunctionTok{.}\NormalTok{ r2vec}
 \NormalTok{    , sysJacobian2     }\FunctionTok{=}\NormalTok{ rejacobi}
-                       \FunctionTok{.}\NormalTok{ fmap vec2l }\FunctionTok{.}\NormalTok{ jacobian2 f }\FunctionTok{.}\NormalTok{ r2vec}
-\NormalTok{    , sysPotential     }\FunctionTok{=}\NormalTok{                        u }\FunctionTok{.}\NormalTok{ r2vec}
-\NormalTok{    , sysPotentialGrad }\FunctionTok{=}\NormalTok{      vec2r }\FunctionTok{.}\NormalTok{      grad u }\FunctionTok{.}\NormalTok{ r2vec}
+                       \FunctionTok{.}\NormalTok{ fmap vec2l }\FunctionTok{.}\NormalTok{  jacobian2 f }\FunctionTok{.}\NormalTok{ r2vec}
+\NormalTok{    , sysPotential     }\FunctionTok{=}\NormalTok{                         u }\FunctionTok{.}\NormalTok{ r2vec}
+\NormalTok{    , sysPotentialGrad }\FunctionTok{=}\NormalTok{      vec2r }\FunctionTok{.}\NormalTok{       grad u }\FunctionTok{.}\NormalTok{ r2vec}
 \NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
@@ -1272,7 +1273,7 @@ translate it into Haskell (using
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L92-109}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L93-110}
 \NormalTok{hamilEqns}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m)}
     \OtherTok{=>} \DataTypeTok{System}\NormalTok{ m n}
@@ -1322,8 +1323,8 @@ our \texttt{Phase\ n}. The rest of the processes then is just to ``step''
 \texttt{Phase\ n}. Gradually update it, following these rate of changes!
 
 This process is known as
-\href{https://en.wikipedia.org/wiki/Numerical_integration}{Numerical
-Integration}, and the ``best'' way to do it is quite a big field, so for this
+\href{https://en.wikipedia.org/wiki/Numerical_integration}{numerical
+integration}, and the ``best'' way to do it is quite a big field, so for this
 article we're going to be using the extremely extremely simple
 \href{https://en.wikipedia.org/wiki/Euler_method}{Euler method} to progress our
 system through time.
@@ -1367,7 +1368,7 @@ We can directly translate this into Haskell:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L111-119}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L112-120}
 \NormalTok{stepEuler}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m)}
     \OtherTok{=>} \DataTypeTok{System}\NormalTok{ m n       }\CommentTok{-- ^ the system}
@@ -1384,7 +1385,7 @@ And repeatedly evolve this system as a lazy list:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L121-129}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L122-130}
 \NormalTok{runSystem}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m)}
     \OtherTok{=>} \DataTypeTok{System}\NormalTok{ m n       }\CommentTok{-- ^ the system}
@@ -1407,13 +1408,13 @@ under gravity --
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L131-136}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L132-137}
 \OtherTok{simpleSystem ::} \DataTypeTok{System} \DecValTok{2} \DecValTok{2}
-\NormalTok{simpleSystem }\FunctionTok{=}\NormalTok{ mkSystem (vec2 }\DecValTok{5} \DecValTok{5}\NormalTok{) id pots}
+\NormalTok{simpleSystem }\FunctionTok{=}\NormalTok{ mkSystem (vec2 }\DecValTok{5} \DecValTok{5}\NormalTok{) id pot}
   \KeywordTok{where}
     \CommentTok{-- U(x,y) = 9.8 * y}
-\OtherTok{    pots ::} \DataTypeTok{RealFloat}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{V.Vector} \DecValTok{2}\NormalTok{ a }\OtherTok{->}\NormalTok{ a}
-\NormalTok{    pots xy }\FunctionTok{=} \FloatTok{9.8} \FunctionTok{*}\NormalTok{ (xy }\OtherTok{`V.index`} \DecValTok{1}\NormalTok{)}
+\OtherTok{    pot ::} \DataTypeTok{RealFloat}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{V.Vector} \DecValTok{2}\NormalTok{ a }\OtherTok{->}\NormalTok{ a}
+\NormalTok{    pot xy }\FunctionTok{=} \FloatTok{9.8} \FunctionTok{*}\NormalTok{ (xy }\OtherTok{`V.index`} \DecValTok{1}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1432,11 +1433,12 @@ We can make our initial configuration:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L138-141}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L139-143}
 \OtherTok{simpleConfig0 ::} \DataTypeTok{Config} \DecValTok{2}
-\NormalTok{simpleConfig0 }\FunctionTok{=} \DataTypeTok{Config}\NormalTok{ \{ confPositions  }\FunctionTok{=}\NormalTok{ vec2 }\DecValTok{0} \DecValTok{0}
-\NormalTok{                       , confVelocities }\FunctionTok{=}\NormalTok{ vec2 }\DecValTok{1} \DecValTok{3}
-\NormalTok{                       \}}
+\NormalTok{simpleConfig0 }\FunctionTok{=} \DataTypeTok{Config}
+\NormalTok{    \{ confPositions  }\FunctionTok{=}\NormalTok{ vec2 }\DecValTok{0} \DecValTok{0}
+\NormalTok{    , confVelocities }\FunctionTok{=}\NormalTok{ vec2 }\DecValTok{1} \DecValTok{3}
+\NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1444,7 +1446,7 @@ And then\ldots{}let it run!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L143-147}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L145-149}
 \OtherTok{simpleMain ::} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{simpleMain }\FunctionTok{=}
 \NormalTok{    mapM_ (disp }\DecValTok{2} \FunctionTok{.}\NormalTok{ phasePositions)  }\CommentTok{-- position with 2 digits of precision}
@@ -1516,9 +1518,9 @@ will be 0.1 radians/sec (clockwise), as we try to induce harmonic motion:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L150-172}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L152-175}
 \OtherTok{pendulum ::} \DataTypeTok{System} \DecValTok{2} \DecValTok{1}
-\NormalTok{pendulum }\FunctionTok{=}\NormalTok{ mkSystem (vec2 }\DecValTok{5} \DecValTok{5}\NormalTok{) coords pots      }\CommentTok{-- 5kg particle}
+\NormalTok{pendulum }\FunctionTok{=}\NormalTok{ mkSystem (vec2 }\DecValTok{5} \DecValTok{5}\NormalTok{) coords pot      }\CommentTok{-- 5kg particle}
   \KeywordTok{where}
     \CommentTok{-- <x,y> = <-0.5 sin(theta), -0.5 cos(theta)>}
     \CommentTok{-- pendulum of length 0.25}
@@ -1527,13 +1529,14 @@ will be 0.1 radians/sec (clockwise), as we try to induce harmonic motion:
                            \FunctionTok{.}\NormalTok{ V.fromList}
                            \FunctionTok{$}\NormalTok{ [}\FunctionTok{-} \FloatTok{0.25} \FunctionTok{*}\NormalTok{ sin theta, }\FunctionTok{-} \FloatTok{0.25} \FunctionTok{*}\NormalTok{ cos theta]}
     \CommentTok{-- U(x,y) = 9.8 * y}
-\OtherTok{    pots ::} \DataTypeTok{RealFloat}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{V.Vector} \DecValTok{1}\NormalTok{ a }\OtherTok{->}\NormalTok{ a}
-\NormalTok{    pots q }\FunctionTok{=} \FloatTok{9.8} \FunctionTok{*}\NormalTok{ (coords q }\OtherTok{`V.index`} \DecValTok{1}\NormalTok{)}
+\OtherTok{    pot ::} \DataTypeTok{RealFloat}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{V.Vector} \DecValTok{1}\NormalTok{ a }\OtherTok{->}\NormalTok{ a}
+\NormalTok{    pot q }\FunctionTok{=} \FloatTok{9.8} \FunctionTok{*}\NormalTok{ (coords q }\OtherTok{`V.index`} \DecValTok{1}\NormalTok{)}
 
 \OtherTok{pendulumConfig0 ::} \DataTypeTok{Config} \DecValTok{1}
-\NormalTok{pendulumConfig0 }\FunctionTok{=} \DataTypeTok{Config}\NormalTok{ \{ confPositions  }\FunctionTok{=} \DecValTok{0}
-\NormalTok{                         , confVelocities }\FunctionTok{=} \FloatTok{0.1}
-\NormalTok{                         \}}
+\NormalTok{pendulumConfig0 }\FunctionTok{=} \DataTypeTok{Config}
+\NormalTok{    \{ confPositions  }\FunctionTok{=} \DecValTok{0}
+\NormalTok{    , confVelocities }\FunctionTok{=} \FloatTok{0.1}
+\NormalTok{    \}}
 
 \OtherTok{pendulumMain ::} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{pendulumMain }\FunctionTok{=}
@@ -1580,15 +1583,12 @@ equilibrium.
 
 We see our \includegraphics{https://latex.codecogs.com/png.latex?\%5Ctheta}
 coordinate increasing, then turning around and decreasing, swinging the other
-way past equilibrium, and then turning around and heading back!
+way past equilibrium, and then turning around and heading back!\footnote{Clearly
+  our system is gaining some sort of phantom energy, since it rises up to 0.045
+  on the left, and then all the way up to -0.69 on the right. Rest assured that
+  this is simply from the inaccuracies in Euler's Method.}
 
-Clearly our system is gaining some sort of phantom energy, since it rises up to
-0.045 on the left, and then all the way up to -0.69 on the right. Rest assured
-that this is simply from the inaccuracies in Euler's Method, which we used to
-integrate!
-
-But, conceptually, this is a success! We \emph{automatically generated equations
-of motion for a pendulum}. Sweet!
+We \emph{automatically generated equations of motion for a pendulum}. Sweet!
 
 \section{Wrap-Up}\label{wrap-up}
 
@@ -1596,7 +1596,8 @@ We traveled through the world of physics, math, Haskell, and back again to
 achieve something that would have initially seemed like a crazy thought
 experiment. But, utilizing Hamiltonian mechanics, we have a system that can
 automatically generate equations of motion given your coordinate system and a
-potential energy function.
+potential energy function. We also learned how to leverage typed vectors for
+more correct code and a smoother development process.
 
 See my
 \href{https://blog.jle.im/entry/introducing-the-hamilton-library.html}{previous
