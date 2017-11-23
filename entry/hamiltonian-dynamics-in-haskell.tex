@@ -2627,12 +2627,16 @@ Also, even though \emph{ad} gives our second-order Jacobian as an
 tensor, we really want it as a \texttt{n}-vector of
 \includegraphics{https://latex.codecogs.com/png.latex?m\%20\%5Ctimes\%20n}
 matrices -- that's how we interpreted it in our original math. So we just need
-to write an function to convert what \emph{ad} gives us to the form we expect:
+to write an function to convert what \emph{ad} gives us to the form we expect.
+It's mostly just fiddling around with the internals of \emph{hmatrix}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L71-71}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L71-74}
 \OtherTok{rejacobi ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ m, }\DataTypeTok{KnownNat}\NormalTok{ n) }\OtherTok{=>} \DataTypeTok{V.Vector}\NormalTok{ m (}\DataTypeTok{L}\NormalTok{ n n) }\OtherTok{->} \DataTypeTok{V.Vector}\NormalTok{ n (}\DataTypeTok{L}\NormalTok{ m n)}
+\NormalTok{rejacobi }\FunctionTok{=}\NormalTok{ fmap (fromJust }\FunctionTok{.}\NormalTok{ (\textbackslash{}rs }\OtherTok{->}\NormalTok{ withRows rs exactDims) }\FunctionTok{.}\NormalTok{ toList)}
+         \FunctionTok{.}\NormalTok{ sequenceA}
+         \FunctionTok{.}\NormalTok{ fmap (fromJust }\FunctionTok{.}\NormalTok{ V.fromList }\FunctionTok{.}\NormalTok{ toRows)}
 \end{Highlighting}
 \end{Shaded}
 

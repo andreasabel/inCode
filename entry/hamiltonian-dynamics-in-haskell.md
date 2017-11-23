@@ -2224,11 +2224,15 @@ Also, even though *ad* gives our second-order Jacobian as an
 tensor, we really want it as a `n`-vector of
 ![m \\times n](https://latex.codecogs.com/png.latex?m%20%5Ctimes%20n "m \times n")
 matrices – that’s how we interpreted it in our original math. So we just need to
-write an function to convert what *ad* gives us to the form we expect:
+write an function to convert what *ad* gives us to the form we expect. It’s
+mostly just fiddling around with the internals of *hmatrix*.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L71-71
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L71-74
 rejacobi :: (KnownNat m, KnownNat n) => V.Vector m (L n n) -> V.Vector n (L m n)
+rejacobi = fmap (fromJust . (\rs -> withRows rs exactDims) . toList)
+         . sequenceA
+         . fmap (fromJust . V.fromList . toRows)
 ```
 
 #### Using AD to Auto-Derive Systems
