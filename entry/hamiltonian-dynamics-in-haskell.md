@@ -75,9 +75,12 @@ dictated by the geometry of the *Hamiltonian* of that phase space.
 
 The system’s *Hamiltonian* is a
 ![\\mathbb{R}\^{2n} \\rightarrow \\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E%7B2n%7D%20%5Crightarrow%20%5Cmathbb%7BR%7D "\mathbb{R}^{2n} \rightarrow \mathbb{R}")
-function on phase space (where ![n](https://latex.codecogs.com/png.latex?n "n")
-is the number of coordinates parameterizing your system) to a scalar number. For
-a time-independent system, the picture of the dynamics is pretty simple: the
+function from a point in
+![\\mathbb{R}\^{2n}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E%7B2n%7D "\mathbb{R}^{2n}")
+phase space (where ![n](https://latex.codecogs.com/png.latex?n "n") is the
+number of coordinates parameterizing your system) to a scalar in
+![\\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D "\mathbb{R}").
+For a time-independent system, the picture of the dynamics is pretty simple: the
 system moves along the *contour lines* of the *Hamiltonian* – the lines of equal
 “height”.
 
