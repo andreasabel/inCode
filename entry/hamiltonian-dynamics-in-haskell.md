@@ -1036,27 +1036,16 @@ found to be given by:
 \\dot{\\mathbf{q}} & = \\hat{K}\^{-1} \\mathbf{p} \\\\
 \\dot{\\mathbf{p}} & = \\mathbf{p}\^T \\hat{K}\^{-1} \\hat{J}\_f\^T \\hat{M}
         \\left\[ \\nabla\_{\\mathbf{q}} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
-    - \\nabla\_{\\mathbf{q}} PE(\\mathbf{q}) \\\\
-\\dot{p}\_{q\_i} & = \\mathbf{p}\^T \\hat{K}\^{-1} \\hat{J}\_f\^T \\hat{M}
-        \\left\[ \\frac{\\partial}{\\partial q\_i} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
     - \\nabla\_{\\mathbf{q}} PE(\\mathbf{q})
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cdot%7B%5Cmathbf%7Bq%7D%7D%20%26%20%3D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%20%5C%5C%0A%5Cdot%7B%5Cmathbf%7Bp%7D%7D%20%26%20%3D%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%20%5C%5C%0A%5Cdot%7Bp%7D_%7Bq_i%7D%20%26%20%3D%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cdot%7B%5Cmathbf%7Bq%7D%7D%20%26%20%3D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%20%5C%5C%0A%5Cdot%7B%5Cmathbf%7Bp%7D%7D%20%26%20%3D%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
 \dot{\mathbf{q}} & = \hat{K}^{-1} \mathbf{p} \\
 \dot{\mathbf{p}} & = \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
         \left[ \nabla_{\mathbf{q}} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
-    - \nabla_{\mathbf{q}} PE(\mathbf{q}) \\
-\dot{p}_{q_i} & = \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
-        \left[ \frac{\partial}{\partial q_i} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
     - \nabla_{\mathbf{q}} PE(\mathbf{q})
 \end{aligned}
 ")
-
-(I’ve given the form of
-![\\dot{\\mathbf{p}}](https://latex.codecogs.com/png.latex?%5Cdot%7B%5Cmathbf%7Bp%7D%7D "\dot{\mathbf{p}}")
-in both its abuse-of-notation form and its explicit component-wise form, which
-is more useful for implementation)
 
 These equations aren’t particularly beautiful, but it’s straightforward to
 translate them into Haskell (using
@@ -1400,7 +1389,7 @@ clarifications, feel free to leave a comment, drop me a
     ![\\langle -y, x \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20-y%2C%20x%20%5Crangle "\langle -y, x \rangle"),
     which actually gives motion *backwards* in time.
 
-[^3]: Disclaimer: I am not a surfer
+[^3]: Disclaimer: I am not a surfer.
 
 [^4]: ![\\hat{J\_f}](https://latex.codecogs.com/png.latex?%5Chat%7BJ_f%7D "\hat{J_f}")
     is full-rank (meaning
