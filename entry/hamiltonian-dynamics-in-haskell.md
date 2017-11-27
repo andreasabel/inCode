@@ -51,7 +51,7 @@ Normally, we’d describe a system using particles’ x and y coordinates, but o
 goal is to be able to describe our particles’ positions using any coordinate
 system we want (polar, distance-along-a-curved-rail, pendulum-angles, etc.) and
 have Haskell automatically generate equations of motions and time progressions
-of those coordinates!
+of those coordinates.
 
 Read [my hamilton library
 introduction](https://blog.jle.im/entry/introducing-the-hamilton-library.html)
