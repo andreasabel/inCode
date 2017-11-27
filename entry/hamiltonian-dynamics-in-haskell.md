@@ -1,7 +1,7 @@
 Hamiltonian Dynamics in Haskell
 ===============================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on November 27, 2017.
 > [Read online!](https://blog.jle.im/entry/hamiltonian-dynamics-in-haskell.html)
 
 As promised in my [*hamilton* introduction
@@ -9,8 +9,8 @@ post](https://blog.jle.im/entry/introducing-the-hamilton-library.html), I’m
 going to go over implementing of the
 *[hamilton](http://hackage.haskell.org/package/hamilton)* library using
 
-1.  `DataKinds` to enforce sizes of vectors and matrices and help guide us write
-    our code
+1.  *DataKinds* (with *TypeLits*) to enforce sizes of vectors and matrices and
+    help guide us write our code
 2.  Statically-sized linear algebra with
     *[hmatrix](http://hackage.haskell.org/package/hmatrix)*
 3.  Automatic differentiation with *[ad](http://hackage.haskell.org/package/ad)*
@@ -32,6 +32,12 @@ familiarity with:
 
 No physics knowledge is assumed, but knowing a little bit of first semester
 physics would help you gain a bit more of an appreciation for the end result!
+
+The [hamilton library
+introduction](https://blog.jle.im/entry/introducing-the-hamilton-library.html)
+should be considered a “soft prerequisite” for this post, as it presents
+motivations, visual demonstrations, and general overviews of the methods
+presented here!
 
 The Goal
 --------
@@ -106,12 +112,9 @@ contour lines” on that Hamiltonian!
 
 ### Phase Space
 
-The only thing I’ve really said in detail about phase space is that if your
-system’s state has ![n](https://latex.codecogs.com/png.latex?n "n") parameters,
-then the corresponding phase space is
-![2n](https://latex.codecogs.com/png.latex?2n "2n")-dimensional (and that
-Hamiltonian mechanics is somehow about systems moving around in phase space).
-Let me clear it up now: *Phase space* is a
+Hamiltonian dynamics are about systems moving around in phase space. Phase space
+is the “room where it happens”, so to speak, so let’s dig deeper into what it
+is. *Phase space* is a
 ![2n](https://latex.codecogs.com/png.latex?2n "2n")-dimensional space
 parameterized by:
 
@@ -127,9 +130,9 @@ the current “generalized momentum” associated with the angle of the pendulum
 What exactly *is* generalized momentum? We’ll go over calculating it eventually,
 but what does it represent…*physically*?
 
-I could give you some spiel here about the underlying Lie algebra of the Lie
-group associated with the generalized coordinates, but that would make this a
-completely different post. What I *can* say is that the generalized momenta
+The deeper answer involves the underlying Lie algebra of the Lie group
+associated with the generalized coordinates, but going into that would make this
+a completely different post. What I *can* say is that the generalized momenta
 associated with (“conjugate to”) certain sets of familiar coordinates yield
 things that we typically call “momenta”:
 
@@ -149,7 +152,8 @@ things that we typically call “momenta”:
 3.  The momentum conjugate to the radial coordinate
     ![r](https://latex.codecogs.com/png.latex?r "r") in polar coordinates is
     also just boring old linear momentum
-    ![p\_r = m \\dot{r}](https://latex.codecogs.com/png.latex?p_r%20%3D%20m%20%5Cdot%7Br%7D "p_r = m \dot{r}").
+    ![p\_r = m \\dot{r}](https://latex.codecogs.com/png.latex?p_r%20%3D%20m%20%5Cdot%7Br%7D "p_r = m \dot{r}"),
+    which makes sense because purely radial motion is just linear motion.
 
 So, it’s our normal momentum (for linear and polar coordinates) *generalized* to
 arbitrary coordinates.
@@ -184,7 +188,11 @@ to
 is
 ![\\langle y, -x \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20y%2C%20-x%20%5Crangle "\langle y, -x \rangle"),[^2]
 so we just derived the actual Hamiltonian equations of motion: just move in the
-direction perpendicular to the steepest ascent!
+direction perpendicular to the steepest ascent! That is, to have things move on
+contour lines,
+![\\dot{q}](https://latex.codecogs.com/png.latex?%5Cdot%7Bq%7D "\dot{q}") and
+![\\dot{p}\_q](https://latex.codecogs.com/png.latex?%5Cdot%7Bp%7D_q "\dot{p}_q")
+*should* be:
 
 ![
 \\begin{aligned}
@@ -198,10 +206,12 @@ direction perpendicular to the steepest ascent!
 \end{aligned}
 ")
 
-Which holds for every generalized coordinate
-![q](https://latex.codecogs.com/png.latex?q "q"), where
-![p\_q](https://latex.codecogs.com/png.latex?p_q "p_q") is the momentum
-conjugate to that coordinate. (For the rest of this post,
+This is a conclusion with one generalized coordinate
+![q](https://latex.codecogs.com/png.latex?q "q"), but we can generalize this to
+systems with multiple coordinates as well, as long as this holds for *every*
+![q](https://latex.codecogs.com/png.latex?q "q") and the momentum conjugate to
+it (![p\_q](https://latex.codecogs.com/png.latex?p_q "p_q")). (For the rest of
+this post,
 ![\\mathbf{q}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bq%7D "\mathbf{q}")
 refers to the vector of coordinates,
 ![q](https://latex.codecogs.com/png.latex?q "q") refers to a single specific
@@ -275,8 +285,8 @@ p_x = \frac{\partial}{\partial \dot{x}} \left[ \frac{1}{2} m \dot{x}^2 \right] =
 
 Just linear momentum, like I claimed before.
 
-Alright, now let’s generalize this to arbitrary coordinates. In general, for
-*Cartesian* coordinates, the kinetic energy will always be
+Let’s generalize this to arbitrary coordinates. In general, for *Cartesian*
+coordinates, the kinetic energy will always be
 
 ![
 KE(\\mathbf{x}, \\dot{\\mathbf{x}}) = \\frac{1}{2} \\left\[ m\_1 \\dot{x}\_1\^2 + m\_2 \\dot{x}\_2\^2 + m\_3 \\dot{x}\_3\^2 + \\dots \\right\]
@@ -291,8 +301,8 @@ describes the location of an object of mass
 ![m](https://latex.codecogs.com/png.latex?m "m"), then
 ![m\_1 = m\_2 = m](https://latex.codecogs.com/png.latex?m_1%20%3D%20m_2%20%3D%20m "m_1 = m_2 = m").
 
-To make things more convenient, we’ll treat this as a quadratic form over an
-inertia matrix:
+To give us nice notation and make things more convenient, we’ll write this as a
+quadratic form over an inertia matrix:
 
 ![
 KE(\\dot{\\mathbf{x}}) = \\frac{1}{2} \\dot{\\mathbf{x}}\^T \\hat{M} \\dot{\\mathbf{x}}
@@ -354,15 +364,15 @@ Or, in short:
 \dot{x}_i = \sum_{j = 1}^n \frac{\partial f_i}{\partial q_j} \dot{q}_j
 ")
 
-But, hey, this looks a lot like a matrix multiplication. If we call
-![\\hat{J}\_f](https://latex.codecogs.com/png.latex?%5Chat%7BJ%7D_f "\hat{J}_f")
-the [Jacobian
-matrix](https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant), the
+But, hey, this looks a lot like a matrix-vector multiplication! If we make
+![\\hat{J}\_f](https://latex.codecogs.com/png.latex?%5Chat%7BJ%7D_f "\hat{J}_f"),
+an
 ![m \\times n](https://latex.codecogs.com/png.latex?m%20%5Ctimes%20n "m \times n")
 matrix of partial derivatives of
 ![f](https://latex.codecogs.com/png.latex?f "f")
 (![\\hat{J}\_{fij} = \\frac{\\partial f\_i}{\\partial q\_j}](https://latex.codecogs.com/png.latex?%5Chat%7BJ%7D_%7Bfij%7D%20%3D%20%5Cfrac%7B%5Cpartial%20f_i%7D%7B%5Cpartial%20q_j%7D "\hat{J}_{fij} = \frac{\partial f_i}{\partial q_j}"))
-at a given point, then we have a nice expression for
+at a given point (typically called the \[Jacobian matrix of f\]\[\], then we
+have a nice expression for
 ![\\dot{\\mathbf{x}}](https://latex.codecogs.com/png.latex?%5Cdot%7B%5Cmathbf%7Bx%7D%7D "\dot{\mathbf{x}}"):
 
 ![
@@ -406,8 +416,10 @@ the vector of conjugate momenta:
 Now, we’re going to be using
 ![\\hat{J}\_f\^T \\hat{M} \\hat{J}\_f](https://latex.codecogs.com/png.latex?%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%20%5Chat%7BJ%7D_f "\hat{J}_f^T \hat{M} \hat{J}_f")
 a lot, so let’s give it a name,
-![\\hat{K}](https://latex.codecogs.com/png.latex?%5Chat%7BK%7D "\hat{K}"). If
-the masses are all positive and
+![\\hat{K}](https://latex.codecogs.com/png.latex?%5Chat%7BK%7D "\hat{K}").
+![\\hat{K}](https://latex.codecogs.com/png.latex?%5Chat%7BK%7D "\hat{K}")
+represents some sort of coordinate-aware inertia term for our system. If the
+masses are all positive and
 ![\\hat{J}\_f](https://latex.codecogs.com/png.latex?%5Chat%7BJ%7D_f "\hat{J}_f")
 is full-rank[^4], then
 ![\\hat{K}](https://latex.codecogs.com/png.latex?%5Chat%7BK%7D "\hat{K}") is a
@@ -448,9 +460,9 @@ bracket](https://en.wikipedia.org/wiki/Poisson_bracket) of the system’s
 [Lagrangian](https://en.wikipedia.org/wiki/Lagrangian_mechanics), but I did some
 of the work for you for the case of time-independent coordinates where the
 potential energy depends *only* on positions (so, no friction, wind resistance,
-etc.), the Hamiltonian of a system is precisely the system’s total [mechanical
-energy](https://en.wikipedia.org/wiki/Mechanical_energy), or its kinetic energy
-plus the potential energy:
+time, etc.), the Hamiltonian of a system is precisely the system’s total
+[mechanical energy](https://en.wikipedia.org/wiki/Mechanical_energy), or its
+kinetic energy plus the potential energy:
 
 ![
 \\mathcal{H}(\\mathbf{q},\\mathbf{p}) = KE(\\mathbf{q},\\mathbf{p}) + PE(\\mathbf{q})
@@ -551,8 +563,8 @@ represents the *second derivatives* of
 ![f](https://latex.codecogs.com/png.latex?f "f") – the derivative with respect
 to ![q\_i](https://latex.codecogs.com/png.latex?q_i "q_i") of the derivatives.
 
-We can write this in a more general way (using the gradient operator
-![\\nabla](https://latex.codecogs.com/png.latex?%5Cnabla "\nabla")) as:
+We can write this in a more general way by abusing notation (using the gradient
+operator ![\\nabla](https://latex.codecogs.com/png.latex?%5Cnabla "\nabla")) as:
 
 ![
 \\nabla\_{\\mathbf{q}} \\left\[ \\hat{J}\_f\^T \\hat{M} \\hat{J}\_f \\right\] =
@@ -565,7 +577,7 @@ We can write this in a more general way (using the gradient operator
 If we define
 ![\\nabla\_{\\mathbf{q}} \\hat{J}\_f](https://latex.codecogs.com/png.latex?%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f "\nabla_{\mathbf{q}} \hat{J}_f")
 as an
-![m \\times n \\times n](https://latex.codecogs.com/png.latex?m%20%5Ctimes%20n%20%5Ctimes%20n "m \times n \times n")
+![n \\times m \\times n](https://latex.codecogs.com/png.latex?n%20%5Ctimes%20m%20%5Ctimes%20n "n \times m \times n")
 tensor, whose ![n](https://latex.codecogs.com/png.latex?n "n") components are
 the each the
 ![m \\times n](https://latex.codecogs.com/png.latex?m%20%5Ctimes%20n "m \times n")
@@ -574,6 +586,20 @@ matrices corresponding to
 
 And with that, we have our final expression for
 ![\\nabla\_{\\mathbf{q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p})](https://latex.codecogs.com/png.latex?%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29 "\nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p})"):
+
+![
+\\frac{\\partial}{\\partial q\_i} \\mathcal{H}(\\mathbf{q},\\mathbf{p}) =
+    - \\mathbf{p}\^T \\hat{K}\^{-1} \\hat{J}\_f\^T \\hat{M}
+        \\left\[ \\frac{\\partial}{\\partial q\_i} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
+    + \\nabla\_{\\mathbf{q}} PE(\\mathbf{q})
+](https://latex.codecogs.com/png.latex?%0A%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%20%3D%0A%20%20%20%20-%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20%2B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A "
+\frac{\partial}{\partial q_i} \mathcal{H}(\mathbf{q},\mathbf{p}) =
+    - \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
+        \left[ \frac{\partial}{\partial q_i} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
+    + \nabla_{\mathbf{q}} PE(\mathbf{q})
+")
+
+Or, to use our abuse of notation:
 
 ![
 \\nabla\_{\\mathbf{q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p}) =
@@ -593,18 +619,18 @@ motion! To progress through phase space
 
 ![
 \\begin{aligned}
-\\dot{q} & = \\nabla\_{\\mathbf{p\_q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p})
+\\dot{\\mathbf{q}} & = \\nabla\_{\\mathbf{p\_q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p})
   && = \\hat{K}\^{-1} \\mathbf{p} \\\\
-\\dot{p}\_q & = - \\nabla\_{\\mathbf{q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p})
+\\dot{\\mathbf{p}} & = - \\nabla\_{\\mathbf{q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p})
   && = \\mathbf{p}\^T \\hat{K}\^{-1} \\hat{J}\_f\^T \\hat{M}
         \\left\[ \\nabla\_{\\mathbf{q}} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
     - \\nabla\_{\\mathbf{q}} PE(\\mathbf{q})
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cdot%7Bq%7D%20%26%20%3D%20%5Cnabla_%7B%5Cmathbf%7Bp_q%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%20%20%26%26%20%3D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%20%5C%5C%0A%5Cdot%7Bp%7D_q%20%26%20%3D%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%20%20%26%26%20%3D%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cdot%7B%5Cmathbf%7Bq%7D%7D%20%26%20%3D%20%5Cnabla_%7B%5Cmathbf%7Bp_q%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%20%20%26%26%20%3D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%20%5C%5C%0A%5Cdot%7B%5Cmathbf%7Bp%7D%7D%20%26%20%3D%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%20%20%26%26%20%3D%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-\dot{q} & = \nabla_{\mathbf{p_q}} \mathcal{H}(\mathbf{q},\mathbf{p})
+\dot{\mathbf{q}} & = \nabla_{\mathbf{p_q}} \mathcal{H}(\mathbf{q},\mathbf{p})
   && = \hat{K}^{-1} \mathbf{p} \\
-\dot{p}_q & = - \nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p})
+\dot{\mathbf{p}} & = - \nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p})
   && = \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
         \left[ \nabla_{\mathbf{q}} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
     - \nabla_{\mathbf{q}} PE(\mathbf{q})
@@ -690,7 +716,7 @@ We can couple together all of these functions in a data type that fully
 describes the physics of our systems (the “shape” of the Hamiltonian):
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L19-26
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L25-32
 data System m n = System
     { sysInertia       :: R m                         -- ^ 'm' vector
     , sysCoords        :: R n -> R m                  -- ^ f
@@ -717,7 +743,7 @@ and generalized velocities (the rates of changes of these positions,
 which is sometimes called “configuration space”:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L28-32
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L35-39
 data Config n = Config
     { confPositions  :: R n
     , confVelocities :: R n
@@ -733,7 +759,7 @@ and their conjugate momenta,
 So let’s make a type to describe the state of our system in phase space:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L34-38
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L42-46
 data Phase n = Phase
     { phasePositions :: R n
     , phaseMomenta   :: R n
@@ -751,8 +777,11 @@ position in generalized coordinates, and returns the position in the “underlyi
 coordinate system”:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L40-41
-underlyingPosition :: System m n -> R n -> R m
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L51-55
+underlyingPosition
+    :: System m n
+    -> R n
+    -> R m
 underlyingPosition = sysCoords
 ```
 
@@ -776,8 +805,12 @@ We remember that we have a nice formula for that, up above:
 We can translate that directly into Haskell code:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L43-47
-momenta :: (KnownNat n, KnownNat m) => System m n -> Config n -> R n
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L59-67
+momenta
+    :: (KnownNat n, KnownNat m)
+    => System m n
+    -> Config n
+    -> R n
 momenta s (Config q v) = tr j #> mHat #> j #> v
   where
     j    = sysJacobian s q
@@ -797,8 +830,12 @@ With this, we can write a function to convert any state in configuration space
 to its coordinates in phase space:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L49-50
-toPhase :: (KnownNat n, KnownNat m) => System m n -> Config n -> Phase n
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L70-75
+toPhase
+    :: (KnownNat n, KnownNat m)
+    => System m n
+    -> Config n
+    -> Phase n
 toPhase s c = Phase (confPositions c) (momenta s c)
 ```
 
@@ -873,7 +910,7 @@ utility function that only gives us the second-order Jacobian:
 ``` {.haskell}
 -- import qualified Control.Comonad        as C
 -- import qualified Control.Comonad.Cofree as C
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L52-60
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L78-86
 jacobian2
     :: (Traversable f, Functor g, RealFloat a)
     => (forall b. RealFloat b => f b -> g b)
@@ -887,10 +924,10 @@ jacobian2 f = (fmap . fmap . fmap) C.extract  -- ^ take 2nd deriv
 
 If you think of `Cofree` as an infinite linked list (of nested Functors),
 `jacobians` returns a linked list of derivative tensors. The first item is the
-0th derivative (the actual function value), so we drop it with `unwrap` (like
+0th derivative (the actual function value), so we drop it with `C.unwrap` (like
 `tail`) for lists). The second item is the 1st derivative, so we drop it again
-using `unwrap`. And finally, we only want the third item (the 2nd derivatives)
-so we `extract` it (like `head` for lists).
+using `C.unwrap`. And finally, we only want the third item (the 2nd derivatives)
+so we `C.extract` it (like `head` for lists).
 
 Finally, we can achieve our goal:
 
@@ -904,11 +941,12 @@ jacobian2 myFunc
 #### Conversion between vector-sized and hmatrix
 
 So some ugly things – we need to write some functions to convert between
-*vector-sized* sized vectors and *hmatrix* vectors and matrices:
+*vector-sized* sized vectors and *hmatrix* vectors and matrices. These are
+fundamentally unsafe to write (but safe to use, after written properly):
 
 ``` {.haskell}
 -- import qualified Data.Vector.Generic.Sized as VG
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L62-69
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L89-98
 vec2r :: KnownNat n => V.Vector n Double -> R n
 vec2r = fromJust . create . VG.fromSized . VG.convert
 
@@ -919,11 +957,10 @@ vec2l :: (KnownNat m, KnownNat n) => V.Vector m (V.Vector n Double) -> L m n
 vec2l = fromJust . (\rs -> withRows rs exactDims) . toList . fmap vec2r
 ```
 
-Remember that it is necessary to switch because *ad* requires our vectors to be
-*Functors*, but `R` and `L` from *hmatrix* are not your typical Hask Functors.
-One nice thing is that because they both use TypeLits to get their sized
-parameters, we can get type-safe conversions that preserve their size
-information!
+These are necessary because *ad* requires our vectors to be *Functors*, but `R`
+and `L` from *hmatrix* are not your typical Hask Functors. One nice thing is
+that because they both use *TypeLits* to get their sized parameters, we can get
+type-safe conversions that preserve their size information!
 
 Also, even though *ad* gives our second-order Jacobian as an
 ![m \\times n \\times n](https://latex.codecogs.com/png.latex?m%20%5Ctimes%20n%20%5Ctimes%20n "m \times n \times n")
@@ -935,7 +972,7 @@ mostly just fiddling around with the internals of *hmatrix* in a rather
 inelegant way.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L71-74
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L101-104
 rejacobi :: (KnownNat m, KnownNat n) => V.Vector m (L n n) -> V.Vector n (L m n)
 rejacobi = fmap (fromJust . (\rs -> withRows rs exactDims) . toList)
          . sequenceA
@@ -948,7 +985,7 @@ Now to make a `System` using just the mass vector, the coordinate conversion
 function, and the potential energy function:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L76-91
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L108-124
 mkSystem
     :: (KnownNat m, KnownNat n)
     => R m
@@ -965,6 +1002,7 @@ mkSystem m f u = System
     , sysPotential     =                         u . r2vec
     , sysPotentialGrad =      vec2r .       grad u . r2vec
     }
+                  -- < convert from | actual thing | convert to >
 ```
 
 Now, I hesitate to call this “trivial”…but, I think it really is a
@@ -990,15 +1028,15 @@ found to be given by:
 
 ![
 \\begin{aligned}
-\\dot{q} & = \\hat{K}\^{-1} \\mathbf{p} \\\\
-\\dot{p}\_q & = \\mathbf{p}\^T \\hat{K}\^{-1} \\hat{J}\_f\^T \\hat{M}
+\\dot{\\mathbf{q}} & = \\hat{K}\^{-1} \\mathbf{p} \\\\
+\\dot{\\mathbf{p}} & = \\mathbf{p}\^T \\hat{K}\^{-1} \\hat{J}\_f\^T \\hat{M}
         \\left\[ \\nabla\_{\\mathbf{q}} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
     - \\nabla\_{\\mathbf{q}} PE(\\mathbf{q})
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cdot%7Bq%7D%20%26%20%3D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%20%5C%5C%0A%5Cdot%7Bp%7D_q%20%26%20%3D%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cdot%7B%5Cmathbf%7Bq%7D%7D%20%26%20%3D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%20%5C%5C%0A%5Cdot%7B%5Cmathbf%7Bp%7D%7D%20%26%20%3D%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-\dot{q} & = \hat{K}^{-1} \mathbf{p} \\
-\dot{p}_q & = \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
+\dot{\mathbf{q}} & = \hat{K}^{-1} \mathbf{p} \\
+\dot{\mathbf{p}} & = \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
         \left[ \nabla_{\mathbf{q}} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
     - \nabla_{\mathbf{q}} PE(\mathbf{q})
 \end{aligned}
@@ -1009,7 +1047,7 @@ translate it into Haskell (using
 ![\\hat{K} = \\hat{J}\_f\^T \\hat{M} \\hat{J}\_f](https://latex.codecogs.com/png.latex?%5Chat%7BK%7D%20%3D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%20%5Chat%7BJ%7D_f "\hat{K} = \hat{J}_f^T \hat{M} \hat{J}_f")):
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L93-110
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L127-144
 hamilEqns
     :: (KnownNat n, KnownNat m)
     => System m n
@@ -1034,17 +1072,17 @@ Of course, there is no way to get around the big ugly math term in
 ![\\dot{p}\_q](https://latex.codecogs.com/png.latex?%5Cdot%7Bp%7D_q "\dot{p}_q"),
 but at least it is a direct reading of the math!
 
-*But !!* I’d much rather write this scary Haskell than that scary math, because
+*But!!* I’d much rather write this scary Haskell than that scary math, because
 *ghc typechecks our math*! When writing out those equations, we really had no
 idea if we were writing it correctly, and if the matrix and vector and tensor
 dimensions line up. If it even *made sense* to multiply and transpose the
 quantities we had.
 
-But, when writing `hamilEqns`, we let GHC hold our hand for us. If any of our
-math is wrong, GHC will verify it for us! If any dimensions don’t match up, or
-any transpositions don’t make sense, we’ll know! And if we’re ever lost, we can
-leave a *[typed hole](https://wiki.haskell.org/GHC/Typed_holes)* – then GHC will
-tell you all of the values in scope that can *fit* in that hole!
+However, when writing `hamilEqns`, we let GHC *hold our hand for us*. If any of
+our math is wrong, GHC will verify it for us! If any dimensions don’t match up,
+or any transpositions don’t make sense, we’ll know! And if we’re ever lost, we
+can leave a *[typed hole](https://wiki.haskell.org/GHC/Typed_holes)* – then GHC
+will tell you all of the values in scope that can *fit* in that hole!
 
 It’s admittedly difficult to convey how helpful these sized vector types are
 without working through trying to implement them yourself, so feel free to give
@@ -1099,10 +1137,12 @@ for small
 so we can do a little bit of symbolic manipulation to get
 ![x(t + \\Delta t) \\approx \\dot{x}(t) \\Delta t + x(t)](https://latex.codecogs.com/png.latex?x%28t%20%2B%20%5CDelta%20t%29%20%5Capprox%20%5Cdot%7Bx%7D%28t%29%20%5CDelta%20t%20%2B%20x%28t%29 "x(t + \Delta t) \approx \dot{x}(t) \Delta t + x(t)").
 
-We can directly translate this into Haskell:
+We can directly translate this into Haskell: (using
+`konst :: KnownNat n => Double -> R n`, making a constant vector, and `*`, the
+component-wise product of two vectors)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L112-120
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L147-155
 stepEuler
     :: (KnownNat n, KnownNat m)
     => System m n       -- ^ the system
@@ -1117,7 +1157,7 @@ stepEuler s dt ph@(Phase q p) = Phase (q + konst dt * dq) (p + konst dt * dp)
 And repeatedly evolve this system as a lazy list:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L122-130
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L158-166
 runSystem
     :: (KnownNat n, KnownNat m)
     => System m n       -- ^ the system
@@ -1139,10 +1179,11 @@ Let’s generate the boring system, a 5kg particle in 2D Cartesian Coordinates
 under gravity –
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L132-137
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L169-175
 simpleSystem :: System 2 2
 simpleSystem = mkSystem (vec2 5 5) id pot
   where
+    -- potential energy of a gravity field
     -- U(x,y) = 9.8 * y
     pot :: RealFloat a => V.Vector 2 a -> a
     pot xy = 9.8 * (xy `V.index` 1)
@@ -1162,7 +1203,7 @@ downwards.
 We can make our initial configuration:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L139-143
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L179-183
 simpleConfig0 :: Config 2
 simpleConfig0 = Config
     { confPositions  = vec2 0 0
@@ -1173,7 +1214,7 @@ simpleConfig0 = Config
 And then…let it run!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L145-149
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L185-189
 simpleMain :: IO ()
 simpleMain =
     mapM_ (disp 2 . phasePositions)  -- position with 2 digits of precision
@@ -1218,7 +1259,7 @@ positions increase, slow down, and start decreasing.
 
 We can try a slightly more complicated example that validates all of the work
 we’ve done – let’s simulate a simple pendulum. The state of a pendulum is
-characterized by one coordinate –
+characterized by one coordinate
 ![\\theta](https://latex.codecogs.com/png.latex?%5Ctheta "\theta"), which refers
 to the angular (clockwise) from the equilibrium “hanging straight down”
 position.
@@ -1240,7 +1281,9 @@ be at equilibrium, and our initial angular velocity
 will be 0.1 radians/sec (clockwise), as we try to induce harmonic motion:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L152-175
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L192-221
+-- | A pendulum system, parameterized by its angle clockwise from
+-- equilibrium
 pendulum :: System 2 1
 pendulum = mkSystem (vec2 5 5) coords pot      -- 5kg particle
   where
@@ -1250,6 +1293,7 @@ pendulum = mkSystem (vec2 5 5) coords pot      -- 5kg particle
     coords (V.head->theta) = fromJust
                            . V.fromList
                            $ [- 0.25 * sin theta, - 0.25 * cos theta]
+    -- potential energy of gravity field
     -- U(x,y) = 9.8 * y
     pot :: RealFloat a => V.Vector 1 a -> a
     pot q = 9.8 * (coords q `V.index` 1)
@@ -1318,10 +1362,10 @@ more correct code and a smoother development process.
 
 See my [previous
 post](https://blog.jle.im/entry/introducing-the-hamilton-library.html) for even
-crazier examples – involving multiple objects, double pendulums, and more! And
-check out my [hamilton](http://hackage.haskell.org/package/hamilton) library,
-which includes demos for exotic interesting systems, rendered graphically on
-your terminal.
+crazier examples – involving multiple objects, double pendulums, and more. And
+check out my [hamilton](http://hackage.haskell.org/package/hamilton) library on
+hackage, which includes demos for exotic interesting systems, rendered
+graphically on your terminal.
 
 I realize that this was a lot, so if you have any questions or suggestions for
 clarifications, feel free to leave a comment, drop me a
@@ -1336,7 +1380,7 @@ clarifications, feel free to leave a comment, drop me a
 
 [^2]: There’s also another perpendicular vector,
     ![\\langle -y, x \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20-y%2C%20x%20%5Crangle "\langle -y, x \rangle"),
-    but we do not speak of that.
+    which actually gives motion *backwards* in time.
 
 [^3]: Disclaimer: I am not a surfer
 

@@ -94,6 +94,7 @@
 
 \title{Hamiltonian Dynamics in Haskell}
 \author{Justin Le}
+\date{November 27, 2017}
 
 \begin{document}
 \maketitle
@@ -112,8 +113,8 @@ using
 \def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
-  \texttt{DataKinds} to enforce sizes of vectors and matrices and help guide us
-  write our code
+  \emph{DataKinds} (with \emph{TypeLits}) to enforce sizes of vectors and
+  matrices and help guide us write our code
 \item
   Statically-sized linear algebra with
   \emph{\href{http://hackage.haskell.org/package/hmatrix}{hmatrix}}
@@ -145,6 +146,12 @@ familiarity with:
 
 No physics knowledge is assumed, but knowing a little bit of first semester
 physics would help you gain a bit more of an appreciation for the end result!
+
+The
+\href{https://blog.jle.im/entry/introducing-the-hamilton-library.html}{hamilton
+library introduction} should be considered a ``soft prerequisite'' for this
+post, as it presents motivations, visual demonstrations, and general overviews
+of the methods presented here!
 
 \section{The Goal}\label{the-goal}
 
@@ -229,12 +236,9 @@ contour lines'' on that Hamiltonian!
 
 \subsection{Phase Space}\label{phase-space}
 
-The only thing I've really said in detail about phase space is that if your
-system's state has \includegraphics{https://latex.codecogs.com/png.latex?n}
-parameters, then the corresponding phase space is
-\includegraphics{https://latex.codecogs.com/png.latex?2n}-dimensional (and that
-Hamiltonian mechanics is somehow about systems moving around in phase space).
-Let me clear it up now: \emph{Phase space} is a
+Hamiltonian dynamics are about systems moving around in phase space. Phase space
+is the ``room where it happens'', so to speak, so let's dig deeper into what it
+is. \emph{Phase space} is a
 \includegraphics{https://latex.codecogs.com/png.latex?2n}-dimensional space
 parameterized by:
 
@@ -256,11 +260,11 @@ the current ``generalized momentum'' associated with the angle of the pendulum.
 What exactly \emph{is} generalized momentum? We'll go over calculating it
 eventually, but what does it represent\ldots{}\emph{physically}?
 
-I could give you some spiel here about the underlying Lie algebra of the Lie
-group associated with the generalized coordinates, but that would make this a
-completely different post. What I \emph{can} say is that the generalized momenta
-associated with (``conjugate to'') certain sets of familiar coordinates yield
-things that we typically call ``momenta'':
+The deeper answer involves the underlying Lie algebra of the Lie group
+associated with the generalized coordinates, but going into that would make this
+a completely different post. What I \emph{can} say is that the generalized
+momenta associated with (``conjugate to'') certain sets of familiar coordinates
+yield things that we typically call ``momenta'':
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -281,7 +285,8 @@ things that we typically call ``momenta'':
   The momentum conjugate to the radial coordinate
   \includegraphics{https://latex.codecogs.com/png.latex?r} in polar coordinates
   is also just boring old linear momentum
-  \includegraphics{https://latex.codecogs.com/png.latex?p_r\%20\%3D\%20m\%20\%5Cdot\%7Br\%7D}.
+  \includegraphics{https://latex.codecogs.com/png.latex?p_r\%20\%3D\%20m\%20\%5Cdot\%7Br\%7D},
+  which makes sense because purely radial motion is just linear motion.
 \end{enumerate}
 
 So, it's our normal momentum (for linear and polar coordinates)
@@ -322,9 +327,12 @@ is
 \includegraphics{https://latex.codecogs.com/png.latex?\%5Clangle\%20y\%2C\%20-x\%20\%5Crangle},\footnote{There's
   also another perpendicular vector,
   \includegraphics{https://latex.codecogs.com/png.latex?\%5Clangle\%20-y\%2C\%20x\%20\%5Crangle},
-  but we do not speak of that.} so we just derived the actual Hamiltonian
-equations of motion: just move in the direction perpendicular to the steepest
-ascent!
+  which actually gives motion \emph{backwards} in time.} so we just derived the
+actual Hamiltonian equations of motion: just move in the direction perpendicular
+to the steepest ascent! That is, to have things move on contour lines,
+\includegraphics{https://latex.codecogs.com/png.latex?\%5Cdot\%7Bq\%7D} and
+\includegraphics{https://latex.codecogs.com/png.latex?\%5Cdot\%7Bp\%7D_q}
+\emph{should} be:
 
 {[} \textbackslash{}begin\{aligned\} \textbackslash{}dot\{q\} \& =
 \textbackslash{}frac\{\textbackslash{}partial\}\{\textbackslash{}partial p\_q\}
@@ -342,10 +350,13 @@ ascent!
 
 ``)
 
-Which holds for every generalized coordinate
-\includegraphics{https://latex.codecogs.com/png.latex?q}, where
-\includegraphics{https://latex.codecogs.com/png.latex?p_q} is the momentum
-conjugate to that coordinate. (For the rest of this post,
+This is a conclusion with one generalized coordinate
+\includegraphics{https://latex.codecogs.com/png.latex?q}, but we can generalize
+this to systems with multiple coordinates as well, as long as this holds for
+\emph{every} \includegraphics{https://latex.codecogs.com/png.latex?q} and the
+momentum conjugate to it
+(\includegraphics{https://latex.codecogs.com/png.latex?p_q}). (For the rest of
+this post,
 \includegraphics{https://latex.codecogs.com/png.latex?\%5Cmathbf\%7Bq\%7D}
 refers to the vector of coordinates,
 \includegraphics{https://latex.codecogs.com/png.latex?q} refers to a single
@@ -431,8 +442,8 @@ So the momentum conjugate to
 
 Just linear momentum, like I claimed before.
 
-Alright, now let's generalize this to arbitrary coordinates. In general, for
-\emph{Cartesian} coordinates, the kinetic energy will always be
+Let's generalize this to arbitrary coordinates. In general, for \emph{Cartesian}
+coordinates, the kinetic energy will always be
 
 {[} KE(\textbackslash{}mathbf\{x\},
 \textbackslash{}dot\{\textbackslash{}mathbf\{x\}\}) =
@@ -451,8 +462,8 @@ describes the location of an object of mass
 \includegraphics{https://latex.codecogs.com/png.latex?m}, then
 \includegraphics{https://latex.codecogs.com/png.latex?m_1\%20\%3D\%20m_2\%20\%3D\%20m}.
 
-To make things more convenient, we'll treat this as a quadratic form over an
-inertia matrix:
+To give us nice notation and make things more convenient, we'll write this as a
+quadratic form over an inertia matrix:
 
 {[} KE(\textbackslash{}dot\{\textbackslash{}mathbf\{x\}\}) =
 \textbackslash{}frac\{1\}\{2\}
@@ -517,15 +528,14 @@ q\_j\}
 " \dot{x}\emph{i = \sum}\{j = 1\}\^{}n \frac{\partial f_i}{\partial q_j}
 \dot{q}\_j ``)
 
-But, hey, this looks a lot like a matrix multiplication. If we call
-\includegraphics{https://latex.codecogs.com/png.latex?\%5Chat\%7BJ\%7D_f} the
-\href{https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant}{Jacobian
-matrix}, the
+But, hey, this looks a lot like a matrix-vector multiplication! If we make
+\includegraphics{https://latex.codecogs.com/png.latex?\%5Chat\%7BJ\%7D_f}, an
 \includegraphics{https://latex.codecogs.com/png.latex?m\%20\%5Ctimes\%20n}
 matrix of partial derivatives of
 \includegraphics{https://latex.codecogs.com/png.latex?f}
 (\includegraphics{https://latex.codecogs.com/png.latex?\%5Chat\%7BJ\%7D_\%7Bfij\%7D\%20\%3D\%20\%5Cfrac\%7B\%5Cpartial\%20f_i\%7D\%7B\%5Cpartial\%20q_j\%7D})
-at a given point, then we have a nice expression for
+at a given point (typically called the {[}Jacobian matrix of f{]}{[}{]}, then we
+have a nice expression for
 \includegraphics{https://latex.codecogs.com/png.latex?\%5Cdot\%7B\%5Cmathbf\%7Bx\%7D\%7D}:
 
 {[} \textbackslash{}dot\{\textbackslash{}mathbf\{x\}\} =
@@ -572,7 +582,9 @@ vector of conjugate momenta:
 Now, we're going to be using
 \includegraphics{https://latex.codecogs.com/png.latex?\%5Chat\%7BJ\%7D_f\%5ET\%20\%5Chat\%7BM\%7D\%20\%5Chat\%7BJ\%7D_f}
 a lot, so let's give it a name,
-\includegraphics{https://latex.codecogs.com/png.latex?\%5Chat\%7BK\%7D}. If the
+\includegraphics{https://latex.codecogs.com/png.latex?\%5Chat\%7BK\%7D}.
+\includegraphics{https://latex.codecogs.com/png.latex?\%5Chat\%7BK\%7D}
+represents some sort of coordinate-aware inertia term for our system. If the
 masses are all positive and
 \includegraphics{https://latex.codecogs.com/png.latex?\%5Chat\%7BJ\%7D_f} is
 full-rank\footnote{\includegraphics{https://latex.codecogs.com/png.latex?\%5Chat\%7BJ_f\%7D}
@@ -619,9 +631,9 @@ The \emph{real} Hamiltonian is actually the
 system's \href{https://en.wikipedia.org/wiki/Lagrangian_mechanics}{Lagrangian},
 but I did some of the work for you for the case of time-independent coordinates
 where the potential energy depends \emph{only} on positions (so, no friction,
-wind resistance, etc.), the Hamiltonian of a system is precisely the system's
-total \href{https://en.wikipedia.org/wiki/Mechanical_energy}{mechanical energy},
-or its kinetic energy plus the potential energy:
+wind resistance, time, etc.), the Hamiltonian of a system is precisely the
+system's total \href{https://en.wikipedia.org/wiki/Mechanical_energy}{mechanical
+energy}, or its kinetic energy plus the potential energy:
 
 {[}
 \textbackslash{}mathcal\{H\}(\textbackslash{}mathbf\{q\},\textbackslash{}mathbf\{p\})
@@ -728,8 +740,8 @@ represents the \emph{second derivatives} of
 respect to \includegraphics{https://latex.codecogs.com/png.latex?q_i} of the
 derivatives.
 
-We can write this in a more general way (using the gradient operator
-\includegraphics{https://latex.codecogs.com/png.latex?\%5Cnabla}) as:
+We can write this in a more general way by abusing notation (using the gradient
+operator \includegraphics{https://latex.codecogs.com/png.latex?\%5Cnabla}) as:
 
 {[} \textbackslash{}nabla\_\{\textbackslash{}mathbf\{q\}\}
 \textbackslash{}left{[} \textbackslash{}hat\{J\}\_f\^{}T
@@ -745,7 +757,7 @@ We can write this in a more general way (using the gradient operator
 If we define
 \includegraphics{https://latex.codecogs.com/png.latex?\%5Cnabla_\%7B\%5Cmathbf\%7Bq\%7D\%7D\%20\%5Chat\%7BJ\%7D_f}
 as an
-\includegraphics{https://latex.codecogs.com/png.latex?m\%20\%5Ctimes\%20n\%20\%5Ctimes\%20n}
+\includegraphics{https://latex.codecogs.com/png.latex?n\%20\%5Ctimes\%20m\%20\%5Ctimes\%20n}
 tensor, whose \includegraphics{https://latex.codecogs.com/png.latex?n}
 components are the each the
 \includegraphics{https://latex.codecogs.com/png.latex?m\%20\%5Ctimes\%20n}
@@ -754,6 +766,24 @@ matrices corresponding to
 
 And with that, we have our final expression for
 \includegraphics{https://latex.codecogs.com/png.latex?\%5Cnabla_\%7B\%5Cmathbf\%7Bq\%7D\%7D\%20\%5Cmathcal\%7BH\%7D\%28\%5Cmathbf\%7Bq\%7D\%2C\%5Cmathbf\%7Bp\%7D\%29}:
+
+{[} \textbackslash{}frac\{\textbackslash{}partial\}\{\textbackslash{}partial
+q\_i\}
+\textbackslash{}mathcal\{H\}(\textbackslash{}mathbf\{q\},\textbackslash{}mathbf\{p\})
+= - \textbackslash{}mathbf\{p\}\^{}T \textbackslash{}hat\{K\}\^{}\{-1\}
+\textbackslash{}hat\{J\}\_f\^{}T \textbackslash{}hat\{M\}
+\textbackslash{}left{[}
+\textbackslash{}frac\{\textbackslash{}partial\}\{\textbackslash{}partial q\_i\}
+\textbackslash{}hat\{J\}\_f \textbackslash{}right{]}
+\textbackslash{}hat\{K\}\^{}\{-1\} \textbackslash{}mathbf\{p\} +
+\textbackslash{}nabla\_\{\textbackslash{}mathbf\{q\}\}
+PE(\textbackslash{}mathbf\{q\}){]}(https://latex.codecogs.com/png.latex?\%0A\%5Cfrac\%7B\%5Cpartial\%7D\%7B\%5Cpartial\%20q\_i\%7D\%20\%5Cmathcal\%7BH\%7D\%28\%5Cmathbf\%7Bq\%7D\%2C\%5Cmathbf\%7Bp\%7D\%29\%20\%3D\%0A\%20\%20\%20\%20-\%20\%5Cmathbf\%7Bp\%7D\%5ET\%20\%5Chat\%7BK\%7D\%5E\%7B-1\%7D\%20\%5Chat\%7BJ\%7D\_f\%5ET\%20\%5Chat\%7BM\%7D\%0A\%20\%20\%20\%20\%20\%20\%20\%20\%5Cleft\%5B\%20\%5Cfrac\%7B\%5Cpartial\%7D\%7B\%5Cpartial\%20q\_i\%7D\%20\%5Chat\%7BJ\%7D\_f\%20\%5Cright\%5D\%20\%5Chat\%7BK\%7D\%5E\%7B-1\%7D\%20\%5Cmathbf\%7Bp\%7D\%0A\%20\%20\%20\%20\%2B\%20\%5Cnabla\_\%7B\%5Cmathbf\%7Bq\%7D\%7D\%20PE\%28\%5Cmathbf\%7Bq\%7D\%29\%0A
+" \frac{\partial}{\partial q_i} \mathcal{H}(\mathbf{q},\mathbf{p}) = -
+\mathbf{p}\^{}T \hat{K}\^{}\{-1\} \hat{J}\emph{f\^{}T \hat{M}
+\left[ \frac{\partial}{\partial q_i} \hat{J}_f \right] \hat{K}\^{}\{-1\}
+\mathbf{p} + \nabla}\{\mathbf{q}\} PE(\mathbf{q}) ``)
+
+Or, to use our abuse of notation:
 
 {[} \textbackslash{}nabla\_\{\textbackslash{}mathbf\{q\}\}
 \textbackslash{}mathcal\{H\}(\textbackslash{}mathbf\{q\},\textbackslash{}mathbf\{p\})
@@ -773,11 +803,13 @@ And, finally, we have everything we need --- we can now construct our equations
 of motion! To progress through phase space
 (\includegraphics{https://latex.codecogs.com/png.latex?\%5Clangle\%20\%5Cmathbf\%7Bq\%7D\%2C\%20\%5Cmathbf\%7Bp\%7D\%5Crangle}):
 
-{[} \textbackslash{}begin\{aligned\} \textbackslash{}dot\{q\} \& =
+{[} \textbackslash{}begin\{aligned\}
+\textbackslash{}dot\{\textbackslash{}mathbf\{q\}\} \& =
 \textbackslash{}nabla\_\{\textbackslash{}mathbf\{p\_q\}\}
 \textbackslash{}mathcal\{H\}(\textbackslash{}mathbf\{q\},\textbackslash{}mathbf\{p\})
 \&\& = \textbackslash{}hat\{K\}\^{}\{-1\} \textbackslash{}mathbf\{p\}
-\textbackslash{}\textbackslash{} \textbackslash{}dot\{p\}\_q \& = -
+\textbackslash{}\textbackslash{}
+\textbackslash{}dot\{\textbackslash{}mathbf\{p\}\} \& = -
 \textbackslash{}nabla\_\{\textbackslash{}mathbf\{q\}\}
 \textbackslash{}mathcal\{H\}(\textbackslash{}mathbf\{q\},\textbackslash{}mathbf\{p\})
 \&\& = \textbackslash{}mathbf\{p\}\^{}T \textbackslash{}hat\{K\}\^{}\{-1\}
@@ -787,13 +819,13 @@ of motion! To progress through phase space
 \textbackslash{}hat\{K\}\^{}\{-1\} \textbackslash{}mathbf\{p\} -
 \textbackslash{}nabla\_\{\textbackslash{}mathbf\{q\}\}
 PE(\textbackslash{}mathbf\{q\})
-\textbackslash{}end\{aligned\}{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cbegin\%7Baligned\%7D\%0A\%5Cdot\%7Bq\%7D\%20\%26\%20\%3D\%20\%5Cnabla\_\%7B\%5Cmathbf\%7Bp\_q\%7D\%7D\%20\%5Cmathcal\%7BH\%7D\%28\%5Cmathbf\%7Bq\%7D\%2C\%5Cmathbf\%7Bp\%7D\%29\%0A\%20\%20\%26\%26\%20\%3D\%20\%5Chat\%7BK\%7D\%5E\%7B-1\%7D\%20\%5Cmathbf\%7Bp\%7D\%20\%5C\%5C\%0A\%5Cdot\%7Bp\%7D\_q\%20\%26\%20\%3D\%20-\%20\%5Cnabla\_\%7B\%5Cmathbf\%7Bq\%7D\%7D\%20\%5Cmathcal\%7BH\%7D\%28\%5Cmathbf\%7Bq\%7D\%2C\%5Cmathbf\%7Bp\%7D\%29\%0A\%20\%20\%26\%26\%20\%3D\%20\%5Cmathbf\%7Bp\%7D\%5ET\%20\%5Chat\%7BK\%7D\%5E\%7B-1\%7D\%20\%5Chat\%7BJ\%7D\_f\%5ET\%20\%5Chat\%7BM\%7D\%0A\%20\%20\%20\%20\%20\%20\%20\%20\%5Cleft\%5B\%20\%5Cnabla\_\%7B\%5Cmathbf\%7Bq\%7D\%7D\%20\%5Chat\%7BJ\%7D\_f\%20\%5Cright\%5D\%20\%5Chat\%7BK\%7D\%5E\%7B-1\%7D\%20\%5Cmathbf\%7Bp\%7D\%0A\%20\%20\%20\%20-\%20\%5Cnabla\_\%7B\%5Cmathbf\%7Bq\%7D\%7D\%20PE\%28\%5Cmathbf\%7Bq\%7D\%29\%0A\%5Cend\%7Baligned\%7D\%0A
+\textbackslash{}end\{aligned\}{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cbegin\%7Baligned\%7D\%0A\%5Cdot\%7B\%5Cmathbf\%7Bq\%7D\%7D\%20\%26\%20\%3D\%20\%5Cnabla\_\%7B\%5Cmathbf\%7Bp\_q\%7D\%7D\%20\%5Cmathcal\%7BH\%7D\%28\%5Cmathbf\%7Bq\%7D\%2C\%5Cmathbf\%7Bp\%7D\%29\%0A\%20\%20\%26\%26\%20\%3D\%20\%5Chat\%7BK\%7D\%5E\%7B-1\%7D\%20\%5Cmathbf\%7Bp\%7D\%20\%5C\%5C\%0A\%5Cdot\%7B\%5Cmathbf\%7Bp\%7D\%7D\%20\%26\%20\%3D\%20-\%20\%5Cnabla\_\%7B\%5Cmathbf\%7Bq\%7D\%7D\%20\%5Cmathcal\%7BH\%7D\%28\%5Cmathbf\%7Bq\%7D\%2C\%5Cmathbf\%7Bp\%7D\%29\%0A\%20\%20\%26\%26\%20\%3D\%20\%5Cmathbf\%7Bp\%7D\%5ET\%20\%5Chat\%7BK\%7D\%5E\%7B-1\%7D\%20\%5Chat\%7BJ\%7D\_f\%5ET\%20\%5Chat\%7BM\%7D\%0A\%20\%20\%20\%20\%20\%20\%20\%20\%5Cleft\%5B\%20\%5Cnabla\_\%7B\%5Cmathbf\%7Bq\%7D\%7D\%20\%5Chat\%7BJ\%7D\_f\%20\%5Cright\%5D\%20\%5Chat\%7BK\%7D\%5E\%7B-1\%7D\%20\%5Cmathbf\%7Bp\%7D\%0A\%20\%20\%20\%20-\%20\%5Cnabla\_\%7B\%5Cmathbf\%7Bq\%7D\%7D\%20PE\%28\%5Cmathbf\%7Bq\%7D\%29\%0A\%5Cend\%7Baligned\%7D\%0A
 "
 
 \begin{aligned}
-\dot{q} & = \nabla_{\mathbf{p_q}} \mathcal{H}(\mathbf{q},\mathbf{p})
+\dot{\mathbf{q}} & = \nabla_{\mathbf{p_q}} \mathcal{H}(\mathbf{q},\mathbf{p})
   && = \hat{K}^{-1} \mathbf{p} \\
-\dot{p}_q & = - \nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p})
+\dot{\mathbf{p}} & = - \nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p})
   && = \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
         \left[ \nabla_{\mathbf{q}} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
     - \nabla_{\mathbf{q}} PE(\mathbf{q})
@@ -898,7 +930,7 @@ describes the physics of our systems (the ``shape'' of the Hamiltonian):
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L19-26}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L25-32}
 \KeywordTok{data} \DataTypeTok{System}\NormalTok{ m n }\FunctionTok{=} \DataTypeTok{System}
 \NormalTok{    \{}\OtherTok{ sysInertia       ::} \DataTypeTok{R}\NormalTok{ m                         }\CommentTok{-- ^ 'm' vector}
 \NormalTok{    ,}\OtherTok{ sysCoords        ::} \DataTypeTok{R}\NormalTok{ n }\OtherTok{->} \DataTypeTok{R}\NormalTok{ m                  }\CommentTok{-- ^ f}
@@ -929,7 +961,7 @@ which is sometimes called ``configuration space'':
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L28-32}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L35-39}
 \KeywordTok{data} \DataTypeTok{Config}\NormalTok{ n }\FunctionTok{=} \DataTypeTok{Config}
 \NormalTok{    \{}\OtherTok{ confPositions  ::} \DataTypeTok{R}\NormalTok{ n}
 \NormalTok{    ,}\OtherTok{ confVelocities ::} \DataTypeTok{R}\NormalTok{ n}
@@ -947,7 +979,7 @@ So let's make a type to describe the state of our system in phase space:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L34-38}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L42-46}
 \KeywordTok{data} \DataTypeTok{Phase}\NormalTok{ n }\FunctionTok{=} \DataTypeTok{Phase}
 \NormalTok{    \{}\OtherTok{ phasePositions ::} \DataTypeTok{R}\NormalTok{ n}
 \NormalTok{    ,}\OtherTok{ phaseMomenta   ::} \DataTypeTok{R}\NormalTok{ n}
@@ -968,8 +1000,11 @@ position in generalized coordinates, and returns the position in the
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L40-41}
-\OtherTok{underlyingPosition ::} \DataTypeTok{System}\NormalTok{ m n }\OtherTok{->} \DataTypeTok{R}\NormalTok{ n }\OtherTok{->} \DataTypeTok{R}\NormalTok{ m}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L51-55}
+\NormalTok{underlyingPosition}
+\OtherTok{    ::} \DataTypeTok{System}\NormalTok{ m n}
+    \OtherTok{->} \DataTypeTok{R}\NormalTok{ n}
+    \OtherTok{->} \DataTypeTok{R}\NormalTok{ m}
 \NormalTok{underlyingPosition }\FunctionTok{=}\NormalTok{ sysCoords}
 \end{Highlighting}
 \end{Shaded}
@@ -995,8 +1030,12 @@ We can translate that directly into Haskell code:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L43-47}
-\OtherTok{momenta ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m) }\OtherTok{=>} \DataTypeTok{System}\NormalTok{ m n }\OtherTok{->} \DataTypeTok{Config}\NormalTok{ n }\OtherTok{->} \DataTypeTok{R}\NormalTok{ n}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L59-67}
+\NormalTok{momenta}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m)}
+    \OtherTok{=>} \DataTypeTok{System}\NormalTok{ m n}
+    \OtherTok{->} \DataTypeTok{Config}\NormalTok{ n}
+    \OtherTok{->} \DataTypeTok{R}\NormalTok{ n}
 \NormalTok{momenta s (}\DataTypeTok{Config}\NormalTok{ q v) }\FunctionTok{=}\NormalTok{ tr j }\FunctionTok{#>}\NormalTok{ mHat }\FunctionTok{#>}\NormalTok{ j }\FunctionTok{#>}\NormalTok{ v}
   \KeywordTok{where}
 \NormalTok{    j    }\FunctionTok{=}\NormalTok{ sysJacobian s q}
@@ -1019,8 +1058,12 @@ to its coordinates in phase space:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L49-50}
-\OtherTok{toPhase ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m) }\OtherTok{=>} \DataTypeTok{System}\NormalTok{ m n }\OtherTok{->} \DataTypeTok{Config}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Phase}\NormalTok{ n}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L70-75}
+\NormalTok{toPhase}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m)}
+    \OtherTok{=>} \DataTypeTok{System}\NormalTok{ m n}
+    \OtherTok{->} \DataTypeTok{Config}\NormalTok{ n}
+    \OtherTok{->} \DataTypeTok{Phase}\NormalTok{ n}
 \NormalTok{toPhase s c }\FunctionTok{=} \DataTypeTok{Phase}\NormalTok{ (confPositions c) (momenta s c)}
 \end{Highlighting}
 \end{Shaded}
@@ -1106,7 +1149,7 @@ Jacobian:
 \begin{Highlighting}[]
 \CommentTok{-- import qualified Control.Comonad        as C}
 \CommentTok{-- import qualified Control.Comonad.Cofree as C}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L52-60}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L78-86}
 \NormalTok{jacobian2}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Traversable}\NormalTok{ f, }\DataTypeTok{Functor}\NormalTok{ g, }\DataTypeTok{RealFloat}\NormalTok{ a)}
     \OtherTok{=>}\NormalTok{ (forall b}\FunctionTok{.} \DataTypeTok{RealFloat}\NormalTok{ b }\OtherTok{=>}\NormalTok{ f b }\OtherTok{->}\NormalTok{ g b)}
@@ -1122,9 +1165,9 @@ Jacobian:
 If you think of \texttt{Cofree} as an infinite linked list (of nested Functors),
 \texttt{jacobians} returns a linked list of derivative tensors. The first item
 is the 0th derivative (the actual function value), so we drop it with
-\texttt{unwrap} (like \texttt{tail}) for lists). The second item is the 1st
-derivative, so we drop it again using \texttt{unwrap}. And finally, we only want
-the third item (the 2nd derivatives) so we \texttt{extract} it (like
+\texttt{C.unwrap} (like \texttt{tail}) for lists). The second item is the 1st
+derivative, so we drop it again using \texttt{C.unwrap}. And finally, we only
+want the third item (the 2nd derivatives) so we \texttt{C.extract} it (like
 \texttt{head} for lists).
 
 Finally, we can achieve our goal:
@@ -1142,12 +1185,13 @@ Finally, we can achieve our goal:
 hmatrix}\label{conversion-between-vector-sized-and-hmatrix}
 
 So some ugly things -- we need to write some functions to convert between
-\emph{vector-sized} sized vectors and \emph{hmatrix} vectors and matrices:
+\emph{vector-sized} sized vectors and \emph{hmatrix} vectors and matrices. These
+are fundamentally unsafe to write (but safe to use, after written properly):
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- import qualified Data.Vector.Generic.Sized as VG}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L62-69}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L89-98}
 \OtherTok{vec2r ::} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{V.Vector}\NormalTok{ n }\DataTypeTok{Double} \OtherTok{->} \DataTypeTok{R}\NormalTok{ n}
 \NormalTok{vec2r }\FunctionTok{=}\NormalTok{ fromJust }\FunctionTok{.}\NormalTok{ create }\FunctionTok{.}\NormalTok{ VG.fromSized }\FunctionTok{.}\NormalTok{ VG.convert}
 
@@ -1159,11 +1203,11 @@ So some ugly things -- we need to write some functions to convert between
 \end{Highlighting}
 \end{Shaded}
 
-Remember that it is necessary to switch because \emph{ad} requires our vectors
-to be \emph{Functors}, but \texttt{R} and \texttt{L} from \emph{hmatrix} are not
-your typical Hask Functors. One nice thing is that because they both use
-TypeLits to get their sized parameters, we can get type-safe conversions that
-preserve their size information!
+These are necessary because \emph{ad} requires our vectors to be
+\emph{Functors}, but \texttt{R} and \texttt{L} from \emph{hmatrix} are not your
+typical Hask Functors. One nice thing is that because they both use
+\emph{TypeLits} to get their sized parameters, we can get type-safe conversions
+that preserve their size information!
 
 Also, even though \emph{ad} gives our second-order Jacobian as an
 \includegraphics{https://latex.codecogs.com/png.latex?m\%20\%5Ctimes\%20n\%20\%5Ctimes\%20n}
@@ -1176,7 +1220,7 @@ rather inelegant way.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L71-74}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L101-104}
 \OtherTok{rejacobi ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ m, }\DataTypeTok{KnownNat}\NormalTok{ n) }\OtherTok{=>} \DataTypeTok{V.Vector}\NormalTok{ m (}\DataTypeTok{L}\NormalTok{ n n) }\OtherTok{->} \DataTypeTok{V.Vector}\NormalTok{ n (}\DataTypeTok{L}\NormalTok{ m n)}
 \NormalTok{rejacobi }\FunctionTok{=}\NormalTok{ fmap (fromJust }\FunctionTok{.}\NormalTok{ (\textbackslash{}rs }\OtherTok{->}\NormalTok{ withRows rs exactDims) }\FunctionTok{.}\NormalTok{ toList)}
          \FunctionTok{.}\NormalTok{ sequenceA}
@@ -1192,7 +1236,7 @@ conversion function, and the potential energy function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L76-91}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L108-124}
 \NormalTok{mkSystem}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ m, }\DataTypeTok{KnownNat}\NormalTok{ n)}
     \OtherTok{=>} \DataTypeTok{R}\NormalTok{ m}
@@ -1209,6 +1253,7 @@ conversion function, and the potential energy function:
 \NormalTok{    , sysPotential     }\FunctionTok{=}\NormalTok{                         u }\FunctionTok{.}\NormalTok{ r2vec}
 \NormalTok{    , sysPotentialGrad }\FunctionTok{=}\NormalTok{      vec2r }\FunctionTok{.}\NormalTok{       grad u }\FunctionTok{.}\NormalTok{ r2vec}
 \NormalTok{    \}}
+                  \CommentTok{-- < convert from | actual thing | convert to >}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1245,9 +1290,11 @@ such a clean and concise way!
 At this point, we're ready to write our final equations of motion, which we
 found to be given by:
 
-{[} \textbackslash{}begin\{aligned\} \textbackslash{}dot\{q\} \& =
+{[} \textbackslash{}begin\{aligned\}
+\textbackslash{}dot\{\textbackslash{}mathbf\{q\}\} \& =
 \textbackslash{}hat\{K\}\^{}\{-1\} \textbackslash{}mathbf\{p\}
-\textbackslash{}\textbackslash{} \textbackslash{}dot\{p\}\_q \& =
+\textbackslash{}\textbackslash{}
+\textbackslash{}dot\{\textbackslash{}mathbf\{p\}\} \& =
 \textbackslash{}mathbf\{p\}\^{}T \textbackslash{}hat\{K\}\^{}\{-1\}
 \textbackslash{}hat\{J\}\_f\^{}T \textbackslash{}hat\{M\}
 \textbackslash{}left{[} \textbackslash{}nabla\_\{\textbackslash{}mathbf\{q\}\}
@@ -1255,12 +1302,12 @@ found to be given by:
 \textbackslash{}hat\{K\}\^{}\{-1\} \textbackslash{}mathbf\{p\} -
 \textbackslash{}nabla\_\{\textbackslash{}mathbf\{q\}\}
 PE(\textbackslash{}mathbf\{q\})
-\textbackslash{}end\{aligned\}{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cbegin\%7Baligned\%7D\%0A\%5Cdot\%7Bq\%7D\%20\%26\%20\%3D\%20\%5Chat\%7BK\%7D\%5E\%7B-1\%7D\%20\%5Cmathbf\%7Bp\%7D\%20\%5C\%5C\%0A\%5Cdot\%7Bp\%7D\_q\%20\%26\%20\%3D\%20\%5Cmathbf\%7Bp\%7D\%5ET\%20\%5Chat\%7BK\%7D\%5E\%7B-1\%7D\%20\%5Chat\%7BJ\%7D\_f\%5ET\%20\%5Chat\%7BM\%7D\%0A\%20\%20\%20\%20\%20\%20\%20\%20\%5Cleft\%5B\%20\%5Cnabla\_\%7B\%5Cmathbf\%7Bq\%7D\%7D\%20\%5Chat\%7BJ\%7D\_f\%20\%5Cright\%5D\%20\%5Chat\%7BK\%7D\%5E\%7B-1\%7D\%20\%5Cmathbf\%7Bp\%7D\%0A\%20\%20\%20\%20-\%20\%5Cnabla\_\%7B\%5Cmathbf\%7Bq\%7D\%7D\%20PE\%28\%5Cmathbf\%7Bq\%7D\%29\%0A\%5Cend\%7Baligned\%7D\%0A
+\textbackslash{}end\{aligned\}{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cbegin\%7Baligned\%7D\%0A\%5Cdot\%7B\%5Cmathbf\%7Bq\%7D\%7D\%20\%26\%20\%3D\%20\%5Chat\%7BK\%7D\%5E\%7B-1\%7D\%20\%5Cmathbf\%7Bp\%7D\%20\%5C\%5C\%0A\%5Cdot\%7B\%5Cmathbf\%7Bp\%7D\%7D\%20\%26\%20\%3D\%20\%5Cmathbf\%7Bp\%7D\%5ET\%20\%5Chat\%7BK\%7D\%5E\%7B-1\%7D\%20\%5Chat\%7BJ\%7D\_f\%5ET\%20\%5Chat\%7BM\%7D\%0A\%20\%20\%20\%20\%20\%20\%20\%20\%5Cleft\%5B\%20\%5Cnabla\_\%7B\%5Cmathbf\%7Bq\%7D\%7D\%20\%5Chat\%7BJ\%7D\_f\%20\%5Cright\%5D\%20\%5Chat\%7BK\%7D\%5E\%7B-1\%7D\%20\%5Cmathbf\%7Bp\%7D\%0A\%20\%20\%20\%20-\%20\%5Cnabla\_\%7B\%5Cmathbf\%7Bq\%7D\%7D\%20PE\%28\%5Cmathbf\%7Bq\%7D\%29\%0A\%5Cend\%7Baligned\%7D\%0A
 "
 
 \begin{aligned}
-\dot{q} & = \hat{K}^{-1} \mathbf{p} \\
-\dot{p}_q & = \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
+\dot{\mathbf{q}} & = \hat{K}^{-1} \mathbf{p} \\
+\dot{\mathbf{p}} & = \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
         \left[ \nabla_{\mathbf{q}} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
     - \nabla_{\mathbf{q}} PE(\mathbf{q})
 \end{aligned}
@@ -1273,7 +1320,7 @@ translate it into Haskell (using
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L93-110}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L127-144}
 \NormalTok{hamilEqns}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m)}
     \OtherTok{=>} \DataTypeTok{System}\NormalTok{ m n}
@@ -1299,18 +1346,18 @@ Of course, there is no way to get around the big ugly math term in
 \includegraphics{https://latex.codecogs.com/png.latex?\%5Cdot\%7Bp\%7D_q}, but
 at least it is a direct reading of the math!
 
-\emph{But !!} I'd much rather write this scary Haskell than that scary math,
+\emph{But!!} I'd much rather write this scary Haskell than that scary math,
 because \emph{ghc typechecks our math}! When writing out those equations, we
 really had no idea if we were writing it correctly, and if the matrix and vector
 and tensor dimensions line up. If it even \emph{made sense} to multiply and
 transpose the quantities we had.
 
-But, when writing \texttt{hamilEqns}, we let GHC hold our hand for us. If any of
-our math is wrong, GHC will verify it for us! If any dimensions don't match up,
-or any transpositions don't make sense, we'll know! And if we're ever lost, we
-can leave a \emph{\href{https://wiki.haskell.org/GHC/Typed_holes}{typed hole}}
--- then GHC will tell you all of the values in scope that can \emph{fit} in that
-hole!
+However, when writing \texttt{hamilEqns}, we let GHC \emph{hold our hand for
+us}. If any of our math is wrong, GHC will verify it for us! If any dimensions
+don't match up, or any transpositions don't make sense, we'll know! And if we're
+ever lost, we can leave a
+\emph{\href{https://wiki.haskell.org/GHC/Typed_holes}{typed hole}} -- then GHC
+will tell you all of the values in scope that can \emph{fit} in that hole!
 
 It's admittedly difficult to convey how helpful these sized vector types are
 without working through trying to implement them yourself, so feel free to give
@@ -1364,11 +1411,14 @@ for small \includegraphics{https://latex.codecogs.com/png.latex?\%5CDelta\%20t},
 and so we can do a little bit of symbolic manipulation to get
 \includegraphics{https://latex.codecogs.com/png.latex?x\%28t\%20\%2B\%20\%5CDelta\%20t\%29\%20\%5Capprox\%20\%5Cdot\%7Bx\%7D\%28t\%29\%20\%5CDelta\%20t\%20\%2B\%20x\%28t\%29}.
 
-We can directly translate this into Haskell:
+We can directly translate this into Haskell: (using
+\texttt{konst\ ::\ KnownNat\ n\ =\textgreater{}\ Double\ -\textgreater{}\ R\ n},
+making a constant vector, and \texttt{*}, the component-wise product of two
+vectors)
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L112-120}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L147-155}
 \NormalTok{stepEuler}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m)}
     \OtherTok{=>} \DataTypeTok{System}\NormalTok{ m n       }\CommentTok{-- ^ the system}
@@ -1385,7 +1435,7 @@ And repeatedly evolve this system as a lazy list:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L122-130}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L158-166}
 \NormalTok{runSystem}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m)}
     \OtherTok{=>} \DataTypeTok{System}\NormalTok{ m n       }\CommentTok{-- ^ the system}
@@ -1408,10 +1458,11 @@ under gravity --
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L132-137}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L169-175}
 \OtherTok{simpleSystem ::} \DataTypeTok{System} \DecValTok{2} \DecValTok{2}
 \NormalTok{simpleSystem }\FunctionTok{=}\NormalTok{ mkSystem (vec2 }\DecValTok{5} \DecValTok{5}\NormalTok{) id pot}
   \KeywordTok{where}
+    \CommentTok{-- potential energy of a gravity field}
     \CommentTok{-- U(x,y) = 9.8 * y}
 \OtherTok{    pot ::} \DataTypeTok{RealFloat}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{V.Vector} \DecValTok{2}\NormalTok{ a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{    pot xy }\FunctionTok{=} \FloatTok{9.8} \FunctionTok{*}\NormalTok{ (xy }\OtherTok{`V.index`} \DecValTok{1}\NormalTok{)}
@@ -1433,7 +1484,7 @@ We can make our initial configuration:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L139-143}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L179-183}
 \OtherTok{simpleConfig0 ::} \DataTypeTok{Config} \DecValTok{2}
 \NormalTok{simpleConfig0 }\FunctionTok{=} \DataTypeTok{Config}
 \NormalTok{    \{ confPositions  }\FunctionTok{=}\NormalTok{ vec2 }\DecValTok{0} \DecValTok{0}
@@ -1446,7 +1497,7 @@ And then\ldots{}let it run!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L145-149}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L185-189}
 \OtherTok{simpleMain ::} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{simpleMain }\FunctionTok{=}
 \NormalTok{    mapM_ (disp }\DecValTok{2} \FunctionTok{.}\NormalTok{ phasePositions)  }\CommentTok{-- position with 2 digits of precision}
@@ -1494,7 +1545,7 @@ Exactly what we'd expect! The \texttt{x} positions increase steadily, and the
 
 We can try a slightly more complicated example that validates all of the work
 we've done -- let's simulate a simple pendulum. The state of a pendulum is
-characterized by one coordinate --
+characterized by one coordinate
 \includegraphics{https://latex.codecogs.com/png.latex?\%5Ctheta}, which refers
 to the angular (clockwise) from the equilibrium ``hanging straight down''
 position.
@@ -1518,7 +1569,9 @@ will be 0.1 radians/sec (clockwise), as we try to induce harmonic motion:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L152-175}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L192-221}
+\CommentTok{-- | A pendulum system, parameterized by its angle clockwise from}
+\CommentTok{-- equilibrium}
 \OtherTok{pendulum ::} \DataTypeTok{System} \DecValTok{2} \DecValTok{1}
 \NormalTok{pendulum }\FunctionTok{=}\NormalTok{ mkSystem (vec2 }\DecValTok{5} \DecValTok{5}\NormalTok{) coords pot      }\CommentTok{-- 5kg particle}
   \KeywordTok{where}
@@ -1528,6 +1581,7 @@ will be 0.1 radians/sec (clockwise), as we try to induce harmonic motion:
 \NormalTok{    coords (V.head}\OtherTok{->}\NormalTok{theta) }\FunctionTok{=}\NormalTok{ fromJust}
                            \FunctionTok{.}\NormalTok{ V.fromList}
                            \FunctionTok{$}\NormalTok{ [}\FunctionTok{-} \FloatTok{0.25} \FunctionTok{*}\NormalTok{ sin theta, }\FunctionTok{-} \FloatTok{0.25} \FunctionTok{*}\NormalTok{ cos theta]}
+    \CommentTok{-- potential energy of gravity field}
     \CommentTok{-- U(x,y) = 9.8 * y}
 \OtherTok{    pot ::} \DataTypeTok{RealFloat}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{V.Vector} \DecValTok{1}\NormalTok{ a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{    pot q }\FunctionTok{=} \FloatTok{9.8} \FunctionTok{*}\NormalTok{ (coords q }\OtherTok{`V.index`} \DecValTok{1}\NormalTok{)}
@@ -1602,10 +1656,10 @@ more correct code and a smoother development process.
 See my
 \href{https://blog.jle.im/entry/introducing-the-hamilton-library.html}{previous
 post} for even crazier examples -- involving multiple objects, double pendulums,
-and more! And check out my
-\href{http://hackage.haskell.org/package/hamilton}{hamilton} library, which
-includes demos for exotic interesting systems, rendered graphically on your
-terminal.
+and more. And check out my
+\href{http://hackage.haskell.org/package/hamilton}{hamilton} library on hackage,
+which includes demos for exotic interesting systems, rendered graphically on
+your terminal.
 
 I realize that this was a lot, so if you have any questions or suggestions for
 clarifications, feel free to leave a comment, drop me a
