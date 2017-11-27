@@ -373,8 +373,9 @@ an
 matrix of partial derivatives of
 ![f](https://latex.codecogs.com/png.latex?f "f")
 (![\\hat{J}\_{fij} = \\frac{\\partial f\_i}{\\partial q\_j}](https://latex.codecogs.com/png.latex?%5Chat%7BJ%7D_%7Bfij%7D%20%3D%20%5Cfrac%7B%5Cpartial%20f_i%7D%7B%5Cpartial%20q_j%7D "\hat{J}_{fij} = \frac{\partial f_i}{\partial q_j}"))
-at a given point (typically called the \[Jacobian matrix of f\]\[\], then we
-have a nice expression for
+at a given point (typically called the [Jacobian matrix of
+f](https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant), then we have
+a nice expression for
 ![\\dot{\\mathbf{x}}](https://latex.codecogs.com/png.latex?%5Cdot%7B%5Cmathbf%7Bx%7D%7D "\dot{\mathbf{x}}"):
 
 ![
