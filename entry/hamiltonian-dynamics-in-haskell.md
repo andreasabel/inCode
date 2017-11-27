@@ -711,7 +711,7 @@ the user for
 ![\\mathbf{m}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bm%7D "\mathbf{m}"),
 ![f](https://latex.codecogs.com/png.latex?f "f"), and
 ![U](https://latex.codecogs.com/png.latex?U "U") – all of the derivatives can be
-computed automatically!
+computed automatically.
 
 ### Our Data Structures
 
@@ -738,8 +738,8 @@ represents an `m x n` matrix (For example, an `L 5 3` is a 5x3 matrix).
 A `System m n` will describe a system parameterized by `n` generalized
 coordinates, taking place in an underlying `m`-dimensional Cartesian space.
 
-It’ll also be convenient to have a nice data type to describe the state of our
-system in terms of its generalized positions
+It’ll also be convenient to have a data type to describe the state of our system
+in terms of its generalized positions
 (![\\mathbf{q}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bq%7D "\mathbf{q}"))
 and generalized velocities (the rates of changes of these positions,
 ![\\dot{\\mathbf{q}}](https://latex.codecogs.com/png.latex?%5Cdot%7B%5Cmathbf%7Bq%7D%7D "\dot{\mathbf{q}}")),
@@ -859,7 +859,7 @@ your Jacobians and gradients.
 Here’s where the magic comes in – we can have Haskell generate our Jacobians and
 gradients *automatically*, using the amazing
 [ad](http://hackage.haskell.org/package/ad) library! We can just use the
-appropriately named `grad` and `jacobian` functions!
+appropriately named `grad` and `jacobian` functions.
 
 #### Quick Intro to AD
 
@@ -875,6 +875,8 @@ If we have a function a function from a sized vector to a scalar, we can use
 `grad` to get its gradient:
 
 ``` {.haskell}
+-- import qualified Data.Vector.Sized as V
+
 myFunc      :: RealFloat a => V.Vector n a -> a
 grad myFunc :: RealFloat a => V.Vector n a -> V.Vector n a
 ```
