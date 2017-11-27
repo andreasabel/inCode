@@ -148,9 +148,7 @@ things that we typically call “momenta”:
 2.  The momentum conjugate to the angle
     ![\\theta](https://latex.codecogs.com/png.latex?%5Ctheta "\theta") in polar
     coordinates is *angular momentum*
-    (![\\mathbf{L} = m \\mathbf{r} \\times \\mathbf{v}](https://latex.codecogs.com/png.latex?%5Cmathbf%7BL%7D%20%3D%20m%20%5Cmathbf%7Br%7D%20%5Ctimes%20%5Cmathbf%7Bv%7D "\mathbf{L} = m \mathbf{r} \times \mathbf{v}"),
-    or
-    ![L = m r\^2 \\dot{\\theta}](https://latex.codecogs.com/png.latex?L%20%3D%20m%20r%5E2%20%5Cdot%7B%5Ctheta%7D "L = m r^2 \dot{\theta}"))
+    (![L = m r\^2 \\dot{\\theta}](https://latex.codecogs.com/png.latex?L%20%3D%20m%20r%5E2%20%5Cdot%7B%5Ctheta%7D "L = m r^2 \dot{\theta}"))
     from first semester physics.
 
 3.  The momentum conjugate to the radial coordinate
