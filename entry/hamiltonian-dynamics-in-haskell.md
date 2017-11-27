@@ -86,7 +86,7 @@ system moves along the *contour lines* of the *Hamiltonian* – the lines of equ
 
 ![Example of contour lines of a
 ![\\mathbb{R}\^2 \\rightarrow \\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E2%20%5Crightarrow%20%5Cmathbb%7BR%7D "\mathbb{R}^2 \rightarrow \mathbb{R}")
-function – the elevation of land. From the [Ordinace
+function – the elevation of land, from the [Ordinace
 Survey](https://www.ordnancesurvey.co.uk/blog/2015/11/map-reading-skills-making-sense-of-contour-lines/)
 website.](/img/entries/hamilton/contour-lines.jpg "Contour lines")
 
@@ -116,9 +116,9 @@ contour lines” on that Hamiltonian!
 
 ### Phase Space
 
-Hamiltonian dynamics are about systems moving around in phase space. Phase space
-is the “room where it happens”, so to speak, so let’s dig deeper into what it
-is. *Phase space* is a
+Hamiltonian dynamics are about systems moving around in phase space. It seems
+that phase space is the “room where it happens”, so to speak, so let’s dig
+deeper into what it is. *Phase space* is a
 ![2n](https://latex.codecogs.com/png.latex?2n "2n")-dimensional space
 parameterized by:
 
@@ -129,10 +129,10 @@ parameterized by:
     ![n](https://latex.codecogs.com/png.latex?n "n") parameters
 
 So if you were parameterizing your pendulum system by, say, the angle of the
-pendulum, the phase space would be the current angle of the pendulum along with
-the current “generalized momentum” associated with the angle of the pendulum.
-What exactly *is* generalized momentum? We’ll go over calculating it eventually,
-but what does it represent…*physically*?
+pendulum, then a point in phase space would be the current angle of the pendulum
+along with the current “generalized momentum” associated with the angle of the
+pendulum. What exactly *is* generalized momentum? We’ll go over calculating it
+eventually, but what does it represent…*physically*?
 
 The deeper answer involves the underlying Lie algebra of the Lie group
 associated with the generalized coordinates, but going into that would make this
