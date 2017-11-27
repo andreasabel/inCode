@@ -577,7 +577,7 @@ operator ![\\nabla](https://latex.codecogs.com/png.latex?%5Cnabla "\nabla")) as:
     2 \hat{J}_f^T \hat{M} \left[ \nabla_{\mathbf{q}} \hat{J}_f \right]
 ")
 
-If we define
+if we define
 ![\\nabla\_{\\mathbf{q}} \\hat{J}\_f](https://latex.codecogs.com/png.latex?%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f "\nabla_{\mathbf{q}} \hat{J}_f")
 as an
 ![n \\times m \\times n](https://latex.codecogs.com/png.latex?n%20%5Ctimes%20m%20%5Ctimes%20n "n \times m \times n")
