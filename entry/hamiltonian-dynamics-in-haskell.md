@@ -930,7 +930,7 @@ jacobian2 f = (fmap . fmap . fmap) C.extract  -- ^ take 2nd deriv
 If you think of `Cofree` as an infinite linked list (of nested Functors),
 `jacobians` returns a linked list of derivative tensors. The first item is the
 0th derivative (the actual function value), so we drop it with `C.unwrap` (like
-`tail`) for lists). The second item is the 1st derivative, so we drop it again
+`tail` for lists). The second item is the 1st derivative, so we drop it again
 using `C.unwrap`. And finally, we only want the third item (the 2nd derivatives)
 so we `C.extract` it (like `head` for lists).
 
@@ -974,7 +974,7 @@ tensor, we really want it as a n-vector of
 matrices – that’s how we interpreted it in our original math. So we just need to
 write an function to convert what *ad* gives us to the form we expect. It’s
 mostly just fiddling around with the internals of *hmatrix* in a rather
-inelegant way.
+inelegant way. (Again, unsafe to write, but safe to use once you do)
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L101-104
@@ -1006,8 +1006,8 @@ mkSystem m f u = System
                        . fmap vec2l .  jacobian2 f . r2vec
     , sysPotential     =                         u . r2vec
     , sysPotentialGrad =      vec2r .       grad u . r2vec
-    }
                   -- < convert from | actual thing | convert to >
+    }
 ```
 
 Now, I hesitate to call this “trivial”…but, I think it really is a
@@ -1036,19 +1036,30 @@ found to be given by:
 \\dot{\\mathbf{q}} & = \\hat{K}\^{-1} \\mathbf{p} \\\\
 \\dot{\\mathbf{p}} & = \\mathbf{p}\^T \\hat{K}\^{-1} \\hat{J}\_f\^T \\hat{M}
         \\left\[ \\nabla\_{\\mathbf{q}} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
+    - \\nabla\_{\\mathbf{q}} PE(\\mathbf{q}) \\\\
+\\dot{p}\_{q\_i} & = \\mathbf{p}\^T \\hat{K}\^{-1} \\hat{J}\_f\^T \\hat{M}
+        \\left\[ \\frac{\\partial}{\\partial q\_i} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
     - \\nabla\_{\\mathbf{q}} PE(\\mathbf{q})
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cdot%7B%5Cmathbf%7Bq%7D%7D%20%26%20%3D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%20%5C%5C%0A%5Cdot%7B%5Cmathbf%7Bp%7D%7D%20%26%20%3D%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cdot%7B%5Cmathbf%7Bq%7D%7D%20%26%20%3D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%20%5C%5C%0A%5Cdot%7B%5Cmathbf%7Bp%7D%7D%20%26%20%3D%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%20%5C%5C%0A%5Cdot%7Bp%7D_%7Bq_i%7D%20%26%20%3D%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20q_i%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
 \dot{\mathbf{q}} & = \hat{K}^{-1} \mathbf{p} \\
 \dot{\mathbf{p}} & = \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
         \left[ \nabla_{\mathbf{q}} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
+    - \nabla_{\mathbf{q}} PE(\mathbf{q}) \\
+\dot{p}_{q_i} & = \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
+        \left[ \frac{\partial}{\partial q_i} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
     - \nabla_{\mathbf{q}} PE(\mathbf{q})
 \end{aligned}
 ")
 
-This equation isn’t particularly beautiful, but it’s straightforward to
-translate it into Haskell (using
+(I’ve given the form of
+![\\dot{\\mathbf{p}}](https://latex.codecogs.com/png.latex?%5Cdot%7B%5Cmathbf%7Bp%7D%7D "\dot{\mathbf{p}}")
+in both its abuse-of-notation form and its explicit component-wise form, which
+is more useful for implementation)
+
+These equations aren’t particularly beautiful, but it’s straightforward to
+translate them into Haskell (using
 ![\\hat{K} = \\hat{J}\_f\^T \\hat{M} \\hat{J}\_f](https://latex.codecogs.com/png.latex?%5Chat%7BK%7D%20%3D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%20%5Chat%7BJ%7D_f "\hat{K} = \hat{J}_f^T \hat{M} \hat{J}_f")):
 
 ``` {.haskell}
@@ -1085,9 +1096,11 @@ quantities we had.
 
 However, when writing `hamilEqns`, we let GHC *hold our hand for us*. If any of
 our math is wrong, GHC will verify it for us! If any dimensions don’t match up,
-or any transpositions don’t make sense, we’ll know! And if we’re ever lost, we
-can leave a *[typed hole](https://wiki.haskell.org/GHC/Typed_holes)* – then GHC
-will tell you all of the values in scope that can *fit* in that hole!
+or any transpositions don’t make sense, we’ll know immediately. And if we’re
+ever lost, we can leave a *[typed
+hole](https://wiki.haskell.org/GHC/Typed_holes)* – then GHC will tell you all of
+the values in scope that can *fit* in that hole! Even if you don’t completely
+understand the math, this helps you implement it in a somewhat confident way.
 
 It’s admittedly difficult to convey how helpful these sized vector types are
 without working through trying to implement them yourself, so feel free to give
@@ -1262,9 +1275,9 @@ ghci> simpleMain
 Exactly what we’d expect! The `x` positions increase steadily, and the `y`
 positions increase, slow down, and start decreasing.
 
-We can try a slightly more complicated example that validates all of the work
-we’ve done – let’s simulate a simple pendulum. The state of a pendulum is
-characterized by one coordinate
+We can try a slightly more complicated example that validates (and justifies)
+all of the work we’ve done – let’s simulate a simple pendulum. The state of a
+pendulum is characterized by one coordinate
 ![\\theta](https://latex.codecogs.com/png.latex?%5Ctheta "\theta"), which refers
 to the angular (clockwise) from the equilibrium “hanging straight down”
 position.
