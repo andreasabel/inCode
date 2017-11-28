@@ -463,9 +463,10 @@ bracket](https://en.wikipedia.org/wiki/Poisson_bracket) of the system’s
 [Lagrangian](https://en.wikipedia.org/wiki/Lagrangian_mechanics), but I did some
 of the work for you for the case of time-independent coordinates where the
 potential energy depends *only* on positions (so, no friction, wind resistance,
-time, etc.), the Hamiltonian of a system is precisely the system’s total
-[mechanical energy](https://en.wikipedia.org/wiki/Mechanical_energy), or its
-kinetic energy plus the potential energy:
+time, etc.). In such a case, the Hamiltonian of a system is precisely the
+system’s total [mechanical
+energy](https://en.wikipedia.org/wiki/Mechanical_energy), or its kinetic energy
+plus the potential energy:
 
 ![
 \\mathcal{H}(\\mathbf{q},\\mathbf{p}) = KE(\\mathbf{q},\\mathbf{p}) + PE(\\mathbf{q})
@@ -571,7 +572,8 @@ The collection of “second-order derivatives of
 Tensor](https://en.wikipedia.org/wiki/Hessian_matrix#Vector-valued_functions) (a
 vector-valued generalization of the Hessian matrix), which we will denote as
 ![\\hat{H}\_f](https://latex.codecogs.com/png.latex?%5Chat%7BH%7D_f "\hat{H}_f").[^5]
-We can write this in a nicer by abusing matrix multiplication notation as:
+We can write this in a nicer way by abusing matrix multiplication notation to
+get
 
 ![
 \\nabla\_{\\mathbf{q}} \\left\[ \\hat{J}\_f\^T \\hat{M} \\hat{J}\_f \\right\] =
@@ -611,12 +613,12 @@ Or, to use our abuse of notation:
 ![
 \\nabla\_{\\mathbf{q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p}) =
     - \\mathbf{p}\^T \\hat{K}\^{-1} \\hat{J}\_f\^T \\hat{M}
-        \\hat{H}\_f\\left\[ \\nabla\_{\\mathbf{q}} \\hat{J}\_f \\righo \\hat{K}\^{-1} \\mathbf{p}
+        \\hat{H}\_f \\hat{K}\^{-1} \\mathbf{p}
     + \\nabla\_{\\mathbf{q}} PE(\\mathbf{q})
-](https://latex.codecogs.com/png.latex?%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%20%3D%0A%20%20%20%20-%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Chat%7BH%7D_f%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Crigho%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20%2B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%20%3D%0A%20%20%20%20-%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Chat%7BH%7D_f%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20%2B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A "
 \nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p}) =
     - \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
-        \hat{H}_f\left[ \nabla_{\mathbf{q}} \hat{J}_f \righo \hat{K}^{-1} \mathbf{p}
+        \hat{H}_f \hat{K}^{-1} \mathbf{p}
     + \nabla_{\mathbf{q}} PE(\mathbf{q})
 ")
 
