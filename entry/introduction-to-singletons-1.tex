@@ -118,10 +118,10 @@ typed neural networks} series, but some of the concepts are introduced in
 different contexts.
 
 All code is built on \emph{GHC 8.2.1} and with the
-\emph{\href{https://www.stackage.org/nightly-2017-08-20}{nightly-2017-08-20}}
-snapshot (so, singletons-2.3). However, there are negligible changes in the GHC
-type system between GHC 8.0 and 8.2 (the only difference is in the libraries,
-more or less), so everything should work on GHC 8.0 as well!
+\emph{\href{https://www.stackage.org/nightly-2017-11-27}{nightly-2017-11-27}}
+snapshot (so, singletons-2.3.1). However, there are negligible changes in the
+GHC type system between GHC 8.0 and 8.2 (the only difference is in the
+libraries, more or less), so everything should work on GHC 8.0 as well!
 
 The content in the first section of this post, describing the singleton design
 pattern, uses the following extensions:
@@ -136,6 +136,8 @@ pattern, uses the following extensions:
   KindSignatures
 \item
   RankNTypes
+\item
+  TypeApplications
 \item
   TypeInType
 \end{itemize}
@@ -243,13 +245,26 @@ A couple things going on here:
 
   We can use \texttt{UnsafeMkDoor} without ever using anything of type
   \texttt{s}. In reality, a real \texttt{Door} type would be a bit more
-  complicated (and the direct \texttt{MkDoor} constructor would be hidden).
+  complicated (and the direct \texttt{UnsafeMkDoor} constructor would be
+  hidden).
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t }\DataTypeTok{UnsafeMkDoor} \StringTok{"Birch"}\OtherTok{ ::} \DataTypeTok{Door} \CharTok{'Opened}
 \DataTypeTok{Door} \CharTok{'Opened}
 \NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t }\DataTypeTok{UnsafeMkDoor} \StringTok{"Iron"}\OtherTok{ ::} \DataTypeTok{Door} \CharTok{'Locked}
+\DataTypeTok{Door} \CharTok{'Locked}
+\end{Highlighting}
+\end{Shaded}
+
+  We can also use the \emph{TypeApplications} extension to write this in a bit
+  more convenient way --
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t }\DataTypeTok{UnsafeMkDoor} \FunctionTok{@}\CharTok{'Opened "Birch"}
+\DataTypeTok{Door} \CharTok{'Opened}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t }\DataTypeTok{UnsafeMkDoor} \FunctionTok{@}\CharTok{'Locked "Iron"}
 \DataTypeTok{Door} \CharTok{'Locked}
 \end{Highlighting}
 \end{Shaded}
@@ -371,8 +386,9 @@ implementation bugs)
 And, perhaps even more important, how can you create a \texttt{Door} with a
 given state that isn't known until runtime? If we know the type of our doors at
 compile-time, we can just explicitly write
-\texttt{UnsafeMkDoor\ "Iron"\ ::\ Door\ \textquotesingle{}Opened}. But what if
-we wanted to make a door based on a \texttt{DoorState} input?
+\texttt{UnsafeMkDoor\ "Iron"\ ::\ Door\ \textquotesingle{}Opened} or
+\texttt{UnsafeMkDoor\ @\textquotesingle{}Opened\ "Iron"}. But what if we wanted
+to make a door based on a \texttt{DoorState} input?
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -473,7 +489,7 @@ essentially.
 \end{Highlighting}
 \end{Shaded}
 
-(using LambdaCase syntax)
+(using \emph{LambdaCase} syntax)
 
 We can rewrite \texttt{doorStats} to take an additional \texttt{SingDS}, which
 we can use to figure out what \texttt{s} is. When we pattern match on it, we
@@ -604,7 +620,7 @@ utility function:
 creates that value for you!
 
 It works because in each branch, \texttt{s} is now a \emph{specific},
-monomorphic, ``conrete'' \texttt{s}, and GHC knows that such an instance exists
+monomorphic, ``concrete'' \texttt{s}, and GHC knows that such an instance exists
 for every branch. In the \texttt{SOpened} branch,
 \texttt{s\ \textasciitilde{}\ \textquotesingle{}Opened},\footnote{\texttt{\textasciitilde{}}
   here refers to ``type equality'', or the constraint that the types on both
@@ -720,8 +736,8 @@ One thing we can do is write a function to convert a \texttt{SomeDoor} into a
 existential}\label{converting-into-an-existential}
 
 Going from \texttt{SomeDoor} to \texttt{Door\ s} is slightly trickier in Haskell
-than going the other way around. One trick we often use is the \emph{skolemized
-existential}, or a CPS-style existential type.
+than going the other way around. One trick we often use is a CPS-style
+existential type.
 
 The essential concept is that normal Haskell type variables are universally
 qualified, meaning that the \emph{caller} can pick how to instantiate
@@ -814,8 +830,8 @@ It's important to remember that our original separate-implementation
 \texttt{SomeDoor} is, functionally, identical to the new code-reusing
 \texttt{SomeDoor}. The reason why they are the same is that \emph{having an
 existentially quantified singleton is the same as having a value of the
-corresponding type.} Having an existentially quantified \texttt{SingDS} is the
-same as having a value of type \texttt{DoorState}.
+corresponding type.} Having an existentially quantified \texttt{SingDS\ s} is
+\emph{the same as} having a value of type \texttt{DoorState}.
 
 If they're identical, why use a \texttt{SingDS} or the new \texttt{SomeDoor} at
 all? One main reason (besides allowing code-reuse) is that \emph{using the
@@ -825,7 +841,9 @@ GHC can use to bring it all back to the type level.
 
 Basically, \texttt{SingDS} allows us to re-use our original \texttt{Door\ s}
 implementation, because we store both the \texttt{Door}\ldots{}\emph{and} the
-\texttt{s} at the type level.
+\texttt{s} at the type level. It also lets GHC \emph{check} our implementations,
+to help ensure that they are correct, because you maintain the \texttt{s} at the
+type level.
 
 \subsubsection{Some Lingo}\label{some-lingo}
 
@@ -844,7 +862,8 @@ A three-way sum between a \texttt{Door\ \textquotesingle{}Opened}, a
 \texttt{Door\ \textquotesingle{}Closed}, and a
 \texttt{Door\ \textquotesingle{}Locked}, essentially. If you have a
 \texttt{SomeDoor}, it's \emph{either} an opened door, a closed door, or a locked
-door.
+door. Try looking at this new \texttt{SomeDoor} until you realize that this type
+is the same type as the previous \texttt{SomeDoor}!
 
 You might also see \texttt{SomeDoor} called a \textbf{dependent pair}, because
 it's basically an existentially quantified tuple of the type (the \texttt{s},
@@ -959,14 +978,22 @@ singletons of all kinds! (heh) There's a \texttt{SingI} instance for
 
 The great thing about the library is that these types and instances are
 generated, that they're correct (note that I could have implemented
-\texttt{SingDSI} incorrectly\ldots{}using the library guarantees that I don't),
-and that they all work together.
+\texttt{SingDSI} incorrectly earlier, bu using the library guarantees that I
+don't), and that they all work together smoothly.
 
 We also have \texttt{withSingI}, which is equivalent to our \texttt{withSingDSI}
 function earlier.
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{withSingI ::} \DataTypeTok{Sing}\NormalTok{ s }\OtherTok{->}\NormalTok{ (forall r}\FunctionTok{.} \DataTypeTok{SingI}\NormalTok{ s }\OtherTok{=>}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
+\end{Highlighting}
+\end{Shaded}
+
 Note that if you have singletons for a kind \texttt{k}, you also have instances
-for kind \texttt{Maybe\ k}, as well. And also for \texttt{{[}k{]}}, even!
+for kind \texttt{Maybe\ k}, as well. And also for \texttt{{[}k{]}}, even! This
+is a major advantage of using the \emph{singletons} library to manage your
+singletons instead of writing them yourself.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1065,7 +1092,7 @@ links the type \texttt{DoorState} to the kind \texttt{DoorState}.
 The library also defines a neat type synonym,
 \texttt{type\ SDoorState\ =\ Sing}, so you can do
 \texttt{SDoorState\ \textquotesingle{}Opened} instead of
-\texttt{Sing\ \textquotesingle{}Opened}, if you wish!
+\texttt{Sing\ \textquotesingle{}Opened}, if you wish.
 
 There are definitely more useful utility functions, but we will investigate
 these later on in the series! For now, you can look at the
@@ -1094,7 +1121,9 @@ unification of a lot of concepts.
 
 As always, let me know in the comments if you have any questions! You can also
 usually find me idling on the freenode \texttt{\#haskell} channel, as well, as
-\emph{jle`}. Happy haskelling!
+\emph{jle`}. The \emph{singletons}
+\href{https://github.com/goldfirere/singletons/issues}{issue tracker} is also
+very active. Happy haskelling!
 
 \section{Exercises}\label{exercises}
 
@@ -1110,7 +1139,7 @@ file} for a comparison, if you are still unfamiliar.
 \def\labelenumi{\arabic{enumi}.}
 \item
   Write a function to unlock a door, but only if the user enters an odd number
-  (a password).
+  (as a password).
 
 \begin{Shaded}
 \begin{Highlighting}[]

@@ -19,13 +19,14 @@ compiled…really just the king of great languages.">Haskell</a><span class="inf
 <p>If you’ve ever run into dependently typed programming in Haskell, you’ve probably encountered mentions of singletons (and the <em>singletons</em> library). This series of articles will be my attempt at giving you the story of the library, the problems it solves, the power that it gives to you, and how you can integrate it into your code today!<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> (Also, after <a href="https://blog.jle.im/entry/verified-instances-in-haskell.html">my previous April Fools post</a>, people have been asking me for an actual non-joke singletons post.)</p>
 <h3 id="prerequisites">Prerequisites</h3>
 <p>These posts will assume no knowledge of dependent types, and, for now, only basic to intermediate Haskell knowledge. (Types, kinds, typeclasses, data types, functions) The material in this post greatly <em>overlaps</em> with my <a href="https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html">dependently typed neural networks</a> series, but some of the concepts are introduced in different contexts.</p>
-<p>All code is built on <em>GHC 8.2.1</em> and with the <em><a href="https://www.stackage.org/nightly-2017-08-20">nightly-2017-08-20</a></em> snapshot (so, singletons-2.3). However, there are negligible changes in the GHC type system between GHC 8.0 and 8.2 (the only difference is in the libraries, more or less), so everything should work on GHC 8.0 as well!</p>
+<p>All code is built on <em>GHC 8.2.1</em> and with the <em><a href="https://www.stackage.org/nightly-2017-11-27">nightly-2017-11-27</a></em> snapshot (so, singletons-2.3.1). However, there are negligible changes in the GHC type system between GHC 8.0 and 8.2 (the only difference is in the libraries, more or less), so everything should work on GHC 8.0 as well!</p>
 <p>The content in the first section of this post, describing the singleton design pattern, uses the following extensions:</p>
 <ul>
 <li>DataKinds</li>
 <li>GADTs</li>
 <li>KindSignatures</li>
 <li>RankNTypes</li>
+<li>TypeApplications</li>
 <li>TypeInType</li>
 </ul>
 <p>And the second section, introducing the library itself, uses, on top of these:</p>
@@ -63,10 +64,15 @@ ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="ch">&#3
 </ol>
 <ol start="3" type="1">
 <li><p>We’re defining the <code>Door</code> type with a <em>phantom parameter</em> <code>s</code>. It’s a phantom type because we don’t actually have any <em>values</em> of type <code>s</code> in our data type…the <code>s</code> is only just there as a dummy parameter for the type.</p>
-<p>We can use <code>UnsafeMkDoor</code> without ever using anything of type <code>s</code>. In reality, a real <code>Door</code> type would be a bit more complicated (and the direct <code>MkDoor</code> constructor would be hidden).</p>
+<p>We can use <code>UnsafeMkDoor</code> without ever using anything of type <code>s</code>. In reality, a real <code>Door</code> type would be a bit more complicated (and the direct <code>UnsafeMkDoor</code> constructor would be hidden).</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">UnsafeMkDoor</span> <span class="st">&quot;Birch&quot;</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Opened</span>
 <span class="dt">Door</span> <span class="ch">&#39;Opened</span>
 ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">UnsafeMkDoor</span> <span class="st">&quot;Iron&quot;</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
+<span class="dt">Door</span> <span class="ch">&#39;Locked</span></code></pre></div>
+<p>We can also use the <em>TypeApplications</em> extension to write this in a bit more convenient way –</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span><span class="ch">&#39;Opened &quot;Birch&quot;</span>
+<span class="dt">Door</span> <span class="ch">&#39;Opened</span>
+ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span><span class="ch">&#39;Locked &quot;Iron&quot;</span>
 <span class="dt">Door</span> <span class="ch">&#39;Locked</span></code></pre></div></li>
 </ol>
 <p>We’ll take a <code>Door s</code> to mean the type of a door with that current status. So a <code>Door 'Opened</code> is the type of an opened door, a <code>Door 'Closed</code> is the type of a closed (and unlocked) door, etc. The <code>String</code> that the <code>Door</code> contains represents its material (oak, birch, spruce, etc.).</p>
@@ -110,7 +116,7 @@ ghci<span class="fu">&gt;</span> <span class="fu">:</span>t lockDoor <span class
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">doorStatus ::</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">DoorState</span>
 doorStatos _ <span class="fu">=</span> <span class="co">-- ?</span></code></pre></div>
 <p>(It can be done with an ad-hoc typeclass, but it’s not simple, and it’s prone to implementation bugs)</p>
-<p>And, perhaps even more important, how can you create a <code>Door</code> with a given state that isn’t known until runtime? If we know the type of our doors at compile-time, we can just explicitly write <code>UnsafeMkDoor &quot;Iron&quot; :: Door 'Opened</code>. But what if we wanted to make a door based on a <code>DoorState</code> input?</p>
+<p>And, perhaps even more important, how can you create a <code>Door</code> with a given state that isn’t known until runtime? If we know the type of our doors at compile-time, we can just explicitly write <code>UnsafeMkDoor &quot;Iron&quot; :: Door 'Opened</code> or <code>UnsafeMkDoor @'Opened &quot;Iron&quot;</code>. But what if we wanted to make a door based on a <code>DoorState</code> input?</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mkDoor ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s
 mkDoor <span class="dt">Opened</span> <span class="fu">=</span> <span class="co">-- ?</span>
 mkDoor <span class="dt">Closed</span> <span class="fu">=</span> <span class="co">-- ?</span>
@@ -150,7 +156,7 @@ doorStatus <span class="fu">=</span> \<span class="kw">case</span>
         \_ <span class="ot">-&gt;</span> <span class="dt">Closed</span>
     <span class="dt">SLocked</span> <span class="ot">-&gt;</span> <span class="co">-- in this branch, `s` is `&#39;Locked`</span>
         \_ <span class="ot">-&gt;</span> <span class="dt">Locked</span></code></pre></div>
-<p>(using LambdaCase syntax)</p>
+<p>(using <em>LambdaCase</em> syntax)</p>
 <p>We can rewrite <code>doorStats</code> to take an additional <code>SingDS</code>, which we can use to figure out what <code>s</code> is. When we pattern match on it, we reveal what <code>s</code> is. Essentially, the gain the ability to “pattern match” on the <code>s</code> type variable.</p>
 <p>The singleton property of <code>SingDS</code> ensures us that whatever <code>s</code> the <code>SingDS</code> has is the <em>same</em> <code>s</code> that the <code>Door</code> has.</p>
 <p>Not only do <em>we</em> know what <code>s</code> is, but GHC can also take advantage of it. In the scope of the case statement branch, GHC <em>knows</em> what <code>s</code> must be:</p>
@@ -202,7 +208,7 @@ withSingDSI s x <span class="fu">=</span> <span class="kw">case</span> s <span c
     <span class="dt">SClosed</span> <span class="ot">-&gt;</span> x
     <span class="dt">SLocked</span> <span class="ot">-&gt;</span> x</code></pre></div>
 <p><code>withSingDSI</code> takes a <code>SingDS s</code>, and a value (of type <code>r</code>) that requires a <code>SingDSI s</code> instance to be created. And it creates that value for you!</p>
-<p>It works because in each branch, <code>s</code> is now a <em>specific</em>, monomorphic, “conrete” <code>s</code>, and GHC knows that such an instance exists for every branch. In the <code>SOpened</code> branch, <code>s ~ 'Opened</code>,<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a> so GHC knows that there is a <code>SingDSI 'Opened</code> instance, and gives it to you. In the <code>SCloed</code> branch, <code>s ~ 'Closed</code>, so GHC knows that there is a <code>SingDSI 'Closed</code> instance, and gives <em>that</em> to you, etc.</p>
+<p>It works because in each branch, <code>s</code> is now a <em>specific</em>, monomorphic, “concrete” <code>s</code>, and GHC knows that such an instance exists for every branch. In the <code>SOpened</code> branch, <code>s ~ 'Opened</code>,<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a> so GHC knows that there is a <code>SingDSI 'Opened</code> instance, and gives it to you. In the <code>SCloed</code> branch, <code>s ~ 'Closed</code>, so GHC knows that there is a <code>SingDSI 'Closed</code> instance, and gives <em>that</em> to you, etc.</p>
 <p>So now, we can run our implicit functions (like <code>lockAnyDoor_</code>) by giving them explicit inputs:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L69-70</span>
 <span class="ot">lockAnyDoor__ ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
@@ -241,7 +247,7 @@ closeSomeDoor (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Locked<
 <p>Wouldn’t it be nice if we can re-use our original <code>closeDoor</code>? This is a toy example, and in real life, closing a door might have some complicated runtime logic, and it’d be annoying to re-implement it for both <code>SomeDoor</code> and <code>Door</code>.</p>
 <p>One thing we can do is write a function to convert a <code>SomeDoor</code> into a <code>Door</code>, so we can re-use our original <code>closeDoor</code>.</p>
 <h4 id="converting-into-an-existential">Converting into an existential</h4>
-<p>Going from <code>SomeDoor</code> to <code>Door s</code> is slightly trickier in Haskell than going the other way around. One trick we often use is the <em>skolemized existential</em>, or a CPS-style existential type.</p>
+<p>Going from <code>SomeDoor</code> to <code>Door s</code> is slightly trickier in Haskell than going the other way around. One trick we often use is a CPS-style existential type.</p>
 <p>The essential concept is that normal Haskell type variables are universally qualified, meaning that the <em>caller</em> can pick how to instantiate <code>s</code>. However, we want a function where the <em>function</em> can pick the <code>s</code>, and the caller must handle whatever <code>s</code> is given by the function:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">withSomeDoor ::</span> <span class="dt">SomeDoor</span> <span class="ot">-&gt;</span> (forall s<span class="fu">.</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r
 withSomeDoor (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Opened</span> m) f <span class="fu">=</span> f <span class="dt">SOpened</span> (<span class="dt">UnsafeMkDoor</span> m)
@@ -280,15 +286,15 @@ closeSomeDoor <span class="fu">=</span> \<span class="kw">case</span>
 
 <span class="ot">lockAnySomeDoor ::</span> <span class="dt">SomeDoor</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
 lockAnySomeDoor (<span class="dt">MkSomeDoor</span> s d) <span class="fu">=</span> lockAnyDoor s d</code></pre></div>
-<p>It’s important to remember that our original separate-implementation <code>SomeDoor</code> is, functionally, identical to the new code-reusing <code>SomeDoor</code>. The reason why they are the same is that <em>having an existentially quantified singleton is the same as having a value of the corresponding type.</em> Having an existentially quantified <code>SingDS</code> is the same as having a value of type <code>DoorState</code>.</p>
+<p>It’s important to remember that our original separate-implementation <code>SomeDoor</code> is, functionally, identical to the new code-reusing <code>SomeDoor</code>. The reason why they are the same is that <em>having an existentially quantified singleton is the same as having a value of the corresponding type.</em> Having an existentially quantified <code>SingDS s</code> is <em>the same as</em> having a value of type <code>DoorState</code>.</p>
 <p>If they’re identical, why use a <code>SingDS</code> or the new <code>SomeDoor</code> at all? One main reason (besides allowing code-reuse) is that <em>using the singleton lets us recover the type</em>. Essentially, a <code>SingDS s</code> not only contains whether it is Opened/Closed/Locked…it contains it in a way that GHC can use to bring it all back to the type level.</p>
-<p>Basically, <code>SingDS</code> allows us to re-use our original <code>Door s</code> implementation, because we store both the <code>Door</code>…<em>and</em> the <code>s</code> at the type level.</p>
+<p>Basically, <code>SingDS</code> allows us to re-use our original <code>Door s</code> implementation, because we store both the <code>Door</code>…<em>and</em> the <code>s</code> at the type level. It also lets GHC <em>check</em> our implementations, to help ensure that they are correct, because you maintain the <code>s</code> at the type level.</p>
 <h4 id="some-lingo">Some Lingo</h4>
 <p>In the language of dependently typed programming, we call <code>SomeDoor</code> a <strong>dependent sum</strong>, because you can imagine it basically as:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">SomeDoor</span> <span class="fu">=</span> <span class="dt">SDOpened</span> (<span class="dt">SingDS</span> <span class="ch">&#39;Opened) (Door &#39;</span><span class="dt">Opened</span>)
               <span class="fu">|</span> <span class="dt">SDClosed</span> (<span class="dt">SingDS</span> <span class="ch">&#39;Closed) (Door &#39;</span><span class="dt">Closed</span>)
               <span class="fu">|</span> <span class="dt">SDLocked</span> (<span class="dt">SingDS</span> <span class="ch">&#39;Locked) (Door &#39;</span><span class="dt">Locked</span>)</code></pre></div>
-<p>A three-way sum between a <code>Door 'Opened</code>, a <code>Door 'Closed</code>, and a <code>Door 'Locked</code>, essentially. If you have a <code>SomeDoor</code>, it’s <em>either</em> an opened door, a closed door, or a locked door.</p>
+<p>A three-way sum between a <code>Door 'Opened</code>, a <code>Door 'Closed</code>, and a <code>Door 'Locked</code>, essentially. If you have a <code>SomeDoor</code>, it’s <em>either</em> an opened door, a closed door, or a locked door. Try looking at this new <code>SomeDoor</code> until you realize that this type is the same type as the previous <code>SomeDoor</code>!</p>
 <p>You might also see <code>SomeDoor</code> called a <strong>dependent pair</strong>, because it’s basically an existentially quantified tuple of the type (the <code>s</code>, witnessed by the <code>SingDS s</code>) with a value (the <code>Door s</code>).</p>
 <h3 id="types-at-runtime">Types at Runtime</h3>
 <p>With this last tool, we finally have enough to build a function to “make” a door with the status unknown until runtime:</p>
@@ -341,9 +347,10 @@ genSingletons [<span class="ch">&#39;&#39;</span><span class="dt">DoorState</spa
 <span class="dt">STrue</span>
 ghci<span class="fu">&gt;</span><span class="ot"> sing ::</span> <span class="dt">Sing</span> (<span class="ch">&#39;Just &#39;</span><span class="dt">Opened</span>)
 <span class="dt">SJust</span> <span class="dt">SOpened</span></code></pre></div>
-<p>The great thing about the library is that these types and instances are generated, that they’re correct (note that I could have implemented <code>SingDSI</code> incorrectly…using the library guarantees that I don’t), and that they all work together.</p>
+<p>The great thing about the library is that these types and instances are generated, that they’re correct (note that I could have implemented <code>SingDSI</code> incorrectly earlier, bu using the library guarantees that I don’t), and that they all work together smoothly.</p>
 <p>We also have <code>withSingI</code>, which is equivalent to our <code>withSingDSI</code> function earlier.</p>
-<p>Note that if you have singletons for a kind <code>k</code>, you also have instances for kind <code>Maybe k</code>, as well. And also for <code>[k]</code>, even!</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">withSingI ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> (forall r<span class="fu">.</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> r) <span class="ot">-&gt;</span> r</code></pre></div>
+<p>Note that if you have singletons for a kind <code>k</code>, you also have instances for kind <code>Maybe k</code>, as well. And also for <code>[k]</code>, even! This is a major advantage of using the <em>singletons</em> library to manage your singletons instead of writing them yourself.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">SOpened</span> <span class="ot">`SCons`</span> <span class="dt">SClosed</span> <span class="ot">`SCons`</span> <span class="dt">SLocked</span> <span class="ot">`SCons`</span> <span class="dt">SNil</span>
 <span class="dt">Sing</span> <span class="ch">&#39;[ &#39;</span><span class="dt">Opened</span>, <span class="ch">&#39;Closed, &#39;</span><span class="dt">Locked</span> ]</code></pre></div>
 <p>(Remember that, because of <code>DataKinds</code>, <code>Maybe</code> is a kind constructor, who has two type constructors, the type <code>'Nothing</code> and the type constructor <code>'Just :: k -&gt; Maybe k</code>)</p>
@@ -380,18 +387,18 @@ ghci<span class="fu">&gt;</span> putStrLn <span class="fu">$</span> <span class=
     <span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="dt">Sing</span> (<span class="ot">a ::</span> k) <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> k</code></pre></div></li>
 </ul>
 <p>It does this by defining a type class (actually, a “kind class”), <code>SingKind</code>, associating each type to the corresponding datakinds-generated kind. The <code>SingKind</code> instance for <code>DoorState</code> links the type <code>DoorState</code> to the kind <code>DoorState</code>.</p>
-<p>The library also defines a neat type synonym, <code>type SDoorState = Sing</code>, so you can do <code>SDoorState 'Opened</code> instead of <code>Sing 'Opened</code>, if you wish!</p>
+<p>The library also defines a neat type synonym, <code>type SDoorState = Sing</code>, so you can do <code>SDoorState 'Opened</code> instead of <code>Sing 'Opened</code>, if you wish.</p>
 <p>There are definitely more useful utility functions, but we will investigate these later on in the series! For now, you can look at the <a href="http://hackage.haskell.org/package/singletons/docs/Data-Singletons.html">documentation</a> for the library to see more interesting utility functions!</p>
 <h2 id="the-singularity">The Singularity</h2>
 <p>In this post, at shortcomings in the usage of phantom types, and then saw how singletons could help us with these. Then, we looked at how the <em>singletons</em> <strong>library</strong> makes using this pattern extremely easy and smooth to integrate into your existing code.</p>
 <p>You can see all of the “manual singletons” code in this post <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs">here</a>, and then see the code re-implemented using the <em>singletons</em> library <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs">here</a>.</p>
 <p>However, full expressively with phantom types is still out of our reach. If we want to express more complicated relationships and to be able to treat phantom types (and <em>types</em>, in general) as first-class values, and delve into the frighteningly beautiful world of “type-level programming”, we are going to have to dig a bit deeper. Come back for the next post to see how! Singletons will be our tool, and we’ll also see how the singletons library is a very clean unification of a lot of concepts.</p>
-<p>As always, let me know in the comments if you have any questions! You can also usually find me idling on the freenode <code>#haskell</code> channel, as well, as <em>jle`</em>. Happy haskelling!</p>
+<p>As always, let me know in the comments if you have any questions! You can also usually find me idling on the freenode <code>#haskell</code> channel, as well, as <em>jle`</em>. The <em>singletons</em> <a href="https://github.com/goldfirere/singletons/issues">issue tracker</a> is also very active. Happy haskelling!</p>
 <h2 id="exercises">Exercises</h2>
 <p>Click on the links in the corner of the text boxes for solutions!</p>
 <p>These should be written in the singletons library style, with <code>Sing</code> instead of <code>SingDS</code> and <code>SingI</code> instead of <code>SingDSI</code>. Review the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs">singletons file</a> for a comparison, if you are still unfamiliar.</p>
 <ol type="1">
-<li><p>Write a function to unlock a door, but only if the user enters an odd number (a password).</p>
+<li><p>Write a function to unlock a door, but only if the user enters an odd number (as a password).</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L85-85</span>
 <span class="ot">unlockDoor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked -&gt; Maybe (Door &#39;</span><span class="dt">Closed</span>)</code></pre></div>
 <p>It should return a closed door in <code>Just</code> if the caller gives an odd number, or <code>Nothing</code> otherwise.</p></li>
