@@ -1377,10 +1377,9 @@ clarifications, feel free to leave a comment, drop me a
 
 [^5]: Thanks to Edward Kmett for [pointing this out](http://disq.us/p/1o4oyqh)!
 
-[^6]: `hessian` computes the Hessian Matrix for a
-    ![\\mathbb{R}\^n \\rightarrow \\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D "\mathbb{R}^n \rightarrow \mathbb{R}")
-    (a scalar-valued function), but here, we have a vector-valued function, so
-    we need `hessianF`, the Hessian *Tensor*.
+[^6]: `hessian` computes the Hessian Matrix for scalar-valued function, but
+    here, we have a vector-valued function, so we need `hessianF`, the Hessian
+    *Tensor*.
 
 [^7]: Clearly our system is gaining some sort of phantom energy, since it rises
     up to 0.045 on the left, and then all the way up to -0.69 on the right. Rest
