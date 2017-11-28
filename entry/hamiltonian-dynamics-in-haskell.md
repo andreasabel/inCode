@@ -1377,8 +1377,8 @@ clarifications, feel free to leave a comment, drop me a
 
 [^5]: Thanks to Edward Kmett for [pointing this out](http://disq.us/p/1o4oyqh)!
 
-[^6]: `hessian` computes the Hessian Matrix for a \$\mathbf{R}\^n
-    \rightarrow ![\\mathbf{R}](https://latex.codecogs.com/png.latex?%5Cmathbf%7BR%7D "\mathbf{R}")
+[^6]: `hessian` computes the Hessian Matrix for a
+    ![\\mathbb{R}\^n \\rightarrow \\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D "\mathbb{R}^n \rightarrow \mathbb{R}")
     (a scalar-valued function), but here, we have a vector-valued function, so
     we need `hessianF`, the Hessian *Tensor*.
 
