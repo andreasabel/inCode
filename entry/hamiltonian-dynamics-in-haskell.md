@@ -563,22 +563,26 @@ we see that, after some simplification:
 matrix, like
 ![\\hat{J}\_f](https://latex.codecogs.com/png.latex?%5Chat%7BJ%7D_f "\hat{J}_f"))
 represents the *second derivatives* of
-![f](https://latex.codecogs.com/png.latex?f "f") – the derivative with respect
-to ![q\_i](https://latex.codecogs.com/png.latex?q_i "q_i") of the derivatives.
+![f](https://latex.codecogs.com/png.latex?f "f") – the derivative (with respect
+to ![q\_i](https://latex.codecogs.com/png.latex?q_i "q_i")) of the derivatives.
 
-We can write this in a more general way by abusing notation (using the gradient
-operator ![\\nabla](https://latex.codecogs.com/png.latex?%5Cnabla "\nabla")) as:
+The collection of “second-order derivatives of
+![f](https://latex.codecogs.com/png.latex?f "f")” is known as the [Hessian
+Tensor](https://en.wikipedia.org/wiki/Hessian_matrix#Vector-valued_functions) (a
+vector-valued generalization of the Hessian matrix), which we will denote as
+![\\hat{H}\_f](https://latex.codecogs.com/png.latex?%5Chat%7BH%7D_f "\hat{H}_f").[^5]
+We can write this in a nicer by abusing matrix multiplication notation as:
 
 ![
 \\nabla\_{\\mathbf{q}} \\left\[ \\hat{J}\_f\^T \\hat{M} \\hat{J}\_f \\right\] =
-    2 \\hat{J}\_f\^T \\hat{M} \\left\[ \\nabla\_{\\mathbf{q}} \\hat{J}\_f \\right\]
-](https://latex.codecogs.com/png.latex?%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cleft%5B%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%3D%0A%20%20%20%202%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%20%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%0A "
+    2 \\hat{J}\_f\^T \\hat{M} \\hat{H}\_f
+](https://latex.codecogs.com/png.latex?%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cleft%5B%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%3D%0A%20%20%20%202%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%20%5Chat%7BH%7D_f%0A "
 \nabla_{\mathbf{q}} \left[ \hat{J}_f^T \hat{M} \hat{J}_f \right] =
-    2 \hat{J}_f^T \hat{M} \left[ \nabla_{\mathbf{q}} \hat{J}_f \right]
+    2 \hat{J}_f^T \hat{M} \hat{H}_f
 ")
 
-if we define
-![\\nabla\_{\\mathbf{q}} \\hat{J}\_f](https://latex.codecogs.com/png.latex?%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f "\nabla_{\mathbf{q}} \hat{J}_f")
+if we use
+![\\hat{H}\_f](https://latex.codecogs.com/png.latex?%5Chat%7BH%7D_f "\hat{H}_f")
 as an
 ![n \\times m \\times n](https://latex.codecogs.com/png.latex?n%20%5Ctimes%20m%20%5Ctimes%20n "n \times m \times n")
 tensor, whose ![n](https://latex.codecogs.com/png.latex?n "n") components are
@@ -607,16 +611,16 @@ Or, to use our abuse of notation:
 ![
 \\nabla\_{\\mathbf{q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p}) =
     - \\mathbf{p}\^T \\hat{K}\^{-1} \\hat{J}\_f\^T \\hat{M}
-        \\left\[ \\nabla\_{\\mathbf{q}} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
+        \\hat{H}\_f\\left\[ \\nabla\_{\\mathbf{q}} \\hat{J}\_f \\righo \\hat{K}\^{-1} \\mathbf{p}
     + \\nabla\_{\\mathbf{q}} PE(\\mathbf{q})
-](https://latex.codecogs.com/png.latex?%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%20%3D%0A%20%20%20%20-%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20%2B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%20%3D%0A%20%20%20%20-%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Chat%7BH%7D_f%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Crigho%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20%2B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A "
 \nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p}) =
     - \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
-        \left[ \nabla_{\mathbf{q}} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
+        \hat{H}_f\left[ \nabla_{\mathbf{q}} \hat{J}_f \righo \hat{K}^{-1} \mathbf{p}
     + \nabla_{\mathbf{q}} PE(\mathbf{q})
 ")
 
-And, finally, we have everything we need — we can now construct our equations of
+And, finally, we have everything we need – we can now construct our equations of
 motion! To progress through phase space
 (![\\langle \\mathbf{q}, \\mathbf{p}\\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20%5Cmathbf%7Bq%7D%2C%20%5Cmathbf%7Bp%7D%5Crangle "\langle \mathbf{q}, \mathbf{p}\rangle")):
 
@@ -626,16 +630,16 @@ motion! To progress through phase space
   && = \\hat{K}\^{-1} \\mathbf{p} \\\\
 \\dot{\\mathbf{p}} & = - \\nabla\_{\\mathbf{q}} \\mathcal{H}(\\mathbf{q},\\mathbf{p})
   && = \\mathbf{p}\^T \\hat{K}\^{-1} \\hat{J}\_f\^T \\hat{M}
-        \\left\[ \\nabla\_{\\mathbf{q}} \\hat{J}\_f \\right\] \\hat{K}\^{-1} \\mathbf{p}
+        \\hat{H}\_f \\hat{K}\^{-1} \\mathbf{p}
     - \\nabla\_{\\mathbf{q}} PE(\\mathbf{q})
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cdot%7B%5Cmathbf%7Bq%7D%7D%20%26%20%3D%20%5Cnabla_%7B%5Cmathbf%7Bp_q%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%20%20%26%26%20%3D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%20%5C%5C%0A%5Cdot%7B%5Cmathbf%7Bp%7D%7D%20%26%20%3D%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%20%20%26%26%20%3D%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Cleft%5B%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%5Cright%5D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cdot%7B%5Cmathbf%7Bq%7D%7D%20%26%20%3D%20%5Cnabla_%7B%5Cmathbf%7Bp_q%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%20%20%26%26%20%3D%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%20%5C%5C%0A%5Cdot%7B%5Cmathbf%7Bp%7D%7D%20%26%20%3D%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Cmathcal%7BH%7D%28%5Cmathbf%7Bq%7D%2C%5Cmathbf%7Bp%7D%29%0A%20%20%26%26%20%3D%20%5Cmathbf%7Bp%7D%5ET%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%0A%20%20%20%20%20%20%20%20%5Chat%7BH%7D_f%20%5Chat%7BK%7D%5E%7B-1%7D%20%5Cmathbf%7Bp%7D%0A%20%20%20%20-%20%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20PE%28%5Cmathbf%7Bq%7D%29%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
 \dot{\mathbf{q}} & = \nabla_{\mathbf{p_q}} \mathcal{H}(\mathbf{q},\mathbf{p})
   && = \hat{K}^{-1} \mathbf{p} \\
 \dot{\mathbf{p}} & = - \nabla_{\mathbf{q}} \mathcal{H}(\mathbf{q},\mathbf{p})
   && = \mathbf{p}^T \hat{K}^{-1} \hat{J}_f^T \hat{M}
-        \left[ \nabla_{\mathbf{q}} \hat{J}_f \right] \hat{K}^{-1} \mathbf{p}
+        \hat{H}_f \hat{K}^{-1} \mathbf{p}
     - \nabla_{\mathbf{q}} PE(\mathbf{q})
 \end{aligned}
 ")
@@ -690,16 +694,16 @@ functions and vectors we need is:
 \\mathbf{m} & : \\mathbb{R}\^m \\\\
 f & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^m \\\\
 \\hat{J}\_f & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^{m \\times n} \\\\
-\\nabla\_{\\mathbf{q}} \\hat{J}\_f & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^{m \\times n \\times n} \\\\
+\\hat{H}\_f & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^{n \\times m \\times n} \\\\
 U & : \\mathbb{R}\^n \\rightarrow \\mathbb{R} \\\\
 \\nabla\_{\\mathbf{q}} U & : \\mathbb{R}\^n \\rightarrow \\mathbb{R}\^n
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cmathbf%7Bm%7D%20%26%20%3A%20%5Cmathbb%7BR%7D%5Em%20%5C%5C%0Af%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5Em%20%5C%5C%0A%5Chat%7BJ%7D_f%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5E%7Bm%20%5Ctimes%20n%7D%20%5C%5C%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20%5Chat%7BJ%7D_f%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5E%7Bm%20%5Ctimes%20n%20%5Ctimes%20n%7D%20%5C%5C%0AU%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%20%5C%5C%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20U%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5En%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cmathbf%7Bm%7D%20%26%20%3A%20%5Cmathbb%7BR%7D%5Em%20%5C%5C%0Af%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5Em%20%5C%5C%0A%5Chat%7BJ%7D_f%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5E%7Bm%20%5Ctimes%20n%7D%20%5C%5C%0A%5Chat%7BH%7D_f%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5E%7Bn%20%5Ctimes%20m%20%5Ctimes%20n%7D%20%5C%5C%0AU%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%20%5C%5C%0A%5Cnabla_%7B%5Cmathbf%7Bq%7D%7D%20U%20%26%20%3A%20%5Cmathbb%7BR%7D%5En%20%5Crightarrow%20%5Cmathbb%7BR%7D%5En%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
 \mathbf{m} & : \mathbb{R}^m \\
 f & : \mathbb{R}^n \rightarrow \mathbb{R}^m \\
 \hat{J}_f & : \mathbb{R}^n \rightarrow \mathbb{R}^{m \times n} \\
-\nabla_{\mathbf{q}} \hat{J}_f & : \mathbb{R}^n \rightarrow \mathbb{R}^{m \times n \times n} \\
+\hat{H}_f & : \mathbb{R}^n \rightarrow \mathbb{R}^{n \times m \times n} \\
 U & : \mathbb{R}^n \rightarrow \mathbb{R} \\
 \nabla_{\mathbf{q}} U & : \mathbb{R}^n \rightarrow \mathbb{R}^n
 \end{aligned}
@@ -724,7 +728,7 @@ data System m n = System
     { sysInertia       :: R m                         -- ^ 'm' vector
     , sysCoords        :: R n -> R m                  -- ^ f
     , sysJacobian      :: R n -> L m n                -- ^ J_f
-    , sysJacobian2     :: R n -> V.Vector n (L m n)   -- ^ grad (J_f)
+    , sysHessian       :: R n -> V.Vector n (L m n)   -- ^ H_f
     , sysPotential     :: R n -> Double               -- ^ U
     , sysPotentialGrad :: R n -> R n                  -- ^ grad U
     }
@@ -859,7 +863,7 @@ your Jacobians and gradients.
 Here’s where the magic comes in – we can have Haskell generate our Jacobians and
 gradients *automatically*, using the amazing
 [ad](http://hackage.haskell.org/package/ad) library! We can just use the
-appropriately named `grad` and `jacobian` functions.
+appropriately named `grad`, `jacobian`, and `hessianF` functions.
 
 #### Quick Intro to AD
 
@@ -907,39 +911,12 @@ Again note the usage of sized vector types, and the fact that our
 ![m \\times n](https://latex.codecogs.com/png.latex?m%20%5Ctimes%20n "m \times n")
 matrix is represented by a `m`-vector of `n`-vectors.
 
-Finally, we can get a “2nd-order Jacobian” by using `jacobians`, which gives you
-a lazily linked chain of successive order Jacobians (stored in successive cells
-of a `Cofree`). We only need the second order jacobian, so let’s define a quick
-utility function that only gives us the second-order Jacobian:
-
-``` {.haskell}
--- import qualified Control.Comonad        as C
--- import qualified Control.Comonad.Cofree as C
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L78-86
-jacobian2
-    :: (Traversable f, Functor g, RealFloat a)
-    => (forall b. RealFloat b => f b -> g b)
-    -> f a
-    -> g (f (f a))
-jacobian2 f = (fmap . fmap . fmap) C.extract  -- ^ take 2nd deriv
-            . (fmap . fmap) C.unwrap          -- ^ drap 1st deriv
-            . fmap C.unwrap                   -- ^ drop 0th deriv
-            . jacobians f                     -- ^ create list of jacobians
-```
-
-If you think of `Cofree` as an infinite linked list (of nested Functors),
-`jacobians` returns a linked list of derivative tensors. The first item is the
-0th derivative (the actual function value), so we drop it with `C.unwrap` (like
-`tail` for lists). The second item is the 1st derivative, so we drop it again
-using `C.unwrap`. And finally, we only want the third item (the 2nd derivatives)
-so we `C.extract` it (like `head` for lists).
-
-Finally, we can achieve our goal:
+Finally, we can get our Hessian Tensor by using `hessianF`:[^6]
 
 ``` {.haskell}
 myFunc
     :: RealFloat a => V.Vector n a -> V.Vector m a
-jacobian2 myFunc
+hessianF myFunc
     :: RealFloat a => V.Vector n a -> V.Vector m (V.Vector n (V.Vector n a))
 ```
 
@@ -951,7 +928,7 @@ fundamentally unsafe to write (but safe to use, after written properly):
 
 ``` {.haskell}
 -- import qualified Data.Vector.Generic.Sized as VG
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L89-98
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L78-87
 vec2r :: KnownNat n => V.Vector n Double -> R n
 vec2r = fromJust . create . VG.fromSized . VG.convert
 
@@ -967,7 +944,7 @@ and `L` from *hmatrix* are not your typical Hask Functors. One nice thing is
 that because they both use *TypeLits* to get their sized parameters, we can get
 type-safe conversions that preserve their size information!
 
-Also, even though *ad* gives our second-order Jacobian as an
+Also, even though *ad* gives our Hessian as an
 ![m \\times n \\times n](https://latex.codecogs.com/png.latex?m%20%5Ctimes%20n%20%5Ctimes%20n "m \times n \times n")
 tensor, we really want it as a n-vector of
 ![m \\times n](https://latex.codecogs.com/png.latex?m%20%5Ctimes%20n "m \times n")
@@ -977,11 +954,11 @@ mostly just fiddling around with the internals of *hmatrix* in a rather
 inelegant way. (Again, unsafe to write, but safe to use once you do)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L101-104
-rejacobi :: (KnownNat m, KnownNat n) => V.Vector m (L n n) -> V.Vector n (L m n)
-rejacobi = fmap (fromJust . (\rs -> withRows rs exactDims) . toList)
-         . sequenceA
-         . fmap (fromJust . V.fromList . toRows)
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L90-93
+rehessian :: (KnownNat m, KnownNat n) => V.Vector m (L n n) -> V.Vector n (L m n)
+rehessian = fmap (fromJust . (\rs -> withRows rs exactDims) . toList)
+          . sequenceA
+          . fmap (fromJust . V.fromList . toRows)
 ```
 
 #### Using AD to Auto-Derive Systems
@@ -990,7 +967,7 @@ Now to make a `System` using just the mass vector, the coordinate conversion
 function, and the potential energy function:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L108-124
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L97-113
 mkSystem
     :: (KnownNat m, KnownNat n)
     => R m
@@ -1002,8 +979,8 @@ mkSystem m f u = System
     { sysInertia       =                         m
     , sysCoords        =      vec2r .            f . r2vec
     , sysJacobian      =      vec2l .   jacobian f . r2vec
-    , sysJacobian2     = rejacobi
-                       . fmap vec2l .  jacobian2 f . r2vec
+    , sysHessian       = rehessian
+                       . fmap vec2l .   hessianF f . r2vec
     , sysPotential     =                         u . r2vec
     , sysPotentialGrad =      vec2r .       grad u . r2vec
                   -- < convert from | actual thing | convert to >
@@ -1011,20 +988,20 @@ mkSystem m f u = System
 ```
 
 Now, I hesitate to call this “trivial”…but, I think it really is a
-straightforward direct translation of the definitions, minus some ugly
+straightforward direct translation of the definitions, minus some boilerplate
 conversions back and forth using `r2vec`, `vec2r`, and `vec2l`!
 
 1.  The vector of masses is just `m`
 2.  The coordinate function is just `f`
-3.  The jacobian of the coordinate function is just `jacobian f`
-4.  The second-order jacobian of the coordinate function is just `jacobian2 f`
+3.  The Jacobian of the coordinate function is just `jacobian f`
+4.  The Hessian Tensor of the coordinate function is just `hessianF f`
 5.  The potential energy function is just `u`
 6.  The gradient of the potential energy function is just `grad u`
 
 The *ad* library automatically generated all of these for us and created a
-perfectly well-formed `System` with all of its gradients and Jacobians by giving
-only the coordinate function and the potential energy function, and in such a
-clean and concise way!
+perfectly well-formed `System` with all of its gradients and Jacobians and
+Hessians by giving only the coordinate function and the potential energy
+function, and in such a clean and concise way!
 
 ### Equations of Motion
 
@@ -1052,7 +1029,7 @@ translate them into Haskell (using
 ![\\hat{K} = \\hat{J}\_f\^T \\hat{M} \\hat{J}\_f](https://latex.codecogs.com/png.latex?%5Chat%7BK%7D%20%3D%20%5Chat%7BJ%7D_f%5ET%20%5Chat%7BM%7D%20%5Chat%7BJ%7D_f "\hat{K} = \hat{J}_f^T \hat{M} \hat{J}_f")):
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L127-144
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L116-133
 hamilEqns
     :: (KnownNat n, KnownNat m)
     => System m n
@@ -1070,7 +1047,7 @@ hamilEqns s (Phase q p) = (dqdt, dpdt)
       where
         bigUglyThing =
           fmap (\j2 -> -p <.> kHatInv #> trj #> mHat #> j2 #> kHatInv #> p)
-               (sysJacobian2 s q)
+               (sysHessian s q)
 ```
 
 Of course, there is no way to get around the big ugly math term in
@@ -1149,7 +1126,7 @@ We can directly translate this into Haskell: (using
 component-wise product of two vectors)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L147-155
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L136-144
 stepEuler
     :: (KnownNat n, KnownNat m)
     => System m n       -- ^ the system
@@ -1164,7 +1141,7 @@ stepEuler s dt ph@(Phase q p) = Phase (q + konst dt * dq) (p + konst dt * dp)
 And repeatedly evolve this system as a lazy list:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L158-166
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L147-155
 runSystem
     :: (KnownNat n, KnownNat m)
     => System m n       -- ^ the system
@@ -1186,7 +1163,7 @@ Let’s generate the boring system, a 5kg particle in 2D Cartesian Coordinates
 under gravity –
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L169-175
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L158-164
 simpleSystem :: System 2 2
 simpleSystem = mkSystem (vec2 5 5) id pot
   where
@@ -1210,7 +1187,7 @@ downwards.
 We can make our initial configuration:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L179-183
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L168-172
 simpleConfig0 :: Config 2
 simpleConfig0 = Config
     { confPositions  = vec2 0 0
@@ -1221,7 +1198,7 @@ simpleConfig0 = Config
 And then…let it run!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L185-189
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L174-178
 simpleMain :: IO ()
 simpleMain =
     mapM_ (disp 2 . phasePositions)  -- position with 2 digits of precision
@@ -1288,7 +1265,7 @@ be at equilibrium, and our initial angular velocity
 will be 0.1 radians/sec (clockwise), as we try to induce harmonic motion:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L192-221
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L181-210
 -- | A pendulum system, parameterized by its angle clockwise from
 -- equilibrium
 pendulum :: System 2 1
@@ -1353,7 +1330,7 @@ ghci> pendulumMain
 
 We see our ![\\theta](https://latex.codecogs.com/png.latex?%5Ctheta "\theta")
 coordinate increasing, then turning around and decreasing, swinging the other
-way past equilibrium, and then turning around and heading back![^5]
+way past equilibrium, and then turning around and heading back![^7]
 
 We *automatically generated equations of motion for a pendulum*. Sweet!
 
@@ -1398,6 +1375,13 @@ clarifications, feel free to leave a comment, drop me a
     you don’t have any redundant or duplicate coordinates in your general
     coordinate system.
 
-[^5]: Clearly our system is gaining some sort of phantom energy, since it rises
+[^5]: Thanks to Edward Kmett for [pointing this out](http://disq.us/p/1o4oyqh)!
+
+[^6]: `hessian` computes the Hessian Matrix for a \$\mathbf{R}\^n
+    \rightarrow ![\\mathbf{R}](https://latex.codecogs.com/png.latex?%5Cmathbf%7BR%7D "\mathbf{R}")
+    (a scalar-valued function), but here, we have a vector-valued function, so
+    we need `hessianF`, the Hessian *Tensor*.
+
+[^7]: Clearly our system is gaining some sort of phantom energy, since it rises
     up to 0.045 on the left, and then all the way up to -0.69 on the right. Rest
     assured that this is simply from the inaccuracies in Euler’s Method.
