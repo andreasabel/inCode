@@ -33,12 +33,18 @@ less), so everything should work on GHC 8.0 as well!
 The content in the first section of this post, describing the singleton design
 pattern, uses the following extensions:
 
+-   ConstraintKinds
 -   DataKinds
 -   GADTs
 -   KindSignatures
 -   RankNTypes
--   TypeApplications
 -   TypeInType
+
+With some optional “convenience extensions”
+
+-   LambdaCase
+-   PolyKinds
+-   TypeApplications
 
 And the second section, introducing the library itself, uses, on top of these:
 
@@ -72,25 +78,30 @@ ghci> :t MkFoo :: Foo Int
 Foo Int
 ghci> :t MkFoo :: Foo Bool
 Foo Bool
+ghci> :t MkFoo :: Foo Either        -- requires -XPolyKinds
+Foo Either
+ghci> :t MkFoo :: Foo Monad         -- requires -XConstraintKinds
+Foo Monad
 ```
 
 A common use case of phantom type parameters is to tag data as “sanitized” or
-“unsanitized”, for instance. For a simple example, let’s check out a simple DSL
-for a type-safe door:
+“unsanitized” (`UserString 'Santitized` type vs. `UserString 'Unsanitized`) or
+paths as absolute or relative (`Path 'Absolute` vs. `Path 'Relative`). For a
+simple example, let’s check out a simple DSL for a type-safe door:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L13-16
 data DoorState = Opened | Closed | Locked
   deriving (Show, Eq)
 
-data Door (s :: DoorState) = UnsafeMkDoor String
+data Door (s :: DoorState) = UnsafeMkDoor { doorMaterial :: String }
 ```
 
 A couple things going on here:
 
 1.  Our type we are going to be playing with is a `Door`, which contains a
-    single field describing, say, the material that the door is made out of.
-    (`UnsafeMkDoor "Oak"` would be an oak door)
+    single field `doorMaterial` describing, say, the material that the door is
+    made out of. (`UnsafeMkDoor "Oak"` would be an oak door)
 
 2.  We’re using the `DataKinds` extension to create both the *type* `DoorState`
     as well as the *kind* `DoorState`.
@@ -144,16 +155,16 @@ represents its material (oak, birch, spruce, etc.).
 
 Alternatively, we can define `Door` using [*GADT*
 syntax](https://en.wikibooks.org/wiki/Haskell/GADT#Syntax) (which requires the
-`GADTs` extension).
+`GADTs` extension)[^3].
 
 ``` {.haskell}
 data Door :: DoorState -> Type where
-    UnsafeMkDoor :: String -> Door s
+    UnsafeMkDoor :: { doorMaterial :: String } -> Door s
 ```
 
 This is defining the exact same type in the alternate “GADT syntax” style of
 data type declaration – here, we define types by giving the type of its
-constructors.
+constructors, `UnsafeMkDoor :: String -> Door s`.
 
 ### Phantoms in Action
 
@@ -173,28 +184,31 @@ So, the `closeDoor` function will *only* take a `Door 'Opened` (an opened door).
 And it will return a `Door 'Closed` (a closed door).
 
 ``` {.haskell}
-ghci> let myDoor = UnsafeMkDoor "Spruce" :: Door 'Opened
+ghci> let myDoor = UnsafeMkDoor @'Opened "Spruce"
+ghci> :t myDoor
+Door 'Opened
 ghci> :t closeDoor myDoor
 Door 'Closed
-ghci> let yourDoor = UnsafeMkDoor "Acacia" :: Door 'Closed
+ghci> let yourDoor = UnsafeMkDoor @'Closed "Acacia"
 ghci> :t closeDoor yourDoor
 TYPE ERROR!  TYPE ERROR!
 ```
 
 You can think of this as a nice way of catching *logic errors* at compile-time.
 If your door type did not have its status in the type, the `closeDoor` could
-have been given a closed or locked door, and you’d have to reject it at runtime!
+have been given a closed or locked door, and you’d have to handle and reject it
+at runtime!
 
 By adding the state of the door into its type, we can encode our pre-conditions
 and post-conditions directly into the type. And any opportunity to move runtime
-errors to compile-time errors should be celebrated with a little party!
+errors to compile-time errors should be celebrated with a party!
 
 This would also stop you from doing silly things like closing a door twice in a
 row:
 
 ``` {.haskell}
 ghci> :t closeDoor . closeDoor
-TYPE ERROR!  TYPE ERROR!
+TYPE ERROR!  TYPE ERROR!  TYPE ERROR!
 ```
 
 Do you see why?
@@ -216,7 +230,31 @@ ghci> :t closeDoor . openDoor
 Door 'Closed -> Door 'Closed
 ghci> :t lockDoor . closeDoor . openDoor
 Door 'Closed -> Door 'Locked
+ghci> :t lockDoor . openDoor
+TYPE ERROR!  TYPE ERROR!  TYPE ERROR!
 ```
+
+Because of the type of `lockDoor`, you *cannot* lock an opened door! Don’t even
+try! You’d have to close it first.
+
+``` {.haskell}
+ghci> let myDoor = UnsafeMkDoor @'Opened "Spruce"
+ghci> :t myDoor
+Door 'Opened
+ghci> :t lockDoor
+Door 'Closed -> Door 'Closed
+ghci> :t lockDoor myDoor
+TYPE ERROR!  TYPE ERROR!  TYPE ERROR!
+ghci> :t closeDoor myDoor
+Door 'Closed
+ghci> :t lockDoor (closeDoor myDoor)
+Door 'Locked
+```
+
+`lockDoor` expects a `Door 'Closed`, so if you give it a `Door 'Opened`, that’s
+a static compile-time type error. But, `closeDoor` takes a `Door 'Opened` and
+returns a `Door 'Closed` – so *that* is something that you can call `lockDoor`
+with!
 
 ### The Phantom Menace
 
@@ -237,7 +275,7 @@ And, perhaps even more important, how can you create a `Door` with a given state
 that isn’t known until runtime? If we know the type of our doors at
 compile-time, we can just explicitly write `UnsafeMkDoor "Iron" :: Door 'Opened`
 or `UnsafeMkDoor @'Opened "Iron"`. But what if we wanted to make a door based on
-a `DoorState` input?
+a `DoorState` *value*? Something we might not get until runtime?
 
 ``` {.haskell}
 mkDoor :: DoorState -> String -> Door s
@@ -282,9 +320,11 @@ Or, does it?
 The Singleton Pattern
 ---------------------
 
-A singleton in Haskell is a type that, for each instantiation its type
-variables, has exactly one inhabitant, and whose constructor (when pattern
-matched on) reveals its type.
+A singleton in Haskell is a type (of kind `Type` – that is, `*`) that has
+exactly one inhabitant. In practice (and when talking about the design pattern),
+it refers to a parameterized type that, for each pick of parameter, gives a type
+with exactly one inhabitant. It is written so that pattern matching on the
+*constructor* of that value reveals the unique type parameter.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L27-30
@@ -294,11 +334,11 @@ data SingDS :: DoorState -> Type where
     SLocked :: SingDS 'Locked
 ```
 
-Here we’re using *GADT syntax* again. (Also note that `Type` a synonym for the
-`*` kind, exported from the *Data.Kind* module) Notice that, if we use
-`SOpened`, we will get a `SingDS 'Opened`. And if we have a `SingDS 'Opened`, we
-know that it was constructed using `SOpened`. Essentially, this gives us three
-values:
+Here we’re using *GADT syntax* again (but to make an actual GADT). (Also note
+that `Type` is a synonym for the `*` kind, exported from the *Data.Kind* module)
+So, if we use `SOpened`, we will get a `SingDS 'Opened`. And if we have a
+`SingDS 'Opened`, we know that it was constructed using `SOpened`. Essentially,
+this gives us three values:
 
 ``` {.haskell}
 SOpened :: SingDS 'Opened
@@ -312,51 +352,97 @@ The power of singletons is that we can now *pattern match* on types,
 essentially.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L32-39
-doorStatus :: SingDS s -> Door s -> DoorState
-doorStatus = \case
-    SOpened -> -- in this branch, `s` is `'Opened`
-        \_ -> Opened
-    SClosed -> -- in this branch, `s` is `'Closed`
-        \_ -> Closed
-    SLocked -> -- in this branch, `s` is `'Locked`
-        \_ -> Locked
-```
-
-(using *LambdaCase* syntax)
-
-We can rewrite `doorStats` to take an additional `SingDS`, which we can use to
-figure out what `s` is. When we pattern match on it, we reveal what `s` is.
-Essentially, the gain the ability to “pattern match” on the `s` type variable.
-
-The singleton property of `SingDS` ensures us that whatever `s` the `SingDS` has
-is the *same* `s` that the `Door` has.
-
-Not only do *we* know what `s` is, but GHC can also take advantage of it. In the
-scope of the case statement branch, GHC *knows* what `s` must be:
-
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L18-45
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L18-36
 closeDoor :: Door 'Opened -> Door 'Closed
 
 lockDoor :: Door 'Closed -> Door 'Locked
 
 lockAnyDoor :: SingDS s -> (Door s -> Door 'Locked)
 lockAnyDoor = \case
-    SOpened -> lockDoor . closeDoor
-    SClosed -> lockDoor
-    SLocked -> id
+    SOpened -> lockDoor . closeDoor  -- in this branch, s is 'Opened
+    SClosed -> lockDoor              -- in this branch, s is 'Closed
+    SLocked -> id                    -- in this branch, s is 'Locked
 ```
 
-Note that `lockDoor . closeDoor :: Door 'Opened -> Door 'Locked`. GHC will only
-allow you to compile that if it *knew* that the input is `Door 'Opened`…and,
-because of the GADT pattern match, it does!
+(the `\case` is *LambdaCase* syntax)
 
-Similar for the `SLocked -> id` branch — `id` is only a valid response if `s` is
-`'Locked` (and so `id :: Door 'Locked -> Door 'Locked`). But, because we pattern
-matched on `SLocked`, GHC knows that this is legal!
+`lockAnyDoor` is a function that can take a door of any state (a `Door s` of any
+`s`) and *lock* it using a composition of `lockDoor` or `closeDoor` as
+necessary.
+
+If we have `lockAnyDoor` take a `SingDS s` as its input (and, importantly, make
+sure that the `s` in `SingDS s` is the same `s` in the `Door s`), we can
+*pattern match* on the `SingDS s` to *reveal* what `s` is, to the type checker.
+This is known as a **dependent pattern match**.
+
+If `SingDS s`’s pattern match goes down the `SOpened ->` case, then we *know*
+that `s ~ 'Opened`[^4] – that is, `s` must be `'Opened`. That’s because
+`SOpened :: SingDS 'Opened`, so there really isn’t anything else the `s` in
+`SingDS s` could be!
+
+So, if we know that `s ~ 'Opened`, that means that the `Door s` is
+`Door 'Opened`. We have an open door, so we can close-it-then-lock-it, using
+`lockDoor . closeDoor :: Door 'Opened -> Door 'Locked`.
 
 We say that `SOpened` is a “runtime witness” to `s` being `'Opened`.
+
+Note that `lockDoor . closeDoor` will *only* compile if given a `Door 'Opened`,
+but because of our dependent pattern match, we *know* we have a `Door 'Opened`.
+
+Same for the `SClosed ->` branch – since `SClosed :: SingDS 'Closed`, then
+`s ~ 'Closed`, so our `Door s` must be a `Door 'Closed`. This allows us to just
+write `SClosed -> lockDoor`. `lockDoor :: Door 'Closed -> Door 'Locked`, so it
+would only work if given a `Door 'Closed` – which we know we have, because of
+the dependent pattern match.
+
+For the `SLocked ->` branch, `SLocked :: SingDS 'Locked`, so `s ~ 'Locked`, so
+our `Door s` is a `Door 'Locked`. Our door is “already” locked, so we can just
+use `id :: Door 'Locked -> Door 'Locked`.
+
+Note that `id :: Door 'Locked -> Door 'Locked` would not work for any other
+branch, and would be a compile-time error. `id` only works if you know your
+input is already `Door 'Locked`…which we know because of the dependent pattern
+match.
+
+Essentially, our singletons give us *runtime values* that can be used as
+*witnesses* for types and type variables. These values exist at runtime, so they
+“bypass” type erasure. Types themselves are directly erased, but we can hold on
+to them using these runtime tokens when we need them.
+
+#### Reflection
+
+Writing `doorStatus` is now pretty simple –
+
+``` {.haskell}
+doorStatus :: SingDS s -> Door s -> DoorState
+doorStatus = \case
+    SOpened -> \_ -> Opened
+    SClosed -> \_ -> Closed
+    SLocked -> \_ -> Locked
+```
+
+The benefit of the singleton again relies on the fact that the `s` in `SingDS s`
+is the same as the `s` in `Door s`, so if the user gives a `SingDS s`, it *has*
+to match the `s` in the `Door s` they give.
+
+Since we don’t even care about the `door`, we could also just write:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L38-42
+fromSingDS :: SingDS s -> DoorState
+fromSingDS = \case
+    SOpened -> Opened
+    SClosed -> Closed
+    SLocked -> Locked
+```
+
+Which we can use to write a nicer `doorStatus`
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L44-45
+doorStatus :: SingDS s -> Door s -> DoorState
+doorStatus s _ = fromSingDS s
+```
 
 ### Recovering Implicit Passing
 
@@ -381,11 +467,11 @@ And so now we can do:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L57-61
-doorStatus_ :: SingDSI s => Door s -> DoorState
-doorStatus_ = doorStatus singDS
-
 lockAnyDoor_ :: SingDSI s => Door s -> Door 'Locked
 lockAnyDoor_ = lockAnyDoor singDS
+
+doorStatus_ :: SingDSI s => Door s -> DoorState
+doorStatus_ = doorStatus singDS
 ```
 
 Here, type inference will tell GHC that you want `singDS :: SingDS s`, and it
@@ -405,9 +491,9 @@ Earlier, I disparaged the “ad-hoc typeclass” approach. But, here, the typecl
 isn’t quite ad-hoc; it’s basically exactly carrying around an implicit witness
 of `s` that we can grab at any time.
 
-So, it’s important to remember that `doorStatus` and `doorStatus_` are the “same
-function”, with the same power. They are just written in different styles –
-`doorStatus` is written in explicit style, and `doorStatus_` is written in
+So, it’s important to remember that `lockAnyDoor` and `lockAnyDoor_` are the
+“same function”, with the same power. They are just written in different styles
+– `lockAnyDoor` is written in explicit style, and `lockAnyDoor_` is written in
 implicit style.
 
 #### Going backwards
@@ -432,14 +518,19 @@ withSingDSI s x = case s of
 `withSingDSI` takes a `SingDS s`, and a value (of type `r`) that requires a
 `SingDSI s` instance to be created. And it creates that value for you!
 
-It works because in each branch, `s` is now a *specific*, monomorphic,
-“concrete” `s`, and GHC knows that such an instance exists for every branch. In
-the `SOpened` branch, `s ~ 'Opened`,[^3] so GHC knows that there is a
-`SingDSI 'Opened` instance, and gives it to you. In the `SCloed` branch,
-`s ~ 'Closed`, so GHC knows that there is a `SingDSI 'Closed` instance, and
-gives *that* to you, etc.
+To use `x`, you must have a `SingDSI s` instance available. This all works
+because in each branch, `s` is now a *specific*, monomorphic, “concrete” `s`,
+and GHC knows that such an instance exists for every branch. In the `SOpened`
+branch, `s ~ 'Opened`. We explicitly wrote an instance of `SingDSI` for
+`'Opened`, so GHC *knows* that there is a `SingDSI 'Opened` instance in
+existence, allowing you to use/create `x`. In the `SClosed` branch,
+`s ~ 'Closed`, so GHC knows that there is a `SingDSI 'Closed` instance (because
+we wrote one explicitly!), and gives *that* to you – and so you are allowed to
+use/create `x`. In the `SLocked` branch, `s ~ 'Locked`, and because we wrote a
+`SingDSI 'Locked` explicitly, we *know* that a `SingDSI s` instance is
+available, so we can use/create `x`.
 
-So now, we can run our implicit functions (like `lockAnyDoor_`) by giving them
+Now, we can run our implicit functions (like `lockAnyDoor_`) by giving them
 explicit inputs:
 
 ``` {.haskell}
@@ -447,6 +538,8 @@ explicit inputs:
 lockAnyDoor__ :: SingDS s -> Door s -> Door 'Locked
 lockAnyDoor__ s d = withSingDSI s (lockAnyDoor_ d)
 ```
+
+And the cycle begins anew.
 
 ### Fun with Witnesses
 
@@ -474,29 +567,40 @@ And now we can’t do something silly like pass in `SLocked` to get a
 `Door 'Opened`!
 
 However, this is still a step away from a `Door` whose status can vary at
-runtime.
+runtime, since, as of now, we can’t generate an arbitrary singleton at runtime.
 
 Ditching the Phantom
 --------------------
 
-Now, sometimes we don’t actually care about the state of the door, and we don’t
-*want* the state of the door in its type. Our `closeAnyDoor` function earlier
-was an example.
+Now, sometimes we don’t actually care about the state of the door in our type,
+and we don’t *want* the state of the door in its type. Our `lockAnyDoor`
+function earlier was an example.
 
 We have a couple of options here — we can create a new type `SomeDoor`, that
 doesn’t have the opened/closed status in its type, but rather as a runtime
 value:
 
 ``` {.haskell}
-data SomeDoor = UnsafeMkSomeDoor DoorState String
+data SomeDoor = UnsafeMkSomeDoor
+    { someDoorState    :: DoorState
+    , someDoorMaterial :: String
+    }
+
+-- or, in GADT syntax
+data SomeDoor :: Type where
+    UnsafeMkSomeDoor ::
+      { someDoorState    :: DoorState
+      , someDoorMaterial :: String
+      } -> SomeDoor
 ```
 
-Now, we could have actually been using this type the entire time, if we didn’t
-care about type safety. In the real world and in real applications, we might
-have actually written `SomeDoor` before we ever thought about `Door` with a
-phantom type. It’s definitely the more typical Haskell thing.
+We could have actually been using this type the entire time, if we didn’t care
+about type safety. In the real world and in real applications, we might have
+actually written `SomeDoor` *before* we ever thought about `Door` with a phantom
+type. It’s definitely the more typical “standard” Haskell thing.
 
-We can “construct” this from a normal `Door`, using the smart constructor:
+It’s possible to “construct” this from our original typed `Door`, using the
+smart constructor/conversion function:
 
 ``` {.haskell}
 fromDoor :: SingDS s -> Door s -> SomeDoor
@@ -518,12 +622,15 @@ closeSomeDoor (UnsafeMkSomeDoor Closed m) = Nothing
 closeSomeDoor (UnsafeMkSomeDoor Locked m) = Nothing
 ```
 
-Wouldn’t it be nice if we can re-use our original `closeDoor`? This is a toy
+Wouldn’t it be nice if we can *re-use* our original `closeDoor`? This is a toy
 example, and in real life, closing a door might have some complicated runtime
-logic, and it’d be annoying to re-implement it for both `SomeDoor` and `Door`.
+logic, and it’d be annoying to have to *re-implement* it for both `SomeDoor` and
+`Door`.
 
 One thing we can do is write a function to convert a `SomeDoor` into a `Door`,
-so we can re-use our original `closeDoor`.
+so we can re-use our original `closeDoor`. We’d convert our `SomeDoor` into a
+`Door` to re-use our `closeDoor :: Door 'Opened -> Door 'Closed` on it if
+possible!
 
 #### Converting into an existential
 
@@ -549,8 +656,8 @@ an `SOpened`, an `SClosed`, or an `SLocked`. It has to be able to handle all
 three!
 
 Here, we call `s` *existentially quantified*. The `withSomeDoor` function gets
-to pick which `s` to give `f`. So, the `s` type variable is chosen by the
-*function*, and not by the caller.
+to pick which `s` to give `f`. So, the `s` type variable is directly chosen by
+the *function*, and not by the caller.
 
 So we can implement `closeSomeDoor` (and even a `lockAnySomeDoor`) using this
 conversion function:
@@ -558,7 +665,7 @@ conversion function:
 ``` {.haskell}
 closeSomeDoor :: SomeDoor -> Maybe (Door 'Closed)
 closeSomeDoor sd = withSomeDoor sd $ \case
-    SOpened -> \d -> Just $ closeDoor d
+    SOpened -> \d -> Just (closeDoor d)
     SClosed -> \_ -> Nothing
     SLocked -> \_ -> Nothing
 
@@ -570,17 +677,20 @@ lockAnySomeDoor sd = withSomeDoor sd $ \s d ->
 #### The Existential Datatype
 
 However, there’s another path we can take. With the power of singletons, we can
-actually implement `SomeDoor` *in terms of* `Door`, using an existential data
-type!
+actually implement `SomeDoor` *in terms of* `Door`, using an **existential data
+type**:
 
 ``` {.haskell}
 -- using existential constructor syntax
 data SomeDoor = forall s. MkSomeDoor (SingDS s) (Door s)
 
--- or, using GADT syntax
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L78-79
+-- or, using GADT syntax (preferred)
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L78-82
 data SomeDoor :: Type where
-    MkSomeDoor :: SingDS s -> Door s -> SomeDoor
+    MkSomeDoor ::
+      { someDoorState :: SingDS s
+      , someDoorDoor  :: Door s
+      } -> SomeDoor
 ```
 
 `MkSomeDoor` is a constructor for an existential data type, meaning that the
@@ -588,14 +698,23 @@ data type “hides” a type variable `s`.
 
 Hopefully you can see the similarities between our original `SomeDoor` and this
 one. The key difference is that original `SomeDoor` contains a `DoorState`, and
-this new `SomeDoor` contains a `SingDS` (a *singleton* for the `DoorState`).
+this new `SomeDoor` contains a `SingDS` (a *singleton* for the `DoorState`):
+
+``` {.haskell}
+-- Original type
+data SomeDoor where
+    MkSomeDoor :: DoorState -> String -> SomeDoor
+-- New existential type
+data SomeDoor where
+    MkSomeDoor :: SingDS s  -> Door s -> SomeDoor
+```
 
 In Haskell, existential data types are pretty nice, syntactically, to work with.
 For a comparison, let’s re-implement our previous functions with our new data
 type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L81-88
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L84-91
 closeSomeDoor :: SomeDoor -> Maybe (Door 'Closed)
 closeSomeDoor = \case
     MkSomeDoor SOpened d -> Just (closeDoor d)
@@ -606,6 +725,10 @@ lockAnySomeDoor :: SomeDoor -> Door 'Locked
 lockAnySomeDoor (MkSomeDoor s d) = lockAnyDoor s d
 ```
 
+Much more convenient, because *we already have a `Door`!* And we don’t have to
+re-implement one like we did for our original `SomeDoor` – all of our original
+code works directly!
+
 It’s important to remember that our original separate-implementation `SomeDoor`
 is, functionally, identical to the new code-reusing `SomeDoor`. The reason why
 they are the same is that *having an existentially quantified singleton is the
@@ -615,13 +738,14 @@ quantified `SingDS s` is *the same as* having a value of type `DoorState`.
 If they’re identical, why use a `SingDS` or the new `SomeDoor` at all? One main
 reason (besides allowing code-reuse) is that *using the singleton lets us
 recover the type*. Essentially, a `SingDS s` not only contains whether it is
-Opened/Closed/Locked…it contains it in a way that GHC can use to bring it all
-back to the type level.
+Opened/Closed/Locked…it contains it in a way that GHC can use to *bring it all
+back* to the type level.
 
 Basically, `SingDS` allows us to re-use our original `Door s` implementation,
-because we store both the `Door`…*and* the `s` at the type level. It also lets
-GHC *check* our implementations, to help ensure that they are correct, because
-you maintain the `s` at the type level.
+because we store both the `Door`…*and* the `s` at the type level. You should
+read it as storing `s` and `Door s`, together, at runtime. It also lets GHC
+*check* our implementations, to help ensure that they are correct, because you
+maintain the `s` at the type level.
 
 #### Some Lingo
 
@@ -649,7 +773,7 @@ With this last tool, we finally have enough to build a function to “make” a 
 with the status unknown until runtime:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L90-94
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L93-97
 mkSomeDoor :: DoorState -> String -> SomeDoor
 mkSomeDoor = \case
     Opened -> MkSomeDoor SOpened . mkDoor SOpened
@@ -916,5 +1040,9 @@ for a comparison, if you are still unfamiliar.
     at this point in Haskell, to use them whenever you can. It’ll prevent a lot
     of confusion, trust me!
 
-[^3]: `~` here refers to “type equality”, or the constraint that the types on
+[^3]: Actually, GADT syntax just requires `-XGADTSyntax`, but `-XGADT` allows
+    you to actually make GADTs (which we will be doing later), and implies
+    `-XGADTSyntax`
+
+[^4]: `~` here refers to “type equality”, or the constraint that the types on
     both sides are equal. `s ~ 'Opened` can be read as “`s` is `'Opened`”.

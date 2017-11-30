@@ -851,7 +851,7 @@ toPhase s c = Phase (confPositions c) (momenta s c)
 This function is important, because “configuration space” is how we actually
 directly observe our system – in terms of positions and velocities, and not in
 terms of positions and momenta (and sometimes conjugate momenta might not even
-have a meaningful physical interpretation). So, having `toPhase` lets us
+have meaningful physical interpretations). So, having `toPhase` lets us
 “initialize” our system in terms of direct observables, and then convert it to
 its phase space representation, which is something that Hamiltonian mechanics
 can work with.
@@ -1081,9 +1081,9 @@ The result of `hamilEqns` gives the rate of change of the components of our
 update it, following these rate of changes!
 
 This process is known as [numerical
-integration](https://en.wikipedia.org/wiki/Numerical_integration), and the
-“best” way to do it is quite a big field, so for this article we’re going to be
-using the extremely extremely simple [Euler
+integration](https://en.wikipedia.org/wiki/Numerical_integration). The “best”
+way to do it is quite a big field, so for this article we’re going to be using
+the extremely extremely simple [Euler
 method](https://en.wikipedia.org/wiki/Euler_method) to progress our system
 through time.
 
