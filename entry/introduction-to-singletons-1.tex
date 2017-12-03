@@ -562,8 +562,8 @@ If \texttt{SingDS\ s}'s pattern match goes down the
 \texttt{s\ \textasciitilde{}\ \textquotesingle{}Opened}\footnote{\texttt{\textasciitilde{}}
   here refers to ``type equality'', or the constraint that the types on both
   sides are equal. \texttt{s\ \textasciitilde{}\ \textquotesingle{}Opened} can
-  be read as ``\texttt{s} is \texttt{\textquotesingle{}Opened}''.} -- that is,
-\texttt{s} must be \texttt{\textquotesingle{}Opened}. That's because
+  be read as ``\texttt{s} is \texttt{\textquotesingle{}Opened}''.}. We know that
+\texttt{s} must be \texttt{\textquotesingle{}Opened}, because
 \texttt{SOpened\ ::\ SingDS\ \textquotesingle{}Opened}, so there really isn't
 anything else the \texttt{s} in \texttt{SingDS\ s} could be!
 
@@ -572,7 +572,7 @@ that means that the \texttt{Door\ s} is \texttt{Door\ \textquotesingle{}Opened}.
 We have an open door, so we can close-it-then-lock-it, using
 \texttt{lockDoor\ .\ closeDoor\ ::\ Door\ \textquotesingle{}Opened\ -\textgreater{}\ Door\ \textquotesingle{}Locked}.
 
-We say that \texttt{SOpened} is a ``runtime witness'' to \texttt{s} being
+We say that \texttt{SOpened} is a \emph{runtime witness} to \texttt{s} being
 \texttt{\textquotesingle{}Opened}.
 
 Note that \texttt{lockDoor\ .\ closeDoor} will \emph{only} compile if given a
@@ -649,6 +649,9 @@ Which we can use to write a nicer \texttt{doorStatus}
 \end{Highlighting}
 \end{Shaded}
 
+This process -- of turning a type variable (like \texttt{s}) into a dynamic
+runtime value is known as \textbf{reflection}.
+
 \subsection{Recovering Implicit Passing}\label{recovering-implicit-passing}
 
 One downside is that we are required to manually pass in our witness. Wouldn't
@@ -686,9 +689,8 @@ And so now we can do:
 Here, type inference will tell GHC that you want \texttt{singDS\ ::\ SingDS\ s},
 and it will pull out the proper singleton for the door you want to check!
 
-(By the way, If you program Haskell regularly, it should slightly bug you that
-it's super easy to write a bad instance of \texttt{SingDSI}. More about this
-later.)
+Note that \emph{it's impossible} to write our \texttt{SingDSI} instances
+improperly! GHC checks to make sure that this is \emph{correct}.
 
 \subsubsection{The Same Power}\label{the-same-power}
 
@@ -841,9 +843,9 @@ the smart constructor/conversion function:
 
 \subsection{SomeDoor to Door}\label{somedoor-to-door}
 
-Now, \texttt{SomeDoor} is great. But isn't it annoying that we might potentially
-have to write the same function for both \texttt{Door} and \texttt{SomeDoor},
-because they have different implementations. For example:
+Now, \texttt{SomeDoor} is great. But because it's a completely different type,
+we potentially have to write the same function for both \texttt{Door} and
+\texttt{SomeDoor}, because they have different implementations. For example:
 
 \begin{Shaded}
 \begin{Highlighting}[]

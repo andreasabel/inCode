@@ -187,9 +187,9 @@ lockAnyDoor <span class="fu">=</span> \<span class="kw">case</span>
 <p>(the <code>\case</code> is <em>LambdaCase</em> syntax)</p>
 <p><code>lockAnyDoor</code> is a function that can take a door of any state (a <code>Door s</code> of any <code>s</code>) and <em>lock</em> it using a composition of <code>lockDoor</code> or <code>closeDoor</code> as necessary.</p>
 <p>If we have <code>lockAnyDoor</code> take a <code>SingDS s</code> as its input (and, importantly, make sure that the <code>s</code> in <code>SingDS s</code> is the same <code>s</code> in the <code>Door s</code>), we can <em>pattern match</em> on the <code>SingDS s</code> to <em>reveal</em> what <code>s</code> is, to the type checker. This is known as a <strong>dependent pattern match</strong>.</p>
-<p>If <code>SingDS s</code>’s pattern match goes down the <code>SOpened -&gt;</code> case, then we <em>know</em> that <code>s ~ 'Opened</code><a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a> – that is, <code>s</code> must be <code>'Opened</code>. That’s because <code>SOpened :: SingDS 'Opened</code>, so there really isn’t anything else the <code>s</code> in <code>SingDS s</code> could be!</p>
+<p>If <code>SingDS s</code>’s pattern match goes down the <code>SOpened -&gt;</code> case, then we <em>know</em> that <code>s ~ 'Opened</code><a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a>. We know that <code>s</code> must be <code>'Opened</code>, because <code>SOpened :: SingDS 'Opened</code>, so there really isn’t anything else the <code>s</code> in <code>SingDS s</code> could be!</p>
 <p>So, if we know that <code>s ~ 'Opened</code>, that means that the <code>Door s</code> is <code>Door 'Opened</code>. We have an open door, so we can close-it-then-lock-it, using <code>lockDoor . closeDoor :: Door 'Opened -&gt; Door 'Locked</code>.</p>
-<p>We say that <code>SOpened</code> is a “runtime witness” to <code>s</code> being <code>'Opened</code>.</p>
+<p>We say that <code>SOpened</code> is a <em>runtime witness</em> to <code>s</code> being <code>'Opened</code>.</p>
 <p>Note that <code>lockDoor . closeDoor</code> will <em>only</em> compile if given a <code>Door 'Opened</code>, but because of our dependent pattern match, we <em>know</em> we have a <code>Door 'Opened</code>.</p>
 <p>Same for the <code>SClosed -&gt;</code> branch – since <code>SClosed :: SingDS 'Closed</code>, then <code>s ~ 'Closed</code>, so our <code>Door s</code> must be a <code>Door 'Closed</code>. This allows us to just write <code>SClosed -&gt; lockDoor</code>. <code>lockDoor :: Door 'Closed -&gt; Door 'Locked</code>, so it would only work if given a <code>Door 'Closed</code> – which we know we have, because of the dependent pattern match.</p>
 <p>For the <code>SLocked -&gt;</code> branch, <code>SLocked :: SingDS 'Locked</code>, so <code>s ~ 'Locked</code>, so our <code>Door s</code> is a <code>Door 'Locked</code>. Our door is “already” locked, so we can just use <code>id :: Door 'Locked -&gt; Door 'Locked</code>.</p>
@@ -214,6 +214,7 @@ fromSingDS <span class="fu">=</span> \<span class="kw">case</span>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L44-45</span>
 <span class="ot">doorStatus ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">DoorState</span>
 doorStatus s _ <span class="fu">=</span> fromSingDS s</code></pre></div>
+<p>This process – of turning a type variable (like <code>s</code>) into a dynamic runtime value is known as <strong>reflection</strong>.</p>
 <h3 id="recovering-implicit-passing">Recovering Implicit Passing</h3>
 <p>One downside is that we are required to manually pass in our witness. Wouldn’t it be nice if we could have it be passed implicitly? We can do something with typeclasses:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L47-55</span>
@@ -234,7 +235,7 @@ lockAnyDoor_ <span class="fu">=</span> lockAnyDoor singDS
 <span class="ot">doorStatus_ ::</span> <span class="dt">SingDSI</span> s <span class="ot">=&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">DoorState</span>
 doorStatus_ <span class="fu">=</span> doorStatus singDS</code></pre></div>
 <p>Here, type inference will tell GHC that you want <code>singDS :: SingDS s</code>, and it will pull out the proper singleton for the door you want to check!</p>
-<p>(By the way, If you program Haskell regularly, it should slightly bug you that it’s super easy to write a bad instance of <code>SingDSI</code>. More about this later.)</p>
+<p>Note that <em>it’s impossible</em> to write our <code>SingDSI</code> instances improperly! GHC checks to make sure that this is <em>correct</em>.</p>
 <h4 id="the-same-power">The Same Power</h4>
 <p>In Haskell, a constraint <code>SingDSI s =&gt;</code> is essentially the same as passing in <code>SingDS s</code> explicitly. Either way, you are passing in a runtime witness that your function can use. You can think of <code>SingDSI s =&gt;</code> as passing it in <em>implicitly</em>, and <code>SingDS s -&gt;</code> as passing it in <em>explicitly</em>.</p>
 <p>Earlier, I disparaged the “ad-hoc typeclass” approach. But, here, the typeclass isn’t quite ad-hoc; it’s basically exactly carrying around an implicit witness of <code>s</code> that we can grab at any time.</p>
@@ -291,7 +292,7 @@ fromDoor <span class="dt">SOpened</span> (<span class="dt">UnsafeMkDoor</span> m
 formDoor <span class="dt">SClosed</span> (<span class="dt">UnsafeMkDoor</span> m) <span class="fu">=</span> <span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Closed</span> m
 formDoor <span class="dt">SLocked</span> (<span class="dt">UnsafeMkDoor</span> m) <span class="fu">=</span> <span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Locked</span> m</code></pre></div>
 <h3 id="somedoor-to-door">SomeDoor to Door</h3>
-<p>Now, <code>SomeDoor</code> is great. But isn’t it annoying that we might potentially have to write the same function for both <code>Door</code> and <code>SomeDoor</code>, because they have different implementations. For example:</p>
+<p>Now, <code>SomeDoor</code> is great. But because it’s a completely different type, we potentially have to write the same function for both <code>Door</code> and <code>SomeDoor</code>, because they have different implementations. For example:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">closeSomeDoor ::</span> <span class="dt">SomeDoor</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">SomeDoor</span>
 closeSomeDoor (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Opened</span> m) <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Closed</span> m)
 closeSomeDoor (<span class="dt">UnsafeMkSomeDoor</span> <span class="dt">Closed</span> m) <span class="fu">=</span> <span class="dt">Nothing</span>
