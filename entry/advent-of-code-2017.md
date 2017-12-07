@@ -27,4 +27,4 @@ to hit this year.
 Wish me luck! And if you haven’t started yet, it’s not too late to join in the
 fun! [glguy](https://twitter.com/glguy) has been maintaining the semi-official
 [Haskell Leaderboard](adventofcode.com/2017/leaderboard/private) (join code
-43100-84040706) – come join us!
+`43100-84040706`) – come join us!
