@@ -1,5 +1,5 @@
-Ongoing Advent of Code 2017 Solutions and Explanations
-======================================================
+Advent of Code 2017! Ongoing solutions and explanations
+=======================================================
 
 > Originally posted by [Justin Le](https://blog.jle.im/) on December 7, 2017.
 > [Read online!](https://blog.jle.im/entry/advent-of-code-2017.html)
