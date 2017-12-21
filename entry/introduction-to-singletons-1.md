@@ -593,14 +593,14 @@ doesn’t have the opened/closed status in its type, but rather as a runtime
 value:
 
 ``` {.haskell}
-data SomeDoor = UnsafeMkSomeDoor
+data SomeDoor = MkSomeDoor
     { someDoorState    :: DoorState
     , someDoorMaterial :: String
     }
 
 -- or, in GADT syntax
 data SomeDoor :: Type where
-    UnsafeMkSomeDoor ::
+    MkSomeDoor ::
       { someDoorState    :: DoorState
       , someDoorMaterial :: String
       } -> SomeDoor
@@ -616,9 +616,9 @@ smart constructor/conversion function:
 
 ``` {.haskell}
 fromDoor :: SingDS s -> Door s -> SomeDoor
-fromDoor SOpened (UnsafeMkDoor m) = UnsafeMkSomeDoor Opened m
-formDoor SClosed (UnsafeMkDoor m) = UnsafeMkSomeDoor Closed m
-formDoor SLocked (UnsafeMkDoor m) = UnsafeMkSomeDoor Locked m
+fromDoor SOpened (UnsafeMkDoor m) = MkSomeDoor Opened m
+formDoor SClosed (UnsafeMkDoor m) = MkSomeDoor Closed m
+formDoor SLocked (UnsafeMkDoor m) = MkSomeDoor Locked m
 ```
 
 ### SomeDoor to Door
@@ -628,10 +628,10 @@ potentially have to write the same function for both `Door` and `SomeDoor`,
 because they have different implementations. For example:
 
 ``` {.haskell}
-closeSomeDoor :: SomeDoor -> Maybe SomeDoor
-closeSomeDoor (UnsafeMkSomeDoor Opened m) = Just (UnsafeMkSomeDoor Closed m)
-closeSomeDoor (UnsafeMkSomeDoor Closed m) = Nothing
-closeSomeDoor (UnsafeMkSomeDoor Locked m) = Nothing
+closeSomeOpenedDoor :: SomeDoor -> Maybe SomeDoor
+closeSomeOpenedDoor (MkSomeDoor Opened m) = Just (MkSomeDoor Closed m)
+closeSomeOpenedDoor (MkSomeDoor Closed m) = Nothing
+closeSomeOpenedDoor (MkSomeDoor Locked m) = Nothing
 ```
 
 Wouldn’t it be nice if we can *re-use* our original `closeDoor`? This is a toy
@@ -656,9 +656,9 @@ handle whatever `s` is given by the function:
 
 ``` {.haskell}
 withSomeDoor :: SomeDoor -> (forall s. SingDS s -> Door s -> r) -> r
-withSomeDoor (UnsafeMkSomeDoor Opened m) f = f SOpened (UnsafeMkDoor m)
-withSomeDoor (UnsafeMkSomeDoor Closed m) f = f SClosed (UnsafeMkDoor m)
-withSomeDoor (UnsafeMkSomeDoor Locked m) f = f SLocked (UnsafeMkDoor m)
+withSomeDoor (MkSomeDoor Opened m) f = f SOpened (UnsafeMkDoor m)
+withSomeDoor (MkSomeDoor Closed m) f = f SClosed (UnsafeMkDoor m)
+withSomeDoor (MkSomeDoor Locked m) f = f SLocked (UnsafeMkDoor m)
 ```
 
 Notice the funky CPS-like type signature of `withSomeDoor`. To use
@@ -671,12 +671,12 @@ Here, we call `s` *existentially quantified*. The `withSomeDoor` function gets
 to pick which `s` to give `f`. So, the `s` type variable is directly chosen by
 the *function*, and not by the caller.
 
-So we can implement `closeSomeDoor` (and even a `lockAnySomeDoor`) using this
-conversion function:
+So we can implement `closeSomeOpenedDoor` (and even a `lockAnySomeDoor`) using
+this conversion function:
 
 ``` {.haskell}
-closeSomeDoor :: SomeDoor -> Maybe (Door 'Closed)
-closeSomeDoor sd = withSomeDoor sd $ \case
+closeSomeOpenedDoor :: SomeDoor -> Maybe (Door 'Closed)
+closeSomeOpenedDoor sd = withSomeDoor sd $ \case
     SOpened -> \d -> Just (closeDoor d)
     SClosed -> \_ -> Nothing
     SLocked -> \_ -> Nothing
@@ -727,10 +727,10 @@ type:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L84-91
-closeSomeDoor :: SomeDoor -> Maybe (Door 'Closed)
-closeSomeDoor = \case
+closeSomeOpenedDoor :: SomeDoor -> Maybe (Door 'Closed)
+closeSomeOpenedDoor = \case
     MkSomeDoor SOpened d -> Just (closeDoor d)
-    MkSomeDoor SClosed _ -> Nothing
+    MkSomeDoor SClosed d -> Nothing
     MkSomeDoor SLocked _ -> Nothing
 
 lockAnySomeDoor :: SomeDoor -> Door 'Locked

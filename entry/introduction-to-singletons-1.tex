@@ -829,14 +829,14 @@ value:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{SomeDoor} \FunctionTok{=} \DataTypeTok{UnsafeMkSomeDoor}
+\KeywordTok{data} \DataTypeTok{SomeDoor} \FunctionTok{=} \DataTypeTok{MkSomeDoor}
 \NormalTok{    \{}\OtherTok{ someDoorState    ::} \DataTypeTok{DoorState}
 \NormalTok{    ,}\OtherTok{ someDoorMaterial ::} \DataTypeTok{String}
 \NormalTok{    \}}
 
 \CommentTok{-- or, in GADT syntax}
 \KeywordTok{data} \DataTypeTok{SomeDoor}\OtherTok{ ::} \DataTypeTok{Type} \KeywordTok{where}
-    \DataTypeTok{UnsafeMkSomeDoor} \OtherTok{::}
+    \DataTypeTok{MkSomeDoor} \OtherTok{::}
 \NormalTok{      \{}\OtherTok{ someDoorState    ::} \DataTypeTok{DoorState}
 \NormalTok{      ,}\OtherTok{ someDoorMaterial ::} \DataTypeTok{String}
 \NormalTok{      \} }\OtherTok{->} \DataTypeTok{SomeDoor}
@@ -855,9 +855,9 @@ the smart constructor/conversion function:
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{fromDoor ::} \DataTypeTok{SingDS}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{SomeDoor}
-\NormalTok{fromDoor }\DataTypeTok{SOpened}\NormalTok{ (}\DataTypeTok{UnsafeMkDoor}\NormalTok{ m) }\FunctionTok{=} \DataTypeTok{UnsafeMkSomeDoor} \DataTypeTok{Opened}\NormalTok{ m}
-\NormalTok{formDoor }\DataTypeTok{SClosed}\NormalTok{ (}\DataTypeTok{UnsafeMkDoor}\NormalTok{ m) }\FunctionTok{=} \DataTypeTok{UnsafeMkSomeDoor} \DataTypeTok{Closed}\NormalTok{ m}
-\NormalTok{formDoor }\DataTypeTok{SLocked}\NormalTok{ (}\DataTypeTok{UnsafeMkDoor}\NormalTok{ m) }\FunctionTok{=} \DataTypeTok{UnsafeMkSomeDoor} \DataTypeTok{Locked}\NormalTok{ m}
+\NormalTok{fromDoor }\DataTypeTok{SOpened}\NormalTok{ (}\DataTypeTok{UnsafeMkDoor}\NormalTok{ m) }\FunctionTok{=} \DataTypeTok{MkSomeDoor} \DataTypeTok{Opened}\NormalTok{ m}
+\NormalTok{formDoor }\DataTypeTok{SClosed}\NormalTok{ (}\DataTypeTok{UnsafeMkDoor}\NormalTok{ m) }\FunctionTok{=} \DataTypeTok{MkSomeDoor} \DataTypeTok{Closed}\NormalTok{ m}
+\NormalTok{formDoor }\DataTypeTok{SLocked}\NormalTok{ (}\DataTypeTok{UnsafeMkDoor}\NormalTok{ m) }\FunctionTok{=} \DataTypeTok{MkSomeDoor} \DataTypeTok{Locked}\NormalTok{ m}
 \end{Highlighting}
 \end{Shaded}
 
@@ -869,10 +869,10 @@ we potentially have to write the same function for both \texttt{Door} and
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{closeSomeDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{SomeDoor}
-\NormalTok{closeSomeDoor (}\DataTypeTok{UnsafeMkSomeDoor} \DataTypeTok{Opened}\NormalTok{ m) }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (}\DataTypeTok{UnsafeMkSomeDoor} \DataTypeTok{Closed}\NormalTok{ m)}
-\NormalTok{closeSomeDoor (}\DataTypeTok{UnsafeMkSomeDoor} \DataTypeTok{Closed}\NormalTok{ m) }\FunctionTok{=} \DataTypeTok{Nothing}
-\NormalTok{closeSomeDoor (}\DataTypeTok{UnsafeMkSomeDoor} \DataTypeTok{Locked}\NormalTok{ m) }\FunctionTok{=} \DataTypeTok{Nothing}
+\OtherTok{closeSomeOpenedDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{SomeDoor}
+\NormalTok{closeSomeOpenedDoor (}\DataTypeTok{MkSomeDoor} \DataTypeTok{Opened}\NormalTok{ m) }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (}\DataTypeTok{MkSomeDoor} \DataTypeTok{Closed}\NormalTok{ m)}
+\NormalTok{closeSomeOpenedDoor (}\DataTypeTok{MkSomeDoor} \DataTypeTok{Closed}\NormalTok{ m) }\FunctionTok{=} \DataTypeTok{Nothing}
+\NormalTok{closeSomeOpenedDoor (}\DataTypeTok{MkSomeDoor} \DataTypeTok{Locked}\NormalTok{ m) }\FunctionTok{=} \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
 
@@ -903,9 +903,9 @@ function:
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{withSomeDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->}\NormalTok{ (forall s}\FunctionTok{.} \DataTypeTok{SingDS}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
-\NormalTok{withSomeDoor (}\DataTypeTok{UnsafeMkSomeDoor} \DataTypeTok{Opened}\NormalTok{ m) f }\FunctionTok{=}\NormalTok{ f }\DataTypeTok{SOpened}\NormalTok{ (}\DataTypeTok{UnsafeMkDoor}\NormalTok{ m)}
-\NormalTok{withSomeDoor (}\DataTypeTok{UnsafeMkSomeDoor} \DataTypeTok{Closed}\NormalTok{ m) f }\FunctionTok{=}\NormalTok{ f }\DataTypeTok{SClosed}\NormalTok{ (}\DataTypeTok{UnsafeMkDoor}\NormalTok{ m)}
-\NormalTok{withSomeDoor (}\DataTypeTok{UnsafeMkSomeDoor} \DataTypeTok{Locked}\NormalTok{ m) f }\FunctionTok{=}\NormalTok{ f }\DataTypeTok{SLocked}\NormalTok{ (}\DataTypeTok{UnsafeMkDoor}\NormalTok{ m)}
+\NormalTok{withSomeDoor (}\DataTypeTok{MkSomeDoor} \DataTypeTok{Opened}\NormalTok{ m) f }\FunctionTok{=}\NormalTok{ f }\DataTypeTok{SOpened}\NormalTok{ (}\DataTypeTok{UnsafeMkDoor}\NormalTok{ m)}
+\NormalTok{withSomeDoor (}\DataTypeTok{MkSomeDoor} \DataTypeTok{Closed}\NormalTok{ m) f }\FunctionTok{=}\NormalTok{ f }\DataTypeTok{SClosed}\NormalTok{ (}\DataTypeTok{UnsafeMkDoor}\NormalTok{ m)}
+\NormalTok{withSomeDoor (}\DataTypeTok{MkSomeDoor} \DataTypeTok{Locked}\NormalTok{ m) f }\FunctionTok{=}\NormalTok{ f }\DataTypeTok{SLocked}\NormalTok{ (}\DataTypeTok{UnsafeMkDoor}\NormalTok{ m)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -920,13 +920,13 @@ Here, we call \texttt{s} \emph{existentially quantified}. The
 So, the \texttt{s} type variable is directly chosen by the \emph{function}, and
 not by the caller.
 
-So we can implement \texttt{closeSomeDoor} (and even a \texttt{lockAnySomeDoor})
-using this conversion function:
+So we can implement \texttt{closeSomeOpenedDoor} (and even a
+\texttt{lockAnySomeDoor}) using this conversion function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{closeSomeDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Door} \CharTok{'Closed)}
-\NormalTok{closeSomeDoor sd }\FunctionTok{=}\NormalTok{ withSomeDoor sd }\FunctionTok{$}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+\OtherTok{closeSomeOpenedDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Door} \CharTok{'Closed)}
+\NormalTok{closeSomeOpenedDoor sd }\FunctionTok{=}\NormalTok{ withSomeDoor sd }\FunctionTok{$}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{SOpened} \OtherTok{->}\NormalTok{ \textbackslash{}d }\OtherTok{->} \DataTypeTok{Just}\NormalTok{ (closeDoor d)}
     \DataTypeTok{SClosed} \OtherTok{->}\NormalTok{ \textbackslash{}_ }\OtherTok{->} \DataTypeTok{Nothing}
     \DataTypeTok{SLocked} \OtherTok{->}\NormalTok{ \textbackslash{}_ }\OtherTok{->} \DataTypeTok{Nothing}
@@ -984,10 +984,10 @@ type:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L84-91}
-\OtherTok{closeSomeDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Door} \CharTok{'Closed)}
-\NormalTok{closeSomeDoor }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+\OtherTok{closeSomeOpenedDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Door} \CharTok{'Closed)}
+\NormalTok{closeSomeOpenedDoor }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{MkSomeDoor} \DataTypeTok{SOpened}\NormalTok{ d }\OtherTok{->} \DataTypeTok{Just}\NormalTok{ (closeDoor d)}
-    \DataTypeTok{MkSomeDoor} \DataTypeTok{SClosed}\NormalTok{ _ }\OtherTok{->} \DataTypeTok{Nothing}
+    \DataTypeTok{MkSomeDoor} \DataTypeTok{SClosed}\NormalTok{ d }\OtherTok{->} \DataTypeTok{Nothing}
     \DataTypeTok{MkSomeDoor} \DataTypeTok{SLocked}\NormalTok{ _ }\OtherTok{->} \DataTypeTok{Nothing}
 
 \OtherTok{lockAnySomeDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{Door} \CharTok{'Locked}
