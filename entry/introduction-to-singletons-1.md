@@ -19,21 +19,20 @@ been asking me for an actual non-joke singletons post.)
 
 These posts will assume no knowledge of dependent types, and, for now, only
 basic to intermediate Haskell knowledge. (Types, kinds, typeclasses, data types,
-functions) The material in this post greatly *overlaps* with my [dependently
-typed neural
+functions) The material in this post *overlaps* with my [dependently typed
+neural
 networks](https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html)
-series, but some of the concepts are introduced in different contexts.
+series, but the concepts are introduced in different contexts.
 
-All code is built on *GHC 8.2.1* and with the
-*[nightly-2017-11-27](https://www.stackage.org/nightly-2017-11-27)* snapshot
-(so, singletons-2.3.1). However, there are negligible changes in the GHC type
-system between GHC 8.0 and 8.2 (the only difference is in the libraries, more or
-less), so everything should work on GHC 8.0 as well!
+All code is built on *GHC 8.2.2* and with the
+*[lts-10.0](https://www.stackage.org/lts-10.0)* snapshot (so, singletons-2.3.1).
+However, there are negligible changes in the GHC type system between GHC 8.0 and
+8.2 (the only difference is in the libraries, more or less), so everything
+should work on GHC 8.0 as well!
 
 The content in the first section of this post, describing the singleton design
 pattern, uses the following extensions:
 
--   ConstraintKinds
 -   DataKinds
 -   GADTs
 -   KindSignatures
@@ -43,13 +42,13 @@ pattern, uses the following extensions:
 With some optional “convenience extensions”
 
 -   LambdaCase
--   PolyKinds
 -   TypeApplications
 
-And the second section, introducing the library itself, uses, on top of these:
+And the second section, introducing the *singletons* library itself, uses,
+additionally:
 
--   TypeFamilies
 -   TemplateHaskell
+-   TypeFamilies
 
 These extension will be explained when they are used or become relevant.
 
@@ -59,9 +58,9 @@ The Phantom of the Types
 Let’s start with a very common Haskell trick that most learn early in their
 Haskelling journey: the [phantom type](https://wiki.haskell.org/Phantom_type).
 
-Phantom types in Haskell are a very easy way to add a layer of “type safety” for
-your types and DSL’s. It helps you restrict what values functions can take and
-encode pre- and post-conditions directly into your types.
+Phantom types in Haskell are a very simple way to add a layer of “type safety”
+for your types and DSL’s. It helps you restrict what values functions can take
+and encode pre- and post-conditions directly into your types.
 
 For example, in
 
@@ -69,7 +68,7 @@ For example, in
 data Foo a = MkFoo
 ```
 
-The `a` parameter is phantom, because nothing of type `a` in the data type…it
+The `a` parameter is *phantom*, because nothing of type `a` in the data type…it
 just exists as a dummy parameter for the `Foo` type. We can use `MkFoo` without
 ever requiring something of type `a`:
 
@@ -84,10 +83,14 @@ ghci> :t MkFoo :: Foo Monad         -- requires -XConstraintKinds
 Foo Monad
 ```
 
-A common use case of phantom type parameters is to tag data as “sanitized” or
-“unsanitized” (`UserString 'Santitized` type vs. `UserString 'Unsanitized`) or
-paths as absolute or relative (`Path 'Absolute` vs. `Path 'Relative`). For a
-simple example, let’s check out a simple DSL for a type-safe door:
+One use case of phantom type parameters is to prohibit certain functions on
+different types of values and let you be more descriptive with how your
+functions work together (like in
+[safe-money](https://ren.zone/articles/safe-money)). A particularly common use
+case of phantom type parameters is to tag data as “sanitized” or “unsanitized”
+(`UserString 'Santitized` type vs. `UserString 'Unsanitized`) or paths as
+absolute or relative (`Path 'Absolute` vs. `Path 'Relative`). For a simple
+example, let’s check out a simple DSL for a type-safe door:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L13-16
@@ -375,34 +378,37 @@ sure that the `s` in `SingDS s` is the same `s` in the `Door s`), we can
 *pattern match* on the `SingDS s` to *reveal* what `s` is, to the type checker.
 This is known as a **dependent pattern match**.
 
-If `SingDS s`’s pattern match goes down the `SOpened ->` case, then we *know*
-that `s ~ 'Opened`[^4]. We know that `s` must be `'Opened`, because
-`SOpened :: SingDS 'Opened`, so there really isn’t anything else the `s` in
-`SingDS s` could be!
+-   If `SingDS s`’s pattern match goes down the `SOpened ->` case, then we
+    *know* that `s ~ 'Opened`[^4]. We know that `s` must be `'Opened`, because
+    `SOpened :: SingDS 'Opened`, so there really isn’t anything else the `s` in
+    `SingDS s` could be!
 
-So, if we know that `s ~ 'Opened`, that means that the `Door s` is
-`Door 'Opened`. We have an open door, so we can close-it-then-lock-it, using
-`lockDoor . closeDoor :: Door 'Opened -> Door 'Locked`.
+    So, if we know that `s ~ 'Opened`, that means that the `Door s` is
+    `Door 'Opened`. We have an open door, so we can close-it-then-lock-it, using
+    `lockDoor . closeDoor :: Door 'Opened -> Door 'Locked`.
 
-We say that `SOpened` is a *runtime witness* to `s` being `'Opened`.
+    We say that `SOpened` is a *runtime witness* to `s` being `'Opened`.
 
-Note that `lockDoor . closeDoor` will *only* compile if given a `Door 'Opened`,
-but because of our dependent pattern match, we *know* we have a `Door 'Opened`.
+    Note that `lockDoor . closeDoor` will *only* compile if given a
+    `Door 'Opened`, but because of our dependent pattern match, we *know* we
+    have a `Door 'Opened`.
 
-Same for the `SClosed ->` branch – since `SClosed :: SingDS 'Closed`, then
-`s ~ 'Closed`, so our `Door s` must be a `Door 'Closed`. This allows us to just
-write `SClosed -> lockDoor`. `lockDoor :: Door 'Closed -> Door 'Locked`, so it
-would only work if given a `Door 'Closed` – which we know we have, because of
-the dependent pattern match.
+-   Same for the `SClosed ->` branch – since `SClosed :: SingDS 'Closed`, then
+    `s ~ 'Closed`, so our `Door s` must be a `Door 'Closed`. This allows us to
+    just write `SClosed -> lockDoor`.
 
-For the `SLocked ->` branch, `SLocked :: SingDS 'Locked`, so `s ~ 'Locked`, so
-our `Door s` is a `Door 'Locked`. Our door is “already” locked, so we can just
-use `id :: Door 'Locked -> Door 'Locked`.
+    Again, `lockDoor :: Door 'Closed -> Door 'Locked`, so it would only work if
+    given a `Door 'Closed` – which we know we have, because of the dependent
+    pattern match.
 
-Note that `id :: Door 'Locked -> Door 'Locked` would not work for any other
-branch, and would be a compile-time error. `id` only works if you know your
-input is already `Door 'Locked`…which we know because of the dependent pattern
-match.
+-   For the `SLocked ->` branch, `SLocked :: SingDS 'Locked`, so `s ~ 'Locked`,
+    so our `Door s` is a `Door 'Locked`. Our door is “already” locked, so we can
+    just use `id :: Door 'Locked -> Door 'Locked`.
+
+    Note that `id :: Door 'Locked -> Door 'Locked` would not work for any other
+    branch, and would be a compile-time error. `id` only works if you know your
+    input is already `Door 'Locked`…which we know because of the dependent
+    pattern match.
 
 Essentially, our singletons give us *runtime values* that can be used as
 *witnesses* for types and type variables. These values exist at runtime, so they
@@ -503,7 +509,7 @@ implicit style.
 
 Going from `SingDSI s =>` to `SingDS s ->` (implicit to explicit) is very easy –
 just use `singDS` to get a `SingDS s` if you have a `SingDSI s` constraint
-available.
+available. This is what we did for `lockAnyDoor_` and `doorStatus_`.
 
 Going from `SingDS s ->` to `SingDSI s =>` (explicit to implicit) in Haskell is
 actually a little trickier. The typical way to do this is with a CPS-like
@@ -523,15 +529,17 @@ withSingDSI s x = case s of
 
 To use `x`, you must have a `SingDSI s` instance available. This all works
 because in each branch, `s` is now a *specific*, monomorphic, “concrete” `s`,
-and GHC knows that such an instance exists for every branch. In the `SOpened`
-branch, `s ~ 'Opened`. We explicitly wrote an instance of `SingDSI` for
-`'Opened`, so GHC *knows* that there is a `SingDSI 'Opened` instance in
-existence, allowing you to use/create `x`. In the `SClosed` branch,
-`s ~ 'Closed`, so GHC knows that there is a `SingDSI 'Closed` instance (because
-we wrote one explicitly!), and gives *that* to you – and so you are allowed to
-use/create `x`. In the `SLocked` branch, `s ~ 'Locked`, and because we wrote a
-`SingDSI 'Locked` explicitly, we *know* that a `SingDSI s` instance is
-available, so we can use/create `x`.
+and GHC knows that such an instance exists for every branch.
+
+-   In the `SOpened` branch, `s ~ 'Opened`. We explicitly wrote an instance of
+    `SingDSI` for `'Opened`, so GHC *knows* that there is a `SingDSI 'Opened`
+    instance in existence, allowing you to use/create `x`.
+-   In the `SClosed` branch, `s ~ 'Closed`, so GHC knows that there is a
+    `SingDSI 'Closed` instance (because we wrote one explicitly!), and gives
+    *that* to you – and so you are allowed to use/create `x`.
+-   In the `SLocked` branch, `s ~ 'Locked`, and because we wrote a
+    `SingDSI 'Locked` explicitly, we *know* that a `SingDSI s` instance is
+    available, so we can use/create `x`.
 
 Now, we can run our implicit functions (like `lockAnyDoor_`) by giving them
 explicit inputs:
@@ -567,10 +575,11 @@ Door 'Locked
 ```
 
 And now we can’t do something silly like pass in `SLocked` to get a
-`Door 'Opened`!
+`Door 'Opened`.
 
-However, this is still a step away from a `Door` whose status can vary at
-runtime, since, as of now, we can’t generate an arbitrary singleton at runtime.
+(Note, however, that this is still a step away from a `Door` whose status can
+vary at runtime, since, as of now, we can’t generate an arbitrary singleton at
+runtime.)
 
 Ditching the Phantom
 --------------------
@@ -756,9 +765,9 @@ In the language of dependently typed programming, we call `SomeDoor` a
 **dependent sum**, because you can imagine it basically as:
 
 ``` {.haskell}
-data SomeDoor = SDOpened (SingDS 'Opened) (Door 'Opened)
-              | SDClosed (SingDS 'Closed) (Door 'Closed)
-              | SDLocked (SingDS 'Locked) (Door 'Locked)
+data SomeDoor = SDOpened (Door 'Opened)
+              | SDClosed (Door 'Closed)
+              | SDLocked (Door 'Locked)
 ```
 
 A three-way sum between a `Door 'Opened`, a `Door 'Closed`, and a
@@ -800,6 +809,29 @@ runtime (from IO, or a user prompt, or a configuration file, maybe), and create
 a `Door` based on it.
 
 Take *that*, type erasure! :D
+
+We could even directly return a `Door` with an existentially quantified door
+status in CPS style:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L99-103
+withDoor :: DoorState -> String -> (forall s. SingDS s -> Door s -> r) -> r
+withDoor s m f = case s of
+    Opened -> f SOpened (UnsafeMkDoor m)
+    Closed -> f SClosed (UnsafeMkDoor m)
+    Locked -> f SLocked (UnsafeMkDoor m)
+```
+
+``` {.haskell}
+ghci> withDoor Opened "Birch" $ \s d -> case s of
+         SOpened -> "Opened door!"
+         SClosed -> "Closed door!"
+         SLocked -> "Locked door!"
+Opened door!
+```
+
+This allows us to *truly* directly generate a `Door s` with an `s` that can vary
+at runtime.
 
 The Singletons Library
 ----------------------
@@ -862,11 +894,6 @@ ghci> sing :: Sing ('Just 'Opened)
 SJust SOpened
 ```
 
-The great thing about the library is that these types and instances are
-generated, that they’re correct (note that I could have implemented `SingDSI`
-incorrectly earlier, bu using the library guarantees that I don’t), and that
-they all work together smoothly.
-
 We also have `withSingI`, which is equivalent to our `withSingDSI` function
 earlier.
 
@@ -875,9 +902,10 @@ withSingI :: Sing s -> (forall r. SingI s => r) -> r
 ```
 
 Note that if you have singletons for a kind `k`, you also have instances for
-kind `Maybe k`, as well. And also for `[k]`, even! This is a major advantage of
-using the *singletons* library to manage your singletons instead of writing them
-yourself.
+kind `Maybe k`, as well. And also for `[k]`, even! The fact that we have a
+unified way of working with and manipulating singletons of so many different
+types is a major advantage of using the *singletons* library to manage your
+singletons instead of writing them yourself.
 
 ``` {.haskell}
 ghci> :t SOpened `SCons` SClosed `SCons` SLocked `SCons` SNil
@@ -1037,7 +1065,7 @@ for a comparison, if you are still unfamiliar.
 
 [^1]: This series will be based on [a
     talk](http://talks.jle.im/lambdaconf-2017/singletons/) I gave over the
-    summer, and will expand on it eventually.
+    summer, and will expand on it.
 
 [^2]: The `'` ticks are technically optional, but I find that it’s good style,
     at this point in Haskell, to use them whenever you can. It’ll prevent a lot
