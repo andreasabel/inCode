@@ -1,7 +1,7 @@
 Introduction to Singletons (Part 1)
 ===================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on December 22, 2017.
 > [Read online!](https://blog.jle.im/entry/introduction-to-singletons-1.html)
 
 Real dependent types are coming to Haskell soon! Until then, we have the great
@@ -50,7 +50,6 @@ pattern, uses the following extensions:
 -   GADTs
 -   KindSignatures
 -   RankNTypes
--   TypeInType
 
 With some optional “convenience extensions”
 
@@ -109,7 +108,7 @@ absolute or relative (`Path 'Absolute` vs. `Path 'Relative`). For a simple
 example, let’s check out a simple DSL for a type-safe door:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L13-16
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L12-15
 data DoorState = Opened | Closed | Locked
   deriving (Show, Eq)
 
@@ -193,7 +192,7 @@ Well, right off the bat, we can write functions that expect only a certain type
 of `Door`, and return a specific type of `Door`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L18-19
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L17-18
 closeDoor :: Door 'Opened -> Door 'Closed
 closeDoor (UnsafeMkDoor m) = UnsafeMkDoor m
 ```
@@ -215,7 +214,7 @@ TYPE ERROR!  TYPE ERROR!
 You can think of this as a nice way of catching *logic errors* at compile-time.
 If your door type did not have its status in the type, the `closeDoor` could
 have been given a closed or locked door, and you’d have to handle and reject it
-at runtime!
+at *runtime*.
 
 By adding the state of the door into its type, we can encode our pre-conditions
 and post-conditions directly into the type. And any opportunity to move runtime
@@ -232,10 +231,10 @@ TYPE ERROR!  TYPE ERROR!  TYPE ERROR!
 Do you see why?
 
 With a couple of state transitions, we can write compositions that are
-typechecked to all be legal:
+type-checked to all be legal:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L21-25
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L20-24
 lockDoor :: Door 'Closed -> Door 'Locked
 lockDoor (UnsafeMkDoor m) = UnsafeMkDoor m
 
@@ -325,8 +324,8 @@ Oops!
 ### The Fundamental Issue in Haskell
 
 We’ve hit upon a fundamental issue in Haskell’s type system: **type erasure**.
-In Haskell, types only exist *at compiletime*, for help with typechecking. They
-are completely erased at runtime.
+In Haskell, types only exist *at compile-time*, for help with type-checking.
+They are completely erased at runtime.
 
 This is usually what we want. It’s great for performance, and you can bypass
 things like the ad-hoc runtime type checking that you have to deal with in
@@ -345,7 +344,7 @@ with exactly one inhabitant. It is written so that pattern matching on the
 *constructor* of that value reveals the unique type parameter.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L27-30
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L26-29
 data SingDS :: DoorState -> Type where
     SOpened :: SingDS 'Opened
     SClosed :: SingDS 'Closed
@@ -370,7 +369,7 @@ The power of singletons is that we can now *pattern match* on types,
 essentially.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L18-36
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L17-35
 closeDoor :: Door 'Opened -> Door 'Closed
 
 lockDoor :: Door 'Closed -> Door 'Locked
@@ -449,7 +448,7 @@ to match the `s` in the `Door s` they give.
 Since we don’t even care about the `door`, we could also just write:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L38-42
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L37-41
 fromSingDS :: SingDS s -> DoorState
 fromSingDS = \case
     SOpened -> Opened
@@ -460,7 +459,7 @@ fromSingDS = \case
 Which we can use to write a nicer `doorStatus`
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L44-45
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L43-44
 doorStatus :: SingDS s -> Door s -> DoorState
 doorStatus s _ = fromSingDS s
 ```
@@ -475,7 +474,7 @@ it be nice if we could have it be passed implicitly? We can actually leverage
 typeclasses to give us this ability:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L47-55
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L46-54
 class SingDSI s where
     singDS :: SingDS s
 
@@ -493,7 +492,7 @@ checks to make sure that this is *correct*)
 And so now we can do:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L57-61
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L56-60
 lockAnyDoor_ :: SingDSI s => Door s -> Door 'Locked
 lockAnyDoor_ = lockAnyDoor singDS
 
@@ -539,7 +538,7 @@ actually a little trickier. The typical way to do this is with a CPS-like
 utility function:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L63-67
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L62-66
 withSingDSI :: SingDS s -> (SingDSI s => r) -> r
 withSingDSI s x = case s of
     SOpened -> x
@@ -568,7 +567,7 @@ Now, we can run our implicit functions (like `lockAnyDoor_`) by giving them
 explicit inputs:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L69-70
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L68-69
 lockAnyDoor__ :: SingDS s -> Door s -> Door 'Locked
 lockAnyDoor__ s d = withSingDSI s (lockAnyDoor_ d)
 ```
@@ -580,7 +579,7 @@ And the cycle begins anew.
 We can write a nice version of `mkDoor` using singletons:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L72-76
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L71-75
 mkDoor :: SingDS s -> String -> Door s
 mkDoor = \case
     SOpened -> UnsafeMkDoor
@@ -588,7 +587,8 @@ mkDoor = \case
     SLocked -> UnsafeMkDoor
 ```
 
-So we can call it values of `SingDS`:
+We take advantage of the fact that `SingDS s` “locks in” the `s` type variable
+for `Door s`. We can call it now with values of `SingDS`:
 
 ``` {.haskell}
 ghci> :t mkDoor SOpened "Oak"
@@ -679,6 +679,8 @@ singletons instead of writing them yourself.
 ``` {.haskell}
 ghci> :t SOpened `SCons` SClosed `SCons` SLocked `SCons` SNil
 Sing '[ 'Opened, 'Closed, 'Locked ]
+-- 'SCons is the singleton for `:` (cons),
+-- and 'SNil is the singleton for `[]` (nil)
 ```
 
 (Remember that, because of `DataKinds`, `Maybe` is a kind constructor, who has
@@ -746,13 +748,21 @@ You can see all of the “manual singletons” code in this post
 and then see the code re-implemented using the *singletons* library
 [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs).
 
-However, full expressively with phantom types is still out of our reach. If we
-want to express more complicated relationships and to be able to treat phantom
-types (and *types*, in general) as first-class values, and delve into the
-frighteningly beautiful world of “type-level programming”, we are going to have
-to dig a bit deeper. Come back for the next post to see how! Singletons will be
-our tool, and we’ll also see how the singletons library is a very clean
-unification of a lot of concepts.
+However, remember the question that I asked earlier, about creating a `Door`
+with a given state that we don’t know until runtime? So far, we are only able to
+create `Door` and `SingDS` from types we *know* at compile-time. There is no way
+we have yet to convert a `DoorState` from the value level to the type level – so
+it seems that there is no way to “load” a `Door s` with an `s` that depends on,
+say, a file’s contents, or user input. The fundamental issue is still *type
+erasure*.
+
+In Part 2, we will delve into how to overcome this and break through from the
+barrier of the dynamic “unsafe” runtime to the world of safe, typed, verified
+code, and see how the *singletons* library gives us great tools for this.
+Afterwards, in Part 3, we will learn to express more complicated relationships
+with types and type-level functions using defunctionalization and the tools from
+the *singletons* library, and finally break into the world of actual “type-level
+programming”.
 
 As always, let me know in the comments if you have any questions! You can also
 usually find me idling on the freenode `#haskell` channel, as well, as *jle\`*.
@@ -768,7 +778,9 @@ written with a different perspective and tone :)
 Exercises
 ---------
 
-Click on the links in the corner of the text boxes for solutions!
+Click on the links in the corner of the text boxes for solutions! (or just check
+out [the source
+file](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs))
 
 These should be written in the singletons library style, with `Sing` instead of
 `SingDS` and `SingI` instead of `SingDSI`. Review the [singletons
@@ -779,7 +791,7 @@ for a comparison, if you are still unfamiliar.
     (as a password).
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L85-85
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L67-67
     unlockDoor :: Int -> Door 'Locked -> Maybe (Door 'Closed)
     ```
 
@@ -790,7 +802,7 @@ for a comparison, if you are still unfamiliar.
     Sing” style:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L90-90
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L72-72
     openAnyDoor :: SingI s => Int -> Door s -> Maybe (Door 'Opened)
     ```
 
