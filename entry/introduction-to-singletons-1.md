@@ -15,6 +15,12 @@ integrate it into your code today![^1] (Also, after [my previous April Fools
 post](https://blog.jle.im/entry/verified-instances-in-haskell.html), people have
 been asking me for an actual non-joke singletons post.)
 
+Also do note that I definitely am writing this post with the hope that it will
+be obsolete in a year or two, and that when dependent types come to Haskell,
+singletons might be nothing more than a painful historical note. But for now,
+singletons might be the best way to get your foot into the door and experience
+the thrill and benefits of dependently typed programming *today*!
+
 ### Prerequisites
 
 These posts will assume no knowledge of dependent types, and, for now, only
@@ -168,6 +174,10 @@ data Door :: DoorState -> Type where
 This is defining the exact same type in the alternate “GADT syntax” style of
 data type declaration – here, we define types by giving the type of its
 constructors, `UnsafeMkDoor :: String -> Door s`.
+
+`Door` here is an **indexed data type**, which is sometimes called a “type
+family” in the dependently typed programming world (not to be confused with the
+`-XTypeFamily` language mechanic in GHC Haskell).
 
 ### Phantoms in Action
 
@@ -1042,6 +1052,11 @@ usually find me idling on the freenode `#haskell` channel, as well, as *jle\`*.
 The *singletons* [issue
 tracker](https://github.com/goldfirere/singletons/issues) is also very active.
 Happy haskelling!
+
+For further reading, check out the [original singletons
+paper](https://cs.brynmawr.edu/~rae/papers/2012/singletons/paper.pdf)! It’s very
+readable and goes over many of the same techniques in this blog post, just
+written with a different perspective and tone :)
 
 Exercises
 ---------
