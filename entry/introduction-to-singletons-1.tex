@@ -202,7 +202,7 @@ type. We can use \texttt{MkFoo} without ever requiring something of type
 One use case of phantom type parameters is to prohibit certain functions on
 different types of values and let you be more descriptive with how your
 functions work together (like in
-\href{https://ren.zone/articles/safe-money}{safe-money}). A particularly common
+\href{https://ren.zone/articles/safe-money}{safe-money}). One ``hello world''
 use case of phantom type parameters is to tag data as ``sanitized'' or
 ``unsanitized'' (\texttt{UserString\ \textquotesingle{}Santitized} type vs.
 \texttt{UserString\ \textquotesingle{}Unsanitized}) or paths as absolute or
@@ -708,10 +708,6 @@ a runtime witness that your function can use. You can think of
 \texttt{SingDSI\ s\ =\textgreater{}} as passing it in \emph{implicitly}, and
 \texttt{SingDS\ s\ -\textgreater{}} as passing it in \emph{explicitly}.
 
-Earlier, I disparaged the ``ad-hoc typeclass'' approach. But, here, the
-typeclass isn't quite ad-hoc; it's basically exactly carrying around an implicit
-witness of \texttt{s} that we can grab at any time.
-
 So, it's important to remember that \texttt{lockAnyDoor} and
 \texttt{lockAnyDoor\_} are the ``same function'', with the same power. They are
 just written in different styles -- \texttt{lockAnyDoor} is written in explicit
@@ -1083,7 +1079,6 @@ door status in CPS style:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L99-103}
 \OtherTok{withDoor ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{String} \OtherTok{->}\NormalTok{ (forall s}\FunctionTok{.} \DataTypeTok{SingDS}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
 \NormalTok{withDoor s m f }\FunctionTok{=} \KeywordTok{case}\NormalTok{ s }\KeywordTok{of}
     \DataTypeTok{Opened} \OtherTok{->}\NormalTok{ f }\DataTypeTok{SOpened}\NormalTok{ (}\DataTypeTok{UnsafeMkDoor}\NormalTok{ m)}
@@ -1104,6 +1099,38 @@ door status in CPS style:
 
 This allows us to \emph{truly} directly generate a \texttt{Door\ s} with an
 \texttt{s} that can vary at runtime.
+
+\subsubsection{Reification}\label{reification}
+
+The general pattern we are exploiting here is called \textbf{reification} --
+we're taking a dynamic run-time value, and lifting it to the type level as a
+type (here, the type variable \texttt{s}). You can think of reification as the
+opposite of reflection, and imagine the two as being the ``gateway'' between the
+type-safe and unsafe world. In the dynamic world of a \texttt{DoorState} value,
+you have no type safety. You live in the world of \texttt{SomeDoor},
+\texttt{closeSomeOpenedDoor}, \texttt{lockAnySomeDoor}, etc. But, you can
+\emph{reify} your \texttt{DoorState} value to a \emph{type}, and enter the
+type-safe world of \texttt{Door\ s}, \texttt{closeDoor}, \texttt{lockDoor}, and
+\texttt{lockAnyDoor}.
+
+It might be more meaningful then to write a direct reification function for our
+\texttt{DoorState}, in CPS style. Then, we can actually write our
+\texttt{withDoor} in terms of it!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L99-107}
+\OtherTok{withDoorState ::} \DataTypeTok{DoorState} \OtherTok{->}\NormalTok{ (forall s}\FunctionTok{.} \DataTypeTok{SingDS}\NormalTok{ s }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
+\NormalTok{withDoorState }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{Opened} \OtherTok{->}\NormalTok{ \textbackslash{}f }\OtherTok{->}\NormalTok{ f }\DataTypeTok{SOpened}
+    \DataTypeTok{Closed} \OtherTok{->}\NormalTok{ \textbackslash{}f }\OtherTok{->}\NormalTok{ f }\DataTypeTok{SClosed}
+    \DataTypeTok{Locked} \OtherTok{->}\NormalTok{ \textbackslash{}f }\OtherTok{->}\NormalTok{ f }\DataTypeTok{SLocked}
+
+\OtherTok{withDoor ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{String} \OtherTok{->}\NormalTok{ (forall s}\FunctionTok{.} \DataTypeTok{SingDS}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
+\NormalTok{withDoor s m f }\FunctionTok{=}\NormalTok{ withDoorState s }\FunctionTok{$}\NormalTok{ \textbackslash{}sds }\OtherTok{->}
+\NormalTok{                    f sds (}\DataTypeTok{UnsafeMkDoor}\NormalTok{ m)}
+\end{Highlighting}
+\end{Shaded}
 
 \section{The Singletons Library}\label{the-singletons-library}
 
@@ -1216,7 +1243,6 @@ Recall that \texttt{DoorState} has four different things associated with it now:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
-\tightlist
 \item
   The \emph{type} \texttt{DoorState}, whose value constructors are
   \texttt{Opened}, \texttt{Closed}, and \texttt{Locked}.
@@ -1226,7 +1252,15 @@ Recall that \texttt{DoorState} has four different things associated with it now:
   \texttt{\textquotesingle{}Locked}
 \item
   The singletons for \texttt{\textquotesingle{}Opened},
-  \texttt{\textquotesingle{}Closed}, and \texttt{\textquotesingle{}Locked}.
+  \texttt{\textquotesingle{}Closed}, and \texttt{\textquotesingle{}Locked}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{SOpened}\OtherTok{ ::} \DataTypeTok{Sing} \CharTok{'Opened}
+\DataTypeTok{SClosed}\OtherTok{ ::} \DataTypeTok{Sing} \CharTok{'Closed}
+\DataTypeTok{SLocked}\OtherTok{ ::} \DataTypeTok{Sing} \CharTok{'Locked}
+\end{Highlighting}
+\end{Shaded}
 \item
   The \texttt{SingI} instances for \texttt{\textquotesingle{}Opened},
   \texttt{\textquotesingle{}Closed}, and
@@ -1234,9 +1268,9 @@ Recall that \texttt{DoorState} has four different things associated with it now:
 \end{enumerate}
 
 Kind of confusing, and in the future, when we have real dependent types, we can
-hopefully combine all of these manifestations into the same thing. But for now,
-we do have to deal with converting between them, and for that, we have,
-generated for us:
+combine all of these manifestations into the \emph{one} thing. But for now, we
+do have to deal with converting between them, and for that, we have, generated
+for us:
 
 \begin{itemize}
 \item
