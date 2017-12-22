@@ -69,7 +69,7 @@
 \hypersetup{breaklinks=true,
             bookmarks=true,
             pdfauthor={Justin Le},
-            pdftitle={Dependent Types in Haskell: Introduction to Singletons (Part 1)},
+            pdftitle={Introduction to Singletons (Part 1)},
             colorlinks=true,
             citecolor=blue,
             urlcolor=blue,
@@ -83,7 +83,7 @@
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
 
-\title{Dependent Types in Haskell: Introduction to Singletons (Part 1)}
+\title{Introduction to Singletons (Part 1)}
 \author{Justin Le}
 
 \begin{document}
@@ -108,17 +108,17 @@ integrate it into your code today!\footnote{This series will be based on
 April Fools post}, people have been asking me for an actual non-joke singletons
 post.)
 
-Also do note that I definitely am writing this post with the hope that it will
-be obsolete in a year or two, and that when dependent types come to Haskell,
-singletons might be nothing more than a painful historical note. But for now,
-singletons might be the best way to get your foot into the door and experience
-the thrill and benefits of dependently typed programming \emph{today}!
+I definitely am writing this post with the hope that it will be obsolete in a
+year or two, and that when dependent types come to Haskell, singletons might be
+nothing more than a painful historical note. But for now, singletons might be
+the best way to get your foot into the door and experience the thrill and
+benefits of dependently typed programming \emph{today}!
 
 \subsection{Prerequisites}\label{prerequisites}
 
 These posts will assume no knowledge of dependent types, and, for now, only
-basic to intermediate Haskell knowledge. (Types, kinds, typeclasses, data types,
-functions) The material in this post \emph{overlaps} with my
+basic to intermediate Haskell knowledge (Types, kinds, typeclasses, data types,
+functions). The material in this post \emph{overlaps} with my
 \href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html}{dependently
 typed neural networks} series, but the concepts are introduced in different
 contexts.
@@ -267,8 +267,10 @@ A couple things going on here:
 \item
   We're defining the \texttt{Door} type with a \emph{phantom parameter}
   \texttt{s}. It's a phantom type because we don't actually have any
-  \emph{values} of type \texttt{s} in our data type\ldots{}the \texttt{s} is
-  only just there as a dummy parameter for the type.
+  \emph{values} of type \texttt{s} in our data type\footnote{Indeed, this is not
+    even possible. There are no values of type
+    \texttt{\textquotesingle{}SClosed}, \texttt{\textquotesingle{}SOpened}, etc.}
+  \ldots{}the \texttt{s} is only just there as a dummy parameter for the type.
 
   We can use \texttt{UnsafeMkDoor} without ever using anything of type
   \texttt{s}. In reality, a real \texttt{Door} type would be a bit more
@@ -296,12 +298,6 @@ A couple things going on here:
 \end{Highlighting}
 \end{Shaded}
 \end{enumerate}
-
-We'll take a \texttt{Door\ s} to mean the type of a door with that current
-status. So a \texttt{Door\ \textquotesingle{}Opened} is the type of an opened
-door, a \texttt{Door\ \textquotesingle{}Closed} is the type of a closed (and
-unlocked) door, etc. The \texttt{String} that the \texttt{Door} contains
-represents its material (oak, birch, spruce, etc.).
 
 Alternatively, we can define \texttt{Door} using
 \href{https://en.wikibooks.org/wiki/Haskell/GADT\#Syntax}{\emph{GADT} syntax}
@@ -673,8 +669,8 @@ runtime value is known as \textbf{reflection}.
 \subsection{Recovering Implicit Passing}\label{recovering-implicit-passing}
 
 One downside is that we are required to manually pass in our witness. Wouldn't
-it be nice if we could have it be passed implicitly? We can do something with
-typeclasses:
+it be nice if we could have it be passed implicitly? We can actually leverage
+typeclasses to give us this ability:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -690,6 +686,9 @@ typeclasses:
 \NormalTok{    singDS }\FunctionTok{=} \DataTypeTok{SLocked}
 \end{Highlighting}
 \end{Shaded}
+
+(Note that \emph{it's impossible} to write our \texttt{SingDSI} instances
+improperly! GHC checks to make sure that this is \emph{correct})
 
 And so now we can do:
 
@@ -707,8 +706,20 @@ And so now we can do:
 Here, type inference will tell GHC that you want \texttt{singDS\ ::\ SingDS\ s},
 and it will pull out the proper singleton for the door you want to check!
 
-Note that \emph{it's impossible} to write our \texttt{SingDSI} instances
-improperly! GHC checks to make sure that this is \emph{correct}.
+Now, we can call \texttt{lockAnyDoor\_} \emph{without passing in} a singleton,
+explicitly!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ myDoor }\FunctionTok{=} \DataTypeTok{UnsafeMkDoor} \FunctionTok{@}\CharTok{'Opened "Birch"}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t lockAnyDoor }\DataTypeTok{SOpened}\NormalTok{ myDoor }\CommentTok{-- our original method!}
+\DataTypeTok{Door} \CharTok{'Locked}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t lockAnyDoor singDS myDoor  }\CommentTok{-- the power of type inference!}
+\DataTypeTok{Door} \CharTok{'Locked}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t lockAnyDoor_ myDoor        }\CommentTok{-- no explicit singleton being passed!}
+\DataTypeTok{Door} \CharTok{'Locked}
+\end{Highlighting}
+\end{Shaded}
 
 \subsubsection{The Same Power}\label{the-same-power}
 
@@ -816,12 +827,8 @@ So we can call it values of \texttt{SingDS}:
 \end{Highlighting}
 \end{Shaded}
 
-And now we can't do something silly like pass in \texttt{SLocked} to get a
+Now we can't do something silly like pass in \texttt{SLocked} to get a
 \texttt{Door\ \textquotesingle{}Opened}.
-
-(Note, however, that this is still a step away from a \texttt{Door} whose status
-can vary at runtime, since, as of now, we can't generate an arbitrary singleton
-at runtime.)
 
 \section{Ditching the Phantom}\label{ditching-the-phantom}
 
@@ -829,9 +836,9 @@ Now, sometimes we don't actually care about the state of the door in our type,
 and we don't \emph{want} the state of the door in its type. Our
 \texttt{lockAnyDoor} function earlier was an example.
 
-We have a couple of options here --- we can create a new type \texttt{SomeDoor},
-that doesn't have the opened/closed status in its type, but rather as a runtime
-value:
+We have a couple of options here --- first, we can create a new type
+\texttt{SomeDoor}, that doesn't have the opened/closed status in its type, but
+rather as a runtime value:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -856,7 +863,7 @@ actually written \texttt{SomeDoor} \emph{before} we ever thought about
 Haskell thing.
 
 It's possible to ``construct'' this from our original typed \texttt{Door}, using
-the smart constructor/conversion function:
+a smart constructor/conversion function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -887,18 +894,18 @@ This is a toy example, and in real life, closing a door might have some
 complicated runtime logic, and it'd be annoying to have to \emph{re-implement}
 it for both \texttt{SomeDoor} and \texttt{Door}.
 
+\subsubsection{Converting into an
+existential}\label{converting-into-an-existential}
+
 One thing we can do is write a function to convert a \texttt{SomeDoor} into a
 \texttt{Door}, so we can re-use our original \texttt{closeDoor}. We'd convert
 our \texttt{SomeDoor} into a \texttt{Door} to re-use our
 \texttt{closeDoor\ ::\ Door\ \textquotesingle{}Opened\ -\textgreater{}\ Door\ \textquotesingle{}Closed}
 on it if possible!
 
-\subsubsection{Converting into an
-existential}\label{converting-into-an-existential}
-
-Going from \texttt{SomeDoor} to \texttt{Door\ s} is slightly trickier in Haskell
-than going the other way around. One trick we often use is a CPS-style
-existential type.
+However, going from \texttt{SomeDoor} to \texttt{Door\ s} is slightly trickier
+in Haskell than going the other way around. One trick we often use is a
+CPS-style existential type.
 
 The essential concept is that normal Haskell type variables are universally
 qualified, meaning that the \emph{caller} can pick how to instantiate
@@ -968,9 +975,7 @@ actually implement \texttt{SomeDoor} \emph{in terms of} \texttt{Door}, using an
 the data type ``hides'' a type variable \texttt{s}.
 
 Hopefully you can see the similarities between our original \texttt{SomeDoor}
-and this one. The key difference is that original \texttt{SomeDoor} contains a
-\texttt{DoorState}, and this new \texttt{SomeDoor} contains a \texttt{SingDS} (a
-\emph{singleton} for the \texttt{DoorState}):
+and this one.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -982,6 +987,20 @@ and this one. The key difference is that original \texttt{SomeDoor} contains a
     \DataTypeTok{MkSomeDoor}\OtherTok{ ::} \DataTypeTok{SingDS}\NormalTok{ s  }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{SomeDoor}
 \end{Highlighting}
 \end{Shaded}
+
+The key differences are:
+
+\begin{itemize}
+\tightlist
+\item
+  Our first \texttt{SomeDoor} contains a \texttt{DoorState}, and this new
+  \texttt{SomeDoor} contains a \texttt{SingDS} (a \emph{singleton} for the
+  \texttt{DoorState}):
+\item
+  Our first \texttt{SomeDoor} contains essentially a re-implementation of the
+  \texttt{Door} type, but the new \texttt{SomeDoor} contains an actual
+  \texttt{Door}, so we can re-use functions on \texttt{Door}s.
+\end{itemize}
 
 In Haskell, existential data types are pretty nice, syntactically, to work with.
 For a comparison, let's re-implement our previous functions with our new data
@@ -1007,7 +1026,7 @@ all of our original code works directly!
 
 It's important to remember that our original separate-implementation
 \texttt{SomeDoor} is, functionally, identical to the new code-reusing
-\texttt{SomeDoor}. The reason why they are the same is that \emph{having an
+\texttt{Door}. The reason why they are the same is that \emph{having an
 existentially quantified singleton is the same as having a value of the
 corresponding type.} Having an existentially quantified \texttt{SingDS\ s} is
 \emph{the same as} having a value of type \texttt{DoorState}.
@@ -1241,8 +1260,8 @@ constructor, who has two type constructors, the type
 \texttt{\textquotesingle{}Nothing} and the type constructor
 \texttt{\textquotesingle{}Just\ ::\ k\ -\textgreater{}\ Maybe\ k})
 
-Singletons for all integrate together seamlessly, and you have mechanisms to
-generate them for your own type and roll it all into the system!
+Singletons for all kinds integrate together seamlessly, and you have mechanisms
+to generate them for your own type and roll it all into the system!
 
 \subsection{Extra Goodies}\label{extra-goodies}
 
@@ -1328,7 +1347,7 @@ for us:
 It does this by defining a type class (actually, a ``kind class''),
 \texttt{SingKind}, associating each type to the corresponding
 datakinds-generated kind. The \texttt{SingKind} instance for \texttt{DoorState}
-links the type \texttt{DoorState} to the kind \texttt{DoorState}.
+links the \emph{type} \texttt{DoorState} to the \emph{kind} \texttt{DoorState}.
 
 The library also defines a neat type synonym,
 \texttt{type\ SDoorState\ =\ Sing}, so you can do
