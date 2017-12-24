@@ -374,14 +374,12 @@ closeDoor :: Door 'Opened -> Door 'Closed
 
 lockDoor :: Door 'Closed -> Door 'Locked
 
-lockAnyDoor :: SingDS s -> (Door s -> Door 'Locked)
-lockAnyDoor = \case
-    SOpened -> lockDoor . closeDoor  -- in this branch, s is 'Opened
-    SClosed -> lockDoor              -- in this branch, s is 'Closed
-    SLocked -> id                    -- in this branch, s is 'Locked
+lockAnyDoor :: SingDS s -> Door s -> Door 'Locked
+lockAnyDoor sng door = case sng of
+    SOpened -> lockDoor (closeDoor door) -- in this branch, s is 'Opened
+    SClosed -> lockDoor door             -- in this branch, s is 'Closed
+    SLocked -> door                      -- in this branch, s is 'Locked
 ```
-
-(the `\case` is *LambdaCase* syntax)
 
 `lockAnyDoor` is a function that can take a door of any state (a `Door s` of any
 `s`) and *lock* it using a composition of `lockDoor` or `closeDoor` as
@@ -398,36 +396,66 @@ This is known as a **dependent pattern match**.
     `SingDS s` could be!
 
     So, if we know that `s ~ 'Opened`, that means that the `Door s` is
-    `Door 'Opened`. We have an open door, so we can close-it-then-lock-it, using
-    `lockDoor . closeDoor :: Door 'Opened -> Door 'Locked`.
+    `Door 'Opened`. So because `door :: Door' Opened`, we have to `closeDoor` it
+    to get a `Door' Closed`, and then `lockDoor` it to get a `Door 'Locked`
 
     We say that `SOpened` is a *runtime witness* to `s` being `'Opened`.
 
-    Note that `lockDoor . closeDoor` will *only* compile if given a
-    `Door 'Opened`, but because of our dependent pattern match, we *know* we
-    have a `Door 'Opened`.
-
+    <!-- Note that `lockDoor . closeDoor` will *only* compile if given a `Door -->
+    <!-- 'Opened`, but because of our dependent pattern match, we *know* we have a -->
+    <!-- `Door 'Opened`. -->
 -   Same for the `SClosed ->` branch – since `SClosed :: SingDS 'Closed`, then
     `s ~ 'Closed`, so our `Door s` must be a `Door 'Closed`. This allows us to
-    just write `SClosed -> lockDoor`.
+    simply take our `door :: Door 'Closed` and use `lockDoor` to get a
+    `Door 'Locked`
 
-    Again, `lockDoor :: Door 'Closed -> Door 'Locked`, so it would only work if
-    given a `Door 'Closed` – which we know we have, because of the dependent
-    pattern match.
-
+    <!-- just write `SClosed -> lockDoor`. -->
+    <!-- Again, `lockDoor :: Door 'Closed -> Door 'Locked`, so it would only work if -->
+    <!-- given a `Door 'Closed` -- which we know we have, because of the dependent -->
+    <!-- pattern match. -->
 -   For the `SLocked ->` branch, `SLocked :: SingDS 'Locked`, so `s ~ 'Locked`,
     so our `Door s` is a `Door 'Locked`. Our door is “already” locked, so we can
-    just use `id :: Door 'Locked -> Door 'Locked`.
+    just use the `door :: Door 'Locked` that we got!
 
-    Note that `id :: Door 'Locked -> Door 'Locked` would not work for any other
-    branch, and would be a compile-time error. `id` only works if you know your
-    input is already `Door 'Locked`…which we know because of the dependent
-    pattern match.
+    <!-- use `id :: Door 'Locked -> Door 'Locked`. -->
+    <!-- Note that `id :: Door 'Locked -> Door 'Locked` would not work for any other -->
+    <!-- branch, and would be a compile-time error.  `id` only works if you know your -->
+    <!-- input is already `Door 'Locked`...which we know because of the dependent -->
+    <!-- pattern match. -->
 
 Essentially, our singletons give us *runtime values* that can be used as
 *witnesses* for types and type variables. These values exist at runtime, so they
 “bypass” type erasure. Types themselves are directly erased, but we can hold on
 to them using these runtime tokens when we need them.
+
+Note that we can also write `lockAnyDoor` using the *LambdaCase* extension
+syntactic sugar, which I think offers a lot of extra insight:
+
+``` {.haskell}
+lockAnyDoor :: SingDS s -> (Door s -> Door 'Locked)
+lockAnyDoor = \case
+    SOpened -> lockDoor . closeDoor  -- in this branch, s is 'Opened
+    SClosed -> lockDoor              -- in this branch, s is 'Closed
+    SLocked -> id                    -- in this branch, s is 'Locked
+```
+
+Here, we can see `lockAnyDoor sng` as a partially applied function that returns
+a `Door s -> Door 'Locked` For any `SingDS s` you give to `lockAnyDoor`,
+`lockAnyDoor` returns a “locker function” (`Door s -> Door 'Locked`) that is
+custom-made for your `SingDS`:
+
+-   `lockAnyDoor SOpened` will return a `Door 'Opened -> Door 'Locked`. Here, it
+    has to give `lockDoor . closeDoor :: Door 'Opened -> Door 'Locked`.
+
+-   `lockAnyDoor SClosed` will return a `Door 'Closed -> Door 'Locked` – namely
+    `lockDoor :: Door 'Closed -> Door 'Locked`.
+
+-   `lockAnyDoor SLocked` will return a `Door 'Locked -> Door 'Locked`, which
+    will just be `id :: Door 'Locked -> Door 'Locked`
+
+Note that all of these functions will *only* typecheck under the branch they fit
+in. If we gave `lockDoor` for the `SOpened` branch, or `id` for the `SClosed`
+branch, that’ll be a compile-time error!
 
 #### Reflection
 
@@ -435,10 +463,9 @@ Writing `doorStatus` is now pretty simple –
 
 ``` {.haskell}
 doorStatus :: SingDS s -> Door s -> DoorState
-doorStatus = \case
-    SOpened -> \_ -> Opened
-    SClosed -> \_ -> Closed
-    SLocked -> \_ -> Locked
+doorStatus SOpened _ = Opened
+doorStatus SClosed _ = Closed
+doorStatus SLocked _ = Locked
 ```
 
 The benefit of the singleton again relies on the fact that the `s` in `SingDS s`
@@ -448,18 +475,17 @@ to match the `s` in the `Door s` they give.
 Since we don’t even care about the `door`, we could also just write:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L37-41
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L37-40
 fromSingDS :: SingDS s -> DoorState
-fromSingDS = \case
-    SOpened -> Opened
-    SClosed -> Closed
-    SLocked -> Locked
+fromSingDS SOpened = Opened
+fromSingDS SClosed = Closed
+fromSingDS SLocked = Locked
 ```
 
 Which we can use to write a nicer `doorStatus`
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L43-44
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L42-43
 doorStatus :: SingDS s -> Door s -> DoorState
 doorStatus s _ = fromSingDS s
 ```
@@ -474,7 +500,7 @@ it be nice if we could have it be passed implicitly? We can actually leverage
 typeclasses to give us this ability:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L46-54
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L45-53
 class SingDSI s where
     singDS :: SingDS s
 
@@ -492,7 +518,7 @@ checks to make sure that this is *correct*)
 And so now we can do:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L56-60
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L55-59
 lockAnyDoor_ :: SingDSI s => Door s -> Door 'Locked
 lockAnyDoor_ = lockAnyDoor singDS
 
@@ -538,9 +564,9 @@ actually a little trickier. The typical way to do this is with a CPS-like
 utility function:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L62-66
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L61-65
 withSingDSI :: SingDS s -> (SingDSI s => r) -> r
-withSingDSI s x = case s of
+withSingDSI sng x = case sng of
     SOpened -> x
     SClosed -> x
     SLocked -> x
@@ -567,7 +593,7 @@ Now, we can run our implicit functions (like `lockAnyDoor_`) by giving them
 explicit inputs:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L68-69
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L67-68
 lockAnyDoor__ :: SingDS s -> Door s -> Door 'Locked
 lockAnyDoor__ s d = withSingDSI s (lockAnyDoor_ d)
 ```
@@ -579,12 +605,9 @@ And the cycle begins anew.
 We can write a nice version of `mkDoor` using singletons:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L71-75
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L70-71
 mkDoor :: SingDS s -> String -> Door s
-mkDoor = \case
-    SOpened -> UnsafeMkDoor
-    SClosed -> UnsafeMkDoor
-    SLocked -> UnsafeMkDoor
+mkDoor _ = UnsafeMkDoor
 ```
 
 We take advantage of the fact that `SingDS s` “locks in” the `s` type variable
@@ -791,7 +814,7 @@ for a comparison, if you are still unfamiliar.
     (as a password).
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L67-67
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L63-63
     unlockDoor :: Int -> Door 'Locked -> Maybe (Door 'Closed)
     ```
 
@@ -802,7 +825,7 @@ for a comparison, if you are still unfamiliar.
     Sing” style:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L72-72
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L68-68
     openAnyDoor :: SingI s => Int -> Door s -> Maybe (Door 'Opened)
     ```
 

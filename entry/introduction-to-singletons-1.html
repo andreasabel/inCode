@@ -179,48 +179,67 @@ mkDoor <span class="dt">Locked</span> <span class="fu">=</span> <span class="dt"
 
 <span class="ot">lockDoor ::</span> <span class="dt">Door</span> <span class="ch">&#39;Closed -&gt; Door &#39;</span><span class="dt">Locked</span>
 
-<span class="ot">lockAnyDoor ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> (<span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked)</span>
-lockAnyDoor <span class="fu">=</span> \<span class="kw">case</span>
-    <span class="dt">SOpened</span> <span class="ot">-&gt;</span> lockDoor <span class="fu">.</span> closeDoor  <span class="co">-- in this branch, s is &#39;Opened</span>
-    <span class="dt">SClosed</span> <span class="ot">-&gt;</span> lockDoor              <span class="co">-- in this branch, s is &#39;Closed</span>
-    <span class="dt">SLocked</span> <span class="ot">-&gt;</span> id                    <span class="co">-- in this branch, s is &#39;Locked</span></code></pre></div>
-<p>(the <code>\case</code> is <em>LambdaCase</em> syntax)</p>
+<span class="ot">lockAnyDoor ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
+lockAnyDoor sng door <span class="fu">=</span> <span class="kw">case</span> sng <span class="kw">of</span>
+    <span class="dt">SOpened</span> <span class="ot">-&gt;</span> lockDoor (closeDoor door) <span class="co">-- in this branch, s is &#39;Opened</span>
+    <span class="dt">SClosed</span> <span class="ot">-&gt;</span> lockDoor door             <span class="co">-- in this branch, s is &#39;Closed</span>
+    <span class="dt">SLocked</span> <span class="ot">-&gt;</span> door                      <span class="co">-- in this branch, s is &#39;Locked</span></code></pre></div>
 <p><code>lockAnyDoor</code> is a function that can take a door of any state (a <code>Door s</code> of any <code>s</code>) and <em>lock</em> it using a composition of <code>lockDoor</code> or <code>closeDoor</code> as necessary.</p>
 <p>If we have <code>lockAnyDoor</code> take a <code>SingDS s</code> as its input (and, importantly, make sure that the <code>s</code> in <code>SingDS s</code> is the same <code>s</code> in the <code>Door s</code>), we can <em>pattern match</em> on the <code>SingDS s</code> to <em>reveal</em> what <code>s</code> is, to the type checker. This is known as a <strong>dependent pattern match</strong>.</p>
 <ul>
 <li><p>If <code>SingDS s</code>’s pattern match goes down the <code>SOpened -&gt;</code> case, then we <em>know</em> that <code>s ~ 'Opened</code><a href="#fn5" class="footnoteRef" id="fnref5"><sup>5</sup></a>. We know that <code>s</code> must be <code>'Opened</code>, because <code>SOpened :: SingDS 'Opened</code>, so there really isn’t anything else the <code>s</code> in <code>SingDS s</code> could be!</p>
-<p>So, if we know that <code>s ~ 'Opened</code>, that means that the <code>Door s</code> is <code>Door 'Opened</code>. We have an open door, so we can close-it-then-lock-it, using <code>lockDoor . closeDoor :: Door 'Opened -&gt; Door 'Locked</code>.</p>
+<p>So, if we know that <code>s ~ 'Opened</code>, that means that the <code>Door s</code> is <code>Door 'Opened</code>. So because <code>door :: Door' Opened</code>, we have to <code>closeDoor</code> it to get a <code>Door' Closed</code>, and then <code>lockDoor</code> it to get a <code>Door 'Locked</code></p>
 <p>We say that <code>SOpened</code> is a <em>runtime witness</em> to <code>s</code> being <code>'Opened</code>.</p>
-<p>Note that <code>lockDoor . closeDoor</code> will <em>only</em> compile if given a <code>Door 'Opened</code>, but because of our dependent pattern match, we <em>know</em> we have a <code>Door 'Opened</code>.</p></li>
-<li><p>Same for the <code>SClosed -&gt;</code> branch – since <code>SClosed :: SingDS 'Closed</code>, then <code>s ~ 'Closed</code>, so our <code>Door s</code> must be a <code>Door 'Closed</code>. This allows us to just write <code>SClosed -&gt; lockDoor</code>.</p>
-<p>Again, <code>lockDoor :: Door 'Closed -&gt; Door 'Locked</code>, so it would only work if given a <code>Door 'Closed</code> – which we know we have, because of the dependent pattern match.</p></li>
-<li><p>For the <code>SLocked -&gt;</code> branch, <code>SLocked :: SingDS 'Locked</code>, so <code>s ~ 'Locked</code>, so our <code>Door s</code> is a <code>Door 'Locked</code>. Our door is “already” locked, so we can just use <code>id :: Door 'Locked -&gt; Door 'Locked</code>.</p>
-<p>Note that <code>id :: Door 'Locked -&gt; Door 'Locked</code> would not work for any other branch, and would be a compile-time error. <code>id</code> only works if you know your input is already <code>Door 'Locked</code>…which we know because of the dependent pattern match.</p></li>
+<!-- Note that `lockDoor . closeDoor` will *only* compile if given a `Door -->
+<!-- 'Opened`, but because of our dependent pattern match, we *know* we have a -->
+<!-- `Door 'Opened`. --></li>
+<li><p>Same for the <code>SClosed -&gt;</code> branch – since <code>SClosed :: SingDS 'Closed</code>, then <code>s ~ 'Closed</code>, so our <code>Door s</code> must be a <code>Door 'Closed</code>. This allows us to simply take our <code>door :: Door 'Closed</code> and use <code>lockDoor</code> to get a <code>Door 'Locked</code></p>
+<!-- just write `SClosed -> lockDoor`. -->
+<!-- Again, `lockDoor :: Door 'Closed -> Door 'Locked`, so it would only work if -->
+<!-- given a `Door 'Closed` -- which we know we have, because of the dependent -->
+<!-- pattern match. --></li>
+<li><p>For the <code>SLocked -&gt;</code> branch, <code>SLocked :: SingDS 'Locked</code>, so <code>s ~ 'Locked</code>, so our <code>Door s</code> is a <code>Door 'Locked</code>. Our door is “already” locked, so we can just use the <code>door :: Door 'Locked</code> that we got!</p>
+<!-- use `id :: Door 'Locked -> Door 'Locked`. -->
+<!-- Note that `id :: Door 'Locked -> Door 'Locked` would not work for any other -->
+<!-- branch, and would be a compile-time error.  `id` only works if you know your -->
+<!-- input is already `Door 'Locked`...which we know because of the dependent -->
+<!-- pattern match. --></li>
 </ul>
 <p>Essentially, our singletons give us <em>runtime values</em> that can be used as <em>witnesses</em> for types and type variables. These values exist at runtime, so they “bypass” type erasure. Types themselves are directly erased, but we can hold on to them using these runtime tokens when we need them.</p>
+<p>Note that we can also write <code>lockAnyDoor</code> using the <em>LambdaCase</em> extension syntactic sugar, which I think offers a lot of extra insight:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">lockAnyDoor ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> (<span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked)</span>
+lockAnyDoor <span class="fu">=</span> \<span class="kw">case</span>
+    <span class="dt">SOpened</span> <span class="ot">-&gt;</span> lockDoor <span class="fu">.</span> closeDoor  <span class="co">-- in this branch, s is &#39;Opened</span>
+    <span class="dt">SClosed</span> <span class="ot">-&gt;</span> lockDoor              <span class="co">-- in this branch, s is &#39;Closed</span>
+    <span class="dt">SLocked</span> <span class="ot">-&gt;</span> id                    <span class="co">-- in this branch, s is &#39;Locked</span></code></pre></div>
+<p>Here, we can see <code>lockAnyDoor sng</code> as a partially applied function that returns a <code>Door s -&gt; Door 'Locked</code> For any <code>SingDS s</code> you give to <code>lockAnyDoor</code>, <code>lockAnyDoor</code> returns a “locker function” (<code>Door s -&gt; Door 'Locked</code>) that is custom-made for your <code>SingDS</code>:</p>
+<ul>
+<li><p><code>lockAnyDoor SOpened</code> will return a <code>Door 'Opened -&gt; Door 'Locked</code>. Here, it has to give <code>lockDoor . closeDoor :: Door 'Opened -&gt; Door 'Locked</code>.</p></li>
+<li><p><code>lockAnyDoor SClosed</code> will return a <code>Door 'Closed -&gt; Door 'Locked</code> – namely <code>lockDoor :: Door 'Closed -&gt; Door 'Locked</code>.</p></li>
+<li><p><code>lockAnyDoor SLocked</code> will return a <code>Door 'Locked -&gt; Door 'Locked</code>, which will just be <code>id :: Door 'Locked -&gt; Door 'Locked</code></p></li>
+</ul>
+<p>Note that all of these functions will <em>only</em> typecheck under the branch they fit in. If we gave <code>lockDoor</code> for the <code>SOpened</code> branch, or <code>id</code> for the <code>SClosed</code> branch, that’ll be a compile-time error!</p>
 <h4 id="reflection">Reflection</h4>
 <p>Writing <code>doorStatus</code> is now pretty simple –</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">doorStatus ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">DoorState</span>
-doorStatus <span class="fu">=</span> \<span class="kw">case</span>
-    <span class="dt">SOpened</span> <span class="ot">-&gt;</span> \_ <span class="ot">-&gt;</span> <span class="dt">Opened</span>
-    <span class="dt">SClosed</span> <span class="ot">-&gt;</span> \_ <span class="ot">-&gt;</span> <span class="dt">Closed</span>
-    <span class="dt">SLocked</span> <span class="ot">-&gt;</span> \_ <span class="ot">-&gt;</span> <span class="dt">Locked</span></code></pre></div>
+doorStatus <span class="dt">SOpened</span> _ <span class="fu">=</span> <span class="dt">Opened</span>
+doorStatus <span class="dt">SClosed</span> _ <span class="fu">=</span> <span class="dt">Closed</span>
+doorStatus <span class="dt">SLocked</span> _ <span class="fu">=</span> <span class="dt">Locked</span></code></pre></div>
 <p>The benefit of the singleton again relies on the fact that the <code>s</code> in <code>SingDS s</code> is the same as the <code>s</code> in <code>Door s</code>, so if the user gives a <code>SingDS s</code>, it <em>has</em> to match the <code>s</code> in the <code>Door s</code> they give.</p>
 <p>Since we don’t even care about the <code>door</code>, we could also just write:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L37-41</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L37-40</span>
 <span class="ot">fromSingDS ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">DoorState</span>
-fromSingDS <span class="fu">=</span> \<span class="kw">case</span>
-    <span class="dt">SOpened</span> <span class="ot">-&gt;</span> <span class="dt">Opened</span>
-    <span class="dt">SClosed</span> <span class="ot">-&gt;</span> <span class="dt">Closed</span>
-    <span class="dt">SLocked</span> <span class="ot">-&gt;</span> <span class="dt">Locked</span></code></pre></div>
+fromSingDS <span class="dt">SOpened</span> <span class="fu">=</span> <span class="dt">Opened</span>
+fromSingDS <span class="dt">SClosed</span> <span class="fu">=</span> <span class="dt">Closed</span>
+fromSingDS <span class="dt">SLocked</span> <span class="fu">=</span> <span class="dt">Locked</span></code></pre></div>
 <p>Which we can use to write a nicer <code>doorStatus</code></p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L43-44</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L42-43</span>
 <span class="ot">doorStatus ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">DoorState</span>
 doorStatus s _ <span class="fu">=</span> fromSingDS s</code></pre></div>
 <p>This process – of turning a type variable (like <code>s</code>) into a dynamic runtime value is known as <strong>reflection</strong>.</p>
 <h3 id="recovering-implicit-passing">Recovering Implicit Passing</h3>
 <p>One downside is that we are required to manually pass in our witness. Wouldn’t it be nice if we could have it be passed implicitly? We can actually leverage typeclasses to give us this ability:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L46-54</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L45-53</span>
 <span class="kw">class</span> <span class="dt">SingDSI</span> s <span class="kw">where</span>
 <span class="ot">    singDS ::</span> <span class="dt">SingDS</span> s
 
@@ -232,7 +251,7 @@ doorStatus s _ <span class="fu">=</span> fromSingDS s</code></pre></div>
     singDS <span class="fu">=</span> <span class="dt">SLocked</span></code></pre></div>
 <p>(Note that <em>it’s impossible</em> to write our <code>SingDSI</code> instances improperly! GHC checks to make sure that this is <em>correct</em>)</p>
 <p>And so now we can do:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L56-60</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L55-59</span>
 <span class="ot">lockAnyDoor_ ::</span> <span class="dt">SingDSI</span> s <span class="ot">=&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
 lockAnyDoor_ <span class="fu">=</span> lockAnyDoor singDS
 
@@ -253,9 +272,9 @@ ghci<span class="fu">&gt;</span> <span class="fu">:</span>t lockAnyDoor_ myDoor 
 <h4 id="going-backwards">Going backwards</h4>
 <p>Going from <code>SingDSI s =&gt;</code> to <code>SingDS s -&gt;</code> (implicit to explicit) is very easy – just use <code>singDS</code> to get a <code>SingDS s</code> if you have a <code>SingDSI s</code> constraint available. This is what we did for <code>lockAnyDoor_</code> and <code>doorStatus_</code>.</p>
 <p>Going from <code>SingDS s -&gt;</code> to <code>SingDSI s =&gt;</code> (explicit to implicit) in Haskell is actually a little trickier. The typical way to do this is with a CPS-like utility function:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L62-66</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L61-65</span>
 <span class="ot">withSingDSI ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> (<span class="dt">SingDSI</span> s <span class="ot">=&gt;</span> r) <span class="ot">-&gt;</span> r
-withSingDSI s x <span class="fu">=</span> <span class="kw">case</span> s <span class="kw">of</span>
+withSingDSI sng x <span class="fu">=</span> <span class="kw">case</span> sng <span class="kw">of</span>
     <span class="dt">SOpened</span> <span class="ot">-&gt;</span> x
     <span class="dt">SClosed</span> <span class="ot">-&gt;</span> x
     <span class="dt">SLocked</span> <span class="ot">-&gt;</span> x</code></pre></div>
@@ -267,18 +286,15 @@ withSingDSI s x <span class="fu">=</span> <span class="kw">case</span> s <span c
 <li>In the <code>SLocked</code> branch, <code>s ~ 'Locked</code>, and because we wrote a <code>SingDSI 'Locked</code> explicitly, we <em>know</em> that a <code>SingDSI s</code> instance is available, so we can use/create <code>x</code>.</li>
 </ul>
 <p>Now, we can run our implicit functions (like <code>lockAnyDoor_</code>) by giving them explicit inputs:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L68-69</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L67-68</span>
 <span class="ot">lockAnyDoor__ ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
 lockAnyDoor__ s d <span class="fu">=</span> withSingDSI s (lockAnyDoor_ d)</code></pre></div>
 <p>And the cycle begins anew.</p>
 <h3 id="fun-with-witnesses">Fun with Witnesses</h3>
 <p>We can write a nice version of <code>mkDoor</code> using singletons:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L71-75</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L70-71</span>
 <span class="ot">mkDoor ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s
-mkDoor <span class="fu">=</span> \<span class="kw">case</span>
-    <span class="dt">SOpened</span> <span class="ot">-&gt;</span> <span class="dt">UnsafeMkDoor</span>
-    <span class="dt">SClosed</span> <span class="ot">-&gt;</span> <span class="dt">UnsafeMkDoor</span>
-    <span class="dt">SLocked</span> <span class="ot">-&gt;</span> <span class="dt">UnsafeMkDoor</span></code></pre></div>
+mkDoor _ <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span></code></pre></div>
 <p>We take advantage of the fact that <code>SingDS s</code> “locks in” the <code>s</code> type variable for <code>Door s</code>. We can call it now with values of <code>SingDS</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t mkDoor <span class="dt">SOpened</span> <span class="st">&quot;Oak&quot;</span>
 <span class="dt">Door</span> <span class="ch">&#39;Opened</span>
@@ -358,11 +374,11 @@ ghci<span class="fu">&gt;</span><span class="ot"> sing ::</span> <span class="dt
 <p>These should be written in the singletons library style, with <code>Sing</code> instead of <code>SingDS</code> and <code>SingI</code> instead of <code>SingDSI</code>. Review the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs">singletons file</a> for a comparison, if you are still unfamiliar.</p>
 <ol type="1">
 <li><p>Write a function to unlock a door, but only if the user enters an odd number (as a password).</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L67-67</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L63-63</span>
 <span class="ot">unlockDoor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked -&gt; Maybe (Door &#39;</span><span class="dt">Closed</span>)</code></pre></div>
 <p>It should return a closed door in <code>Just</code> if the caller gives an odd number, or <code>Nothing</code> otherwise.</p></li>
 <li><p>Write a function that can open any door, taking a password, in “implicit Sing” style:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L72-72</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L68-68</span>
 <span class="ot">openAnyDoor ::</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> <span class="ch">&#39;Opened)</span></code></pre></div>
 <p>This should be written in terms of <code>unlockDoor</code> and <code>openDoor</code> (see above) – that is, you <strong>should not</strong> use <code>UnsafeMkDoor</code> directly for <code>openAnyDoor</code>.</p>
 <p>If the door is already unlocked or opened, it should ignore the <code>Int</code> input.</p></li>
