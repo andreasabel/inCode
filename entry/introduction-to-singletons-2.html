@@ -188,7 +188,7 @@ withDoor s m f <span class="fu">=</span> <span class="kw">case</span> s <span cl
 <span class="dt">Opened</span> door<span class="fu">!</span></code></pre></div>
 <p>This allows us to <em>directly</em> generate a <code>Door s</code> with an <code>s</code> that can vary at runtime.</p>
 <h3 id="reification">Reification</h3>
-<p>The general pattern we are exploiting here is called <strong>reification</strong> – we’re taking a dynamic run-time value, and lifting it to the type level as a type (here, the type variable <code>s</code>). You can think of reification as the opposite of <em>reflection</em>, and imagine the two as being the “gateway” between the type-safe and unsafe world. In the dynamic world of a <code>DoorState</code> value, you have no type safety. You live in the world of <code>SomeDoor</code>, <code>closeSomeOpenedDoor</code>, <code>lockAnySomeDoor</code>, etc. But, you can <em>reify</em> your <code>DoorState</code> value to a <em>type</em>, and enter the type-safe world of <code>Door s</code>, <code>closeDoor</code>, <code>lockDoor</code>, and <code>lockAnyDoor</code>.</p>
+<p>The general pattern we are exploiting here is called <strong>reification</strong> – we’re taking a dynamic run-time value, and lifting it to the type level as a type (here, the type variable <code>s</code>). You can think of reification as the opposite of <em>reflection</em>, and imagine the two as being the “gateway” between the type-safe and unsafe world. In the dynamic world of a <code>DoorState</code> term-level value, you have no type safety. You live in the world of <code>SomeDoor</code>, <code>closeSomeOpenedDoor</code>, <code>lockAnySomeDoor</code>, etc. But, you can <em>reify</em> your <code>DoorState</code> value to a <em>type</em>, and enter the type-safe world of <code>Door s</code>, <code>closeDoor</code>, <code>lockDoor</code>, and <code>lockAnyDoor</code>.</p>
 <p>The <em>singletons</em> library automatically generates functions to directly reify <code>DoorState</code> values:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">toSing       ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">DoorState</span>
 <span class="ot">withSomeSing ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> (forall s<span class="fu">.</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r</code></pre></div>
@@ -201,7 +201,83 @@ mkSomeDoor ds <span class="fu">=</span> <span class="kw">case</span> toSing ds <
 
 <span class="ot">withDoor ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> (forall s<span class="fu">.</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r
 withDoor ds m f <span class="fu">=</span> withSomeSing ds <span class="fu">$</span> \s <span class="ot">-&gt;</span> f s (<span class="dt">UnsafeMkDoor</span> m)</code></pre></div>
-<!-- ## Sing -->
+<!-- ## A Reflection on Subtyping -->
+<!-- Let's take a step back to look at the concept of "subtyping" in Haskell, and -->
+<!-- how it relates to what we've done here.  Without phantom types you might have -->
+<!-- imagined being able to do something like this: -->
+<!-- ```hskell -->
+<!-- data DoorOpened = MkDoorOpened String -->
+<!-- data DoorClosed = MkDoorClosed String -->
+<!-- data DoorLocked = MkDoorLocked String -->
+<!-- ``` -->
+<!-- And, for the most part, you get a similar API: -->
+<!-- ```haskell -->
+<!-- closeDoor :: DoorOpened -> DoorClosed -->
+<!-- lockDoor  :: DoorClosed -> DoorLocked -->
+<!-- ``` -->
+<!-- This is all stuff we can do in "normal Haskell", and get the same type-safety. -->
+<!-- The advantage of the *indexed type* ("type family", in dependent types -->
+<!-- lingo[^fam]) is that we can write functions that work on *any* door state: -->
+<!-- [^fam]: Again, not to be confused with GHC's Type Families language feature -->
+<!-- ```haskell -->
+<!-- doorMaterial :: Door s -> String -->
+<!-- lockAnyDoor  :: Door s -> Door 'Locked -->
+<!-- ``` -->
+<!-- Remember how I said earlier that our declaration of `Door` created three types? -->
+<!-- `Door 'Opened`, `Door 'Closed`, and `Door 'Locked`?  I lied -- it actually -->
+<!-- gives us a *fourth* type, `forall s. Door s` -- a type that can be instantiated -->
+<!-- as *any* status door.  This is the return type of `UnsafeMkDoor :: String -> -->
+<!-- (forall s. Door s)`. -->
+<!-- As a return type, `forall s. Door s` is what we call a **subtype** of `Door -->
+<!-- 'Opened`, `Door 'Closed`, and `Door 'Locked`.  In type theory, a subtype is -->
+<!-- something that can be used whenever something expects a value of its supertype, -->
+<!-- but not necessarily the other way around. -->
+<h2 id="zooming-out">Zooming Out</h2>
+<p>Alright! We’ve spent two blog posts going over a lot of different things in the context of our humble <code>Door s</code> type. Let’s zoom out and take a large-scale look at how <em>singletons</em> (the design pattern, and the library) helps us in general.</p>
+<h3 id="sing">Sing</h3>
+<p>The crux of everything is the <code>Sing :: Type -&gt; Type</code> indexed type. If you see a value of type <code>Sing s</code>, you should really just think “a runtime witness for <code>s</code>”. If you see:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">lockAnyDoor ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
+<span class="dt">MkSomeDoor</span><span class="ot">  ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></code></pre></div>
+<p>You should read it as (in pseudo-Haskell)</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">lockAnyDoor ::</span> { s } <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
+<span class="dt">MkSomeDoor</span><span class="ot">  ::</span> { s } <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></code></pre></div>
+<p>This is seen clearly if we look at the partially applied type signatures:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">lockAnyDoor <span class="dt">SOpened</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Opened -&gt; Door &#39;</span><span class="dt">Locked</span>
+<span class="dt">MkSomeDoor</span>  <span class="dt">SLocked</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Locked -&gt; SomeDoor</span></code></pre></div>
+<p>If you squint, this kinda looks like:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">lockAnyDoor <span class="ch">&#39;Opened :: Door &#39;</span><span class="dt">Opened</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
+<span class="dt">MkSomeDoor</span>  <span class="ch">&#39;Locked :: Door &#39;</span><span class="dt">Locked</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></code></pre></div>
+<p>And indeed, when we get real dependent types in Haskell, we will really be directly passing types (that act as their own runtime values) instead of singletons.</p>
+<p>It is important to remember that <code>Sing</code> is poly-kinded, so we can have <code>Sing 'Opened</code>, but also <code>Sing 'True</code>, <code>Sing 5</code>, and <code>Sing '['Just 3, 'Nothing, 'Just 0]</code> as well. This is the real benefit of using the <em>singletons</em> library instead of writing our own singletons – we get to work uniformly with singletons of all kinds.</p>
+<h4 id="singi">SingI</h4>
+<p><code>SingI</code> is a bit of typeclass trickery that lets us implicitly pass <code>Sing</code>s to functions:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">SingI</span> s <span class="kw">where</span>
+<span class="ot">    sing ::</span> <span class="dt">Sing</span> s</code></pre></div>
+<p>If you see:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">lockAnyDoor ::</span> <span class="dt">Sing</span>  s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
+<span class="dt">MkSomeDoor</span><span class="ot">  ::</span> <span class="dt">Sing</span>  s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></code></pre></div>
+<p>These are <em>identical</em> to</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">lockAnyDoor ::</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
+<span class="dt">MkSomeDoor</span><span class="ot">  ::</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></code></pre></div>
+<p>Either way, you’re passing in the ability to get a runtime witness on <code>s</code> – just in one way, it is asked for as an explicit argument, and the second way, it is passed in using a typeclass.</p>
+<p>We can <em>convert</em> from <code>SingI s -&gt;</code> style to <code>SingI s =&gt;</code> style using <code>sing</code>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L48-64</span>
+<span class="ot">lockAnyDoor_ ::</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
+lockAnyDoor_ <span class="fu">=</span> lockAnyDoor sing
+
+<span class="ot">fromDoor_ ::</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span>
+fromDoor_ <span class="fu">=</span> <span class="dt">MkSomeDoor</span> sing</code></pre></div>
+<p>And we can convert from <code>SingI s =&gt;</code> style to <code>SingI s -&gt;</code> style using <code>withSingI</code>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">lockAnyDoor ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
+lockAnyDoor s d <span class="fu">=</span> withSingI s (lockAnyDoor_ d)
+
+<span class="ot">fromDoor ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span>
+fromDoor s d <span class="fu">=</span> withSingI s (fromDoor_ d)</code></pre></div>
+<p>Again, the same function – just two different styles of calling them.</p>
+<h3 id="reflection-and-reification">Reflection and Reification</h3>
+<p>Reflection is the process of bringing a type-level thing to a value at the term level (“losing” the type information in the process) and reification is the process of bringing a value-level Reification is the process of going from a value at the <em>term level</em> to the <em>type level</em>.</p>
+<p>One limitation in Haskell is that there is no actual link between the type <code>DoorState</code> and its <em>values</em> with the <em>kind</em> <code>DoorState</code> with its <em>types</em>. Sure, the constructors have the same names, but the language doesn’t actually link them together for us.</p>
+<p>The <em>singletons</em> library handles this by using a typeclass with associated types to implement a generalized reflection and reification process. It gives us the <code>SingKind</code> typeclass:</p>
 <!-- *   `toSing :: DoorState -> SomeSing DoorState` takes us from values to their -->
 <!--     (existentially quantified) singletons -->
 <!--     ```haskell -->
@@ -242,21 +318,34 @@ withDoor ds m f <span class="fu">=</span> withSomeSing ds <span class="fu">$</sp
 <!-- to dig a bit deeper.  Come back for the next post to see how!  Singletons will -->
 <!-- be our tool, and we'll also see how the singletons library is a very clean -->
 <!-- unification of a lot of concepts. -->
-<h3 id="a-reflection-on-subtyping">A Reflection on Subtyping</h3>
-<p>Without phantom types you might have imagined being able to do something like this:</p>
-<pre class="hskell"><code>data DoorOpened = MkDoorOpened { doorMaterial :: String }
-data DoorClosed = MkDoorClosed { doorMaterial :: String }
-data DoorLocked = MkDoorLocked { doorMaterial :: String }</code></pre>
-<p>Which is even possible now with <code>-XDuplicateRecordFields</code>. And, for the most part, you get a similar API:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">closeDoor ::</span> <span class="dt">DoorOpened</span> <span class="ot">-&gt;</span> <span class="dt">DoorClosed</span>
-<span class="ot">lockDoor  ::</span> <span class="dt">DoorClosed</span> <span class="ot">-&gt;</span> <span class="dt">DoorLocked</span></code></pre></div>
-<p>But what about writing things that take on “all” door types?</p>
-<p>The only real way (besides typeclass magic) would be to make some sum type like:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">SomeDoor</span> <span class="fu">=</span> <span class="dt">DO</span> <span class="dt">DoorOpened</span> <span class="fu">|</span> <span class="dt">DC</span> <span class="dt">DoorClosed</span> <span class="fu">|</span> <span class="dt">DL</span> <span class="dt">DoorLocked</span>
-
-<span class="ot">lockAnyDoor ::</span> <span class="dt">SomeDoor</span> <span class="ot">-&gt;</span> <span class="dt">DoorLocked</span></code></pre></div>
-<p>However, we see that if we parameterize a single <code>Door</code> type, we can have it stand in <em>both</em> for a “known status” <code>Door</code> <em>and</em> for a “polymorphic status” <code>Door</code>.</p>
-<p>This actually leverages Haskell’s <em>subtyping</em> system. We say that <code>forall s. Door s</code> (a <code>Door</code> that is polymorphic on all <code>s</code>) is a <em>subtype</em> of <code>Door 'Opened</code>. This means that a <code>forall s. Door s</code> can be used anywhere a function would expect a <code>Door 'Opened</code>…but not the other way around.</p></div><footer><ul class="entry-series"><li><div>This entry is a part of a series called <b>&quot;Practical Dependent Types in Haskell&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html" class="tag-a-series" title="+Practical Dependent Types in Haskell"> series history</a>.</div></li></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/dependent-types.html" class="tag-a-tag">#dependent types</a></li><li><a href="https://blog.jle.im/entries/tagged/functional-programming.html" class="tag-a-tag">#functional programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/singletons.html" class="tag-a-tag">#singletons</a></li><li><a href="https://blog.jle.im/entries/tagged/types.html" class="tag-a-tag">#types</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html" class="tag-a-series">+Practical Dependent Types in Haskell</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing “in Code”!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
+<!-- ### A Reflection on Subtyping -->
+<!-- Without phantom types you might have imagined being able to do something like -->
+<!-- this: -->
+<!-- ```hskell -->
+<!-- data DoorOpened = MkDoorOpened { doorMaterial :: String } -->
+<!-- data DoorClosed = MkDoorClosed { doorMaterial :: String } -->
+<!-- data DoorLocked = MkDoorLocked { doorMaterial :: String } -->
+<!-- ``` -->
+<!-- Which is even possible now with `-XDuplicateRecordFields`.  And, for the most -->
+<!-- part, you get a similar API: -->
+<!-- ```haskell -->
+<!-- closeDoor :: DoorOpened -> DoorClosed -->
+<!-- lockDoor  :: DoorClosed -> DoorLocked -->
+<!-- ``` -->
+<!-- But what about writing things that take on "all" door types? -->
+<!-- The only real way (besides typeclass magic) would be to make some sum type -->
+<!-- like: -->
+<!-- ```haskell -->
+<!-- data SomeDoor = DO DoorOpened | DC DoorClosed | DL DoorLocked -->
+<!-- lockAnyDoor :: SomeDoor -> DoorLocked -->
+<!-- ``` -->
+<!-- However, we see that if we parameterize a single `Door` type, we can have it -->
+<!-- stand in *both* for a "known status" `Door` *and* for a "polymorphic status" -->
+<!-- `Door`. -->
+<!-- This actually leverages Haskell's *subtyping* system.  We say that `forall s. -->
+<!-- Door s` (a `Door` that is polymorphic on all `s`) is a *subtype* of `Door -->
+<!-- 'Opened`.  This means that a `forall s. Door s` can be used anywhere a function -->
+<!-- would expect a `Door 'Opened`...but not the other way around. --></div><footer><ul class="entry-series"><li><div>This entry is a part of a series called <b>&quot;Practical Dependent Types in Haskell&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html" class="tag-a-series" title="+Practical Dependent Types in Haskell"> series history</a>.</div></li></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/dependent-types.html" class="tag-a-tag">#dependent types</a></li><li><a href="https://blog.jle.im/entries/tagged/functional-programming.html" class="tag-a-tag">#functional programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/singletons.html" class="tag-a-tag">#singletons</a></li><li><a href="https://blog.jle.im/entries/tagged/types.html" class="tag-a-tag">#types</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html" class="tag-a-series">+Practical Dependent Types in Haskell</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing “in Code”!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/introduction-to-singletons-2.html';
     this.page.identifier = 'singletons-2';
 };

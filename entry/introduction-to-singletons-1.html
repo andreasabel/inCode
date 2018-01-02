@@ -236,7 +236,7 @@ fromSingDS <span class="dt">SLocked</span> <span class="fu">=</span> <span class
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L42-43</span>
 <span class="ot">doorStatus ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">DoorState</span>
 doorStatus s _ <span class="fu">=</span> fromSingDS s</code></pre></div>
-<p>This process – of turning a type variable (like <code>s</code>) into a dynamic runtime value is known as <strong>reflection</strong>.</p>
+<p>This process – of turning a type variable (like <code>s</code>) into a dynamic runtime value is known as <strong>reflection</strong>. We move a value from the <em>type level</em> to the <em>term level</em>.</p>
 <h3 id="recovering-implicit-passing">Recovering Implicit Passing</h3>
 <p>One downside is that we are required to manually pass in our witness. Wouldn’t it be nice if we could have it be passed implicitly? We can actually leverage typeclasses to give us this ability:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L45-53</span>
@@ -360,7 +360,7 @@ ghci<span class="fu">&gt;</span><span class="ot"> sing ::</span> <span class="dt
 <span class="dt">SLocked</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;Locked</span></code></pre></div></li>
 <li><p>The <code>SingI</code> instances for <code>'Opened</code>, <code>'Closed</code>, and <code>'Locked'</code></p></li>
 </ol>
-<p>Kind of confusing, and in the future, when we have real dependent types, we can combine all of these manifestations into the <em>one</em> thing. But for now, we do have to deal with converting between them, and for that, <em>singletons</em> generates for us <code>fromSing :: Sing (s :: DoorState) -&gt; DoorState</code>. <code>fromSing</code> takes us from singletons to values (<em>reflection</em>):</p>
+<p>Kind of confusing, and in the future, when we have real dependent types, we can combine all of these manifestations into the <em>one</em> thing. But for now, we do have to deal with converting between them, and for that, <em>singletons</em> generates for us <code>fromSing :: Sing (s :: DoorState) -&gt; DoorState</code>. <code>fromSing</code> takes us from singletons to term-level values (<em>reflection</em>):</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> fromSing <span class="dt">SOpened</span>
 <span class="dt">Opened</span></code></pre></div>
 <p>It does this by defining a type class (actually, a “kind class”), <code>SingKind</code>, associating each type to the corresponding datakinds-generated kind. The <code>SingKind</code> instance for <code>DoorState</code> links the <em>type</em> <code>DoorState</code> to the <em>kind</em> <code>DoorState</code>.</p>
