@@ -276,29 +276,94 @@ fromDoor s d <span class="fu">=</span> withSingI s (fromDoor_ d)</code></pre></d
 <p>Again, the same function – just two different styles of calling them.</p>
 <h3 id="reflection-and-reification">Reflection and Reification</h3>
 <p>Reflection is the process of bringing a type-level thing to a value at the term level (“losing” the type information in the process) and reification is the process of bringing a value-level Reification is the process of going from a value at the <em>term level</em> to the <em>type level</em>.</p>
+<p>You can think of reflection and reification as being the “gateways” between the untyped/unsafe world and the typed/safe world. Reflection takes you from the typed world to the untyped world (from <code>Sing s</code> to <code>DoorState</code>) and reification takes you from the untyped world to the typed world (from <code>DoorState</code> to <code>Sing s</code>).</p>
 <p>One limitation in Haskell is that there is no actual link between the type <code>DoorState</code> and its <em>values</em> with the <em>kind</em> <code>DoorState</code> with its <em>types</em>. Sure, the constructors have the same names, but the language doesn’t actually link them together for us.</p>
-<p>The <em>singletons</em> library handles this by using a typeclass with associated types to implement a generalized reflection and reification process. It gives us the <code>SingKind</code> typeclass:</p>
-<!-- *   `toSing :: DoorState -> SomeSing DoorState` takes us from values to their -->
-<!--     (existentially quantified) singletons -->
-<!--     ```haskell -->
-<!--     ghci> let s = toSing Opened -->
-<!--     ghci> :t s -->
-<!--     s :: SomeSing DoorState -->
-<!--     ghci> putStrLn $ case s of -->
-<!--             SomeSing SOpened -> "Opened." -->
-<!--             SomeSing SClosed -> "SClosed." -->
-<!--             SomeSing SLocked -> "SLocked." -->
-<!--     "Opened." -->
-<!--     ``` -->
-<!--     `SomeSing` is like `SomeDoor` in that it is an existentially quantified -->
-<!--     singleton: -->
-<!--     ```haskell -->
-<!--     data SomeSing DoorState :: Type where -->
-<!--         SomeSing :: Sing s -> SomeSing DoorState -->
-<!--     -- or, more accurately, since `SomeSing` is polykinded -->
-<!--     data SomeSing :: k -> Type where -->
-<!--         SomeSing :: Sing (a :: k) -> SomeSing k -->
-<!--     ``` -->
+<h4 id="singkind">SingKind</h4>
+<p>The <em>singletons</em> library handles this by using a typeclass with associated types to implement a generalized reflection and reification process. It gives us the <code>SingKind</code> “kindclass”:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">SingKind</span> k <span class="kw">where</span>
+    <span class="co">-- | Associate a kind k with its reflected type</span>
+    <span class="kw">type</span> <span class="dt">Demote</span> k <span class="fu">=</span> (<span class="ot">r ::</span> <span class="dt">Type</span>)
+
+    <span class="co">-- | Reflect a singleton to its term-level value</span>
+<span class="ot">    fromSing ::</span> <span class="dt">Sing</span> (<span class="ot">a ::</span> k) <span class="ot">-&gt;</span> <span class="dt">Demote</span> k
+
+    <span class="co">-- | Reflect a singleton to its term-level value</span>
+<span class="ot">    toSing ::</span> <span class="dt">Demote</span> k <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> k</code></pre></div>
+<p>Instances of <code>SingKind</code> are promoted kinds like <code>Bool</code>, <code>DoorState</code>, etc., and <code>Demote</code> is an associated type/type family that associates each instance with the <em>type</em> it is promoted from.</p>
+<p>For example, remember how <code>data DoorState = Opened | Closed | Locked</code> created the <em>type</em> <code>DoorState</code> (with value constructors <code>Opened</code>, <code>Closed</code>, and <code>Locked</code>), and also the <em>kind</em> <code>DoorState</code> (with <em>type</em> constructors <code>'Opened</code>, <code>'Closed</code>, and <code>'Locked</code>). Our <em>kind</em> <code>DoorState</code> would be the instance of <code>SingKind</code>, and <code>Demote DoorState</code> would be the <em>type</em> <code>DoorState</code>.</p>
+<p>The reason we need an explicit <code>Demote</code> associated type is, again, that GHC doesn’t actually link the type and its promoted kind. <code>Demote</code> lets us explicitly specify what type a <code>Kind</code> should expect its term-level reflected values to be.</p>
+<h4 id="examples">Examples</h4>
+<p>To illustrate explicitly, here is the automatically generated instance of <code>SingKind</code> for the <code>DoorState</code> <em>kind</em>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">SingKind</span> <span class="dt">DoorState</span> <span class="kw">where</span>       <span class="co">-- the *kind* DoorState</span>
+    <span class="kw">type</span> <span class="dt">Demote</span> <span class="dt">DoorState</span> <span class="fu">=</span> <span class="dt">DoorState</span>   <span class="co">-- the *type* DoorState</span>
+
+    fromSing
+<span class="ot">        ::</span> <span class="dt">Sing</span> (<span class="ot">s ::</span> <span class="dt">DoorState</span>)        <span class="co">-- the *kind* DoorState</span>
+        <span class="ot">-&gt;</span> <span class="dt">DoorState</span>                    <span class="co">-- the *type* DoorState</span>
+    fromSing <span class="fu">=</span> \<span class="kw">case</span>
+        <span class="dt">SOpened</span> <span class="ot">-&gt;</span> <span class="dt">Opened</span>
+        <span class="dt">SClosed</span> <span class="ot">-&gt;</span> <span class="dt">Closed</span>
+        <span class="dt">SLocked</span> <span class="ot">-&gt;</span> <span class="dt">Locked</span>
+
+    toSing
+<span class="ot">        ::</span> <span class="dt">DoorState</span>                    <span class="co">-- the *type* DoorState</span>
+        <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">DoorState</span>           <span class="co">-- the *kind* DoorState</span>
+    toSing <span class="fu">=</span> \<span class="kw">case</span>
+        <span class="dt">Opened</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">SOpened</span>
+        <span class="dt">Closed</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">SClosed</span>
+        <span class="dt">Locked</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">SLocked</span></code></pre></div>
+<p>If you are unfamiliar with how associated types work, <code>type Demote DoorState = DoorState</code> means that wherever we see <code>Demote DoorState</code> (with <code>DoorState</code> the <em>kind</em>), we replace it with <code>DoorState</code> (the <em>type</em>). That’s why the type of our reflection function <code>fromSing :: Sing s -&gt; Demote DoorState</code> can be simplified to <code>fromSing :: Sing s -&gt; DoorState</code>.</p>
+<p>Let’s take a look at the instance for <code>Bool</code>, to compare:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Bool singletons have two constructors:</span>
+<span class="dt">SFalse</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;False</span>
+<span class="dt">STrue</span><span class="ot">  ::</span> <span class="dt">Sing</span> <span class="ch">&#39;True</span>
+
+<span class="kw">instance</span> <span class="dt">SingKind</span> <span class="dt">Bool</span> <span class="kw">where</span>    <span class="co">-- the *kind* Bool</span>
+    <span class="kw">type</span> <span class="dt">Demote</span> <span class="dt">Bool</span> <span class="fu">=</span> <span class="dt">Bool</span>     <span class="co">-- the *type* Bool</span>
+
+    fromSing
+<span class="ot">        ::</span> <span class="dt">Sing</span> (<span class="ot">b ::</span> <span class="dt">Bool</span>)        <span class="co">-- the *kind* Bool</span>
+        <span class="ot">-&gt;</span> <span class="dt">Bool</span>                    <span class="co">-- the *type* Bool</span>
+    fromSing <span class="fu">=</span> \<span class="kw">case</span>
+        <span class="dt">SFalse</span> <span class="ot">-&gt;</span> <span class="dt">False</span>
+        <span class="dt">STrue</span>  <span class="ot">-&gt;</span> <span class="dt">True</span>
+
+    toSing
+<span class="ot">        ::</span> <span class="dt">Bool</span>                    <span class="co">-- the *type* Bool</span>
+        <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">Bool</span>           <span class="co">-- the *kind* Bool</span>
+    toSing <span class="fu">=</span> \<span class="kw">case</span>
+        <span class="dt">False</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">SFalse</span>
+        <span class="dt">True</span>  <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">STrue</span></code></pre></div>
+<p>And a more sophisticated example, let’s look at the instance for <code>Maybe</code>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Maybe singletons have two constructors:</span>
+<span class="dt">SNothing</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;Nothing</span>
+<span class="dt">SJust</span><span class="ot">    ::</span> <span class="dt">Sing</span> x <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ch">&#39;Just x)</span>
+
+<span class="kw">instance</span> <span class="dt">SingKind</span> a <span class="ot">=&gt;</span> <span class="dt">SingKind</span> (<span class="dt">Maybe</span> a) <span class="kw">where</span>     <span class="co">-- the *kind* Maybe</span>
+    <span class="kw">type</span> <span class="dt">Demote</span> (<span class="dt">Maybe</span> a) <span class="fu">=</span> <span class="dt">Maybe</span> (<span class="dt">Demote</span> a)        <span class="co">-- the *type* Maybe</span>
+
+    fromSing
+<span class="ot">        ::</span> <span class="dt">Sing</span> (<span class="ot">m ::</span> <span class="dt">Maybe</span> a)        <span class="co">-- the *kind* Maybe</span>
+        <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a                    <span class="co">-- the *type* Maybe</span>
+    fromSing <span class="fu">=</span> \<span class="kw">case</span>
+        <span class="dt">SNothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+        <span class="dt">SJust</span> sx <span class="ot">-&gt;</span> <span class="dt">Just</span> (fromSing sx)
+
+    toSing
+<span class="ot">        ::</span> <span class="dt">Maybe</span> (<span class="dt">Demote</span> a)             <span class="co">-- the *type* Maybe</span>
+        <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> (<span class="dt">Maybe</span> a)           <span class="co">-- the *kind* Maybe</span>
+    toSing <span class="fu">=</span> \<span class="kw">case</span>
+        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">SNothing</span>
+        <span class="dt">Just</span> x  <span class="ot">-&gt;</span> <span class="kw">case</span> toSing x <span class="kw">of</span>
+          <span class="dt">SomeSing</span> sx <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> (<span class="dt">SJust</span> sx)</code></pre></div>
+<p>This definition, I think, is a real testament to the usefulness of having all of our singletons be unified under the same system. Because of how <code>SingKind</code> works, <code>Demote (Maybe DoorState)</code> is evaluated to <code>Maybe (Demote DoorState)</code>, which is simplified to <code>Maybe DoorState</code>. This means that if we have a way to reify <code>DoorState</code> values, we also have a way to reify <code>Maybe DoorState</code> values! And, if we have a way to reflect <code>DoorState</code> singletons, we also have a way to reflect <code>Maybe DoorState</code> singletons!</p>
+<h4 id="somesing">SomeSing</h4>
+<p>Throughout all of this, we utilize <code>SomeSing</code> as a generic poly-kinded existential wrapper:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span>
+    <span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="dt">Sing</span> (<span class="ot">x ::</span> k) <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> k</code></pre></div>
+<p>Basically, this says that <code>SomeSing k</code> contains a <code>Sing x</code>, where <code>x</code> is of kind <code>k</code>. This is why we had, earlier:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="dt">Sing</span> (<span class="ot">s ::</span> <span class="dt">DoorState</span>) <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">DoorState</span></code></pre></div>
+<p>If we use <code>SomeSing</code> with, say, <code>SClosed</code>, we get <code>SomeSing :: Sing 'Closed -&gt; SomeSing DoorState</code> <code>SomeSing</code> is an indexed type that tells us the <em>kind</em> of the type variable we existentially quantifying over. The value <code>SomeSing STrue</code> would have the type <code>SomeSing Bool</code>. The value <code>SomeSing (SJust SClosed)</code> would have the type <code>SomeSing (Maybe DoorState)</code>.</p>
 <!-- 3.  Implement `withSomeDoor` for the existentially quantified `SomeDoor` type. -->
 <!--     ```haskell -->
 <!--     !!!singletons/DoorSingletons.hs "data SomeDoor" "withSomeDoor ::"1 -->

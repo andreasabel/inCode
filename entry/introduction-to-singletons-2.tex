@@ -702,13 +702,183 @@ level (``losing'' the type information in the process) and reification is the
 process of bringing a value-level Reification is the process of going from a
 value at the \emph{term level} to the \emph{type level}.
 
+You can think of reflection and reification as being the ``gateways'' between
+the untyped/unsafe world and the typed/safe world. Reflection takes you from the
+typed world to the untyped world (from \texttt{Sing\ s} to \texttt{DoorState})
+and reification takes you from the untyped world to the typed world (from
+\texttt{DoorState} to \texttt{Sing\ s}).
+
 One limitation in Haskell is that there is no actual link between the type
 \texttt{DoorState} and its \emph{values} with the \emph{kind} \texttt{DoorState}
 with its \emph{types}. Sure, the constructors have the same names, but the
 language doesn't actually link them together for us.
 
+\subsubsection{SingKind}\label{singkind}
+
 The \emph{singletons} library handles this by using a typeclass with associated
 types to implement a generalized reflection and reification process. It gives us
-the \texttt{SingKind} typeclass:
+the \texttt{SingKind} ``kindclass'':
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{SingKind}\NormalTok{ k }\KeywordTok{where}
+    \CommentTok{-- | Associate a kind k with its reflected type}
+    \KeywordTok{type} \DataTypeTok{Demote}\NormalTok{ k }\FunctionTok{=}\NormalTok{ (}\OtherTok{r ::} \DataTypeTok{Type}\NormalTok{)}
+
+    \CommentTok{-- | Reflect a singleton to its term-level value}
+\OtherTok{    fromSing ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{a ::}\NormalTok{ k) }\OtherTok{->} \DataTypeTok{Demote}\NormalTok{ k}
+
+    \CommentTok{-- | Reflect a singleton to its term-level value}
+\OtherTok{    toSing ::} \DataTypeTok{Demote}\NormalTok{ k }\OtherTok{->} \DataTypeTok{SomeSing}\NormalTok{ k}
+\end{Highlighting}
+\end{Shaded}
+
+Instances of \texttt{SingKind} are promoted kinds like \texttt{Bool},
+\texttt{DoorState}, etc., and \texttt{Demote} is an associated type/type family
+that associates each instance with the \emph{type} it is promoted from.
+
+For example, remember how
+\texttt{data\ DoorState\ =\ Opened\ \textbar{}\ Closed\ \textbar{}\ Locked}
+created the \emph{type} \texttt{DoorState} (with value constructors
+\texttt{Opened}, \texttt{Closed}, and \texttt{Locked}), and also the \emph{kind}
+\texttt{DoorState} (with \emph{type} constructors
+\texttt{\textquotesingle{}Opened}, \texttt{\textquotesingle{}Closed}, and
+\texttt{\textquotesingle{}Locked}). Our \emph{kind} \texttt{DoorState} would be
+the instance of \texttt{SingKind}, and \texttt{Demote\ DoorState} would be the
+\emph{type} \texttt{DoorState}.
+
+The reason we need an explicit \texttt{Demote} associated type is, again, that
+GHC doesn't actually link the type and its promoted kind. \texttt{Demote} lets
+us explicitly specify what type a \texttt{Kind} should expect its term-level
+reflected values to be.
+
+\subsubsection{Examples}\label{examples}
+
+To illustrate explicitly, here is the automatically generated instance of
+\texttt{SingKind} for the \texttt{DoorState} \emph{kind}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{instance} \DataTypeTok{SingKind} \DataTypeTok{DoorState} \KeywordTok{where}       \CommentTok{-- the *kind* DoorState}
+    \KeywordTok{type} \DataTypeTok{Demote} \DataTypeTok{DoorState} \FunctionTok{=} \DataTypeTok{DoorState}   \CommentTok{-- the *type* DoorState}
+
+\NormalTok{    fromSing}
+\OtherTok{        ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{s ::} \DataTypeTok{DoorState}\NormalTok{)        }\CommentTok{-- the *kind* DoorState}
+        \OtherTok{->} \DataTypeTok{DoorState}                    \CommentTok{-- the *type* DoorState}
+\NormalTok{    fromSing }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{SOpened} \OtherTok{->} \DataTypeTok{Opened}
+        \DataTypeTok{SClosed} \OtherTok{->} \DataTypeTok{Closed}
+        \DataTypeTok{SLocked} \OtherTok{->} \DataTypeTok{Locked}
+
+\NormalTok{    toSing}
+\OtherTok{        ::} \DataTypeTok{DoorState}                    \CommentTok{-- the *type* DoorState}
+        \OtherTok{->} \DataTypeTok{SomeSing} \DataTypeTok{DoorState}           \CommentTok{-- the *kind* DoorState}
+\NormalTok{    toSing }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{Opened} \OtherTok{->} \DataTypeTok{SomeSing} \DataTypeTok{SOpened}
+        \DataTypeTok{Closed} \OtherTok{->} \DataTypeTok{SomeSing} \DataTypeTok{SClosed}
+        \DataTypeTok{Locked} \OtherTok{->} \DataTypeTok{SomeSing} \DataTypeTok{SLocked}
+\end{Highlighting}
+\end{Shaded}
+
+If you are unfamiliar with how associated types work,
+\texttt{type\ Demote\ DoorState\ =\ DoorState} means that wherever we see
+\texttt{Demote\ DoorState} (with \texttt{DoorState} the \emph{kind}), we replace
+it with \texttt{DoorState} (the \emph{type}). That's why the type of our
+reflection function
+\texttt{fromSing\ ::\ Sing\ s\ -\textgreater{}\ Demote\ DoorState} can be
+simplified to \texttt{fromSing\ ::\ Sing\ s\ -\textgreater{}\ DoorState}.
+
+Let's take a look at the instance for \texttt{Bool}, to compare:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- Bool singletons have two constructors:}
+\DataTypeTok{SFalse}\OtherTok{ ::} \DataTypeTok{Sing} \CharTok{'False}
+\DataTypeTok{STrue}\OtherTok{  ::} \DataTypeTok{Sing} \CharTok{'True}
+
+\KeywordTok{instance} \DataTypeTok{SingKind} \DataTypeTok{Bool} \KeywordTok{where}    \CommentTok{-- the *kind* Bool}
+    \KeywordTok{type} \DataTypeTok{Demote} \DataTypeTok{Bool} \FunctionTok{=} \DataTypeTok{Bool}     \CommentTok{-- the *type* Bool}
+
+\NormalTok{    fromSing}
+\OtherTok{        ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{b ::} \DataTypeTok{Bool}\NormalTok{)        }\CommentTok{-- the *kind* Bool}
+        \OtherTok{->} \DataTypeTok{Bool}                    \CommentTok{-- the *type* Bool}
+\NormalTok{    fromSing }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{SFalse} \OtherTok{->} \DataTypeTok{False}
+        \DataTypeTok{STrue}  \OtherTok{->} \DataTypeTok{True}
+
+\NormalTok{    toSing}
+\OtherTok{        ::} \DataTypeTok{Bool}                    \CommentTok{-- the *type* Bool}
+        \OtherTok{->} \DataTypeTok{SomeSing} \DataTypeTok{Bool}           \CommentTok{-- the *kind* Bool}
+\NormalTok{    toSing }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{False} \OtherTok{->} \DataTypeTok{SomeSing} \DataTypeTok{SFalse}
+        \DataTypeTok{True}  \OtherTok{->} \DataTypeTok{SomeSing} \DataTypeTok{STrue}
+\end{Highlighting}
+\end{Shaded}
+
+And a more sophisticated example, let's look at the instance for \texttt{Maybe}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- Maybe singletons have two constructors:}
+\DataTypeTok{SNothing}\OtherTok{ ::} \DataTypeTok{Sing} \CharTok{'Nothing}
+\DataTypeTok{SJust}\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ (}\CharTok{'Just x)}
+
+\KeywordTok{instance} \DataTypeTok{SingKind}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{SingKind}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ a) }\KeywordTok{where}     \CommentTok{-- the *kind* Maybe}
+    \KeywordTok{type} \DataTypeTok{Demote}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ a) }\FunctionTok{=} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Demote}\NormalTok{ a)        }\CommentTok{-- the *type* Maybe}
+
+\NormalTok{    fromSing}
+\OtherTok{        ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{m ::} \DataTypeTok{Maybe}\NormalTok{ a)        }\CommentTok{-- the *kind* Maybe}
+        \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a                    }\CommentTok{-- the *type* Maybe}
+\NormalTok{    fromSing }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{SNothing} \OtherTok{->} \DataTypeTok{Nothing}
+        \DataTypeTok{SJust}\NormalTok{ sx }\OtherTok{->} \DataTypeTok{Just}\NormalTok{ (fromSing sx)}
+
+\NormalTok{    toSing}
+\OtherTok{        ::} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Demote}\NormalTok{ a)             }\CommentTok{-- the *type* Maybe}
+        \OtherTok{->} \DataTypeTok{SomeSing}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ a)           }\CommentTok{-- the *kind* Maybe}
+\NormalTok{    toSing }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{Nothing} \OtherTok{->} \DataTypeTok{SomeSing} \DataTypeTok{SNothing}
+        \DataTypeTok{Just}\NormalTok{ x  }\OtherTok{->} \KeywordTok{case}\NormalTok{ toSing x }\KeywordTok{of}
+          \DataTypeTok{SomeSing}\NormalTok{ sx }\OtherTok{->} \DataTypeTok{SomeSing}\NormalTok{ (}\DataTypeTok{SJust}\NormalTok{ sx)}
+\end{Highlighting}
+\end{Shaded}
+
+This definition, I think, is a real testament to the usefulness of having all of
+our singletons be unified under the same system. Because of how
+\texttt{SingKind} works, \texttt{Demote\ (Maybe\ DoorState)} is evaluated to
+\texttt{Maybe\ (Demote\ DoorState)}, which is simplified to
+\texttt{Maybe\ DoorState}. This means that if we have a way to reify
+\texttt{DoorState} values, we also have a way to reify \texttt{Maybe\ DoorState}
+values! And, if we have a way to reflect \texttt{DoorState} singletons, we also
+have a way to reflect \texttt{Maybe\ DoorState} singletons!
+
+\subsubsection{SomeSing}\label{somesing}
+
+Throughout all of this, we utilize \texttt{SomeSing} as a generic poly-kinded
+existential wrapper:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{SomeSing}\OtherTok{ ::} \DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{SomeSing}\OtherTok{ ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{x ::}\NormalTok{ k) }\OtherTok{->} \DataTypeTok{SomeSing}\NormalTok{ k}
+\end{Highlighting}
+\end{Shaded}
+
+Basically, this says that \texttt{SomeSing\ k} contains a \texttt{Sing\ x},
+where \texttt{x} is of kind \texttt{k}. This is why we had, earlier:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{SomeSing}\OtherTok{ ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{s ::} \DataTypeTok{DoorState}\NormalTok{) }\OtherTok{->} \DataTypeTok{SomeSing} \DataTypeTok{DoorState}
+\end{Highlighting}
+\end{Shaded}
+
+If we use \texttt{SomeSing} with, say, \texttt{SClosed}, we get
+\texttt{SomeSing\ ::\ Sing\ \textquotesingle{}Closed\ -\textgreater{}\ SomeSing\ DoorState}
+\texttt{SomeSing} is an indexed type that tells us the \emph{kind} of the type
+variable we existentially quantifying over. The value \texttt{SomeSing\ STrue}
+would have the type \texttt{SomeSing\ Bool}. The value
+\texttt{SomeSing\ (SJust\ SClosed)} would have the type
+\texttt{SomeSing\ (Maybe\ DoorState)}.
 
 \end{document}
