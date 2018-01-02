@@ -89,7 +89,7 @@ ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">Uns
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Door</span><span class="ot"> ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span>
     <span class="dt">UnsafeMkDoor</span><span class="ot"> ::</span> {<span class="ot"> doorMaterial ::</span> <span class="dt">String</span> } <span class="ot">-&gt;</span> <span class="dt">Door</span> s</code></pre></div>
 <p>This is defining the exact same type in the alternate “GADT syntax” style of data type declaration – here, we define types by giving the type of its constructors, <code>UnsafeMkDoor :: String -&gt; Door s</code>.</p>
-<p><code>Door</code> here is an <strong>indexed data type</strong>, which is sometimes called a “type family” in the dependently typed programming world (not to be confused with the <code>-XTypeFamily</code> language mechanic in GHC Haskell).</p>
+<p><code>Door</code> here is an <strong>indexed data type</strong>, which is sometimes called a “type family” in the dependently typed programming world (which is not to be confused with type families in <em>GHC Haskell</em>, <code>-XTypeFamilies</code>, which is a language mechanism that is related but definitely not the same).</p>
 <h3 id="phantoms-in-action">Phantoms in Action</h3>
 <p>At first, this seems a bit silly. Why even have the extra type parameter if you don’t ever use it?</p>
 <p>Well, right off the bat, we can write functions that expect only a certain type of <code>Door</code>, and return a specific type of <code>Door</code>:</p>
@@ -290,6 +290,10 @@ withSingDSI sng x <span class="fu">=</span> <span class="kw">case</span> sng <sp
 <span class="ot">lockAnyDoor__ ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
 lockAnyDoor__ s d <span class="fu">=</span> withSingDSI s (lockAnyDoor_ d)</code></pre></div>
 <p>And the cycle begins anew.</p>
+<p>One interesting thing to point out – note that the type of <code>withSingDSI</code> is very similar to the type of another common combinator:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">withSingDSI ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> (<span class="dt">SingDSI</span> s <span class="ot">=&gt;</span> r) <span class="ot">-&gt;</span> r
+flip<span class="ot">  ($)   ::</span>        a <span class="ot">-&gt;</span> (        a <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r</code></pre></div>
+<p>Which is a bit of a testament to what we said earlier about how a <code>SingDSI s =&gt; ..)</code> is the same as <code>SingDS s -&gt; ..</code>. <code>flip ($)</code> takes a value and a function and applies the function to that value. <code>withSingDSI</code> takes a value and “something like a function” and applies the “something like a function” to that value.</p>
 <h3 id="fun-with-witnesses">Fun with Witnesses</h3>
 <p>We can write a nice version of <code>mkDoor</code> using singletons:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L70-71</span>
