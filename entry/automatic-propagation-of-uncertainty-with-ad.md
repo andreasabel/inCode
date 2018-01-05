@@ -130,8 +130,8 @@ is the variance in ![X](https://latex.codecogs.com/png.latex?X "X"). We consider
 the standard deviation of ![X](https://latex.codecogs.com/png.latex?X "X"), or
 the “plus or minus” part of our numbers. In the simple case of addition, we have
 ![\\operatorname{Var}\[X + Y\] = \\sigma\_X\^2 + \\sigma\_Y\^2](https://latex.codecogs.com/png.latex?%5Coperatorname%7BVar%7D%5BX%20%2B%20Y%5D%20%3D%20%5Csigma_X%5E2%20%2B%20%5Csigma_Y%5E2 "\operatorname{Var}[X + Y] = \sigma_X^2 + \sigma_Y^2"),
-so our new uncertainty is
-![\\sqrt{\\sigma\_X\^2 + \\sigma\_Y\^2}](https://latex.codecogs.com/png.latex?%5Csqrt%7B%5Csigma_X%5E2%20%2B%20%5Csigma_Y%5E2%7D "\sqrt{\sigma_X^2 + \sigma_Y^2}").[^2]
+so our new uncertainty[^2] is
+![\\sqrt{\\sigma\_X\^2 + \\sigma\_Y\^2}](https://latex.codecogs.com/png.latex?%5Csqrt%7B%5Csigma_X%5E2%20%2B%20%5Csigma_Y%5E2%7D "\sqrt{\sigma_X^2 + \sigma_Y^2}").
 
 However, not all functions that combine
 ![X](https://latex.codecogs.com/png.latex?X "X") and
