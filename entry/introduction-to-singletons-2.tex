@@ -123,8 +123,16 @@ Let's return to our \texttt{Door} type:
 \end{Highlighting}
 \end{Shaded}
 
-\texttt{Door} is great! It is an \emph{indexed data type}, in that picking a
-different type variable gives a different ``type'' of Door:
+First, this derives the \emph{type} \texttt{DoorState} with the values
+\texttt{Opened}, \texttt{Closed}, and \texttt{Locked}, and also the \emph{kind}
+\texttt{DoorState} with the \emph{types} \texttt{\textquotesingle{}Opened},
+\texttt{\textquotesingle{}Closed}, and \texttt{\textquotesingle{}Locked}. We
+then also derive the singletons (and implicit-style typeclass instances,
+reflectors, etc.) with the template haskell.
+
+Then, there's \texttt{Door}. \texttt{Door} is great! It is an \emph{indexed data
+type} (indexed by a type of kind \texttt{DoorState}) in that picking a different
+type variable gives a different ``type'' of Door:
 
 \begin{itemize}
 \tightlist
@@ -168,7 +176,7 @@ This might come about a bunch of different ways. Maybe you're reading a
 More concretely, we've seen this in \texttt{lockAnyDoor}, as well --
 \texttt{lockAnyDoor} doesn't care about the type of its input (it can be
 \emph{any} \texttt{Door}). It only cares about the type of its output
-(\texttt{Door\ \textquotesingle{}Locked})
+(\texttt{Door\ \textquotesingle{}Locked}).
 
 To learn how to not care, we can describe a type for a door that does \emph{not}
 have its status in its type.
@@ -273,6 +281,13 @@ function to handle \emph{any possible \texttt{s}}. And, as you can see, the
 function passed in might be given an \texttt{SOpened}, an \texttt{SClosed}, or
 an \texttt{SLocked}. It has to be able to handle all three!
 
+Essentially we're converting a \texttt{SomeDoor} into a \texttt{Sing\ s} and
+\texttt{Door\ s}. We just can't know which \texttt{s}, a priori. So, we must
+handle it with a
+\texttt{forall\ s.\ Sing\ s\ -\textgreater{}\ Door\ s\ -\textgreater{}\ r}
+(using \emph{RankNTypes}) -- a function that can handle \emph{any} \texttt{s}
+that it could possibly be.
+
 Here, we call \texttt{s} \emph{existentially quantified}. The
 \texttt{withSomeDoor} function gets to pick which \texttt{s} to give \texttt{f}.
 So, the \texttt{s} type variable is directly chosen by the \emph{function}, and
@@ -285,7 +300,7 @@ We can implement \texttt{closeSomeOpenedDoor} (and even a
 \begin{Highlighting}[]
 \OtherTok{closeSomeOpenedDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{SomeDoor}
 \NormalTok{closeSomeOpenedDoor sd }\FunctionTok{=}\NormalTok{ withSomeDoor sd }\FunctionTok{$}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-    \DataTypeTok{SOpened} \OtherTok{->}\NormalTok{ \textbackslash{}d }\OtherTok{->} \DataTypeTok{Just} \FunctionTok{.}\NormalTok{ fromDoor_ }\FunctionTok{.}\NormalTok{ closeDoor }\FunctionTok{$}\NormalTok{ d}
+    \DataTypeTok{SOpened} \OtherTok{->}\NormalTok{ \textbackslash{}d }\OtherTok{->} \DataTypeTok{Just} \FunctionTok{.}\NormalTok{ fromDoor_ }\FunctionTok{$}\NormalTok{ closeDoor d}
     \DataTypeTok{SClosed} \OtherTok{->}\NormalTok{ \textbackslash{}_ }\OtherTok{->} \DataTypeTok{Nothing}
     \DataTypeTok{SLocked} \OtherTok{->}\NormalTok{ \textbackslash{}_ }\OtherTok{->} \DataTypeTok{Nothing}
 
@@ -334,11 +349,9 @@ Note the similarities between our original \texttt{SomeDoor} and this one.
     \DataTypeTok{MkSomeDoor}\OtherTok{ ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{SomeDoor}
 
 \CommentTok{-- | Re-using Door, as an existential type}
-\KeywordTok{data} \DataTypeTok{Door}\OtherTok{ ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{DoorState} \KeywordTok{where}
-    \DataTypeTok{UnsafeMkDoor}\OtherTok{ ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Door}\NormalTok{ s}
-
 \KeywordTok{data} \DataTypeTok{SomeDoor} \KeywordTok{where}
     \DataTypeTok{MkSomeDoor}\OtherTok{  ::} \DataTypeTok{Sing}\NormalTok{ s  }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{SomeDoor}
+                            \CommentTok{-- ^ data Door s = UnsafeMkDoor String}
 \end{Highlighting}
 \end{Shaded}
 
@@ -374,6 +387,10 @@ type:
 Much more convenient, because \emph{we already have a \texttt{Door}!} And we
 don't have to re-implement one like we did for our original \texttt{SomeDoor} --
 all of our original code works directly!
+
+The secret ingredient here is the \texttt{Sing\ s} we store inside
+\texttt{MkSomeDoor} -- it gives our pattern matchers the ability to deduce the
+\texttt{s} type.
 
 \subsection{The Link}\label{the-link}
 
@@ -421,9 +438,10 @@ If they're identical, why use a \texttt{Sing} or the new \texttt{SomeDoor} at
 all? Why not just use a \texttt{DoorState} value?
 
 The main reason (besides allowing code-reuse) is that \emph{using the singleton
-lets us directly recover the type}. Essentially, a \texttt{SingDS\ s} not only
-contains whether it is Opened/Closed/Locked\ldots{}it contains it in a way that
-GHC can use to \emph{bring it all back} to the type level.
+lets us directly recover the type}. Essentially, a \texttt{Sing\ s} not only
+contains whether it is Opened/Closed/Locked (like a \texttt{DoorState}
+would)\ldots{}it contains it in a way that GHC can use to \emph{bring it all
+back} to the type level.
 
 A \texttt{forall\ s.\ SomeDoor\ (Sing\ s)\ (Door\ s)} essentially contains
 \texttt{s} \emph{with} \texttt{Door\ s}. When you see this, you \emph{should
