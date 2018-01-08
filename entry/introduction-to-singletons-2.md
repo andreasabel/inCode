@@ -129,7 +129,7 @@ data SomeDoor :: Type where
 `MkSomeDoor` is a constructor for an existential data type, meaning that the
 data type “hides” a type variable `s`. Note the type
 (`Sing s -> Door s -> SomeDoor`) and how the result type (`SomeDoor`) *forgets*
-the `s` and hides all traces of it.[^2]
+the `s` and hides all traces of it.
 
 Note the similarities between our original `SomeDoor` and this one.
 
@@ -433,6 +433,24 @@ mkSomeDoor ds = case toSing ds of
 withDoor :: DoorState -> String -> (forall s. Sing s -> Door s -> r) -> r
 withDoor ds m f = withSomeSing ds $ \s -> f s (UnsafeMkDoor m)
 ```
+
+### All about positions
+
+You might have noticed I was a bit sneaky by jumping straight `SomeDoor` when we
+already had a perfectly good “I don’t care” option. We used it last post!
+
+``` {.haskell}
+lockAnyDoor :: Sing s -> Door s -> Door 'Locked
+```
+
+This does work! `lockAnyDoor` takes a `Door s` and doesn’t “care” about what `s`
+it gets (it’s parametrically polymorphic).
+
+So, this normal “parametrically polymorphic” way is how we have, in the past,
+treated functions that *can take* a `Door` with an `s` we don’t want the type
+system to care about. However, the reason we need `SomeDoor` and existentially
+quantified types is for the situation where we want to *return* something that
+we want to the type system to not care about.
 
 Zooming Out
 -----------
@@ -811,20 +829,3 @@ really being written behind the syntax.
 
 [^1]: And also a not-so-obvious fourth type, `forall s. Door s`, which is a
     subtype of all of those three!
-
-[^2]: You might have noticed I was a bit sneaky by jumping straight `SomeDoor`
-    when we already had a perfectly good “I don’t care” option. We used it last
-    post!
-
-    ``` {.haskell}
-    lockAnyDoor :: Sing s -> Door s -> Door 'Locked
-    ```
-
-    This does work! `lockAnyDoor` takes a `Door s` and doesn’t “care” about what
-    `s` it gets (it’s parametrically polymorphic).
-
-    So, this normal “parametrically polymorphic” way is how we have, in the
-    past, treated functions that *can take* a `Door` with an `s` we don’t want
-    the type system to care about. However, the reason we need `SomeDoor` and
-    existentially quantified types is for the situation where we want to
-    *return* something that we want to the type system to not care about.
