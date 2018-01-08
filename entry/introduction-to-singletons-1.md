@@ -830,7 +830,7 @@ for a comparison, if you are still unfamiliar.
     (as a password).
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L63-63
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L60-60
     unlockDoor :: Int -> Door 'Locked -> Maybe (Door 'Closed)
     ```
 
@@ -841,7 +841,7 @@ for a comparison, if you are still unfamiliar.
     Sing” style:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L68-68
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L65-65
     openAnyDoor :: SingI s => Int -> Door s -> Maybe (Door 'Opened)
     ```
 
