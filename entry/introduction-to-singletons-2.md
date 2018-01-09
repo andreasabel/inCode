@@ -1,7 +1,7 @@
 Introduction to Singletons (Part 2)
 ===================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on January 9, 2018.
 > [Read online!](https://blog.jle.im/entry/introduction-to-singletons-2.html)
 
 Welcome back to our journey through the singleton design pattern and the great
@@ -55,8 +55,8 @@ or locked at compile-time?
 
 This is something we can foresee being a big issue. It’s easy enough to create a
 `Door s` if you know `s` at compile-time by just typing in a type annotation
-(`UnsafeMkDoor "Oak" :: Door 'Opened`). But what if we *don’t* know `s` at
-compile-time?
+(`UnsafeMkDoor "Oak" :: Door 'Opened`) or by using a monomorphic constructor
+(`mkDoor @SOpened "Oak"`). But what if we *don’t* know `s` at compile-time?
 
 To learn how to do this, we first need to learn how to *not care*.
 
@@ -740,7 +740,7 @@ paper](https://cs.brynmawr.edu/~rae/papers/2012/singletons/paper.pdf) for a
 really nice technical overview of all of these techniques from the source
 itself.
 
-### Exercise
+### Exercises
 
 Check out the [sample
 code](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs)
