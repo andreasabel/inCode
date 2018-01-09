@@ -824,6 +824,13 @@ for solutions!
         SCons :: Sing x -> Sing xs -> Sing ('Cons x xs)
 
     instance SingKind k => SingKind (List k) where
+        type Demote (List k) = ???
+
+        fromSing :: Sing (xs :: List k) -> List (Demote k)
+        fromSing = ???
+
+        toSing :: List (Demote k) -> SomeSing (List k)
+        toSing = ???
     ```
 
     The singletons for `List` are:
