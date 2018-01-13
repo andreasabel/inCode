@@ -567,8 +567,117 @@ polymorphically:
 
 Using \emph{\href{http://hackage.haskell.org/package/lens}{lens}} with lenses
 (especially classy ones) is one of the only things that makes programming
-against \texttt{State} with non-trivial state bearable for me!
+against \texttt{State} with non-trivial state bearable for me! We store the
+current program and program head with the \texttt{PointedList}, and also
+represent the register contents with a \texttt{Map\ Char\ Int}.
 
-\texttt{makeClassy} gives us
+\texttt{makeClassy} gives us a typeclass \texttt{HasProgState}, which is for
+things that ``have'' a \texttt{ProgState}, as well as lenses into the
+\texttt{psTape} and \texttt{psRegs} field for that type. We can use these lenses
+with \emph{lens} library machinery:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- | "get" based on a lens}
+\OtherTok{use   ::} \DataTypeTok{MonadState}\NormalTok{ s m }\OtherTok{=>} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ m a}
+
+\CommentTok{-- | "set" through on a lens}
+\OtherTok{(.=)  ::} \DataTypeTok{MonadState}\NormalTok{ s m }\OtherTok{=>} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ a }\OtherTok{->}\NormalTok{ m ()}
+
+\CommentTok{-- | "mappend" through on a lens}
+\OtherTok{(<>=) ::}\NormalTok{ (}\DataTypeTok{Monoid}\NormalTok{ a, }\DataTypeTok{MonadState}\NormalTok{ s m) }\OtherTok{=>} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ a }\OtherTok{->}\NormalTok{ m ()}
+
+\CommentTok{-- | "lift" a State action through a lens}
+\OtherTok{zoom  ::} \DataTypeTok{Lens'}\NormalTok{ s t }\OtherTok{->} \DataTypeTok{State}\NormalTok{ t a }\OtherTok{->} \DataTypeTok{State}\NormalTok{ s a}
+\end{Highlighting}
+\end{Shaded}
+
+So, for example, we have:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- | "get" the registers}
+\NormalTok{use}\OtherTok{ psRegs  ::}\NormalTok{ (}\DataTypeTok{HasProgState}\NormalTok{ s, }\DataTypeTok{MonadState}\NormalTok{ s m) }\OtherTok{=>}\NormalTok{ m (}\DataTypeTok{M.Map} \DataTypeTok{Char} \DataTypeTok{Int}\NormalTok{)}
+
+\CommentTok{-- | "set" the PointedList}
+\NormalTok{(psTape }\FunctionTok{.=}\NormalTok{)}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{HasProgState}\NormalTok{ s, }\DataTypeTok{MonadState}\NormalTok{ s m) }\OtherTok{=>} \DataTypeTok{P.PointedList} \DataTypeTok{Op} \OtherTok{->}\NormalTok{ m ()}
+\end{Highlighting}
+\end{Shaded}
+
+The nice thing about lenses is that they compose, so, for example, we have:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{at ::}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Map}\NormalTok{ k    v  ) (}\DataTypeTok{Maybe}\NormalTok{ v)}
+
+\NormalTok{at }\CharTok{'h'}\OtherTok{  ::} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Map} \DataTypeTok{Char} \DataTypeTok{Int}\NormalTok{) (}\DataTypeTok{Maybe} \DataTypeTok{Int}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+We can use \texttt{at\ \textquotesingle{}c\textquotesingle{}} to give us a lens
+from our registers (\texttt{Map\ Char\ Int}) into the specific register
+\texttt{\textquotesingle{}c\textquotesingle{}} as a \texttt{Maybe\ Int} -- it's
+\texttt{Nothing} if the item is not in the \texttt{Map}, and \texttt{Just} if it
+is (with the value).
+
+However, we want to treat all registers as \texttt{0} by default, not as
+\texttt{Nothing}, so we can use \texttt{non}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{non ::} \DataTypeTok{Eq}\NormalTok{ a }\OtherTok{=>}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ a  ) a         }\CommentTok{-- actually `Iso'`, not `Lens'`}
+\NormalTok{non }\DecValTok{0}\OtherTok{ ::}            \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Maybe} \DataTypeTok{Int}\NormalTok{) }\DataTypeTok{Int}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{non\ 0} is a \texttt{Lens} (actually an \texttt{Iso}, but who's
+counting?) into a \texttt{Maybe\ Int} to treat \texttt{Nothing} as if it was
+\texttt{0}, and to treat \texttt{Just\ x} as if it was \texttt{x}.
+
+We can chain \texttt{at\ r} with \texttt{non\ 0} to get a lens into a
+\texttt{Map\ Char\ Int}, which we can use to edit a specific item, treating
+non-present-items as 0.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{         at }\CharTok{'h'} \FunctionTok{.}\NormalTok{ non }\DecValTok{0}\OtherTok{ ::} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Map} \DataTypeTok{Char} \DataTypeTok{Int}\NormalTok{) }\DataTypeTok{Int}
+
+\NormalTok{psRegs }\FunctionTok{.}\NormalTok{ at }\CharTok{'h'} \FunctionTok{.}\NormalTok{ non }\DecValTok{0}\OtherTok{ ::} \DataTypeTok{HasProgState}\NormalTok{ s }\OtherTok{=>} \DataTypeTok{Lens'}\NormalTok{ s }\DataTypeTok{Int}
+\end{Highlighting}
+\end{Shaded}
+
+With these tools to make life simpler, we can write an interpreter for our
+\texttt{Mem} commands:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L104-114}
+\NormalTok{interpMem}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{MonadState}\NormalTok{ s m, }\DataTypeTok{MonadFail}\NormalTok{ m, }\DataTypeTok{HasProgState}\NormalTok{ s)}
+    \OtherTok{=>} \DataTypeTok{Mem}\NormalTok{ a}
+    \OtherTok{->}\NormalTok{ m a}
+\NormalTok{interpMem }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{MGet}\NormalTok{ c   }\OtherTok{->}\NormalTok{ use (psRegs }\FunctionTok{.}\NormalTok{ at c }\FunctionTok{.}\NormalTok{ non }\DecValTok{0}\NormalTok{)}
+    \DataTypeTok{MSet}\NormalTok{ c x }\OtherTok{->}\NormalTok{ psRegs }\FunctionTok{.}\NormalTok{ at c }\FunctionTok{.}\NormalTok{ non }\DecValTok{0} \FunctionTok{.=}\NormalTok{ x}
+    \DataTypeTok{MJmp}\NormalTok{ n   }\OtherTok{->} \KeywordTok{do}
+      \DataTypeTok{Just}\NormalTok{ t' }\OtherTok{<-}\NormalTok{ P.moveN n }\FunctionTok{<$>}\NormalTok{ use psTape}
+\NormalTok{      psTape }\FunctionTok{.=}\NormalTok{ t'}
+    \DataTypeTok{MPk}      \OtherTok{->}\NormalTok{ use (psTape }\FunctionTok{.}\NormalTok{ P.focus)}
+\end{Highlighting}
+\end{Shaded}
+
+We use \texttt{MonadFail} to explicitly state that we rely on a failed pattern
+match for control flow.
+\texttt{P.moveN\ ::\ Int\ -\textgreater{}\ P.PointedList\ -\textgreater{}\ Maybe\ P.PointedList}
+will ``shift'' a \texttt{PointedList} by a given amount, but will return
+\texttt{Nothing} if it goes out of bounds. Our program is meant to terminate if
+we ever go out of bounds, so we can implement this by using a do block pattern
+match with \texttt{MonadFail}. For instances like
+\texttt{MaybeT}/\texttt{Maybe}, this means
+\texttt{empty}/\texttt{Nothing}/short-circuit. So when we \texttt{P.move}, we
+do-block pattern match on \texttt{Just\ t\textquotesingle{}}.
+
+We also use \texttt{P.focus}, a lens that the \emph{pointedlist} library
+provides to the current ``focus'' of the \texttt{PointedList}.
 
 \end{document}
