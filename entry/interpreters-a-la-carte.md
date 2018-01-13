@@ -199,7 +199,7 @@ Which says that the two “primitive” commands of `State Int` are “putting�
 requires an `Int` and produces a `()` result) and “getting” (which requires no
 inputs, and produces an `Int` result).
 
-You can then write `State` as:
+You can then write `State Int` as:
 
 ``` {.haskell}
 type IntState = Prompt StateCommand
@@ -296,7 +296,8 @@ Part 1 requires `CRcv` to take, as an argument, a number, since whether or not
 `CRcv` is a no-op depends on the value of a certain register for Part 1’s
 virtual machine.
 
-Now, we can leverage the `:|:` type from *\[type-combinators\]\[\]*:
+Now, we can leverage the `:|:` type from
+*[type-combinators](http://hackage.haskell.org/package/type-combinators)*:
 
 ``` {.haskell}
 data (f :|: g) a = L (f a)

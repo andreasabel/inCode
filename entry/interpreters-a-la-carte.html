@@ -90,7 +90,7 @@ parseProgram <span class="fu">=</span> fromJust <span class="fu">.</span> P.from
     <span class="dt">Put</span><span class="ot"> ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">StateCommand</span> ()
     <span class="dt">Get</span><span class="ot"> ::</span> <span class="dt">StateCommand</span> <span class="dt">Int</span></code></pre></div>
 <p>Which says that the two “primitive” commands of <code>State Int</code> are “putting” (which requires an <code>Int</code> and produces a <code>()</code> result) and “getting” (which requires no inputs, and produces an <code>Int</code> result).</p>
-<p>You can then write <code>State</code> as:</p>
+<p>You can then write <code>State Int</code> as:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">IntState</span> <span class="fu">=</span> <span class="dt">Prompt</span> <span class="dt">StateCommand</span></code></pre></div>
 <p>And our primitives can be constructed using:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">prompt ::</span> <span class="dt">StateCommand</span> a <span class="ot">-&gt;</span> <span class="dt">IntState</span> a
@@ -141,7 +141,7 @@ runAsState <span class="fu">=</span> runPormptM interpretState</code></pre></div
     <span class="dt">CSnd</span><span class="ot"> ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Com</span> ()
     <span class="dt">CRcv</span><span class="ot"> ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Com</span> <span class="dt">Int</span></code></pre></div>
 <p>Part 1 requires <code>CRcv</code> to take, as an argument, a number, since whether or not <code>CRcv</code> is a no-op depends on the value of a certain register for Part 1’s virtual machine.</p>
-<p>Now, we can leverage the <code>:|:</code> type from <em>[type-combinators][]</em>:</p>
+<p>Now, we can leverage the <code>:|:</code> type from <em><a href="http://hackage.haskell.org/package/type-combinators">type-combinators</a></em>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> (f <span class="fu">:|:</span> g) a <span class="fu">=</span> <span class="dt">L</span> (f a)
                  <span class="fu">|</span> <span class="dt">R</span> (g a)</code></pre></div>
 <p><code>:|:</code> is a “functor disjunction” – a value of type <code>(f :|: g) a</code> is either <code>f a</code> or <code>g a</code>. <code>:|:</code> is in <em>base</em> twice, as <code>:+:</code> in <em>GHC.Generics</em> and as <code>Sum</code> in <em>Data.Functor.Sum</em>. However, the version in <em>type-combinators</em> has some nice utility combinators we will be using and is more fully-featured.</p>
