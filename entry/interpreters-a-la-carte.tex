@@ -97,7 +97,7 @@ This post is just a fun one exploring a wide range of techniques that I applied
 to solve the Day 18 puzzles of this year's great
 \href{http://adventofcode.com/2017}{Advent of Code}. The puzzles involved
 interpreting an assembly language on an abstract machine. The neat twist is that
-Part 1 gave you a description of one abstract machine, and Part 2 gave you a
+Part 1 gave you a description of one abstract machine, and Part 3 gave you a
 \emph{different} abstract machine to interpret the same language in. This twist
 (one language, but different interpreters/abstract machines) is basically one of
 the textbook applications of the \emph{interpreter pattern} in Haskell and
@@ -240,6 +240,7 @@ the binary mathematical operations:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L21-26}
 \KeywordTok{type} \DataTypeTok{Addr} \FunctionTok{=} \DataTypeTok{Either} \DataTypeTok{Char} \DataTypeTok{Int}
 
 \KeywordTok{data} \DataTypeTok{Op} \FunctionTok{=} \DataTypeTok{OSnd} \DataTypeTok{Addr}
@@ -257,6 +258,7 @@ Now, parsing a single \texttt{Op} is just a matter of pattern matching on
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L28-41}
 \OtherTok{parseOp ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Op}
 \NormalTok{parseOp inp }\FunctionTok{=} \KeywordTok{case}\NormalTok{ words inp }\KeywordTok{of}
     \StringTok{"snd"}\FunctionTok{:}\NormalTok{c    }\FunctionTok{:}\NormalTok{_   }\OtherTok{->} \DataTypeTok{OSnd}\NormalTok{ (addr c)}
@@ -283,13 +285,266 @@ them into a \texttt{PointedList}. We're ready to go!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{parse ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{P.PointedList} \DataTypeTok{Op}
-\NormalTok{parse }\FunctionTok{=}\NormalTok{ fromJust }\FunctionTok{.}\NormalTok{ P.fromList }\FunctionTok{.}\NormalTok{ map parseOp }\FunctionTok{.}\NormalTok{ lines}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L43-44}
+\OtherTok{parseProgram ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{P.PointedList} \DataTypeTok{Op}
+\NormalTok{parseProgram }\FunctionTok{=}\NormalTok{ fromJust }\FunctionTok{.}\NormalTok{ P.fromList }\FunctionTok{.}\NormalTok{ map parseOp }\FunctionTok{.}\NormalTok{ lines}
 \end{Highlighting}
 \end{Shaded}
 
 \section{Our Virtual Machine}\label{our-virtual-machine}
 
-Hi
+\subsection{MonadPrompt}\label{monadprompt}
+
+We're going to be using the great
+\emph{\href{http://hackage.haskell.org/package/MonadPrompt}{MonadPrompt}}
+library to build our representation of our interpreted language. Another common
+choice is to use \emph{\href{http://hackage.haskell.org/package/free}{free}},
+and a lot of other tutorials go down this route. However, \emph{free} is a bit
+more power than you really need for the interpreter pattern, and I always felt
+like the implementation of interpreter pattern programs in \emph{free} was a bit
+awkward.
+
+\emph{MonadPrompt} lets us construct a language (and a monad) using GADTs to
+represent command primitives. For example, to implement something like
+\texttt{State\ Int}, you might use this GADT:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{StateCommand}\OtherTok{ ::} \DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{Put}\OtherTok{ ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{StateCommand}\NormalTok{ ()}
+    \DataTypeTok{Get}\OtherTok{ ::} \DataTypeTok{StateCommand} \DataTypeTok{Int}
+\end{Highlighting}
+\end{Shaded}
+
+Which says that the two ``primitive'' commands of \texttt{State\ Int} are
+``putting'' (which requires an \texttt{Int} and produces a \texttt{()} result)
+and ``getting'' (which requires no inputs, and produces an \texttt{Int} result).
+
+You can then write \texttt{State} as:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{IntState} \FunctionTok{=} \DataTypeTok{Prompt} \DataTypeTok{StateCommand}
+\end{Highlighting}
+\end{Shaded}
+
+And our primitives can be constructed using:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{prompt ::} \DataTypeTok{StateCommand}\NormalTok{ a }\OtherTok{->} \DataTypeTok{IntState}\NormalTok{ a}
+
+\NormalTok{prompt (}\DataTypeTok{Put} \DecValTok{10}\NormalTok{)}\OtherTok{ ::} \DataTypeTok{IntState}\NormalTok{ ()}
+\NormalTok{prompt }\DataTypeTok{Get}\OtherTok{      ::} \DataTypeTok{IntState} \DataTypeTok{Int}
+\end{Highlighting}
+\end{Shaded}
+
+Now, we \emph{interpret} an \texttt{IntState} in a monadic context using
+\texttt{runPromptM}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{runPromptM}
+\OtherTok{    ::} \DataTypeTok{Monad}\NormalTok{ m                              }\CommentTok{-- m is the monad to interpret in}
+    \OtherTok{=>}\NormalTok{ (forall x}\FunctionTok{.} \DataTypeTok{StateCommand}\NormalTok{ x }\OtherTok{->}\NormalTok{ m x)    }\CommentTok{-- a way to interpret each primitive in 'm'}
+    \OtherTok{->} \DataTypeTok{IntState}\NormalTok{ a                           }\CommentTok{-- IntState to interpret}
+    \OtherTok{->}\NormalTok{ m a                                  }\CommentTok{-- resulting action in 'm'}
+\end{Highlighting}
+\end{Shaded}
+
+So, if we wanted to use \texttt{IO} and \texttt{IORefs} as the mechanism for
+interpreting our \texttt{IntState}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{interpretIO}
+\OtherTok{    ::} \DataTypeTok{IORef} \DataTypeTok{Int}
+    \OtherTok{->} \DataTypeTok{StateCommand}\NormalTok{ a}
+    \OtherTok{->} \DataTypeTok{IO}\NormalTok{ a}
+\NormalTok{interpretIO r }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}           \CommentTok{-- using -XLambdaCase}
+    \DataTypeTok{Put}\NormalTok{ x }\OtherTok{->}\NormalTok{ writeIORef r x}
+    \DataTypeTok{Get}   \OtherTok{->}\NormalTok{ readIORef r}
+
+\OtherTok{runAsIO ::} \DataTypeTok{IntState}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{IO}\NormalTok{ a}
+\NormalTok{runAsIO m s0 }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{    r }\OtherTok{<-}\NormalTok{ newIORef s0}
+\NormalTok{    runPromptM (interpretIO r) m}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{interpretIO} is our interpreter, in \texttt{IO}. \texttt{runPromptM}
+will interpret each primitive (\texttt{Put} and \texttt{Get}) using
+\texttt{interpretIO}, and generate the result for us.
+
+We can also be boring and interpret it using \texttt{State\ Int}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{interpretState ::} \DataTypeTok{StateCommand}\NormalTok{ a }\OtherTok{->} \DataTypeTok{State} \DataTypeTok{Int}\NormalTok{ a}
+\NormalTok{interpretState }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{Put}\NormalTok{ x }\OtherTok{->}\NormalTok{ put x}
+    \DataTypeTok{Get}   \OtherTok{->}\NormalTok{ get}
+
+\OtherTok{runAsState ::} \DataTypeTok{IntState}\NormalTok{ a }\OtherTok{->} \DataTypeTok{State} \DataTypeTok{Int}\NormalTok{ a}
+\NormalTok{runAsState }\FunctionTok{=}\NormalTok{ runPormptM interpretState}
+\end{Highlighting}
+\end{Shaded}
+
+Basically, an \texttt{IntState\ a} is an abstract representation of a program
+(as a Monad), and \texttt{interpretIO} and \texttt{interpretState} are different
+ways of \emph{interpreting} that program, in different monadic contexts. To
+``run'' or interpret our program in a context, we provide a function
+\texttt{forall\ x.\ StateCommand\ x\ -\textgreater{}\ m\ x}, which interprets
+each individual primitive command.
+
+\subsection{Duet Commands}\label{duet-commands}
+
+Now let's specify the ``primitives'' of our program. It'll be useful to separate
+out the ``memory-based'' primitive commands from the ``communication-based''
+primitive commands. This is so that we can write interpreters that operate on
+each one individually.
+
+For memory, we can access and modify register values, as well as jump around in
+the program tape and read the \texttt{Op} at the current program head:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L46-50}
+\KeywordTok{data} \DataTypeTok{Mem}\OtherTok{ ::} \DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{MGet}\OtherTok{ ::} \DataTypeTok{Char} \OtherTok{->} \DataTypeTok{Mem} \DataTypeTok{Int}
+    \DataTypeTok{MSet}\OtherTok{ ::} \DataTypeTok{Char} \OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Mem}\NormalTok{ ()}
+    \DataTypeTok{MJmp}\OtherTok{ ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Mem}\NormalTok{ ()}
+    \DataTypeTok{MPk}\OtherTok{  ::} \DataTypeTok{Mem} \DataTypeTok{Op}
+\end{Highlighting}
+\end{Shaded}
+
+For communication, we must be able to ``snd'' and ``rcv''.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L52-54}
+\KeywordTok{data} \DataTypeTok{Com}\OtherTok{ ::} \DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{CSnd}\OtherTok{ ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Com}\NormalTok{ ()}
+    \DataTypeTok{CRcv}\OtherTok{ ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Com} \DataTypeTok{Int}
+\end{Highlighting}
+\end{Shaded}
+
+Part 1 requires \texttt{CRcv} to take, as an argument, a number, since whether
+or not \texttt{CRcv} is a no-op depends on the value of a certain register for
+Part 1's virtual machine.
+
+Now, we can leverage the \texttt{:\textbar{}:} type from
+\emph{{[}type-combinators{]}{[}{]}}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data}\NormalTok{ (f }\FunctionTok{:|:}\NormalTok{ g) a }\FunctionTok{=} \DataTypeTok{L}\NormalTok{ (f a)}
+                 \FunctionTok{|} \DataTypeTok{R}\NormalTok{ (g a)}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{:\textbar{}:} is a ``functor disjunction'' -- a value of type
+\texttt{(f\ :\textbar{}:\ g)\ a} is either \texttt{f\ a} or \texttt{g\ a}.
+\texttt{:\textbar{}:} is in \emph{base} twice, as \texttt{:+:} in
+\emph{GHC.Generics} and as \texttt{Sum} in \emph{Data.Functor.Sum}. However, the
+version in \emph{type-combinators} has some nice utility combinators we will be
+using and is more fully-featured.
+
+We can use \texttt{:\textbar{}:} to create the type
+\texttt{Mem\ :\textbar{}:\ Com}. If \texttt{Mem} and \texttt{Com} represent
+``primitives'' in our Duet language, then \texttt{Mem\ :\textbar{}:\ Com}
+represents \emph{primitives from \texttt{Mem} and \texttt{Com} together}. It's a
+type that contains all of the primitives of \texttt{Mem} and the primitives of
+\texttt{Com} -- that is, it contains:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{L}\NormalTok{ (}\DataTypeTok{MGet} \CharTok{'c'}\NormalTok{)}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{Mem} \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) }\DataTypeTok{Int}
+\DataTypeTok{L} \DataTypeTok{MPk}\OtherTok{        ::}\NormalTok{ (}\DataTypeTok{Mem} \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) }\DataTypeTok{Op}
+\DataTypeTok{R}\NormalTok{ (}\DataTypeTok{CSnd} \DecValTok{5}\NormalTok{)}\OtherTok{   ::}\NormalTok{ (}\DataTypeTok{Mem} \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) ()}
+\end{Highlighting}
+\end{Shaded}
+
+etc.
+
+Our final data type then -- a monad that encompasses \emph{all} possible Duet
+primitive commands, is:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L56-56}
+\KeywordTok{type} \DataTypeTok{Duet} \FunctionTok{=} \DataTypeTok{Prompt}\NormalTok{ (}\DataTypeTok{Mem} \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+We can write some convenient utility primitives to make things easier for us in
+the long run:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L58-74}
+\OtherTok{dGet ::} \DataTypeTok{Char} \OtherTok{->} \DataTypeTok{Duet} \DataTypeTok{Int}
+\NormalTok{dGet }\FunctionTok{=}\NormalTok{ prompt }\FunctionTok{.} \DataTypeTok{L} \FunctionTok{.} \DataTypeTok{MGet}
+
+\OtherTok{dSet ::} \DataTypeTok{Char} \OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Duet}\NormalTok{ ()}
+\NormalTok{dSet r }\FunctionTok{=}\NormalTok{ prompt }\FunctionTok{.} \DataTypeTok{L} \FunctionTok{.} \DataTypeTok{MSet}\NormalTok{ r}
+
+\OtherTok{dJmp ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Duet}\NormalTok{ ()}
+\NormalTok{dJmp }\FunctionTok{=}\NormalTok{ prompt }\FunctionTok{.} \DataTypeTok{L} \FunctionTok{.} \DataTypeTok{MJmp}
+
+\OtherTok{dPk ::} \DataTypeTok{Duet} \DataTypeTok{Op}
+\NormalTok{dPk }\FunctionTok{=}\NormalTok{ prompt (}\DataTypeTok{L} \DataTypeTok{MPk}\NormalTok{)}
+
+\OtherTok{dSnd ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Duet}\NormalTok{ ()}
+\NormalTok{dSnd }\FunctionTok{=}\NormalTok{ prompt }\FunctionTok{.} \DataTypeTok{R} \FunctionTok{.} \DataTypeTok{CSnd}
+
+\OtherTok{dRcv ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Duet} \DataTypeTok{Int}
+\NormalTok{dRcv }\FunctionTok{=}\NormalTok{ prompt }\FunctionTok{.} \DataTypeTok{R} \FunctionTok{.} \DataTypeTok{CRcv}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Constructing Duet Programs}\label{constructing-duet-programs}
+
+Armed with our \texttt{Duet} monad, we can now write a real-life \texttt{Duet}
+action to represent \emph{one step} of our duet programs:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L76-97}
+\OtherTok{stepProg ::} \DataTypeTok{Duet}\NormalTok{ ()}
+\NormalTok{stepProg }\FunctionTok{=}\NormalTok{ dPk }\FunctionTok{>>=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{OSnd}\NormalTok{ x }\OtherTok{->} \KeywordTok{do}
+\NormalTok{      dSnd }\FunctionTok{=<<}\NormalTok{ addrVal x}
+\NormalTok{      dJmp }\DecValTok{1}
+    \DataTypeTok{OBin}\NormalTok{ f x y }\OtherTok{->} \KeywordTok{do}
+\NormalTok{      yVal }\OtherTok{<-}\NormalTok{ addrVal y}
+\NormalTok{      xVal }\OtherTok{<-}\NormalTok{ dGet    x}
+\NormalTok{      dSet x }\FunctionTok{$}\NormalTok{ f xVal yVal}
+\NormalTok{      dJmp }\DecValTok{1}
+    \DataTypeTok{ORcv}\NormalTok{ x }\OtherTok{->} \KeywordTok{do}
+\NormalTok{      y }\OtherTok{<-}\NormalTok{ dRcv }\FunctionTok{=<<}\NormalTok{ dGet x}
+\NormalTok{      dSet x y}
+\NormalTok{      dJmp }\DecValTok{1}
+    \DataTypeTok{OJgz}\NormalTok{ x y }\OtherTok{->} \KeywordTok{do}
+\NormalTok{      xVal }\OtherTok{<-}\NormalTok{ addrVal x}
+\NormalTok{      dJmp }\FunctionTok{=<<} \KeywordTok{if}\NormalTok{ xVal }\FunctionTok{>} \DecValTok{0}
+                 \KeywordTok{then}\NormalTok{ addrVal y}
+                 \KeywordTok{else}\NormalTok{ return }\DecValTok{1}
+  \KeywordTok{where}
+\NormalTok{    addrVal (}\DataTypeTok{Left}\NormalTok{ r ) }\FunctionTok{=}\NormalTok{ dGet r}
+\NormalTok{    addrVal (}\DataTypeTok{Right}\NormalTok{ x) }\FunctionTok{=}\NormalTok{ return x}
+\end{Highlighting}
+\end{Shaded}
+
+This is basically a straightforward interpretation of the ``rules'' of our
+language, and what to do when encountering each op code.
+
+The only non-trivial thing is the \texttt{ORcv} branch, where we include the
+contents of the register in question, so that our interpreter will know whether
+or not to treat it as a no-op.
+
+\section{The Interpreters}\label{the-interpreters}
+
+Now for the fun part!
 
 \end{document}

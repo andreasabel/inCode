@@ -8,7 +8,7 @@ This post is just a fun one exploring a wide range of techniques that I applied
 to solve the Day 18 puzzles of this year’s great [Advent of
 Code](http://adventofcode.com/2017). The puzzles involved interpreting an
 assembly language on an abstract machine. The neat twist is that Part 1 gave you
-a description of one abstract machine, and Part 2 gave you a *different*
+a description of one abstract machine, and Part 3 gave you a *different*
 abstract machine to interpret the same language in. This twist (one language,
 but different interpreters/abstract machines) is basically one of the textbook
 applications of the *interpreter pattern* in Haskell and functional programming,
@@ -127,6 +127,7 @@ representing opcodes. There are four categories: “snd”, “rcv”, “jgz”
 binary mathematical operations:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L21-26
 type Addr = Either Char Int
 
 data Op = OSnd Addr
@@ -141,6 +142,7 @@ take either numbers or other registers.
 Now, parsing a single `Op` is just a matter of pattern matching on `words`:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L28-41
 parseOp :: String -> Op
 parseOp inp = case words inp of
     "snd":c    :_   -> OSnd (addr c)
@@ -165,11 +167,231 @@ then just parsing each line in the program string, and collecting them into a
 `PointedList`. We’re ready to go!
 
 ``` {.haskell}
-parse :: String -> P.PointedList Op
-parse = fromJust . P.fromList . map parseOp . lines
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L43-44
+parseProgram :: String -> P.PointedList Op
+parseProgram = fromJust . P.fromList . map parseOp . lines
 ```
 
 Our Virtual Machine
 -------------------
 
-Hi
+### MonadPrompt
+
+We’re going to be using the great
+*[MonadPrompt](http://hackage.haskell.org/package/MonadPrompt)* library to build
+our representation of our interpreted language. Another common choice is to use
+*[free](http://hackage.haskell.org/package/free)*, and a lot of other tutorials
+go down this route. However, *free* is a bit more power than you really need for
+the interpreter pattern, and I always felt like the implementation of
+interpreter pattern programs in *free* was a bit awkward.
+
+*MonadPrompt* lets us construct a language (and a monad) using GADTs to
+represent command primitives. For example, to implement something like
+`State Int`, you might use this GADT:
+
+``` {.haskell}
+data StateCommand :: Type -> Type where
+    Put :: Int -> StateCommand ()
+    Get :: StateCommand Int
+```
+
+Which says that the two “primitive” commands of `State Int` are “putting” (which
+requires an `Int` and produces a `()` result) and “getting” (which requires no
+inputs, and produces an `Int` result).
+
+You can then write `State` as:
+
+``` {.haskell}
+type IntState = Prompt StateCommand
+```
+
+And our primitives can be constructed using:
+
+``` {.haskell}
+prompt :: StateCommand a -> IntState a
+
+prompt (Put 10) :: IntState ()
+prompt Get      :: IntState Int
+```
+
+Now, we *interpret* an `IntState` in a monadic context using `runPromptM`:
+
+``` {.haskell}
+runPromptM
+    :: Monad m                              -- m is the monad to interpret in
+    => (forall x. StateCommand x -> m x)    -- a way to interpret each primitive in 'm'
+    -> IntState a                           -- IntState to interpret
+    -> m a                                  -- resulting action in 'm'
+```
+
+So, if we wanted to use `IO` and `IORefs` as the mechanism for interpreting our
+`IntState`:
+
+``` {.haskell}
+interpretIO
+    :: IORef Int
+    -> StateCommand a
+    -> IO a
+interpretIO r = \case           -- using -XLambdaCase
+    Put x -> writeIORef r x
+    Get   -> readIORef r
+
+runAsIO :: IntState a -> Int -> IO a
+runAsIO m s0 = do
+    r <- newIORef s0
+    runPromptM (interpretIO r) m
+```
+
+`interpretIO` is our interpreter, in `IO`. `runPromptM` will interpret each
+primitive (`Put` and `Get`) using `interpretIO`, and generate the result for us.
+
+We can also be boring and interpret it using `State Int`:
+
+``` {.haskell}
+interpretState :: StateCommand a -> State Int a
+interpretState = \case
+    Put x -> put x
+    Get   -> get
+
+runAsState :: IntState a -> State Int a
+runAsState = runPormptM interpretState
+```
+
+Basically, an `IntState a` is an abstract representation of a program (as a
+Monad), and `interpretIO` and `interpretState` are different ways of
+*interpreting* that program, in different monadic contexts. To “run” or
+interpret our program in a context, we provide a function
+`forall x. StateCommand x -> m x`, which interprets each individual primitive
+command.
+
+### Duet Commands
+
+Now let’s specify the “primitives” of our program. It’ll be useful to separate
+out the “memory-based” primitive commands from the “communication-based”
+primitive commands. This is so that we can write interpreters that operate on
+each one individually.
+
+For memory, we can access and modify register values, as well as jump around in
+the program tape and read the `Op` at the current program head:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L46-50
+data Mem :: Type -> Type where
+    MGet :: Char -> Mem Int
+    MSet :: Char -> Int -> Mem ()
+    MJmp :: Int -> Mem ()
+    MPk  :: Mem Op
+```
+
+For communication, we must be able to “snd” and “rcv”.
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L52-54
+data Com :: Type -> Type where
+    CSnd :: Int -> Com ()
+    CRcv :: Int -> Com Int
+```
+
+Part 1 requires `CRcv` to take, as an argument, a number, since whether or not
+`CRcv` is a no-op depends on the value of a certain register for Part 1’s
+virtual machine.
+
+Now, we can leverage the `:|:` type from *\[type-combinators\]\[\]*:
+
+``` {.haskell}
+data (f :|: g) a = L (f a)
+                 | R (g a)
+```
+
+`:|:` is a “functor disjunction” – a value of type `(f :|: g) a` is either `f a`
+or `g a`. `:|:` is in *base* twice, as `:+:` in *GHC.Generics* and as `Sum` in
+*Data.Functor.Sum*. However, the version in *type-combinators* has some nice
+utility combinators we will be using and is more fully-featured.
+
+We can use `:|:` to create the type `Mem :|: Com`. If `Mem` and `Com` represent
+“primitives” in our Duet language, then `Mem :|: Com` represents *primitives
+from `Mem` and `Com` together*. It’s a type that contains all of the primitives
+of `Mem` and the primitives of `Com` – that is, it contains:
+
+``` {.haskell}
+L (MGet 'c') :: (Mem :|: Com) Int
+L MPk        :: (Mem :|: Com) Op
+R (CSnd 5)   :: (Mem :|: Com) ()
+```
+
+etc.
+
+Our final data type then – a monad that encompasses *all* possible Duet
+primitive commands, is:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L56-56
+type Duet = Prompt (Mem :|: Com)
+```
+
+We can write some convenient utility primitives to make things easier for us in
+the long run:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L58-74
+dGet :: Char -> Duet Int
+dGet = prompt . L . MGet
+
+dSet :: Char -> Int -> Duet ()
+dSet r = prompt . L . MSet r
+
+dJmp :: Int -> Duet ()
+dJmp = prompt . L . MJmp
+
+dPk :: Duet Op
+dPk = prompt (L MPk)
+
+dSnd :: Int -> Duet ()
+dSnd = prompt . R . CSnd
+
+dRcv :: Int -> Duet Int
+dRcv = prompt . R . CRcv
+```
+
+### Constructing Duet Programs
+
+Armed with our `Duet` monad, we can now write a real-life `Duet` action to
+represent *one step* of our duet programs:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L76-97
+stepProg :: Duet ()
+stepProg = dPk >>= \case
+    OSnd x -> do
+      dSnd =<< addrVal x
+      dJmp 1
+    OBin f x y -> do
+      yVal <- addrVal y
+      xVal <- dGet    x
+      dSet x $ f xVal yVal
+      dJmp 1
+    ORcv x -> do
+      y <- dRcv =<< dGet x
+      dSet x y
+      dJmp 1
+    OJgz x y -> do
+      xVal <- addrVal x
+      dJmp =<< if xVal > 0
+                 then addrVal y
+                 else return 1
+  where
+    addrVal (Left r ) = dGet r
+    addrVal (Right x) = return x
+```
+
+This is basically a straightforward interpretation of the “rules” of our
+language, and what to do when encountering each op code.
+
+The only non-trivial thing is the `ORcv` branch, where we include the contents
+of the register in question, so that our interpreter will know whether or not to
+treat it as a no-op.
+
+The Interpreters
+----------------
+
+Now for the fun part!
