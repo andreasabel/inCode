@@ -562,7 +562,7 @@ so we can merge the contexts of `interpMem` and `interpComB`, and really treat
 them (using type inference) as both working in the same interpretation context.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L151-157
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L153-159
 data Thread = T { _tState   :: ProgState
                 , _tBuffer  :: [Int]
                 }
@@ -575,7 +575,7 @@ instance HasProgState Thread where
 And now, to interpret:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L159-168
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L161-170
 interpComB
     :: (MonadWriter [Int] m, MonadFail m, MonadState Thread m)
     => Com a
@@ -589,3 +589,8 @@ interpComB = \case
 ```
 
 Note again the usage of do block pattern matches and `MonadFail`.
+
+Getting the Results
+-------------------
+
+These are the results.
