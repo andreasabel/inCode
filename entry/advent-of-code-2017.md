@@ -19,12 +19,12 @@ benchmark suite.
 
 I originally was only going to casually try the problems (like I did last year),
 but I hit a decent global rank by accident on Day 4 (which was very suited for
-Haskell!), and since then I've been taking things seriously to try to aim for
-the global leaderboard (top 100). This is a struggle for me because I'm not
-really the *fastest* algorithm person, but I think it's a fun goal for me to try
+Haskell!), and since then I’ve been taking things seriously to try to aim for
+the global leaderboard (top 100). This is a struggle for me because I’m not
+really the *fastest* algorithm person, but I think it’s a fun goal for me to try
 to hit this year.
 
-Wish me luck! And if you haven't started yet, it's not too late to join in the
+Wish me luck! And if you haven’t started yet, it’s not too late to join in the
 fun! [glguy](https://twitter.com/glguy) has been maintaining the semi-official
 [Haskell Leaderboard](adventofcode.com/2017/leaderboard/private) (join code
-`43100-84040706`) -- come join us!
+`43100-84040706`) – come join us!
