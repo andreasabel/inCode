@@ -704,7 +704,7 @@ SJust SOpened
 ```
 
 We also have `withSingI`, which is equivalent to our `withSingDSI` function
-earlier.
+earlier.[^6]
 
 ``` {.haskell}
 withSingI :: Sing s -> (forall r. SingI s => r) -> r
@@ -871,3 +871,9 @@ for a comparison, if you are still unfamiliar.
 
 [^5]: `~` here refers to "type equality", or the constraint that the types on
     both sides are equal. `s ~ 'Opened` can be read as "`s` is `'Opened`".
+
+[^6]: It is probably worth mentioning that, for practical reasons, the
+    implementation of *singleton*'s `withSingI` is very different than the
+    implementation we used for our `withSingDSI`. However, understanding its
+    implementation isn't really relevant understanding how to use the library,
+    so we won't really go to deep into this.
