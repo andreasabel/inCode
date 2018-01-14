@@ -132,6 +132,7 @@ binary mathematical operations:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L31-L36
+
 type Addr = Either Char Int
 
 data Op = OSnd Addr
@@ -147,6 +148,7 @@ Now, parsing a single `Op` is just a matter of pattern matching on `words`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L38-L51
+
 parseOp :: String -> Op
 parseOp inp = case words inp of
     "snd":c    :_   -> OSnd (addr c)
@@ -172,6 +174,7 @@ then just parsing each line in the program string, and collecting them into a
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L53-L54
+
 parseProgram :: String -> P.PointedList Op
 parseProgram = fromJust . P.fromList . map parseOp . lines
 ```
@@ -295,6 +298,7 @@ the program tape and read the `Op` at the current program head:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L56-L60
+
 data Mem :: Type -> Type where
     MGet :: Char -> Mem Int
     MSet :: Char -> Int -> Mem ()
@@ -306,6 +310,7 @@ For communication, we must be able to "snd" and "rcv".
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L62-L64
+
 data Com :: Type -> Type where
     CSnd :: Int -> Com ()
     CRcv :: Int -> Com Int
@@ -346,6 +351,7 @@ primitive commands, is:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L66-L66
+
 type Duet = Prompt (Mem :|: Com)
 ```
 
@@ -354,6 +360,7 @@ the long run:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L68-L84
+
 dGet :: Char -> Duet Int
 dGet = prompt . L . MGet
 
@@ -380,6 +387,7 @@ represent *one step* of our duet programs:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L86-L107
+
 stepProg :: Duet ()
 stepProg = dPk >>= \case
     OSnd x -> do
@@ -425,6 +433,7 @@ polymorphically:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L109-L112
+
 data ProgState = PS { _psTape :: P.PointedList Op
                     , _psRegs :: M.Map Char Int
                     }
@@ -502,6 +511,7 @@ commands:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L114-L124
+
 interpMem
     :: (MonadState s m, MonadFail m, HasProgState s)
     => Mem a
@@ -569,6 +579,7 @@ because, if there are two *snd*'s, we only care about the last *snd*'d thing.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L130-L140
+
 interpComA
     :: (MonadAccum (Last Int) m, MonadWriter (First Int) m)
     => Com a
@@ -617,6 +628,7 @@ them (using type inference) as both working in the same interpretation context.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L153-L159
+
 data Thread = T { _tState   :: ProgState
                 , _tBuffer  :: [Int]
                 }
@@ -634,6 +646,7 @@ And now, to interpret:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L161-L170
+
 interpComB
     :: (MonadWriter [Int] m, MonadFail m, MonadState Thread m)
     => Com a
@@ -723,6 +736,7 @@ And so we can write our final "step" function in that context:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L142-L143
+
 stepA :: MaybeT (StateT ProgState (WriterT (First Int) (A.Accum (Last Int)))) ()
 stepA = runPromptM (interpMem >|< interpComA) stepProg
 ```
@@ -746,6 +760,7 @@ unwrapping *transformers* newtype wrappers.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L145-L151
+
 partA :: P.PointedList Op -> Maybe Int
 partA ops = getFirst
           . flip A.evalAccum mempty
@@ -793,6 +808,7 @@ have, in the end:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L172-L181
+
 stepB :: MaybeT (State (Thread, Thread)) Int
 stepB = do
     outA <- execWriterT $
@@ -824,6 +840,7 @@ use `many` again to run these multiple times until both threads block.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L183-L191
+
 partB :: P.PointedList Op -> Int
 partB ops = sum . concat
           . flip evalState s0
@@ -846,6 +863,7 @@ given some sample puzzle input:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L193-L196
+
 main :: IO ()
 main = do
     print $ partA (parseProgram testProg)

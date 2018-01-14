@@ -179,6 +179,7 @@ Let's start out with our arrow data type:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L12-L18
+
 data ParArrow a b =                     Pure  (a -> b)
                   | forall z.           Seq   (ParArrow a z)
                                               (ParArrow z b)
@@ -221,6 +222,7 @@ Okay, let's define a Category instance, that lets us compose `ParArrow`s:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L20-L22
+
 instance Category ParArrow where
     id    = Pure id
     f . g = Seq g f
@@ -230,6 +232,7 @@ No surprises there, hopefully! Now an Arrow instance:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L24-L29
+
 instance Arrow ParArrow where
     arr      = Pure
     first f  = f  *** id
@@ -249,6 +252,7 @@ into a streamlined simple-as-possible graph:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L31-L51
+
 collapse :: ParArrow a b -> ParArrow a b
 collapse (Seq f g)       =
     case (collapse f, collapse g) of
@@ -297,6 +301,7 @@ It might be useful to get a peek at the internal structures of a collapsed
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L76-L79
+
 data Graph = GPure                  -- Pure function
            | Graph :->: Graph       -- Sequenced arrows
            | Graph :/: Graph        -- Parallel arrows
@@ -307,6 +312,7 @@ And we can convert a given `ParArrow` into its internal graph:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L81-L87
+
 analyze' :: ParArrow a b -> Graph
 analyze' (Pure _) = GPure
 analyze' (Seq f g) = analyze' f :->: analyze' g
@@ -372,6 +378,7 @@ actually isn't too bad at all, because of what we did in `collapse`.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L92-L113
+
 runPar' :: ParArrow a b -> (a -> IO b)
 runPar' = go
   where
@@ -494,6 +501,7 @@ We can "fix" this. We can make `collapse` not collapse the `Pure`-`Par` cases:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L53-L116
+
 collapse_ :: ParArrow a b -> ParArrow a b
 collapse_ (Seq f g)       =
     case (collapse_ f, collapse_ g) of

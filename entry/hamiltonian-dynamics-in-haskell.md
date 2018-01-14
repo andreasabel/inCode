@@ -726,6 +726,7 @@ describes the physics of our systems (the "shape" of the Hamiltonian):
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L25-L32
+
 data System m n = System
     { sysInertia       :: R m                         -- ^ 'm' vector
     , sysCoords        :: R n -> R m                  -- ^ f
@@ -753,6 +754,7 @@ which is sometimes called "configuration space":
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L35-L39
+
 data Config n = Config
     { confPositions  :: R n
     , confVelocities :: R n
@@ -769,6 +771,7 @@ So let's make a type to describe the state of our system in phase space:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L42-L46
+
 data Phase n = Phase
     { phasePositions :: R n
     , phaseMomenta   :: R n
@@ -787,6 +790,7 @@ coordinate system":
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L51-L55
+
 underlyingPosition
     :: System m n
     -> R n
@@ -815,6 +819,7 @@ We can translate that directly into Haskell code:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L59-L67
+
 momenta
     :: (KnownNat n, KnownNat m)
     => System m n
@@ -840,6 +845,7 @@ to its coordinates in phase space:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L70-L75
+
 toPhase
     :: (KnownNat n, KnownNat m)
     => System m n
@@ -931,6 +937,7 @@ fundamentally unsafe to write (but safe to use, after written properly):
 ``` {.haskell}
 -- import qualified Data.Vector.Generic.Sized as VG
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L78-L87
+
 vec2r :: KnownNat n => V.Vector n Double -> R n
 vec2r = fromJust . create . VG.fromSized . VG.convert
 
@@ -957,6 +964,7 @@ inelegant way. (Again, unsafe to write, but safe to use once you do)
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L90-L93
+
 rehessian :: (KnownNat m, KnownNat n) => V.Vector m (L n n) -> V.Vector n (L m n)
 rehessian = fmap (fromJust . (\rs -> withRows rs exactDims) . toList)
           . sequenceA
@@ -970,6 +978,7 @@ function, and the potential energy function:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L97-L113
+
 mkSystem
     :: (KnownNat m, KnownNat n)
     => R m
@@ -1032,6 +1041,7 @@ translate them into Haskell (using
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L116-L133
+
 hamilEqns
     :: (KnownNat n, KnownNat m)
     => System m n
@@ -1129,6 +1139,7 @@ component-wise product of two vectors)
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L136-L144
+
 stepEuler
     :: (KnownNat n, KnownNat m)
     => System m n       -- ^ the system
@@ -1144,6 +1155,7 @@ And repeatedly evolve this system as a lazy list:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L147-L155
+
 runSystem
     :: (KnownNat n, KnownNat m)
     => System m n       -- ^ the system
@@ -1166,6 +1178,7 @@ under gravity --
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L158-L164
+
 simpleSystem :: System 2 2
 simpleSystem = mkSystem (vec2 5 5) id pot
   where
@@ -1190,6 +1203,7 @@ We can make our initial configuration:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L168-L172
+
 simpleConfig0 :: Config 2
 simpleConfig0 = Config
     { confPositions  = vec2 0 0
@@ -1201,6 +1215,7 @@ And then...let it run!
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L174-L178
+
 simpleMain :: IO ()
 simpleMain =
     mapM_ (disp 2 . phasePositions)  -- position with 2 digits of precision
@@ -1268,6 +1283,7 @@ will be 0.1 radians/sec (clockwise), as we try to induce harmonic motion:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L181-L210
+
 -- | A pendulum system, parameterized by its angle clockwise from
 -- equilibrium
 pendulum :: System 2 1

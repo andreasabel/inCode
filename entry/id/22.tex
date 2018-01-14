@@ -324,6 +324,7 @@ Let's start out with our arrow data type:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L12-L18}
+
 \KeywordTok{data} \DataTypeTok{ParArrow}\NormalTok{ a b }\FunctionTok{=}                     \DataTypeTok{Pure}\NormalTok{  (a }\OtherTok{->}\NormalTok{ b)}
                   \FunctionTok{|}\NormalTok{ forall z}\FunctionTok{.}           \DataTypeTok{Seq}\NormalTok{   (}\DataTypeTok{ParArrow}\NormalTok{ a z)}
 \NormalTok{                                              (}\DataTypeTok{ParArrow}\NormalTok{ z b)}
@@ -376,6 +377,7 @@ Okay, let's define a Category instance, that lets us compose \texttt{ParArrow}s:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L20-L22}
+
 \KeywordTok{instance} \DataTypeTok{Category} \DataTypeTok{ParArrow} \KeywordTok{where}
 \NormalTok{    id    }\FunctionTok{=} \DataTypeTok{Pure}\NormalTok{ id}
 \NormalTok{    f }\FunctionTok{.}\NormalTok{ g }\FunctionTok{=} \DataTypeTok{Seq}\NormalTok{ g f}
@@ -387,6 +389,7 @@ No surprises there, hopefully! Now an Arrow instance:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L24-L29}
+
 \KeywordTok{instance} \DataTypeTok{Arrow} \DataTypeTok{ParArrow} \KeywordTok{where}
 \NormalTok{    arr      }\FunctionTok{=} \DataTypeTok{Pure}
 \NormalTok{    first f  }\FunctionTok{=}\NormalTok{ f  }\FunctionTok{***}\NormalTok{ id}
@@ -410,6 +413,7 @@ Now, for the magic --- consolidating a big composition of fragmented
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L31-L51}
+
 \OtherTok{collapse ::} \DataTypeTok{ParArrow}\NormalTok{ a b }\OtherTok{->} \DataTypeTok{ParArrow}\NormalTok{ a b}
 \NormalTok{collapse (}\DataTypeTok{Seq}\NormalTok{ f g)       }\FunctionTok{=}
     \KeywordTok{case}\NormalTok{ (collapse f, collapse g) }\KeywordTok{of}
@@ -469,6 +473,7 @@ It might be useful to get a peek at the internal structures of a collapsed
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L76-L79}
+
 \KeywordTok{data} \DataTypeTok{Graph} \FunctionTok{=} \DataTypeTok{GPure}                  \CommentTok{-- Pure function}
            \FunctionTok{|} \DataTypeTok{Graph} \FunctionTok{:->:} \DataTypeTok{Graph}       \CommentTok{-- Sequenced arrows}
            \FunctionTok{|} \DataTypeTok{Graph} \FunctionTok{:/:} \DataTypeTok{Graph}        \CommentTok{-- Parallel arrows}
@@ -481,6 +486,7 @@ And we can convert a given \texttt{ParArrow} into its internal graph:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L81-L87}
+
 \OtherTok{analyze' ::} \DataTypeTok{ParArrow}\NormalTok{ a b }\OtherTok{->} \DataTypeTok{Graph}
 \NormalTok{analyze' (}\DataTypeTok{Pure}\NormalTok{ _) }\FunctionTok{=} \DataTypeTok{GPure}
 \NormalTok{analyze' (}\DataTypeTok{Seq}\NormalTok{ f g) }\FunctionTok{=}\NormalTok{ analyze' f }\FunctionTok{:->:}\NormalTok{ analyze' g}
@@ -553,6 +559,7 @@ This actually isn't too bad at all, because of what we did in \texttt{collapse}.
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L92-L113}
+
 \OtherTok{runPar' ::} \DataTypeTok{ParArrow}\NormalTok{ a b }\OtherTok{->}\NormalTok{ (a }\OtherTok{->} \DataTypeTok{IO}\NormalTok{ b)}
 \NormalTok{runPar' }\FunctionTok{=}\NormalTok{ go}
   \KeywordTok{where}
@@ -694,6 +701,7 @@ We can ``fix'' this. We can make \texttt{collapse} not collapse the
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L53-L116}
+
 \OtherTok{collapse_ ::} \DataTypeTok{ParArrow}\NormalTok{ a b }\OtherTok{->} \DataTypeTok{ParArrow}\NormalTok{ a b}
 \NormalTok{collapse_ (}\DataTypeTok{Seq}\NormalTok{ f g)       }\FunctionTok{=}
     \KeywordTok{case}\NormalTok{ (collapse_ f, collapse_ g) }\KeywordTok{of}

@@ -201,32 +201,33 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>Think about how you would implement this normally. You might have a state object that stores the current health as well as a flag with the current dead/alive state, and at every step, check if the health is 0 or lower; if it is, swap the flag to be dead and ignore all other updates.</p>
 <p>But let’s try doing this instead with the Maybe monad:</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/MaybeGame.hs#L26-L51</span></a>
-<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="co">-- die or fail immediately</span></a>
-<a class="sourceLine" id="cb9-3" data-line-number="3"><span class="ot">die ::</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb9-4" data-line-number="4">die <span class="fu">=</span> mzero                         <span class="co">-- or die = mzero</span></a>
-<a class="sourceLine" id="cb9-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb9-6" data-line-number="6"><span class="co">-- if not dead, sets the health to the given level</span></a>
-<a class="sourceLine" id="cb9-7" data-line-number="7"><span class="ot">setHealth ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb9-8" data-line-number="8">setHealth n <span class="fu">=</span> return n              <span class="co">-- or setHealth n = return n</span></a>
-<a class="sourceLine" id="cb9-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb9-10" data-line-number="10"><span class="co">-- damage the player (from its previous health) and check for death</span></a>
-<a class="sourceLine" id="cb9-11" data-line-number="11"><span class="ot">hit ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb9-12" data-line-number="12">hit currHealth <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb9-13" data-line-number="13">    <span class="kw">let</span> newHealth <span class="fu">=</span> currHealth <span class="fu">-</span> <span class="dv">1</span></a>
-<a class="sourceLine" id="cb9-14" data-line-number="14">    guard <span class="fu">$</span> newHealth <span class="fu">&gt;</span> <span class="dv">0</span>           <span class="co">-- fail/die immediately unless newHealth</span></a>
-<a class="sourceLine" id="cb9-15" data-line-number="15">                                    <span class="co">--     is positive</span></a>
-<a class="sourceLine" id="cb9-16" data-line-number="16">    return newHealth                <span class="co">-- succeed with newHealth if not already</span></a>
-<a class="sourceLine" id="cb9-17" data-line-number="17">                                    <span class="co">--     dead</span></a>
-<a class="sourceLine" id="cb9-18" data-line-number="18"></a>
-<a class="sourceLine" id="cb9-19" data-line-number="19"><span class="co">-- an alternative but identical definition of `hit`, using &gt;&gt;= and &gt;&gt;</span></a>
-<a class="sourceLine" id="cb9-20" data-line-number="20"><span class="ot">hit&#39; ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb9-21" data-line-number="21">hit&#39; currHealth <span class="fu">=</span> guard (newHealth <span class="fu">&gt;</span> <span class="dv">0</span>) <span class="fu">&gt;&gt;</span> return newHealth</a>
-<a class="sourceLine" id="cb9-22" data-line-number="22">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb9-23" data-line-number="23">        newHealth <span class="fu">=</span> currHealth <span class="fu">-</span> <span class="dv">1</span></a>
-<a class="sourceLine" id="cb9-24" data-line-number="24"></a>
-<a class="sourceLine" id="cb9-25" data-line-number="25"><span class="co">-- increase the player&#39;s health from its previous health</span></a>
-<a class="sourceLine" id="cb9-26" data-line-number="26"><span class="ot">powerup ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb9-27" data-line-number="27">powerup currHealth <span class="fu">=</span> return <span class="fu">$</span> currHealth <span class="fu">+</span> <span class="dv">1</span></a></code></pre></div>
+<a class="sourceLine" id="cb9-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3"><span class="co">-- die or fail immediately</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4"><span class="ot">die ::</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">die <span class="fu">=</span> mzero                         <span class="co">-- or die = mzero</span></a>
+<a class="sourceLine" id="cb9-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb9-7" data-line-number="7"><span class="co">-- if not dead, sets the health to the given level</span></a>
+<a class="sourceLine" id="cb9-8" data-line-number="8"><span class="ot">setHealth ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">setHealth n <span class="fu">=</span> return n              <span class="co">-- or setHealth n = return n</span></a>
+<a class="sourceLine" id="cb9-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb9-11" data-line-number="11"><span class="co">-- damage the player (from its previous health) and check for death</span></a>
+<a class="sourceLine" id="cb9-12" data-line-number="12"><span class="ot">hit ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb9-13" data-line-number="13">hit currHealth <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb9-14" data-line-number="14">    <span class="kw">let</span> newHealth <span class="fu">=</span> currHealth <span class="fu">-</span> <span class="dv">1</span></a>
+<a class="sourceLine" id="cb9-15" data-line-number="15">    guard <span class="fu">$</span> newHealth <span class="fu">&gt;</span> <span class="dv">0</span>           <span class="co">-- fail/die immediately unless newHealth</span></a>
+<a class="sourceLine" id="cb9-16" data-line-number="16">                                    <span class="co">--     is positive</span></a>
+<a class="sourceLine" id="cb9-17" data-line-number="17">    return newHealth                <span class="co">-- succeed with newHealth if not already</span></a>
+<a class="sourceLine" id="cb9-18" data-line-number="18">                                    <span class="co">--     dead</span></a>
+<a class="sourceLine" id="cb9-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb9-20" data-line-number="20"><span class="co">-- an alternative but identical definition of `hit`, using &gt;&gt;= and &gt;&gt;</span></a>
+<a class="sourceLine" id="cb9-21" data-line-number="21"><span class="ot">hit&#39; ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb9-22" data-line-number="22">hit&#39; currHealth <span class="fu">=</span> guard (newHealth <span class="fu">&gt;</span> <span class="dv">0</span>) <span class="fu">&gt;&gt;</span> return newHealth</a>
+<a class="sourceLine" id="cb9-23" data-line-number="23">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-24" data-line-number="24">        newHealth <span class="fu">=</span> currHealth <span class="fu">-</span> <span class="dv">1</span></a>
+<a class="sourceLine" id="cb9-25" data-line-number="25"></a>
+<a class="sourceLine" id="cb9-26" data-line-number="26"><span class="co">-- increase the player&#39;s health from its previous health</span></a>
+<a class="sourceLine" id="cb9-27" data-line-number="27"><span class="ot">powerup ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb9-28" data-line-number="28">powerup currHealth <span class="fu">=</span> return <span class="fu">$</span> currHealth <span class="fu">+</span> <span class="dv">1</span></a></code></pre></div>
 <div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1">ghci<span class="fu">&gt;</span> setHealth <span class="dv">2</span> <span class="fu">&gt;&gt;=</span> hit <span class="fu">&gt;&gt;=</span> powerup <span class="fu">&gt;&gt;=</span> hit <span class="fu">&gt;&gt;=</span> powerup <span class="fu">&gt;&gt;=</span> powerup</a>
 <a class="sourceLine" id="cb10-2" data-line-number="2"><span class="dt">Just</span> <span class="dv">3</span></a>
 <a class="sourceLine" id="cb10-3" data-line-number="3">ghci<span class="fu">&gt;</span> setHealth <span class="dv">2</span> <span class="fu">&gt;&gt;=</span> hit <span class="fu">&gt;&gt;=</span> powerup <span class="fu">&gt;&gt;=</span> hit <span class="fu">&gt;&gt;=</span> hit <span class="fu">&gt;&gt;=</span> powerup</a>

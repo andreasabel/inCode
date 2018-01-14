@@ -22,6 +22,7 @@ Let's return to our `Door` type:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L19-L25
+
 $(singletons [d|
   data DoorState = Opened | Closed | Locked
     deriving (Show, Eq)
@@ -118,6 +119,7 @@ data SomeDoor = forall s. MkSomeDoor (Sing s) (Door s)
 
 -- or, using GADT syntax (preferred)
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L56-L57
+
 data SomeDoor :: Type where
     MkSomeDoor :: Sing s -> Door s -> SomeDoor
 ```
@@ -152,6 +154,7 @@ Let's write some basic functions to see. First, a function to "make" a
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L59-L63
+
 fromDoor :: Sing s -> Door s -> SomeDoor
 fromDoor = MkSomeDoor
 
@@ -165,6 +168,7 @@ and *pattern matching* on `MkSomeDoor`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L65-L72
+
 closeSomeOpenedDoor :: SomeDoor -> Maybe SomeDoor
 closeSomeOpenedDoor (MkSomeDoor s d) = case s of
     SOpened -> Just . fromDoor_ $ closeDoor d
@@ -433,6 +437,7 @@ without directly pattern matching on our constructors:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L74-L79
+
 mkSomeDoor :: DoorState -> String -> SomeDoor
 mkSomeDoor ds = case toSing ds of
     SomeSing s -> fromDoor s . mkDoor s
@@ -522,6 +527,7 @@ We can *convert* from `SingI s ->` style to `SingI s =>` style using `sing`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L50-L63
+
 lockAnyDoor_ :: SingI s => Door s -> Door 'Locked
 lockAnyDoor_ = lockAnyDoor sing
 
@@ -752,6 +758,7 @@ for solutions!
 
     ``` {.haskell}
     -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L56-L87
+
     data OldSomeDoor :: Type where
         OldMkSomeDoor :: DoorState -> String -> OldSomeDoor
 
@@ -764,6 +771,7 @@ for solutions!
 
     ``` {.haskell}
     -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L89-L92
+
     toOld :: SomeDoor -> OldSomeDoor
 
     fromOld :: OldSomeDoor -> SomeDoor
@@ -785,6 +793,7 @@ for solutions!
 
     ``` {.haskell}
     -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L95-L100
+
     unlockDoor :: Int -> Door 'Locked -> Maybe (Door 'Closed)
     unlockDoor n (UnsafeMkDoor m)
         | n `mod` 2 == 1 = Just (UnsafeMkDoor m)
@@ -798,6 +807,7 @@ for solutions!
 
     ``` {.haskell}
     -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L105-L114
+
     openAnyDoor :: SingI s => Int -> Door s -> Maybe (Door 'Opened)
     openAnyDoor n = openAnyDoor_ sing
       where
@@ -817,6 +827,7 @@ for solutions!
 
     ``` {.haskell}
     -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L120-L126
+
     data List a = Nil | Cons a (List a)
 
     data instance Sing (x :: List k) where

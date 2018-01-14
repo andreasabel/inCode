@@ -130,6 +130,7 @@ for some reason:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L7-L9
+
 select :: [a] -> [(a, [a])]
 select []     = []
 select (x:xs) = (x,xs) : [(y,x:ys) | (y,ys) <- select xs]
@@ -161,6 +162,7 @@ And armed with this...we have all we need
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L3-L35
+
 import Control.Monad             (guard, mfilter)
 import Control.Monad.Trans.State
 import Data.List                 (foldl')
@@ -218,6 +220,7 @@ already.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L38-L59
+
 select' :: [a] -> [(a,[a])]
 select' = go []
   where

@@ -81,6 +81,7 @@ Compare that with the linked list data type, which is a Stream with an Ending
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L7-L7
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 data List a = Cons (a, List a) | Nil
 ```
 
@@ -95,6 +96,7 @@ It's pretty easy to build lists:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L36-L37
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 myList :: List Int
 myList = Cons ( 1, Cons ( 2, Cons (3, Nil) ) )
 ```
@@ -104,6 +106,7 @@ which is just, in the more traditional (infix) form:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L40-L41
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 myList' :: [Int]
 myList' = 1:(2:(3:[]))
 ```
@@ -149,6 +152,7 @@ of the stream as an unevaluated function call. And then we can recurse!
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L46-L50
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 myStream :: Stream Int
 myStream = streamFrom 1
   where
@@ -210,6 +214,7 @@ field, we can make it a `newtype`, which has similar usage patterns/syntax as a
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L10-L10
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 newtype Stream b = SCons { runStream :: (b, Stream b) }
 ```
 
@@ -225,6 +230,7 @@ conversion into an infinite list.
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L15-L16
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 streamToList :: Stream b -> [b]
 streamToList (SCons (x, xs)) = x : streamToList xs
 ```
@@ -244,6 +250,7 @@ same thing except that we throw away the modified stream.
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L20-L30
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 testStream :: Stream b -> Int -> ([b], Stream b)
 testStream strm 0 = ([]  , strm )
 testStream strm n = (y:ys, final)
@@ -279,6 +286,7 @@ This is made very apparent in our definition of `streamFrom`:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L49-L50
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
     streamFrom :: Int -> Stream Int
     streamFrom n = SCons ( n, streamFrom (n+1) )
 ```
@@ -300,6 +308,7 @@ have a stream whose state is an integer, yet whose output is a character:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L53-L57
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 charStream :: Stream Char
 charStream = charStreamFrom 65
   where
@@ -354,6 +363,7 @@ Let's call it an Auto.
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-L12
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 newtype Auto a b = ACons { runAuto :: a -> (b, Auto a b) }
 ```
 
@@ -381,6 +391,7 @@ Let's look at a direct "port" of our `myStream`:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L40-L44
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 myStreamAuto :: Auto a Int
 myStreamAuto = streamAutoFrom 1
   where
@@ -431,6 +442,7 @@ reset to a number `n` of our choosing, we pass in a `Just n`
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L48-L54
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 settableAuto :: Auto (Maybe Int) Int
 settableAuto = counterFrom 1
   where
@@ -490,6 +502,7 @@ collection.
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L17-L25
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 testAuto :: Auto a b -> [a] -> ([b], Auto a b)
 testAuto auto []      = ([]  , auto )
 testAuto auto (x:xs)  = (y:ys, final)
@@ -514,6 +527,7 @@ for input at each iteration from the user ---
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L27-L32
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 interactAuto :: (Read a, Show b) => Auto a b -> IO ()
 interactAuto a0 = do
     inp <- getLine
@@ -572,6 +586,7 @@ encapsulated.
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L58-L64
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 isEvenAuto :: Auto (Maybe Int) Bool
 isEvenAuto = isEvenAutoFrom 1
   where
@@ -654,6 +669,7 @@ that int with all of the previous ints it has received in its lifetime.
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L67-L73
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 summer :: Num a => Auto a a
 summer = sumFrom 0
   where
@@ -686,6 +702,7 @@ we'll "fold up" all of our inputs.
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L78-L84
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 autoFold :: forall a b. (b -> a -> b) -> b -> Auto a b
 autoFold op init = foldFrom init
   where
@@ -710,6 +727,7 @@ some cute ones:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L92-L107
 -- interactive: https://www.fpcomplete.com/user/jle/machines
+
 accumulateIntoList :: Auto a [a]
 accumulateIntoList = autoFold (flip (:)) []
 
@@ -874,6 +892,7 @@ prefix form of `(->)` a lot from now on)
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L181-L182
+
 maybeIsEven :: (->) (Maybe Int) Bool
 maybeIsEven = even . fromMaybe 1
 ```

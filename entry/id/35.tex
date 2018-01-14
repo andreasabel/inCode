@@ -136,6 +136,7 @@ types.
 \begin{Highlighting}[]
 \CommentTok{-- first, our imports}
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L25-L43}
+
 \KeywordTok{import} \DataTypeTok{Control.Auto}
 \KeywordTok{import} \DataTypeTok{Control.Auto.Blip}
 \KeywordTok{import} \DataTypeTok{Control.Auto.Collection}\NormalTok{  (mux)}
@@ -161,6 +162,7 @@ types.
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L51-L66}
+
 \KeywordTok{type} \DataTypeTok{Nick}    \FunctionTok{=} \DataTypeTok{String}
 \KeywordTok{type} \DataTypeTok{Channel} \FunctionTok{=} \DataTypeTok{String}
 \KeywordTok{type} \DataTypeTok{Message} \FunctionTok{=} \DataTypeTok{String}
@@ -191,6 +193,7 @@ The type for a chat bot over a monad \texttt{m} would then be:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L68-L68}
+
 \KeywordTok{type} \DataTypeTok{ChatBot}\NormalTok{ m }\FunctionTok{=} \DataTypeTok{Auto}\NormalTok{ m }\DataTypeTok{InMessage} \DataTypeTok{OutMessages}
 \end{Highlighting}
 \end{Shaded}
@@ -218,6 +221,7 @@ the message on. So it'll help us to also make another sort of \texttt{Auto}:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L69-L69}
+
 \KeywordTok{type} \DataTypeTok{RoomBot}\NormalTok{ m }\FunctionTok{=} \DataTypeTok{Auto}\NormalTok{ m }\DataTypeTok{InMessage}\NormalTok{ (}\DataTypeTok{Blip}\NormalTok{ [}\DataTypeTok{Message}\NormalTok{])}
 \end{Highlighting}
 \end{Shaded}
@@ -243,6 +247,7 @@ full-on \texttt{ChatBot}, so we can merge them together with
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L72-L75}
+
 \OtherTok{perRoom ::} \DataTypeTok{Monad}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{RoomBot}\NormalTok{ m }\OtherTok{->} \DataTypeTok{ChatBot}\NormalTok{ m}
 \NormalTok{perRoom rb }\FunctionTok{=}\NormalTok{ proc inp}\FunctionTok{@}\NormalTok{(}\DataTypeTok{InMessage}\NormalTok{ _ _ src _) }\OtherTok{->} \KeywordTok{do}
 \NormalTok{    messages }\OtherTok{<-}\NormalTok{ fromBlips [] }\FunctionTok{.}\NormalTok{ rb }\FunctionTok{-<}\NormalTok{ inp}
@@ -392,6 +397,7 @@ feel free to use any interface/library you want.
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L45-L228}
+
 \OtherTok{withIrcConf ::} \DataTypeTok{IrcConfig} \OtherTok{->} \DataTypeTok{ChatBot} \DataTypeTok{IO} \OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{withIrcConf ircconf chatbot }\FunctionTok{=} \KeywordTok{do}
 
@@ -529,6 +535,7 @@ instance for \texttt{Day} (which represents a date) too, while we're at it.
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L230-L236}
+
 \KeywordTok{instance} \DataTypeTok{Serialize} \DataTypeTok{UTCTime} \KeywordTok{where}
 \NormalTok{    get }\FunctionTok{=}\NormalTok{ read }\FunctionTok{<$>}\NormalTok{ get      }\CommentTok{-- haha don't do this in real life.}
 \NormalTok{    put }\FunctionTok{=}\NormalTok{ put }\FunctionTok{.}\NormalTok{ show}
@@ -564,6 +571,7 @@ With these simple blocks, we can build our \texttt{seenBot}:
 \begin{Highlighting}[]
 \CommentTok{-- seenBot :: Monad m => Auto m InMessage (Blip [Message])}
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L96-L115}
+
 \OtherTok{seenBot ::} \DataTypeTok{Monad}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{RoomBot}\NormalTok{ m}
 \NormalTok{seenBot }\FunctionTok{=}\NormalTok{ proc (}\DataTypeTok{InMessage}\NormalTok{ nick msg _ time) }\OtherTok{->} \KeywordTok{do}
 \NormalTok{    seens  }\OtherTok{<-}\NormalTok{ trackSeens }\FunctionTok{-<}\NormalTok{ (nick, time)}
@@ -700,6 +708,7 @@ And\ldots{}now we can wrap it all together with a nice proc block:
 \begin{Highlighting}[]
 \CommentTok{-- repBot :: Monad m => Auto m InMessage (Blip [Message])}
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L117-L147}
+
 \OtherTok{repBot ::} \DataTypeTok{Monad}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{RoomBot}\NormalTok{ m}
 \NormalTok{repBot }\FunctionTok{=}\NormalTok{ proc (}\DataTypeTok{InMessage}\NormalTok{ nick msg _ _) }\OtherTok{->} \KeywordTok{do}
 \NormalTok{    updateB }\OtherTok{<-}\NormalTok{ updateBlips }\FunctionTok{-<}\NormalTok{ (nick, msg)}
@@ -824,6 +833,7 @@ messages.
 \begin{Highlighting}[]
 \CommentTok{-- announceBot :: Monad m => [Channel] -> Auto m InMessage OutMessages}
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L149-L183}
+
 \OtherTok{announceBot ::} \DataTypeTok{Monad}\NormalTok{ m }\OtherTok{=>}\NormalTok{ [}\DataTypeTok{Channel}\NormalTok{] }\OtherTok{->} \DataTypeTok{ChatBot}\NormalTok{ m}
 \NormalTok{announceBot chans }\FunctionTok{=}\NormalTok{ proc (}\DataTypeTok{InMessage}\NormalTok{ nick msg src time) }\OtherTok{->} \KeywordTok{do}
 \NormalTok{    announceB }\OtherTok{<-}\NormalTok{ announceBlips     }\FunctionTok{-<}\NormalTok{ (nick, msg)}
@@ -893,6 +903,7 @@ We have three nice modules now. Now let's wrap it all together.
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L83-L88}
+
 \OtherTok{chatBot ::} \DataTypeTok{MonadIO}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{ChatBot}\NormalTok{ m}
 \NormalTok{chatBot }\FunctionTok{=}\NormalTok{ serializing' }\StringTok{"chatbot.dat"}
         \FunctionTok{.}\NormalTok{ mconcat }\FunctionTok{$}\NormalTok{ [ perRoom seenBot}
@@ -907,6 +918,7 @@ Or, to future-proof, in case we foresee adding new modules:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L90-L94}
+
 \OtherTok{chatBot' ::} \DataTypeTok{MonadIO}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{ChatBot}\NormalTok{ m}
 \NormalTok{chatBot' }\FunctionTok{=}\NormalTok{ mconcat [ perRoom }\FunctionTok{.}\NormalTok{ serializing' }\StringTok{"seens.dat"} \FunctionTok{$}\NormalTok{ seenBot}
 \NormalTok{                   , perRoom }\FunctionTok{.}\NormalTok{ serializing' }\StringTok{"reps.dat"}  \FunctionTok{$}\NormalTok{ repBot}
@@ -942,6 +954,7 @@ own little copy, with separate state. We can do this using \texttt{mux}:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L78-L81}
+
 \OtherTok{isolatedRooms ::} \DataTypeTok{Monad}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{RoomBot}\NormalTok{ m }\OtherTok{->} \DataTypeTok{ChatBot}\NormalTok{ m}
 \NormalTok{isolatedRooms rb }\FunctionTok{=}\NormalTok{ proc inp}\FunctionTok{@}\NormalTok{(}\DataTypeTok{InMessage}\NormalTok{ _ _ src _) }\OtherTok{->} \KeywordTok{do}
 \NormalTok{    messages }\OtherTok{<-}\NormalTok{ fromBlips [] }\FunctionTok{.}\NormalTok{ mux (const rb) }\FunctionTok{-<}\NormalTok{ (src, inp)}

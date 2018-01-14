@@ -153,6 +153,7 @@ each layer:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L18-L20
+
 data Weights = W { wBiases :: !(Vector Double)  -- n
                  , wNodes  :: !(Matrix Double)  -- n x m
                  }                              -- "m to n" layer
@@ -170,6 +171,7 @@ A feed-forward neural network is then just a linked list of these weights:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L22-L28
+
 data Network :: * where
     O     :: !Weights
           -> Network
@@ -204,6 +206,7 @@ We can write simple procedures, like generating random networks:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L46-L56
+
 randomWeights :: MonadRandom m => Int -> Int -> m Weights
 randomWeights i o = do
     seed1 :: Int <- getRandom
@@ -236,6 +239,7 @@ following the matrix equation we wrote earlier:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L30-L44
+
 logistic :: Floating a => a -> a
 logistic x = 1 / (1 + exp (-x))
 
@@ -287,6 +291,7 @@ sources online and in literature, so let's see the implementation in Haskell:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L58-L96
+
 train :: Double           -- ^ learning rate
       -> Vector Double    -- ^ input vector
       -> Vector Double    -- ^ target vector
@@ -433,6 +438,7 @@ you from a layer of 4 nodes to a layer of 6 nodes:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L21-L23
+
 data Weights i o = W { wBiases :: !(R o)
                      , wNodes  :: !(L o i)
                      }                      -- an "o x i" layer
@@ -470,6 +476,7 @@ from a value-level list of integers.)
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L25-L32
+
 data Network :: Nat -> [Nat] -> Nat -> * where
     O     :: !(Weights i o)
           -> Network i '[] o
@@ -532,6 +539,7 @@ Generating random weights and networks is even nicer now:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L57-L64
+
 randomWeights :: (MonadRandom m, KnownNat i, KnownNat o)
               => m (Weights i o)
 randomWeights = do
@@ -716,6 +724,7 @@ Now we have enough pieces of the puzzle:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L66-L75
+
 randomNet :: forall m i hs o. (MonadRandom m, KnownNat i, SingI hs, KnownNat o)
           => m (Network i hs o)
 randomNet = go sing
@@ -811,6 +820,7 @@ The code for *running* the nets is actually literally identical from before:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L42-L55
+
 runLayer :: (KnownNat i, KnownNat o)
          => Weights i o
          -> R i
@@ -850,6 +860,7 @@ Our back-prop algorithm is ported pretty nicely too:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L77-L116
+
 train :: forall i hs o. (KnownNat i, KnownNat o)
       => Double           -- ^ learning rate
       -> R i              -- ^ input vector

@@ -325,6 +325,7 @@ Algebraic Data Type, of course!
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L18-L20}
+
 \KeywordTok{data} \DataTypeTok{Uncert}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{Un}\NormalTok{ \{}\OtherTok{ uMean ::} \FunctionTok{!}\NormalTok{a}
 \NormalTok{                   ,}\OtherTok{ uVar  ::} \FunctionTok{!}\NormalTok{a}
 \NormalTok{                   \}}
@@ -342,6 +343,7 @@ We can write a function to turn a ``plus or minus'' statement into an
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L22-L23}
+
 \OtherTok{(+/-) ::} \DataTypeTok{Num}\NormalTok{ a }\OtherTok{=>}\NormalTok{ a }\OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Uncert}\NormalTok{ a}
 \NormalTok{x }\FunctionTok{+/-}\NormalTok{ dx }\FunctionTok{=} \DataTypeTok{Un}\NormalTok{ x (dx}\FunctionTok{*}\NormalTok{dx)}
 \end{Highlighting}
@@ -355,6 +357,7 @@ Let's also throw in a handy helper function for ``exact'' values:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L25-L26}
+
 \OtherTok{exact ::} \DataTypeTok{Num}\NormalTok{ a }\OtherTok{=>}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Uncert}\NormalTok{ a}
 \NormalTok{exact x }\FunctionTok{=}\NormalTok{ x }\FunctionTok{+/-} \DecValTok{0}
 \end{Highlighting}
@@ -367,6 +370,7 @@ on a mean and standard deviation:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L29-L34}
+
 \CommentTok{-- pattern (:+/-) :: () => Floating a => a -> a -> Uncert a}
 \CommentTok{-- [GHC 8.0:]}
 \CommentTok{-- pattern (:+/-) :: Floating a => a -> a -> Uncert a}
@@ -385,6 +389,7 @@ uncertainty directly. Neat!
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L36-L37}
+
 \OtherTok{uStdev ::} \DataTypeTok{Floating}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Uncert}\NormalTok{ a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{uStdev (_ }\FunctionTok{:+/-}\NormalTok{ dx) }\FunctionTok{=}\NormalTok{ dx}
 \end{Highlighting}
@@ -521,6 +526,7 @@ Putting it all together:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L39-L47}
+
 \OtherTok{liftU ::} \DataTypeTok{Fractional}\NormalTok{ a}
       \OtherTok{=>}\NormalTok{ (forall s}\FunctionTok{.} \DataTypeTok{AD}\NormalTok{ s (}\DataTypeTok{Tower}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{AD}\NormalTok{ s (}\DataTypeTok{Tower}\NormalTok{ a))}
       \OtherTok{->} \DataTypeTok{Uncert}\NormalTok{ a}
@@ -632,6 +638,7 @@ hessian, because we only care about the repeated partials:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L49-L53}
+
 \OtherTok{diag ::}\NormalTok{ [[a]] }\OtherTok{->}\NormalTok{ [a]}
 \NormalTok{diag }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
 \NormalTok{    []        }\OtherTok{->}\NormalTok{ []}
@@ -646,6 +653,7 @@ together component-by-component and sums the results:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-L56}
+
 \OtherTok{dot ::} \DataTypeTok{Num}\NormalTok{ a }\OtherTok{=>}\NormalTok{ [a] }\OtherTok{->}\NormalTok{ [a] }\OtherTok{->}\NormalTok{ a}
 \NormalTok{dot xs ys }\FunctionTok{=}\NormalTok{ sum (zipWith (}\FunctionTok{*}\NormalTok{) xs ys)}
 \end{Highlighting}
@@ -656,6 +664,7 @@ And now we can write our multi-variate function lifter:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L58-L75}
+
 \OtherTok{liftUF ::}\NormalTok{ (}\DataTypeTok{Traversable}\NormalTok{ f, }\DataTypeTok{Fractional}\NormalTok{ a)}
        \OtherTok{=>}\NormalTok{ (forall s}\FunctionTok{.}\NormalTok{ f (}\DataTypeTok{AD}\NormalTok{ s (}\DataTypeTok{Sparse}\NormalTok{ a)) }\OtherTok{->} \DataTypeTok{AD}\NormalTok{ s (}\DataTypeTok{Sparse}\NormalTok{ a))}
        \OtherTok{->}\NormalTok{ f (}\DataTypeTok{Uncert}\NormalTok{ a)}
@@ -687,6 +696,7 @@ And we can write some nice helper functions so we can use them more naturally:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L77-L90}
+
 \OtherTok{liftU2 ::} \DataTypeTok{Fractional}\NormalTok{ a}
        \OtherTok{=>}\NormalTok{ (forall s}\FunctionTok{.} \DataTypeTok{AD}\NormalTok{ s (}\DataTypeTok{Sparse}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{AD}\NormalTok{ s (}\DataTypeTok{Sparse}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{AD}\NormalTok{ s (}\DataTypeTok{Sparse}\NormalTok{ a))}
        \OtherTok{->} \DataTypeTok{Uncert}\NormalTok{ a}

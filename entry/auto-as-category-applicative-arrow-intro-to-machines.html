@@ -25,7 +25,8 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>We left off in our last post having looked at <code>Auto</code>:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-L12</span></a>
 <a class="sourceLine" id="cb1-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">newtype</span> <span class="dt">Auto</span> a b <span class="fu">=</span> <span class="dt">ACons</span> {<span class="ot"> runAuto ::</span> a <span class="ot">-&gt;</span> (b, <span class="dt">Auto</span> a b) }</a></code></pre></div>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">newtype</span> <span class="dt">Auto</span> a b <span class="fu">=</span> <span class="dt">ACons</span> {<span class="ot"> runAuto ::</span> a <span class="ot">-&gt;</span> (b, <span class="dt">Auto</span> a b) }</a></code></pre></div>
 <p>which we saw as a stream that had an influencing input of type <code>a</code>, an internal, opaque state (a function of the input and of the previous state), and an output “head” of type <code>b</code> (also a function of the input and of the previous state).</p>
 <p>And we looked at <a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L46-L54">a simple auto</a> which acted like a constantly incrementing stream, but where you could reset the counter by passing in a <code>Just</code>.</p>
 <p>Then we took another approach to looking at this — we thought about Autos as functions “with state”. As in, <code>Auto a b</code> was like a function <code>a -&gt; b</code>, but which had an internal state that updated every time it was called.</p>
@@ -86,16 +87,18 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>Enough talk, let’s code! We’ll call our composition operator <code>(~.~)</code>.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L67-L70</span></a>
 <a class="sourceLine" id="cb10-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb10-3" data-line-number="3"><span class="ot">(~.~) ::</span> <span class="dt">Auto</span> b c <span class="ot">-&gt;</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> <span class="dt">Auto</span> a c</a>
-<a class="sourceLine" id="cb10-4" data-line-number="4">g <span class="fu">~.~</span> f <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> <span class="kw">let</span> (y, f&#39;) <span class="fu">=</span> runAuto f x</a>
-<a class="sourceLine" id="cb10-5" data-line-number="5">                            (z, g&#39;) <span class="fu">=</span> runAuto g y</a>
-<a class="sourceLine" id="cb10-6" data-line-number="6">                        <span class="kw">in</span>  (z, g&#39; <span class="fu">~.~</span> f&#39;)</a></code></pre></div>
+<a class="sourceLine" id="cb10-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4"><span class="ot">(~.~) ::</span> <span class="dt">Auto</span> b c <span class="ot">-&gt;</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> <span class="dt">Auto</span> a c</a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">g <span class="fu">~.~</span> f <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> <span class="kw">let</span> (y, f&#39;) <span class="fu">=</span> runAuto f x</a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">                            (z, g&#39;) <span class="fu">=</span> runAuto g y</a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">                        <span class="kw">in</span>  (z, g&#39; <span class="fu">~.~</span> f&#39;)</a></code></pre></div>
 <p>And…that should be it! We run the input through first <code>f</code> then <code>g</code>, collecting the “modified <code>f</code> and <code>g</code>”, and returning both of those at the end, composed.</p>
 <p>Let’s write a useful helper function so that we have more things to test this out on:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L74-L75</span></a>
 <a class="sourceLine" id="cb11-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb11-3" data-line-number="3"><span class="ot">toAuto ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Auto</span> a b</a>
-<a class="sourceLine" id="cb11-4" data-line-number="4">toAuto f <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> (f x, toAuto f)</a></code></pre></div>
+<a class="sourceLine" id="cb11-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4"><span class="ot">toAuto ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Auto</span> a b</a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">toAuto f <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> (f x, toAuto f)</a></code></pre></div>
 <p><code>toAuto</code> basically turns a function <code>a -&gt; b</code> into a stateless <code>Auto a b</code>.</p>
 <p>Time to test these out!</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> doubleA  <span class="fu">=</span> toAuto (<span class="fu">*</span><span class="dv">2</span>)<span class="ot">      ::</span> <span class="dt">Auto</span> <span class="dt">Int</span> <span class="dt">Int</span></a>
@@ -126,8 +129,9 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>Well, wait. We need one last thing: the identity Auto:</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L78-L79</span></a>
 <a class="sourceLine" id="cb13-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb13-3" data-line-number="3"><span class="ot">idA ::</span> <span class="dt">Auto</span> a a</a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">idA <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> (x, idA)</a></code></pre></div>
+<a class="sourceLine" id="cb13-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4"><span class="ot">idA ::</span> <span class="dt">Auto</span> a a</a>
+<a class="sourceLine" id="cb13-5" data-line-number="5">idA <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> (x, idA)</a></code></pre></div>
 <div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1">ghci<span class="fu">&gt;</span> testAuto_ summer [<span class="dv">5</span>,<span class="dv">1</span>,<span class="dv">9</span>,<span class="dv">2</span>,<span class="fu">-</span><span class="dv">3</span>,<span class="dv">4</span>]</a>
 <a class="sourceLine" id="cb14-2" data-line-number="2">[<span class="dv">10</span>,<span class="dv">12</span>,<span class="dv">30</span>,<span class="dv">34</span>,<span class="dv">28</span>,<span class="dv">39</span>]</a>
 <a class="sourceLine" id="cb14-3" data-line-number="3"></a>
@@ -154,17 +158,19 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>And then our <code>Auto</code> Category instance:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L13-L18</span></a>
 <a class="sourceLine" id="cb18-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb18-3" data-line-number="3"><span class="kw">instance</span> <span class="dt">Category</span> <span class="dt">Auto</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb18-4" data-line-number="4">    id    <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> (x, id)</a>
-<a class="sourceLine" id="cb18-5" data-line-number="5">    g <span class="fu">.</span> f <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb18-6" data-line-number="6">              <span class="kw">let</span> (y, f&#39;) <span class="fu">=</span> runAuto f x</a>
-<a class="sourceLine" id="cb18-7" data-line-number="7">                  (z, g&#39;) <span class="fu">=</span> runAuto g y</a>
-<a class="sourceLine" id="cb18-8" data-line-number="8">              <span class="kw">in</span>  (z, g&#39; <span class="fu">.</span> f&#39;)</a></code></pre></div>
+<a class="sourceLine" id="cb18-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb18-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Category</span> <span class="dt">Auto</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb18-5" data-line-number="5">    id    <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> (x, id)</a>
+<a class="sourceLine" id="cb18-6" data-line-number="6">    g <span class="fu">.</span> f <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb18-7" data-line-number="7">              <span class="kw">let</span> (y, f&#39;) <span class="fu">=</span> runAuto f x</a>
+<a class="sourceLine" id="cb18-8" data-line-number="8">                  (z, g&#39;) <span class="fu">=</span> runAuto g y</a>
+<a class="sourceLine" id="cb18-9" data-line-number="9">              <span class="kw">in</span>  (z, g&#39; <span class="fu">.</span> f&#39;)</a></code></pre></div>
 <p>And now… we can work with both <code>(-&gt;)</code> and <code>Auto</code> as if they were the “same thing” :)</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L92-L93</span></a>
 <a class="sourceLine" id="cb19-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb19-3" data-line-number="3"><span class="ot">doTwice ::</span> <span class="dt">Category</span> r <span class="ot">=&gt;</span> r a a <span class="ot">-&gt;</span> r a a</a>
-<a class="sourceLine" id="cb19-4" data-line-number="4">doTwice f <span class="fu">=</span> f <span class="fu">.</span> f</a></code></pre></div>
+<a class="sourceLine" id="cb19-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb19-4" data-line-number="4"><span class="ot">doTwice ::</span> <span class="dt">Category</span> r <span class="ot">=&gt;</span> r a a <span class="ot">-&gt;</span> r a a</a>
+<a class="sourceLine" id="cb19-5" data-line-number="5">doTwice f <span class="fu">=</span> f <span class="fu">.</span> f</a></code></pre></div>
 <div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1">ghci<span class="fu">&gt;</span> doTwice (<span class="fu">*</span><span class="dv">2</span>) <span class="dv">5</span></a>
 <a class="sourceLine" id="cb20-2" data-line-number="2"><span class="dv">20</span></a>
 <a class="sourceLine" id="cb20-3" data-line-number="3">ghci<span class="fu">&gt;</span> testAuto_ (doTwice (toAuto (<span class="fu">*</span><span class="dv">2</span>))) [<span class="dv">5</span>]</a>
@@ -192,10 +198,11 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>For example, if I fmapped <code>show</code> onto <code>summer</code> — if <code>summer</code> was going to output a 1, it will now output a <code>&quot;1&quot;</code>. It turns an <code>Auto Int Int</code> into an <code>Auto Int String</code>!</p>
 <div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L20-L23</span></a>
 <a class="sourceLine" id="cb23-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb23-3" data-line-number="3"><span class="kw">instance</span> <span class="dt">Functor</span> (<span class="dt">Auto</span> r) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb23-4" data-line-number="4">    fmap f a <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb23-5" data-line-number="5">                 <span class="kw">let</span> (y, a&#39;) <span class="fu">=</span> runAuto a x</a>
-<a class="sourceLine" id="cb23-6" data-line-number="6">                 <span class="kw">in</span>  (f y, fmap f a&#39;)</a></code></pre></div>
+<a class="sourceLine" id="cb23-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb23-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Functor</span> (<span class="dt">Auto</span> r) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb23-5" data-line-number="5">    fmap f a <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb23-6" data-line-number="6">                 <span class="kw">let</span> (y, a&#39;) <span class="fu">=</span> runAuto a x</a>
+<a class="sourceLine" id="cb23-7" data-line-number="7">                 <span class="kw">in</span>  (f y, fmap f a&#39;)</a></code></pre></div>
 <div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1">ghci<span class="fu">&gt;</span> testAuto_ (fmap show summer) [<span class="dv">5</span>,<span class="dv">1</span>,<span class="dv">9</span>,<span class="dv">2</span>,<span class="fu">-</span><span class="dv">3</span>,<span class="dv">4</span>]</a>
 <a class="sourceLine" id="cb24-2" data-line-number="2">[<span class="st">&quot;5&quot;</span>,<span class="st">&quot;6&quot;</span>,<span class="st">&quot;15&quot;</span>,<span class="st">&quot;17&quot;</span>,<span class="st">&quot;14&quot;</span>,<span class="st">&quot;18&quot;</span>]</a></code></pre></div>
 <p>Functor, check!</p>
@@ -215,12 +222,13 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>We can pretty much use this to write our Applicative instance for <code>Auto r</code>.</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L25-L30</span></a>
 <a class="sourceLine" id="cb26-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb26-3" data-line-number="3"><span class="kw">instance</span> <span class="dt">Applicative</span> (<span class="dt">Auto</span> r) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb26-4" data-line-number="4">    pure y    <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \_ <span class="ot">-&gt;</span> (y, pure y)</a>
-<a class="sourceLine" id="cb26-5" data-line-number="5">    af <span class="fu">&lt;*&gt;</span> ay <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb26-6" data-line-number="6">                  <span class="kw">let</span> (f, af&#39;) <span class="fu">=</span> runAuto af x</a>
-<a class="sourceLine" id="cb26-7" data-line-number="7">                      (y, ay&#39;) <span class="fu">=</span> runAuto ay x</a>
-<a class="sourceLine" id="cb26-8" data-line-number="8">                  <span class="kw">in</span>  (f y, af&#39; <span class="fu">&lt;*&gt;</span> ay&#39;)</a></code></pre></div>
+<a class="sourceLine" id="cb26-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb26-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Applicative</span> (<span class="dt">Auto</span> r) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb26-5" data-line-number="5">    pure y    <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \_ <span class="ot">-&gt;</span> (y, pure y)</a>
+<a class="sourceLine" id="cb26-6" data-line-number="6">    af <span class="fu">&lt;*&gt;</span> ay <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb26-7" data-line-number="7">                  <span class="kw">let</span> (f, af&#39;) <span class="fu">=</span> runAuto af x</a>
+<a class="sourceLine" id="cb26-8" data-line-number="8">                      (y, ay&#39;) <span class="fu">=</span> runAuto ay x</a>
+<a class="sourceLine" id="cb26-9" data-line-number="9">                  <span class="kw">in</span>  (f y, af&#39; <span class="fu">&lt;*&gt;</span> ay&#39;)</a></code></pre></div>
 <p>Note that <code>pure</code> gives us a “constant Auto” — an <code>Auto</code> that ignores its input and always just produces the same thing.</p>
 <p>The useful thing about Applicative is that it gives us <code>liftA2</code>, which allows us to apply a function “over Applicative”s.</p>
 <div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="ot">liftA2 ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> <span class="dt">Auto</span> r a <span class="ot">-&gt;</span> <span class="dt">Auto</span> r b <span class="ot">-&gt;</span> <span class="dt">Auto</span> r c</a></code></pre></div>
@@ -253,22 +261,23 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>Writing the instance is straightforward enough:</p>
 <div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb30-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L32-L47</span></a>
 <a class="sourceLine" id="cb30-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb30-3" data-line-number="3"><span class="kw">instance</span> <span class="dt">Arrow</span> <span class="dt">Auto</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb30-4" data-line-number="4">    arr f     <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> (f x, arr f)</a>
-<a class="sourceLine" id="cb30-5" data-line-number="5">    first a   <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \(x, z) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb30-6" data-line-number="6">                  <span class="kw">let</span> (y, a&#39;) <span class="fu">=</span> runAuto a x</a>
-<a class="sourceLine" id="cb30-7" data-line-number="7">                  <span class="kw">in</span>  ((y, z), first a&#39;)</a>
-<a class="sourceLine" id="cb30-8" data-line-number="8">    second a  <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \(z, x) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb30-9" data-line-number="9">                  <span class="kw">let</span> (y, a&#39;) <span class="fu">=</span> runAuto a x</a>
-<a class="sourceLine" id="cb30-10" data-line-number="10">                  <span class="kw">in</span>  ((z, y), second a&#39;)</a>
-<a class="sourceLine" id="cb30-11" data-line-number="11">    a1 <span class="fu">***</span> a2 <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \(x1, x2) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb30-12" data-line-number="12">                  <span class="kw">let</span> (y1, a1&#39;) <span class="fu">=</span> runAuto a1 x1</a>
-<a class="sourceLine" id="cb30-13" data-line-number="13">                      (y2, a2&#39;) <span class="fu">=</span> runAuto a2 x2</a>
-<a class="sourceLine" id="cb30-14" data-line-number="14">                  <span class="kw">in</span>  ((y1, y2), a1&#39; <span class="fu">***</span> a2&#39;)</a>
-<a class="sourceLine" id="cb30-15" data-line-number="15">    a1 <span class="fu">&amp;&amp;&amp;</span> a2 <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb30-16" data-line-number="16">                  <span class="kw">let</span> (y1, a1&#39;) <span class="fu">=</span> runAuto a1 x</a>
-<a class="sourceLine" id="cb30-17" data-line-number="17">                      (y2, a2&#39;) <span class="fu">=</span> runAuto a2 x</a>
-<a class="sourceLine" id="cb30-18" data-line-number="18">                  <span class="kw">in</span>  ((y1, y2), a1&#39; <span class="fu">&amp;&amp;&amp;</span> a2&#39;)</a></code></pre></div>
+<a class="sourceLine" id="cb30-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb30-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Arrow</span> <span class="dt">Auto</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb30-5" data-line-number="5">    arr f     <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> (f x, arr f)</a>
+<a class="sourceLine" id="cb30-6" data-line-number="6">    first a   <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \(x, z) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb30-7" data-line-number="7">                  <span class="kw">let</span> (y, a&#39;) <span class="fu">=</span> runAuto a x</a>
+<a class="sourceLine" id="cb30-8" data-line-number="8">                  <span class="kw">in</span>  ((y, z), first a&#39;)</a>
+<a class="sourceLine" id="cb30-9" data-line-number="9">    second a  <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \(z, x) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb30-10" data-line-number="10">                  <span class="kw">let</span> (y, a&#39;) <span class="fu">=</span> runAuto a x</a>
+<a class="sourceLine" id="cb30-11" data-line-number="11">                  <span class="kw">in</span>  ((z, y), second a&#39;)</a>
+<a class="sourceLine" id="cb30-12" data-line-number="12">    a1 <span class="fu">***</span> a2 <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \(x1, x2) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb30-13" data-line-number="13">                  <span class="kw">let</span> (y1, a1&#39;) <span class="fu">=</span> runAuto a1 x1</a>
+<a class="sourceLine" id="cb30-14" data-line-number="14">                      (y2, a2&#39;) <span class="fu">=</span> runAuto a2 x2</a>
+<a class="sourceLine" id="cb30-15" data-line-number="15">                  <span class="kw">in</span>  ((y1, y2), a1&#39; <span class="fu">***</span> a2&#39;)</a>
+<a class="sourceLine" id="cb30-16" data-line-number="16">    a1 <span class="fu">&amp;&amp;&amp;</span> a2 <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb30-17" data-line-number="17">                  <span class="kw">let</span> (y1, a1&#39;) <span class="fu">=</span> runAuto a1 x</a>
+<a class="sourceLine" id="cb30-18" data-line-number="18">                      (y2, a2&#39;) <span class="fu">=</span> runAuto a2 x</a>
+<a class="sourceLine" id="cb30-19" data-line-number="19">                  <span class="kw">in</span>  ((y1, y2), a1&#39; <span class="fu">&amp;&amp;&amp;</span> a2&#39;)</a></code></pre></div>
 <div class="note">
 <p><strong>Aside</strong></p>
 <p>We can also just take a shortcut and implement these in terms of combinators we have already written from different typeclasses:</p>
@@ -307,14 +316,15 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>We’ll instance <code>left</code>, which applies the given <code>Auto</code> on every <code>Left</code> input, and passes any <code>Right</code> input along unchanged; the <code>Auto</code> isn’t stepped or anything. The rest of the methods can be implemented in terms of <code>left</code> and <code>arr</code>.</p>
 <div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb35-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L49-L56</span></a>
 <a class="sourceLine" id="cb35-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb35-3" data-line-number="3"><span class="kw">instance</span> <span class="dt">ArrowChoice</span> <span class="dt">Auto</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb35-4" data-line-number="4">    left a <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb35-5" data-line-number="5">                 <span class="kw">case</span> x <span class="kw">of</span></a>
-<a class="sourceLine" id="cb35-6" data-line-number="6">                   <span class="dt">Left</span> l  <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb35-7" data-line-number="7">                     <span class="kw">let</span> (l&#39;, a&#39;) <span class="fu">=</span> runAuto a l</a>
-<a class="sourceLine" id="cb35-8" data-line-number="8">                     <span class="kw">in</span>  (<span class="dt">Left</span> l&#39;, left a&#39;)</a>
-<a class="sourceLine" id="cb35-9" data-line-number="9">                   <span class="dt">Right</span> r <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb35-10" data-line-number="10">                     (<span class="dt">Right</span> r, left a)</a></code></pre></div>
+<a class="sourceLine" id="cb35-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb35-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">ArrowChoice</span> <span class="dt">Auto</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb35-5" data-line-number="5">    left a <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb35-6" data-line-number="6">                 <span class="kw">case</span> x <span class="kw">of</span></a>
+<a class="sourceLine" id="cb35-7" data-line-number="7">                   <span class="dt">Left</span> l  <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb35-8" data-line-number="8">                     <span class="kw">let</span> (l&#39;, a&#39;) <span class="fu">=</span> runAuto a l</a>
+<a class="sourceLine" id="cb35-9" data-line-number="9">                     <span class="kw">in</span>  (<span class="dt">Left</span> l&#39;, left a&#39;)</a>
+<a class="sourceLine" id="cb35-10" data-line-number="10">                   <span class="dt">Right</span> r <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb35-11" data-line-number="11">                     (<span class="dt">Right</span> r, left a)</a></code></pre></div>
 <p>We’ll see <code>ArrowChoice</code> used in the upcoming syntactic sugar construct, enabling for if/then/else’s and case statements. Don’t worry about it for now if you don’t understand it.</p>
 <h3 id="proc-notation">Proc Notation</h3>
 <p>So finally, here is the <em>real</em> reason Arrow is useful. It’s actually a pretty well-kept secret, but…just like Monad enables <em>do notation</em> syntactical sugar, Arrow enables <em>proc notation</em> syntactical sugar. Which is probably cooler.</p>
@@ -341,35 +351,38 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>We could write this “from scratch”, using explicit recursion:</p>
 <div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L102-L109</span></a>
 <a class="sourceLine" id="cb39-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb39-3" data-line-number="3"><span class="ot">dualCounterR ::</span> <span class="dt">Auto</span> (<span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Int</span>) (<span class="dt">Int</span>, <span class="dt">Int</span>)</a>
-<a class="sourceLine" id="cb39-4" data-line-number="4">dualCounterR <span class="fu">=</span> dualCounterWith (<span class="dv">0</span>, <span class="dv">0</span>)</a>
-<a class="sourceLine" id="cb39-5" data-line-number="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb39-6" data-line-number="6">    dualCounterWith (x, y) <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \inp <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb39-7" data-line-number="7">                               <span class="kw">let</span> newC <span class="fu">=</span> <span class="kw">case</span> inp <span class="kw">of</span></a>
-<a class="sourceLine" id="cb39-8" data-line-number="8">                                            <span class="dt">Left</span> i  <span class="ot">-&gt;</span> (x <span class="fu">+</span> i, y)</a>
-<a class="sourceLine" id="cb39-9" data-line-number="9">                                            <span class="dt">Right</span> i <span class="ot">-&gt;</span> (x, y <span class="fu">+</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb39-10" data-line-number="10">                               <span class="kw">in</span>  (newC, dualCounterWith newC)</a></code></pre></div>
+<a class="sourceLine" id="cb39-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb39-4" data-line-number="4"><span class="ot">dualCounterR ::</span> <span class="dt">Auto</span> (<span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Int</span>) (<span class="dt">Int</span>, <span class="dt">Int</span>)</a>
+<a class="sourceLine" id="cb39-5" data-line-number="5">dualCounterR <span class="fu">=</span> dualCounterWith (<span class="dv">0</span>, <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb39-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb39-7" data-line-number="7">    dualCounterWith (x, y) <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \inp <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb39-8" data-line-number="8">                               <span class="kw">let</span> newC <span class="fu">=</span> <span class="kw">case</span> inp <span class="kw">of</span></a>
+<a class="sourceLine" id="cb39-9" data-line-number="9">                                            <span class="dt">Left</span> i  <span class="ot">-&gt;</span> (x <span class="fu">+</span> i, y)</a>
+<a class="sourceLine" id="cb39-10" data-line-number="10">                                            <span class="dt">Right</span> i <span class="ot">-&gt;</span> (x, y <span class="fu">+</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb39-11" data-line-number="11">                               <span class="kw">in</span>  (newC, dualCounterWith newC)</a></code></pre></div>
 <p>But we all know in Haskell that explicit recursion is usually a sign of bad design and is best avoided whenever possible. So many potential places for bugs!</p>
 <p>Let’s try writing the same thing using Auto composition:</p>
 <div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L112-L116</span></a>
 <a class="sourceLine" id="cb40-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb40-3" data-line-number="3"><span class="ot">dualCounterC ::</span> <span class="dt">Auto</span> (<span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Int</span>) (<span class="dt">Int</span>, <span class="dt">Int</span>)</a>
-<a class="sourceLine" id="cb40-4" data-line-number="4">dualCounterC <span class="fu">=</span> (summer <span class="fu">***</span> summer) <span class="fu">.</span> arr wrap</a>
-<a class="sourceLine" id="cb40-5" data-line-number="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb40-6" data-line-number="6">    wrap (<span class="dt">Left</span> i)  <span class="fu">=</span> (i, <span class="dv">0</span>)</a>
-<a class="sourceLine" id="cb40-7" data-line-number="7">    wrap (<span class="dt">Right</span> i) <span class="fu">=</span> (<span class="dv">0</span>, i)</a></code></pre></div>
+<a class="sourceLine" id="cb40-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb40-4" data-line-number="4"><span class="ot">dualCounterC ::</span> <span class="dt">Auto</span> (<span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Int</span>) (<span class="dt">Int</span>, <span class="dt">Int</span>)</a>
+<a class="sourceLine" id="cb40-5" data-line-number="5">dualCounterC <span class="fu">=</span> (summer <span class="fu">***</span> summer) <span class="fu">.</span> arr wrap</a>
+<a class="sourceLine" id="cb40-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb40-7" data-line-number="7">    wrap (<span class="dt">Left</span> i)  <span class="fu">=</span> (i, <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb40-8" data-line-number="8">    wrap (<span class="dt">Right</span> i) <span class="fu">=</span> (<span class="dv">0</span>, i)</a></code></pre></div>
 <p>That’s a bit more succinct, but I think the proc notation is much nicer!</p>
 <div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L119-L127</span></a>
 <a class="sourceLine" id="cb41-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb41-3" data-line-number="3"><span class="ot">dualCounterP ::</span> <span class="dt">Auto</span> (<span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Int</span>) (<span class="dt">Int</span>, <span class="dt">Int</span>)</a>
-<a class="sourceLine" id="cb41-4" data-line-number="4">dualCounterP <span class="fu">=</span> proc inp <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb41-5" data-line-number="5">    <span class="kw">let</span> (add1, add2) <span class="fu">=</span> <span class="kw">case</span> inp <span class="kw">of</span> <span class="dt">Left</span> i  <span class="ot">-&gt;</span> (i, <span class="dv">0</span>)</a>
-<a class="sourceLine" id="cb41-6" data-line-number="6">                                   <span class="dt">Right</span> i <span class="ot">-&gt;</span> (<span class="dv">0</span>, i)</a>
-<a class="sourceLine" id="cb41-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb41-8" data-line-number="8">    sum1 <span class="ot">&lt;-</span> summer <span class="fu">-&lt;</span> add1</a>
-<a class="sourceLine" id="cb41-9" data-line-number="9">    sum2 <span class="ot">&lt;-</span> summer <span class="fu">-&lt;</span> add2</a>
-<a class="sourceLine" id="cb41-10" data-line-number="10"></a>
-<a class="sourceLine" id="cb41-11" data-line-number="11">    id <span class="fu">-&lt;</span> (sum1, sum2)</a></code></pre></div>
+<a class="sourceLine" id="cb41-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb41-4" data-line-number="4"><span class="ot">dualCounterP ::</span> <span class="dt">Auto</span> (<span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Int</span>) (<span class="dt">Int</span>, <span class="dt">Int</span>)</a>
+<a class="sourceLine" id="cb41-5" data-line-number="5">dualCounterP <span class="fu">=</span> proc inp <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb41-6" data-line-number="6">    <span class="kw">let</span> (add1, add2) <span class="fu">=</span> <span class="kw">case</span> inp <span class="kw">of</span> <span class="dt">Left</span> i  <span class="ot">-&gt;</span> (i, <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb41-7" data-line-number="7">                                   <span class="dt">Right</span> i <span class="ot">-&gt;</span> (<span class="dv">0</span>, i)</a>
+<a class="sourceLine" id="cb41-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb41-9" data-line-number="9">    sum1 <span class="ot">&lt;-</span> summer <span class="fu">-&lt;</span> add1</a>
+<a class="sourceLine" id="cb41-10" data-line-number="10">    sum2 <span class="ot">&lt;-</span> summer <span class="fu">-&lt;</span> add2</a>
+<a class="sourceLine" id="cb41-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb41-12" data-line-number="12">    id <span class="fu">-&lt;</span> (sum1, sum2)</a></code></pre></div>
 <p>It’s a bit more verbose…but I think it’s much clearer what’s going on, right?</p>
 <div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" data-line-number="1">ghci<span class="fu">&gt;</span> testAuto_ dualCounterP [<span class="dt">Right</span> <span class="dv">1</span>, <span class="dt">Left</span> <span class="dv">2</span>, <span class="dt">Right</span> (<span class="fu">-</span><span class="dv">4</span>), <span class="dt">Left</span> <span class="dv">10</span>, <span class="dt">Right</span> <span class="dv">3</span>]</a>
 <a class="sourceLine" id="cb42-2" data-line-number="2">[(<span class="dv">0</span>, <span class="dv">1</span>), (<span class="dv">2</span>, <span class="dv">1</span>), (<span class="dv">2</span>, <span class="fu">-</span><span class="dv">3</span>), (<span class="dv">12</span>, <span class="fu">-</span><span class="dv">3</span>), (<span class="dv">12</span>, <span class="dv">0</span>)]</a></code></pre></div>
@@ -380,19 +393,20 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>But the proc notation? Piece of cake!</p>
 <div class="sourceCode" id="cb43"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L148-L160</span></a>
 <a class="sourceLine" id="cb43-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb43-3" data-line-number="3"><span class="ot">dualCounterSkipP ::</span> <span class="dt">Auto</span> (<span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Int</span>) (<span class="dt">Int</span>, <span class="dt">Int</span>)</a>
-<a class="sourceLine" id="cb43-4" data-line-number="4">dualCounterSkipP <span class="fu">=</span> proc inp <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb43-5" data-line-number="5">    (add1, add2) <span class="ot">&lt;-</span> <span class="kw">case</span> inp <span class="kw">of</span></a>
-<a class="sourceLine" id="cb43-6" data-line-number="6">                      <span class="dt">Left</span> i <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb43-7" data-line-number="7">                        count <span class="ot">&lt;-</span> summer <span class="fu">-&lt;</span> <span class="dv">1</span></a>
-<a class="sourceLine" id="cb43-8" data-line-number="8">                        id <span class="fu">-&lt;</span> (<span class="kw">if</span> odd count <span class="kw">then</span> i <span class="kw">else</span> <span class="dv">0</span>, <span class="dv">0</span>)</a>
-<a class="sourceLine" id="cb43-9" data-line-number="9">                      <span class="dt">Right</span> i <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb43-10" data-line-number="10">                        id <span class="fu">-&lt;</span> (<span class="dv">0</span>, i)</a>
-<a class="sourceLine" id="cb43-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb43-12" data-line-number="12">    sum1 <span class="ot">&lt;-</span> summer <span class="fu">-&lt;</span> add1</a>
-<a class="sourceLine" id="cb43-13" data-line-number="13">    sum2 <span class="ot">&lt;-</span> summer <span class="fu">-&lt;</span> add2</a>
-<a class="sourceLine" id="cb43-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb43-15" data-line-number="15">    id <span class="fu">-&lt;</span> (sum1, sum2)</a></code></pre></div>
+<a class="sourceLine" id="cb43-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb43-4" data-line-number="4"><span class="ot">dualCounterSkipP ::</span> <span class="dt">Auto</span> (<span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Int</span>) (<span class="dt">Int</span>, <span class="dt">Int</span>)</a>
+<a class="sourceLine" id="cb43-5" data-line-number="5">dualCounterSkipP <span class="fu">=</span> proc inp <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb43-6" data-line-number="6">    (add1, add2) <span class="ot">&lt;-</span> <span class="kw">case</span> inp <span class="kw">of</span></a>
+<a class="sourceLine" id="cb43-7" data-line-number="7">                      <span class="dt">Left</span> i <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb43-8" data-line-number="8">                        count <span class="ot">&lt;-</span> summer <span class="fu">-&lt;</span> <span class="dv">1</span></a>
+<a class="sourceLine" id="cb43-9" data-line-number="9">                        id <span class="fu">-&lt;</span> (<span class="kw">if</span> odd count <span class="kw">then</span> i <span class="kw">else</span> <span class="dv">0</span>, <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb43-10" data-line-number="10">                      <span class="dt">Right</span> i <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb43-11" data-line-number="11">                        id <span class="fu">-&lt;</span> (<span class="dv">0</span>, i)</a>
+<a class="sourceLine" id="cb43-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb43-13" data-line-number="13">    sum1 <span class="ot">&lt;-</span> summer <span class="fu">-&lt;</span> add1</a>
+<a class="sourceLine" id="cb43-14" data-line-number="14">    sum2 <span class="ot">&lt;-</span> summer <span class="fu">-&lt;</span> add2</a>
+<a class="sourceLine" id="cb43-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb43-16" data-line-number="16">    id <span class="fu">-&lt;</span> (sum1, sum2)</a></code></pre></div>
 <div class="sourceCode" id="cb44"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb44-1" data-line-number="1">ghci<span class="fu">&gt;</span> testAuto_ dualCounterP [<span class="dt">Right</span> <span class="dv">1</span>, <span class="dt">Left</span> <span class="dv">2</span>, <span class="dt">Right</span> (<span class="fu">-</span><span class="dv">4</span>), <span class="dt">Left</span> <span class="dv">10</span>, <span class="dt">Right</span> <span class="dv">3</span>]</a>
 <a class="sourceLine" id="cb44-2" data-line-number="2">[(<span class="dv">0</span>, <span class="dv">1</span>), (<span class="dv">2</span>, <span class="dv">1</span>), (<span class="dv">2</span>, <span class="fu">-</span><span class="dv">3</span>), (<span class="dv">2</span>, <span class="fu">-</span><span class="dv">3</span>), (<span class="dv">2</span>, <span class="dv">0</span>)]</a></code></pre></div>
 <p>And that’s something to write home about :)</p>
@@ -402,16 +416,17 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>We’d have carried the “entire” state in the parameter:</p>
 <div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb45-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L136-L145</span></a>
 <a class="sourceLine" id="cb45-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb45-3" data-line-number="3"><span class="ot">dualCounterSkipR ::</span> <span class="dt">Auto</span> (<span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Int</span>) (<span class="dt">Int</span>, <span class="dt">Int</span>)</a>
-<a class="sourceLine" id="cb45-4" data-line-number="4">dualCounterSkipR <span class="fu">=</span> counterFrom ((<span class="dv">0</span>, <span class="dv">0</span>), <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb45-5" data-line-number="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb45-6" data-line-number="6">    counterFrom ((x, y), s) <span class="fu">=</span></a>
-<a class="sourceLine" id="cb45-7" data-line-number="7">      <span class="dt">ACons</span> <span class="fu">$</span> \inp <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb45-8" data-line-number="8">        <span class="kw">let</span> newCS <span class="fu">=</span> <span class="kw">case</span> inp <span class="kw">of</span></a>
-<a class="sourceLine" id="cb45-9" data-line-number="9">                      <span class="dt">Left</span> i  <span class="fu">|</span> odd s     <span class="ot">-&gt;</span> ((x <span class="fu">+</span> i, y), s <span class="fu">+</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb45-10" data-line-number="10">                              <span class="fu">|</span> otherwise <span class="ot">-&gt;</span> ((x    , y), s <span class="fu">+</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb45-11" data-line-number="11">                      <span class="dt">Right</span> i             <span class="ot">-&gt;</span> ((x, y <span class="fu">+</span> i), s    )</a>
-<a class="sourceLine" id="cb45-12" data-line-number="12">        <span class="kw">in</span>  (fst newCS, counterFrom newCS)</a></code></pre></div>
+<a class="sourceLine" id="cb45-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb45-4" data-line-number="4"><span class="ot">dualCounterSkipR ::</span> <span class="dt">Auto</span> (<span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Int</span>) (<span class="dt">Int</span>, <span class="dt">Int</span>)</a>
+<a class="sourceLine" id="cb45-5" data-line-number="5">dualCounterSkipR <span class="fu">=</span> counterFrom ((<span class="dv">0</span>, <span class="dv">0</span>), <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb45-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb45-7" data-line-number="7">    counterFrom ((x, y), s) <span class="fu">=</span></a>
+<a class="sourceLine" id="cb45-8" data-line-number="8">      <span class="dt">ACons</span> <span class="fu">$</span> \inp <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb45-9" data-line-number="9">        <span class="kw">let</span> newCS <span class="fu">=</span> <span class="kw">case</span> inp <span class="kw">of</span></a>
+<a class="sourceLine" id="cb45-10" data-line-number="10">                      <span class="dt">Left</span> i  <span class="fu">|</span> odd s     <span class="ot">-&gt;</span> ((x <span class="fu">+</span> i, y), s <span class="fu">+</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb45-11" data-line-number="11">                              <span class="fu">|</span> otherwise <span class="ot">-&gt;</span> ((x    , y), s <span class="fu">+</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb45-12" data-line-number="12">                      <span class="dt">Right</span> i             <span class="ot">-&gt;</span> ((x, y <span class="fu">+</span> i), s    )</a>
+<a class="sourceLine" id="cb45-13" data-line-number="13">        <span class="kw">in</span>  (fst newCS, counterFrom newCS)</a></code></pre></div>
 <p>Not only is it a real mess and pain — and somewhere where bugs are rife to pop up — note the entire state is contained in one thing. That means everything has access to it; all access is sort of haphazard and ad-hoc, as well. Note that the <code>Right</code> case can do whatever it wants with the <code>s</code>. It has access to it, can read it, act on it, modify it…anything it wants! We can’t really “enforce” that the <code>Right</code> case can’t touch the <code>s</code>, without putting in more complicated work/overhead.</p>
 <p>In the proc example…the <code>s</code> is a <code>summer</code> that is “locked inside” the <code>Left</code> branch. <code>Right</code> branch stuff can’t touch it.</p>
 <p>In fact, all of the <code>summers</code> keep their own state, independently from each other. Nothing can really modify their state except for themselves, if they chose to. Less room for bugs, too, in adding, because you already know that <code>summer</code> works.</p>

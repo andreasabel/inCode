@@ -20,6 +20,7 @@ from a random number...and then figure out how to chain them.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-random/Rand.hs#L18-L22
+
 data RandF a where
     FromRandom   :: Random r =>           ( r  -> a) -> RandF a
     FromRandomR  :: Random r => r -> r -> ( r  -> a) -> RandF a
@@ -85,6 +86,7 @@ of doing this is to ask for a random generator/seed from the user:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-random/Rand.hs#L31-L35
+
 runRandomF :: RandomGen g => RandF a -> g -> a
 runRandomF (FromRandom f)         = f . fst . random
 runRandomF (FromRandomR r0 r1 f)  = f . fst . randomR (r0, r1)
@@ -116,6 +118,7 @@ example, if we had `FromRandom (\r -> r * 2)`, if we `fmap show`, we would want
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-random/Rand.hs#L24-L29
+
 instance Functor RandF where
     fmap h rnd = case rnd of
         FromRandom         f -> FromRandom         (h . f)

@@ -87,6 +87,7 @@ way is to use the simple inductive `Nat`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L26-L27
+
 data Nat = Z | S Nat
          deriving Show
 ```
@@ -139,6 +140,7 @@ algebraic data types":
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L37-L44
+
 data Vec :: Nat -> * -> * where
     Nil  :: Vec Z a
     (:#) :: a -> Vec n a -> Vec (S n) a
@@ -195,6 +197,7 @@ Okay, let's define some useful methods:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L93-L97
+
 headV :: Vec (S n) a -> a
 headV (x :# _)  = x
 
@@ -234,6 +237,7 @@ For that, we can use a type family, using the *TypeFamilies* extension (with
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L29-L31
+
 type family (x :: Nat) + (y :: Nat) where
     'Z   + y = y
     'S x + y = 'S (x + y)
@@ -244,6 +248,7 @@ the value level to the `Nat` *data* type:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L33-L35
+
 (+#) :: Nat -> Nat -> Nat       -- types!
 Z   +# y = y
 S x +# y = S (x +# y)
@@ -255,6 +260,7 @@ this "addition" is actually addition. Now, let's use it for `appendV`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L99-L101
+
 appendV :: Vec n a -> Vec m a -> Vec (n + m) a
 appendV Nil       ys = ys
 appendV (x :# xs) ys = x :# appendV xs ys
@@ -279,6 +285,7 @@ to try out).
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L7-L8
+
 class Unfoldable v where
     unfold :: (b -> (a, b)) -> b -> v a
 ```
@@ -292,6 +299,7 @@ The list instance should make it more clear:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L11-L13
+
 instance Unfoldable [] where
     unfold f x0 = let (y, x1) = f x0
                   in  y : unfold f x1
@@ -307,6 +315,7 @@ thing "cuts off" after it's filled the entire vector:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L46-L51
+
 instance Unfoldable (Vec Z) where
     unfold _ _ = Nil
 
@@ -338,6 +347,7 @@ Let's see this in action.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L15-L24
+
 replicateU :: Unfoldable v => a -> v a
 replicateU = unfold (\x -> (x, x))
 
@@ -376,6 +386,7 @@ but let's write one on our own just for learning purposes:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L53-L55
+
 instance Functor (Vec n) where
     fmap _ Nil       = Nil
     fmap f (x :# xs) = f x :# fmap f xs
@@ -387,6 +398,7 @@ the type, and a `(<*>)` that depends on the type, too.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L57-L63
+
 instance Applicative (Vec Z) where
     pure _    = Nil
     Nil <*> _ = Nil
@@ -431,6 +443,7 @@ again here just to demonstrate.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L65-L75
+
 instance Foldable (Vec Z) where
     foldMap _ Nil = mempty
 
@@ -471,6 +484,7 @@ Nothing
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L26-L27
+
 fromListU :: (Unfoldable v, Traversable v) => [a] -> Maybe (v a)
 fromListU = sequence . fromListMaybes
 ```
@@ -495,6 +509,7 @@ the container* from the container type.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L86-L91
+
 instance (Unfoldable (Vec n), Traversable (Vec n)) => L.IsList (Vec n a) where
     type Item (Vec n a) = a
     fromList xs = case fromListU xs of
@@ -559,6 +574,7 @@ terms of it)
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L77-L78
+
 class Index (n :: Nat) v where
     index :: Proxy n -> v a -> a
 ```
@@ -585,6 +601,7 @@ Let's write our instances --- but only the instances that *make sense*.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L80-L84
+
 instance Index Z (Vec (S n)) where
     index _ (x :# _) = x
 
@@ -692,6 +709,7 @@ execute our code, or by adding a pragma:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L14-L14
+
 {-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-}
 ```
 
@@ -726,6 +744,7 @@ see what it gains us.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L33-L40
+
 data Vec :: Nat -> * -> * where
     Nil  :: Vec 0 a
     (:#) :: a -> Vec (n - 1) a -> Vec n a
@@ -756,6 +775,7 @@ So defining a `x > y` constraint is pretty straightforward:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L31-L31
+
 type x > y = CmpNat x y ~ 'GT
 ```
 
@@ -766,6 +786,7 @@ Given this, let's do our favorite list functions, `headV` and `tailV`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L89-L93
+
 headV :: (n > 0) => Vec n a -> a
 headV (x :# _)  = x
 
@@ -801,6 +822,7 @@ can instantly write....
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L95-L97
+
 appendV :: Vec n a -> Vec m a -> Vec (n + m) a
 appendV Nil       ys = ys
 appendV (x :# xs) ys = x :# appendV xs ys
@@ -819,6 +841,7 @@ And our list generating typeclasses ---
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L42-L47
+
 instance Unfoldable (Vec 0) where
     unfold _ _ = Nil
 
@@ -856,6 +879,7 @@ and `Foldable` using GHC)
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L49-L87
+
 instance Functor (Vec n) where
     fmap _ Nil       = Nil
     fmap f (x :# xs) = f x :# fmap f xs

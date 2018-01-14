@@ -58,6 +58,7 @@ sounds like the perfect candidate for an Algebraic Data Structure.
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L19-L21
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 data PreTree a = PTLeaf a
                | PTNode (PreTree a) (PreTree a)
                deriving (Show, Eq, Generic)
@@ -89,6 +90,7 @@ simplify it as:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L46-L47
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 makePT :: a -> PreTree a
 makePT = PTLeaf
 ```
@@ -120,6 +122,7 @@ Which, from what we saw before, can just be written as:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L50-L51
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 mergePT :: PreTree a -> PreTree a -> PreTree a
 mergePT = PTNode
 ```
@@ -147,6 +150,7 @@ includes both a `PreTree` and an (integer) weight.
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs#L13-L15
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 data Weighted a = WPair { _wWeight :: Int
                         , _wItem   :: a
                         } deriving (Show, Functor)
@@ -170,6 +174,7 @@ This weighted `PreTree` is pretty useful, let's give it an alias/typedef:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L54-L54
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 type WeightedPT a = Weighted (PreTree a)
 ```
 
@@ -178,6 +183,7 @@ Let's make the same functions for `WeightedPT` as we did for `PreTree`:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L58-L59
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 makeWPT :: Int -> a -> WeightedPT a
 makeWPT w = WPair w . makePT
 ```
@@ -198,6 +204,7 @@ We will also want to merge two `WeightedPT`s:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L62-L64
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 mergeWPT :: WeightedPT a -> WeightedPT a -> WeightedPT a
 mergeWPT (WPair w1 pt1) (WPair w2 pt2)
     = WPair (w1 + w2) (mergePT pt1 pt2)
@@ -212,6 +219,7 @@ these comparing operations, `Ord`:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs#L17-L21
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 instance Eq (Weighted a) where
     WPair w1 _ == WPair w2 _ = w1 == w2
 
@@ -273,6 +281,7 @@ This is a new type of binary tree, so let's define a new data type:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs#L20-L22
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 data SkewHeap a = SEmpty
                 | SNode a (SkewHeap a) (SkewHeap a)
                 deriving (Show, Eq, Foldable)
@@ -283,6 +292,7 @@ Creating a new `SkewHeap` with one item:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs#L25-L26
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 makeSH :: a -> SkewHeap a
 makeSH x = SNode x SEmpty SEmpty
 ```
@@ -292,6 +302,7 @@ Popping the root off of a skew tree:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs#L31-L33
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 popSH :: Ord a => SkewHeap a -> (Maybe a, SkewHeap a)
 popSH SEmpty          = (Nothing, SEmpty)
 popSH (SNode r h1 h2) = (Just r , mergeSH h1 h2)
@@ -307,6 +318,7 @@ Finally, the hardest piece of code so far: merging two skew heaps:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs#L37-L42
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 mergeSH :: Ord a => SkewHeap a -> SkewHeap a -> SkewHeap a
 mergeSH SEmpty h = h
 mergeSH h SEmpty = h
@@ -338,6 +350,7 @@ Let's wrap this up in a tidy interface/API for a `PQueue` type:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs#L48-L71
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 newtype PQueue a = PQ (SkewHeap a) deriving Show
 
 emptyPQ :: PQueue a
@@ -384,6 +397,7 @@ First, we need to have some sort of frequency table. We will use
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L19-L19
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 type FreqTable a = Map a Int
 ```
 
@@ -399,6 +413,7 @@ arbitrary string:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L22-L25
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 listFreq :: Ord a => [a] -> FreqTable a
 listFreq = foldr f M.empty
   where
@@ -424,6 +439,7 @@ both the key and the value.
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L43-L46
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 listQueue :: Ord a => [a] -> PQueue (Weighted a)
 listQueue = M.foldrWithKey f emptyPQ . listFreq
   where
@@ -641,6 +657,7 @@ done our previous `fold`s as state monad operations; like `listFreq`:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L29-L36
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 runListFreq :: forall a. Ord a => [a] -> FreqTable a
 runListFreq xs = execState listFreqState M.empty
   where
@@ -665,6 +682,7 @@ How about `listQueue`? We could do it with the state monad too, if we wanted to.
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L50-L59
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 listQueueState :: Ord a => [a] -> State (PQueue (WeightedPT a)) ()
 listQueueState xs = M.traverseWithKey addNode (listFreq xs) >> return ()
   where
@@ -746,6 +764,7 @@ instead of a `PreTree a`.
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L75-L98
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+
 buildTree :: State (PQueue (WeightedPT a)) (Maybe (PreTree a))
 buildTree = do
     t1' <- state popPQ

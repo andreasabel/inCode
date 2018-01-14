@@ -247,6 +247,7 @@ the binary mathematical operations:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L31-L36}
+
 \KeywordTok{type} \DataTypeTok{Addr} \FunctionTok{=} \DataTypeTok{Either} \DataTypeTok{Char} \DataTypeTok{Int}
 
 \KeywordTok{data} \DataTypeTok{Op} \FunctionTok{=} \DataTypeTok{OSnd} \DataTypeTok{Addr}
@@ -265,6 +266,7 @@ Now, parsing a single \texttt{Op} is just a matter of pattern matching on
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L38-L51}
+
 \OtherTok{parseOp ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Op}
 \NormalTok{parseOp inp }\FunctionTok{=} \KeywordTok{case}\NormalTok{ words inp }\KeywordTok{of}
     \StringTok{"snd"}\FunctionTok{:}\NormalTok{c    }\FunctionTok{:}\NormalTok{_   }\OtherTok{->} \DataTypeTok{OSnd}\NormalTok{ (addr c)}
@@ -292,6 +294,7 @@ them into a \texttt{PointedList}. We're ready to go!
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L53-L54}
+
 \OtherTok{parseProgram ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{P.PointedList} \DataTypeTok{Op}
 \NormalTok{parseProgram }\FunctionTok{=}\NormalTok{ fromJust }\FunctionTok{.}\NormalTok{ P.fromList }\FunctionTok{.}\NormalTok{ map parseOp }\FunctionTok{.}\NormalTok{ lines}
 \end{Highlighting}
@@ -442,6 +445,7 @@ the program tape and read the \texttt{Op} at the current program head:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L56-L60}
+
 \KeywordTok{data} \DataTypeTok{Mem}\OtherTok{ ::} \DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{MGet}\OtherTok{ ::} \DataTypeTok{Char} \OtherTok{->} \DataTypeTok{Mem} \DataTypeTok{Int}
     \DataTypeTok{MSet}\OtherTok{ ::} \DataTypeTok{Char} \OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Mem}\NormalTok{ ()}
@@ -455,6 +459,7 @@ For communication, we must be able to ``snd'' and ``rcv''.
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L62-L64}
+
 \KeywordTok{data} \DataTypeTok{Com}\OtherTok{ ::} \DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{CSnd}\OtherTok{ ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Com}\NormalTok{ ()}
     \DataTypeTok{CRcv}\OtherTok{ ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Com} \DataTypeTok{Int}
@@ -505,6 +510,7 @@ primitive commands, is:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L66-L66}
+
 \KeywordTok{type} \DataTypeTok{Duet} \FunctionTok{=} \DataTypeTok{Prompt}\NormalTok{ (}\DataTypeTok{Mem} \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
@@ -515,6 +521,7 @@ the long run:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L68-L84}
+
 \OtherTok{dGet ::} \DataTypeTok{Char} \OtherTok{->} \DataTypeTok{Duet} \DataTypeTok{Int}
 \NormalTok{dGet }\FunctionTok{=}\NormalTok{ prompt }\FunctionTok{.} \DataTypeTok{L} \FunctionTok{.} \DataTypeTok{MGet}
 
@@ -544,6 +551,7 @@ action to represent \emph{one step} of our duet programs:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L86-L107}
+
 \OtherTok{stepProg ::} \DataTypeTok{Duet}\NormalTok{ ()}
 \NormalTok{stepProg }\FunctionTok{=}\NormalTok{ dPk }\FunctionTok{>>=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{OSnd}\NormalTok{ x }\OtherTok{->} \KeywordTok{do}
@@ -593,6 +601,7 @@ polymorphically:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L109-L112}
+
 \KeywordTok{data} \DataTypeTok{ProgState} \FunctionTok{=} \DataTypeTok{PS}\NormalTok{ \{}\OtherTok{ _psTape ::} \DataTypeTok{P.PointedList} \DataTypeTok{Op}
 \NormalTok{                    ,}\OtherTok{ _psRegs ::} \DataTypeTok{M.Map} \DataTypeTok{Char} \DataTypeTok{Int}
 \NormalTok{                    \}}
@@ -690,6 +699,7 @@ With these tools to make life simpler, we can write an interpreter for our
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L114-L124}
+
 \NormalTok{interpMem}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{MonadState}\NormalTok{ s m, }\DataTypeTok{MonadFail}\NormalTok{ m, }\DataTypeTok{HasProgState}\NormalTok{ s)}
     \OtherTok{=>} \DataTypeTok{Mem}\NormalTok{ a}
@@ -774,6 +784,7 @@ there are two \emph{snd}'s, we only care about the last \emph{snd}'d thing.
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L130-L140}
+
 \NormalTok{interpComA}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{MonadAccum}\NormalTok{ (}\DataTypeTok{Last} \DataTypeTok{Int}\NormalTok{) m, }\DataTypeTok{MonadWriter}\NormalTok{ (}\DataTypeTok{First} \DataTypeTok{Int}\NormalTok{) m)}
     \OtherTok{=>} \DataTypeTok{Com}\NormalTok{ a}
@@ -836,6 +847,7 @@ working in the same interpretation context.
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L153-L159}
+
 \KeywordTok{data} \DataTypeTok{Thread} \FunctionTok{=} \DataTypeTok{T}\NormalTok{ \{}\OtherTok{ _tState   ::} \DataTypeTok{ProgState}
 \NormalTok{                ,}\OtherTok{ _tBuffer  ::}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
 \NormalTok{                \}}
@@ -857,6 +869,7 @@ And now, to interpret:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L161-L170}
+
 \NormalTok{interpComB}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{MonadWriter}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{] m, }\DataTypeTok{MonadFail}\NormalTok{ m, }\DataTypeTok{MonadState} \DataTypeTok{Thread}\NormalTok{ m)}
     \OtherTok{=>} \DataTypeTok{Com}\NormalTok{ a}
@@ -964,6 +977,7 @@ And so we can write our final ``step'' function in that context:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L142-L143}
+
 \OtherTok{stepA ::} \DataTypeTok{MaybeT}\NormalTok{ (}\DataTypeTok{StateT} \DataTypeTok{ProgState}\NormalTok{ (}\DataTypeTok{WriterT}\NormalTok{ (}\DataTypeTok{First} \DataTypeTok{Int}\NormalTok{) (}\DataTypeTok{A.Accum}\NormalTok{ (}\DataTypeTok{Last} \DataTypeTok{Int}\NormalTok{)))) ()}
 \NormalTok{stepA }\FunctionTok{=}\NormalTok{ runPromptM (interpMem }\FunctionTok{>|<}\NormalTok{ interpComA) stepProg}
 \end{Highlighting}
@@ -991,6 +1005,7 @@ unwrapping \emph{transformers} newtype wrappers.
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L145-L151}
+
 \OtherTok{partA ::} \DataTypeTok{P.PointedList} \DataTypeTok{Op} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Int}
 \NormalTok{partA ops }\FunctionTok{=}\NormalTok{ getFirst}
           \FunctionTok{.}\NormalTok{ flip A.evalAccum mempty}
@@ -1047,6 +1062,7 @@ We have, in the end:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L172-L181}
+
 \OtherTok{stepB ::} \DataTypeTok{MaybeT}\NormalTok{ (}\DataTypeTok{State}\NormalTok{ (}\DataTypeTok{Thread}\NormalTok{, }\DataTypeTok{Thread}\NormalTok{)) }\DataTypeTok{Int}
 \NormalTok{stepB }\FunctionTok{=} \KeywordTok{do}
 \NormalTok{    outA }\OtherTok{<-}\NormalTok{ execWriterT }\FunctionTok{$}
@@ -1081,6 +1097,7 @@ use \texttt{many} again to run these multiple times until both threads block.
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L183-L191}
+
 \OtherTok{partB ::} \DataTypeTok{P.PointedList} \DataTypeTok{Op} \OtherTok{->} \DataTypeTok{Int}
 \NormalTok{partB ops }\FunctionTok{=}\NormalTok{ sum }\FunctionTok{.}\NormalTok{ concat}
           \FunctionTok{.}\NormalTok{ flip evalState s0}
@@ -1106,6 +1123,7 @@ actual answers given some sample puzzle input:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L193-L196}
+
 \OtherTok{main ::} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{main }\FunctionTok{=} \KeywordTok{do}
 \NormalTok{    print }\FunctionTok{$}\NormalTok{ partA (parseProgram testProg)}

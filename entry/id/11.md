@@ -72,6 +72,7 @@ guard True  = return ()
 guard False = mzero
 
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L30-L33
+
 halve :: Int -> Maybe Int
 halve n = do
     guard $ even n
@@ -100,6 +101,7 @@ Let's see what happens when we replace our Maybe container with a list:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L35-L38
+
 halve' :: Int -> [Int]
 halve' n = do
     guard $ even n
@@ -146,6 +148,7 @@ things...
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-L43
+
 genericHalve :: MonadPlus m => Int -> m Int
 genericHalve n = do
     guard $ even n
@@ -219,6 +222,7 @@ path to success if you are odd: doubling. In this way it is slightly racist.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L19-L21
+
 halveOrDouble :: Int -> [Int]
 halveOrDouble n | even n    = [n `div` 2, n * 2]
                 | otherwise = [n * 2]
@@ -276,6 +280,7 @@ Let's look at the same thing in do notation form to offer some possible insight:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L24-L27
+
 halveOrDoubleTwice :: Int -> [Int]
 halveOrDoubleTwice n = do
     x <- halveOrDouble n
@@ -314,6 +319,7 @@ for `x` for the entire rest of the journey. In fact, let's see it in action:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L29-L29
+
 hod2PlusOne :: Int -> [Int]
 hod2PlusOne n = do              -- hod2PlusOne 6
     x <- halveOrDouble n        -- x <-     Just 3          Just 12
@@ -410,6 +416,7 @@ finding Pythagorean triples.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-L18
+
 triplesUnder :: Int -> [Int]
 triplesUnder n = do
     a <- [1..n]
@@ -511,6 +518,7 @@ In fact you should be able to look at code like:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-L18
+
 triplesUnder :: Int -> [Int]
 triplesUnder n = do
     a <- [1..n]
@@ -539,6 +547,7 @@ In fact recall that this block:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-L43
+
 genericHalve :: MonadPlus m => Int -> m Int
 genericHalve n = do
     guard $ even n

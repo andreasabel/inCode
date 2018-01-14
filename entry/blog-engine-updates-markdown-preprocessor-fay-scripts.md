@@ -27,6 +27,7 @@ yields:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/WolfGoatCabbage.hs#L28-L45
 -- interactive: https://www.fpcomplete.com/user/jle/wolf-goat-cabbage
+
 findSolutions :: Int -> [Plan]
 findSolutions n = do
     p <- makeNMoves
@@ -87,6 +88,7 @@ parsec and parser combinators:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/source/EntryPP.hs#L32-L127
+
 data SampleSpec = SampleSpec  { sSpecFile       :: FilePath
                               , _sSpecLive      :: Maybe String
                               , _sSpecKeywords  :: [(String,Maybe Int)]
@@ -154,6 +156,7 @@ Here is a characteristic example of fay code with
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/source/entry.hs#L45-L54
+
 appendTopLinks :: Fay ()
 appendTopLinks = do
   mainContent <- select ".main-content"

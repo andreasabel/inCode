@@ -36,19 +36,22 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>Compare that with the linked list data type, which is a Stream with an Ending (<code>Nil</code>):</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L7-L7</span></a>
 <a class="sourceLine" id="cb2-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">data</span> <span class="dt">List</span> a <span class="fu">=</span> <span class="dt">Cons</span> (a, <span class="dt">List</span> a) <span class="fu">|</span> <span class="dt">Nil</span></a></code></pre></div>
+<a class="sourceLine" id="cb2-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="kw">data</span> <span class="dt">List</span> a <span class="fu">=</span> <span class="dt">Cons</span> (a, <span class="dt">List</span> a) <span class="fu">|</span> <span class="dt">Nil</span></a></code></pre></div>
 <p>or, as is more traditionally written:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">data</span> [a] <span class="fu">=</span> (<span class="fu">:</span>) a [a] <span class="fu">|</span> []</a></code></pre></div>
 <p>It’s pretty easy to build lists:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L36-L37</span></a>
 <a class="sourceLine" id="cb4-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="ot">myList ::</span> <span class="dt">List</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">myList <span class="fu">=</span> <span class="dt">Cons</span> ( <span class="dv">1</span>, <span class="dt">Cons</span> ( <span class="dv">2</span>, <span class="dt">Cons</span> (<span class="dv">3</span>, <span class="dt">Nil</span>) ) )</a></code></pre></div>
+<a class="sourceLine" id="cb4-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="ot">myList ::</span> <span class="dt">List</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">myList <span class="fu">=</span> <span class="dt">Cons</span> ( <span class="dv">1</span>, <span class="dt">Cons</span> ( <span class="dv">2</span>, <span class="dt">Cons</span> (<span class="dv">3</span>, <span class="dt">Nil</span>) ) )</a></code></pre></div>
 <p>which is just, in the more traditional (infix) form:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L40-L41</span></a>
 <a class="sourceLine" id="cb5-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="ot">myList&#39; ::</span> [<span class="dt">Int</span>]</a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">myList&#39; <span class="fu">=</span> <span class="dv">1</span><span class="fu">:</span>(<span class="dv">2</span><span class="fu">:</span>(<span class="dv">3</span><span class="fu">:</span>[]))</a></code></pre></div>
+<a class="sourceLine" id="cb5-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="ot">myList&#39; ::</span> [<span class="dt">Int</span>]</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">myList&#39; <span class="fu">=</span> <span class="dv">1</span><span class="fu">:</span>(<span class="dv">2</span><span class="fu">:</span>(<span class="dv">3</span><span class="fu">:</span>[]))</a></code></pre></div>
 <p>Let’s see if <code>myList</code> does what we want: (a list from 1 to 3):</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (<span class="dt">Cons</span> (x,xs)) <span class="fu">=</span> myList</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">ghci<span class="fu">&gt;</span> x</a>
@@ -72,11 +75,12 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>We can take advantage of Haskell’s “lazy-by-default”-ness and leave the “rest” of the stream as an unevaluated function call. And then we can recurse!</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L46-L50</span></a>
 <a class="sourceLine" id="cb8-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb8-3" data-line-number="3"><span class="ot">myStream ::</span> <span class="dt">Stream</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb8-4" data-line-number="4">myStream <span class="fu">=</span> streamFrom <span class="dv">1</span></a>
-<a class="sourceLine" id="cb8-5" data-line-number="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb8-6" data-line-number="6"><span class="ot">    streamFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb8-7" data-line-number="7">    streamFrom n <span class="fu">=</span> <span class="dt">SCons</span> ( n, streamFrom (n<span class="fu">+</span><span class="dv">1</span>) )</a></code></pre></div>
+<a class="sourceLine" id="cb8-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4"><span class="ot">myStream ::</span> <span class="dt">Stream</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">myStream <span class="fu">=</span> streamFrom <span class="dv">1</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7"><span class="ot">    streamFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8">    streamFrom n <span class="fu">=</span> <span class="dt">SCons</span> ( n, streamFrom (n<span class="fu">+</span><span class="dv">1</span>) )</a></code></pre></div>
 <p>Cool! Let’s see if this <code>myStream</code> really does what we want, the same way we tested <code>myList</code>:</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (<span class="dt">SCons</span> (x, xs)) <span class="fu">=</span> myStream</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">ghci<span class="fu">&gt;</span> x</a>
@@ -108,29 +112,32 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>One minor final touch — because <code>Stream</code> has only one constructor and one field, we can make it a <code>newtype</code>, which has similar usage patterns/syntax as a <code>data</code>, but which the compiler can more easily optimize:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L10-L10</span></a>
 <a class="sourceLine" id="cb12-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb12-3" data-line-number="3"><span class="kw">newtype</span> <span class="dt">Stream</span> b <span class="fu">=</span> <span class="dt">SCons</span> {<span class="ot"> runStream ::</span> (b, <span class="dt">Stream</span> b) }</a></code></pre></div>
+<a class="sourceLine" id="cb12-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4"><span class="kw">newtype</span> <span class="dt">Stream</span> b <span class="fu">=</span> <span class="dt">SCons</span> {<span class="ot"> runStream ::</span> (b, <span class="dt">Stream</span> b) }</a></code></pre></div>
 <h4 id="automating-traversal">Automating Traversal</h4>
 <p>The repeated pattern matching we’ve been doing is kind of tedious, and it’ll only get more annoying over time, so let’s make a function that can automate the pattern matching for us really quickly so that we can test it more easily.</p>
 <p><code>streamToList</code> will take a Stream and perform the very straightforward conversion into an infinite list.</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L15-L16</span></a>
 <a class="sourceLine" id="cb13-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb13-3" data-line-number="3"><span class="ot">streamToList ::</span> <span class="dt">Stream</span> b <span class="ot">-&gt;</span> [b]</a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">streamToList (<span class="dt">SCons</span> (x, xs)) <span class="fu">=</span> x <span class="fu">:</span> streamToList xs</a></code></pre></div>
+<a class="sourceLine" id="cb13-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4"><span class="ot">streamToList ::</span> <span class="dt">Stream</span> b <span class="ot">-&gt;</span> [b]</a>
+<a class="sourceLine" id="cb13-5" data-line-number="5">streamToList (<span class="dt">SCons</span> (x, xs)) <span class="fu">=</span> x <span class="fu">:</span> streamToList xs</a></code></pre></div>
 <p>So now we can do:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1">ghci<span class="fu">&gt;</span> take <span class="dv">10</span> <span class="fu">$</span> streamToList myStream</a>
 <a class="sourceLine" id="cb14-2" data-line-number="2">[<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">10</span>]</a></code></pre></div>
 <p>Alternatively (and for reasons which will later become clear), we can also define <code>testStream</code>, which takes a specified amount of elements and returns also the “resulting” stream after all of those steps, and <code>testStream_</code>, which is the same thing except that we throw away the modified stream.</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L20-L30</span></a>
 <a class="sourceLine" id="cb15-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb15-3" data-line-number="3"><span class="ot">testStream ::</span> <span class="dt">Stream</span> b <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> ([b], <span class="dt">Stream</span> b)</a>
-<a class="sourceLine" id="cb15-4" data-line-number="4">testStream strm <span class="dv">0</span> <span class="fu">=</span> ([]  , strm )</a>
-<a class="sourceLine" id="cb15-5" data-line-number="5">testStream strm n <span class="fu">=</span> (y<span class="fu">:</span>ys, final)</a>
-<a class="sourceLine" id="cb15-6" data-line-number="6">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb15-7" data-line-number="7">    (y , next )   <span class="fu">=</span> runStream  strm</a>
-<a class="sourceLine" id="cb15-8" data-line-number="8">    (ys, final)   <span class="fu">=</span> testStream next (n<span class="fu">-</span><span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb15-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb15-10" data-line-number="10"><span class="ot">testStream_ ::</span> <span class="dt">Stream</span> b <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [b]</a>
-<a class="sourceLine" id="cb15-11" data-line-number="11">testStream_ <span class="fu">=</span> (fst <span class="fu">.</span>) <span class="fu">.</span> testStream</a></code></pre></div>
+<a class="sourceLine" id="cb15-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb15-4" data-line-number="4"><span class="ot">testStream ::</span> <span class="dt">Stream</span> b <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> ([b], <span class="dt">Stream</span> b)</a>
+<a class="sourceLine" id="cb15-5" data-line-number="5">testStream strm <span class="dv">0</span> <span class="fu">=</span> ([]  , strm )</a>
+<a class="sourceLine" id="cb15-6" data-line-number="6">testStream strm n <span class="fu">=</span> (y<span class="fu">:</span>ys, final)</a>
+<a class="sourceLine" id="cb15-7" data-line-number="7">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb15-8" data-line-number="8">    (y , next )   <span class="fu">=</span> runStream  strm</a>
+<a class="sourceLine" id="cb15-9" data-line-number="9">    (ys, final)   <span class="fu">=</span> testStream next (n<span class="fu">-</span><span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb15-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb15-11" data-line-number="11"><span class="ot">testStream_ ::</span> <span class="dt">Stream</span> b <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [b]</a>
+<a class="sourceLine" id="cb15-12" data-line-number="12">testStream_ <span class="fu">=</span> (fst <span class="fu">.</span>) <span class="fu">.</span> testStream</a></code></pre></div>
 <div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1">ghci<span class="fu">&gt;</span> testStream_ myStream <span class="dv">10</span></a>
 <a class="sourceLine" id="cb16-2" data-line-number="2">[<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">10</span>]</a></code></pre></div>
 <h3 id="streams-are-nice">Streams are nice</h3>
@@ -139,19 +146,21 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>This is made very apparent in our definition of <code>streamFrom</code>:</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L49-L50</span></a>
 <a class="sourceLine" id="cb17-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb17-3" data-line-number="3"><span class="ot">    streamFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb17-4" data-line-number="4">    streamFrom n <span class="fu">=</span> <span class="dt">SCons</span> ( n, streamFrom (n<span class="fu">+</span><span class="dv">1</span>) )</a></code></pre></div>
+<a class="sourceLine" id="cb17-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb17-4" data-line-number="4"><span class="ot">    streamFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb17-5" data-line-number="5">    streamFrom n <span class="fu">=</span> <span class="dt">SCons</span> ( n, streamFrom (n<span class="fu">+</span><span class="dv">1</span>) )</a></code></pre></div>
 <p>The “current state” whenever we call <code>streamFrom n</code> is <code>n</code>…the “next state” (the “initial state” of the “tail”) is <code>n+1</code>. We could have provided any function <code>:: Int -&gt; Int</code> there (say, <code>n+2</code>), that would be for us our “next state” function.</p>
 <p>So <code>myStream</code> is a Moore-like machine whose “next state” function is “the current state plus one”, and whose output is just the state itself.</p>
 <h4 id="state-your-purpose">State your purpose!</h4>
 <p>Did you catch that last sentence? It’s a subtle point. In general, streams can have outputs that are different than their states. As a trivial example, let’s have a stream whose state is an integer, yet whose output is a character:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L53-L57</span></a>
 <a class="sourceLine" id="cb18-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb18-3" data-line-number="3"><span class="ot">charStream ::</span> <span class="dt">Stream</span> <span class="dt">Char</span></a>
-<a class="sourceLine" id="cb18-4" data-line-number="4">charStream <span class="fu">=</span> charStreamFrom <span class="dv">65</span></a>
-<a class="sourceLine" id="cb18-5" data-line-number="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb18-6" data-line-number="6"><span class="ot">    charStreamFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> <span class="dt">Char</span></a>
-<a class="sourceLine" id="cb18-7" data-line-number="7">    charStreamFrom n <span class="fu">=</span> <span class="dt">SCons</span> ( chr n, charStreamFrom (n<span class="fu">+</span><span class="dv">1</span>) )</a></code></pre></div>
+<a class="sourceLine" id="cb18-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb18-4" data-line-number="4"><span class="ot">charStream ::</span> <span class="dt">Stream</span> <span class="dt">Char</span></a>
+<a class="sourceLine" id="cb18-5" data-line-number="5">charStream <span class="fu">=</span> charStreamFrom <span class="dv">65</span></a>
+<a class="sourceLine" id="cb18-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb18-7" data-line-number="7"><span class="ot">    charStreamFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> <span class="dt">Char</span></a>
+<a class="sourceLine" id="cb18-8" data-line-number="8">    charStreamFrom n <span class="fu">=</span> <span class="dt">SCons</span> ( chr n, charStreamFrom (n<span class="fu">+</span><span class="dv">1</span>) )</a></code></pre></div>
 <div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1">ghci<span class="fu">&gt;</span> take <span class="dv">10</span> <span class="fu">$</span> streamToList charStream</a>
 <a class="sourceLine" id="cb19-2" data-line-number="2"><span class="st">&quot;ABCDEFGHIJ&quot;</span></a></code></pre></div>
 <p>Wait, this is kind of weird. The type of our stream is <code>Stream Char</code>…<code>Char</code> is the type of output/elements in the stream, the “head” when we pattern match. But where is the <code>Int</code> that is the state of our stream in the type <code>Stream Char</code>…?</p>
@@ -166,7 +175,8 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>Let’s upgrade our streams, and introduce a way to affect how they progress. Let’s call it an Auto.</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-L12</span></a>
 <a class="sourceLine" id="cb20-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb20-3" data-line-number="3"><span class="kw">newtype</span> <span class="dt">Auto</span> a b <span class="fu">=</span> <span class="dt">ACons</span> {<span class="ot"> runAuto ::</span> a <span class="ot">-&gt;</span> (b, <span class="dt">Auto</span> a b) }</a></code></pre></div>
+<a class="sourceLine" id="cb20-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb20-4" data-line-number="4"><span class="kw">newtype</span> <span class="dt">Auto</span> a b <span class="fu">=</span> <span class="dt">ACons</span> {<span class="ot"> runAuto ::</span> a <span class="ot">-&gt;</span> (b, <span class="dt">Auto</span> a b) }</a></code></pre></div>
 <p>Now, instead of an <code>SCons</code> containing just a tuple (a head-tails), an <code>ACons</code> contains a <em>function</em> that <em>produces</em> your head-tails tuple. Before, all of our <code>runStreams</code> produced the same tuple no matter what. Now, our <code>runAuto</code> can produce a different tuple based on an outside input.</p>
 <p>This is cool!</p>
 <p>Let’s look at the type signature of Auto before we go too much further.</p>
@@ -177,11 +187,12 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>Let’s look at a direct “port” of our <code>myStream</code>:</p>
 <div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L40-L44</span></a>
 <a class="sourceLine" id="cb21-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb21-3" data-line-number="3"><span class="ot">myStreamAuto ::</span> <span class="dt">Auto</span> a <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb21-4" data-line-number="4">myStreamAuto <span class="fu">=</span> streamAutoFrom <span class="dv">1</span></a>
-<a class="sourceLine" id="cb21-5" data-line-number="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb21-6" data-line-number="6"><span class="ot">    streamAutoFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Auto</span> a <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb21-7" data-line-number="7">    streamAutoFrom n <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \_ <span class="ot">-&gt;</span> ( n, streamAutoFrom (n<span class="fu">+</span><span class="dv">1</span>) )</a></code></pre></div>
+<a class="sourceLine" id="cb21-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb21-4" data-line-number="4"><span class="ot">myStreamAuto ::</span> <span class="dt">Auto</span> a <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb21-5" data-line-number="5">myStreamAuto <span class="fu">=</span> streamAutoFrom <span class="dv">1</span></a>
+<a class="sourceLine" id="cb21-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb21-7" data-line-number="7"><span class="ot">    streamAutoFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Auto</span> a <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb21-8" data-line-number="8">    streamAutoFrom n <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \_ <span class="ot">-&gt;</span> ( n, streamAutoFrom (n<span class="fu">+</span><span class="dv">1</span>) )</a></code></pre></div>
 <p>This is kind of a dumb example, but <code>myStreamAuto</code> is just the exact same as <code>myStream</code>. It’s an Auto, but it <em>ignores its influencing input</em>.</p>
 <p>Let’s try it out.</p>
 <div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t runAuto</a>
@@ -204,13 +215,14 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>We can do this by having the influence/input be a <code>Maybe Int</code>. If we want the counter to progress normally, we pass in a <code>Nothing</code>. If we want the counter to reset to a number <code>n</code> of our choosing, we pass in a <code>Just n</code></p>
 <div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L48-L54</span></a>
 <a class="sourceLine" id="cb23-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb23-3" data-line-number="3"><span class="ot">settableAuto ::</span> <span class="dt">Auto</span> (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb23-4" data-line-number="4">settableAuto <span class="fu">=</span> counterFrom <span class="dv">1</span></a>
-<a class="sourceLine" id="cb23-5" data-line-number="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb23-6" data-line-number="6"><span class="ot">    counterFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Auto</span> (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb23-7" data-line-number="7">    counterFrom n <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \reset <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb23-8" data-line-number="8">      <span class="kw">let</span> c <span class="fu">=</span> fromMaybe n reset</a>
-<a class="sourceLine" id="cb23-9" data-line-number="9">      <span class="kw">in</span>  ( c, counterFrom (c <span class="fu">+</span> <span class="dv">1</span>) )</a></code></pre></div>
+<a class="sourceLine" id="cb23-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb23-4" data-line-number="4"><span class="ot">settableAuto ::</span> <span class="dt">Auto</span> (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb23-5" data-line-number="5">settableAuto <span class="fu">=</span> counterFrom <span class="dv">1</span></a>
+<a class="sourceLine" id="cb23-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb23-7" data-line-number="7"><span class="ot">    counterFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Auto</span> (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb23-8" data-line-number="8">    counterFrom n <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \reset <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb23-9" data-line-number="9">      <span class="kw">let</span> c <span class="fu">=</span> fromMaybe n reset</a>
+<a class="sourceLine" id="cb23-10" data-line-number="10">      <span class="kw">in</span>  ( c, counterFrom (c <span class="fu">+</span> <span class="dv">1</span>) )</a></code></pre></div>
 <p>Remember that <code>fromMaybe :: a -&gt; Maybe a -&gt; a</code> takes a “default” value, a Maybe value, and then returns the value inside the Maybe if it’s a <code>Just</code>, or the default value if it’s a <code>Nothing</code>.</p>
 <p>So basically, when you <code>runAuto</code> with the Auto, if you give it a <code>Nothing</code>, it’ll give you <code>( n, counterFrom (n+1) )</code>. If you give it <code>Just m</code>, it’ll give you <code>( m, counterFrom (m+1) )</code>.</p>
 <p>Cool — let’s try it out.</p>
@@ -241,15 +253,16 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>Like our <code>testStream</code>, <code>testAuto</code> takes an Auto. But because every “step” needs an input, <code>testAuto auto</code> takes a <em>list</em> that specifies the input for every step. <code>testAuto</code> returns the resulting collection of results, and also the modified Auto. <code>testAuto_</code> throws away the new Auto and just gives us the collection.</p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L17-L25</span></a>
 <a class="sourceLine" id="cb25-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb25-3" data-line-number="3"><span class="ot">testAuto ::</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> ([b], <span class="dt">Auto</span> a b)</a>
-<a class="sourceLine" id="cb25-4" data-line-number="4">testAuto auto []      <span class="fu">=</span> ([]  , auto )</a>
-<a class="sourceLine" id="cb25-5" data-line-number="5">testAuto auto (x<span class="fu">:</span>xs)  <span class="fu">=</span> (y<span class="fu">:</span>ys, final)</a>
-<a class="sourceLine" id="cb25-6" data-line-number="6">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb25-7" data-line-number="7">    (y,  next ) <span class="fu">=</span> runAuto  auto x</a>
-<a class="sourceLine" id="cb25-8" data-line-number="8">    (ys, final) <span class="fu">=</span> testAuto next xs</a>
-<a class="sourceLine" id="cb25-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb25-10" data-line-number="10"><span class="ot">testAuto_ ::</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]</a>
-<a class="sourceLine" id="cb25-11" data-line-number="11">testAuto_ a <span class="fu">=</span> fst <span class="fu">.</span> testAuto a</a></code></pre></div>
+<a class="sourceLine" id="cb25-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb25-4" data-line-number="4"><span class="ot">testAuto ::</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> ([b], <span class="dt">Auto</span> a b)</a>
+<a class="sourceLine" id="cb25-5" data-line-number="5">testAuto auto []      <span class="fu">=</span> ([]  , auto )</a>
+<a class="sourceLine" id="cb25-6" data-line-number="6">testAuto auto (x<span class="fu">:</span>xs)  <span class="fu">=</span> (y<span class="fu">:</span>ys, final)</a>
+<a class="sourceLine" id="cb25-7" data-line-number="7">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb25-8" data-line-number="8">    (y,  next ) <span class="fu">=</span> runAuto  auto x</a>
+<a class="sourceLine" id="cb25-9" data-line-number="9">    (ys, final) <span class="fu">=</span> testAuto next xs</a>
+<a class="sourceLine" id="cb25-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb25-11" data-line-number="11"><span class="ot">testAuto_ ::</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]</a>
+<a class="sourceLine" id="cb25-12" data-line-number="12">testAuto_ a <span class="fu">=</span> fst <span class="fu">.</span> testAuto a</a></code></pre></div>
 <p>Trying it out on <code>settableAuto</code>:</p>
 <pre><code>ghci&gt; testAuto_ settableAuto [ Nothing, Nothing, Just 10
                              , Nothing, Nothing, Just (-1)
@@ -258,12 +271,13 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>Alternatively, here is a fun way to test an Auto interactively, where you ask for input at each iteration from the user —</p>
 <div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L27-L32</span></a>
 <a class="sourceLine" id="cb27-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb27-3" data-line-number="3"><span class="ot">interactAuto ::</span> (<span class="dt">Read</span> a, <span class="dt">Show</span> b) <span class="ot">=&gt;</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb27-4" data-line-number="4">interactAuto a0 <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb27-5" data-line-number="5">    inp <span class="ot">&lt;-</span> getLine</a>
-<a class="sourceLine" id="cb27-6" data-line-number="6">    <span class="kw">let</span> (x,a1) <span class="fu">=</span> runAuto a0 (read inp)</a>
-<a class="sourceLine" id="cb27-7" data-line-number="7">    print x</a>
-<a class="sourceLine" id="cb27-8" data-line-number="8">    interactAuto a1</a></code></pre></div>
+<a class="sourceLine" id="cb27-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb27-4" data-line-number="4"><span class="ot">interactAuto ::</span> (<span class="dt">Read</span> a, <span class="dt">Show</span> b) <span class="ot">=&gt;</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb27-5" data-line-number="5">interactAuto a0 <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb27-6" data-line-number="6">    inp <span class="ot">&lt;-</span> getLine</a>
+<a class="sourceLine" id="cb27-7" data-line-number="7">    <span class="kw">let</span> (x,a1) <span class="fu">=</span> runAuto a0 (read inp)</a>
+<a class="sourceLine" id="cb27-8" data-line-number="8">    print x</a>
+<a class="sourceLine" id="cb27-9" data-line-number="9">    interactAuto a1</a></code></pre></div>
 <div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1">ghci<span class="fu">&gt;</span> interactAuto settableAuto</a>
 <a class="sourceLine" id="cb28-2" data-line-number="2"><span class="fu">&gt;</span> <span class="dt">Nothing</span></a>
 <a class="sourceLine" id="cb28-3" data-line-number="3"><span class="dv">1</span></a>
@@ -286,13 +300,14 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>It’s a little tricky because the “output” and the “state” in our example function seem to be exactly the same (just like for <code>myStream</code>), but let’s whip up a quick example where it’s a little more obvious that the state and the output are different things, and that the state is completely opaque and encapsulated.</p>
 <div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L58-L64</span></a>
 <a class="sourceLine" id="cb29-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb29-3" data-line-number="3"><span class="ot">isEvenAuto ::</span> <span class="dt">Auto</span> (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb29-4" data-line-number="4">isEvenAuto <span class="fu">=</span> isEvenAutoFrom <span class="dv">1</span></a>
-<a class="sourceLine" id="cb29-5" data-line-number="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb29-6" data-line-number="6"><span class="ot">    isEvenAutoFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Auto</span> (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb29-7" data-line-number="7">    isEvenAutoFrom n <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \reset <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb29-8" data-line-number="8">      <span class="kw">let</span> c <span class="fu">=</span> fromMaybe n reset</a>
-<a class="sourceLine" id="cb29-9" data-line-number="9">      <span class="kw">in</span>  ( even c, isEvenAutoFrom (c <span class="fu">+</span> <span class="dv">1</span>) )</a></code></pre></div>
+<a class="sourceLine" id="cb29-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb29-4" data-line-number="4"><span class="ot">isEvenAuto ::</span> <span class="dt">Auto</span> (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb29-5" data-line-number="5">isEvenAuto <span class="fu">=</span> isEvenAutoFrom <span class="dv">1</span></a>
+<a class="sourceLine" id="cb29-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb29-7" data-line-number="7"><span class="ot">    isEvenAutoFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Auto</span> (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb29-8" data-line-number="8">    isEvenAutoFrom n <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \reset <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb29-9" data-line-number="9">      <span class="kw">let</span> c <span class="fu">=</span> fromMaybe n reset</a>
+<a class="sourceLine" id="cb29-10" data-line-number="10">      <span class="kw">in</span>  ( even c, isEvenAutoFrom (c <span class="fu">+</span> <span class="dv">1</span>) )</a></code></pre></div>
 <p>So <code>isEvenAuto</code> is the same as <code>settableCounterFrom</code>, except instead of “yielding”/“outputting” <code>n</code>, it outputs <code>even n</code> — <code>True</code> if <code>n</code> is even and <code>False</code> if <code>n</code> is odd.</p>
 <p>Here is a demonstration of its behavior —</p>
 <div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb30-1" data-line-number="1">ghci<span class="fu">&gt;</span> testAuto isEvenAuto  [ <span class="dt">Nothing</span>, <span class="dt">Nothing</span>, <span class="dt">Just</span> <span class="dv">10</span></a>
@@ -319,13 +334,14 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>How about an Auto that “accumulates” and “sums up” all of its incoming inputs, starting at 0? More correctly, an Auto that, given any int, “returns” the sum of that int with all of the previous ints it has received in its lifetime.</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L67-L73</span></a>
 <a class="sourceLine" id="cb31-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb31-3" data-line-number="3"><span class="ot">summer ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Auto</span> a a</a>
-<a class="sourceLine" id="cb31-4" data-line-number="4">summer <span class="fu">=</span> sumFrom <span class="dv">0</span></a>
-<a class="sourceLine" id="cb31-5" data-line-number="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb31-6" data-line-number="6"><span class="ot">    sumFrom ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Auto</span> a a</a>
-<a class="sourceLine" id="cb31-7" data-line-number="7">    sumFrom n <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \input <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb31-8" data-line-number="8">      <span class="kw">let</span> s <span class="fu">=</span> n <span class="fu">+</span> input</a>
-<a class="sourceLine" id="cb31-9" data-line-number="9">      <span class="kw">in</span>  ( s , sumFrom s )</a></code></pre></div>
+<a class="sourceLine" id="cb31-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb31-4" data-line-number="4"><span class="ot">summer ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Auto</span> a a</a>
+<a class="sourceLine" id="cb31-5" data-line-number="5">summer <span class="fu">=</span> sumFrom <span class="dv">0</span></a>
+<a class="sourceLine" id="cb31-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb31-7" data-line-number="7"><span class="ot">    sumFrom ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Auto</span> a a</a>
+<a class="sourceLine" id="cb31-8" data-line-number="8">    sumFrom n <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \input <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb31-9" data-line-number="9">      <span class="kw">let</span> s <span class="fu">=</span> n <span class="fu">+</span> input</a>
+<a class="sourceLine" id="cb31-10" data-line-number="10">      <span class="kw">in</span>  ( s , sumFrom s )</a></code></pre></div>
 <div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb32-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (out1, auto1) <span class="fu">=</span> runAuto summer <span class="dv">10</span></a>
 <a class="sourceLine" id="cb32-2" data-line-number="2">ghci<span class="fu">&gt;</span> out1</a>
 <a class="sourceLine" id="cb32-3" data-line-number="3"><span class="dv">10</span></a>
@@ -342,29 +358,31 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>Just for kicks, let’s generalize this and make an Auto version of <code>foldl</code> (technically, more like <code>scanl</code>): give us an operator and an initial value, and we’ll “fold up” all of our inputs.</p>
 <div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L78-L84</span></a>
 <a class="sourceLine" id="cb33-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb33-3" data-line-number="3"><span class="ot">autoFold ::</span> forall a b<span class="fu">.</span> (b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Auto</span> a b</a>
-<a class="sourceLine" id="cb33-4" data-line-number="4">autoFold op init <span class="fu">=</span> foldFrom init</a>
-<a class="sourceLine" id="cb33-5" data-line-number="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb33-6" data-line-number="6"><span class="ot">    foldFrom ::</span> b <span class="ot">-&gt;</span> <span class="dt">Auto</span> a b</a>
-<a class="sourceLine" id="cb33-7" data-line-number="7">    foldFrom x <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \input <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb33-8" data-line-number="8">      <span class="kw">let</span> y <span class="fu">=</span> x <span class="ot">`op`</span> input</a>
-<a class="sourceLine" id="cb33-9" data-line-number="9">      <span class="kw">in</span>  ( y, foldFrom y )</a></code></pre></div>
+<a class="sourceLine" id="cb33-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb33-4" data-line-number="4"><span class="ot">autoFold ::</span> forall a b<span class="fu">.</span> (b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Auto</span> a b</a>
+<a class="sourceLine" id="cb33-5" data-line-number="5">autoFold op init <span class="fu">=</span> foldFrom init</a>
+<a class="sourceLine" id="cb33-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb33-7" data-line-number="7"><span class="ot">    foldFrom ::</span> b <span class="ot">-&gt;</span> <span class="dt">Auto</span> a b</a>
+<a class="sourceLine" id="cb33-8" data-line-number="8">    foldFrom x <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \input <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb33-9" data-line-number="9">      <span class="kw">let</span> y <span class="fu">=</span> x <span class="ot">`op`</span> input</a>
+<a class="sourceLine" id="cb33-10" data-line-number="10">      <span class="kw">in</span>  ( y, foldFrom y )</a></code></pre></div>
 <p>(the <code>forall</code> is used with the <a href="http://www.haskell.org/haskellwiki/Scoped_type_variables">Scoped Type Variables</a> extension to let us say that the <code>b</code> we mention in the type of <code>foldFrom</code> is the same as the <code>b</code> in the type of <code>autoFold</code>. If we leave off the type signature of <code>foldFrom</code>, this is not necessary)</p>
 <p>Note that <code>summer</code> then is just <code>autoFold (+) 0</code>.</p>
 <p>You can probably imagine lots of different folds you can turn into <code>autoFold</code>s…and indeed a lot of practical Autos are just <code>autoFold</code>s. Here are some cute ones:</p>
 <div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb34-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L92-L107</span></a>
 <a class="sourceLine" id="cb34-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
-<a class="sourceLine" id="cb34-3" data-line-number="3"><span class="ot">accumulateIntoList ::</span> <span class="dt">Auto</span> a [a]</a>
-<a class="sourceLine" id="cb34-4" data-line-number="4">accumulateIntoList <span class="fu">=</span> autoFold (flip (<span class="fu">:</span>)) []</a>
-<a class="sourceLine" id="cb34-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb34-6" data-line-number="6"><span class="ot">productor ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Auto</span> a a</a>
-<a class="sourceLine" id="cb34-7" data-line-number="7">productor <span class="fu">=</span> autoFold (<span class="fu">*</span>) <span class="dv">1</span></a>
-<a class="sourceLine" id="cb34-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb34-9" data-line-number="9"><span class="ot">accumulateStrings ::</span> <span class="dt">Auto</span> <span class="dt">String</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb34-10" data-line-number="10">accumulateStrings <span class="fu">=</span> autoFold (<span class="fu">++</span>) <span class="st">&quot;&quot;</span></a>
-<a class="sourceLine" id="cb34-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb34-12" data-line-number="12"><span class="ot">monoidAccum ::</span> <span class="dt">Monoid</span> a <span class="ot">=&gt;</span> <span class="dt">Auto</span> a a</a>
-<a class="sourceLine" id="cb34-13" data-line-number="13">monoidAccum <span class="fu">=</span> autoFold mappend mempty</a></code></pre></div>
+<a class="sourceLine" id="cb34-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb34-4" data-line-number="4"><span class="ot">accumulateIntoList ::</span> <span class="dt">Auto</span> a [a]</a>
+<a class="sourceLine" id="cb34-5" data-line-number="5">accumulateIntoList <span class="fu">=</span> autoFold (flip (<span class="fu">:</span>)) []</a>
+<a class="sourceLine" id="cb34-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb34-7" data-line-number="7"><span class="ot">productor ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Auto</span> a a</a>
+<a class="sourceLine" id="cb34-8" data-line-number="8">productor <span class="fu">=</span> autoFold (<span class="fu">*</span>) <span class="dv">1</span></a>
+<a class="sourceLine" id="cb34-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb34-10" data-line-number="10"><span class="ot">accumulateStrings ::</span> <span class="dt">Auto</span> <span class="dt">String</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb34-11" data-line-number="11">accumulateStrings <span class="fu">=</span> autoFold (<span class="fu">++</span>) <span class="st">&quot;&quot;</span></a>
+<a class="sourceLine" id="cb34-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb34-13" data-line-number="13"><span class="ot">monoidAccum ::</span> <span class="dt">Monoid</span> a <span class="ot">=&gt;</span> <span class="dt">Auto</span> a a</a>
+<a class="sourceLine" id="cb34-14" data-line-number="14">monoidAccum <span class="fu">=</span> autoFold mappend mempty</a></code></pre></div>
 <p>Cool, huh?</p>
 <h4 id="parallels-with-list-folds">Parallels with list folds</h4>
 <p>Let’s look very carefully at a comparison between the type signature of Prelude’s <code>foldl</code> and the type signature of <code>autoFold</code>:</p>
@@ -441,8 +459,9 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>You can think of <code>isEvenAuto</code> as a “function thing” from <code>Maybe Int</code> to <code>Bool</code>.</p>
 <p>Here’s another function from <code>Maybe Int</code> to <code>Bool</code>: (I’m going to be using the prefix form of <code>(-&gt;)</code> a lot from now on)</p>
 <div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L181-L182</span></a>
-<a class="sourceLine" id="cb42-2" data-line-number="2"><span class="ot">maybeIsEven ::</span> (<span class="ot">-&gt;</span>) (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb42-3" data-line-number="3">maybeIsEven <span class="fu">=</span> even <span class="fu">.</span> fromMaybe <span class="dv">1</span></a></code></pre></div>
+<a class="sourceLine" id="cb42-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb42-3" data-line-number="3"><span class="ot">maybeIsEven ::</span> (<span class="ot">-&gt;</span>) (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb42-4" data-line-number="4">maybeIsEven <span class="fu">=</span> even <span class="fu">.</span> fromMaybe <span class="dv">1</span></a></code></pre></div>
 <p><code>maybeIsEven</code> returns <code>True</code> when value inside the <code>Just</code> is even, or <code>False</code> if the value is odd or it’s a <code>Nothing</code>.</p>
 <p>Compare that type signature to that of our <code>isEvenAuto</code></p>
 <div class="sourceCode" id="cb43"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="ot">maybeIsEven ::</span> (<span class="ot">-&gt;</span>) (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Bool</span></a>

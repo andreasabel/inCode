@@ -129,6 +129,7 @@ Let's jump straight to abstracting over this and explore a new type, shall we?
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L27-L27
+
 newtype AutoM m a b = AConsM { runAutoM :: a -> m (b, AutoM m a b) }
 ```
 
@@ -152,6 +153,7 @@ is nice, so you might be surprised when you write the `Category` instance:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L43-L48
+
 instance Monad m => Category (AutoM m) where
     id    = AConsM $ \x -> return (x, id)
     g . f = AConsM $ \x -> do
@@ -166,6 +168,7 @@ It should! Remember the logic from the `Auto` Category instance?
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L13-L18
+
 instance Category Auto where
     id    = ACons $ \x -> (x, id)
     g . f = ACons $ \x ->
@@ -188,6 +191,7 @@ Check out the `Functor` and `Arrow` instances, too --- they're exactly the same!
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L20-L47
+
 instance Functor (Auto r) where
     fmap f a = ACons $ \x ->
                  let (y, a') = runAuto a x
@@ -213,6 +217,7 @@ instance Arrow Auto where
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L50-L77
+
 instance Monad m => Functor (AutoM m r) where
     fmap f a = AConsM $ \x -> do
                  (y, a') <- runAutoM a x
@@ -280,6 +285,7 @@ like `arr`, but instead of turning an `a -> b` into an `Auto a b`, it turns an
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L97-L107
+
 autoM :: Monad m => Auto a b -> AutoM m a b
 autoM a = AConsM $ \x -> let (y, a') = runAuto a x
                          in  return (y, autoM a')
@@ -297,6 +303,7 @@ original ones:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L31-L39
+
 testAutoM :: Monad m => AutoM m a b -> [a] -> m ([b], AutoM m a b)
 testAutoM a []      = return ([], a)
 testAutoM a (x:xs)  = do
@@ -332,6 +339,7 @@ the normal input, and the other from `IO`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L119-L123
+
 replicateGets :: AutoM IO Int String
 replicateGets = proc n -> do
     ioString <- arrM (\_ -> getLine) -< ()
@@ -365,6 +373,7 @@ You can also use this to "tack on" effects into your pipeline.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L127-L131
+
 logging :: Show b => Auto a b -> AutoM IO a b
 logging a = proc x -> do
     y <- autoM a -< x
@@ -475,6 +484,7 @@ consumes fuel from the same pool, given at the initial `runState` running.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L139-L175
+
 limit :: Int -> Auto a b -> AutoM (State Int) a (Maybe b)
 limit cost a = proc x -> do
     fuel <- arrM (\_ -> get) -< ()
@@ -558,6 +568,7 @@ eventually run it, but we use the fact that every composed `Auto` gets the
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L199-L234
+
 integral :: Double -> AutoM (Reader Double) Double Double
 integral x0 = AConsM $ \dx -> do
                 dt <- ask
@@ -677,6 +688,7 @@ as we turn them into `Auto`'s.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L182-L192
+
 sealStateAuto :: AutoM (State s) a b -> s -> Auto a b
 sealStateAuto a s0 = ACons $ \x ->
                        let ((y, a'), s1) = runState (runAutoM a x) s0
@@ -731,6 +743,7 @@ We can simulate an "immutable local environment", for example:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L248-L251
+
 runReaderAuto :: AutoM (Reader r) a b -> Auto (a, r) b
 runReaderAuto a = ACons $ \(x, e) ->
                     let (y, a') = runReader (runAutoM a x) e
@@ -833,6 +846,7 @@ Without further ado ---
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L266-L276
+
 piTargeter :: Auto Double Double
 piTargeter = proc control -> do
     rec let err = control - response
@@ -906,6 +920,7 @@ The MVP here really is this function that I sneakily introduced,
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L258-L262
+
 laggingSummer :: Num a => Auto a a
 laggingSummer = sumFrom 0
   where
@@ -989,6 +1004,7 @@ We can write an `ArrowLoop` instance for `Auto`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L58-L61
+
 instance ArrowLoop Auto where
     loop a = ACons $ \x ->
                let ((y, d), a') = runAuto a (x, d)
@@ -1020,6 +1036,7 @@ an instance of `MonadFix`, which is basically a generalization of the recursive
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L88-L91
+
 instance MonadFix m => ArrowLoop (AutoM m) where
     loop a = AConsM $ \x -> do
                rec ((y, d), a') <- runAutoM a (x, d)
@@ -1050,6 +1067,7 @@ We can imagine "baking this in" to our Auto type:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L19-L19
+
 newtype AutoOn a b = AConsOn { runAutoOn :: a -> (Maybe b, AutoOn a b) }
 ```
 
@@ -1059,6 +1077,7 @@ run the auto on the `x`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L22-L29
+
 instance Category AutoOn where
     id    = AConsOn $ \x -> (Just x, id)
     g . f = AConsOn $ \x ->
@@ -1175,6 +1194,7 @@ and `a2`, and the result is the first `Just`.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L80-L86
+
 instance Alternative (AutoOn a) where
     empty     = AConsOn $ \_ -> (Nothing, empty)
     -- (<|>) :: AutoOn a b -> AutoOn a b -> AutoOn a b
@@ -1197,6 +1217,7 @@ after:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L115-L121
+
 (-->) :: AutoOn a b -> AutoOn a b -> AutoOn a b
 a1 --> a2 = AConsOn $ \x ->
               let (y1, a1') = runAutoOn a1 x
@@ -1213,6 +1234,7 @@ Let's test this out; first, some helper functions (the same ones we wrote for
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L91-L107
+
 autoOn :: Auto a b -> AutoOn a b
 autoOn a = AConsOn $ \x ->
              let (y, a') = runAuto a x
@@ -1237,6 +1259,7 @@ Let's play around with some test `AutoOn`s!
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L131-L152
+
 onFor :: Int -> AutoOn a a
 onFor n = proc x -> do
     i <- autoOn summer -< 1
@@ -1268,6 +1291,7 @@ just like with monadic `Maybe` and do blocks:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L163-L173
+
 shortCircuit1 :: AutoOn Int Int
 shortCircuit1 = proc x -> do
     filterA even -< x
@@ -1304,6 +1328,7 @@ what it wants", and then choose to "hand it off" when it is ready.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L178-L183
+
 stages :: AutoOn Int Int
 stages = stage1 --> stage2 --> stage3 --> stages
   where
@@ -1342,6 +1367,7 @@ you'll have to go deeper:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs#L10-L10
+
 newtype AutoOn2 a b = ACons2 { runAutoOn2 :: Maybe a -> (Maybe b, AutoOn2 a b) }
 ```
 
@@ -1350,6 +1376,7 @@ if it receives a `Nothing` from upstream:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs#L16-L18
+
 onFor :: Int -> AutoOn2 a a
 onFor 0 = ACons2 $ \_ -> (Nothing, onFor 0)
 onFor n = ACons2 $ \x -> (x, onFor (n - 1))
@@ -1359,6 +1386,7 @@ You can of course translate all of your `AutoOn`s into this new type:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs#L24-L31
+
 autoOn :: AutoOn a b -> AutoOn2 a b
 autoOn a = ACons2 $ \x ->
              case x of
@@ -1380,6 +1408,7 @@ Of course, we can always literally throw everything we can add together into our
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L18-L18
+
 newtype AutoX m a b = AConsX { runAutoX :: a -> m (Maybe b, AutoX m a b) }
 ```
 
@@ -1406,6 +1435,7 @@ that work *exactly the same way*:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L85-L100
+
 aCons :: Monad m => (a -> (b, AutoX m a b)) -> AutoX m a b
 aCons a = AConsX $ \x ->
             let (y, aX) = a x
@@ -1428,6 +1458,7 @@ versions:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L67-L73
+
 summer :: Num a => Auto a a
 summer = sumFrom 0
   where
@@ -1436,11 +1467,13 @@ summer = sumFrom 0
       let s = n + input
       in  ( s , sumFrom s )
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L104-L107
+
 arrM :: Monad m => (a -> m b) -> AutoM m a b
 arrM f = AConsM $ \x -> do
                     y <- f x
                     return (y, arrM f)
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L154-L158
+
 untilA' :: (a -> Bool) -> AutoOn a a
 untilA' p = AConsOn $ \x ->
               if p x
@@ -1450,6 +1483,7 @@ untilA' p = AConsOn $ \x ->
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L106-L128
+
 summer :: (Monad m, Num a) => AutoX m a a
 summer = sumFrom 0
   where
@@ -1477,6 +1511,7 @@ and `AutoX` by making the type polymorphic over all monads:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L106-L106
+
 summer :: (Monad m, Num a) => AutoX m a a
 ```
 
@@ -1498,6 +1533,7 @@ By the way, here's a "smart constructor" for `AutoM`.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L112-L113
+
 aCons :: Monad m => (a -> (b, AutoM m a b)) -> AutoM m a b
 aCons f = AConsM $ \x -> return (f x)
 ```

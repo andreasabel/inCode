@@ -928,6 +928,7 @@ describes the physics of our systems (the ``shape'' of the Hamiltonian):
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L25-L32}
+
 \KeywordTok{data} \DataTypeTok{System}\NormalTok{ m n }\FunctionTok{=} \DataTypeTok{System}
 \NormalTok{    \{}\OtherTok{ sysInertia       ::} \DataTypeTok{R}\NormalTok{ m                         }\CommentTok{-- ^ 'm' vector}
 \NormalTok{    ,}\OtherTok{ sysCoords        ::} \DataTypeTok{R}\NormalTok{ n }\OtherTok{->} \DataTypeTok{R}\NormalTok{ m                  }\CommentTok{-- ^ f}
@@ -959,6 +960,7 @@ which is sometimes called ``configuration space'':
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L35-L39}
+
 \KeywordTok{data} \DataTypeTok{Config}\NormalTok{ n }\FunctionTok{=} \DataTypeTok{Config}
 \NormalTok{    \{}\OtherTok{ confPositions  ::} \DataTypeTok{R}\NormalTok{ n}
 \NormalTok{    ,}\OtherTok{ confVelocities ::} \DataTypeTok{R}\NormalTok{ n}
@@ -977,6 +979,7 @@ So let's make a type to describe the state of our system in phase space:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L42-L46}
+
 \KeywordTok{data} \DataTypeTok{Phase}\NormalTok{ n }\FunctionTok{=} \DataTypeTok{Phase}
 \NormalTok{    \{}\OtherTok{ phasePositions ::} \DataTypeTok{R}\NormalTok{ n}
 \NormalTok{    ,}\OtherTok{ phaseMomenta   ::} \DataTypeTok{R}\NormalTok{ n}
@@ -999,6 +1002,7 @@ position in generalized coordinates, and returns the position in the
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L51-L55}
+
 \NormalTok{underlyingPosition}
 \OtherTok{    ::} \DataTypeTok{System}\NormalTok{ m n}
     \OtherTok{->} \DataTypeTok{R}\NormalTok{ n}
@@ -1029,6 +1033,7 @@ We can translate that directly into Haskell code:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L59-L67}
+
 \NormalTok{momenta}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m)}
     \OtherTok{=>} \DataTypeTok{System}\NormalTok{ m n}
@@ -1057,6 +1062,7 @@ to its coordinates in phase space:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L70-L75}
+
 \NormalTok{toPhase}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m)}
     \OtherTok{=>} \DataTypeTok{System}\NormalTok{ m n}
@@ -1168,6 +1174,7 @@ are fundamentally unsafe to write (but safe to use, after written properly):
 \begin{Highlighting}[]
 \CommentTok{-- import qualified Data.Vector.Generic.Sized as VG}
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L78-L87}
+
 \OtherTok{vec2r ::} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{V.Vector}\NormalTok{ n }\DataTypeTok{Double} \OtherTok{->} \DataTypeTok{R}\NormalTok{ n}
 \NormalTok{vec2r }\FunctionTok{=}\NormalTok{ fromJust }\FunctionTok{.}\NormalTok{ create }\FunctionTok{.}\NormalTok{ VG.fromSized }\FunctionTok{.}\NormalTok{ VG.convert}
 
@@ -1197,6 +1204,7 @@ rather inelegant way. (Again, unsafe to write, but safe to use once you do)
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L90-L93}
+
 \OtherTok{rehessian ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ m, }\DataTypeTok{KnownNat}\NormalTok{ n) }\OtherTok{=>} \DataTypeTok{V.Vector}\NormalTok{ m (}\DataTypeTok{L}\NormalTok{ n n) }\OtherTok{->} \DataTypeTok{V.Vector}\NormalTok{ n (}\DataTypeTok{L}\NormalTok{ m n)}
 \NormalTok{rehessian }\FunctionTok{=}\NormalTok{ fmap (fromJust }\FunctionTok{.}\NormalTok{ (\textbackslash{}rs }\OtherTok{->}\NormalTok{ withRows rs exactDims) }\FunctionTok{.}\NormalTok{ toList)}
           \FunctionTok{.}\NormalTok{ sequenceA}
@@ -1214,6 +1222,7 @@ conversion function, and the potential energy function:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L97-L113}
+
 \NormalTok{mkSystem}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ m, }\DataTypeTok{KnownNat}\NormalTok{ n)}
     \OtherTok{=>} \DataTypeTok{R}\NormalTok{ m}
@@ -1293,6 +1302,7 @@ translate them into Haskell (using
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L116-L133}
+
 \NormalTok{hamilEqns}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m)}
     \OtherTok{=>} \DataTypeTok{System}\NormalTok{ m n}
@@ -1394,6 +1404,7 @@ vectors)
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L136-L144}
+
 \NormalTok{stepEuler}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m)}
     \OtherTok{=>} \DataTypeTok{System}\NormalTok{ m n       }\CommentTok{-- ^ the system}
@@ -1411,6 +1422,7 @@ And repeatedly evolve this system as a lazy list:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L147-L155}
+
 \NormalTok{runSystem}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m)}
     \OtherTok{=>} \DataTypeTok{System}\NormalTok{ m n       }\CommentTok{-- ^ the system}
@@ -1435,6 +1447,7 @@ under gravity --
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L158-L164}
+
 \OtherTok{simpleSystem ::} \DataTypeTok{System} \DecValTok{2} \DecValTok{2}
 \NormalTok{simpleSystem }\FunctionTok{=}\NormalTok{ mkSystem (vec2 }\DecValTok{5} \DecValTok{5}\NormalTok{) id pot}
   \KeywordTok{where}
@@ -1461,6 +1474,7 @@ We can make our initial configuration:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L168-L172}
+
 \OtherTok{simpleConfig0 ::} \DataTypeTok{Config} \DecValTok{2}
 \NormalTok{simpleConfig0 }\FunctionTok{=} \DataTypeTok{Config}
 \NormalTok{    \{ confPositions  }\FunctionTok{=}\NormalTok{ vec2 }\DecValTok{0} \DecValTok{0}
@@ -1474,6 +1488,7 @@ And then\ldots{}let it run!
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L174-L178}
+
 \OtherTok{simpleMain ::} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{simpleMain }\FunctionTok{=}
 \NormalTok{    mapM_ (disp }\DecValTok{2} \FunctionTok{.}\NormalTok{ phasePositions)  }\CommentTok{-- position with 2 digits of precision}
@@ -1546,6 +1561,7 @@ will be 0.1 radians/sec (clockwise), as we try to induce harmonic motion:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L181-L210}
+
 \CommentTok{-- | A pendulum system, parameterized by its angle clockwise from}
 \CommentTok{-- equilibrium}
 \OtherTok{pendulum ::} \DataTypeTok{System} \DecValTok{2} \DecValTok{1}

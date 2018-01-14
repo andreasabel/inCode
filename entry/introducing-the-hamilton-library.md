@@ -153,6 +153,7 @@ Turns out that this is a complete enough description of our system to let
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L10-L25
+
 doublePendulum :: System 4 2
 doublePendulum = mkSystem' masses coordinates potential
   where
@@ -190,6 +191,7 @@ Now, let's run the simulation. First we have to pick a starting configuration:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L37-L39
+
 config0 :: Config 2
 config0 = Cfg (vec2 1 0  )  -- initial positions
               (vec2 0 0.5)  -- initial velocities
@@ -202,6 +204,7 @@ configuration-space state into a phase-space state:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L41-L42
+
 phase0 :: Phase 2
 phase0 = toPhase doublePendulum config0
 ```
@@ -210,6 +213,7 @@ And now we can ask for the state of our system at any amount of points in time:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L44-L45
+
 evolution :: [Phase 2]
 evolution = evolveHam' doublePendulum phase0 [0,0.1 .. 1]
 ```
@@ -221,6 +225,7 @@ Or, if you want to run the system step-by-step:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L47-L48
+
 evolution' :: [Phase 2]
 evolution' = iterate (stepHam 0.1 doublePendulum) phase0
 ```
@@ -229,6 +234,7 @@ And you can get the position of the coordinates as:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L50-L51
+
 positions :: [R 2]
 positions = phsPositions <$> evolution'
 ```
@@ -239,6 +245,7 @@ And the position in the underlying cartesian space as:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L53-L54
+
 positions' :: [R 4]
 positions' = underlyingPos doublePendulum <$> positions
 ```
@@ -250,6 +257,7 @@ progression of the system's positions:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L56-L57
+
 main :: IO ()
 main = withRows (take 25 positions) (disp 4)
 ```
@@ -359,6 +367,7 @@ Anyway, here we go:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/TwoBody.hs#L10-L42
+
 twoBody :: System 4 2
 twoBody = mkSystem masses coordinates potential
   where
@@ -393,6 +402,7 @@ Let's take a peek:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/TwoBody.hs#L44-L60
+
 phase0 :: Phase 2
 phase0 = toPhase twoBody config0
 

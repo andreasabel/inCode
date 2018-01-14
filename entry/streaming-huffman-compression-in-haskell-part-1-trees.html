@@ -29,9 +29,10 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>So some properties about prefix trees that might be useful to us — all data is stored in the leaves, and all internal nodes have exactly two children. This sounds like the perfect candidate for an Algebraic Data Structure.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L19-L21</span></a>
 <a class="sourceLine" id="cb1-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">data</span> <span class="dt">PreTree</span> a <span class="fu">=</span> <span class="dt">PTLeaf</span> a</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">               <span class="fu">|</span> <span class="dt">PTNode</span> (<span class="dt">PreTree</span> a) (<span class="dt">PreTree</span> a)</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">               <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Generic</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">data</span> <span class="dt">PreTree</span> a <span class="fu">=</span> <span class="dt">PTLeaf</span> a</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">               <span class="fu">|</span> <span class="dt">PTNode</span> (<span class="dt">PreTree</span> a) (<span class="dt">PreTree</span> a)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">               <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Generic</span>)</a></code></pre></div>
 <p>We leave the type parameterized on <code>a</code> (which is like a template/generic in C++/Java) so we can decide what to put into it later.</p>
 <h4 id="pretree-operations"><code>PreTree</code> operations</h4>
 <p>So, what sort of things are we going to want to do with our <code>PreTree</code>?</p>
@@ -43,8 +44,9 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>However, something like this is just begging to be eta-reduced, and we can simplify it as:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L46-L47</span></a>
 <a class="sourceLine" id="cb3-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="ot">makePT ::</span> a <span class="ot">-&gt;</span> <span class="dt">PreTree</span> a</a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">makePT <span class="fu">=</span> <span class="dt">PTLeaf</span></a></code></pre></div>
+<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="ot">makePT ::</span> a <span class="ot">-&gt;</span> <span class="dt">PreTree</span> a</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">makePT <span class="fu">=</span> <span class="dt">PTLeaf</span></a></code></pre></div>
 <p>Which does the same thing. Basically, <code>PTLeaf</code> is already a function <code>a -&gt; PreTree a</code>…so <code>makePT</code> is literally just <code>PTLeaf</code>.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> pt <span class="fu">=</span> makePT <span class="ch">&#39;c&#39;</span></a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t pt</a>
@@ -58,8 +60,9 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>Which, from what we saw before, can just be written as:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L50-L51</span></a>
 <a class="sourceLine" id="cb6-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb6-3" data-line-number="3"><span class="ot">mergePT ::</span> <span class="dt">PreTree</span> a <span class="ot">-&gt;</span> <span class="dt">PreTree</span> a <span class="ot">-&gt;</span> <span class="dt">PreTree</span> a</a>
-<a class="sourceLine" id="cb6-4" data-line-number="4">mergePT <span class="fu">=</span> <span class="dt">PTNode</span></a></code></pre></div>
+<a class="sourceLine" id="cb6-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4"><span class="ot">mergePT ::</span> <span class="dt">PreTree</span> a <span class="ot">-&gt;</span> <span class="dt">PreTree</span> a <span class="ot">-&gt;</span> <span class="dt">PreTree</span> a</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">mergePT <span class="fu">=</span> <span class="dt">PTNode</span></a></code></pre></div>
 <div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> pt1 <span class="fu">=</span> makePT <span class="ch">&#39;c&#39;</span></a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="kw">let</span> pt2 <span class="fu">=</span> makePT <span class="ch">&#39;t&#39;</span></a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">ghci<span class="fu">&gt;</span> <span class="kw">let</span> pt3 <span class="fu">=</span> pt1 <span class="ot">`mergePT`</span> pt2</a>
@@ -73,9 +76,10 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>We’re going to need some way of comparing the weights/priorities of two <code>PreTree</code>s when we are assembling the tree. Let’s introduce a data type that includes both a <code>PreTree</code> and an (integer) weight.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs#L13-L15</span></a>
 <a class="sourceLine" id="cb8-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb8-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Weighted</span> a <span class="fu">=</span> <span class="dt">WPair</span> {<span class="ot"> _wWeight ::</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb8-4" data-line-number="4">                        ,<span class="ot"> _wItem   ::</span> a</a>
-<a class="sourceLine" id="cb8-5" data-line-number="5">                        } <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Functor</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb8-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4"><span class="kw">data</span> <span class="dt">Weighted</span> a <span class="fu">=</span> <span class="dt">WPair</span> {<span class="ot"> _wWeight ::</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">                        ,<span class="ot"> _wItem   ::</span> a</a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">                        } <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Functor</span>)</a></code></pre></div>
 <p>(Code for the Weighted module is <a href="https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs">available for download</a>)</p>
 <p>We will say that a <code>Weighted a</code> is some <code>a</code> associated with an integer weight.</p>
 <p>We can create, say, a <code>PreTree</code> containing the character ‘a’, weighted with integer 1:</p>
@@ -84,12 +88,14 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>This weighted <code>PreTree</code> is pretty useful, let’s give it an alias/typedef:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L54-L54</span></a>
 <a class="sourceLine" id="cb10-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb10-3" data-line-number="3"><span class="kw">type</span> <span class="dt">WeightedPT</span> a <span class="fu">=</span> <span class="dt">Weighted</span> (<span class="dt">PreTree</span> a)</a></code></pre></div>
+<a class="sourceLine" id="cb10-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4"><span class="kw">type</span> <span class="dt">WeightedPT</span> a <span class="fu">=</span> <span class="dt">Weighted</span> (<span class="dt">PreTree</span> a)</a></code></pre></div>
 <p>Let’s make the same functions for <code>WeightedPT</code> as we did for <code>PreTree</code>:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L58-L59</span></a>
 <a class="sourceLine" id="cb11-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb11-3" data-line-number="3"><span class="ot">makeWPT ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">WeightedPT</span> a</a>
-<a class="sourceLine" id="cb11-4" data-line-number="4">makeWPT w <span class="fu">=</span> <span class="dt">WPair</span> w <span class="fu">.</span> makePT</a></code></pre></div>
+<a class="sourceLine" id="cb11-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4"><span class="ot">makeWPT ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">WeightedPT</span> a</a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">makeWPT w <span class="fu">=</span> <span class="dt">WPair</span> w <span class="fu">.</span> makePT</a></code></pre></div>
 <p>The above basically says “to make a <code>WeightedPT</code> with weight <code>w</code>, first <code>makePT</code> it, and then add that result it to a <code>WPair w</code>.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> pt <span class="fu">=</span> makeWPT <span class="dv">1</span> <span class="ch">&#39;w&#39;</span></a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t pt</a>
@@ -99,18 +105,20 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>We will also want to merge two <code>WeightedPT</code>s:</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L62-L64</span></a>
 <a class="sourceLine" id="cb13-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb13-3" data-line-number="3"><span class="ot">mergeWPT ::</span> <span class="dt">WeightedPT</span> a <span class="ot">-&gt;</span> <span class="dt">WeightedPT</span> a <span class="ot">-&gt;</span> <span class="dt">WeightedPT</span> a</a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">mergeWPT (<span class="dt">WPair</span> w1 pt1) (<span class="dt">WPair</span> w2 pt2)</a>
-<a class="sourceLine" id="cb13-5" data-line-number="5">    <span class="fu">=</span> <span class="dt">WPair</span> (w1 <span class="fu">+</span> w2) (mergePT pt1 pt2)</a></code></pre></div>
+<a class="sourceLine" id="cb13-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4"><span class="ot">mergeWPT ::</span> <span class="dt">WeightedPT</span> a <span class="ot">-&gt;</span> <span class="dt">WeightedPT</span> a <span class="ot">-&gt;</span> <span class="dt">WeightedPT</span> a</a>
+<a class="sourceLine" id="cb13-5" data-line-number="5">mergeWPT (<span class="dt">WPair</span> w1 pt1) (<span class="dt">WPair</span> w2 pt2)</a>
+<a class="sourceLine" id="cb13-6" data-line-number="6">    <span class="fu">=</span> <span class="dt">WPair</span> (w1 <span class="fu">+</span> w2) (mergePT pt1 pt2)</a></code></pre></div>
 <p>so that the total weight is the sum of the weights of the two subtrees.</p>
 <p>Finally, the entire point of having weighted things is so that we can compare them and impose some total ordering. Haskell has a typeclass that abstracts these comparing operations, <code>Ord</code>:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs#L17-L21</span></a>
 <a class="sourceLine" id="cb14-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb14-3" data-line-number="3"><span class="kw">instance</span> <span class="dt">Eq</span> (<span class="dt">Weighted</span> a) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb14-4" data-line-number="4">    <span class="dt">WPair</span> w1 _ <span class="fu">==</span> <span class="dt">WPair</span> w2 _ <span class="fu">=</span> w1 <span class="fu">==</span> w2</a>
-<a class="sourceLine" id="cb14-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb14-6" data-line-number="6"><span class="kw">instance</span> <span class="dt">Ord</span> (<span class="dt">Weighted</span> a) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb14-7" data-line-number="7">    compare (<span class="dt">WPair</span> w1 _) (<span class="dt">WPair</span> w2 _) <span class="fu">=</span> compare w1 w2</a></code></pre></div>
+<a class="sourceLine" id="cb14-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb14-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Eq</span> (<span class="dt">Weighted</span> a) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb14-5" data-line-number="5">    <span class="dt">WPair</span> w1 _ <span class="fu">==</span> <span class="dt">WPair</span> w2 _ <span class="fu">=</span> w1 <span class="fu">==</span> w2</a>
+<a class="sourceLine" id="cb14-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb14-7" data-line-number="7"><span class="kw">instance</span> <span class="dt">Ord</span> (<span class="dt">Weighted</span> a) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb14-8" data-line-number="8">    compare (<span class="dt">WPair</span> w1 _) (<span class="dt">WPair</span> w2 _) <span class="fu">=</span> compare w1 w2</a></code></pre></div>
 <p>Which says that <code>Weighted a</code> is an <code>Ord</code> (is orderable/comparable), and to compare two <code>WPair w x</code>’s, you compare the <code>w</code>’s.</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1">ghci<span class="fu">&gt;</span> makeWPT <span class="dv">2</span> <span class="ch">&#39;a&#39;</span> <span class="fu">&gt;</span> makeWPT <span class="dv">3</span> <span class="ch">&#39;b&#39;</span></a>
 <a class="sourceLine" id="cb15-2" data-line-number="2"><span class="dt">False</span></a>
@@ -128,30 +136,34 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>This is a new type of binary tree, so let’s define a new data type:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs#L20-L22</span></a>
 <a class="sourceLine" id="cb16-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb16-3" data-line-number="3"><span class="kw">data</span> <span class="dt">SkewHeap</span> a <span class="fu">=</span> <span class="dt">SEmpty</span></a>
-<a class="sourceLine" id="cb16-4" data-line-number="4">                <span class="fu">|</span> <span class="dt">SNode</span> a (<span class="dt">SkewHeap</span> a) (<span class="dt">SkewHeap</span> a)</a>
-<a class="sourceLine" id="cb16-5" data-line-number="5">                <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Foldable</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb16-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb16-4" data-line-number="4"><span class="kw">data</span> <span class="dt">SkewHeap</span> a <span class="fu">=</span> <span class="dt">SEmpty</span></a>
+<a class="sourceLine" id="cb16-5" data-line-number="5">                <span class="fu">|</span> <span class="dt">SNode</span> a (<span class="dt">SkewHeap</span> a) (<span class="dt">SkewHeap</span> a)</a>
+<a class="sourceLine" id="cb16-6" data-line-number="6">                <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Foldable</span>)</a></code></pre></div>
 <p>Creating a new <code>SkewHeap</code> with one item:</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs#L25-L26</span></a>
 <a class="sourceLine" id="cb17-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb17-3" data-line-number="3"><span class="ot">makeSH ::</span> a <span class="ot">-&gt;</span> <span class="dt">SkewHeap</span> a</a>
-<a class="sourceLine" id="cb17-4" data-line-number="4">makeSH x <span class="fu">=</span> <span class="dt">SNode</span> x <span class="dt">SEmpty</span> <span class="dt">SEmpty</span></a></code></pre></div>
+<a class="sourceLine" id="cb17-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb17-4" data-line-number="4"><span class="ot">makeSH ::</span> a <span class="ot">-&gt;</span> <span class="dt">SkewHeap</span> a</a>
+<a class="sourceLine" id="cb17-5" data-line-number="5">makeSH x <span class="fu">=</span> <span class="dt">SNode</span> x <span class="dt">SEmpty</span> <span class="dt">SEmpty</span></a></code></pre></div>
 <p>Popping the root off of a skew tree:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs#L31-L33</span></a>
 <a class="sourceLine" id="cb18-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb18-3" data-line-number="3"><span class="ot">popSH ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> <span class="dt">SkewHeap</span> a <span class="ot">-&gt;</span> (<span class="dt">Maybe</span> a, <span class="dt">SkewHeap</span> a)</a>
-<a class="sourceLine" id="cb18-4" data-line-number="4">popSH <span class="dt">SEmpty</span>          <span class="fu">=</span> (<span class="dt">Nothing</span>, <span class="dt">SEmpty</span>)</a>
-<a class="sourceLine" id="cb18-5" data-line-number="5">popSH (<span class="dt">SNode</span> r h1 h2) <span class="fu">=</span> (<span class="dt">Just</span> r , mergeSH h1 h2)</a></code></pre></div>
+<a class="sourceLine" id="cb18-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb18-4" data-line-number="4"><span class="ot">popSH ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> <span class="dt">SkewHeap</span> a <span class="ot">-&gt;</span> (<span class="dt">Maybe</span> a, <span class="dt">SkewHeap</span> a)</a>
+<a class="sourceLine" id="cb18-5" data-line-number="5">popSH <span class="dt">SEmpty</span>          <span class="fu">=</span> (<span class="dt">Nothing</span>, <span class="dt">SEmpty</span>)</a>
+<a class="sourceLine" id="cb18-6" data-line-number="6">popSH (<span class="dt">SNode</span> r h1 h2) <span class="fu">=</span> (<span class="dt">Just</span> r , mergeSH h1 h2)</a></code></pre></div>
 <p>We make it return a potential result (<code>Maybe a</code>), and the resulting new popped tree. The result is <code>Maybe a</code> because we might potentially not be able to pop anything! We also require an <code>Ord</code> constraint because in order to merge two skew heaps, the data must be comparable.</p>
 <p>Finally, the hardest piece of code so far: merging two skew heaps:</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs#L37-L42</span></a>
 <a class="sourceLine" id="cb19-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb19-3" data-line-number="3"><span class="ot">mergeSH ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> <span class="dt">SkewHeap</span> a <span class="ot">-&gt;</span> <span class="dt">SkewHeap</span> a <span class="ot">-&gt;</span> <span class="dt">SkewHeap</span> a</a>
-<a class="sourceLine" id="cb19-4" data-line-number="4">mergeSH <span class="dt">SEmpty</span> h <span class="fu">=</span> h</a>
-<a class="sourceLine" id="cb19-5" data-line-number="5">mergeSH h <span class="dt">SEmpty</span> <span class="fu">=</span> h</a>
-<a class="sourceLine" id="cb19-6" data-line-number="6">mergeSH hA<span class="fu">@</span>(<span class="dt">SNode</span> xA lA rA) hB<span class="fu">@</span>(<span class="dt">SNode</span> xB lB rB)</a>
-<a class="sourceLine" id="cb19-7" data-line-number="7">    <span class="fu">|</span> xA <span class="fu">&lt;</span> xB    <span class="fu">=</span> <span class="dt">SNode</span> xA (mergeSH rA hB) lA</a>
-<a class="sourceLine" id="cb19-8" data-line-number="8">    <span class="fu">|</span> otherwise  <span class="fu">=</span> <span class="dt">SNode</span> xB (mergeSH rB hA) lB</a></code></pre></div>
+<a class="sourceLine" id="cb19-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb19-4" data-line-number="4"><span class="ot">mergeSH ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> <span class="dt">SkewHeap</span> a <span class="ot">-&gt;</span> <span class="dt">SkewHeap</span> a <span class="ot">-&gt;</span> <span class="dt">SkewHeap</span> a</a>
+<a class="sourceLine" id="cb19-5" data-line-number="5">mergeSH <span class="dt">SEmpty</span> h <span class="fu">=</span> h</a>
+<a class="sourceLine" id="cb19-6" data-line-number="6">mergeSH h <span class="dt">SEmpty</span> <span class="fu">=</span> h</a>
+<a class="sourceLine" id="cb19-7" data-line-number="7">mergeSH hA<span class="fu">@</span>(<span class="dt">SNode</span> xA lA rA) hB<span class="fu">@</span>(<span class="dt">SNode</span> xB lB rB)</a>
+<a class="sourceLine" id="cb19-8" data-line-number="8">    <span class="fu">|</span> xA <span class="fu">&lt;</span> xB    <span class="fu">=</span> <span class="dt">SNode</span> xA (mergeSH rA hB) lA</a>
+<a class="sourceLine" id="cb19-9" data-line-number="9">    <span class="fu">|</span> otherwise  <span class="fu">=</span> <span class="dt">SNode</span> xB (mergeSH rB hA) lB</a></code></pre></div>
 <p>Hopefully this is very pleasing to read — it reads a lot like a specification, or a math formula:</p>
 <ol type="1">
 <li>Merging any skew heap with an empty heap is that same skew heap.</li>
@@ -164,21 +176,22 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>Let’s wrap this up in a tidy interface/API for a <code>PQueue</code> type:</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs#L48-L71</span></a>
 <a class="sourceLine" id="cb20-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb20-3" data-line-number="3"><span class="kw">newtype</span> <span class="dt">PQueue</span> a <span class="fu">=</span> <span class="dt">PQ</span> (<span class="dt">SkewHeap</span> a) <span class="kw">deriving</span> <span class="dt">Show</span></a>
-<a class="sourceLine" id="cb20-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb20-5" data-line-number="5"><span class="ot">emptyPQ ::</span> <span class="dt">PQueue</span> a</a>
-<a class="sourceLine" id="cb20-6" data-line-number="6">emptyPQ <span class="fu">=</span> <span class="dt">PQ</span> <span class="dt">SEmpty</span></a>
-<a class="sourceLine" id="cb20-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb20-8" data-line-number="8"><span class="ot">insertPQ ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">PQueue</span> a <span class="ot">-&gt;</span> <span class="dt">PQueue</span> a</a>
-<a class="sourceLine" id="cb20-9" data-line-number="9">insertPQ x (<span class="dt">PQ</span> h) <span class="fu">=</span> <span class="dt">PQ</span> (mergeSH h (makeSH x))</a>
-<a class="sourceLine" id="cb20-10" data-line-number="10"></a>
-<a class="sourceLine" id="cb20-11" data-line-number="11"><span class="ot">popPQ ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> <span class="dt">PQueue</span> a <span class="ot">-&gt;</span> (<span class="dt">Maybe</span> a, <span class="dt">PQueue</span> a)</a>
-<a class="sourceLine" id="cb20-12" data-line-number="12">popPQ (<span class="dt">PQ</span> h) <span class="fu">=</span> (res, <span class="dt">PQ</span> h&#39;)</a>
-<a class="sourceLine" id="cb20-13" data-line-number="13">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb20-14" data-line-number="14">    (res, h&#39;) <span class="fu">=</span> popSH h</a>
-<a class="sourceLine" id="cb20-15" data-line-number="15"></a>
-<a class="sourceLine" id="cb20-16" data-line-number="16"><span class="ot">sizePQ ::</span> <span class="dt">PQueue</span> a <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb20-17" data-line-number="17">sizePQ (<span class="dt">PQ</span> h) <span class="fu">=</span> length (toList h)</a></code></pre></div>
+<a class="sourceLine" id="cb20-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb20-4" data-line-number="4"><span class="kw">newtype</span> <span class="dt">PQueue</span> a <span class="fu">=</span> <span class="dt">PQ</span> (<span class="dt">SkewHeap</span> a) <span class="kw">deriving</span> <span class="dt">Show</span></a>
+<a class="sourceLine" id="cb20-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb20-6" data-line-number="6"><span class="ot">emptyPQ ::</span> <span class="dt">PQueue</span> a</a>
+<a class="sourceLine" id="cb20-7" data-line-number="7">emptyPQ <span class="fu">=</span> <span class="dt">PQ</span> <span class="dt">SEmpty</span></a>
+<a class="sourceLine" id="cb20-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb20-9" data-line-number="9"><span class="ot">insertPQ ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">PQueue</span> a <span class="ot">-&gt;</span> <span class="dt">PQueue</span> a</a>
+<a class="sourceLine" id="cb20-10" data-line-number="10">insertPQ x (<span class="dt">PQ</span> h) <span class="fu">=</span> <span class="dt">PQ</span> (mergeSH h (makeSH x))</a>
+<a class="sourceLine" id="cb20-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb20-12" data-line-number="12"><span class="ot">popPQ ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> <span class="dt">PQueue</span> a <span class="ot">-&gt;</span> (<span class="dt">Maybe</span> a, <span class="dt">PQueue</span> a)</a>
+<a class="sourceLine" id="cb20-13" data-line-number="13">popPQ (<span class="dt">PQ</span> h) <span class="fu">=</span> (res, <span class="dt">PQ</span> h&#39;)</a>
+<a class="sourceLine" id="cb20-14" data-line-number="14">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb20-15" data-line-number="15">    (res, h&#39;) <span class="fu">=</span> popSH h</a>
+<a class="sourceLine" id="cb20-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb20-17" data-line-number="17"><span class="ot">sizePQ ::</span> <span class="dt">PQueue</span> a <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb20-18" data-line-number="18">sizePQ (<span class="dt">PQ</span> h) <span class="fu">=</span> length (toList h)</a></code></pre></div>
 <p>(Notice <code>toList</code>, from the <a href="http://hackage.haskell.org/package/base-4.6.0.1/docs/Data-Foldable.html">Foldable</a> module; we derived <code>Foldable</code> so that we can use <code>toList</code> on our <code>SkewHeap</code>s. If your Haskell implementation cannot derive foldable (if you are not using GHC, for example) — and even if your implementation can — it might be fun to think about how to implement <code>sizePQ</code> without it!)</p>
 <p>We do this so that we hide our low-level skew heap implementation over a “high-level” priority queue interface. We do not export the <code>PQ</code> constructor, so users cannot ever directly access the underlying skew heap. In this case, the high level isn’t much higher of a level, but it’s good practice to hide away the implementation details when you can in Haskell, a language whose power lies so much in abstraction.</p>
 <h2 id="building-our-huffman-encoding-tree">Building our Huffman encoding tree</h2>
@@ -187,16 +200,18 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>First, we need to have some sort of frequency table. We will use <code>Data.Map.Strict</code>’s <code>Map</code> type:</p>
 <div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L19-L19</span></a>
 <a class="sourceLine" id="cb21-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb21-3" data-line-number="3"><span class="kw">type</span> <span class="dt">FreqTable</span> a <span class="fu">=</span> <span class="dt">Map</span> a <span class="dt">Int</span></a></code></pre></div>
+<a class="sourceLine" id="cb21-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb21-4" data-line-number="4"><span class="kw">type</span> <span class="dt">FreqTable</span> a <span class="fu">=</span> <span class="dt">Map</span> a <span class="dt">Int</span></a></code></pre></div>
 <p>and we’ll import the operations from <code>Data.Map.Strict</code> qualified:</p>
 <div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Map.Strict</span> <span class="kw">as</span> <span class="dt">M</span></a></code></pre></div>
 <p>Just to work with things now, let’s make a way to generate a <code>FreqTable</code> from an arbitrary string:</p>
 <div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L22-L25</span></a>
 <a class="sourceLine" id="cb23-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb23-3" data-line-number="3"><span class="ot">listFreq ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">FreqTable</span> a</a>
-<a class="sourceLine" id="cb23-4" data-line-number="4">listFreq <span class="fu">=</span> foldr f M.empty</a>
-<a class="sourceLine" id="cb23-5" data-line-number="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb23-6" data-line-number="6">    f x m <span class="fu">=</span> M.insertWith (<span class="fu">+</span>) x <span class="dv">1</span> m</a></code></pre></div>
+<a class="sourceLine" id="cb23-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb23-4" data-line-number="4"><span class="ot">listFreq ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">FreqTable</span> a</a>
+<a class="sourceLine" id="cb23-5" data-line-number="5">listFreq <span class="fu">=</span> foldr f M.empty</a>
+<a class="sourceLine" id="cb23-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb23-7" data-line-number="7">    f x m <span class="fu">=</span> M.insertWith (<span class="fu">+</span>) x <span class="dv">1</span> m</a></code></pre></div>
 <p>This says that <code>listFreq</code> is a fold, where you start with <code>M.empty</code> (an empty <code>FreqTable</code>) and for every element, you insert it into the map as a key with value 1. If the key already exists, add one to its current value instead.</p>
 <div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1">ghci<span class="fu">&gt;</span> listFreq <span class="st">&quot;hello world&quot;</span></a>
 <a class="sourceLine" id="cb24-2" data-line-number="2">fromList [(<span class="ch">&#39; &#39;</span>,<span class="dv">1</span>),(<span class="ch">&#39;d&#39;</span>,<span class="dv">1</span>),(<span class="ch">&#39;e&#39;</span>,<span class="dv">1</span>),(<span class="ch">&#39;h&#39;</span>,<span class="dv">1</span>),(<span class="ch">&#39;l&#39;</span>,<span class="dv">3</span>),(<span class="ch">&#39;o&#39;</span>,<span class="dv">2</span>),(<span class="ch">&#39;r&#39;</span>,<span class="dv">1</span>),(<span class="ch">&#39;w&#39;</span>,<span class="dv">1</span>)]</a></code></pre></div>
@@ -204,10 +219,11 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>Next, we would like to create Huffman leaves out of all of these elements, with associated weights, and insert them all into a <code>PQueue</code>. We can do this by using <code>M.foldrWithKey</code>, which is a <code>foldr</code> over the map, giving the folding function both the key and the value.</p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L43-L46</span></a>
 <a class="sourceLine" id="cb25-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb25-3" data-line-number="3"><span class="ot">listQueue ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">PQueue</span> (<span class="dt">Weighted</span> a)</a>
-<a class="sourceLine" id="cb25-4" data-line-number="4">listQueue <span class="fu">=</span> M.foldrWithKey f emptyPQ <span class="fu">.</span> listFreq</a>
-<a class="sourceLine" id="cb25-5" data-line-number="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb25-6" data-line-number="6">    f k v pq <span class="fu">=</span> insertPQ (<span class="dt">WPair</span> v k) pq</a></code></pre></div>
+<a class="sourceLine" id="cb25-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb25-4" data-line-number="4"><span class="ot">listQueue ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">PQueue</span> (<span class="dt">Weighted</span> a)</a>
+<a class="sourceLine" id="cb25-5" data-line-number="5">listQueue <span class="fu">=</span> M.foldrWithKey f emptyPQ <span class="fu">.</span> listFreq</a>
+<a class="sourceLine" id="cb25-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb25-7" data-line-number="7">    f k v pq <span class="fu">=</span> insertPQ (<span class="dt">WPair</span> v k) pq</a></code></pre></div>
 <div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> pq <span class="fu">=</span> listQueue <span class="st">&quot;hello world&quot;</span></a>
 <a class="sourceLine" id="cb26-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t pq</a>
 <a class="sourceLine" id="cb26-3" data-line-number="3"><span class="ot">pq ::</span> <span class="dt">PQueue</span> (<span class="dt">WPair</span> <span class="dt">Int</span> (<span class="dt">PreTree</span> <span class="dt">Char</span>))</a>
@@ -303,27 +319,29 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>This is a bit of an unrelated aside…but notice that we could have actually done our previous <code>fold</code>s as state monad operations; like <code>listFreq</code>:</p>
 <div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L29-L36</span></a>
 <a class="sourceLine" id="cb40-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb40-3" data-line-number="3"><span class="ot">runListFreq ::</span> forall a<span class="fu">.</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">FreqTable</span> a</a>
-<a class="sourceLine" id="cb40-4" data-line-number="4">runListFreq xs <span class="fu">=</span> execState listFreqState M.empty</a>
-<a class="sourceLine" id="cb40-5" data-line-number="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb40-6" data-line-number="6"><span class="ot">    listFreqState ::</span> <span class="dt">State</span> (<span class="dt">FreqTable</span> a) ()</a>
-<a class="sourceLine" id="cb40-7" data-line-number="7">    listFreqState <span class="fu">=</span> mapM_ addFreq xs</a>
-<a class="sourceLine" id="cb40-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb40-9" data-line-number="9"><span class="ot">    addFreq ::</span> a <span class="ot">-&gt;</span> <span class="dt">State</span> (<span class="dt">FreqTable</span> a) ()</a>
-<a class="sourceLine" id="cb40-10" data-line-number="10">    addFreq x <span class="fu">=</span> modify (M.insertWith (<span class="fu">+</span>) x <span class="dv">1</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb40-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb40-4" data-line-number="4"><span class="ot">runListFreq ::</span> forall a<span class="fu">.</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">FreqTable</span> a</a>
+<a class="sourceLine" id="cb40-5" data-line-number="5">runListFreq xs <span class="fu">=</span> execState listFreqState M.empty</a>
+<a class="sourceLine" id="cb40-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb40-7" data-line-number="7"><span class="ot">    listFreqState ::</span> <span class="dt">State</span> (<span class="dt">FreqTable</span> a) ()</a>
+<a class="sourceLine" id="cb40-8" data-line-number="8">    listFreqState <span class="fu">=</span> mapM_ addFreq xs</a>
+<a class="sourceLine" id="cb40-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb40-10" data-line-number="10"><span class="ot">    addFreq ::</span> a <span class="ot">-&gt;</span> <span class="dt">State</span> (<span class="dt">FreqTable</span> a) ()</a>
+<a class="sourceLine" id="cb40-11" data-line-number="11">    addFreq x <span class="fu">=</span> modify (M.insertWith (<span class="fu">+</span>) x <span class="dv">1</span>)</a></code></pre></div>
 <p><code>execState</code> runs the given <code>State</code> computation with the given initial state, and returns the final state <code>s</code> at the end of it all. Basically, it takes an <code>s -&gt; (a, s)</code> (the <code>State s a</code>), an <code>s</code>, applies the function to it, and returns just the <code>s</code> in the tuple.</p>
 <p>Remember that the best way to read <code>State s a</code> is just “a type synonym for <code>s -&gt; (a,s)</code>”. So when we say <code>listFreqState :: State (FreqTable a) ()</code>, we mean that <code>listFreqState</code> is a function from a <code>FreqTable a</code> to <code>((), FreqTable a)</code>.</p>
 <p>How about <code>listQueue</code>? We could do it with the state monad too, if we wanted to.</p>
 <div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L50-L59</span></a>
 <a class="sourceLine" id="cb41-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb41-3" data-line-number="3"><span class="ot">listQueueState ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">State</span> (<span class="dt">PQueue</span> (<span class="dt">WeightedPT</span> a)) ()</a>
-<a class="sourceLine" id="cb41-4" data-line-number="4">listQueueState xs <span class="fu">=</span> M.traverseWithKey addNode (listFreq xs) <span class="fu">&gt;&gt;</span> return ()</a>
-<a class="sourceLine" id="cb41-5" data-line-number="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb41-6" data-line-number="6"><span class="ot">    addNode ::</span> a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">State</span> (<span class="dt">PQueue</span> (<span class="dt">WeightedPT</span> a)) ()</a>
-<a class="sourceLine" id="cb41-7" data-line-number="7">    addNode x i <span class="fu">=</span> modify (insertPQ (<span class="dt">WPair</span> i (makePT x)))</a>
-<a class="sourceLine" id="cb41-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb41-9" data-line-number="9"><span class="ot">runListQueue ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">PQueue</span> (<span class="dt">WeightedPT</span> a)</a>
-<a class="sourceLine" id="cb41-10" data-line-number="10">runListQueue xs <span class="fu">=</span> execState (listQueueState xs) emptyPQ</a></code></pre></div>
+<a class="sourceLine" id="cb41-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb41-4" data-line-number="4"><span class="ot">listQueueState ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">State</span> (<span class="dt">PQueue</span> (<span class="dt">WeightedPT</span> a)) ()</a>
+<a class="sourceLine" id="cb41-5" data-line-number="5">listQueueState xs <span class="fu">=</span> M.traverseWithKey addNode (listFreq xs) <span class="fu">&gt;&gt;</span> return ()</a>
+<a class="sourceLine" id="cb41-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb41-7" data-line-number="7"><span class="ot">    addNode ::</span> a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">State</span> (<span class="dt">PQueue</span> (<span class="dt">WeightedPT</span> a)) ()</a>
+<a class="sourceLine" id="cb41-8" data-line-number="8">    addNode x i <span class="fu">=</span> modify (insertPQ (<span class="dt">WPair</span> i (makePT x)))</a>
+<a class="sourceLine" id="cb41-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb41-10" data-line-number="10"><span class="ot">runListQueue ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">PQueue</span> (<span class="dt">WeightedPT</span> a)</a>
+<a class="sourceLine" id="cb41-11" data-line-number="11">runListQueue xs <span class="fu">=</span> execState (listQueueState xs) emptyPQ</a></code></pre></div>
 <p>In these cases, the monadic usage isn’t quite necessary or useful on its own. A fold would have probably been more expressive and easier to read. The above examples were just for demonstrations/exercises.</p>
 <p>But when do we “need” the state monad? (Or rather, when is a fold not powerful enough or much messier?)</p>
 <p>It’s when we want to make decisions or “branch” based on the current state, or the results of our state actions. “Fold for three items; if the next list item is even then do this fold afterwards, otherwise do that fold”. This is when the state monad shines as a monad.</p>
@@ -358,28 +376,29 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>Sounds simple enough. We should take into account that we would fail to build a tree if the queue was empty to begin with, by returning a <code>Maybe (PreTree a)</code> instead of a <code>PreTree a</code>.</p>
 <div class="sourceCode" id="cb43"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L75-L98</span></a>
 <a class="sourceLine" id="cb43-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
-<a class="sourceLine" id="cb43-3" data-line-number="3"><span class="ot">buildTree ::</span> <span class="dt">State</span> (<span class="dt">PQueue</span> (<span class="dt">WeightedPT</span> a)) (<span class="dt">Maybe</span> (<span class="dt">PreTree</span> a))</a>
-<a class="sourceLine" id="cb43-4" data-line-number="4">buildTree <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb43-5" data-line-number="5">    t1&#39; <span class="ot">&lt;-</span> state popPQ</a>
-<a class="sourceLine" id="cb43-6" data-line-number="6">    <span class="kw">case</span> t1&#39; <span class="kw">of</span></a>
-<a class="sourceLine" id="cb43-7" data-line-number="7">      <span class="dt">Nothing</span> <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb43-8" data-line-number="8">        <span class="co">-- queue was empty to begin with, so this fails.</span></a>
-<a class="sourceLine" id="cb43-9" data-line-number="9">        return <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb43-10" data-line-number="10">      <span class="dt">Just</span> t1 <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb43-11" data-line-number="11">        t2&#39; <span class="ot">&lt;-</span> state popPQ</a>
-<a class="sourceLine" id="cb43-12" data-line-number="12">        <span class="kw">case</span> t2&#39; <span class="kw">of</span></a>
-<a class="sourceLine" id="cb43-13" data-line-number="13">          <span class="dt">Nothing</span>  <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb43-14" data-line-number="14">            <span class="co">-- We&#39;re done, there was only one item!  Return a `Just` to</span></a>
-<a class="sourceLine" id="cb43-15" data-line-number="15">            <span class="co">-- indicate success.</span></a>
-<a class="sourceLine" id="cb43-16" data-line-number="16">            return (<span class="dt">Just</span> (_wItem t1))     <span class="co">-- break out of the loop</span></a>
-<a class="sourceLine" id="cb43-17" data-line-number="17">          <span class="dt">Just</span> t2 <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb43-18" data-line-number="18">            <span class="co">-- merge and push</span></a>
-<a class="sourceLine" id="cb43-19" data-line-number="19">            <span class="kw">let</span> combined <span class="fu">=</span> mergeWPT t1 t2</a>
-<a class="sourceLine" id="cb43-20" data-line-number="20">            modify (insertPQ combined)</a>
-<a class="sourceLine" id="cb43-21" data-line-number="21">            buildTree                     <span class="co">-- recursive call</span></a>
-<a class="sourceLine" id="cb43-22" data-line-number="22"></a>
-<a class="sourceLine" id="cb43-23" data-line-number="23"><span class="ot">runBuildTree ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> (<span class="dt">Maybe</span> (<span class="dt">PreTree</span> a))</a>
-<a class="sourceLine" id="cb43-24" data-line-number="24">runBuildTree xs <span class="fu">=</span> evalState (listQueueState xs <span class="fu">&gt;&gt;</span> buildTree) emptyPQ</a></code></pre></div>
+<a class="sourceLine" id="cb43-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb43-4" data-line-number="4"><span class="ot">buildTree ::</span> <span class="dt">State</span> (<span class="dt">PQueue</span> (<span class="dt">WeightedPT</span> a)) (<span class="dt">Maybe</span> (<span class="dt">PreTree</span> a))</a>
+<a class="sourceLine" id="cb43-5" data-line-number="5">buildTree <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb43-6" data-line-number="6">    t1&#39; <span class="ot">&lt;-</span> state popPQ</a>
+<a class="sourceLine" id="cb43-7" data-line-number="7">    <span class="kw">case</span> t1&#39; <span class="kw">of</span></a>
+<a class="sourceLine" id="cb43-8" data-line-number="8">      <span class="dt">Nothing</span> <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb43-9" data-line-number="9">        <span class="co">-- queue was empty to begin with, so this fails.</span></a>
+<a class="sourceLine" id="cb43-10" data-line-number="10">        return <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb43-11" data-line-number="11">      <span class="dt">Just</span> t1 <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb43-12" data-line-number="12">        t2&#39; <span class="ot">&lt;-</span> state popPQ</a>
+<a class="sourceLine" id="cb43-13" data-line-number="13">        <span class="kw">case</span> t2&#39; <span class="kw">of</span></a>
+<a class="sourceLine" id="cb43-14" data-line-number="14">          <span class="dt">Nothing</span>  <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb43-15" data-line-number="15">            <span class="co">-- We&#39;re done, there was only one item!  Return a `Just` to</span></a>
+<a class="sourceLine" id="cb43-16" data-line-number="16">            <span class="co">-- indicate success.</span></a>
+<a class="sourceLine" id="cb43-17" data-line-number="17">            return (<span class="dt">Just</span> (_wItem t1))     <span class="co">-- break out of the loop</span></a>
+<a class="sourceLine" id="cb43-18" data-line-number="18">          <span class="dt">Just</span> t2 <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb43-19" data-line-number="19">            <span class="co">-- merge and push</span></a>
+<a class="sourceLine" id="cb43-20" data-line-number="20">            <span class="kw">let</span> combined <span class="fu">=</span> mergeWPT t1 t2</a>
+<a class="sourceLine" id="cb43-21" data-line-number="21">            modify (insertPQ combined)</a>
+<a class="sourceLine" id="cb43-22" data-line-number="22">            buildTree                     <span class="co">-- recursive call</span></a>
+<a class="sourceLine" id="cb43-23" data-line-number="23"></a>
+<a class="sourceLine" id="cb43-24" data-line-number="24"><span class="ot">runBuildTree ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> (<span class="dt">Maybe</span> (<span class="dt">PreTree</span> a))</a>
+<a class="sourceLine" id="cb43-25" data-line-number="25">runBuildTree xs <span class="fu">=</span> evalState (listQueueState xs <span class="fu">&gt;&gt;</span> buildTree) emptyPQ</a></code></pre></div>
 <p>Note that due to our uncanny foresight, <code>popPQ :: PQueue a -&gt; (Maybe a, PQueue a)</code> is already a state function <code>s -&gt; (a, s)</code>, where the state is <code>PSQueue a</code> and the return value is <code>Maybe a</code>. So all we need to do is say <code>state popPQ</code> to wrap it in the <code>State s a</code> newtype wrapper/container, and it becomes an “official” <code>State (PQueue a) (Maybe a)</code>.</p>
 <p>Remember that <code>State s a</code> is <em>just a thin wrapper/container</em> over a function <code>s -&gt; (a, s)</code>, anyway, so the two should be somewhat equivalent in your mind; the requirement to wrap it in <code>State</code> using <code>state</code> is only because of Haskell’s own language limitations (namely, that you can’t define a Monad instance for <code>s -&gt; (a, s)</code> in a clean way). When you read <code>State s a</code>, you <em>should really read</em> <code>s -&gt; (a, s)</code>, because they are for the most part <em>completely equivalent</em>.</p>
 <p>Again, <code>(&gt;&gt;)</code> is Monad-speak for our <code>andThen</code> function we defined earlier, so for <code>buildTree</code>, we do “<code>listQueueState xs</code> <em>and then</em> <code>buildTree</code>”. <code>(&gt;&gt;)</code> joins two <code>s -&gt; (a, s)</code> functions into one giant <code>s -&gt; (a,s)</code>, by feeding the resulting state of the first action into the next one. <code>listQueueState</code> takes an empty priority queue and ‘fills’ it with nodes generated from <code>xs</code>, leaving a filled priority queue. <code>buildTree</code> then takes that filled queue and performs our building operations on it, modifying it as it goes along, and ends up with an empty queue as a state and returning the finished tree as a result.</p>

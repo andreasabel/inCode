@@ -43,6 +43,7 @@ types.
 ``` {.haskell}
 -- first, our imports
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L25-L43
+
 import Control.Auto
 import Control.Auto.Blip
 import Control.Auto.Collection  (mux)
@@ -66,6 +67,7 @@ import qualified Data.Map       as M
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L51-L66
+
 type Nick    = String
 type Channel = String
 type Message = String
@@ -94,6 +96,7 @@ The type for a chat bot over a monad `m` would then be:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L68-L68
+
 type ChatBot m = Auto m InMessage OutMessages
 ```
 
@@ -117,6 +120,7 @@ message on. So it'll help us to also make another sort of `Auto`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L69-L69
+
 type RoomBot m = Auto m InMessage (Blip [Message])
 ```
 
@@ -138,6 +142,7 @@ We can write a quick helper function to convert a `RoomBot` into a full-on
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L72-L75
+
 perRoom :: Monad m => RoomBot m -> ChatBot m
 perRoom rb = proc inp@(InMessage _ _ src _) -> do
     messages <- fromBlips [] . rb -< inp
@@ -259,6 +264,7 @@ free to use any interface/library you want.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L45-L228
+
 withIrcConf :: IrcConfig -> ChatBot IO -> IO ()
 withIrcConf ircconf chatbot = do
 
@@ -382,6 +388,7 @@ while we're at it.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L230-L236
+
 instance Serialize UTCTime where
     get = read <$> get      -- haha don't do this in real life.
     put = put . show
@@ -412,6 +419,7 @@ With these simple blocks, we can build our `seenBot`:
 ``` {.haskell}
 -- seenBot :: Monad m => Auto m InMessage (Blip [Message])
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L96-L115
+
 seenBot :: Monad m => RoomBot m
 seenBot = proc (InMessage nick msg _ time) -> do
     seens  <- trackSeens -< (nick, time)
@@ -529,6 +537,7 @@ And...now we can wrap it all together with a nice proc block:
 ``` {.haskell}
 -- repBot :: Monad m => Auto m InMessage (Blip [Message])
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L117-L147
+
 repBot :: Monad m => RoomBot m
 repBot = proc (InMessage nick msg _ _) -> do
     updateB <- updateBlips -< (nick, msg)
@@ -638,6 +647,7 @@ so it has to say where it wants to send its messages.
 ``` {.haskell}
 -- announceBot :: Monad m => [Channel] -> Auto m InMessage OutMessages
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L149-L183
+
 announceBot :: Monad m => [Channel] -> ChatBot m
 announceBot chans = proc (InMessage nick msg src time) -> do
     announceB <- announceBlips     -< (nick, msg)
@@ -702,6 +712,7 @@ We have three nice modules now. Now let's wrap it all together.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L83-L88
+
 chatBot :: MonadIO m => ChatBot m
 chatBot = serializing' "chatbot.dat"
         . mconcat $ [ perRoom seenBot
@@ -714,6 +725,7 @@ Or, to future-proof, in case we foresee adding new modules:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L90-L94
+
 chatBot' :: MonadIO m => ChatBot m
 chatBot' = mconcat [ perRoom . serializing' "seens.dat" $ seenBot
                    , perRoom . serializing' "reps.dat"  $ repBot
@@ -745,6 +757,7 @@ little copy, with separate state. We can do this using `mux`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L78-L81
+
 isolatedRooms :: Monad m => RoomBot m -> ChatBot m
 isolatedRooms rb = proc inp@(InMessage _ _ src _) -> do
     messages <- fromBlips [] . mux (const rb) -< (src, inp)

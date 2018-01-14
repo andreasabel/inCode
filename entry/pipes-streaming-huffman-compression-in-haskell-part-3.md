@@ -258,6 +258,7 @@ First, our imports:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L19-L46
+
 -- General imports
 import Control.Applicative              ((<$>))
 import Control.Monad.Trans.State.Strict (evalState)
@@ -294,6 +295,7 @@ Now `main`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L48-L60
+
 main :: IO ()
 main = do
     args     <- getArgs
@@ -323,6 +325,7 @@ decoding (lest we begin decoding the leftover padding bits).
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L63-L74
+
 analyzeFile :: FilePath -> IO (Maybe (Int, PreTree Word8))
 analyzeFile fp = withFile fp ReadMode $ \hIn -> do
     let byteProducer = PB.fromHandle hIn >-> bsToBytes
@@ -352,6 +355,7 @@ of `ByteString`s --- and chaining it to `bsToBytes`, a pipe that takes incoming
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L96-L97
+
 bsToBytes :: Monad m => Pipe ByteString Word8 m r
 bsToBytes = PP.mapFoldable B.unpack
 ```
@@ -372,6 +376,7 @@ The fold is identical in logic to `listFreq` from a [Part
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L22-L25
+
 listFreq :: Ord a => [a] -> FreqTable a
 listFreq = foldr f M.empty
   where
@@ -398,6 +403,7 @@ Once we have that, we can get onto the actual encoding process: the second pass.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L78-L92
+
 encodeFile :: FilePath -> FilePath -> Int -> PreTree Word8 -> IO ()
 encodeFile inp out len tree =
     withFile inp ReadMode  $ \hIn  ->
@@ -443,6 +449,7 @@ and spits out the resulting `Direction`s one at a time.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L101-L104
+
 encodeByte :: (Ord a, Monad m)
            => Map a Encoding
            -> Pipe a Direction m r
@@ -464,6 +471,7 @@ using the "producer transformer" tactic we discussed earlier.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L108-L117
+
 dirsBytes :: (MonadIO m, Functor m)
           => Producer Direction m r
           -> Producer Word8     m ()
@@ -510,6 +518,7 @@ Let's take a look at the `dirsBytesP` parser, which parses `Direction`s into a
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L123-L137
+
 dirsBytesP :: (Monad m, Functor m) => Parser Direction m (Maybe Word8)
 dirsBytesP = do
     isEnd <- isEndOfInput
@@ -549,6 +558,7 @@ transforming our bytes stream:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L86-L86
+
           bsOut     = view PB.pack . dirsBytes $ dirsOut
 ```
 
@@ -625,6 +635,7 @@ that decoding is going to be slightly simpler than encoding.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L18-L37
+
 -- General imports
 import Lens.Family2       (view)
 import System.Environment (getArgs)
@@ -651,6 +662,7 @@ import PreTree
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L39-L45
+
 main :: IO ()
 main = do
     args     <- getArgs
@@ -664,6 +676,7 @@ And now on to the juicy parts:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L48-L69
+
 decodeFile :: FilePath -> FilePath -> IO ()
 decodeFile inp out =
     withFile inp ReadMode  $ \hIn  ->
@@ -731,6 +744,7 @@ using `PP.mapFoldable` and a `Word8 -> [Direction]` function.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L96-L104
+
 bytesToDirs :: Monad m => Pipe Word8 Direction m r
 bytesToDirs = PP.mapFoldable byteToDirList
   where
@@ -795,6 +809,7 @@ values into a `Pipe` repeatedly yielding the returned values.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L74-L86
+
 searchPT :: forall a m r. Monad m
          => PreTree a
          -> Pipe Direction a m r
@@ -956,6 +971,7 @@ Basically, we don't ever need `bsToBytes`; instead of
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L65-L65
+
     let byteProducer = PB.fromHandle hIn >-> bsToBytes
 ```
 
