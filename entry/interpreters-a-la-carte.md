@@ -7,14 +7,14 @@ Interpreters a la Carte (Advent of Code 2017 Duet)
 This post is just a fun one exploring a wide range of techniques that I applied
 to solve the Day 18 puzzles of this year’s great [Advent of
 Code](http://adventofcode.com/2017). The puzzles involved interpreting an
-assembly language on an abstract machine. The neat twist is that Part 1 gave you
-a description of one abstract machine, and Part 3 gave you a *different*
+assembly language on an abstract machine. The neat twist is that Part A gave you
+a description of one abstract machine, and Part B gave you a *different*
 abstract machine to interpret the same language in. This twist (one language,
 but different interpreters/abstract machines) is basically one of the textbook
 applications of the *interpreter pattern* in Haskell and functional programming,
 so it was fun to implement my solution in that pattern – the assembly language
 source was “compiled” to an abstract data type once, and the difference between
-Part 1 and Part 2 was just a different choice of interpreter.
+Part A and Part B was just a different choice of interpreter.
 
 Even more interesting is that the two machines are only “half different” –
 there’s one aspect of the virtual machines that are the same between the two
@@ -32,7 +32,7 @@ The Puzzle
 ----------
 
 The puzzle is [Advent of Code 2017 Day 18](http://adventofcode.com/2017/day/18),
-and Part 1 is:
+and Part A is:
 
 > You discover a tablet containing some strange assembly code labeled simply
 > “Duet”. Rather than bother the sound card with it, you decide to run the code
@@ -74,7 +74,7 @@ and Part 1 is:
 > played sound) the *first* time a `rcv` instruction is executed with a non-zero
 > value?
 
-Part 2, however, says:
+Part B, however, says:
 
 > As you congratulate yourself for a job well done, you notice that the
 > documentation has been on the back of the tablet this entire time. While you
@@ -292,8 +292,8 @@ data Com :: Type -> Type where
     CRcv :: Int -> Com Int
 ```
 
-Part 1 requires `CRcv` to take, as an argument, a number, since whether or not
-`CRcv` is a no-op depends on the value of a certain register for Part 1’s
+Part A requires `CRcv` to take, as an argument, a number, since whether or not
+`CRcv` is a no-op depends on the value of a certain register for Part A’s
 virtual machine.
 
 Now, we can leverage the `:|:` type from
@@ -412,6 +412,8 @@ data ProgState = PS { _psTape :: P.PointedList Op
 makeClassy ''ProgState
 ```
 
+#### Brief Aside on Lenses with State
+
 Using *[lens](http://hackage.haskell.org/package/lens)* with lenses (especially
 classy ones) is one of the only things that makes programming against `State`
 with non-trivial state bearable for me! We store the current program and program
@@ -456,11 +458,10 @@ the specific register `'c'` as a `Maybe Int` – it’s `Nothing` if the item is
 in the `Map`, and `Just` if it is (with the value).
 
 However, we want to treat all registers as `0` by default, not as `Nothing`, so
-we can use `non`:
+we can use `non 0`:
 
 ``` {.haskell}
-non :: Eq a => a -> Lens' (Maybe a  ) a         -- actually `Iso'`
-non 0 ::            Lens' (Maybe Int) Int
+non 0 :: Lens' (Maybe Int) Int
 ```
 
 `non 0` is a `Lens` (actually an `Iso`, but who’s counting?) into a `Maybe Int`
@@ -474,6 +475,8 @@ can use to edit a specific item, treating non-present-items as 0.
 
 psRegs . at 'h' . non 0 :: HasProgState s => Lens' s Int
 ```
+
+#### Interpreting Mem
 
 With these tools to make life simpler, we can write an interpreter for our `Mem`
 commands:
@@ -509,10 +512,29 @@ Note that most of this usage of lens with state is not exactly necessary (we can
 manually use `modify`, `gets`, etc. instead of lenses and operators), but it
 does make things a bit more convenient to write.
 
-### Interpreting Com for Part 1
+#### GADT Property
 
-Now, Part 1 (which I’ll call *Part A* from now on) requires an environment
-where:
+The GADT-ness of `Mem` (and `Com`) works to enforce that the “results” that each
+primitive expects is the result that we give.
+
+For example, `MGet 'c' :: Mem Int` requires us to return `m Int`. This is what
+`use` gives us. `MSet 'c' 3 :: Mem ()` requires us to return `m ()`, which is
+what `(.=)` returns.
+
+We have `MPk :: Mem Op`, which requires us to return `m Op`. That’s exactly what
+`use (psTape . P.focus) :: (MonadState s m, HasProgState s) => m Op` gives.
+
+The fact that we can use GADTs to specify the “result type” of each of our
+primitives is a key part about how `Prompt` from *MonadPrompt* works, and how it
+implements the interpreter pattern.
+
+This is enforced in Haskell’s type system (through the “dependent pattern
+match”), so GHC will complain to us if we ever return something of the wrong
+type while handling a given constructor/primitive.
+
+### Interpreting Com for Part A
+
+Now, Part A requires an environment where:
 
 1.  `CSnd` “emits” items into the void, keeping track only of the *last* emitted
     item
@@ -536,14 +558,18 @@ interpComA = \case
     CSnd x ->
       add (Last (Just x))
     CRcv x -> do
-      when (x /= 0) $
+      when (x /= 0) $         -- don't rcv if the register parameter is 0
         tell . First . getLast =<< look
       return x
 ```
 
-### Interpreting Com for Part 2
+Note `add :: MonadAccum w m => w -> m ()` and `look :: MonadAccum w w`, the
+functions to “tell” to a `MonadAccum` and the function to “get”/“ask” from a
+`MonadAccum`.
 
-Part 2 (which I’ll call *Part B* from now on) requires an environment where:
+### Interpreting Com for Part B
+
+Part B requires an environment where:
 
 1.  `CSnd` “emits” items into into some accumulating log of items, and we need
     to keep track of all of them.
@@ -569,6 +595,10 @@ instance HasProgState Thread where
     progState = tState
 ```
 
+(We write an instance for `HasProgState Thread`, so we can use `interpMem` in a
+`MonadState Thread m`, since `psRegs :: Lens' Thread (M.Map Char Int)`, for
+example, will refer to the `psRegs` inside the `ProgState` in the `Thread`)
+
 And now, to interpret:
 
 ``` {.haskell}
@@ -589,7 +619,7 @@ Note again the usage of do block pattern matches and `MonadFail`.
 
 ### Combining Interpreters
 
-To “combine” interpreters, we’re going to be using, from *type-combinators*:
+To combine interpreters, we’re going to be using, from *type-combinators*:
 
 ``` {.haskell}
 (>|<) :: (f a -> r)
@@ -623,7 +653,7 @@ and `Com`. This is the essence of the “data types a la carte” technique.
 Getting the Results
 -------------------
 
-We just have to pick concrete monads now for us to interpret into.
+We now just have to pick concrete monads now for us to interpret into.
 
 ### Part A
 
@@ -680,7 +710,8 @@ But, because of laziness, our computation terminates as soon as a valid `CRcv`
 is found and a `First Int` is logged to the `Writer`, so we don’t actually need
 to run the computation until it goes out of bounds.
 
-Here is the entirety of Part A:
+Here is the entirety of running Part A – as you can see, it consists mostly of
+unwrapping *transformers* newtype wrappers.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L145-151

@@ -97,13 +97,13 @@ This post is just a fun one exploring a wide range of techniques that I applied
 to solve the Day 18 puzzles of this year's great
 \href{http://adventofcode.com/2017}{Advent of Code}. The puzzles involved
 interpreting an assembly language on an abstract machine. The neat twist is that
-Part 1 gave you a description of one abstract machine, and Part 3 gave you a
+Part A gave you a description of one abstract machine, and Part B gave you a
 \emph{different} abstract machine to interpret the same language in. This twist
 (one language, but different interpreters/abstract machines) is basically one of
 the textbook applications of the \emph{interpreter pattern} in Haskell and
 functional programming, so it was fun to implement my solution in that pattern
 -- the assembly language source was ``compiled'' to an abstract data type once,
-and the difference between Part 1 and Part 2 was just a different choice of
+and the difference between Part A and Part B was just a different choice of
 interpreter.
 
 Even more interesting is that the two machines are only ``half different'' --
@@ -121,7 +121,7 @@ Along the way we'll also use mtl typeclasses and classy lenses.
 \section{The Puzzle}\label{the-puzzle}
 
 The puzzle is \href{http://adventofcode.com/2017/day/18}{Advent of Code 2017 Day
-18}, and Part 1 is:
+18}, and Part A is:
 
 \begin{quote}
 You discover a tablet containing some strange assembly code labeled simply
@@ -179,7 +179,7 @@ recently played sound) the \emph{first} time a \texttt{rcv} instruction is
 executed with a non-zero value?
 \end{quote}
 
-Part 2, however, says:
+Part B, however, says:
 
 \begin{quote}
 As you congratulate yourself for a job well done, you notice that the
@@ -429,9 +429,9 @@ For communication, we must be able to ``snd'' and ``rcv''.
 \end{Highlighting}
 \end{Shaded}
 
-Part 1 requires \texttt{CRcv} to take, as an argument, a number, since whether
+Part A requires \texttt{CRcv} to take, as an argument, a number, since whether
 or not \texttt{CRcv} is a no-op depends on the value of a certain register for
-Part 1's virtual machine.
+Part A's virtual machine.
 
 Now, we can leverage the \texttt{:\textbar{}:} type from
 \emph{\href{http://hackage.haskell.org/package/type-combinators}{type-combinators}}:
@@ -565,6 +565,9 @@ polymorphically:
 \end{Highlighting}
 \end{Shaded}
 
+\subsubsection{Brief Aside on Lenses with
+State}\label{brief-aside-on-lenses-with-state}
+
 Using \emph{\href{http://hackage.haskell.org/package/lens}{lens}} with lenses
 (especially classy ones) is one of the only things that makes programming
 against \texttt{State} with non-trivial state bearable for me! We store the
@@ -618,12 +621,11 @@ from our registers (\texttt{Map\ Char\ Int}) into the specific register
 is (with the value).
 
 However, we want to treat all registers as \texttt{0} by default, not as
-\texttt{Nothing}, so we can use \texttt{non}:
+\texttt{Nothing}, so we can use \texttt{non\ 0}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{non ::} \DataTypeTok{Eq}\NormalTok{ a }\OtherTok{=>}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ a  ) a         }\CommentTok{-- actually `Iso'`}
-\NormalTok{non }\DecValTok{0}\OtherTok{ ::}            \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Maybe} \DataTypeTok{Int}\NormalTok{) }\DataTypeTok{Int}
+\NormalTok{non }\DecValTok{0}\OtherTok{ ::} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Maybe} \DataTypeTok{Int}\NormalTok{) }\DataTypeTok{Int}
 \end{Highlighting}
 \end{Shaded}
 
@@ -642,6 +644,8 @@ non-present-items as 0.
 \NormalTok{psRegs }\FunctionTok{.}\NormalTok{ at }\CharTok{'h'} \FunctionTok{.}\NormalTok{ non }\DecValTok{0}\OtherTok{ ::} \DataTypeTok{HasProgState}\NormalTok{ s }\OtherTok{=>} \DataTypeTok{Lens'}\NormalTok{ s }\DataTypeTok{Int}
 \end{Highlighting}
 \end{Shaded}
+
+\subsubsection{Interpreting Mem}\label{interpreting-mem}
 
 With these tools to make life simpler, we can write an interpreter for our
 \texttt{Mem} commands:
@@ -682,10 +686,32 @@ Note that most of this usage of lens with state is not exactly necessary (we can
 manually use \texttt{modify}, \texttt{gets}, etc. instead of lenses and
 operators), but it does make things a bit more convenient to write.
 
-\subsection{Interpreting Com for Part 1}\label{interpreting-com-for-part-1}
+\subsubsection{GADT Property}\label{gadt-property}
 
-Now, Part 1 (which I'll call \emph{Part A} from now on) requires an environment
-where:
+The GADT-ness of \texttt{Mem} (and \texttt{Com}) works to enforce that the
+``results'' that each primitive expects is the result that we give.
+
+For example, \texttt{MGet\ \textquotesingle{}c\textquotesingle{}\ ::\ Mem\ Int}
+requires us to return \texttt{m\ Int}. This is what \texttt{use} gives us.
+\texttt{MSet\ \textquotesingle{}c\textquotesingle{}\ 3\ ::\ Mem\ ()} requires us
+to return \texttt{m\ ()}, which is what \texttt{(.=)} returns.
+
+We have \texttt{MPk\ ::\ Mem\ Op}, which requires us to return \texttt{m\ Op}.
+That's exactly what
+\texttt{use\ (psTape\ .\ P.focus)\ ::\ (MonadState\ s\ m,\ HasProgState\ s)\ =\textgreater{}\ m\ Op}
+gives.
+
+The fact that we can use GADTs to specify the ``result type'' of each of our
+primitives is a key part about how \texttt{Prompt} from \emph{MonadPrompt}
+works, and how it implements the interpreter pattern.
+
+This is enforced in Haskell's type system (through the ``dependent pattern
+match''), so GHC will complain to us if we ever return something of the wrong
+type while handling a given constructor/primitive.
+
+\subsection{Interpreting Com for Part A}\label{interpreting-com-for-part-a}
+
+Now, Part A requires an environment where:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -717,16 +743,21 @@ there are two \emph{snd}'s, we only care about the last \emph{snd}'d thing.
     \DataTypeTok{CSnd}\NormalTok{ x }\OtherTok{->}
 \NormalTok{      add (}\DataTypeTok{Last}\NormalTok{ (}\DataTypeTok{Just}\NormalTok{ x))}
     \DataTypeTok{CRcv}\NormalTok{ x }\OtherTok{->} \KeywordTok{do}
-\NormalTok{      when (x }\FunctionTok{/=} \DecValTok{0}\NormalTok{) }\FunctionTok{$}
+\NormalTok{      when (x }\FunctionTok{/=} \DecValTok{0}\NormalTok{) }\FunctionTok{$}         \CommentTok{-- don't rcv if the register parameter is 0}
 \NormalTok{        tell }\FunctionTok{.} \DataTypeTok{First} \FunctionTok{.}\NormalTok{ getLast }\FunctionTok{=<<}\NormalTok{ look}
 \NormalTok{      return x}
 \end{Highlighting}
 \end{Shaded}
 
-\subsection{Interpreting Com for Part 2}\label{interpreting-com-for-part-2}
+Note
+\texttt{add\ ::\ MonadAccum\ w\ m\ =\textgreater{}\ w\ -\textgreater{}\ m\ ()}
+and \texttt{look\ ::\ MonadAccum\ w\ w}, the functions to ``tell'' to a
+\texttt{MonadAccum} and the function to ``get''/``ask'' from a
+\texttt{MonadAccum}.
 
-Part 2 (which I'll call \emph{Part B} from now on) requires an environment
-where:
+\subsection{Interpreting Com for Part B}\label{interpreting-com-for-part-b}
+
+Part B requires an environment where:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -762,6 +793,12 @@ working in the same interpretation context.
 \end{Highlighting}
 \end{Shaded}
 
+(We write an instance for \texttt{HasProgState\ Thread}, so we can use
+\texttt{interpMem} in a \texttt{MonadState\ Thread\ m}, since
+\texttt{psRegs\ ::\ Lens\textquotesingle{}\ Thread\ (M.Map\ Char\ Int)}, for
+example, will refer to the \texttt{psRegs} inside the \texttt{ProgState} in the
+\texttt{Thread})
+
 And now, to interpret:
 
 \begin{Shaded}
@@ -784,8 +821,7 @@ Note again the usage of do block pattern matches and \texttt{MonadFail}.
 
 \subsection{Combining Interpreters}\label{combining-interpreters}
 
-To ``combine'' interpreters, we're going to be using, from
-\emph{type-combinators}:
+To combine interpreters, we're going to be using, from \emph{type-combinators}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -826,7 +862,7 @@ This is the essence of the ``data types a la carte'' technique.
 
 \section{Getting the Results}\label{getting-the-results}
 
-We just have to pick concrete monads now for us to interpret into.
+We now just have to pick concrete monads now for us to interpret into.
 
 \subsection{Part A}\label{part-a}
 
@@ -893,7 +929,8 @@ But, because of laziness, our computation terminates as soon as a valid
 \texttt{Writer}, so we don't actually need to run the computation until it goes
 out of bounds.
 
-Here is the entirety of Part A:
+Here is the entirety of running Part A -- as you can see, it consists mostly of
+unwrapping \emph{transformers} newtype wrappers.
 
 \begin{Shaded}
 \begin{Highlighting}[]
