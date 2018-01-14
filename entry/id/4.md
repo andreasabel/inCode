@@ -83,18 +83,18 @@ Clearly, there must be a better way.
 You just graduated with your bachelor's degree in Physics. You know all about
 the laws governing force, gravity, water, pressure, potential energy, friction,
 turbulence, hamster physiology ... all of that stuff. You memorized all of the
-equations, because that's what Physics is all about, right?\[^itsnot\]
+equations, because that's what Physics is all about, right?[^1]
 
 So, you whip out your precious equations (which you hold to be worth at least
-the $200,000 you spent to learn them). Sure enough, you have enough equations in
-your tool belt to describe and model the physical system almost perfectly. There
-are some constants you need to figure out --- the friction in the shaft, for
-example, or the width of your pipes --- and after that, given the weight of the
-load, the water pressure per degree of knob twist (which may change depending on
-the day), the desired height, the ambient room temperature, the heat of the
-elevator shaft, the temperature inside the pipes, the current air pressure, the
-humidity, the state of the lubrication in the shaft ... you can predict exactly
-how much you need to twist that water knob.
+the \$200,000 you spent to learn them). Sure enough, you have enough equations
+in your tool belt to describe and model the physical system almost perfectly.
+There are some constants you need to figure out --- the friction in the shaft,
+for example, or the width of your pipes --- and after that, given the weight of
+the load, the water pressure per degree of knob twist (which may change
+depending on the day), the desired height, the ambient room temperature, the
+heat of the elevator shaft, the temperature inside the pipes, the current air
+pressure, the humidity, the state of the lubrication in the shaft ... you can
+predict exactly how much you need to twist that water knob.
 
 You write a little program on your TI-89 to calculate the right amount of twist
 for all of those parameters, and you are good to go!
@@ -131,3 +131,5 @@ is that really practical?
 For a genius the likes of which the world has never seen, it may be *possible*.
 
 But ... there *has* to be a better way.
+
+[^1]: It's not

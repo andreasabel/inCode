@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>Intro to Machines &amp; Arrows (Part 1: Stream and Auto) · in Code</title><meta name="description" content="Weblog of Justin Le, covering his various adventures in programming and explorations in the vast worlds of computation physics, and knowledge."><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta property="og:site_name" content="in Code"><meta property="og:description" content="So I&#39;m going to be running a series soon on computation and (physical) simulations using AFRP (Arrowized Functional Reactive Programming) principles. I consider (A)FRP to actually be a pretty game changing paradigm. It provides us with semantics by which to compose and build time-varying, reactive behaviors and completely changes the way we approach any sort of simulation/state-like project. AFRP has its own elegant way of approaching problems, but to be able to properly use it for simulations, we&#39;re going to have to start by learning about the fundamental abstraction behind its implementation: machines.[^implementation] (This post will assume a somewhat basic knowledge of Haskell. I&#39;ll try explaining concepts here and there if I feel that they might not be very commonly known. But if you have any questions, feel free to leave a comment or stop by freenode&#39;s #haskell on irc!) (A short disclaimer: this article has not too much to do with the great machines library by Rúnar Bjarnason and Edward Kmett)"><meta property="og:type" content="article"><meta property="og:title" content="Intro to Machines &amp; Arrows (Part 1: Stream and Auto)"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/intro-to-machines-arrows-part-1-stream-and.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/intro-to-machines-arrows-part-1-stream-and.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
+<html><head><title>Intro to Machines &amp; Arrows (Part 1: Stream and Auto) · in Code</title><meta name="description" content="Weblog of Justin Le, covering his various adventures in programming and explorations in the vast worlds of computation physics, and knowledge."><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta property="og:site_name" content="in Code"><meta property="og:description" content="So I’m going to be running a series soon on computation and (physical) simulations using AFRP (Arrowized Functional Reactive Programming) principles. I consider (A)FRP to actually be a pretty game changing paradigm. It provides us with semantics by which to compose and build time-varying, reactive behaviors and completely changes the way we approach any sort of simulation/state-like project. AFRP has its own elegant way of approaching problems, but to be able to properly use it for simulations, we’re going to have to start by learning about the fundamental abstraction behind its implementation: machines. (This post will assume a somewhat basic knowledge of Haskell. I’ll try explaining concepts here and there if I feel that they might not be very commonly known. But if you have any questions, feel free to leave a comment or stop by freenode’s #haskell on irc!) (A short disclaimer: this article has not too much to do with the great machines library by Rúnar Bjarnason and Edward Kmett)"><meta property="og:type" content="article"><meta property="og:title" content="Intro to Machines &amp; Arrows (Part 1: Stream and Auto)"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/intro-to-machines-arrows-part-1-stream-and.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/intro-to-machines-arrows-part-1-stream-and.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
 var disqus_shortname='incode';
 </script><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
 (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -16,219 +16,450 @@ ga('send', 'pageview');
 }(document, 'script', 'facebook-jssdk'));
 </script></div><div id="header-container"><div id="navbar-container" class="tile"><nav id="navbar-content"><div class="nav-info"><h1 class="site-title"><a href="https://blog.jle.im/" class="nav-title">in Code</a></h1><span class="nav-author">Justin Le</span></div><ul class="nav-links"><li><a href="https://blog.jle.im/">home</a></li><li><a href="https://blog.jle.im/entries.html">archives</a></li><div class="clear"></div></ul></nav></div><div id="header-content"></div></div><div id="body-container" class="container"><div id="main-container" class="grid"><div class="entry-section unit span-grid" role="main"><article class="tile article"><header><h1 id="title">Intro to Machines &amp; Arrows (Part 1: Stream and Auto)</h1><p class="entry-info">by <a class="author" href="https://blog.jle.im/">Justin Le</a><span class="info-separator"> &diams; </span><time datetime="2014-02-03T09:13:28Z" pubdate="" class="pubdate">Monday February 3, 2014</time></p><p><span class="source-info"><a class="source-link" href="https://github.com/mstksg/inCode/tree/master/copy/entries/machines-1.md">Source</a><span class="info-separator"> &diams; </span><a class="source-link" href="https://github.com/mstksg/inCode/tree/gh-pages/entry/intro-to-machines-arrows-part-1-stream-and.md">Markdown</a><span class="info-separator"> &diams; </span><a class="source-link" href="https://blog.jle.im/entry/intro-to-machines-arrows-part-1-stream-and.tex">LaTeX</a><span class="info-separator"> &diams; </span></span>Posted in <a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category" title="Functional, pure, non-strict, statically and strongly typed, natively
 compiled...really just the king of great languages.">Haskell</a>, <a href="https://blog.jle.im/entries/category/@ramblings.html" class="tag-a-category" title="My slight ramblings on subjects of interest (to me and hopefully to you too!).
-Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-separator"> &diams; </span><a class="comment-link" href="#disqus_thread">Comments</a></p></header><hr><aside class="contents-container"><h5 id="contents-header">Contents</h5><div id="toc"></div></aside><div class="main-content copy-content"><p>So I'm going to be running a series soon on computation and (physical) simulations using AFRP (Arrowized Functional Reactive Programming) principles.</p>
+Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-separator"> &diams; </span><a class="comment-link" href="#disqus_thread">Comments</a></p></header><hr><aside class="contents-container"><h5 id="contents-header">Contents</h5><div id="toc"></div></aside><div class="main-content copy-content"><p>So I’m going to be running a series soon on computation and (physical) simulations using AFRP (Arrowized Functional Reactive Programming) principles.</p>
 <p>I consider (A)FRP to actually be a pretty game changing paradigm. It provides us with semantics by which to <em>compose</em> and build time-varying, reactive behaviors and completely changes the way we approach any sort of simulation/state-like project.</p>
-<p>AFRP has its own elegant way of approaching problems, but to be able to properly use it for simulations, we're going to have to start by learning about the fundamental abstraction behind its <strong>implementation</strong>: machines.[^implementation]</p>
-<p>(This post will assume a somewhat basic knowledge of Haskell. I'll try explaining concepts here and there if I feel that they might not be very commonly known. But if you have any questions, feel free to leave a comment or stop by freenode's #haskell on irc!)</p>
+<p>AFRP has its own elegant way of approaching problems, but to be able to properly use it for simulations, we’re going to have to start by learning about the fundamental abstraction behind its <strong>implementation</strong>: machines.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+<p>(This post will assume a somewhat basic knowledge of Haskell. I’ll try explaining concepts here and there if I feel that they might not be very commonly known. But if you have any questions, feel free to leave a comment or stop by freenode’s #haskell on irc!)</p>
 <p>(A short disclaimer: this article has not too much to do with the great <a href="http://hackage.haskell.org/package/machines">machines</a> library by Rúnar Bjarnason and Edward Kmett)</p>
-<h2>Why FRP?</h2>
-<p>This series doesn't directly deal with FRP, but implementing FRP is one of the motivating factors for what we are discussing.</p>
-<p>So why do we even bother with FRP? Why not just just program imperatively and mutate a state? It's just as easy in a functional/pure language (with a trivial State monad wrapper) as it is in an imperative language.</p>
+<h2 id="why-frp">Why FRP?</h2>
+<p>This series doesn’t directly deal with FRP, but implementing FRP is one of the motivating factors for what we are discussing.</p>
+<p>So why do we even bother with FRP? Why not just just program imperatively and mutate a state? It’s just as easy in a functional/pure language (with a trivial State monad wrapper) as it is in an imperative language.</p>
 <p>The answer is the full power of functional programming: <strong><a href="http://www.haskellforall.com/2012/08/the-category-design-pattern.html">composition</a></strong>. Anyone who has dabbled in functional programming (or who has even used Unix pipes) has had a glimpse into the power of composition. We start with simple, fundamental, self-contained behaviors and compose them piece-by-piece into a complex one.</p>
-<p>So why FRP? FRP provides for us meaningful semantics by which to <em>compose</em> time-varying and reactive behaviors, and create complex ones from smaller ones. You reason about a self-contained behavior &quot;wire&quot;...and then use tools to build complex behaviors from simple ones. You don't specify what happens when, you specify how things <em>should behave</em>, from a top-down level. And then compose those behaviors.</p>
-<p>So to proceed, in this post we are going to introduce Streams and (more importantly) Autos. In the next, we will be looking at Autos as a member of the powerful Category and Arrow typeclasses. In the final post, we'll really be throwing in a lot of useful enhancements to the <code>Auto</code> type in hopes that you may be prepared for anything you encounter in the real world involving it, including the popular AFRP library <a href="http://hackage.haskell.org/package/netwire">netwire</a>.</p>
-<h2>Streams</h2>
+<p>So why FRP? FRP provides for us meaningful semantics by which to <em>compose</em> time-varying and reactive behaviors, and create complex ones from smaller ones. You reason about a self-contained behavior “wire”…and then use tools to build complex behaviors from simple ones. You don’t specify what happens when, you specify how things <em>should behave</em>, from a top-down level. And then compose those behaviors.</p>
+<p>So to proceed, in this post we are going to introduce Streams and (more importantly) Autos. In the next, we will be looking at Autos as a member of the powerful Category and Arrow typeclasses. In the final post, we’ll really be throwing in a lot of useful enhancements to the <code>Auto</code> type in hopes that you may be prepared for anything you encounter in the real world involving it, including the popular AFRP library <a href="http://hackage.haskell.org/package/netwire">netwire</a>.</p>
+<h2 id="streams">Streams</h2>
 <p>(All the code for Streams can be downloaded <a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs">from github</a> and tried interactively online <a href="https://www.fpcomplete.com/user/jle/machines">at FPComplete</a>)</p>
-<p>Let's start with streams, one of the simpler of machines.</p>
+<p>Let’s start with streams, one of the simpler of machines.</p>
 <p>Streams are basically infinitely long linked lists.</p>
-<p>~~~haskell data Stream b = SCons (b, Stream b) ~~~</p>
-<p>(<code>SCons</code> for &quot;Stream cons&quot;)</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Stream</span> b <span class="fu">=</span> <span class="dt">SCons</span> (b, <span class="dt">Stream</span> b)</a></code></pre></div>
+<p>(<code>SCons</code> for “Stream cons”)</p>
 <p>Compare that with the linked list data type, which is a Stream with an Ending (<code>Nil</code>):</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L7-7 -- interactive: https://www.fpcomplete.com/user/jle/machines data List a = Cons (a, List a) | Nil ~~~</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L7-7</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">data</span> <span class="dt">List</span> a <span class="fu">=</span> <span class="dt">Cons</span> (a, <span class="dt">List</span> a) <span class="fu">|</span> <span class="dt">Nil</span></a></code></pre></div>
 <p>or, as is more traditionally written:</p>
-<p>~~~haskell data [a] = (:) a [a] | [] ~~~</p>
-<p>It's pretty easy to build lists:</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L36-37 -- interactive: https://www.fpcomplete.com/user/jle/machines myList :: List Int myList = Cons ( 1, Cons ( 2, Cons (3, Nil) ) ) ~~~</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">data</span> [a] <span class="fu">=</span> (<span class="fu">:</span>) a [a] <span class="fu">|</span> []</a></code></pre></div>
+<p>It’s pretty easy to build lists:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L36-37</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="ot">myList ::</span> <span class="dt">List</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">myList <span class="fu">=</span> <span class="dt">Cons</span> ( <span class="dv">1</span>, <span class="dt">Cons</span> ( <span class="dv">2</span>, <span class="dt">Cons</span> (<span class="dv">3</span>, <span class="dt">Nil</span>) ) )</a></code></pre></div>
 <p>which is just, in the more traditional (infix) form:</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L40-41 -- interactive: https://www.fpcomplete.com/user/jle/machines myList' :: [Int] myList' = 1:(2:(3:[])) ~~~</p>
-<p>Let's see if <code>myList</code> does what we want: (a list from 1 to 3):</p>
-<p>~~~haskell ghci&gt; let (Cons (x,xs)) = myList ghci&gt; x 1 ghci&gt; :t xs xs :: List Int ghci&gt; let (Cons (y,ys)) = xs ghci&gt; y 2 ghci&gt; let (Cons (z,zs)) = ys ghci&gt; z 3 ghci&gt; zs Nil ~~~</p>
-<p>Yes! Perfect. We can &quot;traverse&quot; down our linked list by repeatedly pattern matching out the &quot;head&quot; (the <code>x</code>, the first part of the tuple) and the &quot;tail&quot; (the <code>xs</code>, the second part of the tuple).</p>
-<p>But how are we going to build a stream...? We don't have access to <code>Nil</code>, so do we have to manually type out an infinite stream?</p>
-<p>Let's try defining the stream <code>[1..]</code> --- a stream that contains every natural number starting from 1.</p>
-<p>~~~haskell myStream' :: Stream Int myStream' = SCons ( 1, SCons ( 2, SCons ( 3, ... ) ) ) ~~~</p>
-<p>Hm. This is going to take a while. I wonder if there's an easier way?</p>
-<p>We can take advantage of Haskell's &quot;lazy-by-default&quot;-ness and leave the &quot;rest&quot; of the stream as an unevaluated function call. And then we can recurse!</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L46-50 -- interactive: https://www.fpcomplete.com/user/jle/machines myStream :: Stream Int myStream = streamFrom 1 where streamFrom :: Int -&gt; Stream Int streamFrom n = SCons ( n, streamFrom (n+1) ) ~~~</p>
-<p>Cool! Let's see if this <code>myStream</code> really does what we want, the same way we tested <code>myList</code>:</p>
-<p>~~~haskell ghci&gt; let (SCons (x, xs)) = myStream ghci&gt; x 1 ghci&gt; :t xs xs :: Stream Int ghci&gt; let (SCons (y, ys)) = xs ghci&gt; y 2 ghci&gt; let (SCons (z, zs)) = ys ghci&gt; z 3 ghci&gt; let (SCons (j,js)) = zs ghci&gt; j 4 ghci&gt; let (SCons (k,ks)) = js ghci&gt; k 5 ~~~</p>
-<p>Yes, it works perfectly! Just like in the case of List, we can &quot;traverse&quot; down the stream by pattern matching out the &quot;head&quot; of the stream (the first part of the tuple) and the &quot;tail&quot; of the stream (the second part of the tuple).</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L40-41</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="ot">myList&#39; ::</span> [<span class="dt">Int</span>]</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">myList&#39; <span class="fu">=</span> <span class="dv">1</span><span class="fu">:</span>(<span class="dv">2</span><span class="fu">:</span>(<span class="dv">3</span><span class="fu">:</span>[]))</a></code></pre></div>
+<p>Let’s see if <code>myList</code> does what we want: (a list from 1 to 3):</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (<span class="dt">Cons</span> (x,xs)) <span class="fu">=</span> myList</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">ghci<span class="fu">&gt;</span> x</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3"><span class="dv">1</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t xs</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5"><span class="ot">xs ::</span> <span class="dt">List</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (<span class="dt">Cons</span> (y,ys)) <span class="fu">=</span> xs</a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">ghci<span class="fu">&gt;</span> y</a>
+<a class="sourceLine" id="cb6-8" data-line-number="8"><span class="dv">2</span></a>
+<a class="sourceLine" id="cb6-9" data-line-number="9">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (<span class="dt">Cons</span> (z,zs)) <span class="fu">=</span> ys</a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">ghci<span class="fu">&gt;</span> z</a>
+<a class="sourceLine" id="cb6-11" data-line-number="11"><span class="dv">3</span></a>
+<a class="sourceLine" id="cb6-12" data-line-number="12">ghci<span class="fu">&gt;</span> zs</a>
+<a class="sourceLine" id="cb6-13" data-line-number="13"><span class="dt">Nil</span></a></code></pre></div>
+<p>Yes! Perfect. We can “traverse” down our linked list by repeatedly pattern matching out the “head” (the <code>x</code>, the first part of the tuple) and the “tail” (the <code>xs</code>, the second part of the tuple).</p>
+<p>But how are we going to build a stream…? We don’t have access to <code>Nil</code>, so do we have to manually type out an infinite stream?</p>
+<p>Let’s try defining the stream <code>[1..]</code> — a stream that contains every natural number starting from 1.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">myStream&#39; ::</span> <span class="dt">Stream</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">myStream&#39; <span class="fu">=</span> <span class="dt">SCons</span> ( <span class="dv">1</span>, <span class="dt">SCons</span> ( <span class="dv">2</span>, <span class="dt">SCons</span> ( <span class="dv">3</span>, <span class="fu">...</span> ) ) )</a></code></pre></div>
+<p>Hm. This is going to take a while. I wonder if there’s an easier way?</p>
+<p>We can take advantage of Haskell’s “lazy-by-default”-ness and leave the “rest” of the stream as an unevaluated function call. And then we can recurse!</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L46-50</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3"><span class="ot">myStream ::</span> <span class="dt">Stream</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">myStream <span class="fu">=</span> streamFrom <span class="dv">1</span></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6"><span class="ot">    streamFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7">    streamFrom n <span class="fu">=</span> <span class="dt">SCons</span> ( n, streamFrom (n<span class="fu">+</span><span class="dv">1</span>) )</a></code></pre></div>
+<p>Cool! Let’s see if this <code>myStream</code> really does what we want, the same way we tested <code>myList</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (<span class="dt">SCons</span> (x, xs)) <span class="fu">=</span> myStream</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">ghci<span class="fu">&gt;</span> x</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3"><span class="dv">1</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t xs</a>
+<a class="sourceLine" id="cb9-5" data-line-number="5"><span class="ot">xs ::</span> <span class="dt">Stream</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (<span class="dt">SCons</span> (y, ys)) <span class="fu">=</span> xs</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">ghci<span class="fu">&gt;</span> y</a>
+<a class="sourceLine" id="cb9-8" data-line-number="8"><span class="dv">2</span></a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (<span class="dt">SCons</span> (z, zs)) <span class="fu">=</span> ys</a>
+<a class="sourceLine" id="cb9-10" data-line-number="10">ghci<span class="fu">&gt;</span> z</a>
+<a class="sourceLine" id="cb9-11" data-line-number="11"><span class="dv">3</span></a>
+<a class="sourceLine" id="cb9-12" data-line-number="12">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (<span class="dt">SCons</span> (j,js)) <span class="fu">=</span> zs</a>
+<a class="sourceLine" id="cb9-13" data-line-number="13">ghci<span class="fu">&gt;</span> j</a>
+<a class="sourceLine" id="cb9-14" data-line-number="14"><span class="dv">4</span></a>
+<a class="sourceLine" id="cb9-15" data-line-number="15">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (<span class="dt">SCons</span> (k,ks)) <span class="fu">=</span> js</a>
+<a class="sourceLine" id="cb9-16" data-line-number="16">ghci<span class="fu">&gt;</span> k</a>
+<a class="sourceLine" id="cb9-17" data-line-number="17"><span class="dv">5</span></a></code></pre></div>
+<p>Yes, it works perfectly! Just like in the case of List, we can “traverse” down the stream by pattern matching out the “head” of the stream (the first part of the tuple) and the “tail” of the stream (the second part of the tuple).</p>
 <p>Note that we can have some fun with Haskell syntax <code>Stream</code> by adding a record label to the first (and only) field:</p>
-<p>~~~haskell data Stream b = SCons { runStream :: (b, Stream b) } ~~~</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Stream</span> b <span class="fu">=</span> <span class="dt">SCons</span> {<span class="ot"> runStream ::</span> (b, <span class="dt">Stream</span> b) }</a></code></pre></div>
 <p>so that we can do fancy things like:</p>
-<p>~~~haskell ghci&gt; :t runStream runStream :: Stream b -&gt; (b, Stream b) ghci&gt; let (x, xs) = runStream myStream ghci&gt; x 1 ~~~</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t runStream</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2"><span class="ot">runStream ::</span> <span class="dt">Stream</span> b <span class="ot">-&gt;</span> (b, <span class="dt">Stream</span> b)</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (x, xs) <span class="fu">=</span> runStream myStream</a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">ghci<span class="fu">&gt;</span> x</a>
+<a class="sourceLine" id="cb11-5" data-line-number="5"><span class="dv">1</span></a></code></pre></div>
 <p>Basically, we get for free the function <code>runStream</code>, a function that yanks the tuple out of the stream.</p>
-<p>One minor final touch --- because <code>Stream</code> has only one constructor and one field, we can make it a <code>newtype</code>, which has similar usage patterns/syntax as a <code>data</code>, but which the compiler can more easily optimize:</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L10-10 -- interactive: https://www.fpcomplete.com/user/jle/machines newtype Stream b = SCons { runStream :: (b, Stream b) } ~~~</p>
-<h4>Automating Traversal</h4>
-<p>The repeated pattern matching we've been doing is kind of tedious, and it'll only get more annoying over time, so let's make a function that can automate the pattern matching for us really quickly so that we can test it more easily.</p>
+<p>One minor final touch — because <code>Stream</code> has only one constructor and one field, we can make it a <code>newtype</code>, which has similar usage patterns/syntax as a <code>data</code>, but which the compiler can more easily optimize:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L10-10</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb12-3" data-line-number="3"><span class="kw">newtype</span> <span class="dt">Stream</span> b <span class="fu">=</span> <span class="dt">SCons</span> {<span class="ot"> runStream ::</span> (b, <span class="dt">Stream</span> b) }</a></code></pre></div>
+<h4 id="automating-traversal">Automating Traversal</h4>
+<p>The repeated pattern matching we’ve been doing is kind of tedious, and it’ll only get more annoying over time, so let’s make a function that can automate the pattern matching for us really quickly so that we can test it more easily.</p>
 <p><code>streamToList</code> will take a Stream and perform the very straightforward conversion into an infinite list.</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L15-16 -- interactive: https://www.fpcomplete.com/user/jle/machines streamToList :: Stream b -&gt; [b] streamToList (SCons (x, xs)) = x : streamToList xs ~~~</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L15-16</span></a>
+<a class="sourceLine" id="cb13-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb13-3" data-line-number="3"><span class="ot">streamToList ::</span> <span class="dt">Stream</span> b <span class="ot">-&gt;</span> [b]</a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">streamToList (<span class="dt">SCons</span> (x, xs)) <span class="fu">=</span> x <span class="fu">:</span> streamToList xs</a></code></pre></div>
 <p>So now we can do:</p>
-<p>~~~haskell ghci&gt; take 10 $ streamToList myStream [1,2,3,4,5,6,7,8,9,10] ~~~</p>
-<p>Alternatively (and for reasons which will later become clear), we can also define <code>testStream</code>, which takes a specified amount of elements and returns also the &quot;resulting&quot; stream after all of those steps, and <code>testStream_</code>, which is the same thing except that we throw away the modified stream.</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L20-30 -- interactive: https://www.fpcomplete.com/user/jle/machines testStream :: Stream b -&gt; Int -&gt; ([b], Stream b) testStream strm 0 = ([] , strm ) testStream strm n = (y:ys, final) where (y , next ) = runStream strm (ys, final) = testStream next (n-1)</p>
-<p>testStream_ :: Stream b -&gt; Int -&gt; [b] testStream_ = (fst .) . testStream ~~~</p>
-<p>~~~haskell ghci&gt; testStream_ myStream 10 [1,2,3,4,5,6,7,8,9,10] ~~~</p>
-<h3>Streams are nice</h3>
-<p>Streams are nice! If you've been using Haskell for any stretch of time, you'll know that we use infinite lists all the time and to great usefulness for the ends of expressiveness and abstraction.</p>
-<p>In mathematics, streams are known as a form of <a href="http://en.wikipedia.org/wiki/Moore_machine">Moore machines</a> (albeit with potentially infinite sets of state and output values). They are machines that basically internally progress from state to state to state to state. They just keep on marching on...like a machine. In <code>myStream</code>, the initial state is 1. The next state is 2; the next is 3, etc. What is important is that the next state <em>is a function of the current state</em>.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1">ghci<span class="fu">&gt;</span> take <span class="dv">10</span> <span class="fu">$</span> streamToList myStream</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">[<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">10</span>]</a></code></pre></div>
+<p>Alternatively (and for reasons which will later become clear), we can also define <code>testStream</code>, which takes a specified amount of elements and returns also the “resulting” stream after all of those steps, and <code>testStream_</code>, which is the same thing except that we throw away the modified stream.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L20-30</span></a>
+<a class="sourceLine" id="cb15-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb15-3" data-line-number="3"><span class="ot">testStream ::</span> <span class="dt">Stream</span> b <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> ([b], <span class="dt">Stream</span> b)</a>
+<a class="sourceLine" id="cb15-4" data-line-number="4">testStream strm <span class="dv">0</span> <span class="fu">=</span> ([]  , strm )</a>
+<a class="sourceLine" id="cb15-5" data-line-number="5">testStream strm n <span class="fu">=</span> (y<span class="fu">:</span>ys, final)</a>
+<a class="sourceLine" id="cb15-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb15-7" data-line-number="7">    (y , next )   <span class="fu">=</span> runStream  strm</a>
+<a class="sourceLine" id="cb15-8" data-line-number="8">    (ys, final)   <span class="fu">=</span> testStream next (n<span class="fu">-</span><span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb15-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb15-10" data-line-number="10"><span class="ot">testStream_ ::</span> <span class="dt">Stream</span> b <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [b]</a>
+<a class="sourceLine" id="cb15-11" data-line-number="11">testStream_ <span class="fu">=</span> (fst <span class="fu">.</span>) <span class="fu">.</span> testStream</a></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1">ghci<span class="fu">&gt;</span> testStream_ myStream <span class="dv">10</span></a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">[<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">10</span>]</a></code></pre></div>
+<h3 id="streams-are-nice">Streams are nice</h3>
+<p>Streams are nice! If you’ve been using Haskell for any stretch of time, you’ll know that we use infinite lists all the time and to great usefulness for the ends of expressiveness and abstraction.</p>
+<p>In mathematics, streams are known as a form of <a href="http://en.wikipedia.org/wiki/Moore_machine">Moore machines</a> (albeit with potentially infinite sets of state and output values). They are machines that basically internally progress from state to state to state to state. They just keep on marching on…like a machine. In <code>myStream</code>, the initial state is 1. The next state is 2; the next is 3, etc. What is important is that the next state <em>is a function of the current state</em>.</p>
 <p>This is made very apparent in our definition of <code>streamFrom</code>:</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L49-50 -- interactive: https://www.fpcomplete.com/user/jle/machines streamFrom :: Int -&gt; Stream Int streamFrom n = SCons ( n, streamFrom (n+1) ) ~~~</p>
-<p>The &quot;current state&quot; whenever we call <code>streamFrom n</code> is <code>n</code>...the &quot;next state&quot; (the &quot;initial state&quot; of the &quot;tail&quot;) is <code>n+1</code>. We could have provided any function <code>:: Int -&gt; Int</code> there (say, <code>n+2</code>), that would be for us our &quot;next state&quot; function.</p>
-<p>So <code>myStream</code> is a Moore-like machine whose &quot;next state&quot; function is &quot;the current state plus one&quot;, and whose output is just the state itself.</p>
-<h4>State your purpose!</h4>
-<p>Did you catch that last sentence? It's a subtle point. In general, streams can have outputs that are different than their states. As a trivial example, let's have a stream whose state is an integer, yet whose output is a character:</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L53-57 -- interactive: https://www.fpcomplete.com/user/jle/machines charStream :: Stream Char charStream = charStreamFrom 65 where charStreamFrom :: Int -&gt; Stream Char charStreamFrom n = SCons ( chr n, charStreamFrom (n+1) ) ~~~</p>
-<p>~~~haskell ghci&gt; take 10 $ streamToList charStream &quot;ABCDEFGHIJ&quot; ~~~</p>
-<p>Wait, this is kind of weird. The type of our stream is <code>Stream Char</code>...<code>Char</code> is the type of output/elements in the stream, the &quot;head&quot; when we pattern match. But where is the <code>Int</code> that is the state of our stream in the type <code>Stream Char</code>...?</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L49-50</span></a>
+<a class="sourceLine" id="cb17-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb17-3" data-line-number="3"><span class="ot">    streamFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">    streamFrom n <span class="fu">=</span> <span class="dt">SCons</span> ( n, streamFrom (n<span class="fu">+</span><span class="dv">1</span>) )</a></code></pre></div>
+<p>The “current state” whenever we call <code>streamFrom n</code> is <code>n</code>…the “next state” (the “initial state” of the “tail”) is <code>n+1</code>. We could have provided any function <code>:: Int -&gt; Int</code> there (say, <code>n+2</code>), that would be for us our “next state” function.</p>
+<p>So <code>myStream</code> is a Moore-like machine whose “next state” function is “the current state plus one”, and whose output is just the state itself.</p>
+<h4 id="state-your-purpose">State your purpose!</h4>
+<p>Did you catch that last sentence? It’s a subtle point. In general, streams can have outputs that are different than their states. As a trivial example, let’s have a stream whose state is an integer, yet whose output is a character:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L53-57</span></a>
+<a class="sourceLine" id="cb18-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb18-3" data-line-number="3"><span class="ot">charStream ::</span> <span class="dt">Stream</span> <span class="dt">Char</span></a>
+<a class="sourceLine" id="cb18-4" data-line-number="4">charStream <span class="fu">=</span> charStreamFrom <span class="dv">65</span></a>
+<a class="sourceLine" id="cb18-5" data-line-number="5">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb18-6" data-line-number="6"><span class="ot">    charStreamFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> <span class="dt">Char</span></a>
+<a class="sourceLine" id="cb18-7" data-line-number="7">    charStreamFrom n <span class="fu">=</span> <span class="dt">SCons</span> ( chr n, charStreamFrom (n<span class="fu">+</span><span class="dv">1</span>) )</a></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1">ghci<span class="fu">&gt;</span> take <span class="dv">10</span> <span class="fu">$</span> streamToList charStream</a>
+<a class="sourceLine" id="cb19-2" data-line-number="2"><span class="st">&quot;ABCDEFGHIJ&quot;</span></a></code></pre></div>
+<p>Wait, this is kind of weird. The type of our stream is <code>Stream Char</code>…<code>Char</code> is the type of output/elements in the stream, the “head” when we pattern match. But where is the <code>Int</code> that is the state of our stream in the type <code>Stream Char</code>…?</p>
 <p>Can we even write a function <code>getState :: Stream b -&gt; s</code> that works in general for all streams?</p>
-<p>Hm. If the state of our stream can have a type totally unrelated to the type of the stream...that means that we probably can't even know what it type is. And that even if we could &quot;force&quot; it out somehow, we would not even be able to work with it in a type-safe way!</p>
-<p>In fact...couldn't the state even <em><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L60-70">vary dynamically</a></em> as the stream progresses?</p>
-<h3>Continuing on</h3>
-<p>The problem with streams, as you might have guessed, is that you can't really affect their progress once they start. Once you start <code>myStream</code>, it'll keep on marching on, and on, and on...you have no way to &quot;influence&quot; its progression <em>during</em> its march. The <em>behavior</em> of our stream <em>can't be influenced</em> by the outside world in any way, once it has started. This is a bit limiting, because we want behaviors that we can have interact with each other.</p>
+<p>Hm. If the state of our stream can have a type totally unrelated to the type of the stream…that means that we probably can’t even know what it type is. And that even if we could “force” it out somehow, we would not even be able to work with it in a type-safe way!</p>
+<p>In fact…couldn’t the state even <em><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L60-70">vary dynamically</a></em> as the stream progresses?</p>
+<h3 id="continuing-on">Continuing on</h3>
+<p>The problem with streams, as you might have guessed, is that you can’t really affect their progress once they start. Once you start <code>myStream</code>, it’ll keep on marching on, and on, and on…you have no way to “influence” its progression <em>during</em> its march. The <em>behavior</em> of our stream <em>can’t be influenced</em> by the outside world in any way, once it has started. This is a bit limiting, because we want behaviors that we can have interact with each other.</p>
 <p>And so, we have the natural generalization of streams (and the machine we will be spending the most time looking at): Auto.</p>
-<h2>Auto</h2>
+<h2 id="auto">Auto</h2>
 <p>(All the code for Autos can be downloaded <a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs">from github</a> and tried interactively online <a href="https://www.fpcomplete.com/user/jle/machines">at FPComplete</a>)</p>
-<p>Let's upgrade our streams, and introduce a way to affect how they progress. Let's call it an Auto.</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-12 -- interactive: https://www.fpcomplete.com/user/jle/machines newtype Auto a b = ACons { runAuto :: a -&gt; (b, Auto a b) } ~~~</p>
+<p>Let’s upgrade our streams, and introduce a way to affect how they progress. Let’s call it an Auto.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-12</span></a>
+<a class="sourceLine" id="cb20-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb20-3" data-line-number="3"><span class="kw">newtype</span> <span class="dt">Auto</span> a b <span class="fu">=</span> <span class="dt">ACons</span> {<span class="ot"> runAuto ::</span> a <span class="ot">-&gt;</span> (b, <span class="dt">Auto</span> a b) }</a></code></pre></div>
 <p>Now, instead of an <code>SCons</code> containing just a tuple (a head-tails), an <code>ACons</code> contains a <em>function</em> that <em>produces</em> your head-tails tuple. Before, all of our <code>runStreams</code> produced the same tuple no matter what. Now, our <code>runAuto</code> can produce a different tuple based on an outside input.</p>
 <p>This is cool!</p>
-<p>Let's look at the type signature of Auto before we go too much further.</p>
-<p>In <code>Auto a b</code>, <code>b</code> is (just like for a Stream) the type of your &quot;head&quot; and the type of the items in your &quot;tail&quot;. It's the type of your &quot;stream&quot;.</p>
-<p><code>a</code> is the type of the &quot;influencing input&quot;.</p>
-<p>So now, we basically have a <code>Stream b</code>, except at every &quot;step&quot;, we can &quot;influence&quot; the Stream with something of type <code>a</code>.</p>
-<h3>A Trivial Auto</h3>
-<p>Let's look at a direct &quot;port&quot; of our <code>myStream</code>:</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L40-44 -- interactive: https://www.fpcomplete.com/user/jle/machines myStreamAuto :: Auto a Int myStreamAuto = streamAutoFrom 1 where streamAutoFrom :: Int -&gt; Auto a Int streamAutoFrom n = ACons $ _ -&gt; ( n, streamAutoFrom (n+1) ) ~~~</p>
-<p>This is kind of a dumb example, but <code>myStreamAuto</code> is just the exact same as <code>myStream</code>. It's an Auto, but it <em>ignores its influencing input</em>.</p>
-<p>Let's try it out.</p>
-<p>~~~haskell ghci&gt; :t runAuto runAuto :: Auto a b -&gt; (a -&gt; (b, Auto a b)) ghci&gt; let (x, xs) = runAuto myStreamAuto undefined ghci&gt; x 1 ghci&gt; :t xs xs :: Auto a Int ghci&gt; let (y, ys) = runAuto xs undefined ghci&gt; y 2 ghci&gt; let (z, zs) = runAuto ys undefined ghci&gt; z 3 ~~~</p>
-<p>Remember that we are really doing <code>(runAuto myStreamAuto) undefined</code>, but because of how Haskell associates function calls, the parentheses are unnecessary. And hey, it kind of looks like <code>runAuto</code> is a two-parameter function with an Auto as the first parameter and the &quot;influence&quot;/&quot;input&quot; as its second. Which, due to the magic of currying-by-default, it basically is, in Haskell!</p>
-<h3>A Non-trivial Auto</h3>
-<p>Okay, that was fun I guess. But now let's take a first look at an auto which <em>can</em> be influenced.</p>
-<p>Let's have a stream where at every step, we can choose to &quot;reset&quot; the counter to whatever integer we like.</p>
+<p>Let’s look at the type signature of Auto before we go too much further.</p>
+<p>In <code>Auto a b</code>, <code>b</code> is (just like for a Stream) the type of your “head” and the type of the items in your “tail”. It’s the type of your “stream”.</p>
+<p><code>a</code> is the type of the “influencing input”.</p>
+<p>So now, we basically have a <code>Stream b</code>, except at every “step”, we can “influence” the Stream with something of type <code>a</code>.</p>
+<h3 id="a-trivial-auto">A Trivial Auto</h3>
+<p>Let’s look at a direct “port” of our <code>myStream</code>:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L40-44</span></a>
+<a class="sourceLine" id="cb21-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb21-3" data-line-number="3"><span class="ot">myStreamAuto ::</span> <span class="dt">Auto</span> a <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb21-4" data-line-number="4">myStreamAuto <span class="fu">=</span> streamAutoFrom <span class="dv">1</span></a>
+<a class="sourceLine" id="cb21-5" data-line-number="5">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb21-6" data-line-number="6"><span class="ot">    streamAutoFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Auto</span> a <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb21-7" data-line-number="7">    streamAutoFrom n <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \_ <span class="ot">-&gt;</span> ( n, streamAutoFrom (n<span class="fu">+</span><span class="dv">1</span>) )</a></code></pre></div>
+<p>This is kind of a dumb example, but <code>myStreamAuto</code> is just the exact same as <code>myStream</code>. It’s an Auto, but it <em>ignores its influencing input</em>.</p>
+<p>Let’s try it out.</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t runAuto</a>
+<a class="sourceLine" id="cb22-2" data-line-number="2"><span class="ot">runAuto ::</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> (b, <span class="dt">Auto</span> a b))</a>
+<a class="sourceLine" id="cb22-3" data-line-number="3">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (x, xs) <span class="fu">=</span> runAuto myStreamAuto undefined</a>
+<a class="sourceLine" id="cb22-4" data-line-number="4">ghci<span class="fu">&gt;</span> x</a>
+<a class="sourceLine" id="cb22-5" data-line-number="5"><span class="dv">1</span></a>
+<a class="sourceLine" id="cb22-6" data-line-number="6">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t xs</a>
+<a class="sourceLine" id="cb22-7" data-line-number="7"><span class="ot">xs ::</span> <span class="dt">Auto</span> a <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb22-8" data-line-number="8">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (y, ys) <span class="fu">=</span> runAuto xs undefined</a>
+<a class="sourceLine" id="cb22-9" data-line-number="9">ghci<span class="fu">&gt;</span> y</a>
+<a class="sourceLine" id="cb22-10" data-line-number="10"><span class="dv">2</span></a>
+<a class="sourceLine" id="cb22-11" data-line-number="11">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (z, zs) <span class="fu">=</span> runAuto ys undefined</a>
+<a class="sourceLine" id="cb22-12" data-line-number="12">ghci<span class="fu">&gt;</span> z</a>
+<a class="sourceLine" id="cb22-13" data-line-number="13"><span class="dv">3</span></a></code></pre></div>
+<p>Remember that we are really doing <code>(runAuto myStreamAuto) undefined</code>, but because of how Haskell associates function calls, the parentheses are unnecessary. And hey, it kind of looks like <code>runAuto</code> is a two-parameter function with an Auto as the first parameter and the “influence”/“input” as its second. Which, due to the magic of currying-by-default, it basically is, in Haskell!</p>
+<h3 id="a-non-trivial-auto">A Non-trivial Auto</h3>
+<p>Okay, that was fun I guess. But now let’s take a first look at an auto which <em>can</em> be influenced.</p>
+<p>Let’s have a stream where at every step, we can choose to “reset” the counter to whatever integer we like.</p>
 <p>We can do this by having the influence/input be a <code>Maybe Int</code>. If we want the counter to progress normally, we pass in a <code>Nothing</code>. If we want the counter to reset to a number <code>n</code> of our choosing, we pass in a <code>Just n</code></p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L48-54 -- interactive: https://www.fpcomplete.com/user/jle/machines settableAuto :: Auto (Maybe Int) Int settableAuto = counterFrom 1 where counterFrom :: Int -&gt; Auto (Maybe Int) Int counterFrom n = ACons $ \reset -&gt; let c = fromMaybe n reset in ( c, counterFrom (c + 1) ) ~~~</p>
-<p>Remember that <code>fromMaybe :: a -&gt; Maybe a -&gt; a</code> takes a &quot;default&quot; value, a Maybe value, and then returns the value inside the Maybe if it's a <code>Just</code>, or the default value if it's a <code>Nothing</code>.</p>
-<p>So basically, when you <code>runAuto</code> with the Auto, if you give it a <code>Nothing</code>, it'll give you <code>( n, counterFrom (n+1) )</code>. If you give it <code>Just m</code>, it'll give you <code>( m, counterFrom (m+1) )</code>.</p>
-<p>Cool --- let's try it out.</p>
-<p>~~~haskell ghci&gt; let (x, xs) = runAuto settableAuto Nothing ghci&gt; x 1 ghci&gt; let (y, ys) = runAuto xs Nothing ghci&gt; y 2 ghci&gt; let (z, zs) = runAuto ys (Just 10) ghci&gt; z 10 ghci&gt; let (j, js) = runAuto zs Nothing ghci&gt; j 11 ghci&gt; let (k, ks) = runAuto js Nothing ghci&gt; k 12 ghci&gt; let (l, ls) = runAuto ks (Just (-1)) ghci&gt; l -1 ghci&gt; let (m, ms) = runAuto ls Nothing ghci&gt; m 0 ~~~</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L48-54</span></a>
+<a class="sourceLine" id="cb23-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb23-3" data-line-number="3"><span class="ot">settableAuto ::</span> <span class="dt">Auto</span> (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb23-4" data-line-number="4">settableAuto <span class="fu">=</span> counterFrom <span class="dv">1</span></a>
+<a class="sourceLine" id="cb23-5" data-line-number="5">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb23-6" data-line-number="6"><span class="ot">    counterFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Auto</span> (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb23-7" data-line-number="7">    counterFrom n <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \reset <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb23-8" data-line-number="8">      <span class="kw">let</span> c <span class="fu">=</span> fromMaybe n reset</a>
+<a class="sourceLine" id="cb23-9" data-line-number="9">      <span class="kw">in</span>  ( c, counterFrom (c <span class="fu">+</span> <span class="dv">1</span>) )</a></code></pre></div>
+<p>Remember that <code>fromMaybe :: a -&gt; Maybe a -&gt; a</code> takes a “default” value, a Maybe value, and then returns the value inside the Maybe if it’s a <code>Just</code>, or the default value if it’s a <code>Nothing</code>.</p>
+<p>So basically, when you <code>runAuto</code> with the Auto, if you give it a <code>Nothing</code>, it’ll give you <code>( n, counterFrom (n+1) )</code>. If you give it <code>Just m</code>, it’ll give you <code>( m, counterFrom (m+1) )</code>.</p>
+<p>Cool — let’s try it out.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (x, xs) <span class="fu">=</span> runAuto settableAuto <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb24-2" data-line-number="2">ghci<span class="fu">&gt;</span> x</a>
+<a class="sourceLine" id="cb24-3" data-line-number="3"><span class="dv">1</span></a>
+<a class="sourceLine" id="cb24-4" data-line-number="4">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (y, ys) <span class="fu">=</span> runAuto xs <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb24-5" data-line-number="5">ghci<span class="fu">&gt;</span> y</a>
+<a class="sourceLine" id="cb24-6" data-line-number="6"><span class="dv">2</span></a>
+<a class="sourceLine" id="cb24-7" data-line-number="7">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (z, zs) <span class="fu">=</span> runAuto ys (<span class="dt">Just</span> <span class="dv">10</span>)</a>
+<a class="sourceLine" id="cb24-8" data-line-number="8">ghci<span class="fu">&gt;</span> z</a>
+<a class="sourceLine" id="cb24-9" data-line-number="9"><span class="dv">10</span></a>
+<a class="sourceLine" id="cb24-10" data-line-number="10">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (j, js) <span class="fu">=</span> runAuto zs <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb24-11" data-line-number="11">ghci<span class="fu">&gt;</span> j</a>
+<a class="sourceLine" id="cb24-12" data-line-number="12"><span class="dv">11</span></a>
+<a class="sourceLine" id="cb24-13" data-line-number="13">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (k, ks) <span class="fu">=</span> runAuto js <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb24-14" data-line-number="14">ghci<span class="fu">&gt;</span> k</a>
+<a class="sourceLine" id="cb24-15" data-line-number="15"><span class="dv">12</span></a>
+<a class="sourceLine" id="cb24-16" data-line-number="16">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (l, ls) <span class="fu">=</span> runAuto ks (<span class="dt">Just</span> (<span class="fu">-</span><span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb24-17" data-line-number="17">ghci<span class="fu">&gt;</span> l</a>
+<a class="sourceLine" id="cb24-18" data-line-number="18"><span class="fu">-</span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb24-19" data-line-number="19">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (m, ms) <span class="fu">=</span> runAuto ls <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb24-20" data-line-number="20">ghci<span class="fu">&gt;</span> m</a>
+<a class="sourceLine" id="cb24-21" data-line-number="21"><span class="dv">0</span></a></code></pre></div>
 <p>And there ya go.</p>
-<h4>Automatic traversals for our Autos</h4>
-<p>Again, the manual pattern matching is a little tedious so let's write us a function to automate &quot;progressing&quot; down an Auto.</p>
-<p>Like our <code>testStream</code>, <code>testAuto</code> takes an Auto. But because every &quot;step&quot; needs an input, <code>testAuto auto</code> takes a <em>list</em> that specifies the input for every step. <code>testAuto</code> returns the resulting collection of results, and also the modified Auto. <code>testAuto_</code> throws away the new Auto and just gives us the collection.</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L17-25 -- interactive: https://www.fpcomplete.com/user/jle/machines testAuto :: Auto a b -&gt; [a] -&gt; ([b], Auto a b) testAuto auto [] = ([] , auto ) testAuto auto (x:xs) = (y:ys, final) where (y, next ) = runAuto auto x (ys, final) = testAuto next xs</p>
-<p>testAuto_ :: Auto a b -&gt; [a] -&gt; [b] testAuto_ a = fst . testAuto a ~~~</p>
+<h4 id="automatic-traversals-for-our-autos">Automatic traversals for our Autos</h4>
+<p>Again, the manual pattern matching is a little tedious so let’s write us a function to automate “progressing” down an Auto.</p>
+<p>Like our <code>testStream</code>, <code>testAuto</code> takes an Auto. But because every “step” needs an input, <code>testAuto auto</code> takes a <em>list</em> that specifies the input for every step. <code>testAuto</code> returns the resulting collection of results, and also the modified Auto. <code>testAuto_</code> throws away the new Auto and just gives us the collection.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L17-25</span></a>
+<a class="sourceLine" id="cb25-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb25-3" data-line-number="3"><span class="ot">testAuto ::</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> ([b], <span class="dt">Auto</span> a b)</a>
+<a class="sourceLine" id="cb25-4" data-line-number="4">testAuto auto []      <span class="fu">=</span> ([]  , auto )</a>
+<a class="sourceLine" id="cb25-5" data-line-number="5">testAuto auto (x<span class="fu">:</span>xs)  <span class="fu">=</span> (y<span class="fu">:</span>ys, final)</a>
+<a class="sourceLine" id="cb25-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb25-7" data-line-number="7">    (y,  next ) <span class="fu">=</span> runAuto  auto x</a>
+<a class="sourceLine" id="cb25-8" data-line-number="8">    (ys, final) <span class="fu">=</span> testAuto next xs</a>
+<a class="sourceLine" id="cb25-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb25-10" data-line-number="10"><span class="ot">testAuto_ ::</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]</a>
+<a class="sourceLine" id="cb25-11" data-line-number="11">testAuto_ a <span class="fu">=</span> fst <span class="fu">.</span> testAuto a</a></code></pre></div>
 <p>Trying it out on <code>settableAuto</code>:</p>
-<p>~~~ ghci&gt; testAuto_ settableAuto [ Nothing, Nothing, Just 10 , Nothing, Nothing, Just (-1) , Nothing ] [1,2,10,11,12,-1,0] ~~~</p>
-<p>Alternatively, here is a fun way to test an Auto interactively, where you ask for input at each iteration from the user ---</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L27-32 -- interactive: https://www.fpcomplete.com/user/jle/machines interactAuto :: (Read a, Show b) =&gt; Auto a b -&gt; IO () interactAuto a0 = do inp &lt;- getLine let (x,a1) = runAuto a0 (read inp) print x interactAuto a1 ~~~</p>
-<p>~~~haskell ghci&gt; interactAuto settableAuto</p>
-<blockquote>
-<p>Nothing 1 Nothing 2 Just 10 10 Nothing 11 ~~~</p>
-</blockquote>
-<h3>A Shift</h3>
-<p>Let's shift our thinking a bit. Instead of seeing Autos as &quot;streams you can influence&quot;, we can think about them as &quot;functions with state&quot;. That is, they are functions that carry self-contained encapsulated state <em>inside</em> themselves. They are still <em>functions</em> of some kind --- you put in an &quot;input&quot; of type <code>a</code> and get in an &quot;output&quot; (the head) of type <code>b</code>. However, every &quot;time&quot; you do this, you get a different output depending on what you have already passed in and what the internal state is. As we will see, this internal state is completely opaque to the world. The world only has access to the &quot;output&quot;, the result.</p>
-<p>(Remember that, because we're in a functional language, nothing is technically actually really &quot;mutable&quot;. When we say that we have a stateful function, we really mean that every time we &quot;call&quot; the function, we get back an &quot;updated&quot; function with the new state that behaves differently when &quot;called&quot;).</p>
+<pre><code>ghci&gt; testAuto_ settableAuto [ Nothing, Nothing, Just 10
+                             , Nothing, Nothing, Just (-1)
+                             , Nothing ]
+[1,2,10,11,12,-1,0]</code></pre>
+<p>Alternatively, here is a fun way to test an Auto interactively, where you ask for input at each iteration from the user —</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L27-32</span></a>
+<a class="sourceLine" id="cb27-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb27-3" data-line-number="3"><span class="ot">interactAuto ::</span> (<span class="dt">Read</span> a, <span class="dt">Show</span> b) <span class="ot">=&gt;</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb27-4" data-line-number="4">interactAuto a0 <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb27-5" data-line-number="5">    inp <span class="ot">&lt;-</span> getLine</a>
+<a class="sourceLine" id="cb27-6" data-line-number="6">    <span class="kw">let</span> (x,a1) <span class="fu">=</span> runAuto a0 (read inp)</a>
+<a class="sourceLine" id="cb27-7" data-line-number="7">    print x</a>
+<a class="sourceLine" id="cb27-8" data-line-number="8">    interactAuto a1</a></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1">ghci<span class="fu">&gt;</span> interactAuto settableAuto</a>
+<a class="sourceLine" id="cb28-2" data-line-number="2"><span class="fu">&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb28-3" data-line-number="3"><span class="dv">1</span></a>
+<a class="sourceLine" id="cb28-4" data-line-number="4"><span class="fu">&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb28-5" data-line-number="5"><span class="dv">2</span></a>
+<a class="sourceLine" id="cb28-6" data-line-number="6"><span class="fu">&gt;</span> <span class="dt">Just</span> <span class="dv">10</span></a>
+<a class="sourceLine" id="cb28-7" data-line-number="7"><span class="dv">10</span></a>
+<a class="sourceLine" id="cb28-8" data-line-number="8"><span class="fu">&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb28-9" data-line-number="9"><span class="dv">11</span></a></code></pre></div>
+<h3 id="a-shift">A Shift</h3>
+<p>Let’s shift our thinking a bit. Instead of seeing Autos as “streams you can influence”, we can think about them as “functions with state”. That is, they are functions that carry self-contained encapsulated state <em>inside</em> themselves. They are still <em>functions</em> of some kind — you put in an “input” of type <code>a</code> and get in an “output” (the head) of type <code>b</code>. However, every “time” you do this, you get a different output depending on what you have already passed in and what the internal state is. As we will see, this internal state is completely opaque to the world. The world only has access to the “output”, the result.</p>
+<p>(Remember that, because we’re in a functional language, nothing is technically actually really “mutable”. When we say that we have a stateful function, we really mean that every time we “call” the function, we get back an “updated” function with the new state that behaves differently when “called”).</p>
 <p>To put it in terms of <code>settableAuto</code>:</p>
 <ul>
-<li>The &quot;input&quot; of <code>settableAuto</code> is our <code>Maybe Int</code> by which we convey or decision to reset or allow to increment by one as normal.</li>
-<li>The &quot;output&quot; of <code>settableAuto</code> is the &quot;head&quot; of the <code>ACons</code> that is returned --- the <code>x</code>, <code>y</code>, etc. It's the <code>Int</code>, the counter.</li>
-<li>The &quot;state&quot; of <code>settableAuto</code> is, in essence, the <code>n</code> of <code>counterFrom n</code>. It's the internal value by which the behavior is determined. The behavior of <code>runAuto</code> depends on the <code>n</code> --- it either yields <code>n</code> itself and increments <code>n</code>, or ignores it.</li>
+<li>The “input” of <code>settableAuto</code> is our <code>Maybe Int</code> by which we convey or decision to reset or allow to increment by one as normal.</li>
+<li>The “output” of <code>settableAuto</code> is the “head” of the <code>ACons</code> that is returned — the <code>x</code>, <code>y</code>, etc. It’s the <code>Int</code>, the counter.</li>
+<li>The “state” of <code>settableAuto</code> is, in essence, the <code>n</code> of <code>counterFrom n</code>. It’s the internal value by which the behavior is determined. The behavior of <code>runAuto</code> depends on the <code>n</code> — it either yields <code>n</code> itself and increments <code>n</code>, or ignores it.</li>
 </ul>
-<h4>The opaque state</h4>
-<p>It's a little tricky because the &quot;output&quot; and the &quot;state&quot; in our example function seem to be exactly the same (just like for <code>myStream</code>), but let's whip up a quick example where it's a little more obvious that the state and the output are different things, and that the state is completely opaque and encapsulated.</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L58-64 -- interactive: https://www.fpcomplete.com/user/jle/machines isEvenAuto :: Auto (Maybe Int) Bool isEvenAuto = isEvenAutoFrom 1 where isEvenAutoFrom :: Int -&gt; Auto (Maybe Int) Bool isEvenAutoFrom n = ACons $ \reset -&gt; let c = fromMaybe n reset in ( even c, isEvenAutoFrom (c + 1) ) ~~~</p>
-<p>So <code>isEvenAuto</code> is the same as <code>settableCounterFrom</code>, except instead of &quot;yielding&quot;/&quot;outputting&quot; <code>n</code>, it outputs <code>even n</code> --- <code>True</code> if <code>n</code> is even and <code>False</code> if <code>n</code> is odd.</p>
-<p>Here is a demonstration of its behavior ---</p>
-<p>~~~haskell ghci&gt; testAuto isEvenAuto [ Nothing, Nothing, Just 10 , Nothing, Nothing, Just (-1) , Nothing ] [False,True,True,False,True] ~~~</p>
-<p>Note that there is in general really no way to ever access the <code>n</code> internally (in fact, like we said before, it is in theory possible because we can't even know its type). It is completely sealed off from the world, except by our explicit design. Here, we choose to only &quot;offer&quot; a way to &quot;set&quot; it using our input.</p>
-<p>Now it the three distinct concepts --- the input, output, and state --- should be clear.</p>
+<h4 id="the-opaque-state">The opaque state</h4>
+<p>It’s a little tricky because the “output” and the “state” in our example function seem to be exactly the same (just like for <code>myStream</code>), but let’s whip up a quick example where it’s a little more obvious that the state and the output are different things, and that the state is completely opaque and encapsulated.</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L58-64</span></a>
+<a class="sourceLine" id="cb29-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb29-3" data-line-number="3"><span class="ot">isEvenAuto ::</span> <span class="dt">Auto</span> (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb29-4" data-line-number="4">isEvenAuto <span class="fu">=</span> isEvenAutoFrom <span class="dv">1</span></a>
+<a class="sourceLine" id="cb29-5" data-line-number="5">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb29-6" data-line-number="6"><span class="ot">    isEvenAutoFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Auto</span> (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb29-7" data-line-number="7">    isEvenAutoFrom n <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \reset <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb29-8" data-line-number="8">      <span class="kw">let</span> c <span class="fu">=</span> fromMaybe n reset</a>
+<a class="sourceLine" id="cb29-9" data-line-number="9">      <span class="kw">in</span>  ( even c, isEvenAutoFrom (c <span class="fu">+</span> <span class="dv">1</span>) )</a></code></pre></div>
+<p>So <code>isEvenAuto</code> is the same as <code>settableCounterFrom</code>, except instead of “yielding”/“outputting” <code>n</code>, it outputs <code>even n</code> — <code>True</code> if <code>n</code> is even and <code>False</code> if <code>n</code> is odd.</p>
+<p>Here is a demonstration of its behavior —</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb30-1" data-line-number="1">ghci<span class="fu">&gt;</span> testAuto isEvenAuto  [ <span class="dt">Nothing</span>, <span class="dt">Nothing</span>, <span class="dt">Just</span> <span class="dv">10</span></a>
+<a class="sourceLine" id="cb30-2" data-line-number="2">                           , <span class="dt">Nothing</span>, <span class="dt">Nothing</span>, <span class="dt">Just</span> (<span class="fu">-</span><span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb30-3" data-line-number="3">                           , <span class="dt">Nothing</span> ]</a>
+<a class="sourceLine" id="cb30-4" data-line-number="4">[<span class="dt">False</span>,<span class="dt">True</span>,<span class="dt">True</span>,<span class="dt">False</span>,<span class="dt">True</span>]</a></code></pre></div>
+<p>Note that there is in general really no way to ever access the <code>n</code> internally (in fact, like we said before, it is in theory possible because we can’t even know its type). It is completely sealed off from the world, except by our explicit design. Here, we choose to only “offer” a way to “set” it using our input.</p>
+<p>Now it the three distinct concepts — the input, output, and state — should be clear.</p>
 <ul>
-<li>The &quot;input&quot; again is a <code>Maybe Int</code> where we can choose to reset the march of the state.</li>
-<li>The &quot;output&quot; here is now a <code>Bool</code> that says whether or not the internal state is even.</li>
-<li>The &quot;state&quot; here is still that <code>n</code> (an <code>Int</code>), and was the same as in the last example. But here it is more clear that the state is inaccessible in general. We can only modify it in ways that the Auto <em>itself</em> allows our &quot;input&quot; (in this case, a setter) to modify it. And we certainly can't arbitrarily &quot;read&quot; it.</li>
+<li>The “input” again is a <code>Maybe Int</code> where we can choose to reset the march of the state.</li>
+<li>The “output” here is now a <code>Bool</code> that says whether or not the internal state is even.</li>
+<li>The “state” here is still that <code>n</code> (an <code>Int</code>), and was the same as in the last example. But here it is more clear that the state is inaccessible in general. We can only modify it in ways that the Auto <em>itself</em> allows our “input” (in this case, a setter) to modify it. And we certainly can’t arbitrarily “read” it.</li>
 </ul>
-<h3>Autos are nice!</h3>
+<h3 id="autos-are-nice">Autos are nice!</h3>
 <p>It should be clear now that Autos are a more or less straightforward extension of Streams.</p>
 <p>In fact, you might see that every <code>Stream b</code> is equivalent to <code>Auto () b</code>, where the input is always unit.</p>
 <p>Autos correspond loosely to the mathematical <a href="http://en.wikipedia.org/wiki/Mealy_machine">Mealy machine</a>, but again with technically potentially infinitely many possible states, input, and output values.</p>
 <p>Now, we have a way to model behaviors that can somehow interact with the outside world.</p>
-<h4>More on state</h4>
-<p>As we have seen, Auto's carry all of the hidden-internal-state features of Streams. The type of an Auto (<code>Auto a b</code>) reveals the type of the &quot;input&quot; and the &quot;ouput&quot;...but it never reveals nor fixes the type of the &quot;state&quot;. The type of the state is not only unknown, by possibly dynamically changing over the course of the Auto's progression.</p>
+<h4 id="more-on-state">More on state</h4>
+<p>As we have seen, Auto’s carry all of the hidden-internal-state features of Streams. The type of an Auto (<code>Auto a b</code>) reveals the type of the “input” and the “ouput”…but it never reveals nor fixes the type of the “state”. The type of the state is not only unknown, by possibly dynamically changing over the course of the Auto’s progression.</p>
 <p>What Auto offers over Stream is then a way for the outside world to access and modify the state <em>if the Auto wants it to</em>. Now, we can design Autos that, like we have seen with <code>settableAuto</code>, we can offer limited ways to allow the world to modify the state on our own terms.</p>
-<h3>The Accumulator</h3>
-<p>Let's try our hand at another Auto, but instead of looking at things as an influencable and eternally marching stream, we're going to try to look at things as a function with state that affects its output.</p>
-<p>How about an Auto that &quot;accumulates&quot; and &quot;sums up&quot; all of its incoming inputs, starting at 0? More correctly, an Auto that, given any int, &quot;returns&quot; the sum of that int with all of the previous ints it has received in its lifetime.</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L67-73 -- interactive: https://www.fpcomplete.com/user/jle/machines summer :: Num a =&gt; Auto a a summer = sumFrom 0 where sumFrom :: Num a =&gt; a -&gt; Auto a a sumFrom n = ACons $ \input -&gt; let s = n + input in ( s , sumFrom s ) ~~~</p>
-<p>~~~haskell ghci&gt; let (out1, auto1) = runAuto summer 10 ghci&gt; out1 10 ghci&gt; let (out2, auto2) = runAuto auto1 3 ghci&gt; out2 13 ghci&gt; testAuto_ auto2 [15,-17,6,0,-1] [28,11,17,17,16] ~~~</p>
+<h3 id="the-accumulator">The Accumulator</h3>
+<p>Let’s try our hand at another Auto, but instead of looking at things as an influencable and eternally marching stream, we’re going to try to look at things as a function with state that affects its output.</p>
+<p>How about an Auto that “accumulates” and “sums up” all of its incoming inputs, starting at 0? More correctly, an Auto that, given any int, “returns” the sum of that int with all of the previous ints it has received in its lifetime.</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L67-73</span></a>
+<a class="sourceLine" id="cb31-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb31-3" data-line-number="3"><span class="ot">summer ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Auto</span> a a</a>
+<a class="sourceLine" id="cb31-4" data-line-number="4">summer <span class="fu">=</span> sumFrom <span class="dv">0</span></a>
+<a class="sourceLine" id="cb31-5" data-line-number="5">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb31-6" data-line-number="6"><span class="ot">    sumFrom ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Auto</span> a a</a>
+<a class="sourceLine" id="cb31-7" data-line-number="7">    sumFrom n <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \input <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb31-8" data-line-number="8">      <span class="kw">let</span> s <span class="fu">=</span> n <span class="fu">+</span> input</a>
+<a class="sourceLine" id="cb31-9" data-line-number="9">      <span class="kw">in</span>  ( s , sumFrom s )</a></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb32-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (out1, auto1) <span class="fu">=</span> runAuto summer <span class="dv">10</span></a>
+<a class="sourceLine" id="cb32-2" data-line-number="2">ghci<span class="fu">&gt;</span> out1</a>
+<a class="sourceLine" id="cb32-3" data-line-number="3"><span class="dv">10</span></a>
+<a class="sourceLine" id="cb32-4" data-line-number="4">ghci<span class="fu">&gt;</span> <span class="kw">let</span> (out2, auto2) <span class="fu">=</span> runAuto auto1 <span class="dv">3</span></a>
+<a class="sourceLine" id="cb32-5" data-line-number="5">ghci<span class="fu">&gt;</span> out2</a>
+<a class="sourceLine" id="cb32-6" data-line-number="6"><span class="dv">13</span></a>
+<a class="sourceLine" id="cb32-7" data-line-number="7">ghci<span class="fu">&gt;</span> testAuto_ auto2 [<span class="dv">15</span>,<span class="fu">-</span><span class="dv">17</span>,<span class="dv">6</span>,<span class="dv">0</span>,<span class="fu">-</span><span class="dv">1</span>]</a>
+<a class="sourceLine" id="cb32-8" data-line-number="8">[<span class="dv">28</span>,<span class="dv">11</span>,<span class="dv">17</span>,<span class="dv">17</span>,<span class="dv">16</span>]</a></code></pre></div>
 <ul>
-<li>The &quot;input&quot; is our incoming <code>Int</code> --- 10, 3, 15, -17, etc.</li>
-<li>The &quot;output&quot; is the accumulated sum/integral -- 10, 13, 28, 11, etc.</li>
-<li>The &quot;state&quot; in this case is the accumulator, which in this case stays in sync with the output. But remember that this is not the case in general.</li>
+<li>The “input” is our incoming <code>Int</code> — 10, 3, 15, -17, etc.</li>
+<li>The “output” is the accumulated sum/integral – 10, 13, 28, 11, etc.</li>
+<li>The “state” in this case is the accumulator, which in this case stays in sync with the output. But remember that this is not the case in general.</li>
 </ul>
-<p>Just for kicks, let's generalize this and make an Auto version of <code>foldl</code> (technically, more like <code>scanl</code>): give us an operator and an initial value, and we'll &quot;fold up&quot; all of our inputs.</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L78-84 -- interactive: https://www.fpcomplete.com/user/jle/machines autoFold :: forall a b. (b -&gt; a -&gt; b) -&gt; b -&gt; Auto a b autoFold op init = foldFrom init where foldFrom :: b -&gt; Auto a b foldFrom x = ACons $ \input -&gt; let y = x <code>op</code> input in ( y, foldFrom y ) ~~~</p>
+<p>Just for kicks, let’s generalize this and make an Auto version of <code>foldl</code> (technically, more like <code>scanl</code>): give us an operator and an initial value, and we’ll “fold up” all of our inputs.</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L78-84</span></a>
+<a class="sourceLine" id="cb33-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb33-3" data-line-number="3"><span class="ot">autoFold ::</span> forall a b<span class="fu">.</span> (b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Auto</span> a b</a>
+<a class="sourceLine" id="cb33-4" data-line-number="4">autoFold op init <span class="fu">=</span> foldFrom init</a>
+<a class="sourceLine" id="cb33-5" data-line-number="5">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb33-6" data-line-number="6"><span class="ot">    foldFrom ::</span> b <span class="ot">-&gt;</span> <span class="dt">Auto</span> a b</a>
+<a class="sourceLine" id="cb33-7" data-line-number="7">    foldFrom x <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \input <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb33-8" data-line-number="8">      <span class="kw">let</span> y <span class="fu">=</span> x <span class="ot">`op`</span> input</a>
+<a class="sourceLine" id="cb33-9" data-line-number="9">      <span class="kw">in</span>  ( y, foldFrom y )</a></code></pre></div>
 <p>(the <code>forall</code> is used with the <a href="http://www.haskell.org/haskellwiki/Scoped_type_variables">Scoped Type Variables</a> extension to let us say that the <code>b</code> we mention in the type of <code>foldFrom</code> is the same as the <code>b</code> in the type of <code>autoFold</code>. If we leave off the type signature of <code>foldFrom</code>, this is not necessary)</p>
 <p>Note that <code>summer</code> then is just <code>autoFold (+) 0</code>.</p>
-<p>You can probably imagine lots of different folds you can turn into <code>autoFold</code>s...and indeed a lot of practical Autos are just <code>autoFold</code>s. Here are some cute ones:</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L92-107 -- interactive: https://www.fpcomplete.com/user/jle/machines accumulateIntoList :: Auto a [a] accumulateIntoList = autoFold (flip (:)) []</p>
-<p>productor :: Num a =&gt; Auto a a productor = autoFold (*) 1</p>
-<p>accumulateStrings :: Auto String String accumulateStrings = autoFold (++) &quot;&quot;</p>
-<p>monoidAccum :: Monoid a =&gt; Auto a a monoidAccum = autoFold mappend mempty ~~~</p>
+<p>You can probably imagine lots of different folds you can turn into <code>autoFold</code>s…and indeed a lot of practical Autos are just <code>autoFold</code>s. Here are some cute ones:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb34-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L92-107</span></a>
+<a class="sourceLine" id="cb34-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span></a>
+<a class="sourceLine" id="cb34-3" data-line-number="3"><span class="ot">accumulateIntoList ::</span> <span class="dt">Auto</span> a [a]</a>
+<a class="sourceLine" id="cb34-4" data-line-number="4">accumulateIntoList <span class="fu">=</span> autoFold (flip (<span class="fu">:</span>)) []</a>
+<a class="sourceLine" id="cb34-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb34-6" data-line-number="6"><span class="ot">productor ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Auto</span> a a</a>
+<a class="sourceLine" id="cb34-7" data-line-number="7">productor <span class="fu">=</span> autoFold (<span class="fu">*</span>) <span class="dv">1</span></a>
+<a class="sourceLine" id="cb34-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb34-9" data-line-number="9"><span class="ot">accumulateStrings ::</span> <span class="dt">Auto</span> <span class="dt">String</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb34-10" data-line-number="10">accumulateStrings <span class="fu">=</span> autoFold (<span class="fu">++</span>) <span class="st">&quot;&quot;</span></a>
+<a class="sourceLine" id="cb34-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb34-12" data-line-number="12"><span class="ot">monoidAccum ::</span> <span class="dt">Monoid</span> a <span class="ot">=&gt;</span> <span class="dt">Auto</span> a a</a>
+<a class="sourceLine" id="cb34-13" data-line-number="13">monoidAccum <span class="fu">=</span> autoFold mappend mempty</a></code></pre></div>
 <p>Cool, huh?</p>
-<h4>Parallels with list folds</h4>
-<p>Let's look very carefully at a comparison between the type signature of Prelude's <code>foldl</code> and the type signature of <code>autoFold</code>:</p>
-<p>~~~haskell foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; ([a] -&gt; b) autoFold :: (b -&gt; a -&gt; b) -&gt; b -&gt; Auto a b ~~~</p>
-<p>Hm. Let's do some rearranging. Remember that in Haskell, <code>(-&gt;)</code> is just an infix type operator. So we can always rewrite <code>a -&gt; b</code> as <code>(-&gt;) a b</code></p>
-<p>~~~haskell foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; ( (-&gt;) [a] b ) autoFold :: (b -&gt; a -&gt; b) -&gt; b -&gt; ( Auto a b ) ~~~</p>
-<p>Let's get rid of some of the points, too:</p>
-<p>~~~haskell foldl op initial :: (-&gt;) [a] b autoFold op initial :: Auto a b ~~~</p>
+<h4 id="parallels-with-list-folds">Parallels with list folds</h4>
+<p>Let’s look very carefully at a comparison between the type signature of Prelude’s <code>foldl</code> and the type signature of <code>autoFold</code>:</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb35-1" data-line-number="1">foldl<span class="ot">      ::</span> (b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> ([a] <span class="ot">-&gt;</span> b)</a>
+<a class="sourceLine" id="cb35-2" data-line-number="2"><span class="ot">autoFold   ::</span> (b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span>  <span class="dt">Auto</span> a b</a></code></pre></div>
+<p>Hm. Let’s do some rearranging. Remember that in Haskell, <code>(-&gt;)</code> is just an infix type operator. So we can always rewrite <code>a -&gt; b</code> as <code>(-&gt;) a b</code></p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb36-1" data-line-number="1">foldl<span class="ot">      ::</span> (b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> ( (<span class="ot">-&gt;</span>) [a] b )</a>
+<a class="sourceLine" id="cb36-2" data-line-number="2"><span class="ot">autoFold   ::</span> (b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> ( <span class="dt">Auto</span>  a  b )</a></code></pre></div>
+<p>Let’s get rid of some of the points, too:</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb37-1" data-line-number="1">foldl    op<span class="ot"> initial  ::</span> (<span class="ot">-&gt;</span>) [a] b</a>
+<a class="sourceLine" id="cb37-2" data-line-number="2">autoFold op<span class="ot"> initial  ::</span> <span class="dt">Auto</span>  a  b</a></code></pre></div>
 <p>So both <code>foldl</code> and <code>autoFold</code> have very similar behaviors:</p>
-<p>Give <code>foldl</code> or <code>autoFold</code> an <em>accumulating function</em> and an <em>initial value</em>, and they return <em>a new &quot;function thing&quot;</em>.</p>
-<p>For <code>foldl op initial</code>, this &quot;function thing&quot; takes a <em>list</em> of <code>a</code> values and condenses them into a <code>b</code> value.</p>
-<p>For <code>autoFold op initial</code>, the &quot;function thing&quot; takes <em>one</em> <code>a</code> value and returns a <code>b</code> value based on the previous <code>a</code>'s it has seen.</p>
-<p>The main point here is that <code>autoFold</code> is a sort of &quot;function&quot; in a way...just like the others before it. It's a....&quot;function-like thing&quot;.</p>
-<p>&lt;div class=&quot;note&quot;&gt; <strong>Aside</strong></p>
-<p>Here is a quick diversion, if you're up for it. This doesn't really have too much to do with the rest of the post, but it'll help you test your intuition a bit with Autos.</p>
+<p>Give <code>foldl</code> or <code>autoFold</code> an <em>accumulating function</em> and an <em>initial value</em>, and they return <em>a new “function thing”</em>.</p>
+<p>For <code>foldl op initial</code>, this “function thing” takes a <em>list</em> of <code>a</code> values and condenses them into a <code>b</code> value.</p>
+<p>For <code>autoFold op initial</code>, the “function thing” takes <em>one</em> <code>a</code> value and returns a <code>b</code> value based on the previous <code>a</code>’s it has seen.</p>
+<p>The main point here is that <code>autoFold</code> is a sort of “function” in a way…just like the others before it. It’s a….“function-like thing”.</p>
+<div class="note">
+<p><strong>Aside</strong></p>
+<p>Here is a quick diversion, if you’re up for it. This doesn’t really have too much to do with the rest of the post, but it’ll help you test your intuition a bit with Autos.</p>
 <p>As an exercise, compare (and contrast) these three functions of identical type signatures:</p>
-<p>~~~haskell map f :: [a] -&gt; [b] scanl op initial :: [a] -&gt; [b] testAuto_ auto :: [a] -&gt; [b] ~~~</p>
-<p>(Assume that <code>scanl</code> does not include the initial accumulator...that is, we are really talking about <code>drop 1 . scanl op init</code>)</p>
-<p>Compare what they do conceptually. Then, for fun, try implementing some of them in terms of the other. Which re-implementations are possible? Which ones aren't? &lt;/div&gt;</p>
-<h3>More Auto examples</h3>
-<p><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L111-176">I've thrown up a few auto examples</a> <a href="https://www.fpcomplete.com/user/jle/machines">that you can run online</a> so you can try it out and see how different ones work. Don't get too attached to them, because we will later be re-implementing them as compositions of smaller, simpler building blocks.</p>
-<p><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L111-122">rollingAverage</a> : <code>rollingAverage n :: Fractional a =&gt; Auto a a</code> outputs a rolling average of the last <code>n</code> values it has encountered</p>
-<p>~~~haskell ghci&gt; testAuto_ (rollingAverage 4) [2,8,4,5,1,8,3,5,1,1,8,3,5,9,2] [2.0 ,5.0 ,4.67,4.75,4.5 ,4.5 ,4.25,4.25,4.25,2.5 ,3.75,3.25,4.25,6.25,4.75] ~~~</p>
-<p><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L125-146">onFor</a> : <code>onFor p i :: Auto a Bool</code> normally outputs <code>False</code>...except whenever the input matches the given predicate <code>p :: a -&gt; Bool</code>. Then it stays &quot;on&quot; (<code>True</code>) for <code>i</code> steps.</p>
-<p>~~~haskell ghci&gt; :t onFor even 3 onFor even 3 :: Auto Int Bool ghci&gt; testAuto_ (onFor even 3) [1,1,2,1,1,1,1,4,1,6,1,1,1,1] [ False, False, True , True , True , False, False, True , True , True , True , True , False, False ] ~~~</p>
-<p><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L149-176">autoMap</a> : <code>autoMap cap :: Auto (Command k v) (Maybe v)</code> is a neat one. It internally holds a <a href="http://hackage.haskell.org/package/containers-0.5.4.0/docs/Data-Map.html">Map</a> (a key-value store) --- you can give it <code>[Command][]</code> data types that tell it to insert, lookup, and delete values. However, it enforces a maximum of items.</p>
-<pre><code>The main thing to note here is that you get to completely encapsulate your
-&quot;state&quot;, and allow it only to be &quot;modified&quot; or &quot;viewed&quot; under your own
-terms. In OOP terms, it is like exposing only a few public methods to
-modify your private state with discrimination.  If you were passed an
-`autoMap` with items already inside, you would have no way to have full
-&quot;access&quot; to the map --- you would never be able to perform general
-operations (such as getting a list of all of the keys).</code></pre>
-<p>~~~haskell ghci&gt; testAuto_ (autoMap 3) | [ Insert &quot;hello&quot; 7 | , Insert &quot;world&quot; 10 | , Insert &quot;foo&quot; 12 | , Insert &quot;bar&quot; 15 | , Delete &quot;baz&quot; | , Delete &quot;world&quot; | , Insert &quot;haskell&quot; 19 | , Lookup &quot;world&quot; | , Lookup &quot;hello&quot; | ] [ Just 7 , Just 10, Just 12 , Nothing, Nothing, Just 10 , Just 19, Nothing, Just 7 ] ~~~</p>
-<h2>&quot;Function Things&quot;</h2>
+<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1">map<span class="ot">       f          ::</span> [a] <span class="ot">-&gt;</span> [b]</a>
+<a class="sourceLine" id="cb38-2" data-line-number="2">scanl     op<span class="ot"> initial ::</span> [a] <span class="ot">-&gt;</span> [b]</a>
+<a class="sourceLine" id="cb38-3" data-line-number="3">testAuto_<span class="ot"> auto       ::</span> [a] <span class="ot">-&gt;</span> [b]</a></code></pre></div>
+<p>(Assume that <code>scanl</code> does not include the initial accumulator…that is, we are really talking about <code>drop 1 . scanl op init</code>)</p>
+<p>Compare what they do conceptually. Then, for fun, try implementing some of them in terms of the other. Which re-implementations are possible? Which ones aren’t?</p>
+</div>
+<h3 id="more-auto-examples">More Auto examples</h3>
+<p><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L111-176">I’ve thrown up a few auto examples</a> <a href="https://www.fpcomplete.com/user/jle/machines">that you can run online</a> so you can try it out and see how different ones work. Don’t get too attached to them, because we will later be re-implementing them as compositions of smaller, simpler building blocks.</p>
+<dl>
+<dt><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L111-122">rollingAverage</a></dt>
+<dd><code>rollingAverage n :: Fractional a =&gt; Auto a a</code> outputs a rolling average of the last <code>n</code> values it has encountered
+</dd>
+</dl>
+<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1">ghci<span class="fu">&gt;</span> testAuto_ (rollingAverage <span class="dv">4</span>) [<span class="dv">2</span>,<span class="dv">8</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">1</span>,<span class="dv">8</span>,<span class="dv">3</span>,<span class="dv">5</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">8</span>,<span class="dv">3</span>,<span class="dv">5</span>,<span class="dv">9</span>,<span class="dv">2</span>]</a>
+<a class="sourceLine" id="cb39-2" data-line-number="2">[<span class="fl">2.0</span> ,<span class="fl">5.0</span> ,<span class="fl">4.67</span>,<span class="fl">4.75</span>,<span class="fl">4.5</span></a>
+<a class="sourceLine" id="cb39-3" data-line-number="3">,<span class="fl">4.5</span> ,<span class="fl">4.25</span>,<span class="fl">4.25</span>,<span class="fl">4.25</span>,<span class="fl">2.5</span></a>
+<a class="sourceLine" id="cb39-4" data-line-number="4">,<span class="fl">3.75</span>,<span class="fl">3.25</span>,<span class="fl">4.25</span>,<span class="fl">6.25</span>,<span class="fl">4.75</span>]</a></code></pre></div>
+<dl>
+<dt><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L125-146">onFor</a></dt>
+<dd><code>onFor p i :: Auto a Bool</code> normally outputs <code>False</code>…except whenever the input matches the given predicate <code>p :: a -&gt; Bool</code>. Then it stays “on” (<code>True</code>) for <code>i</code> steps.
+</dd>
+</dl>
+<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t onFor even <span class="dv">3</span></a>
+<a class="sourceLine" id="cb40-2" data-line-number="2">onFor even <span class="dv">3</span><span class="ot"> ::</span> <span class="dt">Auto</span> <span class="dt">Int</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb40-3" data-line-number="3">ghci<span class="fu">&gt;</span> testAuto_ (onFor even <span class="dv">3</span>) [<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">4</span>,<span class="dv">1</span>,<span class="dv">6</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>]</a>
+<a class="sourceLine" id="cb40-4" data-line-number="4">[ <span class="dt">False</span>, <span class="dt">False</span>, <span class="dt">True</span> , <span class="dt">True</span> , <span class="dt">True</span></a>
+<a class="sourceLine" id="cb40-5" data-line-number="5">, <span class="dt">False</span>, <span class="dt">False</span>, <span class="dt">True</span> , <span class="dt">True</span> , <span class="dt">True</span></a>
+<a class="sourceLine" id="cb40-6" data-line-number="6">, <span class="dt">True</span> , <span class="dt">True</span> , <span class="dt">False</span>, <span class="dt">False</span> ]</a></code></pre></div>
+<dl>
+<dt><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L149-176">autoMap</a></dt>
+<dd><p><code>autoMap cap :: Auto (Command k v) (Maybe v)</code> is a neat one. It internally holds a <a href="http://hackage.haskell.org/package/containers-0.5.4.0/docs/Data-Map.html">Map</a> (a key-value store) — you can give it <code>[Command][]</code> data types that tell it to insert, lookup, and delete values. However, it enforces a maximum of items.</p>
+<p>The main thing to note here is that you get to completely encapsulate your “state”, and allow it only to be “modified” or “viewed” under your own terms. In OOP terms, it is like exposing only a few public methods to modify your private state with discrimination. If you were passed an <code>autoMap</code> with items already inside, you would have no way to have full “access” to the map — you would never be able to perform general operations (such as getting a list of all of the keys).</p>
+</dd>
+</dl>
+<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1">ghci<span class="fu">&gt;</span> testAuto_ (autoMap <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb41-2" data-line-number="2">    <span class="fu">|</span>   [ <span class="dt">Insert</span> <span class="st">&quot;hello&quot;</span> <span class="dv">7</span></a>
+<a class="sourceLine" id="cb41-3" data-line-number="3">    <span class="fu">|</span>   , <span class="dt">Insert</span> <span class="st">&quot;world&quot;</span> <span class="dv">10</span></a>
+<a class="sourceLine" id="cb41-4" data-line-number="4">    <span class="fu">|</span>   , <span class="dt">Insert</span> <span class="st">&quot;foo&quot;</span> <span class="dv">12</span></a>
+<a class="sourceLine" id="cb41-5" data-line-number="5">    <span class="fu">|</span>   , <span class="dt">Insert</span> <span class="st">&quot;bar&quot;</span> <span class="dv">15</span></a>
+<a class="sourceLine" id="cb41-6" data-line-number="6">    <span class="fu">|</span>   , <span class="dt">Delete</span> <span class="st">&quot;baz&quot;</span></a>
+<a class="sourceLine" id="cb41-7" data-line-number="7">    <span class="fu">|</span>   , <span class="dt">Delete</span> <span class="st">&quot;world&quot;</span></a>
+<a class="sourceLine" id="cb41-8" data-line-number="8">    <span class="fu">|</span>   , <span class="dt">Insert</span> <span class="st">&quot;haskell&quot;</span> <span class="dv">19</span></a>
+<a class="sourceLine" id="cb41-9" data-line-number="9">    <span class="fu">|</span>   , <span class="dt">Lookup</span> <span class="st">&quot;world&quot;</span></a>
+<a class="sourceLine" id="cb41-10" data-line-number="10">    <span class="fu">|</span>   , <span class="dt">Lookup</span> <span class="st">&quot;hello&quot;</span></a>
+<a class="sourceLine" id="cb41-11" data-line-number="11">    <span class="fu">|</span>   ]</a>
+<a class="sourceLine" id="cb41-12" data-line-number="12">[ <span class="dt">Just</span> <span class="dv">7</span> , <span class="dt">Just</span> <span class="dv">10</span>, <span class="dt">Just</span> <span class="dv">12</span></a>
+<a class="sourceLine" id="cb41-13" data-line-number="13">, <span class="dt">Nothing</span>, <span class="dt">Nothing</span>, <span class="dt">Just</span> <span class="dv">10</span></a>
+<a class="sourceLine" id="cb41-14" data-line-number="14">, <span class="dt">Just</span> <span class="dv">19</span>, <span class="dt">Nothing</span>, <span class="dt">Just</span> <span class="dv">7</span>  ]</a></code></pre></div>
+<h2 id="function-things">“Function Things”</h2>
 <p>Anyways, back to our main point of emphasis:</p>
 <p><em>Autos are function-like things</em>.</p>
-<p>They are functions...<em>with (self-contained) state</em>.</p>
-<p>Let's do an analysis for <code>isEvenAuto</code> like the one we did with <code>foldAuto</code>. Our &quot;input&quot; was a <code>Maybe Int</code> and our &quot;output&quot; was a <code>Bool</code>.</p>
-<p>You can think of <code>isEvenAuto</code> as a &quot;function thing&quot; from <code>Maybe Int</code> to <code>Bool</code>.</p>
-<p>Here's another function from <code>Maybe Int</code> to <code>Bool</code>: (I'm going to be using the prefix form of <code>(-&gt;)</code> a lot from now on)</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L181-182 maybeIsEven :: (-&gt;) (Maybe Int) Bool maybeIsEven = even . fromMaybe 1 ~~~</p>
-<p><code>maybeIsEven</code> returns <code>True</code> when value inside the <code>Just</code> is even, or <code>False</code> if the value is odd or it's a <code>Nothing</code>.</p>
+<p>They are functions…<em>with (self-contained) state</em>.</p>
+<p>Let’s do an analysis for <code>isEvenAuto</code> like the one we did with <code>foldAuto</code>. Our “input” was a <code>Maybe Int</code> and our “output” was a <code>Bool</code>.</p>
+<p>You can think of <code>isEvenAuto</code> as a “function thing” from <code>Maybe Int</code> to <code>Bool</code>.</p>
+<p>Here’s another function from <code>Maybe Int</code> to <code>Bool</code>: (I’m going to be using the prefix form of <code>(-&gt;)</code> a lot from now on)</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L181-182</span></a>
+<a class="sourceLine" id="cb42-2" data-line-number="2"><span class="ot">maybeIsEven ::</span> (<span class="ot">-&gt;</span>) (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb42-3" data-line-number="3">maybeIsEven <span class="fu">=</span> even <span class="fu">.</span> fromMaybe <span class="dv">1</span></a></code></pre></div>
+<p><code>maybeIsEven</code> returns <code>True</code> when value inside the <code>Just</code> is even, or <code>False</code> if the value is odd or it’s a <code>Nothing</code>.</p>
 <p>Compare that type signature to that of our <code>isEvenAuto</code></p>
-<p>~~~haskell maybeIsEven :: (-&gt;) (Maybe Int) Bool isEvenAuto :: Auto (Maybe Int) Bool ~~~</p>
-<p><code>maybeIsEven</code> and <code>isEvenAuto</code> are <em>both</em> &quot;function-like things&quot;. But whereas <code>maybeIsEven</code> is &quot;memoryless&quot; (it's the same every time you call it), <code>isEvenAuto</code> <em>has memory</em> --- it returns a different Boolean based on its history.</p>
-<p>Contrast this with a Stream, which as we have seen is just an <code>Auto () b</code>. Streams are then &quot;function like things&quot; analogous to some <code>(-&gt;) () b</code>, or <code>() -&gt; b</code>. We can call functions like <code>() -&gt; b</code> &quot;constants&quot;, or &quot;producers&quot;. They are the same every time you call them or ask for them. Streams, however, &quot;return&quot; a potentially different <code>b</code> value every time they are &quot;asked for&quot;. So, just like an Auto is a &quot;function&quot; that has memory, a Stream is like a &quot;constant&quot; that has memory. A stateful generator. A &quot;constant&quot; that returns something different every time you ask for it.</p>
-<p>Anyway, you should be able to guess that, after vaguely using the phrase &quot;function things&quot; several times...I'm going to surprise you all with the revelation that the general class of these &quot;function things&quot; have a name! And maybe even...a typeclass?</p>
-<h2>Onward</h2>
-<p>So far we haven't really made too convincing of an argument for the advantages of using machines (like Auto and the related Wire). Yeah, they provide encapsulation and a changing state...but these things come for free in most good Object-Oriented Programming languages. So what gives?</p>
-<p>As it turns out, as we suggested before, Autos are potentially more &quot;composable&quot; than the objects of OOP. That is because, at their heart, they are just functions. And what do functions do best (as every functional programmer knows)? They compose! Complex object built seamlessly from simpler ones.</p>
-<p>Now, I haven't really been able to back this up so far. We've only scratched the surface, and we haven't even considered function-like things that can return other function-like things. But in the next post, as we explore more the function-like nature of these things, we will be able to witness more of the full power of machine composition. And we'll even be able to re-implement <em>many</em> of the complex machines of this post with compositions of smaller, simpler Autos.</p></div><footer><ul class="entry-series"><li><div>This entry is a part of a series called <b>&quot;Intro to Machines and Arrows&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+intro-to-machines-and-arrows.html" class="tag-a-series" title="+Intro to Machines and Arrows"> series history</a>.</div></li></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/arrows.html" class="tag-a-tag">#arrows</a></li><li><a href="https://blog.jle.im/entries/tagged/auto-machines.html" class="tag-a-tag">#auto-machines</a></li><li><a href="https://blog.jle.im/entries/tagged/functional-reactive-programming.html" class="tag-a-tag">#functional reactive programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/machines.html" class="tag-a-tag">#machines</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@ramblings.html" class="tag-a-category">@RAMBLINGS</a></li><li><a href="https://blog.jle.im/entries/series/+intro-to-machines-and-arrows.html" class="tag-a-series">+Intro to Machines and Arrows</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="prev-entry-link">&larr; <a href="https://blog.jle.im/entry/blog-engine-updates-markdown-preprocessor-fay-scripts.html">Blog engine updates: Markdown Preprocessor &amp; Fay Scripts</a> (Previous)</li><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-1-trees.html">Streaming Huffman Compression in Haskell (Part 1: Trees and State)</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
+<div class="sourceCode" id="cb43"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="ot">maybeIsEven ::</span> (<span class="ot">-&gt;</span>) (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb43-2" data-line-number="2"><span class="ot">isEvenAuto  ::</span> <span class="dt">Auto</span> (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Bool</span></a></code></pre></div>
+<p><code>maybeIsEven</code> and <code>isEvenAuto</code> are <em>both</em> “function-like things”. But whereas <code>maybeIsEven</code> is “memoryless” (it’s the same every time you call it), <code>isEvenAuto</code> <em>has memory</em> — it returns a different Boolean based on its history.</p>
+<p>Contrast this with a Stream, which as we have seen is just an <code>Auto () b</code>. Streams are then “function like things” analogous to some <code>(-&gt;) () b</code>, or <code>() -&gt; b</code>. We can call functions like <code>() -&gt; b</code> “constants”, or “producers”. They are the same every time you call them or ask for them. Streams, however, “return” a potentially different <code>b</code> value every time they are “asked for”. So, just like an Auto is a “function” that has memory, a Stream is like a “constant” that has memory. A stateful generator. A “constant” that returns something different every time you ask for it.</p>
+<p>Anyway, you should be able to guess that, after vaguely using the phrase “function things” several times…I’m going to surprise you all with the revelation that the general class of these “function things” have a name! And maybe even…a typeclass?</p>
+<h2 id="onward">Onward</h2>
+<p>So far we haven’t really made too convincing of an argument for the advantages of using machines (like Auto and the related Wire). Yeah, they provide encapsulation and a changing state…but these things come for free in most good Object-Oriented Programming languages. So what gives?</p>
+<p>As it turns out, as we suggested before, Autos are potentially more “composable” than the objects of OOP. That is because, at their heart, they are just functions. And what do functions do best (as every functional programmer knows)? They compose! Complex object built seamlessly from simpler ones.</p>
+<p>Now, I haven’t really been able to back this up so far. We’ve only scratched the surface, and we haven’t even considered function-like things that can return other function-like things. But in the next post, as we explore more the function-like nature of these things, we will be able to witness more of the full power of machine composition. And we’ll even be able to re-implement <em>many</em> of the complex machines of this post with compositions of smaller, simpler Autos.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>It is somewhat important to note here that the semantics of FRP do not inherently involve machines. We’ll learn more about this later. For now, remember that this series will chiefly study the low-level <em>implementation</em> of AFRP, which may or may not be related to the <em>semantics</em>/abstractions of FRP — in an ideal world we wouldn’t even have to worry about implementation and just work on the level of the abstractions. Unfortunately, we don’t live in an ideal world :(<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section></div><footer><ul class="entry-series"><li><div>This entry is a part of a series called <b>&quot;Intro to Machines and Arrows&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+intro-to-machines-and-arrows.html" class="tag-a-series" title="+Intro to Machines and Arrows"> series history</a>.</div></li></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/arrows.html" class="tag-a-tag">#arrows</a></li><li><a href="https://blog.jle.im/entries/tagged/auto-machines.html" class="tag-a-tag">#auto-machines</a></li><li><a href="https://blog.jle.im/entries/tagged/functional-reactive-programming.html" class="tag-a-tag">#functional reactive programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/machines.html" class="tag-a-tag">#machines</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@ramblings.html" class="tag-a-category">@RAMBLINGS</a></li><li><a href="https://blog.jle.im/entries/series/+intro-to-machines-and-arrows.html" class="tag-a-series">+Intro to Machines and Arrows</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="prev-entry-link">&larr; <a href="https://blog.jle.im/entry/blog-engine-updates-markdown-preprocessor-fay-scripts.html">Blog engine updates: Markdown Preprocessor &amp; Fay Scripts</a> (Previous)</li><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-1-trees.html">Streaming Huffman Compression in Haskell (Part 1: Trees and State)</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/intro-to-machines-arrows-part-1-stream-and.html';
     this.page.identifier = 'machines-1';
 };

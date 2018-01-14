@@ -21,6 +21,46 @@
 % use microtype if available
 \IfFileExists{microtype.sty}{\usepackage{microtype}}{}
 \usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
 \ifxetex
   \usepackage[setpagesize=false, % page size defined by xetex
               unicode=false, % unicode breaks when used with xetex
@@ -30,8 +70,8 @@
 \fi
 \hypersetup{breaklinks=true,
             bookmarks=true,
-            pdfauthor={},
-            pdftitle={},
+            pdfauthor={Justin Le},
+            pdftitle={Pipes: Streaming Huffman Compression in Haskell (Part 3)},
             colorlinks=true,
             citecolor=blue,
             urlcolor=blue,
@@ -45,18 +85,19 @@
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
 
+\title{Pipes: Streaming Huffman Compression in Haskell (Part 3)}
+\author{Justin Le}
+\date{June 26, 2014}
 
 \begin{document}
-
-\% Pipes: Streaming Huffman Compression in Haskell (Part 3) \% Justin Le \% June
-26, 2014
+\maketitle
 
 \emph{Originally posted on
 \textbf{\href{https://blog.jle.im/entry/pipes-streaming-huffman-compression-in-haskell-part-3.html}{in
 Code}}.}
 
 Let's finally finish up our Streaming Huffman Compression project by actually
-implementing the "streaming" part :) In
+implementing the ``streaming'' part :) In
 \href{http://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-1-trees}{part
 1} we looked at the data structures which we used to implement our compression
 logic; in
@@ -65,9 +106,9 @@ logic; in
 it. Finally, let's wrap it all up and actually implement a streaming interface!
 
 If we were using an imperative approach, this would usually involve some sort of
-loop -\/-\/- read a byte, process it, write the resulting byte, read the next,
-process it, write it...it's a step of instructions that a computer will be able
-to perform step-by-step.
+loop --- read a byte, process it, write the resulting byte, read the next,
+process it, write it\ldots{}it's a step of instructions that a computer will be
+able to perform step-by-step.
 
 In Haskell, when we can, we try to look for a pure, declarative approach based
 on compositions of abstractions. That's what Haskell does best, after all. So
@@ -77,12 +118,14 @@ let's see what we can do!
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/huffman}{from
 github}, so you can download it and try it out yourself!)
 
-\section{Pipes}
+\hypertarget{pipes}{%
+\section{Pipes}\label{pipes}}
 
-\subsection{Choosing Pipes}
+\hypertarget{choosing-pipes}{%
+\subsection{Choosing Pipes}\label{choosing-pipes}}
 
 So we are searching for an abstraction to handle \emph{constant-space} IO
-streaming -\/-\/- that is, we only ever have in memory exactly what we are
+streaming --- that is, we only ever have in memory exactly what we are
 processing at that moment, and nothing else. For this, there are a couple go-to
 abstractions we can use that provide this (at the low level).
 
@@ -90,7 +133,7 @@ We can use lazy IO, which basically relies on Haskell's built in laziness
 semantics that we know and love to control when IO happens. The problem here is
 that your IO actions are no longer
 \href{http://blog.jle.im/entry/the-compromiseless-reconciliation-of-i-o-and-purity}{first-class
-members} of the language -\/-\/- they are "runtime magic". You can no longer
+members} of the language --- they are ``runtime magic''. You can no longer
 really reason about when file handles are closed and exactly when reads happen.
 This really is a bit antithetical to Haskell, a language where we actually have
 the ability to move IO into a first-class member of the language and make it
@@ -100,7 +143,7 @@ There have been many solutions developed to this problem and in modern times,
 \href{https://hackage.haskell.org/package/conduit}{conduit} and
 \href{http://hackage.haskell.org/package/pipes}{pipes} have emerged, built on
 the backs of early coroutine-based libraries. These libraries are built on the
-idea of purely assembling and "declaring" the IO pipeline that you want, with
+idea of purely assembling and ``declaring'' the IO pipeline that you want, with
 each pipeline component having very explicit and comparable and
 able-to-reason-with IO read/write/close semantics.
 
@@ -120,19 +163,21 @@ expressiveness, I'm sure. I mostly chose \emph{pipes} because I wanted to
 demonstrate some of the nice reasoning that pipes enables that Haskell is so
 famous for. I also just wanted to learn it, myself :)
 
-\subsection{Before we go}
+\hypertarget{before-we-go}{%
+\subsection{Before we go}\label{before-we-go}}
 
 Before you proceed, it is recommended that you read over or are at least
 somewhat familiar with the excellent
 \href{http://hackage.haskell.org/package/pipes-4.1.2/docs/Pipes-Tutorial.html}{pipes
 tutorial}, which is a part of the actual pipes documentation. This post does not
-attempt to be a substitute for it, only a "what's next?".
+attempt to be a substitute for it, only a ``what's next?''.
 
 Now, we are going to be using a bit more than just plain old \emph{pipes} for
 our program. In addition to the libraries used in our previous parts, we're
 going to be using:
 
 \begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
   \emph{\href{http://hackage.haskell.org/package/pipes-parse}{pipes-parse}}, for
@@ -149,24 +194,25 @@ Today, our work with \emph{pipes} will revolve around a couple of main concepts:
 \begin{itemize}
 \item
   Taking two or more pipes and chaining them together to make new ones; hooking
-  up input generators ("sources", or \emph{Producers}) to pipes and to data
-  consumers ("sinks", or \emph{Consumers})
+  up input generators (``sources'', or \emph{Producers}) to pipes and to data
+  consumers (``sinks'', or \emph{Consumers})
 \item
   Taking producers and pipes and chains of pipes (which are themselves just
   pipes, by the way) and \emph{transforming} them into new producers and pipes.
 \end{itemize}
 
 If you've ever used bash/unix, the first concept is like using unix pipes to
-"declare" a chain of tools. You can do powerful things by just chaining simple
+``declare'' a chain of tools. You can do powerful things by just chaining simple
 components.
 
 The second concept relates to things to \emph{sudo} or \emph{time}; they take
-normal bash commands and "transform" them into super user commands, or
-"timeable" commands.
+normal bash commands and ``transform'' them into super user commands, or
+``timeable'' commands.
 
 And without any further delay, let's write \emph{encode.hs}!
 
-\section{Encoding}
+\hypertarget{encoding}{%
+\section{Encoding}\label{encoding}}
 
 (Remember that you can download
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs}{encode.hs}
@@ -179,7 +225,8 @@ and
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs}{Weighted.hs}
 from the previous parts of this tutorial!)
 
-\subsection{Design}
+\hypertarget{design}{%
+\subsection{Design}\label{design}}
 
 Okay, so with the above in mind, let's sketch out a rough plan. We'll talk about
 the holes in the plan later, but it's useful to see exactly what won't work, or
@@ -195,17 +242,21 @@ the given file handle.
 Those in hand, we'll need:
 
 \begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
-  A pipe that turns incoming \texttt{ByteString}s into bytes{[}\^{}bs{]}
-  (\texttt{Word8}s), emitting one at a time.
+  A pipe that turns incoming \texttt{ByteString}s into bytes\footnote{Remember,
+    a \texttt{ByteString} is an efficiently packed ``chunk''/``list'' of
+    \texttt{Word8}/bytes; we can use functions like \texttt{ByteString.unpack}
+    and \texttt{ByteString.pack} to turn a \texttt{ByteString} into a list of
+    \texttt{Word8}s or go backwards.} (\texttt{Word8}s), emitting one at a time.
 \item
   A pipe that turns incoming \texttt{Word8}s into \texttt{Direction}s, by
   looking up each \texttt{Word8} in an encoding table to get a list of
   \texttt{Direction}s and emitting them one at a time.
 \item
-  A pipe that takes in \texttt{Direction}s and "chunks them up" 8-at-a-time, and
-  re-emits those chunks of 8 as bytes/\texttt{Word8}'s.
+  A pipe that takes in \texttt{Direction}s and ``chunks them up'' 8-at-a-time,
+  and re-emits those chunks of 8 as bytes/\texttt{Word8}'s.
 \item
   A pipe that takes incoming \texttt{Word8}s and wraps them each back into
   \texttt{ByteString}s and emits them.
@@ -215,22 +266,23 @@ Sounds simple enough, right? Basically like using unix pipes!
 
 We'll be making two modifications to this plan before we go forward.
 
-\subsubsection{Leftovers}
+\hypertarget{leftovers}{%
+\subsubsection{Leftovers}\label{leftovers}}
 
 The first hole: vanilla \emph{pipes} does not have \emph{leftover support}. That
 is, the stream terminates as soon as the producer terminates.
 
 To put more technically: when a pipe is \emph{awaiting} something, there is no
-guarantee that it'll ever get anything -\/-\/- if the producer it is awaiting
-from terminates, then that's that; no chance to respond.
+guarantee that it'll ever get anything --- if the producer it is awaiting from
+terminates, then that's that; no chance to respond.
 
 This is normally not a problem, and it won't be an issue for our decoding
-program. However, we run into a problem for pipe \#3 above: we need to "clump
-up" incoming \texttt{Direction}s and emit them in groups of 8.
+program. However, we run into a problem for pipe \#3 above: we need to ``clump
+up'' incoming \texttt{Direction}s and emit them in groups of 8.
 
 This spells trouble for us, because our pipe will be merrily be waiting for
-eight Directions before clumping them up -\/-\/- until our producer terminates
-mid-clump. Then what? That final in-progress clump will be lost...forever!
+eight Directions before clumping them up --- until our producer terminates
+mid-clump. Then what? That final in-progress clump will be lost\ldots{}forever!
 
 The problem is in the semantics of pipe composition with
 \texttt{(\textgreater{}-\textgreater{})}.
@@ -247,10 +299,11 @@ high level, instead of composing pipes with
 \texttt{(\textgreater{}-\textgreater{})}, we'll \emph{transform} pipes by using
 pipe transformers/functions.
 
-So we'll modify our plan. We'll have our "\texttt{Direction} producer", which
+So we'll modify our plan. We'll have our ``\texttt{Direction} producer'', which
 consists of:
 
 \begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
   Our \texttt{ByteString} producer.
@@ -260,28 +313,31 @@ consists of:
   Our \texttt{Word8} to \texttt{Direction} pipe.
 \end{enumerate}
 
-And then we "transform" that \texttt{Direction} producer into a \texttt{Word8}
+And then we ``transform'' that \texttt{Direction} producer into a \texttt{Word8}
 producer, which we'll call \texttt{dirsBytes}:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell dirsBytes :: Producer
-Direction m r -\textgreater{} Producer Word8 m r
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{dirsBytes ::} \DataTypeTok{Producer} \DataTypeTok{Direction}\NormalTok{ m r }\OtherTok{->} \DataTypeTok{Producer} \DataTypeTok{Word8}\NormalTok{ m r}
+\end{Highlighting}
+\end{Shaded}
 
 which turns a \texttt{Direction} producer into a \texttt{Word8} producer that
-clumps up the \texttt{Direction}s into groups of 8 -\/-\/- and if the directions
-run out, pad the rest of the byte with 0's.
+clumps up the \texttt{Direction}s into groups of 8 --- and if the directions run
+out, pad the rest of the byte with 0's.
 
 \emph{pipes-parse} gives us the ability to write \texttt{dirsBytes}.
 
-\subsubsection{Perfect Packing}
+\hypertarget{perfect-packing}{%
+\subsubsection{Perfect Packing}\label{perfect-packing}}
 
 The next problem.
 
 If you've ever worked with \texttt{ByteString}s, you might have noted an
-asymmetry to what we are doing. Look closely -\/-\/- do you see it?
+asymmetry to what we are doing. Look closely --- do you see it?
 
-We \emph{read} \texttt{ByteString}s from the file -\/-\/- entire \emph{big
-chunks} of bytes/\texttt{Word8}s.
+We \emph{read} \texttt{ByteString}s from the file --- entire \emph{big chunks}
+of bytes/\texttt{Word8}s.
 
 We \emph{write} individual bytes, one at a time. That is, we emit individual
 \texttt{Word8}s, which we each individually wrap into singleton
@@ -296,85 +352,112 @@ We're not going to write it ourselves using \emph{pipes-parse};
 \emph{pipes-bytestring} (which we will import qualified as \texttt{PB}) actually
 comes with such a transformer for us.
 
-The only hitch is that it's "trapped" in a "lens", called \texttt{PB.pack}.
+The only hitch is that it's ``trapped'' in a ``lens'', called \texttt{PB.pack}.
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell PB.pack :: Lens'
-(Producer Word8 m r) (Producer ByteString m r)
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{PB.pack}\OtherTok{ ::} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Producer} \DataTypeTok{Word8}\NormalTok{ m r) (}\DataTypeTok{Producer} \DataTypeTok{ByteString}\NormalTok{ m r)}
+\end{Highlighting}
+\end{Shaded}
 
 If you are still learning lens, this basically means that \texttt{PB.pack}
 contains, among other things, a function that allows you to go from a
 \texttt{Word8} producer to a \texttt{ByteString} producer. The function
 \texttt{view} lets us unlock that pipe transformer from the lens.
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell view :: Lens' a b
--\textgreater{} (a -\textgreater{} b) -\/- in our case
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{view ::} \DataTypeTok{Lens'}\NormalTok{ a b }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ b)       }\CommentTok{-- in our case}
+\end{Highlighting}
+\end{Shaded}
 
 So,
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell view PB.pack ::
-Producer Word8 m r -\textgreater{} Producer ByteString m r
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{view PB.pack}\OtherTok{ ::} \DataTypeTok{Producer} \DataTypeTok{Word8}\NormalTok{      m r}
+             \OtherTok{->} \DataTypeTok{Producer} \DataTypeTok{ByteString}\NormalTok{ m r}
+\end{Highlighting}
+\end{Shaded}
 
 Cool. Anyways, \emph{pipes-bytestring} implements \texttt{view\ pack} (the
 conversion function) in a way that does
-\href{http://www.haskellforall.com/2013/09/perfect-streaming-using-pipes-bytestring.html}{"smart
-chunking"} -\/-\/- it waits until an appropriate amount of \texttt{Word8}s have
+\href{http://www.haskellforall.com/2013/09/perfect-streaming-using-pipes-bytestring.html}{``smart
+chunking''} --- it waits until an appropriate amount of \texttt{Word8}s have
 accumulated in a buffer before packing them all into a big fat
 \texttt{ByteString}.
 
 And that should be the last hole in our puzzle!
 
-\subsection{Down to it}
+\hypertarget{down-to-it}{%
+\subsection{Down to it}\label{down-to-it}}
 
 Let's just get down to it!
 
 First, our imports:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L19-46
--\/- General imports import Control.Applicative ((\textless{}\$\textgreater{}))
-import Control.Monad.Trans.State.Strict (evalState) import Data.Foldable (sum)
-import Data.Map.Strict (Map, (!)) import Lens.Family2 (view) import Prelude
-hiding (sum) import System.Environment (getArgs) import System.IO (withFile,
-IOMode(..)) import qualified Data.Map.Strict as M
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L19-46}
+\CommentTok{-- General imports}
+\KeywordTok{import} \DataTypeTok{Control.Applicative}\NormalTok{              ((<$>))}
+\KeywordTok{import} \DataTypeTok{Control.Monad.Trans.State.Strict}\NormalTok{ (evalState)}
+\KeywordTok{import} \DataTypeTok{Data.Foldable}\NormalTok{                    (sum)}
+\KeywordTok{import} \DataTypeTok{Data.Map.Strict}\NormalTok{                  (}\DataTypeTok{Map}\NormalTok{, (!))}
+\KeywordTok{import} \DataTypeTok{Lens.Family2}\NormalTok{                     (view)}
+\KeywordTok{import} \DataTypeTok{Prelude} \KeywordTok{hiding}\NormalTok{                   (sum)}
+\KeywordTok{import} \DataTypeTok{System.Environment}\NormalTok{               (getArgs)}
+\KeywordTok{import} \DataTypeTok{System.IO}\NormalTok{                        (withFile, }\DataTypeTok{IOMode}\NormalTok{(..))}
+\KeywordTok{import} \KeywordTok{qualified} \DataTypeTok{Data.Map.Strict}        \KeywordTok{as} \DataTypeTok{M}
 
--\/- Pipes imports import Pipes import Pipes.Parse import qualified
-Pipes.ByteString as PB import qualified Pipes.Prelude as PP
+\CommentTok{-- Pipes imports}
+\KeywordTok{import} \DataTypeTok{Pipes}
+\KeywordTok{import} \DataTypeTok{Pipes.Parse}
+\KeywordTok{import} \KeywordTok{qualified} \DataTypeTok{Pipes.ByteString} \KeywordTok{as} \DataTypeTok{PB}
+\KeywordTok{import} \KeywordTok{qualified} \DataTypeTok{Pipes.Prelude}    \KeywordTok{as} \DataTypeTok{PP}
 
--\/- Working with Binary import Data.Binary hiding (encodeFile) import Data.Bits
-(setBit) import Data.ByteString (ByteString) import qualified Data.ByteString as
-B import qualified Data.ByteString.Lazy as BL
+\CommentTok{-- Working with Binary}
+\KeywordTok{import} \DataTypeTok{Data.Binary} \KeywordTok{hiding}\NormalTok{             (encodeFile)}
+\KeywordTok{import} \DataTypeTok{Data.Bits}\NormalTok{                      (setBit)}
+\KeywordTok{import} \DataTypeTok{Data.ByteString}\NormalTok{                (}\DataTypeTok{ByteString}\NormalTok{)}
+\KeywordTok{import} \KeywordTok{qualified} \DataTypeTok{Data.ByteString}      \KeywordTok{as} \DataTypeTok{B}
+\KeywordTok{import} \KeywordTok{qualified} \DataTypeTok{Data.ByteString.Lazy} \KeywordTok{as} \DataTypeTok{BL}
 
--\/- Huffman imports import Huffman import PQueue import PreTree
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\CommentTok{-- Huffman imports}
+\KeywordTok{import} \DataTypeTok{Huffman}
+\KeywordTok{import} \DataTypeTok{PQueue}
+\KeywordTok{import} \DataTypeTok{PreTree}
+\end{Highlighting}
+\end{Shaded}
 
 It's a doozy, admittedly!
 
 Now \texttt{main}:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L48-60
-main :: IO () main = do args \textless{}- getArgs let (inp, out) = case args of
-i:o:\_ -\textgreater{} (i,o) \_ -\textgreater{} error "Give input and output
-files."
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L48-60}
+\OtherTok{main ::} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{main }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{    args     }\OtherTok{<-}\NormalTok{ getArgs}
+    \KeywordTok{let}\NormalTok{ (inp, out)  }\FunctionTok{=} \KeywordTok{case}\NormalTok{ args }\KeywordTok{of}
+\NormalTok{                        i}\FunctionTok{:}\NormalTok{o}\FunctionTok{:}\NormalTok{_      }\OtherTok{->}\NormalTok{ (i,o)}
+\NormalTok{                        _          }\OtherTok{->}\NormalTok{ error }\StringTok{"Give input and output files."}
 
-\begin{verbatim}
-metadata <- analyzeFile inp
-let (len, tree) = case metadata of
-                    Just (l, t) -> (l, t)
-                    Nothing     -> error "Empty File"
+\NormalTok{    metadata }\OtherTok{<-}\NormalTok{ analyzeFile inp}
+    \KeywordTok{let}\NormalTok{ (len, tree) }\FunctionTok{=} \KeywordTok{case}\NormalTok{ metadata }\KeywordTok{of}
+                        \DataTypeTok{Just}\NormalTok{ (l, t) }\OtherTok{->}\NormalTok{ (l, t)}
+                        \DataTypeTok{Nothing}     \OtherTok{->}\NormalTok{ error }\StringTok{"Empty File"}
 
-encodeFile inp out len tree
-\end{verbatim}
-
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\NormalTok{    encodeFile inp out len tree}
+\end{Highlighting}
+\end{Shaded}
 
 Just straight-forward, more or less. The error handling is kind of not too
 great, but we won't go into that too deeply here :)
 
-\subsubsection{File metadata}
+\hypertarget{file-metadata}{%
+\subsubsection{File metadata}\label{file-metadata}}
 
 \texttt{analyzeFile} is going to be how we build the Huffman Tree for the
 encoding, as discussed in part 1. It'll go through an entire pass of the file
@@ -383,16 +466,23 @@ encoding tree out of it. It'll also give us the length of the file in bytes;
 this is actually necessary for \emph{decoding} the file later, because it tells
 us where to stop decoding (lest we begin decoding the leftover padding bits).
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L63-74
-analyzeFile :: FilePath -\textgreater{} IO (Maybe (Int, PreTree Word8))
-analyzeFile fp = withFile fp ReadMode \$ \textbackslash{}hIn -\textgreater{} do
-let byteProducer = PB.fromHandle hIn \textgreater{}-\textgreater{} bsToBytes fqs
-\textless{}- freqs byteProducer let len = sum fqs tree = evalState
-(listQueueStateTable fqs \textgreater{}\textgreater{} buildTree) emptyPQ return
-\$ fmap (len,) tree where freqs :: (Monad m, Ord a) =\textgreater{} Producer a m
-() -\textgreater{} m (M.Map a Int) freqs = PP.fold f M.empty id where f m x =
-M.insertWith (+) x 1 m \textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L63-74}
+\OtherTok{analyzeFile ::}\NormalTok{ FilePath }\OtherTok{->} \DataTypeTok{IO}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Int}\NormalTok{, }\DataTypeTok{PreTree} \DataTypeTok{Word8}\NormalTok{))}
+\NormalTok{analyzeFile fp }\FunctionTok{=}\NormalTok{ withFile fp }\DataTypeTok{ReadMode} \FunctionTok{$}\NormalTok{ \textbackslash{}hIn }\OtherTok{->} \KeywordTok{do}
+    \KeywordTok{let}\NormalTok{ byteProducer }\FunctionTok{=}\NormalTok{ PB.fromHandle hIn }\FunctionTok{>->}\NormalTok{ bsToBytes}
+\NormalTok{    fqs }\OtherTok{<-}\NormalTok{ freqs byteProducer}
+    \KeywordTok{let}\NormalTok{ len  }\FunctionTok{=}\NormalTok{ sum fqs}
+\NormalTok{        tree }\FunctionTok{=}\NormalTok{ evalState (listQueueStateTable fqs }\FunctionTok{>>}\NormalTok{ buildTree) emptyPQ}
+\NormalTok{    return }\FunctionTok{$}\NormalTok{ fmap (len,) tree}
+  \KeywordTok{where}
+\OtherTok{    freqs ::}\NormalTok{ (}\DataTypeTok{Monad}\NormalTok{ m, }\DataTypeTok{Ord}\NormalTok{ a) }\OtherTok{=>} \DataTypeTok{Producer}\NormalTok{ a m () }\OtherTok{->}\NormalTok{ m (}\DataTypeTok{M.Map}\NormalTok{ a }\DataTypeTok{Int}\NormalTok{)}
+\NormalTok{    freqs }\FunctionTok{=}\NormalTok{ PP.fold f M.empty id}
+      \KeywordTok{where}
+\NormalTok{        f m x }\FunctionTok{=}\NormalTok{ M.insertWith (}\FunctionTok{+}\NormalTok{) x }\DecValTok{1}\NormalTok{ m}
+\end{Highlighting}
+\end{Shaded}
 
 First, we use
 \href{http://hackage.haskell.org/package/base-4.7.0.0/docs/System-IO.html\#v:withFile}{\texttt{withFile}}
@@ -403,38 +493,46 @@ our simple use cases of \emph{pipes}.
 
 Now we run into real \emph{pipes} for the first time!
 
-We'll assemble our producer of bytes by using \texttt{PB.fromHandle\ hIn}
--\/-\/- a producer of \texttt{ByteString}s -\/-\/- and chaining it to
-\texttt{bsToBytes}, a pipe that takes incoming \texttt{ByteString}s and emits
-their constituent, unpacked \texttt{Word8}s one-by-one:
+We'll assemble our producer of bytes by using \texttt{PB.fromHandle\ hIn} --- a
+producer of \texttt{ByteString}s --- and chaining it to \texttt{bsToBytes}, a
+pipe that takes incoming \texttt{ByteString}s and emits their constituent,
+unpacked \texttt{Word8}s one-by-one:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L96-97
-bsToBytes :: Monad m =\textgreater{} Pipe ByteString Word8 m r bsToBytes =
-PP.mapFoldable B.unpack \textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L96-97}
+\OtherTok{bsToBytes ::} \DataTypeTok{Monad}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Pipe} \DataTypeTok{ByteString} \DataTypeTok{Word8}\NormalTok{ m r}
+\NormalTok{bsToBytes }\FunctionTok{=}\NormalTok{ PP.mapFoldable B.unpack}
+\end{Highlighting}
+\end{Shaded}
 
 Our implementation uses
 \texttt{B.unpack\ ::\ ByteString\ -\textgreater{}\ {[}Word8{]}} from
 \emph{pipes-bytestring}, which turns a \texttt{ByteString} into a list of its
 constituent \texttt{Word8}s. We use \texttt{PP.mapFoldable}, which is sort of
-like \texttt{concatMap} -\/-\/- it applies the given function to every incoming
-element in the stream, and emits the items in the resulting
-list{[}\^{}foldable{]} one-by-one. So \texttt{bsToBytes} is a Pipe that takes in
-\texttt{ByteString}s and emits each contained \texttt{Word8} one-by-one.
+like \texttt{concatMap} --- it applies the given function to every incoming
+element in the stream, and emits the items in the resulting list\footnote{It
+  actually works on all \texttt{Foldable}s, not just \texttt{{[}{]}}.}
+one-by-one. So \texttt{bsToBytes} is a Pipe that takes in \texttt{ByteString}s
+and emits each contained \texttt{Word8} one-by-one.
 
-Then with our pipe ready, we "run"/"use" it, using \texttt{PP.fold}, from the
-pipes Prelude. This basically runs a giant "foldl" all over the incoming items
-of the given producer.
+Then with our pipe ready, we ``run''/``use'' it, using \texttt{PP.fold}, from
+the pipes Prelude. This basically runs a giant ``foldl'' all over the incoming
+items of the given producer.
 
 The fold is identical in logic to \texttt{listFreq} from a
 \href{http://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-2-binary}{Part
 2}:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs\#L22-25
-listFreq :: Ord a =\textgreater{} {[}a{]} -\textgreater{} FreqTable a listFreq =
-foldr f M.empty where f x m = M.insertWith (+) x 1 m
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L22-25}
+\OtherTok{listFreq ::} \DataTypeTok{Ord}\NormalTok{ a }\OtherTok{=>}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{FreqTable}\NormalTok{ a}
+\NormalTok{listFreq }\FunctionTok{=}\NormalTok{ foldr f M.empty}
+  \KeywordTok{where}
+\NormalTok{    f x m }\FunctionTok{=}\NormalTok{ M.insertWith (}\FunctionTok{+}\NormalTok{) x }\DecValTok{1}\NormalTok{ m}
+\end{Highlighting}
+\end{Shaded}
 
 Except instead of folding over a list, we fold over the elements of the
 producer. Note that the helper function has its arguments reversed. This whole
@@ -453,27 +551,31 @@ a \texttt{Maybe\ (PreTree\ Word8)}; we then tag on the length to our
 \texttt{(,y)} is sugar for
 \texttt{(\textbackslash{}x\ -\textgreater{}\ (x,y))}).
 
-\subsubsection{The Encoding Pipeline}
+\hypertarget{the-encoding-pipeline}{%
+\subsubsection{The Encoding Pipeline}\label{the-encoding-pipeline}}
 
 Once we have that, we can get onto the actual encoding process: the second pass.
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L78-92
-encodeFile :: FilePath -\textgreater{} FilePath -\textgreater{} Int
--\textgreater{} PreTree Word8 -\textgreater{} IO () encodeFile inp out len tree
-= withFile inp ReadMode \$ \textbackslash{}hIn -\textgreater{} withFile out
-WriteMode \$ \textbackslash{}hOut -\textgreater{} do BL.hPut hOut \$ encode
-(len, tree) let dirsOut = PB.fromHandle hIn \textgreater{}-\textgreater{}
-bsToBytes \textgreater{}-\textgreater{} encodeByte encTable bsOut = view PB.pack
-. dirsBytes \$ dirsOut pipeline = bsOut \textgreater{}-\textgreater{}
-PB.toHandle hOut
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L78-92}
+\OtherTok{encodeFile ::}\NormalTok{ FilePath }\OtherTok{->}\NormalTok{ FilePath }\OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{PreTree} \DataTypeTok{Word8} \OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{encodeFile inp out len tree }\FunctionTok{=}
+\NormalTok{    withFile inp }\DataTypeTok{ReadMode}  \FunctionTok{$}\NormalTok{ \textbackslash{}hIn  }\OtherTok{->}
+\NormalTok{    withFile out }\DataTypeTok{WriteMode} \FunctionTok{$}\NormalTok{ \textbackslash{}hOut }\OtherTok{->} \KeywordTok{do}
+\NormalTok{      BL.hPut hOut }\FunctionTok{$}\NormalTok{ encode (len, tree)}
+      \KeywordTok{let}\NormalTok{ dirsOut   }\FunctionTok{=}\NormalTok{ PB.fromHandle hIn}
+                  \FunctionTok{>->}\NormalTok{ bsToBytes}
+                  \FunctionTok{>->}\NormalTok{ encodeByte encTable}
+\NormalTok{          bsOut     }\FunctionTok{=}\NormalTok{ view PB.pack }\FunctionTok{.}\NormalTok{ dirsBytes }\FunctionTok{$}\NormalTok{ dirsOut}
+\NormalTok{          pipeline  }\FunctionTok{=}\NormalTok{ bsOut}
+                  \FunctionTok{>->}\NormalTok{ PB.toHandle hOut}
 
-\begin{verbatim}
-  runEffect pipeline
-\end{verbatim}
-
-where encTable = ptTable tree
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\NormalTok{      runEffect pipeline}
+  \KeywordTok{where}
+\NormalTok{    encTable  }\FunctionTok{=}\NormalTok{ ptTable tree}
+\end{Highlighting}
+\end{Shaded}
 
 First, we open our file handles for our input and output files. Then, we use
 what we learned in
@@ -485,15 +587,15 @@ handle and a lazy \texttt{ByteString}, and writes that \texttt{ByteString} out
 to the file. We use the lazy version because \texttt{encode} gives us a lazy
 \texttt{ByteString} by default.
 
-Note that we can "put" \texttt{(len,\ tree)} together as a tuple instead of
+Note that we can ``put'' \texttt{(len,\ tree)} together as a tuple instead of
 putting \texttt{len} and \texttt{tree} one after the other. This is because
 \texttt{(a,\ b)} has a \texttt{Binary} instance. We'll read it back in later as
 a tuple, but it actually doesn't matter, because the \texttt{Binary} instance
 for tuples is just putting/getting each item one after the other.
 
-Now, we get to our actual pipes. The first "pipeline" is \texttt{dirsOut}, which
-is our stream (producer) of \texttt{Direction}s encoding the input file. As can
-be read, \texttt{dirStream} is \texttt{PB.fromHandle\ hIn} (a
+Now, we get to our actual pipes. The first ``pipeline'' is \texttt{dirsOut},
+which is our stream (producer) of \texttt{Direction}s encoding the input file.
+As can be read, \texttt{dirStream} is \texttt{PB.fromHandle\ hIn} (a
 \texttt{ByteString} producer from the given handle) piped into our old friend
 \texttt{bsToBytes} piped into \texttt{encodeByte\ encTable}, which is a pipe
 taking in bytes (\texttt{Word8}), looks them up in \texttt{encTable} (the table
@@ -501,37 +603,51 @@ mapping \texttt{Word8} to \texttt{{[}Direction{]}}, which we built in
 \href{http://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-2-binary}{Part
 2}), and spits out the resulting \texttt{Direction}s one at a time.
 
-\texttt{encodeByte\ encTable} is implemented "exactly the same" as
+\texttt{encodeByte\ encTable} is implemented ``exactly the same'' as
 \texttt{bsToBytes}:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L101-104
-encodeByte :: (Ord a, Monad m) =\textgreater{} Map a Encoding -\textgreater{}
-Pipe a Direction m r encodeByte encTable = PP.mapFoldable (encTable !)
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L101-104}
+\OtherTok{encodeByte ::}\NormalTok{ (}\DataTypeTok{Ord}\NormalTok{ a, }\DataTypeTok{Monad}\NormalTok{ m)}
+           \OtherTok{=>} \DataTypeTok{Map}\NormalTok{ a }\DataTypeTok{Encoding}
+           \OtherTok{->} \DataTypeTok{Pipe}\NormalTok{ a }\DataTypeTok{Direction}\NormalTok{ m r}
+\NormalTok{encodeByte encTable }\FunctionTok{=}\NormalTok{ PP.mapFoldable (encTable }\FunctionTok{!}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
 
 instead of using \texttt{mapFoldable} with a
 \texttt{ByteString\ -\textgreater{}\ {[}Word8{]}}, we use \texttt{mapFoldable}
 with a \texttt{Word8\ -\textgreater{}\ {[}Direction{]}}, which does the same
-thing -\/-\/- apply the function to every incoming item, and spit out the items
-in the resulting list one at a time.
+thing --- apply the function to every incoming item, and spit out the items in
+the resulting list one at a time.
 
 \texttt{(!)\ ::\ Map\ k\ v\ -\textgreater{}\ k\ -\textgreater{}\ v} is the
 lookup function for \texttt{Map}s.
 
-\subsubsection{Parser}
+\hypertarget{parser}{%
+\subsubsection{Parser}\label{parser}}
 
 So now we have \texttt{dirsOut\ ::\ Producer\ Direction\ IO\ r}, which is a
-producer of \texttt{Direction}s drawn from the file. It's now time to "group up"
-the directions, using the "producer transformer" tactic we discussed earlier.
+producer of \texttt{Direction}s drawn from the file. It's now time to ``group
+up'' the directions, using the ``producer transformer'' tactic we discussed
+earlier.
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L108-117
-dirsBytes :: (MonadIO m, Functor m) =\textgreater{} Producer Direction m r
--\textgreater{} Producer Word8 m () dirsBytes p = do (result, leftovers)
-\textless{}- lift \$ runStateT dirsBytesP p case result of Just byte
--\textgreater{} do yield byte dirsBytes leftovers Nothing -\textgreater{} return
-() \textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L108-117}
+\OtherTok{dirsBytes ::}\NormalTok{ (}\DataTypeTok{MonadIO}\NormalTok{ m, }\DataTypeTok{Functor}\NormalTok{ m)}
+          \OtherTok{=>} \DataTypeTok{Producer} \DataTypeTok{Direction}\NormalTok{ m r}
+          \OtherTok{->} \DataTypeTok{Producer} \DataTypeTok{Word8}\NormalTok{     m ()}
+\NormalTok{dirsBytes p }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{    (result, leftovers) }\OtherTok{<-}\NormalTok{ lift }\FunctionTok{$}\NormalTok{ runStateT dirsBytesP p}
+    \KeywordTok{case}\NormalTok{ result }\KeywordTok{of}
+      \DataTypeTok{Just}\NormalTok{ byte }\OtherTok{->} \KeywordTok{do}
+\NormalTok{        yield byte}
+\NormalTok{        dirsBytes leftovers}
+      \DataTypeTok{Nothing}   \OtherTok{->}\NormalTok{ return ()}
+\end{Highlighting}
+\end{Shaded}
 
 \texttt{dirsBytes} turns out \texttt{Direction} producer into a \texttt{Word8}
 producer by running the \emph{parser} \texttt{dirsBytesP} onto the producer, and
@@ -543,20 +659,25 @@ runs out; if the stream is already empty to start with, it returns
 
 Remember that in \emph{pipes-parse}:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell runStateT :: Parser a
-m b -\textgreater{} Producer a m r -\textgreater{} m (b, Producer a m r)
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{runStateT ::} \DataTypeTok{Parser}\NormalTok{ a m b }\OtherTok{->} \DataTypeTok{Producer}\NormalTok{ a m r }\OtherTok{->}\NormalTok{ m (b, }\DataTypeTok{Producer}\NormalTok{ a m r)}
+\end{Highlighting}
+\end{Shaded}
 
-Basically, \texttt{runStateT\ parser} takes a \texttt{Producer\ a} and "parses"
-a value out of it, returning the parsed value and the "leftover/used"
-\texttt{Producer}.
+Basically, \texttt{runStateT\ parser} takes a \texttt{Producer\ a} and
+``parses'' a value out of it, returning the parsed value and the
+``leftover/used'' \texttt{Producer}.
 
 In our case:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell runStateT :: Parser
-Direction IO (Maybe Word8) -\textgreater{} Producer Direction IO r
--\textgreater{} IO (Maybe Word8, Producer Direction IO r)
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{runStateT ::} \DataTypeTok{Parser}   \DataTypeTok{Direction} \DataTypeTok{IO}\NormalTok{ (}\DataTypeTok{Maybe} \DataTypeTok{Word8}\NormalTok{)}
+          \OtherTok{->} \DataTypeTok{Producer} \DataTypeTok{Direction} \DataTypeTok{IO}\NormalTok{ r}
+          \OtherTok{->} \DataTypeTok{IO}\NormalTok{ (}\DataTypeTok{Maybe} \DataTypeTok{Word8}\NormalTok{, }\DataTypeTok{Producer} \DataTypeTok{Direction} \DataTypeTok{IO}\NormalTok{ r)}
+\end{Highlighting}
+\end{Shaded}
 
 So we use the \texttt{dirsBytesP} parser onto the producer we are given. If it
 doesn't parse any bytes (\texttt{Nothing}), then we stop. If it does
@@ -566,80 +687,97 @@ start over again with the leftovers producer.
 Let's take a look at the \texttt{dirsBytesP} parser, which parses
 \texttt{Direction}s into a \texttt{Word8}:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L123-137
-dirsBytesP :: (Monad m, Functor m) =\textgreater{} Parser Direction m (Maybe
-Word8) dirsBytesP = do isEnd \textless{}- isEndOfInput if isEnd then return
-Nothing else Just \textless{}\$\textgreater{} go 0 0 where go :: Monad m
-=\textgreater{} Word8 -\textgreater{} Int -\textgreater{} Parser Direction m
-Word8 go b 8 = return b go b i = do dir \textless{}- draw case dir of Just DLeft
--\textgreater{} go b (i + 1) Just DRight -\textgreater{} go (setBit b i) (i + 1)
-Nothing -\textgreater{} return b
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L123-137}
+\OtherTok{dirsBytesP ::}\NormalTok{ (}\DataTypeTok{Monad}\NormalTok{ m, }\DataTypeTok{Functor}\NormalTok{ m) }\OtherTok{=>} \DataTypeTok{Parser} \DataTypeTok{Direction}\NormalTok{ m (}\DataTypeTok{Maybe} \DataTypeTok{Word8}\NormalTok{)}
+\NormalTok{dirsBytesP }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{    isEnd }\OtherTok{<-}\NormalTok{ isEndOfInput}
+    \KeywordTok{if}\NormalTok{ isEnd}
+      \KeywordTok{then}\NormalTok{ return }\DataTypeTok{Nothing}
+      \KeywordTok{else} \DataTypeTok{Just} \FunctionTok{<$>}\NormalTok{ go }\DecValTok{0} \DecValTok{0}
+  \KeywordTok{where}
+\OtherTok{    go ::} \DataTypeTok{Monad}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Word8} \OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Parser} \DataTypeTok{Direction}\NormalTok{ m }\DataTypeTok{Word8}
+\NormalTok{    go b }\DecValTok{8} \FunctionTok{=}\NormalTok{ return b}
+\NormalTok{    go b i }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{      dir }\OtherTok{<-}\NormalTok{ draw}
+      \KeywordTok{case}\NormalTok{ dir }\KeywordTok{of}
+        \DataTypeTok{Just} \DataTypeTok{DLeft}  \OtherTok{->}\NormalTok{ go     b            (i }\FunctionTok{+} \DecValTok{1}\NormalTok{)}
+        \DataTypeTok{Just} \DataTypeTok{DRight} \OtherTok{->}\NormalTok{ go     (setBit b i) (i }\FunctionTok{+} \DecValTok{1}\NormalTok{)}
+        \DataTypeTok{Nothing}     \OtherTok{->}\NormalTok{ return b}
+\end{Highlighting}
+\end{Shaded}
 
-This implementation is pretty straightforward -\/-\/- "if the producer is empty,
+This implementation is pretty straightforward --- ``if the producer is empty,
 return \texttt{Nothing}. Otherwise, start with \texttt{00000000} and draw
 \texttt{Direction}s one at a time, flipping the appropriate bit when you get a
-\texttt{Right}." For more information on the exact functions for bitwise
+\texttt{Right}.'' For more information on the exact functions for bitwise
 operators, look into the \href{http://hackage.haskell.org/package/bits}{bits}
 package, where they come from.
 
-Note the usage of \texttt{draw}, which "returns" a \texttt{Nothing} if you draw
-from the end of the producer, and a \texttt{Just\ x} if there is something to
-draw. \texttt{draw} is special to parsers, because it lets you react on
+Note the usage of \texttt{draw}, which ``returns'' a \texttt{Nothing} if you
+draw from the end of the producer, and a \texttt{Just\ x} if there is something
+to draw. \texttt{draw} is special to parsers, because it lets you react on
 end-of-input as a \texttt{Nothing} (as opposed to \texttt{await}). In
 \texttt{go}, we loop drawing until we either get all eight bits (and return the
 resulting byte) or run out of inputs (and return the byte that we have so far).
 
 We get our direction producer by doing \texttt{dirsBytes\ dirsOut}.
 
-\subsubsection{Smart Chunker}
+\hypertarget{smart-chunker}{%
+\subsubsection{Smart Chunker}\label{smart-chunker}}
 
-And finally, we use the "smart chunking" provided by \emph{pipes-bytestring} by
-transforming our bytes stream:
+And finally, we use the ``smart chunking'' provided by \emph{pipes-bytestring}
+by transforming our bytes stream:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L86-86
-bsOut = view PB.pack . dirsBytes \$ dirsOut
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L86-86}
+\NormalTok{          bsOut     }\FunctionTok{=}\NormalTok{ view PB.pack }\FunctionTok{.}\NormalTok{ dirsBytes }\FunctionTok{$}\NormalTok{ dirsOut}
+\end{Highlighting}
+\end{Shaded}
 
-\subsubsection{All together}
+\hypertarget{all-together}{%
+\subsubsection{All together}\label{all-together}}
 
 That gives us our final \texttt{pipeline}; we lay out a series of pipes and
 pipes transformers that takes our file and streamingly processes the data and
 writes it into the output file.
 
-Once we have our \texttt{pipeline}, we use \texttt{runEffect} to "run" it;
-then...that's it!
+Once we have our \texttt{pipeline}, we use \texttt{runEffect} to ``run'' it;
+then\ldots{}that's it!
 
-\subsection{Testing it out}
+\hypertarget{testing-it-out}{%
+\subsection{Testing it out}\label{testing-it-out}}
 
 Cool, let's try it out with Leo Tolstoy's great classic
 \href{http://www.gutenberg.org/files/2600/2600.txt}{War and Peace} from Project
 Gutenberg!
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}bash \$ ghc -O2 encode.hs \$
-./encode warandpeace.txt warandpeace.enc \$ du -h warandpeace.*
-
-\section{1.8M warandpeace.enc}
-
-\section{3.1M warandpeace.txt}
-
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{$ }\ExtensionTok{ghc}\NormalTok{ -O2 encode.hs}
+\NormalTok{$ }\ExtensionTok{./encode}\NormalTok{ warandpeace.txt warandpeace.enc}
+\NormalTok{$ }\FunctionTok{du}\NormalTok{ -h warandpeace.*}
+\CommentTok{# 1.8M warandpeace.enc}
+\CommentTok{# 3.1M warandpeace.txt}
+\end{Highlighting}
+\end{Shaded}
 
 Cool, we compressed it to 58\% of the original file size. Not bad! Using
 \texttt{gzip} with default settings gives a compression of 39\%, so it's not the
 best, but it's something. If we take out the encoding part of the script, we can
 see that the metadata (the length and the dictionary) itself only takes 259
-bytes (which is negligible) -\/-\/- so 58\% is pretty much the asymptotic
+bytes (which is negligible) --- so 58\% is pretty much the asymptotic
 compression rate.
 
 At this point it's not as snappy (performance wise) as we'd like; a compressing
-a 3.1M file is not "super slow" (it takes about seven seconds on my computer),
+a 3.1M file is not ``super slow'' (it takes about seven seconds on my computer),
 but you probably won't be compressing a gigabyte. We'll look into performance in
 a later post!
 
-\section{Decoding}
+\hypertarget{decoding}{%
+\section{Decoding}\label{decoding}}
 
 (Remember again that download
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs}{decode.hs}
@@ -652,12 +790,14 @@ and
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs}{Weighted.hs}
 from posts past.)
 
-\subsection{Design}
+\hypertarget{design-1}{%
+\subsection{Design}\label{design-1}}
 
 Let's try to see the plan for our decoding script, applying what we learned
 before. What components do we need?
 
 \begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
   First, a component producing decoded \texttt{Word8}s (that will be
@@ -665,6 +805,7 @@ before. What components do we need?
   \texttt{ByteString}s with smart chunking)
 
   \begin{enumerate}
+  \def\labelenumii{\arabic{enumii}.}
   \tightlist
   \item
     A producer that reads in \texttt{ByteString}s from a file and sends them
@@ -673,7 +814,7 @@ before. What components do we need?
     A pipe that unpacks those \texttt{ByteString}s into \texttt{Word8}s and
     sends each one down.
   \item
-    A pipe that "unpacks" those \texttt{Word8}s into \texttt{Direction}s and
+    A pipe that ``unpacks'' those \texttt{Word8}s into \texttt{Direction}s and
     sends \emph{those} down.
   \item
     A pipe that traverses down the Huffman encoding tree following the incoming
@@ -685,66 +826,86 @@ before. What components do we need?
   our output file.
 \end{enumerate}
 
-\subsection{Down to it}
+\hypertarget{down-to-it-1}{%
+\subsection{Down to it}\label{down-to-it-1}}
 
 Luckily we can use most of the concepts we learned in writing the encoding
 script to write the decoding script; we also have a less imports, so it's a sign
 that decoding is going to be slightly simpler than encoding.
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs\#L18-37
--\/- General imports import Lens.Family2 (view) import System.Environment
-(getArgs) import System.IO (withFile, IOMode(..))
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L18-37}
+\CommentTok{-- General imports}
+\KeywordTok{import} \DataTypeTok{Lens.Family2}\NormalTok{       (view)}
+\KeywordTok{import} \DataTypeTok{System.Environment}\NormalTok{ (getArgs)}
+\KeywordTok{import} \DataTypeTok{System.IO}\NormalTok{          (withFile, }\DataTypeTok{IOMode}\NormalTok{(..))}
 
--\/- Pipes imports import Pipes import Pipes.Parse import qualified Pipes.Binary
-as PB import qualified Pipes.ByteString as PB import qualified Pipes.Prelude as
-PP
+\CommentTok{-- Pipes imports}
+\KeywordTok{import} \DataTypeTok{Pipes}
+\KeywordTok{import} \DataTypeTok{Pipes.Parse}
+\KeywordTok{import} \KeywordTok{qualified} \DataTypeTok{Pipes.Binary}     \KeywordTok{as} \DataTypeTok{PB}
+\KeywordTok{import} \KeywordTok{qualified} \DataTypeTok{Pipes.ByteString} \KeywordTok{as} \DataTypeTok{PB}
+\KeywordTok{import} \KeywordTok{qualified} \DataTypeTok{Pipes.Prelude}    \KeywordTok{as} \DataTypeTok{PP}
 
--\/- Working with Binary import Data.Bits (testBit) import Data.ByteString
-(ByteString) import Data.Word (Word8) import qualified Data.ByteString as B
+\CommentTok{-- Working with Binary}
+\KeywordTok{import} \DataTypeTok{Data.Bits}\NormalTok{                 (testBit)}
+\KeywordTok{import} \DataTypeTok{Data.ByteString}\NormalTok{           (}\DataTypeTok{ByteString}\NormalTok{)}
+\KeywordTok{import} \DataTypeTok{Data.Word}\NormalTok{                 (}\DataTypeTok{Word8}\NormalTok{)}
+\KeywordTok{import} \KeywordTok{qualified} \DataTypeTok{Data.ByteString} \KeywordTok{as} \DataTypeTok{B}
 
--\/- Huffman imports import PreTree
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\CommentTok{-- Huffman imports}
+\KeywordTok{import} \DataTypeTok{PreTree}
+\end{Highlighting}
+\end{Shaded}
 
 \texttt{main} should seem very familiar:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs\#L39-45
-main :: IO () main = do args \textless{}- getArgs let (inp, out) = case args of
-i:o:\_ -\textgreater{} (i,o) \_ -\textgreater{} error "Give input and output
-files." decodeFile inp out \textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L39-45}
+\OtherTok{main ::} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{main }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{    args     }\OtherTok{<-}\NormalTok{ getArgs}
+    \KeywordTok{let}\NormalTok{ (inp, out)  }\FunctionTok{=} \KeywordTok{case}\NormalTok{ args }\KeywordTok{of}
+\NormalTok{                        i}\FunctionTok{:}\NormalTok{o}\FunctionTok{:}\NormalTok{_      }\OtherTok{->}\NormalTok{ (i,o)}
+\NormalTok{                        _          }\OtherTok{->}\NormalTok{ error }\StringTok{"Give input and output files."}
+\NormalTok{    decodeFile inp out}
+\end{Highlighting}
+\end{Shaded}
 
 And now on to the juicy parts:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs\#L48-69
-decodeFile :: FilePath -\textgreater{} FilePath -\textgreater{} IO () decodeFile
-inp out = withFile inp ReadMode \$ \textbackslash{}hIn -\textgreater{} withFile
-out WriteMode \$ \textbackslash{}hOut -\textgreater{} do let metadataPipe =
-PB.fromHandle hIn
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L48-69}
+\OtherTok{decodeFile ::}\NormalTok{ FilePath }\OtherTok{->}\NormalTok{ FilePath }\OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{decodeFile inp out }\FunctionTok{=}
+\NormalTok{    withFile inp }\DataTypeTok{ReadMode}  \FunctionTok{$}\NormalTok{ \textbackslash{}hIn  }\OtherTok{->}
+\NormalTok{    withFile out }\DataTypeTok{WriteMode} \FunctionTok{$}\NormalTok{ \textbackslash{}hOut }\OtherTok{->} \KeywordTok{do}
+      \KeywordTok{let}\NormalTok{ metadataPipe }\FunctionTok{=}\NormalTok{ PB.fromHandle hIn}
 
-\begin{verbatim}
-  -- consume metapipe to read in the tree/metadata
-  (metadata, decodingPipe) <- runStateT PB.decode metadataPipe
+      \CommentTok{-- consume metapipe to read in the tree/metadata}
+\NormalTok{      (metadata, decodingPipe) }\OtherTok{<-}\NormalTok{ runStateT PB.decode metadataPipe}
 
-  case metadata of
-    Left   _          ->
-      error "Corrupt metadata."
-    Right (len, tree) -> do
-      -- do everything with the rest
-      let bytesOut  = decodingPipe >-> bsToBytes
-                  >-> bytesToDirs  >-> searchPT tree
-                  >-> PP.take len
-          bsOut     = (view PB.pack) bytesOut
-          pipeline  = bsOut
-                  >-> PB.toHandle hOut
+      \KeywordTok{case}\NormalTok{ metadata }\KeywordTok{of}
+        \DataTypeTok{Left}\NormalTok{   _          }\OtherTok{->}
+\NormalTok{          error }\StringTok{"Corrupt metadata."}
+        \DataTypeTok{Right}\NormalTok{ (len, tree) }\OtherTok{->} \KeywordTok{do}
+          \CommentTok{-- do everything with the rest}
+          \KeywordTok{let}\NormalTok{ bytesOut  }\FunctionTok{=}\NormalTok{ decodingPipe }\FunctionTok{>->}\NormalTok{ bsToBytes}
+                      \FunctionTok{>->}\NormalTok{ bytesToDirs  }\FunctionTok{>->}\NormalTok{ searchPT tree}
+                      \FunctionTok{>->}\NormalTok{ PP.take len}
+\NormalTok{              bsOut     }\FunctionTok{=}\NormalTok{ (view PB.pack) bytesOut}
+\NormalTok{              pipeline  }\FunctionTok{=}\NormalTok{ bsOut}
+                      \FunctionTok{>->}\NormalTok{ PB.toHandle hOut}
 
-      runEffect pipeline
-\end{verbatim}
+\NormalTok{          runEffect pipeline}
+\end{Highlighting}
+\end{Shaded}
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
-
-\subsubsection{Loading metadata}
+\hypertarget{loading-metadata}{%
+\subsubsection{Loading metadata}\label{loading-metadata}}
 
 Loading the metadata is a snap, and it uses what we learned earlier from
 \texttt{runStateT} and \texttt{Parser}s.
@@ -755,45 +916,57 @@ you'd expect: it reads in binary data from the source stream, consuming it until
 it has a successful (or unsuccessful) parse, as given by the \emph{binary}
 package talked about in
 \href{http://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-2-binary}{Part
-2}. The "result" is the \texttt{Either} containing the success or failure, and
-the "leftover", consumed source stream.
+2}. The ``result'' is the \texttt{Either} containing the success or failure, and
+the ``leftover'', consumed source stream.
 
 In our case:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell runStateT :: Parser
-ByteString IO (Either DecodingError (Int, PreTree Word8)) -\textgreater{}
-Producer ByteString IO r -\textgreater{} IO (Either DecodingError (Int, PreTree
-Word8), Producer ByteString IO r)
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{runStateT}
+\OtherTok{  ::} \DataTypeTok{Parser}   \DataTypeTok{ByteString} \DataTypeTok{IO}\NormalTok{ (}\DataTypeTok{Either} \DataTypeTok{DecodingError}\NormalTok{ (}\DataTypeTok{Int}\NormalTok{, }\DataTypeTok{PreTree} \DataTypeTok{Word8}\NormalTok{))}
+  \OtherTok{->} \DataTypeTok{Producer} \DataTypeTok{ByteString} \DataTypeTok{IO}\NormalTok{ r}
+  \OtherTok{->} \DataTypeTok{IO}\NormalTok{ (}\DataTypeTok{Either} \DataTypeTok{DecodingError}\NormalTok{ (}\DataTypeTok{Int}\NormalTok{, }\DataTypeTok{PreTree} \DataTypeTok{Word8}\NormalTok{), }\DataTypeTok{Producer} \DataTypeTok{ByteString} \DataTypeTok{IO}\NormalTok{ r)}
+\end{Highlighting}
+\end{Shaded}
 
 So \texttt{metadata} is \texttt{Either\ DecodingError\ (Int,\ PreTree\ Word8)}.
 If we get a \texttt{Left\ e}, then we throw an error for unparseable/corrupted
 metadata. If we get a \texttt{Right\ (len,\ tree)}, then we are good to go.
 
-\subsubsection{The Decoding Pipeline}
+\hypertarget{the-decoding-pipeline}{%
+\subsubsection{The Decoding Pipeline}\label{the-decoding-pipeline}}
 
 The rest just reads like poetry!
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell let byteStream =
-decodingPipe \textgreater{}-\textgreater{} bsToBytes
-\textgreater{}-\textgreater{} bytesToDirs \textgreater{}-\textgreater{} searchPT
-tree \textgreater{}-\textgreater{} PP.take len
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{let}\NormalTok{ byteStream }\FunctionTok{=}\NormalTok{ decodingPipe }\FunctionTok{>->}\NormalTok{ bsToBytes}
+             \FunctionTok{>->}\NormalTok{ bytesToDirs  }\FunctionTok{>->}\NormalTok{ searchPT tree}
+             \FunctionTok{>->}\NormalTok{ PP.take len}
+\end{Highlighting}
+\end{Shaded}
 
 Beautiful! \texttt{decodingPipe} is the leftover producer after the parse of the
 metadata. \texttt{bsToBytes} is the same as from our encoder.
-\texttt{bytesToDirs} is implemented "exactly" like \texttt{bsToBytes} and
-\texttt{encodeByte} (from \emph{encode.hs}) -\/-\/- using
-\texttt{PP.mapFoldable} and a \texttt{Word8\ -\textgreater{}\ {[}Direction{]}}
-function.
+\texttt{bytesToDirs} is implemented ``exactly'' like \texttt{bsToBytes} and
+\texttt{encodeByte} (from \emph{encode.hs}) --- using \texttt{PP.mapFoldable}
+and a \texttt{Word8\ -\textgreater{}\ {[}Direction{]}} function.
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs\#L96-104
-bytesToDirs :: Monad m =\textgreater{} Pipe Word8 Direction m r bytesToDirs =
-PP.mapFoldable byteToDirList where -\/- Turns a byte into a list of directions
-byteToDirList :: Word8 -\textgreater{} {[}Direction{]} byteToDirList b = map f
-{[}0..7{]} where f i \textbar{} testBit b i = DRight \textbar{} otherwise =
-DLeft \textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L96-104}
+\OtherTok{bytesToDirs ::} \DataTypeTok{Monad}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Pipe} \DataTypeTok{Word8} \DataTypeTok{Direction}\NormalTok{ m r}
+\NormalTok{bytesToDirs }\FunctionTok{=}\NormalTok{ PP.mapFoldable byteToDirList}
+  \KeywordTok{where}
+    \CommentTok{-- Turns a byte into a list of directions}
+\OtherTok{    byteToDirList ::} \DataTypeTok{Word8} \OtherTok{->}\NormalTok{ [}\DataTypeTok{Direction}\NormalTok{]}
+\NormalTok{    byteToDirList b }\FunctionTok{=}\NormalTok{ map f [}\DecValTok{0}\FunctionTok{..}\DecValTok{7}\NormalTok{]}
+      \KeywordTok{where}
+\NormalTok{        f i }\FunctionTok{|}\NormalTok{ testBit b i }\FunctionTok{=} \DataTypeTok{DRight}
+            \FunctionTok{|}\NormalTok{ otherwise   }\FunctionTok{=} \DataTypeTok{DLeft}
+\end{Highlighting}
+\end{Shaded}
 
 It uses the \emph{bits} package to turn an incoming \texttt{Word8} into a list
 of its constituent bits (in the form of \texttt{Direction}s), and yields each of
@@ -805,7 +978,7 @@ the given \texttt{PreTree}. The implementation is a bit tricky so we're going to
 go into it in more detail later.
 
 \texttt{PP.take\ len} is new; it's from \texttt{Pipes.Prelude}, and it basically
-says "take \texttt{len} items from the source, then stop drawing." This is
+says ``take \texttt{len} items from the source, then stop drawing.'' This is
 necessary because, because of the padding of 0's we did from the encoding
 script, there will be more bits in the file than are actually a part of the
 encoding; using \texttt{PP.take} ensures that we don't try to read the extra
@@ -813,21 +986,32 @@ padding bits. It'll take up to \texttt{len} \texttt{Word8}s, and then stop.
 
 And so now we have our \texttt{Word8}/byte Producer/stream!
 
-\subsubsection{searchPT}
+\hypertarget{searchpt}{%
+\subsubsection{searchPT}\label{searchpt}}
 
 One could actually have written \texttt{searchPT} like this:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell searchPT :: PreTree a
--\textgreater{} Pipe Direction Word8 m r searchPT pt0 = go pt0 where go (PTLeaf
-x) = do yield x go pt0 go (PTNode pt1 pt2) = do dir \textless{}- await go \$
-case dir of DLeft -\textgreater{} pt1 DRight -\textgreater{} pt2
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{searchPT ::} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Pipe} \DataTypeTok{Direction} \DataTypeTok{Word8}\NormalTok{ m r}
+\NormalTok{searchPT pt0 }\FunctionTok{=}\NormalTok{ go pt0}
+  \KeywordTok{where}
+\NormalTok{    go (}\DataTypeTok{PTLeaf}\NormalTok{ x) }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{        yield x}
+\NormalTok{        go pt0}
+\NormalTok{    go (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{        dir }\OtherTok{<-}\NormalTok{ await}
+\NormalTok{        go }\FunctionTok{$} \KeywordTok{case}\NormalTok{ dir }\KeywordTok{of}
+               \DataTypeTok{DLeft}  \OtherTok{->}\NormalTok{ pt1}
+               \DataTypeTok{DRight} \OtherTok{->}\NormalTok{ pt2}
+\end{Highlighting}
+\end{Shaded}
 
 which looks a lot like the logic of our decoder functions from
 \href{http://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-2-binary}{Part
 2}.
 
-However, we can do better. This way sort of mixes together the "logic" of
+However, we can do better. This way sort of mixes together the ``logic'' of
 decoding from the yielding/continuation/recursion/pipe-ness of it all. Ideally
 we'd like to be able to separate the logic. This isn't \emph{too} necessary, but
 doing this will expose us to some nice \emph{pipes} idioms :)
@@ -839,77 +1023,101 @@ sealed off) that consumes \texttt{Direction}s and \emph{returns} resulting
 
 Then we use \texttt{(\textgreater{}\textasciitilde{}\ cat)}, which turns a
 \texttt{Consumer\textquotesingle{}} into something that is forever consuming and
-re-yielding -\/-\/- in essence, it turns a \texttt{Consumer\textquotesingle{}}
+re-yielding --- in essence, it turns a \texttt{Consumer\textquotesingle{}}
 returning values into a \texttt{Pipe} repeatedly yielding the returned values.
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs\#L74-86
-searchPT :: forall a m r. Monad m =\textgreater{} PreTree a -\textgreater{} Pipe
-Direction a m r searchPT t = searchPT' t \textgreater{}\textasciitilde{} cat
-where searchPT' :: PreTree a -\textgreater{} Consumer' Direction m a searchPT'
-(PTLeaf x) = return x searchPT' (PTNode pt1 pt2) = do dir \textless{}- await
-searchPT' \$ case dir of DLeft -\textgreater{} pt1 DRight -\textgreater{} pt2
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L74-86}
+\OtherTok{searchPT ::}\NormalTok{ forall a m r}\FunctionTok{.} \DataTypeTok{Monad}\NormalTok{ m}
+         \OtherTok{=>} \DataTypeTok{PreTree}\NormalTok{ a}
+         \OtherTok{->} \DataTypeTok{Pipe} \DataTypeTok{Direction}\NormalTok{ a m r}
+\NormalTok{searchPT t }\FunctionTok{=}\NormalTok{ searchPT' t }\FunctionTok{>~}\NormalTok{ cat}
+  \KeywordTok{where}
+\OtherTok{    searchPT' ::} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Consumer'} \DataTypeTok{Direction}\NormalTok{ m a}
+\NormalTok{    searchPT' (}\DataTypeTok{PTLeaf}\NormalTok{ x)       }\FunctionTok{=}
+\NormalTok{        return x}
+\NormalTok{    searchPT' (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{        dir }\OtherTok{<-}\NormalTok{ await}
+\NormalTok{        searchPT' }\FunctionTok{$} \KeywordTok{case}\NormalTok{ dir }\KeywordTok{of}
+                      \DataTypeTok{DLeft}  \OtherTok{->}\NormalTok{ pt1}
+                      \DataTypeTok{DRight} \OtherTok{->}\NormalTok{ pt2}
+\end{Highlighting}
+\end{Shaded}
 
 The logic is slightly cleaner; the gain isn't that much, but just being able to
 have this separation is nice. Also, we get rid of explicit recursion. And
 everybody knows that every time you can get rid of explicit recursion, you get a
-big win -\/-\/- in lack of potential bugs, in more concise code, and in
-leveraging higher order functions. In any case, this is also a good exposure to
+big win --- in lack of potential bugs, in more concise code, and in leveraging
+higher order functions. In any case, this is also a good exposure to
 \texttt{(\textgreater{}\textasciitilde{})}!
 
-\textless{}div class="note"\textgreater{} \textbf{Aside}
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\textbf{Aside}
 
 \texttt{(\textgreater{}\textasciitilde{})} is a pretty useful thing. Basically,
 when you say
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell consumer
-\textgreater{}\textasciitilde{} pipe
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{consumer }\FunctionTok{>~}\NormalTok{ pipe}
+\end{Highlighting}
+\end{Shaded}
 
-it is like saying "\emph{Every time \texttt{pipe} \texttt{await}s, just use the
-result returned by \texttt{consumer} instead}".
+it is like saying ``\emph{Every time \texttt{pipe} \texttt{await}s, just use the
+result returned by \texttt{consumer} instead}''.
 
 We can look at \texttt{cat}:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell cat :: Pipe a a m r
-cat = forever \$ do a \textless{}- await yield a
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{cat ::} \DataTypeTok{Pipe}\NormalTok{ a a m r}
+\NormalTok{cat }\FunctionTok{=}\NormalTok{ forever }\FunctionTok{$} \KeywordTok{do}
+\NormalTok{        a }\OtherTok{<-}\NormalTok{ await}
+\NormalTok{        yield a}
+\end{Highlighting}
+\end{Shaded}
 
 Which just simply echoes/sends back down whatever it receives.
 
 When we say:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell consumer
-\textgreater{}\textasciitilde{} cat
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{consumer }\FunctionTok{>~}\NormalTok{ cat}
+\end{Highlighting}
+\end{Shaded}
 
-We basically say "every time we \texttt{await} something in \texttt{cat}, just
-use \texttt{consumer}'s return value":
+We basically say ``every time we \texttt{await} something in \texttt{cat}, just
+use \texttt{consumer}'s return value'':
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell consumer
-\textgreater{}\textasciitilde{} cat = forever \$ do a \textless{}- consumer
-yield a
-
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{consumer }\FunctionTok{>~}\NormalTok{ cat}
+    \FunctionTok{=}\NormalTok{ forever }\FunctionTok{$} \KeywordTok{do}
+\NormalTok{        a }\OtherTok{<-}\NormalTok{ consumer}
+\NormalTok{        yield a}
+\end{Highlighting}
+\end{Shaded}
 
 Basically, \texttt{consumer\ \textgreater{}\textasciitilde{}\ cat} repeatedly
 consumes the input and yields downstream the return of the consuming.
 
 (Remember, the value the pipe returns (the \texttt{r}) is different than the
-value the pipe "sends downstream"; the downstream values are used in connecting
-with \texttt{(\textgreater{}-\textgreater{})} and the like, and the return value
-is just the value that the specific thing \emph{returns} when ran, to the thing
-doing the running.)
+value the pipe ``sends downstream''; the downstream values are used in
+connecting with \texttt{(\textgreater{}-\textgreater{})} and the like, and the
+return value is just the value that the specific thing \emph{returns} when ran,
+to the thing doing the running.)
 
 Play around with \texttt{(\textgreater{}\textasciitilde{})}-ifying different
 \texttt{Pipe}s and seeing what it does to it; you might have some fun.
 
 Why \texttt{Consumer\textquotesingle{}} and not \texttt{Consumer}? Well,
-remember that all lines of the \texttt{do} block have to have the same "yield"
+remember that all lines of the \texttt{do} block have to have the same ``yield''
 type (because the Monad is \texttt{Pipe\ a\ b\ m}, so all lines have to be
-\texttt{Pipe\ a\ b\ m\ r} for different \texttt{r}'s -\/-\/- the \texttt{a}'s
-and \texttt{b}'s (the yield type) and \texttt{m}'s have to be the same), so
+\texttt{Pipe\ a\ b\ m\ r} for different \texttt{r}'s --- the \texttt{a}'s and
+\texttt{b}'s (the yield type) and \texttt{m}'s have to be the same), so
 \texttt{Consumer\textquotesingle{}} lets the yield type be whatever it needs to
 be to match with the rest of the \texttt{do} block.
 
@@ -917,32 +1125,36 @@ Don't worry if this is a bit complicated; you don't need to really undersatnd
 this to use \emph{pipes} :)
 
 Admittedly, my description isn't too great, so if anyone has a better one, I'd
-be happy to use it here! \textless{}/div\textgreater{}
+be happy to use it here!
 
-\subsubsection{The Rest}
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
-And the rest is...well, we already know it!
+\hypertarget{the-rest}{%
+\subsubsection{The Rest}\label{the-rest}}
+
+And the rest is\ldots{}well, we already know it!
 
 We use \texttt{(view\ PB.pack)\ byteStream} like last time to turn our stream of
-\texttt{Word8} into a stream of \texttt{ByteString}, with "smart chunking". Then
-we pipe that in to \texttt{PB.toHandle}, like we did last time, and have it all
-flow into the output file.
+\texttt{Word8} into a stream of \texttt{ByteString}, with ``smart chunking''.
+Then we pipe that in to \texttt{PB.toHandle}, like we did last time, and have it
+all flow into the output file.
 
 We have assembled our pipeline; all we have to do now is \texttt{runEffect}, to
-"run" it. And again, that's it!
+``run'' it. And again, that's it!
 
-\subsection{Testing}
+\hypertarget{testing}{%
+\subsection{Testing}\label{testing}}
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}bash \$ ghc -O2 decode.hs \$
-./decode warandpeace.enc warandpeace.dec \$ md5sum warandpeace.txt
-
-\section{3c8168e48f49784ac3c2c25d15388e96 warandpeace.txt}
-
-\$ md5sum warandpeace.dec
-
-\section{3c8168e48f49784ac3c2c25d15388e96 warandpeace.dec}
-
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{$ }\ExtensionTok{ghc}\NormalTok{ -O2 decode.hs}
+\NormalTok{$ }\ExtensionTok{./decode}\NormalTok{ warandpeace.enc warandpeace.dec}
+\NormalTok{$ }\ExtensionTok{md5sum}\NormalTok{ warandpeace.txt}
+\CommentTok{# 3c8168e48f49784ac3c2c25d15388e96  warandpeace.txt}
+\NormalTok{$ }\ExtensionTok{md5sum}\NormalTok{ warandpeace.dec}
+\CommentTok{# 3c8168e48f49784ac3c2c25d15388e96  warandpeace.dec}
+\end{Highlighting}
+\end{Shaded}
 
 And yup, we get an exact, lossless decompression.
 
@@ -950,7 +1162,8 @@ Decompression is faster than compression, as you'd expect; on my computer it
 takes about two seconds to decompress the 3.1M file. Still a bit slower than
 we'd like, but not \emph{too} bad. Well. Maybe.
 
-\section{Conclusion}
+\hypertarget{conclusion}{%
+\section{Conclusion}\label{conclusion}}
 
 Hopefully from this all, you can see \emph{pipes} as a beautiful abstraction for
 chaining together and transforming streaming computations in a pure,
@@ -975,10 +1188,13 @@ Keep in mind that I'm still a new user of \emph{pipes} myself; if I've made any
 huge mistakes in style or idiomaticness, I'm available here in the comments and
 I'd appreciate any corrections y'all can offer.
 
-So ends the "pipes tutorial" section of this series; tune in next time and we'll
-try our best to optimize this baby! {[}\^{}nexttime{]}
+So ends the ``pipes tutorial'' section of this series; tune in next time and
+we'll try our best to optimize this baby! \footnote{Hopefully you aren't holding
+  your breath on this one :) This next part is not scheduled any ime soon and
+  might not come for a while, as I'll be pursuing some other things in the near
+  future --- I apologize for any disappointment/inconvenience this may cause.}
 
-\textless{}div class="note"\textgreater{}
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 \textbf{Bonus Round: \emph{Full Lens}}
 
@@ -987,52 +1203,59 @@ Hey guess what! Let's try and go \emph{full lens} :)
 (This section does not invalidate anything you learned already, so if you have
 problems with it, it's okay :) )
 
-Now, you might have thought, "Hey, we used \texttt{view\ PB.pack} to turn our
-\texttt{Word8} producer into a \texttt{ByteString} producer...couldn't we just
-use \texttt{view\ PB.unpack} to turn our \texttt{ByteString} producer into a
-\texttt{Word8} producer in the first place???"
+Now, you might have thought, ``Hey, we used \texttt{view\ PB.pack} to turn our
+\texttt{Word8} producer into a \texttt{ByteString} producer\ldots{}couldn't we
+just use \texttt{view\ PB.unpack} to turn our \texttt{ByteString} producer into
+a \texttt{Word8} producer in the first place???''
 
-Yup! In fact, this takes us into a..."pipe transformer style" of pipes code, as
-opposed to a "pipe composition style" of pipes code. Both ways are considered
-"idiomatic", and it's up to you to decide what suits you more.
+Yup! In fact, this takes us into a\ldots{}``pipe transformer style'' of pipes
+code, as opposed to a ``pipe composition style'' of pipes code. Both ways are
+considered ``idiomatic'', and it's up to you to decide what suits you more.
 
 Basically, we don't ever need \texttt{bsToBytes}; instead of
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L65-65
-let byteProducer = PB.fromHandle hIn \textgreater{}-\textgreater{} bsToBytes
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L65-65}
+    \KeywordTok{let}\NormalTok{ byteProducer }\FunctionTok{=}\NormalTok{ PB.fromHandle hIn }\FunctionTok{>->}\NormalTok{ bsToBytes}
+\end{Highlighting}
+\end{Shaded}
 
 We can just write
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell let byteProducer =
-(view PB.unpack) (PB.fromHandle hIn)
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{let}\NormalTok{ byteProducer }\FunctionTok{=}\NormalTok{ (view PB.unpack) (PB.fromHandle hIn)}
+\end{Highlighting}
+\end{Shaded}
 
 Okay, one last thing.
 
-With \emph{lens}, we not only have the ability to "view" the \texttt{ByteString}
-producer "as a" \texttt{Word8} producer.
+With \emph{lens}, we not only have the ability to ``view'' the
+\texttt{ByteString} producer ``as a'' \texttt{Word8} producer.
 
 We also have the ability to \emph{modify} the \texttt{Word8} producer that we
-"see"...and \emph{put it back into} the \texttt{ByteString} producer!
+``see''\ldots{}and \emph{put it back into} the \texttt{ByteString} producer!
 
 That is, if I have a \texttt{ByteString} producer, I can see the \texttt{Word8}
-producer, modify it, and "stick it back into" the \texttt{ByteString}
-producer...to basically create a new \texttt{ByteString} producer that instead
-outputs our "modified" \texttt{Word8} producer.
+producer, modify it, and ``stick it back into'' the \texttt{ByteString}
+producer\ldots{}to basically create a new \texttt{ByteString} producer that
+instead outputs our ``modified'' \texttt{Word8} producer.
 
 It's like a fancy \texttt{fmap}. And like how \texttt{view} was how we
-"unlocked" the viewer from the lens, we use \texttt{over} to "unlock" the "pull
-out, edit, and stick back in".
+``unlocked'' the viewer from the lens, we use \texttt{over} to ``unlock'' the
+``pull out, edit, and stick back in''.
 
 That is, in our case,
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell over :: Lens'
-(Producer ByteString m r) (Producer Word8 m r) -\textgreater{} (Producer Word8 m
-r -\textgreater{} Producer Word8 m r) -\textgreater{} Producer ByteString m r
--\textgreater{} Producer ByteString m r
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{over ::} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Producer} \DataTypeTok{ByteString}\NormalTok{ m r) (}\DataTypeTok{Producer} \DataTypeTok{Word8}\NormalTok{ m r)}
+     \OtherTok{->}\NormalTok{ (}\DataTypeTok{Producer} \DataTypeTok{Word8}\NormalTok{ m r }\OtherTok{->} \DataTypeTok{Producer} \DataTypeTok{Word8}\NormalTok{ m r)}
+     \OtherTok{->} \DataTypeTok{Producer} \DataTypeTok{ByteString}\NormalTok{ m r}
+     \OtherTok{->} \DataTypeTok{Producer} \DataTypeTok{ByteString}\NormalTok{ m r}
+\end{Highlighting}
+\end{Shaded}
 
 What does this mean, in practice?
 
@@ -1042,11 +1265,16 @@ chunking) for us, all in one swoop.
 
 So, we can rewrite \texttt{bsOut}:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell bsIn = PB.fromHandle
-hIn bsOut = flip (over PB.unpack) bsIn \$ \textbackslash{}bytesOut
--\textgreater{} dirsBytes ( bytesOut \textgreater{}-\textgreater{} encodeByte
-encTable ) pipeline = bsOut \textgreater{}-\textgreater{} PB.toHandle hOut
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{bsIn      }\FunctionTok{=}\NormalTok{ PB.fromHandle hIn}
+\NormalTok{bsOut     }\FunctionTok{=}\NormalTok{ flip (over PB.unpack) bsIn }\FunctionTok{$}\NormalTok{ \textbackslash{}bytesOut }\OtherTok{->}
+\NormalTok{                dirsBytes ( bytesOut}
+                        \FunctionTok{>->}\NormalTok{ encodeByte encTable )}
+\NormalTok{pipeline  }\FunctionTok{=}\NormalTok{ bsOut}
+        \FunctionTok{>->}\NormalTok{ PB.toHandle hOut}
+\end{Highlighting}
+\end{Shaded}
 
 So \texttt{over\ PB.unpack} handles the unpacking (to get \texttt{bytesOut}) and
 the re-packing (after the result of \texttt{dirsBytes}) for us, in one fell
@@ -1056,6 +1284,6 @@ Neat!
 
 Okay now, good bye, for reals!
 
-\textless{}/div\textgreater{}
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 \end{document}

@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>Auto: A Todo GUI application with Auto (on GHCJS, etc.) · in Code</title><meta name="description" content="Weblog of Justin Le, covering his various adventures in programming and explorations in the vast worlds of computation physics, and knowledge."><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta property="og:site_name" content="in Code"><meta property="og:description" content="Continuing along with All About Auto, let&#39;s look at another exciting and useful application of the auto library: GUI&#39;s. We&#39;re going to look at the canonical &quot;hello world&quot; of GUI apps these days --- the todo app. We&#39;re going to be using the specs of todoMVC to build a todoMVC &quot;candidate&quot; that follows the specs...and along the way see what auto offers in its tools of managing isolated state components and modeling GUI logic. We&#39;re really going to be focusing on application logic --- &quot;control&quot; and &quot;model&quot; --- and not looking too close on &quot;views&quot;, which auto doesn&#39;t quite try to offer and where you can really pick your own view rendering system, making this adaptable to really any platform --- javascript/web, desktop, command line, etc. A live version of our end-product is hosted and online. This post does assume some concepts from the tutorial...if not all, then at least those in the introductory post or the README. If you ever find yourself thinking that these concepts are completely new and crazy, you might want to try looking through the tutorial or docs to refresh your mind. As always, comments are welcome, and I&#39;m also usually on #haskell-auto as jle`, and also on twitter (Fair warning...this is not quite a &quot;ghcjs tutorial&quot;, if that&#39;s what you&#39;re looking for; it&#39;s an auto tutorial that uses some rudimentary ghcjs. Hopefully you can learn from that too!)"><meta property="og:type" content="article"><meta property="og:title" content="Auto: A Todo GUI application with Auto (on GHCJS, etc.)"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/auto-a-todo-gui-application-with-auto-on.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/auto-a-todo-gui-application-with-auto-on.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
+<html><head><title>Auto: A Todo GUI application with Auto (on GHCJS, etc.) · in Code</title><meta name="description" content="Weblog of Justin Le, covering his various adventures in programming and explorations in the vast worlds of computation physics, and knowledge."><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta property="og:site_name" content="in Code"><meta property="og:description" content="Continuing along with All About Auto, let’s look at another exciting and useful application of the auto library: GUI’s. We’re going to look at the canonical “hello world” of GUI apps these days — the todo app. We’re going to be using the specs of todoMVC to build a todoMVC “candidate” that follows the specs…and along the way see what auto offers in its tools of managing isolated state components and modeling GUI logic. We’re really going to be focusing on application logic — “control” and “model” — and not looking too close on “views”, which auto doesn’t quite try to offer and where you can really pick your own view rendering system, making this adaptable to really any platform — javascript/web, desktop, command line, etc. A live version of our end-product is hosted and online. This post does assume some concepts from the tutorial…if not all, then at least those in the introductory post or the README. If you ever find yourself thinking that these concepts are completely new and crazy, you might want to try looking through the tutorial or docs to refresh your mind. As always, comments are welcome, and I’m also usually on #haskell-auto as jle`, and also on twitter (Fair warning…this is not quite a “ghcjs tutorial”, if that’s what you’re looking for; it’s an auto tutorial that uses some rudimentary ghcjs. Hopefully you can learn from that too!)"><meta property="og:type" content="article"><meta property="og:title" content="Auto: A Todo GUI application with Auto (on GHCJS, etc.)"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/auto-a-todo-gui-application-with-auto-on.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/auto-a-todo-gui-application-with-auto-on.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
 var disqus_shortname='incode';
 </script><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
 (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -18,95 +18,147 @@ ga('send', 'pageview');
 programming DSL and platform. Check out the README, tutorial, or examples for
 more information!">Auto</a>, <a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category" title="Functional, pure, non-strict, statically and strongly typed, natively
 compiled...really just the king of great languages.">Haskell</a>, <a href="https://blog.jle.im/entries/category/@tutorials.html" class="tag-a-category" title="Technical tutorials/walkthroughs on specific programming processes and problems
-that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-separator"> &diams; </span><a class="comment-link" href="#disqus_thread">Comments</a></p></header><hr><aside class="contents-container"><h5 id="contents-header">Contents</h5><div id="toc"></div></aside><div class="main-content copy-content"><p>Continuing along with <a href="http://blog.jle.im/entries/series/+all-about-auto">All About Auto</a>, let's look at another exciting and useful application of the <em><a href="http://hackage.haskell.org/package/auto">auto</a></em> library: GUI's. We're going to look at the canonical &quot;hello world&quot; of GUI apps these days --- the todo app. We're going to be using the specs of <a href="http://todomvc.com/">todoMVC</a> to build a todoMVC &quot;candidate&quot; that follows the specs...and along the way see what <em>auto</em> offers in its tools of managing isolated state components and modeling GUI logic. We're really going to be focusing on application logic --- &quot;control&quot; and &quot;model&quot; --- and not looking too close on &quot;views&quot;, which <em>auto</em> doesn't quite try to offer and where you can really pick your own view rendering system, making this adaptable to really any platform --- javascript/web, desktop, command line, etc.</p>
+that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-separator"> &diams; </span><a class="comment-link" href="#disqus_thread">Comments</a></p></header><hr><aside class="contents-container"><h5 id="contents-header">Contents</h5><div id="toc"></div></aside><div class="main-content copy-content"><p>Continuing along with <a href="http://blog.jle.im/entries/series/+all-about-auto">All About Auto</a>, let’s look at another exciting and useful application of the <em><a href="http://hackage.haskell.org/package/auto">auto</a></em> library: GUI’s. We’re going to look at the canonical “hello world” of GUI apps these days — the todo app. We’re going to be using the specs of <a href="http://todomvc.com/">todoMVC</a> to build a todoMVC “candidate” that follows the specs…and along the way see what <em>auto</em> offers in its tools of managing isolated state components and modeling GUI logic. We’re really going to be focusing on application logic — “control” and “model” — and not looking too close on “views”, which <em>auto</em> doesn’t quite try to offer and where you can really pick your own view rendering system, making this adaptable to really any platform — javascript/web, desktop, command line, etc.</p>
 <p>A live version of our end-product <a href="https://mstksg.github.com/auto-examples/todo">is hosted and online</a>.</p>
-<p>This post does assume <em>some</em> concepts from the <a href="https://github.com/mstksg/auto/blob/master/tutorial/tutorial.md">tutorial</a>...if not all, then at least those in the <a href="http://blog.jle.im/entry/introducing-the-auto-library">introductory post</a> or the <a href="https://github.com/mstksg/auto/blob/master/README.md">README</a>. If you ever find yourself thinking that these concepts are completely new and crazy, you might want to try looking through the <a href="https://github.com/mstksg/auto/blob/master/tutorial/tutorial.md">tutorial</a> or <a href="http://hackage.haskell.org/package/auto">docs</a> to refresh your mind. As always, comments are welcome, and I'm also usually on <em>#haskell-auto</em> as <em>jle`</em>, and also on <a href="https://twitter.com/mstk" title="Twitter">twitter</a></p>
-<p>(Fair warning...this is not quite a &quot;ghcjs tutorial&quot;, if that's what you're looking for; it's an auto tutorial that uses some rudimentary ghcjs. Hopefully you can learn from that too!)</p>
-<h2>Overall Layout</h2>
-<p>At the highest level, <em>auto</em> is a library that provides us tools to build and work with stream transformers on streams of values. Transform a stream of input values to a stream of output values. So, let's try to phrase our Todo app problem in that perspective. What are our inputs, and what are our outputs?</p>
-<p>For a Todo app, the outputs are probably going to be a <em>todo list</em> itself. If we're building a GUI, then having the todo list itself is going to be enough to build our front-end display. The stream of <em>inputs</em> is a little less obvious, but, well, what does an app really take as inputs? Commands! Our stream of inputs will be commands sent by a GUI or by whatever front-end we choose. Our todo app then is a transformer of a stream of commands to a stream of todo lists...where the todo list we get changes as we process more commands.</p>
-<p>So the &quot;overall loop&quot; will be:</p>
-<ol>
+<p>This post does assume <em>some</em> concepts from the <a href="https://github.com/mstksg/auto/blob/master/tutorial/tutorial.md">tutorial</a>…if not all, then at least those in the <a href="http://blog.jle.im/entry/introducing-the-auto-library">introductory post</a> or the <a href="https://github.com/mstksg/auto/blob/master/README.md">README</a>. If you ever find yourself thinking that these concepts are completely new and crazy, you might want to try looking through the <a href="https://github.com/mstksg/auto/blob/master/tutorial/tutorial.md">tutorial</a> or <a href="http://hackage.haskell.org/package/auto">docs</a> to refresh your mind. As always, comments are welcome, and I’m also usually on <em>#haskell-auto</em> as <em>jle`</em>, and also on <a href="https://twitter.com/mstk" title="Twitter">twitter</a></p>
+<p>(Fair warning…this is not quite a “ghcjs tutorial”, if that’s what you’re looking for; it’s an auto tutorial that uses some rudimentary ghcjs. Hopefully you can learn from that too!)</p>
+<h2 id="overall-layout">Overall Layout</h2>
+<p>At the highest level, <em>auto</em> is a library that provides us tools to build and work with stream transformers on streams of values. Transform a stream of input values to a stream of output values. So, let’s try to phrase our Todo app problem in that perspective. What are our inputs, and what are our outputs?</p>
+<p>For a Todo app, the outputs are probably going to be a <em>todo list</em> itself. If we’re building a GUI, then having the todo list itself is going to be enough to build our front-end display. The stream of <em>inputs</em> is a little less obvious, but, well, what does an app really take as inputs? Commands! Our stream of inputs will be commands sent by a GUI or by whatever front-end we choose. Our todo app then is a transformer of a stream of commands to a stream of todo lists…where the todo list we get changes as we process more commands.</p>
+<p>So the “overall loop” will be:</p>
+<ol type="1">
 <li>A front-end rendered by <em>ghcjs-dom</em> (or whatever) with event handlers that drop commands into a concurrent <code>Chan</code> queue. This just handles rendering.</li>
 <li>Our <code>Auto</code> launched with <code>runOnChan</code>, which waits on the <code>Chan</code> queue, runs the inputs through the <code>Auto</code>, and renders the result. This handles all of the logic.</li>
 </ol>
-<p>We like types in Haskell, so let's begin by laying out our types!</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L19-46 import Control.Auto import Control.Auto.Collection import Control.Monad.Fix import Data.IntMap (IntMap) import Data.Serialize import GHC.Generics import Prelude hiding ((.), id) import qualified Data.IntMap as IM</p>
-<p>data TodoInp = IAdd String -- new task with description | ITask TaskID TaskCmd -- send command to task by ID | IAll TaskCmd -- send command to all tasks deriving Show</p>
-<p>data TaskCmd = CDelete -- delete | CPrune -- delete if completed | CComplete Bool -- set completed status | CModify String -- modify description | CNop -- do nothing deriving Show</p>
-<p>data Task = Task { taskDescr :: String , taskCompleted :: Bool } deriving (Show, Generic)</p>
-<p>instance Serialize Task -- from Data.Serialize, from the cereal library ~~~</p>
-<p>We have a type to represent our inputs, <code>TodoInp</code>, which can be an &quot;add&quot; command with a <code>String</code>, a &quot;task&quot; command with a <code>TaskId</code> (<code>Int</code>) and a <code>TaskCmd</code>, and an &quot;all&quot; command with a <code>TaskCmd</code> that is supposed to represent sending that command to all tasks.</p>
-<p>Our <code>TaskCmd</code> represents commands we can send to individual tasks -- we can delete, prune (delete if completed), set the &quot;completed&quot; flag, or modify the description.</p>
-<p>We're going to represent our task list, <code>TaskMap</code>, as not a <code>[]</code> list, but as an <code>IntMap</code> from <em>containers</em>, which associates an <code>Int</code> to a <code>Task</code> that we can look up with the <code>IntMap</code> API. What would a <code>TaskMap</code> store other than a bunch of <code>Task</code>s, which we are defining as jus a tupling of a <code>String</code> description and a <code>Bool</code> completed/uncompleted status.</p>
-<h2>The Todo Auto</h2>
-<p>Time to go over the logic portion! The part that <em>auto</em> is meant for! We're going to structure the logic of our app (also known as the &quot;model&quot;) by using principles of local statefulness to avoid ever working with a &quot;global state&quot;, and working in a declarative, high-level manner.</p>
-<h3>Tasks</h3>
-<p>It's clear that the core of our entire thing is going to be the &quot;task list&quot; construct itself...something that can dynamically add or remove tasks.</p>
-<p>In <em>auto</em>, there is a construct created just for this kind of situation: dynamic collections indexed by a key (a &quot;task id&quot;), where you can add or subtract <code>Auto</code>s from dynamically --- they are <code>dynMap</code> and <code>dynMapF</code> from <em><a href="http://hackage.haskell.org/package/auto/docs/Control-Auto-Collection.html">Control.Auto.Collection</a></em>. We'll be using <code>dynMapF</code> because it's serializable, and we don't need the extra power that <code>dynMap</code> offers.</p>
-<p>~~~haskell dynMapF :: (k -&gt; Interval m a b) -- ^ function to initialize new <code>Auto</code>s -&gt; a -- ^ default inputs -&gt; Auto m ( IntMap a -- ^ input for each internal <code>Auto</code>, indexed by key , Blip [k] -- ^ blip stream to initialize new <code>Auto</code>s ) (IntMap b) -- ^ <code>Auto</code> outputs, by key ~~~</p>
-<p><code>dynMapF</code> keeps a &quot;dynamic collection&quot; of <code>Interval m a b</code>s, indexed by an <code>Int</code> key, or an &quot;ID&quot;. It takes as input a stream of <code>IntMap a</code>...basically a bunch of <code>(Int, a)</code> pairs. <code>dynMapF</code> routes each input to the <code>Interval</code> at that ID/address (with a suitable &quot;default&quot; <code>a</code> if none was sent in), and then outputs all of the results as an <code>IntMap b</code> --- a bunch of <code>(Int, b)</code> pairs, each output with the address of the <code>Auto</code> that made it.</p>
-<p>For example, <code>IM.singleton 5 True</code> would send <code>True</code> to the <code>Auto</code> stored at <code>5</code>. It'll then output something that includes <code>(5, &quot;received True!&quot;)</code> --- the output of the <code>Auto</code> at slot 5.</p>
-<p>Whenever an <code>Interval</code> turns &quot;off&quot; (is <code>Nothing</code>), it is removed from the collection. In this way we can have <code>Auto</code>s &quot;remove themselves&quot;.</p>
-<p>It also takes as input a blip stream of <code>[k]</code>s. We use each emitted <code>k</code> to &quot;initialize a new <code>Interval</code>&quot; and throw it into the collection, creating a new unique key for it. Every time a new <code>Auto</code> is initialized, <code>dynMapF</code> creates a new key for it.</p>
+<p>We like types in Haskell, so let’s begin by laying out our types!</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L19-46</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">import</span> <span class="dt">Control.Auto</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Control.Auto.Collection</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Control.Monad.Fix</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Data.IntMap</span>             (<span class="dt">IntMap</span>)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Data.Serialize</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">GHC.Generics</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Prelude</span> <span class="kw">hiding</span>          ((.), id)</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.IntMap</span>   <span class="kw">as</span> <span class="dt">IM</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">data</span> <span class="dt">TodoInp</span> <span class="fu">=</span> <span class="dt">IAdd</span>  <span class="dt">String</span>           <span class="co">-- new task with description</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">             <span class="fu">|</span> <span class="dt">ITask</span> <span class="dt">TaskID</span> <span class="dt">TaskCmd</span>   <span class="co">-- send command to task by ID</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13">             <span class="fu">|</span> <span class="dt">IAll</span> <span class="dt">TaskCmd</span>           <span class="co">-- send command to all tasks</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">             <span class="kw">deriving</span> <span class="dt">Show</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">data</span> <span class="dt">TaskCmd</span> <span class="fu">=</span> <span class="dt">CDelete</span>          <span class="co">-- delete</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17">             <span class="fu">|</span> <span class="dt">CPrune</span>           <span class="co">-- delete if completed</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18">             <span class="fu">|</span> <span class="dt">CComplete</span> <span class="dt">Bool</span>   <span class="co">-- set completed status</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19">             <span class="fu">|</span> <span class="dt">CModify</span> <span class="dt">String</span>   <span class="co">-- modify description</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20">             <span class="fu">|</span> <span class="dt">CNop</span>             <span class="co">-- do nothing</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21">             <span class="kw">deriving</span> <span class="dt">Show</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">data</span> <span class="dt">Task</span> <span class="fu">=</span> <span class="dt">Task</span> {<span class="ot"> taskDescr     ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb1-24" data-line-number="24">                 ,<span class="ot"> taskCompleted ::</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb1-25" data-line-number="25">                 } <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb1-26" data-line-number="26"></a>
+<a class="sourceLine" id="cb1-27" data-line-number="27"><span class="kw">instance</span> <span class="dt">Serialize</span> <span class="dt">Task</span> <span class="co">-- from Data.Serialize, from the cereal library</span></a></code></pre></div>
+<p>We have a type to represent our inputs, <code>TodoInp</code>, which can be an “add” command with a <code>String</code>, a “task” command with a <code>TaskId</code> (<code>Int</code>) and a <code>TaskCmd</code>, and an “all” command with a <code>TaskCmd</code> that is supposed to represent sending that command to all tasks.</p>
+<p>Our <code>TaskCmd</code> represents commands we can send to individual tasks – we can delete, prune (delete if completed), set the “completed” flag, or modify the description.</p>
+<p>We’re going to represent our task list, <code>TaskMap</code>, as not a <code>[]</code> list, but as an <code>IntMap</code> from <em>containers</em>, which associates an <code>Int</code> to a <code>Task</code> that we can look up with the <code>IntMap</code> API. What would a <code>TaskMap</code> store other than a bunch of <code>Task</code>s, which we are defining as jus a tupling of a <code>String</code> description and a <code>Bool</code> completed/uncompleted status.</p>
+<h2 id="the-todo-auto">The Todo Auto</h2>
+<p>Time to go over the logic portion! The part that <em>auto</em> is meant for! We’re going to structure the logic of our app (also known as the “model”) by using principles of local statefulness to avoid ever working with a “global state”, and working in a declarative, high-level manner.</p>
+<h3 id="tasks">Tasks</h3>
+<p>It’s clear that the core of our entire thing is going to be the “task list” construct itself…something that can dynamically add or remove tasks.</p>
+<p>In <em>auto</em>, there is a construct created just for this kind of situation: dynamic collections indexed by a key (a “task id”), where you can add or subtract <code>Auto</code>s from dynamically — they are <code>dynMap</code> and <code>dynMapF</code> from <em><a href="http://hackage.haskell.org/package/auto/docs/Control-Auto-Collection.html">Control.Auto.Collection</a></em>. We’ll be using <code>dynMapF</code> because it’s serializable, and we don’t need the extra power that <code>dynMap</code> offers.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">dynMapF ::</span> (k <span class="ot">-&gt;</span> <span class="dt">Interval</span> m a b)    <span class="co">-- ^ function to initialize new `Auto`s</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">        <span class="ot">-&gt;</span> a                        <span class="co">-- ^ default inputs</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">        <span class="ot">-&gt;</span> <span class="dt">Auto</span> m ( <span class="dt">IntMap</span> a        <span class="co">-- ^ input for each internal `Auto`, indexed by key</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">                  , <span class="dt">Blip</span> [k]        <span class="co">-- ^ blip stream to initialize new `Auto`s</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">                  )</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">                  (<span class="dt">IntMap</span> b)        <span class="co">-- ^ `Auto` outputs, by key</span></a></code></pre></div>
+<p><code>dynMapF</code> keeps a “dynamic collection” of <code>Interval m a b</code>s, indexed by an <code>Int</code> key, or an “ID”. It takes as input a stream of <code>IntMap a</code>…basically a bunch of <code>(Int, a)</code> pairs. <code>dynMapF</code> routes each input to the <code>Interval</code> at that ID/address (with a suitable “default” <code>a</code> if none was sent in), and then outputs all of the results as an <code>IntMap b</code> — a bunch of <code>(Int, b)</code> pairs, each output with the address of the <code>Auto</code> that made it.</p>
+<p>For example, <code>IM.singleton 5 True</code> would send <code>True</code> to the <code>Auto</code> stored at <code>5</code>. It’ll then output something that includes <code>(5, &quot;received True!&quot;)</code> — the output of the <code>Auto</code> at slot 5.</p>
+<p>Whenever an <code>Interval</code> turns “off” (is <code>Nothing</code>), it is removed from the collection. In this way we can have <code>Auto</code>s “remove themselves”.</p>
+<p>It also takes as input a blip stream of <code>[k]</code>s. We use each emitted <code>k</code> to “initialize a new <code>Interval</code>” and throw it into the collection, creating a new unique key for it. Every time a new <code>Auto</code> is initialized, <code>dynMapF</code> creates a new key for it.</p>
 <p>Read over the <a href="https://github.com/mstksg/auto/blob/master/tutorial/tutorial.md#semantic-tools">tutorial section on blip streams and <code>Interval</code>s</a> if you are still unfamiliar with them.</p>
 <p>This pretty much fits exactly what we want for our task collection. If we imagined that we had our <code>Task</code> as an <code>Auto</code>:</p>
-<p>~~~haskell initTask :: Monad m =&gt; String -&gt; Interval m TaskCmd Task ~~~</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">initTask ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Interval</span> m <span class="dt">TaskCmd</span> <span class="dt">Task</span></a></code></pre></div>
 <p><code>initTask</code> takes a string (a starting description) and initializes an <code>Interval</code> that takes in a stream of task commands, and has a stream of new, updated <code>Task</code>s as its output stream. At every step, it processes the command and outputs the new appropriate <code>Task</code>.</p>
-<p>We can then use this as our &quot;initializer&quot; for <code>dynMapF</code>...and now we have a dynamic collection of tasks!</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L48-50 taskCollection :: Monad m =&gt; Auto m (IntMap TaskCmd, Blip [String]) (IntMap Task) taskCollection = dynMapF initTask CNop ~~~</p>
-<p>If we wanted to send in the command <code>CModify &quot;hey!&quot;</code> to the task whose id/key/address is <code>12</code>, I'd feed in <code>IM.singleton 12 (CModify &quot;hey!&quot;)</code>. The output would then contain the output of feeding that <code>CModify</code> to the <code>Auto</code> at that slot 12, associated with slot 12 on the output <code>IntMap</code>.</p>
-<p>Writing <code>initTask</code> and the task <code>Auto</code> is straightforward with <code>accum</code>, which is basically like <code>foldl</code> on the inputs and a &quot;current state&quot;. (The current state is of course the <code>Task</code>).</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L52-62 initTask :: Monad m =&gt; String -&gt; Interval m TaskCmd Task initTask descr = accum f (Just (Task descr False)) where f (Just t) tc = case tc of CDelete -&gt; Nothing CPrune | taskCompleted t -&gt; Nothing | otherwise -&gt; Just t CComplete s -&gt; Just t { taskCompleted = s } CModify descr -&gt; Just t { taskDescr = descr } CNop -&gt; Just t f Nothing _ = Nothing ~~~</p>
-<p>See that our <code>Auto</code> &quot;turns off&quot; by outputting <code>Nothing</code>. That's interval semantics, and it's what <code>dynMapF</code> relies on for its internal <code>Auto</code>s!</p>
-<h3>Routing the inputs</h3>
+<p>We can then use this as our “initializer” for <code>dynMapF</code>…and now we have a dynamic collection of tasks!</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L48-50</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="ot">taskCollection ::</span> <span class="dt">Monad</span> m</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">               <span class="ot">=&gt;</span> <span class="dt">Auto</span> m (<span class="dt">IntMap</span> <span class="dt">TaskCmd</span>, <span class="dt">Blip</span> [<span class="dt">String</span>]) (<span class="dt">IntMap</span> <span class="dt">Task</span>)</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">taskCollection <span class="fu">=</span> dynMapF initTask <span class="dt">CNop</span></a></code></pre></div>
+<p>If we wanted to send in the command <code>CModify &quot;hey!&quot;</code> to the task whose id/key/address is <code>12</code>, I’d feed in <code>IM.singleton 12 (CModify &quot;hey!&quot;)</code>. The output would then contain the output of feeding that <code>CModify</code> to the <code>Auto</code> at that slot 12, associated with slot 12 on the output <code>IntMap</code>.</p>
+<p>Writing <code>initTask</code> and the task <code>Auto</code> is straightforward with <code>accum</code>, which is basically like <code>foldl</code> on the inputs and a “current state”. (The current state is of course the <code>Task</code>).</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L52-62</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="ot">initTask ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Interval</span> m <span class="dt">TaskCmd</span> <span class="dt">Task</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">initTask descr <span class="fu">=</span> accum f (<span class="dt">Just</span> (<span class="dt">Task</span> descr <span class="dt">False</span>))</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">    f (<span class="dt">Just</span> t) tc <span class="fu">=</span> <span class="kw">case</span> tc <span class="kw">of</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">                      <span class="dt">CDelete</span>                  <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">                      <span class="dt">CPrune</span> <span class="fu">|</span> taskCompleted t <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">                             <span class="fu">|</span> otherwise       <span class="ot">-&gt;</span> <span class="dt">Just</span> t</a>
+<a class="sourceLine" id="cb5-9" data-line-number="9">                      <span class="dt">CComplete</span> s              <span class="ot">-&gt;</span> <span class="dt">Just</span> t { taskCompleted <span class="fu">=</span> s }</a>
+<a class="sourceLine" id="cb5-10" data-line-number="10">                      <span class="dt">CModify</span> descr            <span class="ot">-&gt;</span> <span class="dt">Just</span> t { taskDescr <span class="fu">=</span> descr }</a>
+<a class="sourceLine" id="cb5-11" data-line-number="11">                      <span class="dt">CNop</span>                     <span class="ot">-&gt;</span> <span class="dt">Just</span> t</a>
+<a class="sourceLine" id="cb5-12" data-line-number="12">    f <span class="dt">Nothing</span> _   <span class="fu">=</span> <span class="dt">Nothing</span></a></code></pre></div>
+<p>See that our <code>Auto</code> “turns off” by outputting <code>Nothing</code>. That’s interval semantics, and it’s what <code>dynMapF</code> relies on for its internal <code>Auto</code>s!</p>
+<h3 id="routing-the-inputs">Routing the inputs</h3>
 <p>The only thing left, then, is just to route our input stream to send everything to the correct <code>Auto</code> in <code>taskCollection</code>.</p>
-<p>Our input stream is going to be a stream of <code>TodoInp</code>, which can be &quot;add&quot;, &quot;send command to a single task&quot;, or &quot;send command to all tasks&quot;. Really, though, you can think of it three separate streams all &quot;jammed&quot; into one stream.</p>
+<p>Our input stream is going to be a stream of <code>TodoInp</code>, which can be “add”, “send command to a single task”, or “send command to all tasks”. Really, though, you can think of it three separate streams all “jammed” into one stream.</p>
 <p>This is a common pattern that we can use <em>blip streams</em> for. Instead of working with one big fatty stream, we can work with several blip streams that only emit when the input that we care about comes in.</p>
-<p>Typically, we'd do this with <code>emitJusts</code>:</p>
-<p>~~~haskell emitJusts :: (a -&gt; Maybe b) -&gt; Auto m a (Blip b) ~~~</p>
-<p>You can imagine <code>emitJusts</code> is a &quot;siphon&quot; off of the input stream of <code>a</code>s...and pulling out only the values that we care about, as a blip stream of <code>b</code>'s.</p>
-<p>We can build our &quot;siphoners&quot;:</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L95-105 getAddEvts :: TodoInp -&gt; Maybe [String] getAddEvts (IAdd descr) = Just [descr] getAddEvts _ = Nothing</p>
-<p>getModEvts :: TodoInp -&gt; Maybe (IntMap TaskCmd) getModEvts (ITask n te) = Just $ IM.singleton n te getModEvts _ = Nothing</p>
-<p>getMassEvts :: ([TaskID], TodoInp) -&gt; Maybe (IntMap TaskCmd) getMassEvts (allIds, IAll te) = Just $ IM.fromList (map (,te) allIds) getMassEvts _ = Nothing ~~~</p>
+<p>Typically, we’d do this with <code>emitJusts</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">emitJusts ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b) <span class="ot">-&gt;</span> <span class="dt">Auto</span> m a (<span class="dt">Blip</span> b)</a></code></pre></div>
+<p>You can imagine <code>emitJusts</code> is a “siphon” off of the input stream of <code>a</code>s…and pulling out only the values that we care about, as a blip stream of <code>b</code>’s.</p>
+<p>We can build our “siphoners”:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L95-105</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2"><span class="ot">getAddEvts ::</span> <span class="dt">TodoInp</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">String</span>]</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">getAddEvts (<span class="dt">IAdd</span> descr) <span class="fu">=</span> <span class="dt">Just</span> [descr]</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">getAddEvts _            <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6"><span class="ot">getModEvts ::</span> <span class="dt">TodoInp</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">IntMap</span> <span class="dt">TaskCmd</span>)</a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">getModEvts (<span class="dt">ITask</span> n te) <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> IM.singleton n te</a>
+<a class="sourceLine" id="cb7-8" data-line-number="8">getModEvts _            <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb7-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb7-10" data-line-number="10"><span class="ot">getMassEvts ::</span> ([<span class="dt">TaskID</span>], <span class="dt">TodoInp</span>) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">IntMap</span> <span class="dt">TaskCmd</span>)</a>
+<a class="sourceLine" id="cb7-11" data-line-number="11">getMassEvts (allIds, <span class="dt">IAll</span> te) <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> IM.fromList (map (,te) allIds)</a>
+<a class="sourceLine" id="cb7-12" data-line-number="12">getMassEvts _                 <span class="fu">=</span> <span class="dt">Nothing</span></a></code></pre></div>
 <p><code>getAddEvts</code>, when used with <code>emitJusts</code>, will siphon off all <code>IAdd</code> commands as a blip stream of <code>[String]</code>s, emitting descriptions of new tasks to add.</p>
 <p><code>getModEvts</code>, when used with <code>emitJusts</code>, will siphon off all <code>ITask</code> commands as a blip stream of <code>IntMap TaskCmd</code>, which will be fed into <code>taskCollection</code> and <code>dynMapF</code>.</p>
-<p><code>getMassEvts</code> is pretty much the same thing...siphoning off all <code>IAll</code> commands as a blip stream of <code>IntMap TaskCmd</code>. It needs a list of all <code>TaskID</code>s though, to do its job...because it needs to make an <code>IntMap</code> targeting all of the current tasks.</p>
-<p>Remember, we interace with tasks through an <code>IntMap TaskCmd</code>...which is a map of task id-task command pairs. The <code>TaskCmd</code> stored at key <code>1</code> will be the command we want to send to task id 1.</p>
-<p>Let's see it all work together!</p>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L64-93 todoApp :: MonadFix m =&gt; Auto m TodoInp (IntMap Task) todoApp = proc inpEvt -&gt; do</p>
-<pre><code>rec -- all id&#39;s currently alive
-    allIds &lt;- arrD IM.keys [] -&lt; taskMap
-
-    -- &quot;forking&quot; `inpEvt` into three blip streams:
-    -- newTaskB :: Blip [String]
-    newTaskB  &lt;- emitJusts getAddEvts  -&lt; inpEvt
-    -- modTaskB :: Blip (IntMap TaskCmd)
-    modTaskB  &lt;- emitJusts getModEvts  -&lt; inpEvt
-    -- massTaskB :: Blip (IntMap TaskCmd)
-    massTaskB &lt;- emitJusts getMassEvts -&lt; (allIds, inpEvt)
-
-    -- merge the two streams together to get &quot;all&quot; inputs, single and
-    -- mass.
-    let allInpB :: Blip (IntMap TaskCmd)
-        allInpB = modTaskB &lt;&gt; massTaskB
-
-    -- from a blip stream to an `IntMap` stream that is empty when the
-    -- stream doesn&#39;t emit
-    -- taskCommands :: IntMap TaskCmd
-    taskCommands &lt;- fromBlips IM.empty -&lt; allInpB
-
-    -- feed the commands and the new tasks to `taskMap`...the result is
-    -- the `IntMap` of tasks.
-    -- taskMap :: IntMap Task
-    taskMap &lt;- taskCollection -&lt; (taskCommands, newTaskB)
-
-id -&lt; taskMap</code></pre>
-<p>~~~</p>
-<p>To read the proc block, it does help to sort of see all of the lines as english statements of what things &quot;are&quot;.</p>
-<ol>
-<li><p><code>allIds</code> is a list of keys (id's) currently in the task map <code>taskMap</code>. All of the id's of the tasks currently alive.</p></li>
+<p><code>getMassEvts</code> is pretty much the same thing…siphoning off all <code>IAll</code> commands as a blip stream of <code>IntMap TaskCmd</code>. It needs a list of all <code>TaskID</code>s though, to do its job…because it needs to make an <code>IntMap</code> targeting all of the current tasks.</p>
+<p>Remember, we interace with tasks through an <code>IntMap TaskCmd</code>…which is a map of task id-task command pairs. The <code>TaskCmd</code> stored at key <code>1</code> will be the command we want to send to task id 1.</p>
+<p>Let’s see it all work together!</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L64-93</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2"><span class="ot">todoApp ::</span> <span class="dt">MonadFix</span> m <span class="ot">=&gt;</span> <span class="dt">Auto</span> m <span class="dt">TodoInp</span> (<span class="dt">IntMap</span> <span class="dt">Task</span>)</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">todoApp <span class="fu">=</span> proc inpEvt <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">    rec <span class="co">-- all id&#39;s currently alive</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">        allIds <span class="ot">&lt;-</span> arrD IM.keys [] <span class="fu">-&lt;</span> taskMap</a>
+<a class="sourceLine" id="cb8-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8">        <span class="co">-- &quot;forking&quot; `inpEvt` into three blip streams:</span></a>
+<a class="sourceLine" id="cb8-9" data-line-number="9">        <span class="co">-- newTaskB :: Blip [String]</span></a>
+<a class="sourceLine" id="cb8-10" data-line-number="10">        newTaskB  <span class="ot">&lt;-</span> emitJusts getAddEvts  <span class="fu">-&lt;</span> inpEvt</a>
+<a class="sourceLine" id="cb8-11" data-line-number="11">        <span class="co">-- modTaskB :: Blip (IntMap TaskCmd)</span></a>
+<a class="sourceLine" id="cb8-12" data-line-number="12">        modTaskB  <span class="ot">&lt;-</span> emitJusts getModEvts  <span class="fu">-&lt;</span> inpEvt</a>
+<a class="sourceLine" id="cb8-13" data-line-number="13">        <span class="co">-- massTaskB :: Blip (IntMap TaskCmd)</span></a>
+<a class="sourceLine" id="cb8-14" data-line-number="14">        massTaskB <span class="ot">&lt;-</span> emitJusts getMassEvts <span class="fu">-&lt;</span> (allIds, inpEvt)</a>
+<a class="sourceLine" id="cb8-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb8-16" data-line-number="16">        <span class="co">-- merge the two streams together to get &quot;all&quot; inputs, single and</span></a>
+<a class="sourceLine" id="cb8-17" data-line-number="17">        <span class="co">-- mass.</span></a>
+<a class="sourceLine" id="cb8-18" data-line-number="18">        <span class="kw">let</span><span class="ot"> allInpB ::</span> <span class="dt">Blip</span> (<span class="dt">IntMap</span> <span class="dt">TaskCmd</span>)</a>
+<a class="sourceLine" id="cb8-19" data-line-number="19">            allInpB <span class="fu">=</span> modTaskB <span class="fu">&lt;&gt;</span> massTaskB</a>
+<a class="sourceLine" id="cb8-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb8-21" data-line-number="21">        <span class="co">-- from a blip stream to an `IntMap` stream that is empty when the</span></a>
+<a class="sourceLine" id="cb8-22" data-line-number="22">        <span class="co">-- stream doesn&#39;t emit</span></a>
+<a class="sourceLine" id="cb8-23" data-line-number="23">        <span class="co">-- taskCommands :: IntMap TaskCmd</span></a>
+<a class="sourceLine" id="cb8-24" data-line-number="24">        taskCommands <span class="ot">&lt;-</span> fromBlips IM.empty <span class="fu">-&lt;</span> allInpB</a>
+<a class="sourceLine" id="cb8-25" data-line-number="25"></a>
+<a class="sourceLine" id="cb8-26" data-line-number="26">        <span class="co">-- feed the commands and the new tasks to `taskMap`...the result is</span></a>
+<a class="sourceLine" id="cb8-27" data-line-number="27">        <span class="co">-- the `IntMap` of tasks.</span></a>
+<a class="sourceLine" id="cb8-28" data-line-number="28">        <span class="co">-- taskMap :: IntMap Task</span></a>
+<a class="sourceLine" id="cb8-29" data-line-number="29">        taskMap <span class="ot">&lt;-</span> taskCollection <span class="fu">-&lt;</span> (taskCommands, newTaskB)</a>
+<a class="sourceLine" id="cb8-30" data-line-number="30"></a>
+<a class="sourceLine" id="cb8-31" data-line-number="31">    id <span class="fu">-&lt;</span> taskMap</a></code></pre></div>
+<p>To read the proc block, it does help to sort of see all of the lines as english statements of what things “are”.</p>
+<ol type="1">
+<li><p><code>allIds</code> is a list of keys (id’s) currently in the task map <code>taskMap</code>. All of the id’s of the tasks currently alive.</p></li>
 <li><p>Now, we fork into blip streams:</p>
 <ul>
 <li><code>newTaskB</code> is a blip stream that emits with task descriptions whenever <code>inpEvt</code> calls for one.</li>
@@ -114,91 +166,158 @@ id -&lt; taskMap</code></pre>
 <li><code>massTaskB</code> is a blip stream that emits commands to every single task in <code>allIds</code> whenever <code>inpEvt</code> calls for it.</li>
 <li><code>allInpB</code> is a blip stream with addressed commands whenever either <code>modTaskB</code> or <code>massTaskB</code> emits.</li>
 </ul></li>
-<li><p><code>taskCommands</code> is a map of addressed commands for each task. It's whatever <code>allInpB</code> emits, when it does emit...or just <code>IM.empty</code> (an empty map) when it doesn't.</p></li>
+<li><p><code>taskCommands</code> is a map of addressed commands for each task. It’s whatever <code>allInpB</code> emits, when it does emit…or just <code>IM.empty</code> (an empty map) when it doesn’t.</p></li>
 <li><p><code>taskMap</code> is the map of tasks that we get from our <code>taskCollection</code> updater, which manages a collection of tasks. <code>taskCollection</code> needs the commands for each task and the new tasks we want to do its job.</p></li>
 </ol>
-<p>We state things as an interplay of streams. And in the end, the result is what we want --- an indexed list of tasks.</p>
-<p>Note that we needed the <code>rec</code> block because we referred to <code>taskMap</code> at the beginning (to get <code>allIds</code>), but we don't define <code>taskMap</code> until the end.</p>
-<p>Note that we use <code>arrD</code> for <code>allIds</code>. What we really &quot;meant&quot; was something like:</p>
-<p>~~~haskell allIds &lt;- arr IM.keys -&lt; taskMap ~~~</p>
-<p>But...this doesn't really work out, because when the whole thing &quot;starts&quot;, we don't know what <code>taskMap</code> is. We need to know <code>massTaskB</code> to know <code>taskMap</code>, and we need to know <code>allIds</code> to know <code>massTaskB</code>, and...recursive dependency!</p>
-<p>We can use <code>arrD</code> to specify an &quot;initial output&quot; to &quot;close the loop&quot; (in technical terms). We want <code>allIds</code> to initially be <code>[]</code> (we can assume we start with no task id's), so instead of</p>
-<p>~~~haskell allIds &lt;- arr IM.keys -&lt; taskMap ~~~</p>
+<p>We state things as an interplay of streams. And in the end, the result is what we want — an indexed list of tasks.</p>
+<p>Note that we needed the <code>rec</code> block because we referred to <code>taskMap</code> at the beginning (to get <code>allIds</code>), but we don’t define <code>taskMap</code> until the end.</p>
+<p>Note that we use <code>arrD</code> for <code>allIds</code>. What we really “meant” was something like:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1">allIds <span class="ot">&lt;-</span> arr IM.keys <span class="fu">-&lt;</span> taskMap</a></code></pre></div>
+<p>But…this doesn’t really work out, because when the whole thing “starts”, we don’t know what <code>taskMap</code> is. We need to know <code>massTaskB</code> to know <code>taskMap</code>, and we need to know <code>allIds</code> to know <code>massTaskB</code>, and…recursive dependency!</p>
+<p>We can use <code>arrD</code> to specify an “initial output” to “close the loop” (in technical terms). We want <code>allIds</code> to initially be <code>[]</code> (we can assume we start with no task id’s), so instead of</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1">allIds <span class="ot">&lt;-</span> arr IM.keys <span class="fu">-&lt;</span> taskMap</a></code></pre></div>
 <p>we have</p>
-<p>~~~haskell allIds &lt;- arrD IM.keys [] -&lt; taskMap ~~~</p>
-<p>Where <code>[]</code> is the &quot;initial output&quot;, so when we first try to do anything, we don't need <code>taskMap</code> --- we just pop out <code>[]</code>!</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1">allIds <span class="ot">&lt;-</span> arrD IM.keys [] <span class="fu">-&lt;</span> taskMap</a></code></pre></div>
+<p>Where <code>[]</code> is the “initial output”, so when we first try to do anything, we don’t need <code>taskMap</code> — we just pop out <code>[]</code>!</p>
 <p>This is just a small thing to worry about whenever you have recursive bindings. There is a small cognitive price to pay, but in return, you have something that really just looks like laying out relationships between different quantities :)</p>
-<h2>Interfacing with the world</h2>
-<p>Our application logic is done; let's explore ways to interface with it!</p>
-<h3>Testing/command line</h3>
-<p>~~~haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/todo-cmd.hs#L25-62 parseInp :: String -&gt; Maybe TodoInp parseInp = p . words where p (&quot;A&quot;:xs) = Just (IAdd (unwords xs)) p (&quot;D&quot;:n:<em>) = onId n CDelete p (&quot;C&quot;:n:</em>) = onId n (CComplete True) p (&quot;U&quot;:n:<em>) = onId n (CComplete False) p (&quot;P&quot;:n:</em>) = onId n CPrune p (&quot;M&quot;:n:xs) = onId n (CModify (unwords xs)) p _ = Nothing</p>
-<pre><code>onId :: String -&gt; TaskCmd -&gt; Maybe TodoInp
-onId &quot;*&quot; te = Just (IAll te)
-onId n   te = (`ITask` te) &lt;$&gt; readMaybe n</code></pre>
-<p>formatTodo :: IntMap Task -&gt; String formatTodo = unlines . map format . IM.toList where format (n, Task desc compl) = concat [ show n , &quot;. [&quot; , if compl then &quot;X&quot; else &quot; &quot; , &quot;] &quot; , desc ]</p>
-<p>main :: IO () main = do putStrLn &quot;Enter command! 'A descr' or '[D/C/U/P/M] [id/*]'&quot; void . interactAuto $ -- interactAuto takes an Interval; <code>toOn</code> gives -- one that runs forever toOn -- default output value on bad command . fromBlips &quot;Bad command!&quot; -- run <code>formatTodo &lt;$&gt; todoApp</code> on emitted commands . perBlip (formatTodo &lt;$&gt; todoApp) -- emit when input is parseable . emitJusts parseInp ~~~</p>
-<p><code>interactAuto</code> runs an <code>Interval</code> by feeding it in strings from stdin printing the output to stdout, until the output is &quot;off&quot;/<code>Nothing</code> --- then stops. Here we use <code>parseInp</code> to emit input events whenever there is a parse, run <code>todoApp</code> (formatted) on the emitted events, and then condense it all with <code>fromBlips</code> and wrap it in an &quot;always on&quot; <code>toOn</code>.</p>
-<p>~~~ $ cabal sandbox init $ cabal install auto $ cabal exec runghc todo-cmd.hs Enter command! 'A descr' or '[D/C/U/P/M] [id/*]'</p>
-<blockquote>
-<p>A take out the trash 0. [ ] take out the trash</p>
-</blockquote>
-<blockquote>
-<p>A do the dishes 0. [ ] take out the trash 1. [ ] do the dishes</p>
-</blockquote>
-<blockquote>
-<p>C 1 0. [ ] take out the trash 1. [X] do the dishes</p>
-</blockquote>
-<blockquote>
-<p>U 1 0. [ ] take out the trash 1. [ ] do the dishes</p>
-</blockquote>
-<blockquote>
-<p>C 0 0. [X] take out the trash 1. [ ] do the dishes</p>
-</blockquote>
-<blockquote>
-<p>P * 1. [ ] do the dishes ~~~</p>
-</blockquote>
+<h2 id="interfacing-with-the-world">Interfacing with the world</h2>
+<p>Our application logic is done; let’s explore ways to interface with it!</p>
+<h3 id="testingcommand-line">Testing/command line</h3>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/todo-cmd.hs#L25-62</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="ot">parseInp ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">TodoInp</span></a>
+<a class="sourceLine" id="cb12-3" data-line-number="3">parseInp <span class="fu">=</span> p <span class="fu">.</span> words</a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">    p (<span class="st">&quot;A&quot;</span><span class="fu">:</span>xs)   <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">IAdd</span> (unwords xs))</a>
+<a class="sourceLine" id="cb12-6" data-line-number="6">    p (<span class="st">&quot;D&quot;</span><span class="fu">:</span>n<span class="fu">:</span>_)  <span class="fu">=</span> onId n <span class="dt">CDelete</span></a>
+<a class="sourceLine" id="cb12-7" data-line-number="7">    p (<span class="st">&quot;C&quot;</span><span class="fu">:</span>n<span class="fu">:</span>_)  <span class="fu">=</span> onId n (<span class="dt">CComplete</span> <span class="dt">True</span>)</a>
+<a class="sourceLine" id="cb12-8" data-line-number="8">    p (<span class="st">&quot;U&quot;</span><span class="fu">:</span>n<span class="fu">:</span>_)  <span class="fu">=</span> onId n (<span class="dt">CComplete</span> <span class="dt">False</span>)</a>
+<a class="sourceLine" id="cb12-9" data-line-number="9">    p (<span class="st">&quot;P&quot;</span><span class="fu">:</span>n<span class="fu">:</span>_)  <span class="fu">=</span> onId n <span class="dt">CPrune</span></a>
+<a class="sourceLine" id="cb12-10" data-line-number="10">    p (<span class="st">&quot;M&quot;</span><span class="fu">:</span>n<span class="fu">:</span>xs) <span class="fu">=</span> onId n (<span class="dt">CModify</span> (unwords xs))</a>
+<a class="sourceLine" id="cb12-11" data-line-number="11">    p _          <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb12-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb12-13" data-line-number="13"><span class="ot">    onId ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">TaskCmd</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">TodoInp</span></a>
+<a class="sourceLine" id="cb12-14" data-line-number="14">    onId <span class="st">&quot;*&quot;</span> te <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">IAll</span> te)</a>
+<a class="sourceLine" id="cb12-15" data-line-number="15">    onId n   te <span class="fu">=</span> (<span class="ot">`ITask`</span> te) <span class="fu">&lt;$&gt;</span> readMaybe n</a>
+<a class="sourceLine" id="cb12-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb12-17" data-line-number="17"><span class="ot">formatTodo ::</span> <span class="dt">IntMap</span> <span class="dt">Task</span> <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb12-18" data-line-number="18">formatTodo <span class="fu">=</span> unlines <span class="fu">.</span> map format <span class="fu">.</span> IM.toList</a>
+<a class="sourceLine" id="cb12-19" data-line-number="19">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb12-20" data-line-number="20">    format (n, <span class="dt">Task</span> desc compl) <span class="fu">=</span> concat [ show n</a>
+<a class="sourceLine" id="cb12-21" data-line-number="21">                                         , <span class="st">&quot;. [&quot;</span></a>
+<a class="sourceLine" id="cb12-22" data-line-number="22">                                         , <span class="kw">if</span> compl <span class="kw">then</span> <span class="st">&quot;X&quot;</span> <span class="kw">else</span> <span class="st">&quot; &quot;</span></a>
+<a class="sourceLine" id="cb12-23" data-line-number="23">                                         , <span class="st">&quot;] &quot;</span></a>
+<a class="sourceLine" id="cb12-24" data-line-number="24">                                         , desc</a>
+<a class="sourceLine" id="cb12-25" data-line-number="25">                                         ]</a>
+<a class="sourceLine" id="cb12-26" data-line-number="26"></a>
+<a class="sourceLine" id="cb12-27" data-line-number="27"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb12-28" data-line-number="28">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-29" data-line-number="29">    putStrLn <span class="st">&quot;Enter command! &#39;A descr&#39; or &#39;[D/C/U/P/M] [id/*]&#39;&quot;</span></a>
+<a class="sourceLine" id="cb12-30" data-line-number="30">    void <span class="fu">.</span> interactAuto <span class="fu">$</span> <span class="co">-- interactAuto takes an Interval; `toOn` gives</span></a>
+<a class="sourceLine" id="cb12-31" data-line-number="31">                          <span class="co">--   one that runs forever</span></a>
+<a class="sourceLine" id="cb12-32" data-line-number="32">                          toOn</a>
+<a class="sourceLine" id="cb12-33" data-line-number="33">                          <span class="co">-- default output value on bad command</span></a>
+<a class="sourceLine" id="cb12-34" data-line-number="34">                        <span class="fu">.</span> fromBlips <span class="st">&quot;Bad command!&quot;</span></a>
+<a class="sourceLine" id="cb12-35" data-line-number="35">                          <span class="co">-- run `formatTodo &lt;$&gt; todoApp` on emitted commands</span></a>
+<a class="sourceLine" id="cb12-36" data-line-number="36">                        <span class="fu">.</span> perBlip (formatTodo <span class="fu">&lt;$&gt;</span> todoApp)</a>
+<a class="sourceLine" id="cb12-37" data-line-number="37">                          <span class="co">-- emit when input is parseable</span></a>
+<a class="sourceLine" id="cb12-38" data-line-number="38">                        <span class="fu">.</span> emitJusts parseInp</a></code></pre></div>
+<p><code>interactAuto</code> runs an <code>Interval</code> by feeding it in strings from stdin printing the output to stdout, until the output is “off”/<code>Nothing</code> — then stops. Here we use <code>parseInp</code> to emit input events whenever there is a parse, run <code>todoApp</code> (formatted) on the emitted events, and then condense it all with <code>fromBlips</code> and wrap it in an “always on” <code>toOn</code>.</p>
+<pre><code>$ cabal sandbox init
+$ cabal install auto
+$ cabal exec runghc todo-cmd.hs
+Enter command! &#39;A descr&#39; or &#39;[D/C/U/P/M] [id/*]&#39;
+&gt; A take out the trash
+0. [ ] take out the trash
+
+&gt; A do the dishes
+0. [ ] take out the trash
+1. [ ] do the dishes
+
+&gt; C 1
+0. [ ] take out the trash
+1. [X] do the dishes
+
+&gt; U 1
+0. [ ] take out the trash
+1. [ ] do the dishes
+
+&gt; C 0
+0. [X] take out the trash
+1. [ ] do the dishes
+
+&gt; P *
+1. [ ] do the dishes</code></pre>
 <p>You can <a href="https://github.com/mstksg/inCode/tree/master/code-samples/auto/todo-cmd.hs">download and run this yourself</a>!</p>
 <p>Looks like the logic works! Time to take it to GUI!</p>
-<h3>As a GUI</h3>
+<h3 id="as-a-gui">As a GUI</h3>
 <p>To build a GUI, we must build an <code>Auto</code> that takes in inputs from events and output everything the front-end renderer needs to render the interface.</p>
 <p>For a typical todomvc gui, we need to be able to filter and select things. So that means we need to be extend our input type with filtering and selecting events. And our output has to also indicate the current filter selected, and the current task selected, as well.</p>
-<p>~~~haskell data GUIOpts = GUI { <em>currFilter :: Filter -- currently applied filter , </em>currSelected :: Maybe TaskID -- currently selected task }</p>
-<p>data GUIInp = GIFilter Filter | GISelect (Maybe TaskID)</p>
-<p>data Filter = All | Active | Completed deriving (Show, Generic, Enum, Eq)</p>
-<p>instance Serialize Filter ~~~</p>
-<p>Instead of defining a new input mega-type with all input events and the todo map with the options, we can use good ol' fashioned <code>Either</code> and <code>(,)</code>. So now, instead of:</p>
-<p>~~~haskell todoApp :: Auto m TodoInp (IntMap Task) ~~~</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw">data</span> <span class="dt">GUIOpts</span> <span class="fu">=</span> <span class="dt">GUI</span> {<span class="ot"> _currFilter   ::</span> <span class="dt">Filter</span>        <span class="co">-- currently applied filter</span></a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">                   ,<span class="ot"> _currSelected ::</span> <span class="dt">Maybe</span> <span class="dt">TaskID</span>  <span class="co">-- currently selected task</span></a>
+<a class="sourceLine" id="cb14-3" data-line-number="3">                   }</a>
+<a class="sourceLine" id="cb14-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb14-5" data-line-number="5"><span class="kw">data</span> <span class="dt">GUIInp</span> <span class="fu">=</span> <span class="dt">GIFilter</span> <span class="dt">Filter</span></a>
+<a class="sourceLine" id="cb14-6" data-line-number="6">            <span class="fu">|</span> <span class="dt">GISelect</span> (<span class="dt">Maybe</span> <span class="dt">TaskID</span>)</a>
+<a class="sourceLine" id="cb14-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb14-8" data-line-number="8"><span class="kw">data</span> <span class="dt">Filter</span> <span class="fu">=</span> <span class="dt">All</span> <span class="fu">|</span> <span class="dt">Active</span> <span class="fu">|</span> <span class="dt">Completed</span></a>
+<a class="sourceLine" id="cb14-9" data-line-number="9">            <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Generic</span>, <span class="dt">Enum</span>, <span class="dt">Eq</span>)</a>
+<a class="sourceLine" id="cb14-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb14-11" data-line-number="11"><span class="kw">instance</span> <span class="dt">Serialize</span> <span class="dt">Filter</span></a></code></pre></div>
+<p>Instead of defining a new input mega-type with all input events and the todo map with the options, we can use good ol’ fashioned <code>Either</code> and <code>(,)</code>. So now, instead of:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">todoApp ::</span> <span class="dt">Auto</span> m <span class="dt">TodoInp</span> (<span class="dt">IntMap</span> <span class="dt">Task</span>)</a></code></pre></div>
 <p>We have:</p>
-<p>~~~haskell todoAppGUI :: Auto m (Either TodoInp GUIInp) (IntMap Task, GUIOpts) ~~~</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">todoAppGUI ::</span> <span class="dt">Auto</span> m (<span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span>) (<span class="dt">IntMap</span> <span class="dt">Task</span>, <span class="dt">GUIOpts</span>)</a></code></pre></div>
 <p>Now we take <em>either</em> <code>TodoInp</code> or <code>GUIInp</code> and then return <em>both</em> <code>IntMap Task</code> <em>and</em> <code>GUIOpts</code>.</p>
-<p>~~~haskell todoAppGUI :: Auto' (Either TodoInp GUIInp) (IntMap Task, GUIOpts) todoAppGUI = proc inp -&gt; do filt &lt;- holdWith All . emitJusts filtInps -&lt; inp selc &lt;- holdWith Nothing . emitJusts selcInps -&lt; inp tasks &lt;- holdWith mempty . perBlip todoApp . emitJusts todoInps -&lt; inp</p>
-<pre><code>id -&lt; (tasks, GUI filt selc)</code></pre>
-<p>where todoInps :: Either TodoInp GUIInp -&gt; Maybe TodoInp todoInps (Left ti) = Just ti todoInps _ = Nothing filtInps :: Either TodoInp GUIInp -&gt; Maybe Filter filtInps (Right (GIFilter filt)) = Just filt filtInps _ = Nothing selcInps :: Either TodoInp GUIInp -&gt; Maybe (Maybe TaskID) selcInps (Right (GISelect sec)) = Just selc selcInps _ = Nothing ~~~</p>
-<p>Here we have the same idea as before. One input stream of <code>Either TodoInp GUIInp</code> comes through, and we fork it into three blip streams that each do what we want. <code>holdWith x :: Auto m (Blip b) b</code> is always the value of the last emitted item...but starts off as <code>x</code> first.</p>
-<p>By the way, the above code is much more succinct if you are willing to use <em><a href="http://lens.github.com">lens</a></em>...</p>
-<p>~~~haskell todoAppGUI :: Auto' (Either TodoInp GUIInp) (IntMap Task, GUIOpts) todoAppGUI = proc inp -&gt; do filt &lt;- holdWith All . emitJusts (preview (<em>Right . </em>GIFilter)) -&lt; inp selc &lt;- holdWith Nothing . emitJusts (preview (<em>Right . </em>GISelect)) -&lt; inp tasks &lt;- holdWith mempty . perBlip todoApp . emitJusts (preview _Left) -&lt; inp</p>
-<pre><code>id -&lt; (tasks, GUI filt selc)</code></pre>
-<p>~~~</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="ot">todoAppGUI ::</span> <span class="dt">Auto&#39;</span> (<span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span>) (<span class="dt">IntMap</span> <span class="dt">Task</span>, <span class="dt">GUIOpts</span>)</a>
+<a class="sourceLine" id="cb17-2" data-line-number="2">todoAppGUI <span class="fu">=</span> proc inp <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb17-3" data-line-number="3">    filt  <span class="ot">&lt;-</span> holdWith <span class="dt">All</span>                      <span class="fu">.</span> emitJusts filtInps <span class="fu">-&lt;</span> inp</a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">    selc  <span class="ot">&lt;-</span> holdWith <span class="dt">Nothing</span>                  <span class="fu">.</span> emitJusts selcInps <span class="fu">-&lt;</span> inp</a>
+<a class="sourceLine" id="cb17-5" data-line-number="5">    tasks <span class="ot">&lt;-</span> holdWith mempty <span class="fu">.</span> perBlip todoApp <span class="fu">.</span> emitJusts todoInps <span class="fu">-&lt;</span> inp</a>
+<a class="sourceLine" id="cb17-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb17-7" data-line-number="7">    id <span class="fu">-&lt;</span> (tasks, <span class="dt">GUI</span> filt selc)</a>
+<a class="sourceLine" id="cb17-8" data-line-number="8">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb17-9" data-line-number="9"><span class="ot">    todoInps ::</span> <span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">TodoInp</span></a>
+<a class="sourceLine" id="cb17-10" data-line-number="10">    todoInps (<span class="dt">Left</span> ti) <span class="fu">=</span> <span class="dt">Just</span> ti</a>
+<a class="sourceLine" id="cb17-11" data-line-number="11">    todoInps _         <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb17-12" data-line-number="12"><span class="ot">    filtInps ::</span> <span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Filter</span></a>
+<a class="sourceLine" id="cb17-13" data-line-number="13">    filtInps (<span class="dt">Right</span> (<span class="dt">GIFilter</span> filt)) <span class="fu">=</span> <span class="dt">Just</span> filt</a>
+<a class="sourceLine" id="cb17-14" data-line-number="14">    filtInps _                       <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb17-15" data-line-number="15"><span class="ot">    selcInps ::</span> <span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Maybe</span> <span class="dt">TaskID</span>)</a>
+<a class="sourceLine" id="cb17-16" data-line-number="16">    selcInps (<span class="dt">Right</span> (<span class="dt">GISelect</span> sec))  <span class="fu">=</span> <span class="dt">Just</span> selc</a>
+<a class="sourceLine" id="cb17-17" data-line-number="17">    selcInps _                       <span class="fu">=</span> <span class="dt">Nothing</span></a></code></pre></div>
+<p>Here we have the same idea as before. One input stream of <code>Either TodoInp GUIInp</code> comes through, and we fork it into three blip streams that each do what we want. <code>holdWith x :: Auto m (Blip b) b</code> is always the value of the last emitted item…but starts off as <code>x</code> first.</p>
+<p>By the way, the above code is much more succinct if you are willing to use <em><a href="http://lens.github.com">lens</a></em>…</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="ot">todoAppGUI ::</span> <span class="dt">Auto&#39;</span> (<span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span>) (<span class="dt">IntMap</span> <span class="dt">Task</span>, <span class="dt">GUIOpts</span>)</a>
+<a class="sourceLine" id="cb18-2" data-line-number="2">todoAppGUI <span class="fu">=</span> proc inp <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb18-3" data-line-number="3">    filt  <span class="ot">&lt;-</span> holdWith <span class="dt">All</span></a>
+<a class="sourceLine" id="cb18-4" data-line-number="4">           <span class="fu">.</span> emitJusts (preview (_Right <span class="fu">.</span> _GIFilter)) <span class="fu">-&lt;</span> inp</a>
+<a class="sourceLine" id="cb18-5" data-line-number="5">    selc  <span class="ot">&lt;-</span> holdWith <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb18-6" data-line-number="6">           <span class="fu">.</span> emitJusts (preview (_Right <span class="fu">.</span> _GISelect)) <span class="fu">-&lt;</span> inp</a>
+<a class="sourceLine" id="cb18-7" data-line-number="7">    tasks <span class="ot">&lt;-</span> holdWith mempty <span class="fu">.</span> perBlip todoApp</a>
+<a class="sourceLine" id="cb18-8" data-line-number="8">           <span class="fu">.</span> emitJusts (preview _Left)                <span class="fu">-&lt;</span> inp</a>
+<a class="sourceLine" id="cb18-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb18-10" data-line-number="10">    id <span class="fu">-&lt;</span> (tasks, <span class="dt">GUI</span> filt selc)</a></code></pre></div>
 <p>(assuming we defined the prisms for <code>GUIInp</code> or used <code>''mkPrisms</code>)</p>
 <p>Neat, right? In a way, you can say that <code>emitJusts</code> and <code>Prisms</code>/lens was a match made in heaven :)</p>
-<h3>Giving it life</h3>
-<p>The last step is to hook everything up together ---</p>
-<ol>
+<h3 id="giving-it-life">Giving it life</h3>
+<p>The last step is to hook everything up together —</p>
+<ol type="1">
 <li>Setting up events in our GUI to feed inputs to a queue</li>
 <li>Setting up the queue to wait on inputs, and output the task map/gui status on every one using <code>todoAppGUI</code></li>
 <li>Rendering the output into the GUI framework of your choice</li>
 </ol>
-<p>The second step in particular can be handled with good ol' <code>[runOnChan][]</code>:</p>
-<p>~~~haskell runOnChan :: (b -&gt; IO Bool) -&gt; Chan a -&gt; Auto' a b -&gt; IO (Auto' a b) ~~~</p>
-<p>We know and love <code>runOnChan</code> from when we used it to make our <a href="http://blog.jle.im/entry/auto-building-a-declarative-chatbot-with-implicit-serialization#irc-backend-the-ugly-part">chatbot</a>. It runs an <code>Auto' a b</code> &quot;on a <code>Chan</code>&quot; (concurrent queue). The first argument is an &quot;output hander&quot; --- it handles the <code>b</code>s that the <code>Auto'</code> pops out. It decides whether to stop the whole thing or keep on listening based on the <code>Bool</code> result of the handler. The second argument is the <code>Chan a</code> to listen for inputs on. Whenever something is dropped into that <code>Chan</code>, it runs the <code>Auto'</code> with the <code>a</code> and processes the output <code>b</code> with the handler.</p>
+<p>The second step in particular can be handled with good ol’ <code>[runOnChan][]</code>:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="ot">runOnChan ::</span> (b <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">Chan</span> a <span class="ot">-&gt;</span> <span class="dt">Auto&#39;</span> a b <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Auto&#39;</span> a b)</a></code></pre></div>
+<p>We know and love <code>runOnChan</code> from when we used it to make our <a href="http://blog.jle.im/entry/auto-building-a-declarative-chatbot-with-implicit-serialization#irc-backend-the-ugly-part">chatbot</a>. It runs an <code>Auto' a b</code> “on a <code>Chan</code>” (concurrent queue). The first argument is an “output hander” — it handles the <code>b</code>s that the <code>Auto'</code> pops out. It decides whether to stop the whole thing or keep on listening based on the <code>Bool</code> result of the handler. The second argument is the <code>Chan a</code> to listen for inputs on. Whenever something is dropped into that <code>Chan</code>, it runs the <code>Auto'</code> with the <code>a</code> and processes the output <code>b</code> with the handler.</p>
 <p>Our final runner is then just:</p>
-<p>~~~haskell runOnChan renderGUI inputChan todoAppGUI ~~~</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1">runOnChan renderGUI inputChan todoAppGUI</a></code></pre></div>
 <p>where</p>
-<p>~~~haskell renderGUI :: (IntMap Task, GUIOpts) -&gt; IO Bool inputChan :: Chan (Either TodoInp GUIInp) ~~~</p>
-<p>The rendering is done with <code>renderGUI</code>...and it really depends on your framework here. That's #3 from the list above.</p>
-<p>All you need after that is just to have your GUI hook up event handlers to drop the appropriate <code>Either TodoInp GUIInp</code> into <code>inputChan</code>...and you're golden!</p>
-<h2>Seeing it in action</h2>
-<p>We've reached the end of our tutorial --- the parts about <code>auto</code>. It is my hope that whatever GUI front-end you want to work with, it'll be simple enough to &quot;plug in&quot; our <code>Auto</code> logic.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="ot">renderGUI ::</span> (<span class="dt">IntMap</span> <span class="dt">Task</span>, <span class="dt">GUIOpts</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb21-2" data-line-number="2"><span class="ot">inputChan ::</span> <span class="dt">Chan</span> (<span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span>)</a></code></pre></div>
+<p>The rendering is done with <code>renderGUI</code>…and it really depends on your framework here. That’s #3 from the list above.</p>
+<p>All you need after that is just to have your GUI hook up event handlers to drop the appropriate <code>Either TodoInp GUIInp</code> into <code>inputChan</code>…and you’re golden!</p>
+<h2 id="seeing-it-in-action">Seeing it in action</h2>
+<p>We’ve reached the end of our tutorial — the parts about <code>auto</code>. It is my hope that whatever GUI front-end you want to work with, it’ll be simple enough to “plug in” our <code>Auto</code> logic.</p>
 <p>A <a href="https://mstksg.github.com/auto-examples/todo">live demo</a> is online too; you can see <a href="https://github.com/mstksg/auto-examples/blob/master/src/TodoJS.hs">the source of the front-end bindings</a></p>
 <p>This is a bare-bons <em>ghcjs</em> implementation using <em>ghcjs-dom</em>, which uses direct dom manipulation.</p>
 <p>User <a href="https://github.com/eryx67">eryx67</a> has been kind enough to provide <a href="https://github.com/eryx67/auto-examples/blob/master/src/TodoJS.hs">an implementation in <em>ghcjs</em></a> with the <em><a href="https://github.com/ocharles/virtual-dom">virtual-dom</a></em> library (<a href="https://github.com/mstksg/auto-examples/commit/246133a89fbca6a2ec7ea276d8536701f6ab8d2c?diff=split">side-by-side comparison</a>), so there is a slightly less uglier implementation with abstraction :)</p>

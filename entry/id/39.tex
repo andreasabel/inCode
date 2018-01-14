@@ -21,6 +21,46 @@
 % use microtype if available
 \IfFileExists{microtype.sty}{\usepackage{microtype}}{}
 \usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
 \ifxetex
   \usepackage[setpagesize=false, % page size defined by xetex
               unicode=false, % unicode breaks when used with xetex
@@ -30,8 +70,8 @@
 \fi
 \hypersetup{breaklinks=true,
             bookmarks=true,
-            pdfauthor={},
-            pdftitle={},
+            pdfauthor={Justin Le},
+            pdftitle={Introducing the ``Prompt'' library},
             colorlinks=true,
             citecolor=blue,
             urlcolor=blue,
@@ -45,10 +85,12 @@
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
 
+\title{Introducing the ``Prompt'' library}
+\author{Justin Le}
+\date{June 30, 2015}
 
 \begin{document}
-
-\% Introducing the "Prompt" library \% Justin Le \% June 30, 2015
+\maketitle
 
 \emph{Originally posted on
 \textbf{\href{https://blog.jle.im/entry/introducing-the-prompt-library.html}{in
@@ -60,59 +102,74 @@ Code}}.}
 \href{https://github.com/mstksg/prompt}{github}
 
 Have you ever wanted to specify a computation involving some limited form of IO
--\/-\/- like querying a database, or asking stdio -\/-\/- but didn't want a
-computation in the \texttt{IO} monad, opening the entire can of worms that is
-arbitrary \texttt{IO}? Have you ever looked at complicated \texttt{IO\ a} you
-wrote last week at 4am and prayed that it didn't launch missiles if you decided
-to execute it? Do you want to be able to run an effectful computation and
-explicitly \emph{say} what IO it can or cannot do?
+--- like querying a database, or asking stdio --- but didn't want a computation
+in the \texttt{IO} monad, opening the entire can of worms that is arbitrary
+\texttt{IO}? Have you ever looked at complicated \texttt{IO\ a} you wrote last
+week at 4am and prayed that it didn't launch missiles if you decided to execute
+it? Do you want to be able to run an effectful computation and explicitly
+\emph{say} what IO it can or cannot do?
 
 Introducing the \emph{\href{http://hackage.haskell.org/package/prompt}{prompt}}
 library! It's a small little lightweight library that allows you to specify and
-describe computations involving forms of effects where you "ask" with a value
+describe computations involving forms of effects where you ``ask'' with a value
 and receive a value in return (such as a database query, etc.), but not ever
-care about how the effects are fulfilled -\/-\/- freeing you from working
-directly with IO.
+care about how the effects are fulfilled --- freeing you from working directly
+with IO.
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell data Foo = Foo \{
-fooBar :: String , fooBaz :: Int \} deriving Show
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Foo} \FunctionTok{=} \DataTypeTok{Foo}\NormalTok{ \{}\OtherTok{ fooBar ::} \DataTypeTok{String}
+\NormalTok{               ,}\OtherTok{ fooBaz ::} \DataTypeTok{Int}
+\NormalTok{               \} }\KeywordTok{deriving} \DataTypeTok{Show}
 
--\/- ask with a String, receive a String as an answer promptFoo :: Prompt String
-String Foo promptFoo = Foo \textless{}\$\textgreater{} prompt "bar"
-\textless{}*\textgreater{} fmap length (prompt "baz")
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\CommentTok{-- ask with a String, receive a String as an answer}
+\OtherTok{promptFoo ::} \DataTypeTok{Prompt} \DataTypeTok{String} \DataTypeTok{String} \DataTypeTok{Foo}
+\NormalTok{promptFoo }\FunctionTok{=} \DataTypeTok{Foo}
+        \FunctionTok{<$>}\NormalTok{ prompt }\StringTok{"bar"}
+        \FunctionTok{<*>}\NormalTok{ fmap length (prompt }\StringTok{"baz"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
 
-\section{Running}
+\hypertarget{running}{%
+\section{Running}\label{running}}
 
-You can now "run it" in IO, by talking to stdio -\/-\/-
+You can now ``run it'' in IO, by talking to stdio ---
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-runPromptM promptFoo \$ \textbackslash{}str -\textgreater{} putStrLn str
-\textgreater{}\textgreater{} getLine bar -\/- stdout prompt
-
-\begin{quote}
-hello! -\/- stdin response typed in baz -\/- stdout prompt i am baz -\/- stdin
-response typed in Foo "hello!" 8 -\/- result
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
-\end{quote}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ runPromptM promptFoo }\FunctionTok{$}\NormalTok{ \textbackslash{}str }\OtherTok{->}\NormalTok{ putStrLn str }\FunctionTok{>>}\NormalTok{ getLine}
+\NormalTok{bar                 }\CommentTok{-- stdout prompt}
+\FunctionTok{>}\NormalTok{ hello}\FunctionTok{!}            \CommentTok{-- stdin response typed in}
+\NormalTok{baz                 }\CommentTok{-- stdout prompt}
+\FunctionTok{>}\NormalTok{ i am baz          }\CommentTok{-- stdin response typed in}
+\DataTypeTok{Foo} \StringTok{"hello!"} \DecValTok{8}      \CommentTok{-- result}
+\end{Highlighting}
+\end{Shaded}
 
 (this is also just \texttt{interactP\ promptFoo})
 
 Or you can maybe request it from the environment variables:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-import System.Environment ghci\textgreater{} setEnv "bar" "hello!"
-ghci\textgreater{} setEnv "baz" "i am baz" ghci\textgreater{} runPromptM
-promptFoo getEnv Foo "hello!" 8
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{import} \DataTypeTok{System.Environment}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ setEnv }\StringTok{"bar"} \StringTok{"hello!"}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ setEnv }\StringTok{"baz"} \StringTok{"i am baz"}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ runPromptM promptFoo getEnv}
+\DataTypeTok{Foo} \StringTok{"hello!"} \DecValTok{8}
+\end{Highlighting}
+\end{Shaded}
 
 Or maybe you want to fulfill the prompts purely:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-import qualified Data.Map as M ghci\textgreater{} let testMap = M.fromList
-{[}("bar", "hello!"), ("baz", "i am baz"){]} ghci\textgreater{} runPrompt
-promptFoo (testMap M.!) Foo "hello!" 8
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{import} \KeywordTok{qualified} \DataTypeTok{Data.Map} \KeywordTok{as} \DataTypeTok{M}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ testMap }\FunctionTok{=}\NormalTok{ M.fromList [(}\StringTok{"bar"}\NormalTok{, }\StringTok{"hello!"}\NormalTok{), (}\StringTok{"baz"}\NormalTok{, }\StringTok{"i am baz"}\NormalTok{)]}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ runPrompt promptFoo (testMap }\FunctionTok{M.!}\NormalTok{)}
+\DataTypeTok{Foo} \StringTok{"hello!"} \DecValTok{8}
+\end{Highlighting}
+\end{Shaded}
 
 With \texttt{Prompt}, specify the computation and your logic \emph{without
 involving any IO}, so you can write safe code without arbitrary side effects. If
@@ -120,166 +177,223 @@ you ever receive a \texttt{Prompt}, you know it can't wipe out your hard drive
 or do any IO other than exactly what you allow it to do! I'd feel more safe
 running a \texttt{Prompt\ a\ b\ r} than an \texttt{IO\ r}.
 
-You can also do some cute tricks; \texttt{Prompt\ a\ ()\ r} with a "prompt
-response function" like \texttt{putStrLn} lets you do streaming logging, and
-defer \emph{how} the logging is done -\/-\/- to IO, to a list?
+You can also do some cute tricks; \texttt{Prompt\ a\ ()\ r} with a ``prompt
+response function'' like \texttt{putStrLn} lets you do streaming logging, and
+defer \emph{how} the logging is done --- to IO, to a list?
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-let logHelloWord = mapM\_ prompt {[}"hello", "world"{]} ghci\textgreater{}
-runPromptM logHelloWorld putStrLn hello world ghci\textgreater{} execWriter \$
-runPromptM logHelloWorld tell "helloworld"
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ logHelloWord }\FunctionTok{=}\NormalTok{ mapM_ prompt [}\StringTok{"hello"}\NormalTok{, }\StringTok{"world"}\NormalTok{]}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ runPromptM logHelloWorld putStrLn}
+\NormalTok{hello}
+\NormalTok{world}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ execWriter }\FunctionTok{$}\NormalTok{ runPromptM logHelloWorld tell}
+\StringTok{"helloworld"}
+\end{Highlighting}
+\end{Shaded}
 
 \texttt{Prompt\ ()\ b\ r} is like a fancy \texttt{ReaderT\ b\ m\ r}, where you
-"defer" the choice of the Monad.
+``defer'' the choice of the Monad.
 
-\section{Combining with other effects}
+\hypertarget{combining-with-other-effects}{%
+\section{Combining with other effects}\label{combining-with-other-effects}}
 
-\texttt{Prompt} can be used as an underlying "effects" source for libraries like
-\emph{pipes}, \emph{conduit}, and \emph{auto}. If your effects are only ever
-asking and prompting and receiving, there's really no need to put the entire
-power of \texttt{IO} underneath your DSL as an effects source. That's just
-crazy!
+\texttt{Prompt} can be used as an underlying ``effects'' source for libraries
+like \emph{pipes}, \emph{conduit}, and \emph{auto}. If your effects are only
+ever asking and prompting and receiving, there's really no need to put the
+entire power of \texttt{IO} underneath your DSL as an effects source. That's
+just crazy!
 
 \texttt{Prompt} can be used with monad transformers to give you safe underlying
 effect sources, like \texttt{StateT\ s\ (Prompt\ a\ b)\ r}, which is a stateful
-computation which can sometimes sequence "prompty" effects. \texttt{Prompt} is
-also itself a "Traversable transformer", with \texttt{PrompT\ a\ b\ t\ r}. It
+computation which can sometimes sequence ``prompty'' effects. \texttt{Prompt} is
+also itself a ``Traversable transformer'', with \texttt{PrompT\ a\ b\ t\ r}. It
 can perform computations in the context of a Traversable \texttt{t}, to be able
 to incorporate built-in short-circuiting and logging, etc.
 
 This is all abstracted over with \texttt{MonadPrompt}, \texttt{MonadError},
-\texttt{MonadPlus}, etc., typeclasses -\/-\/-
+\texttt{MonadPlus}, etc., typeclasses ---
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell promptFoo2 ::
-(MonadPlus m, MonadPrompt String String m) =\textgreater{} m Foo promptFoo2 = do
-bar \textless{}- prompt "bar" str \textless{}- prompt "baz" case readMaybe str
-of Just baz -\textgreater{} return \$ Foo bar baz Nothing -\textgreater{} mzero
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{promptFoo2 ::}\NormalTok{ (}\DataTypeTok{MonadPlus}\NormalTok{ m, }\DataTypeTok{MonadPrompt} \DataTypeTok{String} \DataTypeTok{String}\NormalTok{ m) }\OtherTok{=>}\NormalTok{ m }\DataTypeTok{Foo}
+\NormalTok{promptFoo2 }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{    bar }\OtherTok{<-}\NormalTok{ prompt }\StringTok{"bar"}
+\NormalTok{    str }\OtherTok{<-}\NormalTok{ prompt }\StringTok{"baz"}
+    \KeywordTok{case}\NormalTok{ readMaybe str }\KeywordTok{of}
+        \DataTypeTok{Just}\NormalTok{ baz }\OtherTok{->}\NormalTok{ return }\FunctionTok{$} \DataTypeTok{Foo}\NormalTok{ bar baz}
+        \DataTypeTok{Nothing}  \OtherTok{->}\NormalTok{ mzero}
 
--\/- more polymorphic promptFoo :: MonadPrompt String String m =\textgreater{} m
-Foo promptFoo = Foo \textless{}\$\textgreater{} prompt "bar"
-\textless{}*\textgreater{} fmap length (prompt "baz")
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\CommentTok{-- more polymorphic}
+\OtherTok{promptFoo ::} \DataTypeTok{MonadPrompt} \DataTypeTok{String} \DataTypeTok{String}\NormalTok{ m }\OtherTok{=>}\NormalTok{ m }\DataTypeTok{Foo}
+\NormalTok{promptFoo }\FunctionTok{=} \DataTypeTok{Foo}
+        \FunctionTok{<$>}\NormalTok{ prompt }\StringTok{"bar"}
+        \FunctionTok{<*>}\NormalTok{ fmap length (prompt }\StringTok{"baz"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
 
 You can run \texttt{promptFoo} as a
 \texttt{MaybeT\ (Prompt\ String\ String)\ Foo}, and manually unwrap:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-interactP . runMaybeT \$ promptFoo2 bar
-
-\begin{quote}
-hello! baz i am baz Nothing ghci\textgreater{} interactP . runMaybeT \$
-promptFoo2 bar hello! baz 19 Just (Foo "hello!" 19)
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
-\end{quote}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ interactP }\FunctionTok{.}\NormalTok{ runMaybeT }\FunctionTok{$}\NormalTok{ promptFoo2}
+\NormalTok{bar}
+\FunctionTok{>}\NormalTok{ hello}\FunctionTok{!}
+\NormalTok{baz}
+\FunctionTok{>}\NormalTok{ i am baz}
+\DataTypeTok{Nothing}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ interactP }\FunctionTok{.}\NormalTok{ runMaybeT }\FunctionTok{$}\NormalTok{ promptFoo2}
+\NormalTok{bar}
+\FunctionTok{>}\NormalTok{ hello}\FunctionTok{!}
+\NormalTok{baz}
+\FunctionTok{>} \DecValTok{19}
+\DataTypeTok{Just}\NormalTok{ (}\DataTypeTok{Foo} \StringTok{"hello!"} \DecValTok{19}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
 
 Or you can run it as a \texttt{PromptT\ String\ String\ MaybeT\ Foo}, to have
 \texttt{PromptT} handle the wrapping/unwrapping itself:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-interactPT promptFoo2 bar
-
-\begin{quote}
-hello! baz i am baz Nothing ghci\textgreater{} interactPT \$ promptFoo2
-\textless{}\textbar{}\textgreater{} promptFoo bar hello! baz i am baz bar -\/-
-failed to parse -\/-\/- retrying with promptFoo! hello! baz i am baz Just (Foo
-"hello" 8) \textasciitilde{}\textasciitilde{}\textasciitilde{}
-\end{quote}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ interactPT promptFoo2}
+\NormalTok{bar}
+\FunctionTok{>}\NormalTok{ hello}\FunctionTok{!}
+\NormalTok{baz}
+\FunctionTok{>}\NormalTok{ i am baz}
+\DataTypeTok{Nothing}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ interactPT }\FunctionTok{$}\NormalTok{ promptFoo2 }\FunctionTok{<|>}\NormalTok{ promptFoo}
+\NormalTok{bar}
+\FunctionTok{>}\NormalTok{ hello}\FunctionTok{!}
+\NormalTok{baz}
+\FunctionTok{>}\NormalTok{ i am baz}
+\NormalTok{bar                 }\CommentTok{-- failed to parse --- retrying with promptFoo!}
+\FunctionTok{>}\NormalTok{ hello}\FunctionTok{!}
+\NormalTok{baz}
+\FunctionTok{>}\NormalTok{ i am baz}
+\DataTypeTok{Just}\NormalTok{ (}\DataTypeTok{Foo} \StringTok{"hello"} \DecValTok{8}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
 
 The previous example of \texttt{logHelloWorld}?
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-runPromptT (logHelloWorld :: PromptT String () (Writer String) ()) tell
-"helloworld" \textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ runPromptT (}\OtherTok{logHelloWorld ::} \DataTypeTok{PromptT} \DataTypeTok{String}\NormalTok{ () (}\DataTypeTok{Writer} \DataTypeTok{String}\NormalTok{) ()) tell}
+\StringTok{"helloworld"}
+\end{Highlighting}
+\end{Shaded}
 
-\section{Runners}
+\hypertarget{runners}{%
+\section{Runners}\label{runners}}
 
-The "runners" are:
+The ``runners'' are:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell interactP :: Prompt
-String String r -\textgreater{} IO r interactPT :: Applicative t =\textgreater{}
-PromptT String String t r -\textgreater{} IO (t r)
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{interactP   ::}                  \DataTypeTok{Prompt}  \DataTypeTok{String} \DataTypeTok{String}\NormalTok{   r }\OtherTok{->} \DataTypeTok{IO}\NormalTok{ r}
+\OtherTok{interactPT  ::} \DataTypeTok{Applicative}\NormalTok{ t }\OtherTok{=>} \DataTypeTok{PromptT} \DataTypeTok{String} \DataTypeTok{String}\NormalTok{ t r }\OtherTok{->} \DataTypeTok{IO}\NormalTok{ (t r)}
 
-runPrompt :: Prompt a b r -\textgreater{} (a -\textgreater{} b) -\textgreater{}
-r runPromptM :: Monad m =\textgreater{} Prompt a b r -\textgreater{} (a
--\textgreater{} m b) -\textgreater{} m r
+\OtherTok{runPrompt   ::}                  \DataTypeTok{Prompt}\NormalTok{  a b   r }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{   b) }\OtherTok{->}\NormalTok{ r}
+\OtherTok{runPromptM  ::} \DataTypeTok{Monad}\NormalTok{ m       }\OtherTok{=>} \DataTypeTok{Prompt}\NormalTok{  a b   r }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ m b) }\OtherTok{->}\NormalTok{ m r}
 
-runPromptT :: PromptT a b t r -\textgreater{} (a -\textgreater{} t b)
--\textgreater{} t r runPromptTM :: Monad m =\textgreater{} PromptT a b t r
--\textgreater{} (a -\textgreater{} m (t b)) -\textgreater{} m (t r)
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\OtherTok{runPromptT  ::}                  \DataTypeTok{PromptT}\NormalTok{ a b t r }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{    t b)  }\OtherTok{->}\NormalTok{ t r}
+\OtherTok{runPromptTM ::} \DataTypeTok{Monad}\NormalTok{ m       }\OtherTok{=>} \DataTypeTok{PromptT}\NormalTok{ a b t r }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ m (t b)) }\OtherTok{->}\NormalTok{ m (t r)}
+\end{Highlighting}
+\end{Shaded}
 
 Note that \texttt{runPromptM} and \texttt{runPromptTM} can run in monads (like
 \texttt{IO}) that are \emph{completely unrelated} to the \texttt{Prompt} type
-itself. It sequences them all "after the fact". It's also interesting to note
+itself. It sequences them all ``after the fact''. It's also interesting to note
 that \texttt{runPrompt} is just a glorified
 \texttt{Reader\ (a\ -\textgreater{}\ b)\ r}.
 
-With \texttt{runPromptTM}, you can incorporate \texttt{t} in your "prompt
-response" function, too. Which brings us to our grand finale -\/- environment
+With \texttt{runPromptTM}, you can incorporate \texttt{t} in your ``prompt
+response'' function, too. Which brings us to our grand finale -- environment
 variable parsing!
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell import
-Control.Monad.Error.Class import Control.Monad.Prompt import Text.Read import
-qualified Data.Map as M
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{import} \DataTypeTok{Control.Monad.Error.Class}
+\KeywordTok{import} \DataTypeTok{Control.Monad.Prompt}
+\KeywordTok{import} \DataTypeTok{Text.Read}
+\KeywordTok{import} \KeywordTok{qualified} \DataTypeTok{Data.Map} \KeywordTok{as} \DataTypeTok{M}
 
-type Key = String type Val = String
+\KeywordTok{type} \DataTypeTok{Key} \FunctionTok{=} \DataTypeTok{String}
+\KeywordTok{type} \DataTypeTok{Val} \FunctionTok{=} \DataTypeTok{String}
 
-data MyError = MENoParse Key Val \textbar{} MENotFound Key deriving Show
+\KeywordTok{data} \DataTypeTok{MyError} \FunctionTok{=} \DataTypeTok{MENoParse} \DataTypeTok{Key} \DataTypeTok{Val}
+             \FunctionTok{|} \DataTypeTok{MENotFound} \DataTypeTok{Key}
+             \KeywordTok{deriving} \DataTypeTok{Show}
 
-promptRead :: (MonadError MyError m, MonadPrompt Key Val m, Read b)
-=\textgreater{} Key -\textgreater{} m b -\/- promptRead :: Read b
-=\textgreater{} Key -\textgreater{} PromptT Key Val (Either MyError) b
-promptRead k = do resp \textless{}- prompt k case readMaybe resp of Nothing
--\textgreater{} throwError \$ MEParse k resp Just v -\textgreater{} return v
+\OtherTok{promptRead ::}\NormalTok{ (}\DataTypeTok{MonadError} \DataTypeTok{MyError}\NormalTok{ m, }\DataTypeTok{MonadPrompt} \DataTypeTok{Key} \DataTypeTok{Val}\NormalTok{ m, }\DataTypeTok{Read}\NormalTok{ b)}
+           \OtherTok{=>} \DataTypeTok{Key} \OtherTok{->}\NormalTok{ m b}
+\CommentTok{-- promptRead :: Read b => Key -> PromptT Key Val (Either MyError) b}
+\NormalTok{promptRead k }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{    resp }\OtherTok{<-}\NormalTok{ prompt k}
+    \KeywordTok{case}\NormalTok{ readMaybe resp }\KeywordTok{of}
+      \DataTypeTok{Nothing} \OtherTok{->}\NormalTok{ throwError }\FunctionTok{$} \DataTypeTok{MEParse}\NormalTok{ k resp}
+      \DataTypeTok{Just}\NormalTok{ v  }\OtherTok{->}\NormalTok{ return v}
 
-promptFoo3 :: MonadPrompt Key Val m =\textgreater{} m Foo -\/- promptFoo3 ::
-Applicative t =\textgreater{} PromptT Key Val t Foo promptFoo3 = Foo
-\textless{}\$\textgreater{} prompt "bar" \textless{}*\textgreater{} promptRead
-"baz"
+\OtherTok{promptFoo3 ::} \DataTypeTok{MonadPrompt} \DataTypeTok{Key} \DataTypeTok{Val}\NormalTok{ m }\OtherTok{=>}\NormalTok{ m }\DataTypeTok{Foo}
+\CommentTok{-- promptFoo3 :: Applicative t => PromptT Key Val t Foo}
+\NormalTok{promptFoo3 }\FunctionTok{=} \DataTypeTok{Foo} \FunctionTok{<$>}\NormalTok{ prompt }\StringTok{"bar"} \FunctionTok{<*>}\NormalTok{ promptRead }\StringTok{"baz"}
 
--\/- -\/- running!
+\CommentTok{--}
+\CommentTok{-- running!}
 
--\/- Lookup environment variables, and "throw" an error if not found throughEnv
-:: IO (Either MyError Foo) throughEnv = runPromptTM parseFoo3 \$
-\textbackslash{}k -\textgreater{} do env \textless{}- lookupEnv k return \$ case
-env of Nothing -\textgreater{} Left (MENotFound k) Just v -\textgreater{} Right
-v
+\CommentTok{-- Lookup environment variables, and "throw" an error if not found}
+\OtherTok{throughEnv ::} \DataTypeTok{IO}\NormalTok{ (}\DataTypeTok{Either} \DataTypeTok{MyError} \DataTypeTok{Foo}\NormalTok{)}
+\NormalTok{throughEnv }\FunctionTok{=}\NormalTok{ runPromptTM parseFoo3 }\FunctionTok{$}\NormalTok{ \textbackslash{}k }\OtherTok{->} \KeywordTok{do}
+\NormalTok{    env }\OtherTok{<-}\NormalTok{ lookupEnv k}
+\NormalTok{    return }\FunctionTok{$} \KeywordTok{case}\NormalTok{ env }\KeywordTok{of}
+      \DataTypeTok{Nothing} \OtherTok{->} \DataTypeTok{Left}\NormalTok{ (}\DataTypeTok{MENotFound}\NormalTok{ k)}
+      \DataTypeTok{Just}\NormalTok{ v  }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ v}
 
--\/- Fulfill the prompt through user input throughStdIO :: IO (Either MyError
-Foo) throughStdIO = interactPT parseFoo3
+\CommentTok{-- Fulfill the prompt through user input}
+\OtherTok{throughStdIO ::} \DataTypeTok{IO}\NormalTok{ (}\DataTypeTok{Either} \DataTypeTok{MyError} \DataTypeTok{Foo}\NormalTok{)}
+\NormalTok{throughStdIO }\FunctionTok{=}\NormalTok{ interactPT parseFoo3}
 
--\/- Fulfill the prompt through user input; count blank responses as "not found"
-throughStdIOBlankIsError :: IO (Either MyError Foo) throughStdIOBlankIsError =
-runPromptTM parseFoo3 \$ \textbackslash{}k -\textgreater{} do putStrLn k resp
-\textless{}- getLine return \$ if null resp then Left (MENotFound k) else Right
-resp
+\CommentTok{-- Fulfill the prompt through user input; count blank responses as "not found"}
+\OtherTok{throughStdIOBlankIsError ::} \DataTypeTok{IO}\NormalTok{ (}\DataTypeTok{Either} \DataTypeTok{MyError} \DataTypeTok{Foo}\NormalTok{)}
+\NormalTok{throughStdIOBlankIsError }\FunctionTok{=}\NormalTok{ runPromptTM parseFoo3 }\FunctionTok{$}\NormalTok{ \textbackslash{}k }\OtherTok{->} \KeywordTok{do}
+\NormalTok{    putStrLn k}
+\NormalTok{    resp }\OtherTok{<-}\NormalTok{ getLine}
+\NormalTok{    return }\FunctionTok{$} \KeywordTok{if}\NormalTok{ null resp}
+      \KeywordTok{then} \DataTypeTok{Left}\NormalTok{ (}\DataTypeTok{MENotFound}\NormalTok{ k)}
+      \KeywordTok{else} \DataTypeTok{Right}\NormalTok{ resp}
 
--\/- Fulfill the prompt purely through a Map lookup throughMap :: M.Map Key Val
--\textgreater{} Either MyError Foo throughMap m = runPromptT parseFoo3 \$
-\textbackslash{}k -\textgreater{} case M.lookup k m of Nothing -\textgreater{}
-Left (MENotFound k) Just v -\textgreater{} Right v
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\CommentTok{-- Fulfill the prompt purely through a Map lookup}
+\OtherTok{throughMap ::} \DataTypeTok{M.Map} \DataTypeTok{Key} \DataTypeTok{Val} \OtherTok{->} \DataTypeTok{Either} \DataTypeTok{MyError} \DataTypeTok{Foo}
+\NormalTok{throughMap m }\FunctionTok{=}\NormalTok{ runPromptT parseFoo3 }\FunctionTok{$}\NormalTok{ \textbackslash{}k }\OtherTok{->}
+    \KeywordTok{case}\NormalTok{ M.lookup k m }\KeywordTok{of}
+      \DataTypeTok{Nothing} \OtherTok{->} \DataTypeTok{Left}\NormalTok{ (}\DataTypeTok{MENotFound}\NormalTok{ k)}
+      \DataTypeTok{Just}\NormalTok{ v  }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ v}
+\end{Highlighting}
+\end{Shaded}
 
 Hope you enjoy! Please feel free to leave a comment, find me on
 \href{https://twitter.com/mstk}{twitter}, leave an issue on the
-\href{https://github.com/mstksg/prompt}{github}, etc. -\/-\/- and I'm usually on
+\href{https://github.com/mstksg/prompt}{github}, etc. --- and I'm usually on
 freenode's \emph{\#haskell} as \emph{jle`} if you have any questions!
 
-\section{Comparisons}
+\hypertarget{comparisons}{%
+\section{Comparisons}\label{comparisons}}
 
 To lay it all on the floor,
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell newtype PromptT a b t
-r = PromptT \{ runPromptTM :: forall m. Monad m =\textgreater{} (a
--\textgreater{} m (t b)) -\textgreater{} m (t r) \}
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{newtype} \DataTypeTok{PromptT}\NormalTok{ a b t r }\FunctionTok{=} \DataTypeTok{PromptT}\NormalTok{ \{}\OtherTok{ runPromptTM ::}\NormalTok{ forall m}\FunctionTok{.} \DataTypeTok{Monad}\NormalTok{ m }\OtherTok{=>}\NormalTok{ (a }\OtherTok{->}\NormalTok{ m (t b)) }\OtherTok{->}\NormalTok{ m (t r) \}}
+\end{Highlighting}
+\end{Shaded}
 
 There is admittedly a popular misconception that I've seen going around that
 equates this sort of type to \texttt{Free} from the \emph{free} package.
 However, \texttt{Free} doesn't really have anything significant to do with this.
 Sure, you might be able to generate this type by using \texttt{FreeT} over a
-specifically chosen Functor, but...this is the case for literally any Monad
+specifically chosen Functor, but\ldots{}this is the case for literally any Monad
 ever, so that doesn't really mean much :)
 
 It's also unrelated in this same manner to \texttt{Prompt} from the
@@ -296,16 +410,17 @@ package. The biggest difference that makes \texttt{Bazaar} unusable is because
 the RankN constraint is only \texttt{Applicative}, not \texttt{Monad}, so a
 \texttt{Monad} instance is impossible. Ignoring that (or if it's okay for you to
 only use the \texttt{Applicative} instance), \texttt{Bazaar} forces the
-"prompting effect" to take place in the same context as the \texttt{Traversable}
-\texttt{t}...which really defeats the purpose of this whole thing in the first
-place (the idea is to be able to separate your prompting effect from your
-application logic). If the \texttt{Traversable} you want to transform has a
-"monad transformer" version, then you can somewhat simulate \texttt{PromptT} for
-that specifc \texttt{t} with the transformer version.
+``prompting effect'' to take place in the same context as the
+\texttt{Traversable} \texttt{t}\ldots{}which really defeats the purpose of this
+whole thing in the first place (the idea is to be able to separate your
+prompting effect from your application logic). If the \texttt{Traversable} you
+want to transform has a ``monad transformer'' version, then you can somewhat
+simulate \texttt{PromptT} for that specifc \texttt{t} with the transformer
+version.
 
 It's also somewhat similar to the \texttt{Client} type from \emph{pipes}, but
 it's also a bit tricky to use that with a different effect type than the logic
-\texttt{Traversable}, as well...so it has a lot of the same difference as
+\texttt{Traversable}, as well\ldots{}so it has a lot of the same difference as
 \texttt{Bazaar} here.
 
 But this type is common/simple enough that I'm sure someone has it somewhere in

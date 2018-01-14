@@ -20,21 +20,31 @@ Demonstration
 
 Here it is in action:
 
-~~~
+    > !!!monad-plus/WolfGoatCabbage.hs "findSolutions ::" "makeMove ::" wolf-goat-cabbage
 
-> !!!monad-plus/WolfGoatCabbage.hs "findSolutions ::" "makeMove ::"
-> wolf-goat-cabbage ~~~ yields:
+yields:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/WolfGoatCabbage.hs\#L28-45
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/WolfGoatCabbage.hs#L28-45
 -- interactive: https://www.fpcomplete.com/user/jle/wolf-goat-cabbage
-findSolutions :: Int -&gt; \[Plan\] findSolutions n = do p &lt;- makeNMoves
-guard $ isSolution p return p where makeNMoves = iterate (&gt;&gt;= makeMove)
-(return startingPlan) !! n
+findSolutions :: Int -> [Plan]
+findSolutions n = do
+    p <- makeNMoves
+    guard $ isSolution p
+    return p
+    where
+        makeNMoves = iterate (>>= makeMove) (return startingPlan) !! n
 
-makeMove :: Plan -&gt; \[Plan\] makeMove p = do next &lt;- MoveThe &lt;$&gt;
-\[Farmer ..\] guard $ moveLegal p next guard . not $ moveRedundant p next let p'
-= p ++ \[next\] guard $ safePlan p' return p' ~~~
+makeMove :: Plan -> [Plan]
+makeMove p = do
+    next <- MoveThe <$> [Farmer ..]
+    guard       $ moveLegal p next
+    guard . not $ moveRedundant p next
+    let
+        p' = p ++ [next]
+    guard $ safePlan p'
+    return p'
+```
 
 (If you're reading this on the actual website, mouse over or click them to see
 the full effect, or if nothing is happening, try a hard refresh --- CTRL+SHIFT+R
@@ -63,9 +73,7 @@ before it is processed by pandoc.
 
 The syntax is:
 
-~~~
-
-> !!!path/to/code "keyword" "limited"n live\_link ~~~
+    > !!!path/to/code "keyword" "limited"n live_link
 
 Where "keyword" is the text in the line to match for, `n` is the number of lines
 after the keyword to display (if left off, it takes the next "block", or the
@@ -77,24 +85,31 @@ is a link to the live/interactive version on FPComplete.
 So...writing the parser for the syntax specification was pretty easy due to
 parsec and parser combinators:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/source/EntryPP.hs\#L32-127
-data SampleSpec = SampleSpec { sSpecFile :: FilePath , *sSpecLive :: Maybe
-String , *sSpecKeywords :: \[(String,Maybe Int)\] } deriving (Show)
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/source/EntryPP.hs#L32-127
+data SampleSpec = SampleSpec  { sSpecFile       :: FilePath
+                              , _sSpecLive      :: Maybe String
+                              , _sSpecKeywords  :: [(String,Maybe Int)]
+                              } deriving (Show)
 
-sampleSpec :: Parser SampleSpec sampleSpec = do filePath &lt;- noSpaces
-&lt;?&gt; "sample filePath" spaces keywords &lt;- many $ do keyword &lt;- char
-'"' \*&gt; manyTill anyChar (char '"') &lt;?&gt; "keyword" keylimit &lt;-
-optionMaybe (read &lt;$&gt; many1 digit &lt;?&gt; "keyword limit") spaces return
-(keyword,keylimit)
+sampleSpec :: Parser SampleSpec
+sampleSpec = do
+    filePath <- noSpaces <?> "sample filePath"
+    spaces
+    keywords <- many $ do
+      keyword <- char '"' *> manyTill anyChar (char '"') <?> "keyword"
+      keylimit <- optionMaybe (read <$> many1 digit <?> "keyword limit")
+      spaces
+      return (keyword,keylimit)
 
     live <- optionMaybe noSpaces <?> "live url"
     let
       live' = mfilter (not . null) live
 
     return $ SampleSpec filePath live' keywords
-
-where noSpaces = manyTill anyChar (space &lt;|&gt; ' ' &lt;$ eof) ~~~
+  where
+    noSpaces = manyTill anyChar (space <|> ' ' <$ eof)
+```
 
 The code to actually find the right code block to paste was complicated and
 horrifying at first, but after I sat down and really sorted out the logic, it
@@ -137,39 +152,61 @@ re-write the entire library (a Table of Contents generator) myself some day.
 Here is a characteristic example of fay code with
 [fay-jquery](http://hackage.haskell.org/package/fay-jquery-0.6.0.2) (0.6.0.2):
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/source/entry.hs\#L45-54
-appendTopLinks :: Fay () appendTopLinks = do mainContent &lt;- select
-".main-content" headings &lt;- childrenMatching "h2,h3,h4,h5" mainContent
-J.append topLink headings topLinks &lt;- select ".top-link" click (scrollTo 400)
-topLinks return () where topLink = "&lt;a href='\#title'
-class='top-link'&gt;top&lt;/a&gt;" ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/source/entry.hs#L45-54
+appendTopLinks :: Fay ()
+appendTopLinks = do
+  mainContent <- select ".main-content"
+  headings <- childrenMatching "h2,h3,h4,h5" mainContent
+  J.append topLink headings
+  topLinks <- select ".top-link"
+  click (scrollTo 400) topLinks
+  return ()
+  where
+    topLink = "<a href='#title' class='top-link'>top</a>"
+```
 
 As you can see, some of the method calls in fay-jquery seem a bit backwards...I
 had to resist the urge to write things like
 
-~~~haskell container `append` contained container `childrenMatching`
-".contained" ~~~
+``` {.haskell}
+container `append` contained
+container `childrenMatching` ".contained"
+```
 
 Which matches the JQuery calling model:
 
-~~~javascript container.append(contained); container.children('.contained'); ~~~
+``` {.javascript}
+container.append(contained);
+container.children('.contained');
+```
 
 Unfortunately, this doesn't work, and you're supposed to reverse the order of
 the parameters. I guess it is more Haskell-y in a way, to be able to play with
 partial application and do something like
 
-~~~haskell let appendIt = append container in appendIt contained1 appendIt
-contained2 appendIt contained3 ~~~
+``` {.haskell}
+let
+  appendIt = append container
+in
+  appendIt contained1
+  appendIt contained2
+  appendIt contained3
+```
 
 So I guess that's okay.
 
 However, something I was less understanding of was the ordering for event
 binding and loops, which needed the handlers *before* the object being binded.
 
-~~~haskell flip click header $ \_ -&gt; do toggled &lt;- readFayRef
-sourceToggled if toggled then sHide sourceInfo else unhide sourceInfo
-modifyFayRef' sourceToggled Prelude.not ~~~
+``` {.haskell}
+flip click header $ \_ -> do
+  toggled <- readFayRef sourceToggled
+  if toggled
+    then sHide sourceInfo
+    else unhide sourceInfo
+  modifyFayRef' sourceToggled Prelude.not
+```
 
 This one kind of bucks the convention that methods like `append` maintain...and
 also needs those annoying `flips` to have easy anonymous callbacks. I don't want
@@ -201,7 +238,7 @@ enough.
 
 Of course, the fay javascript files were a bit larger than the normal javascript
 ones. Not too significantly, though, only about 80x. This actually puts them
-however at around the size of my image files (~100KB)...this is slightly
+however at around the size of my image files (\~100KB)...this is slightly
 worrisome, but I don't really stress too much about one image, so I guess I
 shouldn't stress too much about this either. Not ideal, but what else could I
 expect?
@@ -213,9 +250,6 @@ Hopefully I'm able to make [that javascript
 call](http://blog.jle.im/source/code-samples/source/entry_toc.js#L4-21) on fay
 one day, without having to rewrite the entire library in Fay (although it might
 be a fun exercise).
-
-&lt;!-- ~~~javascript --&gt; &lt;!-- !!!source/entry\_toc.js "\#toc"18 --&gt;
-&lt;!-- ~~~ --&gt;
 
 If anyone knows how I can do this, I'd really appreciate any help!
 

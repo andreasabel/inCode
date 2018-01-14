@@ -14,8 +14,7 @@ project.
 
 AFRP has its own elegant way of approaching problems, but to be able to properly
 use it for simulations, we're going to have to start by learning about the
-fundamental abstraction behind its **implementation**:
-machines.\[^implementation\]
+fundamental abstraction behind its **implementation**: machines.[^1]
 
 (This post will assume a somewhat basic knowledge of Haskell. I'll try
 explaining concepts here and there if I feel that they might not be very
@@ -70,41 +69,62 @@ Let's start with streams, one of the simpler of machines.
 
 Streams are basically infinitely long linked lists.
 
-~~~haskell data Stream b = SCons (b, Stream b) ~~~
+``` {.haskell}
+data Stream b = SCons (b, Stream b)
+```
 
 (`SCons` for "Stream cons")
 
 Compare that with the linked list data type, which is a Stream with an Ending
 (`Nil`):
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs\#L7-7
--- interactive: https://www.fpcomplete.com/user/jle/machines data List a = Cons
-(a, List a) | Nil ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L7-7
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+data List a = Cons (a, List a) | Nil
+```
 
 or, as is more traditionally written:
 
-~~~haskell data \[a\] = (:) a \[a\] | \[\] ~~~
+``` {.haskell}
+data [a] = (:) a [a] | []
+```
 
 It's pretty easy to build lists:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs\#L36-37
--- interactive: https://www.fpcomplete.com/user/jle/machines myList :: List Int
-myList = Cons ( 1, Cons ( 2, Cons (3, Nil) ) ) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L36-37
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+myList :: List Int
+myList = Cons ( 1, Cons ( 2, Cons (3, Nil) ) )
+```
 
 which is just, in the more traditional (infix) form:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs\#L40-41
--- interactive: https://www.fpcomplete.com/user/jle/machines myList' :: \[Int\]
-myList' = 1:(2:(3:\[\])) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L40-41
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+myList' :: [Int]
+myList' = 1:(2:(3:[]))
+```
 
 Let's see if `myList` does what we want: (a list from 1 to 3):
 
-~~~haskell ghci&gt; let (Cons (x,xs)) = myList ghci&gt; x 1 ghci&gt; :t xs xs ::
-List Int ghci&gt; let (Cons (y,ys)) = xs ghci&gt; y 2 ghci&gt; let (Cons (z,zs))
-= ys ghci&gt; z 3 ghci&gt; zs Nil ~~~
+``` {.haskell}
+ghci> let (Cons (x,xs)) = myList
+ghci> x
+1
+ghci> :t xs
+xs :: List Int
+ghci> let (Cons (y,ys)) = xs
+ghci> y
+2
+ghci> let (Cons (z,zs)) = ys
+ghci> z
+3
+ghci> zs
+Nil
+```
 
 Yes! Perfect. We can "traverse" down our linked list by repeatedly pattern
 matching out the "head" (the `x`, the first part of the tuple) and the "tail"
@@ -116,27 +136,48 @@ we have to manually type out an infinite stream?
 Let's try defining the stream `[1..]` --- a stream that contains every natural
 number starting from 1.
 
-~~~haskell myStream' :: Stream Int myStream' = SCons ( 1, SCons ( 2, SCons ( 3,
-... ) ) ) ~~~
+``` {.haskell}
+myStream' :: Stream Int
+myStream' = SCons ( 1, SCons ( 2, SCons ( 3, ... ) ) )
+```
 
 Hm. This is going to take a while. I wonder if there's an easier way?
 
 We can take advantage of Haskell's "lazy-by-default"-ness and leave the "rest"
 of the stream as an unevaluated function call. And then we can recurse!
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs\#L46-50
--- interactive: https://www.fpcomplete.com/user/jle/machines myStream :: Stream
-Int myStream = streamFrom 1 where streamFrom :: Int -&gt; Stream Int streamFrom
-n = SCons ( n, streamFrom (n+1) ) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L46-50
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+myStream :: Stream Int
+myStream = streamFrom 1
+  where
+    streamFrom :: Int -> Stream Int
+    streamFrom n = SCons ( n, streamFrom (n+1) )
+```
 
 Cool! Let's see if this `myStream` really does what we want, the same way we
 tested `myList`:
 
-~~~haskell ghci&gt; let (SCons (x, xs)) = myStream ghci&gt; x 1 ghci&gt; :t xs
-xs :: Stream Int ghci&gt; let (SCons (y, ys)) = xs ghci&gt; y 2 ghci&gt; let
-(SCons (z, zs)) = ys ghci&gt; z 3 ghci&gt; let (SCons (j,js)) = zs ghci&gt; j 4
-ghci&gt; let (SCons (k,ks)) = js ghci&gt; k 5 ~~~
+``` {.haskell}
+ghci> let (SCons (x, xs)) = myStream
+ghci> x
+1
+ghci> :t xs
+xs :: Stream Int
+ghci> let (SCons (y, ys)) = xs
+ghci> y
+2
+ghci> let (SCons (z, zs)) = ys
+ghci> z
+3
+ghci> let (SCons (j,js)) = zs
+ghci> j
+4
+ghci> let (SCons (k,ks)) = js
+ghci> k
+5
+```
 
 Yes, it works perfectly! Just like in the case of List, we can "traverse" down
 the stream by pattern matching out the "head" of the stream (the first part of
@@ -145,12 +186,19 @@ the tuple) and the "tail" of the stream (the second part of the tuple).
 Note that we can have some fun with Haskell syntax `Stream` by adding a record
 label to the first (and only) field:
 
-~~~haskell data Stream b = SCons { runStream :: (b, Stream b) } ~~~
+``` {.haskell}
+data Stream b = SCons { runStream :: (b, Stream b) }
+```
 
 so that we can do fancy things like:
 
-~~~haskell ghci&gt; :t runStream runStream :: Stream b -&gt; (b, Stream b)
-ghci&gt; let (x, xs) = runStream myStream ghci&gt; x 1 ~~~
+``` {.haskell}
+ghci> :t runStream
+runStream :: Stream b -> (b, Stream b)
+ghci> let (x, xs) = runStream myStream
+ghci> x
+1
+```
 
 Basically, we get for free the function `runStream`, a function that yanks the
 tuple out of the stream.
@@ -159,10 +207,11 @@ One minor final touch --- because `Stream` has only one constructor and one
 field, we can make it a `newtype`, which has similar usage patterns/syntax as a
 `data`, but which the compiler can more easily optimize:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs\#L10-10
--- interactive: https://www.fpcomplete.com/user/jle/machines newtype Stream b =
-SCons { runStream :: (b, Stream b) } ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L10-10
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+newtype Stream b = SCons { runStream :: (b, Stream b) }
+```
 
 #### Automating Traversal
 
@@ -173,31 +222,43 @@ pattern matching for us really quickly so that we can test it more easily.
 `streamToList` will take a Stream and perform the very straightforward
 conversion into an infinite list.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs\#L15-16
--- interactive: https://www.fpcomplete.com/user/jle/machines streamToList ::
-Stream b -&gt; \[b\] streamToList (SCons (x, xs)) = x : streamToList xs ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L15-16
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+streamToList :: Stream b -> [b]
+streamToList (SCons (x, xs)) = x : streamToList xs
+```
 
 So now we can do:
 
-~~~haskell ghci&gt; take 10 $ streamToList myStream \[1,2,3,4,5,6,7,8,9,10\] ~~~
+``` {.haskell}
+ghci> take 10 $ streamToList myStream
+[1,2,3,4,5,6,7,8,9,10]
+```
 
 Alternatively (and for reasons which will later become clear), we can also
 define `testStream`, which takes a specified amount of elements and returns also
 the "resulting" stream after all of those steps, and `testStream_`, which is the
 same thing except that we throw away the modified stream.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs\#L20-30
--- interactive: https://www.fpcomplete.com/user/jle/machines testStream ::
-Stream b -&gt; Int -&gt; (\[b\], Stream b) testStream strm 0 = (\[\] , strm )
-testStream strm n = (y:ys, final) where (y , next ) = runStream strm (ys, final)
-= testStream next (n-1)
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L20-30
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+testStream :: Stream b -> Int -> ([b], Stream b)
+testStream strm 0 = ([]  , strm )
+testStream strm n = (y:ys, final)
+  where
+    (y , next )   = runStream  strm
+    (ys, final)   = testStream next (n-1)
 
-testStream\_ :: Stream b -&gt; Int -&gt; \[b\] testStream\_ = (fst .) .
-testStream ~~~
+testStream_ :: Stream b -> Int -> [b]
+testStream_ = (fst .) . testStream
+```
 
-~~~haskell ghci&gt; testStream\_ myStream 10 \[1,2,3,4,5,6,7,8,9,10\] ~~~
+``` {.haskell}
+ghci> testStream_ myStream 10
+[1,2,3,4,5,6,7,8,9,10]
+```
 
 ### Streams are nice
 
@@ -215,10 +276,12 @@ function of the current state*.
 
 This is made very apparent in our definition of `streamFrom`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs\#L49-50
--- interactive: https://www.fpcomplete.com/user/jle/machines streamFrom :: Int
--&gt; Stream Int streamFrom n = SCons ( n, streamFrom (n+1) ) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L49-50
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+    streamFrom :: Int -> Stream Int
+    streamFrom n = SCons ( n, streamFrom (n+1) )
+```
 
 The "current state" whenever we call `streamFrom n` is `n`...the "next state"
 (the "initial state" of the "tail") is `n+1`. We could have provided any
@@ -234,13 +297,20 @@ Did you catch that last sentence? It's a subtle point. In general, streams can
 have outputs that are different than their states. As a trivial example, let's
 have a stream whose state is an integer, yet whose output is a character:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs\#L53-57
--- interactive: https://www.fpcomplete.com/user/jle/machines charStream ::
-Stream Char charStream = charStreamFrom 65 where charStreamFrom :: Int -&gt;
-Stream Char charStreamFrom n = SCons ( chr n, charStreamFrom (n+1) ) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L53-57
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+charStream :: Stream Char
+charStream = charStreamFrom 65
+  where
+    charStreamFrom :: Int -> Stream Char
+    charStreamFrom n = SCons ( chr n, charStreamFrom (n+1) )
+```
 
-~~~haskell ghci&gt; take 10 $ streamToList charStream "ABCDEFGHIJ" ~~~
+``` {.haskell}
+ghci> take 10 $ streamToList charStream
+"ABCDEFGHIJ"
+```
 
 Wait, this is kind of weird. The type of our stream is `Stream Char`...`Char` is
 the type of output/elements in the stream, the "head" when we pattern match. But
@@ -281,10 +351,11 @@ FPComplete](https://www.fpcomplete.com/user/jle/machines))
 Let's upgrade our streams, and introduce a way to affect how they progress.
 Let's call it an Auto.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs\#L12-12
--- interactive: https://www.fpcomplete.com/user/jle/machines newtype Auto a b =
-ACons { runAuto :: a -&gt; (b, Auto a b) } ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-12
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+newtype Auto a b = ACons { runAuto :: a -> (b, Auto a b) }
+```
 
 Now, instead of an `SCons` containing just a tuple (a head-tails), an `ACons`
 contains a *function* that *produces* your head-tails tuple. Before, all of our
@@ -307,21 +378,36 @@ So now, we basically have a `Stream b`, except at every "step", we can
 
 Let's look at a direct "port" of our `myStream`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs\#L40-44
--- interactive: https://www.fpcomplete.com/user/jle/machines myStreamAuto ::
-Auto a Int myStreamAuto = streamAutoFrom 1 where streamAutoFrom :: Int -&gt;
-Auto a Int streamAutoFrom n = ACons $ \_ -&gt; ( n, streamAutoFrom (n+1) ) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L40-44
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+myStreamAuto :: Auto a Int
+myStreamAuto = streamAutoFrom 1
+  where
+    streamAutoFrom :: Int -> Auto a Int
+    streamAutoFrom n = ACons $ \_ -> ( n, streamAutoFrom (n+1) )
+```
 
 This is kind of a dumb example, but `myStreamAuto` is just the exact same as
 `myStream`. It's an Auto, but it *ignores its influencing input*.
 
 Let's try it out.
 
-~~~haskell ghci&gt; :t runAuto runAuto :: Auto a b -&gt; (a -&gt; (b, Auto a b))
-ghci&gt; let (x, xs) = runAuto myStreamAuto undefined ghci&gt; x 1 ghci&gt; :t
-xs xs :: Auto a Int ghci&gt; let (y, ys) = runAuto xs undefined ghci&gt; y 2
-ghci&gt; let (z, zs) = runAuto ys undefined ghci&gt; z 3 ~~~
+``` {.haskell}
+ghci> :t runAuto
+runAuto :: Auto a b -> (a -> (b, Auto a b))
+ghci> let (x, xs) = runAuto myStreamAuto undefined
+ghci> x
+1
+ghci> :t xs
+xs :: Auto a Int
+ghci> let (y, ys) = runAuto xs undefined
+ghci> y
+2
+ghci> let (z, zs) = runAuto ys undefined
+ghci> z
+3
+```
 
 Remember that we are really doing `(runAuto myStreamAuto) undefined`, but
 because of how Haskell associates function calls, the parentheses are
@@ -342,12 +428,17 @@ We can do this by having the influence/input be a `Maybe Int`. If we want the
 counter to progress normally, we pass in a `Nothing`. If we want the counter to
 reset to a number `n` of our choosing, we pass in a `Just n`
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs\#L48-54
--- interactive: https://www.fpcomplete.com/user/jle/machines settableAuto ::
-Auto (Maybe Int) Int settableAuto = counterFrom 1 where counterFrom :: Int -&gt;
-Auto (Maybe Int) Int counterFrom n = ACons $ \\reset -&gt; let c = fromMaybe n
-reset in ( c, counterFrom (c + 1) ) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L48-54
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+settableAuto :: Auto (Maybe Int) Int
+settableAuto = counterFrom 1
+  where
+    counterFrom :: Int -> Auto (Maybe Int) Int
+    counterFrom n = ACons $ \reset ->
+      let c = fromMaybe n reset
+      in  ( c, counterFrom (c + 1) )
+```
 
 Remember that `fromMaybe :: a -> Maybe a -> a` takes a "default" value, a Maybe
 value, and then returns the value inside the Maybe if it's a `Just`, or the
@@ -359,12 +450,29 @@ you `( m, counterFrom (m+1) )`.
 
 Cool --- let's try it out.
 
-~~~haskell ghci&gt; let (x, xs) = runAuto settableAuto Nothing ghci&gt; x 1
-ghci&gt; let (y, ys) = runAuto xs Nothing ghci&gt; y 2 ghci&gt; let (z, zs) =
-runAuto ys (Just 10) ghci&gt; z 10 ghci&gt; let (j, js) = runAuto zs Nothing
-ghci&gt; j 11 ghci&gt; let (k, ks) = runAuto js Nothing ghci&gt; k 12 ghci&gt;
-let (l, ls) = runAuto ks (Just (-1)) ghci&gt; l -1 ghci&gt; let (m, ms) =
-runAuto ls Nothing ghci&gt; m 0 ~~~
+``` {.haskell}
+ghci> let (x, xs) = runAuto settableAuto Nothing
+ghci> x
+1
+ghci> let (y, ys) = runAuto xs Nothing
+ghci> y
+2
+ghci> let (z, zs) = runAuto ys (Just 10)
+ghci> z
+10
+ghci> let (j, js) = runAuto zs Nothing
+ghci> j
+11
+ghci> let (k, ks) = runAuto js Nothing
+ghci> k
+12
+ghci> let (l, ls) = runAuto ks (Just (-1))
+ghci> l
+-1
+ghci> let (m, ms) = runAuto ls Nothing
+ghci> m
+0
+```
 
 And there ya go.
 
@@ -379,33 +487,52 @@ step. `testAuto` returns the resulting collection of results, and also the
 modified Auto. `testAuto_` throws away the new Auto and just gives us the
 collection.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs\#L17-25
--- interactive: https://www.fpcomplete.com/user/jle/machines testAuto :: Auto a
-b -&gt; \[a\] -&gt; (\[b\], Auto a b) testAuto auto \[\] = (\[\] , auto )
-testAuto auto (x:xs) = (y:ys, final) where (y, next ) = runAuto auto x (ys,
-final) = testAuto next xs
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L17-25
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+testAuto :: Auto a b -> [a] -> ([b], Auto a b)
+testAuto auto []      = ([]  , auto )
+testAuto auto (x:xs)  = (y:ys, final)
+  where
+    (y,  next ) = runAuto  auto x
+    (ys, final) = testAuto next xs
 
-testAuto\_ :: Auto a b -&gt; \[a\] -&gt; \[b\] testAuto\_ a = fst . testAuto a
-~~~
+testAuto_ :: Auto a b -> [a] -> [b]
+testAuto_ a = fst . testAuto a
+```
 
 Trying it out on `settableAuto`:
 
-~~~ ghci&gt; testAuto\_ settableAuto \[ Nothing, Nothing, Just 10 , Nothing,
-Nothing, Just (-1) , Nothing \] \[1,2,10,11,12,-1,0\] ~~~
+    ghci> testAuto_ settableAuto [ Nothing, Nothing, Just 10
+                                 , Nothing, Nothing, Just (-1)
+                                 , Nothing ]
+    [1,2,10,11,12,-1,0]
 
 Alternatively, here is a fun way to test an Auto interactively, where you ask
 for input at each iteration from the user ---
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs\#L27-32
--- interactive: https://www.fpcomplete.com/user/jle/machines interactAuto ::
-(Read a, Show b) =&gt; Auto a b -&gt; IO () interactAuto a0 = do inp &lt;-
-getLine let (x,a1) = runAuto a0 (read inp) print x interactAuto a1 ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L27-32
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+interactAuto :: (Read a, Show b) => Auto a b -> IO ()
+interactAuto a0 = do
+    inp <- getLine
+    let (x,a1) = runAuto a0 (read inp)
+    print x
+    interactAuto a1
+```
 
-~~~haskell ghci&gt; interactAuto settableAuto
-
-> Nothing 1 Nothing 2 Just 10 10 Nothing 11 ~~~
+``` {.haskell}
+ghci> interactAuto settableAuto
+> Nothing
+1
+> Nothing
+2
+> Just 10
+10
+> Nothing
+11
+```
 
 ### A Shift
 
@@ -442,12 +569,17 @@ up a quick example where it's a little more obvious that the state and the
 output are different things, and that the state is completely opaque and
 encapsulated.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs\#L58-64
--- interactive: https://www.fpcomplete.com/user/jle/machines isEvenAuto :: Auto
-(Maybe Int) Bool isEvenAuto = isEvenAutoFrom 1 where isEvenAutoFrom :: Int -&gt;
-Auto (Maybe Int) Bool isEvenAutoFrom n = ACons $ \\reset -&gt; let c = fromMaybe
-n reset in ( even c, isEvenAutoFrom (c + 1) ) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L58-64
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+isEvenAuto :: Auto (Maybe Int) Bool
+isEvenAuto = isEvenAutoFrom 1
+  where
+    isEvenAutoFrom :: Int -> Auto (Maybe Int) Bool
+    isEvenAutoFrom n = ACons $ \reset ->
+      let c = fromMaybe n reset
+      in  ( even c, isEvenAutoFrom (c + 1) )
+```
 
 So `isEvenAuto` is the same as `settableCounterFrom`, except instead of
 "yielding"/"outputting" `n`, it outputs `even n` --- `True` if `n` is even and
@@ -455,8 +587,12 @@ So `isEvenAuto` is the same as `settableCounterFrom`, except instead of
 
 Here is a demonstration of its behavior ---
 
-~~~haskell ghci&gt; testAuto isEvenAuto \[ Nothing, Nothing, Just 10 , Nothing,
-Nothing, Just (-1) , Nothing \] \[False,True,True,False,True\] ~~~
+``` {.haskell}
+ghci> testAuto isEvenAuto  [ Nothing, Nothing, Just 10
+                           , Nothing, Nothing, Just (-1)
+                           , Nothing ]
+[False,True,True,False,True]
+```
 
 Note that there is in general really no way to ever access the `n` internally
 (in fact, like we said before, it is in theory possible because we can't even
@@ -515,15 +651,28 @@ How about an Auto that "accumulates" and "sums up" all of its incoming inputs,
 starting at 0? More correctly, an Auto that, given any int, "returns" the sum of
 that int with all of the previous ints it has received in its lifetime.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs\#L67-73
--- interactive: https://www.fpcomplete.com/user/jle/machines summer :: Num a
-=&gt; Auto a a summer = sumFrom 0 where sumFrom :: Num a =&gt; a -&gt; Auto a a
-sumFrom n = ACons $ \\input -&gt; let s = n + input in ( s , sumFrom s ) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L67-73
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+summer :: Num a => Auto a a
+summer = sumFrom 0
+  where
+    sumFrom :: Num a => a -> Auto a a
+    sumFrom n = ACons $ \input ->
+      let s = n + input
+      in  ( s , sumFrom s )
+```
 
-~~~haskell ghci&gt; let (out1, auto1) = runAuto summer 10 ghci&gt; out1 10
-ghci&gt; let (out2, auto2) = runAuto auto1 3 ghci&gt; out2 13 ghci&gt;
-testAuto\_ auto2 \[15,-17,6,0,-1\] \[28,11,17,17,16\] ~~~
+``` {.haskell}
+ghci> let (out1, auto1) = runAuto summer 10
+ghci> out1
+10
+ghci> let (out2, auto2) = runAuto auto1 3
+ghci> out2
+13
+ghci> testAuto_ auto2 [15,-17,6,0,-1]
+[28,11,17,17,16]
+```
 
 -   The "input" is our incoming `Int` --- 10, 3, 15, -17, etc.
 -   The "output" is the accumulated sum/integral -- 10, 13, 28, 11, etc.
@@ -534,12 +683,17 @@ Just for kicks, let's generalize this and make an Auto version of `foldl`
 (technically, more like `scanl`): give us an operator and an initial value, and
 we'll "fold up" all of our inputs.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs\#L78-84
--- interactive: https://www.fpcomplete.com/user/jle/machines autoFold :: forall
-a b. (b -&gt; a -&gt; b) -&gt; b -&gt; Auto a b autoFold op init = foldFrom init
-where foldFrom :: b -&gt; Auto a b foldFrom x = ACons $ \\input -&gt; let y = x
-`op` input in ( y, foldFrom y ) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L78-84
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+autoFold :: forall a b. (b -> a -> b) -> b -> Auto a b
+autoFold op init = foldFrom init
+  where
+    foldFrom :: b -> Auto a b
+    foldFrom x = ACons $ \input ->
+      let y = x `op` input
+      in  ( y, foldFrom y )
+```
 
 (the `forall` is used with the [Scoped Type
 Variables](http://www.haskell.org/haskellwiki/Scoped_type_variables) extension
@@ -553,16 +707,21 @@ You can probably imagine lots of different folds you can turn into
 `autoFold`s...and indeed a lot of practical Autos are just `autoFold`s. Here are
 some cute ones:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs\#L92-107
--- interactive: https://www.fpcomplete.com/user/jle/machines accumulateIntoList
-:: Auto a \[a\] accumulateIntoList = autoFold (flip (:)) \[\]
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L92-107
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+accumulateIntoList :: Auto a [a]
+accumulateIntoList = autoFold (flip (:)) []
 
-productor :: Num a =&gt; Auto a a productor = autoFold (\*) 1
+productor :: Num a => Auto a a
+productor = autoFold (*) 1
 
-accumulateStrings :: Auto String String accumulateStrings = autoFold (++) ""
+accumulateStrings :: Auto String String
+accumulateStrings = autoFold (++) ""
 
-monoidAccum :: Monoid a =&gt; Auto a a monoidAccum = autoFold mappend mempty ~~~
+monoidAccum :: Monoid a => Auto a a
+monoidAccum = autoFold mappend mempty
+```
 
 Cool, huh?
 
@@ -571,19 +730,25 @@ Cool, huh?
 Let's look very carefully at a comparison between the type signature of
 Prelude's `foldl` and the type signature of `autoFold`:
 
-~~~haskell foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; (\[a\] -&gt; b) autoFold
-:: (b -&gt; a -&gt; b) -&gt; b -&gt; Auto a b ~~~
+``` {.haskell}
+foldl      :: (b -> a -> b) -> b -> ([a] -> b)
+autoFold   :: (b -> a -> b) -> b ->  Auto a b
+```
 
 Hm. Let's do some rearranging. Remember that in Haskell, `(->)` is just an infix
 type operator. So we can always rewrite `a -> b` as `(->) a b`
 
-~~~haskell foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; ( (-&gt;) \[a\] b )
-autoFold :: (b -&gt; a -&gt; b) -&gt; b -&gt; ( Auto a b ) ~~~
+``` {.haskell}
+foldl      :: (b -> a -> b) -> b -> ( (->) [a] b )
+autoFold   :: (b -> a -> b) -> b -> ( Auto  a  b )
+```
 
 Let's get rid of some of the points, too:
 
-~~~haskell foldl op initial :: (-&gt;) \[a\] b autoFold op initial :: Auto a b
-~~~
+``` {.haskell}
+foldl    op initial  :: (->) [a] b
+autoFold op initial  :: Auto  a  b
+```
 
 So both `foldl` and `autoFold` have very similar behaviors:
 
@@ -599,7 +764,8 @@ returns a `b` value based on the previous `a`'s it has seen.
 The main point here is that `autoFold` is a sort of "function" in a way...just
 like the others before it. It's a...."function-like thing".
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 Here is a quick diversion, if you're up for it. This doesn't really have too
 much to do with the rest of the post, but it'll help you test your intuition a
@@ -608,15 +774,18 @@ bit with Autos.
 As an exercise, compare (and contrast) these three functions of identical type
 signatures:
 
-~~~haskell map f :: \[a\] -&gt; \[b\] scanl op initial :: \[a\] -&gt; \[b\]
-testAuto\_ auto :: \[a\] -&gt; \[b\] ~~~
+``` {.haskell}
+map       f          :: [a] -> [b]
+scanl     op initial :: [a] -> [b]
+testAuto_ auto       :: [a] -> [b]
+```
 
 (Assume that `scanl` does not include the initial accumulator...that is, we are
 really talking about `drop 1 . scanl op init`)
 
 Compare what they do conceptually. Then, for fun, try implementing some of them
 in terms of the other. Which re-implementations are possible? Which ones aren't?
-&lt;/div&gt;
+:::
 
 ### More Auto examples
 
@@ -628,43 +797,63 @@ because we will later be re-implementing them as compositions of smaller,
 simpler building blocks.
 
 [rollingAverage](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L111-122)
-: `rollingAverage n :: Fractional a => Auto a a` outputs a rolling average of
-the last `n` values it has encountered
+:   `rollingAverage n :: Fractional a => Auto a a` outputs a rolling average of
+    the last `n` values it has encountered
 
-~~~haskell ghci&gt; testAuto\_ (rollingAverage 4)
-\[2,8,4,5,1,8,3,5,1,1,8,3,5,9,2\] \[2.0 ,5.0 ,4.67,4.75,4.5 ,4.5
-,4.25,4.25,4.25,2.5 ,3.75,3.25,4.25,6.25,4.75\] ~~~
+``` {.haskell}
+ghci> testAuto_ (rollingAverage 4) [2,8,4,5,1,8,3,5,1,1,8,3,5,9,2]
+[2.0 ,5.0 ,4.67,4.75,4.5
+,4.5 ,4.25,4.25,4.25,2.5
+,3.75,3.25,4.25,6.25,4.75]
+```
 
 [onFor](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L125-146)
-: `onFor p i :: Auto a Bool` normally outputs `False`...except whenever the
-input matches the given predicate `p :: a -> Bool`. Then it stays "on" (`True`)
-for `i` steps.
+:   `onFor p i :: Auto a Bool` normally outputs `False`...except whenever the
+    input matches the given predicate `p :: a -> Bool`. Then it stays "on"
+    (`True`) for `i` steps.
 
-~~~haskell ghci&gt; :t onFor even 3 onFor even 3 :: Auto Int Bool ghci&gt;
-testAuto\_ (onFor even 3) \[1,1,2,1,1,1,1,4,1,6,1,1,1,1\] \[ False, False, True
-, True , True , False, False, True , True , True , True , True , False, False \]
-~~~
+``` {.haskell}
+ghci> :t onFor even 3
+onFor even 3 :: Auto Int Bool
+ghci> testAuto_ (onFor even 3) [1,1,2,1,1,1,1,4,1,6,1,1,1,1]
+[ False, False, True , True , True
+, False, False, True , True , True
+, True , True , False, False ]
+```
 
 [autoMap](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L149-176)
-: `autoMap cap :: Auto (Command k v) (Maybe v)` is a neat one. It internally
-holds a
-[Map](http://hackage.haskell.org/package/containers-0.5.4.0/docs/Data-Map.html)
-(a key-value store) --- you can give it `[Command][]` data types that tell it to
-insert, lookup, and delete values. However, it enforces a maximum of items.
+
+:   `autoMap cap :: Auto (Command k v) (Maybe v)` is a neat one. It internally
+    holds a
+    [Map](http://hackage.haskell.org/package/containers-0.5.4.0/docs/Data-Map.html)
+    (a key-value store) --- you can give it `[Command][]` data types that tell
+    it to insert, lookup, and delete values. However, it enforces a maximum of
+    items.
 
     The main thing to note here is that you get to completely encapsulate your
     "state", and allow it only to be "modified" or "viewed" under your own
-    terms. In OOP terms, it is like exposing only a few public methods to
-    modify your private state with discrimination.  If you were passed an
-    `autoMap` with items already inside, you would have no way to have full
-    "access" to the map --- you would never be able to perform general
-    operations (such as getting a list of all of the keys).
+    terms. In OOP terms, it is like exposing only a few public methods to modify
+    your private state with discrimination. If you were passed an `autoMap` with
+    items already inside, you would have no way to have full "access" to the map
+    --- you would never be able to perform general operations (such as getting a
+    list of all of the keys).
 
-~~~haskell ghci&gt; testAuto\_ (autoMap 3) | \[ Insert "hello" 7 | , Insert
-"world" 10 | , Insert "foo" 12 | , Insert "bar" 15 | , Delete "baz" | , Delete
-"world" | , Insert "haskell" 19 | , Lookup "world" | , Lookup "hello" | \] \[
-Just 7 , Just 10, Just 12 , Nothing, Nothing, Just 10 , Just 19, Nothing, Just 7
-\] ~~~
+``` {.haskell}
+ghci> testAuto_ (autoMap 3)
+    |   [ Insert "hello" 7
+    |   , Insert "world" 10
+    |   , Insert "foo" 12
+    |   , Insert "bar" 15
+    |   , Delete "baz"
+    |   , Delete "world"
+    |   , Insert "haskell" 19
+    |   , Lookup "world"
+    |   , Lookup "hello"
+    |   ]
+[ Just 7 , Just 10, Just 12
+, Nothing, Nothing, Just 10
+, Just 19, Nothing, Just 7  ]
+```
 
 "Function Things"
 -----------------
@@ -683,17 +872,21 @@ You can think of `isEvenAuto` as a "function thing" from `Maybe Int` to `Bool`.
 Here's another function from `Maybe Int` to `Bool`: (I'm going to be using the
 prefix form of `(->)` a lot from now on)
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs\#L181-182
-maybeIsEven :: (-&gt;) (Maybe Int) Bool maybeIsEven = even . fromMaybe 1 ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L181-182
+maybeIsEven :: (->) (Maybe Int) Bool
+maybeIsEven = even . fromMaybe 1
+```
 
 `maybeIsEven` returns `True` when value inside the `Just` is even, or `False` if
 the value is odd or it's a `Nothing`.
 
 Compare that type signature to that of our `isEvenAuto`
 
-~~~haskell maybeIsEven :: (-&gt;) (Maybe Int) Bool isEvenAuto :: Auto (Maybe
-Int) Bool ~~~
+``` {.haskell}
+maybeIsEven :: (->) (Maybe Int) Bool
+isEvenAuto  :: Auto (Maybe Int) Bool
+```
 
 `maybeIsEven` and `isEvenAuto` are *both* "function-like things". But whereas
 `maybeIsEven` is "memoryless" (it's the same every time you call it),
@@ -734,3 +927,11 @@ function-like nature of these things, we will be able to witness more of the
 full power of machine composition. And we'll even be able to re-implement *many*
 of the complex machines of this post with compositions of smaller, simpler
 Autos.
+
+[^1]: It is somewhat important to note here that the semantics of FRP do not
+    inherently involve machines. We'll learn more about this later. For now,
+    remember that this series will chiefly study the low-level *implementation*
+    of AFRP, which may or may not be related to the *semantics*/abstractions of
+    FRP --- in an ideal world we wouldn't even have to worry about
+    implementation and just work on the level of the abstractions.
+    Unfortunately, we don't live in an ideal world :(

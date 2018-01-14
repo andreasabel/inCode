@@ -20,8 +20,12 @@ some sort of action or modification to some state. The [wikipedia
 article](http://en.wikipedia.org/wiki/Statement_(computer_science)) has a nice
 explanation. Some typical statements from common imperative languages include:
 
-~~~c int a = 4; // declaration & assignment a += 5; // modification
-printf("hello world"); // call return false; // exit points ~~~
+``` {.c}
+int a = 4;              // declaration & assignment
+a += 5;                 // modification
+printf("hello world");  // call
+return false;           // exit points
+```
 
 In these languages, whenever control flow reaches these statements, something
 happens. We do not differentiate the act of *evaluating* these statements
@@ -54,7 +58,8 @@ still just an `Int`.
 (through some abstract representation that isn't really important) the act of a
 *computer* printing the string `"hello world"` to stdout.
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 The type `IO ()` means "an object/abstracted data structure that represents the
 act of a computer computing a `()`" --- or, in other terms, "instructions for a
@@ -73,7 +78,8 @@ this action is a `String`. An `IO Int` would represent a CPU
 computation/IO-based computation that produces an `Int`.
 
 For the sake of this discussion, we'll only be considering `IO ()`s...but in
-real life, these other types pop up just as often. &lt;/div&gt;
+real life, these other types pop up just as often.
+:::
 
 Haskell gives you a bunch of *combinators*/functions to *work* with these
 `IO ()`'s (and `IO a`'s in general). To manipulate then, merge them, sequence
@@ -86,14 +92,17 @@ represents printing "hello", and `putStrLn "world"`, which represents printing
 "world".
 
 If you have those two `IO ()`s, you can use the `(>>)` combinator to "merge"
-them and create a new `IO ()`.\[^fftype\] In this case:
+them and create a new `IO ()`.[^1] In this case:
 
-~~~haskell -- :: means "has the type"
+``` {.haskell}
+-- :: means "has the type"
 
--- putStrLn "hello" is an object with type IO (). putStrLn "hello" :: IO ()
+-- putStrLn "hello" is an object with type IO ().
+putStrLn "hello" :: IO ()
 putStrLn "world" :: IO ()
 
-(&gt;&gt;) :: IO () -&gt; IO () -&gt; IO () ~~~
+(>>) :: IO () -> IO () -> IO ()
+```
 
 The type signature of `(>>)` says (in simple terms) that it's a function that
 takes two `IO ()`s and returns a shiny new `IO ()`. It's a function that takes
@@ -101,11 +110,13 @@ two objects and returns one.
 
 We can apply `(>>)` as an infix operator:
 
-~~~haskell helloThenWorld :: IO () helloThenWorld = putStrLn "hello" &gt;&gt;
-putStrLn "world"
+``` {.haskell}
+helloThenWorld :: IO ()
+helloThenWorld = putStrLn "hello" >> putStrLn "world"
 
--- define `helloThenWorld` as putStrLn "hello" &gt;&gt; putStrLn "world"; and
-its type is `IO ()`. ~~~
+-- define `helloThenWorld` as putStrLn "hello" >> putStrLn "world"; and its
+type is `IO ()`.
+```
 
 That new `IO ()` is a data structure that represents the act of printing
 "hello", then printing "world".
@@ -124,8 +135,11 @@ normal function on normal data structures.
 
 You can even make your own "first class" control flow!
 
-~~~haskell when :: Bool -&gt; IO () -&gt; IO () when True p = p when False \_ =
-return () ~~~
+``` {.haskell}
+when :: Bool -> IO () -> IO ()
+when True  p = p
+when False _ = return ()
+```
 
 (`return ()` is an `IO ()` that represents the act of doing nothing...it doesn't
 actually have anything to do with the `return` keyword in many other languages.
@@ -136,13 +150,15 @@ It basically represents a no-op.)
 
 We can evaluate a call to `when (4 > 0) (putStrLn "it's True!")` by hand:
 
-~~~haskell when (4 &gt; 0) (putStrLn "it's True!") :: IO () when True (putStrLn
-"it's True!") :: IO () -- evaluate 4 &gt; 0 putStrLn "it's True!" :: IO () --
-definition of when True
+``` {.haskell}
+when (4 > 0) (putStrLn "it's True!") :: IO ()
+when True (putStrLn "it's True!")    :: IO ()  -- evaluate 4 > 0
+putStrLn "it's True!"                :: IO ()  -- definition of when True
 
-when (4 &lt; 0) (putStrLn "it's True!") :: IO () when False (putStrLn "it's
-True!") :: IO () -- evaluate 4 &lt; 0 return () :: IO () -- definition of when
-False ~~~
+when (4 < 0) (putStrLn "it's True!") :: IO ()
+when False (putStrLn "it's True!")   :: IO ()  -- evaluate 4 < 0
+return ()                            :: IO ()  -- definition of when False
+```
 
 The above is *not* an "execution"...it's an *evaluation*. Execution involves
 executing actions on a computer, where evaluation is simply a reduction, like
@@ -155,10 +171,12 @@ wrote it ourself from scratch!
 
 You can't write `when` in this naive way in a language like, say, Javascript:
 
-~~~javascript var when = function(cond, act) { if (cond) { act; } };
+``` {.javascript}
+var when = function(cond, act) { if (cond) { act; } };
 
-when(false, console.log("hello")); // "hello" is printed, even though the
-condition is false ~~~
+when(false, console.log("hello"));
+// "hello" is printed, even though the condition is false
+```
 
 (You can simulate something that works by having `when` take functions instead
 of statements...but that's the point! You can't pass in a "statement", you have
@@ -169,38 +187,50 @@ With only a basic knowledge of functional programming (using a
 fold/reduce/inject, basically, or even recursion), you can easy write this
 function:
 
-~~~haskell sequence\_ :: \[IO ()\] -&gt; IO () ~~~
+``` {.haskell}
+sequence_ :: [IO ()] -> IO ()
+```
 
 Which says, "give me a list of `IO ()`s, and I'll give you a new `IO ()` that
 represents executing all of those `IO ()`s one-after-another".
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 If you are curious, here is the definition of `sequence` using a fold:
 
-~~~haskell sequence\_ :: \[IO ()\] -&gt; IO () sequence\_ xs = foldr (&gt;&gt;)
-(return ()) xs ~~~
+``` {.haskell}
+sequence_ :: [IO ()] -> IO ()
+sequence_ xs = foldr (>>) (return ()) xs
+```
 
 If you're familiar with folds/reduces, `return ()` is the "base value", and
 `(>>)` is the "accumulating function".
 
-~~~haskell sequence\_ \[putStrLn "hello", putStrLn "world", putStrLn
-"goodbye!"\]
+``` {.haskell}
+sequence_ [putStrLn "hello", putStrLn "world", putStrLn "goodbye!"]
 
--- evaluates to: putStrLn "hello" &gt;&gt; (putStrLn "world" &gt;&gt; (putStrLn
-"goodbye!" &gt;&gt; return ())) ~~~ &lt;/div&gt;
+-- evaluates to:
+putStrLn "hello" >> (putStrLn "world" >> (putStrLn "goodbye!" >> return ()))
+```
+:::
 
 Note that all of these functions take anything of type `IO ()`...so I could
 really be passing in named `IO ()`'s, or the result of combinators, or...
 
-~~~haskell hello :: IO () hello = putStrLn "hello"
+``` {.haskell}
+hello :: IO ()
+hello = putStrLn "hello"
 
-world :: IO () world = putStrLn "world"
+world :: IO ()
+world = putStrLn "world"
 
-helloworld :: IO () helloworld = hello &gt;&gt; world
+helloworld :: IO ()
+helloworld = hello >> world
 
-helloworldhelloworld :: IO () helloworldhelloworld = sequence\_ \[hello, world,
-helloworld\] ~~~
+helloworldhelloworld :: IO ()
+helloworldhelloworld = sequence_ [hello, world, helloworld]
+```
 
 Remember -- nothing is being called or executed. It's just all normal functions
 on normal data. The inputs are data, the outputs are data.
@@ -210,14 +240,18 @@ them one-after-the-other. I can...merge them *in parallel*!
 
 I can write a combinator:
 
-~~~haskell bothPar :: IO () -&gt; IO () -&gt; IO () ~~~
+``` {.haskell}
+bothPar :: IO () -> IO () -> IO ()
+```
 
 That takes two `IO ()`s and create a new shiny `IO ()` that represents the act
 of executing them *in parallel*.
 
 Then I can also write a new `sequencePar`:
 
-~~~haskell sequencePar :: \[IO ()\] -&gt; IO () ~~~
+``` {.haskell}
+sequencePar :: [IO ()] -> IO ()
+```
 
 That takes a list of `IO ()`s and returns a new shiny `IO ()` that represents
 the act of executing them all *in parallel*!
@@ -233,43 +267,55 @@ the semicolon --- and the syntax required for launching a bunch of parallel
 actions is noticeably different. In Haskell, "sequencing" isn't a part of the
 syntax (the semicolon) --- it's just *a regular ol' function*!
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 `sequencePar`'s implementation is pretty much identical to `sequence`'s, but
 swapping out `(>>)` for `bothPar`:
 
-~~~haskell sequencePar :: \[IO ()\] -&gt; IO () sequencePar xs = foldr bothPar
-(return ()) xs ~~~
+``` {.haskell}
+sequencePar :: [IO ()] -> IO ()
+sequencePar xs = foldr bothPar (return ()) xs
+```
 
 By the way, `bothPar` isn't defined by default, but we'll define it really soon.
-&lt;/div&gt;
+:::
 
 There are an entire wealth of combinators by which to compose and sequence and
 manipulate `IO ()`s together. And many of them you can even write yourself, from
 scratch.
 
 There are also many "IO action transformers" you have access to --- one notable
-one being `makePar`:\[^fio\]
+one being `makePar`:[^2]
 
-~~~haskell makePar :: IO () -&gt; IO () ~~~
+``` {.haskell}
+makePar :: IO () -> IO ()
+```
 
 That takes an `IO ()`, and "transforms" it into a "parallel" `IO ()`. Or rather,
 it takes an object representing a computer action, and returns an object
 representing launching that computer action in a parallel fork.
 
-We can write `bothPar` ourselves, then, with this:\[^parsimp\]
+We can write `bothPar` ourselves, then, with this:[^3]
 
-~~~haskell bothPar :: IO () -&gt; IO () -&gt; IO () bothPar x y = makePar x
-&gt;&gt; makePar y ~~~
+``` {.haskell}
+bothPar :: IO () -> IO () -> IO ()
+bothPar x y = makePar x >> makePar y
+```
 
 Give `bothPar` two `IO ()`'s representing computer actions, and it'll give you a
 new one that represents launching both computer actions in parallel. To do that,
 simply launch them both one after the other!
 
-Another common transformer on an `IO ()` is `catch`:\[^catch\]
+Another common transformer on an `IO ()` is `catch`:[^4]
 
-~~~haskell catch :: IO () -&gt; (SomeException -&gt; IO ()) -&gt; IO () -- ^ ^ ^
--- | | +-- modified object -- | +-- handler function -- +-- original object ~~~
+``` {.haskell}
+catch :: IO () -> (SomeException -> IO ()) -> IO ()
+--       ^         ^                          ^
+--       |         |                          +-- modified object
+--       |         +-- handler function
+--       +-- original object
+```
 
 Which takes an `IO ()` object and a handler function, and imbues that `IO ()`
 with "error handling capabilities". It returns a new `IO ()` object that
@@ -285,7 +331,8 @@ Again --- no execution is being done. We're simply taking an object representing
 an IO action, and returning a new, modified one representing a slightly
 different IO action.
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 This is a pretty aside-y aside, and you can definitely skip it if you want!
 
@@ -296,7 +343,9 @@ Let's say you wanted to read a line from stdin, and then print it out right
 away. You can do this with `getLine :: IO String` and
 `putStrLn :: String -> IO ()`. But wait! This doesn't work:
 
-~~~haskell getLine &gt;&gt; putStrLn "hello?" ~~~
+``` {.haskell}
+getLine >> putStrLn "hello?"
+```
 
 `(>>)` acts like a semicolon...it just sequences them together one after the
 other. Wouldn't it be nice if we had something like a unix pipe? It "sequences"
@@ -304,17 +353,24 @@ the two things, but the result of the first can be used by the second?
 
 Well, if `(>>)` is a bash semicolon `;`, then `(>>=)` is a bash pipe `|`!
 
-~~~haskell getLine &gt;&gt;= putStrLn :: IO () ~~~
+``` {.haskell}
+getLine >>= putStrLn
+                      :: IO ()
+```
 
 does exactly what we want!
 
 The type of `(>>=)` is:
 
-~~~haskell (&gt;&gt;=) :: IO a -&gt; (a -&gt; IO b) -&gt; IO b ~~~
+``` {.haskell}
+(>>=) :: IO a -> (a -> IO b) -> IO b
+```
 
 And in our specific case, it is:
 
-~~~haskell (&gt;&gt;=) :: IO String -&gt; (String -&gt; IO ()) -&gt; IO () ~~~
+``` {.haskell}
+(>>=) :: IO String -> (String -> IO ()) -> IO ()
+```
 
 Which says, "give me an `IO String` and a function taking a `String` and
 producing an `IO ()`, and I'll give you a shiny new `IO ()`" This might sound a
@@ -327,7 +383,8 @@ first. As soon as you add the `(>>=)` combinator to your arsenal...the space of
 programs you can construct using various `IO a`'s opens up in crazy ways. Just
 imagine bash with no pipes, and only semicolons! If you ever decide to implement
 some system of first-class statements, and it might be tricky to state/model
-imperative computations without `(>>=)`. &lt;/div&gt;
+imperative computations without `(>>=)`.
+:::
 
 ### Much More
 
@@ -380,13 +437,14 @@ providing a DSL to "generate" byte code.
 By the way, did you see how `IO ()` is *completely separate* from its binary
 representation? Hm. Why do we have to compile it to binary, anyway?
 
-Enter in *other Haskell compilers*, like \[ghcjs\] --- instead of being
-`IO () -> Binary`, it's `IO () -> Javascript`! That is, give it *any* ol'
-`IO ()` (the same one that you would design for a CPU/processor), and instead of
-translating it into bytecode/binary, it translates it into Javascript! This is
-another power of having `IO ()` being its own, abstract object that is
-independent of the architecture or computer that it will be eventually run on.
-Because it's so abstract...it can be compiled and run really on *anything*!
+Enter in *other Haskell compilers*, like [ghcjs](https://github.com/ghcjs/ghcjs)
+--- instead of being `IO () -> Binary`, it's `IO () -> Javascript`! That is,
+give it *any* ol' `IO ()` (the same one that you would design for a
+CPU/processor), and instead of translating it into bytecode/binary, it
+translates it into Javascript! This is another power of having `IO ()` being its
+own, abstract object that is independent of the architecture or computer that it
+will be eventually run on. Because it's so abstract...it can be compiled and run
+really on *anything*!
 
 Haskell
 -------
@@ -402,7 +460,7 @@ Taylor has a
 post](http://chris-taylor.github.io/blog/2013/02/09/io-is-not-a-side-effect/) on
 what you might see if you "peek into" the internal representation of (a possible
 implementation of) an IO action type --- you could even use this to implement
-first-class statements in your language of choice! \[^ghc\]
+first-class statements in your language of choice! [^5]
 
 This post is a distillation of concepts I have mentioned in [some
 other](http://blog.jle.im/entry/the-compromiseless-reconciliation-of-i-o-and-purity)
@@ -427,3 +485,38 @@ let me know in the comments or via
 
 (Credit to [computionist](https://twitter.com/computionist) and
 [bitemyapp](https://twitter.com/bitemyapp) for proofreading/helpful suggestions)
+
+[^1]: The type of `(>>)` is actually more general:
+    `(>>) :: IO a -> IO b -> IO b`. We do only use it for `IO ()` in this post,
+    though.
+
+    Actually, would you be mad at me if I told you that its true type in Haskell
+    is even more general? It's actually `m a -> m b -> m b`, for any type `m`
+    that is a member of the `Monad` typeclass. You can think of it like any type
+    that "implements" `(>>)` for that type, and more, following some rules on
+    how it should behave.
+
+    Ah! This rabbit hole is a bit deep though, so I recommend you not to worry
+    about it!
+
+[^2]: `makePar` actually exists in the standard Haskell libraries as
+    `forkIO`...kinda. `forkIO :: IO () -> IO ThreadId`. Our `makePar` is
+    basically `forkIO`, but with the return value ignored. Basically, it is
+    `makePar x = forkIO x >> return ()`
+
+[^3]: Note that this action doesn't "wait" for both threads to complete; all it
+    does is launch the two threads.
+
+[^4]: Again, the real definition here is slightly more general.
+
+[^5]: For performance reasons, the way IO is implemented in that article
+    actually isn't the way it's implemented in the popular Haskell compiler
+    *GHC*. GHC's implementation is best described as "hacky", and doesn't really
+    line up too well with the semantic picture of what `IO ()` is supposed to
+    represent. But remember that this is really just an (admittedly ugly)
+    *implementation detail*. The outward-facing API that it offers for the
+    `IO ()` type works as you would expect, of course. One would hope, at least!
+    In any case, it's important to remember the difference between *Haskell the
+    language*, and what the IO type is supposed to "represent", and *Haskell the
+    implementation*, which provides the semantics of the language, abstracting
+    over ugly implementation details.

@@ -127,7 +127,7 @@ So, if you're going to be spending your time writing something that is like
 Haskell, but forces you to write it in a way that is nothing like any actual
 Haskell code you'd normally write... why even bother keeping up with Haskell
 semantics and Haskell compatibility? Why not break out and try something new and
-fresh, unbound by Haskell and compatibility issues?\[^bash\]\[^haste\]
+fresh, unbound by Haskell and compatibility issues?[^1][^2]
 
 ### on Purescript
 
@@ -153,23 +153,41 @@ At many moments, I felt like writing in Purescript felt like writing in *the
 language that Haskell should have been*.
 
 But one of my favorite aspects about purescript ended up being the sheer beauty
-and conciseness of the generated javascript. Look at how\[^pshighlight\]:
+and conciseness of the generated javascript. Look at how[^3]:
 
-~~~purescript appendTopLinks doc = do hs &lt;- querySelectorAll headers
-(documentToParentNode doc) flip traverseNodeList\_ hs \\h -&gt; do topLink &lt;-
-createElement "a" doc let topLinkNode = elementToNode topLink setAttribute
-"href" "\#title" topLink setClassName "top-link" topLink setTextContent "top"
-topLinkNode appendChild topLinkNode (elementToNode h) return unit ~~~
+``` {.purescript}
+appendTopLinks doc = do
+    hs <- querySelectorAll headers (documentToParentNode doc)
+    flip traverseNodeList_ hs \h -> do
+      topLink <- createElement "a" doc
+      let topLinkNode = elementToNode topLink
+      setAttribute "href" "#title" topLink
+      setClassName "top-link" topLink
+      setTextContent "top" topLinkNode
+      appendChild topLinkNode (elementToNode h)
+      return unit
+```
 
 gets translated to:
 
-~~~javascript var appendTopLinks = function (doc) { return function \_\_do() {
-var v = querySelectorAll(headers)(documentToParentNode(doc))(); return
-flip(traverseNodeList\_(monadEffEff))(v)(function (h) { return function \_\_do()
-{ var v1 = createElement("a")(doc)(); var topLinkNode = elementToNode(v1);
-setAttribute("href")("\#title")(v1)(); setClassName("top-link")(v1)();
-setTextContent("top")(topLinkNode)();
-appendChild(topLinkNode)(elementToNode(h))(); return unit; }; })(); }; }; ~~~
+``` {.javascript}
+var appendTopLinks = function (doc) {
+    return function __do() {
+        var v = querySelectorAll(headers)(documentToParentNode(doc))();
+        return flip(traverseNodeList_(monadEffEff))(v)(function (h) {
+            return function __do() {
+                var v1 = createElement("a")(doc)();
+                var topLinkNode = elementToNode(v1);
+                setAttribute("href")("#title")(v1)();
+                setClassName("top-link")(v1)();
+                setTextContent("top")(topLinkNode)();
+                appendChild(topLinkNode)(elementToNode(h))();
+                return unit;
+            };
+        })();
+    };
+};
+```
 
 And it's not just the IO-based imperative code that looks nice, either.
 Everything gets compiled to clean, readable javascript that you'd be happy to
@@ -177,7 +195,7 @@ import in your node/normal javascript project.
 
 The total exported javascript blob is only *88 kB*, even smaller than fay's *100
 kB* output (but not significantly so), and much smaller than GHCJS's *1.4
-MB*\[^140MB\] output (which, to be fair, has to also contain the entire Haskell
+MB*[^4] output (which, to be fair, has to also contain the entire Haskell
 runtime, implementing Haskell semantics, as well).
 
 Interestingly enough, the *original* raw javacript I wrote in 2013 came out to
@@ -214,3 +232,19 @@ My main takeways ---
 This reflection post has been to help me organize my thoughts, but I hope they
 can be useful for those of you looking for new technologies to learn and ways to
 implement/approach your stack or next programming project, as well!
+
+[^1]: I definitely don't mean to bash on *fay* here! It definitely has its role
+    and place in the ecosystem. It's for my specific application that I was
+    looking for an alternative with.
+
+[^2]: There's another thing here that I skipped over slightly --
+    [Haste](http://haste-lang.org/). I haven't had much experience with it
+    myself, but for this purpose, I decided to jump into something not-Haskell
+    and try out something new!
+
+[^3]: Unfortunately,
+    *[highlighting-kate](https://github.com/jgm/highlighting-kate)* doesn't yet
+    support purescript syntax highlighting?
+
+[^4]: A previous version of this post claimed that the javascript bundle was
+    *140 MB*, instead of *1.4 MB*. My bad!

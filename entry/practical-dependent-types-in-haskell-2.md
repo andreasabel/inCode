@@ -57,8 +57,10 @@ Types at Runtime
 
 Recall the type we had for our neural networks:
 
-~~~haskell ghci&gt; :k Network Network :: Nat -&gt; \[Nat\] -&gt; Nat -&gt; \*
-~~~
+``` {.haskell}
+ghci> :k Network
+Network :: Nat -> [Nat] -> Nat -> *
+```
 
 They're of the form `Network i hs o`, where `i` is the size of the input vector
 it expects, `hs` is the list of hidden layer sizes, and `o` is the size of the
@@ -78,9 +80,14 @@ that you can't know until runtime?
 
 To illustrate more clearly:
 
-~~~haskell main :: IO () main = do putStrLn "What hidden layer structure do you
-want?" hs &lt;- readLn :: IO \[Integer\] net &lt;- randomNet :: IO (Network 10
-??? 3) -- what is ??? -- ...? ~~~
+``` {.haskell}
+main :: IO ()
+main = do
+    putStrLn "What hidden layer structure do you want?"
+    hs  <- readLn    :: IO [Integer]
+    net <- randomNet :: IO (Network 10 ??? 3)   -- what is ???
+    -- ...?
+```
 
 We *want* to put `hs` there where `???` is, but...`???` has to be a type (of
 kind `[Nat]`). `hs` is a value (of type `[Integer]`). It's clear here that the
@@ -116,7 +123,9 @@ inputs/outputs (and API).
 Imagine that we had written a `Network` type that *didn't* have the internal
 structure in the type ---
 
-~~~haskell data OpaqueNet i o ~~~
+``` {.haskell}
+data OpaqueNet i o
+```
 
 Recall that our issue earlier was that we had to write `Network i ??? o`, but we
 had no idea what to put in for `???`. But, if we worked with an `OpaqueNet i o`,
@@ -136,10 +145,11 @@ a often a more ideal type to *use*.
 We can implement our vision for `OpaqueNet` as an "existential" wrapper over
 `Network`, actually:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L110-111
-data OpaqueNet :: Nat -&gt; Nat -&gt; \* where ONet :: Network i hs o -&gt;
-OpaqueNet i o ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L110-111
+data OpaqueNet :: Nat -> Nat -> * where
+    ONet :: Network i hs o -> OpaqueNet i o
+```
 
 So, if you have `net :: Network 6 '[10,6,3] 2`, you can create
 `ONet net :: OpaqueNet 6 2`. When you use the `ONet` constructor, the structure
@@ -147,18 +157,30 @@ of the hidden layers disappears from the type!
 
 We can use the network inside by *pattern matching* on `ONet`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L113-125
-runOpaqueNet :: (KnownNat i, KnownNat o) =&gt; OpaqueNet i o -&gt; R i -&gt; R o
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L113-125
+runOpaqueNet :: (KnownNat i, KnownNat o)
+             => OpaqueNet i o
+             -> R i
+             -> R o
 runOpaqueNet (ONet n) x = runNet n x
 
-numHiddens :: OpaqueNet i o -&gt; Int numHiddens (ONet n) = go n where go ::
-Network i hs o -&gt; Int go = \\case O \_ -&gt; 0 \_ :&~ n' -&gt; 1 + go n' ~~~
+numHiddens :: OpaqueNet i o -> Int
+numHiddens (ONet n) = go n
+  where
+    go :: Network i hs o -> Int
+    go = \case
+        O _      -> 0
+        _ :&~ n' -> 1 + go n'
+```
 
 With the *ScopedTypeVariables* extension, we can even bring `hs` back into
 scope, as in:
 
-~~~haskell case oN of ONet (n :: Network i hs o) -&gt; ... ~~~
+``` {.haskell}
+case oN of
+  ONet (n :: Network i hs o) -> ...
+```
 
 This pattern is sometimes called the **dependent pair**, because pattern
 matching on `ONet` yields the hidden **existentially quantified** type (`hs`)
@@ -174,8 +196,10 @@ parametrically polymorphic way of dealing with it!
 
 For example, this function is completely *not* ok:
 
-~~~haskell bad :: OpaqueNet i o -&gt; Network i hs o bad (ONet n) = n -- nope,
-not ok at all. ~~~
+``` {.haskell}
+bad :: OpaqueNet i o -> Network i hs o
+bad (ONet n) = n            -- nope, not ok at all.
+```
 
 Why not? Well, a type signature like `OpaqueNet i o -> Network i hs o` means
 that the *caller* can decide what `hs` can be --- just like
@@ -192,20 +216,26 @@ Haskell: the issue of who has the power to decide what the types will be
 instantiated as. Most polymorphic functions you work with in Haskell are
 "universally qualified". For example, for a function like
 
-~~~haskell map :: (a -&gt; b) -&gt; \[a\] -&gt; \[b\] ~~~
+``` {.haskell}
+map :: (a -> b) -> [a] -> [b]
+```
 
 `a` and `b` are universally quantified, which means that the person who *uses*
 `map` gets to decide what `a` and `b` are. To be more explicit, that type
 signature can be written as:
 
-~~~haskell map :: forall a b. (a -&gt; b) -&gt; \[a\] -&gt; \[b\] ~~~
+``` {.haskell}
+map :: forall a b. (a -> b) -> [a] -> [b]
+```
 
 This means that `map` is defined in a way that will work for *any* `a` and `b`
 that the *caller* wants. As a caller, you can request:
 
-~~~haskell map :: (Int -&gt; Bool) -&gt; \[Int\] -&gt; \[Bool\] map :: (Double
--&gt; Void) -&gt; \[Double\] -&gt; \[Void\] map :: (String -&gt; (Bool -&gt;
-Char)) -&gt; \[String\] -&gt; \[Bool -&gt; Char\] ~~~
+``` {.haskell}
+map :: (Int -> Bool)    -> [Int]    -> [Bool]
+map :: (Double -> Void) -> [Double] -> [Void]
+map :: (String -> (Bool -> Char)) -> [String] -> [Bool -> Char]
+```
 
 Or anything else!
 
@@ -215,7 +245,9 @@ flexible enough to handle whatever the caller asks for.
 
 But, for a function like:
 
-~~~haskell foo :: \[Int\] -&gt; OpaqueNet i o ~~~
+``` {.haskell}
+foo :: [Int] -> OpaqueNet i o
+```
 
 While the caller can choose what `i` and `o` are, the *function* gets to choose
 what `hs` (in the hidden `Network i hs o`) is. If I want to *use* the thing that
@@ -251,13 +283,15 @@ existential types in Haskell is no different than working with `Either`!
 
 If I had:
 
-~~~haskell foo :: String -&gt; Either Int Bool ~~~
+``` {.haskell}
+foo :: String -> Either Int Bool
+```
 
 I have to handle the result for both the case where I get an `Int` and the case
 where I get a `Bool`. The *function* gets to pick what type I have to handle
 (`Int` or `Bool`), and *I* have to adapt to whatever it returns. Sound familiar?
 In fact, you can even imagine that `OpaqueNet i o` as being just a infinite
-*Either* over `'[]`, `'[1]`, `'[1,2]`, etc.\[^eithers\]
+*Either* over `'[]`, `'[1]`, `'[1,2]`, etc.[^1]
 
 Remember that the basic way of handling an `Either` and figuring out what the
 type of the value is inside is through *pattern matching* on it. You can't know
@@ -275,18 +309,21 @@ revealed...and GHC lets you take advantage of knowing the type!
 For simplicity, let's re-write `randomNet` the more sensible way --- with the
 explicit singleton input style:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L79-87
-randomNet' :: forall m i hs o. (MonadRandom m, KnownNat i, KnownNat o) =&gt;
-Sing hs -&gt; m (Network i hs o) randomNet' = \\case SNil -&gt; O &lt;$&gt;
-randomWeights SNat `SCons` ss -&gt; (:&~) &lt;$&gt; randomWeights &lt;\*&gt;
-randomNet' ss
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L79-87
+randomNet' :: forall m i hs o. (MonadRandom m, KnownNat i, KnownNat o)
+           => Sing hs -> m (Network i hs o)
+randomNet' = \case
+    SNil            ->     O <$> randomWeights
+    SNat `SCons` ss -> (:&~) <$> randomWeights <*> randomNet' ss
 
 randomNet :: forall m i hs o. (MonadRandom m, KnownNat i, SingI hs, KnownNat o)
-=&gt; m (Network i hs o) randomNet = randomNet' sing ~~~
+          => m (Network i hs o)
+randomNet = randomNet' sing
+```
 
 We use `sing :: SingI hs => Sing hs` to go call the `Sing hs ->`-style function
-from the `SingI hs =>` one.\[^style\]
+from the `SingI hs =>` one.[^2]
 
 Now, we still need to somehow get our list of integers to the type level so that
 we can create a `Network i hs o` to stuff into our `ONet`. For that, the
@@ -296,22 +333,33 @@ data constructor. `toSing` takes the term-level value (for us, an `[Integer]`)
 and returns a `SomeSing` wrapping the type-level value (for us, a `[Nat]`). When
 we pattern match on the `SomeSing` constructor, we get `a` in scope!
 
-As of *singletons-2.2* and GHC 8\[^old-singletons\], `SomeSing` is implemented
-as:
+As of *singletons-2.2* and GHC 8[^3], `SomeSing` is implemented as:
 
-~~~haskell data SomeSing :: \* -&gt; \* where SomeSing :: Sing (a :: k) -&gt;
-SomeSing k ~~~
+``` {.haskell}
+data SomeSing :: * -> * where
+    SomeSing :: Sing (a :: k) -> SomeSing k
+```
 
 And you have:
 
-~~~haskell foo :: SomeSing Bool foo = SomeSing STrue
+``` {.haskell}
+foo :: SomeSing Bool
+foo = SomeSing STrue
 
-bar :: SomeSing Nat bar = SomeSing (SNat :: Sing 10) ~~~
+bar :: SomeSing Nat
+bar = SomeSing (SNat :: Sing 10)
+```
 
 Pattern matching looks like:
 
-~~~haskell main :: IO () main = do putStrLn "How many cats do you own?" c &lt;-
-readLn :: IO Integer case toSing c of SomeSing (SNat :: Sing n) -&gt; -- ... ~~~
+``` {.haskell}
+main :: IO ()
+main = do
+    putStrLn "How many cats do you own?"
+    c <- readLn :: IO Integer
+    case toSing c of
+      SomeSing (SNat :: Sing n) -> -- ...
+```
 
 Now, inside the case statement branch (the `...`), we have *type* `n :: Nat` in
 scope! And by pattern matching on the `SNat` constructor, we also have a
@@ -329,21 +377,31 @@ value `x` of type `a` to a singleton representing type `x` with kind `a`.
 
 We now have enough to write our `randomONet`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L127-131
-randomONet :: (MonadRandom m, KnownNat i, KnownNat o) =&gt; \[Integer\] -&gt; m
-(OpaqueNet i o) randomONet hs = case toSing hs of SomeSing ss -&gt; ONet
-&lt;$&gt; randomNet' ss ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L127-131
+randomONet :: (MonadRandom m, KnownNat i, KnownNat o)
+           => [Integer]
+           -> m (OpaqueNet i o)
+randomONet hs = case toSing hs of
+                  SomeSing ss -> ONet <$> randomNet' ss
+```
 
 This process of bringing a term-level value into the type level is known in
 Haskell as **reification**. With this, our original goal is (finally) within
 reach:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L205-213
-main :: IO () main = do putStrLn "What hidden layer structure do you want?" hs
-&lt;- readLn n &lt;- randomONet hs case n of ONet (net :: Network 10 hs 3) -&gt;
-do print net -- blah blah stuff with our dynamically generated net ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L205-213
+main :: IO ()
+main = do
+    putStrLn "What hidden layer structure do you want?"
+    hs <- readLn
+    n  <- randomONet hs
+    case n of
+      ONet (net :: Network 10 hs 3) -> do
+        print net
+        -- blah blah stuff with our dynamically generated net
+```
 
 #### The Boundary
 
@@ -396,20 +454,24 @@ more natural to use in a lot of cases. Remember that when we pattern match on an
 existential data type, we have to work with the values in the constructor in a
 parametrically polymorphic way. For example, if we had:
 
-~~~haskell oNetToFoo :: OpaqueNet i o -&gt; Foo oNetToFoo (ONet n) = f n ~~~
+``` {.haskell}
+oNetToFoo :: OpaqueNet i o -> Foo
+oNetToFoo (ONet n) = f n
+```
 
 `f` has to take a `Network i hs o` but deal with it in a way that works *for
 all* `hs`. It can't be written for *only* `'[5]` or *only* `'[6,3]`...it has to
-work for *any* `hs`. That's the whole "existential vs. universal quantification"
+work for *any* `hs`. That's the whole "existential vs. universal quantification"
 thing we just talked about.
 
 Well, we could really also just skip the constructor altogether and represent an
 existential type as something *taking* the continuation `f` and giving it what
 it needs.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L154-154
-type OpaqueNet' i o r = (forall hs. Network i hs o -&gt; r) -&gt; r ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L154-154
+type OpaqueNet' i o r = (forall hs. Network i hs o -> r) -> r
+```
 
 "Tell me how you would make an `r` if you had a `Network i hs o` (that works for
 any `hs`) and I'll make it for you!"
@@ -421,59 +483,92 @@ on the subject.)
 
 *Using* these types is very similar to using the constructor-style ones:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L159-176
-runOpaqueNet' :: (KnownNat i, KnownNat o) =&gt; OpaqueNet' i o (R o) -&gt; R i
--&gt; R o runOpaqueNet' oN x = oN (\\n -&gt; runNet n x) -- :: ((forall hs.
-Network i hs o -&gt; R o) -&gt; R o) -- -&gt; R i -- -&gt; R o
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L159-176
+runOpaqueNet' :: (KnownNat i, KnownNat o)
+              => OpaqueNet' i o (R o)
+              -> R i
+              -> R o
+runOpaqueNet' oN x = oN (\n -> runNet n x)
+--            :: ((forall hs. Network i hs o -> R o) -> R o)
+--            -> R i
+--            -> R o
 
-numHiddens' :: OpaqueNet' i o Int -&gt; Int numHiddens' oN = oN go where go ::
-Network i hs o -&gt; Int go = \\case O \_ -&gt; 0 \_ :&~ n' -&gt; 1 + go n' --
-:: ((forall hs. Network i hs o -&gt; Int) -&gt; Int) -- -&gt; Int ~~~
+numHiddens' :: OpaqueNet' i o Int -> Int
+numHiddens' oN = oN go
+  where
+    go :: Network i hs o -> Int
+    go = \case
+        O _      -> 0
+        _ :&~ n' -> 1 + go n'
+--          :: ((forall hs. Network i hs o -> Int) -> Int)
+--          -> Int
+```
 
-This "continuation transformation" is formally known as
-**skolemization**.\[^skolemization\]
+This "continuation transformation" is formally known as **skolemization**.[^4]
 
 We can "wrap" a `Network i hs o` into an `OpaqueNet' i o r`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L156-157
-oNet' :: Network i hs o -&gt; OpaqueNet' i o r oNet' n = \\f -&gt; f n ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L156-157
+oNet' :: Network i hs o -> OpaqueNet' i o r
+oNet' n = \f -> f n
+```
 
 Let's write a version of `randomONet` that returns a continuation-style
 existential:
 
-~~~haskell withRandomONet' :: (MonadRandom m, KnownNat i, KnownNat o) =&gt;
-\[Integer\] -&gt; (forall hs. Network i hs o -&gt; m r) -&gt; m r -- aka, =&gt;
-\[Integer\] -- -&gt; OpaqueNet' i o (m r) withRandomONet' hs f = case toSing hs
-of SomeSing ss -&gt; do net &lt;- randomNet' ss f net
-
-~~~
+``` {.haskell}
+withRandomONet' :: (MonadRandom m, KnownNat i, KnownNat o)
+                => [Integer]
+                -> (forall hs. Network i hs o -> m r)
+                -> m r
+--         aka, => [Integer]
+--              -> OpaqueNet' i o (m r)
+withRandomONet' hs f = case toSing hs of
+                         SomeSing ss -> do
+                           net <- randomNet' ss
+                           f net
+```
 
 But, hey, because we're skolemizing everything, let's do it with the skolemized
 version of `toSing`/`SomeSing`, `withSomeSing`:
 
-~~~haskell -- a version of `toSing` that returns a skolemized `SomeSing`
-withSomeSing :: \[Integer\] -&gt; (forall (hs :: \[Nat\]). Sing hs -&gt; r)
--&gt; r ~~~
+``` {.haskell}
+-- a version of `toSing` that returns a skolemized `SomeSing`
+withSomeSing :: [Integer]
+             -> (forall (hs :: [Nat]). Sing hs -> r)
+             -> r
+```
 
 Because why not? Skolemize all the things!
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L178-186
-withRandomONet' :: (MonadRandom m, KnownNat i, KnownNat o) =&gt; \[Integer\]
--&gt; (forall hs. Network i hs o -&gt; m r) -&gt; m r -- aka, =&gt; \[Integer\]
--- -&gt; OpaqueNet' i o (m r) withRandomONet' hs f = withSomeSing hs $ \\ss
--&gt; do net &lt;- randomNet' ss f net ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L178-186
+withRandomONet' :: (MonadRandom m, KnownNat i, KnownNat o)
+                => [Integer]
+                -> (forall hs. Network i hs o -> m r)
+                -> m r
+--         aka, => [Integer]
+--              -> OpaqueNet' i o (m r)
+withRandomONet' hs f = withSomeSing hs $ \ss -> do
+                         net <- randomNet' ss
+                         f net
+```
 
 We can use it to do the same things we used the constructor-based existential
 for, as well...and, in a way, it actually seems (oddly) more natural.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L215-221
-main' :: IO () main' = do putStrLn "What hidden layer structure do you want?" hs
-&lt;- readLn withRandomONet' hs $ (net :: Network 10 hs 3) -&gt; do print net --
-blah blah stuff with our dynamically generated net ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L215-221
+main' :: IO ()
+main' = do
+    putStrLn "What hidden layer structure do you want?"
+    hs <- readLn
+    withRandomONet' hs $ \(net :: Network 10 hs 3) -> do
+      print net
+      -- blah blah stuff with our dynamically generated net
+```
 
 Like the case statement pattern match represented the lexical "wall"/"boundary"
 between the untyped and typed world when using constructor-style existentials,
@@ -511,13 +606,24 @@ years:
     much better because each nested existential doesn't force another level of
     indentation:
 
-    ~~~haskell foo = withSomeSing x $ \\sx -&gt; withSomeSing y $ \\sy -&gt;
-    withSomeSing z $ \\sz -&gt; -- ... ~~~
+    ``` {.haskell}
+    foo = withSomeSing x $ \sx ->
+          withSomeSing y $ \sy ->
+          withSomeSing z $ \sz ->
+            -- ...
+    ```
 
     vs.
 
-    ~~~haskell foo = case toSing x of SomeSing sx -&gt; case toSing y of
-    SomeSing sy -&gt; case toSing z of SomeSing sz -&gt; -- ... ~~~
+    ``` {.haskell}
+    foo = case toSing x of
+            SomeSing sx ->
+              case toSing y of
+                SomeSing sy ->
+                  case toSing z of
+                    SomeSing sz ->
+                      -- ...
+    ```
 
     Every time you nest a case statement, you actually waste *two* levels of
     indentation, which can be annoying even at 2-space indentation. But you
@@ -527,16 +633,26 @@ years:
     and *ScopedTypeVariables* for a nicer style that doesn't require any nesting
     at all:
 
-    ~~~haskell main = do ONet n1 &lt;- randomONet \[7,5,3\] :: IO (OpaqueNet 10
-    1) ONet n2 &lt;- randomONet \[5,5,5\] :: IO (OpaqueNet 10 1) ONet n3 &lt;-
-    randomONet \[5,4,3\] :: IO (OpaqueNet 10 1) hs &lt;- readLn ONet (n4 ::
-    Network 10 hs 1) &lt;- randomONet hs -- ... ~~~
+    ``` {.haskell}
+    main = do
+        ONet n1 <- randomONet [7,5,3] :: IO (OpaqueNet 10 1)
+        ONet n2 <- randomONet [5,5,5] :: IO (OpaqueNet 10 1)
+        ONet n3 <- randomONet [5,4,3] :: IO (OpaqueNet 10 1)
+        hs <- readLn
+        ONet (n4 :: Network 10 hs 1) <- randomONet hs
+        -- ...
+    ```
 
     Which is arguably nicer than
 
-    ~~~haskell main = withRandomONet' \[7,5,3\] $ \\n1 -&gt; withRandomONet'
-    \[5,5,5\] $ \\n2 -&gt; withRandomONet' \[5,4,3\] $ \\n3 -&gt; do hs &lt;-
-    readLn withRandomONet' hs $ (n4 :: Network 10 hs 1) -&gt; do -- ... ~~~
+    ``` {.haskell}
+    main = withRandomONet' [7,5,3] $ \n1 ->
+           withRandomONet' [5,5,5] $ \n2 ->
+           withRandomONet' [5,4,3] $ \n3 -> do
+             hs <- readLn
+             withRandomONet' hs $ \(n4 :: Network 10 hs 1) -> do
+               -- ...
+    ```
 
     A lot of libraries return existentials in `Maybe`'s ([base is
     guilty](http://hackage.haskell.org/package/base-4.9.0.0/docs/GHC-TypeLits.html#v:someNatVal)),
@@ -546,9 +662,13 @@ years:
     returned in a monad. You could wrap it in Identity, but that's kind of
     silly:
 
-    ~~~haskell foo = runIdentity $ do SomeSing sx &lt;- Identity $ toSing x
-    SomeSing sy &lt;- Identity $ toSing y SomeSing sz &lt;- Identity $ toSing z
-    return $ -- ... ~~~
+    ``` {.haskell}
+    foo = runIdentity $ do
+            SomeSing sx <- Identity $ toSing x
+            SomeSing sy <- Identity $ toSing y
+            SomeSing sz <- Identity $ toSing z
+            return $ -- ...
+    ```
 
 -   Constructor-style is necessary for writing typeclass instances. You can't
     write a `Show` instance for `(forall hs. Network i hs o -> r) -> r`, but you
@@ -576,16 +696,22 @@ years:
     For example, we wrote a function to find the number of hidden layers in a
     network earlier:
 
-    ~~~haskell numHiddens :: OpaqueNet i o -&gt; Int ~~~
+    ``` {.haskell}
+    numHiddens :: OpaqueNet i o -> Int
+    ```
 
     But the continuation-style version has a slightly messier type:
 
-    ~~~haskell numHiddens' :: ((forall hs. Network i hs o -&gt; Int) -&gt; Int)
-    -&gt; Int ~~~
+    ``` {.haskell}
+    numHiddens' :: ((forall hs. Network i hs o -> Int) -> Int)
+                -> Int
+    ```
 
     Even with with the type synonym, it's still a little awkward:
 
-    ~~~haskell numHiddens' :: OpaqueNet' i o Int -&gt; Int ~~~
+    ``` {.haskell}
+    numHiddens' :: OpaqueNet' i o Int -> Int
+    ```
 
     This is why you'll encounter many more functions *returning*
     continuation-style existentials in libraries than *taking* them, for the
@@ -615,7 +741,7 @@ reification to another simple application: serialization.
 
 Serializing networks of *known* size --- whose sizes are statically in their
 types --- is pretty straightforward, and its ease is one of the often-quoted
-advantages of having sizes in your types.\[^storable\] I'm going to be using the
+advantages of having sizes in your types.[^5] I'm going to be using the
 *[binary](https://hackage.haskell.org/package/binary)* library, which offers a
 very standard typeclass-based approach for serializing and deserializing data.
 There are a lot of tutorials online (and I even [wrote a small
@@ -627,20 +753,28 @@ used to provide serialization instructions for different types.
 In practice, we usually don't write our own instances from scratch. Instead, we
 use GHC's generics features to give us instances for free:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L25-30
-data Weights i o = W { wBiases :: !(R o) , wNodes :: !(L o i) } deriving (Show,
-Generic)
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L25-30
+data Weights i o = W { wBiases :: !(R o)
+                     , wNodes  :: !(L o i)
+                     }
+  deriving (Show, Generic)
 
-instance (KnownNat i, KnownNat o) =&gt; Binary (Weights i o) ~~~
+instance (KnownNat i, KnownNat o) => Binary (Weights i o)
+```
 
 For simple types like `Weights`, which simply contain serializable things, the
 *binary* library is smart enough to write your instances automatically for you!
 This gives us `get` and `put`:
 
-~~~haskell get :: (KnownNat i, KnownNat o) =&gt; Get (Weights i o)
+``` {.haskell}
+get :: (KnownNat i, KnownNat o)
+    => Get (Weights i o)
 
-put :: (KnownNat i, KnownNat o) =&gt; Weights i o -&gt; Put ~~~
+put :: (KnownNat i, KnownNat o)
+    => Weights i o
+    -> Put
+```
 
 However, for GADTs like `Network`, we have to things manually.
 
@@ -648,21 +782,30 @@ However, for GADTs like `Network`, we have to things manually.
 
 Taking advantage of having the entire structure in the type, `put` is simple:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L89-94
-putNet :: (KnownNat i, KnownNat o) =&gt; Network i hs o -&gt; Put putNet =
-\\case O w -&gt; put w w :&~ n -&gt; put w \*&gt; putNet n ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L89-94
+putNet :: (KnownNat i, KnownNat o)
+       => Network i hs o
+       -> Put
+putNet = \case
+    O w     -> put w
+    w :&~ n -> put w *> putNet n
+```
 
 If it's an `O w`, just serialize the `w`. If it's a `w :&~ net`, serialize the
 `w` then the rest of the `net`. Normally, we might have to put a "flag" to tell
 what constructor we serializing, so that the deserializer can know what
 constructor to deserialize at every step. But for `Network`, we don't have to:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L96-101
-getNet :: forall i hs o. (KnownNat i, KnownNat o) =&gt; Sing hs -&gt; Get
-(Network i hs o) getNet = \\case SNil -&gt; O &lt;$&gt; get SNat `SCons` ss
--&gt; (:&~) &lt;$&gt; get &lt;\*&gt; getNet ss ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L96-101
+getNet :: forall i hs o. (KnownNat i, KnownNat o)
+       => Sing hs
+       -> Get (Network i hs o)
+getNet = \case
+    SNil            ->     O <$> get
+    SNat `SCons` ss -> (:&~) <$> get <*> getNet ss
+```
 
 `getNet` doesn't need flags because we already *know* how many `:&~` layers to
 expect *just from the type*. If we want to deserialize a
@@ -678,10 +821,12 @@ To write a `Binary` instance for `Network`, we can't have `get` take a `Sing hs`
 input --- that'd change the arity/type of the function. We have to switch to
 `SingI`-style had have their `Binary` instances require a `SingI hs` constraint.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L103-105
-instance (KnownNat i, SingI hs, KnownNat o) =&gt; Binary (Network i hs o) where
-put = putNet get = getNet sing ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L103-105
+instance (KnownNat i, SingI hs, KnownNat o) => Binary (Network i hs o) where
+    put = putNet
+    get = getNet sing
+```
 
 ### Serializating `OpaqueNet`
 
@@ -697,11 +842,15 @@ encode it as a flag in the binary serialization so that the deserializer will
 know what constructors to expect and deserialize. We can write a simple function
 to get the `[Integer]` of a network's structure:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L72-77
-hiddenStruct :: Network i hs o -&gt; \[Integer\] hiddenStruct = \\case O \_
--&gt; \[\] \_ :&~ (n' :: Network h hs' o) -&gt; natVal (Proxy @h) : hiddenStruct
-n' ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L72-77
+hiddenStruct :: Network i hs o -> [Integer]
+hiddenStruct = \case
+    O _    -> []
+    _ :&~ (n' :: Network h hs' o)
+           -> natVal (Proxy @h)
+            : hiddenStruct n'
+```
 
 Recall that `natVal :: KnownNat n => Proxy n -> Integer` returns the value-level
 `Integer` corresponding to the type-level `n :: Nat`. (I'm also using GHC 8's
@@ -717,20 +866,30 @@ library offers reflectors for all of its singletons, as `fromSing`.)
 
 That's all we need!
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L133-138
-putONet :: (KnownNat i, KnownNat o) =&gt; OpaqueNet i o -&gt; Put putONet (ONet
-net) = do put (hiddenStruct net) putNet net ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L133-138
+putONet :: (KnownNat i, KnownNat o)
+        => OpaqueNet i o
+        -> Put
+putONet (ONet net) = do
+    put (hiddenStruct net)
+    putNet net
+```
 
 "Put the structure (as a binary flag), and then put the network itself."
 
 Now, to deserialize, we want to *load* the list of `Integer`s and reify it back
 to the type level to know what type of network we're expecting to load:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L140-145
-getONet :: (KnownNat i, KnownNat o) =&gt; Get (OpaqueNet i o) getONet = do hs
-&lt;- get withSomeSing hs $ \\ss -&gt; ONet &lt;$&gt; getNet ss ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L140-145
+getONet :: (KnownNat i, KnownNat o)
+        => Get (OpaqueNet i o)
+getONet = do
+    hs <- get
+    withSomeSing hs $ \ss ->
+      ONet <$> getNet ss
+```
 
 We load our flag, reify it, and once we're back in the typed land again, we can
 do our normal business. Isn't it nice that GHC is also there at every step to
@@ -738,10 +897,12 @@ make sure we make the transition safely?
 
 Our final instance:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs\#L147-149
-instance (KnownNat i, KnownNat o) =&gt; Binary (OpaqueNet i o) where put =
-putONet get = getONet ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L147-149
+instance (KnownNat i, KnownNat o) => Binary (OpaqueNet i o) where
+    put = putONet
+    get = getONet
+```
 
 And, of course, we used the constructor-style existential this whole time
 instead of the continuation-style one because we can't directly write typeclass
@@ -788,8 +949,12 @@ Links are to the solutions.
 2.  Work with an existential wrapper over the *entire* network structure (inputs
     and outputs, too):
 
-    ~~~haskell data SomeNet where SNet :: (KnownNat i, KnownNat o) =&gt; Network
-    i hs o -&gt; SomeNet ~~~
+    ``` {.haskell}
+    data SomeNet where
+        SNet :: (KnownNat i, KnownNat o)
+             => Network i hs o
+             -> SomeNet
+    ```
 
     (We need the `KnownNat` constraints because of type erasure, to recover the
     original input/output dimensions back once we pattern match)
@@ -817,3 +982,29 @@ Links are to the solutions.
 
     Hint: Remember that `toSomeSing` also works for `Integer`s, to get `Sing`s
     for `Nat`s, too!
+
+[^1]: A bit of a stretch, because the set of all `[Nat]`s is non-enumerable and
+    uncountable, but hopefully you get the picture!
+
+[^2]: Recall that I recommend (personally, and subjectively) a style where your
+    external API functions and typeclass instances are implemented in
+    `SingI a =>` style, and your internal ones in `Sing a ->` style. This lets
+    all of your internal functions fit together more nicely (`Sing a ->` style
+    tends to be easier to write in, especially if you stay in it the entire
+    time, because `Sing`s are normal first-class values, unlike those global and
+    magical typeclasses) while at the same time removing the burden of calling
+    with explicit singletons from people using the functionality externally.
+
+[^3]: In older versions of singletons, before GHC 8 and *TypeInType*, we had to
+    implement it using "kind proxies". Don't worry if you're following along in
+    7.10; the basic usage of `SomeSing` is essentially identical either way.
+
+[^4]: Skolemization is probably one of the coolest words you'll encounter when
+    learning/using Haskell, and sometimes just knowing that you're "skolemizing"
+    something makes you feel cooler. Thank you [Thoralf
+    Skolem](https://en.wikipedia.org/wiki/Thoralf_Skolem). If you ever see a
+    "rigid, skolem" error in GHC, you can thank him for that too! He is also the
+    inspiration behind my decision to name my first-born son Thoralf. (My second
+    son's name will be Curry)
+
+[^5]: It even lets you write `Storable` instances!

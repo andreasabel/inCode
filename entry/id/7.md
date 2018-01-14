@@ -93,7 +93,7 @@ high, and stop the motor when it is just right.
 
 Congratulations, you now have your very first automated closed feedback loop,
 known as the [bang--bang
-controller](http://en.wikipedia.org/wiki/Bang%E2%80%93bang_control)\[^bangbangnote\].
+controller](http://en.wikipedia.org/wiki/Bang%E2%80%93bang_control)[^1].
 
 With this in hand, you are sure to have no obstacles to firmly establishing your
 hamster hotel empire.
@@ -165,3 +165,7 @@ to this hamster hole.
 
 But first! How will we solve these fundamental problems --- jittering and
 oscillation --- of the bang--bang controller?
+
+[^1]: Technically, it is a modified version of the bang--bang controller with an
+    option for "don't do anything" --- a "bang--bang--shh". A true bang--bang
+    controller would not have the "green light" option.

@@ -22,7 +22,7 @@ if you want to add things like timestamps?
 
 Here's introducing ***[log.sh](https://github.com/mstksg/log.sh)***.
 
-[Log.sh](https://github.com/mstksg/log.sh)
+[Log.sh](https://github.com/mstksg/log.sh) {#log.shlog.sh}
 ------------------------------------------
 
 *[log.sh](https://github.com/mstksg/log.sh)* is intended for these use cases:
@@ -45,7 +45,9 @@ Most of all, it is meant to be quick, fast, efficient, streamlined, simple.
 
 Don't believe me? Here's how you enter in a note:
 
-~~~bash $ log.sh hey, this is a note! ~~~
+``` {.bash}
+$ log.sh hey, this is a note!
+```
 
 (Note no need to surround your log with quotes or anything.)
 
@@ -55,7 +57,9 @@ That command will write the line
 
 to the active log file. As a cute trick, you can specify the flag `-t`
 
-~~~bash $ log.sh -t buy milk ~~~
+``` {.bash}
+$ log.sh -t buy milk
+```
 
 which will handily add a cute `[ ]` before the item like so:
 
@@ -68,7 +72,9 @@ of your choice and "check" it off.
 
 That's actually very easy, because
 
-~~~bash $ log.sh -e ~~~
+``` {.bash}
+$ log.sh -e
+```
 
 will open the active log file in your favorite editor, specified by the
 `$EDITOR` environment variable.
@@ -80,7 +86,9 @@ either in the root directory of the relevant project, or in your home folder.
 
 To create a log file in your current working directory, enter
 
-~~~bash $ log.sh -c ~~~
+``` {.bash}
+$ log.sh -c
+```
 
 This'll create a file `.log.log` in the directory.
 
@@ -118,7 +126,9 @@ created/searched for, or you can even specify the exact path of the log file you
 want to append to or edit using command line flags. More detail on how to do
 this in the documentation:
 
-~~~bash $ log.sh -h ~~~
+``` {.bash}
+$ log.sh -h
+```
 
 Basically, the entire thing is meant to be as frictionless, fast, and
 thoughtless as possible. Enter in small notes to reference later in only the
@@ -129,7 +139,9 @@ timestamps. *[log.sh](https://github.com/mstksg/log.sh)* has got you covered!
 I do recommend, if you use this, aliasing the command to something short. I
 personally use `n`, so I write notes by saying:
 
-~~~bash $ n goodbye! ~~~
+``` {.bash}
+$ n goodbye!
+```
 
 Hopefully this script ends up being as useful to you as it has to me. Feel free
 to leave any comments on questions/bugs/improvements, and I'm always happy to

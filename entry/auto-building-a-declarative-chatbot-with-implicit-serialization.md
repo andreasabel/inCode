@@ -40,29 +40,49 @@ input messages from the irc server, and our output stream is a stream of
 messages to send to the server. In haskell we like types, so let's make some
 types.
 
-~~~haskell -- first, our imports -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs\#L25-43
-import Control.Auto import Control.Auto.Blip import Control.Auto.Collection
-(mux) import Control.Auto.Run (runOnChanM) import Control.Auto.Serialize
-(serializing') import Control.Auto.Switch (resetOn) import Control.Concurrent
-(Chan, newChan, writeChan, forkIO, threadDelay) import Control.Monad (void,
-forever) import Control.Monad.IO.Class import Data.Foldable (forM\_) import
-Data.Map (Map) import Data.Serialize import Data.Text hiding (words, unwords,
-map) import Data.Text.Encoding import Data.Text.Encoding.Error import Data.Time
-import Network.SimpleIRC import Prelude hiding ((.), id) -- we use (.) and id
-from `Control.Category` import qualified Data.Map as M ~~~
+``` {.haskell}
+-- first, our imports
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L25-43
+import Control.Auto
+import Control.Auto.Blip
+import Control.Auto.Collection  (mux)
+import Control.Auto.Run         (runOnChanM)
+import Control.Auto.Serialize   (serializing')
+import Control.Auto.Switch      (resetOn)
+import Control.Concurrent       (Chan, newChan, writeChan, forkIO, threadDelay)
+import Control.Monad            (void, forever)
+import Control.Monad.IO.Class
+import Data.Foldable            (forM_)
+import Data.Map                 (Map)
+import Data.Serialize
+import Data.Text hiding         (words, unwords, map)
+import Data.Text.Encoding
+import Data.Text.Encoding.Error
+import Data.Time
+import Network.SimpleIRC
+import Prelude hiding           ((.), id)   -- we use (.) and id from `Control.Category`
+import qualified Data.Map       as M
+```
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs\#L51-66
-type Nick = String type Channel = String type Message = String
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L51-66
+type Nick    = String
+type Channel = String
+type Message = String
 
-data InMessage = InMessage { *inMessageNick :: Nick , *inMessageBody :: Message
-, *inMessageSource :: Channel , *inMessageTime :: UTCTime } deriving Show
+data InMessage = InMessage { _inMessageNick   :: Nick
+                           , _inMessageBody   :: Message
+                           , _inMessageSource :: Channel
+                           , _inMessageTime   :: UTCTime
+                           } deriving Show
 
-newtype OutMessages = OutMessages (Map Channel \[Message\]) deriving Show
+newtype OutMessages = OutMessages (Map Channel [Message]) deriving Show
 
-instance Monoid OutMessages where mempty = OutMessages M.empty mappend
-(OutMessages m1) (OutMessages m2) = OutMessages (M.unionWith (++) m1 m2) ~~~
+instance Monoid OutMessages where
+    mempty  = OutMessages M.empty
+    mappend (OutMessages m1) (OutMessages m2)
+            = OutMessages (M.unionWith (++) m1 m2)
+```
 
 We make some type aliases to make things a bit clearer. Our inputs are going to
 be a data type/"struct" with a nick, a body, a source, and a time. Our outputs
@@ -72,16 +92,19 @@ combine `OutMessages` maps.
 
 The type for a chat bot over a monad `m` would then be:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs\#L68-68
-type ChatBot m = Auto m InMessage OutMessages ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L68-68
+type ChatBot m = Auto m InMessage OutMessages
+```
 
 A `ChatBot` takes a stream of `InMessage`s and returns a stream of
 `OutMessages`s...and might have effects in `m` as it does so.
 
 Note that we get a free instance of `Monoid` on `ChatBot m`:
 
-~~~haskell mappend :: ChatBot m -&gt; ChatBot m -&gt; ChatBot m ~~~
+``` {.haskell}
+mappend :: ChatBot m -> ChatBot m -> ChatBot m
+```
 
 That takes two `ChatBot`s and creates a new `ChatBot` that forks the input
 stream (sends all `InMessage`s) to both of the original ones, and `mappend`s the
@@ -92,9 +115,10 @@ However, not all modules really have to "care" about the room of the
 outputs...they might just always reply directly to the room they received the
 message on. So it'll help us to also make another sort of `Auto`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs\#L69-69
-type RoomBot m = Auto m InMessage (Blip \[Message\]) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L69-69
+type RoomBot m = Auto m InMessage (Blip [Message])
+```
 
 A `RoomBot` doesn't care where its messages go...it just replies to the same
 room it got its input from. It outputs a blip stream of message lists; when it
@@ -112,11 +136,13 @@ work with them using combinators and `Auto`s from
 We can write a quick helper function to convert a `RoomBot` into a full-on
 `ChatBot`, so we can merge them together with `mappend`/`(<>)`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs\#L72-75
-perRoom :: Monad m =&gt; RoomBot m -&gt; ChatBot m perRoom rb = proc
-inp@(InMessage \_ \_ src \_) -&gt; do messages &lt;- fromBlips \[\] . rb -&lt;
-inp id -&lt; OutMessages $ M.singleton src messages ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L72-75
+perRoom :: Monad m => RoomBot m -> ChatBot m
+perRoom rb = proc inp@(InMessage _ _ src _) -> do
+    messages <- fromBlips [] . rb -< inp
+    id -< OutMessages $ M.singleton src messages
+```
 
 (This example uses proc notation; see this [proc notation
 primer](https://github.com/mstksg/auto/blob/master/tutorial/tutorial.md#brief-primer-on-proc-notation)
@@ -170,8 +196,9 @@ it into an `Auto` that "self-serializes" --- when you begin running it, it
 automatically loads its previous state if it exists, and as you run it, it
 automatically maintains an updated "resume state" on disk.
 
-~~~haskell serializing' :: MonadIO m =&gt; FilePath -&gt; ChatBot m -&gt;
-ChatBot m ~~~
+``` {.haskell}
+serializing' :: MonadIO m => FilePath -> ChatBot m -> ChatBot m
+```
 
 Note that `serializing' fp :: MonadIO m => ChatBot m -> ChatBot m`. It looks a
 lot like an "identity-ish" sort of function, right? That's because it is meant
@@ -182,13 +209,17 @@ itself between steps).
 
 So, instead of
 
-~~~haskell chatBot :: Monad m =&gt; ChatBot m chatBot = mconcat \[module1,
-module2, module3\] ~~~
+``` {.haskell}
+chatBot :: Monad m => ChatBot m
+chatBot = mconcat [module1, module2, module3]
+```
 
 We can do:
 
-~~~haskell chatBot :: MonadIO m =&gt; ChatBot m chatBot = serializing'
-"state.dat" $ mconcat \[module1, module2, module3\] ~~~
+``` {.haskell}
+chatBot :: MonadIO m => ChatBot m
+chatBot = serializing' "state.dat" $ mconcat [module1, module2, module3]
+```
 
 And now our `chatBot` will automatically resume itself on program startup, and
 keep its state backed up on disk at `state.dat`. We get this for free, without
@@ -205,8 +236,13 @@ not see yourself changing...or even just serializing parts of the modules you
 don't see yourself changing. Then you can change each portion separately and not
 worry about migration issues.
 
-~~~haskell chatBot :: MonadIO m =&gt; ChatBot m chatBot = mconcat \[
-serializing' "m1.dat" module1 , module2 , serializing' "m3.dat" module3 \] ~~~
+``` {.haskell}
+chatBot :: MonadIO m => ChatBot m
+chatBot = mconcat [ serializing' "m1.dat" module1
+                  , module2
+                  , serializing' "m3.dat" module3
+                  ]
+```
 
 We're not all-or-nothing now here, either! So, `module1` gets serialized and
 auto-resumed from `m1.dat`, `module2` is not serialized at all, and `module3`
@@ -221,10 +257,10 @@ will vary based on what library you use; I'm going to use the
 [simpleirc-0.3.0](http://hackage.haskell.org/package/simpleirc-0.3.0), but feel
 free to use any interface/library you want.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs\#L45-228
-withIrcConf :: IrcConfig -&gt; ChatBot IO -&gt; IO () withIrcConf ircconf
-chatbot = do
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L45-228
+withIrcConf :: IrcConfig -> ChatBot IO -> IO ()
+withIrcConf ircconf chatbot = do
 
     -- chan to receive `InMessage`s
     inputChan <- newChan :: IO (Chan InMessage)
@@ -240,12 +276,17 @@ chatbot = do
     void . forkIO . void $
         runOnChanM id (processOutput server) inputChan chatbot
 
-where -- what to do when `chatBot` outputs processOutput :: MIrc -&gt;
-OutMessages -&gt; IO Bool processOutput server (OutMessages outs) = do print
-outs \_ &lt;- flip M.traverseWithKey outs $ \\channel messages -&gt; do let
-channel' = encodeUtf8 . pack $ channel forM\_ messages $ \\message -&gt; do let
-message' = encodeUtf8 . pack $ message sendMsg server channel' message' return
-True -- "yes, continue on"
+  where
+    -- what to do when `chatBot` outputs
+    processOutput :: MIrc -> OutMessages -> IO Bool
+    processOutput server (OutMessages outs) = do
+      print outs
+      _ <- flip M.traverseWithKey outs $ \channel messages -> do
+        let channel' = encodeUtf8 . pack $ channel
+        forM_ messages $ \message -> do
+          let message' = encodeUtf8 . pack $ message
+          sendMsg server channel' message'
+      return True       -- "yes, continue on"
 
     -- what to do when you get a new message
     onMessage :: Chan InMessage -> EventFunc
@@ -258,13 +299,17 @@ True -- "yes, continue on"
                                           (unpack (decodeUtf8 src))
                                           time
 
-channels :: \[Channel\] channels = \["\#testchan1", "\#testchan2"\]
+channels :: [Channel]
+channels = ["#testchan1", "#testchan2"]
 
-conf :: IrcConfig conf = (mkDefaultConfig "myserver" "mynick") { cChannels =
-channels }
+conf :: IrcConfig
+conf = (mkDefaultConfig "myserver" "mynick") { cChannels = channels }
 
-main :: IO () main = do withIrcConf conf chatBot forever (threadDelay
-1000000000) ~~~
+main :: IO ()
+main = do
+    withIrcConf conf chatBot
+    forever (threadDelay 1000000000)
+```
 
 That should be it...don't worry if you don't understand all of it, most of it is
 just implementation details from `simpleirc`. The overall loop is `runOnChanM`
@@ -273,9 +318,14 @@ through `ChatBot` and sends the outputs through *simpleirc*'s interface.
 Meanwhile, `onMessage` is triggered whenever *simpleirc* receives a message,
 where it prepares an `InMessage` and drops it off at `inputChan`.
 
-~~~haskell runOnChanM :: Monad m =&gt; (forall c. m c -&gt; IO c) -- convert `m`
-to `IO` -&gt; (b -&gt; IO Bool) -- handle output -&gt; Chan a -- chan to await
-input on -&gt; Auto m a b -- `Auto` to run -&gt; IO (Auto m a b) ~~~
+``` {.haskell}
+runOnChanM :: Monad m
+           => (forall c. m c -> IO c)   -- convert `m` to `IO`
+           -> (b -> IO Bool)            -- handle output
+           -> Chan a                    -- chan to await input on
+           -> Auto m a b                -- `Auto` to run
+           -> IO (Auto m a b)
+```
 
 `runOnChanM` runs any `Auto m a b`, as long as there's a way to convert it to
 `Auto IO a b` (we can use a `ChatBot IO`, so we just put `id` there). You give
@@ -308,13 +358,17 @@ Logically, this is pretty straightforward, and anything other than `accum`
 (which is like `foldl'`) would really be a bit overkill; every input would just
 update the output map.
 
-~~~haskell trackSeens :: Monad m =&gt; Auto m (Nick, UTCTime) (Map Nick UTCTime)
-trackSeens = accum (\\mp (nick, time) -&gt; M.insert nick time mp) M.empty ~~~
+``` {.haskell}
+trackSeens :: Monad m => Auto m (Nick, UTCTime) (Map Nick UTCTime)
+trackSeens = accum (\mp (nick, time) -> M.insert nick time mp) M.empty
+```
 
 `accum` takes the same thing that `foldl` takes:
 
-~~~haskell foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; \[a\] -&gt; b accum ::
-Monad m =&gt; (b -&gt; a -&gt; b) -&gt; b -&gt; Auto m a b ~~~
+``` {.haskell}
+foldl ::            (b -> a -> b) -> b -> [a] -> b
+accum :: Monad m => (b -> a -> b) -> b -> Auto m a b
+```
 
 So it basically "folds up" the entire history of inputs, with a starting value.
 Every time an input comes, the output is the new folded history of inputs. You
@@ -326,21 +380,28 @@ instance for `UTCTime`...just for the sake of demonstration, let's make one now.
 Let's also write a `Serialize` instance for `Day` (which represents a date) too,
 while we're at it.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs\#L230-236
-instance Serialize UTCTime where get = read &lt;$&gt; get -- haha don't do this
-in real life. put = put . show
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L230-236
+instance Serialize UTCTime where
+    get = read <$> get      -- haha don't do this in real life.
+    put = put . show
 
-instance Serialize Day where get = ModifiedJulianDay &lt;$&gt; get put = put .
-toModifiedJulianDay ~~~
+instance Serialize Day where
+    get = ModifiedJulianDay <$> get
+    put = put . toModifiedJulianDay
+```
 
 The next component is just to respond to requests. We want to do something on
 some "triggering" input. Every once in a while, some input will come that will
 "trigger" some special response. This is a sign that we can use *blip streams*.
 
-~~~haskell queryBlips :: Auto m Message (Blip Nick) queryBlips = emitJusts
-(getRequest . words) where getRequest ("@seen":nick:*) = Just nick getRequest *
-= Nothing ~~~
+``` {.haskell}
+queryBlips :: Auto m Message (Blip Nick)
+queryBlips = emitJusts (getRequest . words)
+  where
+    getRequest ("@seen":nick:_) = Just nick
+    getRequest _                = Nothing
+```
 
 `queryBlips` takes an input stream of strings and turns it into an output *blip
 stream* that emits with a `Nick` whenever the input stream contains a request in
@@ -348,11 +409,12 @@ the form of `"@seen [nick]"`.
 
 With these simple blocks, we can build our `seenBot`:
 
-~~~haskell -- seenBot :: Monad m =&gt; Auto m InMessage (Blip \[Message\]) --
-source:
-https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs\#L96-115
-seenBot :: Monad m =&gt; RoomBot m seenBot = proc (InMessage nick msg \_ time)
--&gt; do seens &lt;- trackSeens -&lt; (nick, time)
+``` {.haskell}
+-- seenBot :: Monad m => Auto m InMessage (Blip [Message])
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L96-115
+seenBot :: Monad m => RoomBot m
+seenBot = proc (InMessage nick msg _ time) -> do
+    seens  <- trackSeens -< (nick, time)
 
     queryB <- queryBlips -< msg
 
@@ -362,11 +424,15 @@ seenBot :: Monad m =&gt; RoomBot m seenBot = proc (InMessage nick msg \_ time)
                         Nothing -> ["No record of " ++ qry ++ "."]
 
     id -< respond <$> queryB
-
-where trackSeens :: Monad m =&gt; Auto m (Nick, UTCTime) (Map Nick UTCTime)
-trackSeens = accum (\\mp (nick, time) -&gt; M.insert nick time mp) M.empty
-queryBlips :: Auto m Message (Blip Nick) queryBlips = emitJusts (getRequest .
-words) where getRequest ("@seen":nick:*) = Just nick getRequest * = Nothing ~~~
+  where
+    trackSeens :: Monad m => Auto m (Nick, UTCTime) (Map Nick UTCTime)
+    trackSeens = accum (\mp (nick, time) -> M.insert nick time mp) M.empty
+    queryBlips :: Auto m Message (Blip Nick)
+    queryBlips = emitJusts (getRequest . words)
+      where
+        getRequest ("@seen":nick:_) = Just nick
+        getRequest _                = Nothing
+```
 
 Here we define `respond` as a function that takes a `Nick` and returns the
 output `[Message]`. We could have also defined it outside as a helper function
@@ -387,7 +453,9 @@ allowed us to look at them individually for this tutorial.
 So that's it for that; also, if we wanted `seenBot` to serialize and persist
 across sessions, all we have to do is use:
 
-~~~haskell serializing' "seenbot.dat" seenBot :: MonadIO m =&gt; RoomBot m ~~~
+``` {.haskell}
+serializing' "seenbot.dat" seenBot :: MonadIO m => RoomBot m
+```
 
 Neat, right?
 
@@ -395,7 +463,9 @@ If we forsee ourselves adding more features to `seenBot`, we can future-proof
 our `seenBot` for now by only serializing `trackSeens`, meaning replacing that
 line with:
 
-~~~haskell seens &lt;- serializing' "seen.dat" trackSeens -&lt; (nick, time) ~~~
+``` {.haskell}
+    seens <- serializing' "seen.dat" trackSeens -< (nick, time)
+```
 
 Remember, `serializing' fp` acts as a sort of "identity", so you can drop it in
 anywhere and you'd expect it to behave the same.
@@ -412,11 +482,17 @@ This time though, our "score updates" only happen every once in a while,
 triggered by certain words in the message. Again, this pattern calls for a blip
 stream:
 
-~~~haskell updateBlips :: Auto m (Nick, Message) (Blip (Nick, Int)) updateBlips
-= emitJusts getUpdateCommand where -- updater is the person triggering the
-update blip getUpdateCommand (updater, msg) = case words msg of
-"@addRep":nick:\_ | nick /= updater -&gt; Just (nick, 1) "@subRep":nick:\_ -&gt;
-Just (nick, -1) \_ -&gt; Nothing ~~~
+``` {.haskell}
+updateBlips :: Auto m (Nick, Message) (Blip (Nick, Int))
+updateBlips = emitJusts getUpdateCommand
+  where
+    -- updater is the person triggering the update blip
+    getUpdateCommand (updater, msg) =
+      case words msg of
+        "@addRep":nick:_ | nick /= updater -> Just (nick, 1)
+        "@subRep":nick:_                   -> Just (nick, -1)
+        _                                  -> Nothing
+```
 
 `updateBlips` takes in a stream of `(Nick, Message)`, with the person who is
 sending the message and their message, and outputs a blip stream that and emits
@@ -429,27 +505,33 @@ We probably want to keep track of the scores as a `Map Nick Int`, so we can do
 that with something like `accum` again. However, `accum` takes a stream of
 normal values, but we have a *blip stream*, so we can use `scanB` instead.
 `scanB` is pretty much the same thing, but it collapses a blip stream into a
-value stream by holding the "current result" of the fold.\[^accumB\]
+value stream by holding the "current result" of the fold.[^1]
 
-~~~haskell trackReps :: Monad m =&gt; Auto m (Blip (Nick, Int)) (Map Nick Int)
-trackReps = scanB (\\mp (nick, change) -&gt; M.insertWith (+) nick change mp)
-M.empty ~~~
+``` {.haskell}
+trackReps :: Monad m => Auto m (Blip (Nick, Int)) (Map Nick Int)
+trackReps = scanB (\mp (nick, change) -> M.insertWith (+) nick change mp) M.empty
+```
 
 And finally, the "response" portion --- we want to be able to respond to
 commands and look up the result. We basically had this identical pattern for
 `seenBot`:
 
-~~~haskell queryBlips :: Auto m Message (Blip Nick) queryBlips = emitJusts
-(getRequest . words) where getRequest ("@rep":nick:*) = Just nick getRequest * =
-Nothing ~~~
+``` {.haskell}
+queryBlips :: Auto m Message (Blip Nick)
+queryBlips = emitJusts (getRequest . words)
+  where
+    getRequest ("@rep":nick:_) = Just nick
+    getRequest _                = Nothing
+```
 
 And...now we can wrap it all together with a nice proc block:
 
-~~~haskell -- repBot :: Monad m =&gt; Auto m InMessage (Blip \[Message\]) --
-source:
-https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs\#L117-147
-repBot :: Monad m =&gt; RoomBot m repBot = proc (InMessage nick msg \_ \_) -&gt;
-do updateB &lt;- updateBlips -&lt; (nick, msg)
+``` {.haskell}
+-- repBot :: Monad m => Auto m InMessage (Blip [Message])
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L117-147
+repBot :: Monad m => RoomBot m
+repBot = proc (InMessage nick msg _ _) -> do
+    updateB <- updateBlips -< (nick, msg)
 
     reps    <- trackReps   -< updateB
 
@@ -461,16 +543,24 @@ do updateB &lt;- updateBlips -&lt; (nick, msg)
             rep = M.findWithDefault 0 nick reps
 
     id -< lookupRep <$> queryB
-
-where updateBlips :: Auto m (Nick, Message) (Blip (Nick, Int)) updateBlips =
-emitJusts getUpdateCommand where -- updater is the person triggering the update
-blip getUpdateCommand (updater, msg) = case words msg of "@addRep":nick:\_ |
-nick /= updater -&gt; Just (nick, 1) "@subRep":nick:\_ -&gt; Just (nick, -1) \_
--&gt; Nothing trackReps :: Monad m =&gt; Auto m (Blip (Nick, Int)) (Map Nick
-Int) trackReps = scanB (\\mp (nick, change) -&gt; M.insertWith (+) nick change
-mp) M.empty queryBlips :: Auto m Message (Blip Nick) queryBlips = emitJusts
-(getRequest . words) where getRequest ("@rep":nick:*) = Just nick getRequest * =
-Nothing ~~~
+  where
+    updateBlips :: Auto m (Nick, Message) (Blip (Nick, Int))
+    updateBlips = emitJusts getUpdateCommand
+      where
+        -- updater is the person triggering the update blip
+        getUpdateCommand (updater, msg) =
+          case words msg of
+            "@addRep":nick:_ | nick /= updater -> Just (nick, 1)
+            "@subRep":nick:_                   -> Just (nick, -1)
+            _                                  -> Nothing
+    trackReps :: Monad m => Auto m (Blip (Nick, Int)) (Map Nick Int)
+    trackReps = scanB (\mp (nick, change) -> M.insertWith (+) nick change mp) M.empty
+    queryBlips :: Auto m Message (Blip Nick)
+    queryBlips = emitJusts (getRequest . words)
+      where
+        getRequest ("@rep":nick:_) = Just nick
+        getRequest _                = Nothing
+```
 
 Again note that we take advantage of the `Functor` instance of blip streams to
 create a new blip stream (`lookupRep <$> queryB`) that emits whenever `queryB`
@@ -491,10 +581,15 @@ only limited to three announcements per day.
 We can start with our typical "blip stream that emits on a certain command" to
 start off everything:
 
-~~~haskell announceBlips :: Monad m =&gt; Auto m (Nick, Message) (Blip
-\[Message\]) announceBlips = emitJusts getAnnounces where getAnnounces (nick,
-msg) = case words msg of "@ann":ann -&gt; Just \[nick ++ " says "" ++ unwords
-ann ++ ""."\] \_ -&gt; Nothing ~~~
+``` {.haskell}
+announceBlips :: Monad m => Auto m (Nick, Message) (Blip [Message])
+announceBlips = emitJusts getAnnounces
+  where
+    getAnnounces (nick, msg) =
+      case words msg of
+        "@ann":ann -> Just [nick ++ " says \"" ++ unwords ann ++ "\"."]
+        _          -> Nothing
+```
 
 `announceBlips` takes in a nick-message pair and emits an announcement
 `[Message]` whenever the incoming message is an announcement command.
@@ -502,8 +597,10 @@ ann ++ ""."\] \_ -&gt; Nothing ~~~
 Next, we'd like to keep track of how many times a user has made an announcement
 today. This is pretty much just `scanB` again like with `repBot`:
 
-~~~haskell trackAnns :: Monad m =&gt; Auto m (Blip Nick) (Map Nick Int)
-trackAnns = scanB (\\mp nick -&gt; M.insertWith (+) nick 1 mp) M.empty ~~~
+``` {.haskell}
+trackAnns :: Monad m => Auto m (Blip Nick) (Map Nick Int)
+trackAnns = scanB (\mp nick -> M.insertWith (+) nick 1 mp) M.empty
+```
 
 However, we'd like to be able to "reset" this map whenever a new day arrives.
 For that, we can use `resetOn` from
@@ -511,8 +608,10 @@ For that, we can use `resetOn` from
 which takes an `Auto` and gives it a "reset channel" input blip stream, that
 resets the whole thing whenever the blip stream emits:
 
-~~~haskell resetOn :: Monad m =&gt; Auto m a b -&gt; Auto m (a , Blip c) b
-resetOn trackAnns :: Monad m =&gt; Auto m (Blip Nick, Blip c) (Map Nick Int) ~~~
+``` {.haskell}
+resetOn :: Monad m => Auto m a b -> Auto m (a        , Blip c) b
+resetOn trackAnns :: Monad m =>     Auto m (Blip Nick, Blip c) (Map Nick Int)
+```
 
 (It doesn't care about the actual value emitted, so we can leave it as a type
 variable `c` conceptually.)
@@ -521,8 +620,10 @@ Now the only thing we need is a blip stream that emits whenever there is a new
 day. For that, we can use `onChange` from
 [`Control.Auto.Blip`](http://hackage.haskell.org/package/auto/docs/Control-Auto-Blip.html):
 
-~~~haskell newDayBlips :: Monad m =&gt; Auto m Day (Blip Day) newDayBlips =
-onChange ~~~
+``` {.haskell}
+newDayBlips :: Monad m => Auto m Day (Blip Day)
+newDayBlips = onChange
+```
 
 `newDayBlips` takes in a stream of `Day`s (from `Data.Time`) that we get from
 the `InMessage` and outputs a blip stream that emits whenever the day changes.
@@ -534,12 +635,12 @@ Finally, let's wrap it all together!
 Remember, `announceBot` is a full on `ChatBot m`, and not a `RoomBot m` anymore,
 so it has to say where it wants to send its messages.
 
-~~~haskell -- announceBot :: Monad m =&gt; \[Channel\] -&gt; Auto m InMessage
-OutMessages -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs\#L149-183
-announceBot :: Monad m =&gt; \[Channel\] -&gt; ChatBot m announceBot chans =
-proc (InMessage nick msg src time) -&gt; do announceB &lt;- announceBlips -&lt;
-(nick, msg)
+``` {.haskell}
+-- announceBot :: Monad m => [Channel] -> Auto m InMessage OutMessages
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L149-183
+announceBot :: Monad m => [Channel] -> ChatBot m
+announceBot chans = proc (InMessage nick msg src time) -> do
+    announceB <- announceBlips     -< (nick, msg)
 
     newDayB   <- newDayBlips       -< utctDay time
 
@@ -560,13 +661,19 @@ proc (InMessage nick msg src time) -&gt; do announceB &lt;- announceBlips -&lt;
                   <$> outB
 
     fromBlips mempty -< outMsgsB
-
-where announceBlips :: Monad m =&gt; Auto m (Nick, Message) (Blip \[Message\])
-announceBlips = emitJusts getAnnounces where getAnnounces (nick, msg) = case
-words msg of "@ann":ann -&gt; Just \[nick ++ " says "" ++ unwords ann ++ ""."\]
-\_ -&gt; Nothing newDayBlips :: Monad m =&gt; Auto m Day (Blip Day) newDayBlips
-= onChange trackAnns :: Monad m =&gt; Auto m (Blip Nick) (Map Nick Int)
-trackAnns = scanB (\\mp nick -&gt; M.insertWith (+) nick 1 mp) M.empty ~~~
+  where
+    announceBlips :: Monad m => Auto m (Nick, Message) (Blip [Message])
+    announceBlips = emitJusts getAnnounces
+      where
+        getAnnounces (nick, msg) =
+          case words msg of
+            "@ann":ann -> Just [nick ++ " says \"" ++ unwords ann ++ "\"."]
+            _          -> Nothing
+    newDayBlips :: Monad m => Auto m Day (Blip Day)
+    newDayBlips = onChange
+    trackAnns :: Monad m => Auto m (Blip Nick) (Map Nick Int)
+    trackAnns = scanB (\mp nick -> M.insertWith (+) nick 1 mp) M.empty
+```
 
 Only slightly more involved, but still pretty readable, right? We find out if
 things have flooded, and our target channels will be just the original source if
@@ -593,18 +700,26 @@ Wrapping it all up
 
 We have three nice modules now. Now let's wrap it all together.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs\#L83-88
-chatBot :: MonadIO m =&gt; ChatBot m chatBot = serializing' "chatbot.dat" .
-mconcat $ \[ perRoom seenBot , perRoom repBot , announceBot channels \] ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L83-88
+chatBot :: MonadIO m => ChatBot m
+chatBot = serializing' "chatbot.dat"
+        . mconcat $ [ perRoom seenBot
+                    , perRoom repBot
+                    , announceBot channels
+                    ]
+```
 
 Or, to future-proof, in case we foresee adding new modules:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs\#L90-94
-chatBot' :: MonadIO m =&gt; ChatBot m chatBot' = mconcat \[ perRoom .
-serializing' "seens.dat" $ seenBot , perRoom . serializing' "reps.dat" $ repBot
-, serializing' "anns.dat" $ announceBot channels \] ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L90-94
+chatBot' :: MonadIO m => ChatBot m
+chatBot' = mconcat [ perRoom . serializing' "seens.dat" $ seenBot
+                   , perRoom . serializing' "reps.dat"  $ repBot
+                   ,           serializing' "anns.dat"  $ announceBot channels
+                   ]
+```
 
 And...that's it!
 
@@ -612,8 +727,7 @@ Feel free to [download and run this all
 yourself](https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs)
 using `runghc`! (provided you have the appropriate libraries installed)
 
-&lt;div class="note"&gt;
-
+::: {.note}
 **Aside**
 
 This is a quick diversion! It's slightly more advanced, so don't worry if you
@@ -629,15 +743,19 @@ another room.
 Another way we could "upgrade" a `RoomBot` is to give each channel its own
 little copy, with separate state. We can do this using `mux`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs\#L78-81
-isolatedRooms :: Monad m =&gt; RoomBot m -&gt; ChatBot m isolatedRooms rb = proc
-inp@(InMessage \_ \_ src \_) -&gt; do messages &lt;- fromBlips \[\] . mux (const
-rb) -&lt; (src, inp) id -&lt; OutMessages $ M.singleton src messages ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L78-81
+isolatedRooms :: Monad m => RoomBot m -> ChatBot m
+isolatedRooms rb = proc inp@(InMessage _ _ src _) -> do
+    messages <- fromBlips [] . mux (const rb) -< (src, inp)
+    id -< OutMessages $ M.singleton src messages
+```
 
 `mux` is an "`Auto` multiplexer":
 
-~~~haskell mux :: (k -&gt; Auto m a b) -&gt; Auto m (k, a) b ~~~
+``` {.haskell}
+mux :: (k -> Auto m a b) -> Auto m (k, a) b
+```
 
 `mux f` associates a separate/different `Auto`, with its own isolated state,
 with every key `k`. It takes in a stream of key-input pairs `(k, a)` and feeds
@@ -660,8 +778,7 @@ that only knows about *\#foo* messages.
 
 So now every channel has its own `repBot`, and maintains its own independent
 reputation database.
-
-&lt;/div&gt;
+:::
 
 Fin
 ---
@@ -690,7 +807,9 @@ working components that you might see in real bots, and not just toy ones.
 Where can we go from here? Well, you might actually want to maybe write
 "subscription" `Auto`s that are updated every minute or so:
 
-~~~haskell type ChronBot m = Auto m UTCTime OutMessages ~~~
+``` {.haskell}
+type ChronBot m = Auto m UTCTime OutMessages
+```
 
 You feed them inputs every minute with the time, and it's allowed to react with
 the time and output an `OutMessages`. You can use this bot to implement things
@@ -704,9 +823,10 @@ throws in times.
 We can do this with minimal extra work by using the `(|||)` combinator from
 `Control.Arrow`:
 
-~~~haskell (|||) :: Auto m a c -&gt; Auto m b c -&gt; Auto m (Either a b ) c
-(|||) :: ChatBot m -&gt; ChronBot m -&gt; Auto m (Either InMessage UTCTime)
-OutMessages ~~~
+``` {.haskell}
+(|||) :: Auto m a c -> Auto m b c -> Auto m (Either a         b      ) c
+(|||) :: ChatBot m  -> ChronBot m -> Auto m (Either InMessage UTCTime) OutMessages
+```
 
 And...you get it all for free! No extra work. Now both the `ChatBot` and the
 `ChronBot` will wait on the input stream, and the `Left`s will be fed to the
@@ -720,3 +840,7 @@ twitter as [mstk](https://twitter.com/mstk "Twitter"). If you have any questions
 or comments/suggestions, feel free to leave a comment down below or drop by
 freenode's *\#haskell-auto* or *\#haskell-game*, where I go by *jle\`*! And, as
 always, happy Haskelling!
+
+[^1]: `scanB f x0 :: Auto m (Blip a) b`, but there's also
+    `accumB f x0 :: Auto m a (Blip a) (Blip b)`, which emits whenever the input
+    emits only.

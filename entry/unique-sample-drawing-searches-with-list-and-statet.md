@@ -18,21 +18,31 @@ Mark's use case however incorporates a bit of an extra pattern not typically
 discussed. The list monad is good for taking "independent samples" of things
 (looking at different samples from a list):
 
-~~~haskell ghci&gt; do x &lt;- "abc" y &lt;- "abc" z &lt;- "abc" return
-\[x,y,z\] \["aaa","aab","aac","aba","abb" ... \] ~~~
+``` {.haskell}
+ghci> do x <- "abc"
+         y <- "abc"
+         z <- "abc"
+         return [x,y,z]
+["aaa","aab","aac","aba","abb" ... ]
+```
 
 However, what if you wanted to instead "draw" from a pool, and represent
 different drawings? Traditionally, the answer was something like:
 
-~~~haskell ghci&gt; do x &lt;- "abc" y &lt;- filter (/= x) "abc" z &lt;- filter
-(/= y) . filter (/= x) $ "abc" return \[x,y,z\]
-"abc","acb","bac","bca","cab","cba"\] ~~~
+``` {.haskell}
+ghci> do x <- "abc"
+         y <- filter (/= x) "abc"
+         z <- filter (/= y) . filter (/= x) $ "abc"
+         return [x,y,z]
+"abc","acb","bac","bca","cab","cba"]
+```
 
-This is a little bit awkward...and it definitely gets a lot worse ($O(n^2)$)
-when you have more items. Also, it relies on an `Eq` constraint --- what if our
-thing doesn't have an `Eq` instance? And this also falls apart when our list
-contains duplicate items. If we had used `"aabc"` instead of `"abc"`, the result
-would be the same --- despite having more `'a'`s to pick from!
+This is a little bit awkward...and it definitely gets a lot worse
+(![O(n\^2)](https://latex.codecogs.com/png.latex?O%28n%5E2%29 "O(n^2)")) when
+you have more items. Also, it relies on an `Eq` constraint --- what if our thing
+doesn't have an `Eq` instance? And this also falls apart when our list contains
+duplicate items. If we had used `"aabc"` instead of `"abc"`, the result would be
+the same --- despite having more `'a'`s to pick from!
 
 **Important note:** After writing this article, I found out that Douglas Auclair
 in [11th issue of the Monad
@@ -46,14 +56,18 @@ StateT
 There's a type in the *transformers* library that provides a very useful monad
 instance:
 
-~~~haskell data StateT s m a = StateT (s -&gt; m (a, s)) ~~~
+``` {.haskell}
+data StateT s m a = StateT (s -> m (a, s))
+```
 
 A `StateT s m a` is a function that takes an initial state `s` and returns a
 result `a` with a modified state...in the context of `m`.
 
 Specialize for `m ~ []` and we get
 
-~~~haskell data StateT s \[\] a = StateT (s -&gt; \[(a, s)\]) ~~~
+``` {.haskell}
+data StateT s [] a = StateT (s -> [(a, s)])
+```
 
 Which is basically describing a function from a initial state to a list of *ways
 you can modify the state*, and different results from each one. It returns a
@@ -61,8 +75,10 @@ list of "all ways you can mutate this state".
 
 For example,
 
-~~~haskell foo :: StateT Int \[\] Bool foo = StateT $ \\x -&gt; \[(even x, x+1),
-(odd x, x-1), (x &gt; 0, negate x)\] ~~~
+``` {.haskell}
+foo :: StateT Int [] Bool
+foo = StateT $ \x -> [(even x, x+1), (odd x, x-1), (x > 0, negate x)]
+```
 
 So `foo` takes a number, `x`, and says, "here are three ways we might proceed
 from having this number. We can return whether or not it's even, in which case
@@ -82,7 +98,9 @@ first...etc., etc.
 
 One other tool we have at our disposal is `guard`:
 
-~~~haskell guard :: Bool -&gt; StateT Int \[\] () ~~~~
+``` {.haskell}
+guard :: Bool -> StateT Int [] ()
+```
 
 which is a `StateT` action that says "kill this current branch if given `False`,
 or go on if given `True`"
@@ -92,7 +110,10 @@ The Problem
 
 The problem, as stated, was to find distinct digits for each letter to solve:
 
-~~~ S E N D + M O R E ----------- M O N E Y ~~~
+        S E N D
+    +   M O R E
+    -----------
+      M O N E Y
 
 So `SEND` is a four-digit number, `MORE` is a four-digit number, and `MONEY` is
 a five-digit number that is the sum of the two. The first digit of `MONEY` has
@@ -107,10 +128,12 @@ However, we can abstract over "picking dependently from a sample" by defining a
 function called `select`, which really should be in the base libraries but isn't
 for some reason:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs\#L7-9
-select :: \[a\] -&gt; \[(a, \[a\])\] select \[\] = \[\] select (x:xs) = (x,xs) :
-\[(y,x:ys) | (y,ys) &lt;- select xs\] ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L7-9
+select :: [a] -> [(a, [a])]
+select []     = []
+select (x:xs) = (x,xs) : [(y,x:ys) | (y,ys) <- select xs]
+```
 
 (Implementation thanks to Cale, who has fought valiantly yet fruitlessly to get
 this into base for many years.)
@@ -118,8 +141,10 @@ this into base for many years.)
 `select` will take a list `[a]` and return a list of different "selected" `a`s,
 with the rest of the list, too:
 
-~~~haskell ghci&gt; select "abcd"
-\[('a',"bcd"),('b',"acd"),('c',"abd"),('d',"abc")\] ~~~
+``` {.haskell}
+ghci> select "abcd"
+[('a',"bcd"),('b',"acd"),('c',"abd"),('d',"abc")]
+```
 
 But, hey...does the type signature of `select` look like anything familiar?
 
@@ -128,23 +153,38 @@ initial state (`[a]`), and returns a list of all possible ways to "mutate" that
 state (by removing one element from the state), and a result from each mutation
 (the removed element).
 
-~~~haskell StateT select :: StateT \[a\] \[\] a ~~~
+``` {.haskell}
+StateT select :: StateT [a] [] a
+```
 
 And armed with this...we have all we need
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs\#L3-35
-import Control.Monad (guard, mfilter) import Control.Monad.Trans.State import
-Data.List (foldl')
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L3-35
+import Control.Monad             (guard, mfilter)
+import Control.Monad.Trans.State
+import Data.List                 (foldl')
 
-asNumber :: \[Int\] -&gt; Int asNumber = foldl' (\\t o -&gt; t\*10 + o) 0
+asNumber :: [Int] -> Int
+asNumber = foldl' (\t o -> t*10 + o) 0
 
-main :: IO () main = print . flip evalStateT \[0..9\] $ do s &lt;- StateT select
-e &lt;- StateT select n &lt;- StateT select d &lt;- StateT select m &lt;- StateT
-select o &lt;- StateT select r &lt;- StateT select y &lt;- StateT select guard $
-s /= 0 && m /= 0 let send = asNumber \[s,e,n,d\] more = asNumber \[m,o,r,e\]
-money = asNumber \[m,o,n,e,y\] guard $ send + more == money return (send, more,
-money) ~~~
+main :: IO ()
+main = print . flip evalStateT [0..9] $ do
+    s <- StateT select
+    e <- StateT select
+    n <- StateT select
+    d <- StateT select
+    m <- StateT select
+    o <- StateT select
+    r <- StateT select
+    y <- StateT select
+    guard $ s /= 0 && m /= 0
+    let send  = asNumber [s,e,n,d]
+        more  = asNumber [m,o,r,e]
+        money = asNumber [m,o,n,e,y]
+    guard $ send + more == money
+    return (send, more, money)
+```
 
 Remember, `StateT` here operates with an underlying state of `[Int]`, a list of
 numbers not yet picked. `StateT select` picks one of these numbers, and modifies
@@ -160,33 +200,46 @@ credit to the source blog.
 
 And, to test it out...
 
-~~~bash $ ghc -O2 send-more-money.hs $ ./send-more-money
-
-\[(9567,1085,10652)\]
-=====================
-
-~~~
+``` {.bash}
+$ ghc -O2 send-more-money.hs
+$ ./send-more-money
+# [(9567,1085,10652)]
+```
 
 It returns the one and only solution, `SEND = 9567`, `MORE = 1085`, and
-`MONEY = 10652`.\[^perf\]
+`MONEY = 10652`.[^1]
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 We can make things a little bit more efficient with minimal cost in
 expressiveness. But not that it matters...the original version runs fast
 already.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs\#L38-59
-select' :: \[a\] -&gt; \[(a,\[a\])\] select' = go \[\] where go xs \[\] = \[\]
-go xs (y:ys) = (y,xs++ys) : go (y:xs) ys
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L38-59
+select' :: [a] -> [(a,[a])]
+select' = go []
+  where
+   go xs [] = []
+   go xs (y:ys) = (y,xs++ys) : go (y:xs) ys
 
-main' :: IO () main' = print . flip evalStateT \[0..9\] $ do s &lt;- mfilter (/=
-0) $ StateT select' m &lt;- mfilter (/= 0) $ StateT select' e &lt;- StateT
-select' n &lt;- StateT select' d &lt;- StateT select' o &lt;- StateT select' r
-&lt;- StateT select' y &lt;- StateT select' let send = asNumber \[s,e,n,d\] more
-= asNumber \[m,o,r,e\] money = asNumber \[m,o,n,e,y\] guard $ send + more ==
-money return (send, more, money) ~~~
+main' :: IO ()
+main' = print . flip evalStateT [0..9] $ do
+    s <- mfilter (/= 0) $ StateT select'
+    m <- mfilter (/= 0) $ StateT select'
+    e <- StateT select'
+    n <- StateT select'
+    d <- StateT select'
+    o <- StateT select'
+    r <- StateT select'
+    y <- StateT select'
+    let send  = asNumber [s,e,n,d]
+        more  = asNumber [m,o,r,e]
+        money = asNumber [m,o,n,e,y]
+    guard $ send + more == money
+    return (send, more, money)
+```
 
 This is a more performant version of `select` [courtesy of Simon
 Marlow](http://chimera.labs.oreilly.com/books/1230000000929/pr01.html) that
@@ -196,7 +249,8 @@ Also, we use `mfilter` to "eliminate bad `s` and `m`s" right off the bat, before
 having to pick any more things. `mfilter` can be thought of as "killing the fork
 immediately" if the action doesn't satisfy the predicate. If the `s` picked
 doesn't match `(/= 0)`, then the entire branch/fork is immediately ruled
-invalid. &lt;/div&gt;
+invalid.
+:::
 
 By the way, isn't it neat that it does all of this in "constant space"? It just
 keeps track of the output list, but the actual search processes is in constant
@@ -210,9 +264,13 @@ Using `select` and `StateT`, we can do a lot of things involving picking from a
 sample, or permutations. Anything that you used to awkwardly do by using filter
 not-equal-to's can work now. You can do things like drawing from a deck:
 
-~~~haskell pokerGame :: \[Ordering\] pokerGame = flip evalStateT \[0..51\] $ do
-p2Hand &lt;- replicateM 5 (StateT select) p1Hand &lt;- replicateM 5 (StateT
-select) return $ pokerCompare p1Hand p2Hand ~~~
+``` {.haskell}
+pokerGame :: [Ordering]
+pokerGame = flip evalStateT [0..51] $ do
+    p2Hand <- replicateM 5 (StateT select)
+    p1Hand <- replicateM 5 (StateT select)
+    return $ pokerCompare p1Hand p2Hand
+```
 
 Which would draw five distinct cards from a deck of `[0..51]`, and return who
 won for each draw (assuming you had a suitable
@@ -220,20 +278,16 @@ won for each draw (assuming you had a suitable
 `runStateT`, you'd get the results (the winner), *as well as* the leftover cards
 in the deck for each path!
 
-&lt;!-- I used to have an example here about simulating russian roulette --&gt;
-
-&lt;!-- But this doesn't really work in a useful way...because the paths all
-"stop" --&gt; &lt;!-- after the first shot. In reality, you are just as likely
-to be shot on the --&gt; &lt;!-- first pull as you are on the second. But as
-this simulation runs, it "stops" --&gt; &lt;!-- after the first shot...so `1`
-will only show up once. --&gt;
-
 You can even combine the two sorts of drawings --- sampling independently (like
 rolling dice) using `lift`, and drawing from an underlying deck. For example,
 you might encode some game logic from a board game like monopoly:
 
-~~~haskell combo = flip evalStateT initialDeck $ do roll &lt;- lift \[1..6\]
-draw &lt;- StateT select ... ~~~
+``` {.haskell}
+combo = flip evalStateT initialDeck $ do
+    roll <- lift [1..6]
+    draw <- StateT select
+    ...
+```
 
 Whenever you want a dice roll, use `lift [1..6]`...and whenever you want to draw
 from the deck, use `StateT select`.
@@ -243,3 +297,9 @@ a list of every possible result from all of your different rolling and drawing
 choices.
 
 Happy Haskelling!
+
+[^1]: For some reason this runs pretty slowly if you use `runghc`/`runHaskell`,
+    but it runs in the blink of an eye when you actually compile it (and
+    especially with optimizations on). The difference is pretty striking...and I
+    don't really know what's going on here, to be honest. If anyone does know a
+    good explanation, I'd love to hear it :)

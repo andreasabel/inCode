@@ -52,22 +52,18 @@ bug if you want to stay on GHC 7.10.
 
 You can add this:
 
-~~~yaml packages: - location: git: git@github.com:albertoruiz/hmatrix.git
-commit: 42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1 subdirs: - packages/base
-
-\# If stuck on GHC 7.10:
-========================
-
+``` {.yaml}
+packages:
 - location:
-===========
-
-git: git@github.com:mstksg/singletons.git
-=========================================
-
-commit: v2.0.2
-==============
-
-~~~
+    git: git@github.com:albertoruiz/hmatrix.git
+    commit: 42a88fbcb6bd1d2c4dc18fae5e962bd34fb316a1
+  subdirs:
+    - packages/base
+# # If stuck on GHC 7.10:
+# - location:
+#     git: git@github.com:mstksg/singletons.git
+#     commit: v2.0.2
+```
 
 to the `packages` field of your directory or global *stack.yaml* and *stack*
 will know what version of *hmatrix* and *singletons* to use when you use
@@ -114,22 +110,37 @@ layers. Every node "outputs" a weighted sum of all of the outputs of the
 *previous* layer, plus an always-on "bias" term (so that its result can be
 non-zero even when all of its inputs are zero). Symbolically, it looks like:
 
-$$ y*j = b*j + \\sum*i^m w*{ij} x\_i $$
+![
+y\_j = b\_j + \\sum\_i\^m w\_{ij} x\_i
+](https://latex.codecogs.com/png.latex?%0Ay_j%20%3D%20b_j%20%2B%20%5Csum_i%5Em%20w_%7Bij%7D%20x_i%0A "
+y_j = b_j + \sum_i^m w_{ij} x_i
+")
 
 Or, if we treat the output of a layer and the list of list of weights as a
 matrix, we can write it a little cleaner:
 
-$$ \\mathbf{y} = \\mathbf{b} + W \\mathbf{x} $$
+![
+\\mathbf{y} = \\mathbf{b} + W \\mathbf{x}
+](https://latex.codecogs.com/png.latex?%0A%5Cmathbf%7By%7D%20%3D%20%5Cmathbf%7Bb%7D%20%2B%20W%20%5Cmathbf%7Bx%7D%0A "
+\mathbf{y} = \mathbf{b} + W \mathbf{x}
+")
 
-The result, the $n$-vector of nodes $\\mathbf{y}$, is computed from the
-$n$-vector of biases $\\mathbf{b}$ and the $n \\times m$ weight matrix $W$
-multiplied with the $m$-vector input, $\\mathbf{x}$.
+The result, the ![n](https://latex.codecogs.com/png.latex?n "n")-vector of nodes
+![\\mathbf{y}](https://latex.codecogs.com/png.latex?%5Cmathbf%7By%7D "\mathbf{y}"),
+is computed from the ![n](https://latex.codecogs.com/png.latex?n "n")-vector of
+biases
+![\\mathbf{b}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bb%7D "\mathbf{b}")
+and the
+![n \\times m](https://latex.codecogs.com/png.latex?n%20%5Ctimes%20m "n \times m")
+weight matrix ![W](https://latex.codecogs.com/png.latex?W "W") multiplied with
+the ![m](https://latex.codecogs.com/png.latex?m "m")-vector input,
+![\\mathbf{x}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D "\mathbf{x}").
 
 To "scale" the result (and to give the system the magical powers of
 nonlinearity), we actually apply an "activation function" to the output before
 passing it down to the next step. We'll be using the popular [logistic
-function](https://en.wikipedia.org/wiki/Logistic_function), $f(x) = 1 / (1 +
-e^{-x})$.
+function](https://en.wikipedia.org/wiki/Logistic_function),
+![f(x) = 1 / (1 + e\^{-x})](https://latex.codecogs.com/png.latex?f%28x%29%20%3D%201%20%2F%20%281%20%2B%20e%5E%7B-x%7D%29 "f(x) = 1 / (1 + e^{-x})").
 
 *Training* a network involves picking the right set of weights to get the
 network to answer the question you want.
@@ -140,10 +151,12 @@ Vanilla Types
 We can store a network by storing the matrix of of weights and biases between
 each layer:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs\#L18-20
-data Weights = W { wBiases :: !(Vector Double) -- n , wNodes :: !(Matrix Double)
--- n x m } -- "m to n" layer ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L18-20
+data Weights = W { wBiases :: !(Vector Double)  -- n
+                 , wNodes  :: !(Matrix Double)  -- n x m
+                 }                              -- "m to n" layer
+```
 
 Now, a `Weights` linking an *m*-node layer to an *n*-node layer has an
 *n*-dimensional bias vector (one component for each output) and an *n*-by-*m*
@@ -155,41 +168,54 @@ linear algebra, implemented using blas/lapack under the hood)
 
 A feed-forward neural network is then just a linked list of these weights:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs\#L22-28
-data Network :: \* where O :: !Weights -&gt; Network (:&~) :: !Weights -&gt;
-!Network -&gt; Network infixr 5 :&~ ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L22-28
+data Network :: * where
+    O     :: !Weights
+          -> Network
+    (:&~) :: !Weights
+          -> !Network
+          -> Network
+infixr 5 :&~
+```
 
 Note that we're using [GADT](https://en.wikibooks.org/wiki/Haskell/GADT) syntax
 here, which just lets us define `Network` (with a kind signature, `*`) by
 providing the type of its *constructors*, `O` and `(:&~)`. It'd be equivalent to
 the following normal data declaration:
 
-~~~haskell data Network = O Weights | Weights :&~ Network ~~~
+``` {.haskell}
+data Network = O Weights
+             | Weights :&~ Network
+```
 
 A network with one input layer, two inner layers, and one output layer would
 look like:
 
-~~~haskell ih :&~ hh :&~ O ho ~~~
+``` {.haskell}
+ih :&~ hh :&~ O ho
+```
 
 The first component is the weights from the input to first inner layer, the
 second is the weights between the two hidden layers, and the last is the weights
 between the last hidden layer and the output layer.
 
-&lt;!-- TODO: graphs using diagrams? --&gt;
-
 We can write simple procedures, like generating random networks:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs\#L46-56
-randomWeights :: MonadRandom m =&gt; Int -&gt; Int -&gt; m Weights randomWeights
-i o = do seed1 :: Int &lt;- getRandom seed2 :: Int &lt;- getRandom let wB =
-randomVector seed1 Uniform o \* 2 - 1 wN = uniformSample seed2 o (replicate i
-(-1, 1)) return $ W wB wN
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L46-56
+randomWeights :: MonadRandom m => Int -> Int -> m Weights
+randomWeights i o = do
+    seed1 :: Int <- getRandom
+    seed2 :: Int <- getRandom
+    let wB = randomVector  seed1 Uniform o * 2 - 1
+        wN = uniformSample seed2 o (replicate i (-1, 1))
+    return $ W wB wN
 
-randomNet :: MonadRandom m =&gt; Int -&gt; \[Int\] -&gt; Int -&gt; m Network
-randomNet i \[\] o = O &lt;$&gt; randomWeights i o randomNet i (h:hs) o = (:&~)
-&lt;$&gt; randomWeights i h &lt;\*&gt; randomNet h hs o ~~~
+randomNet :: MonadRandom m => Int -> [Int] -> Int -> m Network
+randomNet i []     o =     O <$> randomWeights i o
+randomNet i (h:hs) o = (:&~) <$> randomWeights i h <*> randomNet h hs o
+```
 
 (We're using the `MonadRandom` typeclass from the
 *[MonadRandom](http://hackage.haskell.org/package/MonadRandom)* library, which
@@ -208,20 +234,21 @@ them here to generate them with numbers between -1 and 1)
 And now we can write a function to "run" our network on a given input vector,
 following the matrix equation we wrote earlier:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs\#L30-44
-logistic :: Floating a =&gt; a -&gt; a logistic x = 1 / (1 + exp (-x))
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L30-44
+logistic :: Floating a => a -> a
+logistic x = 1 / (1 + exp (-x))
 
-runLayer :: Weights -&gt; Vector Double -&gt; Vector Double runLayer (W wB wN) v
-= wB + wN \#&gt; v
+runLayer :: Weights -> Vector Double -> Vector Double
+runLayer (W wB wN) v = wB + wN #> v
 
-runNet :: Network -&gt; Vector Double -&gt; Vector Double runNet (O w) !v =
-logistic (runLayer w v) runNet (w :&~ n') !v = let v' = logistic (runLayer w v)
-in runNet n' v' ~~~
+runNet :: Network -> Vector Double -> Vector Double
+runNet (O w)      !v = logistic (runLayer w v)
+runNet (w :&~ n') !v = let v' = logistic (runLayer w v)
+                       in  runNet n' v'
+```
 
 (`#>` is matrix-vector multiplication)
-
-&lt;!-- TODO: examples of running --&gt;
 
 If you're a non-Haskell programmer, this might all seem perfectly fine and
 normal, and you probably have only a slightly elevated heart rate. If you are a
@@ -253,28 +280,53 @@ Now, let's try implementing back-propagation! It's a textbook gradient descent
 algorithm. There are [many
 explanations](https://en.wikipedia.org/wiki/Backpropagation) on the internet;
 the basic idea is that you try to minimize the squared error of what the neural
-network outputs for a given input vs. the actual expected output. You find the
+network outputs for a given input vs. the actual expected output. You find the
 direction of change that minimizes the error (by finding the derivative), and
 move that direction. The implementation of backpropagation is found in many
 sources online and in literature, so let's see the implementation in Haskell:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs\#L58-96
-train :: Double -- ^ learning rate -&gt; Vector Double -- ^ input vector -&gt;
-Vector Double -- ^ target vector -&gt; Network -- ^ network to train -&gt;
-Network train rate x0 target = fst . go x0 where go :: Vector Double -- ^ input
-vector -&gt; Network -- ^ network to train -&gt; (Network, Vector Double) --
-handle the output layer go !x (O w@(W wB wN)) = let y = runLayer w x o =
-logistic y -- the gradient (how much y affects the error) -- (logistic' is the
-derivative of logistic) dEdy = logistic' y \* (o - target) -- new bias weights
-and node weights wB' = wB - scale rate dEdy wN' = wN - scale rate (dEdy `outer`
-x) w' = W wB' wN' -- bundle of derivatives for next step dWs = tr wN \#&gt; dEdy
-in (O w', dWs) -- handle the inner layers go !x (w@(W wB wN) :&~ n) = let y =
-runLayer w x o = logistic y -- get dWs', bundle of derivatives from rest of the
-net (n', dWs') = go o n -- the gradient (how much y affects the error) dEdy =
-logistic' y \* dWs' -- new bias weights and node weights wB' = wB - scale rate
-dEdy wN' = wN - scale rate (dEdy `outer` x) w' = W wB' wN' -- bundle of
-derivatives for next step dWs = tr wN \#&gt; dEdy in (w' :&~ n', dWs) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L58-96
+train :: Double           -- ^ learning rate
+      -> Vector Double    -- ^ input vector
+      -> Vector Double    -- ^ target vector
+      -> Network          -- ^ network to train
+      -> Network
+train rate x0 target = fst . go x0
+  where
+    go :: Vector Double    -- ^ input vector
+       -> Network          -- ^ network to train
+       -> (Network, Vector Double)
+    -- handle the output layer
+    go !x (O w@(W wB wN))
+        = let y    = runLayer w x
+              o    = logistic y
+              -- the gradient (how much y affects the error)
+              --   (logistic' is the derivative of logistic)
+              dEdy = logistic' y * (o - target)
+              -- new bias weights and node weights
+              wB'  = wB - scale rate dEdy
+              wN'  = wN - scale rate (dEdy `outer` x)
+              w'   = W wB' wN'
+              -- bundle of derivatives for next step
+              dWs  = tr wN #> dEdy
+          in  (O w', dWs)
+    -- handle the inner layers
+    go !x (w@(W wB wN) :&~ n)
+        = let y          = runLayer w x
+              o          = logistic y
+              -- get dWs', bundle of derivatives from rest of the net
+              (n', dWs') = go o n
+              -- the gradient (how much y affects the error)
+              dEdy       = logistic' y * dWs'
+              -- new bias weights and node weights
+              wB'  = wB - scale rate dEdy
+              wN'  = wN - scale rate (dEdy `outer` x)
+              w'   = W wB' wN'
+              -- bundle of derivatives for next step
+              dWs  = tr wN #> dEdy
+          in  (w' :&~ n', dWs)
+```
 
 The algorithm computes the *updated* network by recursively updating the layers,
 backwards up from the output layer. At every step, it returns the updated
@@ -296,7 +348,7 @@ mentioned before, but amplified.
 
 In short, you're leaving yourself open to many potential bugs...and the compiler
 doesn't help you write your code at all! This is the nightmare of every Haskell
-programmer. There must be a better way!\[^better\]
+programmer. There must be a better way![^1]
 
 #### Putting it to the test
 
@@ -311,40 +363,29 @@ function to test our network on). We basically train the network to be able to
 recognize the two-circle pattern. I implemented a simple printing function and
 tested the trained network on a grid:
 
-~~~bash $ stack install hmatrix MonadRandom $ stack ghc -- -O2
-./NetworkUntyped.hs $ ./NetworkUntyped
-
-Training network...
-===================
-
-.=\#\#\#\#\#\#\#\#=
-===================
-
-.\#\#\#\#\#\#\#\#\#\#\#\#\#\#.
-==============================
-
-.\#\#\#\#\#\#\#\#\#\#\#\#\#\#-
-==============================
-
-.
-=
-
-... ...
-=======
-
--\#\#\#\#\#\#\#\#\#\#.
-======================
-
--\#\#\#\#\#\#\#\#\#\#\#\#\#\#.
-==============================
-
-=\#\#\#\#\#\#\#\#\#\#\#\#=
-==========================
-
-.\#\#\#\#\#\#\#=.
-=================
-
-~~~
+``` {.bash}
+$ stack install hmatrix MonadRandom
+$ stack ghc -- -O2 ./NetworkUntyped.hs
+$ ./NetworkUntyped
+# Training network...
+#
+#
+#            .=########=
+#          .##############.
+#          ################
+#          ################
+#          .##############-
+#            .###########
+#                 ...             ...
+#                             -##########.
+#                           -##############.
+#                           ################
+#                           ################
+#                            =############=
+#                              .#######=.
+#
+#
+```
 
 Not too bad! The network learned to recognize the circles. But, I was basically
 forced to resort to unit testing to ensure my code was correct. Let's see if we
@@ -367,10 +408,9 @@ back of your mind!
 
 Looking back at our untyped implementation, we notice some things:
 
-1.  Literally every single function we wrote is partial. Like,
-    actually.\[^literally\] If we had passed in the incorrectly sized
-    matrix/vector, or stored mismatched vectors in our network, everything would
-    fall apart.
+1.  Literally every single function we wrote is partial. Like, actually.[^2] If
+    we had passed in the incorrectly sized matrix/vector, or stored mismatched
+    vectors in our network, everything would fall apart.
 2.  There are billions of ways we could have implemented our functions where
     they would still typechecked. We could multiply mismatched matrices, or
     forget to multiply a matrix, etc.
@@ -391,10 +431,12 @@ it expects. Let's have, say, a `Weights 10 5` be a set of weights that takes you
 from a layer of 10 nodes to a layer of 5 nodes. `w :: Weights 4 6` would take
 you from a layer of 4 nodes to a layer of 6 nodes:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L21-23
-data Weights i o = W { wBiases :: !(R o) , wNodes :: !(L o i) } -- an "o x i"
-layer ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L21-23
+data Weights i o = W { wBiases :: !(R o)
+                     , wNodes  :: !(L o i)
+                     }                      -- an "o x i" layer
+```
 
 The type constructor `Weights` has the kind `Weights :: Nat -> Nat -> *` --- it
 takes two types of kind `Nat` (from the
@@ -426,11 +468,17 @@ have hidden layers of size 7, 5, and 3. (The `'[7,5,3]` is a type-level list of
 Nats; the optional `'` apostrophe is just for our own benefit to distinguish it
 from a value-level list of integers.)
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L25-32
-data Network :: Nat -&gt; \[Nat\] -&gt; Nat -&gt; \* where O :: !(Weights i o)
--&gt; Network i '\[\] o (:&~) :: KnownNat h =&gt; !(Weights i h) -&gt; !(Network
-h hs o) -&gt; Network i (h ': hs) o infixr 5 :&~ ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L25-32
+data Network :: Nat -> [Nat] -> Nat -> * where
+    O     :: !(Weights i o)
+          -> Network i '[] o
+    (:&~) :: KnownNat h
+          => !(Weights i h)
+          -> !(Network h hs o)
+          -> Network i (h ': hs) o
+infixr 5 :&~
+```
 
 We use GADT syntax here again. The *kind signature* of the type constructor
 means that the `Network` type constructor takes three inputs: a `Nat`
@@ -457,10 +505,17 @@ input, hidden layers, and output sizes). Let's go over the two constructors.
 
 We can still construct them the same way:
 
-~~~haskell -- given: ih :: Weights 10 7 hh :: Weights 7 4 ho :: Weights 4 2
+``` {.haskell}
+-- given:
+ih :: Weights 10 7
+hh :: Weights  7 4
+ho :: Weights  4 2
 
--- we have: O ho :: Network 4 '\[\] 2 hh :&~ O ho :: Network 7 '\[4\] 2 ih :&~
-hh :&~ O ho :: Network 10 '\[7,4\] 2 ~~~
+-- we have:
+              O ho :: Network  4 '[] 2
+       hh :&~ O ho :: Network  7 '[4] 2
+ih :&~ hh :&~ O ho :: Network 10 '[7,4] 2
+```
 
 Note that the shape of the constructors requires all of the weight vectors to
 "fit together". `ih :&~ O ho` would be a type error (feeding a 7-output layer to
@@ -475,12 +530,17 @@ this case, the compiler actually enforces your documentation's statements!)
 
 Generating random weights and networks is even nicer now:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L57-64
-randomWeights :: (MonadRandom m, KnownNat i, KnownNat o) =&gt; m (Weights i o)
-randomWeights = do s1 :: Int &lt;- getRandom s2 :: Int &lt;- getRandom let wB =
-randomVector s1 Uniform \* 2 - 1 wN = uniformSample s2 (-1) 1 return $ W wB wN
-~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L57-64
+randomWeights :: (MonadRandom m, KnownNat i, KnownNat o)
+              => m (Weights i o)
+randomWeights = do
+    s1 :: Int <- getRandom
+    s2 :: Int <- getRandom
+    let wB = randomVector  s1 Uniform * 2 - 1
+        wN = uniformSample s2 (-1) 1
+    return $ W wB wN
+```
 
 Notice that the *Static* versions of
 [`randomVector`](http://mstksg.github.io/hmatrix/Numeric-LinearAlgebra-Static.html#v:randomVector)
@@ -500,9 +560,9 @@ parameters?), or gave the wrong parameter to the vector generator.
 
 But here, you are guaranteed/forced to return the correctly sized vectors and
 matrices. In fact, you *don't even have to worry* about it --- it's handled
-automatically by the magic of type inference\[^hindley\]! I consider this a very
-big victory. One of the whole points of types is to give you less to "worry
-about", as a programmer. Here, we completely eliminate an *entire dimension* of
+automatically by the magic of type inference[^3]! I consider this a very big
+victory. One of the whole points of types is to give you less to "worry about",
+as a programmer. Here, we completely eliminate an *entire dimension* of
 programmer concern.
 
 #### Benefits to the user
@@ -511,8 +571,10 @@ Not only is this style nicer for you as the implementer, it's also very
 beneficial for the *user* of the function. Consider looking at the two competing
 type signatures side-by-side:
 
-~~~haskell randomWeights :: Int -&gt; Int -&gt; m Weights randomWeights :: m
-(Weights i o) ~~~
+``` {.haskell}
+randomWeights :: Int -> Int -> m Weights
+randomWeights ::               m (Weights i o)
+```
 
 If you want to *use* this function, you have to look up some things from the
 documentation:
@@ -540,7 +602,7 @@ just a better style of defining functions/offering an API!
 
 The code for the updated `randomNet` takes a bit of background to understand, so
 let's take a quick detour through the concepts of singletons, dependent pattern
-matching, and induction on dependent data types.\[^old\]
+matching, and induction on dependent data types.[^4]
 
 Let's say we want to implement an algorithm that can create any
 `Network i hs o`, so that we can construct a `Network 4 '[3,2] 1` or something.
@@ -565,8 +627,10 @@ encounter in everyday use.
 We want to "pattern match" on a type-level list, so we want a singleton for
 lists. The *singletons* library provides them:
 
-~~~haskell SNil :: Sing '\[\] SCons :: Sing a -&gt; Sing as -&gt; Sing (a ': as)
-~~~
+``` {.haskell}
+SNil  :: Sing '[]
+SCons :: Sing a -> Sing as -> Sing (a ': as)
+```
 
 This means that if we ever get value of type `Sing as` (and `as` is a type-level
 list), we can pattern match on it. If we match on the `SNil` constructor, we
@@ -576,13 +640,19 @@ called *dependent pattern matching*. Every "branch" of your case statement has a
 different inferred type of the arguments, depending on the constructor you match
 on.
 
-~~~haskell case foo of SNil -&gt; ... -- here, GHC knows `foo :: Sing '[]` SCons
-\_ \_ -&gt; ... -- here, GHC knows `foo :: Sing (a ': as)` ~~~
+``` {.haskell}
+case foo of
+  SNil      -> ...   -- here, GHC knows `foo :: Sing '[]`
+  SCons _ _ -> ...   -- here, GHC knows `foo :: Sing (a ': as)`
+```
 
 *singletons* actually provides a whole bunch of singleton constructors for
 different types and kinds, like for `Bool`:
 
-~~~haskell STrue :: Sing 'True SFalse :: Sing 'False ~~~
+``` {.haskell}
+STrue  :: Sing 'True
+SFalse :: Sing 'False
+```
 
 (That's the *type* `'True`, of *kind* `Bool`)
 
@@ -593,8 +663,10 @@ we can pattern match on it. And in the branch that `STrue` matches on, `b` is
 Singletons give us a way to pattern match on types by having an actual
 term-level value we can pattern match on. So, we *could* implement:
 
-~~~haskell randomNet :: (MonadRandom m, KnownNat i, KnownNat o) =&gt; Sing hs
--&gt; m (Network i hs o) ~~~
+``` {.haskell}
+randomNet :: (MonadRandom m, KnownNat i, KnownNat o)
+          => Sing hs -> m (Network i hs o)
+```
 
 And `randomNet` gets to directly pattern match and deconstruct on `Sing hs`.
 
@@ -605,9 +677,14 @@ offers a typeclass we can use to implicitly conjure up values of a singleton
 type -- `SingI`. We can use `sing :: SingI s => Sing s` to generate the
 "inferred" singleton:
 
-~~~haskell ghci&gt; sing :: Sing '\[\] SNil ghci&gt; sing :: Sing 'True STrue
-ghci&gt; sing :: Sing '\['True, 'False, 'True\] STrue `SCons` SFalse `SCons`
-STrue `SCons` SNil ~~~
+``` {.haskell}
+ghci> sing :: Sing '[]
+SNil
+ghci> sing :: Sing 'True
+STrue
+ghci> sing :: Sing '['True, 'False, 'True]
+STrue `SCons` SFalse `SCons` STrue `SCons` SNil
+```
 
 So if you have a function `SingI hs => ...`, it's really no different than
 `Sing hs -> ...`. The function itself gets to use a `Sing hs` either way ... but
@@ -617,10 +694,15 @@ The final piece of the puzzle is the singleton for a type-level `Nat`. It's a
 little different because when you pattern match on it, instead of directly
 learning about the type, you "receive" a `KnownNat` instance you can use.
 
-~~~haskell SNat :: KnownNat n =&gt; Sing n ~~~
+``` {.haskell}
+SNat :: KnownNat n => Sing n
+```
 
-~~~haskell -- `foo :: Sing n`, but we don't know what `n` it is case foo of SNat
--&gt; ... -- in this branch, we have a `KnownNat n` instance ~~~
+``` {.haskell}
+-- `foo :: Sing n`, but we don't know what `n` it is
+case foo of
+  SNat -> ...   -- in this branch, we have a `KnownNat n` instance
+```
 
 Essentially, the data constructor comes "packaged" with a `KnownNat n` instance.
 The *creation* of `SNat :: Sing n` requires the presence of `KnownNat n`. So if
@@ -632,13 +714,19 @@ constructor might have.
 
 Now we have enough pieces of the puzzle:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L66-75
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L66-75
 randomNet :: forall m i hs o. (MonadRandom m, KnownNat i, SingI hs, KnownNat o)
-=&gt; m (Network i hs o) randomNet = go sing where go :: forall h hs'. KnownNat
-h =&gt; Sing hs' -&gt; m (Network h hs' o) go = \\case SNil -&gt; O &lt;$&gt;
-randomWeights SNat `SCons` ss -&gt; (:&~) &lt;$&gt; randomWeights &lt;\*&gt; go
-ss ~~~
+          => m (Network i hs o)
+randomNet = go sing
+  where
+    go :: forall h hs'. KnownNat h
+       => Sing hs'
+       -> m (Network h hs' o)
+    go = \case
+        SNil            ->     O <$> randomWeights
+        SNat `SCons` ss -> (:&~) <$> randomWeights <*> go ss
+```
 
 The real heavy lifting is done by `go` (written with
 [LambdaCase](https://www.schoolofhaskell.com/school/to-infinity-and-beyond/pick-of-the-week/guide-to-ghc-extensions/basic-syntax-extensions#lambdacase)),
@@ -681,12 +769,18 @@ of `KnownNat` is `Integer`.)
 
 So, the constructor:
 
-~~~haskell SNat :: KnownNat n =&gt; Sing n ~~~
+``` {.haskell}
+SNat :: KnownNat n => Sing n
+```
 
 Is really *kind* of like:
 
-~~~haskell SNat :: Integer -&gt; Sing n -- or, in normal data type notation SNat
-Integer -- kinda! ~~~
+``` {.haskell}
+SNat :: Integer -> Sing n
+-- or, in normal data type notation
+SNat Integer
+-- kinda!
+```
 
 The GADT constructor for `SNat` requires a `KnownNat n` instance in scope to
 produce. That instance is essentially stored inside the constructor (as if it
@@ -715,24 +809,38 @@ have to play a guessing game about the shape of the returned matrix.
 
 The code for *running* the nets is actually literally identical from before:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L42-55
-runLayer :: (KnownNat i, KnownNat o) =&gt; Weights i o -&gt; R i -&gt; R o
-runLayer (W wB wN) v = wB + wN \#&gt; v
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L42-55
+runLayer :: (KnownNat i, KnownNat o)
+         => Weights i o
+         -> R i
+         -> R o
+runLayer (W wB wN) v = wB + wN #> v
 
-runNet :: (KnownNat i, KnownNat o) =&gt; Network i hs o -&gt; R i -&gt; R o
-runNet = \\case O w -&gt; (!v) -&gt; logistic (runLayer w v) (w :&~ n') -&gt;
-(!v) -&gt; let v' = logistic (runLayer w v) in runNet n' v' ~~~
+runNet :: (KnownNat i, KnownNat o)
+       => Network i hs o
+       -> R i
+       -> R o
+runNet = \case
+   O w -> \(!v) -> logistic (runLayer w v)
+   (w :&~ n') -> \(!v) -> let v' = logistic (runLayer w v)
+                          in runNet n' v'
+```
 
 But now, we get the assurance that the matrices and vectors all fit each-other,
 at compile-time. GHC basically writes our code for us. The operations all demand
 vectors and matrices that "fit together", so you can only ever multiply a matrix
 by a properly sized vector.
 
-~~~haskell (+) :: KnownNat n =&gt; R n -&gt; R n -&gt; R n (\#&gt;) :: (KnownNat
-n, KnownNat m) =&gt; L n m -&gt; R m -&gt; R n
+``` {.haskell}
+(+)  :: KnownNat n
+     => R n -> R n -> R n
+(#>) :: (KnownNat n, KnownNat m)
+     => L n m -> R m -> R n
 
-logistic :: KnownNat n =&gt; R n -&gt; R n ~~~
+logistic :: KnownNat n
+         => R n -> R n
+```
 
 The source code is the same from before, so there isn't any extra overhead in
 annotation. The correctness proofs and guarantees basically come without any
@@ -740,24 +848,49 @@ extra work --- they're free!
 
 Our back-prop algorithm is ported pretty nicely too:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs\#L77-116
-train :: forall i hs o. (KnownNat i, KnownNat o) =&gt; Double -- ^ learning rate
--&gt; R i -- ^ input vector -&gt; R o -- ^ target vector -&gt; Network i hs o --
-^ network to train -&gt; Network i hs o train rate x0 target = fst . go x0 where
-go :: forall j js. KnownNat j =&gt; R j -- ^ input vector -&gt; Network j js o
--- ^ network to train -&gt; (Network j js o, R j) go !x (O w@(W wB wN)) = let y
-= runLayer w x o = logistic y -- the gradient (how much y affects the error) --
-(logistic' is the derivative of logistic) dEdy = logistic' y \* (o - target) --
-new bias weights and node weights wB' = wB - konst rate \* dEdy wN' = wN - konst
-rate \* (dEdy `outer` x) w' = W wB' wN' -- bundle of derivatives for next step
-dWs = tr wN \#&gt; dEdy in (O w', dWs) -- handle the inner layers go !x (w@(W wB
-wN) :&~ n) = let y = runLayer w x o = logistic y -- get dWs', bundle of
-derivatives from rest of the net (n', dWs') = go o n -- the gradient (how much y
-affects the error) dEdy = logistic' y \* dWs' -- new bias weights and node
-weights wB' = wB - konst rate \* dEdy wN' = wN - konst rate \* (dEdy `outer` x)
-w' = W wB' wN' -- bundle of derivatives for next step dWs = tr wN \#&gt; dEdy in
-(w' :&~ n', dWs) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L77-116
+train :: forall i hs o. (KnownNat i, KnownNat o)
+      => Double           -- ^ learning rate
+      -> R i              -- ^ input vector
+      -> R o              -- ^ target vector
+      -> Network i hs o   -- ^ network to train
+      -> Network i hs o
+train rate x0 target = fst . go x0
+  where
+    go  :: forall j js. KnownNat j
+        => R j              -- ^ input vector
+        -> Network j js o   -- ^ network to train
+        -> (Network j js o, R j)
+    go !x (O w@(W wB wN))
+        = let y    = runLayer w x
+              o    = logistic y
+              -- the gradient (how much y affects the error)
+              --   (logistic' is the derivative of logistic)
+              dEdy = logistic' y * (o - target)
+              -- new bias weights and node weights
+              wB'  = wB - konst rate * dEdy
+              wN'  = wN - konst rate * (dEdy `outer` x)
+              w'   = W wB' wN'
+              -- bundle of derivatives for next step
+              dWs  = tr wN #> dEdy
+          in  (O w', dWs)
+    -- handle the inner layers
+    go !x (w@(W wB wN) :&~ n)
+        = let y          = runLayer w x
+              o          = logistic y
+              -- get dWs', bundle of derivatives from rest of the net
+              (n', dWs') = go o n
+              -- the gradient (how much y affects the error)
+              dEdy       = logistic' y * dWs'
+              -- new bias weights and node weights
+              wB'  = wB - konst rate * dEdy
+              wN'  = wN - konst rate * (dEdy `outer` x)
+              w'   = W wB' wN'
+              -- bundle of derivatives for next step
+              dWs  = tr wN #> dEdy
+          in  (w' :&~ n', dWs)
+```
 
 It's pretty much again almost an exact copy-and-paste, but now with GHC checking
 to make sure everything fits together in our implementation.
@@ -798,52 +931,29 @@ source code and run it yourself. Again, the
 method is written identically to that of the other file and tests the identical
 function.
 
-~~~bash $ stack install hmatrix MonadRandom singletons $ stack ghc -- -O2
-./NetworkTyped.hs $ ./NetworkTyped
-
-Training network...
-===================
-
--\#\#\#\#\#\#\#\#\#-
-====================
-
--\#\#\#\#\#\#\#\#\#\#\#\#\#=
-============================
-
--\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#-
-================================
-
-=\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#=
-================================
-
-\#\#\#\#\#\#\#\#\#\#\#\#\#\#=.
-==============================
-
-.\#\#\#\#\#\#\#\#\#\#=.
-=======================
-
-.==\#=-
-=======
-
--\#\#\#\#\#\#\#\#\#\#\#-
-========================
-
-=\#\#\#\#\#\#\#\#\#\#\#\#\#\#.
-==============================
-
-.\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#=
-================================
-
-=\#\#\#\#\#\#\#\#\#\#\#\#\#\#-
-==============================
-
-=\#\#\#\#\#\#\#\#\#\#\#\#-
-==========================
-
--\#\#\#\#\#\#=-.
-================
-
-~~~
+``` {.bash}
+$ stack install hmatrix MonadRandom singletons
+$ stack ghc -- -O2 ./NetworkTyped.hs
+$ ./NetworkTyped
+# Training network...
+#
+#
+#             -#########-
+#           -#############=
+#          -###############-
+#          =###############=
+#           ##############=.
+#            .##########=.
+#                               .==#=-
+#                            -###########-
+#                           =##############.
+#                          .###############=
+#                           =##############-
+#                            =############-
+#                              -######=-.
+#
+#
+```
 
 Finding Something to Depend on
 ------------------------------
@@ -914,8 +1024,30 @@ some of the concepts! The links are to the solutions in the source file.
     structure](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L189-192)
     --- `Sing hs`:
 
-    ~~~haskell hiddenSing :: Network i hs o -&gt; Sing hs ~~~
+    ``` {.haskell}
+    hiddenSing :: Network i hs o -> Sing hs
+    ```
 
-    ~~~haskell ghci&gt; n &lt;- randomNet :: IO (Network 10 '\[5,3\] 1) ghci&gt;
-    let s = hiddenSing n ghci&gt; :t s s :: Sing '\[5,3\] ghci&gt; s SNat
-    `SCons` SNat `SCons` SNil ~~~
+    ``` {.haskell}
+    ghci> n <- randomNet :: IO (Network 10 '[5,3] 1)
+    ghci> let s = hiddenSing n
+    ghci> :t s
+    s :: Sing '[5,3]
+    ghci> s
+    SNat `SCons` SNat `SCons` SNil
+    ```
+
+[^1]: This sentence is the story of my Haskell life.
+
+[^2]: Okay, maybe not *literally* every one. But, pretty much every one.
+
+[^3]: Thank you based Hindley-Milner.
+
+[^4]: This entire section was previously written to use the
+    [typelits-witnesses](http://hackage.haskell.org/package/typelits-witnesses)
+    library, but has now been re-written to use the canonical
+    [singletons](https://hackage.haskell.org/package/singletons) library after a
+    [conversation](https://www.reddit.com/r/haskell/comments/4l199z/practical_dependent_types_in_haskell_type_safe/d3jkslv)
+    with Andras Kovacs. The [old
+    version](https://github.com/mstksg/inCode/blob/697c1f726b9ab9c3f9830ed5521bfeee6ec10727/entry/practical-dependent-types-in-haskell-1.md#singletons-and-induction)
+    is still online at github, if you want to look at it or compare!

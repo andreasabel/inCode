@@ -30,14 +30,22 @@ does what you'd expect from an error monad.
 Now, we have a generic interface to work on *all specfic type error-throwing
 Monads*. The `Either` type comes to mind as an obvious candidate:
 
-~~~haskell instance MonadError e (Either e) where throwError = Left catchError s
-f = case s of Right \_ -&gt; s Left e -&gt; f e ~~~
+``` {.haskell}
+instance MonadError e (Either e) where
+    throwError = Left
+    catchError s f = case s of
+                       Right _ -> s
+                       Left e  -> f e
+```
 
 But there are definitely other instances possible. How about for `IO` and
 `IOException`s, in specific?
 
-~~~haskell instance MonadError IOException IO where throwError = ioError
-catchErrror = catch -- will not catch non-IOExceptions ~~~
+``` {.haskell}
+instance MonadError IOException IO where
+    throwError  = ioError
+    catchErrror = catch     -- will not catch non-IOExceptions
+```
 
 This is great, because we can now write code *generic* over *all* specific-type
 error things!
@@ -128,7 +136,8 @@ my function is generic over *all* things that can embed IO...anything that can
 embed IO can sequence my function/type". The generic "embedding" action is
 `liftIO :: MonadIO m => IO a -> m a`.
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 You know...ideally, all of these typeclasses would have laws, so we could make
 conclusions and apply equational reasoning to generically written functions.
@@ -145,7 +154,7 @@ capability of analyzing generic programs is rough heuristins/feelings about what
 "should" be right.
 
 A bit un-ideal, but...in practice, this ends up working not-so-badly :)
-&lt;/div&gt;
+:::
 
 Not a Monad Transformer Library
 -------------------------------

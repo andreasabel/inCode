@@ -54,8 +54,13 @@ So what kind of Arrow interface am I imagining with this?
 
 Haskell has some nice syntax for composing "functions" (`f`, `g`, and `h`):
 
-~~~haskell proc x -&gt; do y &lt;- f -&lt; x z &lt;- g -&lt; x q &lt;- h -&lt; y
-returnA -&lt; y \* z + q ~~~
+``` {.haskell}
+proc x -> do
+    y <- f -< x
+    z <- g -< x
+    q <- h -< y
+    returnA -< y * z + q
+```
 
 A `proc` statement is a fancy lambda, which takes an input `x` and "funnels" `x`
 through several different "functions" --- in our case, `f`, `g`, and `h` --- and
@@ -89,7 +94,9 @@ arrow...what if `f`, `g`, and `h` represented "a way to get a `b` from an
 
 So if I were to "run" this special arrow, a `ParArrow a b`, I would do
 
-~~~haskell runPar :: ParArrow a b -&gt; a -&gt; IO b ~~~
+``` {.haskell}
+runPar :: ParArrow a b -> a -> IO b
+```
 
 Where if i gave `runPar` a `ParArrow a b`, and an `a`, It would fork itself into
 its own thread and give you an `IO b` in response to your `a`.
@@ -115,9 +122,17 @@ parallel" from eachother.
 
 With that in mind, we could even do something like `parMap`:
 
-~~~haskell parMap :: ParArrow a b -&gt; ParArrow \[a\] \[b\] parMap f = proc
-input -&gt; do case input of \[\] -&gt; returnA -&lt; \[\] (x:xs) -&gt; do y
-&lt;- f -&lt; x ys &lt;- parMap f -&lt; xs returnA -&lt; y:ys ~~~
+``` {.haskell}
+parMap :: ParArrow a b -> ParArrow [a] [b]
+parMap f = proc input -> do
+    case input of
+      []     ->
+          returnA        -< []
+      (x:xs) -> do
+          y  <- f        -< x
+          ys <- parMap f -< xs
+          returnA        -< y:ys
+```
 
 And because "what depends on what" is so *obviously clear* from proc/do notation
 --- you know exactly what depends on what, and the graph is already laid out
@@ -129,15 +144,27 @@ great way to structure programs and take advantage of implicit data parallelism.
 
 Also notice something cool -- if leave our proc blocks polymorphic:
 
-~~~haskell map' :: ArrowChoice r =&gt; r a b -&gt; r \[a\] \[b\] map' f = proc
-input -&gt; do case input of \[\] -&gt; returnA -&lt; \[\] (x:xs) -&gt; do y
-&lt;- f -&lt; x ys &lt;- map' f -&lt; xs returnA -&lt; y:ys ~~~
+``` {.haskell}
+map' :: ArrowChoice r => r a b -> r [a] [b]
+map' f = proc input -> do
+    case input of
+      []     ->
+          returnA        -< []
+      (x:xs) -> do
+          y  <- f        -< x
+          ys <- map' f   -< xs
+          returnA        -< y:ys
+```
 
 We can now use `map'` as *both* a normal, sequentual function *and* a parallel,
 forked computation!
 
-~~~haskell λ: map' (arr (*2)) \[1..5\] \[2,4,6,8,10\] λ: runPar $ map' (arr
-(*2)) \[1..5\] \[2,4,6,8,10\] ~~~
+``` {.haskell}
+λ:          map' (arr (*2)) [1..5]
+[2,4,6,8,10]
+λ: runPar $ map' (arr (*2)) [1..5]
+[2,4,6,8,10]
+```
 
 Yup!
 
@@ -150,14 +177,19 @@ ParArrow
 
 Let's start out with our arrow data type:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs\#L12-18
-data ParArrow a b = Pure (a -&gt; b) | forall z. Seq (ParArrow a z) (ParArrow z
-b) | forall a1 a2 b1 b2. Par (a -&gt; (a1, a2)) (ParArrow a1 b1) (ParArrow a2
-b2) ((b1, b2) -&gt; b) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L12-18
+data ParArrow a b =                     Pure  (a -> b)
+                  | forall z.           Seq   (ParArrow a z)
+                                              (ParArrow z b)
+                  | forall a1 a2 b1 b2. Par   (a -> (a1, a2))
+                                              (ParArrow a1 b1)
+                                              (ParArrow a2 b2)
+                                              ((b1, b2) -> b)
+```
 
 So a `ParArrow a b` represents a (pure) paralleizable, forkable computation that
-returns a `b` (as `IO b`) when given an `a`.\[^unsafepio\]
+returns a `b` (as `IO b`) when given an `a`.[^1]
 
 -   `Pure f` wraps a pure function in a `ParArrow` that computes that function
     in a fork when necessary.
@@ -187,16 +219,24 @@ returns a `b` (as `IO b`) when given an `a`.\[^unsafepio\]
 
 Okay, let's define a Category instance, that lets us compose `ParArrow`s:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs\#L20-22
-instance Category ParArrow where id = Pure id f . g = Seq g f ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L20-22
+instance Category ParArrow where
+    id    = Pure id
+    f . g = Seq g f
+```
 
 No surprises there, hopefully! Now an Arrow instance:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs\#L24-29
-instance Arrow ParArrow where arr = Pure first f = f \*\*\* id second g = id
-\*\*\* g f &&& g = Par (id &&& id) f g id f \*\*\* g = Par id f g id ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L24-29
+instance Arrow ParArrow where
+    arr      = Pure
+    first f  = f  *** id
+    second g = id *** g
+    f &&& g  = Par (id &&& id) f g id
+    f *** g  = Par id          f g id
+```
 
 Also simple enough. Note that `first` and `second` are defined in terms of
 `(***)`, instead of the typical way of defining `second`, `(&&&)`, and `(***)`
@@ -207,18 +247,30 @@ in terms of `arr` and `first`.
 Now, for the magic --- consolidating a big composition of fragmented `ParArrow`s
 into a streamlined simple-as-possible graph:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs\#L31-51
-collapse :: ParArrow a b -&gt; ParArrow a b collapse (Seq f g) = case (collapse
-f, collapse g) of (Pure p1, Pure p2) -&gt; Pure (p1 &gt;&gt;&gt; p2) (Seq s1 s2,
-*) -&gt; Seq (collapse s1) (collapse (Seq s2 g)) (*, Seq s1 s2) -&gt; Seq
-(collapse (Seq f s1)) (collapse s2) (Pure p, Par l p1 p2 r) -&gt; Par (p
-&gt;&gt;&gt; l) (collapse p1) (collapse p2) r (Par l p1 p2 r, Pure p) -&gt; Par
-l (collapse p1) (collapse p2) (r &gt;&gt;&gt; p) (Par l p1 p2 r, Par l' p1' p2'
-r') -&gt; let p1f x = fst . l' . r $ (x, undefined) p2f x = snd . l' . r $
-(undefined, x) pp1 = collapse (p1 &gt;&gt;&gt; arr p1f &gt;&gt;&gt; p1') pp2 =
-collapse (p2 &gt;&gt;&gt; arr p2f &gt;&gt;&gt; p2') in Par l pp1 pp2 r' collapse
-p = p ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L31-51
+collapse :: ParArrow a b -> ParArrow a b
+collapse (Seq f g)       =
+    case (collapse f, collapse g) of
+      (Pure p1, Pure p2)      -> Pure (p1 >>> p2)
+      (Seq s1 s2, _)          -> Seq (collapse s1)
+                                     (collapse (Seq s2 g))
+      (_, Seq s1 s2)          -> Seq (collapse (Seq f s1))
+                                     (collapse s2)
+      (Pure p, Par l p1 p2 r) -> Par (p >>> l)
+                                     (collapse p1) (collapse p2)
+                                     r
+      (Par l p1 p2 r, Pure p) -> Par l
+                                     (collapse p1) (collapse p2)
+                                     (r >>> p)
+      (Par l p1 p2 r,
+       Par l' p1' p2' r')     -> let p1f x = fst . l' . r $ (x, undefined)
+                                     p2f x = snd . l' . r $ (undefined, x)
+                                     pp1 = collapse (p1 >>> arr p1f >>> p1')
+                                     pp2 = collapse (p2 >>> arr p2f >>> p2')
+                                 in  Par l pp1 pp2 r'
+collapse p = p
+```
 
 There are probably a couple of redundant calls to `collapse` in there, but the
 picture should still be evident:
@@ -243,30 +295,46 @@ And...here we have a highly condensed parallelism graph.
 It might be useful to get a peek at the internal structures of a collapsed
 `ParArrow`. I used a helper data type, `Graph`.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs\#L76-79
-data Graph = GPure -- Pure function | Graph :-&gt;: Graph -- Sequenced arrows |
-Graph :/: Graph -- Parallel arrows deriving Show ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L76-79
+data Graph = GPure                  -- Pure function
+           | Graph :->: Graph       -- Sequenced arrows
+           | Graph :/: Graph        -- Parallel arrows
+           deriving Show
+```
 
 And we can convert a given `ParArrow` into its internal graph:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs\#L81-87
-analyze' :: ParArrow a b -&gt; Graph analyze' (Pure *) = GPure analyze' (Seq f
-g) = analyze' f :-&gt;: analyze' g analyze' (Par * f g \_) = analyze' f :/:
-analyze' g
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L81-87
+analyze' :: ParArrow a b -> Graph
+analyze' (Pure _) = GPure
+analyze' (Seq f g) = analyze' f :->: analyze' g
+analyze' (Par _ f g _) = analyze' f :/: analyze' g
 
-analyze :: ParArrow a b -&gt; Graph analyze = analyze' . collapse ~~~
+analyze :: ParArrow a b -> Graph
+analyze = analyze' . collapse
+```
 
 ### Sample ParArrows
 
 Let's try examining it with some simple `Arrow`s, like the one we mentioned
 before:
 
-~~~haskell λ: let test1 = | proc x -&gt; do | y &lt;- arr (*2) -&lt; x | z &lt;-
-arr (+3) -&lt; x | q &lt;- arr (^2) -&lt; y | returnA -&lt; y * z + q λ: :t
-test1 test1 :: (Arrow r, Num t) =&gt; r t t λ: test1 5 180 λ: analyze test1
-GPure :/: GPure ~~~
+``` {.haskell}
+λ: let test1 =
+ |       proc x -> do
+ |       y <- arr (*2) -< x
+ |       z <- arr (+3) -< x
+ |       q <- arr (^2) -< y
+ |       returnA -< y * z + q
+λ: :t test1
+test1 :: (Arrow r, Num t) => r t t
+λ: test1 5
+180
+λ: analyze test1
+GPure :/: GPure
+```
 
 This is what we would expect. From looking at the diagram above, we can see that
 there are two completely parallel forks; so in the collapsed arrow, there are
@@ -274,10 +342,19 @@ indeed only two parallel forks of pure functions.
 
 How about a much simpler one that we unroll ourselves:
 
-~~~haskell λ: let test2 = arr (uncurry (+)) | . (arr (*2) *\*\* arr (+3)) | .
-(id &&& id) λ: :t test2 test2 :: (Arrow r, Num t) =&gt; r t t λ: test2 5 18 λ:
-analyze' test2 ((GPure :/: GPure) :-&gt;: (GPure :/: GPure)) :-&gt;: GPure λ:
-analyze test2 GPure :/: GPure ~~~
+``` {.haskell}
+λ: let test2 = arr (uncurry (+))
+ |           . (arr (*2) *** arr (+3))
+ |           . (id &&& id)
+λ: :t test2
+test2 :: (Arrow r, Num t) => r t t
+λ: test2 5
+18
+λ: analyze' test2
+((GPure :/: GPure) :->: (GPure :/: GPure)) :->: GPure
+λ: analyze test2
+GPure :/: GPure
+```
 
 So as we can see, the "uncollapsed" `test2` is actually three sequenced
 functions (as we would expect): Two parallel pure arrows (the `id &&& id` and
@@ -293,12 +370,16 @@ Running ParArrows
 Now we just need a way to run a `ParArrow`, and do the proper forking. This
 actually isn't too bad at all, because of what we did in `collapse`.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs\#L92-113
-runPar' :: ParArrow a b -&gt; (a -&gt; IO b) runPar' = go where go :: ParArrow a
-b -&gt; (a -&gt; IO b) go (Pure f) = \\x -&gt; putStrLn "P" &gt;&gt; return (f
-x) go (Seq f g) = go f &gt;=&gt; go g go (Par l f g r) = \\x -&gt; do putStrLn
-"F"
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L92-113
+runPar' :: ParArrow a b -> (a -> IO b)
+runPar' = go
+  where
+    go :: ParArrow a b -> (a -> IO b)
+    go (Pure f)      = \x -> putStrLn "P" >> return (f x)
+    go (Seq f g)     = go f >=> go g
+    go (Par l f g r) = \x -> do
+      putStrLn "F"
 
       fres <- newEmptyMVar
       gres <- newEmptyMVar
@@ -310,7 +391,9 @@ x) go (Seq f g) = go f &gt;=&gt; go g go (Par l f g r) = \\x -&gt; do putStrLn
       reses <- (,) <$> takeMVar fres <*> takeMVar gres
       return (r reses)
 
-runPar :: ParArrow a b -&gt; (a -&gt; IO b) runPar = runPar' . collapse ~~~
+runPar :: ParArrow a b -> (a -> IO b)
+runPar = runPar' . collapse
+```
 
 (Note that I left in debug traces)
 
@@ -318,7 +401,15 @@ runPar :: ParArrow a b -&gt; (a -&gt; IO b) runPar = runPar' . collapse ~~~
 
 Sweet, now let's run it!
 
-~~~haskell λ: test2 5 18 λ: runPar test2 5 F P P 18 ~~~
+``` {.haskell}
+λ: test2 5
+18
+λ: runPar test2 5
+F
+P
+P
+18
+```
 
 That works as expected!
 
@@ -331,8 +422,15 @@ Okay, so it looks like this does exactly what we want. It intelligently "knows"
 when to fork, when to unfork, when to "sequence" forks. Let's try it with
 `test1`, which was written in `proc` notation.
 
-~~~haskell λ: test1 5 180 λ: runPar test1 5 F P P \*\*\* Exception:
-Prelude.undefined ~~~
+``` {.haskell}
+λ: test1 5
+180
+λ: runPar test1 5
+F
+P
+P
+*** Exception: Prelude.undefined
+```
 
 What! :/
 
@@ -341,12 +439,20 @@ What went wrong
 
 Let's dig into actual desguaring. According to the proc notation specs:
 
-~~~haskell test3 = proc x -&gt; do y &lt;- arr (\*2) -&lt; x z &lt;- arr (+3)
--&lt; x returnA -&lt; y + z
+``` {.haskell}
+test3 = proc x -> do
+    y <- arr (*2) -< x
+    z <- arr (+3) -< x
+    returnA -< y + z
 
--- desugared: test3' = arr ((x,y) -&gt; x + y) -- add . arr ((x,y) -&gt; (y,x))
--- flip . first (arr (+3)) -- z . arr ((x,y) -&gt; (y,x)) -- flip . first (arr
-(\*2)) -- y . arr (\\x -&gt; (x,x)) -- split ~~~
+-- desugared:
+test3' = arr (\(x,y) -> x + y)     -- add
+       . arr (\(x,y) -> (y,x))     -- flip
+       . first (arr (+3))          -- z
+       . arr (\(x,y) -> (y,x))     -- flip
+       . first (arr (*2))          -- y
+       . arr (\x -> (x,x))         -- split
+```
 
 Ah. Everything is in terms of `arr` and `first`, and it never uses `second`,
 `(***)`, or `(&&&)`. (These should be equivalent, due to the Arrow laws, of
@@ -357,7 +463,9 @@ sequenced `Pure` and `Par`s.
 
 Basically, the collapsing rules say that if we have:
 
-~~~haskell Par l p1 p2 r `Seq` Pure f `Seq` Par l' p1' p2' r' ~~~
+``` {.haskell}
+Par l p1 p2 r `Seq` Pure f `Seq` Par l' p1' p2' r'
+```
 
 It should be the same as one giant `Par`, where `f` is "injected" between `p1`
 and `p1'`, `p2` and `p2'`.
@@ -384,30 +492,52 @@ forks, they must exchange information? Then it's no longer fully parallel!
 
 We can "fix" this. We can make `collapse` not collapse the `Pure`-`Par` cases:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs\#L53-116
-collapse\_ :: ParArrow a b -&gt; ParArrow a b collapse\_ (Seq f g) = case
-(collapse\_ f, collapse\_ g) of (Pure p1, Pure p2) -&gt; Pure (p1 &gt;&gt;&gt;
-p2) (Seq s1 s2, *) -&gt; Seq (collapse* s1) (collapse\_ (Seq s2 g)) (*, Seq s1
-s2) -&gt; Seq (collapse* (Seq f s1)) (collapse\_ s2) -- (Pure p, Par l p1 p2 r)
--&gt; Par (p &gt;&gt;&gt; l) -- (collapse\_ p1) (collapse\_ p2) -- r -- (Par l
-p1 p2 r, Pure p) -&gt; Par l -- (collapse\_ p1) (collapse\_ p2) -- (r
-&gt;&gt;&gt; p) (Par l p1 p2 r, Par l' p1' p2' r') -&gt; let p1f x = fst . l' .
-r $ (x, undefined) p2f x = snd . l' . r $ (undefined, x) pp1 = collapse\_ (p1
-&gt;&gt;&gt; arr p1f &gt;&gt;&gt; p1') pp2 = collapse\_ (p2 &gt;&gt;&gt; arr p2f
-&gt;&gt;&gt; p2') in Par l pp1 pp2 r' (f,g) -&gt; Seq f g collapse\_ p = p
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L53-116
+collapse_ :: ParArrow a b -> ParArrow a b
+collapse_ (Seq f g)       =
+    case (collapse_ f, collapse_ g) of
+      (Pure p1, Pure p2)      -> Pure (p1 >>> p2)
+      (Seq s1 s2, _)          -> Seq (collapse_ s1)
+                                     (collapse_ (Seq s2 g))
+      (_, Seq s1 s2)          -> Seq (collapse_ (Seq f s1))
+                                     (collapse_ s2)
+      -- (Pure p, Par l p1 p2 r) -> Par (p >>> l)
+      --                                (collapse_ p1) (collapse_ p2)
+      --                                r
+      -- (Par l p1 p2 r, Pure p) -> Par l
+      --                                (collapse_ p1) (collapse_ p2)
+      --                                (r >>> p)
+      (Par l p1 p2 r,
+       Par l' p1' p2' r')     -> let p1f x = fst . l' . r $ (x, undefined)
+                                     p2f x = snd . l' . r $ (undefined, x)
+                                     pp1 = collapse_ (p1 >>> arr p1f >>> p1')
+                                     pp2 = collapse_ (p2 >>> arr p2f >>> p2')
+                                 in  Par l pp1 pp2 r'
+      (f,g)                   -> Seq f g
+collapse_ p = p
 
-analyze\_ :: ParArrow a b -&gt; Graph analyze\_ = analyze' . collapse\_
+analyze_ :: ParArrow a b -> Graph
+analyze_ = analyze' . collapse_
 
-runPar\_ :: ParArrow a b -&gt; (a -&gt; IO b) runPar\_ = runPar' . collapse\_
-~~~
+runPar_ :: ParArrow a b -> (a -> IO b)
+runPar_ = runPar' . collapse_
+```
 
 Then we have:
 
-~~~haskell λ: analyze\_ test1 ( GPure :-&gt;: ( ( GPure :-&gt;: GPure ) :/:
-GPure ) ) :-&gt;: (( GPure :-&gt;: ( ( GPure :-&gt;: GPure ) :/: GPure ) )
-:-&gt;: (( GPure :-&gt;: ( ( GPure :-&gt;: GPure ) :/: GPure ) ) :-&gt;: GPure
-)) ~~~
+``` {.haskell}
+λ: analyze_ test1
+(
+  GPure :->: ( ( GPure :->: GPure ) :/: GPure )
+) :->: ((
+  GPure :->: ( ( GPure :->: GPure ) :/: GPure )
+) :->: ((
+  GPure :->: ( ( GPure :->: GPure ) :/: GPure )
+) :->:
+  GPure
+))
+```
 
 We basically have three `GPure :-> ((GPure :->: GPure) :/: GPure)`'s in a row. A
 pure function followed by parallel functions. This sort of makes sense, and if
@@ -416,7 +546,21 @@ get, sorta. now we don't "collapse" the three parallel forks together.
 
 This runs without error:
 
-~~~haskell λ: runPar\_ test1 5 P F P P P P F P P P P 18 ~~~
+``` {.haskell}
+λ: runPar_ test1 5
+P
+F
+P
+P
+P
+P
+F
+P
+P
+P
+P
+18
+```
 
 And the trace shows that it is "forking" two times. The structural analysis
 would actaully suggest that we forked three times, but...I'm not totally sure
@@ -495,8 +639,17 @@ but I don't think that offers much advantages over the current system (using
 `(***)` etc.), and also it gives up the entire point --- using proc notation,
 and also the neat ability to use them as if they were regular functions.
 
-For now, though, I am calling this a "dead end"\[^another\]; if anyone has any
+For now, though, I am calling this a "dead end"[^2]; if anyone has any
 suggestions, I'd be happy to hear them :) I just thought it'd be worth putting
 up my thought process up in written form somewhere so that I could look back on
 them, or so that people can see what doesn't work and/or possibly learn :) And
 of course for entertainment in case I am hilariously awful.
+
+[^1]: Technically, all `ParArrow` computations are pure, so you might not loose
+    too much by just returning a `b` instead of an `IO b` with
+    `unsafePerformIO`, but...
+
+[^2]: Actually, this is technically not true; while I was writing this article
+    another idea came to me by using some sort of state machine/automation arrow
+    to wait on the results and pass them on, but that's still in the first
+    stages of being thought through :)

@@ -20,13 +20,16 @@ Review
 
 Let's return to our `Door` type:
 
-\`\`\`haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs\#L19-25
-$(singletons \[d| data DoorState = Opened | Closed | Locked deriving (Show, Eq)
-|\])
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L19-25
+$(singletons [d|
+  data DoorState = Opened | Closed | Locked
+    deriving (Show, Eq)
+  |])
 
-data Door :: DoorState -&gt; Type where UnsafeMkDoor :: { doorMaterial :: String
-} -&gt; Door s \`\`\`
+data Door :: DoorState -> Type where
+    UnsafeMkDoor :: { doorMaterial :: String } -> Door s
+```
 
 First, this derives the *type* `DoorState` with the values `Opened`, `Closed`,
 and `Locked`, and also the *kind* `DoorState` with the *types* `'Opened`,
@@ -44,7 +47,7 @@ different "type" of Door:
     *locked* door.
 
 So, really, when we define `Door s`, we really are defining *three distinct*
-types\[^fourth\].
+types[^1].
 
 This is great and all, but isn't Haskell a language with static, compile-time
 types? Doesn't that mean that we have to know if our doors are opened, closed,
@@ -79,11 +82,19 @@ We have a couple of options here. First, we can create a new type `SomeDoor`
 that is the same as `Door`, except instead of keeping its status in its type, it
 keeps it as a runtime value:
 
-\`\`\`haskell data SomeDoor = MkSomeDoor { someDoorState :: DoorState ,
-someDoorMaterial :: String }
+``` {.haskell}
+data SomeDoor = MkSomeDoor
+    { someDoorState    :: DoorState
+    , someDoorMaterial :: String
+    }
 
--- or, in GADT syntax data SomeDoor :: Type where MkSomeDoor :: { someDoorState
-:: DoorState , someDoorMaterial :: String } -&gt; SomeDoor \`\`\`
+-- or, in GADT syntax
+data SomeDoor :: Type where
+    MkSomeDoor ::
+      { someDoorState    :: DoorState
+      , someDoorMaterial :: String
+      } -> SomeDoor
+```
 
 Note the similarity of `SomeDoor`'s declaration to `Door`'s declaration above.
 It's mostly the same, except, instead of `DoorState` being a type parameter, it
@@ -105,13 +116,15 @@ However, there's another path we can take. With the power of singletons, we can
 actually implement `SomeDoor` *in terms of* `Door`, using an **existential data
 type**:
 
-\`\`\`haskell -- using existential constructor syntax data SomeDoor = forall s.
-MkSomeDoor (Sing s) (Door s)
+``` {.haskell}
+-- using existential constructor syntax
+data SomeDoor = forall s. MkSomeDoor (Sing s) (Door s)
 
--- or, using GADT syntax (preferred) -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs\#L56-57
-data SomeDoor :: Type where MkSomeDoor :: Sing s -&gt; Door s -&gt; SomeDoor
-\`\`\`
+-- or, using GADT syntax (preferred)
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L56-57
+data SomeDoor :: Type where
+    MkSomeDoor :: Sing s -> Door s -> SomeDoor
+```
 
 `MkSomeDoor` is a constructor for an existential data type, meaning that the
 data type "hides" a type variable `s`. Note the type
@@ -121,11 +134,16 @@ type variable goes in, but it's absorbed opaquely into the result type.
 
 Note the similarities between our original `SomeDoor` and this one.
 
-\`\`\`haskell -- | Re-implementing door data SomeDoor where MkSomeDoor ::
-DoorState -&gt; String -&gt; SomeDoor
+``` {.haskell}
+-- | Re-implementing door
+data SomeDoor where
+    MkSomeDoor :: DoorState -> String -> SomeDoor
 
--- | Re-using Door, as an existential type data SomeDoor where MkSomeDoor ::
-Sing s -&gt; Door s -&gt; SomeDoor -- ^ data Door s = UnsafeMkDoor String \`\`\`
+-- | Re-using Door, as an existential type
+data SomeDoor where
+    MkSomeDoor  :: Sing s  -> Door s -> SomeDoor
+                            -- ^ data Door s = UnsafeMkDoor String
+```
 
 Basically, our type before re-implements `Door`. But the new one actually
 directly uses the original `Door s`. This means we can *directly* re-use our
@@ -135,24 +153,29 @@ In Haskell, existential data types are pretty nice, syntactically, to work with.
 Let's write some basic functions to see. First, a function to "make" a
 `SomeDoor` from a `Door`:
 
-\`\`\`haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs\#L59-63
-fromDoor :: Sing s -&gt; Door s -&gt; SomeDoor fromDoor = MkSomeDoor
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L59-63
+fromDoor :: Sing s -> Door s -> SomeDoor
+fromDoor = MkSomeDoor
 
-fromDoor\_ :: SingI s =&gt; Door s -&gt; SomeDoor fromDoor\_ = MkSomeDoor sing
-\`\`\`
+fromDoor_ :: SingI s => Door s -> SomeDoor
+fromDoor_ = MkSomeDoor sing
+```
 
 So that's how we *make* one...how do we *use* it? Let's port our `Door`
 functions to `SomeDoor`, by re-using our pre-existing functions whenever we can:
 
-\`\`\`haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs\#L65-72
-closeSomeOpenedDoor :: SomeDoor -&gt; Maybe SomeDoor closeSomeOpenedDoor
-(MkSomeDoor s d) = case s of SOpened -&gt; Just . fromDoor\_ $ closeDoor d
-SClosed -&gt; Nothing SLocked -&gt; Nothing
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L65-72
+closeSomeOpenedDoor :: SomeDoor -> Maybe SomeDoor
+closeSomeOpenedDoor (MkSomeDoor s d) = case s of
+    SOpened -> Just . fromDoor_ $ closeDoor d
+    SClosed -> Nothing
+    SLocked -> Nothing
 
-lockAnySomeDoor :: SomeDoor -&gt; SomeDoor lockAnySomeDoor (MkSomeDoor s d) =
-fromDoor\_ $ lockAnyDoor s d \`\`\`
+lockAnySomeDoor :: SomeDoor -> SomeDoor
+lockAnySomeDoor (MkSomeDoor s d) = fromDoor_ $ lockAnyDoor s d
+```
 
 Using an existential wrapper with a singleton makes this pretty simple -- just a
 simple unwrapping and re-wrapping! Imagine having to re-implement all of these
@@ -165,11 +188,20 @@ the `s` type. Without it, the `s` would be lost forever.
 
 Imagine if `MkSomeDoor` did not have the `Sing`:
 
-`haskell data SomeDoor where     MkSomeDoor  :: Door s -> SomeDoor       -- no Sing s ???`
+``` {.haskell}
+data SomeDoor where
+    MkSomeDoor  :: Door s -> SomeDoor       -- no Sing s ???
+```
 
 It would then be impossible to write `closeSomeOpenedDoor`:
 
-`haskell closeSomeOpenedDoor :: SomeDoor -> Maybe SomeDoor closeSomeOpenedDoor (MkSomeDoor d) =             -- is the door opened, closed, or locked?             -- there's no way to know!             -- curses, type erasure!`
+``` {.haskell}
+closeSomeOpenedDoor :: SomeDoor -> Maybe SomeDoor
+closeSomeOpenedDoor (MkSomeDoor d) =
+            -- is the door opened, closed, or locked?
+            -- there's no way to know!
+            -- curses, type erasure!
+```
 
 ### The Link
 
@@ -183,11 +215,19 @@ type `DoorState`.
 
 In fact, the *singletons* library gives us a direct existential wrapper:
 
-`haskell -- from singletons (not the actual definition) data SomeSing DoorState :: Type where     SomeSing :: Sing s -> SomeSing DoorState`
+``` {.haskell}
+-- from singletons (not the actual definition)
+data SomeSing DoorState :: Type where
+    SomeSing :: Sing s -> SomeSing DoorState
+```
 
 There are three values of type `SomeSing DoorState`:
 
-`haskell SomeSing SOpened :: SomeSing DoorState SomeSing SClosed :: SomeSing DoorState SomeSing SLocked :: SomeSing DoorState`
+``` {.haskell}
+SomeSing SOpened :: SomeSing DoorState
+SomeSing SClosed :: SomeSing DoorState
+SomeSing SLocked :: SomeSing DoorState
+```
 
 A value of type `SomeSing DoorState` (which contains an existentially quantified
 `Sing s` -- a `SingDS`) is *the same* as a value of type `DoorState`. The two
@@ -222,14 +262,18 @@ simply to be a run-time stand-in for the type `s` itself.
 So, for our original `Door s` functions, we need to know `s` at runtime --
 storing the `Sing s` gives GHC exactly that. Once you get the `Sing s` back, you
 can now use it in all of our type-safe functions from Part 1, and you're back in
-type-safe land.\[^pos\]
+type-safe land.[^2]
 
 ### Some Lingo
 
 In the language of dependently typed programming, we call `SomeDoor` a
 **dependent sum**, because you can imagine it basically as a sum type:
 
-`haskell data SomeDoor = SDOpened (Door 'Opened)               | SDClosed (Door 'Closed)               | SDLocked (Door 'Locked)`
+``` {.haskell}
+data SomeDoor = SDOpened (Door 'Opened)
+              | SDClosed (Door 'Closed)
+              | SDLocked (Door 'Locked)
+```
 
 A three-way sum between a `Door 'Opened`, a `Door 'Closed`, and a
 `Door 'Locked`, essentially. If you have a `SomeDoor`, it's *either* an opened
@@ -249,9 +293,24 @@ pair syntax, as `(s ** Door s)`. The *value* of the first item reveals to us
 With this last tool, we finally have enough to build a function to "make" a door
 with the status unknown until runtime:
 
-`haskell mkSomeDoor :: DoorState -> String -> SomeDoor mkSomeDoor = \case     Opened -> MkSomeDoor SOpened . mkDoor SOpened     Closed -> MkSomeDoor SClosed . mkDoor SClosed     Locked -> MkSomeDoor SLocked . mkDoor SLocked`
+``` {.haskell}
+mkSomeDoor :: DoorState -> String -> SomeDoor
+mkSomeDoor = \case
+    Opened -> MkSomeDoor SOpened . mkDoor SOpened
+    Closed -> MkSomeDoor SClosed . mkDoor SClosed
+    Locked -> MkSomeDoor SLocked . mkDoor SLocked
+```
 
-`haskell ghci> let mySomeDoor = mkSomeDoor Opened "Birch" ghci> :t mySomeDoor SomeDoor ghci> putStrLn $ case mySomeDoor of         MkSomeDoor SOpened _ -> "mySomeDoor was opened!"         MkSomeDoor SClosed _ -> "mySomeDoor was closed!"         MkSomeDoor SLocked _ -> "mySomeDoor was locked!" mySomeDoor was opened!`
+``` {.haskell}
+ghci> let mySomeDoor = mkSomeDoor Opened "Birch"
+ghci> :t mySomeDoor
+SomeDoor
+ghci> putStrLn $ case mySomeDoor of
+        MkSomeDoor SOpened _ -> "mySomeDoor was opened!"
+        MkSomeDoor SClosed _ -> "mySomeDoor was closed!"
+        MkSomeDoor SLocked _ -> "mySomeDoor was locked!"
+mySomeDoor was opened!
+```
 
 Using `mkSomeDoor`, we can truly pass in a `DoorState` that we generate at
 runtime (from IO, or a user prompt, or a configuration file, maybe), and create
@@ -272,7 +331,9 @@ the user asks for.
 
 For example, a function like:
 
-`haskell read :: Read a => String -> a`
+``` {.haskell}
+read :: Read a => String -> a
+```
 
 Is universally quantified over `a`: The *caller* of `read` gets to pick which
 type is given. The burden is on the implementor of `read` to be able to handle
@@ -280,7 +341,9 @@ whatever `a` the user picks.
 
 But, for a value like:
 
-`haskell myDoor :: SomeDoor`
+``` {.haskell}
+myDoor :: SomeDoor
+```
 
 The type variable `s` is existentially quantified. The person who *made*
 `myDoor` picked what `s` was. And, if you *use* `myDoor`, you have to be ready
@@ -292,14 +355,32 @@ both styles. We saw earlier `mkSomeDoor`, which takes a `DoorState` and a
 `String` and returns an existentially quantified `Door` in the form of
 `SomeDoor`:
 
-`haskell mkSomeDoor     :: DoorState     -> String     -> SomeDoor mkSomeDoor s m = case s of     Opened -> MkSomeDoor SOpened (mkDoor SOpened m)     Closed -> MkSomeDoor SClosed (mkDoor SClosed m)     Locked -> MkSomeDoor SLocked (mkDoor SLocked m)`
+``` {.haskell}
+mkSomeDoor
+    :: DoorState
+    -> String
+    -> SomeDoor
+mkSomeDoor s m = case s of
+    Opened -> MkSomeDoor SOpened (mkDoor SOpened m)
+    Closed -> MkSomeDoor SClosed (mkDoor SClosed m)
+    Locked -> MkSomeDoor SLocked (mkDoor SLocked m)
+```
 
 The caller of the function can then break open the `SomeDoor` and must handle
 whatever `s` they find inside.
 
 We can write the same function using a *CPS-style* existential instead:
 
-`haskell withDoor     :: DoorState     -> String     -> (forall s. Sing s -> Door s -> r) -> r withDoor s m f = case s of     Opened -> f SOpened (mkDoor SOpened m)     Closed -> f SClosed (mkDoor SClosed m)     Locked -> f SLocked (mkDoor SLocked m)`
+``` {.haskell}
+withDoor
+    :: DoorState
+    -> String
+    -> (forall s. Sing s -> Door s -> r) -> r
+withDoor s m f = case s of
+    Opened -> f SOpened (mkDoor SOpened m)
+    Closed -> f SClosed (mkDoor SClosed m)
+    Locked -> f SLocked (mkDoor SLocked m)
+```
 
 With a Rank-N Type, `withDoor` takes a `DoorState` and a `String` and a
 *function to handle a `Door s` polymorphically*. The caller of `withDoor` must
@@ -307,7 +388,13 @@ provide a handler that can handle *any* `s`, in a uniform and parametrically
 polymorphic way. The function then gives the result of the handler function
 called on the resulting `Sing s` and `Door s`.
 
-`haskell ghci> withDoor Opened "Birch" $ \s d -> case s of          SOpened -> "Opened door!"          SClosed -> "Closed door!"          SLocked -> "Locked door!" Opened door!`
+``` {.haskell}
+ghci> withDoor Opened "Birch" $ \s d -> case s of
+         SOpened -> "Opened door!"
+         SClosed -> "Closed door!"
+         SLocked -> "Locked door!"
+Opened door!
+```
 
 The key to making this work is that your handler function *has to be
 polymorphic* over all possible `s`s. This way, it can handle any potential `s`
@@ -329,7 +416,12 @@ and enter the type-safe world of `Door s`, `closeDoor`, `lockDoor`, and
 The *singletons* library automatically generates functions to directly reify
 `DoorState` values:
 
-`haskell toSing       :: DoorState -> SomeSing DoorState withSomeSing :: DoorState -> (forall s. Sing (s :: DoorState) -> r) -> r withSomeSing :: DoorState -> (forall s. SDoorState s  -> r) -> r                                      -- ^ using the convenience type synonym`
+``` {.haskell}
+toSing       :: DoorState -> SomeSing DoorState
+withSomeSing :: DoorState -> (forall s. Sing (s :: DoorState) -> r) -> r
+withSomeSing :: DoorState -> (forall s. SDoorState s  -> r) -> r
+                                     -- ^ using the convenience type synonym
+```
 
 The first one reifies a `DoorState` as an existentially quantified data type,
 and the second one reifies one in CPS-style, without the intermediate data type.
@@ -337,14 +429,15 @@ and the second one reifies one in CPS-style, without the intermediate data type.
 We can actually use these to write `mkSomeDoor` and `withDoor` in a nicer way,
 without directly pattern matching on our constructors:
 
-\`\`\`haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs\#L74-79
-mkSomeDoor :: DoorState -&gt; String -&gt; SomeDoor mkSomeDoor ds = case toSing
-ds of SomeSing s -&gt; MkSomeDoor s . mkDoor s
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L74-79
+mkSomeDoor :: DoorState -> String -> SomeDoor
+mkSomeDoor ds = case toSing ds of
+    SomeSing s -> MkSomeDoor s . mkDoor s
 
-withDoor :: DoorState -&gt; String -&gt; (forall s. Sing s -&gt; Door s -&gt; r)
--&gt; r withDoor ds m f = withSomeSing ds $ \\s -&gt; f s (UnsafeMkDoor m)
-\`\`\`
+withDoor :: DoorState -> String -> (forall s. Sing s -> Door s -> r) -> r
+withDoor ds m f = withSomeSing ds $ \s -> f s (UnsafeMkDoor m)
+```
 
 Zooming Out
 -----------
@@ -359,19 +452,31 @@ The crux of everything is the `Sing :: Type -> Type` indexed type. If you see a
 value of type `Sing s`, you should really just think "a runtime witness for
 `s`". If you see:
 
-`haskell lockAnyDoor :: Sing s -> Door s -> Door 'Locked MkSomeDoor  :: Sing s -> Door s -> SomeDoor`
+``` {.haskell}
+lockAnyDoor :: Sing s -> Door s -> Door 'Locked
+MkSomeDoor  :: Sing s -> Door s -> SomeDoor
+```
 
 You should read it as (in pseudo-Haskell)
 
-`haskell lockAnyDoor :: { s } -> Door s -> Door 'Locked MkSomeDoor  :: { s } -> Door s -> SomeDoor`
+``` {.haskell}
+lockAnyDoor :: { s } -> Door s -> Door 'Locked
+MkSomeDoor  :: { s } -> Door s -> SomeDoor
+```
 
 This is seen clearly if we look at the partially applied type signatures:
 
-`haskell lockAnyDoor SOpened :: Door 'Opened -> Door 'Locked MkSomeDoor  SLocked :: Door 'Locked -> SomeDoor`
+``` {.haskell}
+lockAnyDoor SOpened :: Door 'Opened -> Door 'Locked
+MkSomeDoor  SLocked :: Door 'Locked -> SomeDoor
+```
 
 If you squint, this kinda looks like:
 
-`haskell lockAnyDoor 'Opened :: Door 'Opened -> Door 'Locked MkSomeDoor  'Locked :: Door 'Locked -> SomeDoor`
+``` {.haskell}
+lockAnyDoor 'Opened :: Door 'Opened -> Door 'Locked
+MkSomeDoor  'Locked :: Door 'Locked -> SomeDoor
+```
 
 And indeed, when we get real dependent types in Haskell, we will really be
 directly passing types (that act as their own runtime values) instead of
@@ -388,15 +493,24 @@ uniformly with singletons of all kinds.
 `SingI` is a bit of typeclass trickery that lets us implicitly pass `Sing`s to
 functions:
 
-`haskell class SingI s where     sing :: Sing s`
+``` {.haskell}
+class SingI s where
+    sing :: Sing s
+```
 
 If you see:
 
-`haskell lockAnyDoor :: Sing  s -> Door s -> Door 'Locked MkSomeDoor  :: Sing  s -> Door s -> SomeDoor`
+``` {.haskell}
+lockAnyDoor :: Sing  s -> Door s -> Door 'Locked
+MkSomeDoor  :: Sing  s -> Door s -> SomeDoor
+```
 
 These are *identical* to
 
-`haskell lockAnyDoor :: SingI s => Door s -> Door 'Locked MkSomeDoor  :: SingI s => Door s -> SomeDoor`
+``` {.haskell}
+lockAnyDoor :: SingI s => Door s -> Door 'Locked
+MkSomeDoor  :: SingI s => Door s -> SomeDoor
+```
 
 Either way, you're passing in the ability to get a runtime witness on `s` --
 just in one way, it is asked for as an explicit argument, and the second way, it
@@ -404,22 +518,25 @@ is passed in using a typeclass.
 
 We can *convert* from `SingI s ->` style to `SingI s =>` style using `sing`:
 
-\`\`\`haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs\#L50-63
-lockAnyDoor\_ :: SingI s =&gt; Door s -&gt; Door 'Locked lockAnyDoor\_ =
-lockAnyDoor sing
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L50-63
+lockAnyDoor_ :: SingI s => Door s -> Door 'Locked
+lockAnyDoor_ = lockAnyDoor sing
 
-fromDoor\_ :: SingI s =&gt; Door s -&gt; SomeDoor fromDoor\_ = MkSomeDoor sing
-\`\`\`
+fromDoor_ :: SingI s => Door s -> SomeDoor
+fromDoor_ = MkSomeDoor sing
+```
 
 And we can convert from `SingI s =>` style to `SingI s ->` style using
 `withSingI`:
 
-\`\`\`haskell lockAnyDoor :: Sing s -&gt; Door s -&gt; Door 'Locked lockAnyDoor
-s d = withSingI s (lockAnyDoor\_ d)
+``` {.haskell}
+lockAnyDoor :: Sing s -> Door s -> Door 'Locked
+lockAnyDoor s d = withSingI s (lockAnyDoor_ d)
 
-fromDoor :: Sing s -&gt; Door s -&gt; SomeDoor fromDoor s d = withSingI s
-(fromDoor\_ d) \`\`\`
+fromDoor :: Sing s -> Door s -> SomeDoor
+fromDoor s d = withSingI s (fromDoor_ d)
+```
 
 Again, the same function -- just two different styles of calling them.
 
@@ -447,8 +564,10 @@ The *singletons* library handles this by using a typeclass with associated types
 to implement a generalized reflection and reification process. It gives us the
 `SingKind` "kindclass":
 
-\`\``haskell class SingKind k where      --`k\` is a kind! -- | Associate a kind
-k with its reflected type type Demote k = (r :: Type)
+``` {.haskell}
+class SingKind k where      -- `k` is a kind!
+    -- | Associate a kind k with its reflected type
+    type Demote k = (r :: Type)
 
     -- | Reflect a singleton to its term-level value
     fromSing :: Sing (a :: k) -> Demote k
@@ -456,8 +575,7 @@ k with its reflected type type Demote k = (r :: Type)
     -- | Reify a term-level value to the type level, as an existentially
     -- quantified singleton
     toSing :: Demote k -> SomeSing k
-
-\`\`\`
+```
 
 Instances of `SingKind` are (promoted) *kinds* like `Bool`-the-kind,
 `DoorState`-the-kind, etc., and `Demote` is an associated type/type family that
@@ -481,8 +599,9 @@ values to be.
 To illustrate explicitly, here is the automatically generated instance of
 `SingKind` for the `DoorState` *kind*:
 
-\`\`\`haskell instance SingKind DoorState where -- the *kind* DoorState type
-Demote DoorState = DoorState -- the *type* DoorState
+``` {.haskell}
+instance SingKind DoorState where       -- the *kind* DoorState
+    type Demote DoorState = DoorState   -- the *type* DoorState
 
     fromSing
         :: Sing (s :: DoorState)        -- the *kind* DoorState
@@ -499,8 +618,7 @@ Demote DoorState = DoorState -- the *type* DoorState
         Opened -> SomeSing SOpened
         Closed -> SomeSing SClosed
         Locked -> SomeSing SLocked
-
-\`\`\`
+```
 
 If you are unfamiliar with how associated types work,
 `type Demote DoorState = DoorState` means that wherever we see
@@ -511,11 +629,13 @@ If you are unfamiliar with how associated types work,
 
 Let's take a look at the instance for `Bool`, to compare:
 
-\`\`\`haskell -- Bool singletons have two constructors: SFalse :: Sing 'False
-STrue :: Sing 'True
+``` {.haskell}
+-- Bool singletons have two constructors:
+SFalse :: Sing 'False
+STrue  :: Sing 'True
 
-instance SingKind Bool where -- the *kind* Bool type Demote Bool = Bool -- the
-*type* Bool
+instance SingKind Bool where    -- the *kind* Bool
+    type Demote Bool = Bool     -- the *type* Bool
 
     fromSing
         :: Sing (b :: Bool)        -- the *kind* Bool
@@ -530,16 +650,17 @@ instance SingKind Bool where -- the *kind* Bool type Demote Bool = Bool -- the
     toSing = \case
         False -> SomeSing SFalse
         True  -> SomeSing STrue
-
-\`\`\`
+```
 
 And a more sophisticated example, let's look at the instance for `Maybe`:
 
-\`\`\`haskell -- Maybe singletons have two constructors: SNothing :: Sing
-'Nothing SJust :: Sing x -&gt; Sing ('Just x)
+``` {.haskell}
+-- Maybe singletons have two constructors:
+SNothing :: Sing 'Nothing
+SJust    :: Sing x -> Sing ('Just x)
 
-instance SingKind k =&gt; SingKind (Maybe k) where -- the *kind* Maybe type
-Demote (Maybe k) = Maybe (Demote k) -- the *type* Maybe
+instance SingKind k => SingKind (Maybe k) where     -- the *kind* Maybe
+    type Demote (Maybe k) = Maybe (Demote k)        -- the *type* Maybe
 
     fromSing
         :: Sing (m :: Maybe k)        -- the *kind* Maybe
@@ -555,8 +676,7 @@ Demote (Maybe k) = Maybe (Demote k) -- the *type* Maybe
         Nothing -> SomeSing SNothing
         Just x  -> case toSing x of
           SomeSing sx -> SomeSing (SJust sx)
-
-\`\`\`
+```
 
 This definition, I think, is a real testament to the usefulness of having all of
 our singletons be unified under the same system. Because of how `SingKind`
@@ -571,12 +691,19 @@ reflect `Maybe DoorState` singletons!
 Throughout all of this, we utilize `SomeSing` as a generic poly-kinded
 existential wrapper:
 
-`haskell data SomeSing :: Type -> Type where     SomeSing :: Sing (x :: k) -> SomeSing k`
+``` {.haskell}
+data SomeSing :: Type -> Type where
+    SomeSing :: Sing (x :: k) -> SomeSing k
+```
 
 Basically, this says that `SomeSing k` contains a `Sing x`, where `x` is of kind
 `k`. This is why we had, earlier:
 
-`haskell SomeSing :: Sing (s :: DoorState) -> SomeSing DoorState SomeSing :: Sing (s :: Bool)      -> SomeSing Bool SomeSing :: Sing (s :: Maybe k)   -> SomeSing (Maybe k)`
+``` {.haskell}
+SomeSing :: Sing (s :: DoorState) -> SomeSing DoorState
+SomeSing :: Sing (s :: Bool)      -> SomeSing Bool
+SomeSing :: Sing (s :: Maybe k)   -> SomeSing (Maybe k)
+```
 
 If we use `SomeSing` with, say, `SClosed`, we get
 `SomeSing :: Sing 'Closed -> SomeSing DoorState`. `SomeSing` is an indexed type
@@ -619,22 +746,24 @@ for solutions!
 1.  Let's revisit our original redundant `SomeDoor`, compared to our final
     `SomeDoor`:
 
-    \`\`\`haskell -- source:
-    https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs\#L56-87
-    data OldSomeDoor :: Type where OldMkSomeDoor :: DoorState -&gt; String -&gt;
-    OldSomeDoor
+    ``` {.haskell}
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L56-87
+    data OldSomeDoor :: Type where
+        OldMkSomeDoor :: DoorState -> String -> OldSomeDoor
 
-    data SomeDoor :: Type where MkSomeDoor :: Sing s -&gt; Door s -&gt; SomeDoor
-    \`\`\`
+    data SomeDoor :: Type where
+        MkSomeDoor :: Sing s -> Door s -> SomeDoor
+    ```
 
     To help convince yourself that the two are equal, write functions converting
     between the two:
 
-    \`\`\`haskell -- source:
-    https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs\#L89-92
-    toOld :: SomeDoor -&gt; OldSomeDoor
+    ``` {.haskell}
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L89-92
+    toOld :: SomeDoor -> OldSomeDoor
 
-    fromOld :: OldSomeDoor -&gt; SomeDoor \`\`\`
+    fromOld :: OldSomeDoor -> SomeDoor
+    ```
 
     **Avoid directly pattern matching on the singletons or constructors**.
     Instead, use *singletons* library tools like `toSing`, `withSomeSing`,
@@ -650,38 +779,70 @@ for solutions!
     unlocked (with a `Just`), return the unlocked door in a `SomeDoor`.
     Otherwise, *return the original locked door* (in a `SomeDoor`).
 
-    \`\``haskell -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L95-100 unlockDoor :: Int -> Door 'Locked -> Maybe (Door 'Closed) unlockDoor n (UnsafeMkDoor m)     | n`mod\`
-    2 == 1 = Just (UnsafeMkDoor m) | otherwise = Nothing
+    ``` {.haskell}
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L95-100
+    unlockDoor :: Int -> Door 'Locked -> Maybe (Door 'Closed)
+    unlockDoor n (UnsafeMkDoor m)
+        | n `mod` 2 == 1 = Just (UnsafeMkDoor m)
+        | otherwise      = Nothing
 
-    unlockDoor' :: Int -&gt; Door 'Locked -&gt; SomeDoor \`\`\`
+    unlockDoor' :: Int -> Door 'Locked -> SomeDoor
+    ```
 
 3.  Implement `openAnyDoor'` in the same style, with respect to `openAnyDoor`:
 
-    \`\`\`haskell -- source:
-    https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs\#L105-114
-    openAnyDoor :: SingI s =&gt; Int -&gt; Door s -&gt; Maybe (Door 'Opened)
-    openAnyDoor n = openAnyDoor\_ sing where openAnyDoor\_ :: Sing s -&gt; Door
-    s -&gt; Maybe (Door 'Opened) openAnyDoor\_ = \\case SOpened -&gt; Just
-    SClosed -&gt; Just . openDoor SLocked -&gt; fmap openDoor . unlockDoor n
+    ``` {.haskell}
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L105-114
+    openAnyDoor :: SingI s => Int -> Door s -> Maybe (Door 'Opened)
+    openAnyDoor n = openAnyDoor_ sing
+      where
+        openAnyDoor_ :: Sing s -> Door s -> Maybe (Door 'Opened)
+        openAnyDoor_ = \case
+          SOpened -> Just
+          SClosed -> Just . openDoor
+          SLocked -> fmap openDoor . unlockDoor n
 
-    openAnyDoor' :: Int -&gt; SomeDoor -&gt; SomeDoor \`\`\`
+    openAnyDoor' :: Int -> SomeDoor -> SomeDoor
+    ```
 
     Remember to re-use `openAnyDoor`.
 
 4.  Write the `SingKind` instance for the promoted kind of a custom list type:
 
-    \`\`\`haskell -- source:
-    https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs\#L120-126
+    ``` {.haskell}
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L120-126
     data List a = Nil | Cons a (List a)
 
-    data instance Sing (x :: List k) where SNil :: Sing 'Nil SCons :: Sing x
-    -&gt; Sing xs -&gt; Sing ('Cons x xs)
+    data instance Sing (x :: List k) where
+        SNil  :: Sing 'Nil
+        SCons :: Sing x -> Sing xs -> Sing ('Cons x xs)
 
-    instance SingKind k =&gt; SingKind (List k) where \`\`\`
+    instance SingKind k => SingKind (List k) where
+    ```
 
     The singletons for `List` are:
 
-    \`\`\`haskell SNil :: Sing 'Nil SCons :: Sing x -&gt; Sing xs -&gt; Sing
-    ('Cons x xs)
+    ``` {.haskell}
+    SNil  :: Sing 'Nil
+    SCons :: Sing x -> Sing xs -> Sing ('Cons x xs)
+    ```
 
-    \`\`\`
+[^1]: And also a not-so-obvious fourth type, `forall s. Door s`, which is a
+    subtype of all of those three!
+
+[^2]: You might have noticed I was a bit sneaky by jumping straight `SomeDoor`
+    when we already had a perfectly good "I don't care" option. We used it last
+    post!
+
+    ``` {.haskell}
+    lockAnyDoor :: Sing s -> Door s -> Door 'Locked
+    ```
+
+    This does work! `lockAnyDoor` takes a `Door s` and doesn't "care" about what
+    `s` it gets (it's parametrically polymorphic).
+
+    So, this normal "parametrically polymorphic" way is how we have, in the
+    past, treated functions that *can take* a `Door` with an `s` we don't want
+    the type system to care about. However, the reason we need `SomeDoor` and
+    existentially quantified types is for the situation where we want to
+    *return* something that we want to the type system to not care about.

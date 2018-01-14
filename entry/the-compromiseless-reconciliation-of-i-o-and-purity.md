@@ -54,14 +54,22 @@ A Functional "Program"
 
 Let's look at an almost-typical Haskell program.
 
-~~~haskell -- factorial n: n! factorial :: Int -&gt; Int factorial 0 = 1
-factorial n = n \* factorial (n-1)
+``` {.haskell}
+--  factorial n: n!
+factorial :: Int -> Int
+factorial 0 = 1
+factorial n = n * factorial (n-1)
 
--- fib n: the nth Fibonacci number fib :: Int -&gt; Int fib 0 = 1 fib 1 = 1 fib
-n = fib (n-2) + fib (n-1)
+--  fib n: the nth Fibonacci number
+fib :: Int -> Int
+fib 0 = 1
+fib 1 = 1
+fib n = fib (n-2) + fib (n-1)
 
--- first*n*fibs n: a list of the first n Fibonacci numbers first*n*fibs :: Int
--&gt; \[Int\] first*n*fibs n = map fib \[1..n\] ~~~
+--  first_n_fibs n: a list of the first n Fibonacci numbers
+first_n_fibs :: Int -> [Int]
+first_n_fibs n = map fib [1..n]
+```
 
 One of the first things you should notice is that this looks strikingly similar
 to a list of math equations...and almost not like a program.
@@ -72,10 +80,7 @@ inherent ordering in any of these statements. By this, I mean that `factorial`,
 declarations of mathematical objects on paper, the order in which you declare
 them should have no bearing on what they represent. These are functions.
 Immortal, unchanging, ethereal, separate from time and space. It is simply
-nonsensical to talk about order in this context.\[^strictness\]
-
-&lt;!-- Thanks to evincarofautum of reddit for pointing out that the ordering of
-the --&gt; &lt;!-- pattern matches in this example actually do matter. --&gt;
+nonsensical to talk about order in this context.[^1]
 
 Also note that these declarations don't always declare integers/numbers.
 `first_n_fibs` actually declares a data structure --- a list that contains
@@ -95,16 +100,20 @@ something of type `a`. There are a couple of pre-packaged computations included
 in the standard library. Let's write another almost-typical Haskell program with
 some.
 
-~~~haskell -- getStringFromStdin: returns a computation that represents the act
-of -- getting a string from stdin. or rather, a series of instructions on --
-interacting with the computer and generating a String. getStringFromStdin :: IO
-String getStringFromStdin = getLine
+``` {.haskell}
+--  getStringFromStdin: returns a computation that represents the act of
+--      getting a string from stdin.  or rather, a series of instructions on
+--      interacting with the computer and generating a String.
+getStringFromStdin :: IO String
+getStringFromStdin = getLine
 
--- printFibN: returns a computation that represents the act of printing the --
-nth Fibonacci number to stdout and returns () (Nothing). or rather, -- a series
-of instruction on interacting with the computer to get it to -- print a
-Fibonacci number and returning nothing. printFibN :: Int -&gt; IO () printFibN n
-= print (fib n) ~~~
+--  printFibN: returns a computation that represents the act of printing the
+--      nth Fibonacci number to stdout and returns () (Nothing).  or rather,
+--      a series of instruction on interacting with the computer to get it to
+--      print a Fibonacci number and returning nothing.
+printFibN :: Int -> IO ()
+printFibN n = print (fib n)
+```
 
 Let's look at these.
 
@@ -142,8 +151,10 @@ To illustrate the difference between a data structure representing a computation
 and a computation itself, let's look at a possible confusion that might arise
 from mixing up the two.
 
-~~~haskell getStringAndPrint :: IO () getStringAndPrint = print
-(getStringFromStdin) ~~~
+``` {.haskell}
+getStringAndPrint :: IO ()
+getStringAndPrint = print (getStringFromStdin)
+```
 
 What would you expect to happen here?
 
@@ -223,12 +234,12 @@ Persistent library.
 
 Then you have [Parsec](http://hackage.haskell.org/package/parsec), which
 provides a `Parsec` data structure, which are *instructions for Parsec to parse
-a string*. A `Parsec Int` structure\[^parsect\] represents instructions for
-parsing a string into an `Int`. When you give a `Parsec Int` and a string to
-parse to the Parsec library, it will run the parse specified by the `Parsec`
-object and return (hopefully) a parsed `Int`. Remember, a `Parsec Int` object
-does *not* actually "parse" anything; It is *used by Parsec* to parse a string
-and return an `Int`!
+a string*. A `Parsec Int` structure[^2] represents instructions for parsing a
+string into an `Int`. When you give a `Parsec Int` and a string to parse to the
+Parsec library, it will run the parse specified by the `Parsec` object and
+return (hopefully) a parsed `Int`. Remember, a `Parsec Int` object does *not*
+actually "parse" anything; It is *used by Parsec* to parse a string and return
+an `Int`!
 
 The reason why we use these data structures in Haskell, instead of actually
 writing SQL queries and parsing rules from scratch, is because they become
@@ -264,12 +275,16 @@ actually compiles into computer-readable code.
 
 And by convention/specification, it is the IO object with the name "main":
 
-~~~haskell -- printFibN: returns a computation that represents the act of
-printing the -- nth Fibonacci number to stdout and returns () (Nothing).
-printFibN :: Int -&gt; IO () printFibN n = print (fib n)
+``` {.haskell}
+--  printFibN: returns a computation that represents the act of printing the
+--      nth Fibonacci number to stdout and returns () (Nothing).
+printFibN :: Int -> IO ()
+printFibN n = print (fib n)
 
--- main: The IO object that we agree that the compiler will actually compile.
-main :: IO () main = printFibN 10 ~~~
+--  main: The IO object that we agree that the compiler will actually compile.
+main :: IO ()
+main = printFibN 10
+```
 
 And here we are. A full, executable Haskell program. You can [download and run
 it
@@ -291,13 +306,16 @@ exact same computational data structure.
 
 Now consider:
 
-~~~haskell -- getStringFromStdin: returns a computation that represents the act
-of -- getting a string from stdin getStringFromStdin :: IO String
+``` {.haskell}
+--  getStringFromStdin: returns a computation that represents the act of
+--      getting a string from stdin
+getStringFromStdin :: IO String
 getStringFromStdin = getLine
 
--- main: The IO object that we agree that the compiler will actually compile.
-main :: IO () main = getStringFromStdin &gt;&gt;= (\\result -&gt; print result)
-~~~
+--  main: The IO object that we agree that the compiler will actually compile.
+main :: IO ()
+main = getStringFromStdin >>= (\result -> print result)
+```
 
 (Sample can be [downloaded and
 run](https://github.com/mstksg/inCode/blob/master/code-samples/io-purity/Challenge.hs))
@@ -349,10 +367,13 @@ language.
 To really understand the difference between evaluation and execution, let's look
 at this example:
 
-~~~haskell ignoreAndSayHello :: IO a -&gt; IO () ignoreAndSayHello to\_ignore =
-print "Hello!"
+``` {.haskell}
+ignoreAndSayHello :: IO a -> IO ()
+ignoreAndSayHello to_ignore = print "Hello!"
 
-main :: IO () main = ignoreAndSayHello getStringFromStdin ~~~
+main :: IO ()
+main = ignoreAndSayHello getStringFromStdin
+```
 
 What does this program do?
 
@@ -371,10 +392,13 @@ computation does not represent anything that would ask for input.
 
 The "real" way to do this would be:
 
-~~~haskell ignoreAndSayHello :: IO a -&gt; IO () ignoreAndSayHello to*ignore =
-to*ignore &gt;&gt;= (\\result -&gt; print "Hello!")
+``` {.haskell}
+ignoreAndSayHello :: IO a -> IO ()
+ignoreAndSayHello to_ignore = to_ignore >>= (\result -> print "Hello!")
 
-main :: IO () main = ignoreAndSayHello getStringFromStdin ~~~
+main :: IO ()
+main = ignoreAndSayHello getStringFromStdin
+```
 
 Remember, `>>=` "combines" two IO objects into one. It returns a new IO object
 that takes the result of the left-hand side and uses it as an argument to the
@@ -460,3 +484,12 @@ And like we said before, you get all the benefits of [equational
 reasoning](http://u.jle.im/19JxV5S) because you're dealing with pure "inert"
 compositions --- this is something you could never get if you dealt with
 executing the actual functions themselves!
+
+[^1]: So, the astute reader will note that I am slightly blurring the line
+    between purity and non-strictness/laziness. While it is true that pure
+    languages can be strict, and ordering *can* matter, this demonstration is to
+    mostly illustrate that declarations of items and objects don't *necessarily*
+    have to correspond to evaluation, execution and IO --- an important point
+    for the next section.
+
+[^2]: Technically, the full type would be `ParsecT s u m Int`.

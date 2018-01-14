@@ -25,14 +25,18 @@ the Haskell interpreter!)
 
 In Haskell, we have a type called `Maybe a`:
 
-~~~haskell data Maybe a = Nothing | Just a ~~~
+``` {.haskell}
+data Maybe a = Nothing | Just a
+```
 
 This says that `Maybe a` is like an Enumerable type of sorts; The `|` reads like
 "*or*".
 
 This is like saying
 
-~~~haskell data Bool = False | True ~~~
+``` {.haskell}
+data Bool = False | True
+```
 
 to define a `Bool` data type. If I have something of type `Bool`, it can be
 (literally) `False` or `True`. If I have something of type `Maybe a`, it can be
@@ -43,30 +47,41 @@ to saying `Maybe<a>` -- `Maybe<a>` is a parameterized type over some `a`.
 
 This type is useful for functions that might fail:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs\#L23-41
--- interactive: https://www.fpcomplete.com/user/jle/inside-my-world --
-divideMaybe: Takes two integers and returns -- possibly -- their integer --
-quotient. It succeeds if the denominator is not zero, and fails if -- it is.
-divideMaybe :: Int -&gt; Int -&gt; Maybe Int divideMaybe \_ 0 = Nothing
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L23-41
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+-- divideMaybe: Takes two integers and returns -- possibly -- their integer
+--      quotient. It succeeds if the denominator is not zero, and fails if
+--      it is.
+divideMaybe :: Int -> Int -> Maybe Int
+divideMaybe _ 0 = Nothing
 divideMaybe x y = Just (x `div` y)
 
--- headMaybe: Takes a list and returns -- possibly -- its first element. --
-Fails if the list is empty, and succeeds with the first element -- otherwise.
-headMaybe :: \[a\] -&gt; Maybe a headMaybe \[\] = Nothing headMaybe (x:\_) =
-Just x
+-- headMaybe: Takes a list and returns -- possibly -- its first element.
+--      Fails if the list is empty, and succeeds with the first element
+--      otherwise.
+headMaybe :: [a] -> Maybe a
+headMaybe []    = Nothing
+headMaybe (x:_) = Just x
 
--- halveMaybe: Takes an integer and returns -- possibly -- its half. Fails -- if
-it is an odd number. halveMaybe :: Int -&gt; Maybe Int halveMaybe x | x `mod` 2
-== 0 = Just (x `div` 2) | otherwise = Nothing ~~~
+-- halveMaybe: Takes an integer and returns -- possibly -- its half.  Fails
+--      if it is an odd number.
+halveMaybe :: Int -> Maybe Int
+halveMaybe x | x `mod` 2 == 0 = Just (x `div` 2)
+             | otherwise      = Nothing
+```
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 Oh hi!
 
 For people new to Haskell:
 
-~~~haskell foo :: Int -&gt; Bool foo x = ... ~~~
+``` {.haskell}
+foo :: Int -> Bool
+foo x = ...
+```
 
 declares a function named `foo` of type `Int -> Bool` --- we use `::` to specify
 type signatures. `Int -> Bool` means that it takes an `Int` (named `x`) and
@@ -80,7 +95,8 @@ So `divideMaybe :: Int -> Int -> Maybe Int` means that `divideMaybe` takes two
 
 You might have also noticed the pattern matching construct, `headMaybe (x:_)`.
 This matches the first element in the list to the name `x`, and the rest of the
-list to the wildcard, `_`. &lt;/div&gt;
+list to the wildcard, `_`.
+:::
 
 When you want to return a value of type `Maybe a`, you can either return
 `Just x` or `Nothing` (where `x :: a`) --- they both are members of type
@@ -91,7 +107,7 @@ If I had something of type `Maybe Int`, would you know for sure if that `Int`
 was there or not (from just the type)? You wouldn't! You are living in the world
 of uncertainties.
 
-Welcome to the world of uncertainty.\[^dundundun\]
+Welcome to the world of uncertainty.[^1]
 
 ### The Problem
 
@@ -100,22 +116,30 @@ normal inty-things with it.
 
 That is...I have all these functions that work only on `Int`!
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs\#L43-50
--- interactive: https://www.fpcomplete.com/user/jle/inside-my-world addThree ::
-Int -&gt; Int addThree = (+ 3)
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L43-50
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+addThree :: Int -> Int
+addThree = (+ 3)
 
-square :: Int -&gt; Int square = (^ 2)
+square :: Int -> Int
+square = (^ 2)
 
-showInt :: Int -&gt; String showInt = show ~~~
+showInt :: Int -> String
+showInt = show
+```
 
 But...I can't do these things on `Maybe Int`!
 
-~~~haskell ghci&gt; addThree (Just 5) \*\*\* SCARY ERROR! \*\*\* addThree takes
-an Int but you gave it a Maybe Int. \*\*\* What are you trying to do anyway,
-wise guy. ~~~
+``` {.haskell}
+ghci> addThree (Just 5)
+*** SCARY ERROR!
+*** addThree takes an Int but you gave it a Maybe Int.
+*** What are you trying to do anyway, wise guy.
+```
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 In this post, commands at the interactive Haskell interpreter (REPL) ghci are
 prefaced with the prompt `ghci>`. If you see `ghci>`, it means that this is
@@ -124,30 +148,42 @@ something you'd enter at ghci. If not, it is normal Haskell source code!
 In `ghci`, we also have this command `:t` that you'll be seeing often that lets
 you find the type of something:
 
-~~~haskell ghci&gt; :t True True :: Bool ~~~ &lt;/div&gt;
+``` {.haskell}
+ghci> :t True
+True :: Bool
+```
+:::
 
 In most other languages, to get around this, you would "exit" your uncertain
 world. That is, you would turn your uncertain 5 into either a certain 5 or an
 error. Or you would turn your uncertain 5 into either a certain 5 or some
 "default" value.
 
-That is, you would use functions like these to exit your world:\[^fjfm\]
+That is, you would use functions like these to exit your world:[^2]
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs\#L76-82
--- interactive: https://www.fpcomplete.com/user/jle/inside-my-world certaintify
-:: Maybe a -&gt; a certaintify (Just x) = x certaintify Nothing = error "Nothing
-was there, you fool!"
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L76-82
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+certaintify :: Maybe a -> a
+certaintify (Just x) = x
+certaintify Nothing  = error "Nothing was there, you fool!"
 
-certaintifyWithDefault :: a -&gt; Maybe a -&gt; a certaintifyWithDefault \_
-(Just x) = x certaintifyWithDefault d Nothing = d ~~~
+certaintifyWithDefault :: a -> Maybe a -> a
+certaintifyWithDefault _ (Just x) = x
+certaintifyWithDefault d Nothing  = d
+```
 
 And then you can just willy-nilly use your normal `Int -> Int` functions on what
 you pull out...using various "error handling" mechanisms if it was `Nothing`.
 
-~~~haskell ghci&gt; addThree (certaintify (headMaybe \[1,2,3\])) 4 ghci&gt;
-square (certaintify (halveMaybe 7)) \*\*\* Exception: Nothing was there, you
-fool! ghci&gt; square (certaintifyWithDefault 0 (halveMaybe 7)) 0 ~~~
+``` {.haskell}
+ghci> addThree (certaintify (headMaybe [1,2,3]))
+4
+ghci> square (certaintify (halveMaybe 7))
+*** Exception: Nothing was there, you fool!
+ghci> square (certaintifyWithDefault 0 (halveMaybe 7))
+0
+```
 
 But...work with me here. Let's say I want to live in my uncertain world.
 
@@ -157,17 +193,23 @@ Let's say you had a function that looked up a person from a database given their
 ID number. But not all ID numbers have a person attached, so the function might
 fail and not lookup anyone.
 
-~~~haskell personFromId :: ID -&gt; Maybe Person ~~~
+``` {.haskell}
+personFromId :: ID -> Maybe Person
+```
 
 And you also had a function that returned the age of a given person:
 
-~~~haskell age :: Person -&gt; Int ~~~
+``` {.haskell}
+age :: Person -> Int
+```
 
 What if you wanted to write a function that looked up *the age of the person in
 that database with that ID*. The result is going to also be in a `Maybe`,
 because the given ID might not correspond to anyone to have an age for.
 
-~~~haskell ageFromId :: ID -&gt; Maybe Int ~~~
+``` {.haskell}
+ageFromId :: ID -> Maybe Int
+```
 
 In this case, it would make no sense to "exit" the world of uncertainty as soon
 as we get a `Maybe Person`, and then "re-enter" it somehow when you return the
@@ -195,36 +237,57 @@ We want a function of type `(a -> b) -> (Maybe a -> Maybe b)`
 Let's make one! It'll apply the function to the value inside a `Just`, and leave
 a `Nothing` alone.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs\#L84-88
--- interactive: https://www.fpcomplete.com/user/jle/inside-my-world inMaybe ::
-(a -&gt; b) -&gt; (Maybe a -&gt; Maybe b) inMaybe f = liftedF where liftedF
-(Just x) = Just (f x) liftedF Nothing = Nothing ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L84-88
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+inMaybe :: (a -> b) -> (Maybe a -> Maybe b)
+inMaybe f = liftedF
+  where
+    liftedF (Just x) = Just (f x)
+    liftedF Nothing  = Nothing
+```
 
 What can we do with it?
 
-~~~haskell ghci&gt; let addThreeInMaybe = inMaybe addThree ghci&gt;
-addThreeInMaybe (Just 7) Just 10 ghci&gt; addThreeInMaybe Nothing Nothing
-ghci&gt; (inMaybe square) (Just 9) Just 81 ghci&gt; (inMaybe showInt) Nothing
-Nothing ghci&gt; (inMaybe showInt) (Just 8) Just "8" ~~~
+``` {.haskell}
+ghci> let addThreeInMaybe = inMaybe addThree
+ghci> addThreeInMaybe (Just 7)
+Just 10
+ghci> addThreeInMaybe Nothing
+Nothing
+ghci> (inMaybe square) (Just 9)
+Just 81
+ghci> (inMaybe showInt) Nothing
+Nothing
+ghci> (inMaybe showInt) (Just 8)
+Just "8"
+```
 
 Wow! We can now use normal functions and still stay inside my uncertain world.
 We could even write our `ageFromId`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs\#L68-69
--- interactive: https://www.fpcomplete.com/user/jle/inside-my-world ageFromId ::
-ID -&gt; Maybe Int ageFromId i = (inMaybe age) (personFromId i) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L68-69
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+ageFromId :: ID -> Maybe Int
+ageFromId i = (inMaybe age) (personFromId i)
+```
 
 Now we are no longer afraid of dealing with uncertainty. It's a scary realm, but
 as long as we have `inMaybe`...all of our normal tools apply!
 
-~~~haskell ghci&gt; let x = headMaybe \[2,3,4\] -- x = Just 2 ghci&gt; let y =
-(inMaybe square) x -- y = Just 4 ghci&gt; let z = (inMaybe addThree) y -- z =
-Just 7 ghci&gt; (inMaybe (&gt; 5)) z Just True ghci&gt; let x' = halveMaybe 7 --
-x' = Nothing ghci&gt; let y' = (inMaybe square) x' -- y' = Nothing ghci&gt; let
-z' = (inMaybe addThree) y' -- z' = Nothing ghci&gt; (inMaybe (&gt; 5)) z'
-Nothing ~~~
+``` {.haskell}
+ghci> let x = headMaybe [2,3,4]        -- x = Just 2
+ghci> let y = (inMaybe square) x       -- y = Just 4
+ghci> let z = (inMaybe addThree) y     -- z = Just 7
+ghci> (inMaybe (> 5)) z
+Just True
+ghci> let x' = halveMaybe 7            -- x' = Nothing
+ghci> let y' = (inMaybe square) x'     -- y' = Nothing
+ghci> let z' = (inMaybe addThree) y'   -- z' = Nothing
+ghci> (inMaybe (> 5)) z'
+Nothing
+```
 
 ### Functor
 
@@ -241,10 +304,15 @@ any function `a -> b` and "lifts" it into the `Maybe` world, turning it into a
 
 `fmap` for `Maybe` is incidentally exactly our `inMaybe`.
 
-~~~haskell ghci&gt; (fmap square) (headMaybe \[4,5,6\]) Just 16 ghci&gt; (fmap
-square) (halveMaybe 7) Nothing ~~~
+``` {.haskell}
+ghci> (fmap square) (headMaybe [4,5,6])
+Just 16
+ghci> (fmap square) (halveMaybe 7)
+Nothing
+```
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 Any "legitimate" instance of `Functor` must satisfy a couple of properties ---
 "laws", so to speak. These laws basically ensure that whatever instance you
@@ -255,8 +323,7 @@ supposed to convey.
     functions be the same as composing lifted functions. (`(.)` is the function
     composition operator)
 2.  `fmap id thing` should leave `thing` unchanged.
-
-&lt;/div&gt;
+:::
 
 Some notes before we move on!
 
@@ -268,8 +335,14 @@ way from now on.
 Secondly, an infix operator alias for `fmap` exists: `(<$>)`. That way, you can
 write `fmap f x` as `f <$> x`, which is meant to look similar to `f $ x`:
 
-~~~haskell ghci&gt; addThree $ 7 10 ghci&gt; addThree &lt;$&gt; Just 7 Just 10
-ghci&gt; addThree &lt;$&gt; Nothing Nothing ~~~
+``` {.haskell}
+ghci> addThree $ 7
+10
+ghci> addThree <$> Just 7
+Just 10
+ghci> addThree <$> Nothing
+Nothing
+```
 
 (For those unfamiliar, `f $ x` = `f x`)
 
@@ -283,7 +356,11 @@ syntax). And you have lots and lots and lots of functions that take `Int`s.
 Heck, why would you even ever have a function take a `Maybe<Int>`? A function
 would be like:
 
-~~~java class Monster { void deal\_damage(int damage) {}; } ~~~
+``` {.java}
+class Monster {
+    void deal_damage(int damage) {};
+}
+```
 
 where your `deal_damage` function would take an integer. So `Maybe Int` is
 useless! You either have to re-write `deal_damage` to take a `Maybe Int`, and
@@ -309,16 +386,22 @@ are other functions that might be interesting to apply on a `Maybe a`.
 What about `halveMaybe :: Int -> Maybe Int`? Can I use `halveMaybe` on a
 `Maybe Int`?
 
-~~~haskell ghci&gt; let x = divideMaybe 12 3 -- x = Just 4 :: Maybe Int ghci&gt;
-halveMaybe x \*\*\* SCARY ERROR! \*\*\* halveMaybe takes an Int but you gave it
-\*\*\* a Maybe Int. Please think about your life. ~~~
+``` {.haskell}
+ghci> let x = divideMaybe 12 3     -- x = Just 4 :: Maybe Int
+ghci> halveMaybe x
+*** SCARY ERROR!
+*** halveMaybe takes an Int but you gave it
+*** a Maybe Int.  Please think about your life.
+```
 
 Oh no! Maybe we can't really stay inside our `Maybe` world after all!
 
 This might be important! Let's imagine this trip down our world of uncertainty
 --- let's say we wanted a function `halfOfAge`
 
-~~~haskell halfOfAge :: ID -&gt; Maybe Int ~~~
+``` {.haskell}
+halfOfAge :: ID -> Maybe Int
+```
 
 That returns (possibly), half of the age of the person corresponding to that ID
 (and `Nothing` if the person looked up has an odd age. Because odd ages don't
@@ -328,8 +411,10 @@ but we want to apply `halveMaybe` to that `Maybe Int`. But we can't! Because
 
 We can't even use `fmap`, because:
 
-~~~haskell ghci&gt; :t fmap halveMaybe fmap halveMaybe :: Maybe Int -&gt; Maybe
-(Maybe Int) ~~~
+``` {.haskell}
+ghci> :t fmap halveMaybe
+fmap halveMaybe :: Maybe Int -> Maybe (Maybe Int)
+```
 
 Wrong wrong wrong! We don't want a `Maybe Int -> Maybe (Maybe Int)`, we want a
 `Maybe Int -> Maybe Int`! `fmap` lifts "both sides" of the function, but we only
@@ -345,7 +430,9 @@ turn it into a `Maybe a -> Maybe b`. So we have a `a -> Maybe b` here that we
 want to apply to a `Maybe a`. The plan is simple! We turn an `a -> Maybe b` into
 a `Maybe a -> Maybe b`. Let's pretend we had such a function.
 
-~~~haskell liftInput :: (a -&gt; Maybe b) -&gt; (Maybe a -&gt; Maybe b) ~~~
+``` {.haskell}
+liftInput :: (a -> Maybe b) -> (Maybe a -> Maybe b)
+```
 
 How should we expect this to behave?
 
@@ -360,24 +447,36 @@ result there. If the result is not there, then you don't.
 
 We have enough to write this out ourselves:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs\#L90-94
--- interactive: https://www.fpcomplete.com/user/jle/inside-my-world liftInput ::
-(a -&gt; Maybe b) -&gt; (Maybe a -&gt; Maybe b) liftInput f = liftedF where
-liftedF Nothing = Nothing liftedF (Just x) = f x ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L90-94
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+liftInput :: (a -> Maybe b) -> (Maybe a -> Maybe b)
+liftInput f = liftedF
+  where
+    liftedF Nothing  = Nothing
+    liftedF (Just x) = f x
+```
 
-~~~haskell ghci&gt; :t liftInput halveMaybe Maybe Int -&gt; Maybe Int ghci&gt;
-let x = divideMaybe 12 3 -- x = Just 4 :: Maybe Int ghci&gt; (liftInput
-halveMaybe) x Just 2 ghci&gt; let y = divideMaybe 12 0 -- y = Nothing :: Maybe
-Int ghci&gt; (liftInput halveMaybe) y Nothing ~~~
+``` {.haskell}
+ghci> :t liftInput halveMaybe
+Maybe Int -> Maybe Int
+ghci> let x = divideMaybe 12 3     -- x = Just 4 :: Maybe Int
+ghci> (liftInput halveMaybe) x
+Just 2
+ghci> let y = divideMaybe 12 0     -- y = Nothing :: Maybe Int
+ghci> (liftInput halveMaybe) y
+Nothing
+```
 
 Neat! Now we don't have to fear `a -> Maybe b`'s...we can use them and *still
 stay in our world*, without leaving our world of uncertainty!
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs\#L71-72
--- interactive: https://www.fpcomplete.com/user/jle/inside-my-world halfOfAge ::
-ID -&gt; Maybe Int halfOfAge i = (liftInput halveMaybe) (ageFromId i) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L71-72
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+halfOfAge :: ID -> Maybe Int
+halfOfAge i = (liftInput halveMaybe) (ageFromId i)
+```
 
 ### Monad
 
@@ -389,8 +488,7 @@ into your world". We would like to turn it, in general, into
 `world a -> world b`. Lifting the input only, so to speak.
 
 We say that if a world has such a way of lifting the input of such a function
-(plus some other requirements), it implements the `Monad`
-typeclass\[^othermonad\].
+(plus some other requirements), it implements the `Monad` typeclass[^3].
 
 Monad is a typeclass (which is kinda like an interface), so that means that if
 `Maybe` is a Monad, it "implements" that way to turn a `a -> Maybe b` into a
@@ -407,18 +505,26 @@ library...it actually only exists as an operator, `(=<<)`.
 
 `(=<<)` is exactly our `liftInput` for `Maybe`. Let's try it out:
 
-~~~haskell ghci&gt; :t (=&lt;&lt;) halveMaybe Maybe Int -&gt; Maybe Int ghci&gt;
-let x = divideMaybe 12 3 -- x = Just 4 :: Maybe Int
+``` {.haskell}
+ghci> :t (=<<) halveMaybe
+Maybe Int -> Maybe Int
+ghci> let x = divideMaybe 12 3     -- x = Just 4 :: Maybe Int
 
--- use it as a prefix function ghci&gt; (=&lt;&lt;) halveMaybe x Just 2 ghci&gt;
-let y = divideMaybe 12 0 -- y = Nothing :: Maybe Int
+-- use it as a prefix function
+ghci> (=<<) halveMaybe x
+Just 2
+ghci> let y = divideMaybe 12 0     -- y = Nothing :: Maybe Int
 
--- use it as an infix operator ghci&gt; halveMaybe =&lt;&lt; y Nothing ~~~
+-- use it as an infix operator
+ghci> halveMaybe =<< y
+Nothing
+```
 
 And now maybe we can finally rest easy knowing that we can "stay inside `Maybe`"
 and never have to leave it.
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 The "other thing" that Monad has to have (the other thing that the "interface"
 demands, besides `(=<<)`) is a way to "bring a value into your world".
@@ -437,24 +543,31 @@ useful (just like for `Functor`). If you define nonsensical `return` and
 `(=<<)`, of course, your instance won't be very useful anyway, and you wouldn't
 be able to reason with how they work together. The laws sort of are some way of
 ensuring that your instance is useful and sensible, and that `(=<<)` and
-`return` make sense at all. &lt;/div&gt;
+`return` make sense at all.
+:::
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 Now, for some strange reason, it is actually much more popular to use `(>>=)`
 over `(=<<)`; `(>>=)` is just `(=<<)` backwards:
 
-~~~haskell ghci&gt; halveMaybe =&lt;&lt; Just 8 Just 4 ghci&gt; Just 8 &gt;&gt;=
-halveMaybe Just 4 ~~~
+``` {.haskell}
+ghci> halveMaybe =<< Just 8
+Just 4
+ghci> Just 8 >>= halveMaybe
+Just 4
+```
 
 This is really weird! I mean...really *really* weird! Why would you ever put the
 function you are applying *after* the value you are applying it to? That's like
 having `x :: a` and `f :: a -> b`, and doing `x f` or something!
 
-Why is this style the norm? Who knows!\[^whoknows\] People are just weird!
+Why is this style the norm? Who knows![^4] People are just weird!
 
 For the rest of this article, we will be using `(=<<)`; just be aware that you
-might see `(>>=)` out in the wild more often! &lt;/div&gt;
+might see `(>>=)` out in the wild more often!
+:::
 
 Recap
 -----
@@ -498,7 +611,7 @@ vaguely.
 When I say that a value is "inside" a "world", I mean that it "lives" inside the
 context of what that world represents. A `Maybe a` is an `a` living in the
 `Maybe` "world" --- it is an `a` that can exist or not exist. `Maybe` represents
-a context of existing-or-not-existing.\[^worlds\]
+a context of existing-or-not-existing.[^5]
 
 But there are other worlds, and other contexts too. And though I have shown you
 what Functor and Monad look like for `Maybe`...you probably need to see a few
@@ -511,7 +624,8 @@ the specific instance. We saw what they "did" for `Maybe`, but their meaning
 came from `Maybe` itself. For other worlds, as we will see, we can make them
 mean completely different things.
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 There are some important nuances that might trip you up! Though useful worlds
 are instances of Monad, it is improper to say that "Monads are worlds/values in
@@ -521,7 +635,8 @@ functions and their laws), no more and no less.
 In our usage here, Functor and Monad mean only "these things implement some sort
 of `fmap` and `(=<<)`, etc., and those two are useful." That is, the interface
 offered by Functor and Monad are useful for our specific world. But there are
-plenty of Functors and Monads that are not "worlds". &lt;/div&gt;
+plenty of Functors and Monads that are not "worlds".
+:::
 
 Anyways, here is a whirlwind tour of different worlds, to help you realize how
 often you'll actually want to live in these worlds in Haskell, and why having
@@ -537,38 +652,53 @@ little machine that "waits" for something of type `r`, then *uses* it to
 (purely) make an `a`. The `a` doesn't exist yet; it's a future `a` that will
 exist as soon as you give it an `r`.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs\#L17-27
--- interactive: https://www.fpcomplete.com/user/jle/inside-my-world --
-futureLength: A future `Int` that will be the length of whatever the -- list it
-is waiting for will be. futureLength :: (Reader \[a\]) Int
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L17-27
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+-- futureLength: A future `Int` that will be the length of whatever the
+--      list it is waiting for will be.
+futureLength :: (Reader [a]) Int
 
--- futureHead: An future `a` that will be the first element of whatever the --
-list it is waiting for will be. futureHead :: (Reader \[a\]) a
+-- futureHead: An future `a` that will be the first element of whatever the
+--      list it is waiting for will be.
+futureHead   :: (Reader [a]) a
 
--- futureOdd: A future `Bool` that will be whether the `Int` it is waiting --
-for is odd or not. futureOdd :: (Reader Int) Bool ~~~
+-- futureOdd: A future `Bool` that will be whether the `Int` it is waiting
+--      for is odd or not.
+futureOdd    :: (Reader Int) Bool
+```
 
 `futureLength` is a "future `Int`"; an `Int` waiting (for an `[a]`) to be
 realized. `futureHead` is a "future `a`", waiting for an `[a]`.
 
 We use the function `runReader` to "force" the `a` out of the `(Reader r) a`:
 
-~~~haskell -- given a `(Reader r) a` and an `r`, uses that `r` to finally get
-the `a`: runReader :: (Reader r) a -&gt; r -&gt; a ~~~
+``` {.haskell}
+-- given a `(Reader r) a` and an `r`, uses that `r` to finally get the `a`:
+runReader :: (Reader r) a -> r -> a
+```
 
-~~~haskell ghci&gt; runReader futureLength \[1,2,3\] 3 ghci&gt; runReader
-futureHead \[1,2,3\] 1 ghci&gt; runReader futureOdd 6 False ghci&gt; runReader
-futureOdd 5 True ~~~
+``` {.haskell}
+ghci> runReader futureLength [1,2,3]
+3
+ghci> runReader futureHead [1,2,3]
+1
+ghci> runReader futureOdd 6
+False
+ghci> runReader futureOdd 5
+True
+```
 
 Welcome to the world of future values.
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 It is important to note here that `(Reader Int) Bool` and `(Reader [Int]) Bool`
 *do not exist* in the same world. One lives in a `Reader Int` world --- a world
 of future values awaiting an `Int`. The other lives in a `Reader [Int]` world
---- a world of future values awaiting an `[Int]`. &lt;/div&gt;
+--- a world of future values awaiting an `[Int]`.
+:::
 
 Let's say I have a future `Int`. Say, `futureLength`, waiting on an `[a]`. And I
 have a function `(< 5) :: Int -> Bool`. Can I apply `(< 5)` to my future `Int`,
@@ -581,17 +711,22 @@ Oh --- but, because `Reader [a]` is a Functor, I can use `fmap` to turn
 `(< 5) :: Int -> Bool` into
 `fmap (< 5) :: (Reader [a]) Int -> (Reader [a]) Bool`!
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs\#L34-38
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L34-38
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
-futureShorterThan :: Int -&gt; (Reader \[a\]) Bool futureShorterThan n = fmap
-(&lt; n) futureLength
+futureShorterThan :: Int -> (Reader [a]) Bool
+futureShorterThan n = fmap (< n) futureLength
 
-futureShorterThan5 :: (Reader \[a\]) Bool futureShorterThan5 = futureShorterThan
-5 ~~~
+futureShorterThan5 :: (Reader [a]) Bool
+futureShorterThan5 = futureShorterThan 5
+```
 
-~~~haskell ghci&gt; runReader futureShorterThan5 \[1,2,3\] True ghci&gt;
-runReader (futureShorterThan 3) \[1,2,3,4\] False ~~~
+``` {.haskell}
+ghci> runReader futureShorterThan5 [1,2,3]
+True
+ghci> runReader (futureShorterThan 3) [1,2,3,4]
+False
+```
 
 And voilà, we have a future `Bool`. We turned an `Int -> Bool` into a function
 that takes a future `Int` and returns a future `Bool`. We *applied `(< 5)` to
@@ -610,24 +745,31 @@ take the `Int -> (Reader [a]) Bool` and turn it into a
 Using `(=<<)`, we turned a function from `Int` to a future `Bool` to a function
 from a future `Int` to a future `Bool`.
 
-~~~haskell futureShorterThan :: Int -&gt; (Reader \[a\]) Bool (=&lt;&lt;)
-futureShorterThan :: (Reader \[a\]) Int -&gt; (Reader \[a\]) Bool ~~~
+``` {.haskell}
+futureShorterThan       :: Int              -> (Reader [a]) Bool
+(=<<) futureShorterThan :: (Reader [a]) Int -> (Reader [a]) Bool
+```
 
 Hm. Let's try this out on a future `Int` we have...we can use
 `futureHead :: (Reader [Int]) Int`.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs\#L40-41
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L40-41
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
-futureShorterThanHead :: (Reader \[Int\]) Bool futureShorterThanHead =
-futureShorterThan =&lt;&lt; futureHead ~~~
+futureShorterThanHead :: (Reader [Int]) Bool
+futureShorterThanHead = futureShorterThan =<< futureHead
+```
 
 So, we are applying `futureShorterThan` to the `Int` we got from `futureHead`.
 And so we get a future `Bool` that tells us if that future `Int` we got from the
 input list is shorter than the input list.
 
-~~~haskell ghci&gt; runReader futureShorterThanHead \[1,2,3\] False ghci&gt;
-runReader futureShorterThanHead \[5,2,3\] True ~~~
+``` {.haskell}
+ghci> runReader futureShorterThanHead [1,2,3]
+False
+ghci> runReader futureShorterThanHead [5,2,3]
+True
+```
 
 Neat!
 
@@ -666,13 +808,13 @@ the computer executes those commands.
 
 If you've ever used a Unix operating system, there is a shell command `ls` that
 lists the contents of a directory. The actual `ls` program is kind of like an
-`IO [FilePath]`. The `[FilePath]` does not "exist" inside" `ls` --- rather, `ls`
-is a program that promises a list of `FilePath`s when it is executed by the
+`IO [FilePath]`. The `[FilePath]` does not "exist" inside\" `ls` --- rather,
+`ls` is a program that promises a list of `FilePath`s when it is executed by the
 computer or interpreter.
 
 So an `IO String` doesn't "contain" a `String` --- it is a program that
 *promises* a `String` in the future, when a computer eventually executes
-it,\[^exitio\].
+it,[^6].
 
 One common IO object we are given is `getLine :: IO String`. `getLine` is kind
 of like the Unix program `cat` --- it promises a `String`, and it gets that
@@ -686,8 +828,12 @@ get us a future/promised `Int`. Again, we can't apply `length` to `getLine`
 directly --- but because `IO` is a Functor, we can use
 `fmap length :: IO String -> IO Int`.
 
-~~~haskell getLine :: IO String length :: String -&gt; Int fmap length :: IO
-String -&gt; IO Int fmap length getLine :: IO Int ~~~
+``` {.haskell}
+getLine             :: IO String
+length              :: String -> Int
+fmap length         :: IO String -> IO Int
+fmap length getLine :: IO Int
+```
 
 Neat!
 
@@ -698,10 +844,11 @@ Let's look at a function returning an IO action `wc`, which takes a filename and
 returns a program that, when executed, promises an `Int` --- the number of lines
 in that file.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/inside/io.hs\#L19-19
--- interactive: https://www.fpcomplete.com/user/jle/inside-my-world wc :: String
--&gt; IO Int ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/io.hs#L19-19
+-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
+wc :: String -> IO Int
+```
 
 So `wc "file.txt"` would evaluate to a computation that, when executed by a
 computer, produces an `Int` (by loading the file from disk using system calls,
@@ -715,8 +862,12 @@ want to turn our `String -> IO Int` into an `IO String -> IO Int`.
 
 Luckily, `IO` is a Monad, so we have `(=<<)` at our disposal.
 
-~~~haskell getLine :: IO String wc :: String -&gt; IO Int (=&lt;&lt;) wc :: IO
-String -&gt; IO Int wc =&lt;&lt; getLine :: IO Int ~~~
+``` {.haskell}
+getLine        :: IO String
+wc             :: String -> IO Int
+(=<<) wc       :: IO String -> IO Int
+wc =<< getLine :: IO Int
+```
 
 Neat!
 
@@ -796,3 +947,78 @@ As always, if you have any questions, leave them in the comments, or come find
 me on freenode's \#haskell --- I go by *jle\`* :)
 
 (Special thanks to c\_wraith and rhaps0dy for their time reviewing this post)
+
+[^1]: Dun dun dun!
+
+[^2]: In the standard libraries, `certaintify` and `certaintifyWithDefault`
+    exist in the `Data.Maybe` module as `fromJust` and `fromMaybe`,
+    respectively.
+
+[^3]: It also needs `return`, which I will mention in due time.
+
+[^4]: I know! And I'm not telling! Just kidding.
+
+    `(>>=)` is actually a lot of times more useful than `(=<<)`, despite its
+    awkward reversed nature.
+
+    One major reason is that things end up looking more "imperative" (which may
+    or may not be desired). Imagine
+    `divideMaybe 12 3 >>= halveMaybe >>= halveMaybe` versus
+    `halveMaybe =<< halveMaybe =<< divideMaybe 12 3`.
+
+    Believe it or not, usage of Monads was originally motivated by structuring
+    IO actions. So, in that setting, it seemed natural to have an "imperative-y"
+    feel.
+
+    Also, in the popular "do notation" syntactical sugar, `(>>=)` is used in the
+    desugaring and not `(=<<)`, so `(>>=)` pops out naturally when reasoning
+    about Monads coming through do notation.
+
+    Also, whenever you use lambda syntax (like `(\x -> f x)`), `(>>=)` might be
+    nice, because lambda syntax carries some sort of inherent left-to-rightness
+    in it with the arrow. It's also tricky to write "chained binds" using lambda
+    syntax using `(=<<)` --- try writing `f >>= (\x -> g >>= (\y -> h x y))`
+    using `(=<<)` and you'll see that it's slightly less natural.
+
+    Still, it is worth being aware that `(>>=)` is a is a bit "different" from
+    the rest of the pack of normal Haskell function application and composition
+    operators; it is unique in that it is the only one where the backwards form
+    is more common than the normal one.
+
+    Even the term "bind" is often used to refer to both.
+
+    A general guideline is that you ever mix a bind with a `(<$>)` and/or a
+    `($)` and `(.)`, you should prefer `(=<<)`, to prevent your eyes from
+    jumping directions.
+
+[^5]: In Haskell, "worlds" are represented at the type level as type
+    constructors. `Maybe` is a type constructor that takes a type like `Int` and
+    returns a new type, `Maybe Int`. Not all type constructors represent Worlds,
+    of course.
+
+[^6]: An important distinction between `IO` and the other worlds we have looked
+    at is that there is no way to "exit" the world of `IO` within Haskell. That
+    is, there is no meaningful `IO a -> a`.
+
+    If you think about it for a while, it kind of makes sense. If `IO a` is
+    assembly code for a computer...the only thing that can "get" that `a` is the
+    computer itself --- by shifting those registers, ticking that program clock,
+    reading from IO...
+
+    Remember, *a Haskell program can only "evaluate"* expressions, *not
+    "execute"* them. The execution is the computer's job. When you compile a
+    Haskell program, the compiler takes whatever `IO ()` is named `main` in your
+    program, *evaluates* it, and compiles it into a binary. Then you, the
+    computer user, can *execute* that binary like any other binary (compiled
+    from C or whatever). Because you can never "exit" `IO` in your Haskell code,
+    this makes `IO` an extreme version of the worlds we mentioned before; in the
+    others, we could "exit" the world if we really wanted to. We only used
+    `fmap` and `(=<<)` because it provided for beautiful abstractions. This
+    topic is discussed in depth at an [old blog
+    post](http://blog.jle.im/entry/the-compromiseless-reconciliation-of-i-o-and-purity)
+    of mine.
+
+    Because of this, if it weren't for Functor and Monad, it would be extremely
+    hard to do *anything* useful with `IO`! We literally can't pass an `IO a`
+    into *any* normal function. We need Functor and Monad for us to *ever* work
+    at all with our "future values" with normal functions!

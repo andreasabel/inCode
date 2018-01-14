@@ -22,36 +22,52 @@ computations involving forms of effects where you "ask" with a value and receive
 a value in return (such as a database query, etc.), but not ever care about how
 the effects are fulfilled --- freeing you from working directly with IO.
 
-~~~haskell data Foo = Foo { fooBar :: String , fooBaz :: Int } deriving Show
+``` {.haskell}
+data Foo = Foo { fooBar :: String
+               , fooBaz :: Int
+               } deriving Show
 
--- ask with a String, receive a String as an answer promptFoo :: Prompt String
-String Foo promptFoo = Foo &lt;$&gt; prompt "bar" &lt;\*&gt; fmap length (prompt
-"baz") ~~~
+-- ask with a String, receive a String as an answer
+promptFoo :: Prompt String String Foo
+promptFoo = Foo
+        <$> prompt "bar"
+        <*> fmap length (prompt "baz")
+```
 
 Running
 -------
 
 You can now "run it" in IO, by talking to stdio ---
 
-~~~haskell ghci&gt; runPromptM promptFoo $ \\str -&gt; putStrLn str &gt;&gt;
-getLine bar -- stdout prompt
-
-> hello! -- stdin response typed in baz -- stdout prompt i am baz -- stdin
-> response typed in Foo "hello!" 8 -- result ~~~
+``` {.haskell}
+ghci> runPromptM promptFoo $ \str -> putStrLn str >> getLine
+bar                 -- stdout prompt
+> hello!            -- stdin response typed in
+baz                 -- stdout prompt
+> i am baz          -- stdin response typed in
+Foo "hello!" 8      -- result
+```
 
 (this is also just `interactP promptFoo`)
 
 Or you can maybe request it from the environment variables:
 
-~~~haskell ghci&gt; import System.Environment ghci&gt; setEnv "bar" "hello!"
-ghci&gt; setEnv "baz" "i am baz" ghci&gt; runPromptM promptFoo getEnv Foo
-"hello!" 8 ~~~
+``` {.haskell}
+ghci> import System.Environment
+ghci> setEnv "bar" "hello!"
+ghci> setEnv "baz" "i am baz"
+ghci> runPromptM promptFoo getEnv
+Foo "hello!" 8
+```
 
 Or maybe you want to fulfill the prompts purely:
 
-~~~haskell ghci&gt; import qualified Data.Map as M ghci&gt; let testMap =
-M.fromList \[("bar", "hello!"), ("baz", "i am baz")\] ghci&gt; runPrompt
-promptFoo (testMap M.!) Foo "hello!" 8 ~~~
+``` {.haskell}
+ghci> import qualified Data.Map as M
+ghci> let testMap = M.fromList [("bar", "hello!"), ("baz", "i am baz")]
+ghci> runPrompt promptFoo (testMap M.!)
+Foo "hello!" 8
+```
 
 With `Prompt`, specify the computation and your logic *without involving any
 IO*, so you can write safe code without arbitrary side effects. If you ever
@@ -63,9 +79,14 @@ You can also do some cute tricks; `Prompt a () r` with a "prompt response
 function" like `putStrLn` lets you do streaming logging, and defer *how* the
 logging is done --- to IO, to a list?
 
-~~~haskell ghci&gt; let logHelloWord = mapM\_ prompt \["hello", "world"\]
-ghci&gt; runPromptM logHelloWorld putStrLn hello world ghci&gt; execWriter $
-runPromptM logHelloWorld tell "helloworld" ~~~
+``` {.haskell}
+ghci> let logHelloWord = mapM_ prompt ["hello", "world"]
+ghci> runPromptM logHelloWorld putStrLn
+hello
+world
+ghci> execWriter $ runPromptM logHelloWorld tell
+"helloworld"
+```
 
 `Prompt () b r` is like a fancy `ReaderT b m r`, where you "defer" the choice of
 the Monad.
@@ -88,48 +109,84 @@ logging, etc.
 This is all abstracted over with `MonadPrompt`, `MonadError`, `MonadPlus`, etc.,
 typeclasses ---
 
-~~~haskell promptFoo2 :: (MonadPlus m, MonadPrompt String String m) =&gt; m Foo
-promptFoo2 = do bar &lt;- prompt "bar" str &lt;- prompt "baz" case readMaybe str
-of Just baz -&gt; return $ Foo bar baz Nothing -&gt; mzero
+``` {.haskell}
+promptFoo2 :: (MonadPlus m, MonadPrompt String String m) => m Foo
+promptFoo2 = do
+    bar <- prompt "bar"
+    str <- prompt "baz"
+    case readMaybe str of
+        Just baz -> return $ Foo bar baz
+        Nothing  -> mzero
 
--- more polymorphic promptFoo :: MonadPrompt String String m =&gt; m Foo
-promptFoo = Foo &lt;$&gt; prompt "bar" &lt;\*&gt; fmap length (prompt "baz") ~~~
+-- more polymorphic
+promptFoo :: MonadPrompt String String m => m Foo
+promptFoo = Foo
+        <$> prompt "bar"
+        <*> fmap length (prompt "baz")
+```
 
 You can run `promptFoo` as a `MaybeT (Prompt String String) Foo`, and manually
 unwrap:
 
-~~~haskell ghci&gt; interactP . runMaybeT $ promptFoo2 bar
-
-> hello! baz i am baz Nothing ghci&gt; interactP . runMaybeT $ promptFoo2 bar
-> hello! baz 19 Just (Foo "hello!" 19) ~~~
+``` {.haskell}
+ghci> interactP . runMaybeT $ promptFoo2
+bar
+> hello!
+baz
+> i am baz
+Nothing
+ghci> interactP . runMaybeT $ promptFoo2
+bar
+> hello!
+baz
+> 19
+Just (Foo "hello!" 19)
+```
 
 Or you can run it as a `PromptT String String MaybeT Foo`, to have `PromptT`
 handle the wrapping/unwrapping itself:
 
-~~~haskell ghci&gt; interactPT promptFoo2 bar
-
-> hello! baz i am baz Nothing ghci&gt; interactPT $ promptFoo2 &lt;|&gt;
-> promptFoo bar hello! baz i am baz bar -- failed to parse --- retrying with
-> promptFoo! hello! baz i am baz Just (Foo "hello" 8) ~~~
+``` {.haskell}
+ghci> interactPT promptFoo2
+bar
+> hello!
+baz
+> i am baz
+Nothing
+ghci> interactPT $ promptFoo2 <|> promptFoo
+bar
+> hello!
+baz
+> i am baz
+bar                 -- failed to parse --- retrying with promptFoo!
+> hello!
+baz
+> i am baz
+Just (Foo "hello" 8)
+```
 
 The previous example of `logHelloWorld`?
 
-~~~haskell ghci&gt; runPromptT (logHelloWorld :: PromptT String () (Writer
-String) ()) tell "helloworld" ~~~
+``` {.haskell}
+ghci> runPromptT (logHelloWorld :: PromptT String () (Writer String) ()) tell
+"helloworld"
+```
 
 Runners
 -------
 
 The "runners" are:
 
-~~~haskell interactP :: Prompt String String r -&gt; IO r interactPT ::
-Applicative t =&gt; PromptT String String t r -&gt; IO (t r)
+``` {.haskell}
+interactP   ::                  Prompt  String String   r -> IO r
+interactPT  :: Applicative t => PromptT String String t r -> IO (t r)
 
-runPrompt :: Prompt a b r -&gt; (a -&gt; b) -&gt; r runPromptM :: Monad m =&gt;
-Prompt a b r -&gt; (a -&gt; m b) -&gt; m r
+runPrompt   ::                  Prompt  a b   r -> (a ->   b) -> r
+runPromptM  :: Monad m       => Prompt  a b   r -> (a -> m b) -> m r
 
-runPromptT :: PromptT a b t r -&gt; (a -&gt; t b) -&gt; t r runPromptTM :: Monad
-m =&gt; PromptT a b t r -&gt; (a -&gt; m (t b)) -&gt; m (t r) ~~~
+runPromptT  ::                  PromptT a b t r -> (a ->    t b)  -> t r
+runPromptTM :: Monad m       => PromptT a b t r -> (a -> m (t b)) -> m (t r)
+```
 
 Note that `runPromptM` and `runPromptTM` can run in monads (like `IO`) that are
 *completely unrelated* to the `Prompt` type itself. It sequences them all "after
@@ -139,40 +196,63 @@ the fact". It's also interesting to note that `runPrompt` is just a glorified
 With `runPromptTM`, you can incorporate `t` in your "prompt response" function,
 too. Which brings us to our grand finale -- environment variable parsing!
 
-~~~haskell import Control.Monad.Error.Class import Control.Monad.Prompt import
-Text.Read import qualified Data.Map as M
+``` {.haskell}
+import Control.Monad.Error.Class
+import Control.Monad.Prompt
+import Text.Read
+import qualified Data.Map as M
 
-type Key = String type Val = String
+type Key = String
+type Val = String
 
-data MyError = MENoParse Key Val | MENotFound Key deriving Show
+data MyError = MENoParse Key Val
+             | MENotFound Key
+             deriving Show
 
-promptRead :: (MonadError MyError m, MonadPrompt Key Val m, Read b) =&gt; Key
--&gt; m b -- promptRead :: Read b =&gt; Key -&gt; PromptT Key Val (Either
-MyError) b promptRead k = do resp &lt;- prompt k case readMaybe resp of Nothing
--&gt; throwError $ MEParse k resp Just v -&gt; return v
+promptRead :: (MonadError MyError m, MonadPrompt Key Val m, Read b)
+           => Key -> m b
+-- promptRead :: Read b => Key -> PromptT Key Val (Either MyError) b
+promptRead k = do
+    resp <- prompt k
+    case readMaybe resp of
+      Nothing -> throwError $ MEParse k resp
+      Just v  -> return v
 
-promptFoo3 :: MonadPrompt Key Val m =&gt; m Foo -- promptFoo3 :: Applicative t
-=&gt; PromptT Key Val t Foo promptFoo3 = Foo &lt;$&gt; prompt "bar" &lt;\*&gt;
-promptRead "baz"
+promptFoo3 :: MonadPrompt Key Val m => m Foo
+-- promptFoo3 :: Applicative t => PromptT Key Val t Foo
+promptFoo3 = Foo <$> prompt "bar" <*> promptRead "baz"
 
--- -- running!
+--
+-- running!
 
--- Lookup environment variables, and "throw" an error if not found throughEnv ::
-IO (Either MyError Foo) throughEnv = runPromptTM parseFoo3 $ \\k -&gt; do env
-&lt;- lookupEnv k return $ case env of Nothing -&gt; Left (MENotFound k) Just v
--&gt; Right v
+-- Lookup environment variables, and "throw" an error if not found
+throughEnv :: IO (Either MyError Foo)
+throughEnv = runPromptTM parseFoo3 $ \k -> do
+    env <- lookupEnv k
+    return $ case env of
+      Nothing -> Left (MENotFound k)
+      Just v  -> Right v
 
--- Fulfill the prompt through user input throughStdIO :: IO (Either MyError Foo)
+-- Fulfill the prompt through user input
+throughStdIO :: IO (Either MyError Foo)
 throughStdIO = interactPT parseFoo3
 
 -- Fulfill the prompt through user input; count blank responses as "not found"
-throughStdIOBlankIsError :: IO (Either MyError Foo) throughStdIOBlankIsError =
-runPromptTM parseFoo3 $ \\k -&gt; do putStrLn k resp &lt;- getLine return $ if
-null resp then Left (MENotFound k) else Right resp
+throughStdIOBlankIsError :: IO (Either MyError Foo)
+throughStdIOBlankIsError = runPromptTM parseFoo3 $ \k -> do
+    putStrLn k
+    resp <- getLine
+    return $ if null resp
+      then Left (MENotFound k)
+      else Right resp
 
--- Fulfill the prompt purely through a Map lookup throughMap :: M.Map Key Val
--&gt; Either MyError Foo throughMap m = runPromptT parseFoo3 $ \\k -&gt; case
-M.lookup k m of Nothing -&gt; Left (MENotFound k) Just v -&gt; Right v ~~~
+-- Fulfill the prompt purely through a Map lookup
+throughMap :: M.Map Key Val -> Either MyError Foo
+throughMap m = runPromptT parseFoo3 $ \k ->
+    case M.lookup k m of
+      Nothing -> Left (MENotFound k)
+      Just v  -> Right v
+```
 
 Hope you enjoy! Please feel free to leave a comment, find me on
 [twitter](https://twitter.com/mstk "Twitter"), leave an issue on the
@@ -184,8 +264,9 @@ Comparisons
 
 To lay it all on the floor,
 
-~~~haskell newtype PromptT a b t r = PromptT { runPromptTM :: forall m. Monad m
-=&gt; (a -&gt; m (t b)) -&gt; m (t r) } ~~~
+``` {.haskell}
+newtype PromptT a b t r = PromptT { runPromptTM :: forall m. Monad m => (a -> m (t b)) -> m (t r) }
+```
 
 There is admittedly a popular misconception that I've seen going around that
 equates this sort of type to `Free` from the *free* package. However, `Free`

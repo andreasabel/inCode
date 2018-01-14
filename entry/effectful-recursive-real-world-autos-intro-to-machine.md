@@ -24,8 +24,8 @@ limits of real-world industrial usage. We're going to be exploring mechanisms
 for adding effects and, making the plain ol' `Auto` into something more rich and
 featureful. We'll see how to express denotative and declarative compositions
 using recursively binded `Auto`s, and what that even means. It'll be a trip down
-several avenues to motivate and see practical Auto usage.\[^nofrp\] Basically,
-it'll be a "final hurrah".
+several avenues to motivate and see practical Auto usage.[^1] Basically, it'll
+be a "final hurrah".
 
 A fair bit of warning --- if the last post is not fresh in your mind, or you
 still have some holes, I recommend going back and reading through them again.
@@ -47,7 +47,9 @@ Effectful Stepping
 Recall our original definition of `Auto a b` as a newtype wrapper over a
 function:
 
-~~~haskell a -&gt; (b, Auto a b) ~~~
+``` {.haskell}
+a -> (b, Auto a b)
+```
 
 This can be read as saying, "feed the `Auto` an `a`, and (purely) get a
 resulting `b`, and a 'next stepper'" --- the `b` is the result, and the
@@ -59,7 +61,9 @@ guess what's going to happen next!
 Instead of "purely" creating a naked result and a "next step"...we're going to
 return it in a context.
 
-~~~haskell a -&gt; f (b, Auto a b) ~~~
+``` {.haskell}
+a -> f (b, Auto a b)
+```
 
 What, you say? What good does that do?
 
@@ -71,11 +75,15 @@ contextual computation. This process can be complicated, or simple, or trivial.
 
 For example, a function like:
 
-~~~haskell a -&gt; b ~~~
+``` {.haskell}
+a -> b
+```
 
 means that it simply creates a `b` from an `a`. But a function like:
 
-~~~haskell a -&gt; State s b ~~~
+``` {.haskell}
+a -> State s b
+```
 
 Means that, given an `a`, you get a state machine that can *create a `b`* using
 a stateful process, once given an initial state. The `b` doesn't "exist" yet;
@@ -85,7 +93,9 @@ state machine.
 
 A function like:
 
-~~~haskell a -&gt; IO b ~~~
+``` {.haskell}
+a -> IO b
+```
 
 Means that, given an `a`, you're given *a computer program* that, when executed
 by a computer, will generate a `b`. The `b` doesn't "exist" yet; depending on
@@ -95,7 +105,9 @@ ability to *choose* the `b`.
 
 So how about something like:
 
-~~~haskell a -&gt; State s (b, Auto a b) ~~~
+``` {.haskell}
+a -> State s (b, Auto a b)
+```
 
 This means that, given `a`, "running" the `Auto` with an `a` will give you *a
 state machine* that gives you, using a stateful process, both the *result* and
@@ -104,7 +116,9 @@ the *next step*. The crazy thing is that now you are given the state machine
 
 Something like:
 
-~~~haskell a -&gt; IO (b, Auto a b) ~~~
+``` {.haskell}
+a -> IO (b, Auto a b)
+```
 
 means that your new `Auto`-running function will give you a result and a "next
 step" that is going to be dependent on IO actions.
@@ -113,9 +127,10 @@ Let's jump straight to abstracting over this and explore a new type, shall we?
 
 ### Monadic Auto
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs\#L27-27
-newtype AutoM m a b = AConsM { runAutoM :: a -&gt; m (b, AutoM m a b) } ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L27-27
+newtype AutoM m a b = AConsM { runAutoM :: a -> m (b, AutoM m a b) }
+```
 
 We already explained earlier the new power of this type. Let's see if we can
 write our favorite instances with it. First of all, what would a `Category`
@@ -135,20 +150,29 @@ result afterwards, with the new composed autos.
 The neat thing is that Haskell's built-in syntax for handling monadic sequencing
 is nice, so you might be surprised when you write the `Category` instance:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs\#L43-48
-instance Monad m =&gt; Category (AutoM m) where id = AConsM $ \\x -&gt; return
-(x, id) g . f = AConsM $ \\x -&gt; do (y, f') &lt;- runAutoM f x (z, g') &lt;-
-runAutoM g y return (z, g' . f') ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L43-48
+instance Monad m => Category (AutoM m) where
+    id    = AConsM $ \x -> return (x, id)
+    g . f = AConsM $ \x -> do
+              (y, f') <- runAutoM f x
+              (z, g') <- runAutoM g y
+              return (z, g' . f')
+```
 
 Does it look familiar?
 
 It should! Remember the logic from the `Auto` Category instance?
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L13-18
-instance Category Auto where id = ACons $ \\x -&gt; (x, id) g . f = ACons $ \\x
--&gt; let (y, f') = runAuto f x (z, g') = runAuto g y in (z, g' . f') ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L13-18
+instance Category Auto where
+    id    = ACons $ \x -> (x, id)
+    g . f = ACons $ \x ->
+              let (y, f') = runAuto f x
+                  (z, g') = runAuto g y
+              in  (z, g' . f')
+```
 
 It's basically *identical* and exactly the same :O The only difference is that
 instead of `let`, we have `do`...instead of `=` we have `<-`, and instead of
@@ -162,30 +186,55 @@ realize the symmetry and similarities.
 
 Check out the `Functor` and `Arrow` instances, too --- they're exactly the same!
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L20-47
-instance Functor (Auto r) where fmap f a = ACons $ \\x -&gt; let (y, a') =
-runAuto a x in (f y, fmap f a')
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L20-47
+instance Functor (Auto r) where
+    fmap f a = ACons $ \x ->
+                 let (y, a') = runAuto a x
+                 in  (f y, fmap f a')
 
-instance Arrow Auto where arr f = ACons $ \\x -&gt; (f x, arr f) first a = ACons
-$ (x, z) -&gt; let (y, a') = runAuto a x in ((y, z), first a') second a = ACons
-$ (z, x) -&gt; let (y, a') = runAuto a x in ((z, y), second a') a1 \*\*\* a2 =
-ACons $ (x1, x2) -&gt; let (y1, a1') = runAuto a1 x1 (y2, a2') = runAuto a2 x2
-in ((y1, y2), a1' \*\*\* a2') a1 &&& a2 = ACons $ \\x -&gt; let (y1, a1') =
-runAuto a1 x (y2, a2') = runAuto a2 x in ((y1, y2), a1' &&& a2') ~~~
+instance Arrow Auto where
+    arr f     = ACons $ \x -> (f x, arr f)
+    first a   = ACons $ \(x, z) ->
+                  let (y, a') = runAuto a x
+                  in  ((y, z), first a')
+    second a  = ACons $ \(z, x) ->
+                  let (y, a') = runAuto a x
+                  in  ((z, y), second a')
+    a1 *** a2 = ACons $ \(x1, x2) ->
+                  let (y1, a1') = runAuto a1 x1
+                      (y2, a2') = runAuto a2 x2
+                  in  ((y1, y2), a1' *** a2')
+    a1 &&& a2 = ACons $ \x ->
+                  let (y1, a1') = runAuto a1 x
+                      (y2, a2') = runAuto a2 x
+                  in  ((y1, y2), a1' &&& a2')
+```
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs\#L50-77
-instance Monad m =&gt; Functor (AutoM m r) where fmap f a = AConsM $ \\x -&gt;
-do (y, a') &lt;- runAutoM a x return (f y, fmap f a')
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L50-77
+instance Monad m => Functor (AutoM m r) where
+    fmap f a = AConsM $ \x -> do
+                 (y, a') <- runAutoM a x
+                 return (f y, fmap f a')
 
-instance Monad m =&gt; Arrow (AutoM m) where arr f = AConsM $ \\x -&gt; return
-(f x, arr f) first a = AConsM $ (x, z) -&gt; do (y, a') &lt;- runAutoM a x
-return ((y, z), first a') second a = AConsM $ (z, x) -&gt; do (y, a') &lt;-
-runAutoM a x return ((z, y), second a') a1 \*\*\* a2 = AConsM $ (x1, x2) -&gt;
-do (y1, a1') &lt;- runAutoM a1 x1 (y2, a2') &lt;- runAutoM a2 x2 return ((y1,
-y2), a1' \*\*\* a2') a1 &&& a2 = AConsM $ \\x -&gt; do (y1, a1') &lt;- runAutoM
-a1 x (y2, a2') &lt;- runAutoM a2 x return ((y1, y2), a1' &&& a2') ~~~
+instance Monad m => Arrow (AutoM m) where
+    arr f     = AConsM $ \x -> return (f x, arr f)
+    first a   = AConsM $ \(x, z) -> do
+                  (y, a') <- runAutoM a x
+                  return ((y, z), first a')
+    second a  = AConsM $ \(z, x) -> do
+                  (y, a') <- runAutoM a x
+                  return ((z, y), second a')
+    a1 *** a2 = AConsM $ \(x1, x2) -> do
+                  (y1, a1') <- runAutoM a1 x1
+                  (y2, a2') <- runAutoM a2 x2
+                  return ((y1, y2), a1' *** a2')
+    a1 &&& a2 = AConsM $ \x -> do
+                  (y1, a1') <- runAutoM a1 x
+                  (y2, a2') <- runAutoM a2 x
+                  return ((y1, y2), a1' &&& a2')
+```
 
 (I've left the rest of the instances from the previous part as an exercise; the
 solutions are available in the downloadable.)
@@ -197,22 +246,25 @@ function application and composition to application and composition in a
 context.
 
 Our previous instances were then just a "specialized" version of `AutoM`, one
-where we used naked application and composition,\[^compapl\]
+where we used naked application and composition,[^2]
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 If you look at the instances we wrote out, you might see that for some of them,
 `Monad` is a bit overkill. For example, for the `Functor` instance,
 
-~~~haskell instance Functor m =&gt; Functor (AutoM m r) where fmap f a = AConsM
-$ (f \*\*\* fmap f) . runAutoM a ~~~
+``` {.haskell}
+instance Functor m => Functor (AutoM m r) where
+    fmap f a = AConsM $ (f *** fmap f) . runAutoM a
+```
 
 is just fine. We only need `Functor` to make `AutoM m r` a `Functor`. Cool,
 right?
 
 If you try, how much can we "generalize" our other instances to? Which ones can
 be generalized to `Functor`, which ones `Applicative`...and which ones can't?
-&lt;/div&gt;
+:::
 
 By the way, it might be worth noting that our original `Auto` type is identical
 to `AutoM Identity` --- all of the instances do the exact same thing.
@@ -222,37 +274,51 @@ to `AutoM Identity` --- all of the instances do the exact same thing.
 Now let's try using these!
 
 First some utility functions just for playing around: `autoM`, which upgrades an
-`Auto a b` to an `AutoM m a b` for any `Monad` `m`\[^autom\], and `arrM`, which
-is like `arr`, but instead of turning an `a -> b` into an `Auto a b`, it turns
-an `a -> m b` into an `AutoM m a b`:
+`Auto a b` to an `AutoM m a b` for any `Monad` `m`[^3], and `arrM`, which is
+like `arr`, but instead of turning an `a -> b` into an `Auto a b`, it turns an
+`a -> m b` into an `AutoM m a b`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs\#L97-107
-autoM :: Monad m =&gt; Auto a b -&gt; AutoM m a b autoM a = AConsM $ \\x -&gt;
-let (y, a') = runAuto a x in return (y, autoM a')
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L97-107
+autoM :: Monad m => Auto a b -> AutoM m a b
+autoM a = AConsM $ \x -> let (y, a') = runAuto a x
+                         in  return (y, autoM a')
 
-arrM :: Monad m =&gt; (a -&gt; m b) -&gt; AutoM m a b arrM f = AConsM $ \\x
--&gt; do y &lt;- f x return (y, arrM f) ~~~
+arrM :: Monad m => (a -> m b) -> AutoM m a b
+arrM f = AConsM $ \x -> do
+                    y <- f x
+                    return (y, arrM f)
+```
 
 We will need to of course re-write our trusty
 [`testAuto`](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L17-25)
 functions from the first entry, which is again a direct translation of the
 original ones:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs\#L31-39
-testAutoM :: Monad m =&gt; AutoM m a b -&gt; \[a\] -&gt; m (\[b\], AutoM m a b)
-testAutoM a \[\] = return (\[\], a) testAutoM a (x:xs) = do (y , a' ) &lt;-
-runAutoM a x (ys, a'') &lt;- testAutoM a' xs return (y:ys, a'')
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L31-39
+testAutoM :: Monad m => AutoM m a b -> [a] -> m ([b], AutoM m a b)
+testAutoM a []      = return ([], a)
+testAutoM a (x:xs)  = do
+    (y , a' ) <- runAutoM a x
+    (ys, a'') <- testAutoM a' xs
+    return (y:ys, a'')
 
-testAutoM\_ :: Monad m =&gt; AutoM m a b -&gt; \[a\] -&gt; m \[b\] testAutoM\_ a
-= liftM fst . testAutoM a ~~~
+testAutoM_ :: Monad m => AutoM m a b -> [a] -> m [b]
+testAutoM_ a = liftM fst . testAutoM a
+```
 
 First, let's test `arrM` ---
 
-~~~haskell ghci&gt; :t arrM putStrLn arrM putStrLn :: AutoM IO String ()
-ghci&gt; res &lt;- testAutoM\_ (arrM putStrLn) \["hello", "world"\] "hello"
-"world" ghci&gt; res \[(), ()\] ~~~
+``` {.haskell}
+ghci> :t arrM putStrLn
+arrM putStrLn :: AutoM IO String ()
+ghci> res <- testAutoM_ (arrM putStrLn) ["hello", "world"]
+"hello"
+"world"
+ghci> res
+[(), ()]
+```
 
 `arrM putStrLn` is, like `arr show`, just an `Auto` with no internal state. It
 outputs `()` for every single input string, except, in the process of getting
@@ -264,11 +330,14 @@ case, printing the string.
 We can sort of abuse this to get an `Auto` with "two input streams": one from
 the normal input, and the other from `IO`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs\#L119-123
-replicateGets :: AutoM IO Int String replicateGets = proc n -&gt; do ioString
-&lt;- arrM (\_ -&gt; getLine) -&lt; () let inpStr = concat (replicate n
-ioString) autoM monoidAccum -&lt; inpStr ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L119-123
+replicateGets :: AutoM IO Int String
+replicateGets = proc n -> do
+    ioString <- arrM (\_ -> getLine) -< ()
+    let inpStr = concat (replicate n ioString)
+    autoM monoidAccum -< inpStr
+```
 
 So, `replicateGets` uses
 [`monoidAccum`](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L106-107)
@@ -277,11 +346,16 @@ to the running accumulated string. `inpStr` is the result of repeating the the
 string that `getLine` returns replicated `n` times --- `n` being the official
 "input" to the `AutoM` when we eventually run it.
 
-~~~haskell ghci&gt; testAutoM\_ replicateGets \[3,1,5\]
-
-> hello world bye \[ "hellohellohello" -- added "hello" three times ,
-> "hellohellohelloworld" -- added "world" once ,
-> "hellohellohelloworldbyebyebyebyebye" -- added "bye" five times \] ~~~
+``` {.haskell}
+ghci> testAutoM_ replicateGets [3,1,5]
+> hello
+> world
+> bye
+[ "hellohellohello"         -- added "hello" three times
+, "hellohellohelloworld"    -- added "world" once
+, "hellohellohelloworldbyebyebyebyebye"     -- added "bye" five times
+]
+```
 
 Here, we used `IO` to get a "side channel input". The main input is the number
 of times we repeat the string, and the side input is what we get from sequencing
@@ -289,17 +363,28 @@ the `getLine` effect.
 
 You can also use this to "tack on" effects into your pipeline.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs\#L127-131
-logging :: Show b =&gt; Auto a b -&gt; AutoM IO a b logging a = proc x -&gt; do
-y &lt;- autoM a -&lt; x arrM (appendFile "log.txt") -&lt; show y ++ "\\n" id
--&lt; y ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L127-131
+logging :: Show b => Auto a b -> AutoM IO a b
+logging a = proc x -> do
+    y <- autoM a -< x
+    arrM (appendFile "log.txt") -< show y ++ "\n"
+    id -< y
+```
 
 Here, `logging a` will "run" `a` with the input like normal (no side-channel
 inputs), but then also log the results line-by-line to *log.txt*.
 
-~~~haskell ghci&gt; testAutoM\_ (logging summer) \[6,2,3,4,1\] \[6,8,11,15,16\]
-ghci&gt; putStrLn =&lt;&lt; readFile "log.txt" 6 8 11 15 16 ~~~
+``` {.haskell}
+ghci> testAutoM_ (logging summer) [6,2,3,4,1]
+[6,8,11,15,16]
+ghci> putStrLn =<< readFile "log.txt"
+6
+8
+11
+15
+16
+```
 
 (By the way, as a side note, `logging :: Auto a b -> AutoM IO a b` here can be
 looked at as an "`Auto` transformer". It takes a normal `Auto` and transforms it
@@ -314,7 +399,9 @@ mixed IO and unconstrained effects and "implicit side channel" inputs. Or both!
 After all, if all we were doing in `replicateGets` was having two inputs, we
 could have just used:
 
-~~~haskell replicateGets' :: Auto (String, Int) String ~~~
+``` {.haskell}
+replicateGets' :: Auto (String, Int) String
+```
 
 And have the user "get" the string before they run the `Auto`.
 
@@ -339,7 +426,7 @@ of a sudden, having to "manually thread" the extra channel of input in is a real
 nightmare. In addition, you can't even statically guarantee that the `String`
 `replicateGets` eventually was the same `String` that the user originally passed
 in. When composing/calling it, who knows if the Auto that composes
-`replicateGets'` passes in the same initially gotten String?\[^readernotio\]
+`replicateGets'` passes in the same initially gotten String?[^4]
 
 Imagine that the `Auto` whose results we wanted to log actually was not the
 final output of the entire `Auto` we run (maybe we want to log a small internal
@@ -375,8 +462,8 @@ Good? Bad? Uncontrollable, unpredictable? Perhaps. You now bring in all of the
 problems of shared state and reasoning with shared mutable state...and avoiding
 these problems was one of the things that originally motivated the usage of
 `Auto` in the first place! But, we can make sound and judicious decisions
-without resorting to "never do this" dogma.\[^dogma\] Remember, these are just
-tools we can possibly explore. Whether or not they work in the real world --- or
+without resorting to "never do this" dogma.[^5] Remember, these are just tools
+we can possibly explore. Whether or not they work in the real world --- or
 whether or not they are self-defeating --- is a complex story!
 
 #### in State
@@ -386,29 +473,49 @@ other; here, the state is a measure of "fuel"; we can take any `Auto a b` and
 give it a "cost" using the `limit` function defined here. Here, every `Auto`
 consumes fuel from the same pool, given at the initial `runState` running.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs\#L139-175
-limit :: Int -&gt; Auto a b -&gt; AutoM (State Int) a (Maybe b) limit cost a =
-proc x -&gt; do fuel &lt;- arrM (\_ -&gt; get) -&lt; () if fuel &gt;= cost then
-do arrM (\_ -&gt; modify (subtract cost)) -&lt; () y &lt;- autoM a -&lt; x id
--&lt; Just y else id -&lt; Nothing
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L139-175
+limit :: Int -> Auto a b -> AutoM (State Int) a (Maybe b)
+limit cost a = proc x -> do
+    fuel <- arrM (\_ -> get) -< ()
+    if fuel >= cost
+      then do
+        arrM (\_ -> modify (subtract cost)) -< ()
+        y <- autoM a -< x
+        id -< Just y
+      else
+        id -< Nothing
 
-sumSqDiff :: AutoM (State Int) Int Int sumSqDiff = proc x -&gt; do sums &lt;-
-fromMaybe 0 &lt;$&gt; limit 3 summer -&lt; x sumSqs &lt;- fromMaybe 0 &lt;$&gt;
-limit 1 summer -&lt; x^2 id -&lt; sumSqs - sums
+sumSqDiff :: AutoM (State Int) Int Int
+sumSqDiff = proc x -> do
+  sums   <- fromMaybe 0 <$> limit 3 summer -< x
+  sumSqs <- fromMaybe 0 <$> limit 1 summer -< x^2
+  id -< sumSqs - sums
 
-stuff :: AutoM (State Int) Int (Maybe Int, Maybe Int, Int) stuff = proc x -&gt;
-do doubled &lt;- limit 1 id -&lt; x \* 2 tripled &lt;- if even x then limit 2 id
--&lt; x \* 3 else id -&lt; Just (x \* 3) sumSqD &lt;- sumSqDiff -&lt; x id -&lt;
-(doubled, tripled, sumSqD) ~~~
+stuff :: AutoM (State Int) Int (Maybe Int, Maybe Int, Int)
+stuff = proc x -> do
+    doubled <- limit 1 id -< x * 2
+    tripled <- if even x
+                 then limit 2 id -< x * 3
+                 else id         -< Just (x * 3)
+    sumSqD  <- sumSqDiff -< x
+    id -< (doubled, tripled, sumSqD)
+```
 
-~~~haskell -- a State machine returning the result and the next Auto ghci&gt;
-let stuffState = runAutoM stuff 4 -- a State machine returning the result
-ghci&gt; let stuffState\_ = fst &lt;$&gt; stuffState ghci&gt; :t stuffState*
-stuffState* :: State Int (Maybe Int, Maybe Int, Int) -- start with 10 fuel
-ghci&gt; runState stuffState\_ 10 ((Just 8, Just 12, 12), 3) -- end up with 3
-fuel left -- start with 2 fuel ghci&gt; runState stuffState\_ 2 ((Just 8,
-Nothing, 16), 0) -- poop out halfway ~~~
+``` {.haskell}
+-- a State machine returning the result and the next Auto
+ghci> let stuffState  = runAutoM stuff 4
+-- a State machine returning the result
+ghci> let stuffState_ = fst <$> stuffState
+ghci> :t stuffState_
+stuffState_ :: State Int (Maybe Int, Maybe Int, Int)
+-- start with 10 fuel
+ghci> runState stuffState_ 10
+((Just 8, Just 12, 12),   3)        -- end up with 3 fuel left
+-- start with 2 fuel
+ghci> runState stuffState_ 2
+((Just 8, Nothing, 16),   0)        -- poop out halfway
+```
 
 You can see that an initial round with an even number should cost you seven
 fuel...if you can get to the end. In the case where we only started with two
@@ -416,10 +523,17 @@ fuel, we only were able to get to the "doubled" part before running out of fuel.
 
 Let's see what happens if we run it several times:
 
-~~~hasell ghci&gt; let stuffStateMany = testAutoM\_ stuff \[3..6\] ghci&gt; :t
-stuffStateMany stuffStateMany :: State Int \[(Maybe Int, Maybe Int, Int)\]
-ghci&gt; runState stuffStateMany 9 ( \[ (Just 6 , Just 9 , 6 ) , (Just 8 , Just
-12, 25) , (Nothing, Just 15, 0 ) , (Nothing, Nothing, 0 ) \] , 0 ) ~~~
+``` {.hasell}
+ghci> let stuffStateMany = testAutoM_ stuff [3..6]
+ghci> :t stuffStateMany
+stuffStateMany :: State Int [(Maybe Int, Maybe Int, Int)]
+ghci> runState stuffStateMany 9
+( [ (Just 6 , Just 9 , 6 )
+  , (Just 8 , Just 12, 25)
+  , (Nothing, Just 15, 0 )
+  , (Nothing, Nothing, 0 ) ]
+, 0 )
+```
 
 So starting with nine fuel, we seem to run out halfway through the second step.
 The third field should be the sum of the squares so far, minus the sum so
@@ -442,21 +556,30 @@ Here we use `Reader` to basically give a "second argument" to an `Auto` when we
 eventually run it, but we use the fact that every composed `Auto` gets the
 *exact same* input to great effect:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs\#L199-234
-integral :: Double -&gt; AutoM (Reader Double) Double Double integral x0 =
-AConsM $ \\dx -&gt; do dt &lt;- ask let x1 = x0 + dx \* dt return (x1, integral
-x1)
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L199-234
+integral :: Double -> AutoM (Reader Double) Double Double
+integral x0 = AConsM $ \dx -> do
+                dt <- ask
+                let x1 = x0 + dx * dt
+                return (x1, integral x1)
 
-derivative :: AutoM (Reader Double) Double (Maybe Double) derivative = AConsM $
-\\x -&gt; return (Nothing, derivative' x) where -- x0 is the "previous input"
-derivative' x0 = AConsM $ \\x1 -&gt; do let dx = x1 - x0 dt &lt;- ask return
-(Just (dx/dt), derivative' x1)
+derivative :: AutoM (Reader Double) Double (Maybe Double)
+derivative = AConsM $ \x -> return (Nothing, derivative' x)
+  where
+                 -- x0 is the "previous input"
+    derivative' x0 = AConsM $ \x1 -> do
+                       let dx = x1 - x0
+                       dt <- ask
+                       return (Just (dx/dt), derivative' x1)
 
-fancyCalculus :: AutoM (Reader Double) Double (Double, Double) fancyCalculus =
-proc x -&gt; do deriv &lt;- fromMaybe 0 &lt;$&gt; derivative -&lt; x deriv2
-&lt;- fromMaybe 0 &lt;$&gt; derivative -&lt; deriv intdev &lt;- integral 0 -&lt;
-deriv id -&lt; (deriv2, intdev) ~~~
+fancyCalculus :: AutoM (Reader Double) Double (Double, Double)
+fancyCalculus = proc x -> do
+    deriv  <- fromMaybe 0 <$> derivative -< x
+    deriv2 <- fromMaybe 0 <$> derivative -< deriv
+    intdev <-                 integral 0 -< deriv
+    id -< (deriv2, intdev)
+```
 
 Now, we are treating our input stream as time-varying values, and the "Reader
 environment" contains the "time passed since the last tick" --- The time step or
@@ -484,7 +607,9 @@ Anyways, if you have taken any introduction to calculus course, you'll know that
 the integral of a derivative is the original function --- so the integral of the
 derivative, if we pick the right `x0`, should just be an "id" function:
 
-~~~haskell integral x0 . derivative == id -- or off by a constant difference ~~~
+``` {.haskell}
+integral x0 . derivative == id      -- or off by a constant difference
+```
 
 Let's try this out with some input streams where we know what the second
 derivative should be, too.
@@ -492,12 +617,18 @@ derivative should be, too.
 We'll try it first with `x^2`, where we know the second derivative will just be
 2, the entire time:
 
-~~~haskell ghci&gt; let x2s = map (^2) \[0,0.05..1\] ghci&gt; let x2Reader =
-testAutoM\_ fancyCalculus x2s ghci&gt; :t x2Reader x2Reader :: Reader Double
-\[(Double, Double)\] ghci&gt; map fst (runReader x2Reader 0.05) \[ ... 2.0, 2.0
-... \] -- with a couple of "stabilizing" first terms ghci&gt; map snd (runReader
-x2Reader 0.05) \[ 0.0, 0.0025, 0.01, 0.0225, 0.04 ...\] ghci&gt; x2s \[ 0.0,
-0.0025, 0.01, 0.0225, 0.04 ...\] ~~~
+``` {.haskell}
+ghci> let x2s = map (^2) [0,0.05..1]
+ghci> let x2Reader = testAutoM_ fancyCalculus x2s
+ghci> :t x2Reader
+x2Reader :: Reader Double [(Double, Double)]
+ghci> map fst (runReader x2Reader 0.05)
+[ ... 2.0, 2.0 ... ]    -- with a couple of "stabilizing" first terms
+ghci> map snd (runReader x2Reader 0.05)
+[ 0.0, 0.0025, 0.01, 0.0225, 0.04 ...]
+ghci> x2s
+[ 0.0, 0.0025, 0.01, 0.0225, 0.04 ...]
+```
 
 Perfect! The second derivative we expected (all 2's) showed up, and the integral
 of the derivative is pretty much exactly the original function.
@@ -534,7 +665,9 @@ non-global-state Autos into it, or we can pick our "main type" to be `Auto`, and
 For the former, we'd use `autoM`'s whenever we want to bring our `Auto`s into
 `AutoM (State s)`...or we can always write `AutoM`'s parameterized over `m`:
 
-~~~haskell summer :: (Monad m, Num a) =&gt; AutoM m a a ~~~
+``` {.haskell}
+summer :: (Monad m, Num a) => AutoM m a a
+```
 
 It is statically guaranteed that `summer` *cannot touch any global state*.
 
@@ -542,15 +675,18 @@ For the latter option, we take `AutoM (State s)`'s that operate on global state
 and then basically "seal off" their access to be just within their local worlds,
 as we turn them into `Auto`'s.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs\#L182-192
-sealStateAuto :: AutoM (State s) a b -&gt; s -&gt; Auto a b sealStateAuto a s0 =
-ACons $ \\x -&gt; let ((y, a'), s1) = runState (runAutoM a x) s0 in (y,
-sealStateAuto a' s1)
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L182-192
+sealStateAuto :: AutoM (State s) a b -> s -> Auto a b
+sealStateAuto a s0 = ACons $ \x ->
+                       let ((y, a'), s1) = runState (runAutoM a x) s0
+                       in  (y, sealStateAuto a' s1)
 
-runStateAuto :: AutoM (State s) a b -&gt; Auto (a, s) (b, s) runStateAuto a =
-ACons $ (x, s) -&gt; let ((y, a'), s') = runState (runAutoM a x) s in ((y, s'),
-runStateAuto a') ~~~
+runStateAuto :: AutoM (State s) a b -> Auto (a, s) (b, s)
+runStateAuto a = ACons $ \(x, s) ->
+                   let ((y, a'), s') = runState (runAutoM a x) s
+                   in  ((y, s'), runStateAuto a')
+```
 
 `sealStateAuto` does exactly this. Give it an initial state, and the `Auto` will
 just continuously feed in its output state at every tick back in as the input
@@ -561,16 +697,20 @@ outside.
 every time you "step" the `Auto`, and observe how it changes --- also another
 useful use case.
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 We can even pull this trick to turn any `AutoM (StateT s m)` into an `AutoM m`.
 See if you can write it :)
 
-~~~haskell sealStateAutoM :: AutoM (StateT s m) a b -&gt; s -&gt; AutoM m a b
+``` {.haskell}
+sealStateAutoM :: AutoM (StateT s m) a b -> s -> AutoM m a b
 sealStateAutoM = ...
 
-runStateAutoM :: AutoM (StateT s m) a b -&gt; AutoM m (a, s) (b, s)
-runStateAutoM = ... ~~~ &lt;/div&gt;
+runStateAutoM :: AutoM (StateT s m) a b -> AutoM m (a, s) (b, s)
+runStateAutoM = ...
+```
+:::
 
 In both of these methods, what is the real win? The big deal is that you can now
 chose to "work only in the world of non-global-state", combining non-global
@@ -589,11 +729,13 @@ This discussion is about `State`, but the ramifications work with almost any
 
 We can simulate an "immutable local environment", for example:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs\#L248-251
-runReaderAuto :: AutoM (Reader r) a b -&gt; Auto (a, r) b runReaderAuto a =
-ACons $ (x, e) -&gt; let (y, a') = runReader (runAutoM a x) e in (y,
-runReaderAuto a') ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L248-251
+runReaderAuto :: AutoM (Reader r) a b -> Auto (a, r) b
+runReaderAuto a = ACons $ \(x, e) ->
+                    let (y, a') = runReader (runAutoM a x) e
+                    in  (y, runReaderAuto a')
+```
 
 Now you can use a `Reader` --- composed with "global environment" semantics ---
 inside a normal `Auto`! Just give it the new environment very step! (Can you
@@ -631,15 +773,19 @@ control theorist!
 
 Let's see how we might write this using our `Auto`s:
 
-~~~haskell piTargeter :: Auto Double Double piTargeter = proc control -&gt; do
-let err = control - response errSums &lt;- summer -&lt; err
+``` {.haskell}
+piTargeter :: Auto Double Double
+piTargeter = proc control -> do
+    let err = control - response
+    errSums  <- summer         -< err
 
     input    <- summer         -< 0.2 * err + 0.01 * errSums
     response <- blackBoxSystem -< input
 
     id -< response
-
-where blackBoxSystem = id -- to simplify things :) ~~~
+  where
+    blackBoxSystem = id     -- to simplify things :)
+```
 
 So this is an `Auto` that takes in a `Double` --- the control --- and outputs a
 `Double` --- the response. The goal is to get the response to "match" control,
@@ -685,17 +831,20 @@ aside --- it's slightly heavy, but some people like to understand.
 
 Without further ado ---
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs\#L266-276
-piTargeter :: Auto Double Double piTargeter = proc control -&gt; do rec let err
-= control - response errSums &lt;- summer -&lt; err
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L266-276
+piTargeter :: Auto Double Double
+piTargeter = proc control -> do
+    rec let err = control - response
+        errSums  <- summer         -< err
 
         input    <- laggingSummer  -< 0.2 * err + 0.01 * errSums
         response <- blackBoxSystem -< input
 
     id -< response
-
-where blackBoxSystem = id -- to simplify things :) ~~~
+  where
+    blackBoxSystem = id     -- to simplify things :)
+```
 
 The key here is the *rec* keyword. Basically, we require that we write an
 instance of `ArrowLoop` for our `Auto`...and now things can refer to each other,
@@ -710,9 +859,12 @@ that our response is just the result of feeding our input through our black box.
 No loops. No iteration. No mutable variables. Just...a declaration of
 relationships.
 
-~~~haskell ghci&gt; testAuto\_ piTargeter \[5,5.01..6\] -- vary our desired
-target slowly \[ 0, 1.05, 1.93, 2.67, 3.28 ... -- "seeking"/tracking to 5 ,
-5.96, 5.97, 5.98, 5.99, 6.00 -- properly tracking \] ~~~
+``` {.haskell}
+ghci> testAuto_ piTargeter [5,5.01..6]      -- vary our desired target slowly
+[ 0, 1.05, 1.93, 2.67, 3.28 ...         -- "seeking"/tracking to 5
+, 5.96, 5.97, 5.98, 5.99, 6.00          -- properly tracking
+]
+```
 
 Perfect!
 
@@ -723,18 +875,28 @@ what we mean?
 Kinda, yes, no. This works based on Haskell's laziness. It's the reason
 something like `fix` works:
 
-~~~haskell fix :: (a -&gt; a) -&gt; a fix f = f (fix f) ~~~
+``` {.haskell}
+fix :: (a -> a) -> a
+fix f = f (fix f)
+```
 
 Infinite loop, right?
 
-~~~haskell ghci&gt; head (fix (1:)) 1 ~~~
+``` {.haskell}
+ghci> head (fix (1:))
+1
+```
 
 What?
 
 `fix (1:)` is basically an infinite lists of ones. But remember that `head` only
 requires the first element to be evaluated:
 
-~~~haskell head (fix (1:)) head (1 : fix (1:)) -- head (x:\_) = x 1 ~~~
+``` {.haskell}
+head (fix (1:))
+head (1 : fix (1:))     -- head (x:_) = x
+1
+```
 
 So that's the key. If what we *want* doesn't require the entire result of the
 infinite loop...then we can safely reason about infinite recursion in haskell.
@@ -742,11 +904,14 @@ infinite loop...then we can safely reason about infinite recursion in haskell.
 The MVP here really is this function that I sneakily introduced,
 `laggingSummer`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs\#L258-262
-laggingSummer :: Num a =&gt; Auto a a laggingSummer = sumFrom 0 where sumFrom ::
-Num a =&gt; a -&gt; Auto a a sumFrom x0 = ACons $ \\x -&gt; (x0, sumFrom (x0 +
-x)) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L258-262
+laggingSummer :: Num a => Auto a a
+laggingSummer = sumFrom 0
+  where
+    sumFrom :: Num a => a -> Auto a a
+    sumFrom x0 = ACons $ \x -> (x0, sumFrom (x0 + x))
+```
 
 `laggingSummer` is like `summer`, except all of the sums are delayed. Every
 step, it adds the input to the accumulator...but returns the accumulator
@@ -755,8 +920,10 @@ accumulator is at 10, and it receives a 2, it *outputs 10*, and *updates the
 accumulator to 12*. The key is that it *doesn't need the input* to *immediately
 return that step's output*.
 
-~~~haskell ghci&gt; testAuto\_ laggingSummer \[5..10\] \[0, 5, 11, 18, 26, 35\]
-~~~
+``` {.haskell}
+ghci> testAuto_ laggingSummer [5..10]
+[0, 5, 11, 18, 26, 35]
+```
 
 The accumulator starts off at 0, and receives a 5...it then outputs 0 and
 updates the accumulator to 5. The accumulator then has 5 and receives a 6...it
@@ -796,7 +963,8 @@ this to us.
 
 In the following aside, I detail the exact mechanics of how this works :)
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 Ah, so you're curious? Or maybe you are just one of those people who really
 wants to know how things work?
@@ -804,8 +972,10 @@ wants to know how things work?
 The `rec` keyword in proc/do blocks desugars to applications of a function
 called `loop`:
 
-~~~haskell class Arrow r =&gt; ArrowLoop r where loop :: r (a, c) (b, c) -&gt; r
-a b ~~~
+``` {.haskell}
+class Arrow r => ArrowLoop r where
+    loop :: r (a, c) (b, c) -> r a b
+```
 
 The type signature seems a bit funny. Loop takes a morphism from `(a, c)` to
 `(b, c)` and turns it into a morphism from `a` to `b`. But...how does it do
@@ -817,10 +987,13 @@ useful, if you're interested. But we're looking at `Auto` for now.
 
 We can write an `ArrowLoop` instance for `Auto`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L58-61
-instance ArrowLoop Auto where loop a = ACons $ \\x -&gt; let ((y, d), a') =
-runAuto a (x, d) in (y, loop a') ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L58-61
+instance ArrowLoop Auto where
+    loop a = ACons $ \x ->
+               let ((y, d), a') = runAuto a (x, d)
+               in  (y, loop a')
+```
 
 So what does this mean? When will we be able to "get a `y`"?
 
@@ -845,10 +1018,14 @@ By the way, this trick works with `ArrowM` too --- provided that the `Monad` is
 an instance of `MonadFix`, which is basically a generalization of the recursive
 `let` bindings we used above:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs\#L88-91
-instance MonadFix m =&gt; ArrowLoop (AutoM m) where loop a = AConsM $ \\x -&gt;
-do rec ((y, d), a') &lt;- runAutoM a (x, d) return (y, loop a') ~~~ &lt;/div&gt;
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L88-91
+instance MonadFix m => ArrowLoop (AutoM m) where
+    loop a = AConsM $ \x -> do
+               rec ((y, d), a') <- runAutoM a (x, d)
+               return (y, loop a')
+```
+:::
 
 Going Kleisli
 -------------
@@ -861,7 +1038,9 @@ common `Auto` variation/trick that is used in real life usages of `Auto`.
 It might some times be convenient to imagine the *results* of the `Auto`s coming
 in contexts --- for example, `Maybe`:
 
-~~~haskell Auto a (Maybe b) ~~~
+``` {.haskell}
+Auto a (Maybe b)
+```
 
 How can we interpret/use this? In many domains, this is used to model "on/off"
 behavior of `Auto`s. The `Auto` is "on" if the output is `Just`, and "off" if
@@ -869,25 +1048,32 @@ the output is `Nothing`.
 
 We can imagine "baking this in" to our Auto type:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs\#L19-19
-newtype AutoOn a b = AConsOn { runAutoOn :: a -&gt; (Maybe b, AutoOn a b) } ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L19-19
+newtype AutoOn a b = AConsOn { runAutoOn :: a -> (Maybe b, AutoOn a b) }
+```
 
 Where the semantics of composition are: if you get a `Nothing` as an input, just
 don't tick anything and pop out a `Nothing`; if you get a `Just x` as an input
 run the auto on the `x`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs\#L22-29
-instance Category AutoOn where id = AConsOn $ \\x -&gt; (Just x, id) g . f =
-AConsOn $ \\x -&gt; let (y, f') = runAutoOn f x (z, g') = case y of Just *y
--&gt; runAutoOn g *y Nothing -&gt; (Nothing, g) in (z, g' . f') ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L22-29
+instance Category AutoOn where
+    id    = AConsOn $ \x -> (Just x, id)
+    g . f = AConsOn $ \x ->
+              let (y, f') = runAutoOn f x
+                  (z, g') = case y of
+                              Just _y -> runAutoOn g _y
+                              Nothing -> (Nothing, g)
+              in  (z, g' . f')
+```
 
 The other instances are on the file linked above, but I won't post them here, so
-you can write them as an exercise. Have fun on the `ArrowLoop`
-instance!\[^autoonnt\]
+you can write them as an exercise. Have fun on the `ArrowLoop` instance![^6]
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 This aside contains category-theoretic justification for what we just did. You
 can feel free to skip it if you aren't really too familiar with the bare basics
@@ -911,17 +1097,25 @@ we have to rethink what we actually "have".
 
 For any Haskell Monad, we get for free our natural transformations:
 
-~~~haskell unitA :: Monad m =&gt; Auto a (m a) unitA = arr return
+``` {.haskell}
+unitA :: Monad m => Auto a (m a)
+unitA = arr return
 
-joinA :: Monad m =&gt; Auto (m (m a)) (m a) joinA = arr join ~~~
+joinA :: Monad m => Auto (m (m a)) (m a)
+joinA = arr join
+```
 
 But what we *don't get*, necessarily, the *endofunctor*. An endofunctor must map
 both objects and morphisms. A type constructor like `Maybe` can map objects fine
 --- we have the same objects in `Auto` as we do in `(->)` (haskell types). But
 we also need the ability to map *morphisms*:
 
-~~~haskell class FunctorA f where fmapA :: Auto a b -&gt; Auto (f a) (f b) --
-fmapA id = id -- fmapA g . fmapA f = fmapA (g . f) ~~~
+``` {.haskell}
+class FunctorA f where
+    fmapA :: Auto a b -> Auto (f a) (f b)
+    -- fmapA id = id
+    -- fmapA g . fmapA f = fmapA (g . f)
+```
 
 So, if this function exists for a type constructor, following the usual `fmap`
 laws, then that type is an endofunctor in our `Auto` category. And if it's also
@@ -929,15 +1123,22 @@ a Monad in `(->)`, then it's also then a Monad in `Auto`.
 
 We can write such an `fmapA` for `Maybe`:
 
-~~~haskell instance FunctorA Maybe where fmapA a = ACons $ \\x -&gt; case x of
-Just \_x -&gt; let (y, a') = runAuto a x in (Just y, fmapA a') Nothing -&gt;
-(Nothing, fmapA a) ~~~
+``` {.haskell}
+instance FunctorA Maybe where
+    fmapA a = ACons $ \x ->
+                case x of
+                  Just _x -> let (y, a') = runAuto a x
+                             in  (Just y, fmapA a')
+                  Nothing -> (Nothing, fmapA a)
+```
 
 And, it is a fact that if we have a Monad, we can write the composition of its
 Kleisli category for free:
 
-~~~haskell (&lt;~=&lt;) :: (FunctorA f, Monad f) =&gt; Auto a (f c) -&gt; Auto a
-(f b) -&gt; Auto a (f c) g &lt;~=&lt; f = joinA . fmapA g . f ~~~
+``` {.haskell}
+(<~=<) :: (FunctorA f, Monad f) => Auto a (f c) -> Auto a (f b) -> Auto a (f c)
+g <~=< f = joinA . fmapA g . f
+```
 
 In fact, for `f ~ Maybe`, this definition is identical to the one for the
 `Category` instance we wrote above for `AutoOn`.
@@ -945,8 +1146,10 @@ In fact, for `f ~ Maybe`, this definition is identical to the one for the
 And, if the `FunctorA` is a real functor and the `Monad` is a real monad, then
 we have for free the associativity of this super-fish operator:
 
-~~~haskell (h &lt;~=&lt; g) &lt;~=&lt; f == h &lt;~=&lt; (g &lt;~=&lt; f) f
-&lt;~=&lt; unitA == unitA &lt;~=&lt; f == f ~~~
+``` {.haskell}
+(h <~=< g) <~=< f == h <~=< (g <~=< f)
+f <~=< unitA      == unitA <~=< f      == f
+```
 
 Category theory is neat!
 
@@ -959,7 +1162,8 @@ One immediate example is `Either e`, which is used for great effect in many FRP
 libraries! It's "inhibit, with a *value*". As an exercise, see if you can write
 its `FunctorA` instance, or re-write the `AutoOn` in this section to work with
 `Either e` (you might need to impose a typeclass constraint on the `e`) instaed
-of `Maybe`! &lt;/div&gt;
+of `Maybe`!
+:::
 
 I'm not going to spend too much time on this, other than saying that it is
 useful to imagine how it might be useful to have an "off" Auto "shut down" every
@@ -969,12 +1173,16 @@ One neat thing is that `AutoOn` admits a handy `Alternative` instance;
 `a1 <|> a2` will create a new `AutoOn` that feeds in its input to *both* `a1`
 and `a2`, and the result is the first `Just`.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs\#L80-86
-instance Alternative (AutoOn a) where empty = AConsOn $ \_ -&gt; (Nothing,
-empty) -- (&lt;|&gt;) :: AutoOn a b -&gt; AutoOn a b -&gt; AutoOn a b a1
-&lt;|&gt; a2 = AConsOn $ \\x -&gt; let (y1, a1') = runAutoOn a1 x (y2, a2') =
-runAutoOn a2 x in (y1 &lt;|&gt; y2, a1' &lt;|&gt; a2') ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L80-86
+instance Alternative (AutoOn a) where
+    empty     = AConsOn $ \_ -> (Nothing, empty)
+    -- (<|>) :: AutoOn a b -> AutoOn a b -> AutoOn a b
+    a1 <|> a2 = AConsOn $ \x ->
+                  let (y1, a1') = runAutoOn a1 x
+                      (y2, a2') = runAutoOn a2 x
+                  in  (y1 <|> y2, a1' <|> a2')
+```
 
 Unexpectedly, we also get the handy `empty`, which is a "always off" `AutoOn`.
 Feed anything through `empty` and it'll produce a `Nothing` no matter what. You
@@ -987,27 +1195,37 @@ looking if the result is on or off --- here is a common switch that behaves like
 the first `AutoOn` until it is off, and then behaves like the second forever
 after:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs\#L115-121
-(--&gt;) :: AutoOn a b -&gt; AutoOn a b -&gt; AutoOn a b a1 --&gt; a2 = AConsOn
-$ \\x -&gt; let (y1, a1') = runAutoOn a1 x in case y1 of Just \_ -&gt; (y1, a1'
---&gt; a2) Nothing -&gt; runAutoOn a2 x infixr 1 --&gt; ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L115-121
+(-->) :: AutoOn a b -> AutoOn a b -> AutoOn a b
+a1 --> a2 = AConsOn $ \x ->
+              let (y1, a1') = runAutoOn a1 x
+              in   case y1 of
+                     Just _  -> (y1, a1' --> a2)
+                     Nothing -> runAutoOn a2 x
+infixr 1 -->
+```
 
 ### Usages
 
 Let's test this out; first, some helper functions (the same ones we wrote for
 `AutoM`)
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs\#L91-107
-autoOn :: Auto a b -&gt; AutoOn a b autoOn a = AConsOn $ \\x -&gt; let (y, a') =
-runAuto a x in (Just y, autoOn a')
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L91-107
+autoOn :: Auto a b -> AutoOn a b
+autoOn a = AConsOn $ \x ->
+             let (y, a') = runAuto a x
+             in  (Just y, autoOn a')
 
-arrOn :: (a -&gt; Maybe b) -&gt; AutoOn a b arrOn f = AConsOn $ \\x -&gt; (f x,
-arrOn f)
+arrOn :: (a -> Maybe b) -> AutoOn a b
+arrOn f = AConsOn $ \x -> (f x, arrOn f)
 
-fromAutoOn :: AutoOn a b -&gt; Auto a (Maybe b) fromAutoOn a = ACons $ \\x -&gt;
-let (y, a') = runAutoOn a x in (y, fromAutoOn a') ~~~
+fromAutoOn :: AutoOn a b -> Auto a (Maybe b)
+fromAutoOn a = ACons $ \x ->
+                 let (y, a') = runAutoOn a x
+                 in  (y, fromAutoOn a')
+```
 
 `autoOn` turns an `Auto a b` into an `AutoOn a b`, where the result is always
 `Just`. `arrOn` is like `arr` and `arrM`...it takes an `a -> Maybe b` and turns
@@ -1017,66 +1235,100 @@ normal `Auto`s.
 
 Let's play around with some test `AutoOn`s!
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs\#L131-152
-onFor :: Int -&gt; AutoOn a a onFor n = proc x -&gt; do i &lt;- autoOn summer
--&lt; 1 if i &lt;= n then id -&lt; x -- succeed else empty -&lt; x -- fail --
-alternatively, using explit recursion: -- onFor 0 = empty -- onFor n = AConsOn $
-\\x -&gt; (Just x, onFor' (n-1))
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L131-152
+onFor :: Int -> AutoOn a a
+onFor n = proc x -> do
+    i <- autoOn summer -< 1
+    if i <= n
+      then id    -< x       -- succeed
+      else empty -< x       -- fail
+-- alternatively, using explit recursion:
+-- onFor 0 = empty
+-- onFor n = AConsOn $ \x -> (Just x, onFor' (n-1))
 
-filterA :: (a -&gt; Bool) -&gt; AutoOn a a filterA p = arrOn (\\x -&gt; x &lt;$
-guard (p x))
+filterA :: (a -> Bool) -> AutoOn a a
+filterA p = arrOn (\x -> x <$ guard (p x))
 
-untilA :: (a -&gt; Bool) -&gt; AutoOn a a untilA p = proc x -&gt; do stopped
-&lt;- autoOn (autoFold (||) False) -&lt; p x if stopped then empty -&lt; x --
-fail else id -&lt; x -- succeed -- alternatively, using explicit recursion: --
-untilA p = AConsOn $ \\x -&gt; -- if p x -- then (Just x , untilA p) -- else
-(Nothing, empty ) ~~~
+untilA :: (a -> Bool) -> AutoOn a a
+untilA p = proc x -> do
+    stopped <- autoOn (autoFold (||) False) -< p x
+    if stopped
+      then empty -< x       -- fail
+      else id    -< x       -- succeed
+-- alternatively, using explicit recursion:
+-- untilA p = AConsOn $ \x ->
+--              if p x
+--                then (Just x , untilA p)
+--                else (Nothing, empty   )
+```
 
 One immediate usage is that we can use these to "short circuit" our proc blocks,
 just like with monadic `Maybe` and do blocks:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs\#L163-173
-shortCircuit1 :: AutoOn Int Int shortCircuit1 = proc x -&gt; do filterA even
--&lt; x onFor 3 -&lt; () id -&lt; x \* 10
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L163-173
+shortCircuit1 :: AutoOn Int Int
+shortCircuit1 = proc x -> do
+    filterA even -< x
+    onFor 3      -< ()
+    id           -< x * 10
 
-shortCircuit2 :: AutoOn Int Int shortCircuit2 = proc x -&gt; do onFor 3 -&lt; ()
-filterA even -&lt; x id -&lt; x \* 10 ~~~
+shortCircuit2 :: AutoOn Int Int
+shortCircuit2 = proc x -> do
+    onFor 3      -< ()
+    filterA even -< x
+    id           -< x * 10
+```
 
 If either the `filterA` or the `onFor` are off, then the whole thing is off. How
 do you think the two differ?
 
-~~~haskell ghci&gt; testAuto (fromAutoOn shortCircuit1) \[1..12\] \[ Nothing,
-Just 20, Nothing, Just 40, Nothing, Just 60 , Nothing, Nothing, Nothing,
-Nothing, Nothing, Nothing\] ghci&gt; testAuto (fromAutoOn shortCircuit2)
-\[1..12\] \[ Nothing, Just 20, Nothing, Nothing, Nothing, Nothing , Nothing,
-Nothing, Nothing, Nothing, Nothing, Nothing\] ~~~
+``` {.haskell}
+ghci> testAuto (fromAutoOn shortCircuit1) [1..12]
+[ Nothing, Just 20, Nothing, Just 40, Nothing, Just 60
+, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing]
+ghci> testAuto (fromAutoOn shortCircuit2) [1..12]
+[ Nothing, Just 20, Nothing, Nothing, Nothing, Nothing
+, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing]
+```
 
 Ah. For `shortCircuit1`, as soon as the `filterA` fails, it jumps *straight to
 the end*, short-circuiting; it doesn't bother "ticking along" the `onFor` and
 updating its state!
 
 The arguably more interesting usage, and the one that is more used in real
-life\[^schead\], is the powerful usage of the switching combinator `(-->)` in
-order to be able to combine multiple `Auto`'s that simulate "stages"...an `Auto`
-can "do what it wants", and then choose to "hand it off" when it is ready.
+life[^7], is the powerful usage of the switching combinator `(-->)` in order to
+be able to combine multiple `Auto`'s that simulate "stages"...an `Auto` can "do
+what it wants", and then choose to "hand it off" when it is ready.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs\#L178-183
-stages :: AutoOn Int Int stages = stage1 --&gt; stage2 --&gt; stage3 --&gt;
-stages where stage1 = onFor 2 . arr negate stage2 = untilA (&gt; 15) . autoOn
-summer stage3 = onFor 3 . (pure 100 . filterA even &lt;|&gt; pure 200) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L178-183
+stages :: AutoOn Int Int
+stages = stage1 --> stage2 --> stage3 --> stages
+  where
+    stage1 = onFor 2 . arr negate
+    stage2 = untilA (> 15) . autoOn summer
+    stage3 = onFor 3 . (pure 100 . filterA even <|> pure 200)
+```
 
-~~~haskell ghci&gt; testAuto\_ (fromAutoOn stages) \[1..15\] \[ Just (-1), Just
-(-2) -- stage 1 , Just 3, Just 7, Just 12 -- stage 2 , Just 100, Just 200, Just
-100 -- stage 3 , Just (-9), Just (-10) -- stage 1 , Just 11 -- stage 2 , Just
-100, Just 200, Just 100 -- stage 3 , Just (-15), Just (-16) -- stage 1 \] ~~~
+``` {.haskell}
+ghci> testAuto_ (fromAutoOn stages) [1..15]
+[ Just (-1), Just (-2)              -- stage 1
+, Just 3, Just 7, Just 12           -- stage 2
+, Just 100, Just 200, Just 100      -- stage 3
+, Just (-9), Just (-10)             -- stage 1
+, Just 11                           -- stage 2
+, Just 100, Just 200, Just 100      -- stage 3
+, Just (-15), Just (-16)            -- stage 1
+]
+```
 
 Note that the stages continually "loop around", as our recursive definition
 seems to imply. Neat!
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 You might note that sometimes, to model on/off behavior, it might be nice to
 really be able to "keep on counting" even when receiving a `Nothing` in a
@@ -1088,29 +1340,37 @@ If this is the behavior you want to model (and this is actually the behavior
 modeled in some FRP libraries), then the type above isn't powerful enough;
 you'll have to go deeper:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs\#L10-10
-newtype AutoOn2 a b = ACons2 { runAutoOn2 :: Maybe a -&gt; (Maybe b, AutoOn2 a
-b) } ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs#L10-10
+newtype AutoOn2 a b = ACons2 { runAutoOn2 :: Maybe a -> (Maybe b, AutoOn2 a b) }
+```
 
 So now, you can write something like `onFor`, which keeps on "ticking on" even
 if it receives a `Nothing` from upstream:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs\#L16-18
-onFor :: Int -&gt; AutoOn2 a a onFor 0 = ACons2 $ \_ -&gt; (Nothing, onFor 0)
-onFor n = ACons2 $ \\x -&gt; (x, onFor (n - 1)) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs#L16-18
+onFor :: Int -> AutoOn2 a a
+onFor 0 = ACons2 $ \_ -> (Nothing, onFor 0)
+onFor n = ACons2 $ \x -> (x, onFor (n - 1))
+```
 
 You can of course translate all of your `AutoOn`s into this new type:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs\#L24-31
-autoOn :: AutoOn a b -&gt; AutoOn2 a b autoOn a = ACons2 $ \\x -&gt; case x of
-Just *x -&gt; let (y, a') = runAutoOn a *x in (y, autoOn a') Nothing -&gt;
-(Nothing, autoOn a) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs#L24-31
+autoOn :: AutoOn a b -> AutoOn2 a b
+autoOn a = ACons2 $ \x ->
+             case x of
+               Just _x ->
+                 let (y, a') = runAutoOn a _x
+                 in  (y, autoOn a')
+               Nothing ->
+                 (Nothing, autoOn a)
+```
 
 Or you can use the smart constructor method detailed immediately following.
-&lt;/div&gt;
+:::
 
 Working all together
 --------------------
@@ -1118,10 +1378,10 @@ Working all together
 Of course, we can always literally throw everything we can add together into our
 `Auto` type:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs\#L18-18
-newtype AutoX m a b = AConsX { runAutoX :: a -&gt; m (Maybe b, AutoX m a b) }
-~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L18-18
+newtype AutoX m a b = AConsX { runAutoX :: a -> m (Maybe b, AutoX m a b) }
+```
 
 (Again, instances are in the source file, but not here in the post directly)
 
@@ -1144,43 +1404,70 @@ even more streamlined: we can replace the "normal constructors" like `ACons`,
 `AConsM`, and `AConsOn`, with *smart constructors* `aCons`, `aConsM`, `aConsOn`,
 that work *exactly the same way*:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs\#L85-100
-aCons :: Monad m =&gt; (a -&gt; (b, AutoX m a b)) -&gt; AutoX m a b aCons a =
-AConsX $ \\x -&gt; let (y, aX) = a x in return (Just y, aX)
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L85-100
+aCons :: Monad m => (a -> (b, AutoX m a b)) -> AutoX m a b
+aCons a = AConsX $ \x ->
+            let (y, aX) = a x
+            in  return (Just y, aX)
 
-aConsM :: Monad m =&gt; (a -&gt; m (b, AutoX m a b)) -&gt; AutoX m a b aConsM a
-= AConsX $ \\x -&gt; do (y, aX) &lt;- a x return (Just y, aX)
+aConsM :: Monad m => (a -> m (b, AutoX m a b)) -> AutoX m a b
+aConsM a = AConsX $ \x -> do
+             (y, aX) <- a x
+             return (Just y, aX)
 
-aConsOn :: Monad m =&gt; (a -&gt; (Maybe b, AutoX m a b)) -&gt; AutoX m a b
-aConsOn a = AConsX $ \\x -&gt; let (y, aX) = a x in return (y, aX) ~~~
+aConsOn :: Monad m => (a -> (Maybe b, AutoX m a b)) -> AutoX m a b
+aConsOn a = AConsX $ \x ->
+              let (y, aX) = a x
+              in  return (y, aX)
+```
 
 Compare these definitions of `summer`, `arrM`, and `untilA` from their "specific
 type" "real constructor" versions to their `AutoX`-generic "smart constructor"
 versions:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs\#L67-73
-summer :: Num a =&gt; Auto a a summer = sumFrom 0 where sumFrom :: Num a =&gt; a
--&gt; Auto a a sumFrom n = ACons $ \\input -&gt; let s = n + input in ( s ,
-sumFrom s ) -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs\#L104-107
-arrM :: Monad m =&gt; (a -&gt; m b) -&gt; AutoM m a b arrM f = AConsM $ \\x
--&gt; do y &lt;- f x return (y, arrM f) -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs\#L154-158
-untilA' :: (a -&gt; Bool) -&gt; AutoOn a a untilA' p = AConsOn $ \\x -&gt; if p
-x then (Just x , untilA p) else (Nothing, empty ) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L67-73
+summer :: Num a => Auto a a
+summer = sumFrom 0
+  where
+    sumFrom :: Num a => a -> Auto a a
+    sumFrom n = ACons $ \input ->
+      let s = n + input
+      in  ( s , sumFrom s )
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L104-107
+arrM :: Monad m => (a -> m b) -> AutoM m a b
+arrM f = AConsM $ \x -> do
+                    y <- f x
+                    return (y, arrM f)
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L154-158
+untilA' :: (a -> Bool) -> AutoOn a a
+untilA' p = AConsOn $ \x ->
+              if p x
+                then (Just x , untilA p)
+                else (Nothing, empty   )
+```
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs\#L106-128
-summer :: (Monad m, Num a) =&gt; AutoX m a a summer = sumFrom 0 where sumFrom n
-= aCons $ \\input -&gt; let s = n + input in ( s , sumFrom s )
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L106-128
+summer :: (Monad m, Num a) => AutoX m a a
+summer = sumFrom 0
+  where
+    sumFrom n = aCons $ \input ->
+      let s = n + input
+      in  ( s , sumFrom s )
 
-arrM :: Monad m =&gt; (a -&gt; m b) -&gt; AutoX m a b arrM f = aConsM $ \\x
--&gt; do y &lt;- f x return (y, arrM f)
+arrM :: Monad m => (a -> m b) -> AutoX m a b
+arrM f = aConsM $ \x -> do
+                    y <- f x
+                    return (y, arrM f)
 
-untilA :: Monad m =&gt; (a -&gt; Bool) -&gt; AutoX m a a untilA p = aConsOn $
-\\x -&gt; if p x then (Just x , untilA p) else (Nothing, empty ) ~~~
+untilA :: Monad m => (a -> Bool) -> AutoX m a a
+untilA p = aConsOn $ \x ->
+             if p x
+               then (Just x , untilA p)
+               else (Nothing, empty   )
+```
 
 They are literally exactly the same...we just change the constructor to the
 smart constructor!
@@ -1188,9 +1475,10 @@ smart constructor!
 You might also note that we can express a "pure, non-Monadic" `Auto` in `AutoM`
 and `AutoX` by making the type polymorphic over all monads:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs\#L106-106
-summer :: (Monad m, Num a) =&gt; AutoX m a a ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L106-106
+summer :: (Monad m, Num a) => AutoX m a a
+```
 
 An `Auto` with a type like this says, "I cannot perform any effects during
 stepping" --- and we know that `summer` definitely does not. `summer` is
@@ -1208,10 +1496,11 @@ inhibition-based semantics, just only use `AutoM`, for example!
 
 By the way, here's a "smart constructor" for `AutoM`.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs\#L112-113
-aCons :: Monad m =&gt; (a -&gt; (b, AutoM m a b)) -&gt; AutoM m a b aCons f =
-AConsM $ \\x -&gt; return (f x) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L112-113
+aCons :: Monad m => (a -> (b, AutoM m a b)) -> AutoM m a b
+aCons f = AConsM $ \x -> return (f x)
+```
 
 Closing Remarks
 ---------------
@@ -1279,3 +1568,34 @@ So, what's next?
     using the concepts in this series to *implement FRP*.
 
 Happy Haskelling!
+
+[^1]: Some of you might recall an earlier plan for this post that would include
+    FRP. Unfortunately, I've refactored FRP into a completely new topic, because
+    I've realized that the two aren't exactly as related as I had led you all to
+    believe. Still, most if not all of these techniques here are used in actual
+    arrowized FRP libraries today. So, look out for that one soon!
+
+[^2]: I'm going to go out on a limb here and say that, where Haskell lets you
+    abstract over functions and function composition with `Category`, Haskell
+    lets you abstract over values and function application with `Monad`,
+    `Applicative`, and `Functor`.
+
+[^3]: This function really could be avoided if we had written all of our `Auto`s
+    is `AutoM`'s parameterized over all `m` in the first place --- that is,
+    written our `Auto a b`'s as the equally powerful `Monad m => AutoM m a b`.
+    But we're just going to run with `Auto` for the rest of this series to make
+    things a bit less confusing.
+
+[^4]: By the way, you might notice this pattern as something that seems more fit
+    for `Reader` than `IO`. We'll look at that later!
+
+[^5]: Which really isn't the point of these posts, anyway!
+
+[^6]: Another exercise you can do if you wanted is to write the exact same
+    instances, but for `newtype AutoOn a b = AutoOn (Auto a (Maybe b))` :)
+
+[^7]: Admittedly, implicit short-circuiting with `Auto`s is actually often times
+    a lot more of a headache than it's worth; note that "switching" still works
+    if you have a normal `Auto a (Maybe b)`; this is the approach that many
+    libraries like [*auto*](https://github.com/mstksg/auto.) take --- write
+    switching combinators on normal `Auto a (Maybe b)`'s instead.

@@ -135,8 +135,8 @@ given file handle. As a *Consumer*, we have `toHandle`, which takes in
 
 Those in hand, we'll need:
 
-1.  A pipe that turns incoming `ByteString`s into bytes\[^bs\] (`Word8`s),
-    emitting one at a time.
+1.  A pipe that turns incoming `ByteString`s into bytes[^1] (`Word8`s), emitting
+    one at a time.
 2.  A pipe that turns incoming `Word8`s into `Direction`s, by looking up each
     `Word8` in an encoding table to get a list of `Direction`s and emitting them
     one at a time.
@@ -188,7 +188,9 @@ of:
 And then we "transform" that `Direction` producer into a `Word8` producer, which
 we'll call `dirsBytes`:
 
-~~~haskell dirsBytes :: Producer Direction m r -&gt; Producer Word8 m r ~~~
+``` {.haskell}
+dirsBytes :: Producer Direction m r -> Producer Word8 m r
+```
 
 which turns a `Direction` producer into a `Word8` producer that clumps up the
 `Direction`s into groups of 8 --- and if the directions run out, pad the rest of
@@ -220,18 +222,25 @@ for us.
 
 The only hitch is that it's "trapped" in a "lens", called `PB.pack`.
 
-~~~haskell PB.pack :: Lens' (Producer Word8 m r) (Producer ByteString m r) ~~~
+``` {.haskell}
+PB.pack :: Lens' (Producer Word8 m r) (Producer ByteString m r)
+```
 
 If you are still learning lens, this basically means that `PB.pack` contains,
 among other things, a function that allows you to go from a `Word8` producer to
 a `ByteString` producer. The function `view` lets us unlock that pipe
 transformer from the lens.
 
-~~~haskell view :: Lens' a b -&gt; (a -&gt; b) -- in our case ~~~
+``` {.haskell}
+view :: Lens' a b -> (a -> b)       -- in our case
+```
 
 So,
 
-~~~haskell view PB.pack :: Producer Word8 m r -&gt; Producer ByteString m r ~~~
+``` {.haskell}
+view PB.pack :: Producer Word8      m r
+             -> Producer ByteString m r
+```
 
 Cool. Anyways, *pipes-bytestring* implements `view pack` (the conversion
 function) in a way that does ["smart
@@ -247,31 +256,50 @@ Let's just get down to it!
 
 First, our imports:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L19-46
--- General imports import Control.Applicative ((&lt;$&gt;)) import
-Control.Monad.Trans.State.Strict (evalState) import Data.Foldable (sum) import
-Data.Map.Strict (Map, (!)) import Lens.Family2 (view) import Prelude hiding
-(sum) import System.Environment (getArgs) import System.IO (withFile,
-IOMode(..)) import qualified Data.Map.Strict as M
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L19-46
+-- General imports
+import Control.Applicative              ((<$>))
+import Control.Monad.Trans.State.Strict (evalState)
+import Data.Foldable                    (sum)
+import Data.Map.Strict                  (Map, (!))
+import Lens.Family2                     (view)
+import Prelude hiding                   (sum)
+import System.Environment               (getArgs)
+import System.IO                        (withFile, IOMode(..))
+import qualified Data.Map.Strict        as M
 
--- Pipes imports import Pipes import Pipes.Parse import qualified
-Pipes.ByteString as PB import qualified Pipes.Prelude as PP
+-- Pipes imports
+import Pipes
+import Pipes.Parse
+import qualified Pipes.ByteString as PB
+import qualified Pipes.Prelude    as PP
 
--- Working with Binary import Data.Binary hiding (encodeFile) import Data.Bits
-(setBit) import Data.ByteString (ByteString) import qualified Data.ByteString as
-B import qualified Data.ByteString.Lazy as BL
+-- Working with Binary
+import Data.Binary hiding             (encodeFile)
+import Data.Bits                      (setBit)
+import Data.ByteString                (ByteString)
+import qualified Data.ByteString      as B
+import qualified Data.ByteString.Lazy as BL
 
--- Huffman imports import Huffman import PQueue import PreTree ~~~
+-- Huffman imports
+import Huffman
+import PQueue
+import PreTree
+```
 
 It's a doozy, admittedly!
 
 Now `main`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L48-60
-main :: IO () main = do args &lt;- getArgs let (inp, out) = case args of i:o:\_
--&gt; (i,o) \_ -&gt; error "Give input and output files."
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L48-60
+main :: IO ()
+main = do
+    args     <- getArgs
+    let (inp, out)  = case args of
+                        i:o:_      -> (i,o)
+                        _          -> error "Give input and output files."
 
     metadata <- analyzeFile inp
     let (len, tree) = case metadata of
@@ -279,8 +307,7 @@ main :: IO () main = do args &lt;- getArgs let (inp, out) = case args of i:o:\_
                         Nothing     -> error "Empty File"
 
     encodeFile inp out len tree
-
-~~~
+```
 
 Just straight-forward, more or less. The error handling is kind of not too
 great, but we won't go into that too deeply here :)
@@ -294,14 +321,21 @@ it. It'll also give us the length of the file in bytes; this is actually
 necessary for *decoding* the file later, because it tells us where to stop
 decoding (lest we begin decoding the leftover padding bits).
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L63-74
-analyzeFile :: FilePath -&gt; IO (Maybe (Int, PreTree Word8)) analyzeFile fp =
-withFile fp ReadMode $ \\hIn -&gt; do let byteProducer = PB.fromHandle hIn
-&gt;-&gt; bsToBytes fqs &lt;- freqs byteProducer let len = sum fqs tree =
-evalState (listQueueStateTable fqs &gt;&gt; buildTree) emptyPQ return $ fmap
-(len,) tree where freqs :: (Monad m, Ord a) =&gt; Producer a m () -&gt; m (M.Map
-a Int) freqs = PP.fold f M.empty id where f m x = M.insertWith (+) x 1 m ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L63-74
+analyzeFile :: FilePath -> IO (Maybe (Int, PreTree Word8))
+analyzeFile fp = withFile fp ReadMode $ \hIn -> do
+    let byteProducer = PB.fromHandle hIn >-> bsToBytes
+    fqs <- freqs byteProducer
+    let len  = sum fqs
+        tree = evalState (listQueueStateTable fqs >> buildTree) emptyPQ
+    return $ fmap (len,) tree
+  where
+    freqs :: (Monad m, Ord a) => Producer a m () -> m (M.Map a Int)
+    freqs = PP.fold f M.empty id
+      where
+        f m x = M.insertWith (+) x 1 m
+```
 
 First, we use
 [`withFile`](http://hackage.haskell.org/package/base-4.7.0.0/docs/System-IO.html#v:withFile)
@@ -316,17 +350,18 @@ We'll assemble our producer of bytes by using `PB.fromHandle hIn` --- a producer
 of `ByteString`s --- and chaining it to `bsToBytes`, a pipe that takes incoming
 `ByteString`s and emits their constituent, unpacked `Word8`s one-by-one:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L96-97
-bsToBytes :: Monad m =&gt; Pipe ByteString Word8 m r bsToBytes = PP.mapFoldable
-B.unpack ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L96-97
+bsToBytes :: Monad m => Pipe ByteString Word8 m r
+bsToBytes = PP.mapFoldable B.unpack
+```
 
 Our implementation uses `B.unpack :: ByteString -> [Word8]` from
 *pipes-bytestring*, which turns a `ByteString` into a list of its constituent
 `Word8`s. We use `PP.mapFoldable`, which is sort of like `concatMap` --- it
 applies the given function to every incoming element in the stream, and emits
-the items in the resulting list\[^foldable\] one-by-one. So `bsToBytes` is a
-Pipe that takes in `ByteString`s and emits each contained `Word8` one-by-one.
+the items in the resulting list[^2] one-by-one. So `bsToBytes` is a Pipe that
+takes in `ByteString`s and emits each contained `Word8` one-by-one.
 
 Then with our pipe ready, we "run"/"use" it, using `PP.fold`, from the pipes
 Prelude. This basically runs a giant "foldl" all over the incoming items of the
@@ -335,10 +370,13 @@ given producer.
 The fold is identical in logic to `listFreq` from a [Part
 2](http://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-2-binary):
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs\#L22-25
-listFreq :: Ord a =&gt; \[a\] -&gt; FreqTable a listFreq = foldr f M.empty where
-f x m = M.insertWith (+) x 1 m ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L22-25
+listFreq :: Ord a => [a] -> FreqTable a
+listFreq = foldr f M.empty
+  where
+    f x m = M.insertWith (+) x 1 m
+```
 
 Except instead of folding over a list, we fold over the elements of the
 producer. Note that the helper function has its arguments reversed. This whole
@@ -358,17 +396,24 @@ and the TupleSections extension. (That is, `(,y)` is sugar for `(\x -> (x,y))`).
 
 Once we have that, we can get onto the actual encoding process: the second pass.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L78-92
-encodeFile :: FilePath -&gt; FilePath -&gt; Int -&gt; PreTree Word8 -&gt; IO ()
-encodeFile inp out len tree = withFile inp ReadMode $ \\hIn -&gt; withFile out
-WriteMode $ \\hOut -&gt; do BL.hPut hOut $ encode (len, tree) let dirsOut =
-PB.fromHandle hIn &gt;-&gt; bsToBytes &gt;-&gt; encodeByte encTable bsOut = view
-PB.pack . dirsBytes $ dirsOut pipeline = bsOut &gt;-&gt; PB.toHandle hOut
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L78-92
+encodeFile :: FilePath -> FilePath -> Int -> PreTree Word8 -> IO ()
+encodeFile inp out len tree =
+    withFile inp ReadMode  $ \hIn  ->
+    withFile out WriteMode $ \hOut -> do
+      BL.hPut hOut $ encode (len, tree)
+      let dirsOut   = PB.fromHandle hIn
+                  >-> bsToBytes
+                  >-> encodeByte encTable
+          bsOut     = view PB.pack . dirsBytes $ dirsOut
+          pipeline  = bsOut
+                  >-> PB.toHandle hOut
 
       runEffect pipeline
-
-where encTable = ptTable tree ~~~
+  where
+    encTable  = ptTable tree
+```
 
 First, we open our file handles for our input and output files. Then, we use
 what we learned in [Part
@@ -396,10 +441,13 @@ and spits out the resulting `Direction`s one at a time.
 
 `encodeByte encTable` is implemented "exactly the same" as `bsToBytes`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L101-104
-encodeByte :: (Ord a, Monad m) =&gt; Map a Encoding -&gt; Pipe a Direction m r
-encodeByte encTable = PP.mapFoldable (encTable !) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L101-104
+encodeByte :: (Ord a, Monad m)
+           => Map a Encoding
+           -> Pipe a Direction m r
+encodeByte encTable = PP.mapFoldable (encTable !)
+```
 
 instead of using `mapFoldable` with a `ByteString -> [Word8]`, we use
 `mapFoldable` with a `Word8 -> [Direction]`, which does the same thing --- apply
@@ -414,12 +462,19 @@ So now we have `dirsOut :: Producer Direction IO r`, which is a producer of
 `Direction`s drawn from the file. It's now time to "group up" the directions,
 using the "producer transformer" tactic we discussed earlier.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L108-117
-dirsBytes :: (MonadIO m, Functor m) =&gt; Producer Direction m r -&gt; Producer
-Word8 m () dirsBytes p = do (result, leftovers) &lt;- lift $ runStateT
-dirsBytesP p case result of Just byte -&gt; do yield byte dirsBytes leftovers
-Nothing -&gt; return () ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L108-117
+dirsBytes :: (MonadIO m, Functor m)
+          => Producer Direction m r
+          -> Producer Word8     m ()
+dirsBytes p = do
+    (result, leftovers) <- lift $ runStateT dirsBytesP p
+    case result of
+      Just byte -> do
+        yield byte
+        dirsBytes leftovers
+      Nothing   -> return ()
+```
 
 `dirsBytes` turns out `Direction` producer into a `Word8` producer by running
 the *parser* `dirsBytesP` onto the producer, and looping onto itself. We'll look
@@ -430,16 +485,20 @@ returns `Nothing`.
 
 Remember that in *pipes-parse*:
 
-~~~haskell runStateT :: Parser a m b -&gt; Producer a m r -&gt; m (b, Producer a
-m r) ~~~
+``` {.haskell}
+runStateT :: Parser a m b -> Producer a m r -> m (b, Producer a m r)
+```
 
 Basically, `runStateT parser` takes a `Producer a` and "parses" a value out of
 it, returning the parsed value and the "leftover/used" `Producer`.
 
 In our case:
 
-~~~haskell runStateT :: Parser Direction IO (Maybe Word8) -&gt; Producer
-Direction IO r -&gt; IO (Maybe Word8, Producer Direction IO r) ~~~
+``` {.haskell}
+runStateT :: Parser   Direction IO (Maybe Word8)
+          -> Producer Direction IO r
+          -> IO (Maybe Word8, Producer Direction IO r)
+```
 
 So we use the `dirsBytesP` parser onto the producer we are given. If it doesn't
 parse any bytes (`Nothing`), then we stop. If it does (`Just byte`), then we
@@ -449,14 +508,24 @@ producer.
 Let's take a look at the `dirsBytesP` parser, which parses `Direction`s into a
 `Word8`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L123-137
-dirsBytesP :: (Monad m, Functor m) =&gt; Parser Direction m (Maybe Word8)
-dirsBytesP = do isEnd &lt;- isEndOfInput if isEnd then return Nothing else Just
-&lt;$&gt; go 0 0 where go :: Monad m =&gt; Word8 -&gt; Int -&gt; Parser
-Direction m Word8 go b 8 = return b go b i = do dir &lt;- draw case dir of Just
-DLeft -&gt; go b (i + 1) Just DRight -&gt; go (setBit b i) (i + 1) Nothing -&gt;
-return b ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L123-137
+dirsBytesP :: (Monad m, Functor m) => Parser Direction m (Maybe Word8)
+dirsBytesP = do
+    isEnd <- isEndOfInput
+    if isEnd
+      then return Nothing
+      else Just <$> go 0 0
+  where
+    go :: Monad m => Word8 -> Int -> Parser Direction m Word8
+    go b 8 = return b
+    go b i = do
+      dir <- draw
+      case dir of
+        Just DLeft  -> go     b            (i + 1)
+        Just DRight -> go     (setBit b i) (i + 1)
+        Nothing     -> return b
+```
 
 This implementation is pretty straightforward --- "if the producer is empty,
 return `Nothing`. Otherwise, start with `00000000` and draw `Direction`s one at
@@ -478,9 +547,10 @@ We get our direction producer by doing `dirsBytes dirsOut`.
 And finally, we use the "smart chunking" provided by *pipes-bytestring* by
 transforming our bytes stream:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L86-86
-bsOut = view PB.pack . dirsBytes $ dirsOut ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L86-86
+          bsOut     = view PB.pack . dirsBytes $ dirsOut
+```
 
 #### All together
 
@@ -495,16 +565,13 @@ Once we have our `pipeline`, we use `runEffect` to "run" it; then...that's it!
 Cool, let's try it out with Leo Tolstoy's great classic [War and
 Peace](http://www.gutenberg.org/files/2600/2600.txt) from Project Gutenberg!
 
-~~~bash $ ghc -O2 encode.hs $ ./encode warandpeace.txt warandpeace.enc $ du -h
-warandpeace.\*
-
-1.8M warandpeace.enc
-====================
-
-3.1M warandpeace.txt
-====================
-
-~~~
+``` {.bash}
+$ ghc -O2 encode.hs
+$ ./encode warandpeace.txt warandpeace.enc
+$ du -h warandpeace.*
+# 1.8M warandpeace.enc
+# 3.1M warandpeace.txt
+```
 
 Cool, we compressed it to 58% of the original file size. Not bad! Using `gzip`
 with default settings gives a compression of 39%, so it's not the best, but it's
@@ -556,34 +623,52 @@ Luckily we can use most of the concepts we learned in writing the encoding
 script to write the decoding script; we also have a less imports, so it's a sign
 that decoding is going to be slightly simpler than encoding.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs\#L18-37
--- General imports import Lens.Family2 (view) import System.Environment
-(getArgs) import System.IO (withFile, IOMode(..))
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L18-37
+-- General imports
+import Lens.Family2       (view)
+import System.Environment (getArgs)
+import System.IO          (withFile, IOMode(..))
 
--- Pipes imports import Pipes import Pipes.Parse import qualified Pipes.Binary
-as PB import qualified Pipes.ByteString as PB import qualified Pipes.Prelude as
-PP
+-- Pipes imports
+import Pipes
+import Pipes.Parse
+import qualified Pipes.Binary     as PB
+import qualified Pipes.ByteString as PB
+import qualified Pipes.Prelude    as PP
 
--- Working with Binary import Data.Bits (testBit) import Data.ByteString
-(ByteString) import Data.Word (Word8) import qualified Data.ByteString as B
+-- Working with Binary
+import Data.Bits                 (testBit)
+import Data.ByteString           (ByteString)
+import Data.Word                 (Word8)
+import qualified Data.ByteString as B
 
--- Huffman imports import PreTree ~~~
+-- Huffman imports
+import PreTree
+```
 
 `main` should seem very familiar:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs\#L39-45
-main :: IO () main = do args &lt;- getArgs let (inp, out) = case args of i:o:\_
--&gt; (i,o) \_ -&gt; error "Give input and output files." decodeFile inp out ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L39-45
+main :: IO ()
+main = do
+    args     <- getArgs
+    let (inp, out)  = case args of
+                        i:o:_      -> (i,o)
+                        _          -> error "Give input and output files."
+    decodeFile inp out
+```
 
 And now on to the juicy parts:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs\#L48-69
-decodeFile :: FilePath -&gt; FilePath -&gt; IO () decodeFile inp out = withFile
-inp ReadMode $ \\hIn -&gt; withFile out WriteMode $ \\hOut -&gt; do let
-metadataPipe = PB.fromHandle hIn
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L48-69
+decodeFile :: FilePath -> FilePath -> IO ()
+decodeFile inp out =
+    withFile inp ReadMode  $ \hIn  ->
+    withFile out WriteMode $ \hOut -> do
+      let metadataPipe = PB.fromHandle hIn
 
       -- consume metapipe to read in the tree/metadata
       (metadata, decodingPipe) <- runStateT PB.decode metadataPipe
@@ -601,8 +686,7 @@ metadataPipe = PB.fromHandle hIn
                       >-> PB.toHandle hOut
 
           runEffect pipeline
-
-~~~
+```
 
 #### Loading metadata
 
@@ -619,9 +703,12 @@ The "result" is the `Either` containing the success or failure, and the
 
 In our case:
 
-~~~haskell runStateT :: Parser ByteString IO (Either DecodingError (Int, PreTree
-Word8)) -&gt; Producer ByteString IO r -&gt; IO (Either DecodingError (Int,
-PreTree Word8), Producer ByteString IO r) ~~~
+``` {.haskell}
+runStateT
+  :: Parser   ByteString IO (Either DecodingError (Int, PreTree Word8))
+  -> Producer ByteString IO r
+  -> IO (Either DecodingError (Int, PreTree Word8), Producer ByteString IO r)
+```
 
 So `metadata` is `Either DecodingError (Int, PreTree Word8)`. If we get a
 `Left e`, then we throw an error for unparseable/corrupted metadata. If we get a
@@ -631,20 +718,29 @@ So `metadata` is `Either DecodingError (Int, PreTree Word8)`. If we get a
 
 The rest just reads like poetry!
 
-~~~haskell let byteStream = decodingPipe &gt;-&gt; bsToBytes &gt;-&gt;
-bytesToDirs &gt;-&gt; searchPT tree &gt;-&gt; PP.take len ~~~
+``` {.haskell}
+let byteStream = decodingPipe >-> bsToBytes
+             >-> bytesToDirs  >-> searchPT tree
+             >-> PP.take len
+```
 
 Beautiful! `decodingPipe` is the leftover producer after the parse of the
 metadata. `bsToBytes` is the same as from our encoder. `bytesToDirs` is
 implemented "exactly" like `bsToBytes` and `encodeByte` (from *encode.hs*) ---
 using `PP.mapFoldable` and a `Word8 -> [Direction]` function.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs\#L96-104
-bytesToDirs :: Monad m =&gt; Pipe Word8 Direction m r bytesToDirs =
-PP.mapFoldable byteToDirList where -- Turns a byte into a list of directions
-byteToDirList :: Word8 -&gt; \[Direction\] byteToDirList b = map f \[0..7\]
-where f i | testBit b i = DRight | otherwise = DLeft ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L96-104
+bytesToDirs :: Monad m => Pipe Word8 Direction m r
+bytesToDirs = PP.mapFoldable byteToDirList
+  where
+    -- Turns a byte into a list of directions
+    byteToDirList :: Word8 -> [Direction]
+    byteToDirList b = map f [0..7]
+      where
+        f i | testBit b i = DRight
+            | otherwise   = DLeft
+```
 
 It uses the *bits* package to turn an incoming `Word8` into a list of its
 constituent bits (in the form of `Direction`s), and yields each of them in turn.
@@ -667,9 +763,19 @@ And so now we have our `Word8`/byte Producer/stream!
 
 One could actually have written `searchPT` like this:
 
-~~~haskell searchPT :: PreTree a -&gt; Pipe Direction Word8 m r searchPT pt0 =
-go pt0 where go (PTLeaf x) = do yield x go pt0 go (PTNode pt1 pt2) = do dir
-&lt;- await go $ case dir of DLeft -&gt; pt1 DRight -&gt; pt2 ~~~
+``` {.haskell}
+searchPT :: PreTree a -> Pipe Direction Word8 m r
+searchPT pt0 = go pt0
+  where
+    go (PTLeaf x) = do
+        yield x
+        go pt0
+    go (PTNode pt1 pt2) = do
+        dir <- await
+        go $ case dir of
+               DLeft  -> pt1
+               DRight -> pt2
+```
 
 which looks a lot like the logic of our decoder functions from [Part
 2](http://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-2-binary).
@@ -687,12 +793,22 @@ Then we use `(>~ cat)`, which turns a `Consumer'` into something that is forever
 consuming and re-yielding --- in essence, it turns a `Consumer'` returning
 values into a `Pipe` repeatedly yielding the returned values.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs\#L74-86
-searchPT :: forall a m r. Monad m =&gt; PreTree a -&gt; Pipe Direction a m r
-searchPT t = searchPT' t &gt;~ cat where searchPT' :: PreTree a -&gt; Consumer'
-Direction m a searchPT' (PTLeaf x) = return x searchPT' (PTNode pt1 pt2) = do
-dir &lt;- await searchPT' $ case dir of DLeft -&gt; pt1 DRight -&gt; pt2 ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L74-86
+searchPT :: forall a m r. Monad m
+         => PreTree a
+         -> Pipe Direction a m r
+searchPT t = searchPT' t >~ cat
+  where
+    searchPT' :: PreTree a -> Consumer' Direction m a
+    searchPT' (PTLeaf x)       =
+        return x
+    searchPT' (PTNode pt1 pt2) = do
+        dir <- await
+        searchPT' $ case dir of
+                      DLeft  -> pt1
+                      DRight -> pt2
+```
 
 The logic is slightly cleaner; the gain isn't that much, but just being able to
 have this separation is nice. Also, we get rid of explicit recursion. And
@@ -700,31 +816,44 @@ everybody knows that every time you can get rid of explicit recursion, you get a
 big win --- in lack of potential bugs, in more concise code, and in leveraging
 higher order functions. In any case, this is also a good exposure to `(>~)`!
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 `(>~)` is a pretty useful thing. Basically, when you say
 
-~~~haskell consumer &gt;~ pipe ~~~
+``` {.haskell}
+consumer >~ pipe
+```
 
 it is like saying "*Every time `pipe` `await`s, just use the result returned by
 `consumer` instead*".
 
 We can look at `cat`:
 
-~~~haskell cat :: Pipe a a m r cat = forever $ do a &lt;- await yield a ~~~
+``` {.haskell}
+cat :: Pipe a a m r
+cat = forever $ do
+        a <- await
+        yield a
+```
 
 Which just simply echoes/sends back down whatever it receives.
 
 When we say:
 
-~~~haskell consumer &gt;~ cat ~~~
+``` {.haskell}
+consumer >~ cat
+```
 
 We basically say "every time we `await` something in `cat`, just use
 `consumer`'s return value":
 
-~~~haskell consumer &gt;~ cat = forever $ do a &lt;- consumer yield a
-
-~~~
+``` {.haskell}
+consumer >~ cat
+    = forever $ do
+        a <- consumer
+        yield a
+```
 
 Basically, `consumer >~ cat` repeatedly consumes the input and yields downstream
 the return of the consuming.
@@ -747,7 +876,8 @@ Don't worry if this is a bit complicated; you don't need to really undersatnd
 this to use *pipes* :)
 
 Admittedly, my description isn't too great, so if anyone has a better one, I'd
-be happy to use it here! &lt;/div&gt;
+be happy to use it here!
+:::
 
 #### The Rest
 
@@ -762,18 +892,14 @@ it. And again, that's it!
 
 ### Testing
 
-~~~bash $ ghc -O2 decode.hs $ ./decode warandpeace.enc warandpeace.dec $ md5sum
-warandpeace.txt
-
-3c8168e48f49784ac3c2c25d15388e96 warandpeace.txt
-================================================
-
+``` {.bash}
+$ ghc -O2 decode.hs
+$ ./decode warandpeace.enc warandpeace.dec
+$ md5sum warandpeace.txt
+# 3c8168e48f49784ac3c2c25d15388e96  warandpeace.txt
 $ md5sum warandpeace.dec
-
-3c8168e48f49784ac3c2c25d15388e96 warandpeace.dec
-================================================
-
-~~~
+# 3c8168e48f49784ac3c2c25d15388e96  warandpeace.dec
+```
 
 And yup, we get an exact, lossless decompression.
 
@@ -808,10 +934,9 @@ mistakes in style or idiomaticness, I'm available here in the comments and I'd
 appreciate any corrections y'all can offer.
 
 So ends the "pipes tutorial" section of this series; tune in next time and we'll
-try our best to optimize this baby! \[^nexttime\]
+try our best to optimize this baby! [^3]
 
-&lt;div class="note"&gt;
-
+::: {.note}
 **Bonus Round: *Full Lens***
 
 Hey guess what! Let's try and go *full lens* :)
@@ -829,13 +954,16 @@ opposed to a "pipe composition style" of pipes code. Both ways are considered
 
 Basically, we don't ever need `bsToBytes`; instead of
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs\#L65-65
-let byteProducer = PB.fromHandle hIn &gt;-&gt; bsToBytes ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L65-65
+    let byteProducer = PB.fromHandle hIn >-> bsToBytes
+```
 
 We can just write
 
-~~~haskell let byteProducer = (view PB.unpack) (PB.fromHandle hIn) ~~~
+``` {.haskell}
+let byteProducer = (view PB.unpack) (PB.fromHandle hIn)
+```
 
 Okay, one last thing.
 
@@ -856,9 +984,12 @@ in".
 
 That is, in our case,
 
-~~~haskell over :: Lens' (Producer ByteString m r) (Producer Word8 m r) -&gt;
-(Producer Word8 m r -&gt; Producer Word8 m r) -&gt; Producer ByteString m r
--&gt; Producer ByteString m r ~~~
+``` {.haskell}
+over :: Lens' (Producer ByteString m r) (Producer Word8 m r)
+     -> (Producer Word8 m r -> Producer Word8 m r)
+     -> Producer ByteString m r
+     -> Producer ByteString m r
+```
 
 What does this mean, in practice?
 
@@ -868,9 +999,14 @@ swoop.
 
 So, we can rewrite `bsOut`:
 
-~~~haskell bsIn = PB.fromHandle hIn bsOut = flip (over PB.unpack) bsIn $
-\\bytesOut -&gt; dirsBytes ( bytesOut &gt;-&gt; encodeByte encTable ) pipeline =
-bsOut &gt;-&gt; PB.toHandle hOut ~~~
+``` {.haskell}
+bsIn      = PB.fromHandle hIn
+bsOut     = flip (over PB.unpack) bsIn $ \bytesOut ->
+                dirsBytes ( bytesOut
+                        >-> encodeByte encTable )
+pipeline  = bsOut
+        >-> PB.toHandle hOut
+```
 
 So `over PB.unpack` handles the unpacking (to get `bytesOut`) and the re-packing
 (after the result of `dirsBytes`) for us, in one fell swoop.
@@ -878,5 +1014,16 @@ So `over PB.unpack` handles the unpacking (to get `bytesOut`) and the re-packing
 Neat!
 
 Okay now, good bye, for reals!
+:::
 
-&lt;/div&gt;
+[^1]: Remember, a `ByteString` is an efficiently packed "chunk"/"list" of
+    `Word8`/bytes; we can use functions like `ByteString.unpack` and
+    `ByteString.pack` to turn a `ByteString` into a list of `Word8`s or go
+    backwards.
+
+[^2]: It actually works on all `Foldable`s, not just `[]`.
+
+[^3]: Hopefully you aren't holding your breath on this one :) This next part is
+    not scheduled any ime soon and might not come for a while, as I'll be
+    pursuing some other things in the near future --- I apologize for any
+    disappointment/inconvenience this may cause.

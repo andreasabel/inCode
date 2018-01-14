@@ -19,11 +19,10 @@ this nonsense once and for all, okay?
 
 So I'll say it here:
 
-**The phrase "IO monad" considered harmful. Please do not use
-it.**\[^never\]\[^sometimes\]
+**The phrase "IO monad" considered harmful. Please do not use it.**[^1][^2]
 
-In most circumstances, an *IO action* of an *IO type*\[^iotype\] is the more
-helpful and more correct answer.
+In most circumstances, an *IO action* of an *IO type*[^3] is the more helpful
+and more correct answer.
 
 I'm going to say that this is probably **the single most harmful and damaging
 thing** in Haskell and the community, with regards to pedagogy, practice, public
@@ -54,8 +53,10 @@ The answer to this is that you use something of an IO action -- somethign of an
 
 You use an *IO action* (of the *IO type*)
 
-~~~haskell ghci&gt; :t putStrLn "hello world" putStrLn "hello world" :: IO ()
-~~~
+``` {.haskell}
+ghci> :t putStrLn "hello world"
+putStrLn "hello world" :: IO ()
+```
 
 There is nothing that has to do with monads at all in printing a string. The
 idea that `putStrLn "hello world"` is monadic is as absurd as saying that
@@ -66,7 +67,8 @@ something important. **It's not.**
 
 **IO in Haskell has nothing to do with monads.**
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 Okay, so the truth is a *little* more complicated than this.
 
@@ -81,8 +83,7 @@ to do IO. But that isn't as nice of a one-liner/sound byte now, is it?
 
 Special thanks to Chris Allen and Kevin Hammond for this important
 clarification.
-
-&lt;/div&gt;
+:::
 
 You could take away monads and even the entire monadic interface from Haskell
 and Haskell could *still* do IO *with the same IO type*.
@@ -92,7 +93,7 @@ regular ol' data type that represents IO actions, in the same way that `Bool`
 represents a boolean or `Integer` represents an integer.
 
 Saying "the IO monad" is literally the most misleading thing you could possibly
-say. IO in Haskell has nothing to do with monads.\[^seeaside\]
+say. IO in Haskell has nothing to do with monads.[^4]
 
 How did this idea become so prevalent and pervasive? I cannot say! But somehow,
 somewhere, this idea happened, and it is persistent now. Please do not add
@@ -253,3 +254,16 @@ Some side notes
 
     In short: use Monad when you are talking about IO's monadic properties;
     don't use it when you aren't. Simple, right?
+
+[^1]: In any case, ever, for any circumstance or reason.
+
+[^2]: Just kidding. Only a sith deals in absolutes.
+
+[^3]: Note here, I am referring to the *IO type*, not the *`IO` type
+    constructor*. The actual abstract data type, and not the `IO :: * -> *` type
+    constructor that you use in type signatures. When we talk about the "Map
+    type", we talk about the abstract data type, the underlying binary search
+    tree, and the API that it offers...we don't really talk about the
+    `Map :: * -> * -> *` *type constructor*.
+
+[^4]: See the aside for a qualification.

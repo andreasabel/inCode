@@ -40,10 +40,11 @@ Recap
 
 We left off in our last post having looked at `Auto`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs\#L12-12
--- interactive: https://www.fpcomplete.com/user/jle/machines newtype Auto a b =
-ACons { runAuto :: a -&gt; (b, Auto a b) } ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-12
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+newtype Auto a b = ACons { runAuto :: a -> (b, Auto a b) }
+```
 
 which we saw as a stream that had an influencing input of type `a`, an internal,
 opaque state (a function of the input and of the previous state), and an output
@@ -87,12 +88,18 @@ to `c`, then you can "compose" or "chain" them to get a morphism from `a` to
 
 In Haskell we use the `(.)` operator for this --- to say more formally:
 
-~~~haskell f :: morphism a b g :: morphism b c g . f :: morphism a c ~~~
+``` {.haskell}
+f     :: morphism a b
+g     :: morphism b c
+g . f :: morphism a c
+```
 
 Some important aspects of the nature of this composition is that it must
 "associate". That means:
 
-~~~haskell (h . g) . f == h . (g . f) ~~~
+``` {.haskell}
+(h . g) . f == h . (g . f)
+```
 
 Composing the composition of `h` and `g` to `h` should be the same as composing
 `h` with the composition of `g` and `f`.
@@ -100,9 +107,12 @@ Composing the composition of `h` and `g` to `h` should be the same as composing
 The final feature is that there must exist some "identity" morphism that leaves
 other morphisms unchanged under composition:
 
-~~~haskell id :: Morphism b b
+``` {.haskell}
+id :: Morphism b b
 
-id . f == f g . id == g ~~~
+id . f  == f
+g  . id == g
+```
 
 It doesn't really matter what `id` literally "does" --- it only matters that it
 leaves morphisms unchanged.
@@ -120,28 +130,48 @@ In Haskell, our functions are things of type `a -> b` --- a morphism from `a` to
 Our composition operator is the familiar `(.)` from Prelude. You can prove all
 of the above laws yourself using the definition of `(.)`:
 
-~~~haskell (.) :: (b -&gt; c) -&gt; (a -&gt; b) -&gt; (a -&gt; c) g . f = \\x
--&gt; g (f x) ~~~
+``` {.haskell}
+(.) :: (b -> c) -> (a -> b) -> (a -> c)
+g . f = \x -> g (f x)
+```
 
 In practice, you can see associativity
 
-~~~haskell ghci&gt; ((&lt; 20) . (+4)) . (^2) $ 4 True ghci&gt; (&lt; 20) .
-((+4) . (^2)) $ 4 True ~~~
+``` {.haskell}
+ghci> ((< 20) . (+4)) . (^2) $ 4
+True
+ghci> (< 20) . ((+4) . (^2)) $ 4
+True
+```
 
 The identity is just Prelude's `id`:
 
-~~~haskell id :: a -&gt; a id x = x ~~~
+``` {.haskell}
+id :: a -> a
+id x = x
+```
 
-~~~haskell ghci&gt; (*3) $ 7 21 ghci&gt; id . (*3) $ 7 21 ghci&gt; (\*3) . id $
-7 21 ~~~
+``` {.haskell}
+ghci>      (*3) $ 7
+21
+ghci> id . (*3) $ 7
+21
+ghci> (*3) . id $ 7
+21
+```
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 I mean it, you can prove it yourself if you are bored some time :) I'll start
 you off with one of the identity laws:
 
-~~~haskell g . id = \\x -&gt; g (id x) -- definition of (.) = \\x -&gt; g x --
-definition of id = g -- eta reduction ~~~ &lt;/div&gt;
+``` {.haskell}
+g . id = \x -> g (id x)     -- definition of (.)
+       = \x -> g x          -- definition of id
+       = g                  -- eta reduction
+```
+:::
 
 So cool...this intuition applies to our actual idea of functions, so we are on a
 sane track!
@@ -167,11 +197,14 @@ Autos!
 
 Enough talk, let's code! We'll call our composition operator `(~.~)`.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L67-70
--- interactive: https://www.fpcomplete.com/user/jle/machines (~.~) :: Auto b c
--&gt; Auto a b -&gt; Auto a c g ~.~ f = ACons $ \\x -&gt; let (y, f') = runAuto
-f x (z, g') = runAuto g y in (z, g' ~.~ f') ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L67-70
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+(~.~) :: Auto b c -> Auto a b -> Auto a c
+g ~.~ f = ACons $ \x -> let (y, f') = runAuto f x
+                            (z, g') = runAuto g y
+                        in  (z, g' ~.~ f')
+```
 
 And...that should be it! We run the input through first `f` then `g`, collecting
 the "modified `f` and `g`", and returning both of those at the end, composed.
@@ -179,48 +212,65 @@ the "modified `f` and `g`", and returning both of those at the end, composed.
 Let's write a useful helper function so that we have more things to test this
 out on:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L74-75
--- interactive: https://www.fpcomplete.com/user/jle/machines toAuto :: (a -&gt;
-b) -&gt; Auto a b toAuto f = ACons $ \\x -&gt; (f x, toAuto f) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L74-75
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+toAuto :: (a -> b) -> Auto a b
+toAuto f = ACons $ \x -> (f x, toAuto f)
+```
 
 `toAuto` basically turns a function `a -> b` into a stateless `Auto a b`.
 
 Time to test these out!
 
-~~~haskell ghci&gt; let doubleA = toAuto (\*2) :: Auto Int Int ghci&gt; let
-succA = toAuto (+1) :: Auto Int Int
+``` {.haskell}
+ghci> let doubleA  = toAuto (*2)      :: Auto Int Int
+ghci> let succA    = toAuto (+1)      :: Auto Int Int
 
-ghci&gt; testAuto\_ doubleA \[1..10\] \[2,4,6,8,10,12,14,16,18,20\]
+ghci> testAuto_ doubleA [1..10]
+[2,4,6,8,10,12,14,16,18,20]
 
-ghci&gt; testAuto\_ (succA ~.~ doubleA) \[1..10\] \[3,5,7,9,11,13,15,17,19,21\]
+ghci> testAuto_ (succA ~.~ doubleA) [1..10]
+[3,5,7,9,11,13,15,17,19,21]
 
-ghci&gt; testAuto\_ summer \[5,1,9,2,-3,4\] \[5,6,15,17,14,18\]
+ghci> testAuto_ summer [5,1,9,2,-3,4]
+[5,6,15,17,14,18]
 
-ghci&gt; testAuto\_ (doubleA ~.~ summer) \[5,1,9,2,-3,4\] \[10,12,30,34,28,39\]
+ghci> testAuto_ (doubleA ~.~ summer) [5,1,9,2,-3,4]
+[10,12,30,34,28,39]
 
-ghci&gt; testAuto\_ settableAuto \[Nothing,Nothing,Just (-3),Nothing,Nothing\]
-\[1,2,-3,-2,-1\]
+ghci> testAuto_ settableAuto [Nothing,Nothing,Just (-3),Nothing,Nothing]
+[1,2,-3,-2,-1]
 
-ghci&gt; testAuto\_ summer \[1,2,-3,-2,-1\] \[1,3,0,-2,-3\]
+ghci> testAuto_ summer [1,2,-3,-2,-1]
+[1,3,0,-2,-3]
 
-ghci&gt; testAuto\_ (summer ~.~ settableAuto) | \[Nothing,Nothing,Just
-(-3),Nothing,Nothing\] \[1,3,0,-2,-3\] ~~~
+ghci> testAuto_ (summer ~.~ settableAuto)
+    |     [Nothing,Nothing,Just (-3),Nothing,Nothing]
+[1,3,0,-2,-3]
+```
 
 And it looks like our Autos really can meaningfully compose!
 
 Well, wait. We need one last thing: the identity Auto:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L78-79
--- interactive: https://www.fpcomplete.com/user/jle/machines idA :: Auto a a idA
-= ACons $ \\x -&gt; (x, idA) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L78-79
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+idA :: Auto a a
+idA = ACons $ \x -> (x, idA)
+```
 
-~~~haskell ghci&gt; testAuto\_ summer \[5,1,9,2,-3,4\] \[10,12,30,34,28,39\]
+``` {.haskell}
+ghci> testAuto_ summer [5,1,9,2,-3,4]
+[10,12,30,34,28,39]
 
-ghci&gt; testAuto\_ (idA ~.~ summer) \[5,1,9,2,-3,4\] \[10,12,30,34,28,39\]
+ghci> testAuto_ (idA ~.~ summer) [5,1,9,2,-3,4]
+[10,12,30,34,28,39]
 
-ghci&gt; testAuto\_ (summer ~.~ idA) \[5,1,9,2,-3,4\] \[10,12,30,34,28,39\] ~~~
+ghci> testAuto_ (summer ~.~ idA) [5,1,9,2,-3,4]
+[10,12,30,34,28,39]
+```
 
 ### Category
 
@@ -229,16 +279,19 @@ These concepts are actually formalized in the mathematical concept of a
 properties (like the ones I mentioned earlier).
 
 In Haskell, we often consider our objects as Haskell types; our usual morphisms
-is the function arrow, `(->)`\[^func\] --- but in this case, it might be
-interesting to consider a different category --- the category of Haskell types
-and morphisms `Auto a b`.
+is the function arrow, `(->)`[^1] --- but in this case, it might be interesting
+to consider a different category --- the category of Haskell types and morphisms
+`Auto a b`.
 
 In Haskell, we have a typeclass that allows us to do generic operations on all
 Categories --- so now we can basically treat `Auto`s "as if" they were `(->)`.
 We can literally "abstract over" the idea of a function. Neat, huh?
 
-~~~haskell class Category r where id :: r a a (.) :: r b c -&gt; r a b -&gt; r a
-c ~~~
+``` {.haskell}
+class Category r where
+    id  :: r a a
+    (.) :: r b c -> r a b -> r a c
+```
 
 Basically, with Category, we can "abstract over" function composition and `id`.
 That is, instead of `(.)` being only for composing normal functions...we can use
@@ -251,33 +304,52 @@ of just as isolated instances.
 Just be sure to use the correct imports so you don't have name clashes with the
 Prelude operators:
 
-~~~haskell import Control.Category import Prelude hiding (id, (.)) ~~~
+``` {.haskell}
+import Control.Category
+import Prelude hiding (id, (.))
+```
 
 First, let's write the `(->)` Category instance:
 
-~~~haskell instance Category (-&gt;) where id = \\x -&gt; x g . f = \\x -&gt; g
-(f x) ~~~
+``` {.haskell}
+instance Category (->) where
+    id    = \x -> x
+    g . f = \x -> g (f x)
+```
 
 And then our `Auto` Category instance:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L13-18
--- interactive: https://www.fpcomplete.com/user/jle/machines instance Category
-Auto where id = ACons $ \\x -&gt; (x, id) g . f = ACons $ \\x -&gt; let (y, f')
-= runAuto f x (z, g') = runAuto g y in (z, g' . f') ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L13-18
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+instance Category Auto where
+    id    = ACons $ \x -> (x, id)
+    g . f = ACons $ \x ->
+              let (y, f') = runAuto f x
+                  (z, g') = runAuto g y
+              in  (z, g' . f')
+```
 
 And now... we can work with both `(->)` and `Auto` as if they were the "same
 thing" :)
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L92-93
--- interactive: https://www.fpcomplete.com/user/jle/machines doTwice :: Category
-r =&gt; r a a -&gt; r a a doTwice f = f . f ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L92-93
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+doTwice :: Category r => r a a -> r a a
+doTwice f = f . f
+```
 
-~~~haskell ghci&gt; doTwice (*2) 5 20 ghci&gt; testAuto\_ (doTwice (toAuto
-(*2))) \[5\] \[20\] ghci&gt; testAuto\_ (doTwice summer) \[5,1,9,2,-3,4\]
-\[5,11,26,43,57,61\] ghci&gt; take 6 $ testAuto\_ (doTwice summer) (repeat 1)
-\[1,3,6,10,15,21\] ~~~
+``` {.haskell}
+ghci> doTwice (*2) 5
+20
+ghci> testAuto_ (doTwice (toAuto (*2))) [5]
+[20]
+ghci> testAuto_ (doTwice summer) [5,1,9,2,-3,4]
+[5,11,26,43,57,61]
+ghci> take 6 $ testAuto_ (doTwice summer) (repeat 1)
+[1,3,6,10,15,21]
+```
 
 The main cool thing here is that we can now abstract over the "idea" of `id` and
 `(.)`, and now our Autos have basically not only captured the idea of
@@ -303,7 +375,9 @@ that produces an `a`; `Reader r a` produces an `a` when given an `r`.
 
 So if you have `f a`, we have a handy function `fmap`:
 
-~~~haskell fmap :: Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b ~~~
+``` {.haskell}
+fmap :: Functor f => (a -> b) -> f a -> f b
+```
 
 Which says, "If you have an `a -> b`, I can turn a producer of `a`'s into a
 producer of `b`'s."
@@ -319,7 +393,9 @@ sense...Auto takes two type parameters, not one.
 But we *can* think of `Auto r a` as a "producer of `a`"s, when used with
 `runAuto`. Our Functor is `Auto r`:
 
-~~~haskell fmap :: (a -&gt; b) -&gt; Auto r a -&gt; Auto r b ~~~
+``` {.haskell}
+fmap :: (a -> b) -> Auto r a -> Auto r b
+```
 
 Which says, "Give me any `a -> b`, and I'll take an Auto that takes an `r` and
 returns an `a`...and give you an Auto that takes an `r` and returns a `b`".
@@ -333,20 +409,26 @@ For example, if I fmapped `show` onto `summer` --- if `summer` was going to
 output a 1, it will now output a `"1"`. It turns an `Auto Int Int` into an
 `Auto Int String`!
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L20-23
--- interactive: https://www.fpcomplete.com/user/jle/machines instance Functor
-(Auto r) where fmap f a = ACons $ \\x -&gt; let (y, a') = runAuto a x in (f y,
-fmap f a') ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L20-23
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+instance Functor (Auto r) where
+    fmap f a = ACons $ \x ->
+                 let (y, a') = runAuto a x
+                 in  (f y, fmap f a')
+```
 
-~~~haskell ghci&gt; testAuto\_ (fmap show summer) \[5,1,9,2,-3,4\]
-\["5","6","15","17","14","18"\] ~~~
+``` {.haskell}
+ghci> testAuto_ (fmap show summer) [5,1,9,2,-3,4]
+["5","6","15","17","14","18"]
+```
 
 Functor, check!
 
 What's next?
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 If you ever have time, try doing some research on the
 [Contravariant](https://ocharles.org.uk/blog/guest-posts/2013-12-21-24-days-of-hackage-contravariant.html)
@@ -354,8 +436,7 @@ Functors and
 [Profunctors](https://ocharles.org.uk/blog/guest-posts/2013-12-22-24-days-of-hackage-profunctors.html).
 Can you make `Auto` or `Auto r` either one of those? Which ones? If not all of
 them, why not?
-
-&lt;/div&gt;
+:::
 
 ### Applicative
 
@@ -372,8 +453,11 @@ something that produces the application of the two.
 
 This stuff...is really better said in types.
 
-~~~haskell class Applicative f where pure :: a -&gt; f a (&lt;\*&gt;) :: f (a
--&gt; b) -&gt; f a -&gt; f b ~~~
+``` {.haskell}
+class Applicative f where
+    pure  :: a -> f a
+    (<*>) :: f (a -> b) -> f a -> f b
+```
 
 In `pure`, give me an `a` and I'll give you a "producer" of that very `a`. In
 `(<*>)`, give me a producer of `a -> b` and a producer of `a` and I'll give you
@@ -381,12 +465,16 @@ a producer of `b`.
 
 We can pretty much use this to write our Applicative instance for `Auto r`.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L25-30
--- interactive: https://www.fpcomplete.com/user/jle/machines instance
-Applicative (Auto r) where pure y = ACons $ \_ -&gt; (y, pure y) af &lt;*&gt; ay
-= ACons $ \\x -&gt; let (f, af') = runAuto af x (y, ay') = runAuto ay x in (f y,
-af' &lt;*&gt; ay') ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L25-30
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+instance Applicative (Auto r) where
+    pure y    = ACons $ \_ -> (y, pure y)
+    af <*> ay = ACons $ \x ->
+                  let (f, af') = runAuto af x
+                      (y, ay') = runAuto ay x
+                  in  (f y, af' <*> ay')
+```
 
 Note that `pure` gives us a "constant Auto" --- an `Auto` that ignores its input
 and always just produces the same thing.
@@ -394,18 +482,23 @@ and always just produces the same thing.
 The useful thing about Applicative is that it gives us `liftA2`, which allows us
 to apply a function "over Applicative"s.
 
-~~~haskell liftA2 :: (a -&gt; b -&gt; c) -&gt; Auto r a -&gt; Auto r b -&gt;
-Auto r c ~~~
+``` {.haskell}
+liftA2 :: (a -> b -> c) -> Auto r a -> Auto r b -> Auto r c
+```
 
 That is, it "feeds in" the `r` input to *both* the `Auto r a` and the
 `Auto r b`, applies the function to both of the results, and the returns the
 result.
 
-~~~haskell ghci&gt; testAuto\_ summer \[5,1,9,2,-3,4\] \[5,6,15,17,14,18\]
+``` {.haskell}
+ghci> testAuto_ summer [5,1,9,2,-3,4]
+[5,6,15,17,14,18]
 
-ghci&gt; let addSumDoub = liftA2 (+) doubleA summer ghci&gt; testAuto\_
-addSumDoub \[5,1,9,2,-3,4\] \[15,8,33,21,8,26\] -- \[5 + 10, 6 + 2, 15 + 18, 17
-+ 4, 14 - 6, 18 + 8\] ~~~
+ghci> let addSumDoub = liftA2 (+) doubleA summer
+ghci> testAuto_ addSumDoub [5,1,9,2,-3,4]
+[15,8,33,21,8,26]
+-- [5 + 10, 6 + 2, 15 + 18, 17 + 4, 14 - 6, 18 + 8]
+```
 
 Hopefully by now you've seen enough usage of the `Auto` type and writing `Auto`
 combinators that do useful things that you are now Auto experts :) Feel free to
@@ -442,10 +535,14 @@ require sort of basic set of combinators on top of our Category instance.
 The Arrow typeclass was invented for just this --- a grab-bag of combinators
 that allow such side-chaining, forking, merging behavior.
 
-~~~haskell class Category r =&gt; Arrow r where arr :: (a -&gt; b) -&gt; r a b
-first :: r a b -&gt; r (a, c) (b, c) second :: r a b -&gt; r (c, a) (c, b)
-(\*\*\*) :: r a b -&gt; r c d -&gt; r (a, c) (b, d) (&&&) :: r a b -&gt; r a c
--&gt; r a (b, c) ~~~
+``` {.haskell}
+class Category r => Arrow r where
+    arr    :: (a -> b) -> r a b
+    first  :: r a b -> r (a, c) (b, c)
+    second :: r a b -> r (c, a) (c, b)
+    (***)  :: r a b -> r c d -> r (a, c) (b, d)
+    (&&&)  :: r a b -> r a c -> r a (b, c)
+```
 
 In our case, `arr` turns any `a -> b` function into an `Auto a b`. `first` turns
 an `Auto a b` into an `Auto (a, c) (b, c)` --- an Auto that operates on single
@@ -459,25 +556,41 @@ It basically has each Auto operate on the tuple "in parallel".
 
 Writing the instance is straightforward enough:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L32-47
--- interactive: https://www.fpcomplete.com/user/jle/machines instance Arrow Auto
-where arr f = ACons $ \\x -&gt; (f x, arr f) first a = ACons $ (x, z) -&gt; let
-(y, a') = runAuto a x in ((y, z), first a') second a = ACons $ (z, x) -&gt; let
-(y, a') = runAuto a x in ((z, y), second a') a1 \*\*\* a2 = ACons $ (x1, x2)
--&gt; let (y1, a1') = runAuto a1 x1 (y2, a2') = runAuto a2 x2 in ((y1, y2), a1'
-\*\*\* a2') a1 &&& a2 = ACons $ \\x -&gt; let (y1, a1') = runAuto a1 x (y2, a2')
-= runAuto a2 x in ((y1, y2), a1' &&& a2') ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L32-47
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+instance Arrow Auto where
+    arr f     = ACons $ \x -> (f x, arr f)
+    first a   = ACons $ \(x, z) ->
+                  let (y, a') = runAuto a x
+                  in  ((y, z), first a')
+    second a  = ACons $ \(z, x) ->
+                  let (y, a') = runAuto a x
+                  in  ((z, y), second a')
+    a1 *** a2 = ACons $ \(x1, x2) ->
+                  let (y1, a1') = runAuto a1 x1
+                      (y2, a2') = runAuto a2 x2
+                  in  ((y1, y2), a1' *** a2')
+    a1 &&& a2 = ACons $ \x ->
+                  let (y1, a1') = runAuto a1 x
+                      (y2, a2') = runAuto a2 x
+                  in  ((y1, y2), a1' &&& a2')
+```
 
-&lt;div class="note"&gt; **Aside**
+::: {.note}
+**Aside**
 
 We can also just take a shortcut and implement these in terms of combinators we
 have already written from different typeclasses:
 
-~~~haskell instance Arrow Auto where arr f = fmap f id first a = liftA2 (,) (a .
-arr fst) (arr snd) second a = liftA2 (,) (arr fst) (a . arr snd) a1 \*\*\* a2 =
-liftA2 (,) (a1 . arr fst) (a2 . arr snd) a1 &&& a2 = (a1 \*\*\* a2) . arr (\\x
--&gt; (x, x)) ~~~
+``` {.haskell}
+instance Arrow Auto where
+    arr f     = fmap f id
+    first a   = liftA2 (,) (a  . arr fst) (arr snd)
+    second a  = liftA2 (,) (arr fst)      (a  . arr snd)
+    a1 *** a2 = liftA2 (,) (a1 . arr fst) (a2 . arr snd)
+    a1 &&& a2 = (a1 *** a2) . arr (\x -> (x, x))
+```
 
 Remember, `id` is the identity Auto... and `fmap f` applies `f` "after" the
 identity. So this makes sense.
@@ -490,16 +603,21 @@ The first of those two autos is `a . arr fst` --- get the first thing in the
 tuple, and then chain the `a` auto onto it. The second of those two autos just
 simply extracts out the second part of the tuple.
 
-~~~haskell a :: Auto a b arr fst :: Auto (a, c) a
+``` {.haskell}
+a           :: Auto a b
+arr fst     :: Auto (a, c) a
 
-a . arr fst :: Auto (a, c) b arr snd :: Auto (a, c) c
+a . arr fst :: Auto (a, c) b
+arr snd     :: Auto (a, c) c
 
-liftA2 (,) (a . arr fst) (arr snd) :: Auto (a, c) (b, c) ~~~
+liftA2 (,) (a . arr fst) (arr snd) :: Auto (a, c) (b, c)
+```
 
 What does this show? Well, that `Arrow` really isn't anything too special...it's
 really just what we already had --- a `Category` with `Applicative`. But we are
 able to define more efficient instances, and also sort of look at the problem in
-a "different way". &lt;/div&gt;
+a "different way".
+:::
 
 What we have here isn't really anything too mystical. It's just some basic
 combinators. And like the aside says, we didn't introduce any "new power" ---
@@ -510,8 +628,11 @@ The main point is just that we have these neat combinators to chain things in
 more useful and expressive ways --- something very important when we eventually
 go into AFRP.
 
-~~~haskell ghci&gt; let sumDoub = summer &&& doubleA ghci&gt; testAuto\_ sumDoub
-\[5,1,9,2,-3,4\] \[(5, 10), (6, 2), (15, 18), (17, 4), (14, -6), (18, 8)\] ~~~
+``` {.haskell}
+ghci> let sumDoub = summer &&& doubleA
+ghci> testAuto_ sumDoub [5,1,9,2,-3,4]
+[(5, 10), (6, 2), (15, 18), (17, 4), (14, -6), (18, 8)]
+```
 
 As we'll see, the *real* benefit of Arrow will be in the syntactical sugar it
 provides, analogous to Monad's do-blocks.
@@ -521,10 +642,12 @@ provides, analogous to Monad's do-blocks.
 Another useful set of combinators is the `ArrowChoice` typeclass, which
 provides:
 
-~~~haskell left :: Auto a b -&gt; Auto (Either a c) (Either b c) right :: Auto a
-b -&gt; Auto (Either c a) (Either c b) (+++) :: Auto a b -&gt; Auto c d -&gt;
-Auto (Either a c) (Either b d) (|||) :: Auto a c -&gt; Auto b c -&gt; Auto
-(Either a b) c ~~~
+``` {.haskell}
+left  :: Auto a b -> Auto (Either a c) (Either b c)
+right :: Auto a b -> Auto (Either c a) (Either c b)
+(+++) :: Auto a b -> Auto c d -> Auto (Either a c) (Either b d)
+(|||) :: Auto a c -> Auto b c -> Auto (Either a b) c
+```
 
 If you look really closely...`left` is kinda like `first`; `right` is kinda like
 `second`...`(+++)` is kinda like `(***)`, and `(|||)` is like a backwards
@@ -537,11 +660,18 @@ We'll instance `left`, which applies the given `Auto` on every `Left` input, and
 passes any `Right` input along unchanged; the `Auto` isn't stepped or anything.
 The rest of the methods can be implemented in terms of `left` and `arr`.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L49-56
--- interactive: https://www.fpcomplete.com/user/jle/machines instance
-ArrowChoice Auto where left a = ACons $ \\x -&gt; case x of Left l -&gt; let
-(l', a') = runAuto a l in (Left l', left a') Right r -&gt; (Right r, left a) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L49-56
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+instance ArrowChoice Auto where
+    left a = ACons $ \x ->
+                 case x of
+                   Left l  ->
+                     let (l', a') = runAuto a l
+                     in  (Left l', left a')
+                   Right r ->
+                     (Right r, left a)
+```
 
 We'll see `ArrowChoice` used in the upcoming syntactic sugar construct, enabling
 for if/then/else's and case statements. Don't worry about it for now if you
@@ -560,14 +690,18 @@ proc notation to be able to express complex compositions...rather elegantly.
 
 Proc notation consists of lines of "arrows":
 
-~~~haskell arrow -&lt; x ~~~
+``` {.haskell}
+arrow -< x
+```
 
 which says "feed `x` through the Arrow `arrow`".
 
 Like in monadic do-blocks, you can also "bind" the result, to be used later in
 the block:
 
-~~~haskell y &lt;- arrow -&lt; x ~~~
+``` {.haskell}
+y <- arrow -< x
+```
 
 Which says "feed `x` through the Arrow `arrow`, and name the result `y`".
 
@@ -579,8 +713,13 @@ monadic do-blocks.
 Let's write our first proc block; one that emulates our
 `liftA2 (+) doubleA summer`:
 
-~~~haskell doubSummer :: Auto Int Int doubSummer = proc x -&gt; do summed &lt;-
-summer -&lt; x doubled &lt;- doubleA -&lt; x id -&lt; summed + doubled ~~~
+``` {.haskell}
+doubSummer :: Auto Int Int
+doubSummer = proc x -> do
+    summed  <- summer  -< x
+    doubled <- doubleA -< x
+    id -< summed + doubled
+```
 
 In the last line, we want to "return" `summed + double`; we have to put an Arrow
 command there, so we can just feed `summed + double` through `id`, to have it
@@ -597,43 +736,56 @@ both counters.
 
 We could write this "from scratch", using explicit recursion:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L102-109
--- interactive: https://www.fpcomplete.com/user/jle/machines dualCounterR ::
-Auto (Either Int Int) (Int, Int) dualCounterR = dualCounterWith (0, 0) where
-dualCounterWith (x, y) = ACons $ \\inp -&gt; let newC = case inp of Left i -&gt;
-(x + i, y) Right i -&gt; (x, y + 1) in (newC, dualCounterWith newC) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L102-109
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+dualCounterR :: Auto (Either Int Int) (Int, Int)
+dualCounterR = dualCounterWith (0, 0)
+  where
+    dualCounterWith (x, y) = ACons $ \inp ->
+                               let newC = case inp of
+                                            Left i  -> (x + i, y)
+                                            Right i -> (x, y + 1)
+                               in  (newC, dualCounterWith newC)
+```
 
 But we all know in Haskell that explicit recursion is usually a sign of bad
 design and is best avoided whenever possible. So many potential places for bugs!
 
 Let's try writing the same thing using Auto composition:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L112-116
--- interactive: https://www.fpcomplete.com/user/jle/machines dualCounterC ::
-Auto (Either Int Int) (Int, Int) dualCounterC = (summer \*\*\* summer) . arr
-wrap where wrap (Left i) = (i, 0) wrap (Right i) = (0, i) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L112-116
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+dualCounterC :: Auto (Either Int Int) (Int, Int)
+dualCounterC = (summer *** summer) . arr wrap
+  where
+    wrap (Left i)  = (i, 0)
+    wrap (Right i) = (0, i)
+```
 
 That's a bit more succinct, but I think the proc notation is much nicer!
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L119-127
--- interactive: https://www.fpcomplete.com/user/jle/machines dualCounterP ::
-Auto (Either Int Int) (Int, Int) dualCounterP = proc inp -&gt; do let (add1,
-add2) = case inp of Left i -&gt; (i, 0) Right i -&gt; (0, i)
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L119-127
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+dualCounterP :: Auto (Either Int Int) (Int, Int)
+dualCounterP = proc inp -> do
+    let (add1, add2) = case inp of Left i  -> (i, 0)
+                                   Right i -> (0, i)
 
     sum1 <- summer -< add1
     sum2 <- summer -< add2
 
     id -< (sum1, sum2)
-
-~~~
+```
 
 It's a bit more verbose...but I think it's much clearer what's going on, right?
 
-~~~haskell ghci&gt; testAuto\_ dualCounterP \[Right 1, Left 2, Right (-4), Left
-10, Right 3\] \[(0, 1), (2, 1), (2, -3), (12, -3), (12, 0)\] ~~~
+``` {.haskell}
+ghci> testAuto_ dualCounterP [Right 1, Left 2, Right (-4), Left 10, Right 3]
+[(0, 1), (2, 1), (2, -3), (12, -3), (12, 0)]
+```
 
 #### Proc shines
 
@@ -651,22 +803,28 @@ composition.
 
 But the proc notation? Piece of cake!
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L148-160
--- interactive: https://www.fpcomplete.com/user/jle/machines dualCounterSkipP ::
-Auto (Either Int Int) (Int, Int) dualCounterSkipP = proc inp -&gt; do (add1,
-add2) &lt;- case inp of Left i -&gt; do count &lt;- summer -&lt; 1 id -&lt; (if
-odd count then i else 0, 0) Right i -&gt; id -&lt; (0, i)
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L148-160
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+dualCounterSkipP :: Auto (Either Int Int) (Int, Int)
+dualCounterSkipP = proc inp -> do
+    (add1, add2) <- case inp of
+                      Left i -> do
+                        count <- summer -< 1
+                        id -< (if odd count then i else 0, 0)
+                      Right i ->
+                        id -< (0, i)
 
     sum1 <- summer -< add1
     sum2 <- summer -< add2
 
     id -< (sum1, sum2)
+```
 
-~~~
-
-~~~haskell ghci&gt; testAuto\_ dualCounterP \[Right 1, Left 2, Right (-4), Left
-10, Right 3\] \[(0, 1), (2, 1), (2, -3), (2, -3), (2, 0)\] ~~~
+``` {.haskell}
+ghci> testAuto_ dualCounterP [Right 1, Left 2, Right (-4), Left 10, Right 3]
+[(0, 1), (2, 1), (2, -3), (2, -3), (2, 0)]
+```
 
 And that's something to write home about :)
 
@@ -681,13 +839,20 @@ explicit recursion?
 
 We'd have carried the "entire" state in the parameter:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs\#L136-145
--- interactive: https://www.fpcomplete.com/user/jle/machines dualCounterSkipR ::
-Auto (Either Int Int) (Int, Int) dualCounterSkipR = counterFrom ((0, 0), 1)
-where counterFrom ((x, y), s) = ACons $ \\inp -&gt; let newCS = case inp of Left
-i | odd s -&gt; ((x + i, y), s + 1) | otherwise -&gt; ((x , y), s + 1) Right i
--&gt; ((x, y + i), s ) in (fst newCS, counterFrom newCS) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L136-145
+-- interactive: https://www.fpcomplete.com/user/jle/machines
+dualCounterSkipR :: Auto (Either Int Int) (Int, Int)
+dualCounterSkipR = counterFrom ((0, 0), 1)
+  where
+    counterFrom ((x, y), s) =
+      ACons $ \inp ->
+        let newCS = case inp of
+                      Left i  | odd s     -> ((x + i, y), s + 1)
+                              | otherwise -> ((x    , y), s + 1)
+                      Right i             -> ((x, y + i), s    )
+        in  (fst newCS, counterFrom newCS)
+```
 
 Not only is it a real mess and pain --- and somewhere where bugs are rife to pop
 up --- note the entire state is contained in one thing. That means everything
@@ -728,7 +893,11 @@ at "composition time". (That is, before you ever "run" it, the structure of the
 This means that you can't use bindings from *proc* blocks to form the `Auto`s
 that you are composing:
 
-~~~haskell foo = proc x -&gt; do y &lt;- auto1 -&lt; x auto2 y -&lt; y ~~~
+``` {.haskell}
+foo = proc x -> do
+    y <- auto1 -< x
+    auto2 y -< y
+```
 
 This won't work. That's because this is really supposed to be a composition of
 `auto1` and `auto2 y`. But what is `auto2 y`? `y` doesn't even exist when you
@@ -737,9 +906,11 @@ are making the compositions! `y` is just a name we gave to the output of
 `foo`...so can't use `auto2 y` in the process of composing `foo`.
 
 To see more clearly, see what we'd do if we tried to write `foo` as a
-compositino:\[^compositino\]
+compositino:[^2]
 
-~~~haskell foo = auto2 y . auto1 ~~~
+``` {.haskell}
+foo = auto2 y . auto1
+```
 
 Where does the `y` come from?!
 
@@ -814,3 +985,9 @@ before Part 3 :)
         isn't much state to separate out, so this example isn't as interesting.
         It might be more fun to use this one as a component of a larger `Auto`,
         and see what you can use it for!
+
+[^1]: Remember, we can write `a -> b` as `(->) a b`; like other operators,
+    `(->)` can be used both infix and prefix.
+
+[^2]: This was originally a typo but I like the word so much that I'm just going
+    to leave it in here.

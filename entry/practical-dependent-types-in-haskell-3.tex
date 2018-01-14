@@ -21,6 +21,46 @@
 % use microtype if available
 \IfFileExists{microtype.sty}{\usepackage{microtype}}{}
 \usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
 \ifxetex
   \usepackage[setpagesize=false, % page size defined by xetex
               unicode=false, % unicode breaks when used with xetex
@@ -30,8 +70,8 @@
 \fi
 \hypersetup{breaklinks=true,
             bookmarks=true,
-            pdfauthor={},
-            pdftitle={},
+            pdfauthor={Justin Le},
+            pdftitle={Practical Dependent Types: A Deeper Look at Proofs},
             colorlinks=true,
             citecolor=blue,
             urlcolor=blue,
@@ -45,10 +85,11 @@
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
 
+\title{Practical Dependent Types: A Deeper Look at Proofs}
+\author{Justin Le}
 
 \begin{document}
-
-\% Practical Dependent Types: A Deeper Look at Proofs \% Justin Le
+\maketitle
 
 \emph{Originally posted on
 \textbf{\href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-3.html}{in
@@ -64,7 +105,7 @@ an epilogue.
 
 In
 \href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html}{Part
-1}, we tried solving our problem in an "untyped" way, recognized all of those
+1}, we tried solving our problem in an ``untyped'' way, recognized all of those
 Haskell red flags, and then added types to make things safer and reap benefits
 in API clarity, compiler support, and a smoother code writing experience. In
 \href{https://blog.jle.im/entry/practical-dependent-types-in-haskell-2.html}{Part
@@ -72,11 +113,12 @@ in API clarity, compiler support, and a smoother code writing experience. In
 types might vary at runtime, by levering existential types in two different
 forms.
 
-\section{The Secret Life of Proofs}
+\hypertarget{the-secret-life-of-proofs}{%
+\section{The Secret Life of Proofs}\label{the-secret-life-of-proofs}}
 
-So far in this journey, we've hand-waved the idea of "proofs", and their role in
-this dependently typed programming. In fact, I've sort of intentionally left the
-idea vague, because I feel like a lot of other dependent type
+So far in this journey, we've hand-waved the idea of ``proofs'', and their role
+in this dependently typed programming. In fact, I've sort of intentionally left
+the idea vague, because I feel like a lot of other dependent type
 introductions/tutorials over-emphasize proofs, to the point there is a public
 impression that
 \href{https://www.reddit.com/r/haskell/comments/62uv6g/verify_your_typeclass_instances_in_haskell_today/dfpt2g7/}{dependently
@@ -95,49 +137,57 @@ disallow it almost always), then I think we would be in a pretty darn good spot.
 
 There's a popular (mis?)conception that dependent types are basically a
 replacement for QuickCheck, or refinement types (like Liquid Haskell). But
-really, as we have seen, they are much more -\/-\/- they let you leverage the
+really, as we have seen, they are much more --- they let you leverage the
 compiler to help you write your code, help you enforce properties at the
 structural level for your types, create more expressive API's, and much more.
-They aren't "just" to prove properties about your program.
+They aren't ``just'' to prove properties about your program.
 
 In reality, the idea of dependent types and the idea of proofs sort of are
-separate but complementing ideas. Dependent types enable this "proofy" style
+separate but complementing ideas. Dependent types enable this ``proofy'' style
 discussed in the comment, but, also, the ability to dynamically construct and
 manipulate proofs opens up many doors for the capabilities of dependently typed
 programs.
 
-\subsection{What are they?}
+\hypertarget{what-are-they}{%
+\subsection{What are they?}\label{what-are-they}}
 
-In the context of dependent types (in Haskell), a "proof" is general
+In the context of dependent types (in Haskell), a ``proof'' is general
 (non-rigorous, informal) term for a \emph{runtime value} that GHC/Haskell can
 use for \emph{type-level} shenanigans. In other words, it's a \emph{term-level}
 witness for a \emph{type-level} truth.
 
 It's the critical \emph{run-time} values that we use to power our
-\emph{type-level} fun, and are also commonly known as "witnesses".
+\emph{type-level} fun, and are also commonly known as ``witnesses''.
 
 I don't believe there is any rigorous definition, but the term comes up whenever
 we talk about generating or using run-time values that give us type-level power.
 
 In this article, the simplest example of something that can be called a proof or
 a witness is the singleton for \texttt{Nat}s: A value of type \texttt{Sing\ n}
-(for \texttt{Nat\ n}) "witnesses" a \texttt{KnownNat\ n} constraint.
+(for \texttt{Nat\ n}) ``witnesses'' a \texttt{KnownNat\ n} constraint.
 
 We saw it earlier when we wanted to pass along evidence that our \texttt{n} has
 an instance of \texttt{KnownNat}:
 
-\texttt{haskell\ nIsKnownNatWePromise\ ::\ forall\ n.\ Sing\ n\ -\textgreater{}\ Integer\ nIsKnonwNatWePromise\ =\ \textbackslash{}case\ \ \ \ \ SNat\ -\textgreater{}\ natVal\ (Proxy\ ::\ Proxy\ n)}
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{nIsKnownNatWePromise ::}\NormalTok{ forall n}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Integer}
+\NormalTok{nIsKnonwNatWePromise }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{SNat} \OtherTok{->}\NormalTok{ natVal (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy}\NormalTok{ n)}
+\end{Highlighting}
+\end{Shaded}
 
 In the case statement above, in the \texttt{SNat\ -\textgreater{}} branch, GHC
 knows that \texttt{n} has a \texttt{KnownNat} instance. This runtime value,
 \texttt{SNat}, carries the fact that we have an instance of
 \texttt{KnownNat\ n}. Remember that
 \texttt{natVal\ ::\ KnownNat\ n\ =\textgreater{}\ p\ n\ -\textgreater{}\ Integer}
--\/- it only works of \texttt{n} is an instance of \texttt{KnownNat}.
-\texttt{SNat\ ::\ Sing\ n} is a runtime value that "gives us" that instance.
-It's a "proof" that \texttt{n} is an instance of \texttt{KnownNat}.
+-- it only works of \texttt{n} is an instance of \texttt{KnownNat}.
+\texttt{SNat\ ::\ Sing\ n} is a runtime value that ``gives us'' that instance.
+It's a ``proof'' that \texttt{n} is an instance of \texttt{KnownNat}.
 
-\subsection{First-Class Values}
+\hypertarget{first-class-values}{%
+\subsection{First-Class Values}\label{first-class-values}}
 
 The \emph{key} to their usefulness is that, as runtime values, they are
 \emph{first-class values} in Haskell. We can manipulate them, pass them,
@@ -147,165 +197,32 @@ complex proofs from simple ones, compose them, etc.
 For example, check out the function \texttt{\%:+} from the \emph{singletons}
 package:
 
-\texttt{haskell\ (\%:+)\ ::\ forall\ (n\ ::\ Nat)\ (m\ ::\ Nat).\ Sing\ n\ -\textgreater{}\ Sing\ m\ -\textgreater{}\ Sing\ (n\ +\ m)}
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{(%:+) ::}\NormalTok{ forall (}\OtherTok{n ::} \DataTypeTok{Nat}\NormalTok{) (}\OtherTok{m ::} \DataTypeTok{Nat}\NormalTok{)}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ m }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ (n }\FunctionTok{+}\NormalTok{ m)}
+\end{Highlighting}
+\end{Shaded}
 
 Given, at runtime, a witness for \texttt{KnownNat\ n} (our \texttt{Sing\ n}) and
 a witness for \texttt{KnownNat\ m}, we can construct, at runtime a witness for
 \texttt{KnownNat\ (n\ +\ m)}:
 
-\texttt{haskell\ add\ ::\ Integer\ -\textgreater{}\ Integer\ -\textgreater{}\ Integer\ add\ x\ y\ =\ withSomeSing\ x\ \$\ \textbackslash{}(sx\ ::\ Sing\ x)\ -\textgreater{}\ \ \ \ \ \ \ \ \ \ \ withSomeSing\ y\ \$\ \textbackslash{}(sy\ ::\ Sing\ y)\ -\textgreater{}\ \ \ \ \ \ \ \ \ \ \ \ \ case\ sx\ \%:+\ sy\ of\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ -\/-\ z\ is\ x\ +\ y\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (SNat\ ::\ Sing\ z)\ -\textgreater{}\ natVal\ (Proxy\ ::\ Proxy\ z)}
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{add ::} \DataTypeTok{Integer} \OtherTok{->} \DataTypeTok{Integer} \OtherTok{->} \DataTypeTok{Integer}
+\NormalTok{add x y }\FunctionTok{=}\NormalTok{ withSomeSing x }\FunctionTok{$}\NormalTok{ \textbackslash{}(}\OtherTok{sx ::} \DataTypeTok{Sing}\NormalTok{ x) }\OtherTok{->}
+\NormalTok{          withSomeSing y }\FunctionTok{$}\NormalTok{ \textbackslash{}(}\OtherTok{sy ::} \DataTypeTok{Sing}\NormalTok{ y) }\OtherTok{->}
+            \KeywordTok{case}\NormalTok{ sx }\FunctionTok{%:+}\NormalTok{ sy }\KeywordTok{of}
+              \CommentTok{-- z is x + y}
+\NormalTok{              (}\DataTypeTok{SNat}\OtherTok{ ::} \DataTypeTok{Sing}\NormalTok{ z) }\OtherTok{->}\NormalTok{ natVal (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy}\NormalTok{ z)}
+\end{Highlighting}
+\end{Shaded}
 
-\texttt{haskell\ ghci\textgreater{}\ add\ 5\ 7\ 12}
-
-\textless{}!-\/- Uniting Existential Contexts -\/-\textgreater{}
-\textless{}!-\/-
--\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-
--\/-\textgreater{}
-
-\textless{}!-\/- In the last exercise, we introduced \texttt{SomeNet}:
--\/-\textgreater{}
-
-\textless{}!-\/- \textasciitilde{}\textasciitilde{}\textasciitilde{}haskell
--\/-\textgreater{} \textless{}!-\/- !!!dependent-haskell/NetworkTyped2.hs "data
-SomeNet" -\/-\textgreater{} \textless{}!-\/-
-\textasciitilde{}\textasciitilde{}\textasciitilde{} -\/-\textgreater{}
-
-\textless{}!-\/- \texttt{SomeNet} is actually a big step above
-\texttt{OpaqueNet} because now its external API -\/-\textgreater{}
-\textless{}!-\/- (the size of vectors that it takes/outputs) is now
-existentially quantified, so -\/-\textgreater{} \textless{}!-\/- this presents
-some unique challenges. -\/-\textgreater{}
-
-\textless{}!-\/- Recall that we was able to write \texttt{runOpaqueNet} without
-much problems, because -\/-\textgreater{} \textless{}!-\/- the types guaranteed
-that everything made sense: -\/-\textgreater{}
-
-\textless{}!-\/- \textasciitilde{}\textasciitilde{}\textasciitilde{}haskell
--\/-\textgreater{} \textless{}!-\/- !!!dependent-haskell/NetworkTyped2.hs
-"runOpaqueNet ::" -\/-\textgreater{} \textless{}!-\/-
-\textasciitilde{}\textasciitilde{}\textasciitilde{} -\/-\textgreater{}
-
-\textless{}!-\/- In fact, GHC actually enforces that everything works out
--\/-\/- it knows that you -\/-\textgreater{} \textless{}!-\/- run a
-\texttt{n\textquotesingle{}} with an \texttt{R\ i}, and sees that \texttt{x} is
-an \texttt{R\ i}, and also knows that -\/-\textgreater{} \textless{}!-\/-
-whatever the internal structure is, an \texttt{R\ o} is always what pops out
-regardless -\/-\textgreater{} \textless{}!-\/- if \texttt{hs} is
-\texttt{\textquotesingle{}{[}{]}}, \texttt{\textquotesingle{}{[}5,3{]}} or
-\texttt{\textquotesingle{}{[}100,200,4{]}}. -\/-\textgreater{}
-
-\textless{}!-\/- But can we write a sensible \texttt{runSomeNet}? What would the
-type even be? Let's -\/-\textgreater{} \textless{}!-\/- try an initial attempt:
--\/-\textgreater{}
-
-\textless{}!-\/- \textasciitilde{}\textasciitilde{}\textasciitilde{}haskell
--\/-\textgreater{} \textless{}!-\/- runSomeNet :: (KnownNat i, KnownNat o)
--\/-\textgreater{} \textless{}!-\/- =\textgreater{} SomeNet -\/-\textgreater{}
-\textless{}!-\/- -\textgreater{} R i -\/-\textgreater{} \textless{}!-\/-
--\textgreater{} R o -\/-\textgreater{} \textless{}!-\/- runSomeNet n x = case n
-of -\/-\textgreater{} \textless{}!-\/- SNet n' -\textgreater{} runNet n' x
--\/-\textgreater{} \textless{}!-\/-
-\textasciitilde{}\textasciitilde{}\textasciitilde{} -\/-\textgreater{}
-
-\textless{}!-\/- Hm. This clearly won't work, because the network inside
-\texttt{SomeNet} might not -\/-\textgreater{} \textless{}!-\/- even take the
-\texttt{R\ i} that we give it. What if it takes a \texttt{R\ 5}, but we pass in
--\/-\textgreater{} \textless{}!-\/- an \texttt{R\ 10}? Remember, because of
-universal quantification, \texttt{runSomeNet} has to -\/-\textgreater{}
-\textless{}!-\/- work with \emph{any} \texttt{i}, be it 5, 10, or 100. But the
-internal network might not -\/-\textgreater{} \textless{}!-\/- be so
-accommodating. If we try to write it, GHC will complain immediately. In
--\/-\textgreater{} \textless{}!-\/- short, \texttt{runSomeNet} should be
-\emph{partial}, and return a \texttt{Maybe}. -\/-\textgreater{}
-
-\textless{}!-\/- \textasciitilde{}\textasciitilde{}\textasciitilde{}haskell
--\/-\textgreater{} \textless{}!-\/- runSomeNet :: (KnownNat i, KnownNat o)
--\/-\textgreater{} \textless{}!-\/- =\textgreater{} SomeNet -\/-\textgreater{}
-\textless{}!-\/- -\textgreater{} R i -\/-\textgreater{} \textless{}!-\/-
--\textgreater{} Maybe (R o) -\/-\textgreater{} \textless{}!-\/-
-\textasciitilde{}\textasciitilde{}\textasciitilde{} -\/-\textgreater{}
-
-\textless{}!-\/- We can see another problem here -\/-\/- We can't have it return
-\texttt{R\ o}, of course, -\/-\textgreater{} \textless{}!-\/- because \texttt{o}
-is universally quantified here, so the user can decide \texttt{o}. But
--\/-\textgreater{} \textless{}!-\/- \texttt{o} isn't free for the user to
-pick...it's determined by the network inside -\/-\textgreater{} \textless{}!-\/-
-\texttt{SNet}. So, the \texttt{o} has to be existentially quantified. We'll
-return a -\/-\textgreater{} \textless{}!-\/- continuation-style existentially
-quantified \texttt{o} here, because \emph{hmatrix} doesn't -\/-\textgreater{}
-\textless{}!-\/- come with a built-in constructor-style quantifier:
--\/-\textgreater{}
-
-\textless{}!-\/- \textasciitilde{}\textasciitilde{}\textasciitilde{}haskell
--\/-\textgreater{} \textless{}!-\/- runSomeNet :: KnownNat i -\/-\textgreater{}
-\textless{}!-\/- =\textgreater{} SomeNet -\/-\textgreater{} \textless{}!-\/-
--\textgreater{} R i -\/-\textgreater{} \textless{}!-\/- -\textgreater{} (forall
-o. KnownNat o =\textgreater{} R o -\textgreater{} r) -\/-\textgreater{}
-\textless{}!-\/- -\textgreater{} Maybe r -\/-\textgreater{} \textless{}!-\/-
-\textasciitilde{}\textasciitilde{}\textasciitilde{} -\/-\textgreater{}
-
-\textless{}!-\/- And finally, we have a type signature that makes sense: give a
-\texttt{SomeNet} and an -\/-\textgreater{} \textless{}!-\/- \texttt{R\ i}, and
-possibly get in return an existentially quantified \texttt{R\ o}. If the
-\texttt{R\ -\/-\textgreater{}\ \textless{}!-\/-\ i} doesn't fit into the
-\texttt{SomeNet}, the result will be \texttt{Nothing}. -\/-\textgreater{}
-
-\textless{}!-\/- Now that we have a type, let's try implementing it:
--\/-\textgreater{}
-
-\textless{}!-\/- \textasciitilde{}\textasciitilde{}\textasciitilde{}haskell
--\/-\textgreater{} \textless{}!-\/- runSomeNet :: KnownNat i -\/-\textgreater{}
-\textless{}!-\/- =\textgreater{} SomeNet -\/-\textgreater{} \textless{}!-\/-
--\textgreater{} R i -\/-\textgreater{} \textless{}!-\/- -\textgreater{} (forall
-o. KnownNat o =\textgreater{} R o -\textgreater{} r) -\/-\textgreater{}
-\textless{}!-\/- -\textgreater{} Maybe r -\/-\textgreater{} \textless{}!-\/-
-runSomeNet n x f = case n of -\/-\textgreater{} \textless{}!-\/- SNet (n' ::
-Network i' hs o) -\textgreater{} -\/-\textgreater{} \textless{}!-\/- if natVal
-(Proxy @i') == natVal (Proxy @i) -\/-\textgreater{} \textless{}!-\/- then Just
-(f (runNet n' x)) -\/-\textgreater{} \textless{}!-\/- else Nothing
--\/-\textgreater{} \textless{}!-\/-
-\textasciitilde{}\textasciitilde{}\textasciitilde{} -\/-\textgreater{}
-
-\textless{}!-\/- First, we open it and check if the \texttt{i\textquotesingle{}}
-inside the \texttt{SNet} is the same as the -\/-\textgreater{} \textless{}!-\/-
-\texttt{i} we get as input. If it is, we return \texttt{Just}, and if not,
-\texttt{Nothing}. -\/-\textgreater{}
-
-\textless{}!-\/- Unfortunately, this doesn't really work. That's because our
-silly little \texttt{==} -\/-\textgreater{} \textless{}!-\/- doesn't actually
-prove to GHC that the two lengths are equal. GHC will still -\/-\textgreater{}
-\textless{}!-\/- believe that \texttt{i} and \texttt{i\textquotesingle{}} are
-different, in general. -\/-\textgreater{}
-
-\textless{}!-\/- And why should it believe that
-\texttt{i\ \textasciitilde{}\ i\textquotesingle{}}, just because of \texttt{==}?
-Remember that -\/-\textgreater{} \textless{}!-\/- \texttt{==} is a user-defined
-function, and can return anything. Why should the type -\/-\textgreater{}
-\textless{}!-\/- checker be
-\textasciitilde{}\textasciitilde{}fooled\textasciitilde{}\textasciitilde{}
-convinced by a silly user-defined function? -\/-\textgreater{}
-
-\textless{}!-\/- The problem is that the \texttt{Bool} returned doesn't really
-tell the compiler -\/-\textgreater{} \textless{}!-\/- anything. It's just a bit
-of information, and doesn't really come with any -\/-\textgreater{}
-\textless{}!-\/- proof that the two types are actually equal. What we need is a
-way to \emph{prove} -\/-\textgreater{} \textless{}!-\/- to the compiler (and the
-typechecker) that the two are equal. -\/-\textgreater{}
-
-\textless{}!-\/- \#\#\# Proofs -\/-\textgreater{}
-
-\textless{}!-\/- We got far without talking about proofs, but really, you can
-only expect to -\/-\textgreater{} \textless{}!-\/- get so far when talking about
-dependently typed programming without talking -\/-\textgreater{}
-\textless{}!-\/- about proofs! Proofs are, in a way, essential to the very
-essence of -\/-\textgreater{} \textless{}!-\/- dependently typed
-programming.{[}\^{}proofs{]} -\/-\textgreater{}
-
-\textless{}!-\/- {[}\^{}proofs{]}: One thing I've noticed, however, is that a
-lot of dependently typed -\/-\textgreater{} \textless{}!-\/- programming
-introductions \emph{begin} with proofs, and go to applications later.
--\/-\textgreater{} \textless{}!-\/- Here, I hope I can change that trend by
-starting with the applications, and -\/-\textgreater{} \textless{}!-\/- bringing
-proofs later after being able to see their motivation! -\/-\textgreater{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ add }\DecValTok{5} \DecValTok{7}
+\DecValTok{12}
+\end{Highlighting}
+\end{Shaded}
 
 \end{document}

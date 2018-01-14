@@ -55,11 +55,13 @@ So some properties about prefix trees that might be useful to us --- all data is
 stored in the leaves, and all internal nodes have exactly two children. This
 sounds like the perfect candidate for an Algebraic Data Structure.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L19-21
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding data
-PreTree a = PTLeaf a | PTNode (PreTree a) (PreTree a) deriving (Show, Eq,
-Generic) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L19-21
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+data PreTree a = PTLeaf a
+               | PTNode (PreTree a) (PreTree a)
+               deriving (Show, Eq, Generic)
+```
 
 We leave the type parameterized on `a` (which is like a template/generic in
 C++/Java) so we can decide what to put into it later.
@@ -73,7 +75,10 @@ create a leaf containing just that data.
 
 That function is sort of embarrassingly easy:
 
-~~~haskell makePT' :: a -&gt; PreTree a makePT' x = PTLeaf x ~~~
+``` {.haskell}
+makePT' :: a -> PreTree a
+makePT' x = PTLeaf x
+```
 
 Remember, that's `PTLeaf` is a data constructor that "creates" a `PreTree` when
 you use `PTLeaf x`.
@@ -81,16 +86,23 @@ you use `PTLeaf x`.
 However, something like this is just begging to be eta-reduced, and we can
 simplify it as:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L46-47
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding makePT :: a
--&gt; PreTree a makePT = PTLeaf ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L46-47
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+makePT :: a -> PreTree a
+makePT = PTLeaf
+```
 
 Which does the same thing. Basically, `PTLeaf` is already a function
 `a -> PreTree a`...so `makePT` is literally just `PTLeaf`.
 
-~~~haskell ghci&gt; let pt = makePT 'c' ghci&gt; :t pt PreTree Char ghci&gt; pt
-PTLeaf 'c' ~~~
+``` {.haskell}
+ghci> let pt = makePT 'c'
+ghci> :t pt
+PreTree Char
+ghci> pt
+PTLeaf 'c'
+```
 
 Now, we might also want a way to "merge" two `PreTree a`'s. This is at the heart
 of building the tree in the first place...successively merge two trees until
@@ -98,19 +110,29 @@ everything is in one giant tree.
 
 This isn't too bad either:
 
-~~~haskell mergePT' :: PreTree a -&gt; PreTree a -&gt; PreTree a mergePT' t1 t2
-= PTNode t1 t2 ~~~
+``` {.haskell}
+mergePT' :: PreTree a -> PreTree a -> PreTree a
+mergePT' t1 t2 = PTNode t1 t2
+```
 
 Which, from what we saw before, can just be written as:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L50-51
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding mergePT ::
-PreTree a -&gt; PreTree a -&gt; PreTree a mergePT = PTNode ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L50-51
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+mergePT :: PreTree a -> PreTree a -> PreTree a
+mergePT = PTNode
+```
 
-~~~haskell ghci&gt; let pt1 = makePT 'c' ghci&gt; let pt2 = makePT 't' ghci&gt;
-let pt3 = pt1 `mergePT` pt2 ghci&gt; :t pt3 PreTree Char ghci&gt; pt3 PTNode
-(PTLeaf 'c') (PTLeaf 't') ~~~
+``` {.haskell}
+ghci> let pt1 = makePT 'c'
+ghci> let pt2 = makePT 't'
+ghci> let pt3 = pt1 `mergePT` pt2
+ghci> :t pt3
+PreTree Char
+ghci> pt3
+PTNode (PTLeaf 'c') (PTLeaf 't')
+```
 
 Hm. Maybe that's a bit too easy. Feels a little unsettling, isn't it?
 
@@ -122,11 +144,13 @@ We're going to need some way of comparing the weights/priorities of two
 `PreTree`s when we are assembling the tree. Let's introduce a data type that
 includes both a `PreTree` and an (integer) weight.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs\#L13-15
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding data
-Weighted a = WPair { *wWeight :: Int , *wItem :: a } deriving (Show, Functor)
-~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs#L13-15
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+data Weighted a = WPair { _wWeight :: Int
+                        , _wItem   :: a
+                        } deriving (Show, Functor)
+```
 
 (Code for the Weighted module is [available for
 download](https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs))
@@ -136,36 +160,48 @@ We will say that a `Weighted a` is some `a` associated with an integer weight.
 We can create, say, a `PreTree` containing the character 'a', weighted with
 integer 1:
 
-~~~haskell ghci&gt; WPair 1 (makePTLeaf 'a') WPair 1 (makePTLeaf 'a') ::
-Weighted (PreTree Char) ~~~
+``` {.haskell}
+ghci> WPair 1 (makePTLeaf 'a')
+WPair 1 (makePTLeaf 'a') :: Weighted (PreTree Char)
+```
 
 This weighted `PreTree` is pretty useful, let's give it an alias/typedef:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L54-54
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding type
-WeightedPT a = Weighted (PreTree a) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L54-54
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+type WeightedPT a = Weighted (PreTree a)
+```
 
 Let's make the same functions for `WeightedPT` as we did for `PreTree`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L58-59
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding makeWPT ::
-Int -&gt; a -&gt; WeightedPT a makeWPT w = WPair w . makePT ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L58-59
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+makeWPT :: Int -> a -> WeightedPT a
+makeWPT w = WPair w . makePT
+```
 
 The above basically says "to make a `WeightedPT` with weight `w`, first `makePT`
 it, and then add that result it to a `WPair w`.
 
-~~~haskell ghci&gt; let pt = makeWPT 1 'w' ghci&gt; :t pt WeightedPT Char
-ghci&gt; pt WPair 1 (PTLeaf 'w') ~~~
+``` {.haskell}
+ghci> let pt = makeWPT 1 'w'
+ghci> :t pt
+WeightedPT Char
+ghci> pt
+WPair 1 (PTLeaf 'w')
+```
 
 We will also want to merge two `WeightedPT`s:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L62-64
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding mergeWPT ::
-WeightedPT a -&gt; WeightedPT a -&gt; WeightedPT a mergeWPT (WPair w1 pt1)
-(WPair w2 pt2) = WPair (w1 + w2) (mergePT pt1 pt2) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L62-64
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+mergeWPT :: WeightedPT a -> WeightedPT a -> WeightedPT a
+mergeWPT (WPair w1 pt1) (WPair w2 pt2)
+    = WPair (w1 + w2) (mergePT pt1 pt2)
+```
 
 so that the total weight is the sum of the weights of the two subtrees.
 
@@ -173,19 +209,25 @@ Finally, the entire point of having weighted things is so that we can compare
 them and impose some total ordering. Haskell has a typeclass that abstracts
 these comparing operations, `Ord`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs\#L17-21
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding instance Eq
-(Weighted a) where WPair w1 \_ == WPair w2 \_ = w1 == w2
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Weighted.hs#L17-21
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+instance Eq (Weighted a) where
+    WPair w1 _ == WPair w2 _ = w1 == w2
 
-instance Ord (Weighted a) where compare (WPair w1 *) (WPair w2 *) = compare w1
-w2 ~~~
+instance Ord (Weighted a) where
+    compare (WPair w1 _) (WPair w2 _) = compare w1 w2
+```
 
 Which says that `Weighted a` is an `Ord` (is orderable/comparable), and to
 compare two `WPair w x`'s, you compare the `w`'s.
 
-~~~haskell ghci&gt; makeWPT 2 'a' &gt; makeWPT 3 'b' False ghci&gt; makeWPT 4
-'t' == makeWPT 4 'k' True ~~~
+``` {.haskell}
+ghci> makeWPT 2 'a' > makeWPT 3 'b'
+False
+ghci> makeWPT 4 't' == makeWPT 4 'k'
+True
+```
 
 Priority Queues
 ---------------
@@ -228,26 +270,32 @@ to make the new tree.
 
 This is a new type of binary tree, so let's define a new data type:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs\#L20-22
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding data
-SkewHeap a = SEmpty | SNode a (SkewHeap a) (SkewHeap a) deriving (Show, Eq,
-Foldable) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs#L20-22
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+data SkewHeap a = SEmpty
+                | SNode a (SkewHeap a) (SkewHeap a)
+                deriving (Show, Eq, Foldable)
+```
 
 Creating a new `SkewHeap` with one item:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs\#L25-26
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding makeSH :: a
--&gt; SkewHeap a makeSH x = SNode x SEmpty SEmpty ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs#L25-26
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+makeSH :: a -> SkewHeap a
+makeSH x = SNode x SEmpty SEmpty
+```
 
 Popping the root off of a skew tree:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs\#L31-33
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding popSH ::
-Ord a =&gt; SkewHeap a -&gt; (Maybe a, SkewHeap a) popSH SEmpty = (Nothing,
-SEmpty) popSH (SNode r h1 h2) = (Just r , mergeSH h1 h2) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs#L31-33
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+popSH :: Ord a => SkewHeap a -> (Maybe a, SkewHeap a)
+popSH SEmpty          = (Nothing, SEmpty)
+popSH (SNode r h1 h2) = (Just r , mergeSH h1 h2)
+```
 
 We make it return a potential result (`Maybe a`), and the resulting new popped
 tree. The result is `Maybe a` because we might potentially not be able to pop
@@ -256,12 +304,16 @@ heaps, the data must be comparable.
 
 Finally, the hardest piece of code so far: merging two skew heaps:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs\#L37-42
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding mergeSH ::
-Ord a =&gt; SkewHeap a -&gt; SkewHeap a -&gt; SkewHeap a mergeSH SEmpty h = h
-mergeSH h SEmpty = h mergeSH hA@(SNode xA lA rA) hB@(SNode xB lB rB) | xA &lt;
-xB = SNode xA (mergeSH rA hB) lA | otherwise = SNode xB (mergeSH rB hA) lB ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs#L37-42
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+mergeSH :: Ord a => SkewHeap a -> SkewHeap a -> SkewHeap a
+mergeSH SEmpty h = h
+mergeSH h SEmpty = h
+mergeSH hA@(SNode xA lA rA) hB@(SNode xB lB rB)
+    | xA < xB    = SNode xA (mergeSH rA hB) lA
+    | otherwise  = SNode xB (mergeSH rB hA) lB
+```
 
 Hopefully this is very pleasing to read --- it reads a lot like a specification,
 or a math formula:
@@ -283,26 +335,32 @@ Ok, neat!
 
 Let's wrap this up in a tidy interface/API for a `PQueue` type:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs\#L48-71
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding newtype
-PQueue a = PQ (SkewHeap a) deriving Show
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PQueue.hs#L48-71
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+newtype PQueue a = PQ (SkewHeap a) deriving Show
 
-emptyPQ :: PQueue a emptyPQ = PQ SEmpty
+emptyPQ :: PQueue a
+emptyPQ = PQ SEmpty
 
-insertPQ :: Ord a =&gt; a -&gt; PQueue a -&gt; PQueue a insertPQ x (PQ h) = PQ
-(mergeSH h (makeSH x))
+insertPQ :: Ord a => a -> PQueue a -> PQueue a
+insertPQ x (PQ h) = PQ (mergeSH h (makeSH x))
 
-popPQ :: Ord a =&gt; PQueue a -&gt; (Maybe a, PQueue a) popPQ (PQ h) = (res, PQ
-h') where (res, h') = popSH h
+popPQ :: Ord a => PQueue a -> (Maybe a, PQueue a)
+popPQ (PQ h) = (res, PQ h')
+  where
+    (res, h') = popSH h
 
-sizePQ :: PQueue a -&gt; Int sizePQ (PQ h) = length (toList h) ~~~
+sizePQ :: PQueue a -> Int
+sizePQ (PQ h) = length (toList h)
+```
 
-(Notice `toList`, from the \[Foldable\] module; we derived `Foldable` so that we
-can use `toList` on our `SkewHeap`s. If your Haskell implementation cannot
-derive foldable (if you are not using GHC, for example) --- and even if your
-implementation can --- it might be fun to think about how to implement `sizePQ`
-without it!)
+(Notice `toList`, from the
+[Foldable](http://hackage.haskell.org/package/base-4.6.0.1/docs/Data-Foldable.html)
+module; we derived `Foldable` so that we can use `toList` on our `SkewHeap`s. If
+your Haskell implementation cannot derive foldable (if you are not using GHC,
+for example) --- and even if your implementation can --- it might be fun to
+think about how to implement `sizePQ` without it!)
 
 We do this so that we hide our low-level skew heap implementation over a
 "high-level" priority queue interface. We do not export the `PQ` constructor, so
@@ -323,30 +381,38 @@ download](https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huff
 First, we need to have some sort of frequency table. We will use
 `Data.Map.Strict`'s `Map` type:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs\#L19-19
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding type
-FreqTable a = Map a Int ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L19-19
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+type FreqTable a = Map a Int
+```
 
 and we'll import the operations from `Data.Map.Strict` qualified:
 
-~~~haskell import qualified Data.Map.Strict as M ~~~
+``` {.haskell}
+import qualified Data.Map.Strict as M
+```
 
 Just to work with things now, let's make a way to generate a `FreqTable` from an
 arbitrary string:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs\#L22-25
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding listFreq ::
-Ord a =&gt; \[a\] -&gt; FreqTable a listFreq = foldr f M.empty where f x m =
-M.insertWith (+) x 1 m ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L22-25
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+listFreq :: Ord a => [a] -> FreqTable a
+listFreq = foldr f M.empty
+  where
+    f x m = M.insertWith (+) x 1 m
+```
 
 This says that `listFreq` is a fold, where you start with `M.empty` (an empty
 `FreqTable`) and for every element, you insert it into the map as a key with
 value 1. If the key already exists, add one to its current value instead.
 
-~~~haskell ghci&gt; listFreq "hello world" fromList \[('
-',1),('d',1),('e',1),('h',1),('l',3),('o',2),('r',1),('w',1)\] ~~~
+``` {.haskell}
+ghci> listFreq "hello world"
+fromList [(' ',1),('d',1),('e',1),('h',1),('l',3),('o',2),('r',1),('w',1)]
+```
 
 ### Building the queue
 
@@ -355,16 +421,30 @@ associated weights, and insert them all into a `PQueue`. We can do this by using
 `M.foldrWithKey`, which is a `foldr` over the map, giving the folding function
 both the key and the value.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs\#L43-46
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding listQueue
-:: Ord a =&gt; \[a\] -&gt; PQueue (Weighted a) listQueue = M.foldrWithKey f
-emptyPQ . listFreq where f k v pq = insertPQ (WPair v k) pq ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L43-46
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+listQueue :: Ord a => [a] -> PQueue (Weighted a)
+listQueue = M.foldrWithKey f emptyPQ . listFreq
+  where
+    f k v pq = insertPQ (WPair v k) pq
+```
 
-~~~haskell ghci&gt; let pq = listQueue "hello world" ghci&gt; :t pq pq :: PQueue
-(WPair Int (PreTree Char)) ghci&gt; sizePQ pq 8 ghci&gt; let (popped1, pq') =
-popPQ pq ghci&gt; popped1 Just (WPair 1 ' ') ghci&gt; let (popped2, pq'') =
-popPQ pq' ghci&gt; popped2 Just (WPair 1 'd') ghci&gt; sizePQ pq'' 6 ~~~
+``` {.haskell}
+ghci> let pq = listQueue "hello world"
+ghci> :t pq
+pq :: PQueue (WPair Int (PreTree Char))
+ghci> sizePQ pq
+8
+ghci> let (popped1, pq') = popPQ pq
+ghci> popped1
+Just (WPair 1 ' ')
+ghci> let (popped2, pq'') = popPQ pq'
+ghci> popped2
+Just (WPair 1 'd')
+ghci> sizePQ pq''
+6
+```
 
 ### Building the tree
 
@@ -388,18 +468,25 @@ What do I mean by "compositions"?
 
 Let's say I have two functions:
 
-~~~haskell f1 :: s -&gt; (a, s) f2 :: s -&gt; (b, s) ~~~
+``` {.haskell}
+f1 :: s -> (a, s)
+f2 :: s -> (b, s)
+```
 
 And I wanted to sequence them:
 
-~~~haskell f1 `andThen` f2 ~~~
+``` {.haskell}
+f1 `andThen` f2
+```
 
 What would that even "look like"?
 
 Well, I expect that sequencing two state functions will return a new, "giant"
 state function that does both functions "one after the other". That is:
 
-~~~haskell f1 `andThen` f2 :: s -&gt; (b, s) ~~~
+``` {.haskell}
+f1 `andThen` f2 :: s -> (b, s)
+```
 
 This new function will first run the input state on `f1`, and take that
 resulting state and pass it into `f2`, and then return the result of `f2` and
@@ -407,20 +494,26 @@ the resulting modified state of `f2`.
 
 So we have something like
 
-~~~haskell andThen :: (s -&gt; (a,s)) -&gt; (s -&gt; (b,s)) -&gt; (s -&gt;
-(b,s)) andThen f1 f2 = \\st -&gt; let (\_,st') = f1 s in f2 st' ~~~
+``` {.haskell}
+andThen :: (s -> (a,s)) -> (s -> (b,s)) -> (s -> (b,s))
+andThen f1 f2 = \st -> let (_,st') = f1 s
+                       in  f2 st'
+```
 
 Think of `andThen` like a semicolon, of sorts.
 
 Notice that we "lose" the result of `f1` with `andThen`. What if we wanted to
 use it? We might write a combinator:
 
-~~~ andThenWith :: (s -&gt; (a, s)) -&gt; (a -&gt; (s -&gt; (b, s))) -&gt; (s
--&gt; (b, s)) ~~~
+    andThenWith ::       (s -> (a, s))
+                -> (a -> (s -> (b, s)))
+                ->       (s -> (b, s))
 
 Which you would use like
 
-~~~haskell f1 `andThenWith` (\\x -&gt; f2 x) ~~~
+``` {.haskell}
+f1 `andThenWith` (\x -> f2 x)
+```
 
 where `f2` is a function that takes an `a` and returns a `s -> (a,s)`.
 
@@ -428,28 +521,37 @@ Basically, it would be exactly the same as `andThen`, except the second argument
 gets access to the result of the first. Writing it is almost as simple, actually
 ---
 
-~~~haskell andThenWith :: (s -&gt; (a,s)) -&gt; (a -&gt; (s -&gt; (b, s))) -&gt;
-(s -&gt; (b, s)) andThenWith f1 f2 = \\st -&gt; let (x,st') = f1 s in (f2 x) st'
-~~~
+``` {.haskell}
+andThenWith :: (s -> (a,s)) -> (a -> (s -> (b, s))) -> (s -> (b, s))
+andThenWith f1 f2 = \st -> let (x,st') = f1 s
+                           in  (f2 x) st'
+```
 
 As it turns out...if you squint hard enough, the type signature `andThenWith`
 looks a lot like the type signature for `(>>=)`:
 
-~~~haskell (&gt;&gt;=) :: Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b ~~~
+``` {.haskell}
+(>>=) :: Monad m => m a -> (a -> m b) -> m b
+```
 
 Hm. Let's create a type synonym for our `s -> (a, s)`, to make things more
 clear.
 
-~~~haskell type State s a = s -&gt; (a, s) ~~~
+``` {.haskell}
+type State s a = s -> (a, s)
+```
 
 So now our `andThenWith` looks like:
 
-~~~haskell andThenWith :: State s a -&gt; (a -&gt; State s b) -&gt; State s b
-~~~
+``` {.haskell}
+andThenWith :: State s a -> (a -> State s b) -> State s b
+```
 
 If we let `m ~ State s`:
 
-~~~haskell andThenWith :: m a -&gt; (a -&gt; m b) -&gt; m b ~~~
+``` {.haskell}
+andThenWith :: m a -> (a -> m b) -> m b
+```
 
 Neat!
 
@@ -458,8 +560,10 @@ encapsulates "sequencing" state functions one after another.
 
 We just need `return`:
 
-~~~haskell returnState :: a -&gt; State s a returnState x = \\st -&gt; (x, st)
-~~~
+``` {.haskell}
+returnState :: a -> State s a
+returnState x = \st -> (x, st)
+```
 
 And `return` is `returnState`, `(>>)` is `andThen`, and `(>>=)` is
 `andThenWith`.
@@ -471,20 +575,28 @@ actually use a `newtype`. The standard implementation comes from the
 combinators, operators, and do notation. The transformers implementation comes
 with a few useful primitives:
 
-~~~haskell -- wrap a normal state function into the State wrapper state :: (s
--&gt; (a, s)) -&gt; State s a
+``` {.haskell}
+-- wrap a normal state function into the State wrapper
+state :: (s -> (a, s)) -> State s a
 
--- get grabs the state as the result. get :: State s s get = state (\\st -&gt;
-(st, st))
+-- get grabs the state as the result.
+get :: State s s
+get = state (\st -> (st, st))
 
--- put sets the state to the input put :: s -&gt; State s () put s = state (\_
--&gt; ((), st))
+-- put sets the state to the input
+put :: s -> State s ()
+put s = state (\_ -> ((), st))
 
--- modifies the state with the given function modify :: (s -&gt; s) -&gt; State
-s () modify f = state (\\st -&gt; ((), f st))
+-- modifies the state with the given function
+modify :: (s -> s) -> State s ()
+modify f = state (\st -> ((), f st))
 
--- alternative implementation of `modify` modify' f :: (s -&gt; s) -&gt; State s
-() modify' f = do st &lt;- get put (f st) ~~~
+-- alternative implementation of `modify`
+modify' f :: (s -> s) -> State s ()
+modify' f = do
+    st <- get
+    put (f st)
+```
 
 If you're still lost, check out Brandon Simmon's [state monad
 tutorial](http://brandon.si/code/the-state-monad-a-tutorial-for-the-confused/),
@@ -526,17 +638,18 @@ expressive tool!
 This is a bit of an unrelated aside...but notice that we could have actually
 done our previous `fold`s as state monad operations; like `listFreq`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs\#L29-36
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding runListFreq
-:: forall a. Ord a =&gt; \[a\] -&gt; FreqTable a runListFreq xs = execState
-listFreqState M.empty where listFreqState :: State (FreqTable a) ()
-listFreqState = mapM\_ addFreq xs
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L29-36
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+runListFreq :: forall a. Ord a => [a] -> FreqTable a
+runListFreq xs = execState listFreqState M.empty
+  where
+    listFreqState :: State (FreqTable a) ()
+    listFreqState = mapM_ addFreq xs
 
     addFreq :: a -> State (FreqTable a) ()
     addFreq x = modify (M.insertWith (+) x 1)
-
-~~~
+```
 
 `execState` runs the given `State` computation with the given initial state, and
 returns the final state `s` at the end of it all. Basically, it takes an
@@ -549,16 +662,18 @@ that `listFreqState` is a function from a `FreqTable a` to `((), FreqTable a)`.
 
 How about `listQueue`? We could do it with the state monad too, if we wanted to.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs\#L50-59
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L50-59
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
-listQueueState :: Ord a =&gt; \[a\] -&gt; State (PQueue (WeightedPT a)) ()
-listQueueState xs = M.traverseWithKey addNode (listFreq xs) &gt;&gt; return ()
-where addNode :: a -&gt; Int -&gt; State (PQueue (WeightedPT a)) () addNode x i
-= modify (insertPQ (WPair i (makePT x)))
+listQueueState :: Ord a => [a] -> State (PQueue (WeightedPT a)) ()
+listQueueState xs = M.traverseWithKey addNode (listFreq xs) >> return ()
+  where
+    addNode :: a -> Int -> State (PQueue (WeightedPT a)) ()
+    addNode x i = modify (insertPQ (WPair i (makePT x)))
 
-runListQueue :: Ord a =&gt; \[a\] -&gt; PQueue (WeightedPT a) runListQueue xs =
-execState (listQueueState xs) emptyPQ ~~~
+runListQueue :: Ord a => [a] -> PQueue (WeightedPT a)
+runListQueue xs = execState (listQueueState xs) emptyPQ
+```
 
 In these cases, the monadic usage isn't quite necessary or useful on its own. A
 fold would have probably been more expressive and easier to read. The above
@@ -579,18 +694,23 @@ example, in `listQueueState`, we "process" a state, and leave it modified for
 
 For example:
 
-~~~haskell prepareQueue :: State (PQueue (WeightedPT a)) () useQueue :: State
-(PQueue (WeightedPT a)) a
+``` {.haskell}
+prepareQueue :: State (PQueue (WeightedPT a)) ()
+useQueue     :: State (PQueue (WeightedPT a)) a
 
-doAllTogether :: Ord a =&gt; \[a\] -&gt; State (PQueue (WeightedPT a)) a
-doAllTogether xs = prepareQueue &gt;&gt; listQueueState xs &gt;&gt; useQueue
+doAllTogether :: Ord a => [a] -> State (PQueue (WeightedPT a)) a
+doAllTogether xs = prepareQueue >> listQueueState xs >> useQueue
 
--- alternatively, the same thing but in do notation doAllTogether' :: Ord a
-=&gt; \[a\] -&gt; State (PQueue (WeightedPT a)) a doAllTogether' xs = do
-prepareQueue listQueueState xs useQueue
+-- alternatively, the same thing but in do notation
+doAllTogether' :: Ord a => [a] -> State (PQueue (WeightedPT a)) a
+doAllTogether' xs = do
+    prepareQueue
+    listQueueState xs
+    useQueue
 
-runDoAllTogether :: Ord a =&gt; \[a\] -&gt; a runDoAllTogether xs = evalState
-(doAllTogether xs) emptyPQ ~~~
+runDoAllTogether :: Ord a => [a] -> a
+runDoAllTogether xs = evalState (doAllTogether xs) emptyPQ
+```
 
 (Remember that `(>>)` is just our `andThen`, and when we sequence using `(>>)`
 we mean "combine these two actions into one big action that feeds the resulting
@@ -623,19 +743,32 @@ Sounds simple enough. We should take into account that we would fail to build a
 tree if the queue was empty to begin with, by returning a `Maybe (PreTree a)`
 instead of a `PreTree a`.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs\#L75-98
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding buildTree
-:: State (PQueue (WeightedPT a)) (Maybe (PreTree a)) buildTree = do t1' &lt;-
-state popPQ case t1' of Nothing -&gt; -- queue was empty to begin with, so this
-fails. return Nothing Just t1 -&gt; do t2' &lt;- state popPQ case t2' of Nothing
--&gt; -- We're done, there was only one item! Return a `Just` to -- indicate
-success. return (Just (\_wItem t1)) -- break out of the loop Just t2 -&gt; do --
-merge and push let combined = mergeWPT t1 t2 modify (insertPQ combined)
-buildTree -- recursive call
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L75-98
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+buildTree :: State (PQueue (WeightedPT a)) (Maybe (PreTree a))
+buildTree = do
+    t1' <- state popPQ
+    case t1' of
+      Nothing ->
+        -- queue was empty to begin with, so this fails.
+        return Nothing
+      Just t1 -> do
+        t2' <- state popPQ
+        case t2' of
+          Nothing  ->
+            -- We're done, there was only one item!  Return a `Just` to
+            -- indicate success.
+            return (Just (_wItem t1))     -- break out of the loop
+          Just t2 -> do
+            -- merge and push
+            let combined = mergeWPT t1 t2
+            modify (insertPQ combined)
+            buildTree                     -- recursive call
 
-runBuildTree :: Ord a =&gt; \[a\] -&gt; (Maybe (PreTree a)) runBuildTree xs =
-evalState (listQueueState xs &gt;&gt; buildTree) emptyPQ ~~~
+runBuildTree :: Ord a => [a] -> (Maybe (PreTree a))
+runBuildTree xs = evalState (listQueueState xs >> buildTree) emptyPQ
+```
 
 Note that due to our uncanny foresight,
 `popPQ :: PQueue a -> (Maybe a, PQueue a)` is already a state function
@@ -668,9 +801,23 @@ gives the resulting `a` of the tuple.
 
 Let's try it out, shall we?
 
-~~~haskell ghci&gt; fromJust $ runBuildTree "hello world" PTNode (PTNode (PTNode
-(PTLeaf 'h') (PTLeaf 'e') ) (PTNode (PTLeaf 'w') (PTLeaf 'r') ) ) (PTNode
-(PTLeaf 'l') (PTNode (PTNode (PTLeaf 'd') (PTLeaf ' ') ) (PTLeaf 'o') ) ) ~~~
+``` {.haskell}
+ghci> fromJust $ runBuildTree "hello world"
+PTNode (PTNode (PTNode (PTLeaf 'h')
+                       (PTLeaf 'e')
+               )
+               (PTNode (PTLeaf 'w')
+                       (PTLeaf 'r')
+               )
+       )
+       (PTNode (PTLeaf 'l')
+               (PTNode (PTNode (PTLeaf 'd')
+                               (PTLeaf ' ')
+                       )
+                       (PTLeaf 'o')
+               )
+       )
+```
 
 Congrats, we built a Huffman encoding tree! Notice that the most commonly used
 letter (`'l'`, occurring 3 times) is only at depth 2 (and is most accessible),
@@ -690,4 +837,4 @@ huffman tree in a compact, serialized binary way, and load it cleanly.
 In the mean time, try [downloading the
 source](https://github.com/mstksg/inCode/tree/master/code-samples/huffman), or
 [playing with it online](https://www.fpcomplete.com/user/jle/huffman-encoding)
-on \[fpcomplete\]!
+on [fpcomplete](http://www.fpcomplete.com)!

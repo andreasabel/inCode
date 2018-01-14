@@ -21,6 +21,46 @@
 % use microtype if available
 \IfFileExists{microtype.sty}{\usepackage{microtype}}{}
 \usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
 \ifxetex
   \usepackage[setpagesize=false, % page size defined by xetex
               unicode=false, % unicode breaks when used with xetex
@@ -30,8 +70,8 @@
 \fi
 \hypersetup{breaklinks=true,
             bookmarks=true,
-            pdfauthor={},
-            pdftitle={},
+            pdfauthor={Justin Le},
+            pdftitle={Streaming Huffman Compression in Haskell (Part 2: Binary and Searches)},
             colorlinks=true,
             citecolor=blue,
             urlcolor=blue,
@@ -45,11 +85,12 @@
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
 
+\title{Streaming Huffman Compression in Haskell (Part 2: Binary and Searches)}
+\author{Justin Le}
+\date{April 11, 2014}
 
 \begin{document}
-
-\% Streaming Huffman Compression in Haskell (Part 2: Binary and Searches) \%
-Justin Le \% April 11, 2014
+\maketitle
 
 \emph{Originally posted on
 \textbf{\href{https://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-2-binary.html}{in
@@ -67,7 +108,8 @@ using the State monad.
 Now let's look at serializing and unserializing our prefix trees for easy
 storage, and then at actually using them to encode and decode!
 
-\section{Binary}
+\hypertarget{binary}{%
+\section{Binary}\label{binary}}
 
 There are a couple of serialization libraries in Haskell; the dominant one is
 \href{http://hackage.haskell.org/package/binary}{binary}, but
@@ -77,35 +119,44 @@ documentation for \emph{cereal}. We'll be using \emph{binary} for the this
 tutorial; among many reasons, for its easy integration with the \emph{pipes}
 library we will be working with later.
 
-\subsection{The Easy Way}
+\hypertarget{the-easy-way}{%
+\subsection{The Easy Way}\label{the-easy-way}}
 
 So let's make \texttt{PreTree} serialize/unserializable.
 
 The easy way is to enable the \texttt{DeriveGeneric} language extension on GHC,
 use \texttt{deriving\ (Generic)} when we define our \texttt{PreTree}, and then:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell instance Binary a
-=\textgreater{} Binary (PreTree a)
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{instance} \DataTypeTok{Binary}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Binary}\NormalTok{ (}\DataTypeTok{PreTree}\NormalTok{ a)}
+\end{Highlighting}
+\end{Shaded}
 
-And...that's it! We just auto-generated functions to serialize and deserialize
-our \texttt{PreTree}s (if what they contain is itself serializable).
+And\ldots{}that's it! We just auto-generated functions to serialize and
+deserialize our \texttt{PreTree}s (if what they contain is itself serializable).
 
 In real life, we would do this. However, for the sake of learning, let's dig a
 bit more into the \texttt{Binary} typeclass.
 
-\subsection{\texorpdfstring{The \emph{Other} Easy Way}{The Other Easy Way}}
+\hypertarget{the-other-easy-way}{%
+\subsection{\texorpdfstring{The \emph{Other} Easy
+Way}{The Other Easy Way}}\label{the-other-easy-way}}
 
 So the big crux of \emph{binary} is the \texttt{Binary} typeclass:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell class Binary t where
-put :: t -\textgreater{} Put get :: Get t
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{Binary}\NormalTok{ t }\KeywordTok{where}
+\OtherTok{    put ::}\NormalTok{ t }\OtherTok{->} \DataTypeTok{Put}
+\OtherTok{    get ::} \DataTypeTok{Get}\NormalTok{ t}
+\end{Highlighting}
+\end{Shaded}
 
-where \texttt{Put} and \texttt{Get} are sort of "instruction objects for
-putting/getting binary". \texttt{Get} is a monad, and \texttt{Put} is a wrapped
+where \texttt{Put} and \texttt{Get} are sort of ``instruction objects for
+putting/getting binary''. \texttt{Get} is a monad, and \texttt{Put} is a wrapped
 \texttt{PutM}, which is a writer monad. (To be more specific, \texttt{Put} is
-\texttt{PutM\ ()}, because the final action has no result and only "writes")
+\texttt{PutM\ ()}, because the final action has no result and only ``writes'')
 
 So \texttt{Binary} things are things that you can serialize (with the
 intructions in \texttt{put}) and deserialize (with the instructions in
@@ -114,27 +165,35 @@ intructions in \texttt{put}) and deserialize (with the instructions in
 Luckily, because of Haskell's great composition tools, assembling these
 instructions by hand are easy peasy!
 
-\subsubsection{Put}
+\hypertarget{put}{%
+\subsubsection{Put}\label{put}}
 
 Let's define our own custom \texttt{Put} for our \texttt{PreTree}s:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L69-76
--\/- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding putPT ::
-Binary a =\textgreater{} PreTree a -\textgreater{} Put putPT (PTLeaf x) = do put
-True -\/- signify we have a leaf put x putPT (PTNode pt1 pt2) = do put False
--\/- signify we have a node put pt1 put pt2
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L69-76}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{putPT ::} \DataTypeTok{Binary}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Put}
+\NormalTok{putPT (}\DataTypeTok{PTLeaf}\NormalTok{ x) }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{    put }\DataTypeTok{True}                    \CommentTok{-- signify we have a leaf}
+\NormalTok{    put x}
+\NormalTok{putPT (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{    put }\DataTypeTok{False}                   \CommentTok{-- signify we have a node}
+\NormalTok{    put pt1}
+\NormalTok{    put pt2}
+\end{Highlighting}
+\end{Shaded}
 
 This all should be fairly readable and self-explanatory.
 
 \begin{itemize}
 \item
-  "To put a \texttt{PTLeaf\ x}, first put a flag saying you have a leaf, then
-  put the value of \texttt{x}."
+  ``To put a \texttt{PTLeaf\ x}, first put a flag saying you have a leaf, then
+  put the value of \texttt{x}.''
 \item
-  "To put a \texttt{PTNode\ pt1\ pt2}, first put a flag saying you have a node,
-  then put both trees."
+  ``To put a \texttt{PTNode\ pt1\ pt2}, first put a flag saying you have a node,
+  then put both trees.''
 \end{itemize}
 
 Due to how monads and pattern matching work, the whole thing is pretty
@@ -145,27 +204,33 @@ The only slightly annoying thing is that we subject ourselves to
 blindness} by using \texttt{True} or \texttt{False}; we have to keep track of
 what means what. Alternatively, we can create our own binary data types,
 \texttt{data\ PTType\ =\ IsNode\ \textbar{}\ IsLeaf}, and \texttt{put}
-\emph{that}, instead...but in this case it might not be so bad to live with
+\emph{that}, instead\ldots{}but in this case it might not be so bad to live with
 boolean blindness for now.
 
-\subsubsection{Get}
+\hypertarget{get}{%
+\subsubsection{Get}\label{get}}
 
 Now let's define our own custom \texttt{Get}:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L79-84
--\/- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding getPT ::
-Binary a =\textgreater{} Get (PreTree a) getPT = do isLeaf \textless{}- get if
-isLeaf then PTLeaf \textless{}\$\textgreater{} get else PTNode
-\textless{}\$\textgreater{} get \textless{}*\textgreater{} get
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L79-84}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{getPT ::} \DataTypeTok{Binary}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Get}\NormalTok{ (}\DataTypeTok{PreTree}\NormalTok{ a)}
+\NormalTok{getPT }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{    isLeaf }\OtherTok{<-}\NormalTok{ get}
+    \KeywordTok{if}\NormalTok{ isLeaf}
+      \KeywordTok{then} \DataTypeTok{PTLeaf} \FunctionTok{<$>}\NormalTok{ get}
+      \KeywordTok{else} \DataTypeTok{PTNode} \FunctionTok{<$>}\NormalTok{ get }\FunctionTok{<*>}\NormalTok{ get}
+\end{Highlighting}
+\end{Shaded}
 
 This also shouldn't be too bad!
 
 \begin{itemize}
 \tightlist
 \item
-  "Get" the boolean flag, to tell you if you have a leaf or a node.
+  ``Get'' the boolean flag, to tell you if you have a leaf or a node.
 \item
   If it's a leaf, then \texttt{get} the data inside the leaf, and wrap it in a
   \texttt{PTLeaf}.
@@ -185,53 +250,99 @@ Hooray for type inference!
 If you're not familiar with the
 \texttt{f\ \textless{}\$\textgreater{}\ x\ \textless{}*\textgreater{}\ y} idiom,
 you can consider it to be the same thing as \texttt{f\ x\ y}, except that
-\texttt{x} and \texttt{y} are "inside" things:
+\texttt{x} and \texttt{y} are ``inside'' things:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-(+) 1 4 5 ghci\textgreater{} (+) \textless{}\$\textgreater{} Just 1
-\textless{}*\textgreater{} Just 4 Just 5
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ (}\FunctionTok{+}\NormalTok{) }\DecValTok{1} \DecValTok{4}
+\DecValTok{5}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ (}\FunctionTok{+}\NormalTok{) }\FunctionTok{<$>} \DataTypeTok{Just} \DecValTok{1} \FunctionTok{<*>} \DataTypeTok{Just} \DecValTok{4}
+\DataTypeTok{Just} \DecValTok{5}
+\end{Highlighting}
+\end{Shaded}
 
 Where \texttt{(\textless{}\$\textgreater{})} and
 \texttt{(\textless{}*\textgreater{})} come from \texttt{Control.Applicative}. We
-call this style "applicative style", in the biz.
+call this style ``applicative style'', in the biz.
 
-\subsubsection{Wrapping it up}
+\hypertarget{wrapping-it-up}{%
+\subsubsection{Wrapping it up}\label{wrapping-it-up}}
 
 And finally, to tie it all together:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L36-38
--\/- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding instance
-Binary a =\textgreater{} Binary (PreTree a) where put = putPT get = getPT
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L36-38}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\KeywordTok{instance} \DataTypeTok{Binary}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Binary}\NormalTok{ (}\DataTypeTok{PreTree}\NormalTok{ a) }\KeywordTok{where}
+\NormalTok{    put }\FunctionTok{=}\NormalTok{ putPT}
+\NormalTok{    get }\FunctionTok{=}\NormalTok{ getPT}
+\end{Highlighting}
+\end{Shaded}
 
-\subsection{Testing it out}
+\hypertarget{testing-it-out}{%
+\subsection{Testing it out}\label{testing-it-out}}
 
 However way we decide to write our \texttt{Binary} instance, let's test it all
 out.
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-let (Just pt) = runBuildTree "hello world" ghci\textgreater{} let encoded =
-encode pt ghci\textgreater{} :t encoded encoded :: ByteString -\/- a string of
-bytes ghci\textgreater{} let decoded = decode encoded :: PreTree Char
-ghci\textgreater{} decoded PTNode (PTNode (PTNode (PTLeaf 'h') (PTLeaf 'e') )
-(PTNode (PTLeaf 'w') (PTLeaf 'r') ) ) (PTNode (PTLeaf 'l') (PTNode (PTNode
-(PTLeaf 'd') (PTLeaf ' ') ) (PTLeaf 'o') ) ) ghci\textgreater{} decoded == t
-True \textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ (}\DataTypeTok{Just}\NormalTok{ pt) }\FunctionTok{=}\NormalTok{ runBuildTree }\StringTok{"hello world"}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ encoded }\FunctionTok{=}\NormalTok{ encode pt}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t encoded}
+\OtherTok{encoded ::} \DataTypeTok{ByteString}       \CommentTok{-- a string of bytes}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ decoded }\FunctionTok{=}\NormalTok{ decode}\OtherTok{ encoded ::} \DataTypeTok{PreTree} \DataTypeTok{Char}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ decoded}
+\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{'h'}\NormalTok{)}
+\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{'e'}\NormalTok{)}
+\NormalTok{               )}
+\NormalTok{               (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{'w'}\NormalTok{)}
+\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{'r'}\NormalTok{)}
+\NormalTok{               )}
+\NormalTok{       )}
+\NormalTok{       (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{'l'}\NormalTok{)}
+\NormalTok{               (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{'d'}\NormalTok{)}
+\NormalTok{                               (}\DataTypeTok{PTLeaf} \CharTok{' '}\NormalTok{)}
+\NormalTok{                       )}
+\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{'o'}\NormalTok{)}
+\NormalTok{               )}
+\NormalTok{       )}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ decoded }\FunctionTok{==}\NormalTok{ t}
+\DataTypeTok{True}
+\end{Highlighting}
+\end{Shaded}
 
 Neat! We can also write it to a file and re-read:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-encodeFile "test.dat" t ghci\textgreater{} t' \textless{}- decodeFile "test.dat"
-:: IO (PreTree Char) ghci\textgreater{} t' PTNode (PTNode (PTNode (PTLeaf 'h')
-(PTLeaf 'e') ) (PTNode (PTLeaf 'w') (PTLeaf 'r') ) ) (PTNode (PTLeaf 'l')
-(PTNode (PTNode (PTLeaf 'd') (PTLeaf ' ') ) (PTLeaf 'o') ) ) ghci\textgreater{}
-t' == t True \textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ encodeFile }\StringTok{"test.dat"}\NormalTok{ t}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ t' }\OtherTok{<-}\NormalTok{ decodeFile }\StringTok{"test.dat"}\OtherTok{ ::} \DataTypeTok{IO}\NormalTok{ (}\DataTypeTok{PreTree} \DataTypeTok{Char}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ t'}
+\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{'h'}\NormalTok{)}
+\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{'e'}\NormalTok{)}
+\NormalTok{               )}
+\NormalTok{               (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{'w'}\NormalTok{)}
+\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{'r'}\NormalTok{)}
+\NormalTok{               )}
+\NormalTok{       )}
+\NormalTok{       (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{'l'}\NormalTok{)}
+\NormalTok{               (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{'d'}\NormalTok{)}
+\NormalTok{                               (}\DataTypeTok{PTLeaf} \CharTok{' '}\NormalTok{)}
+\NormalTok{                       )}
+\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{'o'}\NormalTok{)}
+\NormalTok{               )}
+\NormalTok{       )}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ t' }\FunctionTok{==}\NormalTok{ t}
+\DataTypeTok{True}
+\end{Highlighting}
+\end{Shaded}
 
 And this looks like it works pretty well!
 
-\section{Encoding}
+\hypertarget{encoding}{%
+\section{Encoding}\label{encoding}}
 
 Now that we've got that out of the way, let's work on actually encoding and
 decoding.
@@ -241,13 +352,17 @@ the character.
 
 Let's represent this path as a list of \texttt{Direction}s:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L25-30
--\/- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding data
-Direction = DLeft \textbar{} DRight deriving (Show, Eq, Generic)
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L25-30}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\KeywordTok{data} \DataTypeTok{Direction} \FunctionTok{=} \DataTypeTok{DLeft}
+               \FunctionTok{|} \DataTypeTok{DRight}
+               \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Eq}\NormalTok{, }\DataTypeTok{Generic}\NormalTok{)}
 
-type Encoding = {[}Direction{]}
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\KeywordTok{type} \DataTypeTok{Encoding} \FunctionTok{=}\NormalTok{ [}\DataTypeTok{Direction}\NormalTok{]}
+\end{Highlighting}
+\end{Shaded}
 
 Eventually, an \texttt{Encoding} will be turned into a \texttt{ByteString}, with
 \texttt{DLeft} representing the 0 bit and \texttt{DRight} representing the 1
@@ -255,25 +370,32 @@ bit. But we keep them as their own data types now because everyone hates
 \href{http://existentialtype.wordpress.com/2011/03/15/boolean-blindness/}{boolean
 blindness}. Instead of keeping a \texttt{True} or \texttt{False}, we keep data
 types that actually carry semantic meaning :) And we can't do silly things like
-use a boolean as a direction...what the heck? Why would you even want to do
-that? How is "true" a direction?
+use a boolean as a direction\ldots{}what the heck? Why would you even want to do
+that? How is ``true'' a direction?
 
-\subsection{Direct search}
+\hypertarget{direct-search}{%
+\subsection{Direct search}\label{direct-search}}
 
 Here's a naive recursive direct (depth-first) search.
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L90-96
--\/- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding findPT ::
-Eq a =\textgreater{} PreTree a -\textgreater{} a -\textgreater{} Maybe Encoding
-findPT pt0 x = go pt0 {[}{]} where go (PTLeaf y ) enc \textbar{} x == y = Just
-(reverse enc) \textbar{} otherwise = Nothing go (PTNode pt1 pt2) enc = go pt1
-(DLeft : enc) \textless{}\textbar{}\textgreater{} go pt2 (DRight : enc)
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L90-96}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{findPT ::} \DataTypeTok{Eq}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Encoding}
+\NormalTok{findPT pt0 x }\FunctionTok{=}\NormalTok{ go pt0 []}
+  \KeywordTok{where}
+\NormalTok{    go (}\DataTypeTok{PTLeaf}\NormalTok{ y      ) enc }\FunctionTok{|}\NormalTok{ x }\FunctionTok{==}\NormalTok{ y    }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (reverse enc)}
+                            \FunctionTok{|}\NormalTok{ otherwise }\FunctionTok{=} \DataTypeTok{Nothing}
+\NormalTok{    go (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) enc }\FunctionTok{=}\NormalTok{ go pt1 (}\DataTypeTok{DLeft}  \FunctionTok{:}\NormalTok{ enc) }\FunctionTok{<|>}
+\NormalTok{                              go pt2 (}\DataTypeTok{DRight} \FunctionTok{:}\NormalTok{ enc)}
+\end{Highlighting}
+\end{Shaded}
 
 The algorithm goes:
 
 \begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
 \item
   If you find a \texttt{PTLeaf}, if the data matches what you are looking for,
   return the current path in a \texttt{Just}. If not, this is a dead-end; return
@@ -285,108 +407,139 @@ The algorithm goes:
   the search lazily (ie, stop after the first success).
 \end{enumerate}
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-let pt = runBuildTree "hello world" ghci\textgreater{} findPT pt 'e' Just
-{[}DLeft, DLeft, DRight{]} ghci\textgreater{} findPT pt 'q' Nothing
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ pt }\FunctionTok{=}\NormalTok{ runBuildTree }\StringTok{"hello world"}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ findPT pt }\CharTok{'e'}
+\DataTypeTok{Just}\NormalTok{ [}\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{]}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ findPT pt }\CharTok{'q'}
+\DataTypeTok{Nothing}
+\end{Highlighting}
+\end{Shaded}
 
 While it is clearly horribly inefficient, it does serve as a nice clean example
 of a depth-first search (which exits as soon as it finds the goal), and probably
 a nice reference implementation for us to reference later.
 
-Its inefficiency lies in many things -\/-\/- chiefly of those being the fact
-that Huffman trees don't give you any real help as a search tree, and nothing
-short of a full depth-first traversal would work. Also, you probably don't want
-to do this every time you want to encode something; you'd want to have some sort
-of memoing and cacheing, ideally.
+Its inefficiency lies in many things --- chiefly of those being the fact that
+Huffman trees don't give you any real help as a search tree, and nothing short
+of a full depth-first traversal would work. Also, you probably don't want to do
+this every time you want to encode something; you'd want to have some sort of
+memoing and cacheing, ideally.
 
-\subsection{Pre-searching}
+\hypertarget{pre-searching}{%
+\subsection{Pre-searching}\label{pre-searching}}
 
-We can sort of "solve" both of these problems this by traversing through our
+We can sort of ``solve'' both of these problems this by traversing through our
 \texttt{PreTree} and adding an entry to a \texttt{Map} at every leaf. This fixes
-our repetition problem by memoizing all of our results into a map...and it fixes
-our search problem because \texttt{Map}s are an ordered binary search tree with
-efficient O(log n) lookups.{[}\^{}rewrite{]}
+our repetition problem by memoizing all of our results into a map\ldots{}and it
+fixes our search problem because \texttt{Map}s are an ordered binary search tree
+with efficient O(log n) lookups.\footnote{Note --- this section was largely
+  rewritten; it used to contain a rather involved yet misled tutorial about the
+  Writer monad, as suggested by old links/titles. This can
+  \href{https://github.com/mstksg/inCode/blob/master/copy/entries/.huffman-2-writer.md}{still
+  be found here}, if you want to read through it.}
 
 There are many ways to do this; my favorite right now is to do it by doing
 collapsing our tree into one giant map, using the Monoid instance of
 \texttt{Map}.
 
 Basically, we turn each of our leaves into little \texttt{Map}s, and then
-"combine" them all, using \texttt{(\textless{}\textgreater{})}, which "combines"
-or merges two \texttt{Map\ k\ v}'s, using their Monoid instance:
+``combine'' them all, using \texttt{(\textless{}\textgreater{})}, which
+``combines'' or merges two \texttt{Map\ k\ v}'s, using their Monoid instance:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L101-106
--\/- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding ptTable
-:: Ord a =\textgreater{} PreTree a -\textgreater{} Map a Encoding ptTable pt =
-go pt {[}{]} where go (PTLeaf x) enc = x \texttt{M.singleton} reverse enc go
-(PTNode pt1 pt2) enc = go pt1 (DLeft : enc) \textless{}\textgreater{} go pt2
-(DRight : enc) \textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L101-106}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{ptTable ::} \DataTypeTok{Ord}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Map}\NormalTok{ a }\DataTypeTok{Encoding}
+\NormalTok{ptTable pt }\FunctionTok{=}\NormalTok{ go pt []}
+  \KeywordTok{where}
+\NormalTok{    go (}\DataTypeTok{PTLeaf}\NormalTok{ x) enc       }\FunctionTok{=}\NormalTok{ x }\OtherTok{`M.singleton`}\NormalTok{ reverse enc}
+\NormalTok{    go (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) enc }\FunctionTok{=}\NormalTok{ go pt1 (}\DataTypeTok{DLeft}  \FunctionTok{:}\NormalTok{ enc) }\FunctionTok{<>}
+\NormalTok{                              go pt2 (}\DataTypeTok{DRight} \FunctionTok{:}\NormalTok{ enc)}
+\end{Highlighting}
+\end{Shaded}
 
-We do some sort of fancy depth-first "map" over all of the leaves, keeping track
-of how deep we are. Then we combine it all as we go along with
+We do some sort of fancy depth-first ``map'' over all of the leaves, keeping
+track of how deep we are. Then we combine it all as we go along with
 \texttt{\textless{}\textgreater{}}.
 
 Note how it is almost identical in structure to \texttt{findPT}:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L90-96
--\/- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding findPT ::
-Eq a =\textgreater{} PreTree a -\textgreater{} a -\textgreater{} Maybe Encoding
-findPT pt0 x = go pt0 {[}{]} where go (PTLeaf y ) enc \textbar{} x == y = Just
-(reverse enc) \textbar{} otherwise = Nothing go (PTNode pt1 pt2) enc = go pt1
-(DLeft : enc) \textless{}\textbar{}\textgreater{} go pt2 (DRight : enc)
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L90-96}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{findPT ::} \DataTypeTok{Eq}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Encoding}
+\NormalTok{findPT pt0 x }\FunctionTok{=}\NormalTok{ go pt0 []}
+  \KeywordTok{where}
+\NormalTok{    go (}\DataTypeTok{PTLeaf}\NormalTok{ y      ) enc }\FunctionTok{|}\NormalTok{ x }\FunctionTok{==}\NormalTok{ y    }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (reverse enc)}
+                            \FunctionTok{|}\NormalTok{ otherwise }\FunctionTok{=} \DataTypeTok{Nothing}
+\NormalTok{    go (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) enc }\FunctionTok{=}\NormalTok{ go pt1 (}\DataTypeTok{DLeft}  \FunctionTok{:}\NormalTok{ enc) }\FunctionTok{<|>}
+\NormalTok{                              go pt2 (}\DataTypeTok{DRight} \FunctionTok{:}\NormalTok{ enc)}
+\end{Highlighting}
+\end{Shaded}
 
-Except instead of doing a "short-circuit combination" with
-\texttt{(\textless{}\textbar{}\textgreater{})}, we do a "full combination" with
-\texttt{(\textless{}\textgreater{})}.
+Except instead of doing a ``short-circuit combination'' with
+\texttt{(\textless{}\textbar{}\textgreater{})}, we do a ``full combination''
+with \texttt{(\textless{}\textgreater{})}.
 
-\subsection{Lookup, Act 2}
+\hypertarget{lookup-act-2}{%
+\subsection{Lookup, Act 2}\label{lookup-act-2}}
 
 So now that we have our lookup table, our new lookup/find function is both
 simple and performant:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L110-111
--\/- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
-lookupPTTable :: Ord a =\textgreater{} Map a Encoding -\textgreater{} a
--\textgreater{} Maybe Encoding lookupPTTable = flip M.lookup
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L110-111}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{lookupPTTable ::} \DataTypeTok{Ord}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Map}\NormalTok{ a }\DataTypeTok{Encoding} \OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Encoding}
+\NormalTok{lookupPTTable }\FunctionTok{=}\NormalTok{ flip M.lookup}
+\end{Highlighting}
+\end{Shaded}
 
 given, of course, that we generate our table first.
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-let pt = runBuildTree "hello world" ghci\textgreater{} let tb = fmap ptTable pt
-ghci\textgreater{} tb \textgreater{}\textgreater{}= \textbackslash{}tb'
--\textgreater{} lookupPTTable tb' 'e' Just {[}DLeft, DLeft, DRight{]}
-ghci\textgreater{} tb \textgreater{}\textgreater{}= \textbackslash{}tb'
--\textgreater{} lookupPTTable tb' 'q' Nothing
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ pt }\FunctionTok{=}\NormalTok{ runBuildTree }\StringTok{"hello world"}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ tb }\FunctionTok{=}\NormalTok{ fmap ptTable pt}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ tb }\FunctionTok{>>=}\NormalTok{ \textbackslash{}tb' }\OtherTok{->}\NormalTok{ lookupPTTable tb' }\CharTok{'e'}
+\DataTypeTok{Just}\NormalTok{ [}\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{]}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ tb }\FunctionTok{>>=}\NormalTok{ \textbackslash{}tb' }\OtherTok{->}\NormalTok{ lookupPTTable tb' }\CharTok{'q'}
+\DataTypeTok{Nothing}
+\end{Highlighting}
+\end{Shaded}
 
 (Here we use the Monad instance for Maybe, to extract the
-\texttt{tb\textquotesingle{}} out of the \texttt{Just\ tb}. We "sequence" two
+\texttt{tb\textquotesingle{}} out of the \texttt{Just\ tb}. We ``sequence'' two
 Maybe's together. For more information, check out my
 \href{http://blog.jle.im/entry/practical-fun-with-monads-introducing-monadplus}{blog
 post} on this exact topic)
 
-\subsection{Encoding many}
+\hypertarget{encoding-many}{%
+\subsection{Encoding many}\label{encoding-many}}
 
 Now, we'd like to be able to decode an entire stream of \texttt{a}'s, returning
 a list of the encodings.
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L114-117
--\/- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding encodeAll
-:: Ord a =\textgreater{} PreTree a -\textgreater{} {[}a{]} -\textgreater{} Maybe
-Encoding encodeAll pt xs = concat \textless{}\$\textgreater{} sequence (map
-(lookupPTTable tb) xs) where tb = ptTable pt
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L114-117}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{encodeAll ::} \DataTypeTok{Ord}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Encoding}
+\NormalTok{encodeAll pt xs }\FunctionTok{=}\NormalTok{ concat }\FunctionTok{<$>}\NormalTok{ sequence (map (lookupPTTable tb) xs)}
+  \KeywordTok{where}
+\NormalTok{    tb }\FunctionTok{=}\NormalTok{ ptTable pt}
+\end{Highlighting}
+\end{Shaded}
 
 This is a bit dense! But I'm sure that you are up for it.
 
 \begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
 \item
   First, we build the lookup table and call it \texttt{tb}.
 \item
@@ -400,68 +553,84 @@ This is a bit dense! But I'm sure that you are up for it.
   \texttt{Nothing}. So in this case, if \emph{any} of the inputs are not
   decodable, \emph{the entire thing is Nothing}.
 
-  \textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-  sequence {[}Just 5, Just 4{]} Just {[}5,4{]} ghci\textgreater{} sequence
-  {[}Just 6, Nothing{]} Nothing
-  \textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ sequence [}\DataTypeTok{Just} \DecValTok{5}\NormalTok{, }\DataTypeTok{Just} \DecValTok{4}\NormalTok{]}
+\DataTypeTok{Just}\NormalTok{ [}\DecValTok{5}\NormalTok{,}\DecValTok{4}\NormalTok{]}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ sequence [}\DataTypeTok{Just} \DecValTok{6}\NormalTok{, }\DataTypeTok{Nothing}\NormalTok{]}
+\DataTypeTok{Nothing}
+\end{Highlighting}
+\end{Shaded}
 
   Note that the standard libraries provide a synonym for
-  \texttt{sequence\ .\ map} -\/-\/- \texttt{mapM}. So we could have written it
-  as \texttt{mapM\ (lookupPTTable\ t)\ xs}...but that is significantly less
+  \texttt{sequence\ .\ map} --- \texttt{mapM}. So we could have written it as
+  \texttt{mapM\ (lookupPTTable\ t)\ xs}\ldots{}but that is significantly less
   clear/immediately understandable.
 \item
   Recall that our \texttt{sequence} left us with a
-  \texttt{Maybe\ {[}Encoding{]}}...but we only want \texttt{Maybe\ Encoding}. So
-  we can use \texttt{(\textless{}\$\textgreater{})} to \texttt{concat} all of
-  the \texttt{Encoding}s inside the Maybe.
+  \texttt{Maybe\ {[}Encoding{]}}\ldots{}but we only want
+  \texttt{Maybe\ Encoding}. So we can use \texttt{(\textless{}\$\textgreater{})}
+  to \texttt{concat} all of the \texttt{Encoding}s inside the Maybe.
 \end{enumerate}
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-let pt = runBuildTree "hello world" -\/- :: Maybe (PreTree Char)
-ghci\textgreater{} pt \textgreater{}\textgreater{}= \textbackslash{}pt'
--\textgreater{} encodeAll pt' "hello world" Just {[}DLeft, DLeft, DLeft, DLeft,
-DLeft, DRight, DRight, DLeft, DRight, DLeft, DRight, DRight, DRight, DRight,
-DRight, DLeft, DRight, DLeft, DRight, DLeft, DRight, DRight, DRight, DLeft,
-DRight, DRight, DRight, DLeft, DRight, DRight, DLeft, DLeft{]}
-ghci\textgreater{} pt \textgreater{}\textgreater{}= \textbackslash{}pt'
--\textgreater{} encodeAll pt' "hello worldq" Nothing
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ pt }\FunctionTok{=}\NormalTok{ runBuildTree }\StringTok{"hello world"}          \CommentTok{-- :: Maybe (PreTree Char)}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ pt }\FunctionTok{>>=}\NormalTok{ \textbackslash{}pt' }\OtherTok{->}\NormalTok{ encodeAll pt' }\StringTok{"hello world"}
+\DataTypeTok{Just}\NormalTok{ [}\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{,}
+\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{,}
+\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{,}
+\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{]}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ pt }\FunctionTok{>>=}\NormalTok{ \textbackslash{}pt' }\OtherTok{->}\NormalTok{ encodeAll pt' }\StringTok{"hello worldq"}
+\DataTypeTok{Nothing}
+\end{Highlighting}
+\end{Shaded}
 
 Welp, that's half the battle!
 
-\section{Decoding}
+\hypertarget{decoding}{%
+\section{Decoding}\label{decoding}}
 
 For huffman trees, decoding is the much simpler process. Simply traverse down
 the tree using the given encoding and return a value whenever you reach a leaf.
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L123-128
--\/- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding decodePT
-:: PreTree a -\textgreater{} Encoding -\textgreater{} Maybe (a, Encoding)
-decodePT (PTLeaf x) ds = Just (x, ds) decodePT (PTNode pt1 pt2) (d:ds) = case d
-of DLeft -\textgreater{} decodePT pt1 ds DRight -\textgreater{} decodePT pt2 ds
-decodePT (PTNode \_ \_) {[}{]} = Nothing
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L123-128}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{decodePT ::} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Encoding} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (a, }\DataTypeTok{Encoding}\NormalTok{)}
+\NormalTok{decodePT (}\DataTypeTok{PTLeaf}\NormalTok{ x)       ds     }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (x, ds)}
+\NormalTok{decodePT (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) (d}\FunctionTok{:}\NormalTok{ds) }\FunctionTok{=} \KeywordTok{case}\NormalTok{ d }\KeywordTok{of}
+                                     \DataTypeTok{DLeft}  \OtherTok{->}\NormalTok{ decodePT pt1 ds}
+                                     \DataTypeTok{DRight} \OtherTok{->}\NormalTok{ decodePT pt2 ds}
+\NormalTok{decodePT (}\DataTypeTok{PTNode}\NormalTok{ _ _)     []     }\FunctionTok{=} \DataTypeTok{Nothing}
+\end{Highlighting}
+\end{Shaded}
 
 The logic should seem pretty familiar. The main algorithm involves going down
-the tree, "following" the direction list. If you reach a leaf, then you have
+the tree, ``following'' the direction list. If you reach a leaf, then you have
 found something (and return the directions you haven't followed yet). If you run
-out of directions while on a node...something has gone wrong.
+out of directions while on a node\ldots{}something has gone wrong.
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{} do
-pt \textless{}- runBuildTree "hello world" \textbar{} enc \textless{}- encodeAll
-pt "hello world" \textbar{} decodePT pt enc Just ('h', {[}DLeft, DLeft ...{]})
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{do}\NormalTok{  pt  }\OtherTok{<-}\NormalTok{ runBuildTree }\StringTok{"hello world"}
+    \FunctionTok{|}\NormalTok{     enc }\OtherTok{<-}\NormalTok{ encodeAll pt }\StringTok{"hello world"}
+    \FunctionTok{|}\NormalTok{     decodePT pt enc}
+\DataTypeTok{Just}\NormalTok{ (}\CharTok{'h'}\NormalTok{, [}\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft} \FunctionTok{...}\NormalTok{])}
+\end{Highlighting}
+\end{Shaded}
 
-(Here we are using the Maybe monad, in order to "stitch together" three
+(Here we are using the Maybe monad, in order to ``stitch together'' three
 possibly-failing operations in a row. We call \texttt{pt} and \texttt{enc} the
-values "inside" the \texttt{Just\ pt} and \texttt{Just\ enc} returned by
+values ``inside'' the \texttt{Just\ pt} and \texttt{Just\ enc} returned by
 \texttt{runBuildTree} and \texttt{encodeAll}; the whole thing fails if any of
 the steps fail at any time. If you are not familiar with this,
 \href{http://blog.jle.im/entry/practical-fun-with-monads-introducing-monadplus}{I
 sort of literally wrote an entire blog post} on this subject :) )
 
-\subsection{Decoding many}
+\hypertarget{decoding-many}{%
+\subsection{Decoding many}\label{decoding-many}}
 
 We'd like to repeatedly iterate this until we have consumed our entire encoding.
 
@@ -470,41 +639,57 @@ and build a list from it.
 
 This sounds a lot like the \texttt{Data.List} function \texttt{unfoldr}:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell unfoldr :: (b
--\textgreater{} Maybe (a, b)) -\textgreater{} b -\textgreater{} {[}a{]}
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{unfoldr ::}\NormalTok{ (b }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (a, b)) }\OtherTok{->}\NormalTok{ b }\OtherTok{->}\NormalTok{ [a]}
+\end{Highlighting}
+\end{Shaded}
 
 \texttt{unfoldr} makes a list by applying your function repeatedly to a
-"de-cumulator", carrying the state of the decumulator, and stopping when your
-function returns \texttt{Nothing}. You can think of it as the "opposite" of
+``de-cumulator'', carrying the state of the decumulator, and stopping when your
+function returns \texttt{Nothing}. You can think of it as the ``opposite'' of
 \texttt{foldr}.
 
 Using \texttt{unfoldr}, we can write a \texttt{decodeAll}:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L132-133
--\/- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding decodeAll
-:: PreTree a -\textgreater{} Encoding -\textgreater{} {[}a{]} decodeAll pt =
-unfoldr (decodePT pt) \textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L132-133}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{decodeAll ::} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Encoding} \OtherTok{->}\NormalTok{ [a]}
+\NormalTok{decodeAll pt }\FunctionTok{=}\NormalTok{ unfoldr (decodePT pt)}
+\end{Highlighting}
+\end{Shaded}
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{} do
-pt \textless{}- runBuildTree "hello world" \textbar{} enc \textless{}- encodeAll
-pt "hello world" \textbar{} return (decodeAll pt enc)
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{do}\NormalTok{ pt  }\OtherTok{<-}\NormalTok{ runBuildTree }\StringTok{"hello world"}
+ \FunctionTok{|}\NormalTok{    enc }\OtherTok{<-}\NormalTok{ encodeAll pt }\StringTok{"hello world"}
+ \FunctionTok{|}\NormalTok{    return (decodeAll pt enc)}
+\end{Highlighting}
+\end{Shaded}
 
 Which works exactly as we'd like!
 
-\section{Testing}
+\hypertarget{testing}{%
+\section{Testing}\label{testing}}
 
 We can write a utility to test our encoding/decoding functions:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs\#L106-113
--\/- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding testTree
-:: Ord a =\textgreater{} {[}a{]} -\textgreater{} {[}a{]} testTree {[}{]} =
-{[}{]} -\/- handle the empty list testTree xs = decoded where Just decoded = do
-pt \textless{}- runBuildTree xs enc \textless{}- encodeAll pt xs return
-(decodeAll pt enc) \textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L106-113}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{testTree ::} \DataTypeTok{Ord}\NormalTok{ a }\OtherTok{=>}\NormalTok{ [a] }\OtherTok{->}\NormalTok{ [a]}
+\NormalTok{testTree [] }\FunctionTok{=}\NormalTok{ []                    }\CommentTok{-- handle the empty list}
+\NormalTok{testTree xs }\FunctionTok{=}\NormalTok{ decoded}
+  \KeywordTok{where}
+    \DataTypeTok{Just}\NormalTok{ decoded }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{      pt  }\OtherTok{<-}\NormalTok{ runBuildTree xs}
+\NormalTok{      enc }\OtherTok{<-}\NormalTok{ encodeAll pt xs}
+\NormalTok{      return (decodeAll pt enc)}
+\end{Highlighting}
+\end{Shaded}
 
 (Again, refer to my
 \href{http://blog.jle.im/entry/practical-fun-with-monads-introducing-monadplus}{MonadPlus}
@@ -513,85 +698,114 @@ article from earlier, if you are unfamiliar with working with the Maybe monad)
 \texttt{testTree} should be an identity; that is,
 \texttt{testTree\ xs\ ===\ xs}.
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-testTree "hello world" "hello world" ghci\textgreater{} testTree "the quick
-brown fox jumps over the lazy dog" "the quick brown fox jumps over the lazy dog"
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ testTree }\StringTok{"hello world"}
+\StringTok{"hello world"}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ testTree }\StringTok{"the quick brown fox jumps over the lazy dog"}
+\StringTok{"the quick brown fox jumps over the lazy dog"}
+\end{Highlighting}
+\end{Shaded}
 
 Note the very unsafe irrefutable pattern match on \texttt{Just\ decoded}. We'll
 fix this later!
 
-\subsection{QuickCheck}
+\hypertarget{quickcheck}{%
+\subsection{QuickCheck}\label{quickcheck}}
 
 Now that we have a neat proposition, we can use \texttt{quickcheck} on it, from
 the great \href{http://hackage.haskell.org/package/QuickCheck}{QuickCheck}
 library. \texttt{quickcheck} will basically test our proposition
 \texttt{testTree\ xs\ ==\ xs} by generating several random \texttt{xs}'s.
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-import Test.QuickCheck ghci\textgreater{} :set -XScopedTypeVariables
-ghci\textgreater{} quickCheck ((xs :: String) -\textgreater{} testTree xs == xs)
-*** Failed! Falsifiable (after 3 tests and 2 shrinks): "a"
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{import} \DataTypeTok{Test.QuickCheck}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{set }\FunctionTok{-}\DataTypeTok{XScopedTypeVariables}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ quickCheck (\textbackslash{}(}\OtherTok{xs ::} \DataTypeTok{String}\NormalTok{) }\OtherTok{->}\NormalTok{ testTree xs }\FunctionTok{==}\NormalTok{ xs)}
+\FunctionTok{***} \DataTypeTok{Failed}\FunctionTok{!} \DataTypeTok{Falsifiable}\NormalTok{ (after }\DecValTok{3}\NormalTok{ tests and }\DecValTok{2}\NormalTok{ shrinks)}\FunctionTok{:}
+\StringTok{"a"}
+\end{Highlighting}
+\end{Shaded}
 
-\subsubsection{Failure!}
+\hypertarget{failure}{%
+\subsubsection{Failure!}\label{failure}}
 
 Oh! We failed? And on such a simple case? What happened?
 
 If we look at how \texttt{"a"} is encoded, it'll become apparent:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-let (Just pt) = runBuildTree "aaa" ghci\textgreater{} pt PTLeaf 'a'
-ghci\textgreater{} findPT pt 'a' Just {[}{]} ghci\textgreater{} encodeAll pt
-"aaaaaaaaaaa" Just {[}{]} \textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ (}\DataTypeTok{Just}\NormalTok{ pt) }\FunctionTok{=}\NormalTok{ runBuildTree }\StringTok{"aaa"}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ pt}
+\DataTypeTok{PTLeaf} \CharTok{'a'}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ findPT pt }\CharTok{'a'}
+\DataTypeTok{Just}\NormalTok{ []}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ encodeAll pt }\StringTok{"aaaaaaaaaaa"}
+\DataTypeTok{Just}\NormalTok{ []}
+\end{Highlighting}
+\end{Shaded}
 
 Ah. Well, that's a problem. Basically, our input string has
-\href{http://en.wikipedia.org/wiki/Entropy_(information_theory)}{"zero"
+\href{http://en.wikipedia.org/wiki/Entropy_(information_theory)}{``zero''
 entropy}, according to typical measurements. So we cannot naively huffman encode
 it.
 
-\subsubsection{Success!}
+\hypertarget{success}{%
+\subsubsection{Success!}\label{success}}
 
-There are a few ways to deal with this. The most "immediate" way would be to
+There are a few ways to deal with this. The most ``immediate'' way would be to
 realize that \texttt{decodeAll} is partial (that is, it does not terminate/is
 undefined on some of its inputs), and will actually never terminate if the given
-tree is a singleton tree. We can write a "safe" \texttt{decodeAll}:
+tree is a singleton tree. We can write a ``safe'' \texttt{decodeAll}:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L137-139
--\/- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
-decodeAll' :: PreTree a -\textgreater{} Encoding -\textgreater{} Maybe {[}a{]}
-decodeAll' (PTLeaf \emph{) } = Nothing decodeAll' pt enc = Just \$ unfoldr
-(decodePT pt) enc \textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L137-139}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{decodeAll' ::} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Encoding} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ [a]}
+\NormalTok{decodeAll' (}\DataTypeTok{PTLeaf}\NormalTok{ _) _   }\FunctionTok{=} \DataTypeTok{Nothing}
+\NormalTok{decodeAll' pt         enc }\FunctionTok{=} \DataTypeTok{Just} \FunctionTok{$}\NormalTok{ unfoldr (decodePT pt) enc}
+\end{Highlighting}
+\end{Shaded}
 
-In doing this, we don't exactly "fix" the problem...we only defer
+In doing this, we don't exactly ``fix'' the problem\ldots{}we only defer
 responsibility. Now, whoever uses \texttt{decodeAll\textquotesingle{}} (like our
 eventual encoding interface) is \emph{forced to handle the error} (by handing
 the \texttt{Nothing} case). In this way, \emph{the type system enforces safety}.
 Had we always used the unsafe \texttt{decodeAll}, then whoever uses it
-eventually has to "manually remember" to handle the unterminating case, by
+eventually has to ``manually remember'' to handle the unterminating case, by
 carefuly reading documentation or something. In this case, the type system is a
-big, explicit reminder saying "hey, deal with the unterminating case."
+big, explicit reminder saying ``hey, deal with the unterminating case.''
 
-We'll also a "safe" \texttt{testTree}:
+We'll also a ``safe'' \texttt{testTree}:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs\#L117-121
--\/- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding testTree'
-:: Ord a =\textgreater{} {[}a{]} -\textgreater{} Maybe {[}a{]} testTree' xs = do
-pt \textless{}- runBuildTree xs enc \textless{}- encodeAll pt xs decodeAll' pt
-enc \textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L117-121}
+\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\OtherTok{testTree' ::} \DataTypeTok{Ord}\NormalTok{ a }\OtherTok{=>}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ [a]}
+\NormalTok{testTree' xs }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{    pt  }\OtherTok{<-}\NormalTok{ runBuildTree xs}
+\NormalTok{    enc }\OtherTok{<-}\NormalTok{ encodeAll pt xs}
+\NormalTok{    decodeAll' pt enc}
+\end{Highlighting}
+\end{Shaded}
 
 So we can now quickcheck:
 
-\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
-quickCheck ((xs :: String) -\textgreater{} testTree' xs \texttt{elem}
-{[}Nothing, Just xs{]}) +++ OK, passed 100 tests.
-\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ quickCheck (\textbackslash{}(}\OtherTok{xs ::} \DataTypeTok{String}\NormalTok{) }\OtherTok{->}\NormalTok{ testTree' xs }\OtherTok{`elem`}\NormalTok{ [}\DataTypeTok{Nothing}\NormalTok{, }\DataTypeTok{Just}\NormalTok{ xs])}
+\FunctionTok{+++} \DataTypeTok{OK}\NormalTok{, passed }\DecValTok{100}\NormalTok{ tests}\FunctionTok{.}
+\end{Highlighting}
+\end{Shaded}
 
 Hooray!
 
-\subsection{Re: Testing}
+\hypertarget{re-testing}{%
+\subsection{Re: Testing}\label{re-testing}}
 
 All I'll admit that I didn't even anticipate the degenerate singleton tree case
 until I decided to add a quickcheck section to this post. It just goes to show
@@ -603,7 +817,8 @@ For example, we probably should have tested \texttt{lookupPTTable} against
 \texttt{findPT}, our reference implementation :) We should have also tested our
 binary encode/decode!
 
-\section{Next Time}
+\hypertarget{next-time}{%
+\section{Next Time}\label{next-time}}
 
 We're almost there!
 

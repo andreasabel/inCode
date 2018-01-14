@@ -20,8 +20,9 @@ hackage](http://hackage.haskell.org/package/auto). *auto* is suitable when your
 program involves an input or output that is a discrete stream of things ---
 events, views, etc., like turn based games, GUI's, numerical computations...; it
 allows you to state (possibly cyclic) complex relationships between streams of
-values by composing simple, primitive ones. You can read the \[README\] too for
-a detailed buzz-word laden exposition with nice well-commented short demos and
+values by composing simple, primitive ones. You can read the
+[README](https://github.com/mstksg/auto/blob/master/README.md) too for a
+detailed buzz-word laden exposition with nice well-commented short demos and
 examples, get started with [the
 tutorial](https://github.com/mstksg/auto/blob/master/tutorial/tutorial.md),
 check out the directory of [sample
@@ -75,8 +76,12 @@ Composing two transformers side-by-side or end-to-end creates a new
 transformer...and the state of each trasnformer is "closed off" from the other
 and the rest of the world.
 
-~~~haskell sumAndProduct = proc x -&gt; do sums &lt;- sumFrom 0 -&lt; x prods
-&lt;- productFrom 1 -&lt; x id -&lt; sums + prods ~~~
+``` {.haskell}
+sumAndProduct = proc x -> do
+    sums  <- sumFrom 0     -< x
+    prods <- productFrom 1 -< x
+    id -< sums + prods
+```
 
 `sumFrom 0` denotes a relationship between `x` and `sums` such that `sums` is
 the cumulative sum of all `x`'s seen. `productFrom 1` denotes a relationship
@@ -85,11 +90,15 @@ With `sumAndProduct`, we *built* a new relationship --- the output is the sum of
 the cumulative sum and the cumulative product of the inputs --- by composing two
 primitives.
 
-~~~haskell -- running our Autos over the stream \[1..10\] to get a new stream
-ghci&gt; streamAuto' (sumFrom 0) \[1..10\] \[1,3, 6,10, 15, 21, 28, 36, 45, 55\]
-ghci&gt; streamAuto' (productFrom 1) \[1..10\] \[1,2,
-6,24,120,720,5040,40320,362880,3628800\] ghci&gt; streamAuto' sumAndProduct
-\[1..10\] \[2,5,12,34,135,741,5068,40356,362925,3628855\] ~~~
+``` {.haskell}
+-- running our Autos over the stream [1..10] to get a new stream
+ghci> streamAuto' (sumFrom 0) [1..10]
+[1,3, 6,10, 15, 21,  28,   36,    45,     55]
+ghci> streamAuto' (productFrom 1) [1..10]
+[1,2, 6,24,120,720,5040,40320,362880,3628800]
+ghci> streamAuto' sumAndProduct [1..10]
+[2,5,12,34,135,741,5068,40356,362925,3628855]
+```
 
 Each of them maintain their own "state"...and even `sumAndProduct` will maintain
 its own internal state as you compose it with other things.
@@ -155,7 +164,7 @@ definitely not the norm. *auto* works as *value stream transformers*, working
 with "pure" one-by-one transformations on streams of *values*; pipes and conduit
 provide *effect stream manipulators*, managing streams of *effects* in constant
 space, with resource management, etc...and often involving output effects as a
-result ("consumers").\[^pipes\]
+result ("consumers").[^1]
 
 on the Future
 -------------
@@ -189,3 +198,11 @@ All this being said, *auto* is still kind of technically in a sorta pre-release
 state, because not all of the tests are written yet. But the API should be
 stable and updates before `0.3.x` are going to all be backwards compatible
 (API-wise) bug fixes or filling in holes.
+
+[^1]: One could still use a subset of pipes that does not stream effects, but
+    merely values, and *that* does somewhat fill a similar role; this is used in
+    the [mvc](https://hackage.haskell.org/package/mvc) library to build similar
+    applications that *auto* tries to build. However, due to mvc's "global
+    state" nature, you lose many of the local statefulness idioms in *auto*, and
+    a lot of *auto*'s benefits and design philosophies go away, for other
+    reasons as well.

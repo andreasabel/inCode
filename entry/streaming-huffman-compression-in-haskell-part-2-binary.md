@@ -34,7 +34,9 @@ So let's make `PreTree` serialize/unserializable.
 The easy way is to enable the `DeriveGeneric` language extension on GHC, use
 `deriving (Generic)` when we define our `PreTree`, and then:
 
-~~~haskell instance Binary a =&gt; Binary (PreTree a) ~~~
+``` {.haskell}
+instance Binary a => Binary (PreTree a)
+```
 
 And...that's it! We just auto-generated functions to serialize and deserialize
 our `PreTree`s (if what they contain is itself serializable).
@@ -46,7 +48,11 @@ bit more into the `Binary` typeclass.
 
 So the big crux of *binary* is the `Binary` typeclass:
 
-~~~haskell class Binary t where put :: t -&gt; Put get :: Get t ~~~
+``` {.haskell}
+class Binary t where
+    put :: t -> Put
+    get :: Get t
+```
 
 where `Put` and `Get` are sort of "instruction objects for putting/getting
 binary". `Get` is a monad, and `Put` is a wrapped `PutM`, which is a writer
@@ -63,12 +69,18 @@ instructions by hand are easy peasy!
 
 Let's define our own custom `Put` for our `PreTree`s:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L69-76
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding putPT ::
-Binary a =&gt; PreTree a -&gt; Put putPT (PTLeaf x) = do put True -- signify we
-have a leaf put x putPT (PTNode pt1 pt2) = do put False -- signify we have a
-node put pt1 put pt2 ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L69-76
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+putPT :: Binary a => PreTree a -> Put
+putPT (PTLeaf x) = do
+    put True                    -- signify we have a leaf
+    put x
+putPT (PTNode pt1 pt2) = do
+    put False                   -- signify we have a node
+    put pt1
+    put pt2
+```
 
 This all should be fairly readable and self-explanatory.
 
@@ -92,11 +104,16 @@ might not be so bad to live with boolean blindness for now.
 
 Now let's define our own custom `Get`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L79-84
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding getPT ::
-Binary a =&gt; Get (PreTree a) getPT = do isLeaf &lt;- get if isLeaf then PTLeaf
-&lt;$&gt; get else PTNode &lt;$&gt; get &lt;\*&gt; get ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L79-84
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+getPT :: Binary a => Get (PreTree a)
+getPT = do
+    isLeaf <- get
+    if isLeaf
+      then PTLeaf <$> get
+      else PTNode <$> get <*> get
+```
 
 This also shouldn't be too bad!
 
@@ -117,8 +134,12 @@ Hooray for type inference!
 If you're not familiar with the `f <$> x <*> y` idiom, you can consider it to be
 the same thing as `f x y`, except that `x` and `y` are "inside" things:
 
-~~~haskell ghci&gt; (+) 1 4 5 ghci&gt; (+) &lt;$&gt; Just 1 &lt;\*&gt; Just 4
-Just 5 ~~~
+``` {.haskell}
+ghci> (+) 1 4
+5
+ghci> (+) <$> Just 1 <*> Just 4
+Just 5
+```
 
 Where `(<$>)` and `(<*>)` come from `Control.Applicative`. We call this style
 "applicative style", in the biz.
@@ -127,29 +148,66 @@ Where `(<$>)` and `(<*>)` come from `Control.Applicative`. We call this style
 
 And finally, to tie it all together:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L36-38
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding instance
-Binary a =&gt; Binary (PreTree a) where put = putPT get = getPT ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L36-38
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+instance Binary a => Binary (PreTree a) where
+    put = putPT
+    get = getPT
+```
 
 ### Testing it out
 
 However way we decide to write our `Binary` instance, let's test it all out.
 
-~~~haskell ghci&gt; let (Just pt) = runBuildTree "hello world" ghci&gt; let
-encoded = encode pt ghci&gt; :t encoded encoded :: ByteString -- a string of
-bytes ghci&gt; let decoded = decode encoded :: PreTree Char ghci&gt; decoded
-PTNode (PTNode (PTNode (PTLeaf 'h') (PTLeaf 'e') ) (PTNode (PTLeaf 'w') (PTLeaf
-'r') ) ) (PTNode (PTLeaf 'l') (PTNode (PTNode (PTLeaf 'd') (PTLeaf ' ') )
-(PTLeaf 'o') ) ) ghci&gt; decoded == t True ~~~
+``` {.haskell}
+ghci> let (Just pt) = runBuildTree "hello world"
+ghci> let encoded = encode pt
+ghci> :t encoded
+encoded :: ByteString       -- a string of bytes
+ghci> let decoded = decode encoded :: PreTree Char
+ghci> decoded
+PTNode (PTNode (PTNode (PTLeaf 'h')
+                       (PTLeaf 'e')
+               )
+               (PTNode (PTLeaf 'w')
+                       (PTLeaf 'r')
+               )
+       )
+       (PTNode (PTLeaf 'l')
+               (PTNode (PTNode (PTLeaf 'd')
+                               (PTLeaf ' ')
+                       )
+                       (PTLeaf 'o')
+               )
+       )
+ghci> decoded == t
+True
+```
 
 Neat! We can also write it to a file and re-read:
 
-~~~haskell ghci&gt; encodeFile "test.dat" t ghci&gt; t' &lt;- decodeFile
-"test.dat" :: IO (PreTree Char) ghci&gt; t' PTNode (PTNode (PTNode (PTLeaf 'h')
-(PTLeaf 'e') ) (PTNode (PTLeaf 'w') (PTLeaf 'r') ) ) (PTNode (PTLeaf 'l')
-(PTNode (PTNode (PTLeaf 'd') (PTLeaf ' ') ) (PTLeaf 'o') ) ) ghci&gt; t' == t
-True ~~~
+``` {.haskell}
+ghci> encodeFile "test.dat" t
+ghci> t' <- decodeFile "test.dat" :: IO (PreTree Char)
+ghci> t'
+PTNode (PTNode (PTNode (PTLeaf 'h')
+                       (PTLeaf 'e')
+               )
+               (PTNode (PTLeaf 'w')
+                       (PTLeaf 'r')
+               )
+       )
+       (PTNode (PTLeaf 'l')
+               (PTNode (PTNode (PTLeaf 'd')
+                               (PTLeaf ' ')
+                       )
+                       (PTLeaf 'o')
+               )
+       )
+ghci> t' == t
+True
+```
 
 And this looks like it works pretty well!
 
@@ -164,12 +222,15 @@ the character.
 
 Let's represent this path as a list of `Direction`s:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L25-30
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding data
-Direction = DLeft | DRight deriving (Show, Eq, Generic)
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L25-30
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+data Direction = DLeft
+               | DRight
+               deriving (Show, Eq, Generic)
 
-type Encoding = \[Direction\] ~~~
+type Encoding = [Direction]
+```
 
 Eventually, an `Encoding` will be turned into a `ByteString`, with `DLeft`
 representing the 0 bit and `DRight` representing the 1 bit. But we keep them as
@@ -184,12 +245,17 @@ direction?
 
 Here's a naive recursive direct (depth-first) search.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L90-96
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding findPT ::
-Eq a =&gt; PreTree a -&gt; a -&gt; Maybe Encoding findPT pt0 x = go pt0 \[\]
-where go (PTLeaf y ) enc | x == y = Just (reverse enc) | otherwise = Nothing go
-(PTNode pt1 pt2) enc = go pt1 (DLeft : enc) &lt;|&gt; go pt2 (DRight : enc) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L90-96
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+findPT :: Eq a => PreTree a -> a -> Maybe Encoding
+findPT pt0 x = go pt0 []
+  where
+    go (PTLeaf y      ) enc | x == y    = Just (reverse enc)
+                            | otherwise = Nothing
+    go (PTNode pt1 pt2) enc = go pt1 (DLeft  : enc) <|>
+                              go pt2 (DRight : enc)
+```
 
 The algorithm goes:
 
@@ -200,8 +266,13 @@ The algorithm goes:
     current path, and the right branch adding a `DRight` to the current path.
     Use `(<|>)` to perform the search lazily (ie, stop after the first success).
 
-~~~haskell ghci&gt; let pt = runBuildTree "hello world" ghci&gt; findPT pt 'e'
-Just \[DLeft, DLeft, DRight\] ghci&gt; findPT pt 'q' Nothing ~~~
+``` {.haskell}
+ghci> let pt = runBuildTree "hello world"
+ghci> findPT pt 'e'
+Just [DLeft, DLeft, DRight]
+ghci> findPT pt 'q'
+Nothing
+```
 
 While it is clearly horribly inefficient, it does serve as a nice clean example
 of a depth-first search (which exits as soon as it finds the goal), and probably
@@ -219,7 +290,7 @@ We can sort of "solve" both of these problems this by traversing through our
 `PreTree` and adding an entry to a `Map` at every leaf. This fixes our
 repetition problem by memoizing all of our results into a map...and it fixes our
 search problem because `Map`s are an ordered binary search tree with efficient
-O(log n) lookups.\[^rewrite\]
+O(log n) lookups.[^1]
 
 There are many ways to do this; my favorite right now is to do it by doing
 collapsing our tree into one giant map, using the Monoid instance of `Map`.
@@ -228,24 +299,33 @@ Basically, we turn each of our leaves into little `Map`s, and then "combine"
 them all, using `(<>)`, which "combines" or merges two `Map k v`'s, using their
 Monoid instance:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L101-106
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding ptTable ::
-Ord a =&gt; PreTree a -&gt; Map a Encoding ptTable pt = go pt \[\] where go
-(PTLeaf x) enc = x `M.singleton` reverse enc go (PTNode pt1 pt2) enc = go pt1
-(DLeft : enc) &lt;&gt; go pt2 (DRight : enc) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L101-106
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+ptTable :: Ord a => PreTree a -> Map a Encoding
+ptTable pt = go pt []
+  where
+    go (PTLeaf x) enc       = x `M.singleton` reverse enc
+    go (PTNode pt1 pt2) enc = go pt1 (DLeft  : enc) <>
+                              go pt2 (DRight : enc)
+```
 
 We do some sort of fancy depth-first "map" over all of the leaves, keeping track
 of how deep we are. Then we combine it all as we go along with `<>`.
 
 Note how it is almost identical in structure to `findPT`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L90-96
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding findPT ::
-Eq a =&gt; PreTree a -&gt; a -&gt; Maybe Encoding findPT pt0 x = go pt0 \[\]
-where go (PTLeaf y ) enc | x == y = Just (reverse enc) | otherwise = Nothing go
-(PTNode pt1 pt2) enc = go pt1 (DLeft : enc) &lt;|&gt; go pt2 (DRight : enc) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L90-96
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+findPT :: Eq a => PreTree a -> a -> Maybe Encoding
+findPT pt0 x = go pt0 []
+  where
+    go (PTLeaf y      ) enc | x == y    = Just (reverse enc)
+                            | otherwise = Nothing
+    go (PTNode pt1 pt2) enc = go pt1 (DLeft  : enc) <|>
+                              go pt2 (DRight : enc)
+```
 
 Except instead of doing a "short-circuit combination" with `(<|>)`, we do a
 "full combination" with `(<>)`.
@@ -255,18 +335,23 @@ Except instead of doing a "short-circuit combination" with `(<|>)`, we do a
 So now that we have our lookup table, our new lookup/find function is both
 simple and performant:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L110-111
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L110-111
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
-lookupPTTable :: Ord a =&gt; Map a Encoding -&gt; a -&gt; Maybe Encoding
-lookupPTTable = flip M.lookup ~~~
+lookupPTTable :: Ord a => Map a Encoding -> a -> Maybe Encoding
+lookupPTTable = flip M.lookup
+```
 
 given, of course, that we generate our table first.
 
-~~~haskell ghci&gt; let pt = runBuildTree "hello world" ghci&gt; let tb = fmap
-ptTable pt ghci&gt; tb &gt;&gt;= \\tb' -&gt; lookupPTTable tb' 'e' Just \[DLeft,
-DLeft, DRight\] ghci&gt; tb &gt;&gt;= \\tb' -&gt; lookupPTTable tb' 'q' Nothing
-~~~
+``` {.haskell}
+ghci> let pt = runBuildTree "hello world"
+ghci> let tb = fmap ptTable pt
+ghci> tb >>= \tb' -> lookupPTTable tb' 'e'
+Just [DLeft, DLeft, DRight]
+ghci> tb >>= \tb' -> lookupPTTable tb' 'q'
+Nothing
+```
 
 (Here we use the Monad instance for Maybe, to extract the `tb'` out of the
 `Just tb`. We "sequence" two Maybe's together. For more information, check out
@@ -279,11 +364,14 @@ on this exact topic)
 Now, we'd like to be able to decode an entire stream of `a`'s, returning a list
 of the encodings.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L114-117
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding encodeAll
-:: Ord a =&gt; PreTree a -&gt; \[a\] -&gt; Maybe Encoding encodeAll pt xs =
-concat &lt;$&gt; sequence (map (lookupPTTable tb) xs) where tb = ptTable pt ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L114-117
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+encodeAll :: Ord a => PreTree a -> [a] -> Maybe Encoding
+encodeAll pt xs = concat <$> sequence (map (lookupPTTable tb) xs)
+  where
+    tb = ptTable pt
+```
 
 This is a bit dense! But I'm sure that you are up for it.
 
@@ -298,8 +386,12 @@ This is a bit dense! But I'm sure that you are up for it.
     `Nothing`. So in this case, if *any* of the inputs are not decodable, *the
     entire thing is Nothing*.
 
-    ~~~haskell ghci&gt; sequence \[Just 5, Just 4\] Just \[5,4\] ghci&gt;
-    sequence \[Just 6, Nothing\] Nothing ~~~
+    ``` {.haskell}
+    ghci> sequence [Just 5, Just 4]
+    Just [5,4]
+    ghci> sequence [Just 6, Nothing]
+    Nothing
+    ```
 
     Note that the standard libraries provide a synonym for `sequence . map` ---
     `mapM`. So we could have written it as `mapM (lookupPTTable t) xs`...but
@@ -309,13 +401,16 @@ This is a bit dense! But I'm sure that you are up for it.
     want `Maybe Encoding`. So we can use `(<$>)` to `concat` all of the
     `Encoding`s inside the Maybe.
 
-~~~haskell ghci&gt; let pt = runBuildTree "hello world" -- :: Maybe (PreTree
-Char) ghci&gt; pt &gt;&gt;= \\pt' -&gt; encodeAll pt' "hello world" Just
-\[DLeft, DLeft, DLeft, DLeft, DLeft, DRight, DRight, DLeft, DRight, DLeft,
+``` {.haskell}
+ghci> let pt = runBuildTree "hello world"          -- :: Maybe (PreTree Char)
+ghci> pt >>= \pt' -> encodeAll pt' "hello world"
+Just [DLeft, DLeft, DLeft, DLeft, DLeft, DRight, DRight, DLeft, DRight, DLeft,
 DRight, DRight, DRight, DRight, DRight, DLeft, DRight, DLeft, DRight, DLeft,
 DRight, DRight, DRight, DLeft, DRight, DRight, DRight, DLeft, DRight, DRight,
-DLeft, DLeft\] ghci&gt; pt &gt;&gt;= \\pt' -&gt; encodeAll pt' "hello worldq"
-Nothing ~~~
+DLeft, DLeft]
+ghci> pt >>= \pt' -> encodeAll pt' "hello worldq"
+Nothing
+```
 
 Welp, that's half the battle!
 
@@ -325,20 +420,28 @@ Decoding
 For huffman trees, decoding is the much simpler process. Simply traverse down
 the tree using the given encoding and return a value whenever you reach a leaf.
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L123-128
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding decodePT ::
-PreTree a -&gt; Encoding -&gt; Maybe (a, Encoding) decodePT (PTLeaf x) ds = Just
-(x, ds) decodePT (PTNode pt1 pt2) (d:ds) = case d of DLeft -&gt; decodePT pt1 ds
-DRight -&gt; decodePT pt2 ds decodePT (PTNode \_ \_) \[\] = Nothing ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L123-128
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+decodePT :: PreTree a -> Encoding -> Maybe (a, Encoding)
+decodePT (PTLeaf x)       ds     = Just (x, ds)
+decodePT (PTNode pt1 pt2) (d:ds) = case d of
+                                     DLeft  -> decodePT pt1 ds
+                                     DRight -> decodePT pt2 ds
+decodePT (PTNode _ _)     []     = Nothing
+```
 
 The logic should seem pretty familiar. The main algorithm involves going down
 the tree, "following" the direction list. If you reach a leaf, then you have
 found something (and return the directions you haven't followed yet). If you run
 out of directions while on a node...something has gone wrong.
 
-~~~haskell ghci&gt; do pt &lt;- runBuildTree "hello world" | enc &lt;- encodeAll
-pt "hello world" | decodePT pt enc Just ('h', \[DLeft, DLeft ...\]) ~~~
+``` {.haskell}
+ghci> do  pt  <- runBuildTree "hello world"
+    |     enc <- encodeAll pt "hello world"
+    |     decodePT pt enc
+Just ('h', [DLeft, DLeft ...])
+```
 
 (Here we are using the Maybe monad, in order to "stitch together" three
 possibly-failing operations in a row. We call `pt` and `enc` the values "inside"
@@ -357,7 +460,9 @@ and build a list from it.
 
 This sounds a lot like the `Data.List` function `unfoldr`:
 
-~~~haskell unfoldr :: (b -&gt; Maybe (a, b)) -&gt; b -&gt; \[a\] ~~~
+``` {.haskell}
+unfoldr :: (b -> Maybe (a, b)) -> b -> [a]
+```
 
 `unfoldr` makes a list by applying your function repeatedly to a "de-cumulator",
 carrying the state of the decumulator, and stopping when your function returns
@@ -365,13 +470,18 @@ carrying the state of the decumulator, and stopping when your function returns
 
 Using `unfoldr`, we can write a `decodeAll`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L132-133
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding decodeAll
-:: PreTree a -&gt; Encoding -&gt; \[a\] decodeAll pt = unfoldr (decodePT pt) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L132-133
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+decodeAll :: PreTree a -> Encoding -> [a]
+decodeAll pt = unfoldr (decodePT pt)
+```
 
-~~~haskell ghci&gt; do pt &lt;- runBuildTree "hello world" | enc &lt;- encodeAll
-pt "hello world" | return (decodeAll pt enc) ~~~
+``` {.haskell}
+ghci> do pt  <- runBuildTree "hello world"
+ |    enc <- encodeAll pt "hello world"
+ |    return (decodeAll pt enc)
+```
 
 Which works exactly as we'd like!
 
@@ -380,12 +490,18 @@ Testing
 
 We can write a utility to test our encoding/decoding functions:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs\#L106-113
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding testTree ::
-Ord a =&gt; \[a\] -&gt; \[a\] testTree \[\] = \[\] -- handle the empty list
-testTree xs = decoded where Just decoded = do pt &lt;- runBuildTree xs enc &lt;-
-encodeAll pt xs return (decodeAll pt enc) ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L106-113
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+testTree :: Ord a => [a] -> [a]
+testTree [] = []                    -- handle the empty list
+testTree xs = decoded
+  where
+    Just decoded = do
+      pt  <- runBuildTree xs
+      enc <- encodeAll pt xs
+      return (decodeAll pt enc)
+```
 
 (Again, refer to my
 [MonadPlus](http://blog.jle.im/entry/practical-fun-with-monads-introducing-monadplus)
@@ -393,9 +509,12 @@ article from earlier, if you are unfamiliar with working with the Maybe monad)
 
 `testTree` should be an identity; that is, `testTree xs === xs`.
 
-~~~haskell ghci&gt; testTree "hello world" "hello world" ghci&gt; testTree "the
-quick brown fox jumps over the lazy dog" "the quick brown fox jumps over the
-lazy dog" ~~~
+``` {.haskell}
+ghci> testTree "hello world"
+"hello world"
+ghci> testTree "the quick brown fox jumps over the lazy dog"
+"the quick brown fox jumps over the lazy dog"
+```
 
 Note the very unsafe irrefutable pattern match on `Just decoded`. We'll fix this
 later!
@@ -407,9 +526,13 @@ great [QuickCheck](http://hackage.haskell.org/package/QuickCheck) library.
 `quickcheck` will basically test our proposition `testTree xs == xs` by
 generating several random `xs`'s.
 
-~~~haskell ghci&gt; import Test.QuickCheck ghci&gt; :set -XScopedTypeVariables
-ghci&gt; quickCheck ((xs :: String) -&gt; testTree xs == xs) \*\*\* Failed!
-Falsifiable (after 3 tests and 2 shrinks): "a" ~~~
+``` {.haskell}
+ghci> import Test.QuickCheck
+ghci> :set -XScopedTypeVariables
+ghci> quickCheck (\(xs :: String) -> testTree xs == xs)
+*** Failed! Falsifiable (after 3 tests and 2 shrinks):
+"a"
+```
 
 #### Failure!
 
@@ -417,9 +540,15 @@ Oh! We failed? And on such a simple case? What happened?
 
 If we look at how `"a"` is encoded, it'll become apparent:
 
-~~~haskell ghci&gt; let (Just pt) = runBuildTree "aaa" ghci&gt; pt PTLeaf 'a'
-ghci&gt; findPT pt 'a' Just \[\] ghci&gt; encodeAll pt "aaaaaaaaaaa" Just \[\]
-~~~
+``` {.haskell}
+ghci> let (Just pt) = runBuildTree "aaa"
+ghci> pt
+PTLeaf 'a'
+ghci> findPT pt 'a'
+Just []
+ghci> encodeAll pt "aaaaaaaaaaa"
+Just []
+```
 
 Ah. Well, that's a problem. Basically, our input string has ["zero"
 entropy](http://en.wikipedia.org/wiki/Entropy_(information_theory)), according
@@ -432,11 +561,13 @@ realize that `decodeAll` is partial (that is, it does not terminate/is undefined
 on some of its inputs), and will actually never terminate if the given tree is a
 singleton tree. We can write a "safe" `decodeAll`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs\#L137-139
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding decodeAll'
-:: PreTree a -&gt; Encoding -&gt; Maybe \[a\] decodeAll' (PTLeaf *) * = Nothing
-decodeAll' pt enc = Just $ unfoldr (decodePT pt) enc ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L137-139
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+decodeAll' :: PreTree a -> Encoding -> Maybe [a]
+decodeAll' (PTLeaf _) _   = Nothing
+decodeAll' pt         enc = Just $ unfoldr (decodePT pt) enc
+```
 
 In doing this, we don't exactly "fix" the problem...we only defer
 responsibility. Now, whoever uses `decodeAll'` (like our eventual encoding
@@ -449,16 +580,22 @@ the unterminating case."
 
 We'll also a "safe" `testTree`:
 
-~~~haskell -- source:
-https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs\#L117-121
--- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding testTree'
-:: Ord a =&gt; \[a\] -&gt; Maybe \[a\] testTree' xs = do pt &lt;- runBuildTree
-xs enc &lt;- encodeAll pt xs decodeAll' pt enc ~~~
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L117-121
+-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
+testTree' :: Ord a => [a] -> Maybe [a]
+testTree' xs = do
+    pt  <- runBuildTree xs
+    enc <- encodeAll pt xs
+    decodeAll' pt enc
+```
 
 So we can now quickcheck:
 
-~~~haskell ghci&gt; quickCheck ((xs :: String) -&gt; testTree' xs `elem`
-\[Nothing, Just xs\]) +++ OK, passed 100 tests. ~~~
+``` {.haskell}
+ghci> quickCheck (\(xs :: String) -> testTree' xs `elem` [Nothing, Just xs])
++++ OK, passed 100 tests.
+```
 
 Hooray!
 
@@ -485,3 +622,9 @@ file and encode/decode into a new file as it goes, in constant memory, using
 pipes. After that, we will also be looking at how to profile code, applying some
 optimization tricks we can do to get things just right, and other things to wrap
 up.
+
+[^1]: Note --- this section was largely rewritten; it used to contain a rather
+    involved yet misled tutorial about the Writer monad, as suggested by old
+    links/titles. This can [still be found
+    here](https://github.com/mstksg/inCode/blob/master/copy/entries/.huffman-2-writer.md),
+    if you want to read through it.

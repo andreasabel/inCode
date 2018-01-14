@@ -98,28 +98,38 @@ with a few updates.
     the values to the versions of [GHC](http://www.haskell.org/ghc/) and
     [Haskell Platform](http://www.haskell.org/platform/) you will be using.
 
-    ~~~ruby chef.json.merge!({ :ghc*version =&gt; '7.4.4',
-    :haskell*platform\_version =&gt; '2012.4.0.0'}) ~~~
+    ``` {.ruby}
+    chef.json.merge!({ :ghc_version => '7.4.4',
+                       :haskell_platform_version => '2012.4.0.0'})
+    ```
 
     I'm using `ghc-7.6.3` to develop, and as of October 2013, the lastest stable
     Haskell Platform is `2013.2.0.0`.
 
 5.  Launch your virtual machine with
 
-    ~~~bash $ vagrant up ~~~
+    ``` {.bash}
+    $ vagrant up
+    ```
 
     This will launch the VM and install the given versions of GHC and the
     Haskell Platform. You are mostly good to go now -- log onto your machine
     using
 
-    ~~~bash $ vagrant ssh ~~~
+    ``` {.bash}
+    $ vagrant ssh
+    ```
 
     If this doesn't work, try installing `libgc-dev`. `vagrant ssh` should send
     you into an "ssh" session on your VM. Once there, let's run some basic
     bookkeeping/updating that isn't handled by the vagrant project:
 
-    ~~~bash $ sudo apt-get update $ sudo apt-get upgrade $ sudo apt-get install
-    git-core $ cabal update ~~~
+    ``` {.bash}
+    $ sudo apt-get update
+    $ sudo apt-get upgrade
+    $ sudo apt-get install git-core
+    $ cabal update
+    ```
 
 And you should have a fresh virtual machine compatible with Heroku ready to
 build your project on.
@@ -169,17 +179,12 @@ go about it.
     built-in sandboxing, just to make sure you don't run into any problems in
     the future.
 
-    ~~~bash
-
-    using cabal-dev
-    ===============
-
+    ``` {.bash}
+    #   using cabal-dev
     $ cabal install cabal-dev
-
-    you can add ~/.cabal/bin to your $PATH if you want
-    ==================================================
-
-    $ ~/.cabal/bin/cabal-dev install ~~~
+    #   you can add ~/.cabal/bin to your $PATH if you want
+    $ ~/.cabal/bin/cabal-dev install
+    ```
 
     If any of your cabal packages require developer libraries to be installed on
     your machine (anything involving Postgres comes to mind), you'll need to be
@@ -206,7 +211,9 @@ Heroku?
     You can simply forcefully add the file to git as it is, because chances are
     you have it already in your `.gitignore`:
 
-    ~~~bash $ git add -f dist/build/app-name/app-name ~~~
+    ``` {.bash}
+    $ git add -f dist/build/app-name/app-name
+    ```
 
     Alternatively, you can create a `bin/` folder and copy the executable there.
     It really doesn't make a difference, except that you don't have to modify
@@ -215,12 +222,10 @@ Heroku?
 2.  Now, you need to create your `Procfile` --- this specifies the processes
     that Heroku will be executing.
 
-    ~~~yaml
-
-    Procfile
-    ========
-
-    web: \# system command to launch your server ~~~
+    ``` {.yaml}
+    # Procfile
+    web: # system command to launch your server
+    ```
 
     For some web servers, it is simply the path to the executable; for some
     frameworks like *Yesod*, you need to specify the flag `-p $PORT`, because
@@ -248,17 +253,12 @@ Heroku?
 
 4.  Configure your [Heroku Toolbelt](https://toolbelt.heroku.com/), and deploy.
 
-    ~~~bash
-
-    create your app
-    ===============
-
+    ``` {.bash}
+    #   create your app
     $ heroku create appname
-
-    and, after making sure everything is set up, committed, and in order...
-    =======================================================================
-
-    $ git push heroku master ~~~
+    #   and, after making sure everything is set up, committed, and in order...
+    $ git push heroku master
+    ```
 
     If you have done everything right, this should be succesful. Hooray!
 
@@ -300,17 +300,12 @@ arise, here are some things that it might be important to pay attention to.
 -   Be aware of good virtual machine management practices. Suspend your machine
     whenever you are not using it:
 
-    ~~~bash
-
-    suspend
-    =======
-
+    ``` {.bash}
+    #   suspend
     $ vagrant suspend
-
-    resume
-    ======
-
-    $ vagrant resume ~~~
+    #   resume
+    $ vagrant resume
+    ```
 
     and you will also prevent things from getting hairy in case of a system
     crash on the host side.

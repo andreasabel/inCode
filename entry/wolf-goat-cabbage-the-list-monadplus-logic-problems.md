@@ -38,7 +38,7 @@ friendly \#haskell!
 The usefulness of a monad depends on how you define the characteristic "bind" or
 "chaining" behavior. For this article, MonadPlus refers to the design pattern
 (and Haskell typeclass) where you model this "chaining" as a "success/fail"
-process\[^plus\].
+process[^1].
 
 There is a common language with to talk about this process: `mzero` means "fail
 here" and `return x` means "succeed with a result of the value `x` here". So
@@ -87,17 +87,24 @@ Our Types
 
 The first thing we do when writing any Haskell program: define our types!
 
-~~~haskell data Character = Farmer | Wolf | Goat | Cabbage -- 1 deriving (Show,
-Eq, Enum)
+``` {.haskell}
+data Character = Farmer | Wolf | Goat | Cabbage -- 1
+        deriving (Show, Eq, Enum)
 
-newtype Move = MoveThe Character -- 2 deriving (Eq)
+newtype Move = MoveThe Character                -- 2
+        deriving (Eq)
 
-instance Show Move where -- 3 show (MoveThe Farmer) = "F" show (MoveThe Wolf) =
-"W" show (MoveThe Goat) = "G" show (MoveThe Cabbage) = "C"
+instance Show Move where                        -- 3
+    show (MoveThe Farmer)  = "F"
+    show (MoveThe Wolf)    = "W"
+    show (MoveThe Goat)    = "G"
+    show (MoveThe Cabbage) = "C"
 
-type Plan = \[Move\] -- 4
+type Plan = [Move]                              -- 4
 
-data Position = West | East -- 5 deriving (Show, Eq) ~~~
+data Position = West | East                     -- 5
+    deriving (Show, Eq)
+```
 
 1.  First, we define the enumerated type `Character` all the characters we will
     be working with: the farmer, the wolf, the goat, and the cabbage.
@@ -114,7 +121,8 @@ data Position = West | East -- 5 deriving (Show, Eq) ~~~
     Everyone starts out on the west bank, and we want them all to end up on the
     east bank.
 
-&lt;div class="note"&gt; **Welcome to Haskell!**
+::: {.note}
+**Welcome to Haskell!**
 
 Hi! These "Welcome to Haskell" asides are for people unfamiliar with Haskell,
 mostly for Haskell syntax stuff. If you already feel comfortable, feel free to
@@ -128,8 +136,10 @@ declaring new types.
     `True`: in fact, you could define your own `Bool` with something like this:
     (or even your own `Int`)
 
-    ~~~haskell data Bool = False | True data Int = -536870912 ... | -1 | 0 | 1 |
-    2 | ... 536870911 ~~~
+    ``` {.haskell}
+    data Bool = False | True
+    data Int = -536870912 ... | -1 | 0 | 1 | 2 | ... 536870911
+    ```
 
     The `deriving` syntax tells the compiler to automatically derive functions
     for printing the type (Show), testing for equality (Eq), and enumerating
@@ -138,8 +148,12 @@ declaring new types.
 2.  We declare a new type `Move` which is just a wrapper around a `Character`.
     We can create a new `Move` by using `MoveThe`:
 
-    ~~~haskell ghci&gt; :t MoveThe MoveThe :: Character -&gt; Move ghci&gt; :t
-    MoveThe Wolf MoveThe Wolf :: Move ~~~
+    ``` {.haskell}
+    ghci> :t MoveThe
+    MoveThe :: Character -> Move
+    ghci> :t MoveThe Wolf
+    MoveThe Wolf :: Move
+    ```
 
     (`ghci>` represents a command at the interactive prompt ghci, and `:t` asks
     for the type of whatever comes after it)
@@ -150,8 +164,7 @@ declaring new types.
     mean `[Move]`, and the compiler treats the two things as the same.
 
 5.  `Position`: same deal as `Character`.
-
-&lt;/div&gt;
+:::
 
 Implementation
 --------------
@@ -164,10 +177,16 @@ to be, and then fill in the functions that are necessary to make it happen.
 The last stage of our journey is after we have made all `n` moves, we end the
 journey if it is not a solution.
 
-~~~haskell makeNMoves :: Int -&gt; \[Plan\] -- 1 isSolution :: Plan -&gt; Bool
+``` {.haskell}
+makeNMoves :: Int -> [Plan]         -- 1
+isSolution :: Plan -> Bool
 
-findSolutions :: Int -&gt; \[Plan\] -- 2 findSolutions n = do p &lt;- makeNMoves
-n -- 3 guard $ isSolution p -- 4 return p -- 5 ~~~
+findSolutions :: Int -> [Plan]      -- 2
+findSolutions n = do
+    p <- makeNMoves n               -- 3
+    guard $ isSolution p            -- 4
+    return p                        -- 5
+```
 
 1.  The type signatures of the helper functions we will be using.
 2.  `findSolutions n` is going to be the all successful plans after `n` moves.
@@ -183,7 +202,8 @@ Hm. Sounds good! We're done!
 
 So now we only need to implement `makeNMoves` and `isSolution`!
 
-&lt;div class="note"&gt; **Welcome to Haskell!**
+::: {.note}
+**Welcome to Haskell!**
 
 Haskell is a functional language...but that "do" block sure looks very
 imperative to me. What gives?
@@ -192,13 +212,17 @@ As explained in [Part
 1](http://blog.jle.im/entry/practical-fun-with-monads-introducing-monadplus),
 all do blocks are just syntactical sugar for repeated applications of `>>=`:
 
-~~~haskell findSolutions :: Int -&gt; \[Plan\] findSolutions = makeNMoves n
-&gt;&gt;= (\\p -&gt; guard (isSolution p) &gt;&gt; return p) ~~~
+``` {.haskell}
+findSolutions :: Int -> [Plan]
+findSolutions =
+    makeNMoves n >>= (\p -> guard (isSolution p) >> return p)
+```
 
 And `>>=` is just the (hopefully) familiar bind. Again, look at [Part
 1](http://blog.jle.im/entry/practical-fun-with-monads-introducing-monadplus) or
 [adit's](http://adit.io/posts/2013-04-17-functors,_applicatives,_and_monads_in_pictures.html)
-tutorial for a fuller explanation. &lt;/div&gt;
+tutorial for a fuller explanation.
+:::
 
 ### makeNMoves
 
@@ -208,51 +232,74 @@ moves.
 
 That means we want something like:
 
-~~~haskell makeMove :: Plan -&gt; \[Plan\]
+``` {.haskell}
+makeMove :: Plan -> [Plan]
 
-startingPlan :: Plan startingPlan = \[\]
+startingPlan :: Plan
+startingPlan = []
 
-makeNMoves :: Int -&gt; \[Plan\] makeNMoves n = do m1 &lt;- makeMove
-startingPlan m2 &lt;- makeMove m1 m3 &lt;- makeMove m2 -- ... (n times) mn &lt;-
-makeMove mx return mn ~~~
+makeNMoves :: Int -> [Plan]
+makeNMoves n = do
+    m1 <- makeMove startingPlan
+    m2 <- makeMove m1
+    m3 <- makeMove m2
+    -- ... (n times)
+    mn <- makeMove mx
+    return mn
+```
 
 Which says "The journey of `makeNMoves` is repeatedly making a move `n` times."
 
 Of course we have seen that particular type of `do` block before, it is simply:
 
-~~~haskell makeNMoves :: Int -&gt; \[Plan\] makeNMoves n = makeMove startingPlan
-&gt;&gt;= makeMove &gt;&gt;= makeMove &gt;&gt;= makeMove -- ... &gt;&gt;=
-makeMove -- (n times) ~~~
+``` {.haskell}
+makeNMoves :: Int -> [Plan]
+makeNMoves n =
+    makeMove startingPlan >>= makeMove
+        >>= makeMove >>= makeMove   -- ...
+        >>= makeMove                -- (n times)
+```
 
 Luckily there is a function in the standard library that allows us to repeatedly
 apply a function `n` times: `iterate :: (a -> a) -> a -> [a]`. `iterate f x`
 takes a function `f :: a -> a` and repeatedly applies it to a starting value
 `x :: a` and yields the results as a list:
 
-~~~haskell iterate f x = \[ x, f x, f (f x), f (f (f x)) ... \] ~~~
+``` {.haskell}
+iterate f x = [ x, f x, f (f x), f (f (f x)) ... ]
+```
 
 And so to get the `n`th application, we use `iterate f x !! n` (`!!` being the
 indexing function, getting the `n`th element of the list)
 
 So now we can define `makeNMoves`:
 
-~~~haskell makeNMoves :: Int -&gt; \[Plan\] makeNMoves n = iterate (&gt;&gt;=
-makeMove) (return startingPlan) !! n ~~~
+``` {.haskell}
+makeNMoves :: Int -> [Plan]
+makeNMoves n = iterate (>>= makeMove) (return startingPlan) !! n
+```
 
 We say "apply `(>>= makeMove)` `n` times, starting the single starting plan".
 
-&lt;div class="note"&gt; **Welcome to Haskell!**
+::: {.note}
+**Welcome to Haskell!**
 
 Remember that `return x >>= f` is the same as `f x`. You can see this here:
 
-~~~haskell foo1 = do y &lt;- return x f y
+``` {.haskell}
+foo1 = do
+    y <- return x
+    f y
 
--- identical foo2 = f x ~~~
+-- identical
+foo2 = f x
+```
 
 Where `return x` says "succeed with the value `x`", and `y <-` says "set `y` to
 the value of that success". Of course, `y` is just going to be `x`, because we
 had just said "succeed with the value of `x`. That means that `f y` is the same
-as `f x`. &lt;/div&gt;
+as `f x`.
+:::
 
 Even though the syntax is not the cleanest, it is important to remember here
 that what we are doing is simply defining the journey `makeNMoves` as the result
@@ -277,9 +324,15 @@ of the farmer depends only on the even-/odd-ness of the number of total moves.
 If it is even, then the farmer is on the west bank still (consider 0 moves, two
 moves, etc.). If it is odd, then the farmer is on the east bank.
 
-~~~haskell positionOf :: Plan -&gt; Character -&gt; Position positionOf p c =
-case c of Farmer -&gt; positionFromCount $ length p \_ -&gt; undefined where
-positionFromCount n | even n = West | othherwise = East ~~~
+``` {.haskell}
+positionOf :: Plan -> Character -> Position
+positionOf p c = case c of
+    Farmer  -> positionFromCount $ length p
+    _       -> undefined
+    where
+        positionFromCount n | even n      = West
+                            | othherwise  = East
+```
 
 Now, what if we want to know about non-farmers?
 
@@ -288,28 +341,38 @@ moves involving that given animal.
 
 Let's first filter the Plan `p` by moves involving the character `c`:
 
-~~~haskell filter (== MoveThe c) p ~~~
+``` {.haskell}
+filter (== MoveThe c) p
+```
 
 This will return a new Plan, but with only the moves involving the character
 `c`. We can then use the length of *that*.
 
-&lt;div class="note"&gt; **Welcome to Haskell!**
+::: {.note}
+**Welcome to Haskell!**
 
 `filter :: (a -> Bool) -> [a] -> [a]` is a common function that takes a
 predicate `a -> Bool` and a list, and returns a new list with only the items for
 which the predicate returns true.
 
 `(== MoveThe c)` is a function that returns true if the move is equal to
-`MoveThe c`. &lt;/div&gt;
+`MoveThe c`.
+:::
 
 Putting it all together:
 
-~~~haskell positionOf :: Plan -&gt; Character -&gt; Position positionOf p c =
-case c of Farmer -&gt; positionFromCount . length $ p c -&gt; positionFromCount
-. length $ filter (== MoveThe c) p where positionFromCount n | even n = West |
-othherwise = East ~~~
+``` {.haskell}
+positionOf :: Plan -> Character -> Position
+positionOf p c = case c of
+    Farmer  -> positionFromCount . length $ p
+    c       -> positionFromCount . length $ filter (== MoveThe c) p
+    where
+        positionFromCount n | even n      = West
+                            | othherwise  = East
+```
 
-&lt;div class="note"&gt; **Welcome to Haskell!**
+::: {.note}
+**Welcome to Haskell!**
 
 What is `positionFromCount . length $ p`?
 
@@ -329,13 +392,19 @@ In the same way, `positionFromCount . length $ filter (== MoveThe c) p` is
 `(positionFromCount . length) (filter (== MoveThe c) p)` --- find the length of
 the filtered list, then turn that length into a position. We use `$` mostly
 because we don't like writing parentheses everywhere when we don't have to.
-&lt;/div&gt;
+:::
 
 Does this actually work? Let's try out some examples.
 
-~~~haskell ghci&gt; let p = \[MoveThe Goat, MoveThe Farmer, MoveThe Wolf,
-MoveThe Goat\] ghci&gt; positionOf p Goat West ghci&gt; positionOf p Wolf East
-ghci&gt; positionOf p Farmer West ~~~
+``` {.haskell}
+ghci> let p = [MoveThe Goat, MoveThe Farmer, MoveThe Wolf, MoveThe Goat]
+ghci> positionOf p Goat
+West
+ghci> positionOf p Wolf
+East
+ghci> positionOf p Farmer
+West
+```
 
 It works! By the way, as an unrelated note, isn't it cool that our `Plan`
 literal reads a lot like English? MoveThe Goat, MoveThe Farmer, MoveThe Wolf...
@@ -348,9 +417,14 @@ Simple --- that means that all `Characters` are on the east side.
 
 We can check this manually:
 
-~~~haskell isSolution :: Plan -&gt; Bool isSolution p = positionOf p Farmer ==
-East && positionOf p Wolf == East && positionOf p Goat == East && positionOf p
-Cabbage == East ~~~
+``` {.haskell}
+isSolution :: Plan -> Bool
+isSolution p =
+    positionOf p Farmer == East
+    && positionOf p Wolf == East
+    && positionOf p Goat == East
+    && positionOf p Cabbage == East
+```
 
 Hm. Rather ugly.
 
@@ -363,10 +437,14 @@ and returns true if all items in the list satisfy the predicate.
 
 Let's piece it all together:
 
-~~~haskell isSolution p = all (== East) positions where positions = map
-(positionOf p) \[Farmer ..\] ~~~
+``` {.haskell}
+isSolution p = all (== East) positions
+    where
+        positions = map (positionOf p) [Farmer ..]
+```
 
-&lt;div class="note"&gt; **Welcome to Haskell!**
+::: {.note}
+**Welcome to Haskell!**
 
 `map` is probably the most ubiquitous concept in functional programming --- it
 takes a function and a list and returns a new list with the function applied to
@@ -375,15 +453,23 @@ every item.
 For example, `map f [x,y,z]` = `[f x, f y, f z]`. If we wanted to find the
 lengths of a list of strings, we'd do:
 
-~~~haskell map length \["alice","bob"\] = \[length "alice", length "bob"\] =
-\[5,3\] ~~~
+``` {.haskell}
+map length ["alice","bob"]
+= [length "alice", length "bob"]
+= [5,3]
+```
 
 So in our case:
 
-~~~haskell map (positionOf p) \[Farmer, Wolf, Goat, Cabbage\] = \[ positionOf p
-Farmer -- Position of the farmer , positionOf p Wolf -- Position of the wolf ,
-positionOf p Goat -- Position of the goat , positionOf p Cabbage -- Position of
-the cabbage \] ~~~ &lt;/div&gt;
+``` {.haskell}
+map (positionOf p) [Farmer, Wolf, Goat, Cabbage]
+= [ positionOf p Farmer         -- Position of the farmer
+  , positionOf p Wolf           -- Position of the wolf
+  , positionOf p Goat           -- Position of the goat
+  , positionOf p Cabbage        -- Position of the cabbage
+  ]
+```
+:::
 
 We use `[Farmer ..]` as shorthand for `[Farmer, Wolf, Goat, Cabbage]` --- this
 is because `Character` is an Enum, so it can be enumerated using enumeration
@@ -393,7 +479,9 @@ syntax. It basically means "`Farmer`, etc."
 
 So let's get down to the meat of our journey. How do we make a move?
 
-~~~haskell makeMove :: Plan -&gt; \[Plan\] ~~~
+``` {.haskell}
+makeMove :: Plan -> [Plan]
+```
 
 `makeMove` will be a function that takes a plan and returns all the successful
 ways you can add a move to that plan. It takes a plan and takes it through a
@@ -416,12 +504,19 @@ What does a plan have to "go through" in its journey in adding a move?
 
 Let's try this out:
 
-~~~haskell moveLegal :: Plan -&gt; Move -&gt; Bool -- 1 safePlan :: Plan -&gt;
-Bool
+``` {.haskell}
+moveLegal :: Plan -> Move -> Bool           -- 1
+safePlan :: Plan -> Bool
 
-makeMove :: Plan -&gt; \[Plan\] makeMove p = do next &lt;- MoveThe &lt;$&gt;
-\[Farmer .. Cabbage\] -- 2 guard $ moveLegal p next -- 3 let p' = p ++ \[next\]
--- 4 guard $ safePlan p' -- 5 return p' -- 6 ~~~
+makeMove :: Plan -> [Plan]
+makeMove p = do
+    next <- MoveThe <$> [Farmer .. Cabbage] -- 2
+    guard $ moveLegal p next                -- 3
+    let
+        p' = p ++ [next]                    -- 4
+    guard $ safePlan p'                     -- 5
+    return p'                               -- 6
+```
 
 1.  Here are the types of the helper functions we will be using.
 2.  In this context, `MoveThe <$>` means to apply `MoveThe` to whatever we
@@ -436,12 +531,15 @@ makeMove :: Plan -&gt; \[Plan\] makeMove p = do next &lt;- MoveThe &lt;$&gt;
 5.  We insta-fail unless the new plan is safe.
 6.  If we haven't failed yet, then we succeed with the new plan as the result.
 
-&lt;div class="note"&gt; **Welcome to Haskell!**
+::: {.note}
+**Welcome to Haskell!**
 
 Okay, so I was slightly hand-wavey with `<$>`. But it is true that something
 like:
 
-~~~haskell x &lt;- (\*2) &lt;$&gt; Just 3 ~~~
+``` {.haskell}
+x <- (*2) <$> Just 3
+```
 
 will put 6 (`3 * 2`) into `x` --- it'll take out the 3 and then apply `(*2)` to
 it before storing it in `x`.
@@ -449,34 +547,51 @@ it before storing it in `x`.
 What's going on under the hood is actually less magical. `<$>` basically says
 "apply inside". It is like `$`, but "inside". Remember how we can do:
 
-~~~haskell ghci&gt; (\*2) $ 3 6 ~~~
+``` {.haskell}
+ghci> (*2) $ 3
+6
+```
 
 to apply `(*2)` to 3? We can then also do:
 
-~~~haskell ghci&gt; (*2) $ 3 6 ghci&gt; (*2) &lt;$&gt; Just 3 Just 6 ghci&gt;
-(\*2) &lt;$&gt; \[3\] \[6\] ~~~
+``` {.haskell}
+ghci> (*2) $ 3
+6
+ghci> (*2) <$> Just 3
+Just 6
+ghci> (*2) <$> [3]
+[6]
+```
 
 Now, if we think of a List like a list of possible successes, then applying a
 function "inside" means applying the function to all of the possible successes:
 
-~~~haskell ghci&gt; (\*2) &lt;$&gt; \[3,4,5\] \[6,8,10\]
+``` {.haskell}
+ghci> (*2) <$> [3,4,5]
+[6,8,10]
 
-ghci&gt; MoveThe $ Farmer MoveThe Farmer ghci&gt; MoveThe &lt;$&gt; \[Farmer,
-Wolf, Goat, Cabbage\] \[MoveThe Farmer, MoveThe Wolf, MoveThe Goat, MoveThe
-Cabbage\] ~~~
+ghci> MoveThe $ Farmer
+MoveThe Farmer
+ghci> MoveThe <$> [Farmer, Wolf, Goat, Cabbage]
+[MoveThe Farmer, MoveThe Wolf, MoveThe Goat, MoveThe Cabbage]
+```
 
 So when I say
 
-~~~haskell next &lt;- MoveThe &lt;$&gt; \[Farmer, Wolf, Goat, Cabbage\] ~~~
+``` {.haskell}
+next <- MoveThe <$> [Farmer, Wolf, Goat, Cabbage]
+```
 
 I really mean
 
-~~~haskell next &lt;- \[MoveThe Farmer, MoveThe Wolf, MoveThe Goat, MoveThe
-Cabbage\] ~~~
+``` {.haskell}
+next <- [MoveThe Farmer, MoveThe Wolf, MoveThe Goat, MoveThe Cabbage]
+```
 
 But still, it sometimes is cool to think of it as "Get the item inside, and then
 apply this function to it before you bind it to your variable", if only for
-funsies. &lt;/div&gt;
+funsies.
+:::
 
 #### Thought experiment
 
@@ -531,8 +646,11 @@ is being moved.
 
 We can re-use our `positionOf :: Plan -> Character -> Position` function here.
 
-~~~haskell moveLegal :: Plan -&gt; Move -&gt; Bool moveLegal p (MoveThe Farmer)
-= True moveLegal p (MoveThe c) = positionOf p c == positionOf p Farmer ~~~
+``` {.haskell}
+moveLegal :: Plan -> Move -> Bool
+moveLegal p (MoveThe Farmer)  = True
+moveLegal p (MoveThe c)       = positionOf p c == positionOf p Farmer
+```
 
 #### safePlan
 
@@ -544,10 +662,15 @@ boolean arithmetic will show that this is the same as if either the farmer is on
 the same side as the goat or the goat and cabbage are both "safe" (not on the
 side of their predators).
 
-~~~haskell safePlan :: Plan -&gt; Bool safePlan p = goatPos == farmerPos ||
-safeGoat && safeCabbage where goatPos = positionOf p Goat farmerPos = positionOf
-p Farmer safeGoat = goatPos /= positionOf p Wolf safeCabbage = positionOf p
-Cabbage /= goatPos ~~~
+``` {.haskell}
+safePlan :: Plan -> Bool
+safePlan p = goatPos == farmerPos || safeGoat && safeCabbage
+    where
+        goatPos     = positionOf p Goat
+        farmerPos   = positionOf p Farmer
+        safeGoat    = goatPos /= positionOf p Wolf
+        safeCabbage = positionOf p Cabbage /= goatPos
+```
 
 And...that's it! We finished!
 
@@ -577,12 +700,21 @@ So...let's test it!
 
 First, let's load it up on ghci:
 
-~~~haskell ghci&gt; :l WolfGoatCabbage.hs Ok, modules loaded: Main. ~~~
+``` {.haskell}
+ghci> :l WolfGoatCabbage.hs
+Ok, modules loaded: Main.
+```
 
 Let's try a few plan lengths and see when we get one that has a valid solution:
 
-~~~haskell ghci&gt; findSolutions 5 \[\] ghci&gt; findSolutions 6 \[\] ghci&gt;
-findSolutions 7 \[\[G,F,W,G,C,F,G\],\[G,F,C,G,W,F,G\]\] ~~~
+``` {.haskell}
+ghci> findSolutions 5
+[]
+ghci> findSolutions 6
+[]
+ghci> findSolutions 7
+[[G,F,W,G,C,F,G],[G,F,C,G,W,F,G]]
+```
 
 Great, we have two solutions of length 7. If we try them out, it seems like they
 both work! Notice that, interestingly enough, the two solutions are their own
@@ -599,10 +731,14 @@ ends up on the west bank.
 If we add the filter on redundant moves mentioned earlier, the next valid
 solutions with no direct redundancies come at length 13, and then at 19:
 
-~~~haskell ghci&gt; findSolutions 13 \[\[G,F,W,G,C,W,G,C,W,G,C,F,G\]
-,\[G,F,C,G,W,C,G,W,C,G,W,F,G\]\] ghci&gt; findSolutions 19
-\[\[G,F,W,G,C,W,G,C,W,G,C,W,G,C,W,G,C,F,G\]
-,\[G,F,C,G,W,C,G,W,C,G,W,C,G,W,C,G,W,F,G\]\] ~~~
+``` {.haskell}
+ghci> findSolutions 13
+[[G,F,W,G,C,W,G,C,W,G,C,F,G]
+,[G,F,C,G,W,C,G,W,C,G,W,F,G]]
+ghci> findSolutions 19
+[[G,F,W,G,C,W,G,C,W,G,C,W,G,C,W,G,C,F,G]
+,[G,F,C,G,W,C,G,W,C,G,W,C,G,W,C,G,W,F,G]]
+```
 
 Again note that both of these solutions come in pairs, with one being the
 reverse of the other. Also curious is the fact that they are actually identical
@@ -641,3 +777,10 @@ write something on the matter some day. Anyways, learning about Alternative will
 help you see more about the usefulness of the success/fail design pattern, and
 it might help you gain the perspective which much of the early Haskell
 implementors apparently lacked: not everything is a monad!
+
+[^1]: You might be aware that in the current Haskell standard library
+    organization, the implementation of MonadPlus also provides separate
+    functionality --- the "Plus". We won't be focusing on this part, because it
+    is commonly regarded that it is more of a characteristic of the
+    *Alternative* typeclass/design pattern. For the purposes of this article,
+    MonadPlus is essentially "MonadZero", as it should have been.
