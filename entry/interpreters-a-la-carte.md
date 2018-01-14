@@ -127,7 +127,7 @@ representing opcodes. There are four categories: “snd”, “rcv”, “jgz”
 binary mathematical operations:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L21-26
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L31-36
 type Addr = Either Char Int
 
 data Op = OSnd Addr
@@ -142,7 +142,7 @@ take either numbers or other registers.
 Now, parsing a single `Op` is just a matter of pattern matching on `words`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L28-41
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L38-51
 parseOp :: String -> Op
 parseOp inp = case words inp of
     "snd":c    :_   -> OSnd (addr c)
@@ -167,7 +167,7 @@ then just parsing each line in the program string, and collecting them into a
 `PointedList`. We’re ready to go!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L43-44
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L53-54
 parseProgram :: String -> P.PointedList Op
 parseProgram = fromJust . P.fromList . map parseOp . lines
 ```
@@ -275,7 +275,7 @@ For memory, we can access and modify register values, as well as jump around in
 the program tape and read the `Op` at the current program head:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L46-50
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L56-60
 data Mem :: Type -> Type where
     MGet :: Char -> Mem Int
     MSet :: Char -> Int -> Mem ()
@@ -286,7 +286,7 @@ data Mem :: Type -> Type where
 For communication, we must be able to “snd” and “rcv”.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L52-54
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L62-64
 data Com :: Type -> Type where
     CSnd :: Int -> Com ()
     CRcv :: Int -> Com Int
@@ -326,7 +326,7 @@ Our final data type then – a monad that encompasses *all* possible Duet
 primitive commands, is:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L56-56
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L66-66
 type Duet = Prompt (Mem :|: Com)
 ```
 
@@ -334,7 +334,7 @@ We can write some convenient utility primitives to make things easier for us in
 the long run:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L58-74
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L68-84
 dGet :: Char -> Duet Int
 dGet = prompt . L . MGet
 
@@ -360,7 +360,7 @@ Armed with our `Duet` monad, we can now write a real-life `Duet` action to
 represent *one step* of our duet programs:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L76-97
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L86-107
 stepProg :: Duet ()
 stepProg = dPk >>= \case
     OSnd x -> do
@@ -405,7 +405,7 @@ relevant program state, along with classy lenses for operating on it
 polymorphically:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L99-102
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L109-112
 data ProgState = PS { _psTape :: P.PointedList Op
                     , _psRegs :: M.Map Char Int
                     }
@@ -462,7 +462,7 @@ However, we want to treat all registers as `0` by default, not as `Nothing`, so
 we can use `non`:
 
 ``` {.haskell}
-non :: Eq a => a -> Lens' (Maybe a  ) a         -- actually `Iso'`, not `Lens'`
+non :: Eq a => a -> Lens' (Maybe a  ) a         -- actually `Iso'`
 non 0 ::            Lens' (Maybe Int) Int
 ```
 
@@ -482,7 +482,7 @@ With these tools to make life simpler, we can write an interpreter for our `Mem`
 commands:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L104-114
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L114-124
 interpMem
     :: (MonadState s m, MonadFail m, HasProgState s)
     => Mem a
@@ -497,12 +497,95 @@ interpMem = \case
 ```
 
 We use `MonadFail` to explicitly state that we rely on a failed pattern match
-for control flow. `P.moveN :: Int -> P.PointedList -> Maybe P.PointedList` will
-“shift” a `PointedList` by a given amount, but will return `Nothing` if it goes
-out of bounds. Our program is meant to terminate if we ever go out of bounds, so
-we can implement this by using a do block pattern match with `MonadFail`. For
-instances like `MaybeT`/`Maybe`, this means `empty`/`Nothing`/short-circuit. So
-when we `P.move`, we do-block pattern match on `Just t'`.
+for control flow. `P.moveN :: Int -> P.PointedList a -> Maybe (P.PointedList a)`
+will “shift” a `PointedList` by a given amount, but will return `Nothing` if it
+goes out of bounds. Our program is meant to terminate if we ever go out of
+bounds, so we can implement this by using a do block pattern match with
+`MonadFail`. For instances like `MaybeT`/`Maybe`, this means
+`empty`/`Nothing`/short-circuit. So when we `P.move`, we do-block pattern match
+on `Just t'`.
 
-We also use `P.focus`, a lens that the *pointedlist* library provides to the
-current “focus” of the `PointedList`.
+We also use `P.focus :: Lens' (P.PointedList a) a`, a lens that the
+*pointedlist* library provides to the current “focus” of the `PointedList`.
+
+Note that most of this usage of lens with state is not exactly necessary (we can
+manually use `modify`, `gets`, etc. instead of lenses and operators), but it
+does make things a bit more convenient to write.
+
+### Interpreting Com for Part 1
+
+Now, Part 1 (which I’ll call *Part A* from now on) requires an environment
+where:
+
+1.  `CSnd` “emits” items into the void, keeping track only of the *last* emitted
+    item
+2.  `CRcv` “catches” the last thing seen by `CSnd`, keeping track of only the
+    *first* caught item
+
+We can keep track of this using `MonadWriter (First Int)` to interpret `CRcv`
+(if there are two *rcv*’s, we only care about the first *rcv*’d thing), and
+`MonadAccum (Last Int)` to interpret `CSnd`. A `MonadAccum` is just like
+`MonadWriter` (where you can “tell” things and accumulate things), but you also
+have the ability to read the accumulated log at any time. We use `Last Int`
+because, if there are two *snd*’s, we only care about the last *snd*’d thing.
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L130-140
+interpComA
+    :: (MonadAccum (Last Int) m, MonadWriter (First Int) m)
+    => Com a
+    -> m a
+interpComA = \case
+    CSnd x ->
+      add (Last (Just x))
+    CRcv x -> do
+      when (x /= 0) $
+        tell . First . getLast =<< look
+      return x
+```
+
+### Interpreting Com for Part 2
+
+Part 2 (which I’ll call *Part B* from now on) requires an environment where:
+
+1.  `CSnd` “emits” items into into some accumulating log of items, and we need
+    to keep track of all of them.
+2.  `CRcv` “consumes” items from some external environment, and fails when there
+    are no more items to consume.
+
+We can interpret `CSnd`’s effects using `MonadWriter [Int]`, to collect all
+emitted `Int`s. We can interpret `CRcv`’s effects using `MonadState s`, where
+`s` contains an `[Int]` acting as a source of `Int`s to consume.
+
+We’re going to use a `Thread` type to keep track of all thread state. We do this
+so we can merge the contexts of `interpMem` and `interpComB`, and really treat
+them (using type inference) as both working in the same interpretation context.
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L151-157
+data Thread = T { _tState   :: ProgState
+                , _tBuffer  :: [Int]
+                }
+makeClassy ''Thread
+
+instance HasProgState Thread where
+    progState = tState
+```
+
+And now, to interpret:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L159-168
+interpComB
+    :: (MonadWriter [Int] m, MonadFail m, MonadState Thread m)
+    => Com a
+    -> m a
+interpComB = \case
+    CSnd x -> tell [x]
+    CRcv _ -> do
+      x:xs <- use tBuffer
+      tBuffer .= xs
+      return x
+```
+
+Note again the usage of do block pattern matches and `MonadFail`.
