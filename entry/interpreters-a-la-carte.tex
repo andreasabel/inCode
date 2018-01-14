@@ -584,9 +584,6 @@ with \emph{lens} library machinery:
 \CommentTok{-- | "set" through on a lens}
 \OtherTok{(.=)  ::} \DataTypeTok{MonadState}\NormalTok{ s m }\OtherTok{=>} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ a }\OtherTok{->}\NormalTok{ m ()}
 
-\CommentTok{-- | "mappend" through on a lens}
-\OtherTok{(<>=) ::}\NormalTok{ (}\DataTypeTok{Monoid}\NormalTok{ a, }\DataTypeTok{MonadState}\NormalTok{ s m) }\OtherTok{=>} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ a }\OtherTok{->}\NormalTok{ m ()}
-
 \CommentTok{-- | "lift" a State action through a lens}
 \OtherTok{zoom  ::} \DataTypeTok{Lens'}\NormalTok{ s t }\OtherTok{->} \DataTypeTok{State}\NormalTok{ t a }\OtherTok{->} \DataTypeTok{State}\NormalTok{ s a}
 \end{Highlighting}
@@ -785,8 +782,233 @@ And now, to interpret:
 
 Note again the usage of do block pattern matches and \texttt{MonadFail}.
 
+\subsection{Combining Interpreters}\label{combining-interpreters}
+
+To ``combine'' interpreters, we're going to be using, from
+\emph{type-combinators}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{(>|<) ::}\NormalTok{ (f a }\OtherTok{->}\NormalTok{ r)}
+      \OtherTok{->}\NormalTok{ (g a }\OtherTok{->}\NormalTok{ r)}
+      \OtherTok{->}\NormalTok{ ((f }\FunctionTok{:|:}\NormalTok{ g) a }\OtherTok{->}\NormalTok{ r)}
+\end{Highlighting}
+\end{Shaded}
+
+Basically, \texttt{\textgreater{}\textbar{}\textless{}} lets us write a
+``handler'' for a \texttt{:\textbar{}:} by providing a handler for each side.
+For example, with more concrete types:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{(>|<) ::}\NormalTok{ (}\DataTypeTok{Mem}\NormalTok{ a }\OtherTok{->}\NormalTok{ r)}
+      \OtherTok{->}\NormalTok{ (}\DataTypeTok{Com}\NormalTok{ a }\OtherTok{->}\NormalTok{ r)}
+      \OtherTok{->}\NormalTok{ ((}\DataTypeTok{Mem} \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a }\OtherTok{->}\NormalTok{ r)}
+\end{Highlighting}
+\end{Shaded}
+
+We can use this to build an interpreter for \texttt{Duet}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{runPromptM}
+\OtherTok{    ::} \DataTypeTok{Monad}\NormalTok{ m}
+    \OtherTok{=>}\NormalTok{ (forall x}\FunctionTok{.}\NormalTok{ (}\DataTypeTok{Mem}\NormalTok{ x }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{ x) }\OtherTok{->}\NormalTok{ m x)}
+    \OtherTok{->} \DataTypeTok{Duet}\NormalTok{ a}
+    \OtherTok{->}\NormalTok{ m a}
+\end{Highlighting}
+\end{Shaded}
+
+By using \texttt{\textgreater{}\textbar{}\textless{}} to generate our compound
+interpreters. This is how we can create interpreters on \texttt{Duet} by
+``combining'', in a modular way, interpreters for \texttt{Mem} and \texttt{Com}.
+This is the essence of the ``data types a la carte'' technique.
+
 \section{Getting the Results}\label{getting-the-results}
 
-These are the results.
+We just have to pick concrete monads now for us to interpret into.
+
+\subsection{Part A}\label{part-a}
+
+Our interpreter for Part A is
+\texttt{interpMem\ \textgreater{}\textbar{}\textless{}\ interpComA} -- we
+interpret the \texttt{Mem} primitives the usual way, and interpret the
+\texttt{Com} primitives the Part A way.
+
+Let's check what capabilities our interpreter must have:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t interpMem }\FunctionTok{>|<}\NormalTok{ interpComA}
+\NormalTok{interpMem }\FunctionTok{>|<}\NormalTok{ interpComA}
+\OtherTok{    ::}\NormalTok{ ( }\DataTypeTok{MonadWriter}\NormalTok{ (}\DataTypeTok{First} \DataTypeTok{Int}\NormalTok{) m}
+\NormalTok{       , }\DataTypeTok{MonadAccum}\NormalTok{ (}\DataTypeTok{Last} \DataTypeTok{Int}\NormalTok{) m}
+\NormalTok{       , }\DataTypeTok{MonadFail}\NormalTok{ m}
+\NormalTok{       , }\DataTypeTok{MonadState}\NormalTok{ s m}
+\NormalTok{       , }\DataTypeTok{HasProgState}\NormalTok{ s}
+\NormalTok{       )}
+    \OtherTok{=>}\NormalTok{ (}\DataTypeTok{Mem} \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
+    \OtherTok{->}\NormalTok{ m a}
+\end{Highlighting}
+\end{Shaded}
+
+So it looks like we need to be \texttt{MonadWriter\ (First\ Int)},
+\texttt{MonadAccum\ (Last\ Int)}, \texttt{MonadFail\ m}, and
+\texttt{MonadState\ s\ m}, where \texttt{HasProgState\ s}.
+
+Now, we can write such a Monad from scratch, or we can use the
+\emph{transformers} library to generate a transformer with all of those
+instances for us. For the sake of brevity and reducing duplicated code, let's go
+that route. We can use:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{MaybeT}\NormalTok{ (}\DataTypeTok{StateT} \DataTypeTok{ProgState}\NormalTok{ (}\DataTypeTok{WriterT}\NormalTok{ (}\DataTypeTok{First} \DataTypeTok{Int}\NormalTok{) (}\DataTypeTok{A.Accum}\NormalTok{ (}\DataTypeTok{Last} \DataTypeTok{Int}\NormalTok{))))}
+\end{Highlighting}
+\end{Shaded}
+
+And so we can write our final ``step'' function in that context:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L142-143}
+\OtherTok{stepA ::} \DataTypeTok{MaybeT}\NormalTok{ (}\DataTypeTok{StateT} \DataTypeTok{ProgState}\NormalTok{ (}\DataTypeTok{WriterT}\NormalTok{ (}\DataTypeTok{First} \DataTypeTok{Int}\NormalTok{) (}\DataTypeTok{A.Accum}\NormalTok{ (}\DataTypeTok{Last} \DataTypeTok{Int}\NormalTok{)))) ()}
+\NormalTok{stepA }\FunctionTok{=}\NormalTok{ runPromptM (interpMem }\FunctionTok{>|<}\NormalTok{ interpComA) stepProg}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{stepA} will make a single step of the tape, according to the
+interpreters \texttt{interpMem} and \texttt{interpComA}.
+
+Our final answer is then just the result of \emph{repeating} this over and over
+again until there's a failure. We take advantage of the fact that
+\texttt{MaybeT}'s \texttt{Alternative} instance uses \texttt{empty} for
+\texttt{fail}, so we can use
+\texttt{many\ ::\ MaybeT\ m\ a\ -\textgreater{}\ MaybeT\ m\ {[}a{]}}, which
+repeats a \texttt{MaybeT} action several times until a failure is encountered.
+In our case, ``failure'' is when the tape goes out of bounds.
+
+But, because of laziness, our computation terminates as soon as a valid
+\texttt{CRcv} is found and a \texttt{First\ Int} is logged to the
+\texttt{Writer}, so we don't actually need to run the computation until it goes
+out of bounds.
+
+Here is the entirety of Part A:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L145-151}
+\OtherTok{partA ::} \DataTypeTok{P.PointedList} \DataTypeTok{Op} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Int}
+\NormalTok{partA ops }\FunctionTok{=}\NormalTok{ getFirst}
+          \FunctionTok{.}\NormalTok{ flip A.evalAccum mempty}
+          \FunctionTok{.}\NormalTok{ execWriterT}
+          \FunctionTok{.}\NormalTok{ flip runStateT (}\DataTypeTok{PS}\NormalTok{ ops M.empty)}
+          \FunctionTok{.}\NormalTok{ runMaybeT}
+          \FunctionTok{$}\NormalTok{ many stepA}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Part B}\label{part-b}
+
+Our interpreter for Part B is a little simpler:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t interpMem }\FunctionTok{>|<}\NormalTok{ interpComB}
+\NormalTok{interpMem }\FunctionTok{>|<}\NormalTok{ interpComB}
+\OtherTok{    ::}\NormalTok{ ( }\DataTypeTok{MonadWriter}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{] m}
+\NormalTok{       , }\DataTypeTok{MonadFail}\NormalTok{ m}
+\NormalTok{       , }\DataTypeTok{MonadState} \DataTypeTok{Thread}\NormalTok{ m}
+\NormalTok{       )}
+    \OtherTok{=>}\NormalTok{ (}\DataTypeTok{Mem} \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
+    \OtherTok{->}\NormalTok{ m a}
+\end{Highlighting}
+\end{Shaded}
+
+We can really just use:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{WriterT}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{] (}\DataTypeTok{MaybeT}\NormalTok{ (}\DataTypeTok{State} \DataTypeTok{Thread}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+Writing our concrete \texttt{stepB} is a little more involved, since we have to
+juggle the state of each thread separately. We can do this using:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{zoom}\OtherTok{ _1 ::} \DataTypeTok{MaybeT}\NormalTok{ (}\DataTypeTok{State}\NormalTok{ s) a }\OtherTok{->} \DataTypeTok{MaybeT}\NormalTok{ (}\DataTypeTok{State}\NormalTok{ (s, t)) a}
+\NormalTok{zoom}\OtherTok{ _2 ::} \DataTypeTok{MaybeT}\NormalTok{ (}\DataTypeTok{State}\NormalTok{ t) a }\OtherTok{->} \DataTypeTok{MaybeT}\NormalTok{ (}\DataTypeTok{State}\NormalTok{ (s, t)) a}
+\end{Highlighting}
+\end{Shaded}
+
+To ``lift'' our actions on one thread to be actions on a ``tuple'' of threads.
+We have, in the end:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L172-181}
+\OtherTok{stepB ::} \DataTypeTok{MaybeT}\NormalTok{ (}\DataTypeTok{State}\NormalTok{ (}\DataTypeTok{Thread}\NormalTok{, }\DataTypeTok{Thread}\NormalTok{)) }\DataTypeTok{Int}
+\NormalTok{stepB }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{    outA }\OtherTok{<-}\NormalTok{ execWriterT }\FunctionTok{$}
+\NormalTok{      zoom _1 }\FunctionTok{.}\NormalTok{ many }\FunctionTok{$}\NormalTok{ runPromptM (interpMem }\FunctionTok{>|<}\NormalTok{ interpComB) stepProg}
+\NormalTok{    outB }\OtherTok{<-}\NormalTok{ execWriterT }\FunctionTok{$}
+\NormalTok{      zoom _2 }\FunctionTok{.}\NormalTok{ many }\FunctionTok{$}\NormalTok{ runPromptM (interpMem }\FunctionTok{>|<}\NormalTok{ interpComB) stepProg}
+\NormalTok{    _1 }\FunctionTok{.}\NormalTok{ tBuffer }\FunctionTok{.=}\NormalTok{ outB}
+\NormalTok{    _2 }\FunctionTok{.}\NormalTok{ tBuffer }\FunctionTok{.=}\NormalTok{ outA}
+\NormalTok{    guard }\FunctionTok{.}\NormalTok{ not }\FunctionTok{$}\NormalTok{ null outA }\FunctionTok{&&}\NormalTok{ null outB}
+\NormalTok{    return }\FunctionTok{$}\NormalTok{ length outB}
+\end{Highlighting}
+\end{Shaded}
+
+Our final \texttt{stepB} really doesn't need a \texttt{WriterT\ {[}Int{]}} -- we
+just use that internally to collect \emph{snd} outputs. So we use
+\texttt{execWriter} after ``interpreting'' our actions (along with
+\texttt{many}, to repeat our thread steps until they block) to just get the
+resulting logs.
+
+We then reset the input buffers appropriately (by putting in the collected
+outputs of the previous threads).
+
+If both threads are blocking (they both have to external outputs to pass on),
+then we're done (using \texttt{guard}).
+
+We return the number of items that ``Program 1'' (the second thread) outputs,
+because that's what we need for our answer.
+
+This is one ``single pass'' of both of our threads. As you can anticipate, we'll
+use \texttt{many} again to run these multiple times until both threads block.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L183-191}
+\OtherTok{partB ::} \DataTypeTok{P.PointedList} \DataTypeTok{Op} \OtherTok{->} \DataTypeTok{Int}
+\NormalTok{partB ops }\FunctionTok{=}\NormalTok{ sum }\FunctionTok{.}\NormalTok{ concat}
+          \FunctionTok{.}\NormalTok{ flip evalState s0}
+          \FunctionTok{.}\NormalTok{ runMaybeT}
+          \FunctionTok{$}\NormalTok{ many stepB}
+  \KeywordTok{where}
+\NormalTok{    s0 }\FunctionTok{=}\NormalTok{ ( }\DataTypeTok{T}\NormalTok{ (}\DataTypeTok{PS}\NormalTok{ ops (M.singleton }\CharTok{'p'} \DecValTok{0}\NormalTok{)) []}
+\NormalTok{         , }\DataTypeTok{T}\NormalTok{ (}\DataTypeTok{PS}\NormalTok{ ops (M.singleton }\CharTok{'p'} \DecValTok{1}\NormalTok{)) []}
+\NormalTok{         )}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Examples}\label{examples}
+
+In the same source code, I've included by own puzzle input provided to me from
+the advent of code website. We can now get actual answers given some sample
+puzzle input:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L193-196}
+\OtherTok{main ::} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{main }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{    print }\FunctionTok{$}\NormalTok{ partA (parseProgram testProg)}
+\NormalTok{    print }\FunctionTok{$}\NormalTok{ partB (parseProgram testProg)}
+\end{Highlighting}
+\end{Shaded}
 
 \end{document}

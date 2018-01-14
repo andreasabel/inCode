@@ -216,9 +216,6 @@ makeClassy <span class="ch">&#39;&#39;</span><span class="dt">ProgState</span></
 <span class="co">-- | &quot;set&quot; through on a lens</span>
 <span class="ot">(.=)  ::</span> <span class="dt">MonadState</span> s m <span class="ot">=&gt;</span> <span class="dt">Lens&#39;</span> s a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> m ()
 
-<span class="co">-- | &quot;mappend&quot; through on a lens</span>
-<span class="ot">(&lt;&gt;=) ::</span> (<span class="dt">Monoid</span> a, <span class="dt">MonadState</span> s m) <span class="ot">=&gt;</span> <span class="dt">Lens&#39;</span> s a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> m ()
-
 <span class="co">-- | &quot;lift&quot; a State action through a lens</span>
 <span class="ot">zoom  ::</span> <span class="dt">Lens&#39;</span> s t <span class="ot">-&gt;</span> <span class="dt">State</span> t a <span class="ot">-&gt;</span> <span class="dt">State</span> s a</code></pre></div>
 <p>So, for example, we have:</p>
@@ -304,8 +301,105 @@ interpComB <span class="fu">=</span> \<span class="kw">case</span>
       tBuffer <span class="fu">.=</span> xs
       return x</code></pre></div>
 <p>Note again the usage of do block pattern matches and <code>MonadFail</code>.</p>
+<h3 id="combining-interpreters">Combining Interpreters</h3>
+<p>To “combine” interpreters, we’re going to be using, from <em>type-combinators</em>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">(&gt;|&lt;) ::</span> (f a <span class="ot">-&gt;</span> r)
+      <span class="ot">-&gt;</span> (g a <span class="ot">-&gt;</span> r)
+      <span class="ot">-&gt;</span> ((f <span class="fu">:|:</span> g) a <span class="ot">-&gt;</span> r)</code></pre></div>
+<p>Basically, <code>&gt;|&lt;</code> lets us write a “handler” for a <code>:|:</code> by providing a handler for each side. For example, with more concrete types:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">(&gt;|&lt;) ::</span> (<span class="dt">Mem</span> a <span class="ot">-&gt;</span> r)
+      <span class="ot">-&gt;</span> (<span class="dt">Com</span> a <span class="ot">-&gt;</span> r)
+      <span class="ot">-&gt;</span> ((<span class="dt">Mem</span> <span class="fu">:|:</span> <span class="dt">Com</span>) a <span class="ot">-&gt;</span> r)</code></pre></div>
+<p>We can use this to build an interpreter for <code>Duet</code>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">runPromptM
+<span class="ot">    ::</span> <span class="dt">Monad</span> m
+    <span class="ot">=&gt;</span> (forall x<span class="fu">.</span> (<span class="dt">Mem</span> x <span class="fu">:|:</span> <span class="dt">Com</span> x) <span class="ot">-&gt;</span> m x)
+    <span class="ot">-&gt;</span> <span class="dt">Duet</span> a
+    <span class="ot">-&gt;</span> m a</code></pre></div>
+<p>By using <code>&gt;|&lt;</code> to generate our compound interpreters. This is how we can create interpreters on <code>Duet</code> by “combining”, in a modular way, interpreters for <code>Mem</code> and <code>Com</code>. This is the essence of the “data types a la carte” technique.</p>
 <h2 id="getting-the-results">Getting the Results</h2>
-<p>These are the results.</p></div><footer><ul class="entry-series"><li><div>This entry is a part of a series called <b>&quot;Beginner/Intermediate Haskell Projects&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+beginner-intermediate-haskell-projects.html" class="tag-a-series" title="+Beginner/Intermediate Haskell Projects"> series history</a>.</div></li></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/functional-programming.html" class="tag-a-tag">#functional programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/types.html" class="tag-a-tag">#types</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/series/+beginner-intermediate-haskell-projects.html" class="tag-a-series">+Beginner/Intermediate Haskell Projects</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing “in Code”!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
+<p>We just have to pick concrete monads now for us to interpret into.</p>
+<h3 id="part-a">Part A</h3>
+<p>Our interpreter for Part A is <code>interpMem &gt;|&lt; interpComA</code> – we interpret the <code>Mem</code> primitives the usual way, and interpret the <code>Com</code> primitives the Part A way.</p>
+<p>Let’s check what capabilities our interpreter must have:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t interpMem <span class="fu">&gt;|&lt;</span> interpComA
+interpMem <span class="fu">&gt;|&lt;</span> interpComA
+<span class="ot">    ::</span> ( <span class="dt">MonadWriter</span> (<span class="dt">First</span> <span class="dt">Int</span>) m
+       , <span class="dt">MonadAccum</span> (<span class="dt">Last</span> <span class="dt">Int</span>) m
+       , <span class="dt">MonadFail</span> m
+       , <span class="dt">MonadState</span> s m
+       , <span class="dt">HasProgState</span> s
+       )
+    <span class="ot">=&gt;</span> (<span class="dt">Mem</span> <span class="fu">:|:</span> <span class="dt">Com</span>) a
+    <span class="ot">-&gt;</span> m a</code></pre></div>
+<p>So it looks like we need to be <code>MonadWriter (First Int)</code>, <code>MonadAccum (Last Int)</code>, <code>MonadFail m</code>, and <code>MonadState s m</code>, where <code>HasProgState s</code>.</p>
+<p>Now, we can write such a Monad from scratch, or we can use the <em>transformers</em> library to generate a transformer with all of those instances for us. For the sake of brevity and reducing duplicated code, let’s go that route. We can use:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">MaybeT</span> (<span class="dt">StateT</span> <span class="dt">ProgState</span> (<span class="dt">WriterT</span> (<span class="dt">First</span> <span class="dt">Int</span>) (<span class="dt">A.Accum</span> (<span class="dt">Last</span> <span class="dt">Int</span>))))</code></pre></div>
+<p>And so we can write our final “step” function in that context:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L142-143</span>
+<span class="ot">stepA ::</span> <span class="dt">MaybeT</span> (<span class="dt">StateT</span> <span class="dt">ProgState</span> (<span class="dt">WriterT</span> (<span class="dt">First</span> <span class="dt">Int</span>) (<span class="dt">A.Accum</span> (<span class="dt">Last</span> <span class="dt">Int</span>)))) ()
+stepA <span class="fu">=</span> runPromptM (interpMem <span class="fu">&gt;|&lt;</span> interpComA) stepProg</code></pre></div>
+<p><code>stepA</code> will make a single step of the tape, according to the interpreters <code>interpMem</code> and <code>interpComA</code>.</p>
+<p>Our final answer is then just the result of <em>repeating</em> this over and over again until there’s a failure. We take advantage of the fact that <code>MaybeT</code>’s <code>Alternative</code> instance uses <code>empty</code> for <code>fail</code>, so we can use <code>many :: MaybeT m a -&gt; MaybeT m [a]</code>, which repeats a <code>MaybeT</code> action several times until a failure is encountered. In our case, “failure” is when the tape goes out of bounds.</p>
+<p>But, because of laziness, our computation terminates as soon as a valid <code>CRcv</code> is found and a <code>First Int</code> is logged to the <code>Writer</code>, so we don’t actually need to run the computation until it goes out of bounds.</p>
+<p>Here is the entirety of Part A:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L145-151</span>
+<span class="ot">partA ::</span> <span class="dt">P.PointedList</span> <span class="dt">Op</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span>
+partA ops <span class="fu">=</span> getFirst
+          <span class="fu">.</span> flip A.evalAccum mempty
+          <span class="fu">.</span> execWriterT
+          <span class="fu">.</span> flip runStateT (<span class="dt">PS</span> ops M.empty)
+          <span class="fu">.</span> runMaybeT
+          <span class="fu">$</span> many stepA</code></pre></div>
+<h3 id="part-b">Part B</h3>
+<p>Our interpreter for Part B is a little simpler:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t interpMem <span class="fu">&gt;|&lt;</span> interpComB
+interpMem <span class="fu">&gt;|&lt;</span> interpComB
+<span class="ot">    ::</span> ( <span class="dt">MonadWriter</span> [<span class="dt">Int</span>] m
+       , <span class="dt">MonadFail</span> m
+       , <span class="dt">MonadState</span> <span class="dt">Thread</span> m
+       )
+    <span class="ot">=&gt;</span> (<span class="dt">Mem</span> <span class="fu">:|:</span> <span class="dt">Com</span>) a
+    <span class="ot">-&gt;</span> m a</code></pre></div>
+<p>We can really just use:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">WriterT</span> [<span class="dt">Int</span>] (<span class="dt">MaybeT</span> (<span class="dt">State</span> <span class="dt">Thread</span>))</code></pre></div>
+<p>Writing our concrete <code>stepB</code> is a little more involved, since we have to juggle the state of each thread separately. We can do this using:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">zoom<span class="ot"> _1 ::</span> <span class="dt">MaybeT</span> (<span class="dt">State</span> s) a <span class="ot">-&gt;</span> <span class="dt">MaybeT</span> (<span class="dt">State</span> (s, t)) a
+zoom<span class="ot"> _2 ::</span> <span class="dt">MaybeT</span> (<span class="dt">State</span> t) a <span class="ot">-&gt;</span> <span class="dt">MaybeT</span> (<span class="dt">State</span> (s, t)) a</code></pre></div>
+<p>To “lift” our actions on one thread to be actions on a “tuple” of threads. We have, in the end:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L172-181</span>
+<span class="ot">stepB ::</span> <span class="dt">MaybeT</span> (<span class="dt">State</span> (<span class="dt">Thread</span>, <span class="dt">Thread</span>)) <span class="dt">Int</span>
+stepB <span class="fu">=</span> <span class="kw">do</span>
+    outA <span class="ot">&lt;-</span> execWriterT <span class="fu">$</span>
+      zoom _1 <span class="fu">.</span> many <span class="fu">$</span> runPromptM (interpMem <span class="fu">&gt;|&lt;</span> interpComB) stepProg
+    outB <span class="ot">&lt;-</span> execWriterT <span class="fu">$</span>
+      zoom _2 <span class="fu">.</span> many <span class="fu">$</span> runPromptM (interpMem <span class="fu">&gt;|&lt;</span> interpComB) stepProg
+    _1 <span class="fu">.</span> tBuffer <span class="fu">.=</span> outB
+    _2 <span class="fu">.</span> tBuffer <span class="fu">.=</span> outA
+    guard <span class="fu">.</span> not <span class="fu">$</span> null outA <span class="fu">&amp;&amp;</span> null outB
+    return <span class="fu">$</span> length outB</code></pre></div>
+<p>Our final <code>stepB</code> really doesn’t need a <code>WriterT [Int]</code> – we just use that internally to collect <em>snd</em> outputs. So we use <code>execWriter</code> after “interpreting” our actions (along with <code>many</code>, to repeat our thread steps until they block) to just get the resulting logs.</p>
+<p>We then reset the input buffers appropriately (by putting in the collected outputs of the previous threads).</p>
+<p>If both threads are blocking (they both have to external outputs to pass on), then we’re done (using <code>guard</code>).</p>
+<p>We return the number of items that “Program 1” (the second thread) outputs, because that’s what we need for our answer.</p>
+<p>This is one “single pass” of both of our threads. As you can anticipate, we’ll use <code>many</code> again to run these multiple times until both threads block.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L183-191</span>
+<span class="ot">partB ::</span> <span class="dt">P.PointedList</span> <span class="dt">Op</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>
+partB ops <span class="fu">=</span> sum <span class="fu">.</span> concat
+          <span class="fu">.</span> flip evalState s0
+          <span class="fu">.</span> runMaybeT
+          <span class="fu">$</span> many stepB
+  <span class="kw">where</span>
+    s0 <span class="fu">=</span> ( <span class="dt">T</span> (<span class="dt">PS</span> ops (M.singleton <span class="ch">&#39;p&#39;</span> <span class="dv">0</span>)) []
+         , <span class="dt">T</span> (<span class="dt">PS</span> ops (M.singleton <span class="ch">&#39;p&#39;</span> <span class="dv">1</span>)) []
+         )</code></pre></div>
+<h3 id="examples">Examples</h3>
+<p>In the same source code, I’ve included by own puzzle input provided to me from the advent of code website. We can now get actual answers given some sample puzzle input:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L193-196</span>
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> <span class="kw">do</span>
+    print <span class="fu">$</span> partA (parseProgram testProg)
+    print <span class="fu">$</span> partB (parseProgram testProg)</code></pre></div></div><footer><ul class="entry-series"><li><div>This entry is a part of a series called <b>&quot;Beginner/Intermediate Haskell Projects&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+beginner-intermediate-haskell-projects.html" class="tag-a-series" title="+Beginner/Intermediate Haskell Projects"> series history</a>.</div></li></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/functional-programming.html" class="tag-a-tag">#functional programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/types.html" class="tag-a-tag">#types</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/series/+beginner-intermediate-haskell-projects.html" class="tag-a-series">+Beginner/Intermediate Haskell Projects</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing “in Code”!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/interpreters-a-la-carte.html';
     this.page.identifier = 'interpreters';
 };
