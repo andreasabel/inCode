@@ -21,44 +21,6 @@
 % use microtype if available
 \IfFileExists{microtype.sty}{\usepackage{microtype}}{}
 \usepackage[margin=1in]{geometry}
-\usepackage{color}
-\usepackage{fancyvrb}
-\newcommand{\VerbBar}{|}
-\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
-\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
-% Add ',fontsize=\small' for more characters per line
-\newenvironment{Shaded}{}{}
-\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
-\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{#1}}
-\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
-\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
-\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
-\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{#1}}
-\newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
-\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
-\newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
-\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
-\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{#1}}
-\newcommand{\ImportTok}[1]{#1}
-\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{#1}}}
-\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{#1}}}
-\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
-\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
-\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{#1}}
-\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{#1}}
-\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
-\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
-\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{#1}}
-\newcommand{\BuiltInTok}[1]{#1}
-\newcommand{\ExtensionTok}[1]{#1}
-\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{#1}}
-\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{#1}}
-\newcommand{\RegionMarkerTok}[1]{#1}
-\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
-\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
-\newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
-\newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
-\newcommand{\NormalTok}[1]{#1}
 \ifxetex
   \usepackage[setpagesize=false, % page size defined by xetex
               unicode=false, % unicode breaks when used with xetex
@@ -68,8 +30,8 @@
 \fi
 \hypersetup{breaklinks=true,
             bookmarks=true,
-            pdfauthor={Justin Le},
-            pdftitle={A Non-Unique Monad Instance},
+            pdfauthor={},
+            pdftitle={},
             colorlinks=true,
             citecolor=blue,
             urlcolor=blue,
@@ -83,12 +45,10 @@
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
 
-\title{A Non-Unique Monad Instance}
-\author{Justin Le}
-\date{January 28, 2015}
 
 \begin{document}
-\maketitle
+
+\% A Non-Unique Monad Instance \% Justin Le \% January 28, 2015
 
 \emph{Originally posted on
 \textbf{\href{https://blog.jle.im/entry/a-non-unique-monad-instance.html}{in
@@ -99,20 +59,20 @@ or two :) This post is a bit of a short fun one that describes a quest I had,
 and hopefully some useful extra ideas I found along the way.
 
 Soon after I discovered Haskell, one question has plagued my mind. Day and
-night, I wondered\ldots{}
+night, I wondered...
 
 \begin{quote}
 Are there any Haskell types with more than one unique \texttt{Monad} instance?
 \end{quote}
 
-This was a question that was pretty simple\ldots{}so simple that I was sure many
+This was a question that was pretty simple...so simple that I was sure many
 people had already asked and answered this. But I couldn't really find any
 answers and nobody I asked at the time could really give me one either, so this
 soon embedded itself as a pretty deep mystery to my psyche.
 
 The background?
 
-\section{Functor and Applicative}\label{functor-and-applicative}
+\section{Functor and Applicative}
 
 All \texttt{Functor} instances, if they exist, are \emph{unique} for the type.
 The type uniquely determines the instance. There is only one possible
@@ -122,119 +82,91 @@ instance for \texttt{Maybe}, \texttt{Either}, etc.
 This fact is taken advantage of by GHC to allow you to derive, for some types, a
 \texttt{Functor} instance automatically.
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{set }\FunctionTok{-}\DataTypeTok{XDeriveFunctor}
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{data} \DataTypeTok{Foo}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{Bar}\NormalTok{ [a] (}\DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Foo}\NormalTok{ a)) }\FunctionTok{|} \DataTypeTok{Baz}\NormalTok{ (}\DataTypeTok{Either} \DataTypeTok{String}\NormalTok{ a) (}\DataTypeTok{Foo}\NormalTok{ a)}
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ x }\FunctionTok{=} \DataTypeTok{Bar}\NormalTok{ [}\DecValTok{1}\NormalTok{, }\DecValTok{3}\NormalTok{] (}\DataTypeTok{Just}\NormalTok{ (}\DataTypeTok{Baz}\NormalTok{ (}\DataTypeTok{Right} \DecValTok{4}\NormalTok{) (}\DataTypeTok{Bar}\NormalTok{ [}\DecValTok{10}\NormalTok{] }\DataTypeTok{Nothing}\NormalTok{)))}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ fmap (}\FunctionTok{*}\DecValTok{2}\NormalTok{) x}
-\DataTypeTok{Bar}\NormalTok{ [}\DecValTok{2}\NormalTok{, }\DecValTok{6}\NormalTok{] (}\DataTypeTok{Just}\NormalTok{ (}\DataTypeTok{Baz}\NormalTok{ (}\DataTypeTok{Right} \DecValTok{8}\NormalTok{) (}\DataTypeTok{Bar}\NormalTok{ [}\DecValTok{20}\NormalTok{] }\DataTypeTok{Nothing}\NormalTok{)))}
-\end{Highlighting}
-\end{Shaded}
+\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
+:set -XDeriveFunctor ghci\textgreater{} data Foo a = Bar {[}a{]} (Maybe (Foo a))
+\textbar{} Baz (Either String a) (Foo a) ghci\textgreater{} let x = Bar {[}1,
+3{]} (Just (Baz (Right 4) (Bar {[}10{]} Nothing))) ghci\textgreater{} fmap (*2)
+x Bar {[}2, 6{]} (Just (Baz (Right 8) (Bar {[}20{]} Nothing)))
+\textasciitilde{}\textasciitilde{}\textasciitilde{}
 
 There is no other possible \texttt{Functor} instance for that data type. Go
 ahead, try :D
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Foo}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{Bar}\NormalTok{ [a] (}\DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Foo}\NormalTok{ a)) }\FunctionTok{|} \DataTypeTok{Baz}\NormalTok{ (}\DataTypeTok{Either} \DataTypeTok{String}\NormalTok{ a) (}\DataTypeTok{Foo}\NormalTok{ a)}
+\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell data Foo a = Bar
+{[}a{]} (Maybe (Foo a)) \textbar{} Baz (Either String a) (Foo a)
 
-\KeywordTok{instance} \DataTypeTok{Functor} \DataTypeTok{Foo} \KeywordTok{where}
-\NormalTok{    fmap f (}\DataTypeTok{Bar}\NormalTok{ xs y) }\FunctionTok{=} \DataTypeTok{Bar}\NormalTok{ (fmap f xs) (fmap f y)}
-\NormalTok{    fmap f (}\DataTypeTok{Baz}\NormalTok{ x fy) }\FunctionTok{=} \DataTypeTok{Baz}\NormalTok{ (fmap f x) (fmap f fy)}
-\end{Highlighting}
-\end{Shaded}
+instance Functor Foo where fmap f (Bar xs y) = Bar (fmap f xs) (fmap f y) fmap f
+(Baz x fy) = Baz (fmap f x) (fmap f fy)
+\textasciitilde{}\textasciitilde{}\textasciitilde{}
 
 However, this is not the case for \texttt{Applicative}. Everyone knows of course
 about the normal (cartesian product) Applicative instance and the zippy
 Applicative instance for list:
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{instance} \DataTypeTok{Applicative}\NormalTok{ [] }\KeywordTok{where}
-\NormalTok{    pure x    }\FunctionTok{=}\NormalTok{ [x]}
-\NormalTok{    fs }\FunctionTok{<*>}\NormalTok{ xs }\FunctionTok{=}\NormalTok{ [ f x }\FunctionTok{|}\NormalTok{ f }\OtherTok{<-}\NormalTok{ fs, x }\OtherTok{<-}\NormalTok{ xs ]}
+\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell instance Applicative
+{[}{]} where pure x = {[}x{]} fs \textless{}*\textgreater{} xs = {[} f x
+\textbar{} f \textless{}- fs, x \textless{}- xs {]}
 
-\KeywordTok{instance} \DataTypeTok{Applicative}\NormalTok{ [] }\KeywordTok{where}
-\NormalTok{    pure      }\FunctionTok{=}\NormalTok{ repeat}
-\NormalTok{    fs }\FunctionTok{<*>}\NormalTok{ xs }\FunctionTok{=}\NormalTok{ zipWith (}\FunctionTok{$}\NormalTok{) fs xs}
-\end{Highlighting}
-\end{Shaded}
+instance Applicative {[}{]} where pure = repeat fs \textless{}*\textgreater{} xs
+= zipWith (\$) fs xs \textasciitilde{}\textasciitilde{}\textasciitilde{}
 
 What is also fairly established is that every \emph{noncommutative}
-\texttt{Applicative} instance also has a ``flipped'' version:
+\texttt{Applicative} instance also has a "flipped" version:
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- a flipped IO Applicative}
-\KeywordTok{data} \DataTypeTok{FlipIO}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{FlipIO}\NormalTok{ \{}\OtherTok{ runFlipIO ::} \DataTypeTok{IO}\NormalTok{ a \}}
+\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- a flipped IO
+Applicative data FlipIO a = FlipIO \{ runFlipIO :: IO a \}
 
-\KeywordTok{instance} \DataTypeTok{Applicative} \DataTypeTok{FlipIO} \KeywordTok{where}
-\NormalTok{    pure x    }\FunctionTok{=} \DataTypeTok{FlipIO}\NormalTok{ (pure x)}
-\NormalTok{    fi }\FunctionTok{<*>}\NormalTok{ xi }\FunctionTok{=} \DataTypeTok{FlipIO} \FunctionTok{$} \KeywordTok{do}
-\NormalTok{                  x }\OtherTok{<-}\NormalTok{ runFlipIO xi}
-\NormalTok{                  f }\OtherTok{<-}\NormalTok{ runFlipIO fi     }\CommentTok{-- note the backwards effects}
-\NormalTok{                  return (f x)}
-\end{Highlighting}
-\end{Shaded}
+instance Applicative FlipIO where pure x = FlipIO (pure x) fi
+\textless{}*\textgreater{} xi = FlipIO \$ do x \textless{}- runFlipIO xi f
+\textless{}- runFlipIO fi -\/- note the backwards effects return (f x)
+\textasciitilde{}\textasciitilde{}\textasciitilde{}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{State}\NormalTok{ s a }\FunctionTok{=} \DataTypeTok{State}\NormalTok{ \{}\OtherTok{ runState ::}\NormalTok{ s }\OtherTok{->}\NormalTok{ (a, s) \}}
+\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell data State s a =
+State \{ runState :: s -\textgreater{} (a, s) \}
 
-\CommentTok{-- the normal instance}
-\KeywordTok{instance} \DataTypeTok{Applicative}\NormalTok{ (}\DataTypeTok{State}\NormalTok{ s) }\KeywordTok{where}
-\NormalTok{    pure x    }\FunctionTok{=} \DataTypeTok{State} \FunctionTok{$}\NormalTok{ \textbackslash{}s0 }\OtherTok{->}\NormalTok{ (x, s0)}
-\NormalTok{    fs }\FunctionTok{<*>}\NormalTok{ xs }\FunctionTok{=} \DataTypeTok{State} \FunctionTok{$}\NormalTok{ \textbackslash{}s0 }\OtherTok{->} \KeywordTok{let}\NormalTok{ (f, s1) }\FunctionTok{=}\NormalTok{ runState fs s0}
-\NormalTok{                                   (x, s2) }\FunctionTok{=}\NormalTok{ runState xs s1}
-                               \KeywordTok{in}\NormalTok{  (f x, s2)}
+-\/- the normal instance instance Applicative (State s) where pure x = State \$
+\textbackslash{}s0 -\textgreater{} (x, s0) fs \textless{}*\textgreater{} xs =
+State \$ \textbackslash{}s0 -\textgreater{} let (f, s1) = runState fs s0 (x, s2)
+= runState xs s1 in (f x, s2)
 
-\CommentTok{-- the flipped instance}
-\KeywordTok{instance} \DataTypeTok{Applicative}\NormalTok{ (}\DataTypeTok{State}\NormalTok{ s) }\KeywordTok{where}
-\NormalTok{    pure x    }\FunctionTok{=} \DataTypeTok{State} \FunctionTok{$}\NormalTok{ \textbackslash{}s0 }\OtherTok{->}\NormalTok{ (x, s0)}
-\NormalTok{    fs }\FunctionTok{<*>}\NormalTok{ xs }\FunctionTok{=} \DataTypeTok{State} \FunctionTok{$}\NormalTok{ \textbackslash{}s0 }\OtherTok{->} \KeywordTok{let}\NormalTok{ (x, s1) }\FunctionTok{=}\NormalTok{ runState xs s0}
-\NormalTok{                                   (f, s2) }\FunctionTok{=}\NormalTok{ runState fs s1}
-                               \KeywordTok{in}\NormalTok{  (f x, s2)}
-\end{Highlighting}
-\end{Shaded}
+-\/- the flipped instance instance Applicative (State s) where pure x = State \$
+\textbackslash{}s0 -\textgreater{} (x, s0) fs \textless{}*\textgreater{} xs =
+State \$ \textbackslash{}s0 -\textgreater{} let (x, s1) = runState xs s0 (f, s2)
+= runState fs s1 in (f x, s2)
+\textasciitilde{}\textasciitilde{}\textasciitilde{}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ liftA2 (,) getLine getLine}
-\FunctionTok{>}\NormalTok{ hello         }\CommentTok{-- asking for the first field}
-\FunctionTok{>}\NormalTok{ world         }\CommentTok{-- asking for the second field}
-\NormalTok{(}\StringTok{"hello"}\NormalTok{, }\StringTok{"world"}\NormalTok{)}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ runFlipIO }\FunctionTok{$}\NormalTok{ liftA2 (,) (}\DataTypeTok{FlipIO}\NormalTok{ getLine) (}\DataTypeTok{FlipIO}\NormalTok{ getLine)}
-\FunctionTok{>}\NormalTok{ hello         }\CommentTok{-- asking for the second field}
-\FunctionTok{>}\NormalTok{ world         }\CommentTok{-- asking for the first field}
-\NormalTok{(}\StringTok{"world"}\NormalTok{, }\StringTok{"hello"}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
+\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
+liftA2 (,) getLine getLine
+
+\begin{quote}
+hello -\/- asking for the first field world -\/- asking for the second field
+("hello", "world") ghci\textgreater{} runFlipIO \$ liftA2 (,) (FlipIO getLine)
+(FlipIO getLine) hello -\/- asking for the second field world -\/- asking for
+the first field ("world", "hello")
+\textasciitilde{}\textasciitilde{}\textasciitilde{}
+\end{quote}
 
 Every non-commutative \texttt{Applicative} admits an alternative instance where
-``flipping'' the order of the ``effects'' is also a valid \texttt{Applicative}
+"flipping" the order of the "effects" is also a valid \texttt{Applicative}
 instance. So, not \texttt{Maybe} or \texttt{Either}, but \texttt{State},
 \texttt{{[}{]}}, and \texttt{IO}.
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- free "flipped" Applicative instance}
-\KeywordTok{data} \DataTypeTok{Flipped}\NormalTok{ f a }\FunctionTok{=} \DataTypeTok{Flipped}\NormalTok{ \{}\OtherTok{ runFlipped ::}\NormalTok{ f a \}}
+\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell -\/- free "flipped"
+Applicative instance data Flipped f a = Flipped \{ runFlipped :: f a \}
 
-\CommentTok{-- instance where (<*>) is the same, but the order of effects is switched}
-\KeywordTok{instance} \DataTypeTok{Applicative}\NormalTok{ f }\OtherTok{=>} \DataTypeTok{Applicative}\NormalTok{ (}\DataTypeTok{Flipped}\NormalTok{ f) }\KeywordTok{where}
-\NormalTok{    pure }\FunctionTok{=} \DataTypeTok{Flipped} \FunctionTok{.}\NormalTok{ pure}
-    \DataTypeTok{Flipped}\NormalTok{ f }\FunctionTok{<*>} \DataTypeTok{Flipped}\NormalTok{ x }\FunctionTok{=} \DataTypeTok{Flipped} \FunctionTok{$}\NormalTok{ liftA2 (flip (}\FunctionTok{$}\NormalTok{)) x f}
-\end{Highlighting}
-\end{Shaded}
+-\/- instance where (\textless{}\emph{\textgreater{}) is the same, but the order
+of effects is switched instance Applicative f =\textgreater{} Applicative
+(Flipped f) where pure = Flipped . pure Flipped f \textless{}}\textgreater{}
+Flipped x = Flipped \$ liftA2 (flip (\$)) x f
+\textasciitilde{}\textasciitilde{}\textasciitilde{}
 
 Cool. Types that have \texttt{Functor} instances only have one. Types that have
 \texttt{Applicative} instances very often have more than one.
 
-So, the obvious next question is\ldots{}what about \texttt{Monad}s? Is a
+So, the obvious next question is...what about \texttt{Monad}s? Is a
 \texttt{Monad} instance uniquely determined by its type?
 
-\section{Monad}\label{monad}
+\section{Monad}
 
 The answer wasn't that simple, for me. Yes, \emph{most} \texttt{Applicative}s in
 the wild are non-unique, and there was a generating rule. But not so for
@@ -245,50 +177,35 @@ are.
 
 I vaguely remember from my past two data types that are very similar yet have
 very different \texttt{Monad} and \texttt{Applicative} instances: (finite)
-lists, (infinite)
-\href{http://blog.jle.im/entry/intro-to-machines-arrows-part-1-stream-and}{streams}.
-From the outset, the two have almost identical structure. A \texttt{Stream} is
-just a list with no \texttt{{[}{]}}/nil:
+lists, (infinite) {[}streams{]}. From the outset, the two have almost identical
+structure. A \texttt{Stream} is just a list with no \texttt{{[}{]}}/nil:
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Stream}\NormalTok{ a }\FunctionTok{=}\NormalTok{ a }\FunctionTok{:~} \DataTypeTok{Stream}\NormalTok{ a}
-\end{Highlighting}
-\end{Shaded}
+\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell data Stream a = a
+:\textasciitilde{} Stream a \textasciitilde{}\textasciitilde{}\textasciitilde{}
 
 The \texttt{Functor} instance is identical:
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{instance} \DataTypeTok{Functor} \DataTypeTok{Stream} \KeywordTok{where}
-\NormalTok{    fmap f (x }\FunctionTok{:~}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ f x }\FunctionTok{:~}\NormalTok{ fmap f xs}
-\end{Highlighting}
-\end{Shaded}
+\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell instance Functor
+Stream where fmap f (x :\textasciitilde{} xs) = f x :\textasciitilde{} fmap f xs
+\textasciitilde{}\textasciitilde{}\textasciitilde{}
 
 And the (only??) \texttt{Applicative} instance is the \texttt{ZipList} instance
 for lists:
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{instance} \DataTypeTok{Applicative} \DataTypeTok{Stream} \KeywordTok{where}
-\NormalTok{    pure x }\FunctionTok{=}\NormalTok{ x }\FunctionTok{:~}\NormalTok{ pure x}
-\NormalTok{    (f }\FunctionTok{:~}\NormalTok{ fs) }\FunctionTok{<*>}\NormalTok{ (x }\FunctionTok{:~}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ f x }\FunctionTok{:~}\NormalTok{ (fs }\FunctionTok{<*>}\NormalTok{ xs)}
-\end{Highlighting}
-\end{Shaded}
+\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell instance Applicative
+Stream where pure x = x :\textasciitilde{} pure x (f :\textasciitilde{} fs)
+\textless{}\emph{\textgreater{} (x :\textasciitilde{} xs) = f x
+:\textasciitilde{} (fs \textless{}}\textgreater{} xs)
+\textasciitilde{}\textasciitilde{}\textasciitilde{}
 
 The \texttt{Monad} instance is however very different from that of lists:
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{instance} \DataTypeTok{Monad} \DataTypeTok{Stream} \KeywordTok{where}
-\NormalTok{    return x }\FunctionTok{=}\NormalTok{ x }\FunctionTok{:~}\NormalTok{ return x}
-\NormalTok{    xs }\FunctionTok{>>=}\NormalTok{ f }\FunctionTok{=}\NormalTok{ join' (fmap f xs)}
-      \KeywordTok{where}
-\OtherTok{        join' ::} \DataTypeTok{Stream}\NormalTok{ (}\DataTypeTok{Stream}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Stream}\NormalTok{ a}
-\NormalTok{        join' ((x }\FunctionTok{:~}\NormalTok{ _) }\FunctionTok{:~}\NormalTok{ yss) }\FunctionTok{=}\NormalTok{ x }\FunctionTok{:~}\NormalTok{ join' (fmap tail' yss)}
-\NormalTok{        tail' (_ }\FunctionTok{:~}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ xs}
-\end{Highlighting}
-\end{Shaded}
+\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell instance Monad Stream
+where return x = x :\textasciitilde{} return x xs \textgreater{}\textgreater{}=
+f = join' (fmap f xs) where join' :: Stream (Stream a) -\textgreater{} Stream a
+join' ((x :\textasciitilde{} \emph{) :\textasciitilde{} yss) = x
+:\textasciitilde{} join' (fmap tail' yss) tail' (} :\textasciitilde{} xs) = xs
+\textasciitilde{}\textasciitilde{}\textasciitilde{}
 
 The \texttt{Monad} instance itself is actually interesting enough to write
 about. It all revolves around \texttt{join}, where \texttt{join} takes a stream
@@ -299,16 +216,14 @@ element of the third stream, etc.
 This is actually a special case of the \texttt{Monad} instance for all
 fixed-sized ordered containers. A length 5 vector, for example, will have the
 same \texttt{Applicative} and \texttt{Monad} instance as described here:
-\texttt{(\textless{}*\textgreater{})} with ``zipping'', and \texttt{join} with
+\texttt{(\textless{}*\textgreater{})} with "zipping", and \texttt{join} with
 grabbing the diagonal of the 5-vector of 5-vectors.
 
 This was a promising lead, but, it doesn't take \emph{too} much thought to see
 that neither lists nor \texttt{Stream} are appropriate for \emph{both}
 instances.
 
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
-
-\textbf{Aside}
+\textless{}div class="note"\textgreater{} \textbf{Aside}
 
 In case you were wondering, here is an elaboration :D
 
@@ -324,94 +239,79 @@ In case you were wondering, here is an elaboration :D
   analogous \texttt{Monad} instance, where \texttt{join} is the straight-up
   concatenation. \texttt{m\ \textgreater{}\textgreater{}=\ return\ ==\ m} is
   clearly violated. If \texttt{m} is an infinite list, \texttt{fmap\ return}
-  gives you an infinite list of infinite lists, ``joining''/concatenating them
+  gives you an infinite list of infinite lists, "joining"/concatenating them
   back will just give you an infinite list of the first item in \texttt{m}.
 
   To put succincently, for \texttt{Stream}, \texttt{concat\ ==\ head}.
 \item
   Lists can have the \texttt{Applicative} instance fine, but not the
-  \texttt{Monad} instance. Here we assume that zipping and ``getting the
-  diagonal'' go only as ``far as possible'', and stop when one of the lists is
-  too short.
+  \texttt{Monad} instance. Here we assume that zipping and "getting the
+  diagonal" go only as "far as possible", and stop when one of the lists is too
+  short.
 
   This one is a little trickier, but the weakness is when you have lists of
   lists of lists of different lengths.
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ counterexample }\FunctionTok{=}\NormalTok{ [[[}\DecValTok{1}\NormalTok{]], [[], [}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]]]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ join counterexample}
-\NormalTok{[[}\DecValTok{1}\NormalTok{], [}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ join}\FunctionTok{.}\NormalTok{ join }\FunctionTok{$}\NormalTok{ counterexample}
-\NormalTok{[}\DecValTok{1}\NormalTok{,}\DecValTok{3}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ fmap join counterexample}
-\NormalTok{[[}\DecValTok{1}\NormalTok{], []]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ join }\FunctionTok{.}\NormalTok{ fmap join }\FunctionTok{$}\NormalTok{ counterexample}
-\NormalTok{[}\DecValTok{1}\NormalTok{]}
-\end{Highlighting}
-\end{Shaded}
+  \textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
+  let counterexample = {[}{[}{[}1{]}{]}, {[}{[}{]}, {[}2,3{]}{]}{]}
+  ghci\textgreater{} join counterexample {[}{[}1{]}, {[}2,3{]}{]}
+  ghci\textgreater{} join. join \$ counterexample {[}1,3{]} ghci\textgreater{}
+  fmap join counterexample {[}{[}1{]}, {[}{]}{]} ghci\textgreater{} join . fmap
+  join \$ counterexample {[}1{]}
+  \textasciitilde{}\textasciitilde{}\textasciitilde{}
 
   For a monad, joining the inner layer and then joining it all should be the
   same as joining it all and joining it all. The order of the joining shouldn't
   count. We can see this in the more haskelly monad laws by noting:
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ id }\FunctionTok{<=<}\NormalTok{ (id }\FunctionTok{<=<}\NormalTok{ id) }\FunctionTok{$}\NormalTok{ counterexample}
-\NormalTok{[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ (id }\FunctionTok{<=<}\NormalTok{ id) }\FunctionTok{<=<}\NormalTok{ id }\FunctionTok{$}\NormalTok{ counterexample}
-\NormalTok{[}\DecValTok{1}\NormalTok{]}
-\end{Highlighting}
-\end{Shaded}
+  \textasciitilde{}\textasciitilde{}\textasciitilde{}haskell ghci\textgreater{}
+  id \textless{}=\textless{} (id \textless{}=\textless{} id) \$ counterexample
+  {[}1,2{]} ghci\textgreater{} (id \textless{}=\textless{} id)
+  \textless{}=\textless{} id \$ counterexample {[}1{]}
+  \textasciitilde{}\textasciitilde{}\textasciitilde{}
 
   So, dead end here.
 \end{itemize}
 
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+\textless{}/div\textgreater{}
 
 So I didn't really have any leads at that point; I tried a couple of other paths
 but nothing really panned out. So I shelved it for a while.
 
-\section{Revelation}\label{revelation}
+\section{Revelation}
 
-Several centuries later\footnote{More accurately, ``about a year''}, the final
-revelation came as many revelations do in Haskell --- from a hint by Edward
-Kmett. He pointed out something interesting regarding a \texttt{Monad} instance
-that I had yet to notice:
+Several centuries later{[}\^{}timeframe{]}, the final revelation came as many
+revelations do in Haskell -\/-\/- from a hint by Edward Kmett. He pointed out
+something interesting regarding a \texttt{Monad} instance that I had yet to
+notice:
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{instance} \DataTypeTok{Monoid}\NormalTok{ w }\OtherTok{=>} \DataTypeTok{Monad}\NormalTok{ ((,) w) }\KeywordTok{where}
-\end{Highlighting}
-\end{Shaded}
+\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell instance Monoid w
+=\textgreater{} Monad ((,) w) where
+\textasciitilde{}\textasciitilde{}\textasciitilde{}
 
-This is the classic ``Writer'' monad instance, which is literally about as old
-as monads in functional programming is.
+This is the classic "Writer" monad instance, which is literally about as old as
+monads in functional programming is.
 
 The key is that the \texttt{Monad} instance of \texttt{(w,)} depends on the
-\texttt{Monoid} instance of \texttt{w}. This is the ``log'', so to speak. You
-need a \texttt{Monoid} instance in order to make the \texttt{Monad}
-instance\ldots{}and the behavior of the \texttt{Monad} instance is directly
-determined by the behavior of the \texttt{Monoid} instance of \texttt{w}.
+\texttt{Monoid} instance of \texttt{w}. This is the "log", so to speak. You need
+a \texttt{Monoid} instance in order to make the \texttt{Monad} instance...and
+the behavior of the \texttt{Monad} instance is directly determined by the
+behavior of the \texttt{Monoid} instance of \texttt{w}.
 
-And\ldots{}\texttt{Monoid} instances in Haskell are rarely ever unique! A
-different \texttt{Monoid} instance would create a very different \texttt{Monad}
-instance for the same type!
+And...\texttt{Monoid} instances in Haskell are rarely ever unique! A different
+\texttt{Monoid} instance would create a very different \texttt{Monad} instance
+for the same type!
 
 So, by factoring out the dependency on an external \texttt{Monoid} instance, you
-get\ldots{}
+get...
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Two}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{One}\NormalTok{ a }\FunctionTok{|} \DataTypeTok{Two}\NormalTok{ a}
+\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell data Two a = One a
+\textbar{} Two a
 
-\KeywordTok{instance} \DataTypeTok{Functor} \DataTypeTok{Two} \KeywordTok{where}
-\NormalTok{    fmap f (}\DataTypeTok{One}\NormalTok{ a) }\FunctionTok{=} \DataTypeTok{One}\NormalTok{ (f a)}
-\NormalTok{    fmap f (}\DataTypeTok{Two}\NormalTok{ a) }\FunctionTok{=} \DataTypeTok{Two}\NormalTok{ (f a)}
-\end{Highlighting}
-\end{Shaded}
+instance Functor Two where fmap f (One a) = One (f a) fmap f (Two a) = Two (f a)
+\textasciitilde{}\textasciitilde{}\textasciitilde{}
 
-and\ldots{}voila! There it is!
+and...voila! There it is!
 
 This type is basically equivalent to \texttt{(Bool,\ a)}. And \texttt{Bool} has
 multiple \texttt{Monoid}s on it. Instead of requiring an outside \texttt{Monoid}
@@ -423,23 +323,16 @@ Our instances are basically the \texttt{Writer} instance for
 
 The first instance:
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{instance} \DataTypeTok{Applicative} \DataTypeTok{Two} \KeywordTok{where}
-\NormalTok{    pure }\FunctionTok{=} \DataTypeTok{One}
-    \DataTypeTok{One}\NormalTok{ f }\FunctionTok{<*>} \DataTypeTok{One}\NormalTok{ x }\FunctionTok{=} \DataTypeTok{One}\NormalTok{ (f x)}
-    \DataTypeTok{One}\NormalTok{ f }\FunctionTok{<*>} \DataTypeTok{Two}\NormalTok{ x }\FunctionTok{=} \DataTypeTok{Two}\NormalTok{ (f x)}
-    \DataTypeTok{Two}\NormalTok{ f }\FunctionTok{<*>} \DataTypeTok{One}\NormalTok{ x }\FunctionTok{=} \DataTypeTok{Two}\NormalTok{ (f x)}
-    \DataTypeTok{Two}\NormalTok{ f }\FunctionTok{<*>} \DataTypeTok{Two}\NormalTok{ x }\FunctionTok{=} \DataTypeTok{Two}\NormalTok{ (f x)}
+\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell instance Applicative
+Two where pure = One One f \textless{}\emph{\textgreater{} One x = One (f x) One
+f \textless{}}\textgreater{} Two x = Two (f x) Two f
+\textless{}\emph{\textgreater{} One x = Two (f x) Two f
+\textless{}}\textgreater{} Two x = Two (f x)
 
-\KeywordTok{instance} \DataTypeTok{Monad} \DataTypeTok{Two} \KeywordTok{where}
-\NormalTok{    return }\FunctionTok{=} \DataTypeTok{One}
-    \DataTypeTok{One}\NormalTok{ x }\FunctionTok{>>=}\NormalTok{ f }\FunctionTok{=}\NormalTok{ f x}
-    \DataTypeTok{Two}\NormalTok{ x }\FunctionTok{>>=}\NormalTok{ f }\FunctionTok{=} \KeywordTok{case}\NormalTok{ f x }\KeywordTok{of}
-                    \DataTypeTok{One}\NormalTok{ y }\OtherTok{->} \DataTypeTok{Two}\NormalTok{ y}
-                    \DataTypeTok{Two}\NormalTok{ y }\OtherTok{->} \DataTypeTok{Two}\NormalTok{ y}
-\end{Highlighting}
-\end{Shaded}
+instance Monad Two where return = One One x \textgreater{}\textgreater{}= f = f
+x Two x \textgreater{}\textgreater{}= f = case f x of One y -\textgreater{} Two
+y Two y -\textgreater{} Two y
+\textasciitilde{}\textasciitilde{}\textasciitilde{}
 
 Which represents the monoids formed by \texttt{(\&\&)} with \texttt{True} or by
 \texttt{(\textbar{}\textbar{})} with \texttt{False} (depending on which one you
@@ -448,33 +341,24 @@ instances are isomorphic)
 
 The second:
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{instance} \DataTypeTok{Applicative} \DataTypeTok{Two} \KeywordTok{where}
-\NormalTok{    pure }\FunctionTok{=} \DataTypeTok{One}
-    \DataTypeTok{One}\NormalTok{ f }\FunctionTok{<*>} \DataTypeTok{One}\NormalTok{ x }\FunctionTok{=} \DataTypeTok{One}\NormalTok{ (f x)}
-    \DataTypeTok{One}\NormalTok{ f }\FunctionTok{<*>} \DataTypeTok{Two}\NormalTok{ x }\FunctionTok{=} \DataTypeTok{Two}\NormalTok{ (f x)}
-    \DataTypeTok{Two}\NormalTok{ f }\FunctionTok{<*>} \DataTypeTok{One}\NormalTok{ x }\FunctionTok{=} \DataTypeTok{Two}\NormalTok{ (f x)}
-    \DataTypeTok{Two}\NormalTok{ f }\FunctionTok{<*>} \DataTypeTok{Two}\NormalTok{ x }\FunctionTok{=} \DataTypeTok{One}\NormalTok{ (f x)}
+\textasciitilde{}\textasciitilde{}\textasciitilde{}haskell instance Applicative
+Two where pure = One One f \textless{}\emph{\textgreater{} One x = One (f x) One
+f \textless{}}\textgreater{} Two x = Two (f x) Two f
+\textless{}\emph{\textgreater{} One x = Two (f x) Two f
+\textless{}}\textgreater{} Two x = One (f x)
 
-\KeywordTok{instance} \DataTypeTok{Monad} \DataTypeTok{Two} \KeywordTok{where}
-\NormalTok{    return }\FunctionTok{=} \DataTypeTok{One}
-    \DataTypeTok{One}\NormalTok{ x }\FunctionTok{>>=}\NormalTok{ f }\FunctionTok{=}\NormalTok{ f x}
-    \DataTypeTok{Two}\NormalTok{ x }\FunctionTok{>>=}\NormalTok{ f }\FunctionTok{=} \KeywordTok{case}\NormalTok{ f x }\KeywordTok{of}
-                    \DataTypeTok{One}\NormalTok{ y }\OtherTok{->} \DataTypeTok{Two}\NormalTok{ y}
-                    \DataTypeTok{Two}\NormalTok{ y }\OtherTok{->} \DataTypeTok{One}\NormalTok{ y}
-\end{Highlighting}
-\end{Shaded}
+instance Monad Two where return = One One x \textgreater{}\textgreater{}= f = f
+x Two x \textgreater{}\textgreater{}= f = case f x of One y -\textgreater{} Two
+y Two y -\textgreater{} One y
+\textasciitilde{}\textasciitilde{}\textasciitilde{}
 
-Which represents the monoid formed by \texttt{(/=)} (or ``XOR'') with
+Which represents the monoid formed by \texttt{(/=)} (or "XOR") with
 \texttt{False}.
 
 And there you go. One type, two possible unique, non-isomorphic \texttt{Monad}
 instances.
 
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
-
-\textbf{Aside}
+\textless{}div class="note"\textgreater{} \textbf{Aside}
 
 One interesting thing to note is that the Monad instance for
 \texttt{(-\textgreater{})\ a} requires no monoid constraint, and the Monad
@@ -492,7 +376,6 @@ Is there some duality at play here?
 The answer is, apparently, yes! But according to Edward Kmett, it is one that is
 pretty hard to arrive at and a big headache and overall not worth the time to
 dig into. So you're going to have to take my second-hand word for it.
-
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+\textless{}/div\textgreater{}
 
 \end{document}
