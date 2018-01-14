@@ -831,6 +831,14 @@ main = do
     print $ partB (parseProgram testProg)
 ```
 
+And, as a stack script, we can run this and see my own puzzle’s answers:
+
+``` {.bash}
+$ ./Duet.hs
+Just 7071
+8001
+```
+
 [^1]: Not to be confused with the
     [prompt](http://hackage.haskell.org/package/prompt) library, which is more
     or less unrelated! The library is actually my own that I wrote a few years
