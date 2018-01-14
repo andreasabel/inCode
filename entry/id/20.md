@@ -41,7 +41,7 @@ Recap
 We left off in our last post having looked at `Auto`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-12
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-L12
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 newtype Auto a b = ACons { runAuto :: a -> (b, Auto a b) }
 ```
@@ -51,7 +51,7 @@ opaque state (a function of the input and of the previous state), and an output
 "head" of type `b` (also a function of the input and of the previous state).
 
 And we looked at [a simple
-auto](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L46-54)
+auto](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L46-L54)
 which acted like a constantly incrementing stream, but where you could reset the
 counter by passing in a `Just`.
 
@@ -60,7 +60,7 @@ functions "with state". As in, `Auto a b` was like a function `a -> b`, but
 which had an internal state that updated every time it was called.
 
 We saw this in an auto that [returns the
-sum](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L66-73)
+sum](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L66-L73)
 of everything you have given it.
 
 Autos are "function-like things"...they map or "morph" things of type `a` to
@@ -198,7 +198,7 @@ Autos!
 Enough talk, let's code! We'll call our composition operator `(~.~)`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L67-70
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L67-L70
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 (~.~) :: Auto b c -> Auto a b -> Auto a c
 g ~.~ f = ACons $ \x -> let (y, f') = runAuto f x
@@ -213,7 +213,7 @@ Let's write a useful helper function so that we have more things to test this
 out on:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L74-75
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L74-L75
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 toAuto :: (a -> b) -> Auto a b
 toAuto f = ACons $ \x -> (f x, toAuto f)
@@ -255,7 +255,7 @@ And it looks like our Autos really can meaningfully compose!
 Well, wait. We need one last thing: the identity Auto:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L78-79
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L78-L79
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 idA :: Auto a a
 idA = ACons $ \x -> (x, idA)
@@ -320,7 +320,7 @@ instance Category (->) where
 And then our `Auto` Category instance:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L13-18
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L13-L18
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 instance Category Auto where
     id    = ACons $ \x -> (x, id)
@@ -334,7 +334,7 @@ And now... we can work with both `(->)` and `Auto` as if they were the "same
 thing" :)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L92-93
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L92-L93
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 doTwice :: Category r => r a a -> r a a
 doTwice f = f . f
@@ -410,7 +410,7 @@ output a 1, it will now output a `"1"`. It turns an `Auto Int Int` into an
 `Auto Int String`!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L20-23
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L20-L23
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 instance Functor (Auto r) where
     fmap f a = ACons $ \x ->
@@ -466,7 +466,7 @@ a producer of `b`.
 We can pretty much use this to write our Applicative instance for `Auto r`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L25-30
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L25-L30
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 instance Applicative (Auto r) where
     pure y    = ACons $ \_ -> (y, pure y)
@@ -557,7 +557,7 @@ It basically has each Auto operate on the tuple "in parallel".
 Writing the instance is straightforward enough:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L32-47
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L32-L47
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 instance Arrow Auto where
     arr f     = ACons $ \x -> (f x, arr f)
@@ -661,7 +661,7 @@ passes any `Right` input along unchanged; the `Auto` isn't stepped or anything.
 The rest of the methods can be implemented in terms of `left` and `arr`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L49-56
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L49-L56
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 instance ArrowChoice Auto where
     left a = ACons $ \x ->
@@ -737,7 +737,7 @@ both counters.
 We could write this "from scratch", using explicit recursion:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L102-109
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L102-L109
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 dualCounterR :: Auto (Either Int Int) (Int, Int)
 dualCounterR = dualCounterWith (0, 0)
@@ -755,7 +755,7 @@ design and is best avoided whenever possible. So many potential places for bugs!
 Let's try writing the same thing using Auto composition:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L112-116
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L112-L116
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 dualCounterC :: Auto (Either Int Int) (Int, Int)
 dualCounterC = (summer *** summer) . arr wrap
@@ -767,7 +767,7 @@ dualCounterC = (summer *** summer) . arr wrap
 That's a bit more succinct, but I think the proc notation is much nicer!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L119-127
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L119-L127
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 dualCounterP :: Auto (Either Int Int) (Int, Int)
 dualCounterP = proc inp -> do
@@ -804,7 +804,7 @@ composition.
 But the proc notation? Piece of cake!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L148-160
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L148-L160
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 dualCounterSkipP :: Auto (Either Int Int) (Int, Int)
 dualCounterSkipP = proc inp -> do
@@ -840,7 +840,7 @@ explicit recursion?
 We'd have carried the "entire" state in the parameter:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L136-145
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L136-L145
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 dualCounterSkipR :: Auto (Either Int Int) (Int, Int)
 dualCounterSkipR = counterFrom ((0, 0), 1)

@@ -29,7 +29,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>to define a <code>Bool</code> data type. If I have something of type <code>Bool</code>, it can be (literally) <code>False</code> or <code>True</code>. If I have something of type <code>Maybe a</code>, it can be <code>Nothing</code> (nothing is there, it’s empty) or <code>Just x</code> (it contains a value <code>x</code>).</p>
 <p>If you are used to an OOP language with templates or generics, this is similar to saying <code>Maybe&lt;a&gt;</code> – <code>Maybe&lt;a&gt;</code> is a parameterized type over some <code>a</code>.</p>
 <p>This type is useful for functions that might fail:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L23-41</span></a>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L23-L41</span></a>
 <a class="sourceLine" id="cb3-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world</span></a>
 <a class="sourceLine" id="cb3-3" data-line-number="3"><span class="co">-- divideMaybe: Takes two integers and returns -- possibly -- their integer</span></a>
 <a class="sourceLine" id="cb3-4" data-line-number="4"><span class="co">--      quotient. It succeeds if the denominator is not zero, and fails if</span></a>
@@ -67,7 +67,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <h3 id="the-problem">The Problem</h3>
 <p>Okay, well, I have a <code>Maybe Int</code>. Which is nice and all…but…I want to do normal inty-things with it.</p>
 <p>That is…I have all these functions that work only on <code>Int</code>!</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L43-50</span></a>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L43-L50</span></a>
 <a class="sourceLine" id="cb5-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world</span></a>
 <a class="sourceLine" id="cb5-3" data-line-number="3"><span class="ot">addThree ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
 <a class="sourceLine" id="cb5-4" data-line-number="4">addThree <span class="fu">=</span> (<span class="fu">+</span> <span class="dv">3</span>)</a>
@@ -91,7 +91,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 </div>
 <p>In most other languages, to get around this, you would “exit” your uncertain world. That is, you would turn your uncertain 5 into either a certain 5 or an error. Or you would turn your uncertain 5 into either a certain 5 or some “default” value.</p>
 <p>That is, you would use functions like these to exit your world:<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L76-82</span></a>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L76-L82</span></a>
 <a class="sourceLine" id="cb8-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world</span></a>
 <a class="sourceLine" id="cb8-3" data-line-number="3"><span class="ot">certaintify ::</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> a</a>
 <a class="sourceLine" id="cb8-4" data-line-number="4">certaintify (<span class="dt">Just</span> x) <span class="fu">=</span> x</a>
@@ -122,7 +122,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>If you look at this carefully, we want some sort of “function transformer”. Give our transformer an <code>a -&gt; b</code>, it’ll output a new function <code>Maybe a -&gt; Maybe b</code>. The new function takes an <code>a</code> that may or may not be there, and outputs a <code>b</code> that may or not be there.</p>
 <p>We want a function of type <code>(a -&gt; b) -&gt; (Maybe a -&gt; Maybe b)</code></p>
 <p>Let’s make one! It’ll apply the function to the value inside a <code>Just</code>, and leave a <code>Nothing</code> alone.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L84-88</span></a>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L84-L88</span></a>
 <a class="sourceLine" id="cb13-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world</span></a>
 <a class="sourceLine" id="cb13-3" data-line-number="3"><span class="ot">inMaybe ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (<span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b)</a>
 <a class="sourceLine" id="cb13-4" data-line-number="4">inMaybe f <span class="fu">=</span> liftedF</a>
@@ -142,7 +142,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <a class="sourceLine" id="cb14-10" data-line-number="10">ghci<span class="fu">&gt;</span> (inMaybe showInt) (<span class="dt">Just</span> <span class="dv">8</span>)</a>
 <a class="sourceLine" id="cb14-11" data-line-number="11"><span class="dt">Just</span> <span class="st">&quot;8&quot;</span></a></code></pre></div>
 <p>Wow! We can now use normal functions and still stay inside my uncertain world. We could even write our <code>ageFromId</code>:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L68-69</span></a>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L68-L69</span></a>
 <a class="sourceLine" id="cb15-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world</span></a>
 <a class="sourceLine" id="cb15-3" data-line-number="3"><span class="ot">ageFromId ::</span> <span class="dt">ID</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
 <a class="sourceLine" id="cb15-4" data-line-number="4">ageFromId i <span class="fu">=</span> (inMaybe age) (personFromId i)</a></code></pre></div>
@@ -220,7 +220,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>If we want to apply <code>halveMaybe</code> to a number that isn’t there…well…it should also return a number that isn’t there. It should propagate the not-thereness.</p>
 <p>If we want to apply <code>halveMaybe</code> to a number that <em>is</em> there…well, just apply it to that number, and take that result! If the result is there, then you have a result there. If the result is not there, then you don’t.</p>
 <p>We have enough to write this out ourselves:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L90-94</span></a>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L90-L94</span></a>
 <a class="sourceLine" id="cb24-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world</span></a>
 <a class="sourceLine" id="cb24-3" data-line-number="3"><span class="ot">liftInput ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b) <span class="ot">-&gt;</span> (<span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b)</a>
 <a class="sourceLine" id="cb24-4" data-line-number="4">liftInput f <span class="fu">=</span> liftedF</a>
@@ -236,7 +236,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <a class="sourceLine" id="cb25-7" data-line-number="7">ghci<span class="fu">&gt;</span> (liftInput halveMaybe) y</a>
 <a class="sourceLine" id="cb25-8" data-line-number="8"><span class="dt">Nothing</span></a></code></pre></div>
 <p>Neat! Now we don’t have to fear <code>a -&gt; Maybe b</code>’s…we can use them and <em>still stay in our world</em>, without leaving our world of uncertainty!</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L71-72</span></a>
+<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L71-L72</span></a>
 <a class="sourceLine" id="cb26-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world</span></a>
 <a class="sourceLine" id="cb26-3" data-line-number="3"><span class="ot">halfOfAge ::</span> <span class="dt">ID</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
 <a class="sourceLine" id="cb26-4" data-line-number="4">halfOfAge i <span class="fu">=</span> (liftInput halveMaybe) (ageFromId i)</a></code></pre></div>
@@ -307,7 +307,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <h3 id="the-world-of-future-values">The world of future values</h3>
 <p>(Play along with this section too by <a href="https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs">loading the source</a>!)</p>
 <p>In Haskell, we have a <code>Reader r</code> world. You can think of <code>(Reader r) a</code> as a little machine that “waits” for something of type <code>r</code>, then <em>uses</em> it to (purely) make an <code>a</code>. The <code>a</code> doesn’t exist yet; it’s a future <code>a</code> that will exist as soon as you give it an <code>r</code>.</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L17-27</span></a>
+<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L17-L27</span></a>
 <a class="sourceLine" id="cb29-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world</span></a>
 <a class="sourceLine" id="cb29-3" data-line-number="3"><span class="co">-- futureLength: A future `Int` that will be the length of whatever the</span></a>
 <a class="sourceLine" id="cb29-4" data-line-number="4"><span class="co">--      list it is waiting for will be.</span></a>
@@ -340,7 +340,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>Let’s say I have a future <code>Int</code>. Say, <code>futureLength</code>, waiting on an <code>[a]</code>. And I have a function <code>(&lt; 5) :: Int -&gt; Bool</code>. Can I apply <code>(&lt; 5)</code> to my future <code>Int</code>, in order to get a future <code>Bool</code>?</p>
 <p>At first, no! This future <code>Int</code> is useless! I can’t even use it in <em>any</em> of my normal functions! Time to reach for the exit button?</p>
 <p>Oh — but, because <code>Reader [a]</code> is a Functor, I can use <code>fmap</code> to turn <code>(&lt; 5) :: Int -&gt; Bool</code> into <code>fmap (&lt; 5) :: (Reader [a]) Int -&gt; (Reader [a]) Bool</code>!</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L34-38</span></a>
+<div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L34-L38</span></a>
 <a class="sourceLine" id="cb32-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world</span></a>
 <a class="sourceLine" id="cb32-3" data-line-number="3"><span class="ot">futureShorterThan ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> (<span class="dt">Reader</span> [a]) <span class="dt">Bool</span></a>
 <a class="sourceLine" id="cb32-4" data-line-number="4">futureShorterThan n <span class="fu">=</span> fmap (<span class="fu">&lt;</span> n) futureLength</a>
@@ -358,7 +358,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb34-1" data-line-number="1"><span class="ot">futureShorterThan       ::</span> <span class="dt">Int</span>              <span class="ot">-&gt;</span> (<span class="dt">Reader</span> [a]) <span class="dt">Bool</span></a>
 <a class="sourceLine" id="cb34-2" data-line-number="2">(<span class="fu">=&lt;&lt;</span>)<span class="ot"> futureShorterThan ::</span> (<span class="dt">Reader</span> [a]) <span class="dt">Int</span> <span class="ot">-&gt;</span> (<span class="dt">Reader</span> [a]) <span class="dt">Bool</span></a></code></pre></div>
 <p>Hm. Let’s try this out on a future <code>Int</code> we have…we can use <code>futureHead :: (Reader [Int]) Int</code>.</p>
-<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb35-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L40-41</span></a>
+<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb35-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L40-L41</span></a>
 <a class="sourceLine" id="cb35-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world</span></a>
 <a class="sourceLine" id="cb35-3" data-line-number="3"><span class="ot">futureShorterThanHead ::</span> (<span class="dt">Reader</span> [<span class="dt">Int</span>]) <span class="dt">Bool</span></a>
 <a class="sourceLine" id="cb35-4" data-line-number="4">futureShorterThanHead <span class="fu">=</span> futureShorterThan <span class="fu">=&lt;&lt;</span> futureHead</a></code></pre></div>
@@ -388,7 +388,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>Neat!</p>
 <p>We had a function that only worked on <code>String</code>, but we made it work the “future/promised” <code>String</code> of <code>IO String</code></p>
 <p>Let’s look at a function returning an IO action <code>wc</code>, which takes a filename and returns a program that, when executed, promises an <code>Int</code> — the number of lines in that file.</p>
-<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/io.hs#L19-19</span></a>
+<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/io.hs#L19-L19</span></a>
 <a class="sourceLine" id="cb38-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/inside-my-world</span></a>
 <a class="sourceLine" id="cb38-3" data-line-number="3"><span class="ot">wc ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Int</span></a></code></pre></div>
 <p>So <code>wc &quot;file.txt&quot;</code> would evaluate to a computation that, when executed by a computer, produces an <code>Int</code> (by loading the file from disk using system calls, reading it, and counting the lines).</p>

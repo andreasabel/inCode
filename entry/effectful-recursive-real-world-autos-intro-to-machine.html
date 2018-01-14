@@ -48,14 +48,14 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>means that your new <code>Auto</code>-running function will give you a result and a “next step” that is going to be dependent on IO actions.</p>
 <p>Let’s jump straight to abstracting over this and explore a new type, shall we?</p>
 <h3 id="monadic-auto">Monadic Auto</h3>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L27-27</span></a>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L27-L27</span></a>
 <a class="sourceLine" id="cb8-2" data-line-number="2"><span class="kw">newtype</span> <span class="dt">AutoM</span> m a b <span class="fu">=</span> <span class="dt">AConsM</span> {<span class="ot"> runAutoM ::</span> a <span class="ot">-&gt;</span> m (b, <span class="dt">AutoM</span> m a b) }</a></code></pre></div>
 <p>We already explained earlier the new power of this type. Let’s see if we can write our favorite instances with it. First of all, what would a <code>Category</code> instance even do?</p>
 <p>Recall that the previous <code>Category</code> instance “ticked” each <code>Auto</code> one after the other and gave the final results, and then the “next Auto” was the compositions of the ticked autos.</p>
 <p>In our new type, the “ticking” happens <em>in a context</em>. And we need to tick twice; and the second one is dependent on the result of the first. This means that your context has to be <em>monadic</em> in order to allow you to do this.</p>
 <p>So we sequence two “ticks” inside the monadic context, and then return the result afterwards, with the new composed autos.</p>
 <p>The neat thing is that Haskell’s built-in syntax for handling monadic sequencing is nice, so you might be surprised when you write the <code>Category</code> instance:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L43-48</span></a>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L43-L48</span></a>
 <a class="sourceLine" id="cb9-2" data-line-number="2"><span class="kw">instance</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Category</span> (<span class="dt">AutoM</span> m) <span class="kw">where</span></a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">    id    <span class="fu">=</span> <span class="dt">AConsM</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> return (x, id)</a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">    g <span class="fu">.</span> f <span class="fu">=</span> <span class="dt">AConsM</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> <span class="kw">do</span></a>
@@ -64,7 +64,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <a class="sourceLine" id="cb9-7" data-line-number="7">              return (z, g&#39; <span class="fu">.</span> f&#39;)</a></code></pre></div>
 <p>Does it look familiar?</p>
 <p>It should! Remember the logic from the <code>Auto</code> Category instance?</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L13-18</span></a>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L13-L18</span></a>
 <a class="sourceLine" id="cb10-2" data-line-number="2"><span class="kw">instance</span> <span class="dt">Category</span> <span class="dt">Auto</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb10-3" data-line-number="3">    id    <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> (x, id)</a>
 <a class="sourceLine" id="cb10-4" data-line-number="4">    g <span class="fu">.</span> f <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
@@ -74,7 +74,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>It’s basically <em>identical</em> and exactly the same :O The only difference is that instead of <code>let</code>, we have <code>do</code>…instead of <code>=</code> we have <code>&lt;-</code>, and instead of <code>in</code> we have <code>return</code>. :O</p>
 <p>The takeaway here is that when you have monadic functions, their sequencing and application and composition can really be abstracted away to look pretty much like application and composition of normal values. And Haskell is one of the few languages that gives you language features and a culture to be able to fully realize the symmetry and similarities.</p>
 <p>Check out the <code>Functor</code> and <code>Arrow</code> instances, too — they’re exactly the same!</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L20-47</span></a>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L20-L47</span></a>
 <a class="sourceLine" id="cb11-2" data-line-number="2"><span class="kw">instance</span> <span class="dt">Functor</span> (<span class="dt">Auto</span> r) <span class="kw">where</span></a>
 <a class="sourceLine" id="cb11-3" data-line-number="3">    fmap f a <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
 <a class="sourceLine" id="cb11-4" data-line-number="4">                 <span class="kw">let</span> (y, a&#39;) <span class="fu">=</span> runAuto a x</a>
@@ -96,7 +96,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <a class="sourceLine" id="cb11-20" data-line-number="20">                  <span class="kw">let</span> (y1, a1&#39;) <span class="fu">=</span> runAuto a1 x</a>
 <a class="sourceLine" id="cb11-21" data-line-number="21">                      (y2, a2&#39;) <span class="fu">=</span> runAuto a2 x</a>
 <a class="sourceLine" id="cb11-22" data-line-number="22">                  <span class="kw">in</span>  ((y1, y2), a1&#39; <span class="fu">&amp;&amp;&amp;</span> a2&#39;)</a></code></pre></div>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L50-77</span></a>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L50-L77</span></a>
 <a class="sourceLine" id="cb12-2" data-line-number="2"><span class="kw">instance</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Functor</span> (<span class="dt">AutoM</span> m r) <span class="kw">where</span></a>
 <a class="sourceLine" id="cb12-3" data-line-number="3">    fmap f a <span class="fu">=</span> <span class="dt">AConsM</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb12-4" data-line-number="4">                 (y, a&#39;) <span class="ot">&lt;-</span> runAutoM a x</a>
@@ -133,7 +133,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <h3 id="putting-it-to-use">Putting it to use</h3>
 <p>Now let’s try using these!</p>
 <p>First some utility functions just for playing around: <code>autoM</code>, which upgrades an <code>Auto a b</code> to an <code>AutoM m a b</code> for any <code>Monad</code> <code>m</code><a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a>, and <code>arrM</code>, which is like <code>arr</code>, but instead of turning an <code>a -&gt; b</code> into an <code>Auto a b</code>, it turns an <code>a -&gt; m b</code> into an <code>AutoM m a b</code>:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L97-107</span></a>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L97-L107</span></a>
 <a class="sourceLine" id="cb14-2" data-line-number="2"><span class="ot">autoM ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> <span class="dt">AutoM</span> m a b</a>
 <a class="sourceLine" id="cb14-3" data-line-number="3">autoM a <span class="fu">=</span> <span class="dt">AConsM</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> <span class="kw">let</span> (y, a&#39;) <span class="fu">=</span> runAuto a x</a>
 <a class="sourceLine" id="cb14-4" data-line-number="4">                         <span class="kw">in</span>  return (y, autoM a&#39;)</a>
@@ -142,8 +142,8 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <a class="sourceLine" id="cb14-7" data-line-number="7">arrM f <span class="fu">=</span> <span class="dt">AConsM</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb14-8" data-line-number="8">                    y <span class="ot">&lt;-</span> f x</a>
 <a class="sourceLine" id="cb14-9" data-line-number="9">                    return (y, arrM f)</a></code></pre></div>
-<p>We will need to of course re-write our trusty <a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L17-25"><code>testAuto</code></a> functions from the first entry, which is again a direct translation of the original ones:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L31-39</span></a>
+<p>We will need to of course re-write our trusty <a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L17-L25"><code>testAuto</code></a> functions from the first entry, which is again a direct translation of the original ones:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L31-L39</span></a>
 <a class="sourceLine" id="cb15-2" data-line-number="2"><span class="ot">testAutoM ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">AutoM</span> m a b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> m ([b], <span class="dt">AutoM</span> m a b)</a>
 <a class="sourceLine" id="cb15-3" data-line-number="3">testAutoM a []      <span class="fu">=</span> return ([], a)</a>
 <a class="sourceLine" id="cb15-4" data-line-number="4">testAutoM a (x<span class="fu">:</span>xs)  <span class="fu">=</span> <span class="kw">do</span></a>
@@ -164,13 +164,13 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p><code>arrM putStrLn</code> is, like <code>arr show</code>, just an <code>Auto</code> with no internal state. It outputs <code>()</code> for every single input string, except, in the process of getting the “next Auto” (and producing the <code>()</code>), it emits a side-effect — in our case, printing the string.</p>
 <h4 id="in-io">in IO</h4>
 <p>We can sort of abuse this to get an <code>Auto</code> with “two input streams”: one from the normal input, and the other from <code>IO</code>:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L119-123</span></a>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L119-L123</span></a>
 <a class="sourceLine" id="cb17-2" data-line-number="2"><span class="ot">replicateGets ::</span> <span class="dt">AutoM</span> <span class="dt">IO</span> <span class="dt">Int</span> <span class="dt">String</span></a>
 <a class="sourceLine" id="cb17-3" data-line-number="3">replicateGets <span class="fu">=</span> proc n <span class="ot">-&gt;</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb17-4" data-line-number="4">    ioString <span class="ot">&lt;-</span> arrM (\_ <span class="ot">-&gt;</span> getLine) <span class="fu">-&lt;</span> ()</a>
 <a class="sourceLine" id="cb17-5" data-line-number="5">    <span class="kw">let</span> inpStr <span class="fu">=</span> concat (replicate n ioString)</a>
 <a class="sourceLine" id="cb17-6" data-line-number="6">    autoM monoidAccum <span class="fu">-&lt;</span> inpStr</a></code></pre></div>
-<p>So, <code>replicateGets</code> uses <a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L106-107"><code>monoidAccum</code></a> (or, an <code>AutoM</code> version) to accumulate a string. At every step, it adds <code>inpStr</code> to the running accumulated string. <code>inpStr</code> is the result of repeating the the string that <code>getLine</code> returns replicated <code>n</code> times — <code>n</code> being the official “input” to the <code>AutoM</code> when we eventually run it.</p>
+<p>So, <code>replicateGets</code> uses <a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L106-L107"><code>monoidAccum</code></a> (or, an <code>AutoM</code> version) to accumulate a string. At every step, it adds <code>inpStr</code> to the running accumulated string. <code>inpStr</code> is the result of repeating the the string that <code>getLine</code> returns replicated <code>n</code> times — <code>n</code> being the official “input” to the <code>AutoM</code> when we eventually run it.</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1">ghci<span class="fu">&gt;</span> testAutoM_ replicateGets [<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">5</span>]</a>
 <a class="sourceLine" id="cb18-2" data-line-number="2"><span class="fu">&gt;</span> hello</a>
 <a class="sourceLine" id="cb18-3" data-line-number="3"><span class="fu">&gt;</span> world</a>
@@ -181,7 +181,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <a class="sourceLine" id="cb18-8" data-line-number="8">]</a></code></pre></div>
 <p>Here, we used <code>IO</code> to get a “side channel input”. The main input is the number of times we repeat the string, and the side input is what we get from sequencing the <code>getLine</code> effect.</p>
 <p>You can also use this to “tack on” effects into your pipeline.</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L127-131</span></a>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L127-L131</span></a>
 <a class="sourceLine" id="cb19-2" data-line-number="2"><span class="ot">logging ::</span> <span class="dt">Show</span> b <span class="ot">=&gt;</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> <span class="dt">AutoM</span> <span class="dt">IO</span> a b</a>
 <a class="sourceLine" id="cb19-3" data-line-number="3">logging a <span class="fu">=</span> proc x <span class="ot">-&gt;</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb19-4" data-line-number="4">    y <span class="ot">&lt;-</span> autoM a <span class="fu">-&lt;</span> x</a>
@@ -216,7 +216,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>Good? Bad? Uncontrollable, unpredictable? Perhaps. You now bring in all of the problems of shared state and reasoning with shared mutable state…and avoiding these problems was one of the things that originally motivated the usage of <code>Auto</code> in the first place! But, we can make sound and judicious decisions without resorting to “never do this” dogma.<a href="#fn5" class="footnote-ref" id="fnref5"><sup>5</sup></a> Remember, these are just tools we can possibly explore. Whether or not they work in the real world — or whether or not they are self-defeating — is a complex story!</p>
 <h4 id="in-state">in State</h4>
 <p>Here is a toy state example to demonstrate different autos talking to each other; here, the state is a measure of “fuel”; we can take any <code>Auto a b</code> and give it a “cost” using the <code>limit</code> function defined here. Here, every <code>Auto</code> consumes fuel from the same pool, given at the initial <code>runState</code> running.</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L139-175</span></a>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L139-L175</span></a>
 <a class="sourceLine" id="cb22-2" data-line-number="2"><span class="ot">limit ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> <span class="dt">AutoM</span> (<span class="dt">State</span> <span class="dt">Int</span>) a (<span class="dt">Maybe</span> b)</a>
 <a class="sourceLine" id="cb22-3" data-line-number="3">limit cost a <span class="fu">=</span> proc x <span class="ot">-&gt;</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb22-4" data-line-number="4">    fuel <span class="ot">&lt;-</span> arrM (\_ <span class="ot">-&gt;</span> get) <span class="fu">-&lt;</span> ()</a>
@@ -270,7 +270,7 @@ ghci&gt; runState stuffStateMany 9
 <p>But hey, if your program needs global state, then it’s probably a good sign that you might have had a design flaw somewhere along the way, right?</p>
 <h4 id="in-reader">in Reader</h4>
 <p>Here we use <code>Reader</code> to basically give a “second argument” to an <code>Auto</code> when we eventually run it, but we use the fact that every composed <code>Auto</code> gets the <em>exact same</em> input to great effect:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L199-234</span></a>
+<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L199-L234</span></a>
 <a class="sourceLine" id="cb25-2" data-line-number="2"><span class="ot">integral ::</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">AutoM</span> (<span class="dt">Reader</span> <span class="dt">Double</span>) <span class="dt">Double</span> <span class="dt">Double</span></a>
 <a class="sourceLine" id="cb25-3" data-line-number="3">integral x0 <span class="fu">=</span> <span class="dt">AConsM</span> <span class="fu">$</span> \dx <span class="ot">-&gt;</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb25-4" data-line-number="4">                dt <span class="ot">&lt;-</span> ask</a>
@@ -321,7 +321,7 @@ ghci&gt; runState stuffStateMany 9
 <div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1"><span class="ot">summer ::</span> (<span class="dt">Monad</span> m, <span class="dt">Num</span> a) <span class="ot">=&gt;</span> <span class="dt">AutoM</span> m a a</a></code></pre></div>
 <p>It is statically guaranteed that <code>summer</code> <em>cannot touch any global state</em>.</p>
 <p>For the latter option, we take <code>AutoM (State s)</code>’s that operate on global state and then basically “seal off” their access to be just within their local worlds, as we turn them into <code>Auto</code>’s.</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L182-192</span></a>
+<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L182-L192</span></a>
 <a class="sourceLine" id="cb29-2" data-line-number="2"><span class="ot">sealStateAuto ::</span> <span class="dt">AutoM</span> (<span class="dt">State</span> s) a b <span class="ot">-&gt;</span> s <span class="ot">-&gt;</span> <span class="dt">Auto</span> a b</a>
 <a class="sourceLine" id="cb29-3" data-line-number="3">sealStateAuto a s0 <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
 <a class="sourceLine" id="cb29-4" data-line-number="4">                       <span class="kw">let</span> ((y, a&#39;), s1) <span class="fu">=</span> runState (runAutoM a x) s0</a>
@@ -346,7 +346,7 @@ ghci&gt; runState stuffStateMany 9
 <p>We’re allowed to live and compose (using <code>Category</code>, proc notation, etc.) in whatever world we like — create as complex compositions as we could even imagine — and at the end of it all, we take the final complex product and “glue it on” to our big overall type so everything can work together.</p>
 <p>This discussion is about <code>State</code>, but the ramifications work with almost any <code>Auto</code> or type of <code>Auto</code> or underlying monad we talk about.</p>
 <p>We can simulate an “immutable local environment”, for example:</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L248-251</span></a>
+<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L248-L251</span></a>
 <a class="sourceLine" id="cb31-2" data-line-number="2"><span class="ot">runReaderAuto ::</span> <span class="dt">AutoM</span> (<span class="dt">Reader</span> r) a b <span class="ot">-&gt;</span> <span class="dt">Auto</span> (a, r) b</a>
 <a class="sourceLine" id="cb31-3" data-line-number="3">runReaderAuto a <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \(x, e) <span class="ot">-&gt;</span></a>
 <a class="sourceLine" id="cb31-4" data-line-number="4">                    <span class="kw">let</span> (y, a&#39;) <span class="fu">=</span> runReader (runAutoM a x) e</a>
@@ -388,7 +388,7 @@ ghci&gt; runState stuffStateMany 9
 <h3 id="arrowloop">ArrowLoop</h3>
 <p>There is actually a construct in <em>proc</em> notation that lets you do just that. I’m going to cut to the chase and show you how it looks, and how you use it. I’ll explain the drawbacks and caveats. And then I’ll explain how it works in an aside — it’s slightly heavy, but some people like to understand.</p>
 <p>Without further ado —</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L266-276</span></a>
+<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L266-L276</span></a>
 <a class="sourceLine" id="cb33-2" data-line-number="2"><span class="ot">piTargeter ::</span> <span class="dt">Auto</span> <span class="dt">Double</span> <span class="dt">Double</span></a>
 <a class="sourceLine" id="cb33-3" data-line-number="3">piTargeter <span class="fu">=</span> proc control <span class="ot">-&gt;</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb33-4" data-line-number="4">    rec <span class="kw">let</span> err <span class="fu">=</span> control <span class="fu">-</span> response</a>
@@ -421,7 +421,7 @@ ghci&gt; runState stuffStateMany 9
 <a class="sourceLine" id="cb37-3" data-line-number="3"><span class="dv">1</span></a></code></pre></div>
 <p>So that’s the key. If what we <em>want</em> doesn’t require the entire result of the infinite loop…then we can safely reason about infinite recursion in haskell.</p>
 <p>The MVP here really is this function that I sneakily introduced, <code>laggingSummer</code>:</p>
-<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L258-262</span></a>
+<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L258-L262</span></a>
 <a class="sourceLine" id="cb38-2" data-line-number="2"><span class="ot">laggingSummer ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Auto</span> a a</a>
 <a class="sourceLine" id="cb38-3" data-line-number="3">laggingSummer <span class="fu">=</span> sumFrom <span class="dv">0</span></a>
 <a class="sourceLine" id="cb38-4" data-line-number="4">  <span class="kw">where</span></a>
@@ -454,7 +454,7 @@ ghci&gt; runState stuffStateMany 9
 <p>The type signature seems a bit funny. Loop takes a morphism from <code>(a, c)</code> to <code>(b, c)</code> and turns it into a morphism from <code>a</code> to <code>b</code>. But…how does it do that?</p>
 <p>I’ll point you to <a href="https://wiki.haskell.org/Circular_programming">a whole article about the <code>(-&gt;)</code> instance of <code>ArrowLoop</code></a> and how it is useful, if you’re interested. But we’re looking at <code>Auto</code> for now.</p>
 <p>We can write an <code>ArrowLoop</code> instance for <code>Auto</code>:</p>
-<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L58-61</span></a>
+<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L58-L61</span></a>
 <a class="sourceLine" id="cb41-2" data-line-number="2"><span class="kw">instance</span> <span class="dt">ArrowLoop</span> <span class="dt">Auto</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb41-3" data-line-number="3">    loop a <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
 <a class="sourceLine" id="cb41-4" data-line-number="4">               <span class="kw">let</span> ((y, d), a&#39;) <span class="fu">=</span> runAuto a (x, d)</a>
@@ -465,7 +465,7 @@ ghci&gt; runState stuffStateMany 9
 <p>The actual desugaring of a <code>rec</code> block is a little tricky, but we can trust that if we have a properly defined <code>loop</code> (that typechecks and has the circular dependencies that loop demands), then <code>ArrowLoop</code> will do what it is supposed to do.</p>
 <p>In any case, we can actually understand <em>how to work with rec blocks</em> pretty well — as long as we can have an <code>Auto</code> in the pipeline that can pop something out immediately ignoring its input, then we can rest assured that our knot will be closed.</p>
 <p>By the way, this trick works with <code>ArrowM</code> too — provided that the <code>Monad</code> is an instance of <code>MonadFix</code>, which is basically a generalization of the recursive <code>let</code> bindings we used above:</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L88-91</span></a>
+<div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L88-L91</span></a>
 <a class="sourceLine" id="cb42-2" data-line-number="2"><span class="kw">instance</span> <span class="dt">MonadFix</span> m <span class="ot">=&gt;</span> <span class="dt">ArrowLoop</span> (<span class="dt">AutoM</span> m) <span class="kw">where</span></a>
 <a class="sourceLine" id="cb42-3" data-line-number="3">    loop a <span class="fu">=</span> <span class="dt">AConsM</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb42-4" data-line-number="4">               rec ((y, d), a&#39;) <span class="ot">&lt;-</span> runAutoM a (x, d)</a>
@@ -478,10 +478,10 @@ ghci&gt; runState stuffStateMany 9
 <div class="sourceCode" id="cb43"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="dt">Auto</span> a (<span class="dt">Maybe</span> b)</a></code></pre></div>
 <p>How can we interpret/use this? In many domains, this is used to model “on/off” behavior of <code>Auto</code>s. The <code>Auto</code> is “on” if the output is <code>Just</code>, and “off” if the output is <code>Nothing</code>.</p>
 <p>We can imagine “baking this in” to our Auto type:</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb44-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L19-19</span></a>
+<div class="sourceCode" id="cb44"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb44-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L19-L19</span></a>
 <a class="sourceLine" id="cb44-2" data-line-number="2"><span class="kw">newtype</span> <span class="dt">AutoOn</span> a b <span class="fu">=</span> <span class="dt">AConsOn</span> {<span class="ot"> runAutoOn ::</span> a <span class="ot">-&gt;</span> (<span class="dt">Maybe</span> b, <span class="dt">AutoOn</span> a b) }</a></code></pre></div>
 <p>Where the semantics of composition are: if you get a <code>Nothing</code> as an input, just don’t tick anything and pop out a <code>Nothing</code>; if you get a <code>Just x</code> as an input run the auto on the <code>x</code>:</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb45-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L22-29</span></a>
+<div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb45-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L22-L29</span></a>
 <a class="sourceLine" id="cb45-2" data-line-number="2"><span class="kw">instance</span> <span class="dt">Category</span> <span class="dt">AutoOn</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb45-3" data-line-number="3">    id    <span class="fu">=</span> <span class="dt">AConsOn</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> (<span class="dt">Just</span> x, id)</a>
 <a class="sourceLine" id="cb45-4" data-line-number="4">    g <span class="fu">.</span> f <span class="fu">=</span> <span class="dt">AConsOn</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
@@ -530,7 +530,7 @@ ghci&gt; runState stuffStateMany 9
 </div>
 <p>I’m not going to spend too much time on this, other than saying that it is useful to imagine how it might be useful to have an “off” Auto “shut down” every next Auto in the chain.</p>
 <p>One neat thing is that <code>AutoOn</code> admits a handy <code>Alternative</code> instance; <code>a1 &lt;|&gt; a2</code> will create a new <code>AutoOn</code> that feeds in its input to <em>both</em> <code>a1</code> and <code>a2</code>, and the result is the first <code>Just</code>.</p>
-<div class="sourceCode" id="cb51"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb51-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L80-86</span></a>
+<div class="sourceCode" id="cb51"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb51-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L80-L86</span></a>
 <a class="sourceLine" id="cb51-2" data-line-number="2"><span class="kw">instance</span> <span class="dt">Alternative</span> (<span class="dt">AutoOn</span> a) <span class="kw">where</span></a>
 <a class="sourceLine" id="cb51-3" data-line-number="3">    empty     <span class="fu">=</span> <span class="dt">AConsOn</span> <span class="fu">$</span> \_ <span class="ot">-&gt;</span> (<span class="dt">Nothing</span>, empty)</a>
 <a class="sourceLine" id="cb51-4" data-line-number="4">    <span class="co">-- (&lt;|&gt;) :: AutoOn a b -&gt; AutoOn a b -&gt; AutoOn a b</span></a>
@@ -540,7 +540,7 @@ ghci&gt; runState stuffStateMany 9
 <a class="sourceLine" id="cb51-8" data-line-number="8">                  <span class="kw">in</span>  (y1 <span class="fu">&lt;|&gt;</span> y2, a1&#39; <span class="fu">&lt;|&gt;</span> a2&#39;)</a></code></pre></div>
 <p>Unexpectedly, we also get the handy <code>empty</code>, which is a “always off” <code>AutoOn</code>. Feed anything through <code>empty</code> and it’ll produce a <code>Nothing</code> no matter what. You can use this to provide an “always fail”, “short-circuit here” kind of composition, like <code>Nothing</code> in the <code>Maybe</code> monad.</p>
 <p>You also get this an interesting and useful concept called “switching” that comes from this; the ability to switch from running one Auto or the other by looking if the result is on or off — here is a common switch that behaves like the first <code>AutoOn</code> until it is off, and then behaves like the second forever after:</p>
-<div class="sourceCode" id="cb52"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb52-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L115-121</span></a>
+<div class="sourceCode" id="cb52"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb52-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L115-L121</span></a>
 <a class="sourceLine" id="cb52-2" data-line-number="2"><span class="ot">(--&gt;) ::</span> <span class="dt">AutoOn</span> a b <span class="ot">-&gt;</span> <span class="dt">AutoOn</span> a b <span class="ot">-&gt;</span> <span class="dt">AutoOn</span> a b</a>
 <a class="sourceLine" id="cb52-3" data-line-number="3">a1 <span class="fu">--&gt;</span> a2 <span class="fu">=</span> <span class="dt">AConsOn</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
 <a class="sourceLine" id="cb52-4" data-line-number="4">              <span class="kw">let</span> (y1, a1&#39;) <span class="fu">=</span> runAutoOn a1 x</a>
@@ -550,7 +550,7 @@ ghci&gt; runState stuffStateMany 9
 <a class="sourceLine" id="cb52-8" data-line-number="8"><span class="kw">infixr</span> <span class="dv">1</span> <span class="fu">--&gt;</span></a></code></pre></div>
 <h3 id="usages">Usages</h3>
 <p>Let’s test this out; first, some helper functions (the same ones we wrote for <code>AutoM</code>)</p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb53-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L91-107</span></a>
+<div class="sourceCode" id="cb53"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb53-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L91-L107</span></a>
 <a class="sourceLine" id="cb53-2" data-line-number="2"><span class="ot">autoOn ::</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> <span class="dt">AutoOn</span> a b</a>
 <a class="sourceLine" id="cb53-3" data-line-number="3">autoOn a <span class="fu">=</span> <span class="dt">AConsOn</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
 <a class="sourceLine" id="cb53-4" data-line-number="4">             <span class="kw">let</span> (y, a&#39;) <span class="fu">=</span> runAuto a x</a>
@@ -565,7 +565,7 @@ ghci&gt; runState stuffStateMany 9
 <a class="sourceLine" id="cb53-13" data-line-number="13">                 <span class="kw">in</span>  (y, fromAutoOn a&#39;)</a></code></pre></div>
 <p><code>autoOn</code> turns an <code>Auto a b</code> into an <code>AutoOn a b</code>, where the result is always <code>Just</code>. <code>arrOn</code> is like <code>arr</code> and <code>arrM</code>…it takes an <code>a -&gt; Maybe b</code> and turns it into an <code>AutoOn a b</code>. <code>fromAutoOn</code> turns an <code>AutoOn a b</code> into a normal <code>Auto a (Maybe b)</code>, just so that we can leverage our existing test functions on normal <code>Auto</code>s.</p>
 <p>Let’s play around with some test <code>AutoOn</code>s!</p>
-<div class="sourceCode" id="cb54"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb54-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L131-152</span></a>
+<div class="sourceCode" id="cb54"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb54-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L131-L152</span></a>
 <a class="sourceLine" id="cb54-2" data-line-number="2"><span class="ot">onFor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">AutoOn</span> a a</a>
 <a class="sourceLine" id="cb54-3" data-line-number="3">onFor n <span class="fu">=</span> proc x <span class="ot">-&gt;</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb54-4" data-line-number="4">    i <span class="ot">&lt;-</span> autoOn summer <span class="fu">-&lt;</span> <span class="dv">1</span></a>
@@ -591,7 +591,7 @@ ghci&gt; runState stuffStateMany 9
 <a class="sourceLine" id="cb54-24" data-line-number="24"><span class="co">--                then (Just x , untilA p)</span></a>
 <a class="sourceLine" id="cb54-25" data-line-number="25"><span class="co">--                else (Nothing, empty   )</span></a></code></pre></div>
 <p>One immediate usage is that we can use these to “short circuit” our proc blocks, just like with monadic <code>Maybe</code> and do blocks:</p>
-<div class="sourceCode" id="cb55"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb55-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L163-173</span></a>
+<div class="sourceCode" id="cb55"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb55-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L163-L173</span></a>
 <a class="sourceLine" id="cb55-2" data-line-number="2"><span class="ot">shortCircuit1 ::</span> <span class="dt">AutoOn</span> <span class="dt">Int</span> <span class="dt">Int</span></a>
 <a class="sourceLine" id="cb55-3" data-line-number="3">shortCircuit1 <span class="fu">=</span> proc x <span class="ot">-&gt;</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb55-4" data-line-number="4">    filterA even <span class="fu">-&lt;</span> x</a>
@@ -612,7 +612,7 @@ ghci&gt; runState stuffStateMany 9
 <a class="sourceLine" id="cb56-6" data-line-number="6">, <span class="dt">Nothing</span>, <span class="dt">Nothing</span>, <span class="dt">Nothing</span>, <span class="dt">Nothing</span>, <span class="dt">Nothing</span>, <span class="dt">Nothing</span>]</a></code></pre></div>
 <p>Ah. For <code>shortCircuit1</code>, as soon as the <code>filterA</code> fails, it jumps <em>straight to the end</em>, short-circuiting; it doesn’t bother “ticking along” the <code>onFor</code> and updating its state!</p>
 <p>The arguably more interesting usage, and the one that is more used in real life<a href="#fn7" class="footnote-ref" id="fnref7"><sup>7</sup></a>, is the powerful usage of the switching combinator <code>(--&gt;)</code> in order to be able to combine multiple <code>Auto</code>’s that simulate “stages”…an <code>Auto</code> can “do what it wants”, and then choose to “hand it off” when it is ready.</p>
-<div class="sourceCode" id="cb57"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L178-183</span></a>
+<div class="sourceCode" id="cb57"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L178-L183</span></a>
 <a class="sourceLine" id="cb57-2" data-line-number="2"><span class="ot">stages ::</span> <span class="dt">AutoOn</span> <span class="dt">Int</span> <span class="dt">Int</span></a>
 <a class="sourceLine" id="cb57-3" data-line-number="3">stages <span class="fu">=</span> stage1 <span class="fu">--&gt;</span> stage2 <span class="fu">--&gt;</span> stage3 <span class="fu">--&gt;</span> stages</a>
 <a class="sourceLine" id="cb57-4" data-line-number="4">  <span class="kw">where</span></a>
@@ -633,15 +633,15 @@ ghci&gt; runState stuffStateMany 9
 <p><strong>Aside</strong></p>
 <p>You might note that sometimes, to model on/off behavior, it might be nice to really be able to “keep on counting” even when receiving a <code>Nothing</code> in a composition. For example, you might want both versions of <code>shortCircuit</code> to be the same — let <code>onFor</code> still “keep on counting” even when it has been inhibited upstream.</p>
 <p>If this is the behavior you want to model (and this is actually the behavior modeled in some FRP libraries), then the type above isn’t powerful enough; you’ll have to go deeper:</p>
-<div class="sourceCode" id="cb59"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs#L10-10</span></a>
+<div class="sourceCode" id="cb59"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs#L10-L10</span></a>
 <a class="sourceLine" id="cb59-2" data-line-number="2"><span class="kw">newtype</span> <span class="dt">AutoOn2</span> a b <span class="fu">=</span> <span class="dt">ACons2</span> {<span class="ot"> runAutoOn2 ::</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> (<span class="dt">Maybe</span> b, <span class="dt">AutoOn2</span> a b) }</a></code></pre></div>
 <p>So now, you can write something like <code>onFor</code>, which keeps on “ticking on” even if it receives a <code>Nothing</code> from upstream:</p>
-<div class="sourceCode" id="cb60"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb60-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs#L16-18</span></a>
+<div class="sourceCode" id="cb60"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb60-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs#L16-L18</span></a>
 <a class="sourceLine" id="cb60-2" data-line-number="2"><span class="ot">onFor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">AutoOn2</span> a a</a>
 <a class="sourceLine" id="cb60-3" data-line-number="3">onFor <span class="dv">0</span> <span class="fu">=</span> <span class="dt">ACons2</span> <span class="fu">$</span> \_ <span class="ot">-&gt;</span> (<span class="dt">Nothing</span>, onFor <span class="dv">0</span>)</a>
 <a class="sourceLine" id="cb60-4" data-line-number="4">onFor n <span class="fu">=</span> <span class="dt">ACons2</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> (x, onFor (n <span class="fu">-</span> <span class="dv">1</span>))</a></code></pre></div>
 <p>You can of course translate all of your <code>AutoOn</code>s into this new type:</p>
-<div class="sourceCode" id="cb61"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb61-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs#L24-31</span></a>
+<div class="sourceCode" id="cb61"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb61-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn2.hs#L24-L31</span></a>
 <a class="sourceLine" id="cb61-2" data-line-number="2"><span class="ot">autoOn ::</span> <span class="dt">AutoOn</span> a b <span class="ot">-&gt;</span> <span class="dt">AutoOn2</span> a b</a>
 <a class="sourceLine" id="cb61-3" data-line-number="3">autoOn a <span class="fu">=</span> <span class="dt">ACons2</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
 <a class="sourceLine" id="cb61-4" data-line-number="4">             <span class="kw">case</span> x <span class="kw">of</span></a>
@@ -654,7 +654,7 @@ ghci&gt; runState stuffStateMany 9
 </div>
 <h2 id="working-all-together">Working all together</h2>
 <p>Of course, we can always literally throw everything we can add together into our <code>Auto</code> type:</p>
-<div class="sourceCode" id="cb62"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb62-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L18-18</span></a>
+<div class="sourceCode" id="cb62"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb62-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L18-L18</span></a>
 <a class="sourceLine" id="cb62-2" data-line-number="2"><span class="kw">newtype</span> <span class="dt">AutoX</span> m a b <span class="fu">=</span> <span class="dt">AConsX</span> {<span class="ot"> runAutoX ::</span> a <span class="ot">-&gt;</span> m (<span class="dt">Maybe</span> b, <span class="dt">AutoX</span> m a b) }</a></code></pre></div>
 <p>(Again, instances are in the source file, but not here in the post directly)</p>
 <p>Here is a same of a big conglomerate type where we throw in a bunch of things.</p>
@@ -662,7 +662,7 @@ ghci&gt; runState stuffStateMany 9
 <p>This is the common theme, the “functor design pattern”. Pick your common unifying type, and just pop everything into it. You can compose, etc. with the semantics of the other type when convenient, and then have all the parts work together in the end.</p>
 <p>This pattern is awesome, if only we didn’t have so many types to convert in between manually.</p>
 <p>Well, we’re in luck. There’s actually a great trick, that makes <em>all of this</em> even more streamlined: we can replace the “normal constructors” like <code>ACons</code>, <code>AConsM</code>, and <code>AConsOn</code>, with <em>smart constructors</em> <code>aCons</code>, <code>aConsM</code>, <code>aConsOn</code>, that work <em>exactly the same way</em>:</p>
-<div class="sourceCode" id="cb63"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb63-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L85-100</span></a>
+<div class="sourceCode" id="cb63"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb63-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L85-L100</span></a>
 <a class="sourceLine" id="cb63-2" data-line-number="2"><span class="ot">aCons ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> (b, <span class="dt">AutoX</span> m a b)) <span class="ot">-&gt;</span> <span class="dt">AutoX</span> m a b</a>
 <a class="sourceLine" id="cb63-3" data-line-number="3">aCons a <span class="fu">=</span> <span class="dt">AConsX</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
 <a class="sourceLine" id="cb63-4" data-line-number="4">            <span class="kw">let</span> (y, aX) <span class="fu">=</span> a x</a>
@@ -678,7 +678,7 @@ ghci&gt; runState stuffStateMany 9
 <a class="sourceLine" id="cb63-14" data-line-number="14">              <span class="kw">let</span> (y, aX) <span class="fu">=</span> a x</a>
 <a class="sourceLine" id="cb63-15" data-line-number="15">              <span class="kw">in</span>  return (y, aX)</a></code></pre></div>
 <p>Compare these definitions of <code>summer</code>, <code>arrM</code>, and <code>untilA</code> from their “specific type” “real constructor” versions to their <code>AutoX</code>-generic “smart constructor” versions:</p>
-<div class="sourceCode" id="cb64"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb64-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L67-73</span></a>
+<div class="sourceCode" id="cb64"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb64-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L67-L73</span></a>
 <a class="sourceLine" id="cb64-2" data-line-number="2"><span class="ot">summer ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Auto</span> a a</a>
 <a class="sourceLine" id="cb64-3" data-line-number="3">summer <span class="fu">=</span> sumFrom <span class="dv">0</span></a>
 <a class="sourceLine" id="cb64-4" data-line-number="4">  <span class="kw">where</span></a>
@@ -686,18 +686,18 @@ ghci&gt; runState stuffStateMany 9
 <a class="sourceLine" id="cb64-6" data-line-number="6">    sumFrom n <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \input <span class="ot">-&gt;</span></a>
 <a class="sourceLine" id="cb64-7" data-line-number="7">      <span class="kw">let</span> s <span class="fu">=</span> n <span class="fu">+</span> input</a>
 <a class="sourceLine" id="cb64-8" data-line-number="8">      <span class="kw">in</span>  ( s , sumFrom s )</a>
-<a class="sourceLine" id="cb64-9" data-line-number="9"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L104-107</span></a>
+<a class="sourceLine" id="cb64-9" data-line-number="9"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L104-L107</span></a>
 <a class="sourceLine" id="cb64-10" data-line-number="10"><span class="ot">arrM ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> <span class="dt">AutoM</span> m a b</a>
 <a class="sourceLine" id="cb64-11" data-line-number="11">arrM f <span class="fu">=</span> <span class="dt">AConsM</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb64-12" data-line-number="12">                    y <span class="ot">&lt;-</span> f x</a>
 <a class="sourceLine" id="cb64-13" data-line-number="13">                    return (y, arrM f)</a>
-<a class="sourceLine" id="cb64-14" data-line-number="14"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L154-158</span></a>
+<a class="sourceLine" id="cb64-14" data-line-number="14"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoOn.hs#L154-L158</span></a>
 <a class="sourceLine" id="cb64-15" data-line-number="15"><span class="ot">untilA&#39; ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">AutoOn</span> a a</a>
 <a class="sourceLine" id="cb64-16" data-line-number="16">untilA&#39; p <span class="fu">=</span> <span class="dt">AConsOn</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span></a>
 <a class="sourceLine" id="cb64-17" data-line-number="17">              <span class="kw">if</span> p x</a>
 <a class="sourceLine" id="cb64-18" data-line-number="18">                <span class="kw">then</span> (<span class="dt">Just</span> x , untilA p)</a>
 <a class="sourceLine" id="cb64-19" data-line-number="19">                <span class="kw">else</span> (<span class="dt">Nothing</span>, empty   )</a></code></pre></div>
-<div class="sourceCode" id="cb65"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb65-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L106-128</span></a>
+<div class="sourceCode" id="cb65"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb65-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L106-L128</span></a>
 <a class="sourceLine" id="cb65-2" data-line-number="2"><span class="ot">summer ::</span> (<span class="dt">Monad</span> m, <span class="dt">Num</span> a) <span class="ot">=&gt;</span> <span class="dt">AutoX</span> m a a</a>
 <a class="sourceLine" id="cb65-3" data-line-number="3">summer <span class="fu">=</span> sumFrom <span class="dv">0</span></a>
 <a class="sourceLine" id="cb65-4" data-line-number="4">  <span class="kw">where</span></a>
@@ -717,13 +717,13 @@ ghci&gt; runState stuffStateMany 9
 <a class="sourceLine" id="cb65-18" data-line-number="18">               <span class="kw">else</span> (<span class="dt">Nothing</span>, empty   )</a></code></pre></div>
 <p>They are literally exactly the same…we just change the constructor to the smart constructor!</p>
 <p>You might also note that we can express a “pure, non-Monadic” <code>Auto</code> in <code>AutoM</code> and <code>AutoX</code> by making the type polymorphic over all monads:</p>
-<div class="sourceCode" id="cb66"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb66-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L106-106</span></a>
+<div class="sourceCode" id="cb66"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb66-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/AutoX.hs#L106-L106</span></a>
 <a class="sourceLine" id="cb66-2" data-line-number="2"><span class="ot">summer ::</span> (<span class="dt">Monad</span> m, <span class="dt">Num</span> a) <span class="ot">=&gt;</span> <span class="dt">AutoX</span> m a a</a></code></pre></div>
 <p>An <code>Auto</code> with a type like this says, “I cannot perform any effects during stepping” — and we know that <code>summer</code> definitely does not. <code>summer</code> is statically guaranteed not to affect any state or IO, and it’s reflected in its type.</p>
 <p>The takeaway? You don’t even have to mungle around multiple types to make this strategy work — just make all your <code>Auto</code>s from the start using these smart constructors, and they all compose together! One type from the start — we just expose different constructors to expose the different “subtypes of power” we want to offer.</p>
 <p>Now it’s all just to chose your “greatest common denominator”. If you don’t want inhibition-based semantics, just only use <code>AutoM</code>, for example!</p>
 <p>By the way, here’s a “smart constructor” for <code>AutoM</code>.</p>
-<div class="sourceCode" id="cb67"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb67-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L112-113</span></a>
+<div class="sourceCode" id="cb67"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb67-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto3.hs#L112-L113</span></a>
 <a class="sourceLine" id="cb67-2" data-line-number="2"><span class="ot">aCons ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> (b, <span class="dt">AutoM</span> m a b)) <span class="ot">-&gt;</span> <span class="dt">AutoM</span> m a b</a>
 <a class="sourceLine" id="cb67-3" data-line-number="3">aCons f <span class="fu">=</span> <span class="dt">AConsM</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> return (f x)</a></code></pre></div>
 <h2 id="closing-remarks">Closing Remarks</h2>

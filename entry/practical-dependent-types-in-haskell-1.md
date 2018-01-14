@@ -152,7 +152,7 @@ We can store a network by storing the matrix of of weights and biases between
 each layer:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L18-20
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L18-L20
 data Weights = W { wBiases :: !(Vector Double)  -- n
                  , wNodes  :: !(Matrix Double)  -- n x m
                  }                              -- "m to n" layer
@@ -169,7 +169,7 @@ linear algebra, implemented using blas/lapack under the hood)
 A feed-forward neural network is then just a linked list of these weights:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L22-28
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L22-L28
 data Network :: * where
     O     :: !Weights
           -> Network
@@ -203,7 +203,7 @@ between the last hidden layer and the output layer.
 We can write simple procedures, like generating random networks:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L46-56
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L46-L56
 randomWeights :: MonadRandom m => Int -> Int -> m Weights
 randomWeights i o = do
     seed1 :: Int <- getRandom
@@ -235,7 +235,7 @@ And now we can write a function to "run" our network on a given input vector,
 following the matrix equation we wrote earlier:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L30-44
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L30-L44
 logistic :: Floating a => a -> a
 logistic x = 1 / (1 + exp (-x))
 
@@ -286,7 +286,7 @@ move that direction. The implementation of backpropagation is found in many
 sources online and in literature, so let's see the implementation in Haskell:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L58-96
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L58-L96
 train :: Double           -- ^ learning rate
       -> Vector Double    -- ^ input vector
       -> Vector Double    -- ^ target vector
@@ -356,7 +356,7 @@ Pretty much the only way you can verify this code is to test it out on example
 cases. In the [source
 file](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs),
 I have
-[`main`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L128-136)
+[`main`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkUntyped.hs#L128-L136)
 test out the backprop, training a network on a 2D function that was "on" for two
 small circles and "off" everywhere else (A nice cute non-linearly-separable
 function to test our network on). We basically train the network to be able to
@@ -432,7 +432,7 @@ from a layer of 10 nodes to a layer of 5 nodes. `w :: Weights 4 6` would take
 you from a layer of 4 nodes to a layer of 6 nodes:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L21-23
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L21-L23
 data Weights i o = W { wBiases :: !(R o)
                      , wNodes  :: !(L o i)
                      }                      -- an "o x i" layer
@@ -469,7 +469,7 @@ Nats; the optional `'` apostrophe is just for our own benefit to distinguish it
 from a value-level list of integers.)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L25-32
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L25-L32
 data Network :: Nat -> [Nat] -> Nat -> * where
     O     :: !(Weights i o)
           -> Network i '[] o
@@ -531,7 +531,7 @@ this case, the compiler actually enforces your documentation's statements!)
 Generating random weights and networks is even nicer now:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L57-64
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L57-L64
 randomWeights :: (MonadRandom m, KnownNat i, KnownNat o)
               => m (Weights i o)
 randomWeights = do
@@ -715,7 +715,7 @@ constructor might have.
 Now we have enough pieces of the puzzle:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L66-75
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L66-L75
 randomNet :: forall m i hs o. (MonadRandom m, KnownNat i, SingI hs, KnownNat o)
           => m (Network i hs o)
 randomNet = go sing
@@ -810,7 +810,7 @@ have to play a guessing game about the shape of the returned matrix.
 The code for *running* the nets is actually literally identical from before:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L42-55
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L42-L55
 runLayer :: (KnownNat i, KnownNat o)
          => Weights i o
          -> R i
@@ -849,7 +849,7 @@ extra work --- they're free!
 Our back-prop algorithm is ported pretty nicely too:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L77-116
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L77-L116
 train :: forall i hs o. (KnownNat i, KnownNat o)
       => Double           -- ^ learning rate
       -> R i              -- ^ input vector
@@ -927,7 +927,7 @@ letting the compiler handle remembering/checking the rest.
 You can download the [typed
 network](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs)
 source code and run it yourself. Again, the
-[`main`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L151-159)
+[`main`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L151-L159)
 method is written identically to that of the other file and tests the identical
 function.
 
@@ -1003,7 +1003,7 @@ Here are some exercises you can do for fun to test your understanding and apply
 some of the concepts! The links are to the solutions in the source file.
 
 1.  Write a function that ["pops" the input
-    layer](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L167-168)
+    layer](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L167-L168)
     off of a `Network`, returning both the input layer's weights and the rest of
     the network, `(Weights i h, Network h hs o)`.
 
@@ -1012,7 +1012,7 @@ some of the concepts! The links are to the solutions in the source file.
 
 2.  Write a [function that takes two networks of the same dimensions and adds
     together their
-    weights](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L170-187).
+    weights](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L170-L187).
     Remember that `L m n` has a `Num` instance that adds the matrices together
     element-by-element.
 
@@ -1021,7 +1021,7 @@ some of the concepts! The links are to the solutions in the source file.
 
 3.  Write a function that takes a `Network i hs o` and [returns the singleton
     representing its hidden layer
-    structure](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L189-192)
+    structure](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped.hs#L189-L192)
     --- `Sing hs`:
 
     ``` {.haskell}

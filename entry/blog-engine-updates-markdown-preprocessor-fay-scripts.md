@@ -25,7 +25,7 @@ Here it is in action:
 yields:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/WolfGoatCabbage.hs#L28-45
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/WolfGoatCabbage.hs#L28-L45
 -- interactive: https://www.fpcomplete.com/user/jle/wolf-goat-cabbage
 findSolutions :: Int -> [Plan]
 findSolutions n = do
@@ -86,7 +86,7 @@ So...writing the parser for the syntax specification was pretty easy due to
 parsec and parser combinators:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/source/EntryPP.hs#L32-127
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/source/EntryPP.hs#L32-L127
 data SampleSpec = SampleSpec  { sSpecFile       :: FilePath
                               , _sSpecLive      :: Maybe String
                               , _sSpecKeywords  :: [(String,Maybe Int)]
@@ -153,7 +153,7 @@ Here is a characteristic example of fay code with
 [fay-jquery](http://hackage.haskell.org/package/fay-jquery-0.6.0.2) (0.6.0.2):
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/source/entry.hs#L45-54
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/source/entry.hs#L45-L54
 appendTopLinks :: Fay ()
 appendTopLinks = do
   mainContent <- select ".main-content"

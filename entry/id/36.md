@@ -64,7 +64,7 @@ So the "overall loop" will be:
 We like types in Haskell, so let's begin by laying out our types!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L19-46
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L19-L46
 import Control.Auto
 import Control.Auto.Collection
 import Control.Monad.Fix
@@ -176,7 +176,7 @@ We can then use this as our "initializer" for `dynMapF`...and now we have a
 dynamic collection of tasks!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L48-50
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L48-L50
 taskCollection :: Monad m
                => Auto m (IntMap TaskCmd, Blip [String]) (IntMap Task)
 taskCollection = dynMapF initTask CNop
@@ -192,7 +192,7 @@ basically like `foldl` on the inputs and a "current state". (The current state
 is of course the `Task`).
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L52-62
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L52-L62
 initTask :: Monad m => String -> Interval m TaskCmd Task
 initTask descr = accum f (Just (Task descr False))
   where
@@ -234,7 +234,7 @@ pulling out only the values that we care about, as a blip stream of `b`'s.
 We can build our "siphoners":
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L95-105
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L95-L105
 getAddEvts :: TodoInp -> Maybe [String]
 getAddEvts (IAdd descr) = Just [descr]
 getAddEvts _            = Nothing
@@ -267,7 +267,7 @@ we want to send to task id 1.
 Let's see it all work together!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L64-93
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L64-L93
 todoApp :: MonadFix m => Auto m TodoInp (IntMap Task)
 todoApp = proc inpEvt -> do
 
@@ -370,7 +370,7 @@ Our application logic is done; let's explore ways to interface with it!
 ### Testing/command line
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/todo-cmd.hs#L25-62
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/todo-cmd.hs#L25-L62
 parseInp :: String -> Maybe TodoInp
 parseInp = p . words
   where

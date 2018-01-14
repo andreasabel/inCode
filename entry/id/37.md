@@ -129,7 +129,7 @@ function called `select`, which really should be in the base libraries but isn't
 for some reason:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L7-9
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L7-L9
 select :: [a] -> [(a, [a])]
 select []     = []
 select (x:xs) = (x,xs) : [(y,x:ys) | (y,ys) <- select xs]
@@ -160,7 +160,7 @@ StateT select :: StateT [a] [] a
 And armed with this...we have all we need
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L3-35
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L3-L35
 import Control.Monad             (guard, mfilter)
 import Control.Monad.Trans.State
 import Data.List                 (foldl')
@@ -217,7 +217,7 @@ expressiveness. But not that it matters...the original version runs fast
 already.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L38-59
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L38-L59
 select' :: [a] -> [(a,[a])]
 select' = go []
   where

@@ -160,7 +160,7 @@ newtype wrapper that contains its length as a phantom type parameter.
 \KeywordTok{import} \KeywordTok{qualified} \DataTypeTok{Data.Vector} \KeywordTok{as} \DataTypeTok{V}
 \KeywordTok{import}           \DataTypeTok{GHC.TypeNats}
 
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L19-20}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L19-L20}
 \KeywordTok{data} \DataTypeTok{Vec}\NormalTok{ (}\OtherTok{n ::} \DataTypeTok{Nat}\NormalTok{) a }\FunctionTok{=} \DataTypeTok{UnsafeMkVec}\NormalTok{ \{}\OtherTok{ getVector ::} \DataTypeTok{V.Vector}\NormalTok{ a \}}
     \KeywordTok{deriving} \DataTypeTok{Show}
 \end{Highlighting}
@@ -234,7 +234,7 @@ We can use \texttt{natVal} with the \texttt{KnownNat} typeclass to write a
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L22-26}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L22-L26}
 \OtherTok{mkVec ::}\NormalTok{ forall n a}\FunctionTok{.} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a)}
 \NormalTok{mkVec v }\FunctionTok{|}\NormalTok{ V.length v }\FunctionTok{==}\NormalTok{ l }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (}\DataTypeTok{UnsafeMkVec}\NormalTok{ v)}
         \FunctionTok{|}\NormalTok{ otherwise       }\FunctionTok{=} \DataTypeTok{Nothing}
@@ -278,12 +278,12 @@ and then give it our type signature as a form of documentation:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L28-29}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L28-L29}
 \OtherTok{mapVec ::}\NormalTok{ (a }\OtherTok{->}\NormalTok{ b) }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n b}
 \NormalTok{mapVec f v }\FunctionTok{=} \DataTypeTok{UnsafeMkVec} \FunctionTok{$}\NormalTok{ V.map f (getVector v)}
 
 \CommentTok{-- just for fun}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L31-32}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L31-L32}
 \KeywordTok{instance} \DataTypeTok{Functor}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n) }\KeywordTok{where}
 \NormalTok{    fmap }\FunctionTok{=}\NormalTok{ mapVec}
 \end{Highlighting}
@@ -325,24 +325,24 @@ instead of runtime!
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- the resulting vector's length is the sum of the input vectors' lengths}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L34-35}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L34-L35}
 \OtherTok{(++) ::} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ (n }\FunctionTok{+}\NormalTok{ m) a}
 \DataTypeTok{UnsafeMkVec}\NormalTok{ xs }\FunctionTok{++} \DataTypeTok{UnsafeMkVec}\NormalTok{ ys }\FunctionTok{=} \DataTypeTok{UnsafeMkVec}\NormalTok{ (xs }\FunctionTok{V.++}\NormalTok{ ys)}
 
 \CommentTok{-- you must zip two vectors of the same length}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L37-38}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L37-L38}
 \OtherTok{zipVec ::} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n b }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n (a, b)}
 \NormalTok{zipVec (}\DataTypeTok{UnsafeMkVec}\NormalTok{ xs) (}\DataTypeTok{UnsafeMkVec}\NormalTok{ ys) }\FunctionTok{=} \DataTypeTok{UnsafeMkVec}\NormalTok{ (V.zip xs ys)}
 
 \CommentTok{-- type-level arithmetic to let us 'take'}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L40-43}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L40-L43}
 \OtherTok{takeVec ::}\NormalTok{ forall n m a}\FunctionTok{.} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{Vec}\NormalTok{ (n }\FunctionTok{+}\NormalTok{ m) a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{takeVec (}\DataTypeTok{UnsafeMkVec}\NormalTok{ xs) }\FunctionTok{=} \DataTypeTok{UnsafeMkVec}\NormalTok{ (V.take l xs)}
   \KeywordTok{where}
 \NormalTok{    l }\FunctionTok{=}\NormalTok{ fromIntegral (natVal (}\DataTypeTok{Proxy} \FunctionTok{@}\NormalTok{n))}
 
 \CommentTok{-- splitAt, as well}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L45-49}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L45-L49}
 \OtherTok{splitVec ::}\NormalTok{ forall n m a}\FunctionTok{.} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{Vec}\NormalTok{ (n }\FunctionTok{+}\NormalTok{ m) a }\OtherTok{->}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a, }\DataTypeTok{Vec}\NormalTok{ m a)}
 \NormalTok{splitVec (}\DataTypeTok{UnsafeMkVec}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ (}\DataTypeTok{UnsafeMkVec}\NormalTok{ ys, }\DataTypeTok{UnsafeMkVec}\NormalTok{ zs)}
   \KeywordTok{where}
@@ -439,7 +439,7 @@ indices into our vector!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L51-52}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L51-L52}
 \NormalTok{index}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Finite}\NormalTok{ n }\OtherTok{->}\NormalTok{ a}
 \NormalTok{index v i }\FunctionTok{=}\NormalTok{ getVector v }\FunctionTok{V.!}\NormalTok{ fromIntegral (getFinite i)}
 \end{Highlighting}
@@ -461,7 +461,7 @@ For example, we can write a version of \texttt{replicate}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L54-57}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L54-L57}
 \NormalTok{replicate}\OtherTok{ ::}\NormalTok{ forall n a}\FunctionTok{.} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{replicate x }\FunctionTok{=} \DataTypeTok{UnsafeMkVec} \FunctionTok{$}\NormalTok{ V.replicate l x}
   \KeywordTok{where}
@@ -502,7 +502,7 @@ You might recognize it as very similar to haskellism \texttt{pure}:
 \texttt{replicate} is actually \texttt{pure} for the Applicative instance of
 \texttt{Vec\ n}! As an extra challenge, what would
 \texttt{\textless{}*\textgreater{}} be? See
-\href{https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs\#L59-61}{the
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs\#L59-L61}{the
 solution} if you want to check your answer!
 
 \hypertarget{generating-with-indices}{%
@@ -513,7 +513,7 @@ call \texttt{generate}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L63-66}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L63-L66}
 \OtherTok{generate ::}\NormalTok{ forall n a}\FunctionTok{.} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>}\NormalTok{ (}\DataTypeTok{Finite}\NormalTok{ n }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{generate f }\FunctionTok{=} \DataTypeTok{UnsafeMkVec} \FunctionTok{$}\NormalTok{ V.generate l (f }\FunctionTok{.}\NormalTok{ fromIntegral)}
   \KeywordTok{where}
@@ -638,7 +638,7 @@ We could write, say, a function to always safely get the third item:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L68-69}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L68-L69}
 \OtherTok{getThird ::} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a}
 \NormalTok{getThird v }\FunctionTok{=}\NormalTok{ withVec v }\FunctionTok{$}\NormalTok{ \textbackslash{}v' }\OtherTok{->}\NormalTok{ fmap (v' }\OtherTok{`index`}\NormalTok{) (packFinite }\DecValTok{2}\NormalTok{)}
 \end{Highlighting}
@@ -660,7 +660,7 @@ and then back again:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L71-72}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L71-L72}
 \OtherTok{vectorToVector ::} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->} \DataTypeTok{V.Vector}\NormalTok{ a}
 \NormalTok{vectorToVector v }\FunctionTok{=}\NormalTok{ withVec v getVector}
 \end{Highlighting}
@@ -694,7 +694,7 @@ We can leverage this to write our \texttt{withVec}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L74-76}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L74-L76}
 \OtherTok{withVec ::} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->}\NormalTok{ (forall n}\FunctionTok{.} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
 \NormalTok{withVec v f }\FunctionTok{=} \KeywordTok{case}\NormalTok{ someNatVal (fromIntegral (V.length v)) }\KeywordTok{of}
     \DataTypeTok{SomeNat}\NormalTok{ (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy}\NormalTok{ m) }\OtherTok{->}\NormalTok{ f (}\DataTypeTok{UnsafeMkVec} \FunctionTok{@}\NormalTok{m v)}
@@ -750,7 +750,7 @@ Now, we can write:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L78-81}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L78-L81}
 \OtherTok{exactLength ::}\NormalTok{ forall n m a}\FunctionTok{.}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DataTypeTok{KnownNat}\NormalTok{ m) }\OtherTok{=>} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ m a)}
 \NormalTok{exactLength v }\FunctionTok{=} \KeywordTok{case}\NormalTok{ sameNat (}\DataTypeTok{Proxy} \FunctionTok{@}\NormalTok{n) (}\DataTypeTok{Proxy} \FunctionTok{@}\NormalTok{m) }\KeywordTok{of}
     \DataTypeTok{Just} \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Just}\NormalTok{ v     }\CommentTok{-- here, n ~ m, so a `Vec n a` is a `Vec m a`, too}
@@ -766,10 +766,10 @@ Now we can do:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L37-37}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L37-L37}
 \OtherTok{zipVec ::} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n b }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n (a, b)}
 
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L83-89}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L83-L89}
 \OtherTok{zipSame ::}\NormalTok{ forall a b}\FunctionTok{.} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->} \DataTypeTok{V.Vector}\NormalTok{ b }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{V.Vector}\NormalTok{ (a, b))}
 \NormalTok{zipSame v1 v2 }\FunctionTok{=}\NormalTok{ withVec v1 }\FunctionTok{$}\NormalTok{ \textbackslash{}(}\OtherTok{v1' ::} \DataTypeTok{Vec}\NormalTok{ n a) }\OtherTok{->}
 \NormalTok{                withVec v2 }\FunctionTok{$}\NormalTok{ \textbackslash{}(}\OtherTok{v2' ::} \DataTypeTok{Vec}\NormalTok{ m b) }\OtherTok{->}
@@ -856,7 +856,7 @@ two styles. But here are some practical translations:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- "explicit Sing" style}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L20-24}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L20-L24}
 \OtherTok{mkVec_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a)}
 \NormalTok{mkVec_ s v }\FunctionTok{|}\NormalTok{ V.length v }\FunctionTok{==}\NormalTok{ l }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (}\DataTypeTok{UnsafeMkVec}\NormalTok{ v)}
            \FunctionTok{|}\NormalTok{ otherwise       }\FunctionTok{=} \DataTypeTok{Nothing}
@@ -864,7 +864,7 @@ two styles. But here are some practical translations:
 \NormalTok{    l }\FunctionTok{=}\NormalTok{ fromIntegral (fromSing s)}
 
 \CommentTok{-- "implicit" style}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L26-30}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L26-L30}
 \OtherTok{mkVec ::}\NormalTok{ forall n a}\FunctionTok{.} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a)}
 \NormalTok{mkVec v }\FunctionTok{|}\NormalTok{ V.length v }\FunctionTok{==}\NormalTok{ l }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (}\DataTypeTok{UnsafeMkVec}\NormalTok{ v)}
         \FunctionTok{|}\NormalTok{ otherwise       }\FunctionTok{=} \DataTypeTok{Nothing}
@@ -888,7 +888,7 @@ think of \texttt{Sing\ n} as a token that carries around
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L32-42}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L32-L42}
 \OtherTok{replicate_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{replicate_ s x }\FunctionTok{=} \DataTypeTok{UnsafeMkVec} \FunctionTok{$}\NormalTok{ V.replicate l x}
   \KeywordTok{where}
@@ -902,7 +902,7 @@ think of \texttt{Sing\ n} as a token that carries around
     \DataTypeTok{SomeSing}\NormalTok{ s }\OtherTok{->}\NormalTok{ f s (}\DataTypeTok{UnsafeMkVec}\NormalTok{ v)}
 
 \CommentTok{-- alternatively, skipping `SomeSing` altogether:}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L44-54}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L44-L54}
 \OtherTok{withVec' ::} \DataTypeTok{V.Vector}\NormalTok{ a }\OtherTok{->}\NormalTok{ (forall n}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
 \NormalTok{withVec' v0 f }\FunctionTok{=}\NormalTok{ withSomeSing (fromIntegral (V.length v0)) }\FunctionTok{$}\NormalTok{ \textbackslash{}s }\OtherTok{->}
 \NormalTok{    f s (}\DataTypeTok{UnsafeMkVec}\NormalTok{ v0)}
@@ -942,7 +942,7 @@ we can convert between the two using \texttt{SNat} or \texttt{withKnownNat}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L56-60}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L56-L60}
 \OtherTok{generate_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->}\NormalTok{ (}\DataTypeTok{Finite}\NormalTok{ n }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{generate_ s f }\FunctionTok{=}\NormalTok{ withKnownNat s }\FunctionTok{$}
     \DataTypeTok{UnsafeMkVec} \FunctionTok{$}\NormalTok{ V.generate l (f }\FunctionTok{.}\NormalTok{ fromIntegral)}
@@ -950,13 +950,13 @@ we can convert between the two using \texttt{SNat} or \texttt{withKnownNat}
 \NormalTok{    l }\FunctionTok{=}\NormalTok{ fromIntegral (fromSing s)}
 
 \CommentTok{-- alternatively, via pattern matching:}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L63-66}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L63-L66}
 \OtherTok{generate'_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->}\NormalTok{ (}\DataTypeTok{Finite}\NormalTok{ n }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{generate'_ s}\FunctionTok{@}\DataTypeTok{SNat}\NormalTok{ f }\FunctionTok{=} \DataTypeTok{UnsafeMkVec} \FunctionTok{$}\NormalTok{ V.generate l (f }\FunctionTok{.}\NormalTok{ fromIntegral)}
   \KeywordTok{where}
 \NormalTok{    l }\FunctionTok{=}\NormalTok{ fromIntegral (fromSing s)}
 
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L68-69}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L68-L69}
 \OtherTok{generate ::} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>}\NormalTok{ (}\DataTypeTok{Finite}\NormalTok{ n }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{generate }\FunctionTok{=}\NormalTok{ generate_ sing}
 \end{Highlighting}
@@ -1088,7 +1088,7 @@ haskell list ``zipped'' with \texttt{S}s.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L26-30}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L26-L30}
 \KeywordTok{data} \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{VNil}\OtherTok{ ::} \DataTypeTok{Vec} \CharTok{'Z a}
 \OtherTok{    (:+) ::}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ (}\CharTok{'S n) a}
@@ -1138,7 +1138,7 @@ preserve the lengths:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L32-35}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L32-L35}
 \OtherTok{mapVec ::}\NormalTok{ (a }\OtherTok{->}\NormalTok{ b) }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n b}
 \NormalTok{mapVec f }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{VNil}    \OtherTok{->} \DataTypeTok{VNil}
@@ -1160,7 +1160,7 @@ We can write \texttt{zip} too:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L37-42}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L37-L42}
 \OtherTok{zipVec ::} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n b }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n (a, b)}
 \NormalTok{zipVec }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{VNil} \OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -1182,7 +1182,7 @@ to be able to use it for our \texttt{Nat}s. We can write it as a type family:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L54-61}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L54-L61}
 \KeywordTok{type}\NormalTok{ family (}\OtherTok{n ::} \DataTypeTok{Nat}\NormalTok{) }\FunctionTok{+}\NormalTok{ (}\OtherTok{m ::} \DataTypeTok{Nat}\NormalTok{)}\OtherTok{ ::} \DataTypeTok{Nat} \KeywordTok{where}
     \CharTok{'Z   + m = m}
     \CharTok{'S n + m = '}\DataTypeTok{S}\NormalTok{ (n }\FunctionTok{+}\NormalTok{ m)}
@@ -1230,7 +1230,7 @@ a \texttt{Vec\ n\ a}. We can do something similar, inductively, as well:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L63-67}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L63-L67}
 \KeywordTok{data} \DataTypeTok{Fin}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{FZ}\OtherTok{ ::} \DataTypeTok{Fin}\NormalTok{ (}\CharTok{'S n)}
     \DataTypeTok{FS}\OtherTok{ ::} \DataTypeTok{Fin}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Fin}\NormalTok{ (}\CharTok{'S n)}
@@ -1285,7 +1285,7 @@ indexing:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L69-74}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L69-L74}
 \NormalTok{index}\OtherTok{ ::} \DataTypeTok{Fin}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{index }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{FZ} \OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -1322,7 +1322,7 @@ First, we need to get singletons for our \texttt{Nat}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L21-24}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L21-L24}
 \FunctionTok{$}\NormalTok{(singletons [d|}
 \NormalTok{  data Nat = Z | S Nat}
 \NormalTok{    deriving Eq}
@@ -1342,7 +1342,7 @@ Essentially, we can \emph{pattern match} on \texttt{n}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L76-83}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L76-L83}
 \OtherTok{singSize ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{n ::} \DataTypeTok{Nat}\NormalTok{) }\OtherTok{->} \DataTypeTok{String}
 \NormalTok{singSize }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \CommentTok{-- here, n is 'Z}
@@ -1368,7 +1368,7 @@ Now, to write \texttt{replicate}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L90-93}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L90-L93}
 \OtherTok{replicate_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{replicate_ }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{SZ}   \OtherTok{->}\NormalTok{ \textbackslash{}_ }\OtherTok{->} \DataTypeTok{VNil}
@@ -1382,7 +1382,7 @@ lengths, using \texttt{SingI} and
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L95-96}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L95-L96}
 \NormalTok{replicate}\OtherTok{ ::} \DataTypeTok{SingI}\NormalTok{ n }\OtherTok{=>}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{replicate }\FunctionTok{=}\NormalTok{ replicate_ sing}
 \end{Highlighting}
@@ -1408,7 +1408,7 @@ see the solution, and see how it compares to your own :)
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L98-104}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L98-L104}
 \OtherTok{generate_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->}\NormalTok{ (}\DataTypeTok{Fin}\NormalTok{ n }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 
 \OtherTok{generate ::} \DataTypeTok{SingI}\NormalTok{ n }\OtherTok{=>}\NormalTok{ (}\DataTypeTok{Fin}\NormalTok{ n }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
@@ -1432,7 +1432,7 @@ expects\ldots{}these clues will help you get your bearings!
 Converting from sized to unsized vectors (to lists) is something that is pretty
 straightforward, and can be done by just pattern matching on the vector and
 recursing on the tail. I've
-\href{https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs\#L85-88}{left
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs\#L85-L88}{left
 it as an excercise} to write \texttt{Vec\ n\ a\ -\textgreater{}\ {[}a{]}}.
 
 More interesting is the other way around; our the API of converting unsized to
@@ -1440,7 +1440,7 @@ sized vectors will be the same:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L106-106}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L106-L106}
 \OtherTok{withVec ::}\NormalTok{ [a] }\OtherTok{->}\NormalTok{ (forall n}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
 \end{Highlighting}
 \end{Shaded}
@@ -1455,7 +1455,7 @@ Welcome back! Hope you had a fun time :) Here's the solution!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L106-110}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L106-L110}
 \OtherTok{withVec ::}\NormalTok{ [a] }\OtherTok{->}\NormalTok{ (forall n}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
 \NormalTok{withVec }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
 \NormalTok{    []   }\OtherTok{->}\NormalTok{ \textbackslash{}f }\OtherTok{->}\NormalTok{ f }\DataTypeTok{SZ} \DataTypeTok{VNil}
@@ -1486,7 +1486,7 @@ the vector itself:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L112-115}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L112-L115}
 \OtherTok{vecLength ::} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ n}
 \NormalTok{vecLength }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{VNil}    \OtherTok{->} \DataTypeTok{SZ}
@@ -1507,7 +1507,7 @@ vectors, using \texttt{\%\textasciitilde{}} and \texttt{Decision} and
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L117-123}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L117-L123}
 \OtherTok{exactLength_ ::} \DataTypeTok{Sing}\NormalTok{ m }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ m a)}
 \NormalTok{exactLength_ sM v }\FunctionTok{=} \KeywordTok{case}\NormalTok{ sM }\FunctionTok{%~}\NormalTok{ vecLength v }\KeywordTok{of}
     \DataTypeTok{Proved} \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Just}\NormalTok{ v}
@@ -1528,7 +1528,7 @@ instead --
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L125-135}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L125-L135}
 \OtherTok{exactLengthInductive_ ::} \DataTypeTok{Sing}\NormalTok{ m }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ m a)}
 \NormalTok{exactLengthInductive_ }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{SZ} \OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -1560,7 +1560,7 @@ For example, we can make a witness that \texttt{n} is less than or equal to
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L137-149}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L137-L149}
 \KeywordTok{data} \DataTypeTok{LTE}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{LEZ}\OtherTok{ ::} \DataTypeTok{LTE} \CharTok{'Z n}
     \DataTypeTok{LES}\OtherTok{ ::} \DataTypeTok{LTE}\NormalTok{ n m }\OtherTok{->} \DataTypeTok{LTE}\NormalTok{ (}\CharTok{'S n) ('}\DataTypeTok{S}\NormalTok{ m)}
@@ -1584,7 +1584,7 @@ We can write code to check for this property in our vectors:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L151-157}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L151-L157}
 \OtherTok{atLeast_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{LTE}\NormalTok{ n m, }\DataTypeTok{Vec}\NormalTok{ m a)}
 \NormalTok{atLeast_ sN v }\FunctionTok{=} \KeywordTok{case}\NormalTok{ isLTE sN (vecLength v) }\KeywordTok{of}
     \DataTypeTok{Proved}\NormalTok{ l    }\OtherTok{->} \DataTypeTok{Just}\NormalTok{ (l, v)}
@@ -1604,7 +1604,7 @@ given (via proof) that the vector has at least that many elements:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L159-163}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L159-L163}
 \OtherTok{takeVec ::} \DataTypeTok{LTE}\NormalTok{ n m }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{takeVec }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{LEZ}   \OtherTok{->}\NormalTok{ \textbackslash{}_ }\OtherTok{->} \DataTypeTok{VNil}
@@ -1624,7 +1624,7 @@ And, we can combine that with our \texttt{atLeast} function, to be able to take
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L165-169}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L165-L169}
 \OtherTok{takeVecMaybe_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a)}
 \NormalTok{takeVecMaybe_ sN v }\FunctionTok{=}\NormalTok{ uncurry takeVec }\FunctionTok{<$>}\NormalTok{ atLeast_ sN v}
 

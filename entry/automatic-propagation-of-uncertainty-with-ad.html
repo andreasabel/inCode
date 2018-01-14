@@ -78,22 +78,22 @@ f(\mu_X, \mu_Y) + \frac{1}{2}
 <p>For our case of simple addition, <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Coperatorname%7BE%7D%5BX%20%2B%20Y%5D%20%3D%20%5Cmu_X%20%2B%20%5Cmu_Y" alt="\operatorname{E}[X + Y] = \mu_X + \mu_Y" title="\operatorname{E}[X + Y] = \mu_X + \mu_Y" />, because the second-order partials of <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f%28x%2Cy%29%20%3D%20x%20%2B%20y" alt="f(x,y) = x + y" title="f(x,y) = x + y" /> are 0.</p>
 <h2 id="uncertain-values-in-haskell">Uncertain Values in Haskell</h2>
 <p>So, how are we going to model our uncertain values in Haskell … ? With an Algebraic Data Type, of course!</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L18-20</span></a>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L18-L20</span></a>
 <a class="sourceLine" id="cb3-2" data-line-number="2"><span class="kw">data</span> <span class="dt">Uncert</span> a <span class="fu">=</span> <span class="dt">Un</span> {<span class="ot"> uMean ::</span> <span class="fu">!</span>a</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">                   ,<span class="ot"> uVar  ::</span> <span class="fu">!</span>a</a>
 <a class="sourceLine" id="cb3-4" data-line-number="4">                   }</a></code></pre></div>
 <p>We’ll keep track of the mean (the central point) and the <em>variance</em>, which is the standard deviation <em>squared</em>. We keep track of the variance and not the standard deviation (the “plus or minus”) because the mathematics is a bit more straightforward.</p>
 <p>We can write a function to turn a “plus or minus” statement into an <code>Uncert</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L22-23</span></a>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L22-L23</span></a>
 <a class="sourceLine" id="cb4-2" data-line-number="2"><span class="ot">(+/-) ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Uncert</span> a</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">x <span class="fu">+/-</span> dx <span class="fu">=</span> <span class="dt">Un</span> x (dx<span class="fu">*</span>dx)</a></code></pre></div>
 <p>Give the <code>dx</code> (the standard deviation) and store <code>dx^2</code>, the variance.</p>
 <p>Let’s also throw in a handy helper function for “exact” values:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L25-26</span></a>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L25-L26</span></a>
 <a class="sourceLine" id="cb5-2" data-line-number="2"><span class="ot">exact ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Uncert</span> a</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">exact x <span class="fu">=</span> x <span class="fu">+/-</span> <span class="dv">0</span></a></code></pre></div>
 <p>But, we can do better (if just for fun). We can use pattern synonyms to basically “abstract” away the data type itself, and let people pattern match on a mean and standard deviation:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L29-34</span></a>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L29-L34</span></a>
 <a class="sourceLine" id="cb6-2" data-line-number="2"><span class="co">-- pattern (:+/-) :: () =&gt; Floating a =&gt; a -&gt; a -&gt; Uncert a</span></a>
 <a class="sourceLine" id="cb6-3" data-line-number="3"><span class="co">-- [GHC 8.0:]</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4"><span class="co">-- pattern (:+/-) :: Floating a =&gt; a -&gt; a -&gt; Uncert a</span></a>
@@ -102,7 +102,7 @@ f(\mu_X, \mu_Y) + \frac{1}{2}
 <a class="sourceLine" id="cb6-7" data-line-number="7">    x <span class="fu">:+/-</span> dx <span class="fu">=</span> <span class="dt">Un</span> x (dx<span class="fu">*</span>dx)</a></code></pre></div>
 <p>(Note that the type signature you need for this is different depending on if you’re in GHC 8.0 and GHC 7.10; they’re mutually incompatible. How unfortunate!)</p>
 <p>Now, people can pattern match on <code>x :+/- dx</code> and receive the mean and uncertainty directly. Neat!</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L36-37</span></a>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L36-L37</span></a>
 <a class="sourceLine" id="cb7-2" data-line-number="2"><span class="ot">uStdev ::</span> <span class="dt">Floating</span> a <span class="ot">=&gt;</span> <span class="dt">Uncert</span> a <span class="ot">-&gt;</span> a</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">uStdev (_ <span class="fu">:+/-</span> dx) <span class="fu">=</span> dx</a></code></pre></div>
 <h3 id="making-it-numeric">Making it Numeric</h3>
@@ -154,7 +154,7 @@ f(\mu_X, \mu_Y) + \frac{1}{2}
 <div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1">y  <span class="fu">=</span> fx <span class="fu">+</span> ddfx <span class="fu">*</span> vx <span class="fu">/</span> <span class="dv">2</span></a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">vy <span class="fu">=</span> dfx<span class="fu">^</span><span class="dv">2</span> <span class="fu">*</span> vx</a></code></pre></div>
 <p>Putting it all together:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L39-47</span></a>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L39-L47</span></a>
 <a class="sourceLine" id="cb13-2" data-line-number="2"><span class="ot">liftU ::</span> <span class="dt">Fractional</span> a</a>
 <a class="sourceLine" id="cb13-3" data-line-number="3">      <span class="ot">=&gt;</span> (forall s<span class="fu">.</span> <span class="dt">AD</span> s (<span class="dt">Tower</span> a) <span class="ot">-&gt;</span> <span class="dt">AD</span> s (<span class="dt">Tower</span> a))</a>
 <a class="sourceLine" id="cb13-4" data-line-number="4">      <span class="ot">-&gt;</span> <span class="dt">Uncert</span> a</a>
@@ -199,18 +199,18 @@ f_{yx}(x, y) &amp; f_{yy}(x, y)
 <a class="sourceLine" id="cb17-4" data-line-number="4">)</a></code></pre></div>
 <p>We can access the gradient by using <code>fmap fst</code> on the second component of the tuple and access the hessian by using <code>fmap snd</code>.</p>
 <p>We need a couple of helpers, first — one to get the “diagonal” of our hessian, because we only care about the repeated partials:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L49-53</span></a>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L49-L53</span></a>
 <a class="sourceLine" id="cb18-2" data-line-number="2"><span class="ot">diag ::</span> [[a]] <span class="ot">-&gt;</span> [a]</a>
 <a class="sourceLine" id="cb18-3" data-line-number="3">diag <span class="fu">=</span> \<span class="kw">case</span></a>
 <a class="sourceLine" id="cb18-4" data-line-number="4">    []        <span class="ot">-&gt;</span> []</a>
 <a class="sourceLine" id="cb18-5" data-line-number="5">    []   <span class="fu">:</span>yss <span class="ot">-&gt;</span> diag (drop <span class="dv">1</span> <span class="fu">&lt;$&gt;</span> yss)</a>
 <a class="sourceLine" id="cb18-6" data-line-number="6">    (x<span class="fu">:</span>_)<span class="fu">:</span>yss <span class="ot">-&gt;</span> x <span class="fu">:</span> diag (drop <span class="dv">1</span> <span class="fu">&lt;$&gt;</span> yss)</a></code></pre></div>
 <p>And then a “dot product”, utility function, which just multiplies two lists together component-by-component and sums the results:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-56</span></a>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-L56</span></a>
 <a class="sourceLine" id="cb19-2" data-line-number="2"><span class="ot">dot ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> a</a>
 <a class="sourceLine" id="cb19-3" data-line-number="3">dot xs ys <span class="fu">=</span> sum (zipWith (<span class="fu">*</span>) xs ys)</a></code></pre></div>
 <p>And now we can write our multi-variate function lifter:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L58-75</span></a>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L58-L75</span></a>
 <a class="sourceLine" id="cb20-2" data-line-number="2"><span class="ot">liftUF ::</span> (<span class="dt">Traversable</span> f, <span class="dt">Fractional</span> a)</a>
 <a class="sourceLine" id="cb20-3" data-line-number="3">       <span class="ot">=&gt;</span> (forall s<span class="fu">.</span> f (<span class="dt">AD</span> s (<span class="dt">Sparse</span> a)) <span class="ot">-&gt;</span> <span class="dt">AD</span> s (<span class="dt">Sparse</span> a))</a>
 <a class="sourceLine" id="cb20-4" data-line-number="4">       <span class="ot">-&gt;</span> f (<span class="dt">Uncert</span> a)</a>
@@ -231,7 +231,7 @@ f_{yx}(x, y) &amp; f_{yy}(x, y)
 <a class="sourceLine" id="cb20-19" data-line-number="19">                <span class="fu">$</span> toList ((<span class="fu">^</span><span class="dv">2</span>) <span class="fu">&lt;$&gt;</span> dfxs)</a></code></pre></div>
 <p>(Again, don’t mind the scary type <code>forall s. f (AD s (Sparse a)) -&gt; AD s (Sparse a)</code>, it’s just <em>ad</em>’s type for things you can use <code>hessian'</code> on)</p>
 <p>And we can write some nice helper functions so we can use them more naturally:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L77-90</span></a>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L77-L90</span></a>
 <a class="sourceLine" id="cb21-2" data-line-number="2"><span class="ot">liftU2 ::</span> <span class="dt">Fractional</span> a</a>
 <a class="sourceLine" id="cb21-3" data-line-number="3">       <span class="ot">=&gt;</span> (forall s<span class="fu">.</span> <span class="dt">AD</span> s (<span class="dt">Sparse</span> a) <span class="ot">-&gt;</span> <span class="dt">AD</span> s (<span class="dt">Sparse</span> a) <span class="ot">-&gt;</span> <span class="dt">AD</span> s (<span class="dt">Sparse</span> a))</a>
 <a class="sourceLine" id="cb21-4" data-line-number="4">       <span class="ot">-&gt;</span> <span class="dt">Uncert</span> a</a>

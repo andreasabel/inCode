@@ -37,7 +37,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>Luckily, because of Haskell’s great composition tools, assembling these instructions by hand are easy peasy!</p>
 <h4 id="put">Put</h4>
 <p>Let’s define our own custom <code>Put</code> for our <code>PreTree</code>s:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L69-76</span></a>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L69-L76</span></a>
 <a class="sourceLine" id="cb3-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
 <a class="sourceLine" id="cb3-3" data-line-number="3"><span class="ot">putPT ::</span> <span class="dt">Binary</span> a <span class="ot">=&gt;</span> <span class="dt">PreTree</span> a <span class="ot">-&gt;</span> <span class="dt">Put</span></a>
 <a class="sourceLine" id="cb3-4" data-line-number="4">putPT (<span class="dt">PTLeaf</span> x) <span class="fu">=</span> <span class="kw">do</span></a>
@@ -56,7 +56,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>The only slightly annoying thing is that we subject ourselves to <a href="http://existentialtype.wordpress.com/2011/03/15/boolean-blindness/">boolean blindness</a> by using <code>True</code> or <code>False</code>; we have to keep track of what means what. Alternatively, we can create our own binary data types, <code>data PTType = IsNode | IsLeaf</code>, and <code>put</code> <em>that</em>, instead…but in this case it might not be so bad to live with boolean blindness for now.</p>
 <h4 id="get">Get</h4>
 <p>Now let’s define our own custom <code>Get</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L79-84</span></a>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L79-L84</span></a>
 <a class="sourceLine" id="cb4-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
 <a class="sourceLine" id="cb4-3" data-line-number="3"><span class="ot">getPT ::</span> <span class="dt">Binary</span> a <span class="ot">=&gt;</span> <span class="dt">Get</span> (<span class="dt">PreTree</span> a)</a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">getPT <span class="fu">=</span> <span class="kw">do</span></a>
@@ -80,7 +80,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>Where <code>(&lt;$&gt;)</code> and <code>(&lt;*&gt;)</code> come from <code>Control.Applicative</code>. We call this style “applicative style”, in the biz.</p>
 <h4 id="wrapping-it-up">Wrapping it up</h4>
 <p>And finally, to tie it all together:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L36-38</span></a>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L36-L38</span></a>
 <a class="sourceLine" id="cb6-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
 <a class="sourceLine" id="cb6-3" data-line-number="3"><span class="kw">instance</span> <span class="dt">Binary</span> a <span class="ot">=&gt;</span> <span class="dt">Binary</span> (<span class="dt">PreTree</span> a) <span class="kw">where</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">    put <span class="fu">=</span> putPT</a>
@@ -134,7 +134,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>Now that we’ve got that out of the way, let’s work on actually encoding and decoding.</p>
 <p>So, basically, we encode a character in a huffman tree by path you take to reach the character.</p>
 <p>Let’s represent this path as a list of <code>Direction</code>s:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L25-30</span></a>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L25-L30</span></a>
 <a class="sourceLine" id="cb9-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
 <a class="sourceLine" id="cb9-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Direction</span> <span class="fu">=</span> <span class="dt">DLeft</span></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">               <span class="fu">|</span> <span class="dt">DRight</span></a>
@@ -144,7 +144,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>Eventually, an <code>Encoding</code> will be turned into a <code>ByteString</code>, with <code>DLeft</code> representing the 0 bit and <code>DRight</code> representing the 1 bit. But we keep them as their own data types now because everyone hates <a href="http://existentialtype.wordpress.com/2011/03/15/boolean-blindness/">boolean blindness</a>. Instead of keeping a <code>True</code> or <code>False</code>, we keep data types that actually carry semantic meaning :) And we can’t do silly things like use a boolean as a direction…what the heck? Why would you even want to do that? How is “true” a direction?</p>
 <h3 id="direct-search">Direct search</h3>
 <p>Here’s a naive recursive direct (depth-first) search.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L90-96</span></a>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L90-L96</span></a>
 <a class="sourceLine" id="cb10-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
 <a class="sourceLine" id="cb10-3" data-line-number="3"><span class="ot">findPT ::</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> <span class="dt">PreTree</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Encoding</span></a>
 <a class="sourceLine" id="cb10-4" data-line-number="4">findPT pt0 x <span class="fu">=</span> go pt0 []</a>
@@ -169,7 +169,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>We can sort of “solve” both of these problems this by traversing through our <code>PreTree</code> and adding an entry to a <code>Map</code> at every leaf. This fixes our repetition problem by memoizing all of our results into a map…and it fixes our search problem because <code>Map</code>s are an ordered binary search tree with efficient O(log n) lookups.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
 <p>There are many ways to do this; my favorite right now is to do it by doing collapsing our tree into one giant map, using the Monoid instance of <code>Map</code>.</p>
 <p>Basically, we turn each of our leaves into little <code>Map</code>s, and then “combine” them all, using <code>(&lt;&gt;)</code>, which “combines” or merges two <code>Map k v</code>’s, using their Monoid instance:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L101-106</span></a>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L101-L106</span></a>
 <a class="sourceLine" id="cb12-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
 <a class="sourceLine" id="cb12-3" data-line-number="3"><span class="ot">ptTable ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> <span class="dt">PreTree</span> a <span class="ot">-&gt;</span> <span class="dt">Map</span> a <span class="dt">Encoding</span></a>
 <a class="sourceLine" id="cb12-4" data-line-number="4">ptTable pt <span class="fu">=</span> go pt []</a>
@@ -179,7 +179,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <a class="sourceLine" id="cb12-8" data-line-number="8">                              go pt2 (<span class="dt">DRight</span> <span class="fu">:</span> enc)</a></code></pre></div>
 <p>We do some sort of fancy depth-first “map” over all of the leaves, keeping track of how deep we are. Then we combine it all as we go along with <code>&lt;&gt;</code>.</p>
 <p>Note how it is almost identical in structure to <code>findPT</code>:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L90-96</span></a>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L90-L96</span></a>
 <a class="sourceLine" id="cb13-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
 <a class="sourceLine" id="cb13-3" data-line-number="3"><span class="ot">findPT ::</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> <span class="dt">PreTree</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Encoding</span></a>
 <a class="sourceLine" id="cb13-4" data-line-number="4">findPT pt0 x <span class="fu">=</span> go pt0 []</a>
@@ -191,7 +191,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>Except instead of doing a “short-circuit combination” with <code>(&lt;|&gt;)</code>, we do a “full combination” with <code>(&lt;&gt;)</code>.</p>
 <h3 id="lookup-act-2">Lookup, Act 2</h3>
 <p>So now that we have our lookup table, our new lookup/find function is both simple and performant:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L110-111</span></a>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L110-L111</span></a>
 <a class="sourceLine" id="cb14-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
 <a class="sourceLine" id="cb14-3" data-line-number="3"><span class="ot">lookupPTTable ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> <span class="dt">Map</span> a <span class="dt">Encoding</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Encoding</span></a>
 <a class="sourceLine" id="cb14-4" data-line-number="4">lookupPTTable <span class="fu">=</span> flip M.lookup</a></code></pre></div>
@@ -205,7 +205,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>(Here we use the Monad instance for Maybe, to extract the <code>tb'</code> out of the <code>Just tb</code>. We “sequence” two Maybe’s together. For more information, check out my <a href="http://blog.jle.im/entry/practical-fun-with-monads-introducing-monadplus">blog post</a> on this exact topic)</p>
 <h3 id="encoding-many">Encoding many</h3>
 <p>Now, we’d like to be able to decode an entire stream of <code>a</code>’s, returning a list of the encodings.</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L114-117</span></a>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L114-L117</span></a>
 <a class="sourceLine" id="cb16-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
 <a class="sourceLine" id="cb16-3" data-line-number="3"><span class="ot">encodeAll ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> <span class="dt">PreTree</span> a <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Encoding</span></a>
 <a class="sourceLine" id="cb16-4" data-line-number="4">encodeAll pt xs <span class="fu">=</span> concat <span class="fu">&lt;$&gt;</span> sequence (map (lookupPTTable tb) xs)</a>
@@ -234,7 +234,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>Welp, that’s half the battle!</p>
 <h2 id="decoding">Decoding</h2>
 <p>For huffman trees, decoding is the much simpler process. Simply traverse down the tree using the given encoding and return a value whenever you reach a leaf.</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L123-128</span></a>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L123-L128</span></a>
 <a class="sourceLine" id="cb19-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
 <a class="sourceLine" id="cb19-3" data-line-number="3"><span class="ot">decodePT ::</span> <span class="dt">PreTree</span> a <span class="ot">-&gt;</span> <span class="dt">Encoding</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (a, <span class="dt">Encoding</span>)</a>
 <a class="sourceLine" id="cb19-4" data-line-number="4">decodePT (<span class="dt">PTLeaf</span> x)       ds     <span class="fu">=</span> <span class="dt">Just</span> (x, ds)</a>
@@ -255,7 +255,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="ot">unfoldr ::</span> (b <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (a, b)) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> [a]</a></code></pre></div>
 <p><code>unfoldr</code> makes a list by applying your function repeatedly to a “de-cumulator”, carrying the state of the decumulator, and stopping when your function returns <code>Nothing</code>. You can think of it as the “opposite” of <code>foldr</code>.</p>
 <p>Using <code>unfoldr</code>, we can write a <code>decodeAll</code>:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L132-133</span></a>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L132-L133</span></a>
 <a class="sourceLine" id="cb22-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
 <a class="sourceLine" id="cb22-3" data-line-number="3"><span class="ot">decodeAll ::</span> <span class="dt">PreTree</span> a <span class="ot">-&gt;</span> <span class="dt">Encoding</span> <span class="ot">-&gt;</span> [a]</a>
 <a class="sourceLine" id="cb22-4" data-line-number="4">decodeAll pt <span class="fu">=</span> unfoldr (decodePT pt)</a></code></pre></div>
@@ -265,7 +265,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>Which works exactly as we’d like!</p>
 <h2 id="testing">Testing</h2>
 <p>We can write a utility to test our encoding/decoding functions:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L106-113</span></a>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L106-L113</span></a>
 <a class="sourceLine" id="cb24-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
 <a class="sourceLine" id="cb24-3" data-line-number="3"><span class="ot">testTree ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> [a]</a>
 <a class="sourceLine" id="cb24-4" data-line-number="4">testTree [] <span class="fu">=</span> []                    <span class="co">-- handle the empty list</span></a>
@@ -302,14 +302,14 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>Ah. Well, that’s a problem. Basically, our input string has <a href="http://en.wikipedia.org/wiki/Entropy_(information_theory)">“zero” entropy</a>, according to typical measurements. So we cannot naively huffman encode it.</p>
 <h4 id="success">Success!</h4>
 <p>There are a few ways to deal with this. The most “immediate” way would be to realize that <code>decodeAll</code> is partial (that is, it does not terminate/is undefined on some of its inputs), and will actually never terminate if the given tree is a singleton tree. We can write a “safe” <code>decodeAll</code>:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L137-139</span></a>
+<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L137-L139</span></a>
 <a class="sourceLine" id="cb28-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
 <a class="sourceLine" id="cb28-3" data-line-number="3"><span class="ot">decodeAll&#39; ::</span> <span class="dt">PreTree</span> a <span class="ot">-&gt;</span> <span class="dt">Encoding</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [a]</a>
 <a class="sourceLine" id="cb28-4" data-line-number="4">decodeAll&#39; (<span class="dt">PTLeaf</span> _) _   <span class="fu">=</span> <span class="dt">Nothing</span></a>
 <a class="sourceLine" id="cb28-5" data-line-number="5">decodeAll&#39; pt         enc <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> unfoldr (decodePT pt) enc</a></code></pre></div>
 <p>In doing this, we don’t exactly “fix” the problem…we only defer responsibility. Now, whoever uses <code>decodeAll'</code> (like our eventual encoding interface) is <em>forced to handle the error</em> (by handing the <code>Nothing</code> case). In this way, <em>the type system enforces safety</em>. Had we always used the unsafe <code>decodeAll</code>, then whoever uses it eventually has to “manually remember” to handle the unterminating case, by carefuly reading documentation or something. In this case, the type system is a big, explicit reminder saying “hey, deal with the unterminating case.”</p>
 <p>We’ll also a “safe” <code>testTree</code>:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L117-121</span></a>
+<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L117-L121</span></a>
 <a class="sourceLine" id="cb29-2" data-line-number="2"><span class="co">-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding</span></a>
 <a class="sourceLine" id="cb29-3" data-line-number="3"><span class="ot">testTree&#39; ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [a]</a>
 <a class="sourceLine" id="cb29-4" data-line-number="4">testTree&#39; xs <span class="fu">=</span> <span class="kw">do</span></a>

@@ -48,7 +48,7 @@ to saying `Maybe<a>` -- `Maybe<a>` is a parameterized type over some `a`.
 This type is useful for functions that might fail:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L23-41
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L23-L41
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
 -- divideMaybe: Takes two integers and returns -- possibly -- their integer
 --      quotient. It succeeds if the denominator is not zero, and fails if
@@ -117,7 +117,7 @@ normal inty-things with it.
 That is...I have all these functions that work only on `Int`!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L43-50
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L43-L50
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
 addThree :: Int -> Int
 addThree = (+ 3)
@@ -162,7 +162,7 @@ error. Or you would turn your uncertain 5 into either a certain 5 or some
 That is, you would use functions like these to exit your world:[^2]
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L76-82
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L76-L82
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
 certaintify :: Maybe a -> a
 certaintify (Just x) = x
@@ -238,7 +238,7 @@ Let's make one! It'll apply the function to the value inside a `Just`, and leave
 a `Nothing` alone.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L84-88
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L84-L88
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
 inMaybe :: (a -> b) -> (Maybe a -> Maybe b)
 inMaybe f = liftedF
@@ -267,7 +267,7 @@ Wow! We can now use normal functions and still stay inside my uncertain world.
 We could even write our `ageFromId`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L68-69
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L68-L69
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
 ageFromId :: ID -> Maybe Int
 ageFromId i = (inMaybe age) (personFromId i)
@@ -448,7 +448,7 @@ result there. If the result is not there, then you don't.
 We have enough to write this out ourselves:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L90-94
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L90-L94
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
 liftInput :: (a -> Maybe b) -> (Maybe a -> Maybe b)
 liftInput f = liftedF
@@ -472,7 +472,7 @@ Neat! Now we don't have to fear `a -> Maybe b`'s...we can use them and *still
 stay in our world*, without leaving our world of uncertainty!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L71-72
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/maybe.hs#L71-L72
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
 halfOfAge :: ID -> Maybe Int
 halfOfAge i = (liftInput halveMaybe) (ageFromId i)
@@ -653,7 +653,7 @@ little machine that "waits" for something of type `r`, then *uses* it to
 exist as soon as you give it an `r`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L17-27
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L17-L27
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
 -- futureLength: A future `Int` that will be the length of whatever the
 --      list it is waiting for will be.
@@ -712,7 +712,7 @@ Oh --- but, because `Reader [a]` is a Functor, I can use `fmap` to turn
 `fmap (< 5) :: (Reader [a]) Int -> (Reader [a]) Bool`!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L34-38
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L34-L38
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
 futureShorterThan :: Int -> (Reader [a]) Bool
 futureShorterThan n = fmap (< n) futureLength
@@ -754,7 +754,7 @@ Hm. Let's try this out on a future `Int` we have...we can use
 `futureHead :: (Reader [Int]) Int`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L40-41
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/reader.hs#L40-L41
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
 futureShorterThanHead :: (Reader [Int]) Bool
 futureShorterThanHead = futureShorterThan =<< futureHead
@@ -845,7 +845,7 @@ returns a program that, when executed, promises an `Int` --- the number of lines
 in that file.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/io.hs#L19-19
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/inside/io.hs#L19-L19
 -- interactive: https://www.fpcomplete.com/user/jle/inside-my-world
 wc :: String -> IO Int
 ```
