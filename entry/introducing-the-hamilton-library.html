@@ -72,7 +72,7 @@ U(x_1, y_1, x_2, y_2) = ( y_1 + 2 y_2 ) g
 U(x_1, y_1, x_2, y_2) = ( y_1 + 2 y_2 ) g
 " /><br /></p>
 <p>Turns out that this is a complete enough description of our system to let <em>hamilton</em> do the rest!</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L10-25</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L10-L25</span>
 <span class="ot">doublePendulum ::</span> <span class="dt">System</span> <span class="dv">4</span> <span class="dv">2</span>
 doublePendulum <span class="fu">=</span> mkSystem&#39; masses coordinates potential
   <span class="kw">where</span>
@@ -89,39 +89,39 @@ doublePendulum <span class="fu">=</span> mkSystem&#39; masses coordinates potent
         <span class="ot">=&gt;</span> <span class="dt">V.Vector</span> <span class="dv">4</span> a
         <span class="ot">-&gt;</span> a
     potential (<span class="dt">V4</span> _ y1 _ y2) <span class="fu">=</span> (y1 <span class="fu">+</span> <span class="dv">2</span> <span class="fu">*</span> y2) <span class="fu">*</span> <span class="dv">5</span>    <span class="co">-- assuming g = 5</span></code></pre></div>
-<p>(with some <a href="https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L27-35">helper patterns</a> defined here – <code>V2</code> and <code>V4</code> – that lets us pattern match on and construct sized <code>Vector</code>s and their 2 (or 4) elements)</p>
+<p>(with some <a href="https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L27-L35">helper patterns</a> defined here – <code>V2</code> and <code>V4</code> – that lets us pattern match on and construct sized <code>Vector</code>s and their 2 (or 4) elements)</p>
 <p>Ta dah. That’s literally all we need.</p>
 <p>A <code>System m n</code> represents a description of a physical system (without its state) described with <code>n</code> parameters/generalized coordinates. The <code>m</code> represents the dimension of its underlying cartesian coordinate system (<code>4</code> for us, with <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Clangle%20x_1%2C%20y_1%2C%20x_2%2C%20y_2%20%5Crangle" alt="\langle x_1, y_1, x_2, y_2 \rangle" title="\langle x_1, y_1, x_2, y_2 \rangle" />). The <code>m</code> should be more or less irrelevant to the actual <em>usage</em> of <code>System m n</code> and the <em>hamilton</em> api…but it’s mostly useful only if we eventually want to plot the system in normal cartesian space.</p>
 <p>Now, let’s run the simulation. First we have to pick a starting configuration:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L37-39</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L37-L39</span>
 <span class="ot">config0 ::</span> <span class="dt">Config</span> <span class="dv">2</span>
 config0 <span class="fu">=</span> <span class="dt">Cfg</span> (vec2 <span class="dv">1</span> <span class="dv">0</span>  )  <span class="co">-- initial positions</span>
               (vec2 <span class="dv">0</span> <span class="fl">0.5</span>)  <span class="co">-- initial velocities</span></code></pre></div>
 <p>A <code>Config n</code> represents the state of the system, represented in configuration-space. But, remember, Hamiltonian dynamics is about simulating the path of the particle through <em>phase space</em>. So we can convert our configuration-space state into a phase-space state:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L41-42</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L41-L42</span>
 <span class="ot">phase0 ::</span> <span class="dt">Phase</span> <span class="dv">2</span>
 phase0 <span class="fu">=</span> toPhase doublePendulum config0</code></pre></div>
 <p>And now we can ask for the state of our system at any amount of points in time:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L44-45</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L44-L45</span>
 <span class="ot">evolution ::</span> [<span class="dt">Phase</span> <span class="dv">2</span>]
 evolution <span class="fu">=</span> evolveHam&#39; doublePendulum phase0 [<span class="dv">0</span>,<span class="fl">0.1</span> <span class="fu">..</span> <span class="dv">1</span>]</code></pre></div>
 <p>The result there will be the state of the system at times 0, 0.01, 0.02, 0.03 … etc.</p>
 <p>Or, if you want to run the system step-by-step:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L47-48</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L47-L48</span>
 <span class="ot">evolution&#39; ::</span> [<span class="dt">Phase</span> <span class="dv">2</span>]
 evolution&#39; <span class="fu">=</span> iterate (stepHam <span class="fl">0.1</span> doublePendulum) phase0</code></pre></div>
 <p>And you can get the position of the coordinates as:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L50-51</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L50-L51</span>
 <span class="ot">positions ::</span> [<span class="dt">R</span> <span class="dv">2</span>]
 positions <span class="fu">=</span> phsPositions <span class="fu">&lt;$&gt;</span> evolution&#39;</code></pre></div>
 <p>With <code>phsPositions :: Phase n -&gt; R n</code></p>
 <p>And the position in the underlying cartesian space as:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L53-54</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L53-L54</span>
 <span class="ot">positions&#39; ::</span> [<span class="dt">R</span> <span class="dv">4</span>]
 positions&#39; <span class="fu">=</span> underlyingPos doublePendulum <span class="fu">&lt;$&gt;</span> positions</code></pre></div>
 <p>Where <code>underlyingPos :: System m n -&gt; Phase n -&gt; R m</code>.</p>
 <p>Let’s ignore the underlying position for now, and print out now the full progression of the system’s positions:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L56-57</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/DoublePendulum.hs#L56-L57</span>
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> withRows (take <span class="dv">25</span> positions) (disp <span class="dv">4</span>)</code></pre></div>
 <p>(<code>withRows</code> is from <em>hmatrix</em>, which treats a list of vectors as a matrix with each vector as a row, and <code>disp 5</code> from <em>hmatrix</em> pretty-prints our matrix with 5 decimal places of precision)</p>
@@ -178,7 +178,7 @@ U(r, \theta) = - \frac{G m_1 m_2}{r}
 <p>“But wait,” I hear you say. “If we’re doing a change-of-coordinate-system into polar coordinates, don’t we have to account for artifacts like centrifugal acceleration from the fact that <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?d%20%5Ctheta" alt="d \theta" title="d \theta" /> is non-uniform and depends on <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?r" alt="r" title="r" />?”</p>
 <p>Well, I’m glad you asked! And the answer is, nope. We don’t have to account for any weird interplay from non-uniform coordinate systems because <em>hamilton</em> arrives at the proper solution simply from the geometry of the generalized coordinates. (And it does this using <a href="https://hackage.haskell.org/package/ad">ad</a>, but more on that for a later post!)</p>
 <p>Anyway, here we go:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/TwoBody.hs#L10-42</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/TwoBody.hs#L10-L42</span>
 <span class="ot">twoBody ::</span> <span class="dt">System</span> <span class="dv">4</span> <span class="dv">2</span>
 twoBody <span class="fu">=</span> mkSystem masses coordinates potential
   <span class="kw">where</span>
@@ -204,7 +204,7 @@ config0 <span class="fu">=</span> <span class="dt">Cfg</span> (vec2 <span class=
               (vec2 <span class="dv">0</span> <span class="fl">0.5</span>)  <span class="co">-- initial velocities</span></code></pre></div>
 <p>(we use <code>mkSystem</code> instead of <code>mkSystem'</code> because we want to state the potential energy in terms of our generalized coordinates <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?r" alt="r" title="r" /> and <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Ctheta" alt="\theta" title="\theta" />)</p>
 <p>Let’s take a peek:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/TwoBody.hs#L44-60</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton/TwoBody.hs#L44-L60</span>
 <span class="ot">phase0 ::</span> <span class="dt">Phase</span> <span class="dv">2</span>
 phase0 <span class="fu">=</span> toPhase twoBody config0
 

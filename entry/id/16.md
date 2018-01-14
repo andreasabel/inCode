@@ -79,7 +79,7 @@ Compare that with the linked list data type, which is a Stream with an Ending
 (`Nil`):
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L7-7
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L7-L7
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 data List a = Cons (a, List a) | Nil
 ```
@@ -93,7 +93,7 @@ data [a] = (:) a [a] | []
 It’s pretty easy to build lists:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L36-37
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L36-L37
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 myList :: List Int
 myList = Cons ( 1, Cons ( 2, Cons (3, Nil) ) )
@@ -102,7 +102,7 @@ myList = Cons ( 1, Cons ( 2, Cons (3, Nil) ) )
 which is just, in the more traditional (infix) form:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L40-41
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L40-L41
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 myList' :: [Int]
 myList' = 1:(2:(3:[]))
@@ -147,7 +147,7 @@ We can take advantage of Haskell’s “lazy-by-default”-ness and leave the �
 of the stream as an unevaluated function call. And then we can recurse!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L46-50
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L46-L50
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 myStream :: Stream Int
 myStream = streamFrom 1
@@ -208,7 +208,7 @@ we can make it a `newtype`, which has similar usage patterns/syntax as a `data`,
 but which the compiler can more easily optimize:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L10-10
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L10-L10
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 newtype Stream b = SCons { runStream :: (b, Stream b) }
 ```
@@ -223,7 +223,7 @@ pattern matching for us really quickly so that we can test it more easily.
 conversion into an infinite list.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L15-16
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L15-L16
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 streamToList :: Stream b -> [b]
 streamToList (SCons (x, xs)) = x : streamToList xs
@@ -242,7 +242,7 @@ the “resulting” stream after all of those steps, and `testStream_`, which is
 same thing except that we throw away the modified stream.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L20-30
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L20-L30
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 testStream :: Stream b -> Int -> ([b], Stream b)
 testStream strm 0 = ([]  , strm )
@@ -277,7 +277,7 @@ function of the current state*.
 This is made very apparent in our definition of `streamFrom`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L49-50
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L49-L50
 -- interactive: https://www.fpcomplete.com/user/jle/machines
     streamFrom :: Int -> Stream Int
     streamFrom n = SCons ( n, streamFrom (n+1) )
@@ -298,7 +298,7 @@ have outputs that are different than their states. As a trivial example, let’s
 have a stream whose state is an integer, yet whose output is a character:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L53-57
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L53-L57
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 charStream :: Stream Char
 charStream = charStreamFrom 65
@@ -325,7 +325,7 @@ even if we could “force” it out somehow, we would not even be able to work w
 it in a type-safe way!
 
 In fact…couldn’t the state even *[vary
-dynamically](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L60-70)*
+dynamically](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L60-L70)*
 as the stream progresses?
 
 ### Continuing on
@@ -352,7 +352,7 @@ Let’s upgrade our streams, and introduce a way to affect how they progress.
 Let’s call it an Auto.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-12
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-L12
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 newtype Auto a b = ACons { runAuto :: a -> (b, Auto a b) }
 ```
@@ -379,7 +379,7 @@ So now, we basically have a `Stream b`, except at every “step”, we can
 Let’s look at a direct “port” of our `myStream`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L40-44
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L40-L44
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 myStreamAuto :: Auto a Int
 myStreamAuto = streamAutoFrom 1
@@ -429,7 +429,7 @@ counter to progress normally, we pass in a `Nothing`. If we want the counter to
 reset to a number `n` of our choosing, we pass in a `Just n`
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L48-54
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L48-L54
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 settableAuto :: Auto (Maybe Int) Int
 settableAuto = counterFrom 1
@@ -488,7 +488,7 @@ modified Auto. `testAuto_` throws away the new Auto and just gives us the
 collection.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L17-25
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L17-L25
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 testAuto :: Auto a b -> [a] -> ([b], Auto a b)
 testAuto auto []      = ([]  , auto )
@@ -512,7 +512,7 @@ Alternatively, here is a fun way to test an Auto interactively, where you ask
 for input at each iteration from the user —
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L27-32
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L27-L32
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 interactAuto :: (Read a, Show b) => Auto a b -> IO ()
 interactAuto a0 = do
@@ -570,7 +570,7 @@ output are different things, and that the state is completely opaque and
 encapsulated.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L58-64
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L58-L64
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 isEvenAuto :: Auto (Maybe Int) Bool
 isEvenAuto = isEvenAutoFrom 1
@@ -652,7 +652,7 @@ starting at 0? More correctly, an Auto that, given any int, “returns” the su
 that int with all of the previous ints it has received in its lifetime.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L67-73
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L67-L73
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 summer :: Num a => Auto a a
 summer = sumFrom 0
@@ -684,7 +684,7 @@ Just for kicks, let’s generalize this and make an Auto version of `foldl`
 we’ll “fold up” all of our inputs.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L78-84
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L78-L84
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 autoFold :: forall a b. (b -> a -> b) -> b -> Auto a b
 autoFold op init = foldFrom init
@@ -708,7 +708,7 @@ You can probably imagine lots of different folds you can turn into
 some cute ones:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L92-107
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L92-L107
 -- interactive: https://www.fpcomplete.com/user/jle/machines
 accumulateIntoList :: Auto a [a]
 accumulateIntoList = autoFold (flip (:)) []
@@ -792,13 +792,13 @@ in terms of the other. Which re-implementations are possible? Which ones aren’
 ### More Auto examples
 
 [I’ve thrown up a few auto
-examples](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L111-176)
+examples](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L111-L176)
 [that you can run online](https://www.fpcomplete.com/user/jle/machines) so you
 can try it out and see how different ones work. Don’t get too attached to them,
 because we will later be re-implementing them as compositions of smaller,
 simpler building blocks.
 
-[rollingAverage](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L111-122)
+[rollingAverage](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L111-L122)
 :   `rollingAverage n :: Fractional a => Auto a a` outputs a rolling average of
     the last `n` values it has encountered
 
@@ -809,7 +809,7 @@ ghci> testAuto_ (rollingAverage 4) [2,8,4,5,1,8,3,5,1,1,8,3,5,9,2]
 ,3.75,3.25,4.25,6.25,4.75]
 ```
 
-[onFor](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L125-146)
+[onFor](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L125-L146)
 :   `onFor p i :: Auto a Bool` normally outputs `False`…except whenever the
     input matches the given predicate `p :: a -> Bool`. Then it stays “on”
     (`True`) for `i` steps.
@@ -823,7 +823,7 @@ ghci> testAuto_ (onFor even 3) [1,1,2,1,1,1,1,4,1,6,1,1,1,1]
 , True , True , False, False ]
 ```
 
-[autoMap](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L149-176)
+[autoMap](https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L149-L176)
 
 :   `autoMap cap :: Auto (Command k v) (Maybe v)` is a neat one. It internally
     holds a
@@ -875,7 +875,7 @@ Here’s another function from `Maybe Int` to `Bool`: (I’m going to be using t
 prefix form of `(->)` a lot from now on)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L181-182
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L181-L182
 maybeIsEven :: (->) (Maybe Int) Bool
 maybeIsEven = even . fromMaybe 1
 ```

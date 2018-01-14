@@ -25,7 +25,7 @@ that I’ve struggled through in the past.">Tutorials</a><span class="info-separ
 <p><em>auto</em> is a library that at the highest level gives you a stream transformer on streams of values. Transform a stream of input values to a stream of output values. So when we approach a chat bot, we have to think — what are the inputs, and what are the outputs?</p>
 <p>The choice should be pretty straightforward – our input stream is a stream of input messages from the irc server, and our output stream is a stream of messages to send to the server. In haskell we like types, so let’s make some types.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- first, our imports</span>
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L25-43</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L25-L43</span>
 <span class="kw">import </span><span class="dt">Control.Auto</span>
 <span class="kw">import </span><span class="dt">Control.Auto.Blip</span>
 <span class="kw">import </span><span class="dt">Control.Auto.Collection</span>  (mux)
@@ -45,7 +45,7 @@ that I’ve struggled through in the past.">Tutorials</a><span class="info-separ
 <span class="kw">import </span><span class="dt">Network.SimpleIRC</span>
 <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span>           ((.), id)   <span class="co">-- we use (.) and id from `Control.Category`</span>
 <span class="kw">import qualified</span> <span class="dt">Data.Map</span>       <span class="kw">as</span> <span class="dt">M</span></code></pre></div>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L51-66</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L51-L66</span>
 <span class="kw">type</span> <span class="dt">Nick</span>    <span class="fu">=</span> <span class="dt">String</span>
 <span class="kw">type</span> <span class="dt">Channel</span> <span class="fu">=</span> <span class="dt">String</span>
 <span class="kw">type</span> <span class="dt">Message</span> <span class="fu">=</span> <span class="dt">String</span>
@@ -64,20 +64,20 @@ that I’ve struggled through in the past.">Tutorials</a><span class="info-separ
             <span class="fu">=</span> <span class="dt">OutMessages</span> (M.unionWith (<span class="fu">++</span>) m1 m2)</code></pre></div>
 <p>We make some type aliases to make things a bit clearer. Our inputs are going to be a data type/“struct” with a nick, a body, a source, and a time. Our outputs are going to be a <code>Data.Map.Map</code> from <em>containers</em> associating channels with messages to send. I’m just adding here a <code>Monoid</code> instance in case we want to combine <code>OutMessages</code> maps.</p>
 <p>The type for a chat bot over a monad <code>m</code> would then be:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L68-68</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L68-L68</span>
 <span class="kw">type</span> <span class="dt">ChatBot</span> m <span class="fu">=</span> <span class="dt">Auto</span> m <span class="dt">InMessage</span> <span class="dt">OutMessages</span></code></pre></div>
 <p>A <code>ChatBot</code> takes a stream of <code>InMessage</code>s and returns a stream of <code>OutMessages</code>s…and might have effects in <code>m</code> as it does so.</p>
 <p>Note that we get a free instance of <code>Monoid</code> on <code>ChatBot m</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">mappend<span class="ot"> ::</span> <span class="dt">ChatBot</span> m <span class="ot">-&gt;</span> <span class="dt">ChatBot</span> m <span class="ot">-&gt;</span> <span class="dt">ChatBot</span> m</code></pre></div>
 <p>That takes two <code>ChatBot</code>s and creates a new <code>ChatBot</code> that forks the input stream (sends all <code>InMessage</code>s) to both of the original ones, and <code>mappend</code>s the results. So the new <code>ChatBot</code> will send message to both original ones and return a “combined” <code>OutMessages</code>.</p>
 <p>However, not all modules really have to “care” about the room of the outputs…they might just always reply directly to the room they received the message on. So it’ll help us to also make another sort of <code>Auto</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L69-69</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L69-L69</span>
 <span class="kw">type</span> <span class="dt">RoomBot</span> m <span class="fu">=</span> <span class="dt">Auto</span> m <span class="dt">InMessage</span> (<span class="dt">Blip</span> [<span class="dt">Message</span>])</code></pre></div>
 <p>A <code>RoomBot</code> doesn’t care where its messages go…it just replies to the same room it got its input from. It outputs a blip stream of message lists; when it doesn’t want to send messages out, it doesn’t emit. When it does, it <em>does</em> emit, with the list of messages.</p>
 <p>(Remember, a <em>blip stream</em> is just like a normal stream of values, except it only actually <em>has</em> a value every once in a while, when it “emits”. A <code>Blip Bool</code> is a stream that sometimes, occasionally emits with a <code>Bool</code>. We work with them using combinators and <code>Auto</code>s from <a href="http://hackage.haskell.org/package/auto/docs/Control-Auto-Blip.html"><code>Control.Auto.Blip</code></a>)</p>
 <h3 id="converting">Converting</h3>
 <p>We can write a quick helper function to convert a <code>RoomBot</code> into a full-on <code>ChatBot</code>, so we can merge them together with <code>mappend</code>/<code>(&lt;&gt;)</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L72-75</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L72-L75</span>
 <span class="ot">perRoom ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">RoomBot</span> m <span class="ot">-&gt;</span> <span class="dt">ChatBot</span> m
 perRoom rb <span class="fu">=</span> proc inp<span class="fu">@</span>(<span class="dt">InMessage</span> _ _ src _) <span class="ot">-&gt;</span> <span class="kw">do</span>
     messages <span class="ot">&lt;-</span> fromBlips [] <span class="fu">.</span> rb <span class="fu">-&lt;</span> inp
@@ -117,7 +117,7 @@ chatBot <span class="fu">=</span> mconcat [ serializing&#39; <span class="st">&q
 <p>We’re not all-or-nothing now here, either! So, <code>module1</code> gets serialized and auto-resumed from <code>m1.dat</code>, <code>module2</code> is not serialized at all, and <code>module3</code> now gets serialized and auto-resumed from <code>m3.dat</code>.</p>
 <h2 id="irc-backend-the-ugly-part">IRC Backend (the ugly part)</h2>
 <p>Before we get started on our actual modules, let’s just write out the backend/interface between our <code>ChatBot</code> and irc to get it out of the way. This will vary based on what library you use; I’m going to use the <a href="http://hackage.haskell.org/package/simpleirc-0.3.0">simpleirc-0.3.0</a>, but feel free to use any interface/library you want.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L45-228</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L45-L228</span>
 <span class="ot">withIrcConf ::</span> <span class="dt">IrcConfig</span> <span class="ot">-&gt;</span> <span class="dt">ChatBot</span> <span class="dt">IO</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
 withIrcConf ircconf chatbot <span class="fu">=</span> <span class="kw">do</span>
 
@@ -190,7 +190,7 @@ trackSeens <span class="fu">=</span> accum (\mp (nick, time) <span class="ot">-&
 <span class="ot">accum ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> (b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Auto</span> m a b</code></pre></div>
 <p>So it basically “folds up” the entire history of inputs, with a starting value. Every time an input comes, the output is the new folded history of inputs. You can sort of think of it as it applying the function to any incoming values to an internal accumulator and updating it at every step.</p>
 <p>By the way, because <code>trackSeens</code> is self-serializing, we need a <code>Serialize</code> instance for <code>UTCTime</code>…just for the sake of demonstration, let’s make one now. Let’s also write a <code>Serialize</code> instance for <code>Day</code> (which represents a date) too, while we’re at it.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L230-236</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L230-L236</span>
 <span class="kw">instance</span> <span class="dt">Serialize</span> <span class="dt">UTCTime</span> <span class="kw">where</span>
     get <span class="fu">=</span> read <span class="fu">&lt;$&gt;</span> get      <span class="co">-- haha don&#39;t do this in real life.</span>
     put <span class="fu">=</span> put <span class="fu">.</span> show
@@ -207,7 +207,7 @@ queryBlips <span class="fu">=</span> emitJusts (getRequest <span class="fu">.</s
 <p><code>queryBlips</code> takes an input stream of strings and turns it into an output <em>blip stream</em> that emits with a <code>Nick</code> whenever the input stream contains a request in the form of <code>&quot;@seen [nick]&quot;</code>.</p>
 <p>With these simple blocks, we can build our <code>seenBot</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- seenBot :: Monad m =&gt; Auto m InMessage (Blip [Message])</span>
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L96-115</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L96-L115</span>
 <span class="ot">seenBot ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">RoomBot</span> m
 seenBot <span class="fu">=</span> proc (<span class="dt">InMessage</span> nick msg _ time) <span class="ot">-&gt;</span> <span class="kw">do</span>
     seens  <span class="ot">&lt;-</span> trackSeens <span class="fu">-&lt;</span> (nick, time)
@@ -262,7 +262,7 @@ queryBlips <span class="fu">=</span> emitJusts (getRequest <span class="fu">.</s
     getRequest _                <span class="fu">=</span> <span class="dt">Nothing</span></code></pre></div>
 <p>And…now we can wrap it all together with a nice proc block:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- repBot :: Monad m =&gt; Auto m InMessage (Blip [Message])</span>
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L117-147</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L117-L147</span>
 <span class="ot">repBot ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">RoomBot</span> m
 repBot <span class="fu">=</span> proc (<span class="dt">InMessage</span> nick msg _ _) <span class="ot">-&gt;</span> <span class="kw">do</span>
     updateB <span class="ot">&lt;-</span> updateBlips <span class="fu">-&lt;</span> (nick, msg)
@@ -321,7 +321,7 @@ newDayBlips <span class="fu">=</span> onChange</code></pre></div>
 <p>Finally, let’s wrap it all together!</p>
 <p>Remember, <code>announceBot</code> is a full on <code>ChatBot m</code>, and not a <code>RoomBot m</code> anymore, so it has to say where it wants to send its messages.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- announceBot :: Monad m =&gt; [Channel] -&gt; Auto m InMessage OutMessages</span>
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L149-183</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L149-L183</span>
 <span class="ot">announceBot ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> [<span class="dt">Channel</span>] <span class="ot">-&gt;</span> <span class="dt">ChatBot</span> m
 announceBot chans <span class="fu">=</span> proc (<span class="dt">InMessage</span> nick msg src time) <span class="ot">-&gt;</span> <span class="kw">do</span>
     announceB <span class="ot">&lt;-</span> announceBlips     <span class="fu">-&lt;</span> (nick, msg)
@@ -363,7 +363,7 @@ announceBot chans <span class="fu">=</span> proc (<span class="dt">InMessage</sp
 <p>Finally we use <code>fromBlips</code>, which we met before in the definition of <code>perRoom</code>: the output is the <code>OutMessage</code> in <code>outMsgsB</code> whenever <code>outMsgsB</code> <em>does</em> emit…or it’s <code>mempty</code> (the empty map) when it doesn’t.</p>
 <h2 id="wrapping-it-all-up">Wrapping it all up</h2>
 <p>We have three nice modules now. Now let’s wrap it all together.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L83-88</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L83-L88</span>
 <span class="ot">chatBot ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">ChatBot</span> m
 chatBot <span class="fu">=</span> serializing&#39; <span class="st">&quot;chatbot.dat&quot;</span>
         <span class="fu">.</span> mconcat <span class="fu">$</span> [ perRoom seenBot
@@ -371,7 +371,7 @@ chatBot <span class="fu">=</span> serializing&#39; <span class="st">&quot;chatbo
                     , announceBot channels
                     ]</code></pre></div>
 <p>Or, to future-proof, in case we foresee adding new modules:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L90-94</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L90-L94</span>
 <span class="ot">chatBot&#39; ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">ChatBot</span> m
 chatBot&#39; <span class="fu">=</span> mconcat [ perRoom <span class="fu">.</span> serializing&#39; <span class="st">&quot;seens.dat&quot;</span> <span class="fu">$</span> seenBot
                    , perRoom <span class="fu">.</span> serializing&#39; <span class="st">&quot;reps.dat&quot;</span>  <span class="fu">$</span> repBot
@@ -384,7 +384,7 @@ chatBot&#39; <span class="fu">=</span> mconcat [ perRoom <span class="fu">.</spa
 <p>This is a quick diversion! It’s slightly more advanced, so don’t worry if you don’t understand it immediately.</p>
 <p>Note that the <code>perRoom</code> upgrade has the same <code>RoomBot m</code> watch <em>all</em> of the channels and send any replies back to the channel that it just received from. Every channel is really interacting with the <em>same</em> <code>RoomBot</code> instance, with one shared state. So <code>perRoom repBot</code> keeps track of reputations between rooms — asking for someone’s reputation in one room will be the same as asking for it in another room.</p>
 <p>Another way we could “upgrade” a <code>RoomBot</code> is to give each channel its own little copy, with separate state. We can do this using <code>mux</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L78-81</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/chatbot.hs#L78-L81</span>
 <span class="ot">isolatedRooms ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">RoomBot</span> m <span class="ot">-&gt;</span> <span class="dt">ChatBot</span> m
 isolatedRooms rb <span class="fu">=</span> proc inp<span class="fu">@</span>(<span class="dt">InMessage</span> _ _ src _) <span class="ot">-&gt;</span> <span class="kw">do</span>
     messages <span class="ot">&lt;-</span> fromBlips [] <span class="fu">.</span> mux (const rb) <span class="fu">-&lt;</span> (src, inp)

@@ -56,7 +56,7 @@ ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">MkF
 ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">MkFoo</span><span class="ot"> ::</span> <span class="dt">Foo</span> <span class="dt">Monad</span>       <span class="co">-- requires -XConstraintKinds</span>
 <span class="dt">Foo</span> <span class="dt">Monad</span></code></pre></div>
 <p>One use case of phantom type parameters is to prohibit certain functions on different types of values and let you be more descriptive with how your functions work together (like in <a href="https://ren.zone/articles/safe-money">safe-money</a>). One “hello world” use case of phantom type parameters is to tag data as “sanitized” or “unsanitized” (<code>UserString 'Santitized</code> type vs. <code>UserString 'Unsanitized</code>) or paths as absolute or relative (<code>Path 'Absolute</code> vs. <code>Path 'Relative</code>). For a simple example, let’s check out a simple DSL for a type-safe door:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L12-15</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L12-L15</span>
 <span class="kw">data</span> <span class="dt">DoorState</span> <span class="fu">=</span> <span class="dt">Opened</span> <span class="fu">|</span> <span class="dt">Closed</span> <span class="fu">|</span> <span class="dt">Locked</span>
   <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)
 
@@ -93,7 +93,7 @@ ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">Uns
 <h3 id="phantoms-in-action">Phantoms in Action</h3>
 <p>At first, this seems a bit silly. Why even have the extra type parameter if you don’t ever use it?</p>
 <p>Well, right off the bat, we can write functions that expect only a certain type of <code>Door</code>, and return a specific type of <code>Door</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L17-18</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L17-L18</span>
 <span class="ot">closeDoor ::</span> <span class="dt">Door</span> <span class="ch">&#39;Opened -&gt; Door &#39;</span><span class="dt">Closed</span>
 closeDoor (<span class="dt">UnsafeMkDoor</span> m) <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> m</code></pre></div>
 <p>So, the <code>closeDoor</code> function will <em>only</em> take a <code>Door 'Opened</code> (an opened door). And it will return a <code>Door 'Closed</code> (a closed door).</p>
@@ -112,7 +112,7 @@ ghci<span class="fu">&gt;</span> <span class="fu">:</span>t closeDoor yourDoor
 <span class="dt">TYPE</span> <span class="dt">ERROR</span><span class="fu">!</span>  <span class="dt">TYPE</span> <span class="dt">ERROR</span><span class="fu">!</span>  <span class="dt">TYPE</span> <span class="dt">ERROR</span><span class="fu">!</span></code></pre></div>
 <p>Do you see why?</p>
 <p>With a couple of state transitions, we can write compositions that are type-checked to all be legal:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L20-24</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L20-L24</span>
 <span class="ot">lockDoor ::</span> <span class="dt">Door</span> <span class="ch">&#39;Closed -&gt; Door &#39;</span><span class="dt">Locked</span>
 lockDoor (<span class="dt">UnsafeMkDoor</span> m) <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> m
 
@@ -163,7 +163,7 @@ mkDoor <span class="dt">Locked</span> <span class="fu">=</span> <span class="dt"
 <p>But in our case, it makes functions like <code>doorState</code> fundamentally impossible. Or, does it?</p>
 <h2 id="the-singleton-pattern">The Singleton Pattern</h2>
 <p>A singleton in Haskell is a type (of kind <code>Type</code> – that is, <code>*</code>) that has exactly one inhabitant. In practice (and when talking about the design pattern), it refers to a parameterized type that, for each pick of parameter, gives a type with exactly one inhabitant. It is written so that pattern matching on the <em>constructor</em> of that value reveals the unique type parameter.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L26-29</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L26-L29</span>
 <span class="kw">data</span> <span class="dt">SingDS</span><span class="ot"> ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span>
     <span class="dt">SOpened</span><span class="ot"> ::</span> <span class="dt">SingDS</span> <span class="ch">&#39;Opened</span>
     <span class="dt">SClosed</span><span class="ot"> ::</span> <span class="dt">SingDS</span> <span class="ch">&#39;Closed</span>
@@ -174,7 +174,7 @@ mkDoor <span class="dt">Locked</span> <span class="fu">=</span> <span class="dt"
 <span class="dt">SLocked</span><span class="ot"> ::</span> <span class="dt">SingDS</span> <span class="ch">&#39;Locked</span></code></pre></div>
 <h3 id="the-power-of-the-pattern-match">The Power of the Pattern Match</h3>
 <p>The power of singletons is that we can now <em>pattern match</em> on types, essentially.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L17-35</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L17-L35</span>
 <span class="ot">closeDoor ::</span> <span class="dt">Door</span> <span class="ch">&#39;Opened -&gt; Door &#39;</span><span class="dt">Closed</span>
 
 <span class="ot">lockDoor ::</span> <span class="dt">Door</span> <span class="ch">&#39;Closed -&gt; Door &#39;</span><span class="dt">Locked</span>
@@ -227,19 +227,19 @@ doorStatus <span class="dt">SClosed</span> _ <span class="fu">=</span> <span cla
 doorStatus <span class="dt">SLocked</span> _ <span class="fu">=</span> <span class="dt">Locked</span></code></pre></div>
 <p>The benefit of the singleton again relies on the fact that the <code>s</code> in <code>SingDS s</code> is the same as the <code>s</code> in <code>Door s</code>, so if the user gives a <code>SingDS s</code>, it <em>has</em> to match the <code>s</code> in the <code>Door s</code> they give.</p>
 <p>Since we don’t even care about the <code>door</code>, we could also just write:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L37-40</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L37-L40</span>
 <span class="ot">fromSingDS ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">DoorState</span>
 fromSingDS <span class="dt">SOpened</span> <span class="fu">=</span> <span class="dt">Opened</span>
 fromSingDS <span class="dt">SClosed</span> <span class="fu">=</span> <span class="dt">Closed</span>
 fromSingDS <span class="dt">SLocked</span> <span class="fu">=</span> <span class="dt">Locked</span></code></pre></div>
 <p>Which we can use to write a nicer <code>doorStatus</code></p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L42-43</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L42-L43</span>
 <span class="ot">doorStatus ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">DoorState</span>
 doorStatus s _ <span class="fu">=</span> fromSingDS s</code></pre></div>
 <p>This process – of turning a type variable (like <code>s</code>) into a dynamic runtime value is known as <strong>reflection</strong>. We move a value from the <em>type level</em> to the <em>term level</em>.</p>
 <h3 id="recovering-implicit-passing">Recovering Implicit Passing</h3>
 <p>One downside is that we are required to manually pass in our witness. Wouldn’t it be nice if we could have it be passed implicitly? We can actually leverage typeclasses to give us this ability:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L45-53</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L45-L53</span>
 <span class="kw">class</span> <span class="dt">SingDSI</span> s <span class="kw">where</span>
 <span class="ot">    singDS ::</span> <span class="dt">SingDS</span> s
 
@@ -251,7 +251,7 @@ doorStatus s _ <span class="fu">=</span> fromSingDS s</code></pre></div>
     singDS <span class="fu">=</span> <span class="dt">SLocked</span></code></pre></div>
 <p>(Note that <em>it’s impossible</em> to write our <code>SingDSI</code> instances improperly! GHC checks to make sure that this is <em>correct</em>)</p>
 <p>And so now we can do:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L55-59</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L55-L59</span>
 <span class="ot">lockAnyDoor_ ::</span> <span class="dt">SingDSI</span> s <span class="ot">=&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
 lockAnyDoor_ <span class="fu">=</span> lockAnyDoor singDS
 
@@ -272,7 +272,7 @@ ghci<span class="fu">&gt;</span> <span class="fu">:</span>t lockAnyDoor_ myDoor 
 <h4 id="going-backwards">Going backwards</h4>
 <p>Going from <code>SingDSI s =&gt;</code> to <code>SingDS s -&gt;</code> (implicit to explicit) is very easy – just use <code>singDS</code> to get a <code>SingDS s</code> if you have a <code>SingDSI s</code> constraint available. This is what we did for <code>lockAnyDoor_</code> and <code>doorStatus_</code>.</p>
 <p>Going from <code>SingDS s -&gt;</code> to <code>SingDSI s =&gt;</code> (explicit to implicit) in Haskell is actually a little trickier. The typical way to do this is with a CPS-like utility function:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L61-65</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L61-L65</span>
 <span class="ot">withSingDSI ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> (<span class="dt">SingDSI</span> s <span class="ot">=&gt;</span> r) <span class="ot">-&gt;</span> r
 withSingDSI sng x <span class="fu">=</span> <span class="kw">case</span> sng <span class="kw">of</span>
     <span class="dt">SOpened</span> <span class="ot">-&gt;</span> x
@@ -286,7 +286,7 @@ withSingDSI sng x <span class="fu">=</span> <span class="kw">case</span> sng <sp
 <li>In the <code>SLocked</code> branch, <code>s ~ 'Locked</code>, and because we wrote a <code>SingDSI 'Locked</code> explicitly, we <em>know</em> that a <code>SingDSI s</code> instance is available, so we can use/create <code>x</code>.</li>
 </ul>
 <p>Now, we can run our implicit functions (like <code>lockAnyDoor_</code>) by giving them explicit inputs:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L67-68</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L67-L68</span>
 <span class="ot">lockAnyDoor__ ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span>
 lockAnyDoor__ s d <span class="fu">=</span> withSingDSI s (lockAnyDoor_ d)</code></pre></div>
 <p>And the cycle begins anew.</p>
@@ -296,7 +296,7 @@ flip<span class="ot">  ($)   ::</span>        a <span class="ot">-&gt;</span> ( 
 <p>Which is a bit of a testament to what we said earlier about how a <code>SingDSI s =&gt; ..)</code> is the same as <code>SingDS s -&gt; ..</code>. <code>flip ($)</code> takes a value and a function and applies the function to that value. <code>withSingDSI</code> takes a value and “something like a function” and applies the “something like a function” to that value.</p>
 <h3 id="fun-with-witnesses">Fun with Witnesses</h3>
 <p>We can write a nice version of <code>mkDoor</code> using singletons:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L70-71</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L70-L71</span>
 <span class="ot">mkDoor ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s
 mkDoor _ <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span></code></pre></div>
 <p>We take advantage of the fact that <code>SingDS s</code> “locks in” the <code>s</code> type variable for <code>Door s</code>. We can call it now with values of <code>SingDS</code>:</p>
@@ -315,7 +315,7 @@ ghci<span class="fu">&gt;</span> <span class="fu">:</span>t mkDoor <span class="
 genSingletons [<span class="ch">&#39;&#39;</span><span class="dt">DoorState</span>]
 
 <span class="co">-- or</span>
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L17-20</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L17-L20</span>
 <span class="fu">$</span>(singletons [d|
   data DoorState = Opened | Closed | Locked
     deriving (Show, Eq)
@@ -378,11 +378,11 @@ ghci<span class="fu">&gt;</span><span class="ot"> sing ::</span> <span class="dt
 <p>These should be written in the singletons library style, with <code>Sing</code> instead of <code>SingDS</code> and <code>SingI</code> instead of <code>SingDSI</code>. Review the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs">singletons file</a> for a comparison, if you are still unfamiliar.</p>
 <ol type="1">
 <li><p>Write a function to unlock a door, but only if the user enters an odd number (as a password).</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L60-60</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L60-L60</span>
 <span class="ot">unlockDoor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked -&gt; Maybe (Door &#39;</span><span class="dt">Closed</span>)</code></pre></div>
 <p>It should return a closed door in <code>Just</code> if the caller gives an odd number, or <code>Nothing</code> otherwise.</p></li>
 <li><p>Write a function that can open any door, taking a password, in “implicit Sing” style:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L65-65</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L65-L65</span>
 <span class="ot">openAnyDoor ::</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> <span class="ch">&#39;Opened)</span></code></pre></div>
 <p>This should be written in terms of <code>unlockDoor</code> and <code>openDoor</code> (see above) – that is, you <strong>should not</strong> use <code>UnsafeMkDoor</code> directly for <code>openAnyDoor</code>.</p>
 <p>If the door is already unlocked or opened, it should ignore the <code>Int</code> input.</p></li>

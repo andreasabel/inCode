@@ -31,7 +31,7 @@ that I’ve struggled through in the past.">Tutorials</a><span class="info-separ
 <li>Our <code>Auto</code> launched with <code>runOnChan</code>, which waits on the <code>Chan</code> queue, runs the inputs through the <code>Auto</code>, and renders the result. This handles all of the logic.</li>
 </ol>
 <p>We like types in Haskell, so let’s begin by laying out our types!</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L19-46</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L19-L46</span>
 <span class="kw">import </span><span class="dt">Control.Auto</span>
 <span class="kw">import </span><span class="dt">Control.Auto.Collection</span>
 <span class="kw">import </span><span class="dt">Control.Monad.Fix</span>
@@ -81,13 +81,13 @@ that I’ve struggled through in the past.">Tutorials</a><span class="info-separ
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">initTask ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Interval</span> m <span class="dt">TaskCmd</span> <span class="dt">Task</span></code></pre></div>
 <p><code>initTask</code> takes a string (a starting description) and initializes an <code>Interval</code> that takes in a stream of task commands, and has a stream of new, updated <code>Task</code>s as its output stream. At every step, it processes the command and outputs the new appropriate <code>Task</code>.</p>
 <p>We can then use this as our “initializer” for <code>dynMapF</code>…and now we have a dynamic collection of tasks!</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L48-50</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L48-L50</span>
 <span class="ot">taskCollection ::</span> <span class="dt">Monad</span> m
                <span class="ot">=&gt;</span> <span class="dt">Auto</span> m (<span class="dt">IntMap</span> <span class="dt">TaskCmd</span>, <span class="dt">Blip</span> [<span class="dt">String</span>]) (<span class="dt">IntMap</span> <span class="dt">Task</span>)
 taskCollection <span class="fu">=</span> dynMapF initTask <span class="dt">CNop</span></code></pre></div>
 <p>If we wanted to send in the command <code>CModify &quot;hey!&quot;</code> to the task whose id/key/address is <code>12</code>, I’d feed in <code>IM.singleton 12 (CModify &quot;hey!&quot;)</code>. The output would then contain the output of feeding that <code>CModify</code> to the <code>Auto</code> at that slot 12, associated with slot 12 on the output <code>IntMap</code>.</p>
 <p>Writing <code>initTask</code> and the task <code>Auto</code> is straightforward with <code>accum</code>, which is basically like <code>foldl</code> on the inputs and a “current state”. (The current state is of course the <code>Task</code>).</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L52-62</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L52-L62</span>
 <span class="ot">initTask ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Interval</span> m <span class="dt">TaskCmd</span> <span class="dt">Task</span>
 initTask descr <span class="fu">=</span> accum f (<span class="dt">Just</span> (<span class="dt">Task</span> descr <span class="dt">False</span>))
   <span class="kw">where</span>
@@ -108,7 +108,7 @@ initTask descr <span class="fu">=</span> accum f (<span class="dt">Just</span> (
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">emitJusts ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b) <span class="ot">-&gt;</span> <span class="dt">Auto</span> m a (<span class="dt">Blip</span> b)</code></pre></div>
 <p>You can imagine <code>emitJusts</code> is a “siphon” off of the input stream of <code>a</code>s…and pulling out only the values that we care about, as a blip stream of <code>b</code>’s.</p>
 <p>We can build our “siphoners”:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L95-105</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L95-L105</span>
 <span class="ot">getAddEvts ::</span> <span class="dt">TodoInp</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">String</span>]
 getAddEvts (<span class="dt">IAdd</span> descr) <span class="fu">=</span> <span class="dt">Just</span> [descr]
 getAddEvts _            <span class="fu">=</span> <span class="dt">Nothing</span>
@@ -125,7 +125,7 @@ getMassEvts _                 <span class="fu">=</span> <span class="dt">Nothing
 <p><code>getMassEvts</code> is pretty much the same thing…siphoning off all <code>IAll</code> commands as a blip stream of <code>IntMap TaskCmd</code>. It needs a list of all <code>TaskID</code>s though, to do its job…because it needs to make an <code>IntMap</code> targeting all of the current tasks.</p>
 <p>Remember, we interace with tasks through an <code>IntMap TaskCmd</code>…which is a map of task id-task command pairs. The <code>TaskCmd</code> stored at key <code>1</code> will be the command we want to send to task id 1.</p>
 <p>Let’s see it all work together!</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L64-93</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L64-L93</span>
 <span class="ot">todoApp ::</span> <span class="dt">MonadFix</span> m <span class="ot">=&gt;</span> <span class="dt">Auto</span> m <span class="dt">TodoInp</span> (<span class="dt">IntMap</span> <span class="dt">Task</span>)
 todoApp <span class="fu">=</span> proc inpEvt <span class="ot">-&gt;</span> <span class="kw">do</span>
 
@@ -183,7 +183,7 @@ todoApp <span class="fu">=</span> proc inpEvt <span class="ot">-&gt;</span> <spa
 <h2 id="interfacing-with-the-world">Interfacing with the world</h2>
 <p>Our application logic is done; let’s explore ways to interface with it!</p>
 <h3 id="testingcommand-line">Testing/command line</h3>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/todo-cmd.hs#L25-62</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/todo-cmd.hs#L25-L62</span>
 <span class="ot">parseInp ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">TodoInp</span>
 parseInp <span class="fu">=</span> p <span class="fu">.</span> words
   <span class="kw">where</span>

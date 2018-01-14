@@ -97,7 +97,7 @@ that I’ve struggled through in the past.">Tutorials</a><span class="info-separ
 <h3 id="down-to-it">Down to it</h3>
 <p>Let’s just get down to it!</p>
 <p>First, our imports:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L19-46</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L19-L46</span>
 <span class="co">-- General imports</span>
 <span class="kw">import </span><span class="dt">Control.Applicative</span>              ((&lt;$&gt;))
 <span class="kw">import </span><span class="dt">Control.Monad.Trans.State.Strict</span> (evalState)
@@ -128,7 +128,7 @@ that I’ve struggled through in the past.">Tutorials</a><span class="info-separ
 <span class="kw">import </span><span class="dt">PreTree</span></code></pre></div>
 <p>It’s a doozy, admittedly!</p>
 <p>Now <code>main</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L48-60</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L48-L60</span>
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
     args     <span class="ot">&lt;-</span> getArgs
@@ -145,7 +145,7 @@ main <span class="fu">=</span> <span class="kw">do</span>
 <p>Just straight-forward, more or less. The error handling is kind of not too great, but we won’t go into that too deeply here :)</p>
 <h4 id="file-metadata">File metadata</h4>
 <p><code>analyzeFile</code> is going to be how we build the Huffman Tree for the encoding, as discussed in part 1. It’ll go through an entire pass of the file and count up the number of occurrences for each byte and build a Huffman encoding tree out of it. It’ll also give us the length of the file in bytes; this is actually necessary for <em>decoding</em> the file later, because it tells us where to stop decoding (lest we begin decoding the leftover padding bits).</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L63-74</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L63-L74</span>
 <span class="ot">analyzeFile ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Maybe</span> (<span class="dt">Int</span>, <span class="dt">PreTree</span> <span class="dt">Word8</span>))
 analyzeFile fp <span class="fu">=</span> withFile fp <span class="dt">ReadMode</span> <span class="fu">$</span> \hIn <span class="ot">-&gt;</span> <span class="kw">do</span>
     <span class="kw">let</span> byteProducer <span class="fu">=</span> PB.fromHandle hIn <span class="fu">&gt;-&gt;</span> bsToBytes
@@ -161,13 +161,13 @@ analyzeFile fp <span class="fu">=</span> withFile fp <span class="dt">ReadMode</
 <p>First, we use <a href="http://hackage.haskell.org/package/base-4.7.0.0/docs/System-IO.html#v:withFile"><code>withFile</code></a> from System.IO, which gives us a file handler for a given filepath; we can pass this handler onto functions that take file handlers. <code>withFile</code> actually handles most of the IO-based error handling and cleanup we would ever need for our simple use cases of <em>pipes</em>.</p>
 <p>Now we run into real <em>pipes</em> for the first time!</p>
 <p>We’ll assemble our producer of bytes by using <code>PB.fromHandle hIn</code> — a producer of <code>ByteString</code>s — and chaining it to <code>bsToBytes</code>, a pipe that takes incoming <code>ByteString</code>s and emits their constituent, unpacked <code>Word8</code>s one-by-one:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L96-97</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L96-L97</span>
 <span class="ot">bsToBytes ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Pipe</span> <span class="dt">ByteString</span> <span class="dt">Word8</span> m r
 bsToBytes <span class="fu">=</span> PP.mapFoldable B.unpack</code></pre></div>
 <p>Our implementation uses <code>B.unpack :: ByteString -&gt; [Word8]</code> from <em>pipes-bytestring</em>, which turns a <code>ByteString</code> into a list of its constituent <code>Word8</code>s. We use <code>PP.mapFoldable</code>, which is sort of like <code>concatMap</code> — it applies the given function to every incoming element in the stream, and emits the items in the resulting list<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a> one-by-one. So <code>bsToBytes</code> is a Pipe that takes in <code>ByteString</code>s and emits each contained <code>Word8</code> one-by-one.</p>
 <p>Then with our pipe ready, we “run”/“use” it, using <code>PP.fold</code>, from the pipes Prelude. This basically runs a giant “foldl” all over the incoming items of the given producer.</p>
 <p>The fold is identical in logic to <code>listFreq</code> from a <a href="http://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-2-binary">Part 2</a>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L22-25</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L22-L25</span>
 <span class="ot">listFreq ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">FreqTable</span> a
 listFreq <span class="fu">=</span> foldr f M.empty
   <span class="kw">where</span>
@@ -176,7 +176,7 @@ listFreq <span class="fu">=</span> foldr f M.empty
 <p>We then use <code>sum</code> from <code>Data.Foldable</code>, which sums up all the numbers in our frequency map. Then we use what we learned about the State monad in <a href="http://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-1-trees">Part 1</a> to build our tree (review <a href="http://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-1-trees">Part 1</a> if you do not understand the declaration of <code>tree</code>). <code>tree</code> is a <code>Maybe (PreTree Word8)</code>; we then tag on the length to our <code>tree</code> using <code>fmap</code> and the TupleSections extension. (That is, <code>(,y)</code> is sugar for <code>(\x -&gt; (x,y))</code>).</p>
 <h4 id="the-encoding-pipeline">The Encoding Pipeline</h4>
 <p>Once we have that, we can get onto the actual encoding process: the second pass.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L78-92</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L78-L92</span>
 <span class="ot">encodeFile ::</span> FilePath <span class="ot">-&gt;</span> FilePath <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">PreTree</span> <span class="dt">Word8</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
 encodeFile inp out len tree <span class="fu">=</span>
     withFile inp <span class="dt">ReadMode</span>  <span class="fu">$</span> \hIn  <span class="ot">-&gt;</span>
@@ -196,7 +196,7 @@ encodeFile inp out len tree <span class="fu">=</span>
 <p>Note that we can “put” <code>(len, tree)</code> together as a tuple instead of putting <code>len</code> and <code>tree</code> one after the other. This is because <code>(a, b)</code> has a <code>Binary</code> instance. We’ll read it back in later as a tuple, but it actually doesn’t matter, because the <code>Binary</code> instance for tuples is just putting/getting each item one after the other.</p>
 <p>Now, we get to our actual pipes. The first “pipeline” is <code>dirsOut</code>, which is our stream (producer) of <code>Direction</code>s encoding the input file. As can be read, <code>dirStream</code> is <code>PB.fromHandle hIn</code> (a <code>ByteString</code> producer from the given handle) piped into our old friend <code>bsToBytes</code> piped into <code>encodeByte encTable</code>, which is a pipe taking in bytes (<code>Word8</code>), looks them up in <code>encTable</code> (the table mapping <code>Word8</code> to <code>[Direction]</code>, which we built in <a href="http://blog.jle.im/entry/streaming-huffman-compression-in-haskell-part-2-binary">Part 2</a>), and spits out the resulting <code>Direction</code>s one at a time.</p>
 <p><code>encodeByte encTable</code> is implemented “exactly the same” as <code>bsToBytes</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L101-104</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L101-L104</span>
 <span class="ot">encodeByte ::</span> (<span class="dt">Ord</span> a, <span class="dt">Monad</span> m)
            <span class="ot">=&gt;</span> <span class="dt">Map</span> a <span class="dt">Encoding</span>
            <span class="ot">-&gt;</span> <span class="dt">Pipe</span> a <span class="dt">Direction</span> m r
@@ -205,7 +205,7 @@ encodeByte encTable <span class="fu">=</span> PP.mapFoldable (encTable <span cla
 <p><code>(!) :: Map k v -&gt; k -&gt; v</code> is the lookup function for <code>Map</code>s.</p>
 <h4 id="parser">Parser</h4>
 <p>So now we have <code>dirsOut :: Producer Direction IO r</code>, which is a producer of <code>Direction</code>s drawn from the file. It’s now time to “group up” the directions, using the “producer transformer” tactic we discussed earlier.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L108-117</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L108-L117</span>
 <span class="ot">dirsBytes ::</span> (<span class="dt">MonadIO</span> m, <span class="dt">Functor</span> m)
           <span class="ot">=&gt;</span> <span class="dt">Producer</span> <span class="dt">Direction</span> m r
           <span class="ot">-&gt;</span> <span class="dt">Producer</span> <span class="dt">Word8</span>     m ()
@@ -226,7 +226,7 @@ dirsBytes p <span class="fu">=</span> <span class="kw">do</span>
           <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Maybe</span> <span class="dt">Word8</span>, <span class="dt">Producer</span> <span class="dt">Direction</span> <span class="dt">IO</span> r)</code></pre></div>
 <p>So we use the <code>dirsBytesP</code> parser onto the producer we are given. If it doesn’t parse any bytes (<code>Nothing</code>), then we stop. If it does (<code>Just byte</code>), then we <code>yield</code> the parsed <code>Word8</code> and then start over again with the leftovers producer.</p>
 <p>Let’s take a look at the <code>dirsBytesP</code> parser, which parses <code>Direction</code>s into a <code>Word8</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L123-137</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L123-L137</span>
 <span class="ot">dirsBytesP ::</span> (<span class="dt">Monad</span> m, <span class="dt">Functor</span> m) <span class="ot">=&gt;</span> <span class="dt">Parser</span> <span class="dt">Direction</span> m (<span class="dt">Maybe</span> <span class="dt">Word8</span>)
 dirsBytesP <span class="fu">=</span> <span class="kw">do</span>
     isEnd <span class="ot">&lt;-</span> isEndOfInput
@@ -247,7 +247,7 @@ dirsBytesP <span class="fu">=</span> <span class="kw">do</span>
 <p>We get our direction producer by doing <code>dirsBytes dirsOut</code>.</p>
 <h4 id="smart-chunker">Smart Chunker</h4>
 <p>And finally, we use the “smart chunking” provided by <em>pipes-bytestring</em> by transforming our bytes stream:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L86-86</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L86-L86</span>
           bsOut     <span class="fu">=</span> view PB.pack <span class="fu">.</span> dirsBytes <span class="fu">$</span> dirsOut</code></pre></div>
 <h4 id="all-together">All together</h4>
 <p>That gives us our final <code>pipeline</code>; we lay out a series of pipes and pipes transformers that takes our file and streamingly processes the data and writes it into the output file.</p>
@@ -277,7 +277,7 @@ $ <span class="fu">du</span> -h warandpeace.*
 </ol>
 <h3 id="down-to-it-1">Down to it</h3>
 <p>Luckily we can use most of the concepts we learned in writing the encoding script to write the decoding script; we also have a less imports, so it’s a sign that decoding is going to be slightly simpler than encoding.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L18-37</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L18-L37</span>
 <span class="co">-- General imports</span>
 <span class="kw">import </span><span class="dt">Lens.Family2</span>       (view)
 <span class="kw">import </span><span class="dt">System.Environment</span> (getArgs)
@@ -299,7 +299,7 @@ $ <span class="fu">du</span> -h warandpeace.*
 <span class="co">-- Huffman imports</span>
 <span class="kw">import </span><span class="dt">PreTree</span></code></pre></div>
 <p><code>main</code> should seem very familiar:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L39-45</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L39-L45</span>
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
     args     <span class="ot">&lt;-</span> getArgs
@@ -308,7 +308,7 @@ main <span class="fu">=</span> <span class="kw">do</span>
                         _          <span class="ot">-&gt;</span> error <span class="st">&quot;Give input and output files.&quot;</span>
     decodeFile inp out</code></pre></div>
 <p>And now on to the juicy parts:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L48-69</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L48-L69</span>
 <span class="ot">decodeFile ::</span> FilePath <span class="ot">-&gt;</span> FilePath <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
 decodeFile inp out <span class="fu">=</span>
     withFile inp <span class="dt">ReadMode</span>  <span class="fu">$</span> \hIn  <span class="ot">-&gt;</span>
@@ -346,7 +346,7 @@ decodeFile inp out <span class="fu">=</span>
              <span class="fu">&gt;-&gt;</span> bytesToDirs  <span class="fu">&gt;-&gt;</span> searchPT tree
              <span class="fu">&gt;-&gt;</span> PP.take len</code></pre></div>
 <p>Beautiful! <code>decodingPipe</code> is the leftover producer after the parse of the metadata. <code>bsToBytes</code> is the same as from our encoder. <code>bytesToDirs</code> is implemented “exactly” like <code>bsToBytes</code> and <code>encodeByte</code> (from <em>encode.hs</em>) — using <code>PP.mapFoldable</code> and a <code>Word8 -&gt; [Direction]</code> function.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L96-104</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L96-L104</span>
 <span class="ot">bytesToDirs ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Pipe</span> <span class="dt">Word8</span> <span class="dt">Direction</span> m r
 bytesToDirs <span class="fu">=</span> PP.mapFoldable byteToDirList
   <span class="kw">where</span>
@@ -377,7 +377,7 @@ searchPT pt0 <span class="fu">=</span> go pt0
 <p>However, we can do better. This way sort of mixes together the “logic” of decoding from the yielding/continuation/recursion/pipe-ness of it all. Ideally we’d like to be able to separate the logic. This isn’t <em>too</em> necessary, but doing this will expose us to some nice <em>pipes</em> idioms :)</p>
 <p>One way we can do it is to turn <code>searchPT</code> into a <code>Consumer'</code> (a <code>Consumer</code> with the ends not sealed off) that consumes <code>Direction</code>s and <em>returns</em> resulting <code>Word8</code>s.</p>
 <p>Then we use <code>(&gt;~ cat)</code>, which turns a <code>Consumer'</code> into something that is forever consuming and re-yielding — in essence, it turns a <code>Consumer'</code> returning values into a <code>Pipe</code> repeatedly yielding the returned values.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L74-86</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/decode.hs#L74-L86</span>
 <span class="ot">searchPT ::</span> forall a m r<span class="fu">.</span> <span class="dt">Monad</span> m
          <span class="ot">=&gt;</span> <span class="dt">PreTree</span> a
          <span class="ot">-&gt;</span> <span class="dt">Pipe</span> <span class="dt">Direction</span> a m r
@@ -444,7 +444,7 @@ $ <span class="ex">md5sum</span> warandpeace.dec
 <p>Now, you might have thought, “Hey, we used <code>view PB.pack</code> to turn our <code>Word8</code> producer into a <code>ByteString</code> producer…couldn’t we just use <code>view PB.unpack</code> to turn our <code>ByteString</code> producer into a <code>Word8</code> producer in the first place???”</p>
 <p>Yup! In fact, this takes us into a…“pipe transformer style” of pipes code, as opposed to a “pipe composition style” of pipes code. Both ways are considered “idiomatic”, and it’s up to you to decide what suits you more.</p>
 <p>Basically, we don’t ever need <code>bsToBytes</code>; instead of</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L65-65</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/encode.hs#L65-L65</span>
     <span class="kw">let</span> byteProducer <span class="fu">=</span> PB.fromHandle hIn <span class="fu">&gt;-&gt;</span> bsToBytes</code></pre></div>
 <p>We can just write</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">let</span> byteProducer <span class="fu">=</span> (view PB.unpack) (PB.fromHandle hIn)</code></pre></div>

@@ -23,13 +23,13 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>A fair warning: at times this post might feel a bit fragmented; but remember that we really are just going to be exploring and getting very familiar with the Auto type and building an intuition. Everything comes to a mini-climax at the end, and a final satisfying one at the next post — kind of like every Part 2 in every trilogy ever, you know? :)</p>
 <h2 id="recap">Recap</h2>
 <p>We left off in our last post having looked at <code>Auto</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-12</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-L12</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="kw">newtype</span> <span class="dt">Auto</span> a b <span class="fu">=</span> <span class="dt">ACons</span> {<span class="ot"> runAuto ::</span> a <span class="ot">-&gt;</span> (b, <span class="dt">Auto</span> a b) }</code></pre></div>
 <p>which we saw as a stream that had an influencing input of type <code>a</code>, an internal, opaque state (a function of the input and of the previous state), and an output “head” of type <code>b</code> (also a function of the input and of the previous state).</p>
-<p>And we looked at <a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L46-54">a simple auto</a> which acted like a constantly incrementing stream, but where you could reset the counter by passing in a <code>Just</code>.</p>
+<p>And we looked at <a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L46-L54">a simple auto</a> which acted like a constantly incrementing stream, but where you could reset the counter by passing in a <code>Just</code>.</p>
 <p>Then we took another approach to looking at this — we thought about Autos as functions “with state”. As in, <code>Auto a b</code> was like a function <code>a -&gt; b</code>, but which had an internal state that updated every time it was called.</p>
-<p>We saw this in an auto that <a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L66-73">returns the sum</a> of everything you have given it.</p>
+<p>We saw this in an auto that <a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L66-L73">returns the sum</a> of everything you have given it.</p>
 <p>Autos are “function-like things”…they map or “morph” things of type <code>a</code> to things of type <code>b</code> in some form, just like functions. It looks like we stumbled onto some sort of design pattern. Wouldn’t it be cool if we could treat Autos the same way we treat functions? And reason about them the same way, think about them using the same logic?</p>
 <p>What is the <em>essence</em> of function-like-ness?</p>
 <h2 id="the-essence-of-function-like-ness">The Essence of Function-like-ness</h2>
@@ -84,7 +84,7 @@ ghci<span class="fu">&gt;</span> (<span class="fu">*</span><span class="dv">3</s
 <p>Well…if we think of <code>f</code> like a stateful function that takes in an <code>a</code> and pops out a <code>b</code>…and <code>g</code> like a stateful function that takes in a <code>b</code> and pops out a <code>c</code>…We can think of <code>g . f</code> as a stateful function that takes in an <code>a</code>, feeds it to <code>f</code>, gets the <code>b</code> that <code>f</code> pops out, feeds that to <code>g</code>, and gets the final <code>c</code> out at the end.</p>
 <p>Also, Autos spit out both the result (the <code>c</code>) and the “updated Auto”…so the updated Auto of the composition can just be the composition of the updated Autos!</p>
 <p>Enough talk, let’s code! We’ll call our composition operator <code>(~.~)</code>.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L67-70</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L67-L70</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">(~.~) ::</span> <span class="dt">Auto</span> b c <span class="ot">-&gt;</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> <span class="dt">Auto</span> a c
 g <span class="fu">~.~</span> f <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> <span class="kw">let</span> (y, f&#39;) <span class="fu">=</span> runAuto f x
@@ -92,7 +92,7 @@ g <span class="fu">~.~</span> f <span class="fu">=</span> <span class="dt">ACons
                         <span class="kw">in</span>  (z, g&#39; <span class="fu">~.~</span> f&#39;)</code></pre></div>
 <p>And…that should be it! We run the input through first <code>f</code> then <code>g</code>, collecting the “modified <code>f</code> and <code>g</code>”, and returning both of those at the end, composed.</p>
 <p>Let’s write a useful helper function so that we have more things to test this out on:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L74-75</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L74-L75</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">toAuto ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Auto</span> a b
 toAuto f <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> (f x, toAuto f)</code></pre></div>
@@ -124,7 +124,7 @@ ghci<span class="fu">&gt;</span> testAuto_ (summer <span class="fu">~.~</span> s
 [<span class="dv">1</span>,<span class="dv">3</span>,<span class="dv">0</span>,<span class="fu">-</span><span class="dv">2</span>,<span class="fu">-</span><span class="dv">3</span>]</code></pre></div>
 <p>And it looks like our Autos really can meaningfully compose!</p>
 <p>Well, wait. We need one last thing: the identity Auto:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L78-79</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L78-L79</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">idA ::</span> <span class="dt">Auto</span> a a
 idA <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> (x, idA)</code></pre></div>
@@ -152,7 +152,7 @@ ghci<span class="fu">&gt;</span> testAuto_ (summer <span class="fu">~.~</span> i
     id    <span class="fu">=</span> \x <span class="ot">-&gt;</span> x
     g <span class="fu">.</span> f <span class="fu">=</span> \x <span class="ot">-&gt;</span> g (f x)</code></pre></div>
 <p>And then our <code>Auto</code> Category instance:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L13-18</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L13-L18</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="kw">instance</span> <span class="dt">Category</span> <span class="dt">Auto</span> <span class="kw">where</span>
     id    <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> (x, id)
@@ -161,7 +161,7 @@ ghci<span class="fu">&gt;</span> testAuto_ (summer <span class="fu">~.~</span> i
                   (z, g&#39;) <span class="fu">=</span> runAuto g y
               <span class="kw">in</span>  (z, g&#39; <span class="fu">.</span> f&#39;)</code></pre></div>
 <p>And now… we can work with both <code>(-&gt;)</code> and <code>Auto</code> as if they were the “same thing” :)</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L92-93</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L92-L93</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">doTwice ::</span> <span class="dt">Category</span> r <span class="ot">=&gt;</span> r a a <span class="ot">-&gt;</span> r a a
 doTwice f <span class="fu">=</span> f <span class="fu">.</span> f</code></pre></div>
@@ -190,7 +190,7 @@ ghci<span class="fu">&gt;</span> take <span class="dv">6</span> <span class="fu"
 <p>How can I do that?</p>
 <p>Well…for one…I can just “run” the Auto you give me to get the <code>a</code>…and then apply the function to that <code>a</code> to get the <code>b</code>!</p>
 <p>For example, if I fmapped <code>show</code> onto <code>summer</code> — if <code>summer</code> was going to output a 1, it will now output a <code>&quot;1&quot;</code>. It turns an <code>Auto Int Int</code> into an <code>Auto Int String</code>!</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L20-23</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L20-L23</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="kw">instance</span> <span class="dt">Functor</span> (<span class="dt">Auto</span> r) <span class="kw">where</span>
     fmap f a <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span>
@@ -213,7 +213,7 @@ ghci<span class="fu">&gt;</span> take <span class="dv">6</span> <span class="fu"
 <span class="ot">    (&lt;*&gt;) ::</span> f (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b</code></pre></div>
 <p>In <code>pure</code>, give me an <code>a</code> and I’ll give you a “producer” of that very <code>a</code>. In <code>(&lt;*&gt;)</code>, give me a producer of <code>a -&gt; b</code> and a producer of <code>a</code> and I’ll give you a producer of <code>b</code>.</p>
 <p>We can pretty much use this to write our Applicative instance for <code>Auto r</code>.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L25-30</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L25-L30</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="kw">instance</span> <span class="dt">Applicative</span> (<span class="dt">Auto</span> r) <span class="kw">where</span>
     pure y    <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \_ <span class="ot">-&gt;</span> (y, pure y)
@@ -251,7 +251,7 @@ ghci<span class="fu">&gt;</span> testAuto_ addSumDoub [<span class="dv">5</span>
 <p><code>(***)</code> chains Autos side-by-side: <code>Auto a b -&gt; Auto c d -&gt; Auto (a, c) (b, d)</code>. It basically has each Auto operate on the tuple “in parallel”.</p>
 <p><code>(&amp;&amp;&amp;)</code> “forks”. Give an <code>Auto a b</code> and an <code>Auto a c</code>, and it’ll create a “forking” <code>Auto a (b, c)</code>.</p>
 <p>Writing the instance is straightforward enough:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L32-47</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L32-L47</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="kw">instance</span> <span class="dt">Arrow</span> <span class="dt">Auto</span> <span class="kw">where</span>
     arr f     <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span> (f x, arr f)
@@ -305,7 +305,7 @@ ghci<span class="fu">&gt;</span> testAuto_ sumDoub [<span class="dv">5</span>,<s
 <p>If you look really closely…<code>left</code> is kinda like <code>first</code>; <code>right</code> is kinda like <code>second</code>…<code>(+++)</code> is kinda like <code>(***)</code>, and <code>(|||)</code> is like a backwards <code>(&amp;&amp;&amp;)</code>.</p>
 <p>If <code>Arrow</code> allows computations to be “side-chained”, <code>ArrowChoice</code> allows computations to be “skipped/ignored”.</p>
 <p>We’ll instance <code>left</code>, which applies the given <code>Auto</code> on every <code>Left</code> input, and passes any <code>Right</code> input along unchanged; the <code>Auto</code> isn’t stepped or anything. The rest of the methods can be implemented in terms of <code>left</code> and <code>arr</code>.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L49-56</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L49-L56</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="kw">instance</span> <span class="dt">ArrowChoice</span> <span class="dt">Auto</span> <span class="kw">where</span>
     left a <span class="fu">=</span> <span class="dt">ACons</span> <span class="fu">$</span> \x <span class="ot">-&gt;</span>
@@ -339,7 +339,7 @@ doubSummer <span class="fu">=</span> proc x <span class="ot">-&gt;</span> <span 
 <h4 id="simple-useful-example">Simple useful example</h4>
 <p>How about an <code>Auto (Either Int Int) (Int, Int)</code>, which maintains <em>two</em> internal counters. You increment the first one with an input of <code>Left x</code>, and you increment the second one with an input of <code>Right x</code>. The output is the state of both counters.</p>
 <p>We could write this “from scratch”, using explicit recursion:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L102-109</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L102-L109</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">dualCounterR ::</span> <span class="dt">Auto</span> (<span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Int</span>) (<span class="dt">Int</span>, <span class="dt">Int</span>)
 dualCounterR <span class="fu">=</span> dualCounterWith (<span class="dv">0</span>, <span class="dv">0</span>)
@@ -351,7 +351,7 @@ dualCounterR <span class="fu">=</span> dualCounterWith (<span class="dv">0</span
                                <span class="kw">in</span>  (newC, dualCounterWith newC)</code></pre></div>
 <p>But we all know in Haskell that explicit recursion is usually a sign of bad design and is best avoided whenever possible. So many potential places for bugs!</p>
 <p>Let’s try writing the same thing using Auto composition:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L112-116</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L112-L116</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">dualCounterC ::</span> <span class="dt">Auto</span> (<span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Int</span>) (<span class="dt">Int</span>, <span class="dt">Int</span>)
 dualCounterC <span class="fu">=</span> (summer <span class="fu">***</span> summer) <span class="fu">.</span> arr wrap
@@ -359,7 +359,7 @@ dualCounterC <span class="fu">=</span> (summer <span class="fu">***</span> summe
     wrap (<span class="dt">Left</span> i)  <span class="fu">=</span> (i, <span class="dv">0</span>)
     wrap (<span class="dt">Right</span> i) <span class="fu">=</span> (<span class="dv">0</span>, i)</code></pre></div>
 <p>That’s a bit more succinct, but I think the proc notation is much nicer!</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L119-127</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L119-L127</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">dualCounterP ::</span> <span class="dt">Auto</span> (<span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Int</span>) (<span class="dt">Int</span>, <span class="dt">Int</span>)
 dualCounterP <span class="fu">=</span> proc inp <span class="ot">-&gt;</span> <span class="kw">do</span>
@@ -378,7 +378,7 @@ dualCounterP <span class="fu">=</span> proc inp <span class="ot">-&gt;</span> <s
 <p>How would we do this in the explicit recursive case? Why — well, adding another component to the “explicit state” tuple, and dealing with that when necessary.</p>
 <p>I don’t even know how to begin writing it in a readable way using arrow composition.</p>
 <p>But the proc notation? Piece of cake!</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L148-160</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L148-L160</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">dualCounterSkipP ::</span> <span class="dt">Auto</span> (<span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Int</span>) (<span class="dt">Int</span>, <span class="dt">Int</span>)
 dualCounterSkipP <span class="fu">=</span> proc inp <span class="ot">-&gt;</span> <span class="kw">do</span>
@@ -400,7 +400,7 @@ dualCounterSkipP <span class="fu">=</span> proc inp <span class="ot">-&gt;</span
 <p>The last example highlights something very significant about Autos and their Arrow-based composition: Autos with composition allow you to make <em>locally stateful compositions</em>.</p>
 <p>What if we had done the above using some sort of state monad, or doing the explicit recursion?</p>
 <p>We’d have carried the “entire” state in the parameter:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L136-145</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto2.hs#L136-L145</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">dualCounterSkipR ::</span> <span class="dt">Auto</span> (<span class="dt">Either</span> <span class="dt">Int</span> <span class="dt">Int</span>) (<span class="dt">Int</span>, <span class="dt">Int</span>)
 dualCounterSkipR <span class="fu">=</span> counterFrom ((<span class="dv">0</span>, <span class="dv">0</span>), <span class="dv">1</span>)

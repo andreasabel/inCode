@@ -28,7 +28,7 @@ that I’ve struggled through in the past.">Tutorials</a><span class="info-separ
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import qualified</span> <span class="dt">Data.Vector</span> <span class="kw">as</span> <span class="dt">V</span>
 <span class="kw">import           </span><span class="dt">GHC.TypeNats</span>
 
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L19-20</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L19-L20</span>
 <span class="kw">data</span> <span class="dt">Vec</span> (<span class="ot">n ::</span> <span class="dt">Nat</span>) a <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> {<span class="ot"> getVector ::</span> <span class="dt">V.Vector</span> a }
     <span class="kw">deriving</span> <span class="dt">Show</span></code></pre></div>
 <p>A <code>Vec n a</code> will represent an <code>n</code>-element vector of <code>a</code>s. So, a <code>Vec 5 Int</code> will be a vector of five <code>Int</code>s, a <code>Vec 10 String</code> is a vector of 10 <code>String</code>s, etc.</p>
@@ -47,7 +47,7 @@ ghci<span class="fu">&gt;</span> natVal (<span class="dt">Proxy</span> <span cla
 <p>Super low-level utility functions for the <code>Nat</code> kind (like <code>natVal</code>) are found in the <em><a href="http://hackage.haskell.org/package/base/docs/GHC-TypeNats.html">GHC.TypeNats</a></em> module (and also in <em><a href="http://hackage.haskell.org/package/base/docs/GHC-TypeLits.html">GHC.TypeLits</a></em> for a slightly different API)</p>
 <h3 id="the-smart-constructor">The Smart Constructor</h3>
 <p>We can use <code>natVal</code> with the <code>KnownNat</code> typeclass to write a “smart constructor” for our type – make a <code>Vec</code> from a <code>Vector</code>, but only if the length is the correct type:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L22-26</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L22-L26</span>
 <span class="ot">mkVec ::</span> forall n a<span class="fu">.</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> n a)
 mkVec v <span class="fu">|</span> V.length v <span class="fu">==</span> l <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">UnsafeMkVec</span> v)
         <span class="fu">|</span> otherwise       <span class="fu">=</span> <span class="dt">Nothing</span>
@@ -60,12 +60,12 @@ mkVec v <span class="fu">|</span> V.length v <span class="fu">==</span> l <span 
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">someFunc ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n b</code></pre></div>
 <p>You can see that it takes a function and a vector of length <code>n</code>, and returns another vector of length <code>n</code>. Clearly, this function might be a “map” function, which applies the function to all of the values in the <code>Vec</code>! We know that it must have the same length, so it can’t drop or add items. (However, it could still be shuffling or duplicating or permuting the items, as long as the resulting length is the same)</p>
 <p>In this situation, we can write such a mapping function in an “unsafe” way, and then give it our type signature as a form of documentation:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L28-29</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L28-L29</span>
 <span class="ot">mapVec ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n b
 mapVec f v <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> <span class="fu">$</span> V.map f (getVector v)
 
 <span class="co">-- just for fun</span>
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L31-32</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L31-L32</span>
 <span class="kw">instance</span> <span class="dt">Functor</span> (<span class="dt">Vec</span> n) <span class="kw">where</span>
     fmap <span class="fu">=</span> mapVec</code></pre></div>
 <p>The compiler didn’t help us write this function, and we have to be pretty careful that the guarantees we specify in our types are reflected in the actual unsafe operations. This is because our types don’t <em>structurally</em> enforce their type-level lengths.</p>
@@ -77,24 +77,24 @@ V.map<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class
 <p>We have to rely on the documentation to <em>tell</em> us what the length of the final resulting vector is, even though it can be known statically if you know the length of the input vectors. The vectors have a <em>static relationship</em> in their length, but this isn’t specified in a way that the compiler can take advantage of.</p>
 <p>By having our <code>mapVec :: (a -&gt; b) -&gt; Vec n a -&gt; Vec n b</code>, the relationship between the input lengths and output length is right there in the types, when you <em>use</em> <code>mapVec</code>, GHC is aware of the relationships and can give you help in the form of typed hole suggestions and informative type errors. You can even catch errors in logic at compile-time instead of runtime!</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- the resulting vector&#39;s length is the sum of the input vectors&#39; lengths</span>
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L34-35</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L34-L35</span>
 <span class="ot">(++) ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (n <span class="fu">+</span> m) a
 <span class="dt">UnsafeMkVec</span> xs <span class="fu">++</span> <span class="dt">UnsafeMkVec</span> ys <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> (xs <span class="fu">V.++</span> ys)
 
 <span class="co">-- you must zip two vectors of the same length</span>
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L37-38</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L37-L38</span>
 <span class="ot">zipVec ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n b <span class="ot">-&gt;</span> <span class="dt">Vec</span> n (a, b)
 zipVec (<span class="dt">UnsafeMkVec</span> xs) (<span class="dt">UnsafeMkVec</span> ys) <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> (V.zip xs ys)
 
 <span class="co">-- type-level arithmetic to let us &#39;take&#39;</span>
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L40-43</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L40-L43</span>
 <span class="ot">takeVec ::</span> forall n m a<span class="fu">.</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">Vec</span> (n <span class="fu">+</span> m) a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 takeVec (<span class="dt">UnsafeMkVec</span> xs) <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> (V.take l xs)
   <span class="kw">where</span>
     l <span class="fu">=</span> fromIntegral (natVal (<span class="dt">Proxy</span> <span class="fu">@</span>n))
 
 <span class="co">-- splitAt, as well</span>
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L45-49</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L45-L49</span>
 <span class="ot">splitVec ::</span> forall n m a<span class="fu">.</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">Vec</span> (n <span class="fu">+</span> m) a <span class="ot">-&gt;</span> (<span class="dt">Vec</span> n a, <span class="dt">Vec</span> m a)
 splitVec (<span class="dt">UnsafeMkVec</span> xs) <span class="fu">=</span> (<span class="dt">UnsafeMkVec</span> ys, <span class="dt">UnsafeMkVec</span> zs)
   <span class="kw">where</span>
@@ -121,14 +121,14 @@ splitVec (<span class="dt">UnsafeMkVec</span> xs) <span class="fu">=</span> (<sp
 ghci<span class="fu">&gt;</span> getFinite (finite <span class="dv">2</span><span class="ot"> ::</span> <span class="dt">Finite</span> <span class="dv">5</span>)
 <span class="dv">2</span></code></pre></div>
 <p>We can use a <code>Finite n</code> to “index” a <code>Vector n a</code>. A <code>Vector n a</code> has exactly <code>n</code> slots, and a <code>Finite n</code> has <code>n</code> possible values. Clearly, <code>Finite n</code> only contains valid indices into our vector!</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L51-52</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L51-L52</span>
 index<span class="ot"> ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Finite</span> n <span class="ot">-&gt;</span> a
 index v i <span class="fu">=</span> getVector v <span class="fu">V.!</span> fromIntegral (getFinite i)</code></pre></div>
 <p><code>index</code> will never fail at runtime due to a bad index — do you see why? Valid indices of a <code>Vector 5 a</code> are the integers 0 to 4, and that is precisely the exact things that <code>Finite 5</code> can store!</p>
 <h3 id="generating">Generating</h3>
 <p>We can directly generate these vectors in interesting ways. Using return-type polymorphism, we can have the user <em>directly</em> request a vector length, <em>just</em> by using type inference or a type annotation. (kind of like with <code>read</code>)</p>
 <p>For example, we can write a version of <code>replicate</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L54-57</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L54-L57</span>
 replicate<span class="ot"> ::</span> forall n a<span class="fu">.</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 replicate x <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> <span class="fu">$</span> V.replicate l x
   <span class="kw">where</span>
@@ -140,10 +140,10 @@ replicate x <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> <span 
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">replicate<span class="ot"> ::</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a</code></pre></div>
 <p>You might recognize it as very similar to haskellism <code>pure</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">pure<span class="ot"> ::</span> <span class="dt">Applicative</span> f <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> f a</code></pre></div>
-<p><code>replicate</code> is actually <code>pure</code> for the Applicative instance of <code>Vec n</code>! As an extra challenge, what would <code>&lt;*&gt;</code> be? See <a href="https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L59-61">the solution</a> if you want to check your answer!</p>
+<p><code>replicate</code> is actually <code>pure</code> for the Applicative instance of <code>Vec n</code>! As an extra challenge, what would <code>&lt;*&gt;</code> be? See <a href="https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L59-L61">the solution</a> if you want to check your answer!</p>
 <h4 id="generating-with-indices">Generating with indices</h4>
 <p>We can be a little more fancy with <code>replicate</code>, to get what we normally call <code>generate</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L63-66</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L63-L66</span>
 <span class="ot">generate ::</span> forall n a<span class="fu">.</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> (<span class="dt">Finite</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 generate f <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> <span class="fu">$</span> V.generate l (f <span class="fu">.</span> fromIntegral)
   <span class="kw">where</span>
@@ -183,7 +183,7 @@ ghci<span class="fu">&gt;</span> withVec myVector <span class="fu">$</span> \(<s
             <span class="dt">Just</span> i  <span class="ot">-&gt;</span> v <span class="ot">`index`</span> i
 <span class="dv">5</span></code></pre></div>
 <p>We could write, say, a function to always safely get the third item:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L68-69</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L68-L69</span>
 <span class="ot">getThird ::</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a
 getThird v <span class="fu">=</span> withVec v <span class="fu">$</span> \v&#39; <span class="ot">-&gt;</span> fmap (v&#39; <span class="ot">`index`</span>) (packFinite <span class="dv">2</span>)</code></pre></div>
 <p>And we can run it:</p>
@@ -192,7 +192,7 @@ getThird v <span class="fu">=</span> withVec v <span class="fu">$</span> \v&#39;
 ghci<span class="fu">&gt;</span> getThird <span class="fu">$</span> V.fromList [<span class="dv">1</span>,<span class="dv">2</span>]
 <span class="dt">Nothing</span></code></pre></div>
 <p>We can even do something silly like convert an unsized vector to a sized vector and then back again:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L71-72</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L71-L72</span>
 <span class="ot">vectorToVector ::</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> a
 vectorToVector v <span class="fu">=</span> withVec v getVector</code></pre></div>
 <p>Now that I’ve (hopefully) convinced you that this function really does convert an unsized vector into a sized vector that you can use, let’s see how we can implement it!</p>
@@ -202,7 +202,7 @@ vectorToVector v <span class="fu">=</span> withVec v getVector</code></pre></div
 <span class="ot">someNatVal ::</span> <span class="dt">Natural</span> <span class="ot">-&gt;</span> <span class="dt">SomeNat</span></code></pre></div>
 <p><code>SomeNat</code> contains what we call an existentially quantified type, <code>n</code>. Basically, a value of <code>SomeNat</code> contains a <code>Proxy n</code> with <em>some specific <code>n</code></em>, that is hidden “inside” the constructor. The only way to figure it out is to pattern match on the constructor and use it in a generic and parametrically polymorphic way. Sound familiar?</p>
 <p><code>someNatVal</code> converts <code>Natural</code> (a non-negative Integer type) into a <code>SomeNat</code> — it “picks” the right <code>n</code> (the one that corresponds to that <code>Natural</code>) and stuffs/hides it into <code>SomeNat</code>. We can leverage this to write our <code>withVec</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L74-76</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L74-L76</span>
 <span class="ot">withVec ::</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> (forall n<span class="fu">.</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r
 withVec v f <span class="fu">=</span> <span class="kw">case</span> someNatVal (fromIntegral (V.length v)) <span class="kw">of</span>
     <span class="dt">SomeNat</span> (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> m) <span class="ot">-&gt;</span> f (<span class="dt">UnsafeMkVec</span> <span class="fu">@</span>m v)</code></pre></div>
@@ -225,17 +225,17 @@ sameNat
     <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (n <span class="fu">:~:</span> m)</code></pre></div>
 <p>The only way we can have a non-bottom value of type <code>n :~: m</code> is with the <code>Refl</code> constructor, which can only be used in the case that <code>n</code> and <code>m</code> are equal. <code>sameNat</code> gives us that <code>Refl</code>, if possible — that is, if <code>n</code> and <code>m</code> are equal. If not, it gives us <code>Nothing</code>.</p>
 <p>Now, we can write:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L78-81</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L78-L81</span>
 <span class="ot">exactLength ::</span> forall n m a<span class="fu">.</span> (<span class="dt">KnownNat</span> n, <span class="dt">KnownNat</span> m) <span class="ot">=&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> m a)
 exactLength v <span class="fu">=</span> <span class="kw">case</span> sameNat (<span class="dt">Proxy</span> <span class="fu">@</span>n) (<span class="dt">Proxy</span> <span class="fu">@</span>m) <span class="kw">of</span>
     <span class="dt">Just</span> <span class="dt">Refl</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> v     <span class="co">-- here, n ~ m, so a `Vec n a` is a `Vec m a`, too</span>
     <span class="dt">Nothing</span>   <span class="ot">-&gt;</span> <span class="dt">Nothing</span></code></pre></div>
 <p>(We could also write this by using <code>getVector</code> and <code>mkVec</code>, which wraps and unwraps, but let’s pretend it is expensive to construct and re-construct).</p>
 <p>Now we can do:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L37-37</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L37-L37</span>
 <span class="ot">zipVec ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n b <span class="ot">-&gt;</span> <span class="dt">Vec</span> n (a, b)
 
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L83-89</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrapped.hs#L83-L89</span>
 <span class="ot">zipSame ::</span> forall a b<span class="fu">.</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> b <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">V.Vector</span> (a, b))
 zipSame v1 v2 <span class="fu">=</span> withVec v1 <span class="fu">$</span> \(<span class="ot">v1&#39; ::</span> <span class="dt">Vec</span> n a) <span class="ot">-&gt;</span>
                 withVec v2 <span class="fu">$</span> \(<span class="ot">v2&#39; ::</span> <span class="dt">Vec</span> m b) <span class="ot">-&gt;</span>
@@ -279,7 +279,7 @@ zipSame v1 v2 <span class="fu">=</span> withVec v1 <span class="fu">$</span> \(<
 <span class="ot">(%~) ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Sing</span> m <span class="ot">-&gt;</span> <span class="dt">Decision</span> (n <span class="fu">:~:</span> m)</code></pre></div>
 <p>Hopefully the above should give you a nice “key” for translating between the two styles. But here are some practical translations:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- &quot;explicit Sing&quot; style</span>
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L20-24</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L20-L24</span>
 <span class="ot">mkVec_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> n a)
 mkVec_ s v <span class="fu">|</span> V.length v <span class="fu">==</span> l <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">UnsafeMkVec</span> v)
            <span class="fu">|</span> otherwise       <span class="fu">=</span> <span class="dt">Nothing</span>
@@ -287,7 +287,7 @@ mkVec_ s v <span class="fu">|</span> V.length v <span class="fu">==</span> l <sp
     l <span class="fu">=</span> fromIntegral (fromSing s)
 
 <span class="co">-- &quot;implicit&quot; style</span>
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L26-30</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L26-L30</span>
 <span class="ot">mkVec ::</span> forall n a<span class="fu">.</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> n a)
 mkVec v <span class="fu">|</span> V.length v <span class="fu">==</span> l <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">UnsafeMkVec</span> v)
         <span class="fu">|</span> otherwise       <span class="fu">=</span> <span class="dt">Nothing</span>
@@ -298,7 +298,7 @@ mkVec v <span class="fu">|</span> V.length v <span class="fu">==</span> l <span 
 <span class="ot">mkVec ::</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> n a)
 mkVec <span class="fu">=</span> mkVec_ sing</code></pre></div>
 <p>As you can see, in singletons, we have the luxury of defining our functions in “explicit” style (where the user passes in a <code>Sing</code> token which reveals what length they want) or “implicit” style (where the length is inferred from the return type, requiring a <code>KnownNat n =&gt;</code> constraint), like we have been writing up to this point. <code>Sing n -&gt;</code> and <code>KnownNat n =&gt;</code> really have the same power. You can think of <code>Sing n</code> as a token that carries around <code>KnownNat n =&gt;</code>, in a way.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L32-42</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L32-L42</span>
 <span class="ot">replicate_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 replicate_ s x <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> <span class="fu">$</span> V.replicate l x
   <span class="kw">where</span>
@@ -312,7 +312,7 @@ withVec v f <span class="fu">=</span> <span class="kw">case</span> toSing (fromI
     <span class="dt">SomeSing</span> s <span class="ot">-&gt;</span> f s (<span class="dt">UnsafeMkVec</span> v)
 
 <span class="co">-- alternatively, skipping `SomeSing` altogether:</span>
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L44-54</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L44-L54</span>
 <span class="ot">withVec&#39; ::</span> <span class="dt">V.Vector</span> a <span class="ot">-&gt;</span> (forall n<span class="fu">.</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r
 withVec&#39; v0 f <span class="fu">=</span> withSomeSing (fromIntegral (V.length v0)) <span class="fu">$</span> \s <span class="ot">-&gt;</span>
     f s (<span class="dt">UnsafeMkVec</span> v0)
@@ -333,7 +333,7 @@ exactLength <span class="fu">=</span> exactLength_ sing sing</code></pre></div>
 <span class="co">-- we can give a `Sing n` and be able to execute something in the context where</span>
 <span class="co">-- that `n` has a `KnownNat` constraint</span>
 <span class="ot">withKnownNat ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> (<span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> r) <span class="ot">-&gt;</span> r</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L56-60</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L56-L60</span>
 <span class="ot">generate_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> (<span class="dt">Finite</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 generate_ s f <span class="fu">=</span> withKnownNat s <span class="fu">$</span>
     <span class="dt">UnsafeMkVec</span> <span class="fu">$</span> V.generate l (f <span class="fu">.</span> fromIntegral)
@@ -341,13 +341,13 @@ generate_ s f <span class="fu">=</span> withKnownNat s <span class="fu">$</span>
     l <span class="fu">=</span> fromIntegral (fromSing s)
 
 <span class="co">-- alternatively, via pattern matching:</span>
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L63-66</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L63-L66</span>
 <span class="ot">generate&#39;_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> (<span class="dt">Finite</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 generate&#39;_ s<span class="fu">@</span><span class="dt">SNat</span> f <span class="fu">=</span> <span class="dt">UnsafeMkVec</span> <span class="fu">$</span> V.generate l (f <span class="fu">.</span> fromIntegral)
   <span class="kw">where</span>
     l <span class="fu">=</span> fromIntegral (fromSing s)
 
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L68-69</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs#L68-L69</span>
 <span class="ot">generate ::</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> (<span class="dt">Finite</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 generate <span class="fu">=</span> generate_ sing</code></pre></div>
 <p>You can see most of our original code (with pure <code>KnownNat</code>) rewritten to work with singletons in <a href="https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecWrappedSingletons.hs">this file</a>.</p>
@@ -378,7 +378,7 @@ ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="ch">&#3
 <span class="dt">Nat</span></code></pre></div>
 <p>So <code>'Z</code> represents 0, and <code>'S</code> represents the “successor” function: one plus whatever number it contains. <code>'S 'Z</code> represents 1, <code>'S ('S 'Z)</code> represents 2, etc.</p>
 <p>And now we can define a fixed-length <em>list</em>, which is basically a normal haskell list “zipped” with <code>S</code>s.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L26-30</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L26-L30</span>
 <span class="kw">data</span> <span class="dt">Vec</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span>
     <span class="dt">VNil</span><span class="ot"> ::</span> <span class="dt">Vec</span> <span class="ch">&#39;Z a</span>
 <span class="ot">    (:+) ::</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (<span class="ch">&#39;S n) a</span>
@@ -396,7 +396,7 @@ ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">Fal
 <p>One nice thing about this is that there is no “unsafe” way to construct a <code>Vec</code>. Any <code>Vec</code> is <em>inherently of the correct size</em>. The very act of constructing it enforces its length.</p>
 <p>Remember our “unsafe” <code>mapVec</code>? We had to implement it unsafely, and trust that our implementation is correct. Even worse — our <em>users</em> have to trust that our implementation is correct!</p>
 <p>But writing such a <code>mapVec</code> function using <code>Vec</code> is guaranteed to preserve the lengths:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L32-35</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L32-L35</span>
 <span class="ot">mapVec ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n b
 mapVec f <span class="fu">=</span> \<span class="kw">case</span>
     <span class="dt">VNil</span>    <span class="ot">-&gt;</span> <span class="dt">VNil</span>
@@ -409,7 +409,7 @@ map f <span class="fu">=</span> \<span class="kw">case</span>
     x<span class="fu">:</span>xs <span class="ot">-&gt;</span> f x <span class="fu">:</span> map f xs</code></pre></div>
 <p>Our implementation is guaranteed to have the correct length. Neat! We get all of the documentation benefits described in our previous discussion of <code>mapVec</code>, plus more.</p>
 <p>We can write <code>zip</code> too:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L37-42</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L37-L42</span>
 <span class="ot">zipVec ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n b <span class="ot">-&gt;</span> <span class="dt">Vec</span> n (a, b)
 zipVec <span class="fu">=</span> \<span class="kw">case</span>
     <span class="dt">VNil</span> <span class="ot">-&gt;</span> \<span class="kw">case</span>
@@ -419,7 +419,7 @@ zipVec <span class="fu">=</span> \<span class="kw">case</span>
 <p>Isn’t it neat how the code reads exactly like the code for map/zip for <em>lists</em>? Because their structure is identical, their only real difference is the type-level tag. All of the functions we write are the same.</p>
 <h4 id="type-level-arithmentic">Type-Level Arithmentic</h4>
 <p>GHC provided our <code>+</code> before, so we have to write it ourselves if we want to be able to use it for our <code>Nat</code>s. We can write it as a type family:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L54-61</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L54-L61</span>
 <span class="kw">type</span> family (<span class="ot">n ::</span> <span class="dt">Nat</span>) <span class="fu">+</span> (<span class="ot">m ::</span> <span class="dt">Nat</span>)<span class="ot"> ::</span> <span class="dt">Nat</span> <span class="kw">where</span>
     <span class="ch">&#39;Z   + m = m</span>
     <span class="ch">&#39;S n + m = &#39;</span><span class="dt">S</span> (n <span class="fu">+</span> m)
@@ -434,7 +434,7 @@ zipVec <span class="fu">=</span> \<span class="kw">case</span>
 <p>Unfortunately, for examples where the function we write doesn’t exactly match the structure as the type family we write, this won’t work. And sometimes, the structural properties might get in the way of what we are trying to prove/produce. An example here would be a <code>snoc</code> function (cons to the end of a list). If you try writing it, you’ll see that the structure of <code>Nat</code> and <code>Vec</code> fight back against you pretty hard. So, exploiting structure isn’t universally useful, but it definitely helps in many situations! Handling tricky cases like this is a subject for a whole other blog post.</p>
 <h3 id="indexing-1">Indexing</h3>
 <p>To index our previous type, we used some abstract <code>Finite</code> type, where <code>Finite n</code> conveniently represented the type of all possible indices to a <code>Vec n a</code>. We can do something similar, inductively, as well:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L63-67</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L63-L67</span>
 <span class="kw">data</span> <span class="dt">Fin</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span>
     <span class="dt">FZ</span><span class="ot"> ::</span> <span class="dt">Fin</span> (<span class="ch">&#39;S n)</span>
     <span class="dt">FS</span><span class="ot"> ::</span> <span class="dt">Fin</span> n <span class="ot">-&gt;</span> <span class="dt">Fin</span> (<span class="ch">&#39;S n)</span>
@@ -454,7 +454,7 @@ ghci<span class="fu">&gt;</span> <span class="dt">FS</span> (<span class="dt">FS
 <p>As GHC informs us, <code>FS (FS (FS FZ))</code> is not an inhabitant of <code>Fin ('S ('S ('S 'Z)))</code>, which is exactly the behavior we wanted. This is because <code>FS (FS (FS FZ))</code> has type <code>Fin ('S ('S ('S ('S m))))</code> for some <code>m</code>, and this can’t fit <code>Fin ('S ('S ('S 'Z)))</code>.</p>
 <p>Also, note that there are no inhabitants of <code>Fin 'Z</code>. There is no constructor or combination of constructors that can yield a value of that type.</p>
 <p>Armed with this handy <code>Fin</code> type, we can do structural type-safe indexing:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L69-74</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L69-L74</span>
 index<span class="ot"> ::</span> <span class="dt">Fin</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> a
 index <span class="fu">=</span> \<span class="kw">case</span>
     <span class="dt">FZ</span> <span class="ot">-&gt;</span> \<span class="kw">case</span>
@@ -467,7 +467,7 @@ index <span class="fu">=</span> \<span class="kw">case</span>
 <p>However, we can’t pattern match on types in Haskell, because types are <em>erased</em> at runtime. They’re just used by the compiler to verify your code, but they don’t exist at runtime. So, you can’t just say “do this if <code>n</code> is <code>'Z</code>, otherwise do this”.</p>
 <p>Recall that, in our previous vector type, we needed to use a <code>KnownNat n</code> constraint to be able to <em>reflect</em> a <code>n</code> type down to the value level. We can do something similar using the <em>singletons</em> machinery!</p>
 <p>First, we need to get singletons for our <code>Nat</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L21-24</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L21-L24</span>
 <span class="fu">$</span>(singletons [d|
   data Nat = Z | S Nat
     deriving Eq
@@ -478,7 +478,7 @@ index <span class="fu">=</span> \<span class="kw">case</span>
     <span class="dt">SZ</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;Z</span>
     <span class="dt">SS</span><span class="ot"> ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ch">&#39;S n)</span></code></pre></div>
 <p><code>Sing n</code> is a singleton for our <code>Nat</code>, in that there is only one <code>Sing n</code> for every <code>n</code>. So, if we receive a value of type <code>Sing n</code>, we can pattern match on it to figure out what <code>n</code> is. Essentially, we can <em>pattern match</em> on <code>n</code>.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L76-83</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L76-L83</span>
 <span class="ot">singSize ::</span> <span class="dt">Sing</span> (<span class="ot">n ::</span> <span class="dt">Nat</span>) <span class="ot">-&gt;</span> <span class="dt">String</span>
 singSize <span class="fu">=</span> \<span class="kw">case</span>
     <span class="co">-- here, n is &#39;Z</span>
@@ -491,20 +491,20 @@ singSize <span class="fu">=</span> \<span class="kw">case</span>
 <p>Basically, <em>we can use a singleton</em> if we ever want to “pattern match” or branch our program’s output based on the type. This is a general rule you will observe as we continue on this article.</p>
 <p>Note that because of the inductive nature of our original <code>Nat</code> type, the singletons are also inductive, as well. This is handy, because then our whole ecosystem remains inductive.</p>
 <p>Now, to write <code>replicate</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L90-93</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L90-L93</span>
 <span class="ot">replicate_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 replicate_ <span class="fu">=</span> \<span class="kw">case</span>
     <span class="dt">SZ</span>   <span class="ot">-&gt;</span> \_ <span class="ot">-&gt;</span> <span class="dt">VNil</span>
     <span class="dt">SS</span> l <span class="ot">-&gt;</span> \x <span class="ot">-&gt;</span> x <span class="fu">:+</span> replicate_ l x</code></pre></div>
 <p>And we can recover our original “implicit” style, with type-inference-driven lengths, using <code>SingI</code> and <code>sing :: SingI n =&gt; Sing n</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L95-96</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L95-L96</span>
 replicate<span class="ot"> ::</span> <span class="dt">SingI</span> n <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 replicate <span class="fu">=</span> replicate_ sing</code></pre></div>
 <p>You can think of <code>SingI</code> as the “generic singletons” equivalent of <code>KnownNat</code>. <code>KnownNat</code> lets us reflect out a <code>GHC.TypeNats.Nat</code> to a <code>Sing</code>…<code>SingI</code> lets us reflect any type that has singletons defined to its corresponding <code>Sing</code>. Since our new <code>Nat</code> type has singletons, we basically get a free “<code>KnownNat</code> equivalent”!</p>
 <p>See how useful the whole singletons ecosystem is? :)</p>
 <h4 id="generating-with-indices-1">Generating with indices</h4>
 <p>Writing <code>generate</code> using the inductive <code>Fin</code> and <code>Nat</code> is an interesting challenge. It’s actually a fairly standard pattern that comes up when working with inductive types like these. I’m going to leave it as an exercise to the reader – click the link at the top corner of the text box to see the solution, and see how it compares to your own :)</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L98-104</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L98-L104</span>
 <span class="ot">generate_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> (<span class="dt">Fin</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 
 <span class="ot">generate ::</span> <span class="dt">SingI</span> n <span class="ot">=&gt;</span> (<span class="dt">Fin</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
@@ -512,14 +512,14 @@ generate <span class="fu">=</span> generate_ sing</code></pre></div>
 <p>The one thing I will point out is that it is very useful that GHC verifies our code for us, and that we have typed holes to help us develop our code. If we ever don’t know something, we can just use a typed hole <code>_</code>, and GHC will tell us what type it expects, and what values in scope have that type. It is infinitely useful for situations like this, especially when you are new to this sort of dependently typed inductive programming!</p>
 <p>If you ever get stuck, try throwing in a <code>_</code> and seeing what types GHC expects…these clues will help you get your bearings!</p>
 <h3 id="between-sized-and-unsized">Between Sized and Unsized</h3>
-<p>Converting from sized to unsized vectors (to lists) is something that is pretty straightforward, and can be done by just pattern matching on the vector and recursing on the tail. I’ve <a href="https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L85-88">left it as an excercise</a> to write <code>Vec n a -&gt; [a]</code>.</p>
+<p>Converting from sized to unsized vectors (to lists) is something that is pretty straightforward, and can be done by just pattern matching on the vector and recursing on the tail. I’ve <a href="https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L85-L88">left it as an excercise</a> to write <code>Vec n a -&gt; [a]</code>.</p>
 <p>More interesting is the other way around; our the API of converting unsized to sized vectors will be the same:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L106-106</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L106-L106</span>
 <span class="ot">withVec ::</span> [a] <span class="ot">-&gt;</span> (forall n<span class="fu">.</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r</code></pre></div>
 <p>But implementing it inductively is also an interesting challenge. See my tip above about typed holes (<code>_</code>). I recommend taking a break here to try to solve it yourself.</p>
 <p>Ready?</p>
 <p>Welcome back! Hope you had a fun time :) Here’s the solution!</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L106-110</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L106-L110</span>
 <span class="ot">withVec ::</span> [a] <span class="ot">-&gt;</span> (forall n<span class="fu">.</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r
 withVec <span class="fu">=</span> \<span class="kw">case</span>
     []   <span class="ot">-&gt;</span> \f <span class="ot">-&gt;</span> f <span class="dt">SZ</span> <span class="dt">VNil</span>
@@ -530,14 +530,14 @@ withVec <span class="fu">=</span> \<span class="kw">case</span>
 <h3 id="verifying-properties-1">Verifying properties</h3>
 <p>We can create some corresponding example of <code>exactLength</code> using the exact same process we did before</p>
 <p>First, it’d be nice to get a witness for the length of a given vector just from the vector itself:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L112-115</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L112-L115</span>
 <span class="ot">vecLength ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Sing</span> n
 vecLength <span class="fu">=</span> \<span class="kw">case</span>
     <span class="dt">VNil</span>    <span class="ot">-&gt;</span> <span class="dt">SZ</span>
     _ <span class="fu">:+</span> xs <span class="ot">-&gt;</span> <span class="dt">SS</span> (vecLength xs)</code></pre></div>
 <p>The type of <code>vecLength :: Vec n a -&gt; Sing n</code> says that it is possible, from the structure of the vector given alone, to get a witness to its length. And, because the structure of the vector and the structure of the length type are so similar, this is possible! (Note that this is not possible for our non-structural “wrapped” <code>Vec</code>, without some unsafe operations)</p>
 <p>Now, our code will be identical to the code for our wrapped/non-structural vectors, using <code>%~</code> and <code>Decision</code> and <code>Refl</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L117-123</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L117-L123</span>
 <span class="ot">exactLength_ ::</span> <span class="dt">Sing</span> m <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> m a)
 exactLength_ sM v <span class="fu">=</span> <span class="kw">case</span> sM <span class="fu">%~</span> vecLength v <span class="kw">of</span>
     <span class="dt">Proved</span> <span class="dt">Refl</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> v
@@ -547,7 +547,7 @@ exactLength_ sM v <span class="fu">=</span> <span class="kw">case</span> sM <spa
 exactLength <span class="fu">=</span> exactLength_ sing</code></pre></div>
 <p>It’s nice that this is exactly the same as before, and that’s a testament to how useful the singletons library is at unifying all of these distinct type-level stuffs.</p>
 <p>We could also write <code>exactLength</code> in a cute way by inducting on the length we want and the vector, so it might be fun to look at this version instead –</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L125-135</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L125-L135</span>
 <span class="ot">exactLengthInductive_ ::</span> <span class="dt">Sing</span> m <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> m a)
 exactLengthInductive_ <span class="fu">=</span> \<span class="kw">case</span>
     <span class="dt">SZ</span> <span class="ot">-&gt;</span> \<span class="kw">case</span>
@@ -562,7 +562,7 @@ exactLengthInductive <span class="fu">=</span> exactLengthInductive_ sing</code>
 <p>This is another way you can take advantage of the <em>structure</em> of the length type. Here, we explicitly take advantage of the inductive structure of the <code>Nat</code> type and how it matches with the structure of the <code>Vec</code> type, and do bold things with it!<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a></p>
 <p>But I digress. Like in the last section, checking for a given length is literally the least interesting property you can check for. But, again, the same process is usable here: find a way to get your witness, and then pattern match on that witness.</p>
 <p>For example, we can make a witness that <code>n</code> is less than or equal to <code>m</code>, as well as a way to construct such a witness:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L137-149</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L137-L149</span>
 <span class="kw">data</span> <span class="dt">LTE</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span>
     <span class="dt">LEZ</span><span class="ot"> ::</span> <span class="dt">LTE</span> <span class="ch">&#39;Z n</span>
     <span class="dt">LES</span><span class="ot"> ::</span> <span class="dt">LTE</span> n m <span class="ot">-&gt;</span> <span class="dt">LTE</span> (<span class="ch">&#39;S n) (&#39;</span><span class="dt">S</span> m)
@@ -578,7 +578,7 @@ isLTE <span class="fu">=</span> \<span class="kw">case</span>
           <span class="dt">LES</span> l <span class="ot">-&gt;</span> p l</code></pre></div>
 <p>So, it is impossible to construct an <code>LTE n m</code> if <code>n</code> is <em>not</em> less than or equal to <code>m</code>. I dare you to try!</p>
 <p>We can write code to check for this property in our vectors:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L151-157</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L151-L157</span>
 <span class="ot">atLeast_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">LTE</span> n m, <span class="dt">Vec</span> m a)
 atLeast_ sN v <span class="fu">=</span> <span class="kw">case</span> isLTE sN (vecLength v) <span class="kw">of</span>
     <span class="dt">Proved</span> l    <span class="ot">-&gt;</span> <span class="dt">Just</span> (l, v)
@@ -588,14 +588,14 @@ atLeast_ sN v <span class="fu">=</span> <span class="kw">case</span> isLTE sN (v
 atLeast <span class="fu">=</span> atLeast_ sing</code></pre></div>
 <p><code>atLeast_ sN</code> will only return our vector if its length is <em>at least</em> the length of the length indicated by <code>sN</code>. Basically, we check if our vector is “at least” a certain length.</p>
 <p>We can write a function that can “take” an arbitrary amount from a vector, given (via proof) that the vector has at least that many elements:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L159-163</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L159-L163</span>
 <span class="ot">takeVec ::</span> <span class="dt">LTE</span> n m <span class="ot">-&gt;</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a
 takeVec <span class="fu">=</span> \<span class="kw">case</span>
     <span class="dt">LEZ</span>   <span class="ot">-&gt;</span> \_ <span class="ot">-&gt;</span> <span class="dt">VNil</span>
     <span class="dt">LES</span> l <span class="ot">-&gt;</span> \<span class="kw">case</span>
       x <span class="fu">:+</span> xs <span class="ot">-&gt;</span> x <span class="fu">:+</span> takeVec l xs</code></pre></div>
 <p>And, we can combine that with our <code>atLeast</code> function, to be able to take (maybe)<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a> from any vector:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L165-169</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L165-L169</span>
 <span class="ot">takeVecMaybe_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> n a)
 takeVecMaybe_ sN v <span class="fu">=</span> uncurry takeVec <span class="fu">&lt;$&gt;</span> atLeast_ sN v
 

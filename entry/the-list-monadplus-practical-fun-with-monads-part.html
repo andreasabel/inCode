@@ -41,7 +41,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 guard <span class="dt">True</span>  <span class="fu">=</span> return ()
 guard <span class="dt">False</span> <span class="fu">=</span> mzero
 
-<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L30-33</span>
+<span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L30-L33</span>
 <span class="ot">halve ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span>
 halve n <span class="fu">=</span> <span class="kw">do</span>
     guard <span class="fu">$</span> even n
@@ -56,7 +56,7 @@ ghci<span class="fu">&gt;</span> halve <span class="dv">7</span> <span class="fu
 <span class="dt">Nothing</span></code></pre></div>
 <p>Here, our success/fail mechanism was built into the Maybe container. Remember, first, it fails automatically if <code>n</code> is not even; then, it auto-succeeds with <code>n `div` 2</code> (which only works if it has not already failed). But note that we didn’t actually really “need” Maybe here…we could have used anything that had an <code>mzero</code> (insta-fail, which is used in <code>guard</code>) and a <code>return</code> (auto-succeed).</p>
 <p>Let’s see what happens when we replace our Maybe container with a list:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L35-38</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L35-L38</span>
 <span class="ot">halve&#39; ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]
 halve&#39; n <span class="fu">=</span> <span class="kw">do</span>
     guard <span class="fu">$</span> even n
@@ -78,7 +78,7 @@ ghci<span class="fu">&gt;</span> halve&#39; <span class="dv">32</span> <span cla
 []</code></pre></div>
 <p>So there we have it! <code>Nothing</code> is just like <code>[]</code>, <code>Just x</code> is just like <code>[x]</code>. This whole time! It’s all so clear now! Why does <code>Maybe</code> even exist, anyway, when we can just use <code>[]</code> and <code>[x]</code> for <code>Nothing</code> and <code>Just x</code> and be none the wiser? (Take some time to think about it if you want!)</p>
 <p>In fact, if we generalize our type signature for <code>halve</code>, we can do some crazy things…</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-43</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-L43</span>
 <span class="ot">genericHalve ::</span> <span class="dt">MonadPlus</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m <span class="dt">Int</span>
 genericHalve n <span class="fu">=</span> <span class="kw">do</span>
     guard <span class="fu">$</span> even n
@@ -106,7 +106,7 @@ ghci<span class="fu">&gt;</span> genericHalve <span class="dv">7</span><span cla
 <p>Think of it this way: A value goes through a long and arduous journey with many choices and possible paths and forks. At the end of it, you have the result of every path that could have lead to a success. Contrast this to the Maybe monad, where a value goes through this arduous journey, but never has any choice. There is only one path — successful, or otherwise. A Maybe is deterministic…a list provides a choice in paths.</p>
 <h2 id="halveordouble">halveOrDouble</h2>
 <p>Let’s take a simple example: <code>halveOrDouble</code>. It provides two successful paths if you are even: halving and doubling. It only provides one choice or possible path to success if you are odd: doubling. In this way it is slightly racist.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L19-21</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L19-L21</span>
 <span class="ot">halveOrDouble ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]
 halveOrDouble n <span class="fu">|</span> even n    <span class="fu">=</span> [n <span class="ot">`div`</span> <span class="dv">2</span>, n <span class="fu">*</span> <span class="dv">2</span>]
                 <span class="fu">|</span> otherwise <span class="fu">=</span> [n <span class="fu">*</span> <span class="dv">2</span>]</code></pre></div>
@@ -134,7 +134,7 @@ ghci<span class="fu">&gt;</span> halveOrDouble <span class="dv">8</span> <span c
 <p>The first list represents the results of all of the possible successful paths 5 could have taken to “traverse” the dreaded <code>halveOrDouble</code> landscape twice — double-halve, or double-double. The second, 6 could have emerged successful with halve-double, double-halve, or double-double. For 8, all paths are successful, incidentally. He better check his privilege.</p>
 <h3 id="do-notation">Do notation</h3>
 <p>Let’s look at the same thing in do notation form to offer some possible insight:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L24-27</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L24-L27</span>
 <span class="ot">halveOrDoubleTwice ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]
 halveOrDoubleTwice n <span class="fu">=</span> <span class="kw">do</span>
     x <span class="ot">&lt;-</span> halveOrDouble n
@@ -150,7 +150,7 @@ halveOrDoubleTwice n <span class="fu">=</span> <span class="kw">do</span>       
 <p>Remember, just like in the Maybe monad, the <code>x</code> represents the value “inside” the object — <code>x</code> represents a 3 <strong>or</strong> a 12 (but not “both”), depending on what path you are taking/are “in”. That’s why we can call <code>halveOrDouble x</code>: <code>halveOrDouble</code> only takes <code>Int</code>s and <code>x</code> is <em>one</em> <code>Int</code> along the path.</p>
 <h3 id="a-winding-journey">A winding journey</h3>
 <p>Note that once you bind a value to a variable (like <code>x</code>), then that is the value for <code>x</code> for the entire rest of the journey. In fact, let’s see it in action:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L29-29</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L29-L29</span>
 <span class="ot">hod2PlusOne ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]
 hod2PlusOne n <span class="fu">=</span> <span class="kw">do</span>              <span class="co">-- hod2PlusOne 6</span>
     x <span class="ot">&lt;-</span> halveOrDouble n        <span class="co">-- x &lt;-     Just 3          Just 12</span>
@@ -264,7 +264,7 @@ doubleDoublePlusOne <span class="fu">=</span> <span class="kw">do</span>        
 <!-- ![*testNumber 5*, all journeys illustrated](/img/entries/monad-plus/testnumber.png "testNumber 5") -->
 <h3 id="finding-the-right-combinations">Finding the right combinations</h3>
 <p>Here is probably the most common of all examples involving the list monad: finding Pythagorean triples.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-18</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-L18</span>
 <span class="ot">triplesUnder ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]
 triplesUnder n <span class="fu">=</span> <span class="kw">do</span>
     a <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="fu">..</span>n]
@@ -308,7 +308,7 @@ ghci<span class="fu">&gt;</span> triplesUnder <span class="dv">25</span>
 </ul>
 <p>The last point is particularly important and is pretty pivotal in understanding what is coming up next. Remember that all Maybe blocks and List blocks really essentially look <em>exactly the same</em>. This keeping-track-of-separate-paths thing is all handled behind-the scenes.</p>
 <p>In fact you should be able to look at code like:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-18</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-L18</span>
 <span class="ot">triplesUnder ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]
 triplesUnder n <span class="fu">=</span> <span class="kw">do</span>
     a <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="fu">..</span>n]
@@ -326,7 +326,7 @@ triplesUnder&#39; n <span class="fu">=</span> <span class="kw">do</span>
     return (a,b,c)</code></pre></div>
 <p>for any arbitrary choice of <code>a</code>, <code>b</code>, and <code>c</code>, except instead of <code>Just 3</code> (or <code>[3]</code>), you have <code>[2,3,4]</code>, etc.</p>
 <p>In fact recall that this block:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-43</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-L43</span>
 <span class="ot">genericHalve ::</span> <span class="dt">MonadPlus</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m <span class="dt">Int</span>
 genericHalve n <span class="fu">=</span> <span class="kw">do</span>
     guard <span class="fu">$</span> even n

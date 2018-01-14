@@ -70,7 +70,7 @@ instructions by hand are easy peasy!
 Let’s define our own custom `Put` for our `PreTree`s:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L69-76
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L69-L76
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 putPT :: Binary a => PreTree a -> Put
 putPT (PTLeaf x) = do
@@ -105,7 +105,7 @@ might not be so bad to live with boolean blindness for now.
 Now let’s define our own custom `Get`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L79-84
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L79-L84
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 getPT :: Binary a => Get (PreTree a)
 getPT = do
@@ -149,7 +149,7 @@ Where `(<$>)` and `(<*>)` come from `Control.Applicative`. We call this style
 And finally, to tie it all together:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L36-38
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L36-L38
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 instance Binary a => Binary (PreTree a) where
     put = putPT
@@ -223,7 +223,7 @@ the character.
 Let’s represent this path as a list of `Direction`s:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L25-30
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L25-L30
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 data Direction = DLeft
                | DRight
@@ -246,7 +246,7 @@ direction?
 Here’s a naive recursive direct (depth-first) search.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L90-96
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L90-L96
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 findPT :: Eq a => PreTree a -> a -> Maybe Encoding
 findPT pt0 x = go pt0 []
@@ -300,7 +300,7 @@ them all, using `(<>)`, which “combines” or merges two `Map k v`’s, using 
 Monoid instance:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L101-106
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L101-L106
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 ptTable :: Ord a => PreTree a -> Map a Encoding
 ptTable pt = go pt []
@@ -316,7 +316,7 @@ of how deep we are. Then we combine it all as we go along with `<>`.
 Note how it is almost identical in structure to `findPT`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L90-96
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L90-L96
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 findPT :: Eq a => PreTree a -> a -> Maybe Encoding
 findPT pt0 x = go pt0 []
@@ -336,7 +336,7 @@ So now that we have our lookup table, our new lookup/find function is both
 simple and performant:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L110-111
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L110-L111
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 lookupPTTable :: Ord a => Map a Encoding -> a -> Maybe Encoding
 lookupPTTable = flip M.lookup
@@ -365,7 +365,7 @@ Now, we’d like to be able to decode an entire stream of `a`’s, returning a l
 of the encodings.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L114-117
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L114-L117
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 encodeAll :: Ord a => PreTree a -> [a] -> Maybe Encoding
 encodeAll pt xs = concat <$> sequence (map (lookupPTTable tb) xs)
@@ -421,7 +421,7 @@ For huffman trees, decoding is the much simpler process. Simply traverse down
 the tree using the given encoding and return a value whenever you reach a leaf.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L123-128
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L123-L128
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 decodePT :: PreTree a -> Encoding -> Maybe (a, Encoding)
 decodePT (PTLeaf x)       ds     = Just (x, ds)
@@ -471,7 +471,7 @@ carrying the state of the decumulator, and stopping when your function returns
 Using `unfoldr`, we can write a `decodeAll`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L132-133
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L132-L133
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 decodeAll :: PreTree a -> Encoding -> [a]
 decodeAll pt = unfoldr (decodePT pt)
@@ -491,7 +491,7 @@ Testing
 We can write a utility to test our encoding/decoding functions:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L106-113
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L106-L113
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 testTree :: Ord a => [a] -> [a]
 testTree [] = []                    -- handle the empty list
@@ -562,7 +562,7 @@ on some of its inputs), and will actually never terminate if the given tree is a
 singleton tree. We can write a “safe” `decodeAll`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L137-139
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L137-L139
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 decodeAll' :: PreTree a -> Encoding -> Maybe [a]
 decodeAll' (PTLeaf _) _   = Nothing
@@ -580,7 +580,7 @@ a big, explicit reminder saying “hey, deal with the unterminating case.”
 We’ll also a “safe” `testTree`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L117-121
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L117-L121
 -- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding
 testTree' :: Ord a => [a] -> Maybe [a]
 testTree' xs = do

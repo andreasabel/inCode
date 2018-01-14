@@ -56,7 +56,7 @@ foo <span class="fu">=</span> <span class="dt">StateT</span> <span class="fu">$<
 <p>So <code>SEND</code> is a four-digit number, <code>MORE</code> is a four-digit number, and <code>MONEY</code> is a five-digit number that is the sum of the two. The first digit of <code>MONEY</code> has to be the first digit of <code>MORE</code>, the last digit of <code>MORE</code> has to be the second digit of <code>SEND</code>, etc.</p>
 <p>The previous approach was done using the entire “pick from all possibilities…except for the ones already chosen”, using <code>(/=)</code> and filtering over all of the things seen vs all of the things to pick from.</p>
 <p>However, we can abstract over “picking dependently from a sample” by defining a function called <code>select</code>, which really should be in the base libraries but isn’t for some reason:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L7-9</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L7-L9</span>
 <span class="ot">select ::</span> [a] <span class="ot">-&gt;</span> [(a, [a])]
 select []     <span class="fu">=</span> []
 select (x<span class="fu">:</span>xs) <span class="fu">=</span> (x,xs) <span class="fu">:</span> [(y,x<span class="fu">:</span>ys) <span class="fu">|</span> (y,ys) <span class="ot">&lt;-</span> select xs]</code></pre></div>
@@ -68,7 +68,7 @@ select (x<span class="fu">:</span>xs) <span class="fu">=</span> (x,xs) <span cla
 <p>It looks <em>exactly</em> like something that <code>StateT</code> is supposed to describe! Give an initial state (<code>[a]</code>), and returns a list of all possible ways to “mutate” that state (by removing one element from the state), and a result from each mutation (the removed element).</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">StateT</span><span class="ot"> select ::</span> <span class="dt">StateT</span> [a] [] a</code></pre></div>
 <p>And armed with this…we have all we need</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L3-35</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L3-L35</span>
 <span class="kw">import </span><span class="dt">Control.Monad</span>             (guard, mfilter)
 <span class="kw">import </span><span class="dt">Control.Monad.Trans.State</span>
 <span class="kw">import </span><span class="dt">Data.List</span>                 (foldl&#39;)
@@ -102,7 +102,7 @@ $ <span class="ex">./send-more-money</span>
 <div class="note">
 <p><strong>Aside</strong></p>
 <p>We can make things a little bit more efficient with minimal cost in expressiveness. But not that it matters…the original version runs fast already.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L38-59</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/send-more-money.hs#L38-L59</span>
 <span class="ot">select&#39; ::</span> [a] <span class="ot">-&gt;</span> [(a,[a])]
 select&#39; <span class="fu">=</span> go []
   <span class="kw">where</span>

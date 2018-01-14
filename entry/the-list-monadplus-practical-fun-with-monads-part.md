@@ -71,7 +71,7 @@ guard :: MonadPlus m => Bool -> m ()
 guard True  = return ()
 guard False = mzero
 
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L30-33
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L30-L33
 halve :: Int -> Maybe Int
 halve n = do
     guard $ even n
@@ -98,7 +98,7 @@ an `mzero` (insta-fail, which is used in `guard`) and a `return` (auto-succeed).
 Let’s see what happens when we replace our Maybe container with a list:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L35-38
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L35-L38
 halve' :: Int -> [Int]
 halve' n = do
     guard $ even n
@@ -144,7 +144,7 @@ In fact, if we generalize our type signature for `halve`, we can do some crazy
 things…
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-43
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-L43
 genericHalve :: MonadPlus m => Int -> m Int
 genericHalve n = do
     guard $ even n
@@ -219,7 +219,7 @@ if you are even: halving and doubling. It only provides one choice or possible
 path to success if you are odd: doubling. In this way it is slightly racist.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L19-21
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L19-L21
 halveOrDouble :: Int -> [Int]
 halveOrDouble n | even n    = [n `div` 2, n * 2]
                 | otherwise = [n * 2]
@@ -276,7 +276,7 @@ incidentally. He better check his privilege.
 Let’s look at the same thing in do notation form to offer some possible insight:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L24-27
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L24-L27
 halveOrDoubleTwice :: Int -> [Int]
 halveOrDoubleTwice n = do
     x <- halveOrDouble n
@@ -314,7 +314,7 @@ Note that once you bind a value to a variable (like `x`), then that is the value
 for `x` for the entire rest of the journey. In fact, let’s see it in action:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L29-29
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L29-L29
 hod2PlusOne :: Int -> [Int]
 hod2PlusOne n = do              -- hod2PlusOne 6
     x <- halveOrDouble n        -- x <-     Just 3          Just 12
@@ -470,7 +470,7 @@ Here is probably the most common of all examples involving the list monad:
 finding Pythagorean triples.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-18
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-L18
 triplesUnder :: Int -> [Int]
 triplesUnder n = do
     a <- [1..n]
@@ -571,7 +571,7 @@ is all handled behind-the scenes.
 In fact you should be able to look at code like:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-18
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-L18
 triplesUnder :: Int -> [Int]
 triplesUnder n = do
     a <- [1..n]
@@ -599,7 +599,7 @@ for any arbitrary choice of `a`, `b`, and `c`, except instead of `Just 3` (or
 In fact recall that this block:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-43
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-L43
 genericHalve :: MonadPlus m => Int -> m Int
 genericHalve n = do
     guard $ even n

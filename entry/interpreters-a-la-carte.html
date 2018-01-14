@@ -55,7 +55,7 @@ compiled…really just the king of great languages.">Haskell</a><span class="inf
 <h2 id="parsing-duet">Parsing Duet</h2>
 <p>First, let’s get the parsing of the actual input program out of the way. We’ll be parsing a program into a list of “ops” that we will read as our program.</p>
 <p>Our program will be interpreted as a list of <code>Op</code> values, a data type representing opcodes. There are four categories: “snd”, “rcv”, “jgz”, and the binary mathematical operations:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L31-36</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L31-L36</span>
 <span class="kw">type</span> <span class="dt">Addr</span> <span class="fu">=</span> <span class="dt">Either</span> <span class="dt">Char</span> <span class="dt">Int</span>
 
 <span class="kw">data</span> <span class="dt">Op</span> <span class="fu">=</span> <span class="dt">OSnd</span> <span class="dt">Addr</span>
@@ -64,7 +64,7 @@ compiled…really just the king of great languages.">Haskell</a><span class="inf
         <span class="fu">|</span> <span class="dt">OBin</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>) <span class="dt">Char</span> <span class="dt">Addr</span></code></pre></div>
 <p>It’s important to remember that “snd”, “jgz”, and the binary operations can all take either numbers or other registers.</p>
 <p>Now, parsing a single <code>Op</code> is just a matter of pattern matching on <code>words</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L38-51</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L38-L51</span>
 <span class="ot">parseOp ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Op</span>
 parseOp inp <span class="fu">=</span> <span class="kw">case</span> words inp <span class="kw">of</span>
     <span class="st">&quot;snd&quot;</span><span class="fu">:</span>c    <span class="fu">:</span>_   <span class="ot">-&gt;</span> <span class="dt">OSnd</span> (addr c)
@@ -80,7 +80,7 @@ parseOp inp <span class="fu">=</span> <span class="kw">case</span> words inp <sp
     addr [c] <span class="fu">|</span> isAlpha c <span class="fu">=</span> <span class="dt">Left</span> c
     addr str <span class="fu">=</span> <span class="dt">Right</span> (read str)</code></pre></div>
 <p>We’re going to store our program in a <code>PointedList</code> from the <em><a href="http://hackage.haskell.org/package/pointedlist">pointedlist</a></em> package, which is a non-empty list with a “focus” at a given index, which we use to represent the program counter/program head/current instruction. Parsing our program is then just parsing each line in the program string, and collecting them into a <code>PointedList</code>. We’re ready to go!</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L53-54</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L53-L54</span>
 <span class="ot">parseProgram ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">P.PointedList</span> <span class="dt">Op</span>
 parseProgram <span class="fu">=</span> fromJust <span class="fu">.</span> P.fromList <span class="fu">.</span> map parseOp <span class="fu">.</span> lines</code></pre></div>
 <h2 id="our-virtual-machine">Our Virtual Machine</h2>
@@ -130,14 +130,14 @@ runAsState <span class="fu">=</span> runPormptM interpretState</code></pre></div
 <h3 id="duet-commands">Duet Commands</h3>
 <p>Now let’s specify the “primitives” of our program. It’ll be useful to separate out the “memory-based” primitive commands from the “communication-based” primitive commands. This is so that we can write interpreters that operate on each one individually.</p>
 <p>For memory, we can access and modify register values, as well as jump around in the program tape and read the <code>Op</code> at the current program head:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L56-60</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L56-L60</span>
 <span class="kw">data</span> <span class="dt">Mem</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span>
     <span class="dt">MGet</span><span class="ot"> ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Mem</span> <span class="dt">Int</span>
     <span class="dt">MSet</span><span class="ot"> ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Mem</span> ()
     <span class="dt">MJmp</span><span class="ot"> ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Mem</span> ()
     <span class="dt">MPk</span><span class="ot">  ::</span> <span class="dt">Mem</span> <span class="dt">Op</span></code></pre></div>
 <p>For communication, we must be able to “snd” and “rcv”.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L62-64</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L62-L64</span>
 <span class="kw">data</span> <span class="dt">Com</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span>
     <span class="dt">CSnd</span><span class="ot"> ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Com</span> ()
     <span class="dt">CRcv</span><span class="ot"> ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Com</span> <span class="dt">Int</span></code></pre></div>
@@ -152,10 +152,10 @@ runAsState <span class="fu">=</span> runPormptM interpretState</code></pre></div
 <span class="dt">R</span> (<span class="dt">CSnd</span> <span class="dv">5</span>)<span class="ot">   ::</span> (<span class="dt">Mem</span> <span class="fu">:|:</span> <span class="dt">Com</span>) ()</code></pre></div>
 <p>etc.</p>
 <p>Our final data type then – a monad that encompasses <em>all</em> possible Duet primitive commands, is:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L66-66</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L66-L66</span>
 <span class="kw">type</span> <span class="dt">Duet</span> <span class="fu">=</span> <span class="dt">Prompt</span> (<span class="dt">Mem</span> <span class="fu">:|:</span> <span class="dt">Com</span>)</code></pre></div>
 <p>We can write some convenient utility primitives to make things easier for us in the long run:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L68-84</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L68-L84</span>
 <span class="ot">dGet ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Duet</span> <span class="dt">Int</span>
 dGet <span class="fu">=</span> prompt <span class="fu">.</span> <span class="dt">L</span> <span class="fu">.</span> <span class="dt">MGet</span>
 
@@ -175,7 +175,7 @@ dSnd <span class="fu">=</span> prompt <span class="fu">.</span> <span class="dt"
 dRcv <span class="fu">=</span> prompt <span class="fu">.</span> <span class="dt">R</span> <span class="fu">.</span> <span class="dt">CRcv</span></code></pre></div>
 <h3 id="constructing-duet-programs">Constructing Duet Programs</h3>
 <p>Armed with our <code>Duet</code> monad, we can now write a real-life <code>Duet</code> action to represent <em>one step</em> of our duet programs:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L86-107</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L86-L107</span>
 <span class="ot">stepProg ::</span> <span class="dt">Duet</span> ()
 stepProg <span class="fu">=</span> dPk <span class="fu">&gt;&gt;=</span> \<span class="kw">case</span>
     <span class="dt">OSnd</span> x <span class="ot">-&gt;</span> <span class="kw">do</span>
@@ -204,7 +204,7 @@ stepProg <span class="fu">=</span> dPk <span class="fu">&gt;&gt;=</span> \<span 
 <p>Now for the fun part!</p>
 <h3 id="interpreting-memory-primitives">Interpreting Memory Primitives</h3>
 <p>To interpret our <code>Mem</code> primitives, we need to be in some sort of stateful monad that contains the program state. First, let’s make a type describing our relevant program state, along with classy lenses for operating on it polymorphically:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L109-112</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L109-L112</span>
 <span class="kw">data</span> <span class="dt">ProgState</span> <span class="fu">=</span> <span class="dt">PS</span> {<span class="ot"> _psTape ::</span> <span class="dt">P.PointedList</span> <span class="dt">Op</span>
                     ,<span class="ot"> _psRegs ::</span> <span class="dt">M.Map</span> <span class="dt">Char</span> <span class="dt">Int</span>
                     }
@@ -240,7 +240,7 @@ at <span class="ch">&#39;h&#39;</span><span class="ot">  ::</span> <span class="
 psRegs <span class="fu">.</span> at <span class="ch">&#39;h&#39;</span> <span class="fu">.</span> non <span class="dv">0</span><span class="ot"> ::</span> <span class="dt">HasProgState</span> s <span class="ot">=&gt;</span> <span class="dt">Lens&#39;</span> s <span class="dt">Int</span></code></pre></div>
 <h4 id="interpreting-mem">Interpreting Mem</h4>
 <p>With these tools to make life simpler, we can write an interpreter for our <code>Mem</code> commands:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L114-124</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L114-L124</span>
 interpMem
 <span class="ot">    ::</span> (<span class="dt">MonadState</span> s m, <span class="dt">MonadFail</span> m, <span class="dt">HasProgState</span> s)
     <span class="ot">=&gt;</span> <span class="dt">Mem</span> a
@@ -268,7 +268,7 @@ interpMem <span class="fu">=</span> \<span class="kw">case</span>
 <li><code>CRcv</code> “catches” the last thing seen by <code>CSnd</code>, keeping track of only the <em>first</em> caught item</li>
 </ol>
 <p>We can keep track of this using <code>MonadWriter (First Int)</code> to interpret <code>CRcv</code> (if there are two <em>rcv</em>’s, we only care about the first <em>rcv</em>’d thing), and <code>MonadAccum (Last Int)</code> to interpret <code>CSnd</code>. A <code>MonadAccum</code> is just like <code>MonadWriter</code> (where you can “tell” things and accumulate things), but you also have the ability to read the accumulated log at any time. We use <code>Last Int</code> because, if there are two <em>snd</em>’s, we only care about the last <em>snd</em>’d thing.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L130-140</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L130-L140</span>
 interpComA
 <span class="ot">    ::</span> (<span class="dt">MonadAccum</span> (<span class="dt">Last</span> <span class="dt">Int</span>) m, <span class="dt">MonadWriter</span> (<span class="dt">First</span> <span class="dt">Int</span>) m)
     <span class="ot">=&gt;</span> <span class="dt">Com</span> a
@@ -283,7 +283,7 @@ interpComA <span class="fu">=</span> \<span class="kw">case</span>
 <p>Note <code>add :: MonadAccum w m =&gt; w -&gt; m ()</code> and <code>look :: MonadAccum w w</code>, the functions to “tell” to a <code>MonadAccum</code> and the function to “get”/“ask” from a <code>MonadAccum</code>.</p>
 <h4 id="monadaccum">MonadAccum</h4>
 <p>Small relevant note – <code>MonadAccum</code> does not yet exist in <em>mtl</em>, though it probably will in the next version. It’s the classy version of <code>AccumT</code>, which is already in <em><a href="https://hackage.haskell.org/package/transformers-0.5.5.0">transformers-0.5.5.0</a></em>.</p>
-<p>For now, I’ve added <code>MonadAccum</code> and appropriate instances in the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L126-245">sample source code</a>, but when the new version of <em>mtl</em> comes out, I’ll be sure to update this post to take this into account!</p>
+<p>For now, I’ve added <code>MonadAccum</code> and appropriate instances in the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L126-L245">sample source code</a>, but when the new version of <em>mtl</em> comes out, I’ll be sure to update this post to take this into account!</p>
 <h3 id="interpreting-com-for-part-b">Interpreting Com for Part B</h3>
 <p>Part B requires an environment where:</p>
 <ol type="1">
@@ -292,7 +292,7 @@ interpComA <span class="fu">=</span> \<span class="kw">case</span>
 </ol>
 <p>We can interpret <code>CSnd</code>’s effects using <code>MonadWriter [Int]</code>, to collect all emitted <code>Int</code>s. We can interpret <code>CRcv</code>’s effects using <code>MonadState s</code>, where <code>s</code> contains an <code>[Int]</code> acting as a source of <code>Int</code>s to consume.</p>
 <p>We’re going to use a <code>Thread</code> type to keep track of all thread state. We do this so we can merge the contexts of <code>interpMem</code> and <code>interpComB</code>, and really treat them (using type inference) as both working in the same interpretation context.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L153-159</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L153-L159</span>
 <span class="kw">data</span> <span class="dt">Thread</span> <span class="fu">=</span> <span class="dt">T</span> {<span class="ot"> _tState   ::</span> <span class="dt">ProgState</span>
                 ,<span class="ot"> _tBuffer  ::</span> [<span class="dt">Int</span>]
                 }
@@ -302,7 +302,7 @@ makeClassy <span class="ch">&#39;&#39;</span><span class="dt">Thread</span>
     progState <span class="fu">=</span> tState</code></pre></div>
 <p>(We write an instance for <code>HasProgState Thread</code>, so we can use <code>interpMem</code> in a <code>MonadState Thread m</code>, since <code>psRegs :: Lens' Thread (M.Map Char Int)</code>, for example, will refer to the <code>psRegs</code> inside the <code>ProgState</code> in the <code>Thread</code>)</p>
 <p>And now, to interpret:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L161-170</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L161-L170</span>
 interpComB
 <span class="ot">    ::</span> (<span class="dt">MonadWriter</span> [<span class="dt">Int</span>] m, <span class="dt">MonadFail</span> m, <span class="dt">MonadState</span> <span class="dt">Thread</span> m)
     <span class="ot">=&gt;</span> <span class="dt">Com</span> a
@@ -349,14 +349,14 @@ interpMem <span class="fu">&gt;|&lt;</span> interpComA
 <p>Now, we can write such a Monad from scratch, or we can use the <em>transformers</em> library to generate a transformer with all of those instances for us. For the sake of brevity and reducing duplicated code, let’s go that route. We can use:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">MaybeT</span> (<span class="dt">StateT</span> <span class="dt">ProgState</span> (<span class="dt">WriterT</span> (<span class="dt">First</span> <span class="dt">Int</span>) (<span class="dt">A.Accum</span> (<span class="dt">Last</span> <span class="dt">Int</span>))))</code></pre></div>
 <p>And so we can write our final “step” function in that context:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L142-143</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L142-L143</span>
 <span class="ot">stepA ::</span> <span class="dt">MaybeT</span> (<span class="dt">StateT</span> <span class="dt">ProgState</span> (<span class="dt">WriterT</span> (<span class="dt">First</span> <span class="dt">Int</span>) (<span class="dt">A.Accum</span> (<span class="dt">Last</span> <span class="dt">Int</span>)))) ()
 stepA <span class="fu">=</span> runPromptM (interpMem <span class="fu">&gt;|&lt;</span> interpComA) stepProg</code></pre></div>
 <p><code>stepA</code> will make a single step of the tape, according to the interpreters <code>interpMem</code> and <code>interpComA</code>.</p>
 <p>Our final answer is then just the result of <em>repeating</em> this over and over again until there’s a failure. We take advantage of the fact that <code>MaybeT</code>’s <code>Alternative</code> instance uses <code>empty</code> for <code>fail</code>, so we can use <code>many :: MaybeT m a -&gt; MaybeT m [a]</code>, which repeats a <code>MaybeT</code> action several times until a failure is encountered. In our case, “failure” is when the tape goes out of bounds.</p>
 <p>But, because of laziness, our computation terminates as soon as a valid <code>CRcv</code> is found and a <code>First Int</code> is logged to the <code>Writer</code>, so we don’t actually need to run the computation until it goes out of bounds.</p>
 <p>Here is the entirety of running Part A – as you can see, it consists mostly of unwrapping <em>transformers</em> newtype wrappers.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L145-151</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L145-L151</span>
 <span class="ot">partA ::</span> <span class="dt">P.PointedList</span> <span class="dt">Op</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span>
 partA ops <span class="fu">=</span> getFirst
           <span class="fu">.</span> flip A.evalAccum mempty
@@ -380,7 +380,7 @@ interpMem <span class="fu">&gt;|&lt;</span> interpComB
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">zoom<span class="ot"> _1 ::</span> <span class="dt">MaybeT</span> (<span class="dt">State</span> s) a <span class="ot">-&gt;</span> <span class="dt">MaybeT</span> (<span class="dt">State</span> (s, t)) a
 zoom<span class="ot"> _2 ::</span> <span class="dt">MaybeT</span> (<span class="dt">State</span> t) a <span class="ot">-&gt;</span> <span class="dt">MaybeT</span> (<span class="dt">State</span> (s, t)) a</code></pre></div>
 <p>To “lift” our actions on one thread to be actions on a “tuple” of threads. We have, in the end:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L172-181</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L172-L181</span>
 <span class="ot">stepB ::</span> <span class="dt">MaybeT</span> (<span class="dt">State</span> (<span class="dt">Thread</span>, <span class="dt">Thread</span>)) <span class="dt">Int</span>
 stepB <span class="fu">=</span> <span class="kw">do</span>
     outA <span class="ot">&lt;-</span> execWriterT <span class="fu">$</span>
@@ -396,7 +396,7 @@ stepB <span class="fu">=</span> <span class="kw">do</span>
 <p>If both threads are blocking (they both have to external outputs to pass on), then we’re done (using <code>guard</code>).</p>
 <p>We return the number of items that “Program 1” (the second thread) outputs, because that’s what we need for our answer.</p>
 <p>This is one “single pass” of both of our threads. As you can anticipate, we’ll use <code>many</code> again to run these multiple times until both threads block.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L183-191</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L183-L191</span>
 <span class="ot">partB ::</span> <span class="dt">P.PointedList</span> <span class="dt">Op</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>
 partB ops <span class="fu">=</span> sum <span class="fu">.</span> concat
           <span class="fu">.</span> flip evalState s0
@@ -407,8 +407,8 @@ partB ops <span class="fu">=</span> sum <span class="fu">.</span> concat
          , <span class="dt">T</span> (<span class="dt">PS</span> ops (M.singleton <span class="ch">&#39;p&#39;</span> <span class="dv">1</span>)) []
          )</code></pre></div>
 <h3 id="examples">Examples</h3>
-<p>In the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs">sample source code</a>, I’ve included <a href="https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L198-241">my own puzzle input</a> provided to me from the advent of code website. We can now get actual answers given some sample puzzle input:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L193-196</span>
+<p>In the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs">sample source code</a>, I’ve included <a href="https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L198-L241">my own puzzle input</a> provided to me from the advent of code website. We can now get actual answers given some sample puzzle input:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L193-L196</span>
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
     print <span class="fu">$</span> partA (parseProgram testProg)

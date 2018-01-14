@@ -34,18 +34,18 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Stream</span> b <span class="fu">=</span> <span class="dt">SCons</span> (b, <span class="dt">Stream</span> b)</code></pre></div>
 <p>(<code>SCons</code> for “Stream cons”)</p>
 <p>Compare that with the linked list data type, which is a Stream with an Ending (<code>Nil</code>):</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L7-7</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L7-L7</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="kw">data</span> <span class="dt">List</span> a <span class="fu">=</span> <span class="dt">Cons</span> (a, <span class="dt">List</span> a) <span class="fu">|</span> <span class="dt">Nil</span></code></pre></div>
 <p>or, as is more traditionally written:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> [a] <span class="fu">=</span> (<span class="fu">:</span>) a [a] <span class="fu">|</span> []</code></pre></div>
 <p>It’s pretty easy to build lists:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L36-37</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L36-L37</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">myList ::</span> <span class="dt">List</span> <span class="dt">Int</span>
 myList <span class="fu">=</span> <span class="dt">Cons</span> ( <span class="dv">1</span>, <span class="dt">Cons</span> ( <span class="dv">2</span>, <span class="dt">Cons</span> (<span class="dv">3</span>, <span class="dt">Nil</span>) ) )</code></pre></div>
 <p>which is just, in the more traditional (infix) form:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L40-41</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L40-L41</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">myList&#39; ::</span> [<span class="dt">Int</span>]
 myList&#39; <span class="fu">=</span> <span class="dv">1</span><span class="fu">:</span>(<span class="dv">2</span><span class="fu">:</span>(<span class="dv">3</span><span class="fu">:</span>[]))</code></pre></div>
@@ -70,7 +70,7 @@ ghci<span class="fu">&gt;</span> zs
 myStream&#39; <span class="fu">=</span> <span class="dt">SCons</span> ( <span class="dv">1</span>, <span class="dt">SCons</span> ( <span class="dv">2</span>, <span class="dt">SCons</span> ( <span class="dv">3</span>, <span class="fu">...</span> ) ) )</code></pre></div>
 <p>Hm. This is going to take a while. I wonder if there’s an easier way?</p>
 <p>We can take advantage of Haskell’s “lazy-by-default”-ness and leave the “rest” of the stream as an unevaluated function call. And then we can recurse!</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L46-50</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L46-L50</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">myStream ::</span> <span class="dt">Stream</span> <span class="dt">Int</span>
 myStream <span class="fu">=</span> streamFrom <span class="dv">1</span>
@@ -106,13 +106,13 @@ ghci<span class="fu">&gt;</span> x
 <span class="dv">1</span></code></pre></div>
 <p>Basically, we get for free the function <code>runStream</code>, a function that yanks the tuple out of the stream.</p>
 <p>One minor final touch — because <code>Stream</code> has only one constructor and one field, we can make it a <code>newtype</code>, which has similar usage patterns/syntax as a <code>data</code>, but which the compiler can more easily optimize:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L10-10</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L10-L10</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="kw">newtype</span> <span class="dt">Stream</span> b <span class="fu">=</span> <span class="dt">SCons</span> {<span class="ot"> runStream ::</span> (b, <span class="dt">Stream</span> b) }</code></pre></div>
 <h4 id="automating-traversal">Automating Traversal</h4>
 <p>The repeated pattern matching we’ve been doing is kind of tedious, and it’ll only get more annoying over time, so let’s make a function that can automate the pattern matching for us really quickly so that we can test it more easily.</p>
 <p><code>streamToList</code> will take a Stream and perform the very straightforward conversion into an infinite list.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L15-16</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L15-L16</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">streamToList ::</span> <span class="dt">Stream</span> b <span class="ot">-&gt;</span> [b]
 streamToList (<span class="dt">SCons</span> (x, xs)) <span class="fu">=</span> x <span class="fu">:</span> streamToList xs</code></pre></div>
@@ -120,7 +120,7 @@ streamToList (<span class="dt">SCons</span> (x, xs)) <span class="fu">=</span> x
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> take <span class="dv">10</span> <span class="fu">$</span> streamToList myStream
 [<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">10</span>]</code></pre></div>
 <p>Alternatively (and for reasons which will later become clear), we can also define <code>testStream</code>, which takes a specified amount of elements and returns also the “resulting” stream after all of those steps, and <code>testStream_</code>, which is the same thing except that we throw away the modified stream.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L20-30</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L20-L30</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">testStream ::</span> <span class="dt">Stream</span> b <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> ([b], <span class="dt">Stream</span> b)
 testStream strm <span class="dv">0</span> <span class="fu">=</span> ([]  , strm )
@@ -137,7 +137,7 @@ testStream_ <span class="fu">=</span> (fst <span class="fu">.</span>) <span clas
 <p>Streams are nice! If you’ve been using Haskell for any stretch of time, you’ll know that we use infinite lists all the time and to great usefulness for the ends of expressiveness and abstraction.</p>
 <p>In mathematics, streams are known as a form of <a href="http://en.wikipedia.org/wiki/Moore_machine">Moore machines</a> (albeit with potentially infinite sets of state and output values). They are machines that basically internally progress from state to state to state to state. They just keep on marching on…like a machine. In <code>myStream</code>, the initial state is 1. The next state is 2; the next is 3, etc. What is important is that the next state <em>is a function of the current state</em>.</p>
 <p>This is made very apparent in our definition of <code>streamFrom</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L49-50</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L49-L50</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">    streamFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> <span class="dt">Int</span>
     streamFrom n <span class="fu">=</span> <span class="dt">SCons</span> ( n, streamFrom (n<span class="fu">+</span><span class="dv">1</span>) )</code></pre></div>
@@ -145,7 +145,7 @@ testStream_ <span class="fu">=</span> (fst <span class="fu">.</span>) <span clas
 <p>So <code>myStream</code> is a Moore-like machine whose “next state” function is “the current state plus one”, and whose output is just the state itself.</p>
 <h4 id="state-your-purpose">State your purpose!</h4>
 <p>Did you catch that last sentence? It’s a subtle point. In general, streams can have outputs that are different than their states. As a trivial example, let’s have a stream whose state is an integer, yet whose output is a character:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L53-57</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L53-L57</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">charStream ::</span> <span class="dt">Stream</span> <span class="dt">Char</span>
 charStream <span class="fu">=</span> charStreamFrom <span class="dv">65</span>
@@ -157,14 +157,14 @@ charStream <span class="fu">=</span> charStreamFrom <span class="dv">65</span>
 <p>Wait, this is kind of weird. The type of our stream is <code>Stream Char</code>…<code>Char</code> is the type of output/elements in the stream, the “head” when we pattern match. But where is the <code>Int</code> that is the state of our stream in the type <code>Stream Char</code>…?</p>
 <p>Can we even write a function <code>getState :: Stream b -&gt; s</code> that works in general for all streams?</p>
 <p>Hm. If the state of our stream can have a type totally unrelated to the type of the stream…that means that we probably can’t even know what it type is. And that even if we could “force” it out somehow, we would not even be able to work with it in a type-safe way!</p>
-<p>In fact…couldn’t the state even <em><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L60-70">vary dynamically</a></em> as the stream progresses?</p>
+<p>In fact…couldn’t the state even <em><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Stream.hs#L60-L70">vary dynamically</a></em> as the stream progresses?</p>
 <h3 id="continuing-on">Continuing on</h3>
 <p>The problem with streams, as you might have guessed, is that you can’t really affect their progress once they start. Once you start <code>myStream</code>, it’ll keep on marching on, and on, and on…you have no way to “influence” its progression <em>during</em> its march. The <em>behavior</em> of our stream <em>can’t be influenced</em> by the outside world in any way, once it has started. This is a bit limiting, because we want behaviors that we can have interact with each other.</p>
 <p>And so, we have the natural generalization of streams (and the machine we will be spending the most time looking at): Auto.</p>
 <h2 id="auto">Auto</h2>
 <p>(All the code for Autos can be downloaded <a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs">from github</a> and tried interactively online <a href="https://www.fpcomplete.com/user/jle/machines">at FPComplete</a>)</p>
 <p>Let’s upgrade our streams, and introduce a way to affect how they progress. Let’s call it an Auto.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-12</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L12-L12</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="kw">newtype</span> <span class="dt">Auto</span> a b <span class="fu">=</span> <span class="dt">ACons</span> {<span class="ot"> runAuto ::</span> a <span class="ot">-&gt;</span> (b, <span class="dt">Auto</span> a b) }</code></pre></div>
 <p>Now, instead of an <code>SCons</code> containing just a tuple (a head-tails), an <code>ACons</code> contains a <em>function</em> that <em>produces</em> your head-tails tuple. Before, all of our <code>runStreams</code> produced the same tuple no matter what. Now, our <code>runAuto</code> can produce a different tuple based on an outside input.</p>
@@ -175,7 +175,7 @@ charStream <span class="fu">=</span> charStreamFrom <span class="dv">65</span>
 <p>So now, we basically have a <code>Stream b</code>, except at every “step”, we can “influence” the Stream with something of type <code>a</code>.</p>
 <h3 id="a-trivial-auto">A Trivial Auto</h3>
 <p>Let’s look at a direct “port” of our <code>myStream</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L40-44</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L40-L44</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">myStreamAuto ::</span> <span class="dt">Auto</span> a <span class="dt">Int</span>
 myStreamAuto <span class="fu">=</span> streamAutoFrom <span class="dv">1</span>
@@ -202,7 +202,7 @@ ghci<span class="fu">&gt;</span> z
 <p>Okay, that was fun I guess. But now let’s take a first look at an auto which <em>can</em> be influenced.</p>
 <p>Let’s have a stream where at every step, we can choose to “reset” the counter to whatever integer we like.</p>
 <p>We can do this by having the influence/input be a <code>Maybe Int</code>. If we want the counter to progress normally, we pass in a <code>Nothing</code>. If we want the counter to reset to a number <code>n</code> of our choosing, we pass in a <code>Just n</code></p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L48-54</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L48-L54</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">settableAuto ::</span> <span class="dt">Auto</span> (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Int</span>
 settableAuto <span class="fu">=</span> counterFrom <span class="dv">1</span>
@@ -239,7 +239,7 @@ ghci<span class="fu">&gt;</span> m
 <h4 id="automatic-traversals-for-our-autos">Automatic traversals for our Autos</h4>
 <p>Again, the manual pattern matching is a little tedious so let’s write us a function to automate “progressing” down an Auto.</p>
 <p>Like our <code>testStream</code>, <code>testAuto</code> takes an Auto. But because every “step” needs an input, <code>testAuto auto</code> takes a <em>list</em> that specifies the input for every step. <code>testAuto</code> returns the resulting collection of results, and also the modified Auto. <code>testAuto_</code> throws away the new Auto and just gives us the collection.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L17-25</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L17-L25</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">testAuto ::</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> ([b], <span class="dt">Auto</span> a b)
 testAuto auto []      <span class="fu">=</span> ([]  , auto )
@@ -256,7 +256,7 @@ testAuto_ a <span class="fu">=</span> fst <span class="fu">.</span> testAuto a</
                              , Nothing ]
 [1,2,10,11,12,-1,0]</code></pre>
 <p>Alternatively, here is a fun way to test an Auto interactively, where you ask for input at each iteration from the user —</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L27-32</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L27-L32</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">interactAuto ::</span> (<span class="dt">Read</span> a, <span class="dt">Show</span> b) <span class="ot">=&gt;</span> <span class="dt">Auto</span> a b <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
 interactAuto a0 <span class="fu">=</span> <span class="kw">do</span>
@@ -284,7 +284,7 @@ interactAuto a0 <span class="fu">=</span> <span class="kw">do</span>
 </ul>
 <h4 id="the-opaque-state">The opaque state</h4>
 <p>It’s a little tricky because the “output” and the “state” in our example function seem to be exactly the same (just like for <code>myStream</code>), but let’s whip up a quick example where it’s a little more obvious that the state and the output are different things, and that the state is completely opaque and encapsulated.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L58-64</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L58-L64</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">isEvenAuto ::</span> <span class="dt">Auto</span> (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Bool</span>
 isEvenAuto <span class="fu">=</span> isEvenAutoFrom <span class="dv">1</span>
@@ -317,7 +317,7 @@ isEvenAuto <span class="fu">=</span> isEvenAutoFrom <span class="dv">1</span>
 <h3 id="the-accumulator">The Accumulator</h3>
 <p>Let’s try our hand at another Auto, but instead of looking at things as an influencable and eternally marching stream, we’re going to try to look at things as a function with state that affects its output.</p>
 <p>How about an Auto that “accumulates” and “sums up” all of its incoming inputs, starting at 0? More correctly, an Auto that, given any int, “returns” the sum of that int with all of the previous ints it has received in its lifetime.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L67-73</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L67-L73</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">summer ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Auto</span> a a
 summer <span class="fu">=</span> sumFrom <span class="dv">0</span>
@@ -340,7 +340,7 @@ ghci<span class="fu">&gt;</span> testAuto_ auto2 [<span class="dv">15</span>,<sp
 <li>The “state” in this case is the accumulator, which in this case stays in sync with the output. But remember that this is not the case in general.</li>
 </ul>
 <p>Just for kicks, let’s generalize this and make an Auto version of <code>foldl</code> (technically, more like <code>scanl</code>): give us an operator and an initial value, and we’ll “fold up” all of our inputs.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L78-84</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L78-L84</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">autoFold ::</span> forall a b<span class="fu">.</span> (b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Auto</span> a b
 autoFold op init <span class="fu">=</span> foldFrom init
@@ -352,7 +352,7 @@ autoFold op init <span class="fu">=</span> foldFrom init
 <p>(the <code>forall</code> is used with the <a href="http://www.haskell.org/haskellwiki/Scoped_type_variables">Scoped Type Variables</a> extension to let us say that the <code>b</code> we mention in the type of <code>foldFrom</code> is the same as the <code>b</code> in the type of <code>autoFold</code>. If we leave off the type signature of <code>foldFrom</code>, this is not necessary)</p>
 <p>Note that <code>summer</code> then is just <code>autoFold (+) 0</code>.</p>
 <p>You can probably imagine lots of different folds you can turn into <code>autoFold</code>s…and indeed a lot of practical Autos are just <code>autoFold</code>s. Here are some cute ones:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L92-107</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L92-L107</span>
 <span class="co">-- interactive: https://www.fpcomplete.com/user/jle/machines</span>
 <span class="ot">accumulateIntoList ::</span> <span class="dt">Auto</span> a [a]
 accumulateIntoList <span class="fu">=</span> autoFold (flip (<span class="fu">:</span>)) []
@@ -392,9 +392,9 @@ testAuto_<span class="ot"> auto       ::</span> [a] <span class="ot">-&gt;</span
 <p>Compare what they do conceptually. Then, for fun, try implementing some of them in terms of the other. Which re-implementations are possible? Which ones aren’t?</p>
 </div>
 <h3 id="more-auto-examples">More Auto examples</h3>
-<p><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L111-176">I’ve thrown up a few auto examples</a> <a href="https://www.fpcomplete.com/user/jle/machines">that you can run online</a> so you can try it out and see how different ones work. Don’t get too attached to them, because we will later be re-implementing them as compositions of smaller, simpler building blocks.</p>
+<p><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L111-L176">I’ve thrown up a few auto examples</a> <a href="https://www.fpcomplete.com/user/jle/machines">that you can run online</a> so you can try it out and see how different ones work. Don’t get too attached to them, because we will later be re-implementing them as compositions of smaller, simpler building blocks.</p>
 <dl>
-<dt><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L111-122">rollingAverage</a></dt>
+<dt><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L111-L122">rollingAverage</a></dt>
 <dd><code>rollingAverage n :: Fractional a =&gt; Auto a a</code> outputs a rolling average of the last <code>n</code> values it has encountered
 </dd>
 </dl>
@@ -403,7 +403,7 @@ testAuto_<span class="ot"> auto       ::</span> [a] <span class="ot">-&gt;</span
 ,<span class="fl">4.5</span> ,<span class="fl">4.25</span>,<span class="fl">4.25</span>,<span class="fl">4.25</span>,<span class="fl">2.5</span>
 ,<span class="fl">3.75</span>,<span class="fl">3.25</span>,<span class="fl">4.25</span>,<span class="fl">6.25</span>,<span class="fl">4.75</span>]</code></pre></div>
 <dl>
-<dt><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L125-146">onFor</a></dt>
+<dt><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L125-L146">onFor</a></dt>
 <dd><code>onFor p i :: Auto a Bool</code> normally outputs <code>False</code>…except whenever the input matches the given predicate <code>p :: a -&gt; Bool</code>. Then it stays “on” (<code>True</code>) for <code>i</code> steps.
 </dd>
 </dl>
@@ -414,7 +414,7 @@ ghci<span class="fu">&gt;</span> testAuto_ (onFor even <span class="dv">3</span>
 , <span class="dt">False</span>, <span class="dt">False</span>, <span class="dt">True</span> , <span class="dt">True</span> , <span class="dt">True</span>
 , <span class="dt">True</span> , <span class="dt">True</span> , <span class="dt">False</span>, <span class="dt">False</span> ]</code></pre></div>
 <dl>
-<dt><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L149-176">autoMap</a></dt>
+<dt><a href="https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L149-L176">autoMap</a></dt>
 <dd><p><code>autoMap cap :: Auto (Command k v) (Maybe v)</code> is a neat one. It internally holds a <a href="http://hackage.haskell.org/package/containers-0.5.4.0/docs/Data-Map.html">Map</a> (a key-value store) — you can give it <code>[Command][]</code> data types that tell it to insert, lookup, and delete values. However, it enforces a maximum of items.</p>
 <p>The main thing to note here is that you get to completely encapsulate your “state”, and allow it only to be “modified” or “viewed” under your own terms. In OOP terms, it is like exposing only a few public methods to modify your private state with discrimination. If you were passed an <code>autoMap</code> with items already inside, you would have no way to have full “access” to the map — you would never be able to perform general operations (such as getting a list of all of the keys).</p>
 </dd>
@@ -440,7 +440,7 @@ ghci<span class="fu">&gt;</span> testAuto_ (onFor even <span class="dv">3</span>
 <p>Let’s do an analysis for <code>isEvenAuto</code> like the one we did with <code>foldAuto</code>. Our “input” was a <code>Maybe Int</code> and our “output” was a <code>Bool</code>.</p>
 <p>You can think of <code>isEvenAuto</code> as a “function thing” from <code>Maybe Int</code> to <code>Bool</code>.</p>
 <p>Here’s another function from <code>Maybe Int</code> to <code>Bool</code>: (I’m going to be using the prefix form of <code>(-&gt;)</code> a lot from now on)</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L181-182</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/machines/Auto.hs#L181-L182</span>
 <span class="ot">maybeIsEven ::</span> (<span class="ot">-&gt;</span>) (<span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="dt">Bool</span>
 maybeIsEven <span class="fu">=</span> even <span class="fu">.</span> fromMaybe <span class="dv">1</span></code></pre></div>
 <p><code>maybeIsEven</code> returns <code>True</code> when value inside the <code>Just</code> is even, or <code>False</code> if the value is odd or it’s a <code>Nothing</code>.</p>

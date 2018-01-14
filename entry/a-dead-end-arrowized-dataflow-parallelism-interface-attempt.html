@@ -90,7 +90,7 @@ map&#39; f <span class="fu">=</span> proc input <span class="ot">-&gt;</span> <s
 <h2 id="pararrow">ParArrow</h2>
 <h3 id="data-and-instances">Data and Instances</h3>
 <p>Let’s start out with our arrow data type:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L12-18</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L12-L18</span>
 <span class="kw">data</span> <span class="dt">ParArrow</span> a b <span class="fu">=</span>                     <span class="dt">Pure</span>  (a <span class="ot">-&gt;</span> b)
                   <span class="fu">|</span> forall z<span class="fu">.</span>           <span class="dt">Seq</span>   (<span class="dt">ParArrow</span> a z)
                                               (<span class="dt">ParArrow</span> z b)
@@ -108,12 +108,12 @@ map&#39; f <span class="fu">=</span> proc input <span class="ot">-&gt;</span> <s
 <p>The main purpose of <code>l</code> and <code>r</code> is to be able to meaningfully refer to the two parallel <code>ParArrow</code>s in terms of the <code>a</code> and <code>b</code> of the “combined” <code>ParArrow</code>. Otherwise, the two inputs of the two parallel <code>ParArrow</code>s don’t have anything to do with the input type <code>a</code> of the combined <code>ParArrow</code>, and same for output.</p></li>
 </ul>
 <p>Okay, let’s define a Category instance, that lets us compose <code>ParArrow</code>s:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L20-22</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L20-L22</span>
 <span class="kw">instance</span> <span class="dt">Category</span> <span class="dt">ParArrow</span> <span class="kw">where</span>
     id    <span class="fu">=</span> <span class="dt">Pure</span> id
     f <span class="fu">.</span> g <span class="fu">=</span> <span class="dt">Seq</span> g f</code></pre></div>
 <p>No surprises there, hopefully! Now an Arrow instance:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L24-29</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L24-L29</span>
 <span class="kw">instance</span> <span class="dt">Arrow</span> <span class="dt">ParArrow</span> <span class="kw">where</span>
     arr      <span class="fu">=</span> <span class="dt">Pure</span>
     first f  <span class="fu">=</span> f  <span class="fu">***</span> id
@@ -123,7 +123,7 @@ map&#39; f <span class="fu">=</span> proc input <span class="ot">-&gt;</span> <s
 <p>Also simple enough. Note that <code>first</code> and <code>second</code> are defined in terms of <code>(***)</code>, instead of the typical way of defining <code>second</code>, <code>(&amp;&amp;&amp;)</code>, and <code>(***)</code> in terms of <code>arr</code> and <code>first</code>.</p>
 <h3 id="the-magic">The Magic</h3>
 <p>Now, for the magic — consolidating a big composition of fragmented <code>ParArrow</code>s into a streamlined simple-as-possible graph:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L31-51</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L31-L51</span>
 <span class="ot">collapse ::</span> <span class="dt">ParArrow</span> a b <span class="ot">-&gt;</span> <span class="dt">ParArrow</span> a b
 collapse (<span class="dt">Seq</span> f g)       <span class="fu">=</span>
     <span class="kw">case</span> (collapse f, collapse g) <span class="kw">of</span>
@@ -156,13 +156,13 @@ collapse p <span class="fu">=</span> p</code></pre></div>
 <p>And…here we have a highly condensed parallelism graph.</p>
 <h3 id="inspecting-pararrow-structures">Inspecting <code>ParArrow</code> structures</h3>
 <p>It might be useful to get a peek at the internal structures of a collapsed <code>ParArrow</code>. I used a helper data type, <code>Graph</code>.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L76-79</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L76-L79</span>
 <span class="kw">data</span> <span class="dt">Graph</span> <span class="fu">=</span> <span class="dt">GPure</span>                  <span class="co">-- Pure function</span>
            <span class="fu">|</span> <span class="dt">Graph</span> <span class="fu">:-&gt;:</span> <span class="dt">Graph</span>       <span class="co">-- Sequenced arrows</span>
            <span class="fu">|</span> <span class="dt">Graph</span> <span class="fu">:/:</span> <span class="dt">Graph</span>        <span class="co">-- Parallel arrows</span>
            <span class="kw">deriving</span> <span class="dt">Show</span></code></pre></div>
 <p>And we can convert a given <code>ParArrow</code> into its internal graph:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L81-87</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L81-L87</span>
 <span class="ot">analyze&#39; ::</span> <span class="dt">ParArrow</span> a b <span class="ot">-&gt;</span> <span class="dt">Graph</span>
 analyze&#39; (<span class="dt">Pure</span> _) <span class="fu">=</span> <span class="dt">GPure</span>
 analyze&#39; (<span class="dt">Seq</span> f g) <span class="fu">=</span> analyze&#39; f <span class="fu">:-&gt;:</span> analyze&#39; g
@@ -201,7 +201,7 @@ analyze <span class="fu">=</span> analyze&#39; <span class="fu">.</span> collaps
 <p>However, we can see that that is just a single fork-and-recombine, so when we collapse it, we get <code>GPure :/: GPure</code>, as we would expect.</p>
 <h2 id="running-pararrows">Running ParArrows</h2>
 <p>Now we just need a way to run a <code>ParArrow</code>, and do the proper forking. This actually isn’t too bad at all, because of what we did in <code>collapse</code>.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L92-113</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L92-L113</span>
 <span class="ot">runPar&#39; ::</span> <span class="dt">ParArrow</span> a b <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">IO</span> b)
 runPar&#39; <span class="fu">=</span> go
   <span class="kw">where</span>
@@ -269,7 +269,7 @@ test3&#39; <span class="fu">=</span> arr (\(x,y) <span class="ot">-&gt;</span> x
 <p>However, we see in the desugaring of <code>test3</code> that <code>f</code> is not always that. <code>f</code> can be <em>any</em> function, actually, and we can’t really control what happens to it. In <code>test3</code>, we actaully use <code>f = \(x,y) -&gt; (y,x)</code>…definitely not a “parallel” function!</p>
 <p>Actually, this doesn’t even make any sense in terms of our parallel computation model! How can we “combine” two parallel forks…when halfway in between the two forks, they must exchange information? Then it’s no longer fully parallel!</p>
 <p>We can “fix” this. We can make <code>collapse</code> not collapse the <code>Pure</code>-<code>Par</code> cases:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L53-116</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/pararrow/ParArrow.hs#L53-L116</span>
 <span class="ot">collapse_ ::</span> <span class="dt">ParArrow</span> a b <span class="ot">-&gt;</span> <span class="dt">ParArrow</span> a b
 collapse_ (<span class="dt">Seq</span> f g)       <span class="fu">=</span>
     <span class="kw">case</span> (collapse_ f, collapse_ g) <span class="kw">of</span>

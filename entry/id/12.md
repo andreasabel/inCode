@@ -458,7 +458,7 @@ flag to be dead and ignore all other updates.
 But let’s try doing this instead with the Maybe monad:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/MaybeGame.hs#L26-51
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/MaybeGame.hs#L26-L51
 -- die or fail immediately
 die :: Maybe Int
 die = mzero                         -- or die = mzero

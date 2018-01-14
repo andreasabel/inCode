@@ -131,7 +131,7 @@ representing opcodes. There are four categories: “snd”, “rcv”, “jgz”
 binary mathematical operations:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L31-36
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L31-L36
 type Addr = Either Char Int
 
 data Op = OSnd Addr
@@ -146,7 +146,7 @@ take either numbers or other registers.
 Now, parsing a single `Op` is just a matter of pattern matching on `words`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L38-51
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L38-L51
 parseOp :: String -> Op
 parseOp inp = case words inp of
     "snd":c    :_   -> OSnd (addr c)
@@ -171,7 +171,7 @@ then just parsing each line in the program string, and collecting them into a
 `PointedList`. We’re ready to go!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L53-54
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L53-L54
 parseProgram :: String -> P.PointedList Op
 parseProgram = fromJust . P.fromList . map parseOp . lines
 ```
@@ -279,7 +279,7 @@ For memory, we can access and modify register values, as well as jump around in
 the program tape and read the `Op` at the current program head:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L56-60
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L56-L60
 data Mem :: Type -> Type where
     MGet :: Char -> Mem Int
     MSet :: Char -> Int -> Mem ()
@@ -290,7 +290,7 @@ data Mem :: Type -> Type where
 For communication, we must be able to “snd” and “rcv”.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L62-64
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L62-L64
 data Com :: Type -> Type where
     CSnd :: Int -> Com ()
     CRcv :: Int -> Com Int
@@ -330,7 +330,7 @@ Our final data type then – a monad that encompasses *all* possible Duet
 primitive commands, is:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L66-66
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L66-L66
 type Duet = Prompt (Mem :|: Com)
 ```
 
@@ -338,7 +338,7 @@ We can write some convenient utility primitives to make things easier for us in
 the long run:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L68-84
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L68-L84
 dGet :: Char -> Duet Int
 dGet = prompt . L . MGet
 
@@ -364,7 +364,7 @@ Armed with our `Duet` monad, we can now write a real-life `Duet` action to
 represent *one step* of our duet programs:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L86-107
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L86-L107
 stepProg :: Duet ()
 stepProg = dPk >>= \case
     OSnd x -> do
@@ -409,7 +409,7 @@ relevant program state, along with classy lenses for operating on it
 polymorphically:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L109-112
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L109-L112
 data ProgState = PS { _psTape :: P.PointedList Op
                     , _psRegs :: M.Map Char Int
                     }
@@ -486,7 +486,7 @@ With these tools to make life simpler, we can write an interpreter for our `Mem`
 commands:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L114-124
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L114-L124
 interpMem
     :: (MonadState s m, MonadFail m, HasProgState s)
     => Mem a
@@ -553,7 +553,7 @@ have the ability to read the accumulated log at any time. We use `Last Int`
 because, if there are two *snd*’s, we only care about the last *snd*’d thing.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L130-140
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L130-L140
 interpComA
     :: (MonadAccum (Last Int) m, MonadWriter (First Int) m)
     => Com a
@@ -579,7 +579,7 @@ already in
 *[transformers-0.5.5.0](https://hackage.haskell.org/package/transformers-0.5.5.0)*.
 
 For now, I’ve added `MonadAccum` and appropriate instances in the [sample source
-code](https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L126-245),
+code](https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L126-L245),
 but when the new version of *mtl* comes out, I’ll be sure to update this post to
 take this into account!
 
@@ -601,7 +601,7 @@ so we can merge the contexts of `interpMem` and `interpComB`, and really treat
 them (using type inference) as both working in the same interpretation context.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L153-159
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L153-L159
 data Thread = T { _tState   :: ProgState
                 , _tBuffer  :: [Int]
                 }
@@ -618,7 +618,7 @@ example, will refer to the `psRegs` inside the `ProgState` in the `Thread`)
 And now, to interpret:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L161-170
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L161-L170
 interpComB
     :: (MonadWriter [Int] m, MonadFail m, MonadState Thread m)
     => Com a
@@ -707,7 +707,7 @@ MaybeT (StateT ProgState (WriterT (First Int) (A.Accum (Last Int))))
 And so we can write our final “step” function in that context:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L142-143
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L142-L143
 stepA :: MaybeT (StateT ProgState (WriterT (First Int) (A.Accum (Last Int)))) ()
 stepA = runPromptM (interpMem >|< interpComA) stepProg
 ```
@@ -730,7 +730,7 @@ Here is the entirety of running Part A – as you can see, it consists mostly of
 unwrapping *transformers* newtype wrappers.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L145-151
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L145-L151
 partA :: P.PointedList Op -> Maybe Int
 partA ops = getFirst
           . flip A.evalAccum mempty
@@ -773,7 +773,7 @@ To “lift” our actions on one thread to be actions on a “tuple” of thread
 have, in the end:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L172-181
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L172-L181
 stepB :: MaybeT (State (Thread, Thread)) Int
 stepB = do
     outA <- execWriterT $
@@ -804,7 +804,7 @@ This is one “single pass” of both of our threads. As you can anticipate, we�
 use `many` again to run these multiple times until both threads block.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L183-191
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L183-L191
 partB :: P.PointedList Op -> Int
 partB ops = sum . concat
           . flip evalState s0
@@ -821,12 +821,12 @@ partB ops = sum . concat
 In the [sample source
 code](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs),
 I’ve included [my own puzzle
-input](https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L198-241)
+input](https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L198-L241)
 provided to me from the advent of code website. We can now get actual answers
 given some sample puzzle input:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L193-196
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L193-L196
 main :: IO ()
 main = do
     print $ partA (parseProgram testProg)
