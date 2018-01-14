@@ -104,7 +104,8 @@ prompt <span class="dt">Get</span><span class="ot">      ::</span> <span class="
     <span class="ot">=&gt;</span> (forall x<span class="fu">.</span> <span class="dt">StateCommand</span> x <span class="ot">-&gt;</span> m x)    <span class="co">-- a way to interpret each primitive in &#39;m&#39;</span>
     <span class="ot">-&gt;</span> <span class="dt">IntState</span> a                           <span class="co">-- IntState to interpret</span>
     <span class="ot">-&gt;</span> m a                                  <span class="co">-- resulting action in &#39;m&#39;</span></code></pre></div>
-<p>So, if we wanted to use <code>IO</code> and <code>IORefs</code> as the mechanism for interpreting our <code>IntState</code>:</p>
+<p>If you’re unfamiliar with <em>-XRankNTypes</em>, <code>forall x. StateCommand x -&gt; m x</code> is the type of a handler that can handle a <code>StateCommand</code> of <em>any</em> type, and return a value of <code>m x</code> (an action returning the <em>same type</em> as the <code>StateCommand</code>). So, you can’t give it something like <code>StateCommand Int -&gt; m Bool</code>, or <code>StateCommand x -&gt; m ()</code>…it has to be able to handle a <code>StateCommand a</code> of <em>any</em> type <code>a</code> and return an action in the interpreting context producing a result of the same type. If given a <code>StateCommand Int</code>, it has to return an <code>m Int</code>, and if given a <code>StateCommand ()</code>, it has to return an <code>m ()</code>, etc. etc.</p>
+<p>Now, if we wanted to use <code>IO</code> and <code>IORefs</code> as the mechanism for interpreting our <code>IntState</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">interpretIO
 <span class="ot">    ::</span> <span class="dt">IORef</span> <span class="dt">Int</span>
     <span class="ot">-&gt;</span> <span class="dt">StateCommand</span> a
@@ -118,6 +119,7 @@ runAsIO m s0 <span class="fu">=</span> <span class="kw">do</span>
     r <span class="ot">&lt;-</span> newIORef s0
     runPromptM (interpretIO r) m</code></pre></div>
 <p><code>interpretIO</code> is our interpreter, in <code>IO</code>. <code>runPromptM</code> will interpret each primitive (<code>Put</code> and <code>Get</code>) using <code>interpretIO</code>, and generate the result for us.</p>
+<p>Note that the GADT property of <code>StateCommand</code> ensures us that the <em>result</em> of our <code>IO</code> action matches with the result that the GADT constructor implies, due to the magic of dependent pattern matching. For the <code>Put x :: StateCommand ()</code> branch, the result has to be <code>IO ()</code>; for the <code>Get :: StateCommand Int</code> branch, the result has to be <code>IO Int</code>.</p>
 <p>We can also be boring and interpret it using <code>State Int</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">interpretState ::</span> <span class="dt">StateCommand</span> a <span class="ot">-&gt;</span> <span class="dt">State</span> <span class="dt">Int</span> a
 interpretState <span class="fu">=</span> \<span class="kw">case</span>
@@ -256,7 +258,7 @@ interpMem <span class="fu">=</span> \<span class="kw">case</span>
 <p>We also use <code>P.focus :: Lens' (P.PointedList a) a</code>, a lens that the <em>pointedlist</em> library provides to the current “focus” of the <code>PointedList</code>.</p>
 <p>Note that most of this usage of lens with state is not exactly necessary (we can manually use <code>modify</code>, <code>gets</code>, etc. instead of lenses and operators), but it does make things a bit more convenient to write.</p>
 <h4 id="gadt-property">GADT Property</h4>
-<p>The GADT-ness of <code>Mem</code> (and <code>Com</code>) works to enforce that the “results” that each primitive expects is the result that we give.</p>
+<p>Again, the GADT-ness of <code>Mem</code> (and <code>Com</code>) works to enforce that the “results” that each primitive expects is the result that we give.</p>
 <p>For example, <code>MGet 'c' :: Mem Int</code> requires us to return <code>m Int</code>. This is what <code>use</code> gives us. <code>MSet 'c' 3 :: Mem ()</code> requires us to return <code>m ()</code>, which is what <code>(.=)</code> returns.</p>
 <p>We have <code>MPk :: Mem Op</code>, which requires us to return <code>m Op</code>. That’s exactly what <code>use (psTape . P.focus) :: (MonadState s m, HasProgState s) =&gt; m Op</code> gives.</p>
 <p>The fact that we can use GADTs to specify the “result type” of each of our primitives is a key part about how <code>Prompt</code> from <em>MonadPrompt</em> works, and how it implements the interpreter pattern.</p>
@@ -364,6 +366,7 @@ partA ops <span class="fu">=</span> getFirst
           <span class="fu">.</span> flip runStateT (<span class="dt">PS</span> ops M.empty)
           <span class="fu">.</span> runMaybeT
           <span class="fu">$</span> many stepA</code></pre></div>
+<p>A <code>Nothing</code> result means that the <code>Writer</code> log never received any outputs before <code>many</code> ends looping, which means that the tape goes out of bounds before a successful <em>rcv</em>.</p>
 <h3 id="part-b">Part B</h3>
 <p>Our interpreter for Part B is a little simpler:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t interpMem <span class="fu">&gt;|&lt;</span> interpComB
