@@ -818,7 +818,9 @@ partB ops = sum . concat
 
 ### Examples
 
-In the \[sample source code\]\[Duel.hs\], I’ve included [my own puzzle
+In the [sample source
+code](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs),
+I’ve included [my own puzzle
 input](https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L198-241)
 provided to me from the advent of code website. We can now get actual answers
 given some sample puzzle input:
