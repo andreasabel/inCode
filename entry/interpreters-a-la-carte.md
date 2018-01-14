@@ -29,7 +29,7 @@ providing insight on how I approach and solve non-trivial Haskell problems.
 Along the way we’ll also use mtl typeclasses and classy lenses.
 
 The source code is [available
-online](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs)
+online](https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs)
 and is executable as a stack script.
 
 The Puzzle
@@ -819,7 +819,7 @@ partB ops = sum . concat
 ### Examples
 
 In the [sample source
-code](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs),
+code](https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs),
 I’ve included [my own puzzle
 input](https://github.com/mstksg/inCode/tree/master/code-samples/interpreters/Duet.hs#L198-L241)
 provided to me from the advent of code website. We can now get actual answers
