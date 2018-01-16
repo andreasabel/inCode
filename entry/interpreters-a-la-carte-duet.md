@@ -131,7 +131,7 @@ representing opcodes. There are four categories: "snd", "rcv", "jgz", and the
 binary mathematical operations:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L31-L36
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L32-L37
 
 type Addr = Either Char Int
 
@@ -147,7 +147,7 @@ take either numbers or other registers.
 Now, parsing a single `Op` is just a matter of pattern matching on `words`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L38-L51
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L39-L52
 
 parseOp :: String -> Op
 parseOp inp = case words inp of
@@ -173,7 +173,7 @@ then just parsing each line in the program string, and collecting them into a
 `PointedList`. We're ready to go!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L53-L54
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L54-L55
 
 parseProgram :: String -> P.PointedList Op
 parseProgram = fromJust . P.fromList . map parseOp . lines
@@ -304,7 +304,7 @@ For memory, we can access and modify register values, as well as jump around in
 the program tape and read the `Op` at the current program head:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L56-L60
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L57-L61
 
 data Mem :: Type -> Type where
     MGet :: Char -> Mem Int
@@ -316,7 +316,7 @@ data Mem :: Type -> Type where
 For communication, we must be able to "snd" and "rcv".
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L62-L64
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L63-L65
 
 data Com :: Type -> Type where
     CSnd :: Int -> Com ()
@@ -357,7 +357,7 @@ Our final data type then -- a monad that encompasses *all* possible Duet
 primitive commands, is:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L66-L66
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L67-L67
 
 type Duet = Prompt (Mem :|: Com)
 ```
@@ -366,7 +366,7 @@ We can write some convenient utility primitives to make things easier for us in
 the long run:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L68-L84
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L69-L85
 
 dGet :: Char -> Duet Int
 dGet = prompt . L . MGet
@@ -393,7 +393,7 @@ Armed with our `Duet` monad, we can now write a real-life `Duet` action to
 represent *one step* of our duet programs:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L86-L107
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L87-L108
 
 stepProg :: Duet ()
 stepProg = dPk >>= \case
@@ -439,7 +439,7 @@ relevant program state, along with classy lenses for operating on it
 polymorphically:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L109-L112
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L110-L113
 
 data ProgState = PS { _psTape :: P.PointedList Op
                     , _psRegs :: M.Map Char Int
@@ -517,7 +517,7 @@ With these tools to make life easier, we can write an interpreter for our `Mem`
 commands:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L114-L124
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L115-L125
 
 interpMem
     :: (MonadState s m, MonadFail m, HasProgState s)
@@ -588,7 +588,7 @@ have the ability to read the accumulated log at any time. We use `Last Int`
 because, if there are two *snd*'s, we only care about the last *snd*'d thing.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L130-L141
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L131-L142
 
 interpComA
     :: (MonadAccum (Last Int) m, MonadWriter (First Int) m)
@@ -615,10 +615,12 @@ probably will in the next version. It's the classy version of `AccumT`, which is
 already in
 *[transformers-0.5.5.0](https://hackage.haskell.org/package/transformers-0.5.5.0)*.
 
-For now, I've added `MonadAccum` and appropriate instances in the [sample source
-code](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L126-L246),
-but when the new version of *mtl* comes out, I'll be sure to update this post to
-take this into account!
+For now, [I've added
+`MonadAccum`](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L127-L129)
+and [appropriate
+instances](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L260-L262)
+in the sample source code, but when the new version of *mtl* comes out, I'll be
+sure to update this post to take this into account!
 
 ### Interpreting Com for Part B
 
@@ -638,7 +640,7 @@ so we can merge the contexts of `interpMem` and `interpComB`, and really treat
 them (using type inference) as both working in the same interpretation context.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L154-L160
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L155-L161
 
 data Thread = T { _tState   :: ProgState
                 , _tBuffer  :: [Int]
@@ -656,7 +658,7 @@ example, will refer to the `psRegs` inside the `ProgState` in the `Thread`)
 And now, to interpret:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L162-L171
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L163-L172
 
 interpComB
     :: (MonadWriter [Int] m, MonadFail m, MonadState Thread m)
@@ -747,7 +749,7 @@ MaybeT (StateT ProgState (WriterT (First Int) (A.Accum (Last Int))))
 And so we can write our final "step" function in that context:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L143-L144
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L144-L145
 
 stepA :: MaybeT (StateT ProgState (WriterT (First Int) (A.Accum (Last Int)))) ()
 stepA = runPromptM (interpMem >|< interpComA) stepProg
@@ -772,7 +774,7 @@ Here is the entirety of running Part A -- as you can see, it consists mostly of
 unwrapping *transformers* newtype wrappers.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L146-L152
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L147-L153
 
 partA :: P.PointedList Op -> Maybe Int
 partA ops = getFirst
@@ -820,7 +822,7 @@ To "lift" our actions on one thread to be actions on a "tuple" of threads. We
 have, in the end:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L173-L182
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L174-L183
 
 stepB :: MaybeT (State (Thread, Thread)) Int
 stepB = do
@@ -852,7 +854,7 @@ This is one "single pass" of both of our threads. As you can anticipate, we'll
 use `many` again to run these multiple times until both threads block.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L184-L192
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L185-L193
 
 partB :: P.PointedList Op -> Int
 partB ops = sum . concat
@@ -875,12 +877,12 @@ only need to sum.
 In the [sample source
 code](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs),
 I've included [my own puzzle
-input](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L199-L242)
+input](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L200-L243)
 provided to me from the advent of code website. We can now get actual answers
 given some sample puzzle input:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L194-L197
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L195-L198
 
 main :: IO ()
 main = do
@@ -915,6 +917,141 @@ That's it! Hope you enjoyed some of the techniques used in this post, including
 The *type-combinators* library opens up a lot of doors to combining modular
 interpreters in more complex ways, as well!
 
+### Functor conjunctions
+
+We see that `:|:` (functor disjunction) can be used to merge sets of primitives.
+We can also use `:&:` (functor conjunction), also known as `:*:` from
+*Generics.GHC* and `Product` from *Data.Functor.Product*!
+
+``` {.haskell}
+newtype (f :&: g) a = f a :&: g a
+```
+
+Used with GADTs representing primitives, `:&:` lets us "tag" our primitives with
+extra things.
+
+For example, we were pretty sneaky earlier by using `zoom` to manually lift our
+`Mem` interpreter to work on specific threads. Instead, we can actually use
+`Const Int` to attach a thread ID to `Mem`s:
+
+``` {.haskell}
+-- | type-combinators exports its own version of 'Const'
+newtype C r a = C { getC :: r }
+
+-- | Peek into Thread 0
+C 0 :&: MPk         :: (C Int :&: Mem) Op
+
+-- | Get contents of register 'c' of Thread 1
+C 1 :&: MGet 'c'    :: (C Int :&: Mem) Int
+```
+
+And hey, we can even make things more type-safe by attaching a `Lens'`, instead:
+
+``` {.haskell}
+type PSL s = ALens' s ProgState
+
+-- | Peek into Thread 0
+C (_1 . tState) :&: MPk         :: (C (PSL (Thread, t)) :&: Mem) Op
+
+-- | Get register 'c' of Thread 1
+C (_2 . tState) :&: MGet 'c'    :: (C (PSL (t, Thread)) :&: Mem) Int
+```
+
+Something of type `(C (PSL (Thread, t)) :&: Mem) Op` is an action that gets an
+`Op`, tagged with a lens to access a `ProgState` in a state of type
+`(Thread, t)`. So, instead of manually zooming ad-hoc, we can zoom based on a
+lens attached to a `Mem`.
+
+The advantage we gain by using these tags is that we now have an approach that
+can be generalized to multiple threads, as well.
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L247-L258
+
+interpMemPSL
+    :: (MonadState s m, MonadFail m)
+    => C (PSL s) a
+    -> Mem a
+    -> m a
+interpMemPSL (C (cloneLens->l)) = \case
+    MGet c   -> use (l . psRegs . at c . non 0)
+    MSet c x -> l . psRegs . at c . non 0 .= x
+    MJmp n   -> do
+      Just t' <- P.moveN n <$> use (l . psTape)
+      l . psTape .= t'
+    MPk      -> use (l . psTape . P.focus)
+```
+
+Note that since `PSL` is an `ALens'` (which is required, if we want to store a
+lens in a newtype), we have to use `cloneLens :: ALens' s a -> Lens s a` to
+convert it back to a normal `Lens`.
+
+We can then use the analogy of `>|<`, `uncurryFan`:
+
+``` {.haskell}
+uncurryFan
+    :: (forall x. f x -> g x -> r)
+    -> (f :&: g) a
+    -> r
+
+uncurryFan interpMemPSL
+    :: (MonadState s m, MonadFail m)
+    => (C (PSL s) :&: Mem) a
+    -> m a
+```
+
+We can build interpreters of combinations of `:|:` and `:&:` by using
+combinations of `>|<` and `uncurryFan`.
+
+``` {.haskell}
+interpMem >|< interpComB
+    :: ( MonadWriter [Int] m
+       , MonadFail m
+       , MonadState Thread m
+       )
+    => (Mem :|: Com) a
+    -> m a
+
+uncurryFan interpMemPSL >|< interpComB
+    :: ( MonadWriter [Int] m
+       , MonadFail m
+       , MonadState s m
+       )
+    => ((C (PSL s) :&: Mem) :|: Com) a
+    -> m a
+```
+
+### Manipulating Disjunctions and Conjunctions
+
+So, we have a `Mem :|: Conj`. How could we "tag" our `Mem` after-the-fact, to
+add `C (PSL s)`? We can manipulate the structure of conjunctions and
+disjunctions using the `Bifunctor1` from *Type.Class.Higher*, in
+*type-combinators*.
+
+`bimap1` can be used to modify either half of a `:|:` or `:&:`:
+
+``` {.haskell}
+bimap1
+    :: (forall x. f x -> h x)
+    -> (forall x. g x -> j x)
+    -> (f :|: g) a
+    -> (h :|: j) a
+
+bimap1
+    :: (forall x. f x -> h x)
+    -> (forall x. g x -> j x)
+    -> (f :&: g) a
+    -> (h :&: j) a
+```
+
+So we can "tag" the `Mem` in `Mem :|: Cmd` using:
+
+``` {.haskell}
+bimap1 (C (_1 . tState) :&:) id
+    :: (           Mem            :|: Com) a
+    -> ((PSL (Thread, t) :&: Mem) :|: Com) a
+```
+
 ### Many sets of primitives
 
 Instead of `f >|< g >|< h`, you can use `FSum '[f, g, h]` to combine multiple
@@ -930,8 +1067,43 @@ finj :: Mem a -> FSum '[Mem, Com, Foo] a
 finj :: Com a -> FSum '[Mem, Com, Foo] a
 finj :: Foo a -> FSum '[Mem, Com, Foo] a
 
-prompt (finj MPk) :: Prompt (FSum '[Mem, Com, Foo]) Op
+prompt (finj (MGet 'c')) :: Prompt (FSum '[Mem, Com, Foo]) Int
 ```
+
+There isn't really a built-in way to handle these, but you can whip up a utility
+function with `Prod` (from *type-combinators*) and `ifoldMapFSum`.
+
+``` {.haskell}
+newtype Handle a r f = Handle { runHandle :: f a -> r }
+
+handleFSum :: Prod (Handle a r) fs -> FSum fs a -> r
+handleFSum hs = ifoldMapFSum $ \i -> runHandle $ index i hs
+```
+
+`Prod` lets you bunch up a bunch of handlers together, so you can build handlers
+like:
+
+``` {.haskell}
+handleMem :: Mem a -> m a
+handleCom :: Com a -> m a
+handleFoo :: Foo a -> m a
+
+handleFSum (Handle handleMem :< Handle handleCom :< Handle handleFoo :< Ø)
+    :: FSum '[Mem, Com, Foo] a -> m a
+
+runPromptM (handleFSum ( Handle handleMem
+                      :< Handle handleCom
+                      :< Handle handleFoo
+                      :< Ø)
+           )
+    :: Prompt (FSum '[Mem, Com, Foo]) a -> m a
+```
+
+### Endless Possibilities
+
+Hopefully this post inspires you a bit about this fun design pattern! And, if
+anything, I hope after reading this, you learn to recognize situations where the
+interpreter pattern might be useful in your everyday programming.
 
 [^1]: Not to be confused with the
     [prompt](http://hackage.haskell.org/package/prompt) library, which is more
