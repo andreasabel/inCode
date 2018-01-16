@@ -131,7 +131,7 @@ representing opcodes. There are four categories: "snd", "rcv", "jgz", and the
 binary mathematical operations:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L32-L37
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L33-L38
 
 type Addr = Either Char Int
 
@@ -147,7 +147,7 @@ take either numbers or other registers.
 Now, parsing a single `Op` is just a matter of pattern matching on `words`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L39-L52
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L40-L53
 
 parseOp :: String -> Op
 parseOp inp = case words inp of
@@ -173,7 +173,7 @@ then just parsing each line in the program string, and collecting them into a
 `PointedList`. We're ready to go!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L54-L55
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L55-L56
 
 parseProgram :: String -> P.PointedList Op
 parseProgram = fromJust . P.fromList . map parseOp . lines
@@ -304,7 +304,7 @@ For memory, we can access and modify register values, as well as jump around in
 the program tape and read the `Op` at the current program head:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L57-L61
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L58-L62
 
 data Mem :: Type -> Type where
     MGet :: Char -> Mem Int
@@ -316,7 +316,7 @@ data Mem :: Type -> Type where
 For communication, we must be able to "snd" and "rcv".
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L63-L65
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L64-L66
 
 data Com :: Type -> Type where
     CSnd :: Int -> Com ()
@@ -357,7 +357,7 @@ Our final data type then -- a monad that encompasses *all* possible Duet
 primitive commands, is:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L67-L67
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L68-L68
 
 type Duet = Prompt (Mem :|: Com)
 ```
@@ -366,7 +366,7 @@ We can write some convenient utility primitives to make things easier for us in
 the long run:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L69-L85
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L70-L86
 
 dGet :: Char -> Duet Int
 dGet = prompt . L . MGet
@@ -393,7 +393,7 @@ Armed with our `Duet` monad, we can now write a real-life `Duet` action to
 represent *one step* of our duet programs:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L87-L108
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L88-L109
 
 stepProg :: Duet ()
 stepProg = dPk >>= \case
@@ -439,7 +439,7 @@ relevant program state, along with classy lenses for operating on it
 polymorphically:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L110-L113
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L111-L114
 
 data ProgState = PS { _psTape :: P.PointedList Op
                     , _psRegs :: M.Map Char Int
@@ -517,7 +517,7 @@ With these tools to make life easier, we can write an interpreter for our `Mem`
 commands:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L115-L125
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L116-L126
 
 interpMem
     :: (MonadState s m, MonadFail m, HasProgState s)
@@ -536,13 +536,13 @@ Nothing too surprising here -- we just interpret every primitive in our monadic
 context.
 
 We use `MonadFail` to explicitly state that we rely on a failed pattern match
-for control flow. `P.moveN :: Int -> P.PointedList a -> Maybe (P.PointedList a)`
-will "shift" a `PointedList` by a given amount, but will return `Nothing` if it
-goes out of bounds. Our program is meant to terminate if we ever go out of
-bounds, so we can implement this by using a do block pattern match with
-`MonadFail`. For instances like `MaybeT`/`Maybe`, this means
-`empty`/`Nothing`/short-circuit. So when we `P.move`, we do-block pattern match
-on `Just t'`.
+for control flow.[^2]
+`P.moveN :: Int -> P.PointedList a -> Maybe (P.PointedList a)` will "shift" a
+`PointedList` by a given amount, but will return `Nothing` if it goes out of
+bounds. Our program is meant to terminate if we ever go out of bounds, so we can
+implement this by using a do block pattern match with `MonadFail`. For instances
+like `MaybeT`/`Maybe`, this means `empty`/`Nothing`/short-circuit. So when we
+`P.move`, we do-block pattern match on `Just t'`.
 
 We also use `P.focus :: Lens' (P.PointedList a) a`, a lens that the
 *pointedlist* library provides to the current "focus" of the `PointedList`.
@@ -588,7 +588,7 @@ have the ability to read the accumulated log at any time. We use `Last Int`
 because, if there are two *snd*'s, we only care about the last *snd*'d thing.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L131-L142
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L132-L143
 
 interpComA
     :: (MonadAccum (Last Int) m, MonadWriter (First Int) m)
@@ -616,9 +616,9 @@ already in
 *[transformers-0.5.5.0](https://hackage.haskell.org/package/transformers-0.5.5.0)*.
 
 For now, [I've added
-`MonadAccum`](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L127-L129)
+`MonadAccum`](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L128-L130)
 and [appropriate
-instances](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L245-L247)
+instances](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L246-L248)
 in the sample source code, but when the new version of *mtl* comes out, I'll be
 sure to update this post to take this into account!
 
@@ -640,7 +640,7 @@ so we can merge the contexts of `interpMem` and `interpComB`, and really treat
 them (using type inference) as both working in the same interpretation context.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L155-L161
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L156-L162
 
 data Thread = T { _tState   :: ProgState
                 , _tBuffer  :: [Int]
@@ -658,7 +658,7 @@ example, will refer to the `psRegs` inside the `ProgState` in the `Thread`)
 And now, to interpret:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L163-L172
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L164-L173
 
 interpComB
     :: (MonadWriter [Int] m, MonadFail m, MonadState Thread m)
@@ -749,7 +749,7 @@ MaybeT (StateT ProgState (WriterT (First Int) (A.Accum (Last Int))))
 And so we can write our final "step" function in that context:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L144-L145
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L145-L146
 
 stepA :: MaybeT (StateT ProgState (WriterT (First Int) (A.Accum (Last Int)))) ()
 stepA = runPromptM (interpMem >|< interpComA) stepProg
@@ -774,7 +774,7 @@ Here is the entirety of running Part A -- as you can see, it consists mostly of
 unwrapping *transformers* newtype wrappers.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L147-L153
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L148-L154
 
 partA :: P.PointedList Op -> Maybe Int
 partA ops = getFirst
@@ -822,7 +822,7 @@ To "lift" our actions on one thread to be actions on a "tuple" of threads. We
 have, in the end:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L174-L183
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L175-L184
 
 stepB :: MaybeT (State (Thread, Thread)) Int
 stepB = do
@@ -854,7 +854,7 @@ This is one "single pass" of both of our threads. As you can anticipate, we'll
 use `many` again to run these multiple times until both threads block.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L185-L193
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L186-L194
 
 partB :: P.PointedList Op -> Int
 partB ops = sum . concat
@@ -877,12 +877,12 @@ only need to sum.
 In the [sample source
 code](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs),
 I've included [my own puzzle
-input](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L200-L243)
+input](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L201-L244)
 provided to me from the advent of code website. We can now get actual answers
 given some sample puzzle input:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L195-L198
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L196-L199
 
 main :: IO ()
 main = do
@@ -1097,3 +1097,11 @@ interpreter pattern might be useful in your everyday programming.
     or less unrelated! The library is actually my own that I wrote a few years
     back before I knew about MonadPrompt, and this unfortunate naming collision
     is one of my greatest Haskell regrets.
+
+[^2]: Using `MonadFail` in situations were we would normally use
+    `Alternative`/`MonadPlus`, to take advantage of pattern match syntax in do
+    block and have it work with `Alternative` combinators like `many`, is
+    [coming](https://wiki.haskell.org/MonadFail_Proposal)! For good hygiene,
+    remember to turn on the *-XMonadFailDesugaring* extension so that pattern
+    match failures explicitly use `fail` from `MonadFail`, thus requiring the
+    typeclass constraint.
