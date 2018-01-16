@@ -69,7 +69,7 @@
 \hypersetup{breaklinks=true,
             bookmarks=true,
             pdfauthor={Justin Le},
-            pdftitle={Interpreters a la Carte in Advent of Code 2017 Duet},
+            pdftitle={``Interpreters a la Carte'' in Advent of Code 2017 Duet},
             colorlinks=true,
             citecolor=blue,
             urlcolor=blue,
@@ -83,7 +83,7 @@
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
 
-\title{Interpreters a la Carte in Advent of Code 2017 Duet}
+\title{``Interpreters a la Carte'' in Advent of Code 2017 Duet}
 \author{Justin Le}
 
 \begin{document}
@@ -1161,8 +1161,8 @@ And, as a stack script, we can run this and see my own puzzle's answers:
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{wrap-up-and-expansion}{%
-\section{Wrap Up and Expansion}\label{wrap-up-and-expansion}}
+\hypertarget{wrap-up}{%
+\section{Wrap Up}\label{wrap-up}}
 
 \hypertarget{thats-it-hope-you-enjoyed-some-of-the-techniques-used-in-this-post-including}{%
 \section{That's it! Hope you enjoyed some of the techniques used in this post,
@@ -1188,11 +1188,14 @@ including}\label{thats-it-hope-you-enjoyed-some-of-the-techniques-used-in-this-p
   \texttt{MonadWriter}, \texttt{MonadAccum}, etc.
 \end{enumerate}
 
+\hypertarget{pushing-the-boundaries}{%
+\subsection{Pushing the Boundaries}\label{pushing-the-boundaries}}
+
 The \emph{type-combinators} library opens up a lot of doors to combining modular
 interpreters in more complex ways, as well!
 
 \hypertarget{functor-conjunctions}{%
-\subsection{Functor conjunctions}\label{functor-conjunctions}}
+\subsubsection{Functor conjunctions}\label{functor-conjunctions}}
 
 We see that \texttt{:\textbar{}:} (functor disjunction) can be used to merge
 sets of primitives. We can also use \texttt{:\&:} (functor conjunction), also
@@ -1314,7 +1317,7 @@ We can build interpreters of combinations of \texttt{:\textbar{}:} and
 \end{Shaded}
 
 \hypertarget{manipulating-disjunctions-and-conjunctions}{%
-\subsection{Manipulating Disjunctions and
+\subsubsection{Manipulating Disjunctions and
 Conjunctions}\label{manipulating-disjunctions-and-conjunctions}}
 
 So, we have a \texttt{Mem\ :\textbar{}:\ Conj}. How could we ``tag'' our
@@ -1345,9 +1348,27 @@ So we can ``tag'' the \texttt{Mem} in \texttt{Mem\ :\textbar{}:\ Cmd} using:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{MemAt}\NormalTok{ s }\FunctionTok{=} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{PSL}\NormalTok{ s) }\FunctionTok{:&:} \DataTypeTok{Mem}
+
 \NormalTok{bimap1 (}\DataTypeTok{C}\NormalTok{ (_1 }\FunctionTok{.}\NormalTok{ tState) }\FunctionTok{:&:}\NormalTok{) id}
-\OtherTok{    ::}\NormalTok{ (           }\DataTypeTok{Mem}            \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
-    \OtherTok{->}\NormalTok{ ((}\DataTypeTok{PSL}\NormalTok{ (}\DataTypeTok{Thread}\NormalTok{, t) }\FunctionTok{:&:} \DataTypeTok{Mem}\NormalTok{) }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
+\OtherTok{    ::}\NormalTok{ (       }\DataTypeTok{Mem}       \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
+    \OtherTok{->}\NormalTok{ (}\DataTypeTok{MemAt}\NormalTok{ (}\DataTypeTok{Tread}\NormalTok{, t) }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
+\end{Highlighting}
+\end{Shaded}
+
+Which we can use to re-tag a \texttt{Prompt\ (Mem\ :\textbar{}:\ Com)}, with the
+help of \texttt{runPromptM}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{\textbackslash{}f }\OtherTok{->}\NormalTok{ runPromptM (prompt }\FunctionTok{.}\NormalTok{ f)}
+\OtherTok{    ::}\NormalTok{ (forall x}\FunctionTok{.}\NormalTok{ f x }\OtherTok{->}\NormalTok{ g x)}
+    \OtherTok{->} \DataTypeTok{Prompt}\NormalTok{ f a}
+    \OtherTok{->} \DataTypeTok{Prompt}\NormalTok{ g a}
+
+\NormalTok{runPromptM (prompt }\FunctionTok{.}\NormalTok{ bimap1 ((}\DataTypeTok{C}\NormalTok{ _1 }\FunctionTok{.}\NormalTok{ tState) }\FunctionTok{:&:}\NormalTok{) id)}
+\OtherTok{    ::} \DataTypeTok{Prompt}\NormalTok{ (      }\DataTypeTok{Mem}        \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
+    \OtherTok{->} \DataTypeTok{Prompt}\NormalTok{ (}\DataTypeTok{MemAt}\NormalTok{ (}\DataTypeTok{Tread}\NormalTok{, t) }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1409,7 +1430,7 @@ handlers like:
 \end{Shaded}
 
 \hypertarget{endless-possibilities}{%
-\subsection{Endless Possibilities}\label{endless-possibilities}}
+\subsubsection{Endless Possibilities}\label{endless-possibilities}}
 
 Hopefully this post inspires you a bit about this fun design pattern! And, if
 anything, I hope after reading this, you learn to recognize situations where the
