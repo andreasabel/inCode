@@ -828,7 +828,7 @@ though it probably will in the next version. It's the classy version of
 For now,
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs\#L127-L129}{I've
 added \texttt{MonadAccum}} and
-\href{https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs\#L260-L262}{appropriate
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs\#L245-L247}{appropriate
 instances} in the sample source code, but when the new version of \emph{mtl}
 comes out, I'll be sure to update this post to take this into account!
 
@@ -1228,54 +1228,22 @@ actually use \texttt{Const\ Int} to attach a thread ID to \texttt{Mem}s:
 \end{Highlighting}
 \end{Shaded}
 
-And hey, we can even make things more type-safe by attaching a
-\texttt{Lens\textquotesingle{}}, instead:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{PSL}\NormalTok{ s }\FunctionTok{=} \DataTypeTok{ALens'}\NormalTok{ s }\DataTypeTok{ProgState}
-
-\CommentTok{-- | Peek into Thread 0}
-\DataTypeTok{C}\NormalTok{ (_1 }\FunctionTok{.}\NormalTok{ tState) }\FunctionTok{:&:} \DataTypeTok{MPk}\OtherTok{         ::}\NormalTok{ (}\DataTypeTok{C}\NormalTok{ (}\DataTypeTok{PSL}\NormalTok{ (}\DataTypeTok{Thread}\NormalTok{, t)) }\FunctionTok{:&:} \DataTypeTok{Mem}\NormalTok{) }\DataTypeTok{Op}
-
-\CommentTok{-- | Get register 'c' of Thread 1}
-\DataTypeTok{C}\NormalTok{ (_2 }\FunctionTok{.}\NormalTok{ tState) }\FunctionTok{:&:} \DataTypeTok{MGet} \CharTok{'c'}\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{C}\NormalTok{ (}\DataTypeTok{PSL}\NormalTok{ (t, }\DataTypeTok{Thread}\NormalTok{)) }\FunctionTok{:&:} \DataTypeTok{Mem}\NormalTok{) }\DataTypeTok{Int}
-\end{Highlighting}
-\end{Shaded}
-
-Something of type \texttt{(C\ (PSL\ (Thread,\ t))\ :\&:\ Mem)\ Op} is an action
-that gets an \texttt{Op}, tagged with a lens to access a \texttt{ProgState} in a
-state of type \texttt{(Thread,\ t)}. So, instead of manually zooming ad-hoc, we
-can zoom based on a lens attached to a \texttt{Mem}.
-
 The advantage we gain by using these tags is that we now have an approach that
 can be generalized to multiple threads, as well.
 
+If we had a version of \texttt{interpMem} that takes a thread:
+
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L247-L258}
-
-\NormalTok{interpMemPSL}
-\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{MonadState}\NormalTok{ s m, }\DataTypeTok{MonadFail}\NormalTok{ m)}
-    \OtherTok{=>} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{PSL}\NormalTok{ s) a}
+\NormalTok{interpMemThread}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{MonadState}\NormalTok{ s m, }\DataTypeTok{MonadFail}\NormalTok{ m, }\DataTypeTok{HasProgState}\NormalTok{ s)}
+    \OtherTok{=>} \DataTypeTok{C} \DataTypeTok{Int}\NormalTok{ a}
     \OtherTok{->} \DataTypeTok{Mem}\NormalTok{ a}
     \OtherTok{->}\NormalTok{ m a}
-\NormalTok{interpMemPSL (}\DataTypeTok{C}\NormalTok{ (cloneLens}\OtherTok{->}\NormalTok{l)) }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-    \DataTypeTok{MGet}\NormalTok{ c   }\OtherTok{->}\NormalTok{ use (l }\FunctionTok{.}\NormalTok{ psRegs }\FunctionTok{.}\NormalTok{ at c }\FunctionTok{.}\NormalTok{ non }\DecValTok{0}\NormalTok{)}
-    \DataTypeTok{MSet}\NormalTok{ c x }\OtherTok{->}\NormalTok{ l }\FunctionTok{.}\NormalTok{ psRegs }\FunctionTok{.}\NormalTok{ at c }\FunctionTok{.}\NormalTok{ non }\DecValTok{0} \FunctionTok{.=}\NormalTok{ x}
-    \DataTypeTok{MJmp}\NormalTok{ n   }\OtherTok{->} \KeywordTok{do}
-      \DataTypeTok{Just}\NormalTok{ t' }\OtherTok{<-}\NormalTok{ P.moveN n }\FunctionTok{<$>}\NormalTok{ use (l }\FunctionTok{.}\NormalTok{ psTape)}
-\NormalTok{      l }\FunctionTok{.}\NormalTok{ psTape }\FunctionTok{.=}\NormalTok{ t'}
-    \DataTypeTok{MPk}      \OtherTok{->}\NormalTok{ use (l }\FunctionTok{.}\NormalTok{ psTape }\FunctionTok{.}\NormalTok{ P.focus)}
 \end{Highlighting}
 \end{Shaded}
 
-Note that since \texttt{PSL} is an \texttt{ALens\textquotesingle{}} (which is
-required, if we want to store a lens in a newtype), we have to use
-\texttt{cloneLens\ ::\ ALens\textquotesingle{}\ s\ a\ -\textgreater{}\ Lens\ s\ a}
-to convert it back to a normal \texttt{Lens}.
-
-We can then use the analogy of \texttt{\textgreater{}\textbar{}\textless{}},
+we can use the analogy of \texttt{\textgreater{}\textbar{}\textless{}},
 \texttt{uncurryFan}:
 
 \begin{Shaded}
@@ -1285,9 +1253,9 @@ We can then use the analogy of \texttt{\textgreater{}\textbar{}\textless{}},
     \OtherTok{->}\NormalTok{ (f }\FunctionTok{:&:}\NormalTok{ g) a}
     \OtherTok{->}\NormalTok{ r}
 
-\NormalTok{uncurryFan interpMemPSL}
+\NormalTok{uncurryFan interpMemThread}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{MonadState}\NormalTok{ s m, }\DataTypeTok{MonadFail}\NormalTok{ m)}
-    \OtherTok{=>}\NormalTok{ (}\DataTypeTok{C}\NormalTok{ (}\DataTypeTok{PSL}\NormalTok{ s) }\FunctionTok{:&:} \DataTypeTok{Mem}\NormalTok{) a}
+    \OtherTok{=>}\NormalTok{ (}\DataTypeTok{C} \DataTypeTok{Int} \FunctionTok{:&:} \DataTypeTok{Mem}\NormalTok{) a}
     \OtherTok{->}\NormalTok{ m a}
 \end{Highlighting}
 \end{Shaded}
@@ -1306,12 +1274,12 @@ We can build interpreters of combinations of \texttt{:\textbar{}:} and
     \OtherTok{=>}\NormalTok{ (}\DataTypeTok{Mem} \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
     \OtherTok{->}\NormalTok{ m a}
 
-\NormalTok{uncurryFan interpMemPSL }\FunctionTok{>|<}\NormalTok{ interpComB}
+\NormalTok{uncurryFan interpMemThread }\FunctionTok{>|<}\NormalTok{ interpComB}
 \OtherTok{    ::}\NormalTok{ ( }\DataTypeTok{MonadWriter}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{] m}
 \NormalTok{       , }\DataTypeTok{MonadFail}\NormalTok{ m}
-\NormalTok{       , }\DataTypeTok{MonadState}\NormalTok{ s m}
+\NormalTok{       , }\DataTypeTok{MonadState} \DataTypeTok{Thread}\NormalTok{ m}
 \NormalTok{       )}
-    \OtherTok{=>}\NormalTok{ ((}\DataTypeTok{C}\NormalTok{ (}\DataTypeTok{PSL}\NormalTok{ s) }\FunctionTok{:&:} \DataTypeTok{Mem}\NormalTok{) }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
+    \OtherTok{=>}\NormalTok{ ((}\DataTypeTok{C} \DataTypeTok{Int} \FunctionTok{:&:} \DataTypeTok{Mem}\NormalTok{) }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
     \OtherTok{->}\NormalTok{ m a}
 \end{Highlighting}
 \end{Shaded}
@@ -1321,7 +1289,7 @@ We can build interpreters of combinations of \texttt{:\textbar{}:} and
 Conjunctions}\label{manipulating-disjunctions-and-conjunctions}}
 
 So, we have a \texttt{Mem\ :\textbar{}:\ Conj}. How could we ``tag'' our
-\texttt{Mem} after-the-fact, to add \texttt{C\ (PSL\ s)}? We can manipulate the
+\texttt{Mem} after-the-fact, to add \texttt{C\ Int}? We can manipulate the
 structure of conjunctions and disjunctions using the \texttt{Bifunctor1} from
 \emph{Type.Class.Higher}, in \emph{type-combinators}.
 
@@ -1348,11 +1316,9 @@ So we can ``tag'' the \texttt{Mem} in \texttt{Mem\ :\textbar{}:\ Cmd} using:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{MemAt}\NormalTok{ s }\FunctionTok{=} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{PSL}\NormalTok{ s) }\FunctionTok{:&:} \DataTypeTok{Mem}
-
-\NormalTok{bimap1 (}\DataTypeTok{C}\NormalTok{ (_1 }\FunctionTok{.}\NormalTok{ tState) }\FunctionTok{:&:}\NormalTok{) id}
-\OtherTok{    ::}\NormalTok{ (       }\DataTypeTok{Mem}       \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
-    \OtherTok{->}\NormalTok{ (}\DataTypeTok{MemAt}\NormalTok{ (}\DataTypeTok{Tread}\NormalTok{, t) }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
+\NormalTok{bimap1 (}\DataTypeTok{C} \DecValTok{0} \FunctionTok{:&:}\NormalTok{) id}
+\OtherTok{    ::}\NormalTok{ (      }\DataTypeTok{Mem}       \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
+    \OtherTok{->}\NormalTok{ ((}\DataTypeTok{C} \DataTypeTok{Int} \FunctionTok{:&:} \DataTypeTok{Mem}\NormalTok{) }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1366,14 +1332,14 @@ help of \texttt{runPromptM}:
     \OtherTok{->} \DataTypeTok{Prompt}\NormalTok{ f a}
     \OtherTok{->} \DataTypeTok{Prompt}\NormalTok{ g a}
 
-\NormalTok{runPromptM (prompt }\FunctionTok{.}\NormalTok{ bimap1 ((}\DataTypeTok{C}\NormalTok{ _1 }\FunctionTok{.}\NormalTok{ tState) }\FunctionTok{:&:}\NormalTok{) id)}
-\OtherTok{    ::} \DataTypeTok{Prompt}\NormalTok{ (      }\DataTypeTok{Mem}        \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
-    \OtherTok{->} \DataTypeTok{Prompt}\NormalTok{ (}\DataTypeTok{MemAt}\NormalTok{ (}\DataTypeTok{Tread}\NormalTok{, t) }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
+\NormalTok{runPromptM (prompt }\FunctionTok{.}\NormalTok{ bimap1 (}\DataTypeTok{C} \DecValTok{0} \FunctionTok{:&:}\NormalTok{) id)}
+\OtherTok{    ::} \DataTypeTok{Prompt}\NormalTok{ (      }\DataTypeTok{Mem}       \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
+    \OtherTok{->} \DataTypeTok{Prompt}\NormalTok{ ((}\DataTypeTok{C} \DataTypeTok{Int} \FunctionTok{:&:} \DataTypeTok{Mem}\NormalTok{) }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
 \end{Highlighting}
 \end{Shaded}
 
 \hypertarget{many-sets-of-primitives}{%
-\subsection{Many sets of primitives}\label{many-sets-of-primitives}}
+\subsubsection{Many sets of primitives}\label{many-sets-of-primitives}}
 
 Instead of
 \texttt{f\ \textgreater{}\textbar{}\textless{}\ g\ \textgreater{}\textbar{}\textless{}\ h},

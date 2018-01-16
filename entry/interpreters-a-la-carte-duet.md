@@ -618,7 +618,7 @@ already in
 For now, [I've added
 `MonadAccum`](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L127-L129)
 and [appropriate
-instances](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L260-L262)
+instances](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L245-L247)
 in the sample source code, but when the new version of *mtl* comes out, I'll be
 sure to update this post to take this into account!
 
@@ -947,48 +947,20 @@ C 0 :&: MPk         :: (C Int :&: Mem) Op
 C 1 :&: MGet 'c'    :: (C Int :&: Mem) Int
 ```
 
-And hey, we can even make things more type-safe by attaching a `Lens'`, instead:
-
-``` {.haskell}
-type PSL s = ALens' s ProgState
-
--- | Peek into Thread 0
-C (_1 . tState) :&: MPk         :: (C (PSL (Thread, t)) :&: Mem) Op
-
--- | Get register 'c' of Thread 1
-C (_2 . tState) :&: MGet 'c'    :: (C (PSL (t, Thread)) :&: Mem) Int
-```
-
-Something of type `(C (PSL (Thread, t)) :&: Mem) Op` is an action that gets an
-`Op`, tagged with a lens to access a `ProgState` in a state of type
-`(Thread, t)`. So, instead of manually zooming ad-hoc, we can zoom based on a
-lens attached to a `Mem`.
-
 The advantage we gain by using these tags is that we now have an approach that
 can be generalized to multiple threads, as well.
 
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L247-L258
+If we had a version of `interpMem` that takes a thread:
 
-interpMemPSL
-    :: (MonadState s m, MonadFail m)
-    => C (PSL s) a
+``` {.haskell}
+interpMemThread
+    :: (MonadState s m, MonadFail m, HasProgState s)
+    => C Int a
     -> Mem a
     -> m a
-interpMemPSL (C (cloneLens->l)) = \case
-    MGet c   -> use (l . psRegs . at c . non 0)
-    MSet c x -> l . psRegs . at c . non 0 .= x
-    MJmp n   -> do
-      Just t' <- P.moveN n <$> use (l . psTape)
-      l . psTape .= t'
-    MPk      -> use (l . psTape . P.focus)
 ```
 
-Note that since `PSL` is an `ALens'` (which is required, if we want to store a
-lens in a newtype), we have to use `cloneLens :: ALens' s a -> Lens s a` to
-convert it back to a normal `Lens`.
-
-We can then use the analogy of `>|<`, `uncurryFan`:
+we can use the analogy of `>|<`, `uncurryFan`:
 
 ``` {.haskell}
 uncurryFan
@@ -996,9 +968,9 @@ uncurryFan
     -> (f :&: g) a
     -> r
 
-uncurryFan interpMemPSL
+uncurryFan interpMemThread
     :: (MonadState s m, MonadFail m)
-    => (C (PSL s) :&: Mem) a
+    => (C Int :&: Mem) a
     -> m a
 ```
 
@@ -1014,21 +986,20 @@ interpMem >|< interpComB
     => (Mem :|: Com) a
     -> m a
 
-uncurryFan interpMemPSL >|< interpComB
+uncurryFan interpMemThread >|< interpComB
     :: ( MonadWriter [Int] m
        , MonadFail m
-       , MonadState s m
+       , MonadState Thread m
        )
-    => ((C (PSL s) :&: Mem) :|: Com) a
+    => ((C Int :&: Mem) :|: Com) a
     -> m a
 ```
 
 #### Manipulating Disjunctions and Conjunctions
 
 So, we have a `Mem :|: Conj`. How could we "tag" our `Mem` after-the-fact, to
-add `C (PSL s)`? We can manipulate the structure of conjunctions and
-disjunctions using the `Bifunctor1` from *Type.Class.Higher*, in
-*type-combinators*.
+add `C Int`? We can manipulate the structure of conjunctions and disjunctions
+using the `Bifunctor1` from *Type.Class.Higher*, in *type-combinators*.
 
 `bimap1` can be used to modify either half of a `:|:` or `:&:`:
 
@@ -1049,11 +1020,9 @@ bimap1
 So we can "tag" the `Mem` in `Mem :|: Cmd` using:
 
 ``` {.haskell}
-type MemAt s = C (PSL s) :&: Mem
-
-bimap1 (C (_1 . tState) :&:) id
-    :: (       Mem       :|: Com) a
-    -> (MemAt (Tread, t) :|: Com) a
+bimap1 (C 0 :&:) id
+    :: (      Mem       :|: Com) a
+    -> ((C Int :&: Mem) :|: Com) a
 ```
 
 Which we can use to re-tag a `Prompt (Mem :|: Com)`, with the help of
@@ -1065,12 +1034,12 @@ Which we can use to re-tag a `Prompt (Mem :|: Com)`, with the help of
     -> Prompt f a
     -> Prompt g a
 
-runPromptM (prompt . bimap1 ((C _1 . tState) :&:) id)
-    :: Prompt (      Mem        :|: Com) a
-    -> Prompt (MemAt (Tread, t) :|: Com) a
+runPromptM (prompt . bimap1 (C 0 :&:) id)
+    :: Prompt (      Mem       :|: Com) a
+    -> Prompt ((C Int :&: Mem) :|: Com) a
 ```
 
-### Many sets of primitives
+#### Many sets of primitives
 
 Instead of `f >|< g >|< h`, you can use `FSum '[f, g, h]` to combine multiple
 sets of primitives in a clean way.

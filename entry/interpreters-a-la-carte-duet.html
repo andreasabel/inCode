@@ -300,7 +300,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Note <code>add :: MonadAccum w m =&gt; w -&gt; m ()</code> and <code>look :: MonadAccum w w</code>, the functions to “tell” to a <code>MonadAccum</code> and the function to “get”/“ask” from a <code>MonadAccum</code>.</p>
 <h4 id="monadaccum">MonadAccum</h4>
 <p>Small relevant note – <code>MonadAccum</code> does not yet exist in <em>mtl</em>, though it probably will in the next version. It’s the classy version of <code>AccumT</code>, which is already in <em><a href="https://hackage.haskell.org/package/transformers-0.5.5.0">transformers-0.5.5.0</a></em>.</p>
-<p>For now, <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L127-L129">I’ve added <code>MonadAccum</code></a> and <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L260-L262">appropriate instances</a> in the sample source code, but when the new version of <em>mtl</em> comes out, I’ll be sure to update this post to take this into account!</p>
+<p>For now, <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L127-L129">I’ve added <code>MonadAccum</code></a> and <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L245-L247">appropriate instances</a> in the sample source code, but when the new version of <em>mtl</em> comes out, I’ll be sure to update this post to take this into account!</p>
 <h3 id="interpreting-com-for-part-b">Interpreting Com for Part B</h3>
 <p>Part B requires an environment where:</p>
 <ol type="1">
@@ -467,115 +467,95 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb42-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb42-7" data-line-number="7"><span class="co">-- | Get contents of register &#39;c&#39; of Thread 1</span></a>
 <a class="sourceLine" id="cb42-8" data-line-number="8"><span class="dt">C</span> <span class="dv">1</span> <span class="fu">:&amp;:</span> <span class="dt">MGet</span> <span class="ch">&#39;c&#39;</span><span class="ot">    ::</span> (<span class="dt">C</span> <span class="dt">Int</span> <span class="fu">:&amp;:</span> <span class="dt">Mem</span>) <span class="dt">Int</span></a></code></pre></div>
-<p>And hey, we can even make things more type-safe by attaching a <code>Lens'</code>, instead:</p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="kw">type</span> <span class="dt">PSL</span> s <span class="fu">=</span> <span class="dt">ALens&#39;</span> s <span class="dt">ProgState</span></a>
-<a class="sourceLine" id="cb43-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb43-3" data-line-number="3"><span class="co">-- | Peek into Thread 0</span></a>
-<a class="sourceLine" id="cb43-4" data-line-number="4"><span class="dt">C</span> (_1 <span class="fu">.</span> tState) <span class="fu">:&amp;:</span> <span class="dt">MPk</span><span class="ot">         ::</span> (<span class="dt">C</span> (<span class="dt">PSL</span> (<span class="dt">Thread</span>, t)) <span class="fu">:&amp;:</span> <span class="dt">Mem</span>) <span class="dt">Op</span></a>
-<a class="sourceLine" id="cb43-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb43-6" data-line-number="6"><span class="co">-- | Get register &#39;c&#39; of Thread 1</span></a>
-<a class="sourceLine" id="cb43-7" data-line-number="7"><span class="dt">C</span> (_2 <span class="fu">.</span> tState) <span class="fu">:&amp;:</span> <span class="dt">MGet</span> <span class="ch">&#39;c&#39;</span><span class="ot">    ::</span> (<span class="dt">C</span> (<span class="dt">PSL</span> (t, <span class="dt">Thread</span>)) <span class="fu">:&amp;:</span> <span class="dt">Mem</span>) <span class="dt">Int</span></a></code></pre></div>
-<p>Something of type <code>(C (PSL (Thread, t)) :&amp;: Mem) Op</code> is an action that gets an <code>Op</code>, tagged with a lens to access a <code>ProgState</code> in a state of type <code>(Thread, t)</code>. So, instead of manually zooming ad-hoc, we can zoom based on a lens attached to a <code>Mem</code>.</p>
 <p>The advantage we gain by using these tags is that we now have an approach that can be generalized to multiple threads, as well.</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb44-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L247-L258</span></a>
-<a class="sourceLine" id="cb44-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb44-3" data-line-number="3">interpMemPSL</a>
-<a class="sourceLine" id="cb44-4" data-line-number="4"><span class="ot">    ::</span> (<span class="dt">MonadState</span> s m, <span class="dt">MonadFail</span> m)</a>
-<a class="sourceLine" id="cb44-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">C</span> (<span class="dt">PSL</span> s) a</a>
-<a class="sourceLine" id="cb44-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">Mem</span> a</a>
-<a class="sourceLine" id="cb44-7" data-line-number="7">    <span class="ot">-&gt;</span> m a</a>
-<a class="sourceLine" id="cb44-8" data-line-number="8">interpMemPSL (<span class="dt">C</span> (cloneLens<span class="ot">-&gt;</span>l)) <span class="fu">=</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb44-9" data-line-number="9">    <span class="dt">MGet</span> c   <span class="ot">-&gt;</span> use (l <span class="fu">.</span> psRegs <span class="fu">.</span> at c <span class="fu">.</span> non <span class="dv">0</span>)</a>
-<a class="sourceLine" id="cb44-10" data-line-number="10">    <span class="dt">MSet</span> c x <span class="ot">-&gt;</span> l <span class="fu">.</span> psRegs <span class="fu">.</span> at c <span class="fu">.</span> non <span class="dv">0</span> <span class="fu">.=</span> x</a>
-<a class="sourceLine" id="cb44-11" data-line-number="11">    <span class="dt">MJmp</span> n   <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb44-12" data-line-number="12">      <span class="dt">Just</span> t&#39; <span class="ot">&lt;-</span> P.moveN n <span class="fu">&lt;$&gt;</span> use (l <span class="fu">.</span> psTape)</a>
-<a class="sourceLine" id="cb44-13" data-line-number="13">      l <span class="fu">.</span> psTape <span class="fu">.=</span> t&#39;</a>
-<a class="sourceLine" id="cb44-14" data-line-number="14">    <span class="dt">MPk</span>      <span class="ot">-&gt;</span> use (l <span class="fu">.</span> psTape <span class="fu">.</span> P.focus)</a></code></pre></div>
-<p>Note that since <code>PSL</code> is an <code>ALens'</code> (which is required, if we want to store a lens in a newtype), we have to use <code>cloneLens :: ALens' s a -&gt; Lens s a</code> to convert it back to a normal <code>Lens</code>.</p>
-<p>We can then use the analogy of <code>&gt;|&lt;</code>, <code>uncurryFan</code>:</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb45-1" data-line-number="1">uncurryFan</a>
-<a class="sourceLine" id="cb45-2" data-line-number="2"><span class="ot">    ::</span> (forall x<span class="fu">.</span> f x <span class="ot">-&gt;</span> g x <span class="ot">-&gt;</span> r)</a>
-<a class="sourceLine" id="cb45-3" data-line-number="3">    <span class="ot">-&gt;</span> (f <span class="fu">:&amp;:</span> g) a</a>
-<a class="sourceLine" id="cb45-4" data-line-number="4">    <span class="ot">-&gt;</span> r</a>
-<a class="sourceLine" id="cb45-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb45-6" data-line-number="6">uncurryFan interpMemPSL</a>
-<a class="sourceLine" id="cb45-7" data-line-number="7"><span class="ot">    ::</span> (<span class="dt">MonadState</span> s m, <span class="dt">MonadFail</span> m)</a>
-<a class="sourceLine" id="cb45-8" data-line-number="8">    <span class="ot">=&gt;</span> (<span class="dt">C</span> (<span class="dt">PSL</span> s) <span class="fu">:&amp;:</span> <span class="dt">Mem</span>) a</a>
-<a class="sourceLine" id="cb45-9" data-line-number="9">    <span class="ot">-&gt;</span> m a</a></code></pre></div>
+<p>If we had a version of <code>interpMem</code> that takes a thread:</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb43-1" data-line-number="1">interpMemThread</a>
+<a class="sourceLine" id="cb43-2" data-line-number="2"><span class="ot">    ::</span> (<span class="dt">MonadState</span> s m, <span class="dt">MonadFail</span> m, <span class="dt">HasProgState</span> s)</a>
+<a class="sourceLine" id="cb43-3" data-line-number="3">    <span class="ot">=&gt;</span> <span class="dt">C</span> <span class="dt">Int</span> a</a>
+<a class="sourceLine" id="cb43-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">Mem</span> a</a>
+<a class="sourceLine" id="cb43-5" data-line-number="5">    <span class="ot">-&gt;</span> m a</a></code></pre></div>
+<p>we can use the analogy of <code>&gt;|&lt;</code>, <code>uncurryFan</code>:</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb44-1" data-line-number="1">uncurryFan</a>
+<a class="sourceLine" id="cb44-2" data-line-number="2"><span class="ot">    ::</span> (forall x<span class="fu">.</span> f x <span class="ot">-&gt;</span> g x <span class="ot">-&gt;</span> r)</a>
+<a class="sourceLine" id="cb44-3" data-line-number="3">    <span class="ot">-&gt;</span> (f <span class="fu">:&amp;:</span> g) a</a>
+<a class="sourceLine" id="cb44-4" data-line-number="4">    <span class="ot">-&gt;</span> r</a>
+<a class="sourceLine" id="cb44-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb44-6" data-line-number="6">uncurryFan interpMemThread</a>
+<a class="sourceLine" id="cb44-7" data-line-number="7"><span class="ot">    ::</span> (<span class="dt">MonadState</span> s m, <span class="dt">MonadFail</span> m)</a>
+<a class="sourceLine" id="cb44-8" data-line-number="8">    <span class="ot">=&gt;</span> (<span class="dt">C</span> <span class="dt">Int</span> <span class="fu">:&amp;:</span> <span class="dt">Mem</span>) a</a>
+<a class="sourceLine" id="cb44-9" data-line-number="9">    <span class="ot">-&gt;</span> m a</a></code></pre></div>
 <p>We can build interpreters of combinations of <code>:|:</code> and <code>:&amp;:</code> by using combinations of <code>&gt;|&lt;</code> and <code>uncurryFan</code>.</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb46-1" data-line-number="1">interpMem <span class="fu">&gt;|&lt;</span> interpComB</a>
-<a class="sourceLine" id="cb46-2" data-line-number="2"><span class="ot">    ::</span> ( <span class="dt">MonadWriter</span> [<span class="dt">Int</span>] m</a>
-<a class="sourceLine" id="cb46-3" data-line-number="3">       , <span class="dt">MonadFail</span> m</a>
-<a class="sourceLine" id="cb46-4" data-line-number="4">       , <span class="dt">MonadState</span> <span class="dt">Thread</span> m</a>
-<a class="sourceLine" id="cb46-5" data-line-number="5">       )</a>
-<a class="sourceLine" id="cb46-6" data-line-number="6">    <span class="ot">=&gt;</span> (<span class="dt">Mem</span> <span class="fu">:|:</span> <span class="dt">Com</span>) a</a>
-<a class="sourceLine" id="cb46-7" data-line-number="7">    <span class="ot">-&gt;</span> m a</a>
-<a class="sourceLine" id="cb46-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb46-9" data-line-number="9">uncurryFan interpMemPSL <span class="fu">&gt;|&lt;</span> interpComB</a>
-<a class="sourceLine" id="cb46-10" data-line-number="10"><span class="ot">    ::</span> ( <span class="dt">MonadWriter</span> [<span class="dt">Int</span>] m</a>
-<a class="sourceLine" id="cb46-11" data-line-number="11">       , <span class="dt">MonadFail</span> m</a>
-<a class="sourceLine" id="cb46-12" data-line-number="12">       , <span class="dt">MonadState</span> s m</a>
-<a class="sourceLine" id="cb46-13" data-line-number="13">       )</a>
-<a class="sourceLine" id="cb46-14" data-line-number="14">    <span class="ot">=&gt;</span> ((<span class="dt">C</span> (<span class="dt">PSL</span> s) <span class="fu">:&amp;:</span> <span class="dt">Mem</span>) <span class="fu">:|:</span> <span class="dt">Com</span>) a</a>
-<a class="sourceLine" id="cb46-15" data-line-number="15">    <span class="ot">-&gt;</span> m a</a></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb45-1" data-line-number="1">interpMem <span class="fu">&gt;|&lt;</span> interpComB</a>
+<a class="sourceLine" id="cb45-2" data-line-number="2"><span class="ot">    ::</span> ( <span class="dt">MonadWriter</span> [<span class="dt">Int</span>] m</a>
+<a class="sourceLine" id="cb45-3" data-line-number="3">       , <span class="dt">MonadFail</span> m</a>
+<a class="sourceLine" id="cb45-4" data-line-number="4">       , <span class="dt">MonadState</span> <span class="dt">Thread</span> m</a>
+<a class="sourceLine" id="cb45-5" data-line-number="5">       )</a>
+<a class="sourceLine" id="cb45-6" data-line-number="6">    <span class="ot">=&gt;</span> (<span class="dt">Mem</span> <span class="fu">:|:</span> <span class="dt">Com</span>) a</a>
+<a class="sourceLine" id="cb45-7" data-line-number="7">    <span class="ot">-&gt;</span> m a</a>
+<a class="sourceLine" id="cb45-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb45-9" data-line-number="9">uncurryFan interpMemThread <span class="fu">&gt;|&lt;</span> interpComB</a>
+<a class="sourceLine" id="cb45-10" data-line-number="10"><span class="ot">    ::</span> ( <span class="dt">MonadWriter</span> [<span class="dt">Int</span>] m</a>
+<a class="sourceLine" id="cb45-11" data-line-number="11">       , <span class="dt">MonadFail</span> m</a>
+<a class="sourceLine" id="cb45-12" data-line-number="12">       , <span class="dt">MonadState</span> <span class="dt">Thread</span> m</a>
+<a class="sourceLine" id="cb45-13" data-line-number="13">       )</a>
+<a class="sourceLine" id="cb45-14" data-line-number="14">    <span class="ot">=&gt;</span> ((<span class="dt">C</span> <span class="dt">Int</span> <span class="fu">:&amp;:</span> <span class="dt">Mem</span>) <span class="fu">:|:</span> <span class="dt">Com</span>) a</a>
+<a class="sourceLine" id="cb45-15" data-line-number="15">    <span class="ot">-&gt;</span> m a</a></code></pre></div>
 <h4 id="manipulating-disjunctions-and-conjunctions">Manipulating Disjunctions and Conjunctions</h4>
-<p>So, we have a <code>Mem :|: Conj</code>. How could we “tag” our <code>Mem</code> after-the-fact, to add <code>C (PSL s)</code>? We can manipulate the structure of conjunctions and disjunctions using the <code>Bifunctor1</code> from <em>Type.Class.Higher</em>, in <em>type-combinators</em>.</p>
+<p>So, we have a <code>Mem :|: Conj</code>. How could we “tag” our <code>Mem</code> after-the-fact, to add <code>C Int</code>? We can manipulate the structure of conjunctions and disjunctions using the <code>Bifunctor1</code> from <em>Type.Class.Higher</em>, in <em>type-combinators</em>.</p>
 <p><code>bimap1</code> can be used to modify either half of a <code>:|:</code> or <code>:&amp;:</code>:</p>
-<div class="sourceCode" id="cb47"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb47-1" data-line-number="1">bimap1</a>
-<a class="sourceLine" id="cb47-2" data-line-number="2"><span class="ot">    ::</span> (forall x<span class="fu">.</span> f x <span class="ot">-&gt;</span> h x)</a>
-<a class="sourceLine" id="cb47-3" data-line-number="3">    <span class="ot">-&gt;</span> (forall x<span class="fu">.</span> g x <span class="ot">-&gt;</span> j x)</a>
-<a class="sourceLine" id="cb47-4" data-line-number="4">    <span class="ot">-&gt;</span> (f <span class="fu">:|:</span> g) a</a>
-<a class="sourceLine" id="cb47-5" data-line-number="5">    <span class="ot">-&gt;</span> (h <span class="fu">:|:</span> j) a</a>
-<a class="sourceLine" id="cb47-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb47-7" data-line-number="7">bimap1</a>
-<a class="sourceLine" id="cb47-8" data-line-number="8"><span class="ot">    ::</span> (forall x<span class="fu">.</span> f x <span class="ot">-&gt;</span> h x)</a>
-<a class="sourceLine" id="cb47-9" data-line-number="9">    <span class="ot">-&gt;</span> (forall x<span class="fu">.</span> g x <span class="ot">-&gt;</span> j x)</a>
-<a class="sourceLine" id="cb47-10" data-line-number="10">    <span class="ot">-&gt;</span> (f <span class="fu">:&amp;:</span> g) a</a>
-<a class="sourceLine" id="cb47-11" data-line-number="11">    <span class="ot">-&gt;</span> (h <span class="fu">:&amp;:</span> j) a</a></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb46-1" data-line-number="1">bimap1</a>
+<a class="sourceLine" id="cb46-2" data-line-number="2"><span class="ot">    ::</span> (forall x<span class="fu">.</span> f x <span class="ot">-&gt;</span> h x)</a>
+<a class="sourceLine" id="cb46-3" data-line-number="3">    <span class="ot">-&gt;</span> (forall x<span class="fu">.</span> g x <span class="ot">-&gt;</span> j x)</a>
+<a class="sourceLine" id="cb46-4" data-line-number="4">    <span class="ot">-&gt;</span> (f <span class="fu">:|:</span> g) a</a>
+<a class="sourceLine" id="cb46-5" data-line-number="5">    <span class="ot">-&gt;</span> (h <span class="fu">:|:</span> j) a</a>
+<a class="sourceLine" id="cb46-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb46-7" data-line-number="7">bimap1</a>
+<a class="sourceLine" id="cb46-8" data-line-number="8"><span class="ot">    ::</span> (forall x<span class="fu">.</span> f x <span class="ot">-&gt;</span> h x)</a>
+<a class="sourceLine" id="cb46-9" data-line-number="9">    <span class="ot">-&gt;</span> (forall x<span class="fu">.</span> g x <span class="ot">-&gt;</span> j x)</a>
+<a class="sourceLine" id="cb46-10" data-line-number="10">    <span class="ot">-&gt;</span> (f <span class="fu">:&amp;:</span> g) a</a>
+<a class="sourceLine" id="cb46-11" data-line-number="11">    <span class="ot">-&gt;</span> (h <span class="fu">:&amp;:</span> j) a</a></code></pre></div>
 <p>So we can “tag” the <code>Mem</code> in <code>Mem :|: Cmd</code> using:</p>
-<div class="sourceCode" id="cb48"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb48-1" data-line-number="1"><span class="kw">type</span> <span class="dt">MemAt</span> s <span class="fu">=</span> <span class="dt">C</span> (<span class="dt">PSL</span> s) <span class="fu">:&amp;:</span> <span class="dt">Mem</span></a>
-<a class="sourceLine" id="cb48-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb48-3" data-line-number="3">bimap1 (<span class="dt">C</span> (_1 <span class="fu">.</span> tState) <span class="fu">:&amp;:</span>) id</a>
-<a class="sourceLine" id="cb48-4" data-line-number="4"><span class="ot">    ::</span> (       <span class="dt">Mem</span>       <span class="fu">:|:</span> <span class="dt">Com</span>) a</a>
-<a class="sourceLine" id="cb48-5" data-line-number="5">    <span class="ot">-&gt;</span> (<span class="dt">MemAt</span> (<span class="dt">Tread</span>, t) <span class="fu">:|:</span> <span class="dt">Com</span>) a</a></code></pre></div>
+<div class="sourceCode" id="cb47"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb47-1" data-line-number="1">bimap1 (<span class="dt">C</span> <span class="dv">0</span> <span class="fu">:&amp;:</span>) id</a>
+<a class="sourceLine" id="cb47-2" data-line-number="2"><span class="ot">    ::</span> (      <span class="dt">Mem</span>       <span class="fu">:|:</span> <span class="dt">Com</span>) a</a>
+<a class="sourceLine" id="cb47-3" data-line-number="3">    <span class="ot">-&gt;</span> ((<span class="dt">C</span> <span class="dt">Int</span> <span class="fu">:&amp;:</span> <span class="dt">Mem</span>) <span class="fu">:|:</span> <span class="dt">Com</span>) a</a></code></pre></div>
 <p>Which we can use to re-tag a <code>Prompt (Mem :|: Com)</code>, with the help of <code>runPromptM</code>:</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb49-1" data-line-number="1">\f <span class="ot">-&gt;</span> runPromptM (prompt <span class="fu">.</span> f)</a>
-<a class="sourceLine" id="cb49-2" data-line-number="2"><span class="ot">    ::</span> (forall x<span class="fu">.</span> f x <span class="ot">-&gt;</span> g x)</a>
-<a class="sourceLine" id="cb49-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">Prompt</span> f a</a>
-<a class="sourceLine" id="cb49-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">Prompt</span> g a</a>
-<a class="sourceLine" id="cb49-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb49-6" data-line-number="6">runPromptM (prompt <span class="fu">.</span> bimap1 ((<span class="dt">C</span> _1 <span class="fu">.</span> tState) <span class="fu">:&amp;:</span>) id)</a>
-<a class="sourceLine" id="cb49-7" data-line-number="7"><span class="ot">    ::</span> <span class="dt">Prompt</span> (      <span class="dt">Mem</span>        <span class="fu">:|:</span> <span class="dt">Com</span>) a</a>
-<a class="sourceLine" id="cb49-8" data-line-number="8">    <span class="ot">-&gt;</span> <span class="dt">Prompt</span> (<span class="dt">MemAt</span> (<span class="dt">Tread</span>, t) <span class="fu">:|:</span> <span class="dt">Com</span>) a</a></code></pre></div>
-<h3 id="many-sets-of-primitives">Many sets of primitives</h3>
+<div class="sourceCode" id="cb48"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb48-1" data-line-number="1">\f <span class="ot">-&gt;</span> runPromptM (prompt <span class="fu">.</span> f)</a>
+<a class="sourceLine" id="cb48-2" data-line-number="2"><span class="ot">    ::</span> (forall x<span class="fu">.</span> f x <span class="ot">-&gt;</span> g x)</a>
+<a class="sourceLine" id="cb48-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">Prompt</span> f a</a>
+<a class="sourceLine" id="cb48-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">Prompt</span> g a</a>
+<a class="sourceLine" id="cb48-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb48-6" data-line-number="6">runPromptM (prompt <span class="fu">.</span> bimap1 (<span class="dt">C</span> <span class="dv">0</span> <span class="fu">:&amp;:</span>) id)</a>
+<a class="sourceLine" id="cb48-7" data-line-number="7"><span class="ot">    ::</span> <span class="dt">Prompt</span> (      <span class="dt">Mem</span>       <span class="fu">:|:</span> <span class="dt">Com</span>) a</a>
+<a class="sourceLine" id="cb48-8" data-line-number="8">    <span class="ot">-&gt;</span> <span class="dt">Prompt</span> ((<span class="dt">C</span> <span class="dt">Int</span> <span class="fu">:&amp;:</span> <span class="dt">Mem</span>) <span class="fu">:|:</span> <span class="dt">Com</span>) a</a></code></pre></div>
+<h4 id="many-sets-of-primitives">Many sets of primitives</h4>
 <p>Instead of <code>f &gt;|&lt; g &gt;|&lt; h</code>, you can use <code>FSum '[f, g, h]</code> to combine multiple sets of primitives in a clean way.</p>
 <p>If there are no duplicates in your type-level list, you can even use <code>finj</code> to create your <code>FSum</code>s automatically:</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb50-1" data-line-number="1"><span class="ot">finj ::</span> f ∈ fs <span class="ot">=&gt;</span> f a <span class="ot">-&gt;</span> <span class="dt">FSum</span> fs a</a>
-<a class="sourceLine" id="cb50-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb50-3" data-line-number="3"><span class="ot">finj ::</span> <span class="dt">Mem</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
-<a class="sourceLine" id="cb50-4" data-line-number="4"><span class="ot">finj ::</span> <span class="dt">Com</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
-<a class="sourceLine" id="cb50-5" data-line-number="5"><span class="ot">finj ::</span> <span class="dt">Foo</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
-<a class="sourceLine" id="cb50-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb50-7" data-line-number="7">prompt (finj (<span class="dt">MGet</span> <span class="ch">&#39;c&#39;</span>))<span class="ot"> ::</span> <span class="dt">Prompt</span> (<span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo]) Int</span></a></code></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="ot">finj ::</span> f ∈ fs <span class="ot">=&gt;</span> f a <span class="ot">-&gt;</span> <span class="dt">FSum</span> fs a</a>
+<a class="sourceLine" id="cb49-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb49-3" data-line-number="3"><span class="ot">finj ::</span> <span class="dt">Mem</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
+<a class="sourceLine" id="cb49-4" data-line-number="4"><span class="ot">finj ::</span> <span class="dt">Com</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
+<a class="sourceLine" id="cb49-5" data-line-number="5"><span class="ot">finj ::</span> <span class="dt">Foo</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
+<a class="sourceLine" id="cb49-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb49-7" data-line-number="7">prompt (finj (<span class="dt">MGet</span> <span class="ch">&#39;c&#39;</span>))<span class="ot"> ::</span> <span class="dt">Prompt</span> (<span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo]) Int</span></a></code></pre></div>
 <p>There isn’t really a built-in way to handle these, but you can whip up a utility function with <code>Prod</code> (from <em>type-combinators</em>) and <code>ifoldMapFSum</code>.</p>
-<div class="sourceCode" id="cb51"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb51-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">Handle</span> a r f <span class="fu">=</span> <span class="dt">Handle</span> {<span class="ot"> runHandle ::</span> f a <span class="ot">-&gt;</span> r }</a>
-<a class="sourceLine" id="cb51-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb51-3" data-line-number="3"><span class="ot">handleFSum ::</span> <span class="dt">Prod</span> (<span class="dt">Handle</span> a r) fs <span class="ot">-&gt;</span> <span class="dt">FSum</span> fs a <span class="ot">-&gt;</span> r</a>
-<a class="sourceLine" id="cb51-4" data-line-number="4">handleFSum hs <span class="fu">=</span> ifoldMapFSum <span class="fu">$</span> \i <span class="ot">-&gt;</span> runHandle <span class="fu">$</span> index i hs</a></code></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb50-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">Handle</span> a r f <span class="fu">=</span> <span class="dt">Handle</span> {<span class="ot"> runHandle ::</span> f a <span class="ot">-&gt;</span> r }</a>
+<a class="sourceLine" id="cb50-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb50-3" data-line-number="3"><span class="ot">handleFSum ::</span> <span class="dt">Prod</span> (<span class="dt">Handle</span> a r) fs <span class="ot">-&gt;</span> <span class="dt">FSum</span> fs a <span class="ot">-&gt;</span> r</a>
+<a class="sourceLine" id="cb50-4" data-line-number="4">handleFSum hs <span class="fu">=</span> ifoldMapFSum <span class="fu">$</span> \i <span class="ot">-&gt;</span> runHandle <span class="fu">$</span> index i hs</a></code></pre></div>
 <p><code>Prod</code> lets you bunch up a bunch of handlers together, so you can build handlers like:</p>
-<div class="sourceCode" id="cb52"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb52-1" data-line-number="1"><span class="ot">handleMem ::</span> <span class="dt">Mem</span> a <span class="ot">-&gt;</span> m a</a>
-<a class="sourceLine" id="cb52-2" data-line-number="2"><span class="ot">handleCom ::</span> <span class="dt">Com</span> a <span class="ot">-&gt;</span> m a</a>
-<a class="sourceLine" id="cb52-3" data-line-number="3"><span class="ot">handleFoo ::</span> <span class="dt">Foo</span> a <span class="ot">-&gt;</span> m a</a>
-<a class="sourceLine" id="cb52-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb52-5" data-line-number="5">handleFSum (<span class="dt">Handle</span> handleMem <span class="fu">:&lt;</span> <span class="dt">Handle</span> handleCom <span class="fu">:&lt;</span> <span class="dt">Handle</span> handleFoo <span class="fu">:&lt;</span> Ø)</a>
-<a class="sourceLine" id="cb52-6" data-line-number="6"><span class="ot">    ::</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a -&gt; m a</span></a>
-<a class="sourceLine" id="cb52-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb52-8" data-line-number="8">runPromptM (handleFSum ( <span class="dt">Handle</span> handleMem</a>
-<a class="sourceLine" id="cb52-9" data-line-number="9">                      <span class="fu">:&lt;</span> <span class="dt">Handle</span> handleCom</a>
-<a class="sourceLine" id="cb52-10" data-line-number="10">                      <span class="fu">:&lt;</span> <span class="dt">Handle</span> handleFoo</a>
-<a class="sourceLine" id="cb52-11" data-line-number="11">                      <span class="fu">:&lt;</span> Ø)</a>
-<a class="sourceLine" id="cb52-12" data-line-number="12">           )</a>
-<a class="sourceLine" id="cb52-13" data-line-number="13"><span class="ot">    ::</span> <span class="dt">Prompt</span> (<span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo]) a -&gt; m a</span></a></code></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb51-1" data-line-number="1"><span class="ot">handleMem ::</span> <span class="dt">Mem</span> a <span class="ot">-&gt;</span> m a</a>
+<a class="sourceLine" id="cb51-2" data-line-number="2"><span class="ot">handleCom ::</span> <span class="dt">Com</span> a <span class="ot">-&gt;</span> m a</a>
+<a class="sourceLine" id="cb51-3" data-line-number="3"><span class="ot">handleFoo ::</span> <span class="dt">Foo</span> a <span class="ot">-&gt;</span> m a</a>
+<a class="sourceLine" id="cb51-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb51-5" data-line-number="5">handleFSum (<span class="dt">Handle</span> handleMem <span class="fu">:&lt;</span> <span class="dt">Handle</span> handleCom <span class="fu">:&lt;</span> <span class="dt">Handle</span> handleFoo <span class="fu">:&lt;</span> Ø)</a>
+<a class="sourceLine" id="cb51-6" data-line-number="6"><span class="ot">    ::</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a -&gt; m a</span></a>
+<a class="sourceLine" id="cb51-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb51-8" data-line-number="8">runPromptM (handleFSum ( <span class="dt">Handle</span> handleMem</a>
+<a class="sourceLine" id="cb51-9" data-line-number="9">                      <span class="fu">:&lt;</span> <span class="dt">Handle</span> handleCom</a>
+<a class="sourceLine" id="cb51-10" data-line-number="10">                      <span class="fu">:&lt;</span> <span class="dt">Handle</span> handleFoo</a>
+<a class="sourceLine" id="cb51-11" data-line-number="11">                      <span class="fu">:&lt;</span> Ø)</a>
+<a class="sourceLine" id="cb51-12" data-line-number="12">           )</a>
+<a class="sourceLine" id="cb51-13" data-line-number="13"><span class="ot">    ::</span> <span class="dt">Prompt</span> (<span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo]) a -&gt; m a</span></a></code></pre></div>
 <h4 id="endless-possibilities">Endless Possibilities</h4>
 <p>Hopefully this post inspires you a bit about this fun design pattern! And, if anything, I hope after reading this, you learn to recognize situations where the interpreter pattern might be useful in your everyday programming.</p>
 <section class="footnotes">
