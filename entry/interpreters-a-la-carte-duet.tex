@@ -922,7 +922,9 @@ For example, with more concrete types:
 \end{Highlighting}
 \end{Shaded}
 
-We can use this to build an interpreter for \texttt{Duet}:
+We can use this to build an interpreter for \texttt{Duet}, which goes into
+\texttt{runPromptM}, by using \texttt{\textgreater{}\textbar{}\textless{}} to
+generate our compound interpreters.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -934,10 +936,9 @@ We can use this to build an interpreter for \texttt{Duet}:
 \end{Highlighting}
 \end{Shaded}
 
-By using \texttt{\textgreater{}\textbar{}\textless{}} to generate our compound
-interpreters. This is how we can create interpreters on \texttt{Duet} by
-``combining'', in a modular way, interpreters for \texttt{Mem} and \texttt{Com}.
-This is the essence of the ``data types a la carte'' technique.
+This is how we can create interpreters on \texttt{Duet} by ``combining'', in a
+modular way, interpreters for \texttt{Mem} and \texttt{Com}. This is the essence
+of the ``data types a la carte'' technique.
 
 \hypertarget{getting-the-results}{%
 \section{Getting the Results}\label{getting-the-results}}
@@ -1006,10 +1007,10 @@ again until there's a failure. We take advantage of the fact that
 repeats a \texttt{MaybeT} action several times until a failure is encountered.
 In our case, ``failure'' is when the tape goes out of bounds.
 
-But, because of laziness, our computation terminates as soon as a valid
-\texttt{CRcv} is found and a \texttt{First\ Int} is logged to the
-\texttt{Writer}, so we don't actually need to run the computation until it goes
-out of bounds.
+Note, however, that if we only want the value of the \texttt{First\ Int} in the
+\texttt{WriterT}, this will actually only repeat \texttt{stepA} until the first
+valid \texttt{CRcv} is used \texttt{tell}'d, thanks to laziness. If we only ask
+for the \texttt{First\ Int}, it'll stop running the rest of the computation!
 
 Here is the entirety of running Part A -- as you can see, it consists mostly of
 unwrapping \emph{transformers} newtype wrappers.
@@ -1122,6 +1123,11 @@ use \texttt{many} again to run these multiple times until both threads block.
 \end{Highlighting}
 \end{Shaded}
 
+\texttt{many\ ::\ MaybeT\ s\ Int\ -\textgreater{}\ MaybeT\ s\ {[}Int{]}}, so
+\texttt{runMaybeT} gives us a \texttt{Maybe\ {[}Int{]}}, where each item in the
+resulting list is the number of items emitted by Program 1 at every iteration of
+\texttt{stepB}. To get our final answer, we only need to sum.
+
 \hypertarget{examples}{%
 \subsection{Examples}\label{examples}}
 
@@ -1150,6 +1156,59 @@ And, as a stack script, we can run this and see my own puzzle's answers:
 \NormalTok{$ }\ExtensionTok{./Duet.hs}
 \ExtensionTok{Just}\NormalTok{ 7071}
 \ExtensionTok{8001}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{wrap-up-and-expansion}{%
+\section{Wrap Up and Expansion}\label{wrap-up-and-expansion}}
+
+\hypertarget{thats-it-hope-you-enjoyed-some-of-the-techniques-used-in-this-post-including}{%
+\section{That's it! Hope you enjoyed some of the techniques used in this post,
+including}\label{thats-it-hope-you-enjoyed-some-of-the-techniques-used-in-this-post-including}}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Leveraging the interpreter pattern to create a monad that can be interpreted
+  in multiple contexts with multiple different interpreters
+\item
+  Using functor disjunctions like \texttt{:\textbar{}:} (or \texttt{:+:},
+  \texttt{Sum}, etc.) to combine interpretable primitives
+\item
+  Writing modular interpreters for each set of primitives, then using
+  deconstructors like \texttt{\textgreater{}\textbar{}\textless{}} to easily
+  combine and swap out interpreters.
+\item
+  Lenses with State and classy lenses
+\item
+  Programming against polymorphic monadic contexts like \texttt{MonadState},
+  \texttt{MonadWriter}, \texttt{MonadAccum}, etc.
+\end{enumerate}
+
+The \emph{type-combinators} library opens up a lot of doors to combining modular
+interpreters in more complex ways, as well!
+
+\hypertarget{many-sets-of-primitives}{%
+\subsection{Many sets of primitives}\label{many-sets-of-primitives}}
+
+Instead of
+\texttt{f\ \textgreater{}\textbar{}\textless{}\ g\ \textgreater{}\textbar{}\textless{}\ h},
+you can use \texttt{FSum\ \textquotesingle{}{[}f,\ g,\ h{]}} to combine multiple
+sets of primitives in a clean way.
+
+If there are no duplicates in your type-level list, you can even use
+\texttt{finj} to create your \texttt{FSum}s automatically:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{finj ::}\NormalTok{ f ∈ fs }\OtherTok{=>}\NormalTok{ f a }\OtherTok{->} \DataTypeTok{FSum}\NormalTok{ fs a}
+
+\OtherTok{finj ::} \DataTypeTok{Mem}\NormalTok{ a }\OtherTok{->} \DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo] a}
+\OtherTok{finj ::} \DataTypeTok{Com}\NormalTok{ a }\OtherTok{->} \DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo] a}
+\OtherTok{finj ::} \DataTypeTok{Foo}\NormalTok{ a }\OtherTok{->} \DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo] a}
+
+\NormalTok{prompt (finj }\DataTypeTok{MPk}\NormalTok{)}\OtherTok{ ::} \DataTypeTok{Prompt}\NormalTok{ (}\DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo]) Op}
 \end{Highlighting}
 \end{Shaded}
 

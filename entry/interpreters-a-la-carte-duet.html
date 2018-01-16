@@ -342,13 +342,13 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1"><span class="ot">(&gt;|&lt;) ::</span> (<span class="dt">Mem</span> a <span class="ot">-&gt;</span> r)</a>
 <a class="sourceLine" id="cb28-2" data-line-number="2">      <span class="ot">-&gt;</span> (<span class="dt">Com</span> a <span class="ot">-&gt;</span> r)</a>
 <a class="sourceLine" id="cb28-3" data-line-number="3">      <span class="ot">-&gt;</span> ((<span class="dt">Mem</span> <span class="fu">:|:</span> <span class="dt">Com</span>) a <span class="ot">-&gt;</span> r)</a></code></pre></div>
-<p>We can use this to build an interpreter for <code>Duet</code>:</p>
+<p>We can use this to build an interpreter for <code>Duet</code>, which goes into <code>runPromptM</code>, by using <code>&gt;|&lt;</code> to generate our compound interpreters.</p>
 <div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1">runPromptM</a>
 <a class="sourceLine" id="cb29-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Monad</span> m</a>
 <a class="sourceLine" id="cb29-3" data-line-number="3">    <span class="ot">=&gt;</span> (forall x<span class="fu">.</span> (<span class="dt">Mem</span> x <span class="fu">:|:</span> <span class="dt">Com</span> x) <span class="ot">-&gt;</span> m x)</a>
 <a class="sourceLine" id="cb29-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">Duet</span> a</a>
 <a class="sourceLine" id="cb29-5" data-line-number="5">    <span class="ot">-&gt;</span> m a</a></code></pre></div>
-<p>By using <code>&gt;|&lt;</code> to generate our compound interpreters. This is how we can create interpreters on <code>Duet</code> by “combining”, in a modular way, interpreters for <code>Mem</code> and <code>Com</code>. This is the essence of the “data types a la carte” technique.</p>
+<p>This is how we can create interpreters on <code>Duet</code> by “combining”, in a modular way, interpreters for <code>Mem</code> and <code>Com</code>. This is the essence of the “data types a la carte” technique.</p>
 <h2 id="getting-the-results">Getting the Results</h2>
 <p>We now just have to pick concrete monads now for us to interpret into.</p>
 <h3 id="part-a">Part A</h3>
@@ -374,7 +374,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb32-4" data-line-number="4">stepA <span class="fu">=</span> runPromptM (interpMem <span class="fu">&gt;|&lt;</span> interpComA) stepProg</a></code></pre></div>
 <p><code>stepA</code> will make a single step of the tape, according to the interpreters <code>interpMem</code> and <code>interpComA</code>.</p>
 <p>Our final answer is then just the result of <em>repeating</em> this over and over again until there’s a failure. We take advantage of the fact that <code>MaybeT</code>’s <code>Alternative</code> instance uses <code>empty</code> for <code>fail</code>, so we can use <code>many :: MaybeT m a -&gt; MaybeT m [a]</code>, which repeats a <code>MaybeT</code> action several times until a failure is encountered. In our case, “failure” is when the tape goes out of bounds.</p>
-<p>But, because of laziness, our computation terminates as soon as a valid <code>CRcv</code> is found and a <code>First Int</code> is logged to the <code>Writer</code>, so we don’t actually need to run the computation until it goes out of bounds.</p>
+<p>Note, however, that if we only want the value of the <code>First Int</code> in the <code>WriterT</code>, this will actually only repeat <code>stepA</code> until the first valid <code>CRcv</code> is used <code>tell</code>’d, thanks to laziness. If we only ask for the <code>First Int</code>, it’ll stop running the rest of the computation!</p>
 <p>Here is the entirety of running Part A – as you can see, it consists mostly of unwrapping <em>transformers</em> newtype wrappers.</p>
 <div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L146-L152</span></a>
 <a class="sourceLine" id="cb33-2" data-line-number="2"></a>
@@ -430,6 +430,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb38-9" data-line-number="9">    s0 <span class="fu">=</span> ( <span class="dt">T</span> (<span class="dt">PS</span> ops (M.singleton <span class="ch">&#39;p&#39;</span> <span class="dv">0</span>)) []</a>
 <a class="sourceLine" id="cb38-10" data-line-number="10">         , <span class="dt">T</span> (<span class="dt">PS</span> ops (M.singleton <span class="ch">&#39;p&#39;</span> <span class="dv">1</span>)) []</a>
 <a class="sourceLine" id="cb38-11" data-line-number="11">         )</a></code></pre></div>
+<p><code>many :: MaybeT s Int -&gt; MaybeT s [Int]</code>, so <code>runMaybeT</code> gives us a <code>Maybe [Int]</code>, where each item in the resulting list is the number of items emitted by Program 1 at every iteration of <code>stepB</code>. To get our final answer, we only need to sum.</p>
 <h3 id="examples">Examples</h3>
 <p>In the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs">sample source code</a>, I’ve included <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L199-L242">my own puzzle input</a> provided to me from the advent of code website. We can now get actual answers given some sample puzzle input:</p>
 <div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L194-L197</span></a>
@@ -442,6 +443,26 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <div class="sourceCode" id="cb40"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb40-1" data-line-number="1">$ <span class="ex">./Duet.hs</span></a>
 <a class="sourceLine" id="cb40-2" data-line-number="2"><span class="ex">Just</span> 7071</a>
 <a class="sourceLine" id="cb40-3" data-line-number="3"><span class="ex">8001</span></a></code></pre></div>
+<h2 id="wrap-up-and-expansion">Wrap Up and Expansion</h2>
+<p>That’s it! Hope you enjoyed some of the techniques used in this post, including –</p>
+<ol type="1">
+<li>Leveraging the interpreter pattern to create a monad that can be interpreted in multiple contexts with multiple different interpreters</li>
+<li>Using functor disjunctions like <code>:|:</code> (or <code>:+:</code>, <code>Sum</code>, etc.) to combine interpretable primitives</li>
+<li>Writing modular interpreters for each set of primitives, then using deconstructors like <code>&gt;|&lt;</code> to easily combine and swap out interpreters.</li>
+<li>Lenses with State and classy lenses</li>
+<li>Programming against polymorphic monadic contexts like <code>MonadState</code>, <code>MonadWriter</code>, <code>MonadAccum</code>, etc.</li>
+</ol>
+<p>The <em>type-combinators</em> library opens up a lot of doors to combining modular interpreters in more complex ways, as well!</p>
+<h3 id="many-sets-of-primitives">Many sets of primitives</h3>
+<p>Instead of <code>f &gt;|&lt; g &gt;|&lt; h</code>, you can use <code>FSum '[f, g, h]</code> to combine multiple sets of primitives in a clean way.</p>
+<p>If there are no duplicates in your type-level list, you can even use <code>finj</code> to create your <code>FSum</code>s automatically:</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="ot">finj ::</span> f ∈ fs <span class="ot">=&gt;</span> f a <span class="ot">-&gt;</span> <span class="dt">FSum</span> fs a</a>
+<a class="sourceLine" id="cb41-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb41-3" data-line-number="3"><span class="ot">finj ::</span> <span class="dt">Mem</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
+<a class="sourceLine" id="cb41-4" data-line-number="4"><span class="ot">finj ::</span> <span class="dt">Com</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
+<a class="sourceLine" id="cb41-5" data-line-number="5"><span class="ot">finj ::</span> <span class="dt">Foo</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
+<a class="sourceLine" id="cb41-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb41-7" data-line-number="7">prompt (finj <span class="dt">MPk</span>)<span class="ot"> ::</span> <span class="dt">Prompt</span> (<span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo]) Op</span></a></code></pre></div>
 <section class="footnotes">
 <hr />
 <ol>
