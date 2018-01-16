@@ -115,10 +115,10 @@ different virtual machines -- one has "sound" and "recover", and the other has
 machines.
 
 However, note that these two machines aren't *completely* different -- they both
-have the ability to manipulate memory and read/shift program data. So really ,
-we want to be able to create a "modular" spec and implementation of these
-machines, so that we may re-use this memory manipulation aspect when
-constructing our machine, without duplicating any code.
+have the ability to manipulate memory and read/shift program data. So really, we
+want to be able to create a "modular" spec and implementation of these machines,
+so that we may re-use this memory manipulation aspect when constructing our
+machine, without duplicating any code.
 
 Parsing Duet
 ------------
@@ -194,7 +194,7 @@ implementation of interpreter pattern programs in *free* was a bit awkward.
 
 *MonadPrompt* lets us construct a language (and a monad) using GADTs to
 represent command primitives. For example, to implement something like
-`State Int`, you might use this GADT:
+`State Int` (which we'll call `IntState`), you might use this GADT:
 
 ``` {.haskell}
 data StateCommand :: Type -> Type where
@@ -207,17 +207,19 @@ For those unfamiliar with GADT syntax, this is declaring a data type
 creates a `StateCommand ()`, and `Get`, which takes no parameters and creates a
 `StateCommand Int`.
 
-Our GADT here says that the two "primitive" commands of `State Int` are
-"putting" (which requires an `Int` and produces a `()` result) and "getting"
-(which requires no inputs, and produces an `Int` result).
+Our GADT here says that the two "primitive" commands of `IntState` are "putting"
+(which requires an `Int` and produces a `()` result) and "getting" (which
+requires no inputs, and produces an `Int` result).
 
-You can then write `State Int` as:
+You can then write `IntState` as:
 
 ``` {.haskell}
 type IntState = Prompt StateCommand
 ```
 
-And our primitives can be constructed using:
+Which is an appropriate Functor, Applicative, and Monad.
+
+And our primitives can be constructed using `prompt`:
 
 ``` {.haskell}
 prompt :: StateCommand a -> IntState a
@@ -307,7 +309,7 @@ the program tape and read the `Op` at the current program head:
 data Mem :: Type -> Type where
     MGet :: Char -> Mem Int
     MSet :: Char -> Int -> Mem ()
-    MJmp :: Int -> Mem ()
+    MJmp :: Int  -> Mem ()
     MPk  :: Mem Op
 ```
 
@@ -445,17 +447,17 @@ data ProgState = PS { _psTape :: P.PointedList Op
 makeClassy ''ProgState
 ```
 
+We store the current program and program head with the `PointedList`, and also
+represent the register contents with a `Map Char Int`.
+
 #### Brief Aside on Lenses with State
 
 Using *[lens](http://hackage.haskell.org/package/lens)* with lenses (especially
 classy ones) is one of the only things that makes programming against `State`
-with non-trivial state bearable for me! We store the current program and program
-head with the `PointedList`, and also represent the register contents with a
-`Map Char Int`.
-
-`makeClassy` gives us a typeclass `HasProgState`, which is for things that
-"have" a `ProgState`, as well as lenses into the `psTape` and `psRegs` field for
-that type. We can use these lenses with *lens* library machinery:
+with non-trivial state bearable for me! `makeClassy` gives us a typeclass
+`HasProgState`, which is for things that "have" a `ProgState`, as well as lenses
+into the `psTape` and `psRegs` field for that type. We can use these lenses with
+*lens* library machinery:
 
 ``` {.haskell}
 -- | "get" based on a lens
@@ -511,7 +513,7 @@ psRegs . at 'h' . non 0 :: HasProgState s => Lens' s Int
 
 #### Interpreting Mem
 
-With these tools to make life simpler, we can write an interpreter for our `Mem`
+With these tools to make life easier, we can write an interpreter for our `Mem`
 commands:
 
 ``` {.haskell}
@@ -529,6 +531,9 @@ interpMem = \case
       psTape .= t'
     MPk      -> use (psTape . P.focus)
 ```
+
+Nothing too surprising here -- we just interpret every primitive in our monadic
+context.
 
 We use `MonadFail` to explicitly state that we rely on a failed pattern match
 for control flow. `P.moveN :: Int -> P.PointedList a -> Maybe (P.PointedList a)`
@@ -583,7 +588,7 @@ have the ability to read the accumulated log at any time. We use `Last Int`
 because, if there are two *snd*'s, we only care about the last *snd*'d thing.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L130-L140
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L130-L141
 
 interpComA
     :: (MonadAccum (Last Int) m, MonadWriter (First Int) m)
@@ -593,8 +598,9 @@ interpComA = \case
     CSnd x ->
       add (Last (Just x))
     CRcv x -> do
-      when (x /= 0) $         -- don't rcv if the register parameter is 0
-        tell . First . getLast =<< look
+      when (x /= 0) $ do      -- don't rcv if the register parameter is 0
+        Last lastSent <- look
+        tell (First lastSent)
       return x
 ```
 
@@ -610,7 +616,7 @@ already in
 *[transformers-0.5.5.0](https://hackage.haskell.org/package/transformers-0.5.5.0)*.
 
 For now, I've added `MonadAccum` and appropriate instances in the [sample source
-code](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L126-L245),
+code](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L126-L246),
 but when the new version of *mtl* comes out, I'll be sure to update this post to
 take this into account!
 
@@ -632,7 +638,7 @@ so we can merge the contexts of `interpMem` and `interpComB`, and really treat
 them (using type inference) as both working in the same interpretation context.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L153-L159
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L154-L160
 
 data Thread = T { _tState   :: ProgState
                 , _tBuffer  :: [Int]
@@ -650,7 +656,7 @@ example, will refer to the `psRegs` inside the `ProgState` in the `Thread`)
 And now, to interpret:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L161-L170
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L162-L171
 
 interpComB
     :: (MonadWriter [Int] m, MonadFail m, MonadState Thread m)
@@ -740,7 +746,7 @@ MaybeT (StateT ProgState (WriterT (First Int) (A.Accum (Last Int))))
 And so we can write our final "step" function in that context:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L142-L143
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L143-L144
 
 stepA :: MaybeT (StateT ProgState (WriterT (First Int) (A.Accum (Last Int)))) ()
 stepA = runPromptM (interpMem >|< interpComA) stepProg
@@ -764,7 +770,7 @@ Here is the entirety of running Part A -- as you can see, it consists mostly of
 unwrapping *transformers* newtype wrappers.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L145-L151
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L146-L152
 
 partA :: P.PointedList Op -> Maybe Int
 partA ops = getFirst
@@ -812,7 +818,7 @@ To "lift" our actions on one thread to be actions on a "tuple" of threads. We
 have, in the end:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L172-L181
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L173-L182
 
 stepB :: MaybeT (State (Thread, Thread)) Int
 stepB = do
@@ -844,7 +850,7 @@ This is one "single pass" of both of our threads. As you can anticipate, we'll
 use `many` again to run these multiple times until both threads block.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L183-L191
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L184-L192
 
 partB :: P.PointedList Op -> Int
 partB ops = sum . concat
@@ -862,12 +868,12 @@ partB ops = sum . concat
 In the [sample source
 code](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs),
 I've included [my own puzzle
-input](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L198-L241)
+input](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L199-L242)
 provided to me from the advent of code website. We can now get actual answers
 given some sample puzzle input:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L193-L196
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L194-L197
 
 main :: IO ()
 main = do

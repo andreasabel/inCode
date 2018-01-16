@@ -230,7 +230,7 @@ has ``send'' and ``receive''. We are supposed to run the same program in
 
 However, note that these two machines aren't \emph{completely} different -- they
 both have the ability to manipulate memory and read/shift program data. So
-really , we want to be able to create a ``modular'' spec and implementation of
+really, we want to be able to create a ``modular'' spec and implementation of
 these machines, so that we may re-use this memory manipulation aspect when
 constructing our machine, without duplicating any code.
 
@@ -321,7 +321,8 @@ implementation of interpreter pattern programs in \emph{free} was a bit awkward.
 
 \emph{MonadPrompt} lets us construct a language (and a monad) using GADTs to
 represent command primitives. For example, to implement something like
-\texttt{State\ Int}, you might use this GADT:
+\texttt{State\ Int} (which we'll call \texttt{IntState}), you might use this
+GADT:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -336,12 +337,11 @@ For those unfamiliar with GADT syntax, this is declaring a data type
 \texttt{Int} and creates a \texttt{StateCommand\ ()}, and \texttt{Get}, which
 takes no parameters and creates a \texttt{StateCommand\ Int}.
 
-Our GADT here says that the two ``primitive'' commands of \texttt{State\ Int}
-are ``putting'' (which requires an \texttt{Int} and produces a \texttt{()}
-result) and ``getting'' (which requires no inputs, and produces an \texttt{Int}
-result).
+Our GADT here says that the two ``primitive'' commands of \texttt{IntState} are
+``putting'' (which requires an \texttt{Int} and produces a \texttt{()} result)
+and ``getting'' (which requires no inputs, and produces an \texttt{Int} result).
 
-You can then write \texttt{State\ Int} as:
+You can then write \texttt{IntState} as:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -349,7 +349,9 @@ You can then write \texttt{State\ Int} as:
 \end{Highlighting}
 \end{Shaded}
 
-And our primitives can be constructed using:
+Which is an appropriate Functor, Applicative, and Monad.
+
+And our primitives can be constructed using \texttt{prompt}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -455,7 +457,7 @@ the program tape and read the \texttt{Op} at the current program head:
 \KeywordTok{data} \DataTypeTok{Mem}\OtherTok{ ::} \DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{MGet}\OtherTok{ ::} \DataTypeTok{Char} \OtherTok{->} \DataTypeTok{Mem} \DataTypeTok{Int}
     \DataTypeTok{MSet}\OtherTok{ ::} \DataTypeTok{Char} \OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Mem}\NormalTok{ ()}
-    \DataTypeTok{MJmp}\OtherTok{ ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Mem}\NormalTok{ ()}
+    \DataTypeTok{MJmp}\OtherTok{ ::} \DataTypeTok{Int}  \OtherTok{->} \DataTypeTok{Mem}\NormalTok{ ()}
     \DataTypeTok{MPk}\OtherTok{  ::} \DataTypeTok{Mem} \DataTypeTok{Op}
 \end{Highlighting}
 \end{Shaded}
@@ -615,16 +617,16 @@ polymorphically:
 \end{Highlighting}
 \end{Shaded}
 
+We store the current program and program head with the \texttt{PointedList}, and
+also represent the register contents with a \texttt{Map\ Char\ Int}.
+
 \hypertarget{brief-aside-on-lenses-with-state}{%
 \subsubsection{Brief Aside on Lenses with
 State}\label{brief-aside-on-lenses-with-state}}
 
 Using \emph{\href{http://hackage.haskell.org/package/lens}{lens}} with lenses
 (especially classy ones) is one of the only things that makes programming
-against \texttt{State} with non-trivial state bearable for me! We store the
-current program and program head with the \texttt{PointedList}, and also
-represent the register contents with a \texttt{Map\ Char\ Int}.
-
+against \texttt{State} with non-trivial state bearable for me!
 \texttt{makeClassy} gives us a typeclass \texttt{HasProgState}, which is for
 things that ``have'' a \texttt{ProgState}, as well as lenses into the
 \texttt{psTape} and \texttt{psRegs} field for that type. We can use these lenses
@@ -699,7 +701,7 @@ non-present-items as 0.
 \hypertarget{interpreting-mem}{%
 \subsubsection{Interpreting Mem}\label{interpreting-mem}}
 
-With these tools to make life simpler, we can write an interpreter for our
+With these tools to make life easier, we can write an interpreter for our
 \texttt{Mem} commands:
 
 \begin{Shaded}
@@ -719,6 +721,9 @@ With these tools to make life simpler, we can write an interpreter for our
     \DataTypeTok{MPk}      \OtherTok{->}\NormalTok{ use (psTape }\FunctionTok{.}\NormalTok{ P.focus)}
 \end{Highlighting}
 \end{Shaded}
+
+Nothing too surprising here -- we just interpret every primitive in our monadic
+context.
 
 We use \texttt{MonadFail} to explicitly state that we rely on a failed pattern
 match for control flow.
@@ -789,7 +794,7 @@ there are two \emph{snd}'s, we only care about the last \emph{snd}'d thing.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L130-L140}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L130-L141}
 
 \NormalTok{interpComA}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{MonadAccum}\NormalTok{ (}\DataTypeTok{Last} \DataTypeTok{Int}\NormalTok{) m, }\DataTypeTok{MonadWriter}\NormalTok{ (}\DataTypeTok{First} \DataTypeTok{Int}\NormalTok{) m)}
@@ -799,8 +804,9 @@ there are two \emph{snd}'s, we only care about the last \emph{snd}'d thing.
     \DataTypeTok{CSnd}\NormalTok{ x }\OtherTok{->}
 \NormalTok{      add (}\DataTypeTok{Last}\NormalTok{ (}\DataTypeTok{Just}\NormalTok{ x))}
     \DataTypeTok{CRcv}\NormalTok{ x }\OtherTok{->} \KeywordTok{do}
-\NormalTok{      when (x }\FunctionTok{/=} \DecValTok{0}\NormalTok{) }\FunctionTok{$}         \CommentTok{-- don't rcv if the register parameter is 0}
-\NormalTok{        tell }\FunctionTok{.} \DataTypeTok{First} \FunctionTok{.}\NormalTok{ getLast }\FunctionTok{=<<}\NormalTok{ look}
+\NormalTok{      when (x }\FunctionTok{/=} \DecValTok{0}\NormalTok{) }\FunctionTok{$} \KeywordTok{do}      \CommentTok{-- don't rcv if the register parameter is 0}
+        \DataTypeTok{Last}\NormalTok{ lastSent }\OtherTok{<-}\NormalTok{ look}
+\NormalTok{        tell (}\DataTypeTok{First}\NormalTok{ lastSent)}
 \NormalTok{      return x}
 \end{Highlighting}
 \end{Shaded}
@@ -820,7 +826,7 @@ though it probably will in the next version. It's the classy version of
 \emph{\href{https://hackage.haskell.org/package/transformers-0.5.5.0}{transformers-0.5.5.0}}.
 
 For now, I've added \texttt{MonadAccum} and appropriate instances in the
-\href{https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs\#L126-L245}{sample
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs\#L126-L246}{sample
 source code}, but when the new version of \emph{mtl} comes out, I'll be sure to
 update this post to take this into account!
 
@@ -852,7 +858,7 @@ working in the same interpretation context.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L153-L159}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L154-L160}
 
 \KeywordTok{data} \DataTypeTok{Thread} \FunctionTok{=} \DataTypeTok{T}\NormalTok{ \{}\OtherTok{ _tState   ::} \DataTypeTok{ProgState}
 \NormalTok{                ,}\OtherTok{ _tBuffer  ::}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
@@ -874,7 +880,7 @@ And now, to interpret:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L161-L170}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L162-L171}
 
 \NormalTok{interpComB}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{MonadWriter}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{] m, }\DataTypeTok{MonadFail}\NormalTok{ m, }\DataTypeTok{MonadState} \DataTypeTok{Thread}\NormalTok{ m)}
@@ -982,7 +988,7 @@ And so we can write our final ``step'' function in that context:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L142-L143}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L143-L144}
 
 \OtherTok{stepA ::} \DataTypeTok{MaybeT}\NormalTok{ (}\DataTypeTok{StateT} \DataTypeTok{ProgState}\NormalTok{ (}\DataTypeTok{WriterT}\NormalTok{ (}\DataTypeTok{First} \DataTypeTok{Int}\NormalTok{) (}\DataTypeTok{A.Accum}\NormalTok{ (}\DataTypeTok{Last} \DataTypeTok{Int}\NormalTok{)))) ()}
 \NormalTok{stepA }\FunctionTok{=}\NormalTok{ runPromptM (interpMem }\FunctionTok{>|<}\NormalTok{ interpComA) stepProg}
@@ -1010,7 +1016,7 @@ unwrapping \emph{transformers} newtype wrappers.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L145-L151}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L146-L152}
 
 \OtherTok{partA ::} \DataTypeTok{P.PointedList} \DataTypeTok{Op} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Int}
 \NormalTok{partA ops }\FunctionTok{=}\NormalTok{ getFirst}
@@ -1067,7 +1073,7 @@ We have, in the end:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L172-L181}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L173-L182}
 
 \OtherTok{stepB ::} \DataTypeTok{MaybeT}\NormalTok{ (}\DataTypeTok{State}\NormalTok{ (}\DataTypeTok{Thread}\NormalTok{, }\DataTypeTok{Thread}\NormalTok{)) }\DataTypeTok{Int}
 \NormalTok{stepB }\FunctionTok{=} \KeywordTok{do}
@@ -1102,7 +1108,7 @@ use \texttt{many} again to run these multiple times until both threads block.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L183-L191}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L184-L192}
 
 \OtherTok{partB ::} \DataTypeTok{P.PointedList} \DataTypeTok{Op} \OtherTok{->} \DataTypeTok{Int}
 \NormalTok{partB ops }\FunctionTok{=}\NormalTok{ sum }\FunctionTok{.}\NormalTok{ concat}
@@ -1122,13 +1128,13 @@ use \texttt{many} again to run these multiple times until both threads block.
 In the
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs}{sample
 source code}, I've included
-\href{https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs\#L198-L241}{my
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs\#L199-L242}{my
 own puzzle input} provided to me from the advent of code website. We can now get
 actual answers given some sample puzzle input:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L193-L196}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L194-L197}
 
 \OtherTok{main ::} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{main }\FunctionTok{=} \KeywordTok{do}
