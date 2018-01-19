@@ -183,17 +183,17 @@ parseProgram = fromJust . P.fromList . map parseOp . lines
 Our Virtual Machine
 -------------------
 
-### MonadPrompt
+### Operational
 
 We're going to be using the great
-*[MonadPrompt](http://hackage.haskell.org/package/MonadPrompt)* library[^1] to
+*[operational](http://hackage.haskell.org/package/operational)* library[^1] to
 build our representation of our interpreted language. Another common choice is
 to use *[free](http://hackage.haskell.org/package/free)*, and a lot of other
 tutorials go down this route. However, *free* is a bit more power than you
 really need for the interpreter pattern, and I always felt like the
 implementation of interpreter pattern programs in *free* was a bit awkward.
 
-*MonadPrompt* lets us construct a language (and a monad) using GADTs to
+*operational* lets us construct a language (and a monad) using GADTs to
 represent command primitives. For example, to implement something like
 `State Int` (which we'll call `IntState`), you might use this GADT:
 
@@ -215,7 +215,7 @@ requires no inputs, and produces an `Int` result).
 You can then write `IntState` as:
 
 ``` {.haskell}
-type IntState = Prompt StateCommand
+type IntState = Program StateCommand
 ```
 
 which automatically has the appropriate Functor, Applicative, and Monad
@@ -230,10 +230,11 @@ prompt (Put 10) :: IntState ()
 prompt Get      :: IntState Int
 ```
 
-Now, we *interpret* an `IntState` in a monadic context using `runPromptM`:
+Now, we *interpret* an `IntState` in a monadic context using the appropriately
+named `interpretWithMonad`:
 
 ``` {.haskell}
-runPromptM
+interpretWithMonad
     :: Monad m                              -- m is the monad to interpret in
     => (forall x. StateCommand x -> m x)    -- a way to interpret each primitive in 'm'
     -> IntState a                           -- IntState to interpret
@@ -264,11 +265,12 @@ interpretIO r = \case           -- using -XLambdaCase
 runAsIO :: IntState a -> Int -> IO (a, Int)
 runAsIO m s0 = do
     ref <- newIORef s0
-    runPromptM (interpretIO ref) m
+    interpretWithMonad (interpretIO ref) m
 ```
 
-`interpretIO` is our interpreter, in `IO`. `runPromptM` will interpret each
-primitive (`Put` and `Get`) using `interpretIO` and generate the result for us.
+`interpretIO` is our interpreter, in `IO`. `interpretWithMonad` will interpret
+each primitive (`Put` and `Get`) using `interpretIO` and generate the result for
+us.
 
 Note that the GADT property of `StateCommand` ensures us that the *result* of
 our `IO` action matches with the result that the GADT constructor implies, due
@@ -362,7 +364,7 @@ primitive commands --- is:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L67-L67
 
-type Duet = Prompt (Mem :|: Com)
+type Duet = Program (Mem :|: Com)
 ```
 
 We can write some convenient utility primitives to make things easier for us in
@@ -372,22 +374,22 @@ the long run:
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L69-L85
 
 dGet :: Char -> Duet Int
-dGet = prompt . L . MGet
+dGet = singleton . L . MGet
 
 dSet :: Char -> Int -> Duet ()
-dSet r = prompt . L . MSet r
+dSet r = singleton . L . MSet r
 
 dJmp :: Int -> Duet ()
-dJmp = prompt . L . MJmp
+dJmp = singleton . L . MJmp
 
 dPk :: Duet Op
-dPk = prompt (L MPk)
+dPk = singleton (L MPk)
 
 dSnd :: Int -> Duet ()
-dSnd = prompt . R . CSnd
+dSnd = singleton . R . CSnd
 
 dRcv :: Int -> Duet Int
-dRcv = prompt . R . CRcv
+dRcv = singleton . R . CRcv
 ```
 
 ### Constructing Duet Programs
@@ -573,8 +575,8 @@ We have `MPk :: Mem Op`, which requires us to return `m Op`. That's exactly what
 `use (psTape . P.focus) :: (MonadState s m, HasProgState s) => m Op` gives.
 
 The fact that we can use GADTs to specify the "result type" of each of our
-primitives is a key part about how `Prompt` from *MonadPrompt* works, and how it
-implements the interpreter pattern.
+primitives is a key part about how `Program` from *operational* works, and how
+it implements the interpreter pattern.
 
 This is enforced in Haskell's type system (through the "dependent pattern
 match"), so GHC will complain to us if we ever return something of the wrong
@@ -704,10 +706,10 @@ for each side. For example, with more concrete types:
 ```
 
 We can use this to build an interpreter for `Duet`, which goes into
-`runPromptM`, by using `>|<` to generate our compound interpreters.
+`interpretWithMonad`, by using `>|<` to generate our compound interpreters.
 
 ``` {.haskell}
-runPromptM
+interpretWithMonad
     :: Monad m
     => (forall x. (Mem x :|: Com x) -> m x)
     -> Duet a
@@ -762,7 +764,7 @@ And so we can write our final "step" function in that context:
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L145-L146
 
 stepA :: MaybeT (StateT ProgState (WriterT (First Int) (A.Accum (Last Int)))) ()
-stepA = runPromptM (interpMem >|< interpComA) stepProg
+stepA = interpretWithMonad (interpMem >|< interpComA) stepProg
 ```
 
 `stepA` will make a single step of the tape, according to the interpreters
@@ -836,10 +838,10 @@ have, in the end:
 
 stepB :: MaybeT (State (Thread, Thread)) Int
 stepB = do
-    outA <- execWriterT $
-      zoom _1 . many $ runPromptM (interpMem >|< interpComB) stepProg
-    outB <- execWriterT $
-      zoom _2 . many $ runPromptM (interpMem >|< interpComB) stepProg
+    outA <- execWriterT . zoom _1 $
+      many $ interpretWithMonad (interpMem >|< interpComB) stepProg
+    outB <- execWriterT . zoom _2 $
+      many $ interpretWithMonad (interpMem >|< interpComB) stepProg
     _1 . tBuffer .= outB
     _2 . tBuffer .= outA
     guard . not $ null outA && null outB
@@ -1038,18 +1040,18 @@ bimap1 (C 0 :&:) id
     -> ((C Int :&: Mem) :|: Com) a
 ```
 
-Which we can use to re-tag a `Prompt (Mem :|: Com)`, with the help of
-`runPromptM`:
+Which we can use to re-tag a `Program (Mem :|: Com)`, with the help of
+`interpretWithMonad`:
 
 ``` {.haskell}
-\f -> runPromptM (prompt . f)
+\f -> interpretWithMonad (prompt . f)
     :: (forall x. f x -> g x)
-    -> Prompt f a
-    -> Prompt g a
+    -> Program f a
+    -> Program g a
 
-runPromptM (prompt . bimap1 (C 0 :&:) id)
-    :: Prompt (      Mem       :|: Com) a
-    -> Prompt ((C Int :&: Mem) :|: Com) a
+interpretWithMonad (prompt . bimap1 (C 0 :&:) id)
+    :: Program (      Mem       :|: Com) a
+    -> Program ((C Int :&: Mem) :|: Com) a
 ```
 
 ### Combining many different sets of primitives
@@ -1070,7 +1072,7 @@ finj :: Mem a -> FSum '[Mem, Com, Foo] a
 finj :: Com a -> FSum '[Mem, Com, Foo] a
 finj :: Foo a -> FSum '[Mem, Com, Foo] a
 
-prompt (finj (MGet 'c')) :: Prompt (FSum '[Mem, Com, Foo]) Int
+prompt (finj (MGet 'c')) :: Program (FSum '[Mem, Com, Foo]) Int
 ```
 
 There isn't really a built-in way to handle these, but you can whip up a utility
@@ -1094,12 +1096,13 @@ handleFoo :: Foo a -> m a
 handleFSum (Handle handleMem :< Handle handleCom :< Handle handleFoo :< Ø)
     :: FSum '[Mem, Com, Foo] a -> m a
 
-runPromptM (handleFSum ( Handle handleMem
-                      :< Handle handleCom
-                      :< Handle handleFoo
-                      :< Ø)
-           )
-    :: Prompt (FSum '[Mem, Com, Foo]) a -> m a
+interpretWithMonad
+        (handleFSum ( Handle handleMem
+                   :< Handle handleCom
+                   :< Handle handleFoo
+                   :< Ø)
+        )
+    :: Program (FSum '[Mem, Com, Foo]) a -> m a
 ```
 
 ### Endless Possibilities
@@ -1108,11 +1111,13 @@ Hopefully this post inspires you a bit about this fun design pattern! And, if
 anything, I hope after reading this, you learn to recognize situations where the
 interpreter pattern might be useful in your everyday programming.
 
-[^1]: Not to be confused with the
-    [prompt](http://hackage.haskell.org/package/prompt) library, which is more
-    or less unrelated! The library is actually my own that I wrote a few years
-    back before I knew about MonadPrompt, and this unfortunate naming collision
-    is one of my greatest Haskell regrets.
+[^1]: You could also use the more-or-less identical
+    [MonadPrompt](http://hackage.haskell.org/package/operational) library.
+    However, this is not to be confused with the
+    [prompt](http://hackage.haskell.org/package/prompt) library, which is
+    unrelated! The library is actually my own that I wrote a few years back
+    before I knew about MonadPrompt, and this unfortunate naming collision is
+    one of my greatest Haskell regrets.
 
 [^2]: Using `MonadFail` in situations were we would normally use
     `Alternative`/`MonadPlus`, to take advantage of pattern match syntax in do

@@ -304,23 +304,25 @@ them into a \texttt{PointedList}. We're ready to go!
 \hypertarget{our-virtual-machine}{%
 \section{Our Virtual Machine}\label{our-virtual-machine}}
 
-\hypertarget{monadprompt}{%
-\subsection{MonadPrompt}\label{monadprompt}}
+\hypertarget{operational}{%
+\subsection{Operational}\label{operational}}
 
 We're going to be using the great
-\emph{\href{http://hackage.haskell.org/package/MonadPrompt}{MonadPrompt}}
-library\footnote{Not to be confused with the
+\emph{\href{http://hackage.haskell.org/package/operational}{operational}}
+library\footnote{You could also use the more-or-less identical
+  \href{http://hackage.haskell.org/package/operational}{MonadPrompt} library.
+  However, this is not to be confused with the
   \href{http://hackage.haskell.org/package/prompt}{prompt} library, which is
-  more or less unrelated! The library is actually my own that I wrote a few
-  years back before I knew about MonadPrompt, and this unfortunate naming
-  collision is one of my greatest Haskell regrets.} to build our representation
-of our interpreted language. Another common choice is to use
+  unrelated! The library is actually my own that I wrote a few years back before
+  I knew about MonadPrompt, and this unfortunate naming collision is one of my
+  greatest Haskell regrets.} to build our representation of our interpreted
+language. Another common choice is to use
 \emph{\href{http://hackage.haskell.org/package/free}{free}}, and a lot of other
 tutorials go down this route. However, \emph{free} is a bit more power than you
 really need for the interpreter pattern, and I always felt like the
 implementation of interpreter pattern programs in \emph{free} was a bit awkward.
 
-\emph{MonadPrompt} lets us construct a language (and a monad) using GADTs to
+\emph{operational} lets us construct a language (and a monad) using GADTs to
 represent command primitives. For example, to implement something like
 \texttt{State\ Int} (which we'll call \texttt{IntState}), you might use this
 GADT:
@@ -346,7 +348,7 @@ You can then write \texttt{IntState} as:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{IntState} \FunctionTok{=} \DataTypeTok{Prompt} \DataTypeTok{StateCommand}
+\KeywordTok{type} \DataTypeTok{IntState} \FunctionTok{=} \DataTypeTok{Program} \DataTypeTok{StateCommand}
 \end{Highlighting}
 \end{Shaded}
 
@@ -364,12 +366,12 @@ Our primitives can be constructed using \texttt{prompt}:
 \end{Highlighting}
 \end{Shaded}
 
-Now, we \emph{interpret} an \texttt{IntState} in a monadic context using
-\texttt{runPromptM}:
+Now, we \emph{interpret} an \texttt{IntState} in a monadic context using the
+appropriately named \texttt{interpretWithMonad}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{runPromptM}
+\NormalTok{interpretWithMonad}
 \OtherTok{    ::} \DataTypeTok{Monad}\NormalTok{ m                              }\CommentTok{-- m is the monad to interpret in}
     \OtherTok{=>}\NormalTok{ (forall x}\FunctionTok{.} \DataTypeTok{StateCommand}\NormalTok{ x }\OtherTok{->}\NormalTok{ m x)    }\CommentTok{-- a way to interpret each primitive in 'm'}
     \OtherTok{->} \DataTypeTok{IntState}\NormalTok{ a                           }\CommentTok{-- IntState to interpret}
@@ -405,13 +407,13 @@ interpreting our \texttt{IntState}:
 \OtherTok{runAsIO ::} \DataTypeTok{IntState}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{IO}\NormalTok{ (a, }\DataTypeTok{Int}\NormalTok{)}
 \NormalTok{runAsIO m s0 }\FunctionTok{=} \KeywordTok{do}
 \NormalTok{    ref }\OtherTok{<-}\NormalTok{ newIORef s0}
-\NormalTok{    runPromptM (interpretIO ref) m}
+\NormalTok{    interpretWithMonad (interpretIO ref) m}
 \end{Highlighting}
 \end{Shaded}
 
-\texttt{interpretIO} is our interpreter, in \texttt{IO}. \texttt{runPromptM}
-will interpret each primitive (\texttt{Put} and \texttt{Get}) using
-\texttt{interpretIO} and generate the result for us.
+\texttt{interpretIO} is our interpreter, in \texttt{IO}.
+\texttt{interpretWithMonad} will interpret each primitive (\texttt{Put} and
+\texttt{Get}) using \texttt{interpretIO} and generate the result for us.
 
 Note that the GADT property of \texttt{StateCommand} ensures us that the
 \emph{result} of our \texttt{IO} action matches with the result that the GADT
@@ -522,7 +524,7 @@ primitive commands --- is:
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L67-L67}
 
-\KeywordTok{type} \DataTypeTok{Duet} \FunctionTok{=} \DataTypeTok{Prompt}\NormalTok{ (}\DataTypeTok{Mem} \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{)}
+\KeywordTok{type} \DataTypeTok{Duet} \FunctionTok{=} \DataTypeTok{Program}\NormalTok{ (}\DataTypeTok{Mem} \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -534,22 +536,22 @@ the long run:
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L69-L85}
 
 \OtherTok{dGet ::} \DataTypeTok{Char} \OtherTok{->} \DataTypeTok{Duet} \DataTypeTok{Int}
-\NormalTok{dGet }\FunctionTok{=}\NormalTok{ prompt }\FunctionTok{.} \DataTypeTok{L} \FunctionTok{.} \DataTypeTok{MGet}
+\NormalTok{dGet }\FunctionTok{=}\NormalTok{ singleton }\FunctionTok{.} \DataTypeTok{L} \FunctionTok{.} \DataTypeTok{MGet}
 
 \OtherTok{dSet ::} \DataTypeTok{Char} \OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Duet}\NormalTok{ ()}
-\NormalTok{dSet r }\FunctionTok{=}\NormalTok{ prompt }\FunctionTok{.} \DataTypeTok{L} \FunctionTok{.} \DataTypeTok{MSet}\NormalTok{ r}
+\NormalTok{dSet r }\FunctionTok{=}\NormalTok{ singleton }\FunctionTok{.} \DataTypeTok{L} \FunctionTok{.} \DataTypeTok{MSet}\NormalTok{ r}
 
 \OtherTok{dJmp ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Duet}\NormalTok{ ()}
-\NormalTok{dJmp }\FunctionTok{=}\NormalTok{ prompt }\FunctionTok{.} \DataTypeTok{L} \FunctionTok{.} \DataTypeTok{MJmp}
+\NormalTok{dJmp }\FunctionTok{=}\NormalTok{ singleton }\FunctionTok{.} \DataTypeTok{L} \FunctionTok{.} \DataTypeTok{MJmp}
 
 \OtherTok{dPk ::} \DataTypeTok{Duet} \DataTypeTok{Op}
-\NormalTok{dPk }\FunctionTok{=}\NormalTok{ prompt (}\DataTypeTok{L} \DataTypeTok{MPk}\NormalTok{)}
+\NormalTok{dPk }\FunctionTok{=}\NormalTok{ singleton (}\DataTypeTok{L} \DataTypeTok{MPk}\NormalTok{)}
 
 \OtherTok{dSnd ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Duet}\NormalTok{ ()}
-\NormalTok{dSnd }\FunctionTok{=}\NormalTok{ prompt }\FunctionTok{.} \DataTypeTok{R} \FunctionTok{.} \DataTypeTok{CSnd}
+\NormalTok{dSnd }\FunctionTok{=}\NormalTok{ singleton }\FunctionTok{.} \DataTypeTok{R} \FunctionTok{.} \DataTypeTok{CSnd}
 
 \OtherTok{dRcv ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Duet} \DataTypeTok{Int}
-\NormalTok{dRcv }\FunctionTok{=}\NormalTok{ prompt }\FunctionTok{.} \DataTypeTok{R} \FunctionTok{.} \DataTypeTok{CRcv}
+\NormalTok{dRcv }\FunctionTok{=}\NormalTok{ singleton }\FunctionTok{.} \DataTypeTok{R} \FunctionTok{.} \DataTypeTok{CRcv}
 \end{Highlighting}
 \end{Shaded}
 
@@ -778,7 +780,7 @@ That's exactly what
 gives.
 
 The fact that we can use GADTs to specify the ``result type'' of each of our
-primitives is a key part about how \texttt{Prompt} from \emph{MonadPrompt}
+primitives is a key part about how \texttt{Program} from \emph{operational}
 works, and how it implements the interpreter pattern.
 
 This is enforced in Haskell's type system (through the ``dependent pattern
@@ -943,12 +945,13 @@ For example, with more concrete types:
 \end{Shaded}
 
 We can use this to build an interpreter for \texttt{Duet}, which goes into
-\texttt{runPromptM}, by using \texttt{\textgreater{}\textbar{}\textless{}} to
-generate our compound interpreters.
+\texttt{interpretWithMonad}, by using
+\texttt{\textgreater{}\textbar{}\textless{}} to generate our compound
+interpreters.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{runPromptM}
+\NormalTok{interpretWithMonad}
 \OtherTok{    ::} \DataTypeTok{Monad}\NormalTok{ m}
     \OtherTok{=>}\NormalTok{ (forall x}\FunctionTok{.}\NormalTok{ (}\DataTypeTok{Mem}\NormalTok{ x }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{ x) }\OtherTok{->}\NormalTok{ m x)}
     \OtherTok{->} \DataTypeTok{Duet}\NormalTok{ a}
@@ -1012,7 +1015,7 @@ And so we can write our final ``step'' function in that context:
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L145-L146}
 
 \OtherTok{stepA ::} \DataTypeTok{MaybeT}\NormalTok{ (}\DataTypeTok{StateT} \DataTypeTok{ProgState}\NormalTok{ (}\DataTypeTok{WriterT}\NormalTok{ (}\DataTypeTok{First} \DataTypeTok{Int}\NormalTok{) (}\DataTypeTok{A.Accum}\NormalTok{ (}\DataTypeTok{Last} \DataTypeTok{Int}\NormalTok{)))) ()}
-\NormalTok{stepA }\FunctionTok{=}\NormalTok{ runPromptM (interpMem }\FunctionTok{>|<}\NormalTok{ interpComA) stepProg}
+\NormalTok{stepA }\FunctionTok{=}\NormalTok{ interpretWithMonad (interpMem }\FunctionTok{>|<}\NormalTok{ interpComA) stepProg}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1098,10 +1101,10 @@ We have, in the end:
 
 \OtherTok{stepB ::} \DataTypeTok{MaybeT}\NormalTok{ (}\DataTypeTok{State}\NormalTok{ (}\DataTypeTok{Thread}\NormalTok{, }\DataTypeTok{Thread}\NormalTok{)) }\DataTypeTok{Int}
 \NormalTok{stepB }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    outA }\OtherTok{<-}\NormalTok{ execWriterT }\FunctionTok{$}
-\NormalTok{      zoom _1 }\FunctionTok{.}\NormalTok{ many }\FunctionTok{$}\NormalTok{ runPromptM (interpMem }\FunctionTok{>|<}\NormalTok{ interpComB) stepProg}
-\NormalTok{    outB }\OtherTok{<-}\NormalTok{ execWriterT }\FunctionTok{$}
-\NormalTok{      zoom _2 }\FunctionTok{.}\NormalTok{ many }\FunctionTok{$}\NormalTok{ runPromptM (interpMem }\FunctionTok{>|<}\NormalTok{ interpComB) stepProg}
+\NormalTok{    outA }\OtherTok{<-}\NormalTok{ execWriterT }\FunctionTok{.}\NormalTok{ zoom _1 }\FunctionTok{$}
+\NormalTok{      many }\FunctionTok{$}\NormalTok{ interpretWithMonad (interpMem }\FunctionTok{>|<}\NormalTok{ interpComB) stepProg}
+\NormalTok{    outB }\OtherTok{<-}\NormalTok{ execWriterT }\FunctionTok{.}\NormalTok{ zoom _2 }\FunctionTok{$}
+\NormalTok{      many }\FunctionTok{$}\NormalTok{ interpretWithMonad (interpMem }\FunctionTok{>|<}\NormalTok{ interpComB) stepProg}
 \NormalTok{    _1 }\FunctionTok{.}\NormalTok{ tBuffer }\FunctionTok{.=}\NormalTok{ outB}
 \NormalTok{    _2 }\FunctionTok{.}\NormalTok{ tBuffer }\FunctionTok{.=}\NormalTok{ outA}
 \NormalTok{    guard }\FunctionTok{.}\NormalTok{ not }\FunctionTok{$}\NormalTok{ null outA }\FunctionTok{&&}\NormalTok{ null outB}
@@ -1343,19 +1346,19 @@ So we can ``tag'' the \texttt{Mem} in \texttt{Mem\ :\textbar{}:\ Cmd} using:
 \end{Highlighting}
 \end{Shaded}
 
-Which we can use to re-tag a \texttt{Prompt\ (Mem\ :\textbar{}:\ Com)}, with the
-help of \texttt{runPromptM}:
+Which we can use to re-tag a \texttt{Program\ (Mem\ :\textbar{}:\ Com)}, with
+the help of \texttt{interpretWithMonad}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{\textbackslash{}f }\OtherTok{->}\NormalTok{ runPromptM (prompt }\FunctionTok{.}\NormalTok{ f)}
+\NormalTok{\textbackslash{}f }\OtherTok{->}\NormalTok{ interpretWithMonad (prompt }\FunctionTok{.}\NormalTok{ f)}
 \OtherTok{    ::}\NormalTok{ (forall x}\FunctionTok{.}\NormalTok{ f x }\OtherTok{->}\NormalTok{ g x)}
-    \OtherTok{->} \DataTypeTok{Prompt}\NormalTok{ f a}
-    \OtherTok{->} \DataTypeTok{Prompt}\NormalTok{ g a}
+    \OtherTok{->} \DataTypeTok{Program}\NormalTok{ f a}
+    \OtherTok{->} \DataTypeTok{Program}\NormalTok{ g a}
 
-\NormalTok{runPromptM (prompt }\FunctionTok{.}\NormalTok{ bimap1 (}\DataTypeTok{C} \DecValTok{0} \FunctionTok{:&:}\NormalTok{) id)}
-\OtherTok{    ::} \DataTypeTok{Prompt}\NormalTok{ (      }\DataTypeTok{Mem}       \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
-    \OtherTok{->} \DataTypeTok{Prompt}\NormalTok{ ((}\DataTypeTok{C} \DataTypeTok{Int} \FunctionTok{:&:} \DataTypeTok{Mem}\NormalTok{) }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
+\NormalTok{interpretWithMonad (prompt }\FunctionTok{.}\NormalTok{ bimap1 (}\DataTypeTok{C} \DecValTok{0} \FunctionTok{:&:}\NormalTok{) id)}
+\OtherTok{    ::} \DataTypeTok{Program}\NormalTok{ (      }\DataTypeTok{Mem}       \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
+    \OtherTok{->} \DataTypeTok{Program}\NormalTok{ ((}\DataTypeTok{C} \DataTypeTok{Int} \FunctionTok{:&:} \DataTypeTok{Mem}\NormalTok{) }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1383,7 +1386,7 @@ If there are no duplicates in your type-level list, you can even use
 \OtherTok{finj ::} \DataTypeTok{Com}\NormalTok{ a }\OtherTok{->} \DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo] a}
 \OtherTok{finj ::} \DataTypeTok{Foo}\NormalTok{ a }\OtherTok{->} \DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo] a}
 
-\NormalTok{prompt (finj (}\DataTypeTok{MGet} \CharTok{'c'}\NormalTok{))}\OtherTok{ ::} \DataTypeTok{Prompt}\NormalTok{ (}\DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo]) Int}
+\NormalTok{prompt (finj (}\DataTypeTok{MGet} \CharTok{'c'}\NormalTok{))}\OtherTok{ ::} \DataTypeTok{Program}\NormalTok{ (}\DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo]) Int}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1412,12 +1415,13 @@ handlers like:
 \NormalTok{handleFSum (}\DataTypeTok{Handle}\NormalTok{ handleMem }\FunctionTok{:<} \DataTypeTok{Handle}\NormalTok{ handleCom }\FunctionTok{:<} \DataTypeTok{Handle}\NormalTok{ handleFoo }\FunctionTok{:<}\NormalTok{ Ø)}
 \OtherTok{    ::} \DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo] a -> m a}
 
-\NormalTok{runPromptM (handleFSum ( }\DataTypeTok{Handle}\NormalTok{ handleMem}
-                      \FunctionTok{:<} \DataTypeTok{Handle}\NormalTok{ handleCom}
-                      \FunctionTok{:<} \DataTypeTok{Handle}\NormalTok{ handleFoo}
-                      \FunctionTok{:<}\NormalTok{ Ø)}
-\NormalTok{           )}
-\OtherTok{    ::} \DataTypeTok{Prompt}\NormalTok{ (}\DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo]) a -> m a}
+\NormalTok{interpretWithMonad}
+\NormalTok{        (handleFSum ( }\DataTypeTok{Handle}\NormalTok{ handleMem}
+                   \FunctionTok{:<} \DataTypeTok{Handle}\NormalTok{ handleCom}
+                   \FunctionTok{:<} \DataTypeTok{Handle}\NormalTok{ handleFoo}
+                   \FunctionTok{:<}\NormalTok{ Ø)}
+\NormalTok{        )}
+\OtherTok{    ::} \DataTypeTok{Program}\NormalTok{ (}\DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo]) a -> m a}
 \end{Highlighting}
 \end{Shaded}
 
