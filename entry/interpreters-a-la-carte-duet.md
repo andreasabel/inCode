@@ -1003,9 +1003,9 @@ uncurryFan interpMemThread >|< interpComB
 
 ### Manipulating Disjunctions and Conjunctions
 
-So, we have a `Mem :|: Conj`. How could we "tag" our `Mem` after-the-fact, to
-add `C Int`? We can manipulate the structure of conjunctions and disjunctions
-using the `Bifunctor1` from *Type.Class.Higher*, in *type-combinators*.
+So, we have a `Mem :|: Com`. How could we "tag" our `Mem` after-the-fact, to add
+`C Int`? We can manipulate the structure of conjunctions and disjunctions using
+the `Bifunctor1` from *Type.Class.Higher*, in *type-combinators*.
 
 `bimap1` can be used to modify either half of a `:|:` or `:&:`:
 
