@@ -132,7 +132,7 @@ representing opcodes. There are four categories: "snd", "rcv", "jgz", and the
 binary mathematical operations:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L33-L38
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L32-L37
 
 type Addr = Either Char Int
 
@@ -148,7 +148,7 @@ take either numbers or other registers.
 Now, parsing a single `Op` is just a matter of pattern matching on `words`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L40-L53
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L39-L52
 
 parseOp :: String -> Op
 parseOp inp = case words inp of
@@ -174,7 +174,7 @@ then just parsing each line in the program string, and collecting them into a
 `PointedList`. We're ready to go!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L55-L56
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L54-L55
 
 parseProgram :: String -> P.PointedList Op
 parseProgram = fromJust . P.fromList . map parseOp . lines
@@ -307,7 +307,7 @@ For memory, we can access and modify register values, as well as jump around in
 the program tape and read the `Op` at the current program head:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L58-L62
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L57-L61
 
 data Mem :: Type -> Type where
     MGet :: Char -> Mem Int
@@ -319,7 +319,7 @@ data Mem :: Type -> Type where
 For communication, we must be able to "snd" and "rcv".
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L64-L66
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L63-L65
 
 data Com :: Type -> Type where
     CSnd :: Int -> Com ()
@@ -360,7 +360,7 @@ Our final data type then --- a monad that encompasses *all* possible Duet
 primitive commands --- is:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L68-L68
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L67-L67
 
 type Duet = Prompt (Mem :|: Com)
 ```
@@ -369,7 +369,7 @@ We can write some convenient utility primitives to make things easier for us in
 the long run:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L70-L86
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L69-L85
 
 dGet :: Char -> Duet Int
 dGet = prompt . L . MGet
@@ -396,7 +396,7 @@ Armed with our `Duet` monad, we can now write a real-life `Duet` action to
 represent *one step* of our duet programs:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L88-L109
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L87-L108
 
 stepProg :: Duet ()
 stepProg = dPk >>= \case
@@ -442,11 +442,12 @@ relevant program state, along with classy lenses for operating on it
 polymorphically:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L111-L114
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L110-L114
 
-data ProgState = PS { _psTape :: P.PointedList Op
-                    , _psRegs :: M.Map Char Int
-                    }
+data ProgState = PS
+    { _psTape :: P.PointedList Op
+    , _psRegs :: M.Map Char Int
+    }
 makeClassy ''ProgState
 ```
 
@@ -455,12 +456,17 @@ represent the register contents with a `Map Char Int`.
 
 #### Brief Aside on Lenses with State
 
-Using *[lens](http://hackage.haskell.org/package/lens)* with lenses (especially
-classy ones) is one of the only things that makes programming against `State`
-with non-trivial state bearable for me! `makeClassy` gives us a typeclass
-`HasProgState`, which is for things that "have" a `ProgState`, as well as lenses
-into the `psTape` and `psRegs` field for that type. We can use these lenses with
-*lens* library machinery:
+We're going to be implementing our interpreters using *lens* machinery. Keep in
+mind that this isn't necessary --- this just makes things a little simpler for
+me. Using *lens* with classy lenses is one of the things that make programming
+against `State` with non-trivial state bearable for me, personally! However,
+keep in mind that the lens machinery is more or less unrelated to the
+interpreter pattern and is not necessary for it. We're just using it here to
+make `State` and `MonadState` a little nicer to work with!
+
+`makeClassy` gives us a typeclass `HasProgState`, which is for things that
+"have" a `ProgState`, as well as lenses into the `psTape` and `psRegs` field for
+that type. We can use these lenses with *lens* library machinery:
 
 ``` {.haskell}
 -- | "get" based on a lens
@@ -621,7 +627,7 @@ already in
 For now, [I've added
 `MonadAccum`](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L128-L130)
 and [appropriate
-instances](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L246-L248)
+instances](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L247-L249)
 in the sample source code, but when the new version of *mtl* comes out, I'll be
 sure to update this post to take this into account!
 
@@ -643,11 +649,12 @@ so we can merge the contexts of `interpMem` and `interpComB`, and really treat
 them (using type inference) as both working in the same interpretation context.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L156-L162
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L156-L163
 
-data Thread = T { _tState   :: ProgState
-                , _tBuffer  :: [Int]
-                }
+data Thread = T
+    { _tState   :: ProgState
+    , _tBuffer  :: [Int]
+    }
 makeClassy ''Thread
 
 instance HasProgState Thread where
@@ -661,7 +668,7 @@ example, will refer to the `psRegs` inside the `ProgState` in the `Thread`)
 And now, to interpret:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L164-L173
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L165-L174
 
 interpComB
     :: (MonadWriter [Int] m, MonadFail m, MonadState Thread m)
@@ -825,7 +832,7 @@ To "lift" our actions on one thread to be actions on a "tuple" of threads. We
 have, in the end:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L175-L184
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L176-L185
 
 stepB :: MaybeT (State (Thread, Thread)) Int
 stepB = do
@@ -857,7 +864,7 @@ This is one "single pass" of both of our threads. As you can anticipate, we'll
 use `many` again to run these multiple times until both threads block.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L186-L194
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L187-L195
 
 partB :: P.PointedList Op -> Int
 partB ops = maybe (error "`many` cannot fail") sum
@@ -881,12 +888,12 @@ answer, we only need to sum.
 In the [sample source
 code](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs),
 I've included [my own puzzle
-input](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L201-L244)
+input](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L202-L245)
 provided to me from the advent of code website. We can now get actual answers
 given some sample puzzle input:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L196-L199
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L197-L200
 
 main :: IO ()
 main = do
@@ -1056,6 +1063,7 @@ If there are no duplicates in your type-level list, you can even use `finj` to
 create your `FSum`s automatically:
 
 ``` {.haskell}
+-- (∈) is a typeclass that has instances whenever f in the type-level list fs
 finj :: f ∈ fs => f a -> FSum fs a
 
 finj :: Mem a -> FSum '[Mem, Com, Foo] a

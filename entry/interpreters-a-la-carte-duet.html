@@ -55,7 +55,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h2 id="parsing-duet">Parsing Duet</h2>
 <p>First, let’s get the parsing of the actual input program out of the way. We’ll be parsing a program into a list of “ops” that we will read as our program.</p>
 <p>Our program will be interpreted as a list of <code>Op</code> values, a data type representing opcodes. There are four categories: “snd”, “rcv”, “jgz”, and the binary mathematical operations:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L33-L38</span></a>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L32-L37</span></a>
 <a class="sourceLine" id="cb1-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">type</span> <span class="dt">Addr</span> <span class="fu">=</span> <span class="dt">Either</span> <span class="dt">Char</span> <span class="dt">Int</span></a>
 <a class="sourceLine" id="cb1-4" data-line-number="4"></a>
@@ -65,7 +65,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb1-8" data-line-number="8">        <span class="fu">|</span> <span class="dt">OBin</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>) <span class="dt">Char</span> <span class="dt">Addr</span></a></code></pre></div>
 <p>It’s important to remember that “snd”, “jgz”, and the binary operations can all take either numbers or other registers.</p>
 <p>Now, parsing a single <code>Op</code> is just a matter of pattern matching on <code>words</code>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L40-L53</span></a>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L39-L52</span></a>
 <a class="sourceLine" id="cb2-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb2-3" data-line-number="3"><span class="ot">parseOp ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Op</span></a>
 <a class="sourceLine" id="cb2-4" data-line-number="4">parseOp inp <span class="fu">=</span> <span class="kw">case</span> words inp <span class="kw">of</span></a>
@@ -82,7 +82,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb2-15" data-line-number="15">    addr [c] <span class="fu">|</span> isAlpha c <span class="fu">=</span> <span class="dt">Left</span> c</a>
 <a class="sourceLine" id="cb2-16" data-line-number="16">    addr str <span class="fu">=</span> <span class="dt">Right</span> (read str)</a></code></pre></div>
 <p>We’re going to store our program in a <code>PointedList</code> from the <em><a href="http://hackage.haskell.org/package/pointedlist">pointedlist</a></em> package, which is a non-empty list with a “focus” at a given index, which we use to represent the program counter/program head/current instruction. Parsing our program is then just parsing each line in the program string, and collecting them into a <code>PointedList</code>. We’re ready to go!</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L55-L56</span></a>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L54-L55</span></a>
 <a class="sourceLine" id="cb3-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb3-3" data-line-number="3"><span class="ot">parseProgram ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">P.PointedList</span> <span class="dt">Op</span></a>
 <a class="sourceLine" id="cb3-4" data-line-number="4">parseProgram <span class="fu">=</span> fromJust <span class="fu">.</span> P.fromList <span class="fu">.</span> map parseOp <span class="fu">.</span> lines</a></code></pre></div>
@@ -137,7 +137,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h3 id="duet-commands">Duet Commands</h3>
 <p>Now let’s specify the “primitives” of our program. It’ll be useful to separate out the “memory-based” primitive commands from the “communication-based” primitive commands. This is so that we can write interpreters that operate on each one individually, and re-use our memory-based primitives and interpreters for both parts of the puzzle.</p>
 <p>For memory, we can access and modify register values, as well as jump around in the program tape and read the <code>Op</code> at the current program head:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L58-L62</span></a>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L57-L61</span></a>
 <a class="sourceLine" id="cb10-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb10-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Mem</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb10-4" data-line-number="4">    <span class="dt">MGet</span><span class="ot"> ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Mem</span> <span class="dt">Int</span></a>
@@ -145,7 +145,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb10-6" data-line-number="6">    <span class="dt">MJmp</span><span class="ot"> ::</span> <span class="dt">Int</span>  <span class="ot">-&gt;</span> <span class="dt">Mem</span> ()</a>
 <a class="sourceLine" id="cb10-7" data-line-number="7">    <span class="dt">MPk</span><span class="ot">  ::</span> <span class="dt">Mem</span> <span class="dt">Op</span></a></code></pre></div>
 <p>For communication, we must be able to “snd” and “rcv”.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L64-L66</span></a>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L63-L65</span></a>
 <a class="sourceLine" id="cb11-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb11-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Com</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb11-4" data-line-number="4">    <span class="dt">CSnd</span><span class="ot"> ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Com</span> ()</a>
@@ -161,11 +161,11 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb13-3" data-line-number="3"><span class="dt">R</span> (<span class="dt">CSnd</span> <span class="dv">5</span>)<span class="ot">   ::</span> (<span class="dt">Mem</span> <span class="fu">:|:</span> <span class="dt">Com</span>) ()</a></code></pre></div>
 <p>etc.</p>
 <p>Our final data type then — a monad that encompasses <em>all</em> possible Duet primitive commands — is:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L68-L68</span></a>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L67-L67</span></a>
 <a class="sourceLine" id="cb14-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb14-3" data-line-number="3"><span class="kw">type</span> <span class="dt">Duet</span> <span class="fu">=</span> <span class="dt">Prompt</span> (<span class="dt">Mem</span> <span class="fu">:|:</span> <span class="dt">Com</span>)</a></code></pre></div>
 <p>We can write some convenient utility primitives to make things easier for us in the long run:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L70-L86</span></a>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L69-L85</span></a>
 <a class="sourceLine" id="cb15-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb15-3" data-line-number="3"><span class="ot">dGet ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Duet</span> <span class="dt">Int</span></a>
 <a class="sourceLine" id="cb15-4" data-line-number="4">dGet <span class="fu">=</span> prompt <span class="fu">.</span> <span class="dt">L</span> <span class="fu">.</span> <span class="dt">MGet</span></a>
@@ -186,7 +186,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb15-19" data-line-number="19">dRcv <span class="fu">=</span> prompt <span class="fu">.</span> <span class="dt">R</span> <span class="fu">.</span> <span class="dt">CRcv</span></a></code></pre></div>
 <h3 id="constructing-duet-programs">Constructing Duet Programs</h3>
 <p>Armed with our <code>Duet</code> monad, we can now write a real-life <code>Duet</code> action to represent <em>one step</em> of our duet programs:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L88-L109</span></a>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L87-L108</span></a>
 <a class="sourceLine" id="cb16-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb16-3" data-line-number="3"><span class="ot">stepProg ::</span> <span class="dt">Duet</span> ()</a>
 <a class="sourceLine" id="cb16-4" data-line-number="4">stepProg <span class="fu">=</span> dPk <span class="fu">&gt;&gt;=</span> \<span class="kw">case</span></a>
@@ -216,15 +216,17 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Now for the fun part!</p>
 <h3 id="interpreting-memory-primitives">Interpreting Memory Primitives</h3>
 <p>To interpret our <code>Mem</code> primitives, we need to be in some sort of stateful monad that contains the program state. First, let’s make a type describing our relevant program state, along with classy lenses for operating on it polymorphically:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L111-L114</span></a>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L110-L114</span></a>
 <a class="sourceLine" id="cb17-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb17-3" data-line-number="3"><span class="kw">data</span> <span class="dt">ProgState</span> <span class="fu">=</span> <span class="dt">PS</span> {<span class="ot"> _psTape ::</span> <span class="dt">P.PointedList</span> <span class="dt">Op</span></a>
-<a class="sourceLine" id="cb17-4" data-line-number="4">                    ,<span class="ot"> _psRegs ::</span> <span class="dt">M.Map</span> <span class="dt">Char</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb17-5" data-line-number="5">                    }</a>
-<a class="sourceLine" id="cb17-6" data-line-number="6">makeClassy <span class="ch">&#39;&#39;</span><span class="dt">ProgState</span></a></code></pre></div>
+<a class="sourceLine" id="cb17-3" data-line-number="3"><span class="kw">data</span> <span class="dt">ProgState</span> <span class="fu">=</span> <span class="dt">PS</span></a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">    {<span class="ot"> _psTape ::</span> <span class="dt">P.PointedList</span> <span class="dt">Op</span></a>
+<a class="sourceLine" id="cb17-5" data-line-number="5">    ,<span class="ot"> _psRegs ::</span> <span class="dt">M.Map</span> <span class="dt">Char</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb17-6" data-line-number="6">    }</a>
+<a class="sourceLine" id="cb17-7" data-line-number="7">makeClassy <span class="ch">&#39;&#39;</span><span class="dt">ProgState</span></a></code></pre></div>
 <p>We store the current program and program head with the <code>PointedList</code>, and also represent the register contents with a <code>Map Char Int</code>.</p>
 <h4 id="brief-aside-on-lenses-with-state">Brief Aside on Lenses with State</h4>
-<p>Using <em><a href="http://hackage.haskell.org/package/lens">lens</a></em> with lenses (especially classy ones) is one of the only things that makes programming against <code>State</code> with non-trivial state bearable for me! <code>makeClassy</code> gives us a typeclass <code>HasProgState</code>, which is for things that “have” a <code>ProgState</code>, as well as lenses into the <code>psTape</code> and <code>psRegs</code> field for that type. We can use these lenses with <em>lens</em> library machinery:</p>
+<p>We’re going to be implementing our interpreters using <em>lens</em> machinery. Keep in mind that this isn’t necessary — this just makes things a little simpler for me. Using <em>lens</em> with classy lenses is one of the things that make programming against <code>State</code> with non-trivial state bearable for me, personally! However, keep in mind that the lens machinery is more or less unrelated to the interpreter pattern and is not necessary for it. We’re just using it here to make <code>State</code> and <code>MonadState</code> a little nicer to work with!</p>
+<p><code>makeClassy</code> gives us a typeclass <code>HasProgState</code>, which is for things that “have” a <code>ProgState</code>, as well as lenses into the <code>psTape</code> and <code>psRegs</code> field for that type. We can use these lenses with <em>lens</em> library machinery:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="co">-- | &quot;get&quot; based on a lens</span></a>
 <a class="sourceLine" id="cb18-2" data-line-number="2"><span class="ot">use   ::</span> <span class="dt">MonadState</span> s m <span class="ot">=&gt;</span> <span class="dt">Lens&#39;</span> s a <span class="ot">-&gt;</span> m a</a>
 <a class="sourceLine" id="cb18-3" data-line-number="3"></a>
@@ -300,7 +302,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Note <code>add :: MonadAccum w m =&gt; w -&gt; m ()</code> and <code>look :: MonadAccum w w</code>, the functions to “tell” to a <code>MonadAccum</code> and the function to “get”/“ask” from a <code>MonadAccum</code>.</p>
 <h4 id="monadaccum">MonadAccum</h4>
 <p>Small relevant note — <code>MonadAccum</code> does not yet exist in <em>mtl</em>, though it probably will in the next version. It’s the classy version of <code>AccumT</code>, which is already in <em><a href="https://hackage.haskell.org/package/transformers-0.5.5.0">transformers-0.5.5.0</a></em>.</p>
-<p>For now, <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L128-L130">I’ve added <code>MonadAccum</code></a> and <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L246-L248">appropriate instances</a> in the sample source code, but when the new version of <em>mtl</em> comes out, I’ll be sure to update this post to take this into account!</p>
+<p>For now, <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L128-L130">I’ve added <code>MonadAccum</code></a> and <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L247-L249">appropriate instances</a> in the sample source code, but when the new version of <em>mtl</em> comes out, I’ll be sure to update this post to take this into account!</p>
 <h3 id="interpreting-com-for-part-b">Interpreting Com for Part B</h3>
 <p>Part B requires an environment where:</p>
 <ol type="1">
@@ -309,18 +311,19 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 </ol>
 <p>We can interpret <code>CSnd</code>’s effects using <code>MonadWriter [Int]</code>, to collect all emitted <code>Int</code>s. We can interpret <code>CRcv</code>’s effects using <code>MonadState s</code>, where <code>s</code> contains an <code>[Int]</code> acting as a source of <code>Int</code>s to consume.</p>
 <p>We’re going to use a <code>Thread</code> type to keep track of all thread state. We do this so we can merge the contexts of <code>interpMem</code> and <code>interpComB</code>, and really treat them (using type inference) as both working in the same interpretation context.</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L156-L162</span></a>
+<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L156-L163</span></a>
 <a class="sourceLine" id="cb25-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb25-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Thread</span> <span class="fu">=</span> <span class="dt">T</span> {<span class="ot"> _tState   ::</span> <span class="dt">ProgState</span></a>
-<a class="sourceLine" id="cb25-4" data-line-number="4">                ,<span class="ot"> _tBuffer  ::</span> [<span class="dt">Int</span>]</a>
-<a class="sourceLine" id="cb25-5" data-line-number="5">                }</a>
-<a class="sourceLine" id="cb25-6" data-line-number="6">makeClassy <span class="ch">&#39;&#39;</span><span class="dt">Thread</span></a>
-<a class="sourceLine" id="cb25-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb25-8" data-line-number="8"><span class="kw">instance</span> <span class="dt">HasProgState</span> <span class="dt">Thread</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb25-9" data-line-number="9">    progState <span class="fu">=</span> tState</a></code></pre></div>
+<a class="sourceLine" id="cb25-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Thread</span> <span class="fu">=</span> <span class="dt">T</span></a>
+<a class="sourceLine" id="cb25-4" data-line-number="4">    {<span class="ot"> _tState   ::</span> <span class="dt">ProgState</span></a>
+<a class="sourceLine" id="cb25-5" data-line-number="5">    ,<span class="ot"> _tBuffer  ::</span> [<span class="dt">Int</span>]</a>
+<a class="sourceLine" id="cb25-6" data-line-number="6">    }</a>
+<a class="sourceLine" id="cb25-7" data-line-number="7">makeClassy <span class="ch">&#39;&#39;</span><span class="dt">Thread</span></a>
+<a class="sourceLine" id="cb25-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb25-9" data-line-number="9"><span class="kw">instance</span> <span class="dt">HasProgState</span> <span class="dt">Thread</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb25-10" data-line-number="10">    progState <span class="fu">=</span> tState</a></code></pre></div>
 <p>(We write an instance for <code>HasProgState Thread</code>, so we can use <code>interpMem</code> in a <code>MonadState Thread m</code>, since <code>psRegs :: Lens' Thread (M.Map Char Int)</code>, for example, will refer to the <code>psRegs</code> inside the <code>ProgState</code> in the <code>Thread</code>)</p>
 <p>And now, to interpret:</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L164-L173</span></a>
+<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L165-L174</span></a>
 <a class="sourceLine" id="cb26-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb26-3" data-line-number="3">interpComB</a>
 <a class="sourceLine" id="cb26-4" data-line-number="4"><span class="ot">    ::</span> (<span class="dt">MonadWriter</span> [<span class="dt">Int</span>] m, <span class="dt">MonadFail</span> m, <span class="dt">MonadState</span> <span class="dt">Thread</span> m)</a>
@@ -402,7 +405,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb36-1" data-line-number="1">zoom<span class="ot"> _1 ::</span> <span class="dt">MaybeT</span> (<span class="dt">State</span> s) a <span class="ot">-&gt;</span> <span class="dt">MaybeT</span> (<span class="dt">State</span> (s, t)) a</a>
 <a class="sourceLine" id="cb36-2" data-line-number="2">zoom<span class="ot"> _2 ::</span> <span class="dt">MaybeT</span> (<span class="dt">State</span> t) a <span class="ot">-&gt;</span> <span class="dt">MaybeT</span> (<span class="dt">State</span> (s, t)) a</a></code></pre></div>
 <p>To “lift” our actions on one thread to be actions on a “tuple” of threads. We have, in the end:</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L175-L184</span></a>
+<div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L176-L185</span></a>
 <a class="sourceLine" id="cb37-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb37-3" data-line-number="3"><span class="ot">stepB ::</span> <span class="dt">MaybeT</span> (<span class="dt">State</span> (<span class="dt">Thread</span>, <span class="dt">Thread</span>)) <span class="dt">Int</span></a>
 <a class="sourceLine" id="cb37-4" data-line-number="4">stepB <span class="fu">=</span> <span class="kw">do</span></a>
@@ -419,7 +422,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>If both threads are blocking (they both have to external outputs to pass on), then we’re done (using <code>guard</code>).</p>
 <p>We return the number of items that “Program 1” (the second thread) outputs, because that’s what we need for our answer.</p>
 <p>This is one “single pass” of both of our threads. As you can anticipate, we’ll use <code>many</code> again to run these multiple times until both threads block.</p>
-<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L186-L194</span></a>
+<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L187-L195</span></a>
 <a class="sourceLine" id="cb38-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb38-3" data-line-number="3"><span class="ot">partB ::</span> <span class="dt">P.PointedList</span> <span class="dt">Op</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
 <a class="sourceLine" id="cb38-4" data-line-number="4">partB ops <span class="fu">=</span> maybe (error <span class="st">&quot;`many` cannot fail&quot;</span>) sum</a>
@@ -432,8 +435,8 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb38-11" data-line-number="11">         )</a></code></pre></div>
 <p><code>many :: MaybeT s Int -&gt; MaybeT s [Int]</code>, so <code>runMaybeT</code> gives us a <code>Maybe [Int]</code>, where each item in the resulting list is the number of items emitted by Program 1 at every iteration of <code>stepB</code>. Note that <code>many</code> produces an action that <em>cannot fail</em>, so its result <em>must be <code>Just</code></em>. To get our final answer, we only need to sum.</p>
 <h3 id="examples">Examples</h3>
-<p>In the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs">sample source code</a>, I’ve included <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L201-L244">my own puzzle input</a> provided to me from the advent of code website. We can now get actual answers given some sample puzzle input:</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L196-L199</span></a>
+<p>In the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs">sample source code</a>, I’ve included <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L202-L245">my own puzzle input</a> provided to me from the advent of code website. We can now get actual answers given some sample puzzle input:</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L197-L200</span></a>
 <a class="sourceLine" id="cb39-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb39-3" data-line-number="3"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb39-4" data-line-number="4">main <span class="fu">=</span> <span class="kw">do</span></a>
@@ -530,13 +533,14 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h3 id="combining-many-different-sets-of-primitives">Combining many different sets of primitives</h3>
 <p>If we had three sets of primitives we wanted to combine, we might be tempted to use <code>f :|: g :|: h</code> and <code>handleF &gt;|&lt; handleG &gt;|&lt; handleH</code>. However, there’s a better way! Instead of <code>f :|: g :|: h</code>, you can use <code>FSum '[f, g, h]</code> to combine multiple sets of primitives in a clean way.</p>
 <p>If there are no duplicates in your type-level list, you can even use <code>finj</code> to create your <code>FSum</code>s automatically:</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="ot">finj ::</span> f ∈ fs <span class="ot">=&gt;</span> f a <span class="ot">-&gt;</span> <span class="dt">FSum</span> fs a</a>
-<a class="sourceLine" id="cb49-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb49-3" data-line-number="3"><span class="ot">finj ::</span> <span class="dt">Mem</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
-<a class="sourceLine" id="cb49-4" data-line-number="4"><span class="ot">finj ::</span> <span class="dt">Com</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
-<a class="sourceLine" id="cb49-5" data-line-number="5"><span class="ot">finj ::</span> <span class="dt">Foo</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
-<a class="sourceLine" id="cb49-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb49-7" data-line-number="7">prompt (finj (<span class="dt">MGet</span> <span class="ch">&#39;c&#39;</span>))<span class="ot"> ::</span> <span class="dt">Prompt</span> (<span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo]) Int</span></a></code></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="co">-- (∈) is a typeclass that has instances whenever f in the type-level list fs</span></a>
+<a class="sourceLine" id="cb49-2" data-line-number="2"><span class="ot">finj ::</span> f ∈ fs <span class="ot">=&gt;</span> f a <span class="ot">-&gt;</span> <span class="dt">FSum</span> fs a</a>
+<a class="sourceLine" id="cb49-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb49-4" data-line-number="4"><span class="ot">finj ::</span> <span class="dt">Mem</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
+<a class="sourceLine" id="cb49-5" data-line-number="5"><span class="ot">finj ::</span> <span class="dt">Com</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
+<a class="sourceLine" id="cb49-6" data-line-number="6"><span class="ot">finj ::</span> <span class="dt">Foo</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
+<a class="sourceLine" id="cb49-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb49-8" data-line-number="8">prompt (finj (<span class="dt">MGet</span> <span class="ch">&#39;c&#39;</span>))<span class="ot"> ::</span> <span class="dt">Prompt</span> (<span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo]) Int</span></a></code></pre></div>
 <p>There isn’t really a built-in way to handle these, but you can whip up a utility function with <code>Prod</code> (from <em>type-combinators</em>) and <code>ifoldMapFSum</code>.</p>
 <div class="sourceCode" id="cb50"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb50-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">Handle</span> a r f <span class="fu">=</span> <span class="dt">Handle</span> {<span class="ot"> runHandle ::</span> f a <span class="ot">-&gt;</span> r }</a>
 <a class="sourceLine" id="cb50-2" data-line-number="2"></a>
