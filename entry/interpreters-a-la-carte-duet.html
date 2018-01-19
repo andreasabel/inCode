@@ -241,8 +241,8 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb19-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb19-4" data-line-number="4"><span class="co">-- | &quot;set&quot; the PointedList</span></a>
 <a class="sourceLine" id="cb19-5" data-line-number="5">(psTape <span class="fu">.=</span>)<span class="ot"> ::</span> (<span class="dt">HasProgState</span> s, <span class="dt">MonadState</span> s m) <span class="ot">=&gt;</span> <span class="dt">P.PointedList</span> <span class="dt">Op</span> <span class="ot">-&gt;</span> m ()</a></code></pre></div>
-<p>The nice thing about lenses is that they compose, so, for example, we have:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="ot">at ::</span> k <span class="ot">-&gt;</span> <span class="dt">Lens&#39;</span> (<span class="dt">Map</span> k    v  ) (<span class="dt">Maybe</span> v)</a>
+<p>The nice thing about lenses is that they compose. For example, we have:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="ot">at ::</span> k <span class="ot">-&gt;</span> <span class="dt">Lens&#39;</span> (<span class="dt">Map</span> k    v  ) (<span class="dt">Maybe</span> v  )</a>
 <a class="sourceLine" id="cb20-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb20-3" data-line-number="3">at <span class="ch">&#39;h&#39;</span><span class="ot">  ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Map</span> <span class="dt">Char</span> <span class="dt">Int</span>) (<span class="dt">Maybe</span> <span class="dt">Int</span>)</a></code></pre></div>
 <p>We can use <code>at 'c'</code> to give us a lens from our registers (<code>Map Char Int</code>) into the specific register <code>'c'</code> as a <code>Maybe Int</code> — it’s <code>Nothing</code> if the item is not in the <code>Map</code>, and <code>Just</code> if it is (with the value).</p>
@@ -271,7 +271,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Nothing too surprising here — we just interpret every primitive in our monadic context.</p>
 <p>We use <code>MonadFail</code> to explicitly state that we rely on a failed pattern match for control flow.<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a> <code>P.moveN :: Int -&gt; P.PointedList a -&gt; Maybe (P.PointedList a)</code> will “shift” a <code>PointedList</code> by a given amount, but will return <code>Nothing</code> if it goes out of bounds. Our program is meant to terminate if we ever go out of bounds, so we can implement this by using a do block pattern match with <code>MonadFail</code>. For instances like <code>MaybeT</code>/<code>Maybe</code>, this means <code>empty</code>/<code>Nothing</code>/short-circuit. So when we <code>P.move</code>, we do-block pattern match on <code>Just t'</code>.</p>
 <p>We also use <code>P.focus :: Lens' (P.PointedList a) a</code>, a lens that the <em>pointedlist</em> library provides to the current “focus” of the <code>PointedList</code>.</p>
-<p>Note that most of this usage of lens with state is not exactly necessary (we can manually use <code>modify</code>, <code>gets</code>, etc. instead of lenses and operators), but it does make things a bit more convenient to write.</p>
+<p>Again, this usage of lens with <code>MonadState</code> is not exactly necessary (we can manually use <code>modify</code>, <code>gets</code>, etc. instead of lenses and operators), but it does make things a bit more convenient to write.</p>
 <h4 id="gadt-property">GADT Property</h4>
 <p>Again, the GADT-ness of <code>Mem</code> (and <code>Com</code>) works to enforce that the “results” that each primitive expects is the result that we give.</p>
 <p>For example, <code>MGet 'c' :: Mem Int</code> requires us to return <code>m Int</code>. This is what <code>use</code> gives us. <code>MSet 'c' 3 :: Mem ()</code> requires us to return <code>m ()</code>, which is what <code>(.=)</code> returns.</p>
@@ -281,7 +281,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h3 id="interpreting-com-for-part-a">Interpreting Com for Part A</h3>
 <p>Now, Part A requires an environment where:</p>
 <ol type="1">
-<li><code>CSnd</code> “emits” items into the void, keeping track only of the <em>last</em> emitted item</li>
+<li><code>CSnd</code> “emits” items (as sounds), keeping track only of the <em>last</em> emitted item</li>
 <li><code>CRcv</code> “catches” the last thing seen by <code>CSnd</code>, keeping track of only the <em>first</em> caught item</li>
 </ol>
 <p>We can keep track of this using <code>MonadWriter (First Int)</code> to interpret <code>CRcv</code> (if there are two <em>rcv</em>’s, we only care about the first <em>rcv</em>’d thing), and <code>MonadAccum (Last Int)</code> to interpret <code>CSnd</code>. A <code>MonadAccum</code> is just like <code>MonadWriter</code> (where you can “tell” things and accumulate things), but you also have the ability to read the accumulated log at any time. We use <code>Last Int</code> because, if there are two <em>snd</em>’s, we only care about the last <em>snd</em>’d thing.</p>
@@ -295,7 +295,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb24-8" data-line-number="8">    <span class="dt">CSnd</span> x <span class="ot">-&gt;</span></a>
 <a class="sourceLine" id="cb24-9" data-line-number="9">      add (<span class="dt">Last</span> (<span class="dt">Just</span> x))</a>
 <a class="sourceLine" id="cb24-10" data-line-number="10">    <span class="dt">CRcv</span> x <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb24-11" data-line-number="11">      when (x <span class="fu">/=</span> <span class="dv">0</span>) <span class="fu">$</span> <span class="kw">do</span>      <span class="co">-- don&#39;t rcv if the register parameter is 0</span></a>
+<a class="sourceLine" id="cb24-11" data-line-number="11">      unless (x <span class="fu">==</span> <span class="dv">0</span>) <span class="fu">$</span> <span class="kw">do</span>      <span class="co">-- don&#39;t rcv if the register parameter is 0</span></a>
 <a class="sourceLine" id="cb24-12" data-line-number="12">        <span class="dt">Last</span> lastSent <span class="ot">&lt;-</span> look</a>
 <a class="sourceLine" id="cb24-13" data-line-number="13">        tell (<span class="dt">First</span> lastSent)</a>
 <a class="sourceLine" id="cb24-14" data-line-number="14">      return x</a></code></pre></div>
@@ -342,8 +342,8 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb27-2" data-line-number="2">      <span class="ot">-&gt;</span> (g a <span class="ot">-&gt;</span> r)</a>
 <a class="sourceLine" id="cb27-3" data-line-number="3">      <span class="ot">-&gt;</span> ((f <span class="fu">:|:</span> g) a <span class="ot">-&gt;</span> r)</a></code></pre></div>
 <p>Basically, <code>&gt;|&lt;</code> lets us write a “handler” for a <code>:|:</code> by providing a handler for each side. For example, with more concrete types:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1"><span class="ot">(&gt;|&lt;) ::</span> (<span class="dt">Mem</span> a <span class="ot">-&gt;</span> r)</a>
-<a class="sourceLine" id="cb28-2" data-line-number="2">      <span class="ot">-&gt;</span> (<span class="dt">Com</span> a <span class="ot">-&gt;</span> r)</a>
+<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1"><span class="ot">(&gt;|&lt;) ::</span> (<span class="dt">Mem</span> a           <span class="ot">-&gt;</span> r)</a>
+<a class="sourceLine" id="cb28-2" data-line-number="2">      <span class="ot">-&gt;</span> (<span class="dt">Com</span> a           <span class="ot">-&gt;</span> r)</a>
 <a class="sourceLine" id="cb28-3" data-line-number="3">      <span class="ot">-&gt;</span> ((<span class="dt">Mem</span> <span class="fu">:|:</span> <span class="dt">Com</span>) a <span class="ot">-&gt;</span> r)</a></code></pre></div>
 <p>We can use this to build an interpreter for <code>Duet</code>, which goes into <code>runPromptM</code>, by using <code>&gt;|&lt;</code> to generate our compound interpreters.</p>
 <div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1">runPromptM</a>
@@ -433,7 +433,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb38-9" data-line-number="9">    s0 <span class="fu">=</span> ( <span class="dt">T</span> (<span class="dt">PS</span> ops (M.singleton <span class="ch">&#39;p&#39;</span> <span class="dv">0</span>)) []</a>
 <a class="sourceLine" id="cb38-10" data-line-number="10">         , <span class="dt">T</span> (<span class="dt">PS</span> ops (M.singleton <span class="ch">&#39;p&#39;</span> <span class="dv">1</span>)) []</a>
 <a class="sourceLine" id="cb38-11" data-line-number="11">         )</a></code></pre></div>
-<p><code>many :: MaybeT s Int -&gt; MaybeT s [Int]</code>, so <code>runMaybeT</code> gives us a <code>Maybe [Int]</code>, where each item in the resulting list is the number of items emitted by Program 1 at every iteration of <code>stepB</code>. Note that <code>many</code> produces an action that <em>cannot fail</em>, so its result <em>must be <code>Just</code></em>. To get our final answer, we only need to sum.</p>
+<p><code>many :: MaybeT s Int -&gt; MaybeT s [Int]</code>, so <code>runMaybeT</code> gives us a <code>Maybe [Int]</code>, where each item in the resulting list is the number of items emitted by Program 1 at every iteration of <code>stepB</code>. Note that <code>many</code> produces an action that is guaranteed to succeed, so its result <em>must be <code>Just</code></em>. To get our final answer, we only need to sum.</p>
 <h3 id="examples">Examples</h3>
 <p>In the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs">sample source code</a>, I’ve included <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L202-L245">my own puzzle input</a> provided to me from the advent of code website. We can now get actual answers given some sample puzzle input:</p>
 <div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L197-L200</span></a>

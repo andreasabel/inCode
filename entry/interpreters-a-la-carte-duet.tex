@@ -667,11 +667,11 @@ So, for example, we have:
 \end{Highlighting}
 \end{Shaded}
 
-The nice thing about lenses is that they compose, so, for example, we have:
+The nice thing about lenses is that they compose. For example, we have:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{at ::}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Map}\NormalTok{ k    v  ) (}\DataTypeTok{Maybe}\NormalTok{ v)}
+\OtherTok{at ::}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Map}\NormalTok{ k    v  ) (}\DataTypeTok{Maybe}\NormalTok{ v  )}
 
 \NormalTok{at }\CharTok{'h'}\OtherTok{  ::} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Map} \DataTypeTok{Char} \DataTypeTok{Int}\NormalTok{) (}\DataTypeTok{Maybe} \DataTypeTok{Int}\NormalTok{)}
 \end{Highlighting}
@@ -757,8 +757,8 @@ We also use \texttt{P.focus\ ::\ Lens\textquotesingle{}\ (P.PointedList\ a)\ a},
 a lens that the \emph{pointedlist} library provides to the current ``focus'' of
 the \texttt{PointedList}.
 
-Note that most of this usage of lens with state is not exactly necessary (we can
-manually use \texttt{modify}, \texttt{gets}, etc. instead of lenses and
+Again, this usage of lens with \texttt{MonadState} is not exactly necessary (we
+can manually use \texttt{modify}, \texttt{gets}, etc. instead of lenses and
 operators), but it does make things a bit more convenient to write.
 
 \hypertarget{gadt-property}{%
@@ -794,7 +794,7 @@ Now, Part A requires an environment where:
 \def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
-  \texttt{CSnd} ``emits'' items into the void, keeping track only of the
+  \texttt{CSnd} ``emits'' items (as sounds), keeping track only of the
   \emph{last} emitted item
 \item
   \texttt{CRcv} ``catches'' the last thing seen by \texttt{CSnd}, keeping track
@@ -821,7 +821,7 @@ there are two \emph{snd}'s, we only care about the last \emph{snd}'d thing.
     \DataTypeTok{CSnd}\NormalTok{ x }\OtherTok{->}
 \NormalTok{      add (}\DataTypeTok{Last}\NormalTok{ (}\DataTypeTok{Just}\NormalTok{ x))}
     \DataTypeTok{CRcv}\NormalTok{ x }\OtherTok{->} \KeywordTok{do}
-\NormalTok{      when (x }\FunctionTok{/=} \DecValTok{0}\NormalTok{) }\FunctionTok{$} \KeywordTok{do}      \CommentTok{-- don't rcv if the register parameter is 0}
+\NormalTok{      unless (x }\FunctionTok{==} \DecValTok{0}\NormalTok{) }\FunctionTok{$} \KeywordTok{do}      \CommentTok{-- don't rcv if the register parameter is 0}
         \DataTypeTok{Last}\NormalTok{ lastSent }\OtherTok{<-}\NormalTok{ look}
 \NormalTok{        tell (}\DataTypeTok{First}\NormalTok{ lastSent)}
 \NormalTok{      return x}
@@ -936,8 +936,8 @@ For example, with more concrete types:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{(>|<) ::}\NormalTok{ (}\DataTypeTok{Mem}\NormalTok{ a }\OtherTok{->}\NormalTok{ r)}
-      \OtherTok{->}\NormalTok{ (}\DataTypeTok{Com}\NormalTok{ a }\OtherTok{->}\NormalTok{ r)}
+\OtherTok{(>|<) ::}\NormalTok{ (}\DataTypeTok{Mem}\NormalTok{ a           }\OtherTok{->}\NormalTok{ r)}
+      \OtherTok{->}\NormalTok{ (}\DataTypeTok{Com}\NormalTok{ a           }\OtherTok{->}\NormalTok{ r)}
       \OtherTok{->}\NormalTok{ ((}\DataTypeTok{Mem} \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a }\OtherTok{->}\NormalTok{ r)}
 \end{Highlighting}
 \end{Shaded}
@@ -1146,8 +1146,8 @@ use \texttt{many} again to run these multiple times until both threads block.
 \texttt{many\ ::\ MaybeT\ s\ Int\ -\textgreater{}\ MaybeT\ s\ {[}Int{]}}, so
 \texttt{runMaybeT} gives us a \texttt{Maybe\ {[}Int{]}}, where each item in the
 resulting list is the number of items emitted by Program 1 at every iteration of
-\texttt{stepB}. Note that \texttt{many} produces an action that \emph{cannot
-fail}, so its result \emph{must be \texttt{Just}}. To get our final answer, we
+\texttt{stepB}. Note that \texttt{many} produces an action that is guaranteed to
+succeed, so its result \emph{must be \texttt{Just}}. To get our final answer, we
 only need to sum.
 
 \hypertarget{examples}{%
