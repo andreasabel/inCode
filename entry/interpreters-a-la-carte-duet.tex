@@ -94,17 +94,17 @@
 Code}}.}
 
 This post is just a fun one exploring a wide range of techniques that I applied
-to solve the Day 18 puzzles of this year's great
+to solve the Day 18 puzzles of this past year's great
 \href{http://adventofcode.com/2017}{Advent of Code}. The puzzles involved
 interpreting an assembly language on an abstract machine. The neat twist is that
-Part A gave you a description of one abstract machine, and Part B gave you a
-\emph{different} abstract machine to interpret the same language in. This twist
-(one language, but different interpreters/abstract machines) is basically one of
-the textbook applications of the \emph{interpreter pattern} in Haskell and
-functional programming, so it was fun to implement my solution in that pattern
--- the assembly language source was ``compiled'' to an abstract data type once,
-and the difference between Part A and Part B was just a different choice of
-interpreter.
+Part A gave you a description of \emph{one abstract machine}, and Part B gave
+you a \emph{different} abstract machine to interpret the \emph{same language}
+in. This twist (one language, but different interpreters/abstract machines) is
+basically one of the textbook applications of the \emph{interpreter pattern} in
+Haskell and functional programming, so it was fun to implement my solution in
+that pattern --- the assembly language source was ``compiled'' to an abstract
+monad once, and the difference between Part A and Part B was just a different
+choice of interpreter.
 
 Even more interesting is that the two machines are only ``half different'' --
 there's one aspect of the virtual machines that are the same between the two
@@ -219,17 +219,18 @@ Once both of your programs have terminated (regardless of what caused them to do
 so), \emph{how many times did program \texttt{1} send a value}?
 \end{quote}
 
-Note that in each of these, ``the program'' is a program (written in the Duet
-assembly language), which is different for each user and given to us by the
-site.
+(In each of these, ``the program'' is a program (written in the Duet assembly
+language), which is different for each user and given to us by the site. If you
+sign up and view the page, you will see a link to your own unique program to
+run.)
 
 What's going on here is that both parts execute the same program in two
-different virtual machines -- one has ``sound'' and ``recover'', and the other
+different virtual machines --- one has ``sound'' and ``recover'', and the other
 has ``send'' and ``receive''. We are supposed to run the same program in
 \emph{both} of these machines.
 
-However, note that these two machines aren't \emph{completely} different -- they
-both have the ability to manipulate memory and read/shift program data. So
+However, note that these two machines aren't \emph{completely} different ---
+they both have the ability to manipulate memory and read/shift program data. So
 really, we want to be able to create a ``modular'' spec and implementation of
 these machines, so that we may re-use this memory manipulation aspect when
 constructing our machine, without duplicating any code.
@@ -333,7 +334,7 @@ GADT:
 \end{Shaded}
 
 For those unfamiliar with GADT syntax, this is declaring a data type
-\texttt{StateCommand\ a} with two constructors -- \texttt{Put}, which takes an
+\texttt{StateCommand\ a} with two constructors --- \texttt{Put}, which takes an
 \texttt{Int} and creates a \texttt{StateCommand\ ()}, and \texttt{Get}, which
 takes no parameters and creates a \texttt{StateCommand\ Int}.
 
@@ -349,9 +350,10 @@ You can then write \texttt{IntState} as:
 \end{Highlighting}
 \end{Shaded}
 
-Which is an appropriate Functor, Applicative, and Monad.
+which automatically has the appropriate Functor, Applicative, and Monad
+instances.
 
-And our primitives can be constructed using \texttt{prompt}:
+Our primitives can be constructed using \texttt{prompt}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -400,16 +402,16 @@ interpreting our \texttt{IntState}:
     \DataTypeTok{Put}\NormalTok{ x }\OtherTok{->}\NormalTok{ writeIORef r x}
     \DataTypeTok{Get}   \OtherTok{->}\NormalTok{ readIORef r}
 
-\OtherTok{runAsIO ::} \DataTypeTok{IntState}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{IO}\NormalTok{ a}
+\OtherTok{runAsIO ::} \DataTypeTok{IntState}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{IO}\NormalTok{ (a, }\DataTypeTok{Int}\NormalTok{)}
 \NormalTok{runAsIO m s0 }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    r }\OtherTok{<-}\NormalTok{ newIORef s0}
-\NormalTok{    runPromptM (interpretIO r) m}
+\NormalTok{    ref }\OtherTok{<-}\NormalTok{ newIORef s0}
+\NormalTok{    runPromptM (interpretIO ref) m}
 \end{Highlighting}
 \end{Shaded}
 
 \texttt{interpretIO} is our interpreter, in \texttt{IO}. \texttt{runPromptM}
 will interpret each primitive (\texttt{Put} and \texttt{Get}) using
-\texttt{interpretIO}, and generate the result for us.
+\texttt{interpretIO} and generate the result for us.
 
 Note that the GADT property of \texttt{StateCommand} ensures us that the
 \emph{result} of our \texttt{IO} action matches with the result that the GADT
@@ -445,7 +447,8 @@ each individual primitive command.
 Now let's specify the ``primitives'' of our program. It'll be useful to separate
 out the ``memory-based'' primitive commands from the ``communication-based''
 primitive commands. This is so that we can write interpreters that operate on
-each one individually.
+each one individually, and re-use our memory-based primitives and interpreters
+for both parts of the puzzle.
 
 For memory, we can access and modify register values, as well as jump around in
 the program tape and read the \texttt{Op} at the current program head:
@@ -488,7 +491,7 @@ Now, we can leverage the \texttt{:\textbar{}:} type from
 \end{Highlighting}
 \end{Shaded}
 
-\texttt{:\textbar{}:} is a ``functor disjunction'' -- a value of type
+\texttt{:\textbar{}:} is a ``functor disjunction'' --- a value of type
 \texttt{(f\ :\textbar{}:\ g)\ a} is either \texttt{f\ a} or \texttt{g\ a}.
 \texttt{:\textbar{}:} is in \emph{base} twice, as \texttt{:+:} in
 \emph{GHC.Generics} and as \texttt{Sum} in \emph{Data.Functor.Sum}. However, the
@@ -512,8 +515,8 @@ type that contains all of the primitives of \texttt{Mem} and the primitives of
 
 etc.
 
-Our final data type then -- a monad that encompasses \emph{all} possible Duet
-primitive commands, is:
+Our final data type then --- a monad that encompasses \emph{all} possible Duet
+primitive commands --- is:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -669,7 +672,7 @@ The nice thing about lenses is that they compose, so, for example, we have:
 
 We can use \texttt{at\ \textquotesingle{}c\textquotesingle{}} to give us a lens
 from our registers (\texttt{Map\ Char\ Int}) into the specific register
-\texttt{\textquotesingle{}c\textquotesingle{}} as a \texttt{Maybe\ Int} -- it's
+\texttt{\textquotesingle{}c\textquotesingle{}} as a \texttt{Maybe\ Int} --- it's
 \texttt{Nothing} if the item is not in the \texttt{Map}, and \texttt{Just} if it
 is (with the value).
 
@@ -722,7 +725,7 @@ With these tools to make life easier, we can write an interpreter for our
 \end{Highlighting}
 \end{Shaded}
 
-Nothing too surprising here -- we just interpret every primitive in our monadic
+Nothing too surprising here --- we just interpret every primitive in our monadic
 context.
 
 We use \texttt{MonadFail} to explicitly state that we rely on a failed pattern
@@ -827,7 +830,7 @@ and \texttt{look\ ::\ MonadAccum\ w\ w}, the functions to ``tell'' to a
 \hypertarget{monadaccum}{%
 \subsubsection{MonadAccum}\label{monadaccum}}
 
-Small relevant note -- \texttt{MonadAccum} does not yet exist in \emph{mtl},
+Small relevant note --- \texttt{MonadAccum} does not yet exist in \emph{mtl},
 though it probably will in the next version. It's the classy version of
 \texttt{AccumT}, which is already in
 \emph{\href{https://hackage.haskell.org/package/transformers-0.5.5.0}{transformers-0.5.5.0}}.
@@ -958,7 +961,7 @@ We now just have to pick concrete monads now for us to interpret into.
 \subsection{Part A}\label{part-a}}
 
 Our interpreter for Part A is
-\texttt{interpMem\ \textgreater{}\textbar{}\textless{}\ interpComA} -- we
+\texttt{interpMem\ \textgreater{}\textbar{}\textless{}\ interpComA} --- we
 interpret the \texttt{Mem} primitives the usual way, and interpret the
 \texttt{Com} primitives the Part A way.
 
@@ -1021,7 +1024,7 @@ Note, however, that if we only want the value of the \texttt{First\ Int} in the
 valid \texttt{CRcv} is used \texttt{tell}'d, thanks to laziness. If we only ask
 for the \texttt{First\ Int}, it'll stop running the rest of the computation!
 
-Here is the entirety of running Part A -- as you can see, it consists mostly of
+Here is the entirety of running Part A --- as you can see, it consists mostly of
 unwrapping \emph{transformers} newtype wrappers.
 
 \begin{Shaded}
@@ -1098,8 +1101,8 @@ We have, in the end:
 \end{Highlighting}
 \end{Shaded}
 
-Our final \texttt{stepB} really doesn't need a \texttt{WriterT\ {[}Int{]}} -- we
-just use that internally to collect \emph{snd} outputs. So we use
+Our final \texttt{stepB} really doesn't need a \texttt{WriterT\ {[}Int{]}} ---
+we just use that internally to collect \emph{snd} outputs. So we use
 \texttt{execWriter} after ``interpreting'' our actions (along with
 \texttt{many}, to repeat our thread steps until they block) to just get the
 resulting logs.
