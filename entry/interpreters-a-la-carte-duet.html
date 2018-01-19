@@ -439,7 +439,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb39-4" data-line-number="4">main <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb39-5" data-line-number="5">    print <span class="fu">$</span> partA (parseProgram testProg)</a>
 <a class="sourceLine" id="cb39-6" data-line-number="6">    print <span class="fu">$</span> partB (parseProgram testProg)</a></code></pre></div>
-<p>And, as a stack script, we can run this and see my own puzzle’s answers:</p>
+<p>And, as a stack script, we can run this and see my own puzzle input’s answers:</p>
 <div class="sourceCode" id="cb40"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb40-1" data-line-number="1">$ <span class="ex">./Duet.hs</span></a>
 <a class="sourceLine" id="cb40-2" data-line-number="2"><span class="ex">Just</span> 7071</a>
 <a class="sourceLine" id="cb40-3" data-line-number="3"><span class="ex">8001</span></a></code></pre></div>
@@ -452,9 +452,9 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <li>Lenses with State and classy lenses</li>
 <li>Programming against polymorphic monadic contexts like <code>MonadState</code>, <code>MonadWriter</code>, <code>MonadAccum</code>, etc.</li>
 </ol>
-<h3 id="pushing-the-boundaries">Pushing the Boundaries</h3>
-<p>The <em>type-combinators</em> library opens up a lot of doors to combining modular interpreters in more complex ways, as well!</p>
-<h4 id="functor-conjunctions">Functor conjunctions</h4>
+<h2 id="pushing-the-boundaries">Pushing the Boundaries</h2>
+<p>That’s the main part of the post! However, just for fun, we can take things a little further and expand on this technique. The <em>type-combinators</em> library opens up a lot of doors to combining modular interpreters in more complex ways!</p>
+<h3 id="functor-conjunctions">Functor conjunctions</h3>
 <p>We see that <code>:|:</code> (functor disjunction) can be used to merge sets of primitives. We can also use <code>:&amp;:</code> (functor conjunction), also known as <code>:*:</code> from <em>Generics.GHC</em> and <code>Product</code> from <em>Data.Functor.Product</em>!</p>
 <div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="kw">newtype</span> (f <span class="fu">:&amp;:</span> g) a <span class="fu">=</span> f a <span class="fu">:&amp;:</span> g a</a></code></pre></div>
 <p>Used with GADTs representing primitives, <code>:&amp;:</code> lets us “tag” our primitives with extra things.</p>
@@ -500,7 +500,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb45-13" data-line-number="13">       )</a>
 <a class="sourceLine" id="cb45-14" data-line-number="14">    <span class="ot">=&gt;</span> ((<span class="dt">C</span> <span class="dt">Int</span> <span class="fu">:&amp;:</span> <span class="dt">Mem</span>) <span class="fu">:|:</span> <span class="dt">Com</span>) a</a>
 <a class="sourceLine" id="cb45-15" data-line-number="15">    <span class="ot">-&gt;</span> m a</a></code></pre></div>
-<h4 id="manipulating-disjunctions-and-conjunctions">Manipulating Disjunctions and Conjunctions</h4>
+<h3 id="manipulating-disjunctions-and-conjunctions">Manipulating Disjunctions and Conjunctions</h3>
 <p>So, we have a <code>Mem :|: Conj</code>. How could we “tag” our <code>Mem</code> after-the-fact, to add <code>C Int</code>? We can manipulate the structure of conjunctions and disjunctions using the <code>Bifunctor1</code> from <em>Type.Class.Higher</em>, in <em>type-combinators</em>.</p>
 <p><code>bimap1</code> can be used to modify either half of a <code>:|:</code> or <code>:&amp;:</code>:</p>
 <div class="sourceCode" id="cb46"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb46-1" data-line-number="1">bimap1</a>
@@ -527,7 +527,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb48-6" data-line-number="6">runPromptM (prompt <span class="fu">.</span> bimap1 (<span class="dt">C</span> <span class="dv">0</span> <span class="fu">:&amp;:</span>) id)</a>
 <a class="sourceLine" id="cb48-7" data-line-number="7"><span class="ot">    ::</span> <span class="dt">Prompt</span> (      <span class="dt">Mem</span>       <span class="fu">:|:</span> <span class="dt">Com</span>) a</a>
 <a class="sourceLine" id="cb48-8" data-line-number="8">    <span class="ot">-&gt;</span> <span class="dt">Prompt</span> ((<span class="dt">C</span> <span class="dt">Int</span> <span class="fu">:&amp;:</span> <span class="dt">Mem</span>) <span class="fu">:|:</span> <span class="dt">Com</span>) a</a></code></pre></div>
-<h4 id="many-sets-of-primitives">Many sets of primitives</h4>
+<h3 id="many-sets-of-primitives">Many sets of primitives</h3>
 <p>Instead of <code>f &gt;|&lt; g &gt;|&lt; h</code>, you can use <code>FSum '[f, g, h]</code> to combine multiple sets of primitives in a clean way.</p>
 <p>If there are no duplicates in your type-level list, you can even use <code>finj</code> to create your <code>FSum</code>s automatically:</p>
 <div class="sourceCode" id="cb49"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="ot">finj ::</span> f ∈ fs <span class="ot">=&gt;</span> f a <span class="ot">-&gt;</span> <span class="dt">FSum</span> fs a</a>
@@ -556,7 +556,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb51-11" data-line-number="11">                      <span class="fu">:&lt;</span> Ø)</a>
 <a class="sourceLine" id="cb51-12" data-line-number="12">           )</a>
 <a class="sourceLine" id="cb51-13" data-line-number="13"><span class="ot">    ::</span> <span class="dt">Prompt</span> (<span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo]) a -&gt; m a</span></a></code></pre></div>
-<h4 id="endless-possibilities">Endless Possibilities</h4>
+<h3 id="endless-possibilities">Endless Possibilities</h3>
 <p>Hopefully this post inspires you a bit about this fun design pattern! And, if anything, I hope after reading this, you learn to recognize situations where the interpreter pattern might be useful in your everyday programming.</p>
 <section class="footnotes">
 <hr />

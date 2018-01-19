@@ -894,7 +894,7 @@ main = do
     print $ partB (parseProgram testProg)
 ```
 
-And, as a stack script, we can run this and see my own puzzle's answers:
+And, as a stack script, we can run this and see my own puzzle input's answers:
 
 ``` {.bash}
 $ ./Duet.hs
@@ -918,12 +918,14 @@ That's it! Hope you enjoyed some of the techniques used in this post, including
 5.  Programming against polymorphic monadic contexts like `MonadState`,
     `MonadWriter`, `MonadAccum`, etc.
 
-### Pushing the Boundaries
+Pushing the Boundaries
+----------------------
 
-The *type-combinators* library opens up a lot of doors to combining modular
-interpreters in more complex ways, as well!
+That's the main part of the post! However, just for fun, we can take things a
+little further and expand on this technique. The *type-combinators* library
+opens up a lot of doors to combining modular interpreters in more complex ways!
 
-#### Functor conjunctions
+### Functor conjunctions
 
 We see that `:|:` (functor disjunction) can be used to merge sets of primitives.
 We can also use `:&:` (functor conjunction), also known as `:*:` from
@@ -999,7 +1001,7 @@ uncurryFan interpMemThread >|< interpComB
     -> m a
 ```
 
-#### Manipulating Disjunctions and Conjunctions
+### Manipulating Disjunctions and Conjunctions
 
 So, we have a `Mem :|: Conj`. How could we "tag" our `Mem` after-the-fact, to
 add `C Int`? We can manipulate the structure of conjunctions and disjunctions
@@ -1043,7 +1045,7 @@ runPromptM (prompt . bimap1 (C 0 :&:) id)
     -> Prompt ((C Int :&: Mem) :|: Com) a
 ```
 
-#### Many sets of primitives
+### Many sets of primitives
 
 Instead of `f >|< g >|< h`, you can use `FSum '[f, g, h]` to combine multiple
 sets of primitives in a clean way.
@@ -1090,7 +1092,7 @@ runPromptM (handleFSum ( Handle handleMem
     :: Prompt (FSum '[Mem, Com, Foo]) a -> m a
 ```
 
-#### Endless Possibilities
+### Endless Possibilities
 
 Hopefully this post inspires you a bit about this fun design pattern! And, if
 anything, I hope after reading this, you learn to recognize situations where the
