@@ -1021,8 +1021,8 @@ In our case, ``failure'' is when the tape goes out of bounds.
 
 Note, however, that if we only want the value of the \texttt{First\ Int} in the
 \texttt{WriterT}, this will actually only repeat \texttt{stepA} until the first
-valid \texttt{CRcv} is used \texttt{tell}'d, thanks to laziness. If we only ask
-for the \texttt{First\ Int}, it'll stop running the rest of the computation!
+valid \texttt{CRcv} uses \texttt{tell}, thanks to laziness. If we only ask for
+the \texttt{First\ Int}, it'll stop running the rest of the computation!
 
 Here is the entirety of running Part A --- as you can see, it consists mostly of
 unwrapping \emph{transformers} newtype wrappers.
@@ -1048,7 +1048,7 @@ bounds before a successful \emph{rcv}.
 \hypertarget{part-b}{%
 \subsection{Part B}\label{part-b}}
 
-Our interpreter for Part B is a little simpler:
+Our interpreter's type for Part B is a little simpler:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1124,7 +1124,7 @@ use \texttt{many} again to run these multiple times until both threads block.
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L186-L194}
 
 \OtherTok{partB ::} \DataTypeTok{P.PointedList} \DataTypeTok{Op} \OtherTok{->} \DataTypeTok{Int}
-\NormalTok{partB ops }\FunctionTok{=}\NormalTok{ sum }\FunctionTok{.}\NormalTok{ concat}
+\NormalTok{partB ops }\FunctionTok{=}\NormalTok{ maybe (error }\StringTok{"`many` cannot fail"}\NormalTok{) sum}
           \FunctionTok{.}\NormalTok{ flip evalState s0}
           \FunctionTok{.}\NormalTok{ runMaybeT}
           \FunctionTok{$}\NormalTok{ many stepB}
@@ -1138,7 +1138,9 @@ use \texttt{many} again to run these multiple times until both threads block.
 \texttt{many\ ::\ MaybeT\ s\ Int\ -\textgreater{}\ MaybeT\ s\ {[}Int{]}}, so
 \texttt{runMaybeT} gives us a \texttt{Maybe\ {[}Int{]}}, where each item in the
 resulting list is the number of items emitted by Program 1 at every iteration of
-\texttt{stepB}. To get our final answer, we only need to sum.
+\texttt{stepB}. Note that \texttt{many} produces an action that \emph{cannot
+fail}, so its result \emph{must be \texttt{Just}}. To get our final answer, we
+only need to sum.
 
 \hypertarget{examples}{%
 \subsection{Examples}\label{examples}}

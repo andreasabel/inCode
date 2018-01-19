@@ -374,7 +374,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb32-4" data-line-number="4">stepA <span class="fu">=</span> runPromptM (interpMem <span class="fu">&gt;|&lt;</span> interpComA) stepProg</a></code></pre></div>
 <p><code>stepA</code> will make a single step of the tape, according to the interpreters <code>interpMem</code> and <code>interpComA</code>.</p>
 <p>Our final answer is then just the result of <em>repeating</em> this over and over again until there’s a failure. We take advantage of the fact that <code>MaybeT</code>’s <code>Alternative</code> instance uses <code>empty</code> for <code>fail</code>, so we can use <code>many :: MaybeT m a -&gt; MaybeT m [a]</code>, which repeats a <code>MaybeT</code> action several times until a failure is encountered. In our case, “failure” is when the tape goes out of bounds.</p>
-<p>Note, however, that if we only want the value of the <code>First Int</code> in the <code>WriterT</code>, this will actually only repeat <code>stepA</code> until the first valid <code>CRcv</code> is used <code>tell</code>’d, thanks to laziness. If we only ask for the <code>First Int</code>, it’ll stop running the rest of the computation!</p>
+<p>Note, however, that if we only want the value of the <code>First Int</code> in the <code>WriterT</code>, this will actually only repeat <code>stepA</code> until the first valid <code>CRcv</code> uses <code>tell</code>, thanks to laziness. If we only ask for the <code>First Int</code>, it’ll stop running the rest of the computation!</p>
 <p>Here is the entirety of running Part A — as you can see, it consists mostly of unwrapping <em>transformers</em> newtype wrappers.</p>
 <div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L148-L154</span></a>
 <a class="sourceLine" id="cb33-2" data-line-number="2"></a>
@@ -387,7 +387,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb33-9" data-line-number="9">          <span class="fu">$</span> many stepA</a></code></pre></div>
 <p>A <code>Nothing</code> result means that the <code>Writer</code> log never received any outputs before <code>many</code> ends looping, which means that the tape goes out of bounds before a successful <em>rcv</em>.</p>
 <h3 id="part-b">Part B</h3>
-<p>Our interpreter for Part B is a little simpler:</p>
+<p>Our interpreter’s type for Part B is a little simpler:</p>
 <div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb34-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t interpMem <span class="fu">&gt;|&lt;</span> interpComB</a>
 <a class="sourceLine" id="cb34-2" data-line-number="2">interpMem <span class="fu">&gt;|&lt;</span> interpComB</a>
 <a class="sourceLine" id="cb34-3" data-line-number="3"><span class="ot">    ::</span> ( <span class="dt">MonadWriter</span> [<span class="dt">Int</span>] m</a>
@@ -422,7 +422,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L186-L194</span></a>
 <a class="sourceLine" id="cb38-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb38-3" data-line-number="3"><span class="ot">partB ::</span> <span class="dt">P.PointedList</span> <span class="dt">Op</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb38-4" data-line-number="4">partB ops <span class="fu">=</span> sum <span class="fu">.</span> concat</a>
+<a class="sourceLine" id="cb38-4" data-line-number="4">partB ops <span class="fu">=</span> maybe (error <span class="st">&quot;`many` cannot fail&quot;</span>) sum</a>
 <a class="sourceLine" id="cb38-5" data-line-number="5">          <span class="fu">.</span> flip evalState s0</a>
 <a class="sourceLine" id="cb38-6" data-line-number="6">          <span class="fu">.</span> runMaybeT</a>
 <a class="sourceLine" id="cb38-7" data-line-number="7">          <span class="fu">$</span> many stepB</a>
@@ -430,7 +430,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb38-9" data-line-number="9">    s0 <span class="fu">=</span> ( <span class="dt">T</span> (<span class="dt">PS</span> ops (M.singleton <span class="ch">&#39;p&#39;</span> <span class="dv">0</span>)) []</a>
 <a class="sourceLine" id="cb38-10" data-line-number="10">         , <span class="dt">T</span> (<span class="dt">PS</span> ops (M.singleton <span class="ch">&#39;p&#39;</span> <span class="dv">1</span>)) []</a>
 <a class="sourceLine" id="cb38-11" data-line-number="11">         )</a></code></pre></div>
-<p><code>many :: MaybeT s Int -&gt; MaybeT s [Int]</code>, so <code>runMaybeT</code> gives us a <code>Maybe [Int]</code>, where each item in the resulting list is the number of items emitted by Program 1 at every iteration of <code>stepB</code>. To get our final answer, we only need to sum.</p>
+<p><code>many :: MaybeT s Int -&gt; MaybeT s [Int]</code>, so <code>runMaybeT</code> gives us a <code>Maybe [Int]</code>, where each item in the resulting list is the number of items emitted by Program 1 at every iteration of <code>stepB</code>. Note that <code>many</code> produces an action that <em>cannot fail</em>, so its result <em>must be <code>Just</code></em>. To get our final answer, we only need to sum.</p>
 <h3 id="examples">Examples</h3>
 <p>In the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs">sample source code</a>, I’ve included <a href="https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L201-L244">my own puzzle input</a> provided to me from the advent of code website. We can now get actual answers given some sample puzzle input:</p>
 <div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L196-L199</span></a>

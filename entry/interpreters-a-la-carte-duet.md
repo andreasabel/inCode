@@ -770,8 +770,8 @@ goes out of bounds.
 
 Note, however, that if we only want the value of the `First Int` in the
 `WriterT`, this will actually only repeat `stepA` until the first valid `CRcv`
-is used `tell`'d, thanks to laziness. If we only ask for the `First Int`, it'll
-stop running the rest of the computation!
+uses `tell`, thanks to laziness. If we only ask for the `First Int`, it'll stop
+running the rest of the computation!
 
 Here is the entirety of running Part A --- as you can see, it consists mostly of
 unwrapping *transformers* newtype wrappers.
@@ -794,7 +794,7 @@ successful *rcv*.
 
 ### Part B
 
-Our interpreter for Part B is a little simpler:
+Our interpreter's type for Part B is a little simpler:
 
 ``` {.haskell}
 ghci> :t interpMem >|< interpComB
@@ -860,7 +860,7 @@ use `many` again to run these multiple times until both threads block.
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L186-L194
 
 partB :: P.PointedList Op -> Int
-partB ops = sum . concat
+partB ops = maybe (error "`many` cannot fail") sum
           . flip evalState s0
           . runMaybeT
           $ many stepB
@@ -872,8 +872,9 @@ partB ops = sum . concat
 
 `many :: MaybeT s Int -> MaybeT s [Int]`, so `runMaybeT` gives us a
 `Maybe [Int]`, where each item in the resulting list is the number of items
-emitted by Program 1 at every iteration of `stepB`. To get our final answer, we
-only need to sum.
+emitted by Program 1 at every iteration of `stepB`. Note that `many` produces an
+action that *cannot fail*, so its result *must be `Just`*. To get our final
+answer, we only need to sum.
 
 ### Examples
 
