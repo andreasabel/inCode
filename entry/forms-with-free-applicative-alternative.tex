@@ -21,6 +21,44 @@
 % use microtype if available
 \IfFileExists{microtype.sty}{\usepackage{microtype}}{}
 \usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\newenvironment{Shaded}{}{}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
 \ifxetex
   \usepackage[setpagesize=false, % page size defined by xetex
               unicode=false, % unicode breaks when used with xetex
@@ -75,15 +113,24 @@ applicatives are especially good at representing the idea of abstract
 \emph{parallel} generators (things operating in parallel without any
 interconnected data dependences).
 
+For this post, I'll be talking about using the Free Applicative \texttt{Ap} (and
+the Free Alternative, \texttt{Alt}) with an abstract representation of a form
+element in order to generate an abstract representation of a validating form,
+and leveraging this representation to realize these forms in terminal IO,
+JSON/YAML, PDF documents, and even on the browser using \emph{ghcjs} and
+\emph{\href{https://hackage.haskell.org/package/miso}{miso}}.
+
+\hypertarget{overview}{%
+\section{Overview}\label{overview}}
+
 The general approach to utilizing the Free Applicative is to start with some
 Functor \texttt{F} (\texttt{F\ a} represents the act of generating a value of
-type \texttt{a}). Once you throw \texttt{F} into \texttt{Ap} (or \texttt{Alt})
-to get \texttt{Ap\ F}, you now are able to \emph{combine \texttt{F}s in
-parallel} with \texttt{\textless{}\$\textgreater{}},
-\texttt{\textless{}*\textgreater{}}, \texttt{liftA2}, \texttt{sequence},
-\texttt{traverse}, etc., even though \texttt{F} normally could not support such
-combinations. Then, finally, you have the ability to provide a concrete
-generator function
+type \texttt{a}). Once you throw \texttt{F} into \texttt{Ap} to get
+\texttt{Ap\ F}, you now are able to \emph{combine \texttt{F}s in parallel} with
+\texttt{\textless{}\$\textgreater{}}, \texttt{\textless{}*\textgreater{}},
+\texttt{liftA2}, \texttt{sequence}, \texttt{traverse}, etc., even though
+\texttt{F} normally could not support such combinations. Then, finally, you have
+the ability to provide a concrete generator function
 \texttt{forall\ a.\ Applicative\ f\ =\textgreater{}\ F\ a\ -\textgreater{}\ f\ a}
 (given \texttt{F\ a}, return an actual generator of \texttt{a}s in some
 \texttt{Applicative}), and the magic of the Free Applicative will go in and
@@ -92,11 +139,115 @@ is that, with the same value of \texttt{Ap\ F\ a}, you can \emph{run multiple
 different concrete generators} on it, so you can realize \texttt{Ap\ F} in
 multiple different contexts and situations, adapting it for whatever you need.
 
-For this post, I'll be talking about using the Free Applicative \texttt{Ap} (and
-the Free Alternative, \texttt{Alt}) in order to generate an abstract
-representation of a validating form, and leveraging this representation to
-realize these forms in terminal IO, JSON/YAML, PDF documents, and even on the
-browser using \emph{ghcjs} and
-\emph{\href{https://hackage.haskell.org/package/miso}{miso}}.
+So, in our case, we're going to be making a Functor representing a form element:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{FormElem}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+Where a \texttt{FormElem\ a} represents a \emph{single form element} producing
+an \texttt{a}. A \texttt{FormElem\ Int}, for instance, will represent a single
+form element producing an \texttt{Int}.
+
+Then, we can create, using
+\href{https://hackage.haskell.org/package/free/docs/Control-Applicative-Free.html}{Ap}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{Form} \FunctionTok{=} \DataTypeTok{Ap} \DataTypeTok{FormElem}
+\end{Highlighting}
+\end{Shaded}
+
+And now we have a type where \texttt{Form\ a} is \emph{whole form with multiple
+elements} that all work together to produce a value of type \texttt{a}!
+
+For example, if we had \texttt{intElem\ ::\ FormElem\ Int}, then
+\texttt{liftAp\ intElem\ ::\ Form\ Int}, a single-item form that makes an
+\texttt{Int}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{intElem ::} \DataTypeTok{FormELem} \DataTypeTok{Int}
+
+\OtherTok{intForm ::} \DataTypeTok{Form} \DataTypeTok{Int}
+\NormalTok{intForm }\FunctionTok{=}\NormalTok{ liftAp intElem}
+\end{Highlighting}
+\end{Shaded}
+
+We can now do all of our Applicativey stuff with it, to generate, for instance,
+a form with two items that produces their sum:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- | A form with two elements, whose overal result is the sum of the two}
+\CommentTok{-- element's inputs}
+\OtherTok{addingForm ::} \DataTypeTok{Form} \DataTypeTok{Int}
+\NormalTok{addingForm }\FunctionTok{=}\NormalTok{ (}\FunctionTok{+}\NormalTok{) }\FunctionTok{<$>}\NormalTok{ intForm }\FunctionTok{<*>}\NormalTok{ intForm}
+\end{Highlighting}
+\end{Shaded}
+
+Or, we can even generate a form with many `Int' elements, and produce a list of
+all of their items:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- | A form with five elements, whose result is a list of all of their inputs}
+\OtherTok{bunchaInts ::} \DataTypeTok{Form}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
+\NormalTok{bunchaInts }\FunctionTok{=}\NormalTok{ replicateM }\DecValTok{5}\NormalTok{ intForm}
+\end{Highlighting}
+\end{Shaded}
+
+Of course, in real life, forms usually have \emph{Alternative} instances, which
+allows you to use \texttt{\textless{}\textbar{}\textgreater{}} to ``chose'' a
+result between potentially invalid entries, and also create ``optional'' entries
+for free using \texttt{optional}. To do that, we actually use the \emph{Free
+Alternative},
+\emph{\href{https://hackage.haskell.org/package/free/docs/Control-Alternative-Free-Final.html}{Alt}},
+instead:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{Form} \FunctionTok{=} \DataTypeTok{Alt} \DataTypeTok{FormElem}
+
+\OtherTok{intForm ::} \DataTypeTok{Form} \DataTypeTok{Int}
+\NormalTok{intForm }\FunctionTok{=}\NormalTok{ liftAlt intElem}
+\end{Highlighting}
+\end{Shaded}
+
+And now we get the ability to represent forms with multiple options with
+\texttt{\textless{}\textbar{}\textgreater{}}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{eitherInt ::} \DataTypeTok{Form}\NormalTok{ (}\DataTypeTok{Either} \DataTypeTok{Int} \DataTypeTok{Int}\NormalTok{)}
+\NormalTok{eitherInt }\FunctionTok{=}\NormalTok{ (}\DataTypeTok{Left} \FunctionTok{<$>}\NormalTok{ intForm) }\FunctionTok{<|>}\NormalTok{ (}\DataTypeTok{Right} \FunctionTok{<$>}\NormalTok{ intForm)}
+\end{Highlighting}
+\end{Shaded}
+
+From multiple forms, with \texttt{choice}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{oneOfMany ::} \DataTypeTok{Form} \DataTypeTok{Int}
+\NormalTok{oneOfMany }\FunctionTok{=}\NormalTok{ choice [intForm1, intForm2, intForm3]}
+\end{Highlighting}
+\end{Shaded}
+
+And create ``optional'' entries:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{optionalInt ::} \DataTypeTok{Form}\NormalTok{ (}\DataTypeTok{Maybe} \DataTypeTok{Int}\NormalTok{)}
+\NormalTok{optionalInt }\FunctionTok{=}\NormalTok{ optional intForm}
+\end{Highlighting}
+\end{Shaded}
+
+We get all of these capabilities \emph{for free}! All we did was \emph{define a
+single form element}, and \texttt{Alt} gives us the ability to combine them with
+\texttt{\textless{}*\textgreater{}}/\texttt{\textless{}\$\textgreater{}}, create
+optional form items with \texttt{optional}, and create multiple form options
+with \texttt{\textless{}\textbar{}\textgreater{}}!
 
 \end{document}
