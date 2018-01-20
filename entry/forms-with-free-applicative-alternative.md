@@ -9,8 +9,9 @@ One tool I've been finding myself using a lot recently is the *Free Applicative*
 *[free](https://hackage.haskell.org/package/free)* package.
 
 Free Monads are great, and they're often used to implement the "interpreter
-pattern" (although I personally prefer *\[operational\]\[\]*, as I wrote about
-in a [previous blog
+pattern" (although I personally prefer
+*[operational](https://hackage.haskell.org/package/operational)*, as I wrote
+about in a [previous blog
 post](https://blog.jle.im/entry/interpreters-a-la-carte-duet.html), for that
 design pattern). However, Free Applicatives are really a completely different
 type of thing, and the use cases for each are pretty disjoint.
