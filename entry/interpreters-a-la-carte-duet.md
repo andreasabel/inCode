@@ -6,7 +6,7 @@
 
 This post is just a fun one exploring a wide range of techniques that I applied
 to solve the Day 18 puzzles of this past year's great [Advent of
-Code](http://adventofcode.com/2017). The puzzles involved interpreting an
+Code](https://adventofcode.com/2017). The puzzles involved interpreting an
 assembly language on an abstract machine. The neat twist is that Part A gave you
 a description of *one abstract machine*, and Part B gave you a *different*
 abstract machine to interpret the *same language* in. This twist (one language,
@@ -27,7 +27,7 @@ This blog post will not necessarily be a focused tutorial on this trick, but
 rather an explanation on my solution centered around this pattern, hopefully
 providing insight on how I approach and solve non-trivial Haskell problems.
 We'll be using the
-*[operational](http://hackage.haskell.org/package/operational)* package to
+*[operational](https://hackage.haskell.org/package/operational)* package to
 implement our interpreter pattern program, and along the way we'll also use mtl
 typeclasses and classy lenses.
 
@@ -38,8 +38,8 @@ and is executable as a stack script.
 The Puzzle
 ----------
 
-The puzzle is [Advent of Code 2017 Day 18](http://adventofcode.com/2017/day/18),
-and Part A is:
+The puzzle is [Advent of Code 2017 Day
+18](https://adventofcode.com/2017/day/18), and Part A is:
 
 > You discover a tablet containing some strange assembly code labeled simply
 > "Duet". Rather than bother the sound card with it, you decide to run the code
@@ -170,7 +170,7 @@ parseOp inp = case words inp of
 ```
 
 We're going to store our program in a `PointedList` from the
-*[pointedlist](http://hackage.haskell.org/package/pointedlist)* package, which
+*[pointedlist](https://hackage.haskell.org/package/pointedlist)* package, which
 is a non-empty list with a "focus" at a given index, which we use to represent
 the program counter/program head/current instruction. Parsing our program is
 then just parsing each line in the program string, and collecting them into a
@@ -189,9 +189,9 @@ Our Virtual Machine
 ### Operational
 
 We're going to be using the great
-*[operational](http://hackage.haskell.org/package/operational)* library[^1] to
+*[operational](https://hackage.haskell.org/package/operational)* library[^1] to
 build our representation of our interpreted language. Another common choice is
-to use *[free](http://hackage.haskell.org/package/free)*, and a lot of other
+to use *[free](https://hackage.haskell.org/package/free)*, and a lot of other
 tutorials go down this route. However, *free* is a bit more power than you
 really need for the interpreter pattern, and I always felt like the
 implementation of interpreter pattern programs in *free* was a bit awkward.
@@ -336,7 +336,7 @@ Part A requires `CRcv` to take, as an argument, a number, since whether or not
 virtual machine.
 
 Now, we can leverage the `:|:` type from
-*[type-combinators](http://hackage.haskell.org/package/type-combinators)*:
+*[type-combinators](https://hackage.haskell.org/package/type-combinators)*:
 
 ``` {.haskell}
 data (f :|: g) a = L (f a)
@@ -1116,9 +1116,9 @@ anything, I hope after reading this, you learn to recognize situations where the
 interpreter pattern might be useful in your everyday programming.
 
 [^1]: You could also use the more-or-less identical
-    [MonadPrompt](http://hackage.haskell.org/package/operational) library.
+    [MonadPrompt](https://hackage.haskell.org/package/operational) library.
     However, this is not to be confused with the
-    [prompt](http://hackage.haskell.org/package/prompt) library, which is
+    [prompt](https://hackage.haskell.org/package/prompt) library, which is
     unrelated! The library is actually my own that I wrote a few years back
     before I knew about MonadPrompt, and this unfortunate naming collision is
     one of my greatest Haskell regrets.
