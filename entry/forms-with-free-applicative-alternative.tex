@@ -276,7 +276,7 @@ with \texttt{\textless{}\textbar{}\textgreater{}}!
 \subsection{Form Element}\label{form-element}}
 
 Our form elements will all have monomorphic base element paired with a
-``parser'', default item, description, and id.
+``parser'', a description, and an identifier.
 
 To start off, we'll make a GADT representing a concrete element, as well as what
 is required to actually represent it for the user to interact with:
@@ -286,14 +286,14 @@ is required to actually represent it for the user to interact with:
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L19-L27}
 
 \KeywordTok{data} \DataTypeTok{Elem}\OtherTok{ ::} \DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
-    \CommentTok{-- | Text field, with initial contents}
-    \DataTypeTok{EText}\OtherTok{   ::} \DataTypeTok{String}                \OtherTok{->} \DataTypeTok{Elem} \DataTypeTok{String}
-    \CommentTok{-- | Numberic field, with initial number}
-    \DataTypeTok{ENumber}\OtherTok{ ::} \DataTypeTok{Maybe} \DataTypeTok{Scientific}      \OtherTok{->} \DataTypeTok{Elem} \DataTypeTok{Scientific}
-    \CommentTok{-- | Select box, with initial selection and list of options to display}
-    \DataTypeTok{ESelect}\OtherTok{ ::} \DataTypeTok{Maybe} \DataTypeTok{Int} \OtherTok{->}\NormalTok{ [}\DataTypeTok{String}\NormalTok{] }\OtherTok{->} \DataTypeTok{Elem}\NormalTok{ (}\DataTypeTok{Maybe} \DataTypeTok{Int}\NormalTok{)}
+    \CommentTok{-- | Text field}
+    \DataTypeTok{EText}\OtherTok{   ::} \DataTypeTok{Elem} \DataTypeTok{String}
+    \CommentTok{-- | Numberic field}
+    \DataTypeTok{ENumber}\OtherTok{ ::} \DataTypeTok{Elem} \DataTypeTok{Scientific}
+    \CommentTok{-- | Select box, with list of options to display}
+    \DataTypeTok{ESelect}\OtherTok{ ::}\NormalTok{ [}\DataTypeTok{String}\NormalTok{] }\OtherTok{->} \DataTypeTok{Elem}\NormalTok{ (}\DataTypeTok{Maybe} \DataTypeTok{Int}\NormalTok{)}
     \CommentTok{-- | Check box, with the labels to attach to on/off states}
-    \DataTypeTok{ECheck}\OtherTok{  ::} \DataTypeTok{String}    \OtherTok{->} \DataTypeTok{String}   \OtherTok{->} \DataTypeTok{Elem} \DataTypeTok{Bool}
+    \DataTypeTok{ECheck}\OtherTok{  ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Elem} \DataTypeTok{Bool}
 \end{Highlighting}
 \end{Shaded}
 
@@ -308,15 +308,12 @@ we have:
 \begin{itemize}
 \tightlist
 \item
-  \texttt{EText}, containing an initial or default value, natively outputting a
-  \texttt{String}
+  \texttt{EText}, natively outputting a \texttt{String}.
 \item
-  \texttt{ENumber}, containing (maybe) an initial number, natively outputting a
-  number.
+  \texttt{ENumber}, natively outputting a number (\texttt{Scientific}).
 \item
-  \texttt{ESelect}, a drop-down menu, containing (maybe) an initial selected
-  index and a list of strings to show as items, natively outputting
-  \texttt{Maybe\ Int} (``maybe'' a selected index)
+  \texttt{ESelect}, a drop-down menu, a list of strings to show as items,
+  natively outputting \texttt{Maybe\ Int} (``maybe'' a selected index)
 \item
   \texttt{ECheck}, a check box containing labels for its on and off positions,
   natively outputting a \texttt{Bool}.
@@ -425,16 +422,15 @@ First, a \texttt{Form\ String} with a single text box:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L41-L51}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L41-L50}
 
 \NormalTok{stringInput}
 \OtherTok{    ::} \DataTypeTok{String}           \CommentTok{-- ^ description}
     \OtherTok{->} \DataTypeTok{String}           \CommentTok{-- ^ identifier}
-    \OtherTok{->} \DataTypeTok{String}           \CommentTok{-- ^ initial}
     \OtherTok{->} \DataTypeTok{Form} \DataTypeTok{String}
-\NormalTok{stringInput desc ident initial }\FunctionTok{=}\NormalTok{ liftAlt }\FunctionTok{$}
-    \DataTypeTok{FE}\NormalTok{ \{ feElem  }\FunctionTok{=} \DataTypeTok{EText}\NormalTok{ initial}
-\NormalTok{       , feParse }\FunctionTok{=} \DataTypeTok{Right}
+\NormalTok{stringInput desc ident }\FunctionTok{=}\NormalTok{ liftAlt }\FunctionTok{$}
+    \DataTypeTok{FE}\NormalTok{ \{ feElem  }\FunctionTok{=} \DataTypeTok{EText}
+\NormalTok{       , feParse }\FunctionTok{=}\NormalTok{ mfilter (not }\FunctionTok{.}\NormalTok{ null) }\FunctionTok{.} \DataTypeTok{Right}
 \NormalTok{       , feDesc  }\FunctionTok{=}\NormalTok{ desc}
 \NormalTok{       , feIdent }\FunctionTok{=}\NormalTok{ ident}
 \NormalTok{       \}}
@@ -449,16 +445,15 @@ output \texttt{String}, it parses it into a Haskell value using \texttt{Read}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L53-L65}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L52-L63}
 
 \NormalTok{readInput}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Read}\NormalTok{ a, }\DataTypeTok{Show}\NormalTok{ a)}
     \OtherTok{=>} \DataTypeTok{String}           \CommentTok{-- ^ description}
     \OtherTok{->} \DataTypeTok{String}           \CommentTok{-- ^ identifier}
-    \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a          }\CommentTok{-- ^ initial}
     \OtherTok{->} \DataTypeTok{Form}\NormalTok{ a}
-\NormalTok{readInput desc ident initial }\FunctionTok{=}\NormalTok{ liftAlt }\FunctionTok{$}
-    \DataTypeTok{FE}\NormalTok{ \{ feElem  }\FunctionTok{=} \DataTypeTok{EText}\NormalTok{ (maybe }\StringTok{""}\NormalTok{ show initial)}
+\NormalTok{readInput desc ident }\FunctionTok{=}\NormalTok{ liftAlt }\FunctionTok{$}
+    \DataTypeTok{FE}\NormalTok{ \{ feElem  }\FunctionTok{=} \DataTypeTok{EText}
 \NormalTok{       , feParse }\FunctionTok{=}\NormalTok{ maybe (}\DataTypeTok{Left}\NormalTok{ (}\StringTok{"Could not parse "} \FunctionTok{++}\NormalTok{ ident)) }\DataTypeTok{Right}
                  \FunctionTok{.}\NormalTok{ readMaybe}
 \NormalTok{       , feDesc  }\FunctionTok{=}\NormalTok{ desc}
@@ -472,16 +467,15 @@ another expecting floating-point values.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L67-L93}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L65-L88}
 
 \NormalTok{intInput}
 \OtherTok{    ::} \DataTypeTok{Integral}\NormalTok{ a}
     \OtherTok{=>} \DataTypeTok{String}     \CommentTok{-- ^ description}
     \OtherTok{->} \DataTypeTok{String}     \CommentTok{-- ^ identifier}
-    \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a    }\CommentTok{-- ^ initial}
     \OtherTok{->} \DataTypeTok{Form}\NormalTok{ a}
-\NormalTok{intInput desc ident initial }\FunctionTok{=}\NormalTok{ liftAlt }\FunctionTok{$}
-    \DataTypeTok{FE}\NormalTok{ \{ feElem  }\FunctionTok{=} \DataTypeTok{ENumber}\NormalTok{ (fromIntegral }\FunctionTok{<$>}\NormalTok{ initial)}
+\NormalTok{intInput desc ident }\FunctionTok{=}\NormalTok{ liftAlt }\FunctionTok{$}
+    \DataTypeTok{FE}\NormalTok{ \{ feElem  }\FunctionTok{=} \DataTypeTok{ENumber}
 \NormalTok{       , feParse }\FunctionTok{=}\NormalTok{ either (\textbackslash{}_ }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ (ident }\FunctionTok{++} \StringTok{" should be integer"}\NormalTok{)) }\DataTypeTok{Right}
                  \FunctionTok{.}\NormalTok{ floatingOrInteger }\FunctionTok{@}\DataTypeTok{Double}
 \NormalTok{       , feDesc  }\FunctionTok{=}\NormalTok{ desc}
@@ -492,15 +486,13 @@ another expecting floating-point values.
 \OtherTok{    ::} \DataTypeTok{RealFloat}\NormalTok{ a}
     \OtherTok{=>} \DataTypeTok{String}           \CommentTok{-- ^ description}
     \OtherTok{->} \DataTypeTok{String}           \CommentTok{-- ^ identifier}
-    \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a          }\CommentTok{-- ^ initial}
     \OtherTok{->} \DataTypeTok{Form}\NormalTok{ a}
-\NormalTok{floatInput desc ident initial }\FunctionTok{=}\NormalTok{ liftAlt }\FunctionTok{$}
-    \DataTypeTok{FE}\NormalTok{ \{ feElem  }\FunctionTok{=} \DataTypeTok{ENumber}\NormalTok{ (realToFrac }\FunctionTok{<$>}\NormalTok{ initial)}
+\NormalTok{floatInput desc ident }\FunctionTok{=}\NormalTok{ liftAlt }\FunctionTok{$}
+    \DataTypeTok{FE}\NormalTok{ \{ feElem  }\FunctionTok{=} \DataTypeTok{ENumber}
 \NormalTok{       , feParse }\FunctionTok{=} \DataTypeTok{Right} \FunctionTok{.}\NormalTok{ realToFrac}
 \NormalTok{       , feDesc  }\FunctionTok{=}\NormalTok{ desc}
 \NormalTok{       , feIdent }\FunctionTok{=}\NormalTok{ ident}
 \NormalTok{       \}}
-  \KeywordTok{where}
 \end{Highlighting}
 \end{Shaded}
 
@@ -508,17 +500,16 @@ A simple drop-down menu element that lets the user pick from a list of items:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L95-L105}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L90-L99}
 
 \NormalTok{selectInput}
 \OtherTok{    ::} \DataTypeTok{Show}\NormalTok{ a}
     \OtherTok{=>} \DataTypeTok{String}           \CommentTok{-- ^ description}
     \OtherTok{->} \DataTypeTok{String}           \CommentTok{-- ^ identifier}
-    \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Int}        \CommentTok{-- ^ initial}
     \OtherTok{->}\NormalTok{ [a]              }\CommentTok{-- ^ options}
     \OtherTok{->} \DataTypeTok{Form}\NormalTok{ a}
-\NormalTok{selectInput desc ident initial opts }\FunctionTok{=}\NormalTok{ liftAlt }\FunctionTok{$}
-    \DataTypeTok{FE}\NormalTok{ (}\DataTypeTok{ESelect}\NormalTok{ initial (show }\FunctionTok{<$>}\NormalTok{ opts)) p desc ident}
+\NormalTok{selectInput desc ident opts }\FunctionTok{=}\NormalTok{ liftAlt }\FunctionTok{$}
+    \DataTypeTok{FE}\NormalTok{ (}\DataTypeTok{ESelect}\NormalTok{ (show }\FunctionTok{<$>}\NormalTok{ opts)) p desc ident}
   \KeywordTok{where}
 \NormalTok{    p }\FunctionTok{=}\NormalTok{ maybe (}\DataTypeTok{Left}\NormalTok{ (}\StringTok{"No selection for "} \FunctionTok{++}\NormalTok{ ident)) (}\DataTypeTok{Right} \FunctionTok{.}\NormalTok{ (opts }\FunctionTok{!!}\NormalTok{))}
 \end{Highlighting}
@@ -528,7 +519,7 @@ And a simple check box, which outputs one of two items:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L107-L120}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L101-L114}
 
 \NormalTok{checkInput}
 \OtherTok{    ::} \DataTypeTok{Show}\NormalTok{ a}
@@ -553,11 +544,25 @@ And a simple check box, which outputs one of two items:
 To explore this type, let's make a sample form which we will be re-using for the
 rest of this post!
 
-We will be making a registration form, a form producing an account:
+We will be making a registration form, a form producing an account, which
+contains:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  A name
+\item
+  An optional age
+\item
+  A favorite color (from one of the pre-defined color, or a custom one)
+\item
+  An account type (normal account, or premium account?)
+\end{enumerate}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L122-L134}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L116-L127}
 
 \KeywordTok{data} \DataTypeTok{AccountType} \FunctionTok{=} \DataTypeTok{Normal} \FunctionTok{|} \DataTypeTok{Premium}
     \KeywordTok{deriving} \DataTypeTok{Show}
@@ -566,8 +571,7 @@ We will be making a registration form, a form producing an account:
     \KeywordTok{deriving} \DataTypeTok{Show}
 
 \KeywordTok{data} \DataTypeTok{Account} \FunctionTok{=} \DataTypeTok{Acc}\NormalTok{ \{}\OtherTok{ accName     ::} \DataTypeTok{String}
-\NormalTok{                   ,}\OtherTok{ accCountry  ::} \DataTypeTok{Maybe} \DataTypeTok{String}
-\NormalTok{                   ,}\OtherTok{ accAge      ::} \DataTypeTok{Int}
+\NormalTok{                   ,}\OtherTok{ accAge      ::} \DataTypeTok{Maybe} \DataTypeTok{Int}
 \NormalTok{                   ,}\OtherTok{ accFavColor ::} \DataTypeTok{Either} \DataTypeTok{Color} \DataTypeTok{String}
 \NormalTok{                   ,}\OtherTok{ accPremium  ::} \DataTypeTok{AccountType}
 \NormalTok{                   \}}
@@ -579,19 +583,18 @@ And we'll make the form using Applicative style:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L136-L146}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L129-L138}
 
 \OtherTok{accountForm ::} \DataTypeTok{Form} \DataTypeTok{Account}
 \NormalTok{accountForm }\FunctionTok{=}
-    \DataTypeTok{Acc} \FunctionTok{<$>}\NormalTok{ stringInput }\StringTok{"Name"} \StringTok{"name"} \StringTok{""}
-        \FunctionTok{<*>}\NormalTok{ optional (stringInput }\StringTok{"Country"} \StringTok{"country"} \StringTok{"USA"}\NormalTok{)}
-        \FunctionTok{<*>}\NormalTok{ intInput }\StringTok{"Age"} \StringTok{"age"} \DataTypeTok{Nothing}
+    \DataTypeTok{Acc} \FunctionTok{<$>}\NormalTok{ stringInput }\StringTok{"Name"} \StringTok{"name"}
+        \FunctionTok{<*>}\NormalTok{ optional (intInput }\StringTok{"Age"} \StringTok{"age"}\NormalTok{)}
         \FunctionTok{<*>}\NormalTok{ (}\DataTypeTok{Left} \FunctionTok{<$>}\NormalTok{ favColor }\FunctionTok{<|>} \DataTypeTok{Right} \FunctionTok{<$>}\NormalTok{ customColor)}
         \FunctionTok{<*>}\NormalTok{ checkInput }\StringTok{"Premium Account"} \StringTok{"premium"} \DataTypeTok{Normal} \DataTypeTok{Premium} 
   \KeywordTok{where}
-\NormalTok{    favColor    }\FunctionTok{=}\NormalTok{ selectInput }\StringTok{"Favorite Color"} \StringTok{"fav-color"} \DataTypeTok{Nothing}
+\NormalTok{    favColor    }\FunctionTok{=}\NormalTok{ selectInput }\StringTok{"Favorite Color"} \StringTok{"fav-color"}
 \NormalTok{                    [}\DataTypeTok{Red}\NormalTok{, }\DataTypeTok{Blue}\NormalTok{, }\DataTypeTok{Orange}\NormalTok{, }\DataTypeTok{Yellow}\NormalTok{]}
-\NormalTok{    customColor }\FunctionTok{=}\NormalTok{ stringInput }\StringTok{"Custom Color"} \StringTok{"custum-color"} \StringTok{""}
+\NormalTok{    customColor }\FunctionTok{=}\NormalTok{ stringInput }\StringTok{"Custom Color"} \StringTok{"custum-color"}
 \end{Highlighting}
 \end{Shaded}
 
@@ -601,18 +604,17 @@ form (put the ``age'' field before the ``name'' field, etc.)
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L148-L157}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L140-L148}
 
 \OtherTok{accountFormAdo ::} \DataTypeTok{Form} \DataTypeTok{Account}
 \NormalTok{accountFormAdo }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    nam }\OtherTok{<-}\NormalTok{ stringInput }\StringTok{"Name"} \StringTok{"name"} \StringTok{""}
-\NormalTok{    con }\OtherTok{<-}\NormalTok{ optional }\FunctionTok{$}\NormalTok{ stringInput }\StringTok{"Country"} \StringTok{"country"} \StringTok{"USA"}
-\NormalTok{    age }\OtherTok{<-}\NormalTok{ intInput }\StringTok{"Age"} \StringTok{"age"} \DataTypeTok{Nothing}
-\NormalTok{    col }\OtherTok{<-} \DataTypeTok{Left}  \FunctionTok{<$>}\NormalTok{ selectInput }\StringTok{"Favorite Color"} \StringTok{"fav-color"} \DataTypeTok{Nothing}
+\NormalTok{    nam }\OtherTok{<-}\NormalTok{ stringInput }\StringTok{"Name"} \StringTok{"name"}
+\NormalTok{    age }\OtherTok{<-}\NormalTok{ optional (intInput }\StringTok{"Age"} \StringTok{"age"}\NormalTok{)}
+\NormalTok{    col }\OtherTok{<-} \DataTypeTok{Left}  \FunctionTok{<$>}\NormalTok{ selectInput }\StringTok{"Favorite Color"} \StringTok{"fav-color"}
 \NormalTok{                       [}\DataTypeTok{Red}\NormalTok{, }\DataTypeTok{Blue}\NormalTok{, }\DataTypeTok{Orange}\NormalTok{, }\DataTypeTok{Yellow}\NormalTok{]}
-       \FunctionTok{<|>} \DataTypeTok{Right} \FunctionTok{<$>}\NormalTok{ stringInput }\StringTok{"Custom Color"} \StringTok{"custum-color"} \StringTok{""}
+       \FunctionTok{<|>} \DataTypeTok{Right} \FunctionTok{<$>}\NormalTok{ stringInput }\StringTok{"Custom Color"} \StringTok{"custom-color"}
 \NormalTok{    typ }\OtherTok{<-}\NormalTok{ checkInput }\StringTok{"Premium Account"} \StringTok{"premium"} \DataTypeTok{Normal} \DataTypeTok{Premium} 
-\NormalTok{    pure (}\DataTypeTok{Acc}\NormalTok{ nam con age col typ)}
+\NormalTok{    pure (}\DataTypeTok{Acc}\NormalTok{ nam age col typ)}
 \end{Highlighting}
 \end{Shaded}
 

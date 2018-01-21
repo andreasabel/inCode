@@ -157,7 +157,7 @@ Our Types
 ### Form Element
 
 Our form elements will all have monomorphic base element paired with a "parser",
-default item, description, and id.
+a description, and an identifier.
 
 To start off, we'll make a GADT representing a concrete element, as well as what
 is required to actually represent it for the user to interact with:
@@ -166,14 +166,14 @@ is required to actually represent it for the user to interact with:
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L19-L27
 
 data Elem :: Type -> Type where
-    -- | Text field, with initial contents
-    EText   :: String                -> Elem String
-    -- | Numberic field, with initial number
-    ENumber :: Maybe Scientific      -> Elem Scientific
-    -- | Select box, with initial selection and list of options to display
-    ESelect :: Maybe Int -> [String] -> Elem (Maybe Int)
+    -- | Text field
+    EText   :: Elem String
+    -- | Numberic field
+    ENumber :: Elem Scientific
+    -- | Select box, with list of options to display
+    ESelect :: [String] -> Elem (Maybe Int)
     -- | Check box, with the labels to attach to on/off states
-    ECheck  :: String    -> String   -> Elem Bool
+    ECheck  :: String -> String -> Elem Bool
 ```
 
 We tag the `Elem` with a type representing the element's *native* output. So an
@@ -184,13 +184,10 @@ text input), an `Elem Bool` is an element that natively/naively outputs a `Bool`
 Each native `Elem` contains the information necessary to render it -- so we
 have:
 
--   `EText`, containing an initial or default value, natively outputting a
-    `String`
--   `ENumber`, containing (maybe) an initial number, natively outputting a
-    number.
--   `ESelect`, a drop-down menu, containing (maybe) an initial selected index
-    and a list of strings to show as items, natively outputting `Maybe Int`
-    ("maybe" a selected index)
+-   `EText`, natively outputting a `String`.
+-   `ENumber`, natively outputting a number (`Scientific`).
+-   `ESelect`, a drop-down menu, a list of strings to show as items, natively
+    outputting `Maybe Int` ("maybe" a selected index)
 -   `ECheck`, a check box containing labels for its on and off positions,
     natively outputting a `Bool`.
 
@@ -280,16 +277,15 @@ complex ones.
 First, a `Form String` with a single text box:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L41-L51
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L41-L50
 
 stringInput
     :: String           -- ^ description
     -> String           -- ^ identifier
-    -> String           -- ^ initial
     -> Form String
-stringInput desc ident initial = liftAlt $
-    FE { feElem  = EText initial
-       , feParse = Right
+stringInput desc ident = liftAlt $
+    FE { feElem  = EText
+       , feParse = mfilter (not . null) . Right
        , feDesc  = desc
        , feIdent = ident
        }
@@ -302,16 +298,15 @@ And maybe one that is based on a text box, but instead of just outputting the
 output `String`, it parses it into a Haskell value using `Read`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L53-L65
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L52-L63
 
 readInput
     :: (Read a, Show a)
     => String           -- ^ description
     -> String           -- ^ identifier
-    -> Maybe a          -- ^ initial
     -> Form a
-readInput desc ident initial = liftAlt $
-    FE { feElem  = EText (maybe "" show initial)
+readInput desc ident = liftAlt $
+    FE { feElem  = EText
        , feParse = maybe (Left ("Could not parse " ++ ident)) Right
                  . readMaybe
        , feDesc  = desc
@@ -323,16 +318,15 @@ Now two "numerical" inputs -- one expecting `Integral` values, and another
 expecting floating-point values.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L67-L93
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L65-L88
 
 intInput
     :: Integral a
     => String     -- ^ description
     -> String     -- ^ identifier
-    -> Maybe a    -- ^ initial
     -> Form a
-intInput desc ident initial = liftAlt $
-    FE { feElem  = ENumber (fromIntegral <$> initial)
+intInput desc ident = liftAlt $
+    FE { feElem  = ENumber
        , feParse = either (\_ -> Left (ident ++ " should be integer")) Right
                  . floatingOrInteger @Double
        , feDesc  = desc
@@ -343,31 +337,28 @@ floatInput
     :: RealFloat a
     => String           -- ^ description
     -> String           -- ^ identifier
-    -> Maybe a          -- ^ initial
     -> Form a
-floatInput desc ident initial = liftAlt $
-    FE { feElem  = ENumber (realToFrac <$> initial)
+floatInput desc ident = liftAlt $
+    FE { feElem  = ENumber
        , feParse = Right . realToFrac
        , feDesc  = desc
        , feIdent = ident
        }
-  where
 ```
 
 A simple drop-down menu element that lets the user pick from a list of items:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L95-L105
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L90-L99
 
 selectInput
     :: Show a
     => String           -- ^ description
     -> String           -- ^ identifier
-    -> Maybe Int        -- ^ initial
     -> [a]              -- ^ options
     -> Form a
-selectInput desc ident initial opts = liftAlt $
-    FE (ESelect initial (show <$> opts)) p desc ident
+selectInput desc ident opts = liftAlt $
+    FE (ESelect (show <$> opts)) p desc ident
   where
     p = maybe (Left ("No selection for " ++ ident)) (Right . (opts !!))
 ```
@@ -375,7 +366,7 @@ selectInput desc ident initial opts = liftAlt $
 And a simple check box, which outputs one of two items:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L107-L120
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L101-L114
 
 checkInput
     :: Show a
@@ -398,10 +389,16 @@ boolInput desc ident = checkInput desc ident False True
 To explore this type, let's make a sample form which we will be re-using for the
 rest of this post!
 
-We will be making a registration form, a form producing an account:
+We will be making a registration form, a form producing an account, which
+contains:
+
+1.  A name
+2.  An optional age
+3.  A favorite color (from one of the pre-defined color, or a custom one)
+4.  An account type (normal account, or premium account?)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L122-L134
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L116-L127
 
 data AccountType = Normal | Premium
     deriving Show
@@ -410,8 +407,7 @@ data Color = Red | Blue | Orange | Yellow
     deriving Show
 
 data Account = Acc { accName     :: String
-                   , accCountry  :: Maybe String
-                   , accAge      :: Int
+                   , accAge      :: Maybe Int
                    , accFavColor :: Either Color String
                    , accPremium  :: AccountType
                    }
@@ -421,19 +417,18 @@ data Account = Acc { accName     :: String
 And we'll make the form using Applicative style:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L136-L146
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L129-L138
 
 accountForm :: Form Account
 accountForm =
-    Acc <$> stringInput "Name" "name" ""
-        <*> optional (stringInput "Country" "country" "USA")
-        <*> intInput "Age" "age" Nothing
+    Acc <$> stringInput "Name" "name"
+        <*> optional (intInput "Age" "age")
         <*> (Left <$> favColor <|> Right <$> customColor)
         <*> checkInput "Premium Account" "premium" Normal Premium 
   where
-    favColor    = selectInput "Favorite Color" "fav-color" Nothing
+    favColor    = selectInput "Favorite Color" "fav-color"
                     [Red, Blue, Orange, Yellow]
-    customColor = stringInput "Custom Color" "custum-color" ""
+    customColor = stringInput "Custom Color" "custum-color"
 ```
 
 If you're feeling fancy, you can also make it using "Applicative Do" style,
@@ -441,16 +436,15 @@ which makes it a little more flexible if you want to re-arrange the items in the
 form (put the "age" field before the "name" field, etc.)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L148-L157
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L140-L148
 
 accountFormAdo :: Form Account
 accountFormAdo = do
-    nam <- stringInput "Name" "name" ""
-    con <- optional $ stringInput "Country" "country" "USA"
-    age <- intInput "Age" "age" Nothing
-    col <- Left  <$> selectInput "Favorite Color" "fav-color" Nothing
+    nam <- stringInput "Name" "name"
+    age <- optional (intInput "Age" "age")
+    col <- Left  <$> selectInput "Favorite Color" "fav-color"
                        [Red, Blue, Orange, Yellow]
-       <|> Right <$> stringInput "Custom Color" "custum-color" ""
+       <|> Right <$> stringInput "Custom Color" "custom-color"
     typ <- checkInput "Premium Account" "premium" Normal Premium 
-    pure (Acc nam con age col typ)
+    pure (Acc nam age col typ)
 ```
