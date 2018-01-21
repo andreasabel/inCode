@@ -402,26 +402,27 @@ rest of this post!
 We will be making a registration form, a form producing an account:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L122-L125
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L122-L134
 
 data AccountType = Normal | Premium
     deriving Show
-data Color = Red | Blue | Orange | Yellow
-    deriving Show
 
 data Color = Red | Blue | Orange | Yellow
     deriving Show
 
-data AccountType = Normal | Premium
-    deriving Show
-data Color = Red | Blue | Orange | Yellow
+data Account = Acc { accName     :: String
+                   , accCountry  :: Maybe String
+                   , accAge      :: Int
+                   , accFavColor :: Either Color String
+                   , accPremium  :: AccountType
+                   }
     deriving Show
 ```
 
 And we'll make the form using Applicative style:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L135-L145
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L136-L146
 
 accountForm :: Form Account
 accountForm =
@@ -441,7 +442,7 @@ which makes it a little more flexible if you want to re-arrange the items in the
 form (put the "age" field before the "name" field, etc.)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L147-L156
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/free-applicative-forms/Form.hs#L148-L157
 
 accountFormAdo :: Form Account
 accountFormAdo = do
