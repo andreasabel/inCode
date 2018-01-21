@@ -393,8 +393,7 @@ boolInput :: String -> String -> Form Bool
 boolInput desc ident = checkInput desc ident False True
 ```
 
-Sample Form
------------
+### Sample Form
 
 To explore this type, let's make a sample form which we will be re-using for the
 rest of this post!
