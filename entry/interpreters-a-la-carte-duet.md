@@ -1,34 +1,39 @@
 "Interpreters a la Carte" in Advent of Code 2017 Duet
 =====================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on January 22, 2018.
 > [Read online!](https://blog.jle.im/entry/interpreters-a-la-carte-duet.html)
 
 This post is just a fun one exploring a wide range of techniques that I applied
 to solve the Day 18 puzzles of this past year's great [Advent of
 Code](https://adventofcode.com/2017). The puzzles involved interpreting an
-assembly language on an abstract machine. The neat twist is that Part A gave you
-a description of *one abstract machine*, and Part B gave you a *different*
-abstract machine to interpret the *same language* in. This twist (one language,
-but different interpreters/abstract machines) is basically one of the textbook
-applications of the *interpreter pattern* in Haskell and functional programming,
-so it was fun to implement my solution in that pattern --- the assembly language
-source was "compiled" to an abstract monad once, and the difference between Part
-A and Part B was just a different choice of interpreter.
+assembly language on an abstract machine. The twist is that Part A gave you a
+description of *one abstract machine*, and Part B gave you a *different*
+abstract machine to interpret the *same language* in.
 
-Even more interesting is that the two machines are only "half different" --
+This twist (one language, but different interpreters/abstract machines) is
+basically one of the textbook applications of the *interpreter pattern* in
+Haskell and functional programming, so it was fun to implement my solution in
+that pattern --- the assembly language source was "compiled" to an abstract
+monad once, and the difference between Part A and Part B was just a different
+choice of interpreter.
+
+Even *more* interesting is that the two machines are only "half different" --
 there's one aspect of the virtual machines that are the same between the two
 parts, and aspect that is different. This means that we can apply the "data
 types a la carte" technique in order to mix and match isolated components of
 virtual machine interpreters, and re-use code whenever possible in assembling
-our interpreters for our different machines!
+our interpreters for our different machines! This can be considered an extension
+of the traditional interpreter pattern: the *modular* interpeter pattern.
 
-This blog post will not necessarily be a focused tutorial on this trick, but
-rather an explanation on my solution centered around this pattern, hopefully
-providing insight on how I approach and solve non-trivial Haskell problems.
-We'll be using the
+This blog post will not necessarily be a focused tutorial on this trick/pattern,
+but rather an explanation on my solution centered around this pattern, where I
+will also add in insight on how I approach and solve non-trivial Haskell
+problems. We'll be using the
 *[operational](https://hackage.haskell.org/package/operational)* package to
-implement our interpreter pattern program, and along the way we'll also use mtl
+implement our interpreter pattern program and the
+*[type-combinators](https://hackage.haskell.org/package/type-combinators)*
+package to implement the modularity aspect, and along the way we'll also use mtl
 typeclasses and classy lenses.
 
 The source code is [available
@@ -183,6 +188,12 @@ parseProgram :: String -> P.PointedList Op
 parseProgram = fromJust . P.fromList . map parseOp . lines
 ```
 
+Note that it is possible to skip this parsing step and instead operate directly
+on the original strings for the rest of the program, but this pre-processing
+step lets us isolate our partial code and acts as a verification step as well,
+to get rid of impossible states and commands right off the bat. Definitely more
+in line with the Haskell Way™.
+
 Our Virtual Machine
 -------------------
 
@@ -194,11 +205,13 @@ build our representation of our interpreted language. Another common choice is
 to use *[free](https://hackage.haskell.org/package/free)*, and a lot of other
 tutorials go down this route. However, *free* is a bit more power than you
 really need for the interpreter pattern, and I always felt like the
-implementation of interpreter pattern programs in *free* was a bit awkward.
+implementation of interpreter pattern programs in *free* was a bit awkward,
+since it relies on manually (and carefully) constructing continuations.
 
 *operational* lets us construct a language (and a monad) using GADTs to
 represent command primitives. For example, to implement something like
-`State Int` (which we'll call `IntState`), you might use this GADT:
+`State Int` (which we'll call `IntState`), you might use this
+\[GADT\]\[\^GADT\]:
 
 ``` {.haskell}
 data StateCommand :: Type -> Type where
@@ -209,7 +222,9 @@ data StateCommand :: Type -> Type where
 For those unfamiliar with GADT syntax, this is declaring a data type
 `StateCommand a` with two constructors --- `Put`, which takes an `Int` and
 creates a `StateCommand ()`, and `Get`, which takes no parameters and creates a
-`StateCommand Int`.
+`StateCommand Int`. We give `StateCommand` a *kind signature*, `Type -> Type`,
+meaning that it is a single-argument type constructor (`Type` is just a synonym
+for `*`).
 
 Our GADT here says that the two "primitive" commands of `IntState` are "putting"
 (which requires an `Int` and produces a `()` result) and "getting" (which
@@ -224,14 +239,23 @@ type IntState = Program StateCommand
 which automatically has the appropriate Functor, Applicative, and Monad
 instances.
 
-Our primitives can be constructed using `prompt`:
+Our primitives can be constructed using `singleton`:
 
 ``` {.haskell}
-prompt :: StateCommand a -> IntState a
+singleton :: StateCommand a -> IntState a
 
-prompt (Put 10) :: IntState ()
-prompt Get      :: IntState Int
+singleton (Put 10) :: IntState ()
+singleton Get      :: IntState Int
+
+putInt :: Int -> IntState ()
+putInt = singleton . Put
+
+getInt :: IntState Int
+getInt = singleton Get
 ```
+
+With this, we can write an `IntState` action like we would write an action in
+any other monad.
 
 Now, we *interpret* an `IntState` in a monadic context using the appropriately
 named `interpretWithMonad`:
@@ -257,29 +281,26 @@ Now, if we wanted to use `IO` and `IORefs` as the mechanism for interpreting our
 `IntState`:
 
 ``` {.haskell}
-interpretIO
-    :: IORef Int
-    -> StateCommand a
-    -> IO a
+interpretIO :: IORef Int -> (StateCommand a -> IO a)
 interpretIO r = \case           -- using -XLambdaCase
     Put x -> writeIORef r x
     Get   -> readIORef r
 
 runAsIO :: IntState a -> Int -> IO (a, Int)
 runAsIO m s0 = do
-    ref <- newIORef s0
-    interpretWithMonad (interpretIO ref) m
+    r <- newIORef s0
+    interpretWithMonad (interpretIO r) m
 ```
 
-`interpretIO` is our interpreter, in `IO`. `interpretWithMonad` will interpret
+`interpretIO r` is our interpreter, in `IO`. `interpretWithMonad` will interpret
 each primitive (`Put` and `Get`) using `interpretIO` and generate the result for
 us.
 
-Note that the GADT property of `StateCommand` ensures us that the *result* of
-our `IO` action matches with the result that the GADT constructor implies, due
-to the magic of dependent pattern matching. For the `Put x :: StateCommand ()`
-branch, the result has to be `IO ()`; for the `Get :: StateCommand Int` branch,
-the result has to be `IO Int`.
+The GADT property of `StateCommand` ensures us that the *result* of our `IO`
+action matches with the result that the GADT constructor implies, due to the
+magic of dependent pattern matching. For the `Put x :: StateCommand ()` branch,
+the result has to be `IO ()`; for the `Get :: StateCommand Int` branch, the
+result has to be `IO Int`.
 
 We can also be boring and interpret it using `State Int`:
 
@@ -315,10 +336,10 @@ the program tape and read the `Op` at the current program head:
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L57-L61
 
 data Mem :: Type -> Type where
-    MGet :: Char -> Mem Int
-    MSet :: Char -> Int -> Mem ()
-    MJmp :: Int  -> Mem ()
-    MPk  :: Mem Op
+    MGet  :: Char -> Mem Int
+    MSet  :: Char -> Int -> Mem ()
+    MJump :: Int  -> Mem ()
+    MPeek :: Mem Op
 ```
 
 For communication, we must be able to "snd" and "rcv".
@@ -350,18 +371,18 @@ nice utility combinators we will be using and is more fully-featured.
 
 We can use `:|:` to create the type `Mem :|: Com`. If `Mem` and `Com` represent
 "primitives" in our Duet language, then `Mem :|: Com` represents *primitives
-from `Mem` and `Com` together*. It's a type that contains all of the primitives
-of `Mem` and the primitives of `Com` -- that is, it contains:
+from either `Mem` or `Com`*. It's a type that contains all of the primitives of
+`Mem` and the primitives of `Com`. It contains:
 
 ``` {.haskell}
 L (MGet 'c') :: (Mem :|: Com) Int
-L MPk        :: (Mem :|: Com) Op
+L MPeek      :: (Mem :|: Com) Op
 R (CSnd 5)   :: (Mem :|: Com) ()
 ```
 
 etc.
 
-Our final data type then --- a monad that encompasses *all* possible Duet
+Our final data monad, then --- a monad that encompasses *all* possible Duet
 primitive commands --- is:
 
 ``` {.haskell}
@@ -382,11 +403,11 @@ dGet = singleton . L . MGet
 dSet :: Char -> Int -> Duet ()
 dSet r = singleton . L . MSet r
 
-dJmp :: Int -> Duet ()
-dJmp = singleton . L . MJmp
+dJump :: Int -> Duet ()
+dJump = singleton . L . MJump
 
-dPk :: Duet Op
-dPk = singleton (L MPk)
+dPeek :: Duet Op
+dPeek = singleton (L MPeek)
 
 dSnd :: Int -> Duet ()
 dSnd = singleton . R . CSnd
@@ -401,28 +422,30 @@ Armed with our `Duet` monad, we can now write a real-life `Duet` action to
 represent *one step* of our duet programs:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L87-L108
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L87-L110
 
 stepProg :: Duet ()
-stepProg = dPk >>= \case
+stepProg = dPeek >>= \case
     OSnd x -> do
       dSnd =<< addrVal x
-      dJmp 1
+      dJump 1
     OBin f x y -> do
       yVal <- addrVal y
       xVal <- dGet    x
       dSet x $ f xVal yVal
-      dJmp 1
+      dJump 1
     ORcv x -> do
       y <- dRcv =<< dGet x
       dSet x y
-      dJmp 1
+      dJump 1
     OJgz x y -> do
       xVal <- addrVal x
-      dJmp =<< if xVal > 0
-                 then addrVal y
-                 else return 1
+      dJump =<< if xVal > 0
+        then addrVal y
+        else return 1
   where
+    -- | Addr is `Either Char Int` -- `Left` means a register (so we use
+    -- `dGet`) and `Right` means a direct integer value.
     addrVal (Left r ) = dGet r
     addrVal (Right x) = return x
 ```
@@ -447,10 +470,10 @@ relevant program state, along with classy lenses for operating on it
 polymorphically:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L110-L114
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L112-L116
 
 data ProgState = PS
-    { _psTape :: P.PointedList Op
+    { _psOps  :: P.PointedList Op
     , _psRegs :: M.Map Char Int
     }
 makeClassy ''ProgState
@@ -461,17 +484,25 @@ represent the register contents with a `Map Char Int`.
 
 #### Brief Aside on Lenses with State
 
-We're going to be implementing our interpreters using *lens* machinery. Keep in
-mind that this isn't necessary --- this just makes things a little simpler for
-me. Using *lens* with classy lenses is one of the things that make programming
-against `State` with non-trivial state bearable for me, personally! However,
-keep in mind that the lens machinery is more or less unrelated to the
+We're going to be implementing our interpreters using
+*[lens](https://hackage.haskell.org/package/lens)* machinery. Keep in mind that
+this isn't necessary --- to me, this just makes things a lot simpler. Using
+*lens* with classy lenses is one of the things that make programming against
+`State` and `MonadState` with non-trivial state bearable for me, personally!
+However, keep in mind that the lens aspect is more or less unrelated to the
 interpreter pattern and is not necessary for it. We're just using it here to
 make `State` and `MonadState` a little nicer to work with!
 
 `makeClassy` gives us a typeclass `HasProgState`, which is for things that
-"have" a `ProgState`, as well as lenses into the `psTape` and `psRegs` field for
-that type. We can use these lenses with *lens* library machinery:
+"have" a `ProgState`, as well as lenses into the `psOps` and `psRegs` field for
+that type:
+
+``` {.haskell}
+psOps  :: HasProgState s => Lens' s (P.PointedList Op)
+psRegs :: HasProgState s => Lens' s (M.Map Char Int)
+```
+
+We can use these lenses with *lens* library functions for working with State:
 
 ``` {.haskell}
 -- | "get" based on a lens
@@ -488,10 +519,10 @@ So, for example, we have:
 
 ``` {.haskell}
 -- | "get" the registers
-use psRegs  :: (HasProgState s, MonadState s m) => m (M.Map Char Int)
+use psRegs :: (HasProgState s, MonadState s m) => m (M.Map Char Int)
 
 -- | "set" the PointedList
-(psTape .=) :: (HasProgState s, MonadState s m) => P.PointedList Op -> m ()
+(psOps .=) :: (HasProgState s, MonadState s m) => P.PointedList Op -> m ()
 ```
 
 The nice thing about lenses is that they compose. For example, we have:
@@ -531,7 +562,7 @@ With these tools to make life easier, we can write an interpreter for our `Mem`
 commands:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L116-L126
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L118-L128
 
 interpMem
     :: (MonadState s m, MonadFail m, HasProgState s)
@@ -540,10 +571,10 @@ interpMem
 interpMem = \case
     MGet c   -> use (psRegs . at c . non 0)
     MSet c x -> psRegs . at c . non 0 .= x
-    MJmp n   -> do
-      Just t' <- P.moveN n <$> use psTape
-      psTape .= t'
-    MPk      -> use (psTape . P.focus)
+    MJump n  -> do
+      Just t' <- P.moveN n <$> use psOps
+      psOps .= t'
+    MPeek    -> use (psOps . P.focus)
 ```
 
 Nothing too surprising here --- we just interpret every primitive in our monadic
@@ -561,9 +592,13 @@ like `MaybeT`/`Maybe`, this means `empty`/`Nothing`/short-circuit. So when we
 We also use `P.focus :: Lens' (P.PointedList a) a`, a lens that the
 *pointedlist* library provides to the current "focus" of the `PointedList`.
 
-Again, this usage of lens with `MonadState` is not exactly necessary (we can
-manually use `modify`, `gets`, etc. instead of lenses and operators), but it
-does make things a bit more convenient to write.
+Again, this usage of lens with State is not exactly necessary (we can manually
+use `modify`, `gets`, etc. instead of lenses and their combinators, which gets
+ugly pretty quickly), but it does make things a bit more convenient to write.
+
+We're programming against *abstract interfaces* (like `MonadState`, `MonadFail`)
+instead of actual instances (like `StateT`, etc.) because, as we will see later,
+this lets us combine interpreters together much more smoothly.
 
 #### GADT Property
 
@@ -574,8 +609,8 @@ For example, `MGet 'c' :: Mem Int` requires us to return `m Int`. This is what
 `use` gives us. `MSet 'c' 3 :: Mem ()` requires us to return `m ()`, which is
 what `(.=)` returns.
 
-We have `MPk :: Mem Op`, which requires us to return `m Op`. That's exactly what
-`use (psTape . P.focus) :: (MonadState s m, HasProgState s) => m Op` gives.
+We have `MPeek :: Mem Op`, which requires us to return `m Op`. That's exactly
+what `use (psOps . P.focus) :: (MonadState s m, HasProgState s) => m Op` gives.
 
 The fact that we can use GADTs to specify the "result type" of each of our
 primitives is a key part about how `Program` from *operational* works, and how
@@ -602,7 +637,7 @@ have the ability to read the accumulated log at any time. We use `Last Int`
 because, if there are two *snd*'s, we only care about the last *snd*'d thing.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L132-L143
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L134-L145
 
 interpComA
     :: (MonadAccum (Last Int) m, MonadWriter (First Int) m)
@@ -630,9 +665,9 @@ already in
 *[transformers-0.5.5.0](https://hackage.haskell.org/package/transformers-0.5.5.0)*.
 
 For now, [I've added
-`MonadAccum`](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L128-L130)
+`MonadAccum`](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L130-L132)
 and [appropriate
-instances](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L247-L249)
+instances](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L249-L251)
 in the sample source code, but when the new version of *mtl* comes out, I'll be
 sure to update this post to take this into account!
 
@@ -654,7 +689,7 @@ so we can merge the contexts of `interpMem` and `interpComB`, and really treat
 them (using type inference) as both working in the same interpretation context.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L156-L163
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L158-L165
 
 data Thread = T
     { _tState   :: ProgState
@@ -673,7 +708,7 @@ example, will refer to the `psRegs` inside the `ProgState` in the `Thread`)
 And now, to interpret:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L165-L174
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L167-L176
 
 interpComB
     :: (MonadWriter [Int] m, MonadFail m, MonadState Thread m)
@@ -721,7 +756,7 @@ interpretWithMonad
 
 This is how we can create interpreters on `Duet` by "combining", in a modular
 way, interpreters for `Mem` and `Com`. This is the essence of the "data types a
-la carte" technique.
+la carte" technique and the modular interpreter pattern.
 
 Getting the Results
 -------------------
@@ -755,16 +790,17 @@ So it looks like we need to be `MonadWriter (First Int)`,
 
 Now, we can write such a Monad from scratch, or we can use the *transformers*
 library to generate a transformer with all of those instances for us. For the
-sake of brevity and reducing duplicated code, let's go that route. We can use:
+sake of brevity and reducing duplicated code, let's take the latter route. We
+can use:
 
 ``` {.haskell}
-MaybeT (StateT ProgState (WriterT (First Int) (A.Accum (Last Int))))
+MaybeT (StateT ProgState (WriterT (First Int) (Accum (Last Int))))
 ```
 
 And so we can write our final "step" function in that context:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L145-L146
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L147-L148
 
 stepA :: MaybeT (StateT ProgState (WriterT (First Int) (A.Accum (Last Int)))) ()
 stepA = interpretWithMonad (interpMem >|< interpComA) stepProg
@@ -774,22 +810,22 @@ stepA = interpretWithMonad (interpMem >|< interpComA) stepProg
 `interpMem` and `interpComA`.
 
 Our final answer is then just the result of *repeating* this over and over again
-until there's a failure. We take advantage of the fact that `MaybeT`'s
-`Alternative` instance uses `empty` for `fail`, so we can use
+until there's a failure (we jump out-of-bounds). We take advantage of the fact
+that `MaybeT`'s `Alternative` instance uses `empty` for `fail`, so we can use
 `many :: MaybeT m a -> MaybeT m [a]`, which repeats a `MaybeT` action several
-times until a failure is encountered. In our case, "failure" is when the tape
-goes out of bounds.
+times until a failure is encountered. In our case, this means we repeat until we
+jump out of bounds.
 
-Note, however, that if we only want the value of the `First Int` in the
-`WriterT`, this will actually only repeat `stepA` until the first valid `CRcv`
-uses `tell`, thanks to laziness. If we only ask for the `First Int`, it'll stop
-running the rest of the computation!
+As a nice benefit of laziness, note that if we only want the value of the
+`First Int` in the `WriterT`, this will actually only repeat `stepA` until the
+*first* valid `CRcv` uses `tell`. If we only ask for the `First Int`, it'll stop
+running the rest of the computation, bypassing `many`!
 
 Here is the entirety of running Part A --- as you can see, it consists mostly of
 unwrapping *transformers* newtype wrappers.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L148-L154
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L150-L156
 
 partA :: P.PointedList Op -> Maybe Int
 partA ops = getFirst
@@ -837,7 +873,7 @@ To "lift" our actions on one thread to be actions on a "tuple" of threads. We
 have, in the end:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L176-L185
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L178-L187
 
 stepB :: MaybeT (State (Thread, Thread)) Int
 stepB = do
@@ -851,25 +887,26 @@ stepB = do
     return $ length outB
 ```
 
-Our final `stepB` really doesn't need a `WriterT [Int]` --- we just use that
+Our final `stepB` really doesn't need the `WriterT [Int]` --- we just need that
 internally to collect *snd* outputs. So we use `execWriter` after "interpreting"
 our actions (along with `many`, to repeat our thread steps until they block) to
-just get the resulting logs.
+just get the resulting logs immediately.
 
 We then reset the input buffers appropriately (by putting in the collected
 outputs of the previous threads).
 
 If both threads are blocking (they both have to external outputs to pass on),
-then we're done (using `guard`).
+then we're done (using `guard`, which acts as a "immediately fail here" action
+for `MaybeT`).
 
 We return the number of items that "Program 1" (the second thread) outputs,
 because that's what we need for our answer.
 
-This is one "single pass" of both of our threads. As you can anticipate, we'll
+This is one "single pass" of both of our threads. As you probably guessed, we'll
 use `many` again to run these multiple times until both threads block.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L187-L195
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L189-L197
 
 partB :: P.PointedList Op -> Int
 partB ops = maybe (error "`many` cannot fail") sum
@@ -893,12 +930,12 @@ final answer, we only need to sum.
 In the [sample source
 code](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs),
 I've included [my own puzzle
-input](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L202-L245)
+input](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L204-L247)
 provided to me from the advent of code website. We can now get actual answers
 given some sample puzzle input:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L197-L200
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L199-L202
 
 main :: IO ()
 main = do
@@ -927,9 +964,10 @@ That's it! Hope you enjoyed some of the techniques used in this post, including
     interpretable primitives
 3.  Writing modular interpreters for each set of primitives, then using
     deconstructors like `>|<` to easily combine and swap out interpreters.
-4.  Lenses with State and classy lenses
+4.  Lenses with State and classy lenses.
 5.  Programming against polymorphic monadic contexts like `MonadState`,
-    `MonadWriter`, `MonadAccum`, etc.
+    `MonadWriter`, `MonadAccum`, etc., which helps us combine interpreters in a
+    very smooth way.
 
 Pushing the Boundaries
 ----------------------
@@ -960,7 +998,7 @@ For example, we were pretty sneaky earlier by using `zoom` to manually lift our
 newtype C r a = C { getC :: r }
 
 -- | Peek into Thread 0
-C 0 :&: MPk         :: (C Int :&: Mem) Op
+C 0 :&: MPeek       :: (C Int :&: Mem) Op
 
 -- | Get contents of register 'c' of Thread 1
 C 1 :&: MGet 'c'    :: (C Int :&: Mem) Int
@@ -1017,8 +1055,8 @@ uncurryFan interpMemThread >|< interpComB
 ### Manipulating Disjunctions and Conjunctions
 
 So, we have a `Mem :|: Com`. How could we "tag" our `Mem` after-the-fact, to add
-`C Int`? We can manipulate the structure of conjunctions and disjunctions using
-the `Bifunctor1` from *Type.Class.Higher*, in *type-combinators*.
+`C Int`? Well, we can manipulate the structure of conjunctions and disjunctions
+using the `Bifunctor1` from *Type.Class.Higher*, in *type-combinators*.
 
 `bimap1` can be used to modify either half of a `:|:` or `:&:`:
 
@@ -1048,12 +1086,12 @@ Which we can use to re-tag a `Program (Mem :|: Com)`, with the help of
 `interpretWithMonad`:
 
 ``` {.haskell}
-\f -> interpretWithMonad (prompt . f)
+\f -> interpretWithMonad (singleotn . f)
     :: (forall x. f x -> g x)
     -> Program f a
     -> Program g a
 
-interpretWithMonad (prompt . bimap1 (C 0 :&:) id)
+interpretWithMonad (singleton . bimap1 (C 0 :&:) id)
     :: Program (      Mem       :|: Com) a
     -> Program ((C Int :&: Mem) :|: Com) a
 ```
@@ -1063,7 +1101,7 @@ interpretWithMonad (prompt . bimap1 (C 0 :&:) id)
 If we had three sets of primitives we wanted to combine, we might be tempted to
 use `f :|: g :|: h` and `handleF >|< handleG >|< handleH`. However, there's a
 better way! Instead of `f :|: g :|: h`, you can use `FSum '[f, g, h]` to combine
-multiple sets of primitives in a clean way.
+multiple sets of primitives in a clean way, using a type-level list.
 
 If there are no duplicates in your type-level list, you can even use `finj` to
 create your `FSum`s automatically:
@@ -1076,11 +1114,13 @@ finj :: Mem a -> FSum '[Mem, Com, Foo] a
 finj :: Com a -> FSum '[Mem, Com, Foo] a
 finj :: Foo a -> FSum '[Mem, Com, Foo] a
 
-prompt (finj (MGet 'c')) :: Program (FSum '[Mem, Com, Foo]) Int
+singleton (finj (MGet 'c')) :: Program (FSum '[Mem, Com, Foo]) Int
+singleton (finj (CSnd 3  )) :: Program (FSum '[Mem, Com, Foo]) Int
 ```
 
-There isn't really a built-in way to handle these, but you can whip up a utility
-function with `Prod` (from *type-combinators*) and `ifoldMapFSum`.
+There isn't really a nice built-in way to build handlers for these (like we did
+earlier using `>|<`), but you can whip up a utility function with `Prod` (from
+*type-combinators*) and `ifoldMapFSum`.
 
 ``` {.haskell}
 newtype Handle a r f = Handle { runHandle :: f a -> r }
@@ -1112,8 +1152,8 @@ interpretWithMonad
 ### Endless Possibilities
 
 Hopefully this post inspires you a bit about this fun design pattern! And, if
-anything, I hope after reading this, you learn to recognize situations where the
-interpreter pattern might be useful in your everyday programming.
+anything, I hope after reading this, you learn to recognize situations where
+this *modular* interpreter pattern might be useful in your everyday programming.
 
 [^1]: You could also use the more-or-less identical
     [MonadPrompt](https://hackage.haskell.org/package/operational) library.
