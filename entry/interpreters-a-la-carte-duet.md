@@ -38,7 +38,8 @@ typeclasses and classy lenses.
 
 The source code is [available
 online](https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs)
-and is executable as a stack script.
+and is executable as a stack script. This post is written to be accessible for
+early-intermediate Haskell programmers.
 
 The Puzzle
 ----------
