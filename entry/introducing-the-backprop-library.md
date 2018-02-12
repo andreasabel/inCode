@@ -76,7 +76,7 @@ makeLenses ''Net
 ```
 
 We're using the matrix types from
-[`Numeric.LinearAlgebra.Static`](https://hackage.haskell.org/package/hmatrix-backprop/docs/Numeric-LinearAlgebra-Static-Backprop.html).
+[`Numeric.LinearAlgebra.Static`](https://hackage.haskell.org/package/hmatrix/docs/Numeric-LinearAlgebra-Static.html).
 An `L 250 784` is a
 ![250 \\times 784](https://latex.codecogs.com/png.latex?250%20%5Ctimes%20784 "250 \times 784")
 matrix -- or, as we are using it, a linear transformation
@@ -152,7 +152,7 @@ runNet n x = z
 
 `#> :: L m n -> R n -> R m` is the matrix-vector multiplication operator from
 *hmatrix* (its
-[static](https://hackage.haskell.org/package/hmatrix-backprop/docs/Numeric-LinearAlgebra-Static-Backprop.html)
+[static](https://hackage.haskell.org/package/hmatrix/docs/Numeric-LinearAlgebra-Static.html)
 module); we can also just use `+` (from `Num`) to add vectors together.
 
 We use the [logistic function](https://en.wikipedia.org/wiki/Logistic_function)
@@ -255,7 +255,8 @@ import           Numeric.LinearAlgebra.Static.Backprop
 First, we add `Numeric.Backprop`, the module where the magic happens.
 
 Second, we switch from `Numeric.LinearAlgebra.Static` to
-\[`Numeric.LinearAlgebra.Static.Backprop`\]\[\] (from
+[`Numeric.LinearAlgebra.Static.Backprop`](https://hackage.haskell.org/package/hmatrix-backprop/docs/Numeric-LinearAlgebra-Static-Backprop.html)
+(from
 *[hmatrix-backprop](http://hackage.haskell.org/package/hmatrix-backprop)*),
 which exports the exact same[^1] API as `Numeric.LinearAlgebra.Static`, except
 with numeric operations that are "lifted" to work with *backprop*. It's meant to
