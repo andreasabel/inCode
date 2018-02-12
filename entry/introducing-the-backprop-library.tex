@@ -94,6 +94,7 @@
 
 \title{Introducing the backprop library}
 \author{Justin Le}
+\date{February 12, 2018}
 
 \begin{document}
 \maketitle
@@ -105,16 +106,17 @@ Code}}.}
 I'm excited to announce the first official release of the
 \emph{\href{http://hackage.haskell.org/package/backprop}{backprop}} library
 (currently at version 0.1.2.0 on hackage)! This has been something I've been
-working on for a while, trying to find a good API for \emph{heterogeneous}
-automatic differentiation, and I'm happy to finally find something that I feel
+working on for a while (trying to find a good API for \emph{heterogeneous}
+automatic differentiation), and I'm happy to finally find something that I feel
 good about, with the help of a
 \emph{\href{http://hackage.haskell.org/package/lens}{lens}}-based API.
 
-As a quick demonstration, I'm going to create a simple neural network
-implementation, inspired by the
+As a quick demonstration, this post will walk through the creation of a simple
+neural network implementation, inspired by the
 \href{https://www.tensorflow.org/versions/r1.2/get_started/mnist/beginners}{Tensorflow
-Tutorial} for beginners, to learn digit recognition using the MNIST data set. To
-help tell the story, we're going to be implementing it ``normally'', using the
+Tutorial} for beginners, to learn handwritten digit recognition for the MNIST
+data set. To help tell the story, we're going to be implementing it
+``normally'', using the
 \emph{\href{http://hackage.haskell.org/package/hmatrix}{hmatrix}} library API,
 and then re-write the same thing using
 \emph{\href{http://hackage.haskell.org/package/backprop}{backprop}} and
@@ -124,18 +126,19 @@ and then re-write the same thing using
 \hypertarget{the-basics}{%
 \section{The Basics}\label{the-basics}}
 
-For our application, we're not going to be doing anything super fancy. Our
-``neural network'' will just be simple series of matrix multiplications, vector
-additions, and activation functions. We're going to write a neural network with
-a single hidden layer, parameterized by two weight matrices and two bias
-vectors.
+For this network, we're not going to be doing anything super fancy. Our ``neural
+network'' will just be simple series of matrix multiplications, vector
+additions, and activation functions. We're going to make a neural network with a
+single hidden layer using normal Haskell data types, parameterized by two weight
+matrices and two bias vectors.
 
 The purpose of the MNIST challenge is to take a vector of pixel data (28x28, so
 784 elements total) and classify it as one of ten digits (0 through 9). To do
 this, we're going to be building and training a model that takes in a 784-vector
-of pixel data and produces a 10-vector of categorical predictions (which is
-supposed to be 0 everywhere, except for 1 in the category we predict the input
-picture to be in).
+of pixel data and produces a 10-item
+\href{https://en.wikipedia.org/wiki/One-hot}{one-hot} vector of categorical
+predictions (which is supposed to be 0 everywhere, except for 1 in the category
+we predict the input picture to be in).
 
 \hypertarget{types}{%
 \subsection{Types}\label{types}}
@@ -144,25 +147,26 @@ For our types, our imports are pretty simple:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L8-L9}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L10-L11}
 
 \KeywordTok{import}           \DataTypeTok{Control.Lens} \KeywordTok{hiding}\NormalTok{          ((<.>))}
 \KeywordTok{import}           \DataTypeTok{Numeric.LinearAlgebra.Static}
 \end{Highlighting}
 \end{Shaded}
 
-A good first step in using \emph{backprop} is to create a nice custom data type
-containing all of the items you want to compute your gradients on:
+Our \texttt{Net} type will just be a simple collection of all of the matrices
+and vectors we want to optimize:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L11-L16}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L18-L24}
 
 \KeywordTok{data} \DataTypeTok{Net} \FunctionTok{=} \DataTypeTok{N}\NormalTok{ \{}\OtherTok{ _weights1 ::} \DataTypeTok{L} \DecValTok{250} \DecValTok{784}
 \NormalTok{             ,}\OtherTok{ _bias1    ::} \DataTypeTok{R} \DecValTok{250}
 \NormalTok{             ,}\OtherTok{ _weights2 ::} \DataTypeTok{L} \DecValTok{10} \DecValTok{250}
 \NormalTok{             ,}\OtherTok{ _bias2    ::} \DataTypeTok{R} \DecValTok{10}
 \NormalTok{             \}}
+  \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Generic}\NormalTok{)}
 \NormalTok{makeLenses }\CharTok{''}\DataTypeTok{Net}
 \end{Highlighting}
 \end{Shaded}
@@ -186,13 +190,40 @@ Via the \emph{lens} library, four lenses are generated:
 \end{Highlighting}
 \end{Shaded}
 
-These are ways to \emph{access} components of our data type:
+These lenses give us ways to access components of our data type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{myNet             ::} \DataTypeTok{Net}
 \NormalTok{myNet }\FunctionTok{^.}\OtherTok{ weights1 ::} \DataTypeTok{L} \DecValTok{250} \DecValTok{784}  \CommentTok{-- access the weights1 field in myNet}
 \NormalTok{myNet }\FunctionTok{^.}\OtherTok{ bias2    ::} \DataTypeTok{R}  \DecValTok{10}      \CommentTok{-- access the bias2 field in myNet}
+\end{Highlighting}
+\end{Shaded}
+
+I'm also going to define \texttt{Num} and \texttt{Fractional} instances for our
+network, which makes it really easy to write code to ``gradient descend'' our
+network (we can just add and scale our networks with each other). To do this,
+I'm going to be using
+\emph{\href{http://hackage.haskell.org/package/one-liner-instances}{one-liner-instances}}
+to make a \texttt{Num} instance automatically using GHC Generics:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L61-L73}
+
+\KeywordTok{instance} \DataTypeTok{Num} \DataTypeTok{Net} \KeywordTok{where}
+\NormalTok{    (}\FunctionTok{+}\NormalTok{)         }\FunctionTok{=}\NormalTok{ gPlus}
+\NormalTok{    (}\FunctionTok{-}\NormalTok{)         }\FunctionTok{=}\NormalTok{ gMinus}
+\NormalTok{    (}\FunctionTok{*}\NormalTok{)         }\FunctionTok{=}\NormalTok{ gTimes}
+\NormalTok{    negate      }\FunctionTok{=}\NormalTok{ gNegate}
+\NormalTok{    abs         }\FunctionTok{=}\NormalTok{ gAbs}
+\NormalTok{    signum      }\FunctionTok{=}\NormalTok{ gSignum}
+\NormalTok{    fromInteger }\FunctionTok{=}\NormalTok{ gFromInteger}
+
+\KeywordTok{instance} \DataTypeTok{Fractional} \DataTypeTok{Net} \KeywordTok{where}
+\NormalTok{    (}\FunctionTok{/}\NormalTok{)          }\FunctionTok{=}\NormalTok{ gDivide}
+\NormalTok{    recip        }\FunctionTok{=}\NormalTok{ gRecip}
+\NormalTok{    fromRational }\FunctionTok{=}\NormalTok{ gFromRational}
 \end{Highlighting}
 \end{Shaded}
 
@@ -209,7 +240,7 @@ Running our network is pretty textbook:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L34-L41}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L42-L49}
 
 \NormalTok{runNet}
 \OtherTok{    ::} \DataTypeTok{Net}
@@ -226,8 +257,10 @@ Running our network is pretty textbook:
 \texttt{R\ 784\ -\textgreater{}\ R\ 10} function it encodes.
 
 \texttt{\#\textgreater{}\ ::\ L\ m\ n\ -\textgreater{}\ R\ n\ -\textgreater{}\ R\ m}
-is the matrix-vector multiplication operator from \emph{hmatrix}; we can also
-just use \texttt{+} (from \texttt{Num}) to add vectors together.
+is the matrix-vector multiplication operator from \emph{hmatrix} (its
+\href{https://hackage.haskell.org/package/hmatrix/docs/Numeric-LinearAlgebra-Static.html}{static}
+module); we can also just use \texttt{+} (from \texttt{Num}) to add vectors
+together.
 
 We use the \href{https://en.wikipedia.org/wiki/Logistic_function}{logistic
 function} as our internal activation function and
@@ -236,7 +269,7 @@ outputs:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L18-L26}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L26-L34}
 
 \OtherTok{logistic ::} \DataTypeTok{Floating}\NormalTok{ a }\OtherTok{=>}\NormalTok{ a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{logistic x }\FunctionTok{=} \DecValTok{1} \FunctionTok{/}\NormalTok{ (}\DecValTok{1} \FunctionTok{+}\NormalTok{ exp (}\FunctionTok{-}\NormalTok{x))}
@@ -275,7 +308,7 @@ predictions.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L28-L48}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L36-L56}
 
 \NormalTok{crossEntropy}
 \OtherTok{    ::} \DataTypeTok{R} \DecValTok{10}
@@ -300,15 +333,16 @@ negation (from \texttt{Num}).
 \hypertarget{training}{%
 \subsection{Training}\label{training}}
 
-At this point, we are supposed to compute the \emph{gradient} of our error
-function. It's a function that computes the \emph{direction of greatest change}
-of all of the components in our network, with respect to our error function.
+At this point, we are supposed to find a way to compute the \emph{gradient} of
+our error function. It's a function that computes the \emph{direction of
+greatest change} of all of the components in our network, with respect to our
+error function.
 
-The gradient will take our \texttt{Net\ -\textgreater{}\ Double} function and
-produce a \texttt{Net} whose components contain the derivative of each component
-with respect to the error. It tells us how to ``nudge'' each component to
-increase the error function. \emph{Training} a neural network involves moving in
-the opposite direction of the gradient, which causes the error to go
+The gradient will take our \texttt{Net\ -\textgreater{}\ Double} error function
+and produce a \texttt{Net} whose components contain the derivative of each
+component with respect to the error. It tells us how to ``nudge'' each component
+to increase the error function. \emph{Training} a neural network involves moving
+in the opposite direction of the gradient, which causes the error to go
 \emph{down}.
 
 However, given \texttt{netErr}'s definition, it is not obvious how to compute
@@ -360,7 +394,7 @@ For example, let's look a version \texttt{softMax} that works with
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L55-L61}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L56-L62}
 
 \NormalTok{softMax}
 \OtherTok{    ::} \DataTypeTok{Reifies}\NormalTok{ s }\DataTypeTok{W}
@@ -378,7 +412,8 @@ directly with \texttt{R\ 10}s (10-vectors), we work with
 \texttt{BVar\ s\ (R\ 10)}s (\texttt{BVar}s containing 10-vectors).
 
 \texttt{Numeric.LinearAlgebra.Static.Backprop} re-exports \texttt{konst} and
-\texttt{norm\_1} (as \texttt{norm\_1V}) lifted to work with \texttt{BVar}s:
+\texttt{norm\_1} (as \texttt{norm\_1V} --- \texttt{norm\_1} for vectors only)
+lifted to work with \texttt{BVar}s:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -406,7 +441,7 @@ re-use our original implementation of \texttt{logistic}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L52-L53}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L53-L54}
 
 \OtherTok{logistic ::} \DataTypeTok{Floating}\NormalTok{ a }\OtherTok{=>}\NormalTok{ a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{logistic x }\FunctionTok{=} \DecValTok{1} \FunctionTok{/}\NormalTok{ (}\DecValTok{1} \FunctionTok{+}\NormalTok{ exp (}\FunctionTok{-}\NormalTok{x))}
@@ -417,7 +452,7 @@ To \emph{run} our network, things look pretty similar:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L70-L78}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L71-L79}
 
 \NormalTok{runNet}
 \OtherTok{    ::} \DataTypeTok{Reifies}\NormalTok{ s }\DataTypeTok{W}
@@ -456,12 +491,12 @@ Some insight may be gleamed from a comparison of their type signatures:
 \texttt{\^{}.} is access to a value using a lens, and \texttt{\^{}\^{}.} is
 access to a value inside a \texttt{BVar} using a lens.
 
-Using lenses like this gives us a virtually frictionless usage of
+Using lenses like this gives us essentially frictionless usage of
 \texttt{BVar}s, allowing us to access items inside data types in a natural way.
 We can also \emph{set} items using \texttt{.\textasciitilde{}\textasciitilde{}},
-instead of \texttt{.\textasciitilde{}}, and even access constructors in sum
-types using \texttt{\^{}\^{}?} (which can implement pattern matching) and get
-matches for \emph{multiple} targets using \texttt{\^{}\^{}..}:
+instead of \texttt{.\textasciitilde{}}, and access constructors in sum types
+using \texttt{\^{}\^{}?} (which can implement pattern matching) and get matches
+for \emph{multiple} targets using \texttt{\^{}\^{}..}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -481,7 +516,7 @@ too surprising:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L63-L86}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L64-L87}
 
 \NormalTok{crossEntropy}
 \OtherTok{    ::} \DataTypeTok{Reifies}\NormalTok{ s }\DataTypeTok{W}
@@ -500,8 +535,8 @@ too surprising:
 \end{Highlighting}
 \end{Shaded}
 
-Both of these are are 100\% lexicographically \emph{identical} in implementation
-to our original ones -- the only difference is that
+Both of these implementations are are 100\% lexicographically \emph{identical}
+in implementation to our original ones -- the only difference is that
 \texttt{\textless{}.\textgreater{}} comes from
 \texttt{Numeric.LinearAlgebra.Static.Backprop}. Other than that, we re-use
 \texttt{log} and negation.
@@ -513,7 +548,7 @@ Time to gradient descend!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L88-L92}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L89-L93}
 
 \OtherTok{stepNet ::} \DataTypeTok{R} \DecValTok{784} \OtherTok{->} \DataTypeTok{R} \DecValTok{10} \OtherTok{->} \DataTypeTok{Net} \OtherTok{->} \DataTypeTok{Net}
 \NormalTok{stepNet x targ net0 }\FunctionTok{=}\NormalTok{ net0 }\FunctionTok{-} \FloatTok{0.02} \FunctionTok{*}\NormalTok{ gr}
@@ -523,7 +558,7 @@ Time to gradient descend!
 \end{Highlighting}
 \end{Shaded}
 
-That's it!
+And\ldots{}that's it!
 
 To break this down:
 
@@ -593,34 +628,11 @@ To break this down:
 
   We can pass this function to \texttt{gradBP} to get the gradient of the
   network \texttt{Net} with respect to the \texttt{Double} error.
-\item
-  To wrap it all up, we can ``scale'' our gradients because I added a
-  \texttt{Num} and \texttt{Fractional} instance for \texttt{Net} while you
-  weren't looking, using
-  \emph{\href{http://hackage.haskell.org/package/one-liner-instances}{one-liner-instances}}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L143-L155}
-
-\KeywordTok{instance} \DataTypeTok{Num} \DataTypeTok{Net} \KeywordTok{where}
-\NormalTok{    (}\FunctionTok{+}\NormalTok{)         }\FunctionTok{=}\NormalTok{ gPlus}
-\NormalTok{    (}\FunctionTok{-}\NormalTok{)         }\FunctionTok{=}\NormalTok{ gMinus}
-\NormalTok{    (}\FunctionTok{*}\NormalTok{)         }\FunctionTok{=}\NormalTok{ gTimes}
-\NormalTok{    negate      }\FunctionTok{=}\NormalTok{ gNegate}
-\NormalTok{    abs         }\FunctionTok{=}\NormalTok{ gAbs}
-\NormalTok{    signum      }\FunctionTok{=}\NormalTok{ gSignum}
-\NormalTok{    fromInteger }\FunctionTok{=}\NormalTok{ gFromInteger}
-
-\KeywordTok{instance} \DataTypeTok{Fractional} \DataTypeTok{Net} \KeywordTok{where}
-\NormalTok{    (}\FunctionTok{/}\NormalTok{)          }\FunctionTok{=}\NormalTok{ gDivide}
-\NormalTok{    recip        }\FunctionTok{=}\NormalTok{ gRecip}
-\NormalTok{    fromRational }\FunctionTok{=}\NormalTok{ gFromRational}
-\end{Highlighting}
-\end{Shaded}
 \end{enumerate}
 
 And that's really the whole gradient computation and descent code!
+
+Kind of anti-climactic, isn't it?
 
 \hypertarget{taking-it-for-a-spin}{%
 \section{Taking it for a spin}\label{taking-it-for-a-spin}}
@@ -632,7 +644,9 @@ the network, with some basic evaluations.
 
 If you download it
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs}{here},
-you can compile it:
+you can compile it using a stack's self-compiling script feature (if
+\emph{\href{https://docs.haskellstack.org/en/stable/README/}{stack}} is
+installed on your computer):
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -640,7 +654,7 @@ you can compile it:
 \end{Highlighting}
 \end{Shaded}
 
-The above command will cause the program to ``compile itself'', installing the
+The above command will cause the program to compile itself, installing the
 necessary GHC (if needed) and also the automatically download the dependencies
 from hackage. \emph{backprop} manages the automatic differentiation, and
 \emph{stack} manages the automatic dependency management :)
@@ -651,10 +665,7 @@ them into a folder, and run it all with:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{$ }\ExtensionTok{./intro-backprop}\NormalTok{ PATH_TO_DATA/\{train-images-idx3-ubyte,\textbackslash{}}
-\NormalTok{    train-labels-idx1-ubyte,\textbackslash{}}
-\NormalTok{    t10k-images-idx3-ubyte,\textbackslash{}}
-\NormalTok{    t10k-labels-idx1-ubyte\}}
+\NormalTok{$ }\ExtensionTok{./intro-backprop}\NormalTok{ PATH_TO_DATA}
 \ExtensionTok{Loaded}\NormalTok{ data.}
 \NormalTok{[}\ExtensionTok{Epoch}\NormalTok{ 1]}
 \KeywordTok{(}\ExtensionTok{Batch}\NormalTok{ 1}\KeywordTok{)}
@@ -691,15 +702,15 @@ them into a folder, and run it all with:
 After about 35000 training points, we get down to 94\% accuracy on our test set.
 Neat!
 
-\hypertarget{behind-the-magic}{%
-\section{Behind the Magic}\label{behind-the-magic}}
+\hypertarget{a-more-nuanced-look}{%
+\section{A More Nuanced Look}\label{a-more-nuanced-look}}
 
 That's the high level overview -- now let's look a bit at the details that might
 be helpful before you go strike it out on your own.
 
 The main API revolves around writing a
-\texttt{BVar\ s\ a\ -\textgreater{}\ BVar\ s\ b} function, and using one of the
-three runners:
+\texttt{BVar\ s\ a\ -\textgreater{}\ BVar\ s\ b} function (representing an
+\texttt{a\ -\textgreater{}\ b} one), and then using one of the three runners:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -722,16 +733,16 @@ entire application or library in \texttt{BVar}-based code.
 
 \texttt{gradBP}, however, carries a some measurable performance overhead over
 writing your gradient code ``manually'', but this heavily depends on exactly how
-complex the code you are backpropagating is. The overhead comes from the
-building of the function call graph, but also potentially from the mechanical
-automatic differentiation process generating different operations than what you
-might write by hand. See the \href{https://github.com/mstksg/backprop}{README}
-for a deeper analysis.
+complex the code you are backpropagating is. The overhead comes from two
+potential sources: the building of the function call graph, and also potentially
+from the mechanical automatic differentiation process generating different
+operations than what you might write by hand. See the
+\href{https://github.com/mstksg/backprop}{README} for a deeper analysis.
 
-As you might have noticed from the RankN type signature (the
-\texttt{forall\ s.\ ...}), \emph{backprop} uses the RankN type trick that
-\texttt{Control.Monad.ST} and the
-\emph{\href{http://hackage.haskell.org/package/ad}{ad}} library does, for two
+You might have also noticed the RankN type signature (the
+\texttt{forall\ s.\ ...}) that I glossed over earlier. This is here because
+\emph{backprop} uses the RankN type trick from \texttt{Control.Monad.ST} and the
+\emph{\href{http://hackage.haskell.org/package/ad}{ad}} library, for two
 purposes:
 
 \begin{enumerate}
@@ -760,7 +771,7 @@ decision that is a compromise between different options, and the
 this.
 
 Writing a \texttt{Num} instance for your types is some manageable boilerplate if
-your type derives Generic (so we can use
+your type derives Generic (and we can use
 \emph{\href{http://hackage.haskell.org/package/one-liner-instances}{one-liner-instances}}),
 like we saw above with the \texttt{Num} instance for \texttt{Net}.
 
@@ -778,13 +789,13 @@ an application, you can use the orphan instances in
 \subsection{Lifting your own functions}\label{lifting-your-own-functions}}
 
 Of course, all of this would be useless unless you had a way to manipulate
-\texttt{BVar}s. The library does provide lens-based accessors/setters, but, more
-importantly, it gives \texttt{Num}, \texttt{Fractional}, and \texttt{Floating}
-instances for \texttt{BVar}s so you can manipulate a \texttt{BVar\ s\ a} just
-like an \texttt{a} using its numeric instances. We leveraged this heavily by
-using \texttt{+}, \texttt{negate}, \texttt{log}, \texttt{/}, etc., and even
-going as far as re-using our entire \texttt{logistic} implementation because it
-only relied on numeric operations.
+\texttt{BVar}s. The library does provide lens-based accessors/setters. It also
+provides \texttt{Num}, \texttt{Fractional}, and \texttt{Floating} instances for
+\texttt{BVar}s so you can manipulate a \texttt{BVar\ s\ a} just like an
+\texttt{a} using its numeric instances. We leveraged this heavily by using
+\texttt{+}, \texttt{negate}, \texttt{log}, \texttt{/}, etc., and even going as
+far as re-using our entire \texttt{logistic} implementation because it only
+relied on numeric operations.
 
 However, for our domain-specific operations (like matrix multiplication, norms,
 and dot products), we needed to somehow lift those operations into
@@ -821,7 +832,7 @@ the
 \href{https://hackage.haskell.org/package/backprop-0.1.2.0/docs/Numeric-Backprop-Op.html}{documentation
 for \texttt{Numeric.Backprop.Op}}!
 
-If you're interested in writing your own lifted operations, check out the
+If you're interested in writing your own lifted operations, take a look at the
 \href{https://github.com/mstksg/hmatrix-backprop/blob/master/src/Numeric/LinearAlgebra/Static/Backprop.hs}{source
 of the lifted hmatrix module}, which lifts (most) of the functionality of
 \emph{hmatrix} for backprop. (And if you're good at computing gradients, check
@@ -840,17 +851,17 @@ like in my
 \href{https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html}{blog
 series on extensible neural networks}), I wrote
 \href{https://github.com/mstksg/backprop/blob/master/renders/extensible-neural.pdf}{a
-quick write-up} on how to apply those techniques to \emph{backprop} (also
-available in
+quick write-up} on how to apply those type-level dependent programming
+techniques to \emph{backprop} (also available in
 \href{https://github.com/mstksg/backprop/blob/master/samples/extensible-neural.lhs}{literate
 haskell}).
 
 Really, though, the goal of backprop is to allow you to automatically
-differentiate things you have already written. Over the next few weeks I'll be
-lifting operations from other libraries in the ecosystem. Let me know if there
-are any that you might want me to look at first! Be also on the lookout for some
-other posts I'll be writing on applying \emph{backprop} to optimize things other
-than neural networks.
+differentiate things you have \emph{already} written. Over the next few weeks
+I'll be lifting operations from other libraries in the ecosystem. Let me know if
+there are any that you might want me to look at first! Be also on the lookout
+for some other posts I'll be writing on applying \emph{backprop} to optimize
+things other than neural networks.
 
 If you have any questions, feel free to leave a comment. You can also give me a
 shout on \href{https://twitter.com/mstk}{twitter} (I'm \emph{@mstk}), on
@@ -858,6 +869,7 @@ freenode's \emph{\#haskell} (where I am usually idling as \emph{jle`}), or on
 the \href{https://gitter.im/dataHaskell/Lobby}{DataHaskell gitter} (where I hang
 out as \emph{@mstksg}).
 
-Until next time, happy Haskelling!
+Please let me know if you end up doing anything interesting with the library ---
+I'd love to hear about it! And, until next time, happy Haskelling!
 
 \end{document}

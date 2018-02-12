@@ -1,21 +1,21 @@
 Introducing the backprop library
 ================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on February 12, 2018.
 > [Read online!](https://blog.jle.im/entry/introducing-the-backprop-library.html)
 
 I'm excited to announce the first official release of the
 *[backprop](http://hackage.haskell.org/package/backprop)* library (currently at
 version 0.1.2.0 on hackage)! This has been something I've been working on for a
-while, trying to find a good API for *heterogeneous* automatic differentiation,
+while (trying to find a good API for *heterogeneous* automatic differentiation),
 and I'm happy to finally find something that I feel good about, with the help of
 a *[lens](http://hackage.haskell.org/package/lens)*-based API.
 
-As a quick demonstration, I'm going to create a simple neural network
-implementation, inspired by the [Tensorflow
+As a quick demonstration, this post will walk through the creation of a simple
+neural network implementation, inspired by the [Tensorflow
 Tutorial](https://www.tensorflow.org/versions/r1.2/get_started/mnist/beginners)
-for beginners, to learn digit recognition using the MNIST data set. To help tell
-the story, we're going to be implementing it "normally", using the
+for beginners, to learn handwritten digit recognition for the MNIST data set. To
+help tell the story, we're going to be implementing it "normally", using the
 *[hmatrix](http://hackage.haskell.org/package/hmatrix)* library API, and then
 re-write the same thing using
 *[backprop](http://hackage.haskell.org/package/backprop)* and
@@ -25,41 +25,43 @@ drop-in replacement for *hmatrix*).
 The Basics
 ----------
 
-For our application, we're not going to be doing anything super fancy. Our
-"neural network" will just be simple series of matrix multiplications, vector
-additions, and activation functions. We're going to write a neural network with
-a single hidden layer, parameterized by two weight matrices and two bias
-vectors.
+For this network, we're not going to be doing anything super fancy. Our "neural
+network" will just be simple series of matrix multiplications, vector additions,
+and activation functions. We're going to make a neural network with a single
+hidden layer using normal Haskell data types, parameterized by two weight
+matrices and two bias vectors.
 
 The purpose of the MNIST challenge is to take a vector of pixel data (28x28, so
 784 elements total) and classify it as one of ten digits (0 through 9). To do
 this, we're going to be building and training a model that takes in a 784-vector
-of pixel data and produces a 10-vector of categorical predictions (which is
-supposed to be 0 everywhere, except for 1 in the category we predict the input
-picture to be in).
+of pixel data and produces a 10-item
+[one-hot](https://en.wikipedia.org/wiki/One-hot) vector of categorical
+predictions (which is supposed to be 0 everywhere, except for 1 in the category
+we predict the input picture to be in).
 
 ### Types
 
 For our types, our imports are pretty simple:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L8-L9
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L10-L11
 
 import           Control.Lens hiding          ((<.>))
 import           Numeric.LinearAlgebra.Static
 ```
 
-A good first step in using *backprop* is to create a nice custom data type
-containing all of the items you want to compute your gradients on:
+Our `Net` type will just be a simple collection of all of the matrices and
+vectors we want to optimize:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L11-L16
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L18-L24
 
 data Net = N { _weights1 :: L 250 784
              , _bias1    :: R 250
              , _weights2 :: L 10 250
              , _bias2    :: R 10
              }
+  deriving (Generic)
 makeLenses ''Net
 ```
 
@@ -80,12 +82,37 @@ weights2 :: Lens' Net (L 10  250)
 bias2    :: Lens' Net (R 10)
 ```
 
-These are ways to *access* components of our data type:
+These lenses give us ways to access components of our data type:
 
 ``` {.haskell}
 myNet             :: Net
 myNet ^. weights1 :: L 250 784  -- access the weights1 field in myNet
 myNet ^. bias2    :: R  10      -- access the bias2 field in myNet
+```
+
+I'm also going to define `Num` and `Fractional` instances for our network, which
+makes it really easy to write code to "gradient descend" our network (we can
+just add and scale our networks with each other). To do this, I'm going to be
+using
+*[one-liner-instances](http://hackage.haskell.org/package/one-liner-instances)*
+to make a `Num` instance automatically using GHC Generics:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L61-L73
+
+instance Num Net where
+    (+)         = gPlus
+    (-)         = gMinus
+    (*)         = gTimes
+    negate      = gNegate
+    abs         = gAbs
+    signum      = gSignum
+    fromInteger = gFromInteger
+
+instance Fractional Net where
+    (/)          = gDivide
+    recip        = gRecip
+    fromRational = gFromRational
 ```
 
 Without Backprop
@@ -99,7 +126,7 @@ for our network directly.
 Running our network is pretty textbook:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L34-L41
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L42-L49
 
 runNet
     :: Net
@@ -114,7 +141,9 @@ runNet n x = z
 `runNet` takes a network and produces the `R 784 -> R 10` function it encodes.
 
 `#> :: L m n -> R n -> R m` is the matrix-vector multiplication operator from
-*hmatrix*; we can also just use `+` (from `Num`) to add vectors together.
+*hmatrix* (its
+[static](https://hackage.haskell.org/package/hmatrix/docs/Numeric-LinearAlgebra-Static.html)
+module); we can also just use `+` (from `Num`) to add vectors together.
 
 We use the [logistic function](https://en.wikipedia.org/wiki/Logistic_function)
 as our internal activation function and
@@ -122,7 +151,7 @@ as our internal activation function and
 outputs:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L18-L26
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L26-L34
 
 logistic :: Floating a => a -> a
 logistic x = 1 / (1 + exp (-x))
@@ -155,7 +184,7 @@ and the network output. This is a standard error function for classification
 problems; smaller cross-entropies indicate "better" predictions.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L28-L48
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-normal.hs#L36-L56
 
 crossEntropy
     :: R 10
@@ -177,13 +206,13 @@ negation (from `Num`).
 
 ### Training
 
-At this point, we are supposed to compute the *gradient* of our error function.
-It's a function that computes the *direction of greatest change* of all of the
-components in our network, with respect to our error function.
+At this point, we are supposed to find a way to compute the *gradient* of our
+error function. It's a function that computes the *direction of greatest change*
+of all of the components in our network, with respect to our error function.
 
-The gradient will take our `Net -> Double` function and produce a `Net` whose
-components contain the derivative of each component with respect to the error.
-It tells us how to "nudge" each component to increase the error function.
+The gradient will take our `Net -> Double` error function and produce a `Net`
+whose components contain the derivative of each component with respect to the
+error. It tells us how to "nudge" each component to increase the error function.
 *Training* a neural network involves moving in the opposite direction of the
 gradient, which causes the error to go *down*.
 
@@ -229,7 +258,7 @@ slightly -- instead of working directly with values of type `a`, we work with
 For example, let's look a version `softMax` that works with *backprop*:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L55-L61
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L56-L62
 
 softMax
     :: Reifies s W
@@ -245,7 +274,7 @@ Instead of `R 10 -> R 10`, its type signature is now
 (10-vectors), we work with `BVar s (R 10)`s (`BVar`s containing 10-vectors).
 
 `Numeric.LinearAlgebra.Static.Backprop` re-exports `konst` and `norm_1` (as
-`norm_1V`) lifted to work with `BVar`s:
+`norm_1V` --- `norm_1` for vectors only) lifted to work with `BVar`s:
 
 ``` {.haskell}
 -- normal
@@ -269,7 +298,7 @@ One neat trick --- because of `BVar`'s numeric instances, we can actually re-use
 our original implementation of `logistic`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L52-L53
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L53-L54
 
 logistic :: Floating a => a -> a
 logistic x = 1 / (1 + exp (-x))
@@ -278,7 +307,7 @@ logistic x = 1 / (1 + exp (-x))
 To *run* our network, things look pretty similar:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L70-L78
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L71-L79
 
 runNet
     :: Reifies s W
@@ -311,10 +340,10 @@ Some insight may be gleamed from a comparison of their type signatures:
 `^.` is access to a value using a lens, and `^^.` is access to a value inside a
 `BVar` using a lens.
 
-Using lenses like this gives us a virtually frictionless usage of `BVar`s,
+Using lenses like this gives us essentially frictionless usage of `BVar`s,
 allowing us to access items inside data types in a natural way. We can also
-*set* items using `.~~`, instead of `.~`, and even access constructors in sum
-types using `^^?` (which can implement pattern matching) and get matches for
+*set* items using `.~~`, instead of `.~`, and access constructors in sum types
+using `^^?` (which can implement pattern matching) and get matches for
 *multiple* targets using `^^..`:
 
 ``` {.haskell}
@@ -331,7 +360,7 @@ At this point, the implementation of our updated error function should not be
 too surprising:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L63-L86
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L64-L87
 
 crossEntropy
     :: Reifies s W
@@ -349,17 +378,17 @@ netErr
 netErr x targ n = crossEntropy targ (runNet n x)
 ```
 
-Both of these are are 100% lexicographically *identical* in implementation to
-our original ones -- the only difference is that `<.>` comes from
-`Numeric.LinearAlgebra.Static.Backprop`. Other than that, we re-use `log` and
-negation.
+Both of these implementations are are 100% lexicographically *identical* in
+implementation to our original ones -- the only difference is that `<.>` comes
+from `Numeric.LinearAlgebra.Static.Backprop`. Other than that, we re-use `log`
+and negation.
 
 ### Training
 
 Time to gradient descend!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L88-L92
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L89-L93
 
 stepNet :: R 784 -> R 10 -> Net -> Net
 stepNet x targ net0 = net0 - 0.02 * gr
@@ -368,7 +397,7 @@ stepNet x targ net0 = net0 - 0.02 * gr
     gr = gradBP (netErr (constVar x) (constVar targ)) net0
 ```
 
-That's it!
+And...that's it!
 
 To break this down:
 
@@ -421,29 +450,10 @@ To break this down:
 
     We can pass this function to `gradBP` to get the gradient of the network
     `Net` with respect to the `Double` error.
-4.  To wrap it all up, we can "scale" our gradients because I added a `Num` and
-    `Fractional` instance for `Net` while you weren't looking, using
-    *[one-liner-instances](http://hackage.haskell.org/package/one-liner-instances)*:
-
-    ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs#L143-L155
-
-    instance Num Net where
-        (+)         = gPlus
-        (-)         = gMinus
-        (*)         = gTimes
-        negate      = gNegate
-        abs         = gAbs
-        signum      = gSignum
-        fromInteger = gFromInteger
-
-    instance Fractional Net where
-        (/)          = gDivide
-        recip        = gRecip
-        fromRational = gFromRational
-    ```
 
 And that's really the whole gradient computation and descent code!
+
+Kind of anti-climactic, isn't it?
 
 Taking it for a spin
 --------------------
@@ -455,13 +465,15 @@ network, with some basic evaluations.
 
 If you download it
 [here](https://github.com/mstksg/inCode/tree/master/code-samples/backprop/intro-backprop.hs),
-you can compile it:
+you can compile it using a stack's self-compiling script feature (if
+*[stack](https://docs.haskellstack.org/en/stable/README/)* is installed on your
+computer):
 
 ``` {.bash}
 $ ./intro-backprop.hs    # compiles itself, managing dependencies automatically
 ```
 
-The above command will cause the program to "compile itself", installing the
+The above command will cause the program to compile itself, installing the
 necessary GHC (if needed) and also the automatically download the dependencies
 from hackage. *backprop* manages the automatic differentiation, and *stack*
 manages the automatic dependency management :)
@@ -471,10 +483,7 @@ files](http://yann.lecun.com/exdb/mnist/) and uncompress them into a folder, and
 run it all with:
 
 ``` {.bash}
-$ ./intro-backprop PATH_TO_DATA/{train-images-idx3-ubyte,\
-    train-labels-idx1-ubyte,\
-    t10k-images-idx3-ubyte,\
-    t10k-labels-idx1-ubyte}
+$ ./intro-backprop PATH_TO_DATA
 Loaded data.
 [Epoch 1]
 (Batch 1)
@@ -510,14 +519,14 @@ Validation error: 5.85%
 After about 35000 training points, we get down to 94% accuracy on our test set.
 Neat!
 
-Behind the Magic
-----------------
+A More Nuanced Look
+-------------------
 
 That's the high level overview -- now let's look a bit at the details that might
 be helpful before you go strike it out on your own.
 
-The main API revolves around writing a `BVar s a -> BVar s b` function, and
-using one of the three runners:
+The main API revolves around writing a `BVar s a -> BVar s b` function
+(representing an `a -> b` one), and then using one of the three runners:
 
 ``` {.haskell}
 -- Return the result and gradient
@@ -538,15 +547,16 @@ application or library in `BVar`-based code.
 
 `gradBP`, however, carries a some measurable performance overhead over writing
 your gradient code "manually", but this heavily depends on exactly how complex
-the code you are backpropagating is. The overhead comes from the building of the
-function call graph, but also potentially from the mechanical automatic
-differentiation process generating different operations than what you might
-write by hand. See the [README](https://github.com/mstksg/backprop) for a deeper
-analysis.
+the code you are backpropagating is. The overhead comes from two potential
+sources: the building of the function call graph, and also potentially from the
+mechanical automatic differentiation process generating different operations
+than what you might write by hand. See the
+[README](https://github.com/mstksg/backprop) for a deeper analysis.
 
-As you might have noticed from the RankN type signature (the `forall s. ...`),
-*backprop* uses the RankN type trick that `Control.Monad.ST` and the
-*[ad](http://hackage.haskell.org/package/ad)* library does, for two purposes:
+You might have also noticed the RankN type signature (the `forall s. ...`) that
+I glossed over earlier. This is here because *backprop* uses the RankN type
+trick from `Control.Monad.ST` and the
+*[ad](http://hackage.haskell.org/package/ad)* library, for two purposes:
 
 1.  The prevent leakage of variables from the function. You can't use `evalBP`
     to get a `BVar` out in the end, just like you can't use `runST` to get an
@@ -566,7 +576,7 @@ options, and the [README](https://github.com/mstksg/backprop) has a deeper
 discussion on this.
 
 Writing a `Num` instance for your types is some manageable boilerplate if your
-type derives Generic (so we can use
+type derives Generic (and we can use
 *[one-liner-instances](http://hackage.haskell.org/package/one-liner-instances)*),
 like we saw above with the `Num` instance for `Net`.
 
@@ -583,12 +593,12 @@ application, you can use the orphan instances in
 ### Lifting your own functions
 
 Of course, all of this would be useless unless you had a way to manipulate
-`BVar`s. The library does provide lens-based accessors/setters, but, more
-importantly, it gives `Num`, `Fractional`, and `Floating` instances for `BVar`s
-so you can manipulate a `BVar s a` just like an `a` using its numeric instances.
-We leveraged this heavily by using `+`, `negate`, `log`, `/`, etc., and even
-going as far as re-using our entire `logistic` implementation because it only
-relied on numeric operations.
+`BVar`s. The library does provide lens-based accessors/setters. It also provides
+`Num`, `Fractional`, and `Floating` instances for `BVar`s so you can manipulate
+a `BVar s a` just like an `a` using its numeric instances. We leveraged this
+heavily by using `+`, `negate`, `log`, `/`, etc., and even going as far as
+re-using our entire `logistic` implementation because it only relied on numeric
+operations.
 
 However, for our domain-specific operations (like matrix multiplication, norms,
 and dot products), we needed to somehow lift those operations into
@@ -621,7 +631,7 @@ derivative of the result. For more details on the math, see the [documentation
 for
 `Numeric.Backprop.Op`](https://hackage.haskell.org/package/backprop-0.1.2.0/docs/Numeric-Backprop-Op.html)!
 
-If you're interested in writing your own lifted operations, check out the
+If you're interested in writing your own lifted operations, take a look at the
 [source of the lifted hmatrix
 module](https://github.com/mstksg/hmatrix-backprop/blob/master/src/Numeric/LinearAlgebra/Static/Backprop.hs),
 which lifts (most) of the functionality of *hmatrix* for backprop. (And if
@@ -640,11 +650,12 @@ like in my [blog series on extensible neural
 networks](https://blog.jle.im/entries/series/+practical-dependent-types-in-haskell.html)),
 I wrote [a quick
 write-up](https://github.com/mstksg/backprop/blob/master/renders/extensible-neural.pdf)
-on how to apply those techniques to *backprop* (also available in [literate
+on how to apply those type-level dependent programming techniques to *backprop*
+(also available in [literate
 haskell](https://github.com/mstksg/backprop/blob/master/samples/extensible-neural.lhs)).
 
 Really, though, the goal of backprop is to allow you to automatically
-differentiate things you have already written. Over the next few weeks I'll be
+differentiate things you have *already* written. Over the next few weeks I'll be
 lifting operations from other libraries in the ecosystem. Let me know if there
 are any that you might want me to look at first! Be also on the lookout for some
 other posts I'll be writing on applying *backprop* to optimize things other than
@@ -656,4 +667,5 @@ freenode's *\#haskell* (where I am usually idling as *jle\`*), or on the
 [DataHaskell gitter](https://gitter.im/dataHaskell/Lobby) (where I hang out as
 *@mstksg*).
 
-Until next time, happy Haskelling!
+Please let me know if you end up doing anything interesting with the library ---
+I'd love to hear about it! And, until next time, happy Haskelling!
