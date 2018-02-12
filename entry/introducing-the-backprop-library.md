@@ -4,6 +4,9 @@ Introducing the backprop library
 > Originally posted by [Justin Le](https://blog.jle.im/) on February 12, 2018.
 > [Read online!](https://blog.jle.im/entry/introducing-the-backprop-library.html)
 
+**backprop**: [hackage](http://hackage.haskell.org/package/backprop) /
+[github](https://github.com/mstksg/backprop)
+
 I'm excited to announce the first official release of the
 *[backprop](http://hackage.haskell.org/package/backprop)* library (currently at
 version 0.1.2.0 on hackage)! This has been something I've been working on for a
@@ -551,7 +554,7 @@ the code you are backpropagating is. The overhead comes from two potential
 sources: the building of the function call graph, and also potentially from the
 mechanical automatic differentiation process generating different operations
 than what you might write by hand. See the
-[README](https://github.com/mstksg/backprop) for a deeper analysis.
+[README](https://github.com/mstksg/backprop#readme) for a deeper analysis.
 
 You might have also noticed the RankN type signature (the `forall s. ...`) that
 I glossed over earlier. This is here because *backprop* uses the RankN type
@@ -572,8 +575,8 @@ trick from `Control.Monad.ST` and the
 Note that at the moment, `backprop` and `gradBP` (and `(^^.)` and most
 `BVar`-based operations) all require a `Num` instance on the things being
 backpropagated. This is an API decision that is a compromise between different
-options, and the [README](https://github.com/mstksg/backprop) has a deeper
-discussion on this.
+options, and the [README](https://github.com/mstksg/backprop#readme) has a
+deeper discussion on this.
 
 Writing a `Num` instance for your types is some manageable boilerplate if your
 type derives Generic (and we can use
