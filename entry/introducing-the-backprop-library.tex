@@ -179,7 +179,7 @@ and vectors we want to optimize:
 \end{Shaded}
 
 We're using the matrix types from
-\href{https://hackage.haskell.org/package/hmatrix/docs/Numeric-LinearAlgebra-Static.html}{\texttt{Numeric.LinearAlgebra.Static}}.
+\href{https://hackage.haskell.org/package/hmatrix-backprop/docs/Numeric-LinearAlgebra-Static-Backprop.html}{\texttt{Numeric.LinearAlgebra.Static}}.
 An \texttt{L\ 250\ 784} is a
 \includegraphics{https://latex.codecogs.com/png.latex?250\%20\%5Ctimes\%20784}
 matrix -- or, as we are using it, a linear transformation
@@ -265,7 +265,7 @@ Running our network is pretty textbook:
 
 \texttt{\#\textgreater{}\ ::\ L\ m\ n\ -\textgreater{}\ R\ n\ -\textgreater{}\ R\ m}
 is the matrix-vector multiplication operator from \emph{hmatrix} (its
-\href{https://hackage.haskell.org/package/hmatrix/docs/Numeric-LinearAlgebra-Static.html}{static}
+\href{https://hackage.haskell.org/package/hmatrix-backprop/docs/Numeric-LinearAlgebra-Static-Backprop.html}{static}
 module); we can also just use \texttt{+} (from \texttt{Num}) to add vectors
 together.
 
@@ -332,10 +332,9 @@ predictions.
 \end{Highlighting}
 \end{Shaded}
 
-Computing the cross entropy requires us to use
-\texttt{\textless{}.\textgreater{}} (the dot product) from \emph{hmatrix}, but
-other than that we can just use \texttt{log} (from \texttt{Floating}) and
-negation (from \texttt{Num}).
+Computing the cross entropy involves using \texttt{\textless{}.\textgreater{}}
+(the dot product) from \emph{hmatrix}, but other than that we can just use
+\texttt{log} (from \texttt{Floating}) and negation (from \texttt{Num}).
 
 \hypertarget{training}{%
 \subsection{Training}\label{training}}
@@ -346,17 +345,18 @@ greatest change} of all of the components in our network, with respect to our
 error function.
 
 The gradient will take our \texttt{Net\ -\textgreater{}\ Double} error function
-and produce a \texttt{Net} whose components contain the derivative of each
-component with respect to the error. It tells us how to ``nudge'' each component
-to increase the error function. \emph{Training} a neural network involves moving
-in the opposite direction of the gradient, which causes the error to go
-\emph{down}.
+and, given a current network, and produce a ``gradient'' \texttt{Net} whose
+components contain the derivative of each component with respect to the error.
+It tells us how to ``nudge'' each component to increase the error function.
+\emph{Training} a neural network involves moving in the opposite direction of
+the gradient, which causes the error to go \emph{down}.
 
 However, given \texttt{netErr}'s definition, it is not obvious how to compute
-our gradient function. Doing so involves some careful multi-variable calculus
-based on our knowledge of the operations we used. For simple situations we often
-do it by hand, but for more complicated situations, this becomes impractical.
-That's where \emph{automatic differentiation} comes into play.
+our gradient function. Doing so involves some careful multi-variable vector
+calculus and linear algebra based on our knowledge of the operations we used.
+For simple situations we often do it by hand, but for more complicated
+situations, this becomes impractical. That's where \emph{automatic
+differentiation} comes into play.
 
 We've gone as far as we can go now, so let's drop into the world of
 \emph{backprop} and see what it can offer us!
@@ -382,16 +382,18 @@ We'll switch out our imports very slightly:
 First, we add \texttt{Numeric.Backprop}, the module where the magic happens.
 
 Second, we switch from \texttt{Numeric.LinearAlgebra.Static} to
-\texttt{Numeric.LinearAlgebra.Static.Backprop}, which exports the exact API as
-\texttt{Numeric.LinearAlgebra.Static}, except with numeric operations that are
-``lifted'' to work with \emph{backprop}. It's meant to act as a drop-in
-replacement, and, because of this, most of our actual code will be more
-identical.
+{[}\texttt{Numeric.LinearAlgebra.Static.Backprop}{]}{[}{]} (from
+\emph{\href{http://hackage.haskell.org/package/hmatrix-backprop}{hmatrix-backprop}}),
+which exports the exact same\footnote{More or less. See module documentation for
+  more information.} API as \texttt{Numeric.LinearAlgebra.Static}, except with
+numeric operations that are ``lifted'' to work with \emph{backprop}. It's meant
+to act as a drop-in replacement, and, because of this, most of our actual code
+will be more identical.
 
 \hypertarget{running-1}{%
 \subsection{Running}\label{running-1}}
 
-Writing functions that can be used with \emph{backprop} involves changing the
+Writing functions that can be used with \emph{backprop} involves tweaking the
 types slightly -- instead of working directly with values of type \texttt{a}, we
 work with \texttt{BVar}s (backpropagatable variables) \emph{containing}
 \texttt{a}s: a \texttt{BVar\ s\ a}.
@@ -425,9 +427,9 @@ lifted to work with \texttt{BVar}s:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- normal}
-\OtherTok{konst ::}        \DataTypeTok{Double} \OtherTok{->}         \DataTypeTok{R} \DecValTok{10}
+\OtherTok{konst   ::}        \DataTypeTok{Double} \OtherTok{->}         \DataTypeTok{R} \DecValTok{10}
 \CommentTok{-- backprop}
-\OtherTok{konst ::} \DataTypeTok{BVar}\NormalTok{ s }\DataTypeTok{Double} \OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s (}\DataTypeTok{R} \DecValTok{10}\NormalTok{)}
+\OtherTok{konst   ::} \DataTypeTok{BVar}\NormalTok{ s }\DataTypeTok{Double} \OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s (}\DataTypeTok{R} \DecValTok{10}\NormalTok{)}
 
 \CommentTok{-- normal}
 \OtherTok{norm_1  ::}         \DataTypeTok{R} \DecValTok{10}  \OtherTok{->}        \DataTypeTok{Double}
@@ -500,10 +502,10 @@ access to a value inside a \texttt{BVar} using a lens.
 
 Using lenses like this gives us essentially frictionless usage of
 \texttt{BVar}s, allowing us to access items inside data types in a natural way.
-We can also \emph{set} items using \texttt{.\textasciitilde{}\textasciitilde{}},
-instead of \texttt{.\textasciitilde{}}, and access constructors in sum types
-using \texttt{\^{}\^{}?} (which can implement pattern matching) and get matches
-for \emph{multiple} targets using \texttt{\^{}\^{}..}:
+We can also \emph{set} items using \texttt{.\textasciitilde{}\textasciitilde{}}
+(to parallel \texttt{.\textasciitilde{}}), and access constructors in sum types
+using \texttt{\^{}\^{}?} (which can be used to implement pattern matching) and
+get matches for \emph{multiple} targets using \texttt{\^{}\^{}..}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -545,8 +547,8 @@ too surprising:
 Both of these implementations are are 100\% lexicographically \emph{identical}
 in implementation to our original ones -- the only difference is that
 \texttt{\textless{}.\textgreater{}} comes from
-\texttt{Numeric.LinearAlgebra.Static.Backprop}. Other than that, we re-use
-\texttt{log} and negation.
+\texttt{Numeric.LinearAlgebra.Static.Backprop}. Other than that, we can simply
+re-use \texttt{log} and negation.
 
 \hypertarget{training-1}{%
 \subsection{Training}\label{training-1}}
@@ -576,6 +578,9 @@ To break this down:
   means \texttt{net0\ -\ 0.02\ *\ gr} -- we subtract the gradient (scaled by
   0.02, a learning rate, to ensure we don't overshoot our goal) from our
   network.
+
+  Recall that we implemented scaling and subtraction of \texttt{Net}s when we
+  wrote its \texttt{Num} and \texttt{Fractional} instances earlier.
 \item
   To compute our gradient, we use \texttt{gradBP}:
 
@@ -637,7 +642,7 @@ To break this down:
   network \texttt{Net} with respect to the \texttt{Double} error.
 \end{enumerate}
 
-And that's really the whole gradient computation and descent code!
+That's really the entire gradient computation and descent code!
 
 Kind of anti-climactic, isn't it?
 
@@ -738,18 +743,18 @@ The main API revolves around writing a
 writing your functions directly, so there's pretty much no harm in writing your
 entire application or library in \texttt{BVar}-based code.
 
-\texttt{gradBP}, however, carries a some measurable performance overhead over
-writing your gradient code ``manually'', but this heavily depends on exactly how
-complex the code you are backpropagating is. The overhead comes from two
-potential sources: the building of the function call graph, and also potentially
-from the mechanical automatic differentiation process generating different
-operations than what you might write by hand. See the
+\texttt{gradBP}, however, carries measurable performance overhead over writing
+your gradient code ``manually'', but this heavily depends on exactly how complex
+the code you are backpropagating is. The overhead comes from two potential
+sources: the building of the function call graph, and also potentially from the
+mechanical automatic differentiation process generating different operations
+than what you might write by hand. See the
 \href{https://github.com/mstksg/backprop\#readme}{README} for a deeper analysis.
 
 You might have also noticed the RankN type signature (the
 \texttt{forall\ s.\ ...}) that I glossed over earlier. This is here because
-\emph{backprop} uses the RankN type trick from \texttt{Control.Monad.ST} and the
-\emph{\href{http://hackage.haskell.org/package/ad}{ad}} library, for two
+\emph{backprop} uses the RankN type trick (from \texttt{Control.Monad.ST} and
+the \emph{\href{http://hackage.haskell.org/package/ad}{ad}} library) for two
 purposes:
 
 \begin{enumerate}
@@ -770,22 +775,22 @@ purposes:
 \hypertarget{discussion-on-num}{%
 \subsection{Discussion on Num}\label{discussion-on-num}}
 
-Note that at the moment, \texttt{backprop} and \texttt{gradBP} (and
-\texttt{(\^{}\^{}.)} and most \texttt{BVar}-based operations) all require a
+Note that at the moment, \texttt{backprop}, \texttt{gradBP},
+\texttt{(\^{}\^{}.)}, and most \texttt{BVar}-based operations all require a
 \texttt{Num} instance on the things being backpropagated. This is an API
 decision that is a compromise between different options, and the
 \href{https://github.com/mstksg/backprop\#readme}{README} has a deeper
 discussion on this.
 
-Writing a \texttt{Num} instance for your types is some manageable boilerplate if
-your type derives Generic (and we can use
+For the most part, writing a \texttt{Num} instance for your types is some easy
+and quick boilerplate if your type derives Generic (and we can use
 \emph{\href{http://hackage.haskell.org/package/one-liner-instances}{one-liner-instances}}),
 like we saw above with the \texttt{Num} instance for \texttt{Net}.
 
-However, requiring a \texttt{Num} instance means you can't directly
-backpropagate tuples. This can be an issue because of how pervasive tuples are
-used for currying/uncurrying, and also because automatically generated prisms
-use tuples for constructors with multiple fields.
+One potential drawback is that requiring a \texttt{Num} instance means you can't
+directly backpropagate tuples. This can be an issue because of how pervasive
+tuples are used for currying/uncurrying, and also because automatically
+generated prisms use tuples for constructors with multiple fields.
 
 To mitigate this issue, the library exports some convenient
 tuples-with-Num-instances in \texttt{Numeric.Backprop.Tuple}. If you are writing
