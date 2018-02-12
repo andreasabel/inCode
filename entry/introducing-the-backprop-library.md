@@ -20,9 +20,9 @@ find something that I feel good about, with the help of a
 *[lens](http://hackage.haskell.org/package/lens)*-based API.
 
 As a quick demonstration, this post will walk through the creation of a simple
-neural network implementation, inspired by the [Tensorflow
+neural network implementation (inspired by the [Tensorflow
 Tutorial](https://www.tensorflow.org/versions/r1.2/get_started/mnist/beginners)
-for beginners, to learn handwritten digit recognition for the MNIST data set. To
+for beginners) to learn handwritten digit recognition for the MNIST data set. To
 help tell the story, we're going to be implementing it "normally", using the
 *[hmatrix](http://hackage.haskell.org/package/hmatrix)* library API, and then
 re-write the same thing using
