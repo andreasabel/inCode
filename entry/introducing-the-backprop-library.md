@@ -260,7 +260,7 @@ Second, we switch from `Numeric.LinearAlgebra.Static` to
 which exports the exact same[^1] API as `Numeric.LinearAlgebra.Static`, except
 with numeric operations that are "lifted" to work with *backprop*. It's meant to
 act as a drop-in replacement, and, because of this, most of our actual code will
-be more identical.
+be more or less identical.
 
 ### Running
 
