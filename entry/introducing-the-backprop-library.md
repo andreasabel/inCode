@@ -9,7 +9,7 @@ Introducing the backprop library
 
 I'm excited to announce the first official release of the
 *[backprop](http://hackage.haskell.org/package/backprop)* library (currently at
-version 0.1.2.0 on hackage)! *backprop* is a library that allows you write
+version 0.1.3.0 on hackage)! *backprop* is a library that allows you write
 functions on your heterogeneous values like you would normally and takes them
 and (with reverse-mode automatic differentiation) automatically generate
 functions computing their gradients. *backprop* differs from the related
