@@ -148,12 +148,12 @@ is a function that respects 'addition' and 'scaling':
 ![
 \\begin{aligned}
 A(c\\mathbf{x}) & = c A(\\mathbf{x}) \\\\
-A(\\mathbf{x} + \\mathbf{y}) = A(\\mathbf{x}) + A (\\mathbf{y})
+A(\\mathbf{x} + \\mathbf{y}) & = A(\\mathbf{x}) + A (\\mathbf{y})
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28c%5Cmathbf%7Bx%7D%29%20%26%20%3D%20c%20A%28%5Cmathbf%7Bx%7D%29%20%5C%5C%0AA%28%5Cmathbf%7Bx%7D%20%2B%20%5Cmathbf%7By%7D%29%20%3D%20A%28%5Cmathbf%7Bx%7D%29%20%2B%20A%20%28%5Cmathbf%7By%7D%29%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28c%5Cmathbf%7Bx%7D%29%20%26%20%3D%20c%20A%28%5Cmathbf%7Bx%7D%29%20%5C%5C%0AA%28%5Cmathbf%7Bx%7D%20%2B%20%5Cmathbf%7By%7D%29%20%26%20%3D%20A%28%5Cmathbf%7Bx%7D%29%20%2B%20A%20%28%5Cmathbf%7By%7D%29%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
 A(c\mathbf{x}) & = c A(\mathbf{x}) \\
-A(\mathbf{x} + \mathbf{y}) = A(\mathbf{x}) + A (\mathbf{y})
+A(\mathbf{x} + \mathbf{y}) & = A(\mathbf{x}) + A (\mathbf{y})
 \end{aligned}
 ")
 
@@ -178,12 +178,12 @@ look a little nicer:
 ![
 \\begin{aligned}
 \\hat{A}(c\\mathbf{x}) & = c(\\hat{A}\\mathbf{x}) \\\\
-\\hat{A}(\\mathbf{x} + \\mathbf{y}) = \\hat{A} \\mathbf{x} + \\hat{A} \\mathbf{y}
+\\hat{A}(\\mathbf{x} + \\mathbf{y}) & = \\hat{A} \\mathbf{x} + \\hat{A} \\mathbf{y}
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Chat%7BA%7D%28c%5Cmathbf%7Bx%7D%29%20%26%20%3D%20c%28%5Chat%7BA%7D%5Cmathbf%7Bx%7D%29%20%5C%5C%0A%5Chat%7BA%7D%28%5Cmathbf%7Bx%7D%20%2B%20%5Cmathbf%7By%7D%29%20%3D%20%5Chat%7BA%7D%20%5Cmathbf%7Bx%7D%20%2B%20%5Chat%7BA%7D%20%5Cmathbf%7By%7D%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Chat%7BA%7D%28c%5Cmathbf%7Bx%7D%29%20%26%20%3D%20c%28%5Chat%7BA%7D%5Cmathbf%7Bx%7D%29%20%5C%5C%0A%5Chat%7BA%7D%28%5Cmathbf%7Bx%7D%20%2B%20%5Cmathbf%7By%7D%29%20%26%20%3D%20%5Chat%7BA%7D%20%5Cmathbf%7Bx%7D%20%2B%20%5Chat%7BA%7D%20%5Cmathbf%7By%7D%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
 \hat{A}(c\mathbf{x}) & = c(\hat{A}\mathbf{x}) \\
-\hat{A}(\mathbf{x} + \mathbf{y}) = \hat{A} \mathbf{x} + \hat{A} \mathbf{y}
+\hat{A}(\mathbf{x} + \mathbf{y}) & = \hat{A} \mathbf{x} + \hat{A} \mathbf{y}
 \end{aligned}
 ")
 
