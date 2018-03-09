@@ -73,19 +73,19 @@ in that order." Then, we can *write*
 ![\\mathbf{v}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D "\mathbf{v}")
 as
 ![\\langle v\_x, v\_y, v\_z \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20v_x%2C%20v_y%2C%20v_z%20%5Crangle "\langle v_x, v_y, v_z \rangle"),
-such that
-![\\mathbf{v} = v\_x \\hat{\\mathbf{i}} + v\_y \\hat{\\mathbf{j}} + v\_x \\hat{\\mathbf{k}}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D%20%3D%20v_x%20%5Chat%7B%5Cmathbf%7Bi%7D%7D%20%2B%20v_y%20%5Chat%7B%5Cmathbf%7Bj%7D%7D%20%2B%20v_x%20%5Chat%7B%5Cmathbf%7Bk%7D%7D "\mathbf{v} = v_x \hat{\mathbf{i}} + v_y \hat{\mathbf{j}} + v_x \hat{\mathbf{k}}").
+and understand that we really
+mean![\\mathbf{v} = v\_x \\hat{\\mathbf{i}} + v\_y \\hat{\\mathbf{j}} + v\_x \\hat{\\mathbf{k}}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D%20%3D%20v_x%20%5Chat%7B%5Cmathbf%7Bi%7D%7D%20%2B%20v_y%20%5Chat%7B%5Cmathbf%7Bj%7D%7D%20%2B%20v_x%20%5Chat%7B%5Cmathbf%7Bk%7D%7D "\mathbf{v} = v_x \hat{\mathbf{i}} + v_y \hat{\mathbf{j}} + v_x \hat{\mathbf{k}}").
 
 Note that
 ![\\langle v\_x, v\_y, v\_z \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20v_x%2C%20v_y%2C%20v_z%20%5Crangle "\langle v_x, v_y, v_z \rangle")
-is **not** the same thing, conceptually, as the **vector**
+is **not** the same thing as the **vector**
 ![\\mathbf{v}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D "\mathbf{v}").
 It is *an encoding* of that vector, that only makes sense once we choose to
 *agree* on a specific set of basis.
 
-For an N-dimensional vector space, it means that, with N items, we can represent
-any vector in that space. And, if we agree on those N items, we can devise an
-encoding, such that:
+For an N-dimensional vector space, it means that, with a minimum of N items, we
+can represent any vector in that space. And, if we agree on those N items, we
+can devise an encoding, such that:
 
 ![
 \\langle v\_1, v\_2 \\dots v\_N \\rangle
@@ -105,6 +105,91 @@ Note that what this encoding represents is *completely dependent* on what
 ![\\mathbf{e}\_1, \\mathbf{e}\_2 \\ldots \\mathbf{e}\_N](https://latex.codecogs.com/png.latex?%5Cmathbf%7Be%7D_1%2C%20%5Cmathbf%7Be%7D_2%20%5Cldots%20%5Cmathbf%7Be%7D_N "\mathbf{e}_1, \mathbf{e}_2 \ldots \mathbf{e}_N")
 we pick, and in what order. The basis vectors we pick are arbitrary, and
 determine what our encoding looks like.
+
+To highlight this, note that the same vector
+![\\mathbf{v}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D "\mathbf{v}")
+has many different potential encodings --- all you have to do is pick a
+different set of basis vectors, or even just re-arrange the ones you already
+have. However, all of those encodings correspond go the same vector
+![\\mathbf{v}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D "\mathbf{v}").
+
+One interesting consequence of this is that any N-dimensional vector space whose
+scalars are in
+![\\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D "\mathbb{R}")
+is actually isomorphic to
+![\\mathbf{R}\^N](https://latex.codecogs.com/png.latex?%5Cmathbf%7BR%7D%5EN "\mathbf{R}^N")
+--- the vector space of N-tuples of real numbers. Because of this, we often call
+*all* N-dimensional vector spaces (whose scalars are in
+![\\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D "\mathbb{R}"))
+as
+![\\mathbb{R}\^N](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5EN "\mathbb{R}^N").
+You will often hear physicists saying that the three-dimensional vector spaces
+they use are
+![\\mathbb{R}\^3](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E3 "\mathbb{R}^3").
+However, what they really mean is that their vectors are isomorphic to
+![\\mathbb{R}\^3](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E3 "\mathbb{R}^3").
+
+Linear Transformations
+----------------------
+
+Now, one of the most interesting things in mathematics is the idea of the
+**linear transformation**. Linear transformations are useful to study because:
+
+1.  They are ubiquitious. They either come up everywhere in engineering,
+    physics, mathematics, data science, economics, and pretty much any
+    mathematical theory. And there are even more situations which can be
+    *approximated* by linear transformations.
+2.  They are mathematically very nice to work with and study, in practice.
+
+A linear transformation,
+![A(\\mathbf{x})](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bx%7D%29 "A(\mathbf{x})"),
+is a function that respects 'addition' and 'scaling':
+
+![
+\\begin{aligned}
+A(c\\mathbf{x}) & = c A(\\mathbf{x}) \\\\
+A(\\mathbf{x} + \\mathbf{y}) = A(\\mathbf{x}) + A (\\mathbf{y})
+\\end{aligned}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28c%5Cmathbf%7Bx%7D%29%20%26%20%3D%20c%20A%28%5Cmathbf%7Bx%7D%29%20%5C%5C%0AA%28%5Cmathbf%7Bx%7D%20%2B%20%5Cmathbf%7By%7D%29%20%3D%20A%28%5Cmathbf%7Bx%7D%29%20%2B%20A%20%28%5Cmathbf%7By%7D%29%0A%5Cend%7Baligned%7D%0A "
+\begin{aligned}
+A(c\mathbf{x}) & = c A(\mathbf{x}) \\
+A(\mathbf{x} + \mathbf{y}) = A(\mathbf{x}) + A (\mathbf{y})
+\end{aligned}
+")
+
+This means that if you scale the input, the output is scaled by the same amount.
+And also, if you transform the sum of two things, it's the same as the sum of
+the transformed things (it "distributes").
+
+Note that I snuck in vector notation, because the concept of vectors are
+*perfectly suited* for studying linear transformations. That's because talking
+about linear transformations requires talking about scaling and adding,
+and...hey, that's just exactly what vectors have!
+
+In the study of linear transformations, it might be useful to write the function
+![A(\\mathbf{x})](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bx%7D%29 "A(\mathbf{x})")
+in *operator notation*,
+![\\hat{A} \\mathbf{x}](https://latex.codecogs.com/png.latex?%5Chat%7BA%7D%20%5Cmathbf%7Bx%7D "\hat{A} \mathbf{x}"),
+which is read as "the operator
+![\\hat{A}](https://latex.codecogs.com/png.latex?%5Chat%7BA%7D "\hat{A}")
+applied to \mathbf{x}". This makes our description of linear transformations
+look a little nicer:
+
+![
+\\begin{aligned}
+\\hat{A}(c\\mathbf{x}) & = c(\\hat{A}\\mathbf{x}) \\\\
+\\hat{A}(\\mathbf{x} + \\mathbf{y}) = \\hat{A} \\mathbf{x} + \\hat{A} \\mathbf{y}
+\\end{aligned}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Chat%7BA%7D%28c%5Cmathbf%7Bx%7D%29%20%26%20%3D%20c%28%5Chat%7BA%7D%5Cmathbf%7Bx%7D%29%20%5C%5C%0A%5Chat%7BA%7D%28%5Cmathbf%7Bx%7D%20%2B%20%5Cmathbf%7By%7D%29%20%3D%20%5Chat%7BA%7D%20%5Cmathbf%7Bx%7D%20%2B%20%5Chat%7BA%7D%20%5Cmathbf%7By%7D%0A%5Cend%7Baligned%7D%0A "
+\begin{aligned}
+\hat{A}(c\mathbf{x}) & = c(\hat{A}\mathbf{x}) \\
+\hat{A}(\mathbf{x} + \mathbf{y}) = \hat{A} \mathbf{x} + \hat{A} \mathbf{y}
+\end{aligned}
+")
+
+This makes the requirements look visually like the associativity and
+distributivity of multiplication and addition. Really, though, this is nothing
+more than a cheap trick.
 
 [^1]: In short, vector spaces form an Abelian group (which is another way of
     just saying that addition is commutative, associative, has an identity, and
