@@ -135,15 +135,15 @@ Linear Transformations
 Now, one of the most interesting things in mathematics is the idea of the
 **linear transformation**. Linear transformations are useful to study because:
 
-1.  They are ubiquitious. They either come up everywhere in engineering,
-    physics, mathematics, data science, economics, and pretty much any
-    mathematical theory. And there are even more situations which can be
-    *approximated* by linear transformations.
+1.  They are ubiquitious. They come up everywhere in engineering, physics,
+    mathematics, data science, economics, and pretty much any mathematical
+    theory. And there are even more situations which can be *approximated* by
+    linear transformations.
 2.  They are mathematically very nice to work with and study, in practice.
 
 A linear transformation,
 ![A(\\mathbf{x})](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bx%7D%29 "A(\mathbf{x})"),
-is a function that respects 'addition' and 'scaling':
+is a function that "respects" addition and scaling:
 
 ![
 \\begin{aligned}
@@ -165,31 +165,6 @@ Note that I snuck in vector notation, because the concept of vectors are
 *perfectly suited* for studying linear transformations. That's because talking
 about linear transformations requires talking about scaling and adding,
 and...hey, that's just exactly what vectors have!
-
-In the study of linear transformations, it might be useful to write the function
-![A(\\mathbf{x})](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bx%7D%29 "A(\mathbf{x})")
-in *operator notation*,
-![\\hat{A} \\mathbf{x}](https://latex.codecogs.com/png.latex?%5Chat%7BA%7D%20%5Cmathbf%7Bx%7D "\hat{A} \mathbf{x}"),
-which is read as "the operator
-![\\hat{A}](https://latex.codecogs.com/png.latex?%5Chat%7BA%7D "\hat{A}")
-applied to \mathbf{x}". This makes our description of linear transformations
-look a little nicer:
-
-![
-\\begin{aligned}
-\\hat{A}(c\\mathbf{x}) & = c(\\hat{A}\\mathbf{x}) \\\\
-\\hat{A}(\\mathbf{x} + \\mathbf{y}) & = \\hat{A} \\mathbf{x} + \\hat{A} \\mathbf{y}
-\\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Chat%7BA%7D%28c%5Cmathbf%7Bx%7D%29%20%26%20%3D%20c%28%5Chat%7BA%7D%5Cmathbf%7Bx%7D%29%20%5C%5C%0A%5Chat%7BA%7D%28%5Cmathbf%7Bx%7D%20%2B%20%5Cmathbf%7By%7D%29%20%26%20%3D%20%5Chat%7BA%7D%20%5Cmathbf%7Bx%7D%20%2B%20%5Chat%7BA%7D%20%5Cmathbf%7By%7D%0A%5Cend%7Baligned%7D%0A "
-\begin{aligned}
-\hat{A}(c\mathbf{x}) & = c(\hat{A}\mathbf{x}) \\
-\hat{A}(\mathbf{x} + \mathbf{y}) & = \hat{A} \mathbf{x} + \hat{A} \mathbf{y}
-\end{aligned}
-")
-
-This makes the requirements look visually like the associativity and
-distributivity of multiplication and addition. Really, though, this is nothing
-more than a cheap trick.
 
 [^1]: In short, vector spaces form an Abelian group (which is another way of
     just saying that addition is commutative, associative, has an identity, and
