@@ -142,18 +142,18 @@ Now, one of the most interesting things in mathematics is the idea of the
 2.  They are mathematically very nice to work with and study, in practice.
 
 A linear transformation,
-![A(\\mathbf{x})](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bx%7D%29 "A(\mathbf{x})"),
+![f(\\mathbf{x})](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bx%7D%29 "f(\mathbf{x})"),
 is a function that "respects" addition and scaling:
 
 ![
 \\begin{aligned}
-A(c\\mathbf{x}) & = c A(\\mathbf{x}) \\\\
-A(\\mathbf{x} + \\mathbf{y}) & = A(\\mathbf{x}) + A (\\mathbf{y})
+f(c\\mathbf{x}) & = c f(\\mathbf{x}) \\\\
+f(\\mathbf{x} + \\mathbf{y}) & = f(\\mathbf{x}) + f(\\mathbf{y})
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28c%5Cmathbf%7Bx%7D%29%20%26%20%3D%20c%20A%28%5Cmathbf%7Bx%7D%29%20%5C%5C%0AA%28%5Cmathbf%7Bx%7D%20%2B%20%5Cmathbf%7By%7D%29%20%26%20%3D%20A%28%5Cmathbf%7Bx%7D%29%20%2B%20A%20%28%5Cmathbf%7By%7D%29%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Af%28c%5Cmathbf%7Bx%7D%29%20%26%20%3D%20c%20f%28%5Cmathbf%7Bx%7D%29%20%5C%5C%0Af%28%5Cmathbf%7Bx%7D%20%2B%20%5Cmathbf%7By%7D%29%20%26%20%3D%20f%28%5Cmathbf%7Bx%7D%29%20%2B%20f%28%5Cmathbf%7By%7D%29%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-A(c\mathbf{x}) & = c A(\mathbf{x}) \\
-A(\mathbf{x} + \mathbf{y}) & = A(\mathbf{x}) + A (\mathbf{y})
+f(c\mathbf{x}) & = c f(\mathbf{x}) \\
+f(\mathbf{x} + \mathbf{y}) & = f(\mathbf{x}) + f(\mathbf{y})
 \end{aligned}
 ")
 
@@ -165,6 +165,126 @@ Note that I snuck in vector notation, because the concept of vectors are
 *perfectly suited* for studying linear transformations. That's because talking
 about linear transformations requires talking about scaling and adding,
 and...hey, that's just exactly what vectors have!
+
+From now on, we'll talk about linear transformations specifically on
+*N-dimensional vector spaces* (vector spaces that have dimensions and bases we
+can use).
+
+### Studying linear transformations
+
+From first glance, a linear transformation's description doesn't look too useful
+or analyzable. All you have is
+![f(\\mathbf{v})](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bv%7D%29 "f(\mathbf{v})").
+It could be anything! Right? Just a black box function?
+
+Actually, we can exploit its linearity and the fact that we're in a vector space
+with a basis to analyze the heck out of any linear transformation, and see that
+all of them actually have to follow some specific pattern.
+
+Let's say that
+![A(\\mathbf{x})](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bx%7D%29 "A(\mathbf{x})")
+is a linear transformation from N-dimensional vector space
+![V](https://latex.codecogs.com/png.latex?V "V") to M-dimensional vector space
+![U](https://latex.codecogs.com/png.latex?U "U"). That is,
+![A : V \\rightarrow U](https://latex.codecogs.com/png.latex?A%20%3A%20V%20%5Crightarrow%20U "A : V \rightarrow U").
+
+Because we know that any vector
+![\\mathbf{v}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D "\mathbf{v}")
+in ![V](https://latex.codecogs.com/png.latex?V "V") can be decomposed as
+![v\_1 \\mathbf{e}\_1 + v\_2 \\mathbf{e}\_2 + \\ldots v\_n \\mathbf{e}\_N](https://latex.codecogs.com/png.latex?v_1%20%5Cmathbf%7Be%7D_1%20%2B%20v_2%20%5Cmathbf%7Be%7D_2%20%2B%20%5Cldots%20v_n%20%5Cmathbf%7Be%7D_N "v_1 \mathbf{e}_1 + v_2 \mathbf{e}_2 + \ldots v_n \mathbf{e}_N"),
+we really can just look at how a transformation
+![A](https://latex.codecogs.com/png.latex?A "A") acts on this decomposition. For
+example, if ![V](https://latex.codecogs.com/png.latex?V "V") is
+three-dimensional:
+
+![
+A(\\mathbf{v}) = A(v\_1 \\mathbf{e}\_1 + v\_2 \\mathbf{e}\_2 + v\_3 \\mathbf{e}\_3)
+](https://latex.codecogs.com/png.latex?%0AA%28%5Cmathbf%7Bv%7D%29%20%3D%20A%28v_1%20%5Cmathbf%7Be%7D_1%20%2B%20v_2%20%5Cmathbf%7Be%7D_2%20%2B%20v_3%20%5Cmathbf%7Be%7D_3%29%0A "
+A(\mathbf{v}) = A(v_1 \mathbf{e}_1 + v_2 \mathbf{e}_2 + v_3 \mathbf{e}_3)
+")
+
+Hm. Doesn't seem very insightful, does it?
+
+### A simple definition
+
+But! We can exploit the linearity of
+![A](https://latex.codecogs.com/png.latex?A "A") (that it distributes and
+scales) to rewrite that as:
+
+![
+A(\\mathbf{v}) = v\_1 A(\\mathbf{e}\_1) + v\_2 A(\\mathbf{e}\_2) + v\_3 A(\\mathbf{e}\_3)
+](https://latex.codecogs.com/png.latex?%0AA%28%5Cmathbf%7Bv%7D%29%20%3D%20v_1%20A%28%5Cmathbf%7Be%7D_1%29%20%2B%20v_2%20A%28%5Cmathbf%7Be%7D_2%29%20%2B%20v_3%20A%28%5Cmathbf%7Be%7D_3%29%0A "
+A(\mathbf{v}) = v_1 A(\mathbf{e}_1) + v_2 A(\mathbf{e}_2) + v_3 A(\mathbf{e}_3)
+")
+
+Wow! This just means that, to study
+![A](https://latex.codecogs.com/png.latex?A "A"), **all you need to study** is
+how ![A](https://latex.codecogs.com/png.latex?A "A") acts on our *basis
+vectors*. If you know how ![A](https://latex.codecogs.com/png.latex?A "A") acts
+on our basis vectors of our vector space, that's really "all there is" about
+![A](https://latex.codecogs.com/png.latex?A "A")! Not such a black box anymore!
+
+That is, if I were to ask you, "Hey, what is
+![A](https://latex.codecogs.com/png.latex?A "A") like?", *all you'd have to tell
+me* is the result of
+![A(\\mathbf{e}\_1)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Be%7D_1%29 "A(\mathbf{e}_1)"),
+![A(\\mathbf{e}\_2](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Be%7D_2 "A(\mathbf{e}_2"),
+and
+![A(\\mathbf{e}\_3)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Be%7D_3%29 "A(\mathbf{e}_3)").
+Just give me those three *vectors*, and we *uniquely determine
+![A](https://latex.codecogs.com/png.latex?A "A")*.
+
+To put in another way, *any linear transformation* from a three-dimensional
+vector space is *uniquely* characterized by *three vectors*:
+![A(\\mathbf{e}\_1)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Be%7D_1%29 "A(\mathbf{e}_1)"),
+![A(\\mathbf{e}\_2)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Be%7D_2%29 "A(\mathbf{e}_2)"),
+and
+![A(\\mathbf{e}\_3)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Be%7D_3%29 "A(\mathbf{e}_3)").
+
+Those three vectors *completely define*
+![A](https://latex.codecogs.com/png.latex?A "A").
+
+In general, we see that *any linear transformation* from an N-dimensional vector
+space can be *completely defined* by N vectors: the N results of that
+transformation on each of N basis vectors we choose.
+
+### Enter the Matrix
+
+Okay, so how do we "give"/define/state those N vectors?
+
+Well, recall that the result of ![A](https://latex.codecogs.com/png.latex?A "A")
+is *itself* a vector, in a M-dimensional vector space
+![U](https://latex.codecogs.com/png.latex?U "U"). Let's pretend that U is
+2-dimensional, for now.
+
+Remember also that any vector
+![\\mathbf{u}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bu%7D "\mathbf{u}")
+in ![U](https://latex.codecogs.com/png.latex?U "U") can be represented as
+![u\_1 \\mathbf{q}\_1 + u\_2 \\mathbf{q}\_2](https://latex.codecogs.com/png.latex?u_1%20%5Cmathbf%7Bq%7D_1%20%2B%20u_2%20%5Cmathbf%7Bq%7D_2 "u_1 \mathbf{q}_1 + u_2 \mathbf{q}_2"),
+where
+![\\mathbf{q}\_1](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bq%7D_1 "\mathbf{q}_1")
+and
+![\\mathbf{q}\_2](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bq%7D_2 "\mathbf{q}_2")
+is an arbitrary choice of basis vectors.
+
+This means that
+![A(\\mathbf{e}\_1)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Be%7D_1%29 "A(\mathbf{e}_1)")
+etc. can also be represented in terms of these basis vectors. So, laying it all
+out:
+
+![
+\\begin{aligned}
+A(\\mathbf{e}\_1) & = a\_{1,1} \\mathbf{q}\_1 + a\_{2,1} \\mathbf{q}\_2 \\\\
+A(\\mathbf{e}\_2) & = a\_{1,2} \\mathbf{q}\_1 + a\_{2,2} \\mathbf{q}\_2 \\\\
+A(\\mathbf{e}\_3) & = a\_{1,3} \\mathbf{q}\_1 + a\_{2,3} \\mathbf{q}\_2
+\\end{aligned}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28%5Cmathbf%7Be%7D_1%29%20%26%20%3D%20a_%7B1%2C1%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B2%2C1%7D%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0AA%28%5Cmathbf%7Be%7D_2%29%20%26%20%3D%20a_%7B1%2C2%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B2%2C2%7D%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0AA%28%5Cmathbf%7Be%7D_3%29%20%26%20%3D%20a_%7B1%2C3%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B2%2C3%7D%20%5Cmathbf%7Bq%7D_2%0A%5Cend%7Baligned%7D%0A "
+\begin{aligned}
+A(\mathbf{e}_1) & = a_{1,1} \mathbf{q}_1 + a_{2,1} \mathbf{q}_2 \\
+A(\mathbf{e}_2) & = a_{1,2} \mathbf{q}_1 + a_{2,2} \mathbf{q}_2 \\
+A(\mathbf{e}_3) & = a_{1,3} \mathbf{q}_1 + a_{2,3} \mathbf{q}_2
+\end{aligned}
+")
 
 [^1]: In short, vector spaces form an Abelian group (which is another way of
     just saying that addition is commutative, associative, has an identity, and
