@@ -117,16 +117,21 @@ One interesting consequence of this is that any N-dimensional vector space whose
 scalars are in
 ![\\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D "\mathbb{R}")
 is actually isomorphic to
-![\\mathbf{R}\^N](https://latex.codecogs.com/png.latex?%5Cmathbf%7BR%7D%5EN "\mathbf{R}^N")
---- the vector space of N-tuples of real numbers. Because of this, we often call
-*all* N-dimensional vector spaces (whose scalars are in
+![\\mathbb{R}\^N](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5EN "\mathbb{R}^N")
+--- the vector space of N-tuples of real numbers. This means that we can
+basically treat any N-dimensional vector space with
+![\\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D "\mathbb{R}")
+scalars as if it was
+![\\mathbb{R}\^N](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5EN "\mathbb{R}^N"),
+once we decide on the basis vectors. Because of this, we often call *all*
+N-dimensional vector spaces (whose scalars are in
 ![\\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D "\mathbb{R}"))
 as
 ![\\mathbb{R}\^N](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5EN "\mathbb{R}^N").
 You will often hear physicists saying that the three-dimensional vector spaces
 they use are
 ![\\mathbb{R}\^3](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E3 "\mathbb{R}^3").
-However, what they really mean is that their vectors are isomorphic to
+However, what they really mean is that their vector spaces is *isomorphic* to
 ![\\mathbb{R}\^3](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E3 "\mathbb{R}^3").
 
 Linear Transformations
@@ -188,7 +193,9 @@ is a linear transformation from N-dimensional vector space
 ![U](https://latex.codecogs.com/png.latex?U "U"). That is,
 ![A : V \\rightarrow U](https://latex.codecogs.com/png.latex?A%20%3A%20V%20%5Crightarrow%20U "A : V \rightarrow U").
 
-Because we know that any vector
+Because we know that, once we pick a set of basis vectors
+![\\mathbf{e}\_i](https://latex.codecogs.com/png.latex?%5Cmathbf%7Be%7D_i "\mathbf{e}_i"),
+any vector
 ![\\mathbf{v}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D "\mathbf{v}")
 in ![V](https://latex.codecogs.com/png.latex?V "V") can be decomposed as
 ![v\_1 \\mathbf{e}\_1 + v\_2 \\mathbf{e}\_2 + \\ldots v\_n \\mathbf{e}\_N](https://latex.codecogs.com/png.latex?v_1%20%5Cmathbf%7Be%7D_1%20%2B%20v_2%20%5Cmathbf%7Be%7D_2%20%2B%20%5Cldots%20v_n%20%5Cmathbf%7Be%7D_N "v_1 \mathbf{e}_1 + v_2 \mathbf{e}_2 + \ldots v_n \mathbf{e}_N"),
@@ -314,13 +321,14 @@ So, we now see two facts:
 
 Our final conclusion: *any* linear transformation from an N dimensional vector
 space to an M dimensional vector space can be defined using
-![N \\times M](https://latex.codecogs.com/png.latex?N%20%5Ctimes%20M "N \times M")
-scalars.
+![N M](https://latex.codecogs.com/png.latex?N%20M "N M") scalars.
 
 That's right -- *all* possible linear transformations from a 3-dimensional
-vector space to a 2-dimensional are parameterized by only *six* scalars. These
+vector space to a 2-dimensional are parameterized by only *six* scalars! These
 six scalars uniquely determine and define our linear transformation, given a set
-of basis vectors that we agree on.
+of basis vectors that we agree on. All linear transformations
+![\\mathbb{R}\^3 \\rightarrow \\mathbb{R}\^2](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E3%20%5Crightarrow%20%5Cmathbb%7BR%7D%5E2 "\mathbb{R}^3 \rightarrow \mathbb{R}^2")
+can be defined/encoded/expressed with just six real numbers.
 
 These six numbers are pretty important. Just like how we often talk about
 3-dimensional vectors in terms of the encoding of their three coefficients, we
@@ -374,17 +382,59 @@ matrix is a convenient way to represent and define a *linear transformation*
 from an N-dimensional vector space to a M-dimensional vector space (once we
 agree on the bases in both spaces).
 
-And, sometimes we just think of the
-![\\langle x y, z \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20x%20y%2C%20z%20%5Crangle "\langle x y, z \rangle")
-encoding as the vector itself, we often also talk about the
-![M \\times N](https://latex.codecogs.com/png.latex?M%20%5Ctimes%20N "M \times N")
-matrix as if it were the linear transformation itself. The matrix "is" the
-linear transformation, informally.
-
 Matrix Operations
 -----------------
 
 In this light, we can understand the definition of the common matrix operations.
+
+Matrix-Vector Multiplication
+----------------------------
+
+Matrix-vector multiplication is essentially the *decoding* of the linear
+transformation that the matrix represents.
+
+Let's look at the
+![2 \\times 3](https://latex.codecogs.com/png.latex?2%20%5Ctimes%203 "2 \times 3")
+example. Recall that we had:
+
+![
+A(\\mathbf{v}) = v\_1 A(\\mathbf{e}\_1) + v\_2 A(\\mathbf{e}\_2) + v\_3 A(\\mathbf{e}\_3)
+](https://latex.codecogs.com/png.latex?%0AA%28%5Cmathbf%7Bv%7D%29%20%3D%20v_1%20A%28%5Cmathbf%7Be%7D_1%29%20%2B%20v_2%20A%28%5Cmathbf%7Be%7D_2%29%20%2B%20v_3%20A%28%5Cmathbf%7Be%7D_3%29%0A "
+A(\mathbf{v}) = v_1 A(\mathbf{e}_1) + v_2 A(\mathbf{e}_2) + v_3 A(\mathbf{e}_3)
+")
+
+And we say that ![A](https://latex.codecogs.com/png.latex?A "A") is completely
+defined by:
+
+![
+\\begin{aligned}
+A(\\mathbf{e}\_1) & = a\_{11} \\mathbf{q}\_1 + a\_{21} \\mathbf{q}\_2 \\\\
+A(\\mathbf{e}\_2) & = a\_{12} \\mathbf{q}\_1 + a\_{22} \\mathbf{q}\_2 \\\\
+A(\\mathbf{e}\_3) & = a\_{13} \\mathbf{q}\_1 + a\_{23} \\mathbf{q}\_2
+\\end{aligned}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28%5Cmathbf%7Be%7D_1%29%20%26%20%3D%20a_%7B11%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B21%7D%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0AA%28%5Cmathbf%7Be%7D_2%29%20%26%20%3D%20a_%7B12%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B22%7D%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0AA%28%5Cmathbf%7Be%7D_3%29%20%26%20%3D%20a_%7B13%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B23%7D%20%5Cmathbf%7Bq%7D_2%0A%5Cend%7Baligned%7D%0A "
+\begin{aligned}
+A(\mathbf{e}_1) & = a_{11} \mathbf{q}_1 + a_{21} \mathbf{q}_2 \\
+A(\mathbf{e}_2) & = a_{12} \mathbf{q}_1 + a_{22} \mathbf{q}_2 \\
+A(\mathbf{e}_3) & = a_{13} \mathbf{q}_1 + a_{23} \mathbf{q}_2
+\end{aligned}
+")
+
+This means that:
+
+![
+\\begin{aligned}
+A(\\mathbf{v}) & = v\_1 (a\_{11} \\mathbf{q}\_1 + a\_{21} \\mathbf{q}\_2) \\\\
+              & + v\_2 (a\_{12} \\mathbf{q}\_1 + a\_{22} \\mathbf{q}\_2) \\\\
+              & + v\_3 (a\_{13} \\mathbf{q}\_1 + a\_{23} \\mathbf{q}\_2)
+\\end{aligned}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28%5Cmathbf%7Bv%7D%29%20%26%20%3D%20v_1%20%28a_%7B11%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B21%7D%20%5Cmathbf%7Bq%7D_2%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20v_2%20%28a_%7B12%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B22%7D%20%5Cmathbf%7Bq%7D_2%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20v_3%20%28a_%7B13%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B23%7D%20%5Cmathbf%7Bq%7D_2%29%0A%5Cend%7Baligned%7D%0A "
+\begin{aligned}
+A(\mathbf{v}) & = v_1 (a_{11} \mathbf{q}_1 + a_{21} \mathbf{q}_2) \\
+              & + v_2 (a_{12} \mathbf{q}_1 + a_{22} \mathbf{q}_2) \\
+              & + v_3 (a_{13} \mathbf{q}_1 + a_{23} \mathbf{q}_2)
+\end{aligned}
+")
 
 [^1]: In short, vector spaces form an Abelian group (which is another way of
     just saying that addition is commutative, associative, has an identity, and
