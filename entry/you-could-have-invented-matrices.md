@@ -457,15 +457,37 @@ A(\mathbf{v}) & = (v_1 a_{11} + v_2 a_{12} + v_3 a_{13}) \mathbf{q}_1
 
 And this is exactly the formula for matrix-vector multiplication!
 
-\$\$ \\begin{bmatrix} a\_{11} & a\_{12} & a\_{13} \\ a\_{21} & a\_{22} & a\_{23}
+![
+\\begin{bmatrix}
+a\_{11} & a\_{12} & a\_{13} \\\\
+a\_{21} & a\_{22} & a\_{23}
 \\end{bmatrix}
-
-\\begin{bmatrix} v\_1 \\ v\_2 \\ v\_3 \\end{bmatrix}
-
+\\begin{bmatrix}
+v\_1 \\\\
+v\_2 \\\\
+v\_3
+\\end{bmatrix}
 =
-
-\\begin{bmatrix} v\_1 a\_{11} + v\_2 a\_{12} + v\_3 a\_{13} \\ v\_2 a\_{21} +
-v\_2 a\_{22} + v\_3 a\_{23} \\end{bmatrix} \$\$
+\\begin{bmatrix}
+v\_1 a\_{11} + v\_2 a\_{12} + v\_3 a\_{13} \\\\
+v\_2 a\_{21} + v\_2 a\_{22} + v\_3 a\_{23}
+\\end{bmatrix}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Bbmatrix%7D%0Aa_%7B11%7D%20%26%20a_%7B12%7D%20%26%20a_%7B13%7D%20%5C%5C%0Aa_%7B21%7D%20%26%20a_%7B22%7D%20%26%20a_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A%5Cbegin%7Bbmatrix%7D%0Av_1%20%5C%5C%0Av_2%20%5C%5C%0Av_3%0A%5Cend%7Bbmatrix%7D%0A%3D%0A%5Cbegin%7Bbmatrix%7D%0Av_1%20a_%7B11%7D%20%2B%20v_2%20a_%7B12%7D%20%2B%20v_3%20a_%7B13%7D%20%5C%5C%0Av_2%20a_%7B21%7D%20%2B%20v_2%20a_%7B22%7D%20%2B%20v_3%20a_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A "
+\begin{bmatrix}
+a_{11} & a_{12} & a_{13} \\
+a_{21} & a_{22} & a_{23}
+\end{bmatrix}
+\begin{bmatrix}
+v_1 \\
+v_2 \\
+v_3
+\end{bmatrix}
+=
+\begin{bmatrix}
+v_1 a_{11} + v_2 a_{12} + v_3 a_{13} \\
+v_2 a_{21} + v_2 a_{22} + v_3 a_{23}
+\end{bmatrix}
+")
 
 [^1]: In short, vector spaces form an Abelian group (which is another way of
     just saying that addition is commutative, associative, has an identity, and
