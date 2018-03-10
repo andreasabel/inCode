@@ -177,9 +177,9 @@ or analyzable. All you have is
 ![f(\\mathbf{v})](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bv%7D%29 "f(\mathbf{v})").
 It could be anything! Right? Just a black box function?
 
-Actually, we can exploit its linearity and the fact that we're in a vector space
-with a basis to analyze the heck out of any linear transformation, and see that
-all of them actually have to follow some specific pattern.
+But, actually, we can exploit its linearity and the fact that we're in a vector
+space with a basis to analyze the heck out of any linear transformation, and see
+that all of them actually have to follow some specific pattern.
 
 Let's say that
 ![A(\\mathbf{x})](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bx%7D%29 "A(\mathbf{x})")
@@ -217,7 +217,8 @@ A(\\mathbf{v}) = v\_1 A(\\mathbf{e}\_1) + v\_2 A(\\mathbf{e}\_2) + v\_3 A(\\math
 A(\mathbf{v}) = v_1 A(\mathbf{e}_1) + v_2 A(\mathbf{e}_2) + v_3 A(\mathbf{e}_3)
 ")
 
-Wow! This just means that, to study
+Okay, take a moment to pause and take that all in. This is actually a pretty big
+deal! This just means that, to study
 ![A](https://latex.codecogs.com/png.latex?A "A"), **all you need to study** is
 how ![A](https://latex.codecogs.com/png.latex?A "A") acts on our *basis
 vectors*. If you know how ![A](https://latex.codecogs.com/png.latex?A "A") acts
@@ -235,7 +236,7 @@ Just give me those three *vectors*, and we *uniquely determine
 ![A](https://latex.codecogs.com/png.latex?A "A")*.
 
 To put in another way, *any linear transformation* from a three-dimensional
-vector space is *uniquely* characterized by *three vectors*:
+vector space is uniquely characterized by *three vectors*:
 ![A(\\mathbf{e}\_1)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Be%7D_1%29 "A(\mathbf{e}_1)"),
 ![A(\\mathbf{e}\_2)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Be%7D_2%29 "A(\mathbf{e}_2)"),
 and
@@ -252,12 +253,15 @@ transformation on each of N basis vectors we choose.
 
 Okay, so how do we "give"/define/state those N vectors?
 
-Well, recall that the result of ![A](https://latex.codecogs.com/png.latex?A "A")
-is *itself* a vector, in a M-dimensional vector space
-![U](https://latex.codecogs.com/png.latex?U "U"). Let's pretend that U is
-2-dimensional, for now.
+Well, recall that the result of
+![A(\\mathbf{v})](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bv%7D%29 "A(\mathbf{v})")
+and
+![A(\\mathbf{e}\_1)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Be%7D_1%29 "A(\mathbf{e}_1)"),
+etc. are *themselves* vectors, in M-dimensional vector space
+![U](https://latex.codecogs.com/png.latex?U "U"). Let's say that
+![U](https://latex.codecogs.com/png.latex?U "U") is 2-dimensional, for now.
 
-Remember also that any vector
+This means that any vector
 ![\\mathbf{u}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bu%7D "\mathbf{u}")
 in ![U](https://latex.codecogs.com/png.latex?U "U") can be represented as
 ![u\_1 \\mathbf{q}\_1 + u\_2 \\mathbf{q}\_2](https://latex.codecogs.com/png.latex?u_1%20%5Cmathbf%7Bq%7D_1%20%2B%20u_2%20%5Cmathbf%7Bq%7D_2 "u_1 \mathbf{q}_1 + u_2 \mathbf{q}_2"),
@@ -269,22 +273,118 @@ is an arbitrary choice of basis vectors.
 
 This means that
 ![A(\\mathbf{e}\_1)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Be%7D_1%29 "A(\mathbf{e}_1)")
-etc. can also be represented in terms of these basis vectors. So, laying it all
-out:
+etc. can also all be represented in terms of these basis vectors. So, laying it
+all out:
 
 ![
 \\begin{aligned}
-A(\\mathbf{e}\_1) & = a\_{1,1} \\mathbf{q}\_1 + a\_{2,1} \\mathbf{q}\_2 \\\\
-A(\\mathbf{e}\_2) & = a\_{1,2} \\mathbf{q}\_1 + a\_{2,2} \\mathbf{q}\_2 \\\\
-A(\\mathbf{e}\_3) & = a\_{1,3} \\mathbf{q}\_1 + a\_{2,3} \\mathbf{q}\_2
+A(\\mathbf{e}\_1) & = a\_{11} \\mathbf{q}\_1 + a\_{21} \\mathbf{q}\_2 \\\\
+A(\\mathbf{e}\_2) & = a\_{12} \\mathbf{q}\_1 + a\_{22} \\mathbf{q}\_2 \\\\
+A(\\mathbf{e}\_3) & = a\_{13} \\mathbf{q}\_1 + a\_{23} \\mathbf{q}\_2
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28%5Cmathbf%7Be%7D_1%29%20%26%20%3D%20a_%7B1%2C1%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B2%2C1%7D%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0AA%28%5Cmathbf%7Be%7D_2%29%20%26%20%3D%20a_%7B1%2C2%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B2%2C2%7D%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0AA%28%5Cmathbf%7Be%7D_3%29%20%26%20%3D%20a_%7B1%2C3%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B2%2C3%7D%20%5Cmathbf%7Bq%7D_2%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28%5Cmathbf%7Be%7D_1%29%20%26%20%3D%20a_%7B11%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B21%7D%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0AA%28%5Cmathbf%7Be%7D_2%29%20%26%20%3D%20a_%7B12%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B22%7D%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0AA%28%5Cmathbf%7Be%7D_3%29%20%26%20%3D%20a_%7B13%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B23%7D%20%5Cmathbf%7Bq%7D_2%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-A(\mathbf{e}_1) & = a_{1,1} \mathbf{q}_1 + a_{2,1} \mathbf{q}_2 \\
-A(\mathbf{e}_2) & = a_{1,2} \mathbf{q}_1 + a_{2,2} \mathbf{q}_2 \\
-A(\mathbf{e}_3) & = a_{1,3} \mathbf{q}_1 + a_{2,3} \mathbf{q}_2
+A(\mathbf{e}_1) & = a_{11} \mathbf{q}_1 + a_{21} \mathbf{q}_2 \\
+A(\mathbf{e}_2) & = a_{12} \mathbf{q}_1 + a_{22} \mathbf{q}_2 \\
+A(\mathbf{e}_3) & = a_{13} \mathbf{q}_1 + a_{23} \mathbf{q}_2
 \end{aligned}
 ")
+
+Or, to use our bracket notation from before:
+
+![
+\\begin{aligned}
+A(\\mathbf{e}\_1) & = \\langle a\_{11}, a\_{21} \\rangle \\\\
+A(\\mathbf{e}\_2) & = \\langle a\_{12}, a\_{22} \\rangle \\\\
+A(\\mathbf{e}\_3) & = \\langle a\_{13}, a\_{23} \\rangle
+\\end{aligned}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28%5Cmathbf%7Be%7D_1%29%20%26%20%3D%20%5Clangle%20a_%7B11%7D%2C%20a_%7B21%7D%20%5Crangle%20%5C%5C%0AA%28%5Cmathbf%7Be%7D_2%29%20%26%20%3D%20%5Clangle%20a_%7B12%7D%2C%20a_%7B22%7D%20%5Crangle%20%5C%5C%0AA%28%5Cmathbf%7Be%7D_3%29%20%26%20%3D%20%5Clangle%20a_%7B13%7D%2C%20a_%7B23%7D%20%5Crangle%0A%5Cend%7Baligned%7D%0A "
+\begin{aligned}
+A(\mathbf{e}_1) & = \langle a_{11}, a_{21} \rangle \\
+A(\mathbf{e}_2) & = \langle a_{12}, a_{22} \rangle \\
+A(\mathbf{e}_3) & = \langle a_{13}, a_{23} \rangle
+\end{aligned}
+")
+
+So, we now see two facts:
+
+1.  A linear transformation from an N dimensional vector space to an M
+    dimensional vector space can be *defined* using N vectors.
+2.  Each of those N vectors can, themselves, be defined using M scalars each.
+
+Our final conclusion: *any* linear transformation from an N dimensional vector
+space to an M dimensional vector space can be defined using
+![N \\times M](https://latex.codecogs.com/png.latex?N%20%5Ctimes%20M "N \times M")
+scalars.
+
+That's right -- *all* possible linear transformations from a 3-dimensional
+vector space to a 2-dimensional are parameterized by only *six* scalars. These
+six scalars uniquely determine and define our linear transformation, given a set
+of basis vectors that we agree on.
+
+These six numbers are pretty important. Just like how we often talk about
+3-dimensional vectors in terms of the encoding of their three coefficients, we
+often talk about linear transformations from 3-d space to 2-d space in terms of
+their six defining coefficients.
+
+We group these things up in something called a *matrix*.
+
+If our linear transformation ![A](https://latex.codecogs.com/png.latex?A "A")
+from a 3-dimensional vector space to a 2-dimensional vector space is defined by:
+
+![
+\\begin{aligned}
+A(\\mathbf{e}\_1) & = a\_{11} \\mathbf{q}\_1 + a\_{21} \\mathbf{q}\_2 \\\\
+A(\\mathbf{e}\_2) & = a\_{12} \\mathbf{q}\_1 + a\_{22} \\mathbf{q}\_2 \\\\
+A(\\mathbf{e}\_3) & = a\_{13} \\mathbf{q}\_1 + a\_{23} \\mathbf{q}\_2
+\\end{aligned}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28%5Cmathbf%7Be%7D_1%29%20%26%20%3D%20a_%7B11%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B21%7D%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0AA%28%5Cmathbf%7Be%7D_2%29%20%26%20%3D%20a_%7B12%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B22%7D%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0AA%28%5Cmathbf%7Be%7D_3%29%20%26%20%3D%20a_%7B13%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B23%7D%20%5Cmathbf%7Bq%7D_2%0A%5Cend%7Baligned%7D%0A "
+\begin{aligned}
+A(\mathbf{e}_1) & = a_{11} \mathbf{q}_1 + a_{21} \mathbf{q}_2 \\
+A(\mathbf{e}_2) & = a_{12} \mathbf{q}_1 + a_{22} \mathbf{q}_2 \\
+A(\mathbf{e}_3) & = a_{13} \mathbf{q}_1 + a_{23} \mathbf{q}_2
+\end{aligned}
+")
+
+(for arbitrary choice of bases
+![\\mathbf{e}\_i](https://latex.codecogs.com/png.latex?%5Cmathbf%7Be%7D_i "\mathbf{e}_i")
+and
+![\\mathbf{q}\_i](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bq%7D_i "\mathbf{q}_i"))
+
+We "encode" it as the matrix:
+
+![
+\\begin{bmatrix}
+a\_{11} & a\_{12} & a\_{13} \\\\
+a\_{21} & a\_{22} & a\_{23}
+\\end{bmatrix}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Bbmatrix%7D%0Aa_%7B11%7D%20%26%20a_%7B12%7D%20%26%20a_%7B13%7D%20%5C%5C%0Aa_%7B21%7D%20%26%20a_%7B22%7D%20%26%20a_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A "
+\begin{bmatrix}
+a_{11} & a_{12} & a_{13} \\
+a_{21} & a_{22} & a_{23}
+\end{bmatrix}
+")
+
+And that's why we use matrices in linear algebra -- like how
+![\\langle x, y, z \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20x%2C%20y%2C%20z%20%5Crangle "\langle x, y, z \rangle")
+is a convenient way to represent and define a *vector* (once we agree on a
+bases), a
+![M \\times N](https://latex.codecogs.com/png.latex?M%20%5Ctimes%20N "M \times N")
+matrix is a convenient way to represent and define a *linear transformation*
+from an N-dimensional vector space to a M-dimensional vector space (once we
+agree on the bases in both spaces).
+
+And, sometimes we just think of the
+![\\langle x y, z \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20x%20y%2C%20z%20%5Crangle "\langle x y, z \rangle")
+encoding as the vector itself, we often also talk about the
+![M \\times N](https://latex.codecogs.com/png.latex?M%20%5Ctimes%20N "M \times N")
+matrix as if it were the linear transformation itself. The matrix "is" the
+linear transformation, informally.
+
+Matrix Operations
+-----------------
+
+In this light, we can understand the definition of the common matrix operations.
 
 [^1]: In short, vector spaces form an Abelian group (which is another way of
     just saying that addition is commutative, associative, has an identity, and
