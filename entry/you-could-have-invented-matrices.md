@@ -436,6 +436,37 @@ A(\mathbf{v}) & = v_1 (a_{11} \mathbf{q}_1 + a_{21} \mathbf{q}_2) \\
 \end{aligned}
 ")
 
+Which is itself a vector in ![U](https://latex.codecogs.com/png.latex?U "U"), so
+let's write this as a combination of its components
+![\\mathbf{q}\_1](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bq%7D_1 "\mathbf{q}_1")
+and
+![\\mathbf{q}\_2](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bq%7D_2 "\mathbf{q}_2"),
+by distributing and rearranging terms:
+
+![
+\\begin{aligned}
+A(\\mathbf{v}) & = (v\_1 a\_{11} + v\_2 a\_{12} + v\_3 a\_{13}) \\mathbf{q}\_1
+              & + (v\_1 a\_{21} + v\_2 a\_{22} + v\_3 a\_{23}) \\mathbf{q}\_2
+\\end{aligned}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28%5Cmathbf%7Bv%7D%29%20%26%20%3D%20%28v_1%20a_%7B11%7D%20%2B%20v_2%20a_%7B12%7D%20%2B%20v_3%20a_%7B13%7D%29%20%5Cmathbf%7Bq%7D_1%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20a_%7B21%7D%20%2B%20v_2%20a_%7B22%7D%20%2B%20v_3%20a_%7B23%7D%29%20%5Cmathbf%7Bq%7D_2%0A%5Cend%7Baligned%7D%0A "
+\begin{aligned}
+A(\mathbf{v}) & = (v_1 a_{11} + v_2 a_{12} + v_3 a_{13}) \mathbf{q}_1
+              & + (v_1 a_{21} + v_2 a_{22} + v_3 a_{23}) \mathbf{q}_2
+\end{aligned}
+")
+
+And this is exactly the formula for matrix-vector multiplication!
+
+\$\$ \\begin{bmatrix} a\_{11} & a\_{12} & a\_{13} \\ a\_{21} & a\_{22} & a\_{23}
+\\end{bmatrix}
+
+\\begin{bmatrix} v\_1 \\ v\_2 \\ v\_3 \\end{bmatrix}
+
+=
+
+\\begin{bmatrix} v\_1 a\_{11} + v\_2 a\_{12} + v\_3 a\_{13} \\ v\_2 a\_{21} +
+v\_2 a\_{22} + v\_3 a\_{23} \\end{bmatrix} \$\$
+
 [^1]: In short, vector spaces form an Abelian group (which is another way of
     just saying that addition is commutative, associative, has an identity, and
     an inverse), and scalars have to play nice with addition
