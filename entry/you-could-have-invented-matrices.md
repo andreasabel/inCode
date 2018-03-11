@@ -387,8 +387,7 @@ Matrix Operations
 
 In this light, we can understand the definition of the common matrix operations.
 
-Matrix-Vector Multiplication
-----------------------------
+### Matrix-Vector Multiplication
 
 Matrix-vector multiplication is essentially the *decoding* of the linear
 transformation that the matrix represents.
@@ -488,6 +487,12 @@ v_1 a_{11} + v_2 a_{12} + v_3 a_{13} \\
 v_2 a_{21} + v_2 a_{22} + v_3 a_{23}
 \end{bmatrix}
 ")
+
+Again, remember that what we are doing is manipulating *specific encodings* of
+our vectors and our linear transformations. Namely, we encode linear
+transformations as matrices, and vectors in their component encoding. The reason
+we can do these is that we agree upon a set of bases for our source and target
+vector spaces, and express these encodings in terms of those.
 
 [^1]: In short, vector spaces form an Abelian group (which is another way of
     just saying that addition is commutative, associative, has an identity, and
