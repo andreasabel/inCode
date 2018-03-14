@@ -867,9 +867,9 @@ doesn't it? Don't be fooled!
 ![\\hat{A} \\hat{B}](https://latex.codecogs.com/png.latex?%5Chat%7BA%7D%20%5Chat%7BB%7D "\hat{A} \hat{B}"),
 matrix-matrix multiplication, is a completely different type of operation than
 ![\\hat{B}\\mathbf{v}](https://latex.codecogs.com/png.latex?%5Chat%7BB%7D%5Cmathbf%7Bv%7D "\hat{B}\mathbf{v}").
-One is the *symbolic manipulation* of an encoding of a linear transformation,
-and the other is an *application* of an encoding of a linear transformation on
-encoding of a vector.
+One is the symbolic manipulation on *two encodings* of of a linear
+transformation, and the other is an *application* of an encoding of a linear
+transformation on encoding of a vector.
 
 If you're familiar with Haskell idioms, matrix-matrix multiplication is like `.`
 (function composition), and matrix-vector multiplication is like `$`, or
