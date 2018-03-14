@@ -152,7 +152,17 @@ For example:
     ![(1,2,1)](https://latex.codecogs.com/png.latex?%281%2C2%2C1%29 "(1,2,1)"),
     and
     ![(-1,0,1)](https://latex.codecogs.com/png.latex?%28-1%2C0%2C1%29 "(-1,0,1)")
-    as our basis set, we could write
+    as our basis set, when we write
+    ![\\langle x\_1, x\_2, x\_3\\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20x_1%2C%20x_2%2C%20x_3%5Crangle "\langle x_1, x_2, x_3\rangle"),
+    we really mean:
+
+    ![
+    x\_1 (2,0,0) + x\_2 (1,2,1) + x\_3 (-1,0,1)
+    ](https://latex.codecogs.com/png.latex?%0Ax_1%20%282%2C0%2C0%29%20%2B%20x_2%20%281%2C2%2C1%29%20%2B%20x_3%20%28-1%2C0%2C1%29%0A "
+    x_1 (2,0,0) + x_2 (1,2,1) + x_3 (-1,0,1)
+    ")
+
+    In this basis, we can write the tuple the
     ![(-8,-6,-2)](https://latex.codecogs.com/png.latex?%28-8%2C-6%2C-2%29 "(-8,-6,-2)")
     as
     ![\\langle -2, -3, 1\\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20-2%2C%20-3%2C%201%5Crangle "\langle -2, -3, 1\rangle"),
