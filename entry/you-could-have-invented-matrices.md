@@ -68,11 +68,12 @@ Some examples include:
     (![5 p\^2 - 3 p + 2](https://latex.codecogs.com/png.latex?5%20p%5E2%20-%203%20p%20%2B%202 "5 p^2 - 3 p + 2"),
     etc.) is an infinite-dimensional vector space, whose scalars are set of
     possible coefficients. Polynomials can be scaled and added together. One
-    possible basis is ![1](https://latex.codecogs.com/png.latex?1 "1"),
+    possible basis are the polynomials
+    ![1](https://latex.codecogs.com/png.latex?1 "1"),
     ![p](https://latex.codecogs.com/png.latex?p "p"),
     ![p\^2](https://latex.codecogs.com/png.latex?p%5E2 "p^2"),
-    ![p\^3](https://latex.codecogs.com/png.latex?p%5E3 "p^3"), etc.; any
-    polynomial can be made as a weighted combination of these.
+    ![p\^3](https://latex.codecogs.com/png.latex?p%5E3 "p^3"), etc.; every other
+    polynomial can be made as a weighted combination of these polynomials.
 -   N-Tuples of
     ![\\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D "\mathbb{R}")
     (ordered sequences of a given length) are a vector space, and they're one of
