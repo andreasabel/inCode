@@ -121,7 +121,7 @@ For example:
     order." Then, we can *write*
     ![\\mathbf{x}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D "\mathbf{x}")
     as
-    ![\\langle 2\\, {-3}\\, 5\\, 0\\, 0 \\, \\ldots \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%202%5C%2C%20%7B-3%7D%5C%2C%205%5C%2C%200%5C%2C%200%20%5C%2C%20%5Cldots%20%5Crangle "\langle 2\, {-3}\, 5\, 0\, 0 \, \ldots \rangle"),
+    ![\\langle 2, -3, 5, 0, 0, \\ldots \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%202%2C%20-3%2C%205%2C%200%2C%200%2C%20%5Cldots%20%5Crangle "\langle 2, -3, 5, 0, 0, \ldots \rangle"),
     and understand that we really mean
     ![5 p\^2 - 3p + 2](https://latex.codecogs.com/png.latex?5%20p%5E2%20-%203p%20%2B%202 "5 p^2 - 3p + 2").
 -   For
@@ -134,7 +134,7 @@ For example:
     Then, we can *write*
     ![\\mathbf{x}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D "\mathbf{x}")
     as
-    ![\\langle x\_1 x\_2 x\_3 \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20x_1%20x_2%20x_3%20%5Crangle "\langle x_1 x_2 x_3 \rangle"),
+    ![\\langle x\_1, x\_2, x\_3 \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20x_1%2C%20x_2%2C%20x_3%20%5Crangle "\langle x_1, x_2, x_3 \rangle"),
     and understand that we really mean
     ![(x\_1, x\_2, x\_3)](https://latex.codecogs.com/png.latex?%28x_1%2C%20x_2%2C%20x_3%29 "(x_1, x_2, x_3)").
     This is a somewhat of a silly encoding, but it only looks so "trivial"
