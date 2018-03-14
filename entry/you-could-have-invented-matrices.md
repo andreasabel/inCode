@@ -121,7 +121,7 @@ For example:
     order." Then, we can *write*
     ![\\mathbf{x}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D "\mathbf{x}")
     as
-    ![\\langle 2\\, -3\\, 5\\, 0\\, 0 \\, \\ldots \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%202%5C%2C%20-3%5C%2C%205%5C%2C%200%5C%2C%200%20%5C%2C%20%5Cldots%20%5Crangle "\langle 2\, -3\, 5\, 0\, 0 \, \ldots \rangle"),
+    ![\\langle 2\\, {-3}\\, 5\\, 0\\, 0 \\, \\ldots \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%202%5C%2C%20%7B-3%7D%5C%2C%205%5C%2C%200%5C%2C%200%20%5C%2C%20%5Cldots%20%5Crangle "\langle 2\, {-3}\, 5\, 0\, 0 \, \ldots \rangle"),
     and understand that we really mean
     ![5 p\^2 - 3p + 2](https://latex.codecogs.com/png.latex?5%20p%5E2%20-%203p%20%2B%202 "5 p^2 - 3p + 2").
 -   For
