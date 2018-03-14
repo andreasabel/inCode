@@ -157,7 +157,6 @@ scalars as if it was
 *once we decide* on the basis vectors. Because of this, we often call *all*
 N-dimensional vector spaces (whose scalars are in
 ![\\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D "\mathbb{R}"))
-as
 ![\\mathbb{R}\^N](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5EN "\mathbb{R}^N").
 You will often hear physicists saying that the three-dimensional vector spaces
 they use are
@@ -205,6 +204,25 @@ and...hey, that's just exactly what vectors have!
 From now on, we'll talk about linear transformations specifically on
 *N-dimensional vector spaces* (vector spaces that have dimensions and bases we
 can use).
+
+Some common examples of linear transformations include:
+
+-   Simply scaling a vector is a linear transformation. Scaling a scaled vector
+    is scaling the scaled vector; scaling a sum of vectors is the sum of scaling
+    vectors.
+-   Taking the derivative of a polynomial is a linear transformation: the
+    derivative of
+    ![5 p\^2 - 3 p + 2](https://latex.codecogs.com/png.latex?5%20p%5E2%20-%203%20p%20%2B%202 "5 p^2 - 3 p + 2")
+    w.r.t ![p](https://latex.codecogs.com/png.latex?p "p") is
+    ![10 p - 3](https://latex.codecogs.com/png.latex?10%20p%20-%203 "10 p - 3").
+    Taking the derivative of a scaled polynomial is the scaled derivative of the
+    polynomial; taking the derivative of the sum of two polynomials is the sum
+    of the derivatives of the two polynomials.
+-   For N-tuples, keeping and dropping certain components are linear
+    transformations. For example,
+    ![f(x,y,z) = (x,y)](https://latex.codecogs.com/png.latex?f%28x%2Cy%2Cz%29%20%3D%20%28x%2Cy%29 "f(x,y,z) = (x,y)")
+    is a linear transformation from the vector space of 3-tuples to the vector
+    space of 2-tuples.
 
 ### Studying linear transformations
 
@@ -286,6 +304,26 @@ Those three vectors *completely define*
 In general, we see that *any linear transformation* from an N-dimensional vector
 space can be *completely defined* by N vectors: the N results of that
 transformation on each of N basis vectors we choose.
+
+For our previous examples:
+
+-   How does one take the derivative of a polynomial? It's completely defined by
+    what the derivatives of ![1](https://latex.codecogs.com/png.latex?1 "1"),
+    ![p](https://latex.codecogs.com/png.latex?p "p"),
+    ![p\^2](https://latex.codecogs.com/png.latex?p%5E2 "p^2"),
+    ![p\^3](https://latex.codecogs.com/png.latex?p%5E3 "p^3"), etc. are. Once we
+    establish that, we can take the derivative of any polynomial. This is the
+    essence of the [formal
+    derivative](https://en.wikipedia.org/wiki/Formal_derivative).
+-   For our drop-some-components linear transformation, we just need to see how
+    the transformation works on the bases. For our previous example, we see that
+    ![f(1,0,0) = (1,0)](https://latex.codecogs.com/png.latex?f%281%2C0%2C0%29%20%3D%20%281%2C0%29 "f(1,0,0) = (1,0)"),
+    ![f(0,1,0) = (0,1)](https://latex.codecogs.com/png.latex?f%280%2C1%2C0%29%20%3D%20%280%2C1%29 "f(0,1,0) = (0,1)"),
+    and
+    ![f(0,0,0) = (0,0)](https://latex.codecogs.com/png.latex?f%280%2C0%2C0%29%20%3D%20%280%2C0%29 "f(0,0,0) = (0,0)").
+    From that, we know everything we need to know about what the linear
+    transformation does. Different type of "drop components" transformations
+    will give different results when you apply them to each basis vector.
 
 ### Enter the Matrix
 
