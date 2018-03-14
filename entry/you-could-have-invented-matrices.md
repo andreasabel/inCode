@@ -89,9 +89,9 @@ Some examples include:
     Any N-tuple of real numbers can be expressed as a weighted sum of these.
     (There are many possible basis sets; another is
     ![(2,0,0)](https://latex.codecogs.com/png.latex?%282%2C0%2C0%29 "(2,0,0)"),
-    ![(1,1,0)](https://latex.codecogs.com/png.latex?%281%2C1%2C0%29 "(1,1,0)"),
+    ![(1,2,1)](https://latex.codecogs.com/png.latex?%281%2C2%2C1%29 "(1,2,1)"),
     and
-    ![(1,0,1)](https://latex.codecogs.com/png.latex?%281%2C0%2C1%29 "(1,0,1)"))
+    ![(-1,0,1)](https://latex.codecogs.com/png.latex?%28-1%2C0%2C1%29 "(-1,0,1)"))
 
 ### Encoding
 
@@ -114,6 +114,7 @@ For example:
     ![\\langle r\_x, r\_y, r\_z \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20r_x%2C%20r_y%2C%20r_z%20%5Crangle "\langle r_x, r_y, r_z \rangle"),
     and understand that we really mean
     ![\\mathbf{r} = r\_x \\hat{\\mathbf{i}} + r\_y \\hat{\\mathbf{j}} + r\_x \\hat{\\mathbf{k}}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Br%7D%20%3D%20r_x%20%5Chat%7B%5Cmathbf%7Bi%7D%7D%20%2B%20r_y%20%5Chat%7B%5Cmathbf%7Bj%7D%7D%20%2B%20r_x%20%5Chat%7B%5Cmathbf%7Bk%7D%7D "\mathbf{r} = r_x \hat{\mathbf{i}} + r_y \hat{\mathbf{j}} + r_x \hat{\mathbf{k}}").
+
 -   For polynomials, we can say "Let's encode polynomials in terms of
     ![1](https://latex.codecogs.com/png.latex?1 "1"),
     ![p](https://latex.codecogs.com/png.latex?p "p"),
@@ -124,6 +125,7 @@ For example:
     ![\\langle 2, -3, 5, 0, 0, \\ldots \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%202%2C%20-3%2C%205%2C%200%2C%200%2C%20%5Cldots%20%5Crangle "\langle 2, -3, 5, 0, 0, \ldots \rangle"),
     and understand that we really mean
     ![5 p\^2 - 3p + 2](https://latex.codecogs.com/png.latex?5%20p%5E2%20-%203p%20%2B%202 "5 p^2 - 3p + 2").
+
 -   For
     ![\\mathbb{R}\^3](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E3 "\mathbb{R}^3"),
     we can encode the n-tuples in terms of
@@ -137,11 +139,30 @@ For example:
     ![\\langle x\_1, x\_2, x\_3 \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20x_1%2C%20x_2%2C%20x_3%20%5Crangle "\langle x_1, x_2, x_3 \rangle"),
     and understand that we really mean
     ![(x\_1, x\_2, x\_3)](https://latex.codecogs.com/png.latex?%28x_1%2C%20x_2%2C%20x_3%29 "(x_1, x_2, x_3)").
+
     This is a somewhat of a silly encoding, but it only looks so "trivial"
-    because of our choice of bases. If we chose a different set of basis vectors
-    for
-    ![\\mathbf{R}\^3](https://latex.codecogs.com/png.latex?%5Cmathbf%7BR%7D%5E3 "\mathbf{R}^3")
-    (like the one mentioned above), the encoding would not be so trivial!
+    because of our choice of bases.
+
+    If we chose a different set of basis vectors for
+    ![\\mathbf{R}\^3](https://latex.codecogs.com/png.latex?%5Cmathbf%7BR%7D%5E3 "\mathbf{R}^3"),
+    the encoding would not be so trivial!
+
+    For example, if we choose
+    ![(2,0,0)](https://latex.codecogs.com/png.latex?%282%2C0%2C0%29 "(2,0,0)"),
+    ![(1,2,1)](https://latex.codecogs.com/png.latex?%281%2C2%2C1%29 "(1,2,1)"),
+    and
+    ![(-1,0,1)](https://latex.codecogs.com/png.latex?%28-1%2C0%2C1%29 "(-1,0,1)")
+    as our basis set, we could write
+    ![(-8,-6,-2)](https://latex.codecogs.com/png.latex?%28-8%2C-6%2C-2%29 "(-8,-6,-2)")
+    as
+    ![\\langle -2, -3, 1\\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20-2%2C%20-3%2C%201%5Crangle "\langle -2, -3, 1\rangle"),
+    because:
+
+    ![
+    (-8,-6,2) = - 2 (2,0,0) - 3 (1, 2, 1) + 1 (-1,0,1)
+    ](https://latex.codecogs.com/png.latex?%0A%28-8%2C-6%2C2%29%20%3D%20-%202%20%282%2C0%2C0%29%20-%203%20%281%2C%202%2C%201%29%20%2B%201%20%28-1%2C0%2C1%29%0A "
+    (-8,-6,2) = - 2 (2,0,0) - 3 (1, 2, 1) + 1 (-1,0,1)
+    ")
 
 Note that
 ![\\langle r\_x, r\_y, r\_z \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20r_x%2C%20r_y%2C%20r_z%20%5Crangle "\langle r_x, r_y, r_z \rangle")
