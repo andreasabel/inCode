@@ -576,17 +576,17 @@ Then the breakdown of
                     & + (v\_1 a\_{21} + v\_2 a\_{22} + v\_3 a\_{23}) \\mathbf{q}\_2 \\\\
                     & + (v\_1 b\_{11} + v\_2 b\_{12} + v\_3 b\_{13}) \\mathbf{q}\_1 \\\\
                     & + (v\_1 b\_{21} + v\_2 b\_{22} + v\_3 b\_{23}) \\mathbf{q}\_2 \\\\
-                    & = (v\_1 (a\_{11} + b\_{11}) + v\_2 (a\_{12} + b\_{12}) + v\_3 (a\_{13} + b\_{13})) \\mathbf{q} \\\\
-                    & + (v\_1 (a\_{21} + b\_{21}) + v\_2 (a\_{22} + b\_{22}) + v\_3 (a\_{23} + b\_{23})) \\mathbf{q}
+(f + g)(\\mathbf{v}) & = (v\_1 (a\_{11} + b\_{11}) + v\_2 (a\_{12} + b\_{12}) + v\_3 (a\_{13} + b\_{13})) \\mathbf{q}\_1 \\\\
+                    & + (v\_1 (a\_{21} + b\_{21}) + v\_2 (a\_{22} + b\_{22}) + v\_3 (a\_{23} + b\_{23})) \\mathbf{q}\_2
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%28f%20%2B%20g%29%28%5Cmathbf%7Bv%7D%29%20%26%20%3D%20%28v_1%20a_%7B11%7D%20%2B%20v_2%20a_%7B12%7D%20%2B%20v_3%20a_%7B13%7D%29%20%5Cmathbf%7Bq%7D_1%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20a_%7B21%7D%20%2B%20v_2%20a_%7B22%7D%20%2B%20v_3%20a_%7B23%7D%29%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20b_%7B11%7D%20%2B%20v_2%20b_%7B12%7D%20%2B%20v_3%20b_%7B13%7D%29%20%5Cmathbf%7Bq%7D_1%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20b_%7B21%7D%20%2B%20v_2%20b_%7B22%7D%20%2B%20v_3%20b_%7B23%7D%29%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%3D%20%28v_1%20%28a_%7B11%7D%20%2B%20b_%7B11%7D%29%20%2B%20v_2%20%28a_%7B12%7D%20%2B%20b_%7B12%7D%29%20%2B%20v_3%20%28a_%7B13%7D%20%2B%20b_%7B13%7D%29%29%20%5Cmathbf%7Bq%7D%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20%28a_%7B21%7D%20%2B%20b_%7B21%7D%29%20%2B%20v_2%20%28a_%7B22%7D%20%2B%20b_%7B22%7D%29%20%2B%20v_3%20%28a_%7B23%7D%20%2B%20b_%7B23%7D%29%29%20%5Cmathbf%7Bq%7D%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%28f%20%2B%20g%29%28%5Cmathbf%7Bv%7D%29%20%26%20%3D%20%28v_1%20a_%7B11%7D%20%2B%20v_2%20a_%7B12%7D%20%2B%20v_3%20a_%7B13%7D%29%20%5Cmathbf%7Bq%7D_1%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20a_%7B21%7D%20%2B%20v_2%20a_%7B22%7D%20%2B%20v_3%20a_%7B23%7D%29%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20b_%7B11%7D%20%2B%20v_2%20b_%7B12%7D%20%2B%20v_3%20b_%7B13%7D%29%20%5Cmathbf%7Bq%7D_1%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20b_%7B21%7D%20%2B%20v_2%20b_%7B22%7D%20%2B%20v_3%20b_%7B23%7D%29%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0A%28f%20%2B%20g%29%28%5Cmathbf%7Bv%7D%29%20%26%20%3D%20%28v_1%20%28a_%7B11%7D%20%2B%20b_%7B11%7D%29%20%2B%20v_2%20%28a_%7B12%7D%20%2B%20b_%7B12%7D%29%20%2B%20v_3%20%28a_%7B13%7D%20%2B%20b_%7B13%7D%29%29%20%5Cmathbf%7Bq%7D_1%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20%28a_%7B21%7D%20%2B%20b_%7B21%7D%29%20%2B%20v_2%20%28a_%7B22%7D%20%2B%20b_%7B22%7D%29%20%2B%20v_3%20%28a_%7B23%7D%20%2B%20b_%7B23%7D%29%29%20%5Cmathbf%7Bq%7D_2%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
 (f + g)(\mathbf{v}) & = (v_1 a_{11} + v_2 a_{12} + v_3 a_{13}) \mathbf{q}_1 \\
                     & + (v_1 a_{21} + v_2 a_{22} + v_3 a_{23}) \mathbf{q}_2 \\
                     & + (v_1 b_{11} + v_2 b_{12} + v_3 b_{13}) \mathbf{q}_1 \\
                     & + (v_1 b_{21} + v_2 b_{22} + v_3 b_{23}) \mathbf{q}_2 \\
-                    & = (v_1 (a_{11} + b_{11}) + v_2 (a_{12} + b_{12}) + v_3 (a_{13} + b_{13})) \mathbf{q} \\
-                    & + (v_1 (a_{21} + b_{21}) + v_2 (a_{22} + b_{22}) + v_3 (a_{23} + b_{23})) \mathbf{q}
+(f + g)(\mathbf{v}) & = (v_1 (a_{11} + b_{11}) + v_2 (a_{12} + b_{12}) + v_3 (a_{13} + b_{13})) \mathbf{q}_1 \\
+                    & + (v_1 (a_{21} + b_{21}) + v_2 (a_{22} + b_{22}) + v_3 (a_{23} + b_{23})) \mathbf{q}_2
 \end{aligned}
 ")
 
@@ -635,6 +635,44 @@ perfectly "simulates" the addition of the linear transformation!
 
 What's happening here is we can represent manipulations of the functions
 themselves by manipulating *their encodings*.
+
+![
+\\begin{bmatrix}
+a\_{11} & a\_{12} & a\_{13} \\\\
+a\_{21} & a\_{22} & a\_{23}
+\\end{bmatrix}
++
+\\begin{bmatrix}
+b\_{11} & b\_{12} & b\_{13} \\\\
+b\_{21} & b\_{22} & b\_{23}
+\\end{bmatrix}
+=
+\\begin{bmatrix}
+c\_{11} & c\_{12} & c\_{13} \\\\
+c\_{21} & c\_{22} & c\_{23}
+\\end{bmatrix}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Bbmatrix%7D%0Aa_%7B11%7D%20%26%20a_%7B12%7D%20%26%20a_%7B13%7D%20%5C%5C%0Aa_%7B21%7D%20%26%20a_%7B22%7D%20%26%20a_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A%2B%0A%5Cbegin%7Bbmatrix%7D%0Ab_%7B11%7D%20%26%20b_%7B12%7D%20%26%20b_%7B13%7D%20%5C%5C%0Ab_%7B21%7D%20%26%20b_%7B22%7D%20%26%20b_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A%3D%0A%5Cbegin%7Bbmatrix%7D%0Ac_%7B11%7D%20%26%20c_%7B12%7D%20%26%20c_%7B13%7D%20%5C%5C%0Ac_%7B21%7D%20%26%20c_%7B22%7D%20%26%20c_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A "
+\begin{bmatrix}
+a_{11} & a_{12} & a_{13} \\
+a_{21} & a_{22} & a_{23}
+\end{bmatrix}
++
+\begin{bmatrix}
+b_{11} & b_{12} & b_{13} \\
+b_{21} & b_{22} & b_{23}
+\end{bmatrix}
+=
+\begin{bmatrix}
+c_{11} & c_{12} & c_{13} \\
+c_{21} & c_{22} & c_{23}
+\end{bmatrix}
+")
+
+Symbolically, if we write function application as matrix-vector multiplication,
+we say that
+![\\hat{A} + \\hat{B}](https://latex.codecogs.com/png.latex?%5Chat%7BA%7D%20%2B%20%5Chat%7BB%7D "\hat{A} + \hat{B}")
+is defined so that
+![(\\hat{A} + \\hat{B})\\mathbf{v} = \\hat{A} \\mathbf{V} + \\hat{B} \\mathbf{v}](https://latex.codecogs.com/png.latex?%28%5Chat%7BA%7D%20%2B%20%5Chat%7BB%7D%29%5Cmathbf%7Bv%7D%20%3D%20%5Chat%7BA%7D%20%5Cmathbf%7BV%7D%20%2B%20%5Chat%7BB%7D%20%5Cmathbf%7Bv%7D "(\hat{A} + \hat{B})\mathbf{v} = \hat{A} \mathbf{V} + \hat{B} \mathbf{v}").
 
 ### Multiplication of linear transformations
 
@@ -770,14 +808,89 @@ That's exactly what *matrix multiplication* is defined as. If:
     ![O \\times M](https://latex.codecogs.com/png.latex?O%20%5Ctimes%20M "O \times M")
     matrix representing a linear transformation from a M-dimensional space to an
     O-dimensional space
--   \hat{B} is an
+-   ![\\hat{B}](https://latex.codecogs.com/png.latex?%5Chat%7BB%7D "\hat{B}") is
+    an
     ![M \\times N](https://latex.codecogs.com/png.latex?M%20%5Ctimes%20N "M \times N")
     matrix representing a linear transformation from an N-dimensional space to
     an M-dimensional space
 
-Then
-![\\hat{C} = \\hat{A}\\hat{B}](https://latex.codecogs.com/png.latex?%5Chat%7BC%7D%20%3D%20%5Chat%7BA%7D%5Chat%7BB%7D "\hat{C} = \hat{A}\hat{B}")
-is a
-![O \\times N](https://latex.codecogs.com/png.latex?O%20%5Ctimes%20N "O \times N")
-matrix representing a linear transformation from an N-dimensional space to an
-O-dimensional space.
+Then:
+
+-   ![\\hat{C} = \\hat{A}\\hat{B}](https://latex.codecogs.com/png.latex?%5Chat%7BC%7D%20%3D%20%5Chat%7BA%7D%5Chat%7BB%7D "\hat{C} = \hat{A}\hat{B}")
+    is a
+    ![O \\times N](https://latex.codecogs.com/png.latex?O%20%5Ctimes%20N "O \times N")
+    matrix representing a linear transformation from an N-dimensional space to
+    an O-dimensional space.
+
+Symbolically, if we treat function application as matrix-vector multiplication,
+this means that
+![\\hat{A}\\hat{B}](https://latex.codecogs.com/png.latex?%5Chat%7BA%7D%5Chat%7BB%7D "\hat{A}\hat{B}")
+is defined such that
+![(\\hat{A}\\hat{B})\\mathbf{x} = \\hat{A}(\\hat{B}\\mathbf{x})](https://latex.codecogs.com/png.latex?%28%5Chat%7BA%7D%5Chat%7BB%7D%29%5Cmathbf%7Bx%7D%20%3D%20%5Chat%7BA%7D%28%5Chat%7BB%7D%5Cmathbf%7Bx%7D%29 "(\hat{A}\hat{B})\mathbf{x} = \hat{A}(\hat{B}\mathbf{x})").
+
+In that notation, it kinda looks like the associativity of multiplication,
+doesn't it? Don't be fooled!
+![\\hat{A} \\hat{B}](https://latex.codecogs.com/png.latex?%5Chat%7BA%7D%20%5Chat%7BB%7D "\hat{A} \hat{B}"),
+matrix-matrix multiplication, is a completely different type of operation than
+![\\hat{B}\\mathbf{v}](https://latex.codecogs.com/png.latex?%5Chat%7BB%7D%5Cmathbf%7Bv%7D "\hat{B}\mathbf{v}").
+One is the *symbolic manipulation* of an encoding of a linear transformation,
+and the other is an *application* of an encoding of a linear transformation on
+encoding of a vector.
+
+If you're familiar with Haskell idioms, matrix-matrix multiplication is like
+`.`, and matrix-vector multiplication is like `$`. One is a "higher order
+function": taking two functions (at least, the encodings of them) and returning
+a new function. The other is an application of a function to its input.
+
+And, like in Haskell:
+
+``` {.haskell}
+(f . g) x = f (g x)
+```
+
+Or, with explicit function application:
+
+``` {.haskell}
+(f . g) $ x = f $ (g $ x)
+```
+
+We won't go over the actual process of computing the matrix-matrix product, but
+it's something that you can work out just in terms of the definitions of the
+encodings. Just manually apply out everything and group together common factors
+of the basis vectors of the destination space.
+
+The Big Picture
+---------------
+
+At the highest level here, what we're doing is taking a *function* and encoding
+it as *data* -- a parameterization of that function. Essentially, we take the
+properties of the type of functions we are looking at and find out that it can
+be defined/represented in a limited number of parameters
+
+Then, the breakthrough is that we look at useful higher-order functions and
+manipulations of those transformations. Then, we see how we can implement those
+transformations by symbolically manipulating the encodings!
+
+This is actually a dance we do all the time in programming. Instead of working
+with functions, we work with reified data that represent those functions. And,
+instead of direct higher order functions, we transform that data in a way that
+makes it encodes the function we want to produce.
+
+Matrices are exactly that. Linear transformations are the functions we want to
+analyze, and we realize that we can completely specify/define any linear
+transformation with a matrix (against a choice of bases).
+
+Then, we realize that there are some nice manipulations we can do on linear
+transformations; we can combine them to create new linear transformations in
+useful ways.
+
+However, because those manipulations all produce *new* linear transformations,
+we know that their results can all be encoded in *new* matrices. So, we see if
+we can just directly apply those manipulations by directly working on those
+matrices!
+
+I hope this post serves to demystify matrices, matrix addition, and
+multiplication for you, and help you see why they are defined the way that they
+are. Furthermore, I hope it gives some insight on why matrices are useful in
+linear algebra, and also how similar encodings can help you with manipulating
+other types of functions!
