@@ -16,21 +16,27 @@ creative name, right?) and added, like
 ![\\mathbf{v} + \\mathbf{u}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D%20%2B%20%5Cmathbf%7Bu%7D "\mathbf{v} + \mathbf{u}").
 
 In order for vector spaces and their operations to be valid, they just have to
-obey some common-sense rules (like associativity, commutativity, distributivity,
-etc.) that allow us to make meaningful conclusions.[^1]
+obey some [common-sense
+rules](https://en.wikipedia.org/wiki/Vector_space#Definition) (like
+associativity, commutativity, distributivity, etc.) that allow us to make
+meaningful conclusions.
 
 Dimensionality
 --------------
 
-One neat thing about vector spaces is that *some* of them (if you're lucky) have
-a notion of **dimensionality**. We say that a vector space is N-dimensional if
-there exists N "basis" vectors
-![\\mathbf{e}\_1, \\mathbf{e}\_2 \\ldots \\mathbf{e}\_N](https://latex.codecogs.com/png.latex?%5Cmathbf%7Be%7D_1%2C%20%5Cmathbf%7Be%7D_2%20%5Cldots%20%5Cmathbf%7Be%7D_N "\mathbf{e}_1, \mathbf{e}_2 \ldots \mathbf{e}_N")
-where *any* vector can be described as scaled sums of all of them, and that N is
-the lowest number of basis vectors needed. For example, if a vector space is
-3-dimensional, then it means that *any* vector
+One neat thing about vector spaces is that, in *some* of them, you have the
+ability to "decompose" any vector in it as a *weighted sum* of some set of
+"basis" vectors. If this is the case for your vector space, then the size of
+smallest possible set of basis vectors is known as the **dimension** of that
+vector space.
+
+For example, for a 3-dimensional vector space
+![V](https://latex.codecogs.com/png.latex?V "V"), any vector
 ![\\mathbf{v}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D "\mathbf{v}")
-in that space can be broken down as:
+can be described as a weighted sum of three basis vectors
+![\\mathbf{e}\_1](https://latex.codecogs.com/png.latex?%5Cmathbf%7Be%7D_1 "\mathbf{e}_1"),
+![\\mathbf{e}\_2](https://latex.codecogs.com/png.latex?%5Cmathbf%7Be%7D_2 "\mathbf{e}_2"),
+![\\mathbf{e}\_3](https://latex.codecogs.com/png.latex?%5Cmathbf%7Be%7D_3 "\mathbf{e}_3"):
 
 ![
 \\mathbf{v} = a \\mathbf{e}\_1 + b \\mathbf{e}\_2 + c \\mathbf{e}\_3
@@ -44,8 +50,8 @@ Where ![a](https://latex.codecogs.com/png.latex?a "a"),
 
 Dimensionality is really a statement about being able to decompose any vector in
 that vector space into a useful set of bases. For a 3-dimensional vector space,
-you need at least 3 vectors to make a bases that can reproduce *any* vector in
-your space.
+you can make a bases that can reproduce *any* vector in your space...but that's
+only possible with at least three vectors.
 
 In physics, we often treat reality as taking place in a three-dimensional vector
 space. The basis vectors are often called
@@ -108,9 +114,9 @@ determine what our encoding looks like.
 
 To highlight this, note that the same vector
 ![\\mathbf{v}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D "\mathbf{v}")
-has many different potential encodings --- all you have to do is pick a
-different set of basis vectors, or even just re-arrange the ones you already
-have. However, all of those encodings correspond go the same vector
+has many many different potential encodings --- all you have to do is pick a
+different set of basis vectors, or even just re-arrange or re-scale the ones you
+already have. However, all of those encodings correspond go the same vector
 ![\\mathbf{v}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D "\mathbf{v}").
 
 One interesting consequence of this is that any N-dimensional vector space whose
@@ -123,7 +129,7 @@ basically treat any N-dimensional vector space with
 ![\\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D "\mathbb{R}")
 scalars as if it was
 ![\\mathbb{R}\^N](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5EN "\mathbb{R}^N"),
-once we decide on the basis vectors. Because of this, we often call *all*
+*once we decide* on the basis vectors. Because of this, we often call *all*
 N-dimensional vector spaces (whose scalars are in
 ![\\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D "\mathbb{R}"))
 as
@@ -140,7 +146,7 @@ Linear Transformations
 Now, one of the most interesting things in mathematics is the idea of the
 **linear transformation**. Linear transformations are useful to study because:
 
-1.  They are ubiquitious. They come up everywhere in engineering, physics,
+1.  They are ubiquitous. They come up everywhere in engineering, physics,
     mathematics, data science, economics, and pretty much any mathematical
     theory. And there are even more situations which can be *approximated* by
     linear transformations.
@@ -397,9 +403,9 @@ Let's look at the
 example. Recall that we had:
 
 ![
-A(\\mathbf{v}) = v\_1 A(\\mathbf{e}\_1) + v\_2 A(\\mathbf{e}\_2) + v\_3 A(\\mathbf{e}\_3)
-](https://latex.codecogs.com/png.latex?%0AA%28%5Cmathbf%7Bv%7D%29%20%3D%20v_1%20A%28%5Cmathbf%7Be%7D_1%29%20%2B%20v_2%20A%28%5Cmathbf%7Be%7D_2%29%20%2B%20v_3%20A%28%5Cmathbf%7Be%7D_3%29%0A "
-A(\mathbf{v}) = v_1 A(\mathbf{e}_1) + v_2 A(\mathbf{e}_2) + v_3 A(\mathbf{e}_3)
+f(\\mathbf{v}) = v\_1 f(\\mathbf{e}\_1) + v\_2 f(\\mathbf{e}\_2) + v\_3 f(\\mathbf{e}\_3)
+](https://latex.codecogs.com/png.latex?%0Af%28%5Cmathbf%7Bv%7D%29%20%3D%20v_1%20f%28%5Cmathbf%7Be%7D_1%29%20%2B%20v_2%20f%28%5Cmathbf%7Be%7D_2%29%20%2B%20v_3%20f%28%5Cmathbf%7Be%7D_3%29%0A "
+f(\mathbf{v}) = v_1 f(\mathbf{e}_1) + v_2 f(\mathbf{e}_2) + v_3 f(\mathbf{e}_3)
 ")
 
 And we say that ![A](https://latex.codecogs.com/png.latex?A "A") is completely
@@ -407,15 +413,15 @@ defined by:
 
 ![
 \\begin{aligned}
-A(\\mathbf{e}\_1) & = a\_{11} \\mathbf{q}\_1 + a\_{21} \\mathbf{q}\_2 \\\\
-A(\\mathbf{e}\_2) & = a\_{12} \\mathbf{q}\_1 + a\_{22} \\mathbf{q}\_2 \\\\
-A(\\mathbf{e}\_3) & = a\_{13} \\mathbf{q}\_1 + a\_{23} \\mathbf{q}\_2
+f(\\mathbf{e}\_1) & = a\_{11} \\mathbf{q}\_1 + a\_{21} \\mathbf{q}\_2 \\\\
+f(\\mathbf{e}\_2) & = a\_{12} \\mathbf{q}\_1 + a\_{22} \\mathbf{q}\_2 \\\\
+f(\\mathbf{e}\_3) & = a\_{13} \\mathbf{q}\_1 + a\_{23} \\mathbf{q}\_2
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28%5Cmathbf%7Be%7D_1%29%20%26%20%3D%20a_%7B11%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B21%7D%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0AA%28%5Cmathbf%7Be%7D_2%29%20%26%20%3D%20a_%7B12%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B22%7D%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0AA%28%5Cmathbf%7Be%7D_3%29%20%26%20%3D%20a_%7B13%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B23%7D%20%5Cmathbf%7Bq%7D_2%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Af%28%5Cmathbf%7Be%7D_1%29%20%26%20%3D%20a_%7B11%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B21%7D%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0Af%28%5Cmathbf%7Be%7D_2%29%20%26%20%3D%20a_%7B12%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B22%7D%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0Af%28%5Cmathbf%7Be%7D_3%29%20%26%20%3D%20a_%7B13%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B23%7D%20%5Cmathbf%7Bq%7D_2%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-A(\mathbf{e}_1) & = a_{11} \mathbf{q}_1 + a_{21} \mathbf{q}_2 \\
-A(\mathbf{e}_2) & = a_{12} \mathbf{q}_1 + a_{22} \mathbf{q}_2 \\
-A(\mathbf{e}_3) & = a_{13} \mathbf{q}_1 + a_{23} \mathbf{q}_2
+f(\mathbf{e}_1) & = a_{11} \mathbf{q}_1 + a_{21} \mathbf{q}_2 \\
+f(\mathbf{e}_2) & = a_{12} \mathbf{q}_1 + a_{22} \mathbf{q}_2 \\
+f(\mathbf{e}_3) & = a_{13} \mathbf{q}_1 + a_{23} \mathbf{q}_2
 \end{aligned}
 ")
 
@@ -423,13 +429,13 @@ This means that:
 
 ![
 \\begin{aligned}
-A(\\mathbf{v}) & = v\_1 (a\_{11} \\mathbf{q}\_1 + a\_{21} \\mathbf{q}\_2) \\\\
+f(\\mathbf{v}) & = v\_1 (a\_{11} \\mathbf{q}\_1 + a\_{21} \\mathbf{q}\_2) \\\\
               & + v\_2 (a\_{12} \\mathbf{q}\_1 + a\_{22} \\mathbf{q}\_2) \\\\
               & + v\_3 (a\_{13} \\mathbf{q}\_1 + a\_{23} \\mathbf{q}\_2)
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28%5Cmathbf%7Bv%7D%29%20%26%20%3D%20v_1%20%28a_%7B11%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B21%7D%20%5Cmathbf%7Bq%7D_2%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20v_2%20%28a_%7B12%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B22%7D%20%5Cmathbf%7Bq%7D_2%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20v_3%20%28a_%7B13%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B23%7D%20%5Cmathbf%7Bq%7D_2%29%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Af%28%5Cmathbf%7Bv%7D%29%20%26%20%3D%20v_1%20%28a_%7B11%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B21%7D%20%5Cmathbf%7Bq%7D_2%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20v_2%20%28a_%7B12%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B22%7D%20%5Cmathbf%7Bq%7D_2%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20v_3%20%28a_%7B13%7D%20%5Cmathbf%7Bq%7D_1%20%2B%20a_%7B23%7D%20%5Cmathbf%7Bq%7D_2%29%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-A(\mathbf{v}) & = v_1 (a_{11} \mathbf{q}_1 + a_{21} \mathbf{q}_2) \\
+f(\mathbf{v}) & = v_1 (a_{11} \mathbf{q}_1 + a_{21} \mathbf{q}_2) \\
               & + v_2 (a_{12} \mathbf{q}_1 + a_{22} \mathbf{q}_2) \\
               & + v_3 (a_{13} \mathbf{q}_1 + a_{23} \mathbf{q}_2)
 \end{aligned}
@@ -444,12 +450,12 @@ by distributing and rearranging terms:
 
 ![
 \\begin{aligned}
-A(\\mathbf{v}) & = (v\_1 a\_{11} + v\_2 a\_{12} + v\_3 a\_{13}) \\mathbf{q}\_1
+f(\\mathbf{v}) & = (v\_1 a\_{11} + v\_2 a\_{12} + v\_3 a\_{13}) \\mathbf{q}\_1 \\\\
               & + (v\_1 a\_{21} + v\_2 a\_{22} + v\_3 a\_{23}) \\mathbf{q}\_2
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28%5Cmathbf%7Bv%7D%29%20%26%20%3D%20%28v_1%20a_%7B11%7D%20%2B%20v_2%20a_%7B12%7D%20%2B%20v_3%20a_%7B13%7D%29%20%5Cmathbf%7Bq%7D_1%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20a_%7B21%7D%20%2B%20v_2%20a_%7B22%7D%20%2B%20v_3%20a_%7B23%7D%29%20%5Cmathbf%7Bq%7D_2%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Af%28%5Cmathbf%7Bv%7D%29%20%26%20%3D%20%28v_1%20a_%7B11%7D%20%2B%20v_2%20a_%7B12%7D%20%2B%20v_3%20a_%7B13%7D%29%20%5Cmathbf%7Bq%7D_1%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20a_%7B21%7D%20%2B%20v_2%20a_%7B22%7D%20%2B%20v_3%20a_%7B23%7D%29%20%5Cmathbf%7Bq%7D_2%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-A(\mathbf{v}) & = (v_1 a_{11} + v_2 a_{12} + v_3 a_{13}) \mathbf{q}_1
+f(\mathbf{v}) & = (v_1 a_{11} + v_2 a_{12} + v_3 a_{13}) \mathbf{q}_1 \\
               & + (v_1 a_{21} + v_2 a_{22} + v_3 a_{23}) \mathbf{q}_2
 \end{aligned}
 ")
@@ -494,10 +500,284 @@ transformations as matrices, and vectors in their component encoding. The reason
 we can do these is that we agree upon a set of bases for our source and target
 vector spaces, and express these encodings in terms of those.
 
-[^1]: In short, vector spaces form an Abelian group (which is another way of
-    just saying that addition is commutative, associative, has an identity, and
-    an inverse), and scalars have to play nice with addition
-    (![c(\\mathbf{v} + \\mathbf{u}) = c \\mathbf{v} + c \\mathbf{u}](https://latex.codecogs.com/png.latex?c%28%5Cmathbf%7Bv%7D%20%2B%20%5Cmathbf%7Bu%7D%29%20%3D%20c%20%5Cmathbf%7Bv%7D%20%2B%20c%20%5Cmathbf%7Bu%7D "c(\mathbf{v} + \mathbf{u}) = c \mathbf{v} + c \mathbf{u}"),
-    and
-    ![(c + d)\\mathbf{v} = c \\mathbf{v} + d \\mathbf{v}](https://latex.codecogs.com/png.latex?%28c%20%2B%20d%29%5Cmathbf%7Bv%7D%20%3D%20c%20%5Cmathbf%7Bv%7D%20%2B%20d%20%5Cmathbf%7Bv%7D "(c + d)\mathbf{v} = c \mathbf{v} + d \mathbf{v}")).
-    Also, scalars themselves form a field.
+### Addition of linear transformations
+
+One neat thing about linear transformation is that they "add" well -- you can
+add them together by simply applying them both and adding the results. The
+result is another linear transformation.
+
+![
+(f + g)(\\mathbf{x}) \\equiv f(\\mathbf{x}) + g(\\mathbf{x})
+](https://latex.codecogs.com/png.latex?%0A%28f%20%2B%20g%29%28%5Cmathbf%7Bx%7D%29%20%5Cequiv%20f%28%5Cmathbf%7Bx%7D%29%20%2B%20g%28%5Cmathbf%7Bx%7D%29%0A "
+(f + g)(\mathbf{x}) \equiv f(\mathbf{x}) + g(\mathbf{x})
+")
+
+If
+![f : V \\rightarrow U](https://latex.codecogs.com/png.latex?f%20%3A%20V%20%5Crightarrow%20U "f : V \rightarrow U")
+and
+![g : V \\rightarrow U](https://latex.codecogs.com/png.latex?g%20%3A%20V%20%5Crightarrow%20U "g : V \rightarrow U")
+are linear transformations between the *same* vector spaces, then
+![f + g : V \\rightarrow U](https://latex.codecogs.com/png.latex?f%20%2B%20g%20%3A%20V%20%5Crightarrow%20U "f + g : V \rightarrow U"),
+as we defined it, is also one:
+
+![
+\\begin{aligned}
+(f + g)(c \\mathbf{x}) & = f(c \\mathbf{x}) + g(c \\mathbf{x}) \\\\
+                      & = c f(\\mathbf{x}) + c g(\\mathbf{x}) \\\\
+                      & = c ( f(\\mathbf{x}) + g(\\mathbf{x}) ) \\\\
+(f + g)(c \\mathbf{x}) & = c (f + g)(\\mathbf{x})
+\\end{aligned}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%28f%20%2B%20g%29%28c%20%5Cmathbf%7Bx%7D%29%20%26%20%3D%20f%28c%20%5Cmathbf%7Bx%7D%29%20%2B%20g%28c%20%5Cmathbf%7Bx%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%3D%20c%20f%28%5Cmathbf%7Bx%7D%29%20%2B%20c%20g%28%5Cmathbf%7Bx%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%3D%20c%20%28%20f%28%5Cmathbf%7Bx%7D%29%20%2B%20g%28%5Cmathbf%7Bx%7D%29%20%29%20%5C%5C%0A%28f%20%2B%20g%29%28c%20%5Cmathbf%7Bx%7D%29%20%26%20%3D%20c%20%28f%20%2B%20g%29%28%5Cmathbf%7Bx%7D%29%0A%5Cend%7Baligned%7D%0A "
+\begin{aligned}
+(f + g)(c \mathbf{x}) & = f(c \mathbf{x}) + g(c \mathbf{x}) \\
+                      & = c f(\mathbf{x}) + c g(\mathbf{x}) \\
+                      & = c ( f(\mathbf{x}) + g(\mathbf{x}) ) \\
+(f + g)(c \mathbf{x}) & = c (f + g)(\mathbf{x})
+\end{aligned}
+")
+
+(Showing that it respects addition is something you can look at if you want to
+have some fun!)
+
+So, if ![f](https://latex.codecogs.com/png.latex?f "f") is encoded as matrix
+![\\hat{A}](https://latex.codecogs.com/png.latex?%5Chat%7BA%7D "\hat{A}") for
+given bases, and ![g](https://latex.codecogs.com/png.latex?g "g") is encoded as
+matrix
+![\\hat{B}](https://latex.codecogs.com/png.latex?%5Chat%7BB%7D "\hat{B}"), what
+is the encoding of
+![f + g](https://latex.codecogs.com/png.latex?f%20%2B%20g "f + g") ?
+
+Let's say that, if ![V](https://latex.codecogs.com/png.latex?V "V") and
+![U](https://latex.codecogs.com/png.latex?U "U") are 3-dimensional and
+2-dimensional, respectively:
+
+![
+\\begin{aligned}
+f(\\mathbf{v}) & = (v\_1 a\_{11} + v\_2 a\_{12} + v\_3 a\_{13}) \\mathbf{q}\_1 \\\\
+              & + (v\_1 a\_{21} + v\_2 a\_{22} + v\_3 a\_{23}) \\mathbf{q}\_2 \\\\
+g(\\mathbf{v}) & = (v\_1 b\_{11} + v\_2 b\_{12} + v\_3 b\_{13}) \\mathbf{q}\_1 \\\\
+              & + (v\_1 b\_{21} + v\_2 b\_{22} + v\_3 b\_{23}) \\mathbf{q}\_2
+\\end{aligned}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Af%28%5Cmathbf%7Bv%7D%29%20%26%20%3D%20%28v_1%20a_%7B11%7D%20%2B%20v_2%20a_%7B12%7D%20%2B%20v_3%20a_%7B13%7D%29%20%5Cmathbf%7Bq%7D_1%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20a_%7B21%7D%20%2B%20v_2%20a_%7B22%7D%20%2B%20v_3%20a_%7B23%7D%29%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0Ag%28%5Cmathbf%7Bv%7D%29%20%26%20%3D%20%28v_1%20b_%7B11%7D%20%2B%20v_2%20b_%7B12%7D%20%2B%20v_3%20b_%7B13%7D%29%20%5Cmathbf%7Bq%7D_1%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20b_%7B21%7D%20%2B%20v_2%20b_%7B22%7D%20%2B%20v_3%20b_%7B23%7D%29%20%5Cmathbf%7Bq%7D_2%0A%5Cend%7Baligned%7D%0A "
+\begin{aligned}
+f(\mathbf{v}) & = (v_1 a_{11} + v_2 a_{12} + v_3 a_{13}) \mathbf{q}_1 \\
+              & + (v_1 a_{21} + v_2 a_{22} + v_3 a_{23}) \mathbf{q}_2 \\
+g(\mathbf{v}) & = (v_1 b_{11} + v_2 b_{12} + v_3 b_{13}) \mathbf{q}_1 \\
+              & + (v_1 b_{21} + v_2 b_{22} + v_3 b_{23}) \mathbf{q}_2
+\end{aligned}
+")
+
+Then the breakdown of
+![f + g](https://latex.codecogs.com/png.latex?f%20%2B%20g "f + g") is:
+
+![
+\\begin{aligned}
+(f + g)(\\mathbf{v}) & = (v\_1 a\_{11} + v\_2 a\_{12} + v\_3 a\_{13}) \\mathbf{q}\_1 \\\\
+                    & + (v\_1 a\_{21} + v\_2 a\_{22} + v\_3 a\_{23}) \\mathbf{q}\_2 \\\\
+                    & + (v\_1 b\_{11} + v\_2 b\_{12} + v\_3 b\_{13}) \\mathbf{q}\_1 \\\\
+                    & + (v\_1 b\_{21} + v\_2 b\_{22} + v\_3 b\_{23}) \\mathbf{q}\_2 \\\\
+                    & = (v\_1 (a\_{11} + b\_{11}) + v\_2 (a\_{12} + b\_{12}) + v\_3 (a\_{13} + b\_{13})) \\mathbf{q} \\\\
+                    & + (v\_1 (a\_{21} + b\_{21}) + v\_2 (a\_{22} + b\_{22}) + v\_3 (a\_{23} + b\_{23})) \\mathbf{q}
+\\end{aligned}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%28f%20%2B%20g%29%28%5Cmathbf%7Bv%7D%29%20%26%20%3D%20%28v_1%20a_%7B11%7D%20%2B%20v_2%20a_%7B12%7D%20%2B%20v_3%20a_%7B13%7D%29%20%5Cmathbf%7Bq%7D_1%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20a_%7B21%7D%20%2B%20v_2%20a_%7B22%7D%20%2B%20v_3%20a_%7B23%7D%29%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20b_%7B11%7D%20%2B%20v_2%20b_%7B12%7D%20%2B%20v_3%20b_%7B13%7D%29%20%5Cmathbf%7Bq%7D_1%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20b_%7B21%7D%20%2B%20v_2%20b_%7B22%7D%20%2B%20v_3%20b_%7B23%7D%29%20%5Cmathbf%7Bq%7D_2%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%3D%20%28v_1%20%28a_%7B11%7D%20%2B%20b_%7B11%7D%29%20%2B%20v_2%20%28a_%7B12%7D%20%2B%20b_%7B12%7D%29%20%2B%20v_3%20%28a_%7B13%7D%20%2B%20b_%7B13%7D%29%29%20%5Cmathbf%7Bq%7D%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20%28a_%7B21%7D%20%2B%20b_%7B21%7D%29%20%2B%20v_2%20%28a_%7B22%7D%20%2B%20b_%7B22%7D%29%20%2B%20v_3%20%28a_%7B23%7D%20%2B%20b_%7B23%7D%29%29%20%5Cmathbf%7Bq%7D%0A%5Cend%7Baligned%7D%0A "
+\begin{aligned}
+(f + g)(\mathbf{v}) & = (v_1 a_{11} + v_2 a_{12} + v_3 a_{13}) \mathbf{q}_1 \\
+                    & + (v_1 a_{21} + v_2 a_{22} + v_3 a_{23}) \mathbf{q}_2 \\
+                    & + (v_1 b_{11} + v_2 b_{12} + v_3 b_{13}) \mathbf{q}_1 \\
+                    & + (v_1 b_{21} + v_2 b_{22} + v_3 b_{23}) \mathbf{q}_2 \\
+                    & = (v_1 (a_{11} + b_{11}) + v_2 (a_{12} + b_{12}) + v_3 (a_{13} + b_{13})) \mathbf{q} \\
+                    & + (v_1 (a_{21} + b_{21}) + v_2 (a_{22} + b_{22}) + v_3 (a_{23} + b_{23})) \mathbf{q}
+\end{aligned}
+")
+
+Note that if we say that
+![f + g](https://latex.codecogs.com/png.latex?f%20%2B%20g "f + g") is encoded as
+matrix
+![\\hat{C}](https://latex.codecogs.com/png.latex?%5Chat%7BC%7D "\hat{C}"), and
+call the components
+![c\_{11}](https://latex.codecogs.com/png.latex?c_%7B11%7D "c_{11}"),
+![c\_{12}](https://latex.codecogs.com/png.latex?c_%7B12%7D "c_{12}"), etc., then
+we can rewrite that as:
+
+![
+\\begin{aligned}
+(f + g)(\\mathbf{v}) & = (v\_1 c\_{11} + v\_2 c\_{12} + v\_3 c\_{13}) \\mathbf{q}\_1 \\\\
+                    & + (v\_1 c\_{21} + v\_2 c\_{22} + v\_3 c\_{23}) \\mathbf{q}\_2
+\\end{aligned}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%28f%20%2B%20g%29%28%5Cmathbf%7Bv%7D%29%20%26%20%3D%20%28v_1%20c_%7B11%7D%20%2B%20v_2%20c_%7B12%7D%20%2B%20v_3%20c_%7B13%7D%29%20%5Cmathbf%7Bq%7D_1%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%28v_1%20c_%7B21%7D%20%2B%20v_2%20c_%7B22%7D%20%2B%20v_3%20c_%7B23%7D%29%20%5Cmathbf%7Bq%7D_2%0A%5Cend%7Baligned%7D%0A "
+\begin{aligned}
+(f + g)(\mathbf{v}) & = (v_1 c_{11} + v_2 c_{12} + v_3 c_{13}) \mathbf{q}_1 \\
+                    & + (v_1 c_{21} + v_2 c_{22} + v_3 c_{23}) \mathbf{q}_2
+\end{aligned}
+")
+
+Where
+![c\_{11} = a\_{11} + b\_{11}](https://latex.codecogs.com/png.latex?c_%7B11%7D%20%3D%20a_%7B11%7D%20%2B%20b_%7B11%7D "c_{11} = a_{11} + b_{11}"),
+![c\_{12} = a\_{12} + b\_{13}](https://latex.codecogs.com/png.latex?c_%7B12%7D%20%3D%20a_%7B12%7D%20%2B%20b_%7B13%7D "c_{12} = a_{12} + b_{13}"),
+etc.
+
+So, if ![\\hat{A}](https://latex.codecogs.com/png.latex?%5Chat%7BA%7D "\hat{A}")
+and ![\\hat{B}](https://latex.codecogs.com/png.latex?%5Chat%7BB%7D "\hat{B}")
+encode linear transformations ![f](https://latex.codecogs.com/png.latex?f "f")
+and ![g](https://latex.codecogs.com/png.latex?g "g"), then we can encode
+![f + g](https://latex.codecogs.com/png.latex?f%20%2B%20g "f + g") as matrix
+![\\hat{C}](https://latex.codecogs.com/png.latex?%5Chat%7BC%7D "\hat{C}"), where
+the components of
+![\\hat{C}](https://latex.codecogs.com/png.latex?%5Chat%7BC%7D "\hat{C}") are
+just the sum of their corresponding components in
+![\\hat{A}](https://latex.codecogs.com/png.latex?%5Chat%7BA%7D "\hat{A}") and
+![\\hat{B}](https://latex.codecogs.com/png.latex?%5Chat%7BB%7D "\hat{B}").
+
+And that's why we define
+![\\hat{A} + \\hat{B}](https://latex.codecogs.com/png.latex?%5Chat%7BA%7D%20%2B%20%5Chat%7BB%7D "\hat{A} + \hat{B}"),
+matrix-matrix addition, as component-wise addition: component-wise addition
+perfectly "simulates" the addition of the linear transformation!
+
+What's happening here is we can represent manipulations of the functions
+themselves by manipulating *their encodings*.
+
+### Multiplication of linear transformations
+
+We might be tempted to define *multiplication* of linear transformations the
+same way. However, this doesn't quite make sense.
+
+Remember that we talked about adding linear transformations as the addition of
+their results. However, we can't talk about multiplying linear transformations
+as the multiplication of their results because the idea of a vector space
+doesn't come with any notion of multiplication.
+
+However, even if we talk specifically about linear transformations to *scalars*,
+this still doesn't quite work:
+
+![
+\\begin{aligned}
+(f \* g)(c \\mathbf{x}) & = f(c \\mathbf{x}) \* g(c \\mathbf{x}) \\\\
+                      & = c f(\\mathbf{x}) \* c g(\\mathbf{x}) \\\\
+                      & = c\^2 ( f(\\mathbf{x}) \* g(\\mathbf{x}) ) \\\\
+(f \* g)(c \\mathbf{x}) & = c\^2 (f \* g)(\\mathbf{x})
+\\end{aligned}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%28f%20%2A%20g%29%28c%20%5Cmathbf%7Bx%7D%29%20%26%20%3D%20f%28c%20%5Cmathbf%7Bx%7D%29%20%2A%20g%28c%20%5Cmathbf%7Bx%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%3D%20c%20f%28%5Cmathbf%7Bx%7D%29%20%2A%20c%20g%28%5Cmathbf%7Bx%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%3D%20c%5E2%20%28%20f%28%5Cmathbf%7Bx%7D%29%20%2A%20g%28%5Cmathbf%7Bx%7D%29%20%29%20%5C%5C%0A%28f%20%2A%20g%29%28c%20%5Cmathbf%7Bx%7D%29%20%26%20%3D%20c%5E2%20%28f%20%2A%20g%29%28%5Cmathbf%7Bx%7D%29%0A%5Cend%7Baligned%7D%0A "
+\begin{aligned}
+(f * g)(c \mathbf{x}) & = f(c \mathbf{x}) * g(c \mathbf{x}) \\
+                      & = c f(\mathbf{x}) * c g(\mathbf{x}) \\
+                      & = c^2 ( f(\mathbf{x}) * g(\mathbf{x}) ) \\
+(f * g)(c \mathbf{x}) & = c^2 (f * g)(\mathbf{x})
+\end{aligned}
+")
+
+That's right,
+![f \* g](https://latex.codecogs.com/png.latex?f%20%2A%20g "f * g"), defined
+point-wise, does not create a linear transformation.
+
+So, *there is no matrix* that could would even represent or encode
+![f \* g](https://latex.codecogs.com/png.latex?f%20%2A%20g "f * g"), as we
+defined it. So, since
+![f \* g](https://latex.codecogs.com/png.latex?f%20%2A%20g "f * g") isn't even
+representable as a matrix in our encoding scheme, it doesn't make sense to treat
+it as a matrix operation.
+
+### Composition of linear transformations
+
+Since linear transformations are functions, we can compose them:
+
+![
+(f \\circ g)(\\mathbf{x}) \\equiv f(g(\\mathbf{x}))
+](https://latex.codecogs.com/png.latex?%0A%28f%20%5Ccirc%20g%29%28%5Cmathbf%7Bx%7D%29%20%5Cequiv%20f%28g%28%5Cmathbf%7Bx%7D%29%29%0A "
+(f \circ g)(\mathbf{x}) \equiv f(g(\mathbf{x}))
+")
+
+Is the composition of linear transformations also a linear transformation?
+
+![
+\\begin{aligned}
+(f \\circ g)(c \\mathbf{x}) & = f(g(c \\mathbf{x})) \\\\
+                      & = f(c g(\\mathbf{x})) \\\\
+                      & = c f(g(\\mathbf{x})) \\\\
+(f \\circ g)(c \\mathbf{x}) & = c (f \\circ g)(\\mathbf{x})
+\\end{aligned}
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%28f%20%5Ccirc%20g%29%28c%20%5Cmathbf%7Bx%7D%29%20%26%20%3D%20f%28g%28c%20%5Cmathbf%7Bx%7D%29%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%3D%20f%28c%20g%28%5Cmathbf%7Bx%7D%29%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%3D%20c%20f%28g%28%5Cmathbf%7Bx%7D%29%29%20%5C%5C%0A%28f%20%5Ccirc%20g%29%28c%20%5Cmathbf%7Bx%7D%29%20%26%20%3D%20c%20%28f%20%5Ccirc%20g%29%28%5Cmathbf%7Bx%7D%29%0A%5Cend%7Baligned%7D%0A "
+\begin{aligned}
+(f \circ g)(c \mathbf{x}) & = f(g(c \mathbf{x})) \\
+                      & = f(c g(\mathbf{x})) \\
+                      & = c f(g(\mathbf{x})) \\
+(f \circ g)(c \mathbf{x}) & = c (f \circ g)(\mathbf{x})
+\end{aligned}
+")
+
+Yes! (Well, once you prove that it respects addition. I'll leave the fun to
+you!)
+
+Okay, so we know that
+![f \\circ g](https://latex.codecogs.com/png.latex?f%20%5Ccirc%20g "f \circ g")
+is indeed a linear transformation. That means that it can *also* be encoded as a
+matrix.
+
+So, let's say that
+![f : U \\rightarrow W](https://latex.codecogs.com/png.latex?f%20%3A%20U%20%5Crightarrow%20W "f : U \rightarrow W"),
+then
+![g : V \\rightarrow U](https://latex.codecogs.com/png.latex?g%20%3A%20V%20%5Crightarrow%20U "g : V \rightarrow U").
+![f](https://latex.codecogs.com/png.latex?f "f") is a linear transformation from
+![U](https://latex.codecogs.com/png.latex?U "U") to
+![W](https://latex.codecogs.com/png.latex?W "W"), and
+![g](https://latex.codecogs.com/png.latex?g "g") is a linear transformation from
+![V](https://latex.codecogs.com/png.latex?V "V") to
+![U](https://latex.codecogs.com/png.latex?U "U"). That means that
+![f \\circ g : V \\rightarrow W](https://latex.codecogs.com/png.latex?f%20%5Ccirc%20g%20%3A%20V%20%5Crightarrow%20W "f \circ g : V \rightarrow W")
+is a linear transformation from ![V](https://latex.codecogs.com/png.latex?V "V")
+to ![W](https://latex.codecogs.com/png.latex?W "W").
+
+Let's say that ![V](https://latex.codecogs.com/png.latex?V "V") is
+3-dimensional, ![U](https://latex.codecogs.com/png.latex?U "U") is
+2-dimensional, and ![W](https://latex.codecogs.com/png.latex?W "W") is
+4-dimensional.
+
+If ![f](https://latex.codecogs.com/png.latex?f "f") is encoded by the
+![4 \\times 2](https://latex.codecogs.com/png.latex?4%20%5Ctimes%202 "4 \times 2")
+matrix
+![\\hat{A}](https://latex.codecogs.com/png.latex?%5Chat%7BA%7D "\hat{A}"), and
+![g](https://latex.codecogs.com/png.latex?g "g") is encoded by
+![2 \\times 3](https://latex.codecogs.com/png.latex?2%20%5Ctimes%203 "2 \times 3")
+matrix
+![\\hat{B}](https://latex.codecogs.com/png.latex?%5Chat%7BB%7D "\hat{B}"), then
+we can represent
+![f \\circ g](https://latex.codecogs.com/png.latex?f%20%5Ccirc%20g "f \circ g")
+as the
+![4 \\times 3](https://latex.codecogs.com/png.latex?4%20%5Ctimes%203 "4 \times 3")
+matrix
+![\\hat{C}](https://latex.codecogs.com/png.latex?%5Chat%7BC%7D "\hat{C}").
+
+If you've taken a linear algebra class, you might recognize this pattern.
+Combining a
+![4 \\times 2](https://latex.codecogs.com/png.latex?4%20%5Ctimes%202 "4 \times 2")
+and a
+![2 \\times 3](https://latex.codecogs.com/png.latex?2%20%5Ctimes%203 "2 \times 3")
+to make a
+![4 \\times 3](https://latex.codecogs.com/png.latex?4%20%5Ctimes%203 "4 \times 3")
+?
+
+We *can* compute
+![\\hat{C}](https://latex.codecogs.com/png.latex?%5Chat%7BC%7D "\hat{C}") using
+only the encodings
+![\\hat{A}](https://latex.codecogs.com/png.latex?%5Chat%7BA%7D "\hat{A}") and
+![\\hat{B}](https://latex.codecogs.com/png.latex?%5Chat%7BB%7D "\hat{B}")! We
+call this **matrix multiplication**. It's typically denoted as
+![\\hat{C} = \\hat{A} \\hat{B}](https://latex.codecogs.com/png.latex?%5Chat%7BC%7D%20%3D%20%5Chat%7BA%7D%20%5Chat%7BB%7D "\hat{C} = \hat{A} \hat{B}").
+
+That's exactly what *matrix multiplication* is defined as. If:
+
+-   ![\\hat{A}](https://latex.codecogs.com/png.latex?%5Chat%7BA%7D "\hat{A}") is
+    a
+    ![O \\times M](https://latex.codecogs.com/png.latex?O%20%5Ctimes%20M "O \times M")
+    matrix representing a linear transformation from a M-dimensional space to an
+    O-dimensional space
+-   \hat{B} is an
+    ![M \\times N](https://latex.codecogs.com/png.latex?M%20%5Ctimes%20N "M \times N")
+    matrix representing a linear transformation from an N-dimensional space to
+    an M-dimensional space
+
+Then
+![\\hat{C} = \\hat{A}\\hat{B}](https://latex.codecogs.com/png.latex?%5Chat%7BC%7D%20%3D%20%5Chat%7BA%7D%5Chat%7BB%7D "\hat{C} = \hat{A}\hat{B}")
+is a
+![O \\times N](https://latex.codecogs.com/png.latex?O%20%5Ctimes%20N "O \times N")
+matrix representing a linear transformation from an N-dimensional space to an
+O-dimensional space.
