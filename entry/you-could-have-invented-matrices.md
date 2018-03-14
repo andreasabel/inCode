@@ -718,10 +718,10 @@ b\_{21} & b\_{22} & b\_{23}
 \\end{bmatrix}
 =
 \\begin{bmatrix}
-c\_{11} & c\_{12} & c\_{13} \\\\
-c\_{21} & c\_{22} & c\_{23}
+a\_{11}+b\_{11} & a\_{12}+b\_{12} & a\_{13}+b\_{13} \\\\
+a\_{21}+b\_{21} & a\_{22}+b\_{22} & a\_{23}+b\_{23}
 \\end{bmatrix}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Bbmatrix%7D%0Aa_%7B11%7D%20%26%20a_%7B12%7D%20%26%20a_%7B13%7D%20%5C%5C%0Aa_%7B21%7D%20%26%20a_%7B22%7D%20%26%20a_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A%2B%0A%5Cbegin%7Bbmatrix%7D%0Ab_%7B11%7D%20%26%20b_%7B12%7D%20%26%20b_%7B13%7D%20%5C%5C%0Ab_%7B21%7D%20%26%20b_%7B22%7D%20%26%20b_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A%3D%0A%5Cbegin%7Bbmatrix%7D%0Ac_%7B11%7D%20%26%20c_%7B12%7D%20%26%20c_%7B13%7D%20%5C%5C%0Ac_%7B21%7D%20%26%20c_%7B22%7D%20%26%20c_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Bbmatrix%7D%0Aa_%7B11%7D%20%26%20a_%7B12%7D%20%26%20a_%7B13%7D%20%5C%5C%0Aa_%7B21%7D%20%26%20a_%7B22%7D%20%26%20a_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A%2B%0A%5Cbegin%7Bbmatrix%7D%0Ab_%7B11%7D%20%26%20b_%7B12%7D%20%26%20b_%7B13%7D%20%5C%5C%0Ab_%7B21%7D%20%26%20b_%7B22%7D%20%26%20b_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A%3D%0A%5Cbegin%7Bbmatrix%7D%0Aa_%7B11%7D%2Bb_%7B11%7D%20%26%20a_%7B12%7D%2Bb_%7B12%7D%20%26%20a_%7B13%7D%2Bb_%7B13%7D%20%5C%5C%0Aa_%7B21%7D%2Bb_%7B21%7D%20%26%20a_%7B22%7D%2Bb_%7B22%7D%20%26%20a_%7B23%7D%2Bb_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A "
 \begin{bmatrix}
 a_{11} & a_{12} & a_{13} \\
 a_{21} & a_{22} & a_{23}
@@ -733,8 +733,8 @@ b_{21} & b_{22} & b_{23}
 \end{bmatrix}
 =
 \begin{bmatrix}
-c_{11} & c_{12} & c_{13} \\
-c_{21} & c_{22} & c_{23}
+a_{11}+b_{11} & a_{12}+b_{12} & a_{13}+b_{13} \\
+a_{21}+b_{21} & a_{22}+b_{22} & a_{23}+b_{23}
 \end{bmatrix}
 ")
 
