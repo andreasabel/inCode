@@ -76,15 +76,22 @@ Some examples include:
     polynomial can be made as a weighted combination of these polynomials.
 -   N-Tuples of
     ![\\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D "\mathbb{R}")
-    (ordered sequences of a given length) are a vector space, and they're one of
-    the more common examples. One possible basis for
+    (ordered sequences of real numbers of a given length) are a vector space
+    (denoted as
+    ![\\mathbb{R}\^N](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5EN "\mathbb{R}^N")),
+    and they're one of the more common examples. One possible basis for
     ![\\mathbb{R}\^3](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E3 "\mathbb{R}^3")
     is
     ![(1,0,0)](https://latex.codecogs.com/png.latex?%281%2C0%2C0%29 "(1,0,0)"),
     ![(0,1,0)](https://latex.codecogs.com/png.latex?%280%2C1%2C0%29 "(0,1,0)"),
     and
     ![(0,0,1)](https://latex.codecogs.com/png.latex?%280%2C0%2C1%29 "(0,0,1)").
-    N-tuple of real numbers can be expressed as a weighted sum of these.
+    Any N-tuple of real numbers can be expressed as a weighted sum of these.
+    (There are many possible basis sets; another is
+    ![(2,0,0)](https://latex.codecogs.com/png.latex?%282%2C0%2C0%29 "(2,0,0)"),
+    ![(1,1,0)](https://latex.codecogs.com/png.latex?%281%2C1%2C0%29 "(1,1,0)"),
+    and
+    ![(1,0,1)](https://latex.codecogs.com/png.latex?%281%2C0%2C1%29 "(1,0,1)"))
 
 ### Encoding
 
@@ -94,17 +101,47 @@ One neat thing that physicists take advantage of all the time is that if we
 ![\\mathbf{x}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D "\mathbf{x}")
 in terms of those basis vectors.
 
-So in physics, we can say "Let's encode vectors in terms of
-![\\hat{\\mathbf{i}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bi%7D%7D "\hat{\mathbf{i}}"),
-![\\hat{\\mathbf{j}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bj%7D%7D "\hat{\mathbf{j}}"),
-and
-![\\hat{\\mathbf{k}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bk%7D%7D "\hat{\mathbf{k}}"),
-in that order." Then, we can *write*
-![\\mathbf{r}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Br%7D "\mathbf{r}")
-as
-![\\langle r\_x, r\_y, r\_z \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20r_x%2C%20r_y%2C%20r_z%20%5Crangle "\langle r_x, r_y, r_z \rangle"),
-and understand that we really
-mean![\\mathbf{r} = r\_x \\hat{\\mathbf{i}} + r\_y \\hat{\\mathbf{j}} + r\_x \\hat{\\mathbf{k}}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Br%7D%20%3D%20r_x%20%5Chat%7B%5Cmathbf%7Bi%7D%7D%20%2B%20r_y%20%5Chat%7B%5Cmathbf%7Bj%7D%7D%20%2B%20r_x%20%5Chat%7B%5Cmathbf%7Bk%7D%7D "\mathbf{r} = r_x \hat{\mathbf{i}} + r_y \hat{\mathbf{j}} + r_x \hat{\mathbf{k}}").
+For example:
+
+-   In physics, we can say "Let's encode vectors in terms of
+    ![\\hat{\\mathbf{i}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bi%7D%7D "\hat{\mathbf{i}}"),
+    ![\\hat{\\mathbf{j}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bj%7D%7D "\hat{\mathbf{j}}"),
+    and
+    ![\\hat{\\mathbf{k}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bk%7D%7D "\hat{\mathbf{k}}"),
+    in that order." Then, we can *write*
+    ![\\mathbf{r}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Br%7D "\mathbf{r}")
+    as
+    ![\\langle r\_x, r\_y, r\_z \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20r_x%2C%20r_y%2C%20r_z%20%5Crangle "\langle r_x, r_y, r_z \rangle"),
+    and understand that we really mean
+    ![\\mathbf{r} = r\_x \\hat{\\mathbf{i}} + r\_y \\hat{\\mathbf{j}} + r\_x \\hat{\\mathbf{k}}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Br%7D%20%3D%20r_x%20%5Chat%7B%5Cmathbf%7Bi%7D%7D%20%2B%20r_y%20%5Chat%7B%5Cmathbf%7Bj%7D%7D%20%2B%20r_x%20%5Chat%7B%5Cmathbf%7Bk%7D%7D "\mathbf{r} = r_x \hat{\mathbf{i}} + r_y \hat{\mathbf{j}} + r_x \hat{\mathbf{k}}").
+-   For polynomials, we can say "Let's encode polynomials in terms of
+    ![1](https://latex.codecogs.com/png.latex?1 "1"),
+    ![p](https://latex.codecogs.com/png.latex?p "p"),
+    ![p\^2](https://latex.codecogs.com/png.latex?p%5E2 "p^2"), etc., in that
+    order." Then, we can *write*
+    ![\\mathbf{x}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D "\mathbf{x}")
+    as
+    ![\\langle 2 {-3} 5 0 0 \\ldots \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%202%20%7B-3%7D%205%200%200%20%5Cldots%20%5Crangle "\langle 2 {-3} 5 0 0 \ldots \rangle"),
+    and understand that we really mean
+    ![5 p\^2 - 3p + 2](https://latex.codecogs.com/png.latex?5%20p%5E2%20-%203p%20%2B%202 "5 p^2 - 3p + 2").
+-   For
+    ![\\mathbb{R}\^3](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E3 "\mathbb{R}^3"),
+    we can encode the n-tuples in terms of
+    ![(1,0,0)](https://latex.codecogs.com/png.latex?%281%2C0%2C0%29 "(1,0,0)"),
+    ![(0,1,0)](https://latex.codecogs.com/png.latex?%280%2C1%2C0%29 "(0,1,0)"),
+    and
+    ![(0,0,1)](https://latex.codecogs.com/png.latex?%280%2C0%2C1%29 "(0,0,1)").
+    Then, we can *write*
+    ![\\mathbf{x}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D "\mathbf{x}")
+    as
+    ![\\langle x\_1 x\_2 x\_3 \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20x_1%20x_2%20x_3%20%5Crangle "\langle x_1 x_2 x_3 \rangle"),
+    and understand that we really mean
+    ![(x\_1, x\_2, x\_3)](https://latex.codecogs.com/png.latex?%28x_1%2C%20x_2%2C%20x_3%29 "(x_1, x_2, x_3)").
+    This is a somewhat of a silly encoding, but it only looks so "trivial"
+    because of our choice of bases. If we chose a different set of basis vectors
+    for
+    ![\\mathbf{R}\^3](https://latex.codecogs.com/png.latex?%5Cmathbf%7BR%7D%5E3 "\mathbf{R}^3")
+    (like the one mentioned above), the encoding would not be so trivial!
 
 Note that
 ![\\langle r\_x, r\_y, r\_z \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20r_x%2C%20r_y%2C%20r_z%20%5Crangle "\langle r_x, r_y, r_z \rangle")
@@ -775,7 +812,7 @@ this still doesn't quite work:
 
 That's right,
 ![f \* g](https://latex.codecogs.com/png.latex?f%20%2A%20g "f * g"), defined
-point-wise, does not create a linear transformation.
+point-wise, does *not* yield a linear transformation.
 
 So, *there is no matrix* that could would even represent or encode
 ![f \* g](https://latex.codecogs.com/png.latex?f%20%2A%20g "f * g"), as we
