@@ -174,11 +174,11 @@ For example:
     (-8,-6,2) = - 2 (2,0,0) - 3 (1, 2, 1) + 1 (-1,0,1)
     ")
 
-Note that
-![\\langle r\_x, r\_y, r\_z \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20r_x%2C%20r_y%2C%20r_z%20%5Crangle "\langle r_x, r_y, r_z \rangle")
-is **not** the same thing as the **vector**
-![\\mathbf{r}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Br%7D "\mathbf{r}").
-It is *an encoding* of that vector, that only makes sense once we choose to
+It should be made clear that
+![\\langle x\_1, x\_2, x\_3 \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20x_1%2C%20x_2%2C%20x_3%20%5Crangle "\langle x_1, x_2, x_3 \rangle")
+is **not** the same thing as the *vector*
+![\\mathbf{x}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D "\mathbf{x}").
+It is *an encoding* of that vector, which only makes sense once we choose to
 *agree* on a specific set of basis. If we chose a different basis, we'd have a
 different encoding.
 
