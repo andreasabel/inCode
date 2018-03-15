@@ -537,19 +537,29 @@ In that case, we have:
 
 ![
 \\begin{aligned}
-\\frac{d}{dp} 1   & = 0 & = 0 + 0 p + 0 p\^2 + 0 p\^3 + \\ldots \\\\
-\\frac{d}{dp} p   & = 1 & = 1 + 0 p + 0 p\^2 + 0 p\^3 + \\ldots \\\\
-\\frac{d}{dp} p\^2 & = 2 p & = 0 + 2 p + 0 p\^2 + 0 p\^3 + \\ldots \\\\
-\\frac{d}{dp} p\^3 & = 3 p\^2 & = 0 + 0 p + 3 p\^2 + 0 p\^3 + \\ldots \\\\
+\\frac{d}{dp} 1   & = 0     & = 0 + 0 p + 0 p\^2 + 0 p\^3 + \\ldots
+    & = \\langle 0, 0, 0, 0 \\ldots \\rangle  \\\\
+\\frac{d}{dp} p   & = 1     & = 1 + 0 p + 0 p\^2 + 0 p\^3 + \\ldots
+    & = \\langle 1, 0, 0, 0 \\ldots \\rangle  \\\\
+\\frac{d}{dp} p\^2 & = 2 p   & = 0 + 2 p + 0 p\^2 + 0 p\^3 + \\ldots
+    & = \\langle 0, 2, 0, 0 \\ldots \\rangle  \\\\
+\\frac{d}{dp} p\^3 & = 3 p\^2 & = 0 + 0 p + 3 p\^2 + 0 p\^3 + \\ldots
+    & = \\langle 0, 0, 3, 0 \\ldots \\rangle  \\\\
 \\frac{d}{dp} p\^4 & = 4 p\^3 & = 0 + 0 p + 0 p\^2 + 4 p\^3 + \\ldots
+    & = \\langle 0, 0, 0, 4 \\ldots \\rangle
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7Bd%7D%7Bdp%7D%201%20%20%20%26%20%3D%200%20%26%20%3D%200%20%2B%200%20p%20%2B%200%20p%5E2%20%2B%200%20p%5E3%20%2B%20%5Cldots%20%5C%5C%0A%5Cfrac%7Bd%7D%7Bdp%7D%20p%20%20%20%26%20%3D%201%20%26%20%3D%201%20%2B%200%20p%20%2B%200%20p%5E2%20%2B%200%20p%5E3%20%2B%20%5Cldots%20%5C%5C%0A%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E2%20%26%20%3D%202%20p%20%26%20%3D%200%20%2B%202%20p%20%2B%200%20p%5E2%20%2B%200%20p%5E3%20%2B%20%5Cldots%20%5C%5C%0A%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E3%20%26%20%3D%203%20p%5E2%20%26%20%3D%200%20%2B%200%20p%20%2B%203%20p%5E2%20%2B%200%20p%5E3%20%2B%20%5Cldots%20%5C%5C%0A%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E4%20%26%20%3D%204%20p%5E3%20%26%20%3D%200%20%2B%200%20p%20%2B%200%20p%5E2%20%2B%204%20p%5E3%20%2B%20%5Cldots%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7Bd%7D%7Bdp%7D%201%20%20%20%26%20%3D%200%20%20%20%20%20%26%20%3D%200%20%2B%200%20p%20%2B%200%20p%5E2%20%2B%200%20p%5E3%20%2B%20%5Cldots%0A%20%20%20%20%26%20%3D%20%5Clangle%200%2C%200%2C%200%2C%200%20%5Cldots%20%5Crangle%20%20%5C%5C%0A%5Cfrac%7Bd%7D%7Bdp%7D%20p%20%20%20%26%20%3D%201%20%20%20%20%20%26%20%3D%201%20%2B%200%20p%20%2B%200%20p%5E2%20%2B%200%20p%5E3%20%2B%20%5Cldots%0A%20%20%20%20%26%20%3D%20%5Clangle%201%2C%200%2C%200%2C%200%20%5Cldots%20%5Crangle%20%20%5C%5C%0A%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E2%20%26%20%3D%202%20p%20%20%20%26%20%3D%200%20%2B%202%20p%20%2B%200%20p%5E2%20%2B%200%20p%5E3%20%2B%20%5Cldots%0A%20%20%20%20%26%20%3D%20%5Clangle%200%2C%202%2C%200%2C%200%20%5Cldots%20%5Crangle%20%20%5C%5C%0A%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E3%20%26%20%3D%203%20p%5E2%20%26%20%3D%200%20%2B%200%20p%20%2B%203%20p%5E2%20%2B%200%20p%5E3%20%2B%20%5Cldots%0A%20%20%20%20%26%20%3D%20%5Clangle%200%2C%200%2C%203%2C%200%20%5Cldots%20%5Crangle%20%20%5C%5C%0A%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E4%20%26%20%3D%204%20p%5E3%20%26%20%3D%200%20%2B%200%20p%20%2B%200%20p%5E2%20%2B%204%20p%5E3%20%2B%20%5Cldots%0A%20%20%20%20%26%20%3D%20%5Clangle%200%2C%200%2C%200%2C%204%20%5Cldots%20%5Crangle%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-\frac{d}{dp} 1   & = 0 & = 0 + 0 p + 0 p^2 + 0 p^3 + \ldots \\
-\frac{d}{dp} p   & = 1 & = 1 + 0 p + 0 p^2 + 0 p^3 + \ldots \\
-\frac{d}{dp} p^2 & = 2 p & = 0 + 2 p + 0 p^2 + 0 p^3 + \ldots \\
-\frac{d}{dp} p^3 & = 3 p^2 & = 0 + 0 p + 3 p^2 + 0 p^3 + \ldots \\
+\frac{d}{dp} 1   & = 0     & = 0 + 0 p + 0 p^2 + 0 p^3 + \ldots
+    & = \langle 0, 0, 0, 0 \ldots \rangle  \\
+\frac{d}{dp} p   & = 1     & = 1 + 0 p + 0 p^2 + 0 p^3 + \ldots
+    & = \langle 1, 0, 0, 0 \ldots \rangle  \\
+\frac{d}{dp} p^2 & = 2 p   & = 0 + 2 p + 0 p^2 + 0 p^3 + \ldots
+    & = \langle 0, 2, 0, 0 \ldots \rangle  \\
+\frac{d}{dp} p^3 & = 3 p^2 & = 0 + 0 p + 3 p^2 + 0 p^3 + \ldots
+    & = \langle 0, 0, 3, 0 \ldots \rangle  \\
 \frac{d}{dp} p^4 & = 4 p^3 & = 0 + 0 p + 0 p^2 + 4 p^3 + \ldots
+    & = \langle 0, 0, 0, 4 \ldots \rangle
 \end{aligned}
 ")
 
@@ -591,15 +601,21 @@ basis in the target space, and see that:
 
 ![
 \\begin{aligned}
-f(1,0,0) & = (1, 0) & = 1 (1,0) + 0 (0,1) \\\\
-f(0,1,0) & = (0, 1) & = 0 (1,0) + 1 (0,1) \\\\
+f(1,0,0) & = (1, 0) & = 1 (1,0) + 0 (0,1)
+    & = \\langle 1, 0 \\rangle \\\\
+f(0,1,0) & = (0, 1) & = 0 (1,0) + 1 (0,1)
+    & = \\langle 0, 1 \\rangle \\\\
 f(0,0,1) & = (0, 0) & = 0 (1,0) + 0 (0,1)
+    & = \\langle 0, 0 \\rangle
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Af%281%2C0%2C0%29%20%26%20%3D%20%281%2C%200%29%20%26%20%3D%201%20%281%2C0%29%20%2B%200%20%280%2C1%29%20%5C%5C%0Af%280%2C1%2C0%29%20%26%20%3D%20%280%2C%201%29%20%26%20%3D%200%20%281%2C0%29%20%2B%201%20%280%2C1%29%20%5C%5C%0Af%280%2C0%2C1%29%20%26%20%3D%20%280%2C%200%29%20%26%20%3D%200%20%281%2C0%29%20%2B%200%20%280%2C1%29%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Af%281%2C0%2C0%29%20%26%20%3D%20%281%2C%200%29%20%26%20%3D%201%20%281%2C0%29%20%2B%200%20%280%2C1%29%0A%20%20%20%20%26%20%3D%20%5Clangle%201%2C%200%20%5Crangle%20%5C%5C%0Af%280%2C1%2C0%29%20%26%20%3D%20%280%2C%201%29%20%26%20%3D%200%20%281%2C0%29%20%2B%201%20%280%2C1%29%0A%20%20%20%20%26%20%3D%20%5Clangle%200%2C%201%20%5Crangle%20%5C%5C%0Af%280%2C0%2C1%29%20%26%20%3D%20%280%2C%200%29%20%26%20%3D%200%20%281%2C0%29%20%2B%200%20%280%2C1%29%0A%20%20%20%20%26%20%3D%20%5Clangle%200%2C%200%20%5Crangle%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-f(1,0,0) & = (1, 0) & = 1 (1,0) + 0 (0,1) \\
-f(0,1,0) & = (0, 1) & = 0 (1,0) + 1 (0,1) \\
+f(1,0,0) & = (1, 0) & = 1 (1,0) + 0 (0,1)
+    & = \langle 1, 0 \rangle \\
+f(0,1,0) & = (0, 1) & = 0 (1,0) + 1 (0,1)
+    & = \langle 0, 1 \rangle \\
 f(0,0,1) & = (0, 0) & = 0 (1,0) + 0 (0,1)
+    & = \langle 0, 0 \rangle
 \end{aligned}
 ")
 
@@ -621,65 +637,20 @@ f
 \end{bmatrix}
 ")
 
-To illustrate that the matrix encoding depends on the choice of basis, let's
-switch to the
-![(2,0,0), (1,2,1), (-1,0,1)](https://latex.codecogs.com/png.latex?%282%2C0%2C0%29%2C%20%281%2C2%2C1%29%2C%20%28-1%2C0%2C1%29 "(2,0,0), (1,2,1), (-1,0,1)")
-in the source space, and the
-![(-1,3), (2,2)](https://latex.codecogs.com/png.latex?%28-1%2C3%29%2C%20%282%2C2%29 "(-1,3), (2,2)")
-basis in the target space.
-
-In that case, we need only look at:
-
-![
-\\begin{aligned}
-f( 2, 0, 0) & = ( 2, 0) & = -\\frac{1}{2} (-1,3) & + \\frac{3}{4} (2,2) \\\\
-f( 1, 2, 1) & = ( 1, 2) & =  \\frac{1}{4} (-1,3) & + \\frac{5}{8} (2,2) \\\\
-f(-1, 0,-1) & = (-1, 0) & =  \\frac{1}{4} (-1,3) & - \\frac{5}{8} (2,2)
-\\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Af%28%202%2C%200%2C%200%29%20%26%20%3D%20%28%202%2C%200%29%20%26%20%3D%20-%5Cfrac%7B1%7D%7B2%7D%20%28-1%2C3%29%20%26%20%2B%20%5Cfrac%7B3%7D%7B4%7D%20%282%2C2%29%20%5C%5C%0Af%28%201%2C%202%2C%201%29%20%26%20%3D%20%28%201%2C%202%29%20%26%20%3D%20%20%5Cfrac%7B1%7D%7B4%7D%20%28-1%2C3%29%20%26%20%2B%20%5Cfrac%7B5%7D%7B8%7D%20%282%2C2%29%20%5C%5C%0Af%28-1%2C%200%2C-1%29%20%26%20%3D%20%28-1%2C%200%29%20%26%20%3D%20%20%5Cfrac%7B1%7D%7B4%7D%20%28-1%2C3%29%20%26%20-%20%5Cfrac%7B5%7D%7B8%7D%20%282%2C2%29%0A%5Cend%7Baligned%7D%0A "
-\begin{aligned}
-f( 2, 0, 0) & = ( 2, 0) & = -\frac{1}{2} (-1,3) & + \frac{3}{4} (2,2) \\
-f( 1, 2, 1) & = ( 1, 2) & =  \frac{1}{4} (-1,3) & + \frac{5}{8} (2,2) \\
-f(-1, 0,-1) & = (-1, 0) & =  \frac{1}{4} (-1,3) & - \frac{5}{8} (2,2)
-\end{aligned}
-")
-
-Do verify that
-![-\\frac{1}{2} (-1, 3) + \\frac{3}{4} (2, 2)](https://latex.codecogs.com/png.latex?-%5Cfrac%7B1%7D%7B2%7D%20%28-1%2C%203%29%20%2B%20%5Cfrac%7B3%7D%7B4%7D%20%282%2C%202%29 "-\frac{1}{2} (-1, 3) + \frac{3}{4} (2, 2)")
-is indeed equal to
-![(2,0)](https://latex.codecogs.com/png.latex?%282%2C0%29 "(2,0)")!
-
-Anyway, with these funky basis sets, we can encode the *same* "drop the last
-component" linear transformation as:
-
-![
-f
-\\sim
-\\begin{bmatrix}
--\\frac{1}{2} & \\frac{1}{4} &  \\frac{1}{4} \\\\
- \\frac{3}{4} & \\frac{5}{8} & -\\frac{5}{8}
-\\end{bmatrix}
-](https://latex.codecogs.com/png.latex?%0Af%0A%5Csim%0A%5Cbegin%7Bbmatrix%7D%0A-%5Cfrac%7B1%7D%7B2%7D%20%26%20%5Cfrac%7B1%7D%7B4%7D%20%26%20%20%5Cfrac%7B1%7D%7B4%7D%20%5C%5C%0A%20%5Cfrac%7B3%7D%7B4%7D%20%26%20%5Cfrac%7B5%7D%7B8%7D%20%26%20-%5Cfrac%7B5%7D%7B8%7D%0A%5Cend%7Bbmatrix%7D%0A "
-f
-\sim
-\begin{bmatrix}
--\frac{1}{2} & \frac{1}{4} &  \frac{1}{4} \\
- \frac{3}{4} & \frac{5}{8} & -\frac{5}{8}
-\end{bmatrix}
-")
-
-It's a different numerical matrix, but it represents the same linear
-transformation!
+As an exercise, try figuring out what the encoding of the same
+drop-last-component linear transformation if we pick different bases for the
+source and target! You'll find that your matrix will, numerically, be different,
+but it will encode the exact same transformation!
 
 Matrix Operations
 -----------------
 
 In this light, we can understand the definition of the common matrix operations.
 
-### Matrix-Vector Multiplication
+### Matrix-Vector Application
 
-Matrix-vector multiplication is essentially the *decoding* of the linear
-transformation that the matrix represents.
+Matrix-vector application (or "multiplication") is essentially the *decoding* of
+the linear transformation that the matrix represents.
 
 Let's look at the
 ![2 \\times 3](https://latex.codecogs.com/png.latex?2%20%5Ctimes%203 "2 \times 3")
@@ -691,7 +662,7 @@ f(\\mathbf{x}) = x\_1 f(\\mathbf{v}\_1) + x\_2 f(\\mathbf{v}\_2) + x\_3 f(\\math
 f(\mathbf{x}) = x_1 f(\mathbf{v}_1) + x_2 f(\mathbf{v}_2) + x_3 f(\mathbf{v}_3)
 ")
 
-And we say that ![A](https://latex.codecogs.com/png.latex?A "A") is completely
+And we say that ![f](https://latex.codecogs.com/png.latex?f "f") is completely
 defined by:
 
 ![
@@ -758,9 +729,9 @@ x\_3
 =
 \\begin{bmatrix}
 x\_1 a\_{11} + x\_2 a\_{12} + x\_3 a\_{13} \\\\
-x\_2 a\_{21} + x\_2 a\_{22} + x\_3 a\_{23}
+x\_1 a\_{21} + x\_2 a\_{22} + x\_3 a\_{23}
 \\end{bmatrix}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Bbmatrix%7D%0Aa_%7B11%7D%20%26%20a_%7B12%7D%20%26%20a_%7B13%7D%20%5C%5C%0Aa_%7B21%7D%20%26%20a_%7B22%7D%20%26%20a_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A%5Cbegin%7Bbmatrix%7D%0Ax_1%20%5C%5C%0Ax_2%20%5C%5C%0Ax_3%0A%5Cend%7Bbmatrix%7D%0A%3D%0A%5Cbegin%7Bbmatrix%7D%0Ax_1%20a_%7B11%7D%20%2B%20x_2%20a_%7B12%7D%20%2B%20x_3%20a_%7B13%7D%20%5C%5C%0Ax_2%20a_%7B21%7D%20%2B%20x_2%20a_%7B22%7D%20%2B%20x_3%20a_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Bbmatrix%7D%0Aa_%7B11%7D%20%26%20a_%7B12%7D%20%26%20a_%7B13%7D%20%5C%5C%0Aa_%7B21%7D%20%26%20a_%7B22%7D%20%26%20a_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A%5Cbegin%7Bbmatrix%7D%0Ax_1%20%5C%5C%0Ax_2%20%5C%5C%0Ax_3%0A%5Cend%7Bbmatrix%7D%0A%3D%0A%5Cbegin%7Bbmatrix%7D%0Ax_1%20a_%7B11%7D%20%2B%20x_2%20a_%7B12%7D%20%2B%20x_3%20a_%7B13%7D%20%5C%5C%0Ax_1%20a_%7B21%7D%20%2B%20x_2%20a_%7B22%7D%20%2B%20x_3%20a_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A "
 \begin{bmatrix}
 a_{11} & a_{12} & a_{13} \\
 a_{21} & a_{22} & a_{23}
@@ -773,7 +744,7 @@ x_3
 =
 \begin{bmatrix}
 x_1 a_{11} + x_2 a_{12} + x_3 a_{13} \\
-x_2 a_{21} + x_2 a_{22} + x_3 a_{23}
+x_1 a_{21} + x_2 a_{22} + x_3 a_{23}
 \end{bmatrix}
 ")
 
@@ -899,7 +870,7 @@ we can rewrite that as:
 
 Where
 ![c\_{11} = a\_{11} + b\_{11}](https://latex.codecogs.com/png.latex?c_%7B11%7D%20%3D%20a_%7B11%7D%20%2B%20b_%7B11%7D "c_{11} = a_{11} + b_{11}"),
-![c\_{12} = a\_{12} + b\_{13}](https://latex.codecogs.com/png.latex?c_%7B12%7D%20%3D%20a_%7B12%7D%20%2B%20b_%7B13%7D "c_{12} = a_{12} + b_{13}"),
+![c\_{12} = a\_{12} + b\_{12}](https://latex.codecogs.com/png.latex?c_%7B12%7D%20%3D%20a_%7B12%7D%20%2B%20b_%7B12%7D "c_{12} = a_{12} + b_{12}"),
 etc.
 
 So, if ![\\hat{A}](https://latex.codecogs.com/png.latex?%5Chat%7BA%7D "\hat{A}")
@@ -979,30 +950,31 @@ this still doesn't quite work:
 
 ![
 \\begin{aligned}
-(f \* g)(c \\mathbf{x}) & = f(c \\mathbf{x}) \* g(c \\mathbf{x}) \\\\
-                      & = c f(\\mathbf{x}) \* c g(\\mathbf{x}) \\\\
-                      & = c\^2 ( f(\\mathbf{x}) \* g(\\mathbf{x}) ) \\\\
+(f \* g)(c \\mathbf{x}) & = f(c \\mathbf{x}) g(c \\mathbf{x}) \\\\
+                      & = c f(\\mathbf{x}) c g(\\mathbf{x}) \\\\
+                      & = c\^2 ( f(\\mathbf{x}) g(\\mathbf{x}) ) \\\\
 (f \* g)(c \\mathbf{x}) & = c\^2 (f \* g)(\\mathbf{x})
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%28f%20%2A%20g%29%28c%20%5Cmathbf%7Bx%7D%29%20%26%20%3D%20f%28c%20%5Cmathbf%7Bx%7D%29%20%2A%20g%28c%20%5Cmathbf%7Bx%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%3D%20c%20f%28%5Cmathbf%7Bx%7D%29%20%2A%20c%20g%28%5Cmathbf%7Bx%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%3D%20c%5E2%20%28%20f%28%5Cmathbf%7Bx%7D%29%20%2A%20g%28%5Cmathbf%7Bx%7D%29%20%29%20%5C%5C%0A%28f%20%2A%20g%29%28c%20%5Cmathbf%7Bx%7D%29%20%26%20%3D%20c%5E2%20%28f%20%2A%20g%29%28%5Cmathbf%7Bx%7D%29%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%28f%20%2A%20g%29%28c%20%5Cmathbf%7Bx%7D%29%20%26%20%3D%20f%28c%20%5Cmathbf%7Bx%7D%29%20g%28c%20%5Cmathbf%7Bx%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%3D%20c%20f%28%5Cmathbf%7Bx%7D%29%20c%20g%28%5Cmathbf%7Bx%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%3D%20c%5E2%20%28%20f%28%5Cmathbf%7Bx%7D%29%20g%28%5Cmathbf%7Bx%7D%29%20%29%20%5C%5C%0A%28f%20%2A%20g%29%28c%20%5Cmathbf%7Bx%7D%29%20%26%20%3D%20c%5E2%20%28f%20%2A%20g%29%28%5Cmathbf%7Bx%7D%29%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-(f * g)(c \mathbf{x}) & = f(c \mathbf{x}) * g(c \mathbf{x}) \\
-                      & = c f(\mathbf{x}) * c g(\mathbf{x}) \\
-                      & = c^2 ( f(\mathbf{x}) * g(\mathbf{x}) ) \\
+(f * g)(c \mathbf{x}) & = f(c \mathbf{x}) g(c \mathbf{x}) \\
+                      & = c f(\mathbf{x}) c g(\mathbf{x}) \\
+                      & = c^2 ( f(\mathbf{x}) g(\mathbf{x}) ) \\
 (f * g)(c \mathbf{x}) & = c^2 (f * g)(\mathbf{x})
 \end{aligned}
 ")
 
-That's right,
-![f \* g](https://latex.codecogs.com/png.latex?f%20%2A%20g "f * g"), defined
-point-wise, does *not* yield a linear transformation.
+So,
+![(f \* g)(c \\mathbf{x}) = c\^2 (f \* g)(\\mathbf{x})](https://latex.codecogs.com/png.latex?%28f%20%2A%20g%29%28c%20%5Cmathbf%7Bx%7D%29%20%3D%20c%5E2%20%28f%20%2A%20g%29%28%5Cmathbf%7Bx%7D%29 "(f * g)(c \mathbf{x}) = c^2 (f * g)(\mathbf{x})").
+Therefore, ![f \* g](https://latex.codecogs.com/png.latex?f%20%2A%20g "f * g"),
+defined point-wise, does *not* yield a linear transformation.
 
-So, *there is no matrix* that could would even represent or encode
+Therefore, *there is no matrix* that could would even represent or encode
 ![f \* g](https://latex.codecogs.com/png.latex?f%20%2A%20g "f * g"), as we
 defined it. So, since
 ![f \* g](https://latex.codecogs.com/png.latex?f%20%2A%20g "f * g") isn't even
 representable as a matrix in our encoding scheme, it doesn't make sense to treat
-it as a matrix operation.
+it as a matrix operation. There's no possible result!
 
 ### Composition of linear transformations
 
@@ -1052,7 +1024,10 @@ then
 ![U](https://latex.codecogs.com/png.latex?U "U"). That means that
 ![f \\circ g : V \\rightarrow W](https://latex.codecogs.com/png.latex?f%20%5Ccirc%20g%20%3A%20V%20%5Crightarrow%20W "f \circ g : V \rightarrow W")
 is a linear transformation from ![V](https://latex.codecogs.com/png.latex?V "V")
-to ![W](https://latex.codecogs.com/png.latex?W "W").
+to ![W](https://latex.codecogs.com/png.latex?W "W"). It goes from
+![V](https://latex.codecogs.com/png.latex?V "V"), through
+![U](https://latex.codecogs.com/png.latex?U "U"), and all the way to
+![W](https://latex.codecogs.com/png.latex?W "W").
 
 Let's say that ![V](https://latex.codecogs.com/png.latex?V "V") is
 3-dimensional, ![U](https://latex.codecogs.com/png.latex?U "U") is
