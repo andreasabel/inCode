@@ -278,7 +278,7 @@ Some common examples of linear transformations include:
     same vector space. Scaling a scaled vector is scaling the scaled vector;
     scaling a sum of vectors is the sum of scaling vectors.
 -   Taking the derivative of a polynomial
-    ![\\frac{d}{dp](https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdp "\frac{d}{dp")
+    ![\\frac{d}{dp}](https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdp%7D "\frac{d}{dp}")
     is a linear transformation from the vector space of polynomials to itself:
     the derivative of
     ![5 p\^2 - 3 p + 2](https://latex.codecogs.com/png.latex?5%20p%5E2%20-%203%20p%20%2B%202 "5 p^2 - 3 p + 2")
