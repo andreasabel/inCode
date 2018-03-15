@@ -275,23 +275,33 @@ can use).
 Some common examples of linear transformations include:
 
 -   Simply scaling a vector is a linear transformation from vector space to the
-    same vector space. Scaling a scaled vector is scaling the scaled vector;
-    scaling a sum of vectors is the sum of scaling vectors.
+    same vector space.
+
+    This is a linear transformation because scaling a scaled vector is scaling
+    the scaled vector; scaling a sum of vectors is the sum of scaling vectors.
+
 -   Taking the derivative of a polynomial
     ![\\frac{d}{dp}](https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdp%7D "\frac{d}{dp}")
     is a linear transformation from the vector space of polynomials to itself:
     the derivative of
     ![5 p\^2 - 3 p + 2](https://latex.codecogs.com/png.latex?5%20p%5E2%20-%203%20p%20%2B%202 "5 p^2 - 3 p + 2")
-    w.r.t ![p](https://latex.codecogs.com/png.latex?p "p") is
+    with respect to *p* is
     ![10 p - 3](https://latex.codecogs.com/png.latex?10%20p%20-%203 "10 p - 3").
-    Taking the derivative of a scaled polynomial is the scaled derivative of the
-    polynomial; taking the derivative of the sum of two polynomials is the sum
-    of the derivatives of the two polynomials.
+
+    This is a linear transformation because taking the derivative of a scaled
+    polynomial is the scaled derivative of the polynomial; taking the derivative
+    of the sum of two polynomials is the sum of the derivatives of the two
+    polynomials.
+
 -   For N-tuples, keeping and dropping certain components are linear
     transformations. For example,
     ![f(x,y,z) = (x,y)](https://latex.codecogs.com/png.latex?f%28x%2Cy%2Cz%29%20%3D%20%28x%2Cy%29 "f(x,y,z) = (x,y)")
     is a linear transformation from the vector space of 3-tuples to the vector
     space of 2-tuples.
+
+    This is a linear transformation because scaling the original tuple would
+    scale the reuslting tuple, and dropping the components of the sum of two
+    tuples is the same as summing the dropped components.
 
 ### Studying linear transformations
 
@@ -354,7 +364,7 @@ That is, if I were to ask you, "Hey, what is
 ![f](https://latex.codecogs.com/png.latex?f "f") like?", *all you'd have to tell
 me* is the result of
 ![f(\\mathbf{v}\_1)](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bv%7D_1%29 "f(\mathbf{v}_1)"),
-![f(\\mathbf{v}\_2](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bv%7D_2 "f(\mathbf{v}_2"),
+![f(\\mathbf{v}\_2)](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bv%7D_2%29 "f(\mathbf{v}_2)"),
 and
 ![f(\\mathbf{v}\_3)](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bv%7D_3%29 "f(\mathbf{v}_3)").
 Just give me those three *vectors*, and we *uniquely determine
@@ -366,7 +376,6 @@ vector space is uniquely characterized and determined by *three vectors*:
 ![f(\\mathbf{v}\_2)](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bv%7D_2%29 "f(\mathbf{v}_2)"),
 and
 ![f(\\mathbf{v}\_3)](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bv%7D_3%29 "f(\mathbf{v}_3)").
-
 Those three vectors *completely define*
 ![f](https://latex.codecogs.com/png.latex?f "f").
 
@@ -381,8 +390,8 @@ etc.; if you know those, then you can compute the derivative of *any*
 polynomial. If I told you that
 ![\\frac{d}{dp} p\^n = n p\^{n - 1}](https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdp%7D%20p%5En%20%3D%20n%20p%5E%7Bn%20-%201%7D "\frac{d}{dp} p^n = n p^{n - 1}")
 (the good ol' trusty [power rule](https://en.wikipedia.org/wiki/Power_rule)),
-then you could compute the derivative of any polynomial. This is the essence of
-the *[formal derivative](https://en.wikipedia.org/wiki/Formal_derivative)*.
+then you could compute the derivative of *any* polynomial. This is the essence
+of the *[formal derivative](https://en.wikipedia.org/wiki/Formal_derivative)*.
 
 ### Enter the Matrix
 
@@ -528,19 +537,19 @@ In that case, we have:
 
 ![
 \\begin{aligned}
-\\frac{d}{dp} 1 & = 0 + 0 p + 0 p\^2 + 0 p\^3 + \\ldots \\\\
-\\frac{d}{dp} p & = 1 + 0 p + 0 p\^2 + 0 p\^3 + \\ldots \\\\
-\\frac{d}{dp} p\^2 & = 0 + 2 p + 0 p\^2 + 0 p\^3 + \\ldots \\\\
-\\frac{d}{dp} p\^3 & = 0 + 0 p + 3 p\^2 + 0 p\^3 + \\ldots \\\\
-\\frac{d}{dp} p\^4 & = 0 + 0 p + 0 p\^2 + 4 p\^3 + \\ldots
+\\frac{d}{dp} 1   & = 0 & = 0 + 0 p + 0 p\^2 + 0 p\^3 + \\ldots \\\\
+\\frac{d}{dp} p   & = 1 & = 1 + 0 p + 0 p\^2 + 0 p\^3 + \\ldots \\\\
+\\frac{d}{dp} p\^2 & = 2 p & = 0 + 2 p + 0 p\^2 + 0 p\^3 + \\ldots \\\\
+\\frac{d}{dp} p\^3 & = 3 p\^2 & = 0 + 0 p + 3 p\^2 + 0 p\^3 + \\ldots \\\\
+\\frac{d}{dp} p\^4 & = 4 p\^3 & = 0 + 0 p + 0 p\^2 + 4 p\^3 + \\ldots
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7Bd%7D%7Bdp%7D%201%20%26%20%3D%200%20%2B%200%20p%20%2B%200%20p%5E2%20%2B%200%20p%5E3%20%2B%20%5Cldots%20%5C%5C%0A%5Cfrac%7Bd%7D%7Bdp%7D%20p%20%26%20%3D%201%20%2B%200%20p%20%2B%200%20p%5E2%20%2B%200%20p%5E3%20%2B%20%5Cldots%20%5C%5C%0A%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E2%20%26%20%3D%200%20%2B%202%20p%20%2B%200%20p%5E2%20%2B%200%20p%5E3%20%2B%20%5Cldots%20%5C%5C%0A%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E3%20%26%20%3D%200%20%2B%200%20p%20%2B%203%20p%5E2%20%2B%200%20p%5E3%20%2B%20%5Cldots%20%5C%5C%0A%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E4%20%26%20%3D%200%20%2B%200%20p%20%2B%200%20p%5E2%20%2B%204%20p%5E3%20%2B%20%5Cldots%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7Bd%7D%7Bdp%7D%201%20%20%20%26%20%3D%200%20%26%20%3D%200%20%2B%200%20p%20%2B%200%20p%5E2%20%2B%200%20p%5E3%20%2B%20%5Cldots%20%5C%5C%0A%5Cfrac%7Bd%7D%7Bdp%7D%20p%20%20%20%26%20%3D%201%20%26%20%3D%201%20%2B%200%20p%20%2B%200%20p%5E2%20%2B%200%20p%5E3%20%2B%20%5Cldots%20%5C%5C%0A%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E2%20%26%20%3D%202%20p%20%26%20%3D%200%20%2B%202%20p%20%2B%200%20p%5E2%20%2B%200%20p%5E3%20%2B%20%5Cldots%20%5C%5C%0A%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E3%20%26%20%3D%203%20p%5E2%20%26%20%3D%200%20%2B%200%20p%20%2B%203%20p%5E2%20%2B%200%20p%5E3%20%2B%20%5Cldots%20%5C%5C%0A%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E4%20%26%20%3D%204%20p%5E3%20%26%20%3D%200%20%2B%200%20p%20%2B%200%20p%5E2%20%2B%204%20p%5E3%20%2B%20%5Cldots%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-\frac{d}{dp} 1 & = 0 + 0 p + 0 p^2 + 0 p^3 + \ldots \\
-\frac{d}{dp} p & = 1 + 0 p + 0 p^2 + 0 p^3 + \ldots \\
-\frac{d}{dp} p^2 & = 0 + 2 p + 0 p^2 + 0 p^3 + \ldots \\
-\frac{d}{dp} p^3 & = 0 + 0 p + 3 p^2 + 0 p^3 + \ldots \\
-\frac{d}{dp} p^4 & = 0 + 0 p + 0 p^2 + 4 p^3 + \ldots
+\frac{d}{dp} 1   & = 0 & = 0 + 0 p + 0 p^2 + 0 p^3 + \ldots \\
+\frac{d}{dp} p   & = 1 & = 1 + 0 p + 0 p^2 + 0 p^3 + \ldots \\
+\frac{d}{dp} p^2 & = 2 p & = 0 + 2 p + 0 p^2 + 0 p^3 + \ldots \\
+\frac{d}{dp} p^3 & = 3 p^2 & = 0 + 0 p + 3 p^2 + 0 p^3 + \ldots \\
+\frac{d}{dp} p^4 & = 4 p^3 & = 0 + 0 p + 0 p^2 + 4 p^3 + \ldots
 \end{aligned}
 ")
 
@@ -556,9 +565,10 @@ basis, the derivative of a polynomial can be represented as the matrix:
 0 & 0 & 2 & 0 & 0 & \\ldots \\\\
 0 & 0 & 0 & 3 & 0 & \\ldots \\\\
 0 & 0 & 0 & 0 & 4 & \\ldots \\\\
+0 & 0 & 0 & 0 & 0 & \\ldots \\\\
 \\vdots & \\vdots & \\vdots & \\vdots & \\vdots & \\ddots
 \\end{bmatrix}
-](https://latex.codecogs.com/png.latex?%0A%5Cfrac%7Bd%7D%7Bdp%7D%0A%5Csim%0A%5Cbegin%7Bbmatrix%7D%0A0%20%26%201%20%26%200%20%26%200%20%26%200%20%26%20%5Cldots%20%5C%5C%0A0%20%26%200%20%26%202%20%26%200%20%26%200%20%26%20%5Cldots%20%5C%5C%0A0%20%26%200%20%26%200%20%26%203%20%26%200%20%26%20%5Cldots%20%5C%5C%0A0%20%26%200%20%26%200%20%26%200%20%26%204%20%26%20%5Cldots%20%5C%5C%0A%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cddots%0A%5Cend%7Bbmatrix%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cfrac%7Bd%7D%7Bdp%7D%0A%5Csim%0A%5Cbegin%7Bbmatrix%7D%0A0%20%26%201%20%26%200%20%26%200%20%26%200%20%26%20%5Cldots%20%5C%5C%0A0%20%26%200%20%26%202%20%26%200%20%26%200%20%26%20%5Cldots%20%5C%5C%0A0%20%26%200%20%26%200%20%26%203%20%26%200%20%26%20%5Cldots%20%5C%5C%0A0%20%26%200%20%26%200%20%26%200%20%26%204%20%26%20%5Cldots%20%5C%5C%0A0%20%26%200%20%26%200%20%26%200%20%26%200%20%26%20%5Cldots%20%5C%5C%0A%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cddots%0A%5Cend%7Bbmatrix%7D%0A "
 \frac{d}{dp}
 \sim
 \begin{bmatrix}
@@ -566,6 +576,7 @@ basis, the derivative of a polynomial can be represented as the matrix:
 0 & 0 & 2 & 0 & 0 & \ldots \\
 0 & 0 & 0 & 3 & 0 & \ldots \\
 0 & 0 & 0 & 0 & 4 & \ldots \\
+0 & 0 & 0 & 0 & 0 & \ldots \\
 \vdots & \vdots & \vdots & \vdots & \vdots & \ddots
 \end{bmatrix}
 ")
