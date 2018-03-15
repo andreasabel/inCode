@@ -646,14 +646,14 @@ f
 \\sim
 \\begin{bmatrix}
 -\\frac{1}{2} & \\frac{1}{4} &  \\frac{1}{4} \\\\
- \\frac{3}{4} & \\frac{5}{8} & -\\frac{5}{8}0
+ \\frac{3}{4} & \\frac{5}{8} & -\\frac{5}{8}
 \\end{bmatrix}
-](https://latex.codecogs.com/png.latex?%0Af%0A%5Csim%0A%5Cbegin%7Bbmatrix%7D%0A-%5Cfrac%7B1%7D%7B2%7D%20%26%20%5Cfrac%7B1%7D%7B4%7D%20%26%20%20%5Cfrac%7B1%7D%7B4%7D%20%5C%5C%0A%20%5Cfrac%7B3%7D%7B4%7D%20%26%20%5Cfrac%7B5%7D%7B8%7D%20%26%20-%5Cfrac%7B5%7D%7B8%7D0%0A%5Cend%7Bbmatrix%7D%0A "
+](https://latex.codecogs.com/png.latex?%0Af%0A%5Csim%0A%5Cbegin%7Bbmatrix%7D%0A-%5Cfrac%7B1%7D%7B2%7D%20%26%20%5Cfrac%7B1%7D%7B4%7D%20%26%20%20%5Cfrac%7B1%7D%7B4%7D%20%5C%5C%0A%20%5Cfrac%7B3%7D%7B4%7D%20%26%20%5Cfrac%7B5%7D%7B8%7D%20%26%20-%5Cfrac%7B5%7D%7B8%7D%0A%5Cend%7Bbmatrix%7D%0A "
 f
 \sim
 \begin{bmatrix}
 -\frac{1}{2} & \frac{1}{4} &  \frac{1}{4} \\
- \frac{3}{4} & \frac{5}{8} & -\frac{5}{8}0
+ \frac{3}{4} & \frac{5}{8} & -\frac{5}{8}
 \end{bmatrix}
 ")
 
