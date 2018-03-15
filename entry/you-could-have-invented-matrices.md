@@ -210,7 +210,7 @@ any vector
 in ![V](https://latex.codecogs.com/png.latex?V "V") can be decomposed as
 ![x\_1 \\mathbf{v}\_1 + x\_2 \\mathbf{v}\_2 + \\ldots x\_n \\mathbf{v}\_N](https://latex.codecogs.com/png.latex?x_1%20%5Cmathbf%7Bv%7D_1%20%2B%20x_2%20%5Cmathbf%7Bv%7D_2%20%2B%20%5Cldots%20x_n%20%5Cmathbf%7Bv%7D_N "x_1 \mathbf{v}_1 + x_2 \mathbf{v}_2 + \ldots x_n \mathbf{v}_N"),
 we really can just look at how a transformation
-![A](https://latex.codecogs.com/png.latex?A "A") acts on this decomposition. For
+![f](https://latex.codecogs.com/png.latex?f "f") acts on this decomposition. For
 example, if ![V](https://latex.codecogs.com/png.latex?V "V") is
 three-dimensional:
 
@@ -225,7 +225,7 @@ Hm. Doesn't seem very insightful, does it?
 ### A simple definition
 
 But! We can exploit the linearity of
-![A](https://latex.codecogs.com/png.latex?A "A") (that it distributes and
+![f](https://latex.codecogs.com/png.latex?f "f") (that it distributes and
 scales) to rewrite that as:
 
 ![
@@ -346,7 +346,7 @@ their six defining coefficients.
 
 We group these things up in something called a *matrix*.
 
-If our linear transformation ![A](https://latex.codecogs.com/png.latex?A "A")
+If our linear transformation ![f](https://latex.codecogs.com/png.latex?f "f")
 from a 3-dimensional vector space to a 2-dimensional vector space is defined by:
 
 ![
