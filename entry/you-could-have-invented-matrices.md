@@ -56,39 +56,14 @@ in that vector space into a combination of a set of basis vectors. For a
 in your space...but that's only possible with at least three vectors. a
 4-dimensional vector space, you'd need at least four vectors.
 
-Some examples:
-
--   In physics, we often treat reality as taking place in a three-dimensional
-    vector space. The basis vectors are often called
-    ![\\hat{\\mathbf{i}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bi%7D%7D "\hat{\mathbf{i}}"),
-    ![\\hat{\\mathbf{j}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bj%7D%7D "\hat{\mathbf{j}}"),
-    and
-    ![\\hat{\\mathbf{k}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bk%7D%7D "\hat{\mathbf{k}}"),
-    and so we say that we can describe our 3D physics vectors as
-    ![\\mathbf{r} = r\_x \\hat{\\mathbf{i}} + r\_y \\hat{\\mathbf{j}} + r\_x \\hat{\\mathbf{k}}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Br%7D%20%3D%20r_x%20%5Chat%7B%5Cmathbf%7Bi%7D%7D%20%2B%20r_y%20%5Chat%7B%5Cmathbf%7Bj%7D%7D%20%2B%20r_x%20%5Chat%7B%5Cmathbf%7Bk%7D%7D "\mathbf{r} = r_x \hat{\mathbf{i}} + r_y \hat{\mathbf{j}} + r_x \hat{\mathbf{k}}").
-
--   The set of all polynomials
-    (![5 p\^2 - 3 p + 2](https://latex.codecogs.com/png.latex?5%20p%5E2%20-%203%20p%20%2B%202 "5 p^2 - 3 p + 2"),
-    etc.) is an infinite-dimensional vector space, whose scalars are set of
-    possible coefficients. Polynomials can be scaled and added together. One
-    possible basis are the polynomials
-    ![1, p, p\^2, p\^3 \\ldots](https://latex.codecogs.com/png.latex?1%2C%20p%2C%20p%5E2%2C%20p%5E3%20%5Cldots "1, p, p^2, p^3 \ldots"),
-    etc.; every other polynomial can be made as a weighted combination of these
-    polynomials.
-
--   N-Tuples of
-    ![\\mathbb{R}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D "\mathbb{R}")
-    (ordered sequences of real numbers of a given length) are a vector space
-    (denoted as
-    ![\\mathbb{R}\^N](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5EN "\mathbb{R}^N")),
-    and they're one of the more common examples of a vector space with a basis.
-    One possible basis for
-    ![\\mathbb{R}\^3](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E3 "\mathbb{R}^3")
-    is
-    ![(1,0,0), (0,1,0), (0,0,1)](https://latex.codecogs.com/png.latex?%281%2C0%2C0%29%2C%20%280%2C1%2C0%29%2C%20%280%2C0%2C1%29 "(1,0,0), (0,1,0), (0,0,1)").
-    Any N-tuple of real numbers can be expressed as a weighted sum of these.
-    (There are many possible basis sets; another is
-    ![(2,0,0), (1,2,1), (-1,0,1)](https://latex.codecogs.com/png.latex?%282%2C0%2C0%29%2C%20%281%2C2%2C1%29%2C%20%28-1%2C0%2C1%29 "(2,0,0), (1,2,1), (-1,0,1)"))
+For example, in physics, we often treat reality as taking place in a
+three-dimensional vector space. The basis vectors are often called
+![\\hat{\\mathbf{i}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bi%7D%7D "\hat{\mathbf{i}}"),
+![\\hat{\\mathbf{j}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bj%7D%7D "\hat{\mathbf{j}}"),
+and
+![\\hat{\\mathbf{k}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bk%7D%7D "\hat{\mathbf{k}}"),
+and so we say that we can describe our 3D physics vectors as
+![\\mathbf{r} = r\_x \\hat{\\mathbf{i}} + r\_y \\hat{\\mathbf{j}} + r\_x \\hat{\\mathbf{k}}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Br%7D%20%3D%20r_x%20%5Chat%7B%5Cmathbf%7Bi%7D%7D%20%2B%20r_y%20%5Chat%7B%5Cmathbf%7Bj%7D%7D%20%2B%20r_x%20%5Chat%7B%5Cmathbf%7Bk%7D%7D "\mathbf{r} = r_x \hat{\mathbf{i}} + r_y \hat{\mathbf{j}} + r_x \hat{\mathbf{k}}").
 
 ### Encoding
 
@@ -98,75 +73,18 @@ One neat thing that physicists take advantage of all the time is that if we
 ![\\mathbf{x}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D "\mathbf{x}")
 in terms of those basis vectors.
 
-For example:
-
--   In physics, we can say "Let's encode vectors in terms of sums of scalings of
-    ![\\hat{\\mathbf{i}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bi%7D%7D "\hat{\mathbf{i}}"),
-    ![\\hat{\\mathbf{j}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bj%7D%7D "\hat{\mathbf{j}}"),
-    and
-    ![\\hat{\\mathbf{k}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bk%7D%7D "\hat{\mathbf{k}}"),
-    in that order." Then, we can *write*
-    ![\\mathbf{r}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Br%7D "\mathbf{r}")
-    as
-    ![\\langle r\_x, r\_y, r\_z \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20r_x%2C%20r_y%2C%20r_z%20%5Crangle "\langle r_x, r_y, r_z \rangle"),
-    and understand that we really mean
-    ![\\mathbf{r} = r\_x \\hat{\\mathbf{i}} + r\_y \\hat{\\mathbf{j}} + r\_x \\hat{\\mathbf{k}}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Br%7D%20%3D%20r_x%20%5Chat%7B%5Cmathbf%7Bi%7D%7D%20%2B%20r_y%20%5Chat%7B%5Cmathbf%7Bj%7D%7D%20%2B%20r_x%20%5Chat%7B%5Cmathbf%7Bk%7D%7D "\mathbf{r} = r_x \hat{\mathbf{i}} + r_y \hat{\mathbf{j}} + r_x \hat{\mathbf{k}}").
-
--   For polynomials, we can say "Let's encode polynomials in terms of sums of
-    scalings of ![1](https://latex.codecogs.com/png.latex?1 "1"),
-    ![p](https://latex.codecogs.com/png.latex?p "p"),
-    ![p\^2](https://latex.codecogs.com/png.latex?p%5E2 "p^2"), etc., in that
-    order." Then, we can *write*
-    ![\\mathbf{x}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D "\mathbf{x}")
-    as
-    ![\\langle 2, -3, 5, 0, 0, \\ldots \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%202%2C%20-3%2C%205%2C%200%2C%200%2C%20%5Cldots%20%5Crangle "\langle 2, -3, 5, 0, 0, \ldots \rangle"),
-    and understand that we really mean
-    ![5 p\^2 - 3p + 2](https://latex.codecogs.com/png.latex?5%20p%5E2%20-%203p%20%2B%202 "5 p^2 - 3p + 2").
-
--   For
-    ![\\mathbb{R}\^3](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E3 "\mathbb{R}^3"),
-    we can encode the n-tuples in terms of sums of scalings of
-    ![(1,0,0)](https://latex.codecogs.com/png.latex?%281%2C0%2C0%29 "(1,0,0)"),
-    ![(0,1,0)](https://latex.codecogs.com/png.latex?%280%2C1%2C0%29 "(0,1,0)"),
-    and
-    ![(0,0,1)](https://latex.codecogs.com/png.latex?%280%2C0%2C1%29 "(0,0,1)").
-    Then, we can *write*
-    ![\\mathbf{x}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D "\mathbf{x}")
-    as
-    ![\\langle x\_1, x\_2, x\_3 \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20x_1%2C%20x_2%2C%20x_3%20%5Crangle "\langle x_1, x_2, x_3 \rangle"),
-    and understand that we really mean
-    ![(x\_1, x\_2, x\_3)](https://latex.codecogs.com/png.latex?%28x_1%2C%20x_2%2C%20x_3%29 "(x_1, x_2, x_3)").
-
-    This is a somewhat of a silly encoding, but it only looks so "trivial"
-    because of our choice of bases.
-
-    If we chose a different set of basis vectors for
-    ![\\mathbf{R}\^3](https://latex.codecogs.com/png.latex?%5Cmathbf%7BR%7D%5E3 "\mathbf{R}^3"),
-    the encoding would not be so trivial!
-
-    For example, if we choose
-    ![(2,0,0), (1,2,1), (-1,0,1)](https://latex.codecogs.com/png.latex?%282%2C0%2C0%29%2C%20%281%2C2%2C1%29%2C%20%28-1%2C0%2C1%29 "(2,0,0), (1,2,1), (-1,0,1)")
-    as our basis set, when we write
-    ![\\langle x\_1, x\_2, x\_3\\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20x_1%2C%20x_2%2C%20x_3%5Crangle "\langle x_1, x_2, x_3\rangle"),
-    we really mean:
-
-    ![
-    x\_1 (2,0,0) + x\_2 (1,2,1) + x\_3 (-1,0,1)
-    ](https://latex.codecogs.com/png.latex?%0Ax_1%20%282%2C0%2C0%29%20%2B%20x_2%20%281%2C2%2C1%29%20%2B%20x_3%20%28-1%2C0%2C1%29%0A "
-    x_1 (2,0,0) + x_2 (1,2,1) + x_3 (-1,0,1)
-    ")
-
-    In this basis, we can write the tuple
-    ![(-8,-6,-2)](https://latex.codecogs.com/png.latex?%28-8%2C-6%2C-2%29 "(-8,-6,-2)")
-    as
-    ![\\langle -2, -3, 1\\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20-2%2C%20-3%2C%201%5Crangle "\langle -2, -3, 1\rangle"),
-    because:
-
-    ![
-    (-8,-6,2) = - 2 (2,0,0) - 3 (1, 2, 1) + 1 (-1,0,1)
-    ](https://latex.codecogs.com/png.latex?%0A%28-8%2C-6%2C2%29%20%3D%20-%202%20%282%2C0%2C0%29%20-%203%20%281%2C%202%2C%201%29%20%2B%201%20%28-1%2C0%2C1%29%0A "
-    (-8,-6,2) = - 2 (2,0,0) - 3 (1, 2, 1) + 1 (-1,0,1)
-    ")
+In physics, for instance, we can say "Let's encode vectors in terms of sums of
+scalings of
+![\\hat{\\mathbf{i}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bi%7D%7D "\hat{\mathbf{i}}"),
+![\\hat{\\mathbf{j}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bj%7D%7D "\hat{\mathbf{j}}"),
+and
+![\\hat{\\mathbf{k}}](https://latex.codecogs.com/png.latex?%5Chat%7B%5Cmathbf%7Bk%7D%7D "\hat{\mathbf{k}}"),
+in that order." Then, we can *write*
+![\\mathbf{r}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Br%7D "\mathbf{r}")
+as
+![\\langle r\_x, r\_y, r\_z \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20r_x%2C%20r_y%2C%20r_z%20%5Crangle "\langle r_x, r_y, r_z \rangle"),
+and understand that we really mean
+![\\mathbf{r} = r\_x \\hat{\\mathbf{i}} + r\_y \\hat{\\mathbf{j}} + r\_x \\hat{\\mathbf{k}}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Br%7D%20%3D%20r_x%20%5Chat%7B%5Cmathbf%7Bi%7D%7D%20%2B%20r_y%20%5Chat%7B%5Cmathbf%7Bj%7D%7D%20%2B%20r_x%20%5Chat%7B%5Cmathbf%7Bk%7D%7D "\mathbf{r} = r_x \hat{\mathbf{i}} + r_y \hat{\mathbf{j}} + r_x \hat{\mathbf{k}}").
 
 It should be made clear that
 ![\\langle x\_1, x\_2, x\_3 \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20x_1%2C%20x_2%2C%20x_3%20%5Crangle "\langle x_1, x_2, x_3 \rangle")
@@ -205,11 +123,6 @@ has many different potential encodings --- all you have to do is pick a
 different set of basis vectors, or even just re-arrange or re-scale the ones you
 already have. However, all of those encodings correspond go the same vector
 ![\\mathbf{v}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D "\mathbf{v}").
-For instance, in the example earlier, we saw an
-![\\mathbb{R}\^3](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E3 "\mathbb{R}^3")
-vector
-![(-8,-6,-2)](https://latex.codecogs.com/png.latex?%28-8%2C-6%2C-2%29 "(-8,-6,-2)")
-with two different encodings.
 
 One interesting consequence of this is that any N-dimensional vector space whose
 scalars are in
@@ -272,37 +185,6 @@ From now on, we'll talk about linear transformations specifically on
 *N-dimensional vector spaces* (vector spaces that have dimensions and bases we
 can use).
 
-Some common examples of linear transformations include:
-
--   Simply scaling a vector is a linear transformation from vector space to the
-    same vector space.
-
-    This is a linear transformation because scaling a scaled vector is scaling
-    the scaled vector; scaling a sum of vectors is the sum of scaling vectors.
-
--   Taking the derivative of a polynomial
-    ![\\frac{d}{dp}](https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdp%7D "\frac{d}{dp}")
-    is a linear transformation from the vector space of polynomials to itself:
-    the derivative of
-    ![5 p\^2 - 3 p + 2](https://latex.codecogs.com/png.latex?5%20p%5E2%20-%203%20p%20%2B%202 "5 p^2 - 3 p + 2")
-    with respect to *p* is
-    ![10 p - 3](https://latex.codecogs.com/png.latex?10%20p%20-%203 "10 p - 3").
-
-    This is a linear transformation because taking the derivative of a scaled
-    polynomial is the scaled derivative of the polynomial; taking the derivative
-    of the sum of two polynomials is the sum of the derivatives of the two
-    polynomials.
-
--   For N-tuples, keeping and dropping certain components are linear
-    transformations. For example,
-    ![f(x,y,z) = (x,y)](https://latex.codecogs.com/png.latex?f%28x%2Cy%2Cz%29%20%3D%20%28x%2Cy%29 "f(x,y,z) = (x,y)")
-    is a linear transformation from the vector space of 3-tuples to the vector
-    space of 2-tuples.
-
-    This is a linear transformation because scaling the original tuple would
-    scale the reuslting tuple, and dropping the components of the sum of two
-    tuples is the same as summing the dropped components.
-
 ### Studying linear transformations
 
 From first glance, a linear transformation's description doesn't look too useful
@@ -354,11 +236,11 @@ f(\mathbf{x}) = x_1 f(\mathbf{v}_1) + x_2 f(\mathbf{v}_2) + x_3 f(\mathbf{v}_3)
 
 Okay, take a moment to pause and take that all in. This is actually a pretty big
 deal! This just means that, to study
-![A](https://latex.codecogs.com/png.latex?A "A"), **all you need to study** is
+![f](https://latex.codecogs.com/png.latex?f "f"), **all you need to study** is
 how ![f](https://latex.codecogs.com/png.latex?f "f") acts on our *basis
-vectors*. If you know how ![A](https://latex.codecogs.com/png.latex?A "A") acts
+vectors*. If you know how ![f](https://latex.codecogs.com/png.latex?f "f") acts
 on our basis vectors of our vector space, that's really "all there is" about
-![A](https://latex.codecogs.com/png.latex?A "A")! Not such a black box anymore!
+![f](https://latex.codecogs.com/png.latex?f "f")! Not such a black box anymore!
 
 That is, if I were to ask you, "Hey, what is
 ![f](https://latex.codecogs.com/png.latex?f "f") like?", *all you'd have to tell
@@ -382,16 +264,6 @@ Those three vectors *completely define*
 In general, we see that *any linear transformation* from an N-dimensional vector
 space can be *completely defined* by N vectors: the N results of that
 transformation on each of N basis vectors we choose.
-
-Looking at the previous example, how does one actually take the derivative of a
-polynomial? Well, you really only need to look at the derivative of
-![1, p, p\^2, p\^3 \\ldots](https://latex.codecogs.com/png.latex?1%2C%20p%2C%20p%5E2%2C%20p%5E3%20%5Cldots "1, p, p^2, p^3 \ldots"),
-etc.; if you know those, then you can compute the derivative of *any*
-polynomial. If I told you that
-![\\frac{d}{dp} p\^n = n p\^{n - 1}](https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdp%7D%20p%5En%20%3D%20n%20p%5E%7Bn%20-%201%7D "\frac{d}{dp} p^n = n p^{n - 1}")
-(the good ol' trusty [power rule](https://en.wikipedia.org/wiki/Power_rule)),
-then you could compute the derivative of *any* polynomial. This is the essence
-of the *[formal derivative](https://en.wikipedia.org/wiki/Formal_derivative)*.
 
 ### Enter the Matrix
 
@@ -523,17 +395,49 @@ matrix is a convenient way to represent and define a *linear transformation*
 from an N-dimensional vector space to a M-dimensional vector space (once we
 agree on the bases in both spaces).
 
-### Examples
+### Example
 
-For our polynomial example, we said that the derivative
-![\\frac{d}{dp}](https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdp%7D "\frac{d}{dp}")
-of a polynomial was a linear transformation. Taking
-![1, p, p\^2, p\^3, \\ldots](https://latex.codecogs.com/png.latex?1%2C%20p%2C%20p%5E2%2C%20p%5E3%2C%20%5Cldots "1, p, p^2, p^3, \ldots")
-as our basis, we were told that we can just look at
-![\\frac{d}{dp} 1, \\frac{d}{dp} p, \\frac{d}{dp} p\^2 \\ldots](https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdp%7D%201%2C%20%5Cfrac%7Bd%7D%7Bdp%7D%20p%2C%20%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E2%20%5Cldots "\frac{d}{dp} 1, \frac{d}{dp} p, \frac{d}{dp} p^2 \ldots")
+Let's look at the vector space of polynomials, which includes vectors like
+![5 p\^2 - 3 p + 2](https://latex.codecogs.com/png.latex?5%20p%5E2%20-%203%20p%20%2B%202 "5 p^2 - 3 p + 2"),
+etc.; scaling a polynomial just means scaling the coefficients, and adding
+together polynomials is just normal polynomial addition.
+
+It's an infinite-dimensional vector space, and one popular basis for this vector
+space is the polynomials
+![1, p, p\^2, p\^3, \\ldots](https://latex.codecogs.com/png.latex?1%2C%20p%2C%20p%5E2%2C%20p%5E3%2C%20%5Cldots "1, p, p^2, p^3, \ldots"),
 etc.
 
-In that case, we have:
+With this choice of basis, we can encode a polynomial like
+![5 p\^2 - 3 p + 2](https://latex.codecogs.com/png.latex?5%20p%5E2%20-%203%20p%20%2B%202 "5 p^2 - 3 p + 2")
+with the notation
+![\\langle 2, -3, 5, 0, 0, \\ldots \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%202%2C%20-3%2C%205%2C%200%2C%200%2C%20%5Cldots%20%5Crangle "\langle 2, -3, 5, 0, 0, \ldots \rangle").
+
+One popular linear transformation on polynomials is the derivative,
+![\\frac{d}{dp}](https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdp%7D "\frac{d}{dp}").
+It takes
+![5 p\^2 - 3 p + 2](https://latex.codecogs.com/png.latex?5%20p%5E2%20-%203%20p%20%2B%202 "5 p^2 - 3 p + 2")
+and returns
+![10 p - 3](https://latex.codecogs.com/png.latex?10%20p%20-%203 "10 p - 3"). In
+the basis we just mentioned, it takes
+![\\langle 2, -3, 5, 0, \\ldots \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%202%2C%20-3%2C%205%2C%200%2C%20%5Cldots%20%5Crangle "\langle 2, -3, 5, 0, \ldots \rangle")
+and returns
+![\\langle -3, 10, 0, 0, \\ldots \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%20-3%2C%2010%2C%200%2C%200%2C%20%5Cldots%20%5Crangle "\langle -3, 10, 0, 0, \ldots \rangle").
+
+Now, if you don't know what a derivative was, or how to compute it -- you're in
+luck! What we just found out was that if you want to completely understand a
+linear transformation, you just need to know *how it works on the basis*! You
+just need to know what
+![\\frac{d}{dp} 1, \\frac{d}{dp} p, \\frac{d}{dp} p\^2, \\frac{d}{dp} p\^3, \\ldots](https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdp%7D%201%2C%20%5Cfrac%7Bd%7D%7Bdp%7D%20p%2C%20%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E2%2C%20%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E3%2C%20%5Cldots "\frac{d}{dp} 1, \frac{d}{dp} p, \frac{d}{dp} p^2, \frac{d}{dp} p^3, \ldots")
+etc. are, and you basically know everything about what the derivative does.
+
+All I need to do is tell you that
+![\\frac{d}{dp} p\^n = n p\^{n - 1}](https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdp%7D%20p%5En%20%3D%20n%20p%5E%7Bn%20-%201%7D "\frac{d}{dp} p^n = n p^{n - 1}")
+(what it does to each basis -- the trusty [power
+rule](https://en.wikipedia.org/wiki/Power_rule)), and now you know everything
+you need to know about derivatives on polynomials. You can basically just skip
+all of calculus!
+
+Let's look at what this linear transformation does to each basis:
 
 ![
 \\begin{aligned}
@@ -591,56 +495,8 @@ basis, the derivative of a polynomial can be represented as the matrix:
 \end{bmatrix}
 ")
 
-For our "drop the last component" linear transformation,
-![f(x,y,z) = (x,y)](https://latex.codecogs.com/png.latex?f%28x%2Cy%2Cz%29%20%3D%20%28x%2Cy%29 "f(x,y,z) = (x,y)"),
-we can interpret things in the
-![(1,0,0), (0,1,0), (0,0,1)](https://latex.codecogs.com/png.latex?%281%2C0%2C0%29%2C%20%280%2C1%2C0%29%2C%20%280%2C0%2C1%29 "(1,0,0), (0,1,0), (0,0,1)")
-basis in the source space and the
-![(1,0), (0,1)](https://latex.codecogs.com/png.latex?%281%2C0%29%2C%20%280%2C1%29 "(1,0), (0,1)")
-basis in the target space, and see that:
-
-![
-\\begin{aligned}
-f(1,0,0) & = (1, 0) & = 1 (1,0) + 0 (0,1)
-    & = \\langle 1, 0 \\rangle \\\\
-f(0,1,0) & = (0, 1) & = 0 (1,0) + 1 (0,1)
-    & = \\langle 0, 1 \\rangle \\\\
-f(0,0,1) & = (0, 0) & = 0 (1,0) + 0 (0,1)
-    & = \\langle 0, 0 \\rangle
-\\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Af%281%2C0%2C0%29%20%26%20%3D%20%281%2C%200%29%20%26%20%3D%201%20%281%2C0%29%20%2B%200%20%280%2C1%29%0A%20%20%20%20%26%20%3D%20%5Clangle%201%2C%200%20%5Crangle%20%5C%5C%0Af%280%2C1%2C0%29%20%26%20%3D%20%280%2C%201%29%20%26%20%3D%200%20%281%2C0%29%20%2B%201%20%280%2C1%29%0A%20%20%20%20%26%20%3D%20%5Clangle%200%2C%201%20%5Crangle%20%5C%5C%0Af%280%2C0%2C1%29%20%26%20%3D%20%280%2C%200%29%20%26%20%3D%200%20%281%2C0%29%20%2B%200%20%280%2C1%29%0A%20%20%20%20%26%20%3D%20%5Clangle%200%2C%200%20%5Crangle%0A%5Cend%7Baligned%7D%0A "
-\begin{aligned}
-f(1,0,0) & = (1, 0) & = 1 (1,0) + 0 (0,1)
-    & = \langle 1, 0 \rangle \\
-f(0,1,0) & = (0, 1) & = 0 (1,0) + 1 (0,1)
-    & = \langle 0, 1 \rangle \\
-f(0,0,1) & = (0, 0) & = 0 (1,0) + 0 (0,1)
-    & = \langle 0, 0 \rangle
-\end{aligned}
-")
-
-So this is the matrix:
-
-![
-f
-\\sim
-\\begin{bmatrix}
-1 & 0 & 0 \\\\
-0 & 1 & 0
-\\end{bmatrix}
-](https://latex.codecogs.com/png.latex?%0Af%0A%5Csim%0A%5Cbegin%7Bbmatrix%7D%0A1%20%26%200%20%26%200%20%5C%5C%0A0%20%26%201%20%26%200%0A%5Cend%7Bbmatrix%7D%0A "
-f
-\sim
-\begin{bmatrix}
-1 & 0 & 0 \\
-0 & 1 & 0
-\end{bmatrix}
-")
-
-As an exercise, try figuring out what the encoding of the same
-drop-last-component linear transformation if we pick different bases for the
-source and target! You'll find that your matrix will, numerically, be different,
-but it will encode the exact same transformation!
+No calculus required! (This is the core idea of the [formal
+derivative](https://en.wikipedia.org/wiki/Formal_derivative) of a polynomial)
 
 Matrix Operations
 -----------------
