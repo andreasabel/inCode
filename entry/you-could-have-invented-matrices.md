@@ -1,7 +1,7 @@
 You Could Have Invented Matrices!
 =================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on March 15, 2018.
 > [Read online!](https://blog.jle.im/entry/you-could-have-invented-matrices.html)
 
 You could have invented matrices!
