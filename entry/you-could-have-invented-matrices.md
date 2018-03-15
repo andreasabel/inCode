@@ -305,11 +305,11 @@ space with a basis to analyze the heck out of any linear transformation, and see
 that all of them actually have to follow some specific pattern.
 
 Let's say that
-![A(\\mathbf{x})](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bx%7D%29 "A(\mathbf{x})")
+![f(\\mathbf{x})](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bx%7D%29 "f(\mathbf{x})")
 is a linear transformation from N-dimensional vector space
 ![V](https://latex.codecogs.com/png.latex?V "V") to M-dimensional vector space
 ![U](https://latex.codecogs.com/png.latex?U "U"). That is,
-![A : V \\rightarrow U](https://latex.codecogs.com/png.latex?A%20%3A%20V%20%5Crightarrow%20U "A : V \rightarrow U").
+![f : V \\rightarrow U](https://latex.codecogs.com/png.latex?f%20%3A%20V%20%5Crightarrow%20U "f : V \rightarrow U").
 
 Because we know that, once we pick a set of basis vectors
 ![\\mathbf{v}\_i](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D_i "\mathbf{v}_i"),
@@ -323,9 +323,9 @@ example, if ![V](https://latex.codecogs.com/png.latex?V "V") is
 three-dimensional:
 
 ![
-A(\\mathbf{x}) = A(x\_1 \\mathbf{v}\_1 + x\_2 \\mathbf{v}\_2 + x\_3 \\mathbf{v}\_3)
-](https://latex.codecogs.com/png.latex?%0AA%28%5Cmathbf%7Bx%7D%29%20%3D%20A%28x_1%20%5Cmathbf%7Bv%7D_1%20%2B%20x_2%20%5Cmathbf%7Bv%7D_2%20%2B%20x_3%20%5Cmathbf%7Bv%7D_3%29%0A "
-A(\mathbf{x}) = A(x_1 \mathbf{v}_1 + x_2 \mathbf{v}_2 + x_3 \mathbf{v}_3)
+f(\\mathbf{x}) = f(x\_1 \\mathbf{v}\_1 + x\_2 \\mathbf{v}\_2 + x\_3 \\mathbf{v}\_3)
+](https://latex.codecogs.com/png.latex?%0Af%28%5Cmathbf%7Bx%7D%29%20%3D%20f%28x_1%20%5Cmathbf%7Bv%7D_1%20%2B%20x_2%20%5Cmathbf%7Bv%7D_2%20%2B%20x_3%20%5Cmathbf%7Bv%7D_3%29%0A "
+f(\mathbf{x}) = f(x_1 \mathbf{v}_1 + x_2 \mathbf{v}_2 + x_3 \mathbf{v}_3)
 ")
 
 Hm. Doesn't seem very insightful, does it?
@@ -337,44 +337,42 @@ But! We can exploit the linearity of
 scales) to rewrite that as:
 
 ![
-A(\\mathbf{x}) = x\_1 A(\\mathbf{v}\_1) + x\_2 A(\\mathbf{v}\_2) + x\_3 A(\\mathbf{v}\_3)
-](https://latex.codecogs.com/png.latex?%0AA%28%5Cmathbf%7Bx%7D%29%20%3D%20x_1%20A%28%5Cmathbf%7Bv%7D_1%29%20%2B%20x_2%20A%28%5Cmathbf%7Bv%7D_2%29%20%2B%20x_3%20A%28%5Cmathbf%7Bv%7D_3%29%0A "
-A(\mathbf{x}) = x_1 A(\mathbf{v}_1) + x_2 A(\mathbf{v}_2) + x_3 A(\mathbf{v}_3)
+f(\\mathbf{x}) = x\_1 f(\\mathbf{v}\_1) + x\_2 f(\\mathbf{v}\_2) + x\_3 f(\\mathbf{v}\_3)
+](https://latex.codecogs.com/png.latex?%0Af%28%5Cmathbf%7Bx%7D%29%20%3D%20x_1%20f%28%5Cmathbf%7Bv%7D_1%29%20%2B%20x_2%20f%28%5Cmathbf%7Bv%7D_2%29%20%2B%20x_3%20f%28%5Cmathbf%7Bv%7D_3%29%0A "
+f(\mathbf{x}) = x_1 f(\mathbf{v}_1) + x_2 f(\mathbf{v}_2) + x_3 f(\mathbf{v}_3)
 ")
 
 Okay, take a moment to pause and take that all in. This is actually a pretty big
 deal! This just means that, to study
 ![A](https://latex.codecogs.com/png.latex?A "A"), **all you need to study** is
-how ![A](https://latex.codecogs.com/png.latex?A "A") acts on our *basis
+how ![f](https://latex.codecogs.com/png.latex?f "f") acts on our *basis
 vectors*. If you know how ![A](https://latex.codecogs.com/png.latex?A "A") acts
 on our basis vectors of our vector space, that's really "all there is" about
 ![A](https://latex.codecogs.com/png.latex?A "A")! Not such a black box anymore!
 
 That is, if I were to ask you, "Hey, what is
-![A](https://latex.codecogs.com/png.latex?A "A") like?", *all you'd have to tell
+![f](https://latex.codecogs.com/png.latex?f "f") like?", *all you'd have to tell
 me* is the result of
-![A(\\mathbf{v}\_1)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bv%7D_1%29 "A(\mathbf{v}_1)"),
-![A(\\mathbf{v}\_2](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bv%7D_2 "A(\mathbf{v}_2"),
+![f(\\mathbf{v}\_1)](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bv%7D_1%29 "f(\mathbf{v}_1)"),
+![f(\\mathbf{v}\_2](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bv%7D_2 "f(\mathbf{v}_2"),
 and
-![A(\\mathbf{v}\_3)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bv%7D_3%29 "A(\mathbf{v}_3)").
+![f(\\mathbf{v}\_3)](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bv%7D_3%29 "f(\mathbf{v}_3)").
 Just give me those three *vectors*, and we *uniquely determine
-![A](https://latex.codecogs.com/png.latex?A "A")*.
+![f](https://latex.codecogs.com/png.latex?f "f")*.
 
 To put in another way, *any linear transformation* from a three-dimensional
 vector space is uniquely characterized and determined by *three vectors*:
-![A(\\mathbf{v}\_1)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bv%7D_1%29 "A(\mathbf{v}_1)"),
-![A(\\mathbf{v}\_2)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bv%7D_2%29 "A(\mathbf{v}_2)"),
+![f(\\mathbf{v}\_1)](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bv%7D_1%29 "f(\mathbf{v}_1)"),
+![f(\\mathbf{v}\_2)](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bv%7D_2%29 "f(\mathbf{v}_2)"),
 and
-![A(\\mathbf{v}\_3)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bv%7D_3%29 "A(\mathbf{v}_3)").
+![f(\\mathbf{v}\_3)](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bv%7D_3%29 "f(\mathbf{v}_3)").
 
 Those three vectors *completely define*
-![A](https://latex.codecogs.com/png.latex?A "A").
+![f](https://latex.codecogs.com/png.latex?f "f").
 
 In general, we see that *any linear transformation* from an N-dimensional vector
 space can be *completely defined* by N vectors: the N results of that
 transformation on each of N basis vectors we choose.
-
-For our previous examples:
 
 Looking at the previous example, how does one actually take the derivative of a
 polynomial? Well, you really only need to look at the derivative of
@@ -391,9 +389,9 @@ the *[formal derivative](https://en.wikipedia.org/wiki/Formal_derivative)*.
 Okay, so how do we "give"/define/state those N vectors?
 
 Well, recall that the result of
-![A(\\mathbf{x})](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bx%7D%29 "A(\mathbf{x})")
+![f(\\mathbf{x})](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bx%7D%29 "f(\mathbf{x})")
 and
-![A(\\mathbf{v}\_1)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bv%7D_1%29 "A(\mathbf{v}_1)"),
+![f(\\mathbf{v}\_1)](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bv%7D_1%29 "f(\mathbf{v}_1)"),
 etc. are *themselves* vectors, in M-dimensional vector space
 ![U](https://latex.codecogs.com/png.latex?U "U"). Let's say that
 ![U](https://latex.codecogs.com/png.latex?U "U") is 2-dimensional, for now.
@@ -409,21 +407,21 @@ and
 is an arbitrary choice of basis vectors.
 
 This means that
-![A(\\mathbf{v}\_1)](https://latex.codecogs.com/png.latex?A%28%5Cmathbf%7Bv%7D_1%29 "A(\mathbf{v}_1)")
+![f(\\mathbf{v}\_1)](https://latex.codecogs.com/png.latex?f%28%5Cmathbf%7Bv%7D_1%29 "f(\mathbf{v}_1)")
 etc. can also all be represented in terms of these basis vectors. So, laying it
 all out:
 
 ![
 \\begin{aligned}
-A(\\mathbf{v}\_1) & = a\_{11} \\mathbf{u}\_1 + a\_{21} \\mathbf{u}\_2 \\\\
-A(\\mathbf{v}\_2) & = a\_{12} \\mathbf{u}\_1 + a\_{22} \\mathbf{u}\_2 \\\\
-A(\\mathbf{v}\_3) & = a\_{13} \\mathbf{u}\_1 + a\_{23} \\mathbf{u}\_2
+f(\\mathbf{v}\_1) & = a\_{11} \\mathbf{u}\_1 + a\_{21} \\mathbf{u}\_2 \\\\
+f(\\mathbf{v}\_2) & = a\_{12} \\mathbf{u}\_1 + a\_{22} \\mathbf{u}\_2 \\\\
+f(\\mathbf{v}\_3) & = a\_{13} \\mathbf{u}\_1 + a\_{23} \\mathbf{u}\_2
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28%5Cmathbf%7Bv%7D_1%29%20%26%20%3D%20a_%7B11%7D%20%5Cmathbf%7Bu%7D_1%20%2B%20a_%7B21%7D%20%5Cmathbf%7Bu%7D_2%20%5C%5C%0AA%28%5Cmathbf%7Bv%7D_2%29%20%26%20%3D%20a_%7B12%7D%20%5Cmathbf%7Bu%7D_1%20%2B%20a_%7B22%7D%20%5Cmathbf%7Bu%7D_2%20%5C%5C%0AA%28%5Cmathbf%7Bv%7D_3%29%20%26%20%3D%20a_%7B13%7D%20%5Cmathbf%7Bu%7D_1%20%2B%20a_%7B23%7D%20%5Cmathbf%7Bu%7D_2%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Af%28%5Cmathbf%7Bv%7D_1%29%20%26%20%3D%20a_%7B11%7D%20%5Cmathbf%7Bu%7D_1%20%2B%20a_%7B21%7D%20%5Cmathbf%7Bu%7D_2%20%5C%5C%0Af%28%5Cmathbf%7Bv%7D_2%29%20%26%20%3D%20a_%7B12%7D%20%5Cmathbf%7Bu%7D_1%20%2B%20a_%7B22%7D%20%5Cmathbf%7Bu%7D_2%20%5C%5C%0Af%28%5Cmathbf%7Bv%7D_3%29%20%26%20%3D%20a_%7B13%7D%20%5Cmathbf%7Bu%7D_1%20%2B%20a_%7B23%7D%20%5Cmathbf%7Bu%7D_2%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-A(\mathbf{v}_1) & = a_{11} \mathbf{u}_1 + a_{21} \mathbf{u}_2 \\
-A(\mathbf{v}_2) & = a_{12} \mathbf{u}_1 + a_{22} \mathbf{u}_2 \\
-A(\mathbf{v}_3) & = a_{13} \mathbf{u}_1 + a_{23} \mathbf{u}_2
+f(\mathbf{v}_1) & = a_{11} \mathbf{u}_1 + a_{21} \mathbf{u}_2 \\
+f(\mathbf{v}_2) & = a_{12} \mathbf{u}_1 + a_{22} \mathbf{u}_2 \\
+f(\mathbf{v}_3) & = a_{13} \mathbf{u}_1 + a_{23} \mathbf{u}_2
 \end{aligned}
 ")
 
@@ -431,15 +429,15 @@ Or, to use our bracket notation from before:
 
 ![
 \\begin{aligned}
-A(\\mathbf{v}\_1) & = \\langle a\_{11}, a\_{21} \\rangle \\\\
-A(\\mathbf{v}\_2) & = \\langle a\_{12}, a\_{22} \\rangle \\\\
-A(\\mathbf{v}\_3) & = \\langle a\_{13}, a\_{23} \\rangle
+f(\\mathbf{v}\_1) & = \\langle a\_{11}, a\_{21} \\rangle \\\\
+f(\\mathbf{v}\_2) & = \\langle a\_{12}, a\_{22} \\rangle \\\\
+f(\\mathbf{v}\_3) & = \\langle a\_{13}, a\_{23} \\rangle
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28%5Cmathbf%7Bv%7D_1%29%20%26%20%3D%20%5Clangle%20a_%7B11%7D%2C%20a_%7B21%7D%20%5Crangle%20%5C%5C%0AA%28%5Cmathbf%7Bv%7D_2%29%20%26%20%3D%20%5Clangle%20a_%7B12%7D%2C%20a_%7B22%7D%20%5Crangle%20%5C%5C%0AA%28%5Cmathbf%7Bv%7D_3%29%20%26%20%3D%20%5Clangle%20a_%7B13%7D%2C%20a_%7B23%7D%20%5Crangle%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Af%28%5Cmathbf%7Bv%7D_1%29%20%26%20%3D%20%5Clangle%20a_%7B11%7D%2C%20a_%7B21%7D%20%5Crangle%20%5C%5C%0Af%28%5Cmathbf%7Bv%7D_2%29%20%26%20%3D%20%5Clangle%20a_%7B12%7D%2C%20a_%7B22%7D%20%5Crangle%20%5C%5C%0Af%28%5Cmathbf%7Bv%7D_3%29%20%26%20%3D%20%5Clangle%20a_%7B13%7D%2C%20a_%7B23%7D%20%5Crangle%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-A(\mathbf{v}_1) & = \langle a_{11}, a_{21} \rangle \\
-A(\mathbf{v}_2) & = \langle a_{12}, a_{22} \rangle \\
-A(\mathbf{v}_3) & = \langle a_{13}, a_{23} \rangle
+f(\mathbf{v}_1) & = \langle a_{11}, a_{21} \rangle \\
+f(\mathbf{v}_2) & = \langle a_{12}, a_{22} \rangle \\
+f(\mathbf{v}_3) & = \langle a_{13}, a_{23} \rangle
 \end{aligned}
 ")
 
@@ -472,15 +470,15 @@ from a 3-dimensional vector space to a 2-dimensional vector space is defined by:
 
 ![
 \\begin{aligned}
-A(\\mathbf{v}\_1) & = a\_{11} \\mathbf{u}\_1 + a\_{21} \\mathbf{u}\_2 \\\\
-A(\\mathbf{v}\_2) & = a\_{12} \\mathbf{u}\_1 + a\_{22} \\mathbf{u}\_2 \\\\
-A(\\mathbf{v}\_3) & = a\_{13} \\mathbf{u}\_1 + a\_{23} \\mathbf{u}\_2
+f(\\mathbf{v}\_1) & = a\_{11} \\mathbf{u}\_1 + a\_{21} \\mathbf{u}\_2 \\\\
+f(\\mathbf{v}\_2) & = a\_{12} \\mathbf{u}\_1 + a\_{22} \\mathbf{u}\_2 \\\\
+f(\\mathbf{v}\_3) & = a\_{13} \\mathbf{u}\_1 + a\_{23} \\mathbf{u}\_2
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AA%28%5Cmathbf%7Bv%7D_1%29%20%26%20%3D%20a_%7B11%7D%20%5Cmathbf%7Bu%7D_1%20%2B%20a_%7B21%7D%20%5Cmathbf%7Bu%7D_2%20%5C%5C%0AA%28%5Cmathbf%7Bv%7D_2%29%20%26%20%3D%20a_%7B12%7D%20%5Cmathbf%7Bu%7D_1%20%2B%20a_%7B22%7D%20%5Cmathbf%7Bu%7D_2%20%5C%5C%0AA%28%5Cmathbf%7Bv%7D_3%29%20%26%20%3D%20a_%7B13%7D%20%5Cmathbf%7Bu%7D_1%20%2B%20a_%7B23%7D%20%5Cmathbf%7Bu%7D_2%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Af%28%5Cmathbf%7Bv%7D_1%29%20%26%20%3D%20a_%7B11%7D%20%5Cmathbf%7Bu%7D_1%20%2B%20a_%7B21%7D%20%5Cmathbf%7Bu%7D_2%20%5C%5C%0Af%28%5Cmathbf%7Bv%7D_2%29%20%26%20%3D%20a_%7B12%7D%20%5Cmathbf%7Bu%7D_1%20%2B%20a_%7B22%7D%20%5Cmathbf%7Bu%7D_2%20%5C%5C%0Af%28%5Cmathbf%7Bv%7D_3%29%20%26%20%3D%20a_%7B13%7D%20%5Cmathbf%7Bu%7D_1%20%2B%20a_%7B23%7D%20%5Cmathbf%7Bu%7D_2%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-A(\mathbf{v}_1) & = a_{11} \mathbf{u}_1 + a_{21} \mathbf{u}_2 \\
-A(\mathbf{v}_2) & = a_{12} \mathbf{u}_1 + a_{22} \mathbf{u}_2 \\
-A(\mathbf{v}_3) & = a_{13} \mathbf{u}_1 + a_{23} \mathbf{u}_2
+f(\mathbf{v}_1) & = a_{11} \mathbf{u}_1 + a_{21} \mathbf{u}_2 \\
+f(\mathbf{v}_2) & = a_{12} \mathbf{u}_1 + a_{22} \mathbf{u}_2 \\
+f(\mathbf{v}_3) & = a_{13} \mathbf{u}_1 + a_{23} \mathbf{u}_2
 \end{aligned}
 ")
 
@@ -492,11 +490,15 @@ and
 We "encode" it as the matrix:
 
 ![
+f
+\\sim
 \\begin{bmatrix}
 a\_{11} & a\_{12} & a\_{13} \\\\
 a\_{21} & a\_{22} & a\_{23}
 \\end{bmatrix}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Bbmatrix%7D%0Aa_%7B11%7D%20%26%20a_%7B12%7D%20%26%20a_%7B13%7D%20%5C%5C%0Aa_%7B21%7D%20%26%20a_%7B22%7D%20%26%20a_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A "
+](https://latex.codecogs.com/png.latex?%0Af%0A%5Csim%0A%5Cbegin%7Bbmatrix%7D%0Aa_%7B11%7D%20%26%20a_%7B12%7D%20%26%20a_%7B13%7D%20%5C%5C%0Aa_%7B21%7D%20%26%20a_%7B22%7D%20%26%20a_%7B23%7D%0A%5Cend%7Bbmatrix%7D%0A "
+f
+\sim
 \begin{bmatrix}
 a_{11} & a_{12} & a_{13} \\
 a_{21} & a_{22} & a_{23}
@@ -519,9 +521,7 @@ For our polynomial example, we said that the derivative
 of a polynomial was a linear transformation. Taking
 ![1, p, p\^2, p\^3, \\ldots](https://latex.codecogs.com/png.latex?1%2C%20p%2C%20p%5E2%2C%20p%5E3%2C%20%5Cldots "1, p, p^2, p^3, \ldots")
 as our basis, we were told that we can just look at
-![\\frac{d}{dp} 1](https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdp%7D%201 "\frac{d}{dp} 1"),
-![\\frac{d}{dp} p](https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdp%7D%20p "\frac{d}{dp} p"),
-![\\frac{d}{dp} p\^2](https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E2 "\frac{d}{dp} p^2"),
+![\\frac{d}{dp} 1, \\frac{d}{dp} p, \\frac{d}{dp} p\^2 \\ldots](https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdp%7D%201%2C%20%5Cfrac%7Bd%7D%7Bdp%7D%20p%2C%20%5Cfrac%7Bd%7D%7Bdp%7D%20p%5E2%20%5Cldots "\frac{d}{dp} 1, \frac{d}{dp} p, \frac{d}{dp} p^2 \ldots")
 etc.
 
 In that case, we have:
@@ -549,6 +549,8 @@ And so, in that
 basis, the derivative of a polynomial can be represented as the matrix:
 
 ![
+\\frac{d}{dp}
+\\sim
 \\begin{bmatrix}
 0 & 1 & 0 & 0 & 0 & \\ldots \\\\
 0 & 0 & 2 & 0 & 0 & \\ldots \\\\
@@ -556,7 +558,9 @@ basis, the derivative of a polynomial can be represented as the matrix:
 0 & 0 & 0 & 0 & 4 & \\ldots \\\\
 \\vdots & \\vdots & \\vdots & \\vdots & \\vdots & \\ddots
 \\end{bmatrix}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Bbmatrix%7D%0A0%20%26%201%20%26%200%20%26%200%20%26%200%20%26%20%5Cldots%20%5C%5C%0A0%20%26%200%20%26%202%20%26%200%20%26%200%20%26%20%5Cldots%20%5C%5C%0A0%20%26%200%20%26%200%20%26%203%20%26%200%20%26%20%5Cldots%20%5C%5C%0A0%20%26%200%20%26%200%20%26%200%20%26%204%20%26%20%5Cldots%20%5C%5C%0A%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cddots%0A%5Cend%7Bbmatrix%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cfrac%7Bd%7D%7Bdp%7D%0A%5Csim%0A%5Cbegin%7Bbmatrix%7D%0A0%20%26%201%20%26%200%20%26%200%20%26%200%20%26%20%5Cldots%20%5C%5C%0A0%20%26%200%20%26%202%20%26%200%20%26%200%20%26%20%5Cldots%20%5C%5C%0A0%20%26%200%20%26%200%20%26%203%20%26%200%20%26%20%5Cldots%20%5C%5C%0A0%20%26%200%20%26%200%20%26%200%20%26%204%20%26%20%5Cldots%20%5C%5C%0A%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cddots%0A%5Cend%7Bbmatrix%7D%0A "
+\frac{d}{dp}
+\sim
 \begin{bmatrix}
 0 & 1 & 0 & 0 & 0 & \ldots \\
 0 & 0 & 2 & 0 & 0 & \ldots \\
@@ -591,11 +595,15 @@ f(0,0,1) & = (0, 0) & = 0 (1,0) + 0 (0,1)
 So this is the matrix:
 
 ![
+f
+\\sim
 \\begin{bmatrix}
 1 & 0 & 0 \\\\
 0 & 1 & 0
 \\end{bmatrix}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Bbmatrix%7D%0A1%20%26%200%20%26%200%20%5C%5C%0A0%20%26%201%20%26%200%0A%5Cend%7Bbmatrix%7D%0A "
+](https://latex.codecogs.com/png.latex?%0Af%0A%5Csim%0A%5Cbegin%7Bbmatrix%7D%0A1%20%26%200%20%26%200%20%5C%5C%0A0%20%26%201%20%26%200%0A%5Cend%7Bbmatrix%7D%0A "
+f
+\sim
 \begin{bmatrix}
 1 & 0 & 0 \\
 0 & 1 & 0
@@ -634,11 +642,15 @@ Anyway, with these funky basis sets, we can encode the *same* "drop the last
 component" linear transformation as:
 
 ![
+f
+\\sim
 \\begin{bmatrix}
 -\\frac{1}{2} & \\frac{1}{4} &  \\frac{1}{4} \\\\
  \\frac{3}{4} & \\frac{5}{8} & -\\frac{5}{8}0
 \\end{bmatrix}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Bbmatrix%7D%0A-%5Cfrac%7B1%7D%7B2%7D%20%26%20%5Cfrac%7B1%7D%7B4%7D%20%26%20%20%5Cfrac%7B1%7D%7B4%7D%20%5C%5C%0A%20%5Cfrac%7B3%7D%7B4%7D%20%26%20%5Cfrac%7B5%7D%7B8%7D%20%26%20-%5Cfrac%7B5%7D%7B8%7D0%0A%5Cend%7Bbmatrix%7D%0A "
+](https://latex.codecogs.com/png.latex?%0Af%0A%5Csim%0A%5Cbegin%7Bbmatrix%7D%0A-%5Cfrac%7B1%7D%7B2%7D%20%26%20%5Cfrac%7B1%7D%7B4%7D%20%26%20%20%5Cfrac%7B1%7D%7B4%7D%20%5C%5C%0A%20%5Cfrac%7B3%7D%7B4%7D%20%26%20%5Cfrac%7B5%7D%7B8%7D%20%26%20-%5Cfrac%7B5%7D%7B8%7D0%0A%5Cend%7Bbmatrix%7D%0A "
+f
+\sim
 \begin{bmatrix}
 -\frac{1}{2} & \frac{1}{4} &  \frac{1}{4} \\
  \frac{3}{4} & \frac{5}{8} & -\frac{5}{8}0
