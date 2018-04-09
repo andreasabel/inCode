@@ -1,0 +1,245 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+    \usepackage{xltxtra,xunicode}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{\usepackage{microtype}}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex]{hyperref}
+\else
+  \usepackage[unicode=true]{hyperref}
+\fi
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            pdfauthor={Justin Le},
+            pdftitle={A Purely Functional Typed Approach to Trainable Models},
+            colorlinks=true,
+            citecolor=blue,
+            urlcolor=blue,
+            linkcolor=magenta,
+            pdfborder={0 0 0}}
+\urlstyle{same}  % don't use monospace font for urls
+% Make links footnotes instead of hotlinks:
+\renewcommand{\href}[2]{#2\footnote{\url{#1}}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\setcounter{secnumdepth}{0}
+
+\title{A Purely Functional Typed Approach to Trainable Models}
+\author{Justin Le}
+
+\begin{document}
+\maketitle
+
+\emph{Originally posted on
+\textbf{\href{https://blog.jle.im/entry/purely-functional-typed-models.html}{in
+Code}}.}
+
+With the release of
+\href{http://hackage.haskell.org/package/backprop}{backprop}, I've been
+exploring the space of parameterized models of all sorts, from linear and
+logistic regression and other statistical models to artificial neural networks,
+feed-forward and recurrent (stateful). I wanted to see to what extent we can
+really apply automatic differentiation and iterative gradient decent-based
+training to all of these different models.
+
+I'm starting to see a picture unifying all of these models, painted in the
+language of purely typed functional programming. I'm already applying these to
+models I'm using in real life and in my research, and I thought I'd take some
+time to put my thoughts to writing in case anyone else finds these illuminating
+or useful.
+
+As a big picture, I really believe that a purely functional typed approach is
+\emph{the} way to move forward in the future for models like artificial neural
+networks -- and that one day, object-oriented and imperative approaches will
+seem quaint.
+
+I'm not the first person to attempt to build a conceptual framework for these
+types of models in a purely functional typed sense --
+\href{http://colah.github.io/posts/2015-09-NN-Types-FP/}{Christopher Olah's
+famous post} comes to mind, and is definitely worth a read. However, Olah's post
+is more of an abstract piece; the approach I am describing here can be applied
+\emph{today}, to start building and \emph{discovering} effective models and
+training them. And I have code! :)
+
+The code in this post is written in Haskell, using the
+\href{http://hackage.haskell.org/package/backprop}{backprop},
+\href{http://hackage.haskell.org/package/hmatrix}{hmatrix} (with
+\href{http://hackage.haskell.org/package/hmatrix-backprop}{hmatrix-backprop}),
+and \href{http://hackage.haskell.org/package/vector-sized}{vector-sized}
+libraries.
+
+\hypertarget{essence-of-a-model}{%
+\section{Essence of a Model}\label{essence-of-a-model}}
+
+For the purpose of this post, a \emph{parameterized model} is a function from
+some input ``question'' (predictor, independent variable) to some output
+``answer'' (predictand, dependent variable)
+
+Notationally, we might write it as a function:
+
+{[} f\_p(x) =
+y{]}(https://latex.codecogs.com/png.latex?\%0Af\_p\%28x\%29\%20\%3D\%20y\%0A "
+f\_p(x) = y ``)
+
+The important thing is that, for every choice of \emph{parameterization}
+\includegraphics{https://latex.codecogs.com/png.latex?p}, we get a
+\emph{different function}
+\includegraphics{https://latex.codecogs.com/png.latex?f_p\%28x\%29}.
+
+For example, you might want to write a model that, when given an email, outputs
+whether or not that email is spam.
+
+The parameterization \emph{p} is some piece of data that we tweak to produce a
+different \includegraphics{https://latex.codecogs.com/png.latex?f_p\%28x\%29}.
+So, ``training'' (or ``learning'', or ``estimating'') a model is a process of
+picking the \includegraphics{https://latex.codecogs.com/png.latex?p} that gives
+the ``correct'' function
+\includegraphics{https://latex.codecogs.com/png.latex?f_p\%28x\%29} --- that is,
+the function that accurately predicts spam or whatever thing you are trying to
+predict.
+
+For example, for linear regression, you are trying to ``fit'' your
+\includegraphics{https://latex.codecogs.com/png.latex?\%28x\%2C\%20y\%29} data
+points to some function
+\includegraphics{https://latex.codecogs.com/png.latex?f\%28x\%29\%20\%3D\%20\%5Cbeta\%20\%2B\%20\%5Calpha\%20x}.
+The \emph{parameters} are
+\includegraphics{https://latex.codecogs.com/png.latex?\%5Calpha} and
+\includegraphics{https://latex.codecogs.com/png.latex?\%5Cbeta}, the
+\emph{input} is \includegraphics{https://latex.codecogs.com/png.latex?x}, and
+the \emph{output} is
+\includegraphics{https://latex.codecogs.com/png.latex?\%5Cbeta\%20\%2B\%20\%5Calpha\%20x}.
+
+\hypertarget{optimizing-models-with-observations}{%
+\subsection{Optimizing Models with
+Observations}\label{optimizing-models-with-observations}}
+
+Something interesting happens if we flip the script. What if, instead of
+\includegraphics{https://latex.codecogs.com/png.latex?f_p\%28x\%29}, we talked
+about \includegraphics{https://latex.codecogs.com/png.latex?f_x\%28p\%29}? That
+is, we fix the input and vary the parameter, and see what type of outputs we get
+for the same output while we vary the parameter?
+
+If we have an ``expected output'' for our input, then one thing we can do is
+look at \includegraphics{https://latex.codecogs.com/png.latex?f_p\%28x\%29} and
+see when the result is close to
+\includegraphics{https://latex.codecogs.com/png.latex?y_x} (the expected output
+of our model when given
+\includegraphics{https://latex.codecogs.com/png.latex?x}).
+
+In fact, we can turn this into an optimization problem by trying to pick
+\includegraphics{https://latex.codecogs.com/png.latex?p} that minimizes the
+difference between
+\includegraphics{https://latex.codecogs.com/png.latex?f_x\%28p\%29} and
+\includegraphics{https://latex.codecogs.com/png.latex?y_x}. We can say that our
+model with parameter \includegraphics{https://latex.codecogs.com/png.latex?p}
+predicts \includegraphics{https://latex.codecogs.com/png.latex?y_x} the best
+when we minimize:
+
+{[} (f\_x(p) -
+y\_x)\^{}2{]}(https://latex.codecogs.com/png.latex?\%0A\%28f\_x\%28p\%29\%20-\%20y\_x\%29\%5E2\%0A
+" (f\_x(p) - y\_x)\^{}2 ``)
+
+If we minimize the squared error between the result of picking the parameter and
+the expected result, we find the best parameters for that given input!
+
+In general, picking the best parameter for the model involves picking the
+\includegraphics{https://latex.codecogs.com/png.latex?p} that minimizes the
+relationship
+
+{[} \textbackslash{}text\{loss\}(y\_x,
+f\_x(p)){]}(https://latex.codecogs.com/png.latex?\%0A\%5Ctext\%7Bloss\%7D\%28y\_x\%2C\%20f\_x\%28p\%29\%29\%0A
+" \text{loss}(y\_x, f\_x(p)) ``)
+
+Where
+\includegraphics{https://latex.codecogs.com/png.latex?\%5Ctext\%7Bloss\%7D\%28target\%2C\%20result\%29\%20\%3A\%20\%5Cmathbb\%7BR\%7D}
+gives a measure of ``how badly'' the model result differs from the expected
+target. Common loss functions include squared error, cross-entropy, etc.
+
+This gives us a supervised way to train any model: if we have enough
+observations
+(\includegraphics{https://latex.codecogs.com/png.latex?\%28x\%2C\%20y_x\%29}
+pairs) we can just pick a
+\includegraphics{https://latex.codecogs.com/png.latex?p} that does its best to
+make the loss between all observations as small as possible.
+
+\hypertarget{stochastic-gradient-descent}{%
+\subsection{Stochastic Gradient Descent}\label{stochastic-gradient-descent}}
+
+If our model is a \emph{differentiable function}, then we have a nice tool we
+can use: \emph{stochastic gradient descent}.
+
+That is, we can always calculate the \emph{gradient} of the loss function with
+respect to our parameters. This gives us the direction we can ``nudge'' our
+parameters to make the loss bigger or smaller.
+
+That is, if we get the gradient of the loss with respect to
+\includegraphics{https://latex.codecogs.com/png.latex?p}:
+
+{[} \textbackslash{}nabla\_p \textbackslash{}text\{loss\}(f\_x(p),
+y\_x){]}(https://latex.codecogs.com/png.latex?\%0A\%5Cnabla\_p\%20\%5Ctext\%7Bloss\%7D\%28f\_x\%28p\%29\%2C\%20y\_x\%29\%0A
+" \nabla\_p \text{loss}(f\_x(p), y\_x) ``)
+
+We now have a nice way to ``train'' our model:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Start with an initial guess at the parameter
+\item
+  Look at a random
+  \includegraphics{https://latex.codecogs.com/png.latex?\%28x\%2C\%20y_x\%29}
+  observation pair.
+\item
+  Compute the gradient
+  \includegraphics{https://latex.codecogs.com/png.latex?\%5Cnabla_p\%20\%5Ctext\%7Bloss\%7D\%28f_x\%28p\%29\%2C\%20y_x\%29}
+  of our current \includegraphics{https://latex.codecogs.com/png.latex?p}, which
+  tells us a direction we can ``nudge''
+  \includegraphics{https://latex.codecogs.com/png.latex?p} in to make the loss
+  smaller.
+\item
+  Nudge \includegraphics{https://latex.codecogs.com/png.latex?p} in that
+  direction
+\item
+  Pick a new
+  \includegraphics{https://latex.codecogs.com/png.latex?\%28x\%2C\%20y_x\%29}
+  observation pair.
+\end{enumerate}
+
+With every new observation, we see how we can nudge the parameter to make the
+model more accurate, and then we perform that nudge.
+
+\hypertarget{gradient-descent}{%
+\subsection{Gradient Descent}\label{gradient-descent}}
+
+\end{document}
