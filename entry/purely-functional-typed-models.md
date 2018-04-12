@@ -210,7 +210,7 @@ instead:
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L41-L42
 
 type Model p a b = forall s. Reifies s W
-                => BVar s p -> BVar s a -> BVar s b
+                 => BVar s p -> BVar s a -> BVar s b
 ```
 
 We can write a simple linear regression model:
@@ -268,7 +268,8 @@ squaredErrorGrad f x targ = gradBP $ \p ->
 We use `constVar :: a -> BVar s a`, to lift a normal value to a `BVar` holding
 that value, since our model `f` takes `BVar`s.
 
-And finally, we can train it using stochastic gradient descent:
+And finally, we can train it using stochastic gradient descent, with just a
+simple fold over all observations:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L60-L66
@@ -281,3 +282,18 @@ trainModel
     -> p                -- ^ updated parameter guess
 trainModel f = foldl' $ \p (x,y) -> p - 0.1 * squaredErrorGrad f x y p
 ```
+
+Let's train our linear regression model to fit the points `(1,1)`, `(2,3)`,
+`(3,5)`, `(4,7)`, and `(5,9)`! This should follow
+![f(x) = 2 x - 1](https://latex.codecogs.com/png.latex?f%28x%29%20%3D%202%20x%20-%201 "f(x) = 2 x - 1"),
+or
+![\\alpha = -1,\\, \\beta = 2](https://latex.codecogs.com/png.latex?%5Calpha%20%3D%20-1%2C%5C%2C%20%5Cbeta%20%3D%202 "\alpha = -1,\, \beta = 2"):
+
+``` {.haskell}
+ghci> samps = [(1,1),(2,3),(3,5),(4,7),(5,9)]
+ghci> trainModel linReg (T2 0 0) (concat (replicate 1000 samps))
+T2 (-1.0000000000000024) 2.0000000000000036
+```
+
+Neat! After going through all of those observations a thousand times, the model
+nudges itself all the way to the right parameters to fit our model!

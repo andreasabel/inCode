@@ -322,7 +322,7 @@ containing those values) instead:
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L41-L42}
 
 \KeywordTok{type} \DataTypeTok{Model}\NormalTok{ p a b }\FunctionTok{=}\NormalTok{ forall s}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ s }\DataTypeTok{W}
-                \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ s p }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s a }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s b}
+                 \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ s p }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s a }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s b}
 \end{Highlighting}
 \end{Shaded}
 
@@ -386,7 +386,8 @@ We use \texttt{constVar\ ::\ a\ -\textgreater{}\ BVar\ s\ a}, to lift a normal
 value to a \texttt{BVar} holding that value, since our model \texttt{f} takes
 \texttt{BVar}s.
 
-And finally, we can train it using stochastic gradient descent:
+And finally, we can train it using stochastic gradient descent, with just a
+simple fold over all observations:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -401,5 +402,23 @@ And finally, we can train it using stochastic gradient descent:
 \NormalTok{trainModel f }\FunctionTok{=}\NormalTok{ foldl' }\FunctionTok{$}\NormalTok{ \textbackslash{}p (x,y) }\OtherTok{->}\NormalTok{ p }\FunctionTok{-} \FloatTok{0.1} \FunctionTok{*}\NormalTok{ squaredErrorGrad f x y p}
 \end{Highlighting}
 \end{Shaded}
+
+Let's train our linear regression model to fit the points \texttt{(1,1)},
+\texttt{(2,3)}, \texttt{(3,5)}, \texttt{(4,7)}, and \texttt{(5,9)}! This should
+follow
+\includegraphics{https://latex.codecogs.com/png.latex?f\%28x\%29\%20\%3D\%202\%20x\%20-\%201},
+or
+\includegraphics{https://latex.codecogs.com/png.latex?\%5Calpha\%20\%3D\%20-1\%2C\%5C\%2C\%20\%5Cbeta\%20\%3D\%202}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ samps }\FunctionTok{=}\NormalTok{ [(}\DecValTok{1}\NormalTok{,}\DecValTok{1}\NormalTok{),(}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{),(}\DecValTok{3}\NormalTok{,}\DecValTok{5}\NormalTok{),(}\DecValTok{4}\NormalTok{,}\DecValTok{7}\NormalTok{),(}\DecValTok{5}\NormalTok{,}\DecValTok{9}\NormalTok{)]}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ trainModel linReg (}\DataTypeTok{T2} \DecValTok{0} \DecValTok{0}\NormalTok{) (concat (replicate }\DecValTok{1000}\NormalTok{ samps))}
+\DataTypeTok{T2}\NormalTok{ (}\FunctionTok{-}\FloatTok{1.0000000000000024}\NormalTok{) }\FloatTok{2.0000000000000036}
+\end{Highlighting}
+\end{Shaded}
+
+Neat! After going through all of those observations a thousand times, the model
+nudges itself all the way to the right parameters to fit our model!
 
 \end{document}
