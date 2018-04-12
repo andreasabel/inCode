@@ -207,7 +207,7 @@ having it work with `BVar s p` and `BVar s a` (`BVar`s containing those values)
 instead:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L41-L42
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L42-L43
 
 type Model p a b = forall s. Reifies s W
                  => BVar s p -> BVar s a -> BVar s b
@@ -222,7 +222,7 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 ")
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L44-L48
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L45-L49
 
 linReg :: Model (T2 Double Double) Double Double
 linReg ab x = b * x + a
@@ -238,7 +238,7 @@ second item with `^^. _2`, and then talk about the function
 We can *run* `linReg` using `evalBP2`:
 
 ``` {.haskell}
-ghci> evalBP2 linReg (T2 0.3 -0.1) 5
+ghci> evalBP2 linReg (T2 0.3 (-0.1)) 5
 -0.2        -- (-0.1) * 5 + 0.3
 ```
 
@@ -252,7 +252,7 @@ if we identify a loss function:
 ")
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L50-L58
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L51-L59
 
 squaredErrorGrad
     :: (Num p, Num b)
@@ -272,7 +272,7 @@ And finally, we can train it using stochastic gradient descent, with just a
 simple fold over all observations:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L60-L66
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L61-L67
 
 trainModel
     :: (Fractional p, Num b)
@@ -297,3 +297,56 @@ T2 (-1.0000000000000024) 2.0000000000000036
 
 Neat! After going through all of those observations a thousand times, the model
 nudges itself all the way to the right parameters to fit our model!
+
+The important takeaway is that all we specified was the *function* of the model
+itself. The training part all follows automatically!
+
+### Feed-forward Neural Network
+
+Here's another example: a feed-forward neural network.
+
+We can start with a single layer. The model here will also take two parameters
+(a weight matrix and a bias vector), take in a vector, and output a vector.
+
+``` {.haskell}
+import Numeric.LinearAlgebra.Static.Backprop
+
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L75-L84
+
+logistic :: Floating a => a -> a
+logistic x = 1 / (1 + exp (-x))
+
+feedForward
+    :: (KnownNat i, KnownNat o)
+    => Model (T2 (L o i) (R o)) (R i) (R o)
+feedForward wb x = logistic (w #> x + b)
+  where
+    w = wb ^^. _1
+    b = wb ^^. _2
+```
+
+Here we use the `L n m` (an n-by-m matrix) and `R n` (an n-vector) types from
+the *hmatrix* library, and `#>` for backprop-aware matrix-vector multiplication.
+
+Let's try training a model to learn the simple logical "AND":
+
+``` {.haskell}
+ghci> import qualified Numeric.LinearAlgebra.Static as H
+ghci> samps = [(H.vec2 0 0, 0), (H.vec2 1 0, 0), (H.vec2 0 1, 0), (H.vec2 1 1, 1)]
+ghci> trained = trainModel feedForward (T2 0 0) (concat (replicate 10000 samps))
+```
+
+We have our trained parameters! Let's see if they actually model "AND"?
+
+``` {.haskell}
+ghci> evalBP2 feedForward trained (H.vec2 0 0)
+(7.468471910660985e-5 :: R 1)
+ghci> evalBP2 feedForward trained (H.vec2 1 0)
+(3.816205998697482e-2 :: R 1)
+ghci> evalBP2 feedForward trained (H.vec2 0 1)
+(3.817490115313559e-2 :: R 1)
+ghci> evalBP2 feedForward trained (H.vec2 1 1)
+(0.9547178031665701 :: R 1)
+```
+
+Close enough!

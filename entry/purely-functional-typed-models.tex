@@ -319,7 +319,7 @@ containing those values) instead:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L41-L42}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L42-L43}
 
 \KeywordTok{type} \DataTypeTok{Model}\NormalTok{ p a b }\FunctionTok{=}\NormalTok{ forall s}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ s }\DataTypeTok{W}
                  \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ s p }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s a }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s b}
@@ -335,7 +335,7 @@ x +
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L44-L48}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L45-L49}
 
 \OtherTok{linReg ::} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{T2} \DataTypeTok{Double} \DataTypeTok{Double}\NormalTok{) }\DataTypeTok{Double} \DataTypeTok{Double}
 \NormalTok{linReg ab x }\FunctionTok{=}\NormalTok{ b }\FunctionTok{*}\NormalTok{ x }\FunctionTok{+}\NormalTok{ a}
@@ -354,7 +354,7 @@ We can \emph{run} \texttt{linReg} using \texttt{evalBP2}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 linReg (}\DataTypeTok{T2} \FloatTok{0.3} \FunctionTok{-}\FloatTok{0.1}\NormalTok{) }\DecValTok{5}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 linReg (}\DataTypeTok{T2} \FloatTok{0.3}\NormalTok{ (}\FunctionTok{-}\FloatTok{0.1}\NormalTok{)) }\DecValTok{5}
 \FunctionTok{-}\FloatTok{0.2}        \CommentTok{-- (-0.1) * 5 + 0.3}
 \end{Highlighting}
 \end{Shaded}
@@ -368,7 +368,7 @@ y\_x)\^{}2{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cnabla\_p\%20\%28f\_x\
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L50-L58}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L51-L59}
 
 \NormalTok{squaredErrorGrad}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Num}\NormalTok{ p, }\DataTypeTok{Num}\NormalTok{ b)}
@@ -391,7 +391,7 @@ simple fold over all observations:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L60-L66}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L61-L67}
 
 \NormalTok{trainModel}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Fractional}\NormalTok{ p, }\DataTypeTok{Num}\NormalTok{ b)}
@@ -420,5 +420,66 @@ or
 
 Neat! After going through all of those observations a thousand times, the model
 nudges itself all the way to the right parameters to fit our model!
+
+The important takeaway is that all we specified was the \emph{function} of the
+model itself. The training part all follows automatically!
+
+\hypertarget{feed-forward-neural-network}{%
+\subsection{Feed-forward Neural Network}\label{feed-forward-neural-network}}
+
+Here's another example: a feed-forward neural network.
+
+We can start with a single layer. The model here will also take two parameters
+(a weight matrix and a bias vector), take in a vector, and output a vector.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{import} \DataTypeTok{Numeric.LinearAlgebra.Static.Backprop}
+
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L75-L84}
+
+\OtherTok{logistic ::} \DataTypeTok{Floating}\NormalTok{ a }\OtherTok{=>}\NormalTok{ a }\OtherTok{->}\NormalTok{ a}
+\NormalTok{logistic x }\FunctionTok{=} \DecValTok{1} \FunctionTok{/}\NormalTok{ (}\DecValTok{1} \FunctionTok{+}\NormalTok{ exp (}\FunctionTok{-}\NormalTok{x))}
+
+\NormalTok{feedForward}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
+    \OtherTok{=>} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{T2}\NormalTok{ (}\DataTypeTok{L}\NormalTok{ o i) (}\DataTypeTok{R}\NormalTok{ o)) (}\DataTypeTok{R}\NormalTok{ i) (}\DataTypeTok{R}\NormalTok{ o)}
+\NormalTok{feedForward wb x }\FunctionTok{=}\NormalTok{ logistic (w }\FunctionTok{#>}\NormalTok{ x }\FunctionTok{+}\NormalTok{ b)}
+  \KeywordTok{where}
+\NormalTok{    w }\FunctionTok{=}\NormalTok{ wb }\FunctionTok{^^.}\NormalTok{ _1}
+\NormalTok{    b }\FunctionTok{=}\NormalTok{ wb }\FunctionTok{^^.}\NormalTok{ _2}
+\end{Highlighting}
+\end{Shaded}
+
+Here we use the \texttt{L\ n\ m} (an n-by-m matrix) and \texttt{R\ n} (an
+n-vector) types from the \emph{hmatrix} library, and \texttt{\#\textgreater{}}
+for backprop-aware matrix-vector multiplication.
+
+Let's try training a model to learn the simple logical ``AND'':
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{import} \KeywordTok{qualified} \DataTypeTok{Numeric.LinearAlgebra.Static} \KeywordTok{as} \DataTypeTok{H}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ samps }\FunctionTok{=}\NormalTok{ [(H.vec2 }\DecValTok{0} \DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{), (H.vec2 }\DecValTok{1} \DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{), (H.vec2 }\DecValTok{0} \DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{), (H.vec2 }\DecValTok{1} \DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{)]}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ trained }\FunctionTok{=}\NormalTok{ trainModel feedForward (}\DataTypeTok{T2} \DecValTok{0} \DecValTok{0}\NormalTok{) (concat (replicate }\DecValTok{10000}\NormalTok{ samps))}
+\end{Highlighting}
+\end{Shaded}
+
+We have our trained parameters! Let's see if they actually model ``AND''?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 feedForward trained (H.vec2 }\DecValTok{0} \DecValTok{0}\NormalTok{)}
+\NormalTok{(}\FloatTok{7.468471910660985e-5}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 feedForward trained (H.vec2 }\DecValTok{1} \DecValTok{0}\NormalTok{)}
+\NormalTok{(}\FloatTok{3.816205998697482e-2}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 feedForward trained (H.vec2 }\DecValTok{0} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{3.817490115313559e-2}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 feedForward trained (H.vec2 }\DecValTok{1} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{0.9547178031665701}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Close enough!
 
 \end{document}
