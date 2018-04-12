@@ -166,7 +166,8 @@ the ``correct'' function
 the function that accurately predicts spam or whatever thing you are trying to
 predict.
 
-For example, for linear regression, you are trying to ``fit'' your
+For example, for \href{https://en.wikipedia.org/wiki/Linear_regression}{linear
+regression}, you are trying to ``fit'' your
 \includegraphics{https://latex.codecogs.com/png.latex?\%28x\%2C\%20y\%29} data
 points to some function
 \includegraphics{https://latex.codecogs.com/png.latex?f\%28x\%29\%20\%3D\%20\%5Cbeta\%20\%2B\%20\%5Calpha\%20x}.
@@ -319,7 +320,7 @@ containing those values) instead:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L42-L43}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L43-L44}
 
 \KeywordTok{type} \DataTypeTok{Model}\NormalTok{ p a b }\FunctionTok{=}\NormalTok{ forall s}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ s }\DataTypeTok{W}
                  \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ s p }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s a }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s b}
@@ -335,7 +336,7 @@ x +
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L45-L49}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L46-L50}
 
 \OtherTok{linReg ::} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{T2} \DataTypeTok{Double} \DataTypeTok{Double}\NormalTok{) }\DataTypeTok{Double} \DataTypeTok{Double}
 \NormalTok{linReg ab x }\FunctionTok{=}\NormalTok{ b }\FunctionTok{*}\NormalTok{ x }\FunctionTok{+}\NormalTok{ a}
@@ -368,7 +369,7 @@ y\_x)\^{}2{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cnabla\_p\%20\%28f\_x\
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L51-L59}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L52-L60}
 
 \NormalTok{squaredErrorGrad}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Num}\NormalTok{ p, }\DataTypeTok{Num}\NormalTok{ b)}
@@ -391,7 +392,7 @@ simple fold over all observations:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L61-L67}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L62-L68}
 
 \NormalTok{trainModel}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Fractional}\NormalTok{ p, }\DataTypeTok{Num}\NormalTok{ b)}
@@ -435,16 +436,15 @@ We can start with a single layer. The model here will also take two parameters
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{import} \DataTypeTok{Numeric.LinearAlgebra.Static.Backprop}
-
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L75-L84}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L76-L85}
 
 \OtherTok{logistic ::} \DataTypeTok{Floating}\NormalTok{ a }\OtherTok{=>}\NormalTok{ a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{logistic x }\FunctionTok{=} \DecValTok{1} \FunctionTok{/}\NormalTok{ (}\DecValTok{1} \FunctionTok{+}\NormalTok{ exp (}\FunctionTok{-}\NormalTok{x))}
 
-\NormalTok{feedForward}
+\NormalTok{feedForwardLog}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
     \OtherTok{=>} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{T2}\NormalTok{ (}\DataTypeTok{L}\NormalTok{ o i) (}\DataTypeTok{R}\NormalTok{ o)) (}\DataTypeTok{R}\NormalTok{ i) (}\DataTypeTok{R}\NormalTok{ o)}
-\NormalTok{feedForward wb x }\FunctionTok{=}\NormalTok{ logistic (w }\FunctionTok{#>}\NormalTok{ x }\FunctionTok{+}\NormalTok{ b)}
+\NormalTok{feedForwardLog wb x }\FunctionTok{=}\NormalTok{ logistic (w }\FunctionTok{#>}\NormalTok{ x }\FunctionTok{+}\NormalTok{ b)}
   \KeywordTok{where}
 \NormalTok{    w }\FunctionTok{=}\NormalTok{ wb }\FunctionTok{^^.}\NormalTok{ _1}
 \NormalTok{    b }\FunctionTok{=}\NormalTok{ wb }\FunctionTok{^^.}\NormalTok{ _2}
@@ -462,7 +462,7 @@ Let's try training a model to learn the simple
 \begin{Highlighting}[]
 \NormalTok{ghci}\FunctionTok{>} \KeywordTok{import} \KeywordTok{qualified} \DataTypeTok{Numeric.LinearAlgebra.Static} \KeywordTok{as} \DataTypeTok{H}
 \NormalTok{ghci}\FunctionTok{>}\NormalTok{ samps }\FunctionTok{=}\NormalTok{ [(H.vec2 }\DecValTok{0} \DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{), (H.vec2 }\DecValTok{1} \DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{), (H.vec2 }\DecValTok{0} \DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{), (H.vec2 }\DecValTok{1} \DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{)]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ trained }\FunctionTok{=}\NormalTok{ trainModel feedForward (}\DataTypeTok{T2} \DecValTok{0} \DecValTok{0}\NormalTok{) (concat (replicate }\DecValTok{10000}\NormalTok{ samps))}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ trained }\FunctionTok{=}\NormalTok{ trainModel feedForwardLog (}\DataTypeTok{T2} \DecValTok{0} \DecValTok{0}\NormalTok{) (concat (replicate }\DecValTok{10000}\NormalTok{ samps))}
 \end{Highlighting}
 \end{Shaded}
 
@@ -470,17 +470,136 @@ We have our trained parameters! Let's see if they actually model ``AND''?
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 feedForward trained (H.vec2 }\DecValTok{0} \DecValTok{0}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 feedForwardLog trained (H.vec2 }\DecValTok{0} \DecValTok{0}\NormalTok{)}
 \NormalTok{(}\FloatTok{7.468471910660985e-5}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 feedForward trained (H.vec2 }\DecValTok{1} \DecValTok{0}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 feedForwardLog trained (H.vec2 }\DecValTok{1} \DecValTok{0}\NormalTok{)}
 \NormalTok{(}\FloatTok{3.816205998697482e-2}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 feedForward trained (H.vec2 }\DecValTok{0} \DecValTok{1}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 feedForwardLog trained (H.vec2 }\DecValTok{0} \DecValTok{1}\NormalTok{)}
 \NormalTok{(}\FloatTok{3.817490115313559e-2}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 feedForward trained (H.vec2 }\DecValTok{1} \DecValTok{1}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 feedForwardLog trained (H.vec2 }\DecValTok{1} \DecValTok{1}\NormalTok{)}
 \NormalTok{(}\FloatTok{0.9547178031665701}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 Close enough!
+
+\hypertarget{functional-composition}{%
+\subsection{Functional composition}\label{functional-composition}}
+
+Because our functions are simply just normal functions, we can create new,
+complex models from simpler ones using just functional composition.
+
+For example, we can map the result of a model to create a new model. Here, we
+compose \texttt{linReg\ ab} (linear regression with parameter \texttt{ab}) with
+the logistic function to create a
+\emph{\href{https://en.wikipedia.org/wiki/Logistic_regression}{logistic
+regression}} model.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L101-L102}
+
+\OtherTok{logReg ::} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{T2} \DataTypeTok{Double} \DataTypeTok{Double}\NormalTok{) }\DataTypeTok{Double} \DataTypeTok{Double}
+\NormalTok{logReg ab }\FunctionTok{=}\NormalTok{ logistic }\FunctionTok{.}\NormalTok{ linReg ab}
+\end{Highlighting}
+\end{Shaded}
+
+We could have even written our \texttt{feedForwardLog} without its activation
+function:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L79-L85}
+
+\NormalTok{feedForwardLog}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
+    \OtherTok{=>} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{T2}\NormalTok{ (}\DataTypeTok{L}\NormalTok{ o i) (}\DataTypeTok{R}\NormalTok{ o)) (}\DataTypeTok{R}\NormalTok{ i) (}\DataTypeTok{R}\NormalTok{ o)}
+\NormalTok{feedForwardLog wb x }\FunctionTok{=}\NormalTok{ logistic (w }\FunctionTok{#>}\NormalTok{ x }\FunctionTok{+}\NormalTok{ b)}
+  \KeywordTok{where}
+\NormalTok{    w }\FunctionTok{=}\NormalTok{ wb }\FunctionTok{^^.}\NormalTok{ _1}
+\NormalTok{    b }\FunctionTok{=}\NormalTok{ wb }\FunctionTok{^^.}\NormalTok{ _2}
+\end{Highlighting}
+\end{Shaded}
+
+And now we can swap out activation functions using simple function composition:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L112-L115}
+
+\NormalTok{feedForwardLog'}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
+    \OtherTok{=>} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{T2}\NormalTok{ (}\DataTypeTok{L}\NormalTok{ o i) (}\DataTypeTok{R}\NormalTok{ o)) (}\DataTypeTok{R}\NormalTok{ i) (}\DataTypeTok{R}\NormalTok{ o)}
+\NormalTok{feedForwardLog' wb }\FunctionTok{=}\NormalTok{ logistic }\FunctionTok{.}\NormalTok{ feedForward wb}
+\end{Highlighting}
+\end{Shaded}
+
+Maybe even a softmax classifier!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L117-L125}
+
+\OtherTok{softMax ::}\NormalTok{ (}\DataTypeTok{Reifies}\NormalTok{ s }\DataTypeTok{W}\NormalTok{, }\DataTypeTok{KnownNat}\NormalTok{ n) }\OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ s (}\DataTypeTok{R}\NormalTok{ n) }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s (}\DataTypeTok{R}\NormalTok{ n)}
+\NormalTok{softMax x }\FunctionTok{=}\NormalTok{ konst (}\DecValTok{1} \FunctionTok{/}\NormalTok{ sumElements expx) }\FunctionTok{*}\NormalTok{ expx}
+  \KeywordTok{where}
+\NormalTok{    expx }\FunctionTok{=}\NormalTok{ exp x}
+
+\NormalTok{feedForwardSoftMax}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
+    \OtherTok{=>} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{T2}\NormalTok{ (}\DataTypeTok{L}\NormalTok{ o i) (}\DataTypeTok{R}\NormalTok{ o)) (}\DataTypeTok{R}\NormalTok{ i) (}\DataTypeTok{R}\NormalTok{ o)}
+\NormalTok{feedForwardSoftMax wb }\FunctionTok{=}\NormalTok{ logistic }\FunctionTok{.}\NormalTok{ feedForward wb}
+\end{Highlighting}
+\end{Shaded}
+
+We can even write a function to \emph{compose} two models, keeping their two
+original parameters separate:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L127-L136}
+
+\NormalTok{(}\FunctionTok{.<}\NormalTok{)}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Num}\NormalTok{ p, }\DataTypeTok{Num}\NormalTok{ q)}
+    \OtherTok{=>} \DataTypeTok{Model}\NormalTok{ p b c}
+    \OtherTok{->} \DataTypeTok{Model}\NormalTok{ q a b}
+    \OtherTok{->} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{T2}\NormalTok{ p q) a c}
+\NormalTok{(f }\FunctionTok{.<}\NormalTok{ g) pq }\FunctionTok{=}\NormalTok{ f p }\FunctionTok{.}\NormalTok{ g q}
+  \KeywordTok{where}
+\NormalTok{    p }\FunctionTok{=}\NormalTok{ pq }\FunctionTok{^^.}\NormalTok{ _1}
+\NormalTok{    q }\FunctionTok{=}\NormalTok{ pq }\FunctionTok{^^.}\NormalTok{ _2}
+\KeywordTok{infixr} \DecValTok{8} \FunctionTok{.<}
+\end{Highlighting}
+\end{Shaded}
+
+And now we have a way to chain models! Maybe even make a multiple-layer neural
+network? Let's see if we can get a two-layer model to learn
+\href{https://en.wikipedia.org/wiki/Exclusive_or}{XOR}!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ samps }\FunctionTok{=}\NormalTok{ [(H.vec2 }\DecValTok{0} \DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{), (H.vec2 }\DecValTok{1} \DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{), (H.vec2 }\DecValTok{0} \DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{), (H.vec2 }\DecValTok{1} \DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{)]}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ twoLayer }\FunctionTok{=}\NormalTok{ feedForwardLog' }\FunctionTok{@}\DecValTok{4} \FunctionTok{@}\DecValTok{1} \FunctionTok{.<}\NormalTok{ feedForwardLog' }\FunctionTok{@}\DecValTok{2} \FunctionTok{@}\DecValTok{4}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ trained }\FunctionTok{=}\NormalTok{ trainModel twoLayer p0 (concat (replicate }\DecValTok{10000}\NormalTok{ samps))}
+\end{Highlighting}
+\end{Shaded}
+
+Trained. Now, does it model ``XOR''?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 twoLayer trained (H.vec2 }\DecValTok{0} \DecValTok{0}\NormalTok{)}
+\NormalTok{(}\FloatTok{3.0812844350410647e-2}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 twoLayer trained (H.vec2 }\DecValTok{1} \DecValTok{0}\NormalTok{)}
+\NormalTok{(}\FloatTok{0.959153369985914}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 twoLayer trained (H.vec2 }\DecValTok{0} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{0.9834757090696419}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ evalBP2 twoLayer trained (H.vec2 }\DecValTok{1} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{3.6846467867668035e-2}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Not bad! We just built a working neural network using normal function
+composition and simple combinators.
 
 \end{document}

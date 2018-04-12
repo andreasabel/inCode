@@ -65,7 +65,9 @@ function ![f\_p(x)](https://latex.codecogs.com/png.latex?f_p%28x%29 "f_p(x)")
 --- that is, the function that accurately predicts spam or whatever thing you
 are trying to predict.
 
-For example, for linear regression, you are trying to "fit" your
+For example, for [linear
+regression](https://en.wikipedia.org/wiki/Linear_regression), you are trying to
+"fit" your
 ![(x, y)](https://latex.codecogs.com/png.latex?%28x%2C%20y%29 "(x, y)") data
 points to some function
 ![f(x) = \\beta + \\alpha x](https://latex.codecogs.com/png.latex?f%28x%29%20%3D%20%5Cbeta%20%2B%20%5Calpha%20x "f(x) = \beta + \alpha x").
@@ -207,7 +209,7 @@ having it work with `BVar s p` and `BVar s a` (`BVar`s containing those values)
 instead:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L42-L43
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L43-L44
 
 type Model p a b = forall s. Reifies s W
                  => BVar s p -> BVar s a -> BVar s b
@@ -222,7 +224,7 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 ")
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L45-L49
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L46-L50
 
 linReg :: Model (T2 Double Double) Double Double
 linReg ab x = b * x + a
@@ -252,7 +254,7 @@ if we identify a loss function:
 ")
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L51-L59
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L52-L60
 
 squaredErrorGrad
     :: (Num p, Num b)
@@ -272,7 +274,7 @@ And finally, we can train it using stochastic gradient descent, with just a
 simple fold over all observations:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L61-L67
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L62-L68
 
 trainModel
     :: (Fractional p, Num b)
@@ -310,16 +312,15 @@ We can start with a single layer. The model here will also take two parameters
 
 ``` {.haskell}
 import Numeric.LinearAlgebra.Static.Backprop
-
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L75-L84
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L76-L85
 
 logistic :: Floating a => a -> a
 logistic x = 1 / (1 + exp (-x))
 
-feedForward
+feedForwardLog
     :: (KnownNat i, KnownNat o)
     => Model (T2 (L o i) (R o)) (R i) (R o)
-feedForward wb x = logistic (w #> x + b)
+feedForwardLog wb x = logistic (w #> x + b)
   where
     w = wb ^^. _1
     b = wb ^^. _2
@@ -334,20 +335,122 @@ Let's try training a model to learn the simple [logical
 ``` {.haskell}
 ghci> import qualified Numeric.LinearAlgebra.Static as H
 ghci> samps = [(H.vec2 0 0, 0), (H.vec2 1 0, 0), (H.vec2 0 1, 0), (H.vec2 1 1, 1)]
-ghci> trained = trainModel feedForward (T2 0 0) (concat (replicate 10000 samps))
+ghci> trained = trainModel feedForwardLog (T2 0 0) (concat (replicate 10000 samps))
 ```
 
 We have our trained parameters! Let's see if they actually model "AND"?
 
 ``` {.haskell}
-ghci> evalBP2 feedForward trained (H.vec2 0 0)
+ghci> evalBP2 feedForwardLog trained (H.vec2 0 0)
 (7.468471910660985e-5 :: R 1)
-ghci> evalBP2 feedForward trained (H.vec2 1 0)
+ghci> evalBP2 feedForwardLog trained (H.vec2 1 0)
 (3.816205998697482e-2 :: R 1)
-ghci> evalBP2 feedForward trained (H.vec2 0 1)
+ghci> evalBP2 feedForwardLog trained (H.vec2 0 1)
 (3.817490115313559e-2 :: R 1)
-ghci> evalBP2 feedForward trained (H.vec2 1 1)
+ghci> evalBP2 feedForwardLog trained (H.vec2 1 1)
 (0.9547178031665701 :: R 1)
 ```
 
 Close enough!
+
+### Functional composition
+
+Because our functions are simply just normal functions, we can create new,
+complex models from simpler ones using just functional composition.
+
+For example, we can map the result of a model to create a new model. Here, we
+compose `linReg ab` (linear regression with parameter `ab`) with the logistic
+function to create a *[logistic
+regression](https://en.wikipedia.org/wiki/Logistic_regression)* model.
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L101-L102
+
+logReg :: Model (T2 Double Double) Double Double
+logReg ab = logistic . linReg ab
+```
+
+We could have even written our `feedForwardLog` without its activation function:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L79-L85
+
+feedForwardLog
+    :: (KnownNat i, KnownNat o)
+    => Model (T2 (L o i) (R o)) (R i) (R o)
+feedForwardLog wb x = logistic (w #> x + b)
+  where
+    w = wb ^^. _1
+    b = wb ^^. _2
+```
+
+And now we can swap out activation functions using simple function composition:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L112-L115
+
+feedForwardLog'
+    :: (KnownNat i, KnownNat o)
+    => Model (T2 (L o i) (R o)) (R i) (R o)
+feedForwardLog' wb = logistic . feedForward wb
+```
+
+Maybe even a softmax classifier!
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L117-L125
+
+softMax :: (Reifies s W, KnownNat n) => BVar s (R n) -> BVar s (R n)
+softMax x = konst (1 / sumElements expx) * expx
+  where
+    expx = exp x
+
+feedForwardSoftMax
+    :: (KnownNat i, KnownNat o)
+    => Model (T2 (L o i) (R o)) (R i) (R o)
+feedForwardSoftMax wb = logistic . feedForward wb
+```
+
+We can even write a function to *compose* two models, keeping their two original
+parameters separate:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L127-L136
+
+(.<)
+    :: (Num p, Num q)
+    => Model p b c
+    -> Model q a b
+    -> Model (T2 p q) a c
+(f .< g) pq = f p . g q
+  where
+    p = pq ^^. _1
+    q = pq ^^. _2
+infixr 8 .<
+```
+
+And now we have a way to chain models! Maybe even make a multiple-layer neural
+network? Let's see if we can get a two-layer model to learn
+[XOR](https://en.wikipedia.org/wiki/Exclusive_or)!
+
+``` {.haskell}
+ghci> samps = [(H.vec2 0 0, 0), (H.vec2 1 0, 1), (H.vec2 0 1, 1), (H.vec2 1 1, 1)]
+ghci> twoLayer = feedForwardLog' @4 @1 .< feedForwardLog' @2 @4
+ghci> trained = trainModel twoLayer p0 (concat (replicate 10000 samps))
+```
+
+Trained. Now, does it model "XOR"?
+
+``` {.haskell}
+ghci> evalBP2 twoLayer trained (H.vec2 0 0)
+(3.0812844350410647e-2 :: R 1)
+ghci> evalBP2 twoLayer trained (H.vec2 1 0)
+(0.959153369985914 :: R 1)
+ghci> evalBP2 twoLayer trained (H.vec2 0 1)
+(0.9834757090696419 :: R 1)
+ghci> evalBP2 twoLayer trained (H.vec2 1 1)
+(3.6846467867668035e-2 :: R 1)
+```
+
+Not bad! We just built a working neural network using normal function
+composition and simple combinators.
