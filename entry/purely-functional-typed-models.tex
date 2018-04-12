@@ -559,16 +559,16 @@ original parameters separate:
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L127-L136}
 
-\NormalTok{(}\FunctionTok{.<}\NormalTok{)}
+\NormalTok{(}\FunctionTok{<~}\NormalTok{)}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Num}\NormalTok{ p, }\DataTypeTok{Num}\NormalTok{ q)}
-    \OtherTok{=>} \DataTypeTok{Model}\NormalTok{ p b c}
-    \OtherTok{->} \DataTypeTok{Model}\NormalTok{ q a b}
+    \OtherTok{=>} \DataTypeTok{Model}\NormalTok{     p    b c}
+    \OtherTok{->} \DataTypeTok{Model}\NormalTok{       q  a b}
     \OtherTok{->} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{T2}\NormalTok{ p q) a c}
-\NormalTok{(f }\FunctionTok{.<}\NormalTok{ g) pq }\FunctionTok{=}\NormalTok{ f p }\FunctionTok{.}\NormalTok{ g q}
+\NormalTok{(f }\FunctionTok{<~}\NormalTok{ g) pq }\FunctionTok{=}\NormalTok{ f p }\FunctionTok{.}\NormalTok{ g q}
   \KeywordTok{where}
 \NormalTok{    p }\FunctionTok{=}\NormalTok{ pq }\FunctionTok{^^.}\NormalTok{ _1}
 \NormalTok{    q }\FunctionTok{=}\NormalTok{ pq }\FunctionTok{^^.}\NormalTok{ _2}
-\KeywordTok{infixr} \DecValTok{8} \FunctionTok{.<}
+\KeywordTok{infixr} \DecValTok{8} \FunctionTok{<~}
 \end{Highlighting}
 \end{Shaded}
 
@@ -576,10 +576,22 @@ And now we have a way to chain models! Maybe even make a multiple-layer neural
 network? Let's see if we can get a two-layer model to learn
 \href{https://en.wikipedia.org/wiki/Exclusive_or}{XOR}!
 
+Our model is simple:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ twoLayer }\FunctionTok{=}\NormalTok{ feedForwardLog' }\FunctionTok{@}\DecValTok{4} \FunctionTok{@}\DecValTok{1} \FunctionTok{<~}\NormalTok{ feedForwardLog' }\FunctionTok{@}\DecValTok{2} \FunctionTok{@}\DecValTok{4}
+\end{Highlighting}
+\end{Shaded}
+
+Note we use type application syntax to specify the input/output dimensions of
+\texttt{feedForwardLog\textquotesingle{}}.
+
+We can train it on sample points:
+
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{ghci}\FunctionTok{>}\NormalTok{ samps }\FunctionTok{=}\NormalTok{ [(H.vec2 }\DecValTok{0} \DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{), (H.vec2 }\DecValTok{1} \DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{), (H.vec2 }\DecValTok{0} \DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{), (H.vec2 }\DecValTok{1} \DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{)]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ twoLayer }\FunctionTok{=}\NormalTok{ feedForwardLog' }\FunctionTok{@}\DecValTok{4} \FunctionTok{@}\DecValTok{1} \FunctionTok{.<}\NormalTok{ feedForwardLog' }\FunctionTok{@}\DecValTok{2} \FunctionTok{@}\DecValTok{4}
 \NormalTok{ghci}\FunctionTok{>}\NormalTok{ trained }\FunctionTok{=}\NormalTok{ trainModel twoLayer p0 (concat (replicate }\DecValTok{10000}\NormalTok{ samps))}
 \end{Highlighting}
 \end{Shaded}
@@ -599,7 +611,11 @@ Trained. Now, does it model ``XOR''?
 \end{Highlighting}
 \end{Shaded}
 
-Not bad! We just built a working neural network using normal function
-composition and simple combinators.
+Not bad!
+
+We just built a working neural network using normal function composition and
+simple combinators. No need for any objects or mutability or fancy explicit
+graphs. Just pure, typed functions! Why would you ever bring anything imperative
+into this?
 
 \end{document}

@@ -417,25 +417,35 @@ parameters separate:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L127-L136
 
-(.<)
+(<~)
     :: (Num p, Num q)
-    => Model p b c
-    -> Model q a b
+    => Model     p    b c
+    -> Model       q  a b
     -> Model (T2 p q) a c
-(f .< g) pq = f p . g q
+(f <~ g) pq = f p . g q
   where
     p = pq ^^. _1
     q = pq ^^. _2
-infixr 8 .<
+infixr 8 <~
 ```
 
 And now we have a way to chain models! Maybe even make a multiple-layer neural
 network? Let's see if we can get a two-layer model to learn
 [XOR](https://en.wikipedia.org/wiki/Exclusive_or)!
 
+Our model is simple:
+
+``` {.haskell}
+ghci> twoLayer = feedForwardLog' @4 @1 <~ feedForwardLog' @2 @4
+```
+
+Note we use type application syntax to specify the input/output dimensions of
+`feedForwardLog'`.
+
+We can train it on sample points:
+
 ``` {.haskell}
 ghci> samps = [(H.vec2 0 0, 0), (H.vec2 1 0, 1), (H.vec2 0 1, 1), (H.vec2 1 1, 1)]
-ghci> twoLayer = feedForwardLog' @4 @1 .< feedForwardLog' @2 @4
 ghci> trained = trainModel twoLayer p0 (concat (replicate 10000 samps))
 ```
 
@@ -452,5 +462,9 @@ ghci> evalBP2 twoLayer trained (H.vec2 1 1)
 (3.6846467867668035e-2 :: R 1)
 ```
 
-Not bad! We just built a working neural network using normal function
-composition and simple combinators.
+Not bad!
+
+We just built a working neural network using normal function composition and
+simple combinators. No need for any objects or mutability or fancy explicit
+graphs. Just pure, typed functions! Why would you ever bring anything imperative
+into this?
