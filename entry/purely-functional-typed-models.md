@@ -84,9 +84,9 @@ just a "partially applied"
 that function, it has type:
 
 ![
-f : P \\cross A \\rightarrow B
-](https://latex.codecogs.com/png.latex?%0Af%20%3A%20P%20%5Ccross%20A%20%5Crightarrow%20B%0A "
-f : P \cross A \rightarrow B
+f : P \\times A \\rightarrow B
+](https://latex.codecogs.com/png.latex?%0Af%20%3A%20P%20%5Ctimes%20A%20%5Crightarrow%20B%0A "
+f : P \times A \rightarrow B
 ")
 
 If we [curry](https://en.wikipedia.org/wiki/Currying) this, we get the original
@@ -235,7 +235,9 @@ linReg ab x = b * x + a
 
 Here `T2 Double Double` is a tuple of two `Double`s, which contains the
 parameters (`a` and `b`). We extract the first item using `^^. _1` and the
-second item with `^^. _2`, and then talk about the function
+second item with `^^. _2`, and then talk about the actual function, whose result
+is `b * x + a`. Note that, because `BVar`s have a `Num` instance, we can use all
+our normal numeric operators, and the results are still differentiable.
 
 We can *run* `linReg` using `evalBP2`:
 
@@ -248,9 +250,9 @@ But the neat thing is that we can also get the gradient of the parameters, too,
 if we identify a loss function:
 
 ![
-\\nabla\_p (f\_x(p) - y\_x)\^2
-](https://latex.codecogs.com/png.latex?%0A%5Cnabla_p%20%28f_x%28p%29%20-%20y_x%29%5E2%0A "
-\nabla_p (f_x(p) - y_x)^2
+\\nabla\_p (f(p, x) - y\_x)\^2
+](https://latex.codecogs.com/png.latex?%0A%5Cnabla_p%20%28f%28p%2C%20x%29%20-%20y_x%29%5E2%0A "
+\nabla_p (f(p, x) - y_x)^2
 ")
 
 ``` {.haskell}
@@ -465,12 +467,12 @@ ghci> evalBP2 twoLayer trained (H.vec2 1 1)
 
 Not bad!
 
+### Possibilities
+
 We just built a working neural network using normal function composition and
 simple combinators. No need for any objects or mutability or fancy explicit
 graphs. Just pure, typed functions! Why would you ever bring anything imperative
 into this?
-
-### Possibilities
 
 You can build a lot with just these tools alone. By using primitive models and
 the various combinators, you can create autoencoders, nonlinear regressions,
@@ -479,3 +481,6 @@ complex "graphs" of networks that fork and re-combine with themselves.
 
 The nice thing is that these are all just regular (Rank-2) functions, so...you
 have two models? Just compose their functions like normal functions!
+
+Time Series Models
+------------------
