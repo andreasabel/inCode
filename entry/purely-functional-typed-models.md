@@ -328,7 +328,8 @@ feedForward wb x = logistic (w #> x + b)
 Here we use the `L n m` (an n-by-m matrix) and `R n` (an n-vector) types from
 the *hmatrix* library, and `#>` for backprop-aware matrix-vector multiplication.
 
-Let's try training a model to learn the simple logical "AND":
+Let's try training a model to learn the simple [logical
+"AND"](https://en.wikipedia.org/wiki/Logical_conjunction):
 
 ``` {.haskell}
 ghci> import qualified Numeric.LinearAlgebra.Static as H
