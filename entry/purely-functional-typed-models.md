@@ -395,7 +395,8 @@ feedForwardLog'
 feedForwardLog' wb = logistic . feedForward wb
 ```
 
-Maybe even a softmax classifier!
+Maybe even a [softmax](https://en.wikipedia.org/wiki/Softmax_function)
+classifier!
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L117-L125
@@ -468,3 +469,13 @@ We just built a working neural network using normal function composition and
 simple combinators. No need for any objects or mutability or fancy explicit
 graphs. Just pure, typed functions! Why would you ever bring anything imperative
 into this?
+
+### Possibilities
+
+You can build a lot with just these tools alone. By using primitive models and
+the various combinators, you can create autoencoders, nonlinear regressions,
+convolutional neural networks, multi-layered neural networks...you can create
+complex "graphs" of networks that fork and re-combine with themselves.
+
+The nice thing is that these are all just regular (Rank-2) functions, so...you
+have two models? Just compose their functions like normal functions!
