@@ -75,6 +75,27 @@ The *parameters* are
 ![x](https://latex.codecogs.com/png.latex?x "x"), and the *output* is
 ![\\beta + \\alpha x](https://latex.codecogs.com/png.latex?%5Cbeta%20%2B%20%5Calpha%20x "\beta + \alpha x").
 
+As it so happens, a
+![f\_p(x)](https://latex.codecogs.com/png.latex?f_p%28x%29 "f_p(x)") is really
+just a "partially applied"
+![f(p,x)](https://latex.codecogs.com/png.latex?f%28p%2Cx%29 "f(p,x)"). Imagining
+that function, it has type:
+
+![
+f : P \\cross A \\rightarrow B
+](https://latex.codecogs.com/png.latex?%0Af%20%3A%20P%20%5Ccross%20A%20%5Crightarrow%20B%0A "
+f : P \cross A \rightarrow B
+")
+
+If we [curry](https://en.wikipedia.org/wiki/Currying) this, we get the original
+model representation we talked about:
+
+![
+f : P \\rightarrow (A \\rightarrow B)
+](https://latex.codecogs.com/png.latex?%0Af%20%3A%20P%20%5Crightarrow%20%28A%20%5Crightarrow%20B%29%0A "
+f : P \rightarrow (A \rightarrow B)
+")
+
 ### Optimizing Models with Observations
 
 Something interesting happens if we flip the script. What if, instead of
@@ -116,7 +137,7 @@ In general, picking the best parameter for the model involves picking the
 ")
 
 Where
-![\\text{loss}(target, result) : \\mathbb{R}](https://latex.codecogs.com/png.latex?%5Ctext%7Bloss%7D%28target%2C%20result%29%20%3A%20%5Cmathbb%7BR%7D "\text{loss}(target, result) : \mathbb{R}")
+![\\text{loss} : B \\times B \\rightarrow \\mathbb{R}](https://latex.codecogs.com/png.latex?%5Ctext%7Bloss%7D%20%3A%20B%20%5Ctimes%20B%20%5Crightarrow%20%5Cmathbb%7BR%7D "\text{loss} : B \times B \rightarrow \mathbb{R}")
 gives a measure of "how badly" the model result differs from the expected
 target. Common loss functions include squared error, cross-entropy, etc.
 
@@ -129,7 +150,7 @@ does its best to make the loss between all observations as small as possible.
 ### Stochastic Gradient Descent
 
 If our model is a *differentiable function*, then we have a nice tool we can
-use: *stochastic gradient descent*.
+use: *stochastic gradient descent* (SGD).
 
 That is, we can always calculate the *gradient* of the loss function with
 respect to our parameters. This gives us the direction we can "nudge" our
@@ -164,4 +185,99 @@ We now have a nice way to "train" our model:
 With every new observation, we see how we can nudge the parameter to make the
 model more accurate, and then we perform that nudge.
 
-### Gradient Descent
+Functional Implementation
+-------------------------
+
+This naturally lends itself well to a functional implementation. That's because,
+in this light, a model is nothing more than a function. And a model that is
+trainable using SGD is simply a differentiable function.
+
+Using the *[backprop](http://hackage.haskell.org/package/backprop)* library, we
+can easily write functions to be differentiable.
+
+Let's write the type of our models. A model from type `a` to type `b` with
+parameter `p` can be written as
+
+``` {.haskell}
+type Model p a b = p -> a -> b
+```
+
+Not normally differentiable, but we can make it a differentiable function by
+having it work with `BVar s p` and `BVar s a` (`BVar`s containing those values)
+instead:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L41-L42
+
+type Model p a b = forall s. Reifies s W
+                => BVar s p -> BVar s a -> BVar s b
+```
+
+We can write a simple linear regression model:
+
+![
+f\_{\\alpha, \\beta}(x) = \\beta x + \\alpha
+](https://latex.codecogs.com/png.latex?%0Af_%7B%5Calpha%2C%20%5Cbeta%7D%28x%29%20%3D%20%5Cbeta%20x%20%2B%20%5Calpha%0A "
+f_{\alpha, \beta}(x) = \beta x + \alpha
+")
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L44-L48
+
+linReg :: Model (T2 Double Double) Double Double
+linReg ab x = b * x + a
+  where
+    a = ab ^^. _1
+    b = ab ^^. _2
+```
+
+Here `T2 Double Double` is a tuple of two `Double`s, which contains the
+parameters (`a` and `b`). We extract the first item using `^^. _1` and the
+second item with `^^. _2`, and then talk about the function
+
+We can *run* `linReg` using `evalBP2`:
+
+``` {.haskell}
+ghci> evalBP2 linReg (T2 0.3 -0.1) 5
+-0.2        -- (-0.1) * 5 + 0.3
+```
+
+But the neat thing is that we can also get the gradient of the parameters, too,
+if we identify a loss function:
+
+![
+\\nabla\_p (f\_x(p) - y\_x)\^2
+](https://latex.codecogs.com/png.latex?%0A%5Cnabla_p%20%28f_x%28p%29%20-%20y_x%29%5E2%0A "
+\nabla_p (f_x(p) - y_x)^2
+")
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L50-L58
+
+squaredErrorGrad
+    :: (Num p, Num b)
+    => Model p a b      -- ^ Model
+    -> a                -- ^ Observed input
+    -> b                -- ^ Observed output
+    -> p                -- ^ Parameter guess
+    -> p                -- ^ Gradient
+squaredErrorGrad f x targ = gradBP $ \p ->
+    (f p (constVar x) - constVar targ) ^ 2
+```
+
+We use `constVar :: a -> BVar s a`, to lift a normal value to a `BVar` holding
+that value, since our model `f` takes `BVar`s.
+
+And finally, we can train it using stochastic gradient descent:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L60-L66
+
+trainModel
+    :: (Fractional p, Num b)
+    => Model p a b      -- ^ model to train
+    -> p                -- ^ initial parameter guess
+    -> [(a,b)]          -- ^ list of observations
+    -> p                -- ^ updated parameter guess
+trainModel f = foldl' $ \p (x,y) -> p - 0.1 * squaredErrorGrad f x y p
+```
