@@ -182,7 +182,12 @@ As it so happens, a
 \includegraphics{https://latex.codecogs.com/png.latex?f_p\%28x\%29} is really
 just a ``partially applied''
 \includegraphics{https://latex.codecogs.com/png.latex?f\%28p\%2Cx\%29}.
-Imagining that function, it has type:
+Imagining that function, it has type:\footnote{Those familiar with Haskell
+  idioms might recognize this type as being isomorphic to
+  \texttt{a\ -\textgreater{}\ Reader\ p\ b} (or
+  \texttt{Kleisli\ (Reader\ p)\ a\ b}) which roughly represents the notion of
+  ``A function from \texttt{a} to \texttt{b} with an `environment' of type
+  \texttt{p}''.}
 
 {[} f : P \textbackslash{}times A \textbackslash{}rightarrow
 B{]}(https://latex.codecogs.com/png.latex?\%0Af\%20\%3A\%20P\%20\%5Ctimes\%20A\%20\%5Crightarrow\%20B\%0A
@@ -438,7 +443,7 @@ We can start with a single layer. The model here will also take two parameters
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{import} \DataTypeTok{Numeric.LinearAlgebra.Static.Backprop}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L76-L85}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L76-L93}
 
 \OtherTok{logistic ::} \DataTypeTok{Floating}\NormalTok{ a }\OtherTok{=>}\NormalTok{ a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{logistic x }\FunctionTok{=} \DecValTok{1} \FunctionTok{/}\NormalTok{ (}\DecValTok{1} \FunctionTok{+}\NormalTok{ exp (}\FunctionTok{-}\NormalTok{x))}
@@ -499,7 +504,7 @@ regression}} model.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L101-L102}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L109-L110}
 
 \OtherTok{logReg ::} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{T2} \DataTypeTok{Double} \DataTypeTok{Double}\NormalTok{) }\DataTypeTok{Double} \DataTypeTok{Double}
 \NormalTok{logReg ab }\FunctionTok{=}\NormalTok{ logistic }\FunctionTok{.}\NormalTok{ linReg ab}
@@ -513,10 +518,10 @@ function:
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L79-L85}
 
-\NormalTok{feedForwardLog}
+\NormalTok{feedForward}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
     \OtherTok{=>} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{T2}\NormalTok{ (}\DataTypeTok{L}\NormalTok{ o i) (}\DataTypeTok{R}\NormalTok{ o)) (}\DataTypeTok{R}\NormalTok{ i) (}\DataTypeTok{R}\NormalTok{ o)}
-\NormalTok{feedForwardLog wb x }\FunctionTok{=}\NormalTok{ logistic (w }\FunctionTok{#>}\NormalTok{ x }\FunctionTok{+}\NormalTok{ b)}
+\NormalTok{feedForward wb x }\FunctionTok{=}\NormalTok{ w }\FunctionTok{#>}\NormalTok{ x }\FunctionTok{+}\NormalTok{ b}
   \KeywordTok{where}
 \NormalTok{    w }\FunctionTok{=}\NormalTok{ wb }\FunctionTok{^^.}\NormalTok{ _1}
 \NormalTok{    b }\FunctionTok{=}\NormalTok{ wb }\FunctionTok{^^.}\NormalTok{ _2}
@@ -635,5 +640,102 @@ functions!
 
 \hypertarget{time-series-models}{%
 \section{Time Series Models}\label{time-series-models}}
+
+Not all models are ``question and answer'' models, however -- some models
+represent a time series. This is usually notated as:
+
+As a generalization, we can talk about models that are intended to represent
+time series:
+
+{[} f\_p(x,t) =
+y{]}(https://latex.codecogs.com/png.latex?\%0Af\_p\%28x\%2Ct\%29\%20\%3D\%20y\%0A
+" f\_p(x,t) = y ``)
+
+Which says, given an input and a time, return an output based on both. The point
+of this is to let us have recurrent relationships, like for autoregressive
+models:
+
+{[} \textbackslash{}text\{AR\}\_p(x,t) = \textbackslash{}epsilon\_t +
+\textbackslash{}phi\_1 \textbackslash{}text\{AR\}\_p(x, t-1) +
+\textbackslash{}phi\_2 \textbackslash{}text\{AR\}\_p(x, t-2) +
+\textbackslash{}ldots \textbackslash{}phi\_p \textbackslash{}text\{AR\}\_p(x,
+t-p){]}(https://latex.codecogs.com/png.latex?\%0A\%5Ctext\%7BAR\%7D\_p\%28x\%2Ct\%29\%20\%3D\%20\%5Cepsilon\_t\%20\%2B\%20\%5Cphi\_1\%20\%5Ctext\%7BAR\%7D\_p\%28x\%2C\%20t-1\%29\%20\%2B\%20\%5Cphi\_2\%20\%5Ctext\%7BAR\%7D\_p\%28x\%2C\%20t-2\%29\%20\%2B\%20\%5Cldots\%20\%5Cphi\_p\%20\%5Ctext\%7BAR\%7D\_p\%28x\%2C\%20t-p\%29\%0A
+" \text{AR}\_p(x,t) = \epsilon\_t + \phi\_1 \text{AR}\_p(x, t-1) + \phi\_2
+\text{AR}\_p(x, t-2) + \ldots \phi\_p \text{AR}\_p(x, t-p) ``)
+
+However, this is a bad way to look at models on time serieses, because nothing
+is stopping the result of a model from depending on a future value (the value at
+time \includegraphics{https://latex.codecogs.com/png.latex?t\%20\%3D\%203}, for
+instance, might depend explicitly only the value at time
+\includegraphics{https://latex.codecogs.com/png.latex?t\%20\%3D\%205}). Instead,
+we can imagine time series models as explicitly ``stateful'' models:
+
+{[} f\_p(x, s\_\{\textbackslash{}text\{old\}\}) = (y,
+s\_\{\textbackslash{}text\{new\}\}){]}(https://latex.codecogs.com/png.latex?\%0Af\_p\%28x\%2C\%20s\_\%7B\%5Ctext\%7Bold\%7D\%7D\%29\%20\%3D\%20\%28y\%2C\%20s\_\%7B\%5Ctext\%7Bnew\%7D\%7D\%29\%0A
+" f\_p(x, s\_\{\text{old}\}) = (y, s\_\{\text{new}\}) ``)
+
+These have type:\footnote{If you recognized our original stateless model type as
+  \texttt{a\ -\textgreater{}\ Reader\ p\ b}, then you might see too that this is
+  the common Haskell idiom
+  \texttt{a\ -\textgreater{}\ StateT\ s\ (Reader\ p)\ b} (or
+  \texttt{Kleisli\ (StateT\ s\ (Reader\ p))\ a\ b}), which represents the notion
+  of a ``function from \texttt{a} to \texttt{b} with environment \texttt{p},
+  that takes and returns a modified version of some `state' \texttt{s}''.}
+
+{[} f : P \textbackslash{}times A \textbackslash{}times S
+\textbackslash{}rightarrow B \textbackslash{}times
+S{]}(https://latex.codecogs.com/png.latex?\%0Af\%20\%3A\%20P\%20\%5Ctimes\%20A\%20\%5Ctimes\%20S\%20\%5Crightarrow\%20B\%20\%5Ctimes\%20S\%0A
+" f : P \times A \times S \rightarrow B \times S ``)
+
+This makes it clear that the output of our model can only depend on current and
+\emph{previously occurring} information, preserving causality.
+
+\hypertarget{examples}{%
+\section{Examples}\label{examples}}
+
+We can use this to implement a ``rolling mean'' model (different from the
+``Moving Average'' model), who sees an input and outputs the weighted average of
+the input with the previous input:
+
+{[} f\_\textbackslash{}lambda(x, s) = (\textbackslash{}frac\{x +
+\textbackslash{}lambda s\}\{1 + \textbackslash{}lambda\},
+x){]}(https://latex.codecogs.com/png.latex?\%0Af\_\%5Clambda\%28x\%2C\%20s\%29\%20\%3D\%20\%28\%5Cfrac\%7Bx\%20\%2B\%20\%5Clambda\%20s\%7D\%7B1\%20\%2B\%20\%5Clambda\%7D\%2C\%20x\%29\%0A
+" f\_\lambda(x, s) = (\frac{x + \lambda s}{1 + \lambda}, x) ``)
+
+This is a model parameterized by how much to weight the current input with the
+previous input.
+
+There's also the classic fully-connected recurrent neural network layer, whose
+output is a combination of the previous output and the current input:
+
+{[} f\_\{W\_x, W\_s, \textbackslash{}mathbf\{b\}\}(\textbackslash{}mathbf\{x\},
+\textbackslash{}mathbf\{s\}) = ( W\_x \textbackslash{}mathbf\{x\} + W\_s
+\textbackslash{}mathbf\{s\} + \textbackslash{}mathbf\{b\} ,
+\textbackslash{}sigma(W\_x \textbackslash{}mathbf\{x\} + W\_s
+\textbackslash{}mathbf\{s\} + \textbackslash{}mathbf\{b\})
+){]}(https://latex.codecogs.com/png.latex?\%0Af\_\%7BW\_x\%2C\%20W\_s\%2C\%20\%5Cmathbf\%7Bb\%7D\%7D\%28\%5Cmathbf\%7Bx\%7D\%2C\%20\%5Cmathbf\%7Bs\%7D\%29\%20\%3D\%0A\%20\%20\%28\%20W\_x\%20\%5Cmathbf\%7Bx\%7D\%20\%2B\%20W\_s\%20\%5Cmathbf\%7Bs\%7D\%20\%2B\%20\%5Cmathbf\%7Bb\%7D\%0A\%20\%20\%2C\%20\%5Csigma\%28W\_x\%20\%5Cmathbf\%7Bx\%7D\%20\%2B\%20W\_s\%20\%5Cmathbf\%7Bs\%7D\%20\%2B\%20\%5Cmathbf\%7Bb\%7D\%29\%0A\%20\%20\%29\%0A
+" f\_\{W\_x, W\_s, \mathbf{b}\}(\mathbf{x}, \mathbf{s}) = ( W\_x \mathbf{x} +
+W\_s \mathbf{s} + \mathbf{b} , \sigma(W\_x \mathbf{x} + W\_s \mathbf{s} +
+\mathbf{b}) ) ``)
+
+\hypertarget{the-connection}{%
+\section{The connection}\label{the-connection}}
+
+These stateful models seem to be at odds with our previous picture of models.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  They aren't stated in the same way. They require specifying a state of some
+  sort, and also a modified state
+\item
+  These can't be \emph{trained} in the same way (using stochastic gradient
+  descent), and look like they require a different algorithm for training.
+\end{enumerate}
+
+However, because we just have functions, it's easy to transform non-stateful
+models into stateful models, and stateful models to non-stateful models. That's
+just the point of
 
 \end{document}

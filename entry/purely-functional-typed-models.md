@@ -81,7 +81,7 @@ As it so happens, a
 ![f\_p(x)](https://latex.codecogs.com/png.latex?f_p%28x%29 "f_p(x)") is really
 just a "partially applied"
 ![f(p,x)](https://latex.codecogs.com/png.latex?f%28p%2Cx%29 "f(p,x)"). Imagining
-that function, it has type:
+that function, it has type:[^1]
 
 ![
 f : P \\times A \\rightarrow B
@@ -314,7 +314,7 @@ We can start with a single layer. The model here will also take two parameters
 
 ``` {.haskell}
 import Numeric.LinearAlgebra.Static.Backprop
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L76-L85
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L76-L93
 
 logistic :: Floating a => a -> a
 logistic x = 1 / (1 + exp (-x))
@@ -366,7 +366,7 @@ function to create a *[logistic
 regression](https://en.wikipedia.org/wiki/Logistic_regression)* model.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L101-L102
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L109-L110
 
 logReg :: Model (T2 Double Double) Double Double
 logReg ab = logistic . linReg ab
@@ -377,10 +377,10 @@ We could have even written our `feedForwardLog` without its activation function:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L79-L85
 
-feedForwardLog
+feedForward
     :: (KnownNat i, KnownNat o)
     => Model (T2 (L o i) (R o)) (R i) (R o)
-feedForwardLog wb x = logistic (w #> x + b)
+feedForward wb x = w #> x + b
   where
     w = wb ^^. _1
     b = wb ^^. _2
@@ -484,3 +484,105 @@ have two models? Just compose their functions like normal functions!
 
 Time Series Models
 ------------------
+
+Not all models are "question and answer" models, however -- some models
+represent a time series. This is usually notated as:
+
+As a generalization, we can talk about models that are intended to represent
+time series:
+
+![
+f\_p(x,t) = y
+](https://latex.codecogs.com/png.latex?%0Af_p%28x%2Ct%29%20%3D%20y%0A "
+f_p(x,t) = y
+")
+
+Which says, given an input and a time, return an output based on both. The point
+of this is to let us have recurrent relationships, like for autoregressive
+models:
+
+![
+\\text{AR}\_p(x,t) = \\epsilon\_t + \\phi\_1 \\text{AR}\_p(x, t-1) + \\phi\_2 \\text{AR}\_p(x, t-2) + \\ldots \\phi\_p \\text{AR}\_p(x, t-p)
+](https://latex.codecogs.com/png.latex?%0A%5Ctext%7BAR%7D_p%28x%2Ct%29%20%3D%20%5Cepsilon_t%20%2B%20%5Cphi_1%20%5Ctext%7BAR%7D_p%28x%2C%20t-1%29%20%2B%20%5Cphi_2%20%5Ctext%7BAR%7D_p%28x%2C%20t-2%29%20%2B%20%5Cldots%20%5Cphi_p%20%5Ctext%7BAR%7D_p%28x%2C%20t-p%29%0A "
+\text{AR}_p(x,t) = \epsilon_t + \phi_1 \text{AR}_p(x, t-1) + \phi_2 \text{AR}_p(x, t-2) + \ldots \phi_p \text{AR}_p(x, t-p)
+")
+
+However, this is a bad way to look at models on time serieses, because nothing
+is stopping the result of a model from depending on a future value (the value at
+time ![t = 3](https://latex.codecogs.com/png.latex?t%20%3D%203 "t = 3"), for
+instance, might depend explicitly only the value at time
+![t = 5](https://latex.codecogs.com/png.latex?t%20%3D%205 "t = 5")). Instead, we
+can imagine time series models as explicitly "stateful" models:
+
+![
+f\_p(x, s\_{\\text{old}}) = (y, s\_{\\text{new}})
+](https://latex.codecogs.com/png.latex?%0Af_p%28x%2C%20s_%7B%5Ctext%7Bold%7D%7D%29%20%3D%20%28y%2C%20s_%7B%5Ctext%7Bnew%7D%7D%29%0A "
+f_p(x, s_{\text{old}}) = (y, s_{\text{new}})
+")
+
+These have type:[^2]
+
+![
+f : P \\times A \\times S \\rightarrow B \\times S
+](https://latex.codecogs.com/png.latex?%0Af%20%3A%20P%20%5Ctimes%20A%20%5Ctimes%20S%20%5Crightarrow%20B%20%5Ctimes%20S%0A "
+f : P \times A \times S \rightarrow B \times S
+")
+
+This makes it clear that the output of our model can only depend on current and
+*previously occurring* information, preserving causality.
+
+Examples
+--------
+
+We can use this to implement a "rolling mean" model (different from the "Moving
+Average" model), who sees an input and outputs the weighted average of the input
+with the previous input:
+
+![
+f\_\\lambda(x, s) = (\\frac{x + \\lambda s}{1 + \\lambda}, x)
+](https://latex.codecogs.com/png.latex?%0Af_%5Clambda%28x%2C%20s%29%20%3D%20%28%5Cfrac%7Bx%20%2B%20%5Clambda%20s%7D%7B1%20%2B%20%5Clambda%7D%2C%20x%29%0A "
+f_\lambda(x, s) = (\frac{x + \lambda s}{1 + \lambda}, x)
+")
+
+This is a model parameterized by how much to weight the current input with the
+previous input.
+
+There's also the classic fully-connected recurrent neural network layer, whose
+output is a combination of the previous output and the current input:
+
+![
+f\_{W\_x, W\_s, \\mathbf{b}}(\\mathbf{x}, \\mathbf{s}) =
+  ( W\_x \\mathbf{x} + W\_s \\mathbf{s} + \\mathbf{b}
+  , \\sigma(W\_x \\mathbf{x} + W\_s \\mathbf{s} + \\mathbf{b})
+  )
+](https://latex.codecogs.com/png.latex?%0Af_%7BW_x%2C%20W_s%2C%20%5Cmathbf%7Bb%7D%7D%28%5Cmathbf%7Bx%7D%2C%20%5Cmathbf%7Bs%7D%29%20%3D%0A%20%20%28%20W_x%20%5Cmathbf%7Bx%7D%20%2B%20W_s%20%5Cmathbf%7Bs%7D%20%2B%20%5Cmathbf%7Bb%7D%0A%20%20%2C%20%5Csigma%28W_x%20%5Cmathbf%7Bx%7D%20%2B%20W_s%20%5Cmathbf%7Bs%7D%20%2B%20%5Cmathbf%7Bb%7D%29%0A%20%20%29%0A "
+f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
+  ( W_x \mathbf{x} + W_s \mathbf{s} + \mathbf{b}
+  , \sigma(W_x \mathbf{x} + W_s \mathbf{s} + \mathbf{b})
+  )
+")
+
+The connection
+--------------
+
+These stateful models seem to be at odds with our previous picture of models.
+
+1.  They aren't stated in the same way. They require specifying a state of some
+    sort, and also a modified state
+2.  These can't be *trained* in the same way (using stochastic gradient
+    descent), and look like they require a different algorithm for training.
+
+However, because we just have functions, it's easy to transform non-stateful
+models into stateful models, and stateful models to non-stateful models. That's
+just the point of
+
+[^1]: Those familiar with Haskell idioms might recognize this type as being
+    isomorphic to `a -> Reader p b` (or `Kleisli (Reader p) a b`) which roughly
+    represents the notion of "A function from `a` to `b` with an 'environment'
+    of type `p`".
+
+[^2]: If you recognized our original stateless model type as `a -> Reader p b`,
+    then you might see too that this is the common Haskell idiom
+    `a -> StateT s (Reader p) b` (or `Kleisli (StateT s (Reader p)) a b`), which
+    represents the notion of a "function from `a` to `b` with environment `p`,
+    that takes and returns a modified version of some 'state' `s`".
