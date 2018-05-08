@@ -5,9 +5,11 @@ The Const Applicative and Monoids
 > [Read online!](https://blog.jle.im/entry/const-applicative-and-monoids.html)
 
 The Applicative typeclass has a somewhat infamous reputation for having opaque
-laws. There are a lot of great alternate rephrasing of these laws, from many
-different approaches. For this post, however, I want to talk about Applicative
-in terms of one of my favorites: `Const`.
+laws. There are a lot of great
+[alternative](https://wiki.haskell.org/Typeclassopedia#Alternative_formulation)
+[rephrasing](https://www.reddit.com/r/haskell/comments/2lompe/where_do_the_applicative_laws_come_from/clws90h/)
+of these laws, from many different approaches. For this post, however, I want to
+talk about Applicative in terms of one of my favorites: `Const`.
 
 Const
 -----
@@ -383,7 +385,8 @@ It looks like the Applicative for `IntConst` has to follow some pattern:
 Sound familiar?
 
 This is all satisfied if and only if `f` and the result of `pure` form a
-**monoid** on the integers!
+**[monoid](https://www.schoolofhaskell.com/user/mgsloan/monoids-tour)** on the
+integers!
 
 There is a very fundamental link here: the `Applicative` laws for `IntConst` are
 satisfied if and only if `<*>` acts monoidally on the contents, with `pure`'s
