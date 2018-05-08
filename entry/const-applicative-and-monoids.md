@@ -472,8 +472,8 @@ instance Monoid w where
     (<>)   :: w -> w ->w
 ```
 
-It seems like `Const` is nothing more than a function on a Monoid. As an
-`* -> (k -> *)`, it takes a `*`-kinded Monoid and turns it into a
+It seems like `Const` is nothing more than a (type-level) function on a Monoid.
+As an `* -> (k -> *)`, it takes a `*`-kinded Monoid and turns it into a
 `k -> *`-kinded Monoid:
 
 ``` {.haskell}
