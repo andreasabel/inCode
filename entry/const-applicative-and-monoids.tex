@@ -703,9 +703,22 @@ convey the exact same monoid -- one with \texttt{\textless{}\textgreater{}} and
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{getConst x }\FunctionTok{<>}\NormalTok{ getConst y }\FunctionTok{=}\NormalTok{ getConst (x }\FunctionTok{<*>}\NormalTok{ y)}
-\NormalTok{getConst (pure ())       }\FunctionTok{=}\NormalTok{ getConst (}\DataTypeTok{Const}\NormalTok{ mempty)}
+\NormalTok{mempty                   }\FunctionTok{=}\NormalTok{ getConst (pure ())}
 \end{Highlighting}
 \end{Shaded}
+
+One incidental observation -- \texttt{sequenceA\_} for \texttt{Const\ w} is:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{sequenceA_ ::} \DataTypeTok{Monoid}\NormalTok{ w }\OtherTok{=>}\NormalTok{ [}\DataTypeTok{Const}\NormalTok{ w a] }\OtherTok{->} \DataTypeTok{Const}\NormalTok{ w ()}
+
+\CommentTok{-- strip out newtype wrappers}
+\OtherTok{sequenceA_ ::} \DataTypeTok{Monoid}\NormalTok{ w }\OtherTok{=>}\NormalTok{ [w] }\OtherTok{->}\NormalTok{ w}
+\end{Highlighting}
+\end{Shaded}
+
+It's just \texttt{mconcat}!
 
 \hypertarget{monoid-is-the-key}{%
 \subsection{Monoid is the Key}\label{monoid-is-the-key}}
@@ -723,7 +736,10 @@ monoidal nature of \emph{all} Applicative instances.
 
 All Applicative instances are monoidal in how they sequence their effects.
 Because \texttt{Const}'s effects are so simple (``accumulate a value''), this
-makes it an especially obvious demonstration of this. Hopefully this helps shed
-some insight!
+makes it an especially obvious demonstration of this.
+
+Hopefully this helps you gain some sense of appreciation between the link
+between \texttt{Applicative} and \texttt{Monoid}, and also why \texttt{Const}'s
+Applicative instance is defined the way it is!
 
 \end{document}
