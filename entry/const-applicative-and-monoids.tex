@@ -290,12 +290,12 @@ And we can say with certainty that:
   \texttt{sequenceA\_} of an empty list has no effects.
 \end{enumerate}
 
-This makes \texttt{sequenceA\_} a \textbf{useful} combinator. The fact that we
-can talk about how \texttt{sequenceA\_} behaves for all Applicative instances
-makes it something that is \emph{worth} defining. If you use
-\texttt{sequenceA\_} for your type, you can do it knowing that it will behave in
-a well-defined way: it \emph{must} execute every action once (no more, and no
-less), and sequencing an empty list \emph{must} have no effects.
+This makes \texttt{sequenceA\_} a \emph{useful} combinator. The fact that we can
+talk about how \texttt{sequenceA\_} behaves for all Applicative instances makes
+it something that is \emph{worth} defining. If you use \texttt{sequenceA\_} for
+your type, you can do it knowing that it will behave in a well-defined way: it
+\emph{must} execute every action once (no more, and no less), and sequencing an
+empty list \emph{must} have no effects.
 
 If it weren't for those Applicative laws and expectations, \texttt{sequenceA\_}
 would be a pretty useless function. It might completely ignore all effects, or
@@ -755,15 +755,25 @@ It's just \texttt{mconcat}!
 All of this actually witnesses the core of Applicative. A lot of people describe
 Applicative as a ``lax monoidal functor''.
 
-The idea is that \texttt{liftA2} and \texttt{\textless{}*\textgreater{}} are
-supposed to be ``monoidal'' in some way. This fact is hidden by the normal form
-of the Applicative laws, but I feel like seeing this play out in the
-\texttt{Applicative} instance for \texttt{Const} --- how \texttt{Monoid} is
-exactly the constraint necessary to implement the instance, and how
-\texttt{Const} forms a monoid isomorphism --- really helps hammer in the
-monoidal nature of \emph{all} Applicative instances.
+In this post, I was really handwavey with how I talked about ``effects''
+(``\texttt{f\ \textless{}*\textgreater{}\ x} must use the effects of \texttt{f}
+and \texttt{x} each once and only once'', I claimed, without defining what an
+effect was). The notion of what an ``effect'' is really comes from each
+individual Applicative, and each type really has its own conceptual picture of
+what counts as an effect. The rigorous test of what is a meaningful way to have
+an effect that can be combined comes from those laws
+(\texttt{pure\ f\ \textless{}*\textgreater{}\ x\ =\ fmap\ f\ x}, etc.) and the
+overall sentiment that the combination of effects is \emph{monoidal}.
 
-All Applicative instances are monoidal in how they sequence their effects.
+At its heart, Applicative enforces that \texttt{liftA2} and
+\texttt{\textless{}*\textgreater{}} are supposed to be ``monoidal'' in some way.
+This fact is hidden by the normal form of the Applicative laws, but I feel like
+seeing this play out in the \texttt{Applicative} instance for \texttt{Const} ---
+how \texttt{Monoid} is exactly the constraint necessary to implement the
+instance, and how \texttt{Const} forms a monoid isomorphism --- really helps
+hammer in the monoidal nature of \emph{all} Applicative instances.
+
+Applicative instances must be monoidal in how they sequence their effects.
 Because \texttt{Const}'s effects are so simple (``accumulate a value''), this
 makes it an especially obvious demonstration of this.
 
