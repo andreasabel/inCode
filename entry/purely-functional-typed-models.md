@@ -205,14 +205,14 @@ type Model p a b = p -> a -> b
 ```
 
 Not normally differentiable, but we can make it a differentiable function by
-having it work with `BVar s p` and `BVar s a` (`BVar`s containing those values)
+having it work with `BVar z p` and `BVar z a` (`BVar`s containing those values)
 instead:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L43-L44
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L42-L43
 
-type Model p a b = forall s. Reifies s W
-                 => BVar s p -> BVar s a -> BVar s b
+type Model p a b = forall z. Reifies z W
+                 => BVar z p -> BVar z a -> BVar z b
 ```
 
 We can write a simple linear regression model:
@@ -224,7 +224,7 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 ")
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L46-L50
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L45-L49
 
 linReg :: Model (T2 Double Double) Double Double
 linReg ab x = b * x + a
@@ -256,7 +256,7 @@ if we identify a loss function:
 ")
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L52-L60
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L51-L59
 
 squaredErrorGrad
     :: (Num p, Num b)
@@ -269,14 +269,14 @@ squaredErrorGrad f x targ = gradBP $ \p ->
     (f p (constVar x) - constVar targ) ^ 2
 ```
 
-We use `constVar :: a -> BVar s a`, to lift a normal value to a `BVar` holding
+We use `constVar :: a -> BVar z a`, to lift a normal value to a `BVar` holding
 that value, since our model `f` takes `BVar`s.
 
 And finally, we can train it using stochastic gradient descent, with just a
 simple fold over all observations:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L62-L68
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L61-L67
 
 trainModel
     :: (Fractional p, Num b)
@@ -314,7 +314,7 @@ We can start with a single layer. The model here will also take two parameters
 
 ``` {.haskell}
 import Numeric.LinearAlgebra.Static.Backprop
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L76-L93
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L75-L92
 
 logistic :: Floating a => a -> a
 logistic x = 1 / (1 + exp (-x))
@@ -366,7 +366,7 @@ function to create a *[logistic
 regression](https://en.wikipedia.org/wiki/Logistic_regression)* model.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L109-L110
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L108-L109
 
 logReg :: Model (T2 Double Double) Double Double
 logReg ab = logistic . linReg ab
@@ -375,7 +375,7 @@ logReg ab = logistic . linReg ab
 We could have even written our `feedForwardLog` without its activation function:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L79-L85
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L78-L84
 
 feedForward
     :: (KnownNat i, KnownNat o)
@@ -389,7 +389,7 @@ feedForward wb x = w #> x + b
 And now we can swap out activation functions using simple function composition:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L112-L115
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L111-L114
 
 feedForwardLog'
     :: (KnownNat i, KnownNat o)
@@ -401,9 +401,9 @@ Maybe even a [softmax](https://en.wikipedia.org/wiki/Softmax_function)
 classifier!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L117-L125
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L116-L124
 
-softMax :: (Reifies s W, KnownNat n) => BVar s (R n) -> BVar s (R n)
+softMax :: (Reifies z W, KnownNat n) => BVar z (R n) -> BVar z (R n)
 softMax x = konst (1 / sumElements expx) * expx
   where
     expx = exp x
@@ -418,7 +418,7 @@ We can even write a function to *compose* two models, keeping their two original
 parameters separate:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L127-L136
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L126-L135
 
 (<~)
     :: (Num p, Num q)
@@ -502,9 +502,15 @@ of this is to let us have recurrent relationships, like for autoregressive
 models:
 
 ![
-\\text{AR}\_p(x,t) = \\epsilon\_t + \\phi\_1 \\text{AR}\_p(x, t-1) + \\phi\_2 \\text{AR}\_p(x, t-2) + \\ldots \\phi\_p \\text{AR}\_p(x, t-p)
-](https://latex.codecogs.com/png.latex?%0A%5Ctext%7BAR%7D_p%28x%2Ct%29%20%3D%20%5Cepsilon_t%20%2B%20%5Cphi_1%20%5Ctext%7BAR%7D_p%28x%2C%20t-1%29%20%2B%20%5Cphi_2%20%5Ctext%7BAR%7D_p%28x%2C%20t-2%29%20%2B%20%5Cldots%20%5Cphi_p%20%5Ctext%7BAR%7D_p%28x%2C%20t-p%29%0A "
-\text{AR}_p(x,t) = \epsilon_t + \phi_1 \text{AR}_p(x, t-1) + \phi_2 \text{AR}_p(x, t-2) + \ldots \phi_p \text{AR}_p(x, t-p)
+\\text{AR}\_{\\phi\_1, \\phi\_2, \\ldots}(x,t)
+  = \\epsilon\_t + \\phi\_1 \\text{AR}\_{\\phi\_1, \\phi\_2, \\ldots}(x, t-1)
+  + \\phi\_2 \\text{AR}\_{\\phi\_1, \\phi\_2, \\ldots}(x, t-2)
+  + \\ldots
+](https://latex.codecogs.com/png.latex?%0A%5Ctext%7BAR%7D_%7B%5Cphi_1%2C%20%5Cphi_2%2C%20%5Cldots%7D%28x%2Ct%29%0A%20%20%3D%20%5Cepsilon_t%20%2B%20%5Cphi_1%20%5Ctext%7BAR%7D_%7B%5Cphi_1%2C%20%5Cphi_2%2C%20%5Cldots%7D%28x%2C%20t-1%29%0A%20%20%2B%20%5Cphi_2%20%5Ctext%7BAR%7D_%7B%5Cphi_1%2C%20%5Cphi_2%2C%20%5Cldots%7D%28x%2C%20t-2%29%0A%20%20%2B%20%5Cldots%0A "
+\text{AR}_{\phi_1, \phi_2, \ldots}(x,t)
+  = \epsilon_t + \phi_1 \text{AR}_{\phi_1, \phi_2, \ldots}(x, t-1)
+  + \phi_2 \text{AR}_{\phi_1, \phi_2, \ldots}(x, t-2)
+  + \ldots
 ")
 
 However, this is a bad way to look at models on time serieses, because nothing
@@ -531,8 +537,7 @@ f : P \times A \times S \rightarrow B \times S
 This makes it clear that the output of our model can only depend on current and
 *previously occurring* information, preserving causality.
 
-Examples
---------
+### Examples
 
 We can use this to implement a "rolling mean" model (different from the "Moving
 Average" model), who sees an input and outputs the weighted average of the input
@@ -562,8 +567,7 @@ f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
   )
 ")
 
-The connection
---------------
+### The connection
 
 These stateful models seem to be at odds with our previous picture of models.
 
@@ -575,6 +579,22 @@ These stateful models seem to be at odds with our previous picture of models.
 However, because we just have functions, it's easy to transform non-stateful
 models into stateful models, and stateful models to non-stateful models. That's
 just the point of
+
+### Functional Stateful Models
+
+Alright, so what does this mean, and how does it help us?
+
+To help us, let's try implementing this in Haskell:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L155-L159
+
+type ModelS p s a b = forall z. Reifies z W
+                   => BVar z p
+                   -> BVar z a
+                   -> BVar z s
+                   -> (BVar z b, BVar z s)
+```
 
 [^1]: Those familiar with Haskell idioms might recognize this type as being
     isomorphic to `a -> Reader p b` (or `Kleisli (Reader p) a b`) which roughly
