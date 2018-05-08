@@ -207,6 +207,10 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb40-3" data-line-number="3"><span class="co">-- strip out newtype wrappers</span></a>
 <a class="sourceLine" id="cb40-4" data-line-number="4"><span class="ot">sequenceA_ ::</span> <span class="dt">Monoid</span> w <span class="ot">=&gt;</span> [w] <span class="ot">-&gt;</span> w</a></code></pre></div>
 <p>It’s just <code>mconcat</code>!</p>
+<p>As an exercise, see if you can understand this definition of <code>mconcat</code> in terms of <code>Const</code> and <code>traverse</code>:</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1">mconcat<span class="ot"> ::</span> <span class="dt">Monoid</span> w <span class="ot">=&gt;</span> [w] <span class="ot">-&gt;</span> w</a>
+<a class="sourceLine" id="cb41-2" data-line-number="2">mconcat <span class="fu">=</span> getConst <span class="fu">.</span> traverse_ <span class="dt">Const</span></a></code></pre></div>
+<p><code>traverse</code>, if you aren’t familiar with it, an “effectful” function (in our case, <code>Const :: w -&gt; Const w w</code>) over all values in a container, and sequences all of their effects.</p>
 <h3 id="monoid-is-the-key">Monoid is the Key</h3>
 <p>All of this actually witnesses the core of Applicative. A lot of people describe Applicative as a “lax monoidal functor”.</p>
 <p>In this post, I was really handwavey with how I talked about “effects” (“<code>f &lt;*&gt; x</code> must use the effects of <code>f</code> and <code>x</code> each once and only once”, I claimed, without defining what an effect was). The notion of what an “effect” is really comes from each individual Applicative, and each type really has its own conceptual picture of what counts as an effect. The rigorous test of what is a meaningful way to have an effect that can be combined comes from those laws (<code>pure f &lt;*&gt; x = fmap f x</code>, etc.) and the overall sentiment that the combination of effects is <em>monoidal</em>.</p>
