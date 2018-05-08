@@ -85,6 +85,7 @@
 
 \title{The Const Applicative and Monoids}
 \author{Justin Le}
+\date{May 8, 2018}
 
 \begin{document}
 \maketitle
@@ -95,8 +96,8 @@ Code}}.}
 
 The Applicative typeclass has a somewhat infamous reputation for having opaque
 laws. There are a lot of great alternate rephrasing of these laws, from many
-different approaches. For this post I want to talk about Applicative in terms of
-one of my favorites: \texttt{Const}.
+different approaches. For this post, however, I want to talk about Applicative
+in terms of one of my favorites: \texttt{Const}.
 
 \hypertarget{const}{%
 \section{Const}\label{const}}
@@ -163,8 +164,8 @@ First of all, let's look at the types of the functions we need:
 Now, remember that \texttt{IntConst}'s type parameter is phantom, so we don't
 have any actual values of type \texttt{a\ -\textgreater{}\ b}, \texttt{a}, or
 \texttt{b} involved. An \texttt{IntConst\ a}, for any \texttt{a}, is really just
-an \texttt{Int}. Essentially, once we strip out the newtype wrapper shenanigans,
-we just get:
+an \texttt{Int}. Essentially, once we strip out the newtype wrapper shenanigans
+(replacing \texttt{IntConst\ a} with its contents, \texttt{Int}), we just get:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -179,7 +180,7 @@ works:
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{instance} \DataTypeTok{Applicative} \DataTypeTok{IntConst} \KeywordTok{where}
-\NormalTok{    pure _ }\FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{42}
+\NormalTok{    pure _                    }\FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{42}
     \DataTypeTok{IntConst}\NormalTok{ x }\FunctionTok{<*>} \DataTypeTok{IntConst}\NormalTok{ _ }\FunctionTok{=} \DataTypeTok{IntConst}\NormalTok{ x}
 \end{Highlighting}
 \end{Shaded}
@@ -319,14 +320,23 @@ effects of \texttt{f} and \texttt{x} exactly once, and the properties about
 We haven't defined what the ``effects'' of \texttt{IntConst} are yet, but let's
 at least look at if our \texttt{pure} behaves sensibly with
 \texttt{\textless{}*\textgreater{}}. Namely, let's check
-\texttt{pure\ f\ \textless{}*\textgreater{}\ x\ =\ fmap\ f\ x}
+\texttt{pure\ f\ \textless{}*\textgreater{}\ x\ =\ fmap\ f\ x}.
 
-Let's check it with a simple example for \texttt{x}\ldots{}say,
-\texttt{IntConst\ 5}. On the left hand side, we have:
+Note that this is a meaningful starting point because \texttt{fmap}'s definition
+is \emph{fixed}. For any type, there is only one possible \texttt{fmap} that is
+legal and lawful --- and in Haskell, we only have to check that
+\texttt{fmap\ id} leaves all inputs unchanged.\footnote{There are other laws,
+  but because of parametric polymorphism in Haskell, we know they must be true
+  if and only if \texttt{fmap\ id\ =\ id}.}
+
+With that out of the way, let's check our
+\texttt{pure\ f\ \textless{}*\textgreater{}\ x\ =\ fmap\ f\ x} law with a simple
+example for \texttt{x}\ldots{}say, \texttt{IntConst\ 5}. On the left hand side,
+we have:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- pure _ = IntConst 42}
+\CommentTok{-- pure _                     = IntConst 42}
 \CommentTok{-- IntConst x <*> InstConst _ = IntConst x}
 \NormalTok{pure f }\FunctionTok{<*>} \DataTypeTok{IntConst} \DecValTok{5} \FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{42} \FunctionTok{<*>} \DataTypeTok{IntConst} \DecValTok{5}
                       \FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{42}
@@ -350,7 +360,7 @@ What if we defined:
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{instance} \DataTypeTok{Applicative} \DataTypeTok{IntConst} \KeywordTok{where}
-\NormalTok{    pure _ }\FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{42}
+\NormalTok{    pure _                    }\FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{42}
     \DataTypeTok{IntConst}\NormalTok{ _ }\FunctionTok{<*>} \DataTypeTok{IntConst}\NormalTok{ y }\FunctionTok{=} \DataTypeTok{IntConst}\NormalTok{ y}
 \end{Highlighting}
 \end{Shaded}
@@ -363,7 +373,7 @@ Is that any better? Well,
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- pure _ = IntConst 42}
+\CommentTok{-- pure _                    = IntConst 42}
 \CommentTok{-- IntConst _ <*> IntConst y = IntConst y}
 \DataTypeTok{IntConst} \DecValTok{3} \FunctionTok{<*>}\NormalTok{ pure x }\FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{3} \FunctionTok{<*>} \DataTypeTok{IntConst} \DecValTok{42}
                       \FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{42}
@@ -384,15 +394,15 @@ Ah, that's wrong too, then.
 At this point it might seem like I am facetiously moving very slowly to an
 answer that has to use \emph{both} inputs. After all, my earlier statement
 claimed that \texttt{f\ \textless{}*\textgreater{}\ x} has to use both the
-effects of \texttt{f} and the effects of \texttt{x}, each exactly once. But
-because we didn't really know what the ``effects'' of \texttt{IntConst} are, we
-don't know exactly ``how'' to combine them\ldots{}but we can probably guess it
-has to use both \texttt{Int}s. Let's try another one.
+effects of \texttt{f} and the effects of \texttt{x}, each exactly once. Because
+we didn't really know what the ``effects'' of \texttt{IntConst} are, we don't
+know exactly ``how'' to combine them\ldots{}but we can probably guess it has to
+use both \texttt{Int}s. So, with that in mind, let's try another definition:
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{instance} \DataTypeTok{Applicative} \DataTypeTok{IntConst} \KeywordTok{where}
-\NormalTok{    pure _ }\FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{42}
+\NormalTok{    pure _                    }\FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{42}
     \DataTypeTok{IntConst}\NormalTok{ x }\FunctionTok{<*>} \DataTypeTok{IntConst}\NormalTok{ y }\FunctionTok{=} \DataTypeTok{IntConst}\NormalTok{ (x }\FunctionTok{+}\NormalTok{ y)}
 \end{Highlighting}
 \end{Shaded}
@@ -404,7 +414,7 @@ again if this follows our expectations about \texttt{pure} -- if
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- pure _ = IntConst 42}
+\CommentTok{-- pure _                     = IntConst 42}
 \CommentTok{-- IntConst x <*> InstConst y = IntConst (x + y)}
 \NormalTok{pure f }\FunctionTok{<*>} \DataTypeTok{IntConst} \DecValTok{5} \FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{42} \FunctionTok{<*>} \DataTypeTok{IntConst} \DecValTok{5}
                       \FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{47}
@@ -429,12 +439,14 @@ any other \texttt{Int} unchanged when used with
 
 Thinking back, we remember that if our operation is \texttt{+}, we can use
 \texttt{0}, since \texttt{0\ +\ x\ =\ x} and \texttt{x\ +\ 0\ =\ x}, for all
-\texttt{x}. Finally:
+\texttt{x}. Luckily, our operation \texttt{x\ +\ y} is one that even \emph{has}
+an identity. If we had chosen another operation (like \texttt{x\ +\ 2\ *\ y}),
+we wouldn't be so lucky. Finally:
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{instance} \DataTypeTok{Applicative} \DataTypeTok{IntConst} \KeywordTok{where}
-\NormalTok{    pure _ }\FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{0}
+\NormalTok{    pure _                    }\FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{0}
     \DataTypeTok{IntConst}\NormalTok{ x }\FunctionTok{<*>} \DataTypeTok{IntConst}\NormalTok{ y }\FunctionTok{=} \DataTypeTok{IntConst}\NormalTok{ (x }\FunctionTok{+}\NormalTok{ y)}
 \end{Highlighting}
 \end{Shaded}
@@ -444,7 +456,7 @@ out, again, \texttt{pure\ f\ \textless{}*\textgreater{}\ x\ =\ fmap\ f\ x}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- pure _ = IntConst 0}
+\CommentTok{-- pure _                     = IntConst 0}
 \CommentTok{-- IntConst x <*> InstConst y = IntConst (x + y)}
 \NormalTok{pure f }\FunctionTok{<*>} \DataTypeTok{IntConst} \DecValTok{5} \FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{0} \FunctionTok{<*>} \DataTypeTok{IntConst} \DecValTok{5}
                       \FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{5}
@@ -463,7 +475,7 @@ Perfect! And, checking now
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- pure _ = IntConst 0}
+\CommentTok{-- pure _                    = IntConst 0}
 \CommentTok{-- IntConst x <*> IntConst y = IntConst (x + y)}
 \DataTypeTok{IntConst} \DecValTok{3} \FunctionTok{<*>}\NormalTok{ pure x }\FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{3} \FunctionTok{<*>} \DataTypeTok{IntConst} \DecValTok{0}
                       \FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{3}
@@ -477,12 +489,15 @@ Perfect! And, checking now
 \end{Highlighting}
 \end{Shaded}
 
-This definition works for both!
+This definition works for both\footnote{Note that in the real world we also have
+  to verify that our definition combines effects in an \emph{associative} way,
+  but we won't go too deeply into this for this article.}!
 
 \hypertarget{the-effect-of-const}{%
 \subsection{The Effect of Const}\label{the-effect-of-const}}
 
-And, so, what do we think \texttt{sequenceA\_} does for \texttt{IntConst}?
+With our definition picked out, what do we think \texttt{sequenceA\_} does for
+\texttt{IntConst}?
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -496,7 +511,8 @@ the \texttt{Int} in the \texttt{IntConst\ a}, and \texttt{sequenceA\_} uses
 \texttt{IntConst\ a}\ldots{}we can guess that \texttt{sequenceA\_} for
 \texttt{IntConst} is just \texttt{sum}!
 
-This might be more clear if we strip away the newtype wrappers:
+This might be more clear if we strip away the newtype wrappers (replacing
+\texttt{IntConst\ a} with its contents, \texttt{Int}):
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -524,7 +540,7 @@ following instance is also valid:
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{instance} \DataTypeTok{Applicative} \DataTypeTok{IntConst} \KeywordTok{where}
-\NormalTok{    pure _ }\FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{1}
+\NormalTok{    pure _                    }\FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{1}
     \DataTypeTok{IntConst}\NormalTok{ x }\FunctionTok{<*>} \DataTypeTok{IntConst}\NormalTok{ y }\FunctionTok{=} \DataTypeTok{IntConst}\NormalTok{ (x }\FunctionTok{*}\NormalTok{ y)}
 \end{Highlighting}
 \end{Shaded}
@@ -535,7 +551,7 @@ since \texttt{1\ *\ x\ =\ x} and \texttt{x\ *\ 1\ =\ x}, for all \texttt{x}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- pure _ = IntConst 1}
+\CommentTok{-- pure _                     = IntConst 1}
 \CommentTok{-- IntConst x <*> InstConst y = IntConst (x * y)}
 \NormalTok{pure f }\FunctionTok{<*>} \DataTypeTok{IntConst} \DecValTok{5} \FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{1} \FunctionTok{<*>} \DataTypeTok{IntConst} \DecValTok{5}
                       \FunctionTok{=} \DataTypeTok{IntConst} \DecValTok{5}
@@ -606,14 +622,19 @@ The \texttt{Functor} instance is unique, so there isn't any leeway we have
 \end{Highlighting}
 \end{Shaded}
 
-And we can actually write an \texttt{Applicative} instance for
+This is the only definition that preserves \texttt{fmap\ id\ =\ id}.
+
+Now we can actually write an \texttt{Applicative} instance for
 \texttt{Const\ w}\ldots{}as long as provide a \texttt{Monoid} to use with
-\texttt{w}!
+\texttt{w}\footnote{Note that the Applicative laws are loose enough to allow a
+  different definition, with the same \texttt{pure}, but with
+  \texttt{Const\ x\ \textless{}*\textgreater{}\ Const\ y\ =\ Const\ (y\ \textless{}\textgreater{}\ x}).
+  But, this is just a different \texttt{Monoid} (\texttt{Const\ (Dual\ w)}).}!
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{instance} \DataTypeTok{Monoid}\NormalTok{ w }\OtherTok{=>} \DataTypeTok{Applicative}\NormalTok{ (}\DataTypeTok{Const}\NormalTok{ w) }\KeywordTok{where}
-\NormalTok{    pure _ }\FunctionTok{=} \DataTypeTok{Const}\NormalTok{ mempty}
+\NormalTok{    pure _              }\FunctionTok{=} \DataTypeTok{Const}\NormalTok{ mempty}
     \DataTypeTok{Const}\NormalTok{ x }\FunctionTok{<*>} \DataTypeTok{Const}\NormalTok{ y }\FunctionTok{=} \DataTypeTok{Const}\NormalTok{ (x }\FunctionTok{<>}\NormalTok{ y)}
 \end{Highlighting}
 \end{Shaded}
@@ -622,11 +643,11 @@ Like how we said, as long as the ``combining'' function for \texttt{x} and
 \texttt{y} have the identity that is given by the result of \texttt{pure}, this
 is a valid Applicative.
 
-The ``effects'' of this Applicative instance are ``accumulating log''. If this
-sounds familiar, this is because this is exactly the effect of the
-\texttt{Writer\ w} Applicative instance. \texttt{Const\ w} and
-\texttt{Writer\ w} have the same effects (``accumulate some accumulator''), and
-this can be seen clearly by comparing the two types:
+The ``effects'' of this Applicative instance are ``accumulate to some
+accumulator''. If this sounds familiar, this is because this is exactly the
+effect of the \texttt{Writer\ w} Applicative instance. \texttt{Const\ w} and
+\texttt{Writer\ w} have the same effects (``accumulate to some accumulator''),
+and this can be seen clearly by comparing the two types:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -671,9 +692,9 @@ And let's look at the \texttt{Monoid} typeclass:
 \end{Highlighting}
 \end{Shaded}
 
-It seems like \texttt{Const} is nothing more than a
-\texttt{*\ -\textgreater{}\ (k\ -\textgreater{}\ *)}; it takes a
-\texttt{*}-kinded Monoid, and turns it into a
+It seems like \texttt{Const} is nothing more than a function on a Monoid. As an
+\texttt{*\ -\textgreater{}\ (k\ -\textgreater{}\ *)}, it takes a
+\texttt{*}-kinded Monoid and turns it into a
 \texttt{k\ -\textgreater{}\ *}-kinded Monoid:
 
 \begin{Shaded}
@@ -714,7 +735,8 @@ convey the exact same monoid -- one with \texttt{\textless{}\textgreater{}} and
 \end{Highlighting}
 \end{Shaded}
 
-One incidental observation -- \texttt{sequenceA\_} for \texttt{Const\ w} is:
+One incidental observation -- \texttt{sequenceA\_} for \texttt{Const\ w} might
+look familiar:
 
 \begin{Shaded}
 \begin{Highlighting}[]
