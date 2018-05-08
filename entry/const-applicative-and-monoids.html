@@ -54,19 +54,19 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Basically will take a list of <code>f a</code>s, and return a new <code>f ()</code> that has <em>all</em> of the effects of the <code>f a</code>s in the list.</p>
 <p>To do this sensibly, we need also to talk about a “no-op” value:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1">pure<span class="ot"> ::</span> a <span class="ot">-&gt;</span> <span class="dt">F</span> a</a></code></pre></div>
-<p>That has “no effects”.</p>
-<p>Then we can say something about the behavior of <code>&lt;*&gt;</code> or <code>fmap2</code> or <code>liftA2</code>. Namely:</p>
+<p><code>pure x</code> is intended to be a no-op with “no effects”.</p>
+<p>With this, we can say something about the behavior of <code>&lt;*&gt;</code> or <code>fmap2</code> or <code>liftA2</code>. Namely:</p>
 <ol type="1">
 <li>The effects of <code>f &lt;*&gt; x</code> must have the effects of <code>f</code> once <em>and</em> the effects of <code>x</code> once – no more, and no less.</li>
-<li>Combining effects must be associative.</li>
 <li><p><code>pure</code>’s results must have no “effects”, and so if used with <code>&lt;*&gt;</code>, introduces no extra effects:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1">pure f <span class="fu">&lt;$&gt;</span> x <span class="fu">=</span> fmap f x</a>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1">pure f <span class="fu">&lt;*&gt;</span> x <span class="fu">=</span> fmap f x</a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">f <span class="fu">&lt;*&gt;</span> pure x <span class="fu">=</span> fmap (<span class="fu">$</span> x) f</a></code></pre></div>
-<p>(Knowing that <code>fmap</code> is not allowed to affect effects in any way)</p></li>
+(Remember that <code>fmap</code> is not allowed to affect “effects” in any way)</li>
+<li><p>Combining effects must be associative.</p></li>
 </ol>
 <p>With this guarantee, we can write <code>sequenceA_</code> in a polymorphic way:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">sequenceA_ ::</span> <span class="dt">Applicative</span> f <span class="ot">=&gt;</span> [f a] <span class="ot">-&gt;</span> f ()</a>
-<a class="sourceLine" id="cb12-2" data-line-number="2">sequenceA_ []     <span class="fu">=</span> pure []</a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">sequenceA_ []     <span class="fu">=</span> pure ()</a>
 <a class="sourceLine" id="cb12-3" data-line-number="3">sequenceA_ (x<span class="fu">:</span>xs) <span class="fu">=</span> x <span class="fu">*&gt;</span> sequenceA_ xs</a></code></pre></div>
 <p>And we can say with certainty that:</p>
 <ol type="1">
@@ -74,6 +74,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <li><code>sequenceA_</code> of an empty list has no effects.</li>
 </ol>
 <p>This makes <code>sequenceA_</code> a <strong>useful</strong> combinator. The fact that we can talk about how <code>sequenceA_</code> behaves for all Applicative instances makes it something that is <em>worth</em> defining. If you use <code>sequenceA_</code> for your type, you can do it knowing that it will behave in a well-defined way: it <em>must</em> execute every action once (no more, and no less), and sequencing an empty list <em>must</em> have no effects.</p>
+<p>If it weren’t for those Applicative laws and expectations, <code>sequenceA_</code> would be a pretty useless function. It might completely ignore all effects, or it might perform some of the effects multiple times…who knows! The fact that we have Applicative laws and expectations means we can look at the implementation of <code>sequenceA_</code> and know with certainty (and make bold claims about) how <code>sequenceA_</code> combines effects.</p>
 <h2 id="back-to-const">Back to Const</h2>
 <p>With this new information in mind, let’s revisit our instance for <code>IntConst</code>.</p>
 <p>In order for <code>IntConst</code>’s Applicative instance to behave meaningfully, and in order to be able to match with user expectations of <code>Applicative</code> instance, you need to make sure it follows the basic principles I mentioned earlier (the effects of <code>f &lt;*&gt; x</code> has the effects of <code>f</code> and <code>x</code> exactly once, and the properties about <code>pure</code>).</p>
@@ -100,7 +101,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">-- fmap f (IntConst x) = IntConst x</span></a>
 <a class="sourceLine" id="cb17-2" data-line-number="2">fmap (<span class="fu">$</span> x) (<span class="dt">IntConst</span> <span class="dv">3</span>) <span class="fu">=</span> <span class="dt">IntConst</span> <span class="dv">3</span></a></code></pre></div>
 <p>Ah, that’s wrong too, then.</p>
-<p>At this point it seems like I am facetiously moving very slowly to an answer that has to use <em>both</em> inputs. After all, my earlier statement claimed that <code>f &lt;*&gt; x</code> has to use both the effects of <code>f</code> and the effects of <code>x</code>, each exactly once. But because we didn’t really know what the “effects” of <code>IntConst</code> are, we don’t know exactly “how” to combine them…but we can probably guess it has to use both <code>Int</code>s. Let’s try another one.</p>
+<p>At this point it might seem like I am facetiously moving very slowly to an answer that has to use <em>both</em> inputs. After all, my earlier statement claimed that <code>f &lt;*&gt; x</code> has to use both the effects of <code>f</code> and the effects of <code>x</code>, each exactly once. But because we didn’t really know what the “effects” of <code>IntConst</code> are, we don’t know exactly “how” to combine them…but we can probably guess it has to use both <code>Int</code>s. Let’s try another one.</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Applicative</span> <span class="dt">IntConst</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb18-2" data-line-number="2">    pure _ <span class="fu">=</span> <span class="dt">IntConst</span> <span class="dv">42</span></a>
 <a class="sourceLine" id="cb18-3" data-line-number="3">    <span class="dt">IntConst</span> x <span class="fu">&lt;*&gt;</span> <span class="dt">IntConst</span> y <span class="fu">=</span> <span class="dt">IntConst</span> (x <span class="fu">+</span> y)</a></code></pre></div>

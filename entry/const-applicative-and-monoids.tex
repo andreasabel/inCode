@@ -239,9 +239,9 @@ To do this sensibly, we need also to talk about a ``no-op'' value:
 \end{Highlighting}
 \end{Shaded}
 
-That has ``no effects''.
+\texttt{pure\ x} is intended to be a no-op with ``no effects''.
 
-Then we can say something about the behavior of
+With this, we can say something about the behavior of
 \texttt{\textless{}*\textgreater{}} or \texttt{fmap2} or \texttt{liftA2}.
 Namely:
 
@@ -252,19 +252,19 @@ Namely:
   of \texttt{f} once \emph{and} the effects of \texttt{x} once -- no more, and
   no less.
 \item
-  Combining effects must be associative.
-\item
   \texttt{pure}'s results must have no ``effects'', and so if used with
   \texttt{\textless{}*\textgreater{}}, introduces no extra effects:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{pure f }\FunctionTok{<$>}\NormalTok{ x }\FunctionTok{=}\NormalTok{ fmap f x}
+\NormalTok{pure f }\FunctionTok{<*>}\NormalTok{ x }\FunctionTok{=}\NormalTok{ fmap f x}
 \NormalTok{f }\FunctionTok{<*>}\NormalTok{ pure x }\FunctionTok{=}\NormalTok{ fmap (}\FunctionTok{$}\NormalTok{ x) f}
 \end{Highlighting}
 \end{Shaded}
 
-  (Knowing that \texttt{fmap} is not allowed to affect effects in any way)
+  (Remember that \texttt{fmap} is not allowed to affect ``effects'' in any way)
+\item
+  Combining effects must be associative.
 \end{enumerate}
 
 With this guarantee, we can write \texttt{sequenceA\_} in a polymorphic way:
@@ -272,7 +272,7 @@ With this guarantee, we can write \texttt{sequenceA\_} in a polymorphic way:
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{sequenceA_ ::} \DataTypeTok{Applicative}\NormalTok{ f }\OtherTok{=>}\NormalTok{ [f a] }\OtherTok{->}\NormalTok{ f ()}
-\NormalTok{sequenceA_ []     }\FunctionTok{=}\NormalTok{ pure []}
+\NormalTok{sequenceA_ []     }\FunctionTok{=}\NormalTok{ pure ()}
 \NormalTok{sequenceA_ (x}\FunctionTok{:}\NormalTok{xs) }\FunctionTok{=}\NormalTok{ x }\FunctionTok{*>}\NormalTok{ sequenceA_ xs}
 \end{Highlighting}
 \end{Shaded}
@@ -295,6 +295,13 @@ makes it something that is \emph{worth} defining. If you use
 \texttt{sequenceA\_} for your type, you can do it knowing that it will behave in
 a well-defined way: it \emph{must} execute every action once (no more, and no
 less), and sequencing an empty list \emph{must} have no effects.
+
+If it weren't for those Applicative laws and expectations, \texttt{sequenceA\_}
+would be a pretty useless function. It might completely ignore all effects, or
+it might perform some of the effects multiple times\ldots{}who knows! The fact
+that we have Applicative laws and expectations means we can look at the
+implementation of \texttt{sequenceA\_} and know with certainty (and make bold
+claims about) how \texttt{sequenceA\_} combines effects.
 
 \hypertarget{back-to-const}{%
 \section{Back to Const}\label{back-to-const}}
@@ -374,13 +381,13 @@ And on the right hand side:
 
 Ah, that's wrong too, then.
 
-At this point it seems like I am facetiously moving very slowly to an answer
-that has to use \emph{both} inputs. After all, my earlier statement claimed that
-\texttt{f\ \textless{}*\textgreater{}\ x} has to use both the effects of
-\texttt{f} and the effects of \texttt{x}, each exactly once. But because we
-didn't really know what the ``effects'' of \texttt{IntConst} are, we don't know
-exactly ``how'' to combine them\ldots{}but we can probably guess it has to use
-both \texttt{Int}s. Let's try another one.
+At this point it might seem like I am facetiously moving very slowly to an
+answer that has to use \emph{both} inputs. After all, my earlier statement
+claimed that \texttt{f\ \textless{}*\textgreater{}\ x} has to use both the
+effects of \texttt{f} and the effects of \texttt{x}, each exactly once. But
+because we didn't really know what the ``effects'' of \texttt{IntConst} are, we
+don't know exactly ``how'' to combine them\ldots{}but we can probably guess it
+has to use both \texttt{Int}s. Let's try another one.
 
 \begin{Shaded}
 \begin{Highlighting}[]
