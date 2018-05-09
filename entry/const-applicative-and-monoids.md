@@ -22,7 +22,7 @@ newtype Const w a = Const { getConst :: w }
 ```
 
 However, let's look at a less polymorphic version, `IntConst`, which is
-essentially `Const Int`:
+essentially `Const Int`:[^1]
 
 ``` {.haskell}
 newtype IntConst a = IntConst { getIntConst :: Int }
@@ -189,7 +189,7 @@ look at if our `pure` behaves sensibly with `<*>`. Namely, let's check
 Note that this is a meaningful starting point because `fmap`'s definition is
 *fixed*. For any type, there is only one possible `fmap` that is legal and
 lawful --- and in Haskell, we only have to check that `fmap id` leaves all
-inputs unchanged.[^1]
+inputs unchanged.[^2]
 
 With that out of the way, let's check our `pure f <*> x = fmap f x` law with a
 simple example for `x`...say, `IntConst 5`. On the left hand side, we have:
@@ -315,7 +315,7 @@ IntConst 3 <*> pure x = IntConst 3 <*> IntConst 0
 fmap ($ x) (IntConst 3) = IntConst 3
 ```
 
-This definition works for both[^2]!
+This definition works for both[^3]!
 
 ### The Effect of Const
 
@@ -420,7 +420,7 @@ instance Functor (Const w) where
 This is the only definition that preserves `fmap id = id`.
 
 Now we can actually write an `Applicative` instance for `Const w`...as long as
-provide a `Monoid` to use with `w`[^3]!
+provide a `Monoid` to use with `w`[^4]!
 
 ``` {.haskell}
 instance Monoid w => Applicative (Const w) where
@@ -555,14 +555,17 @@ Hopefully this helps you gain some sense of appreciation between the link
 between `Applicative` and `Monoid`, and also why `Const`'s Applicative instance
 is defined the way it is!
 
-[^1]: There are other laws, but because of parametric polymorphism in Haskell,
+[^1]: Note that if you want to play along in ghci, you should give this a `Show`
+    instance by typing `deriving (Show)` after the data declaration
+
+[^2]: There are other laws, but because of parametric polymorphism in Haskell,
     we know they must be true if and only if `fmap id = id`.
 
-[^2]: Note that in the real world we also have to verify that our definition
+[^3]: Note that in the real world we also have to verify that our definition
     combines effects in an *associative* way, but we won't go too deeply into
     this for this article.
 
-[^3]: Note that the Applicative laws are loose enough to allow a different
+[^4]: Note that the Applicative laws are loose enough to allow a different
     definition, with the same `pure`, but with
     `Const x <*> Const y = Const (y <> x`). But, this is just a different
     `Monoid` (`Const (Dual w)`).
