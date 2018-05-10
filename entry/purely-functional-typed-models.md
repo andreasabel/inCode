@@ -180,9 +180,7 @@ We now have a nice way to "train" our model:
     ![p](https://latex.codecogs.com/png.latex?p "p") in to make the loss
     smaller.
 4.  Nudge ![p](https://latex.codecogs.com/png.latex?p "p") in that direction
-5.  Pick a new
-    ![(x, y\_x)](https://latex.codecogs.com/png.latex?%28x%2C%20y_x%29 "(x, y_x)")
-    observation pair.
+5.  Repeat from \#2 until satisfied
 
 With every new observation, we see how we can nudge the parameter to make the
 model more accurate, and then we perform that nudge.
@@ -209,10 +207,10 @@ having it work with `BVar z p` and `BVar z a` (`BVar`s containing those values)
 instead:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L42-L43
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L81-L82
 
 type Model p a b = forall z. Reifies z W
-                 => BVar z p -> BVar z a -> BVar z b
+                => BVar z p -> BVar z a -> BVar z b
 ```
 
 We can write a simple linear regression model:
@@ -224,25 +222,32 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 ")
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L45-L49
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L46-L88
 
-linReg :: Model (T2 Double Double) Double Double
+data a :& b = !a :& !b
+  deriving (Show, Generic)
+
+linReg :: Model (Double :& Double) Double Double
 linReg ab x = b * x + a
   where
-    a = ab ^^. _1
-    b = ab ^^. _2
+    a = ab ^^. t1
+    b = ab ^^. t2
 ```
 
-Here `T2 Double Double` is a tuple of two `Double`s, which contains the
-parameters (`a` and `b`). We extract the first item using `^^. _1` and the
-second item with `^^. _2`, and then talk about the actual function, whose result
+(First we define a custom tuple data type; backprop works with normal tuples,
+but using a custom tuple with a `Num` instance will come in handy later for
+training models)
+
+Here `Double :& Double` is a tuple of two `Double`s, which contains the
+parameters (`a` and `b`). We extract the first item using `^^. t1` and the
+second item with `^^. t2`, and then talk about the actual function, whose result
 is `b * x + a`. Note that, because `BVar`s have a `Num` instance, we can use all
 our normal numeric operators, and the results are still differentiable.
 
 We can *run* `linReg` using `evalBP2`:
 
 ``` {.haskell}
-ghci> evalBP2 linReg (T2 0.3 (-0.1)) 5
+ghci> evalBP2 linReg (0.3 :& (-0.1)) 5
 -0.2        -- (-0.1) * 5 + 0.3
 ```
 
@@ -256,10 +261,10 @@ if we identify a loss function:
 ")
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L51-L59
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L90-L98
 
 squaredErrorGrad
-    :: (Num p, Num b)
+    :: (Backprop p, Backprop b, Num b)
     => Model p a b      -- ^ Model
     -> a                -- ^ Observed input
     -> b                -- ^ Observed output
@@ -276,10 +281,10 @@ And finally, we can train it using stochastic gradient descent, with just a
 simple fold over all observations:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L61-L67
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L100-L106
 
 trainModel
-    :: (Fractional p, Num b)
+    :: (Fractional p, Backprop p, Num b, Backprop b)
     => Model p a b      -- ^ model to train
     -> p                -- ^ initial parameter guess
     -> [(a,b)]          -- ^ list of observations
@@ -295,8 +300,8 @@ or
 
 ``` {.haskell}
 ghci> samps = [(1,1),(2,3),(3,5),(4,7),(5,9)]
-ghci> trainModel linReg (T2 0 0) (concat (replicate 1000 samps))
-T2 (-1.0000000000000024) 2.0000000000000036
+ghci> trainModel linReg (0 :& 0) (concat (replicate 1000 samps))
+(-1.0000000000000024) :& 2.0000000000000036
 ```
 
 Neat! After going through all of those observations a thousand times, the model
@@ -314,18 +319,18 @@ We can start with a single layer. The model here will also take two parameters
 
 ``` {.haskell}
 import Numeric.LinearAlgebra.Static.Backprop
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L75-L92
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L122-L139
 
 logistic :: Floating a => a -> a
 logistic x = 1 / (1 + exp (-x))
 
 feedForwardLog
     :: (KnownNat i, KnownNat o)
-    => Model (T2 (L o i) (R o)) (R i) (R o)
+    => Model (L o i :& R o) (R i) (R o)
 feedForwardLog wb x = logistic (w #> x + b)
   where
-    w = wb ^^. _1
-    b = wb ^^. _2
+    w = wb ^^. t1
+    b = wb ^^. t2
 ```
 
 Here we use the `L n m` (an n-by-m matrix) and `R n` (an n-vector) types from
@@ -337,7 +342,7 @@ Let's try training a model to learn the simple [logical
 ``` {.haskell}
 ghci> import qualified Numeric.LinearAlgebra.Static as H
 ghci> samps = [(H.vec2 0 0, 0), (H.vec2 1 0, 0), (H.vec2 0 1, 0), (H.vec2 1 1, 1)]
-ghci> trained = trainModel feedForwardLog (T2 0 0) (concat (replicate 10000 samps))
+ghci> trained = trainModel feedForwardLog (0 :& 0) (concat (replicate 10000 samps))
 ```
 
 We have our trained parameters! Let's see if they actually model "AND"?
@@ -366,34 +371,34 @@ function to create a *[logistic
 regression](https://en.wikipedia.org/wiki/Logistic_regression)* model.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L108-L109
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L152-L153
 
-logReg :: Model (T2 Double Double) Double Double
+logReg :: Model (Double :& Double) Double Double
 logReg ab = logistic . linReg ab
 ```
 
 We could have even written our `feedForwardLog` without its activation function:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L78-L84
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L125-L131
 
 feedForward
     :: (KnownNat i, KnownNat o)
-    => Model (T2 (L o i) (R o)) (R i) (R o)
+    => Model (L o i :& R o) (R i) (R o)
 feedForward wb x = w #> x + b
   where
-    w = wb ^^. _1
-    b = wb ^^. _2
+    w = wb ^^. t1
+    b = wb ^^. t2
 ```
 
 And now we can swap out activation functions using simple function composition:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L111-L114
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L155-L158
 
 feedForwardLog'
     :: (KnownNat i, KnownNat o)
-    => Model (T2 (L o i) (R o)) (R i) (R o)
+    => Model (L o i :& R o) (R i) (R o)
 feedForwardLog' wb = logistic . feedForward wb
 ```
 
@@ -401,7 +406,7 @@ Maybe even a [softmax](https://en.wikipedia.org/wiki/Softmax_function)
 classifier!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L116-L124
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L160-L168
 
 softMax :: (Reifies z W, KnownNat n) => BVar z (R n) -> BVar z (R n)
 softMax x = konst (1 / sumElements expx) * expx
@@ -410,7 +415,7 @@ softMax x = konst (1 / sumElements expx) * expx
 
 feedForwardSoftMax
     :: (KnownNat i, KnownNat o)
-    => Model (T2 (L o i) (R o)) (R i) (R o)
+    => Model (L o i :& R o) (R i) (R o)
 feedForwardSoftMax wb = logistic . feedForward wb
 ```
 
@@ -418,17 +423,17 @@ We can even write a function to *compose* two models, keeping their two original
 parameters separate:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L126-L135
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L170-L179
 
 (<~)
-    :: (Num p, Num q)
+    :: (Backprop p, Backprop q)
     => Model     p    b c
     -> Model       q  a b
-    -> Model (T2 p q) a c
+    -> Model (p :& q) a c
 (f <~ g) pq = f p . g q
   where
-    p = pq ^^. _1
-    q = pq ^^. _2
+    p = pq ^^. t1
+    q = pq ^^. t2
 infixr 8 <~
 ```
 
@@ -587,7 +592,7 @@ Alright, so what does this mean, and how does it help us?
 To help us, let's try implementing this in Haskell:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L155-L159
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L194-L198
 
 type ModelS p s a b = forall z. Reifies z W
                    => BVar z p
