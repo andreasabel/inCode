@@ -420,7 +420,7 @@ instance Functor (Const w) where
 This is the only definition that preserves `fmap id = id`.
 
 Now we can actually write an `Applicative` instance for `Const w`...as long as
-provide a `Monoid` to use with `w`[^4]!
+we provide a `Monoid` to use with `w`[^4]!
 
 ``` {.haskell}
 instance Monoid w => Applicative (Const w) where
