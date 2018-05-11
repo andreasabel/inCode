@@ -765,8 +765,8 @@ second-to-last observed value:
 Or, in our explicit state form:
 
 {[} f\_\{c, \textbackslash{}phi\_1, phi\_2\}(x, s) = (c + \textbackslash{}phi\_1
-x + \textbackslash{}phi\_2 s, x)
-{]}(https://latex.codecogs.com/png.latex?\%0Af\_\%7Bc\%2C\%20\%5Cphi\_1\%2C\%20phi\_2\%7D\%28x\%2C\%20s\%29\%20\%3D\%20\%28c\%20\%2B\%20\%5Cphi\_1\%20x\%20\%2B\%20\%5Cphi\_2\%20s\%2C\%20x\%29\%20\%0A
+x + \textbackslash{}phi\_2 s,
+x){]}(https://latex.codecogs.com/png.latex?\%0Af\_\%7Bc\%2C\%20\%5Cphi\_1\%2C\%20phi\_2\%7D\%28x\%2C\%20s\%29\%20\%3D\%20\%28c\%20\%2B\%20\%5Cphi\_1\%20x\%20\%2B\%20\%5Cphi\_2\%20s\%2C\%20x\%29\%0A
 " f\_\{c, \phi\_1, phi\_2\}(x, s) = (c + \phi\_1 x + \phi\_2 s, x) ``)
 
 There's also the classic
@@ -1051,7 +1051,57 @@ category theory, this looks a little bit like a sort of ``fmap'' under a
 
 Olah's post suggests that this is a \texttt{mapAccum}, in functional programming
 parlance. And, surely enough, we can actually write this as a
-\texttt{mapAccumL}:
+\texttt{mapAccumL}.
+
+\texttt{mapAccumL} is sort of like a combination of a \texttt{foldl} and a
+\texttt{map}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mapAccumL}
+\OtherTok{    ::} \DataTypeTok{Traversable}\NormalTok{ t}
+    \OtherTok{=>}\NormalTok{ (a }\OtherTok{->}\NormalTok{ b }\OtherTok{->}\NormalTok{ (a, c))}
+    \OtherTok{->}\NormalTok{ a}
+    \OtherTok{->}\NormalTok{ t b}
+    \OtherTok{->}\NormalTok{ (a, t c)}
+\end{Highlighting}
+\end{Shaded}
+
+Compare to \texttt{foldl}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{foldl}
+\OtherTok{    ::} \DataTypeTok{Foldable}\NormalTok{ t}
+    \OtherTok{=>}\NormalTok{ (a }\OtherTok{->}\NormalTok{ b }\OtherTok{->}\NormalTok{ a)}
+    \OtherTok{->}\NormalTok{ a}
+    \OtherTok{->}\NormalTok{ t b}
+    \OtherTok{->}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+You can see that \texttt{mapAccumL} is just \texttt{foldl}, except the folding
+function emits an extra \texttt{c} for every item, so \texttt{mapAccumL} can
+return a new \texttt{t\ c} with all of the emitted \texttt{c}s.
+
+The \emph{backprop} library has a ``lifted'' \texttt{mapAccumL} in in the
+\emph{\href{http://hackage.haskell.org/package/backprop/docs/Prelude-Backprop.html}{Prelude.Backprop}}
+module that we can use:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mapAccumL}
+\OtherTok{    ::} \DataTypeTok{Traversable}\NormalTok{ t}
+    \OtherTok{=>}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ s a }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s b }\OtherTok{->}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ s a, }\DataTypeTok{BVar}\NormalTok{ s c))}
+    \OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s a}
+    \OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s (t b)}
+    \OtherTok{->}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ s a, }\DataTypeTok{BVar}\NormalTok{ s (t c)))}
+\end{Highlighting}
+\end{Shaded}
+
+It is lifted to work with \texttt{BVar}s of the items instead of directly on the
+items. With that, we can write \texttt{unroll}, which is just a thin wrapper
+over \texttt{mapAccumL}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1069,13 +1119,8 @@ parlance. And, surely enough, we can actually write this as a
 \end{Highlighting}
 \end{Shaded}
 
-This is \emph{exactly} the just the normal functional programming
-\texttt{mapAccumL} of a stateful function over a container. And,
-\texttt{mapAccumL} is general enough to be definable for all
-\texttt{Traversable} containers (not just lists)! (We use \texttt{mapAccumL}
-``lifted'' for \texttt{BVar}s from the
-\emph{\href{http://hackage.haskell.org/package/backprop/docs/Prelude-Backprop.html}{Prelude.Backprop}}
-module)
+This reveals that \texttt{unroll} from the machine learning is really
+\emph{just} \texttt{mapAccumL} from functional programming.
 
 We can also tweak \texttt{unroll}'s result a bit to get a version of
 \texttt{unroll} that shows only the ``final'' result:
