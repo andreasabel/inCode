@@ -310,7 +310,7 @@ f_{c, \phi_1, phi_2}(x, s) = (c + \phi_1 x + \phi_2 s, x)
 " title="
 f_{c, \phi_1, phi_2}(x, s) = (c + \phi_1 x + \phi_2 s, x) 
 " /><br /></p>
-<p>There’s also the classic fully-connected recurrent neural network layer, whose output is a combination of the previous output and the current input:</p>
+<p>There’s also the classic <a href="http://karpathy.github.io/2015/05/21/rnn-effectiveness/">fully-connected recurrent neural network layer</a>, whose output is a linear combination of the (logistic’d) previous output and the current input, plus a bias:</p>
 <p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0As_t%20%26%20%3D%20W_x%20%5Cmathbf%7Bx%7D_t%20%2B%20W_s%20%5Cmathbf%7Bs%7D_%7Bt-1%7D%20%2B%20%5Cmathbf%7Bb%7D%20%5C%5C%0Ay_t%20%26%20%3D%20%5Csigma%28s_t%29%0A%5Cend%7Baligned%7D%0A" alt="
 \begin{aligned}
 s_t &amp; = W_x \mathbf{x}_t + W_s \mathbf{s}_{t-1} + \mathbf{b} \\
@@ -355,7 +355,7 @@ f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
 <div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L172-L178</span></a>
 <a class="sourceLine" id="cb21-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb21-3" data-line-number="3"><span class="ot">ar2 ::</span> <span class="dt">ModelS</span> (<span class="dt">Double</span> <span class="fu">:&amp;</span> (<span class="dt">Double</span> <span class="fu">:&amp;</span> <span class="dt">Double</span>)) <span class="dt">Double</span> <span class="dt">Double</span> <span class="dt">Double</span></a>
-<a class="sourceLine" id="cb21-4" data-line-number="4">ar2 cφ yLast yLastLast <span class="fu">=</span> ( c <span class="fu">+</span> φ1 <span class="fu">*</span> yLast <span class="fu">+</span> φ2 <span class="fu">+</span> yLastLast, yLast )</a>
+<a class="sourceLine" id="cb21-4" data-line-number="4">ar2 cφ yLast yLastLast <span class="fu">=</span> ( c <span class="fu">+</span> φ1 <span class="fu">*</span> yLast <span class="fu">+</span> φ2 <span class="fu">*</span> yLastLast, yLast )</a>
 <a class="sourceLine" id="cb21-5" data-line-number="5">  <span class="kw">where</span></a>
 <a class="sourceLine" id="cb21-6" data-line-number="6">    c  <span class="fu">=</span> cφ <span class="fu">^^.</span> t1</a>
 <a class="sourceLine" id="cb21-7" data-line-number="7">    φ  <span class="fu">=</span> cφ <span class="fu">^^.</span> t2</a>
@@ -419,7 +419,7 @@ f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
 <a class="sourceLine" id="cb28-2" data-line-number="2">           <span class="fu">&lt;*~</span> mapS logistic (fcrnn <span class="fu">@</span><span class="dv">20</span> <span class="fu">@</span><span class="dv">10</span>)</a>
 <a class="sourceLine" id="cb28-3" data-line-number="3">           <span class="fu">&lt;*~</span> mapS logistic (fcrnn <span class="fu">@</span><span class="dv">40</span> <span class="fu">@</span><span class="dv">20</span>)</a></code></pre></div>
 <p>We made a dummy type <code>NoState</code> to use for our stateless model</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L382-L383</span></a>
+<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L400-L401</span></a>
 <a class="sourceLine" id="cb29-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb29-3" data-line-number="3"><span class="kw">data</span> <span class="dt">NoState</span> <span class="fu">=</span> <span class="dt">NoState</span></a>
 <a class="sourceLine" id="cb29-4" data-line-number="4">  <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Generic</span>)</a></code></pre></div>
@@ -510,78 +510,115 @@ f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
 <a class="sourceLine" id="cb37-2" data-line-number="2">unrollLast<span class="ot"> threeLayers             ::</span> <span class="dt">ModelS</span> _ _ [<span class="dt">R</span> <span class="dv">40</span>] (<span class="dt">R</span> <span class="dv">5</span>)</a>
 <a class="sourceLine" id="cb37-3" data-line-number="3">zeroState (unrollLast threeLayers)<span class="ot"> ::</span> <span class="dt">Model</span>  _   [<span class="dt">R</span> <span class="dv">40</span>] (<span class="dt">R</span> <span class="dv">5</span>)</a></code></pre></div>
 <p><code>zeroState (unrollLast threeLayers)</code> is now a normal stateless (and trainable) model. It takes a list of inputs <code>R 40</code>s and produces the “final output” <code>R 5</code>. We can now train this by feeding it with <code>([R 40], R 5)</code> pairs: give a history and an expected next output.</p>
-<p>Let’s see if we can use a two-layer RNN to a sine wave.</p>
-<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co">-- sine signal with period 25</span></a>
-<a class="sourceLine" id="cb38-2" data-line-number="2">ghci<span class="fu">&gt;</span> series <span class="fu">=</span> [ sin (<span class="dv">2</span> <span class="fu">*</span> pi <span class="fu">*</span> t <span class="fu">/</span> <span class="dv">25</span>) <span class="fu">|</span> t <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span>]              ]</a>
-<a class="sourceLine" id="cb38-3" data-line-number="3"><span class="co">-- chunks of runs and &quot;next results&quot;</span></a>
-<a class="sourceLine" id="cb38-4" data-line-number="4">ghci<span class="fu">&gt;</span> samps  <span class="fu">=</span> [ (init c, last c)      <span class="fu">|</span> c <span class="ot">&lt;-</span> chunksOf <span class="dv">19</span> series ]</a>
-<a class="sourceLine" id="cb38-5" data-line-number="5"><span class="co">-- first layer is RNN, second layer is normal ANN, 20 hidden units</span></a>
-<a class="sourceLine" id="cb38-6" data-line-number="6">ghci<span class="fu">&gt;</span> <span class="kw">let</span><span class="ot"> model0 ::</span> <span class="dt">ModelS</span> _ _ (<span class="dt">R</span> <span class="dv">1</span>) (<span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb38-7" data-line-number="7">          model0 <span class="fu">=</span> feedForward <span class="fu">@</span><span class="dv">20</span> <span class="fu">@</span><span class="dv">1</span> <span class="fu">&lt;*~</span> mapS logistic (fcrnn <span class="fu">@</span><span class="dv">1</span> <span class="fu">@</span><span class="dv">20</span>)</a>
-<a class="sourceLine" id="cb38-8" data-line-number="8">ghci<span class="fu">&gt;</span> <span class="kw">let</span><span class="ot"> model  ::</span> <span class="dt">Model</span>  _   [<span class="dt">R</span> <span class="dv">1</span>] (<span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb38-9" data-line-number="9">          model  <span class="fu">=</span> zeroState <span class="fu">$</span> unrollLast model0</a>
-<a class="sourceLine" id="cb38-10" data-line-number="10">ghci<span class="fu">&gt;</span> trained <span class="ot">&lt;-</span> trainModelIO model <span class="fu">$</span> take <span class="dv">10000</span> samps</a></code></pre></div>
-<p>Trained! <code>trained</code> is the parameterization of <code>model</code> that will simulate a sine wave of period 25.</p>
+<p>Let’s see this play out with our AR(2) model:</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="ot">ar2                        ::</span> <span class="dt">ModelS</span> _ _ <span class="dt">Double</span> <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb38-2" data-line-number="2">unrollLast<span class="ot"> ar2             ::</span> <span class="dt">ModelS</span> _ _ [<span class="dt">Double</span>] <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb38-3" data-line-number="3">zeroState (unrollLast ar2)<span class="ot"> ::</span> <span class="dt">Model</span>  _   [<span class="dt">Double</span>] <span class="dt">Double</span></a></code></pre></div>
+<p><code>zeroState (unrollLast ar2)</code> is now a trainable stateless model. Let’s use it to learn a sine wave:</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- sine signal with period 25</span></a>
+<a class="sourceLine" id="cb39-2" data-line-number="2">ghci<span class="fu">&gt;</span> series <span class="fu">=</span> [ sin (<span class="dv">2</span> <span class="fu">*</span> pi <span class="fu">*</span> t <span class="fu">/</span> <span class="dv">25</span>) <span class="fu">|</span> t <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span>]              ]</a>
+<a class="sourceLine" id="cb39-3" data-line-number="3"><span class="co">-- chunks of runs and &quot;next results&quot;</span></a>
+<a class="sourceLine" id="cb39-4" data-line-number="4">ghci<span class="fu">&gt;</span> samps  <span class="fu">=</span> [ (init c, last c)      <span class="fu">|</span> c <span class="ot">&lt;-</span> chunksOf <span class="dv">19</span> series ]</a>
+<a class="sourceLine" id="cb39-5" data-line-number="5">ghci<span class="fu">&gt;</span> trained <span class="ot">&lt;-</span> trainModelIO (zeroState (unrollLast ar2)) <span class="fu">$</span> take <span class="dv">10000</span> samps</a></code></pre></div>
+<p>Trained! <code>trained</code> is the parameterization of <code>ar2</code> that will simulate a sine wave of period 25.</p>
 <p>Let’s define some helper functions to test our model. First, a function <code>prime</code> that takes a stateful model and gives a “warmed-up” state by running it over a list of inputs. This will give the model a sense of “where to start”.</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L265-L272</span></a>
-<a class="sourceLine" id="cb39-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb39-3" data-line-number="3">prime</a>
-<a class="sourceLine" id="cb39-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Foldable</span> t</a>
-<a class="sourceLine" id="cb39-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> p s a b     <span class="co">-- ^ model</span></a>
-<a class="sourceLine" id="cb39-6" data-line-number="6">    <span class="ot">-&gt;</span> p                  <span class="co">-- ^ parameterization</span></a>
-<a class="sourceLine" id="cb39-7" data-line-number="7">    <span class="ot">-&gt;</span> s                  <span class="co">-- ^ initial state</span></a>
-<a class="sourceLine" id="cb39-8" data-line-number="8">    <span class="ot">-&gt;</span> t a                <span class="co">-- ^ priming input</span></a>
-<a class="sourceLine" id="cb39-9" data-line-number="9">    <span class="ot">-&gt;</span> s                  <span class="co">-- ^ primed state</span></a>
-<a class="sourceLine" id="cb39-10" data-line-number="10">prime f p <span class="fu">=</span> foldl&#39; <span class="fu">$</span> evalBP2 (\s x <span class="ot">-&gt;</span> snd <span class="fu">$</span> f (constVar p) x s)</a></code></pre></div>
-<p>Then a function <code>feedback</code> that iterates a stateful model over and over again by feeding its previous output as its next input:</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L278-L288</span></a>
+<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L265-L272</span></a>
 <a class="sourceLine" id="cb40-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb40-3" data-line-number="3">    return <span class="fu">.</span> take <span class="dv">50</span> <span class="fu">$</span> feedback model0 trained primed (series <span class="fu">!!</span> <span class="dv">20</span>)</a>
-<a class="sourceLine" id="cb40-4" data-line-number="4">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb40-5" data-line-number="5">    <span class="co">-- sine wave with period 25</span></a>
-<a class="sourceLine" id="cb40-6" data-line-number="6"><span class="ot">    series ::</span> [<span class="dt">H.R</span> <span class="dv">1</span>]</a>
-<a class="sourceLine" id="cb40-7" data-line-number="7">    series <span class="fu">=</span> [ H.konst (sin (<span class="dv">2</span> <span class="fu">*</span> pi <span class="fu">*</span> t <span class="fu">/</span> <span class="dv">25</span>)) <span class="fu">|</span> t <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span>]              ]</a>
-<a class="sourceLine" id="cb40-8" data-line-number="8">    samps  <span class="fu">=</span> [ (init c, last c)                <span class="fu">|</span> c <span class="ot">&lt;-</span> chunksOf <span class="dv">19</span> series ]</a>
-<a class="sourceLine" id="cb40-9" data-line-number="9"><span class="ot">    model0 ::</span> <span class="dt">ModelS</span> _ _ (<span class="dt">R</span> <span class="dv">1</span>) (<span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb40-10" data-line-number="10">    model0 <span class="fu">=</span> feedForward <span class="fu">@</span><span class="dv">20</span> <span class="fu">@</span><span class="dv">1</span></a>
-<a class="sourceLine" id="cb40-11" data-line-number="11">         <span class="fu">&lt;*~</span> mapS logistic (fcrnn <span class="fu">@</span><span class="dv">1</span> <span class="fu">@</span><span class="dv">20</span>)</a>
-<a class="sourceLine" id="cb40-12" data-line-number="12"><span class="ot">    model  ::</span> <span class="dt">Model</span>  _   [<span class="dt">R</span> <span class="dv">1</span>] (<span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb40-13" data-line-number="13">    model  <span class="fu">=</span> zeroState <span class="fu">$</span> unrollLast model0</a></code></pre></div>
+<a class="sourceLine" id="cb40-3" data-line-number="3">prime</a>
+<a class="sourceLine" id="cb40-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Foldable</span> t</a>
+<a class="sourceLine" id="cb40-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> p s a b     <span class="co">-- ^ model</span></a>
+<a class="sourceLine" id="cb40-6" data-line-number="6">    <span class="ot">-&gt;</span> p                  <span class="co">-- ^ parameterization</span></a>
+<a class="sourceLine" id="cb40-7" data-line-number="7">    <span class="ot">-&gt;</span> s                  <span class="co">-- ^ initial state</span></a>
+<a class="sourceLine" id="cb40-8" data-line-number="8">    <span class="ot">-&gt;</span> t a                <span class="co">-- ^ priming input</span></a>
+<a class="sourceLine" id="cb40-9" data-line-number="9">    <span class="ot">-&gt;</span> s                  <span class="co">-- ^ primed state</span></a>
+<a class="sourceLine" id="cb40-10" data-line-number="10">prime f p <span class="fu">=</span> foldl&#39; <span class="fu">$</span> evalBP2 (\s x <span class="ot">-&gt;</span> snd <span class="fu">$</span> f (constVar p) x s)</a></code></pre></div>
+<p>Then a function <code>feedback</code> that iterates a stateful model over and over again by feeding its previous output as its next input:</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L278-L287</span></a>
+<a class="sourceLine" id="cb41-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb41-3" data-line-number="3">    return <span class="fu">.</span> take <span class="dv">50</span> <span class="fu">$</span> feedback model0 trained primed (series <span class="fu">!!</span> <span class="dv">20</span>)</a>
+<a class="sourceLine" id="cb41-4" data-line-number="4">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb41-5" data-line-number="5">    <span class="co">-- sine wave with period 25</span></a>
+<a class="sourceLine" id="cb41-6" data-line-number="6"><span class="ot">    series ::</span> [<span class="dt">Double</span>]</a>
+<a class="sourceLine" id="cb41-7" data-line-number="7">    series <span class="fu">=</span> [ sin (<span class="dv">2</span> <span class="fu">*</span> pi <span class="fu">*</span> t <span class="fu">/</span> <span class="dv">25</span>) <span class="fu">|</span> t <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span>]              ]</a>
+<a class="sourceLine" id="cb41-8" data-line-number="8">    samps  <span class="fu">=</span> [ (init c, last c)      <span class="fu">|</span> c <span class="ot">&lt;-</span> chunksOf <span class="dv">19</span> series ]</a>
+<a class="sourceLine" id="cb41-9" data-line-number="9"><span class="ot">    model0 ::</span> <span class="dt">ModelS</span> _ _ <span class="dt">Double</span> <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb41-10" data-line-number="10">    model0 <span class="fu">=</span> ar2</a>
+<a class="sourceLine" id="cb41-11" data-line-number="11"><span class="ot">    model  ::</span> <span class="dt">Model</span>  _   [<span class="dt">Double</span>] <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb41-12" data-line-number="12">    model  <span class="fu">=</span> zeroState <span class="fu">$</span> unrollLast model0</a></code></pre></div>
 <p>Now let’s prime our trained model over the first 19 items in our sine wave and start it running in feedback mode on the 20st item!</p>
-<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> primed <span class="fu">=</span> prime model0 trained <span class="dv">0</span> (take <span class="dv">19</span> series)</a>
-<a class="sourceLine" id="cb41-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="kw">let</span> output <span class="fu">=</span> feedback model0 trained primed (series <span class="fu">!!</span> <span class="dv">20</span>)</a>
-<a class="sourceLine" id="cb41-3" data-line-number="3">ghci<span class="fu">&gt;</span> mapM_ print <span class="fu">$</span> take <span class="dv">30</span> output</a>
-<a class="sourceLine" id="cb41-4" data-line-number="4">(<span class="fu">-</span><span class="fl">0.9510565162951536</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-5" data-line-number="5">(<span class="fu">-</span><span class="fl">0.8513651168000752</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-6" data-line-number="6">(<span class="fu">-</span><span class="fl">0.7166599836716709</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-7" data-line-number="7">(<span class="fu">-</span><span class="fl">0.5482473595389897</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-8" data-line-number="8">(<span class="fu">-</span><span class="fl">0.34915724320186287</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-9" data-line-number="9">(<span class="fu">-</span><span class="fl">0.12410494333456273</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-10" data-line-number="10">(<span class="fl">0.11796522261125514</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-11" data-line-number="11">(<span class="fl">0.3617267605713303</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-12" data-line-number="12">(<span class="fl">0.5859020418343457</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-13" data-line-number="13">(<span class="fl">0.768017196984538</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-14" data-line-number="14">(<span class="fl">0.8918483864333885</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-15" data-line-number="15">(<span class="fl">0.9520895380310987</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-16" data-line-number="16">(<span class="fl">0.9527522551095625</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-17" data-line-number="17">(<span class="fl">0.9018819269836273</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-18" data-line-number="18">(<span class="fl">0.8071298312549686</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-19" data-line-number="19">(<span class="fl">0.6739841516649296</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-20" data-line-number="20">(<span class="fl">0.5060989906080221</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-21" data-line-number="21">(<span class="fl">0.3068094725343112</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-22" data-line-number="22">(<span class="fl">8.132150399626142e-2</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-23" data-line-number="23">(<span class="fu">-</span><span class="fl">0.16084964907608051</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-24" data-line-number="24">(<span class="fu">-</span><span class="fl">0.404157125663194</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-25" data-line-number="25">(<span class="fu">-</span><span class="fl">0.6277521119177744</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-26" data-line-number="26">(<span class="fu">-</span><span class="fl">0.8099883239222189</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-27" data-line-number="27">(<span class="fu">-</span><span class="fl">0.9351261952804909</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-28" data-line-number="28">(<span class="fu">-</span><span class="fl">0.9975997729210249</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-29" data-line-number="29">(<span class="fu">-</span><span class="fl">1.000820693251437</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-30" data-line-number="30">(<span class="fu">-</span><span class="fl">0.9525015209823966</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-31" data-line-number="31">(<span class="fu">-</span><span class="fl">0.8603987544425211</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-32" data-line-number="32">(<span class="fu">-</span><span class="fl">0.7303128941490123</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb41-33" data-line-number="33">(<span class="fu">-</span><span class="fl">0.5660763612885787</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a></code></pre></div>
-<p>Looks like a beautiful sine wave! It starts out at -0.95, sweeps back towards 0, cross over and peaks out at positive 0.95, then swings back around past zero and reaches a minimum at -1.00 before swinging back again. Pretty much a perfect sine wave with period 25. Sounds like an unreasonably effective recurrent neural network!</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> primed <span class="fu">=</span> prime    ar2 trained <span class="dv">0</span>      (take <span class="dv">19</span> series)</a>
+<a class="sourceLine" id="cb42-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="kw">let</span> output <span class="fu">=</span> feedback ar2 trained primed (series <span class="fu">!!</span> <span class="dv">20</span>)</a>
+<a class="sourceLine" id="cb42-3" data-line-number="3">ghci<span class="fu">&gt;</span> mapM_ print <span class="fu">$</span> take <span class="dv">30</span> output</a>
+<a class="sourceLine" id="cb42-4" data-line-number="4"><span class="fu">-</span><span class="fl">0.9510565162951536</span></a>
+<a class="sourceLine" id="cb42-5" data-line-number="5"><span class="fu">-</span><span class="fl">0.8600674032037106</span></a>
+<a class="sourceLine" id="cb42-6" data-line-number="6"><span class="fu">-</span><span class="fl">0.7150370920644853</span></a>
+<a class="sourceLine" id="cb42-7" data-line-number="7"><span class="fu">-</span><span class="fl">0.5250783707105848</span></a>
+<a class="sourceLine" id="cb42-8" data-line-number="8"><span class="fu">-</span><span class="fl">0.302127044224051</span></a>
+<a class="sourceLine" id="cb42-9" data-line-number="9"><span class="fu">-</span><span class="fl">6.019196440573038e-2</span></a>
+<a class="sourceLine" id="cb42-10" data-line-number="10"><span class="fl">0.18552519790433009</span></a>
+<a class="sourceLine" id="cb42-11" data-line-number="11"><span class="fl">0.41958512971360296</span></a>
+<a class="sourceLine" id="cb42-12" data-line-number="12"><span class="fl">0.627280984694227</span></a>
+<a class="sourceLine" id="cb42-13" data-line-number="13"><span class="fl">0.795562468425788</span></a>
+<a class="sourceLine" id="cb42-14" data-line-number="14"><span class="fl">0.9138558363893832</span></a>
+<a class="sourceLine" id="cb42-15" data-line-number="15"><span class="fl">0.9747282812232584</span></a>
+<a class="sourceLine" id="cb42-16" data-line-number="16"><span class="fl">0.9743549633453022</span></a>
+<a class="sourceLine" id="cb42-17" data-line-number="17"><span class="fl">0.9127593396907665</span></a>
+<a class="sourceLine" id="cb42-18" data-line-number="18"><span class="fl">0.7938116898267549</span></a>
+<a class="sourceLine" id="cb42-19" data-line-number="19"><span class="fl">0.6249859320531274</span></a>
+<a class="sourceLine" id="cb42-20" data-line-number="20"><span class="fl">0.41689000962856815</span></a>
+<a class="sourceLine" id="cb42-21" data-line-number="21"><span class="fl">0.18259935468235244</span></a>
+<a class="sourceLine" id="cb42-22" data-line-number="22"><span class="fu">-</span><span class="fl">6.316468927441621e-2</span></a>
+<a class="sourceLine" id="cb42-23" data-line-number="23"><span class="fu">-</span><span class="fl">0.3049598635029274</span></a>
+<a class="sourceLine" id="cb42-24" data-line-number="24"><span class="fu">-</span><span class="fl">0.5275932879458836</span></a>
+<a class="sourceLine" id="cb42-25" data-line-number="25"><span class="fu">-</span><span class="fl">0.7170760857570087</span></a>
+<a class="sourceLine" id="cb42-26" data-line-number="26"><span class="fu">-</span><span class="fl">0.861502355880794</span></a>
+<a class="sourceLine" id="cb42-27" data-line-number="27"><span class="fu">-</span><span class="fl">0.9517972646026605</span></a>
+<a class="sourceLine" id="cb42-28" data-line-number="28"><span class="fu">-</span><span class="fl">0.9822872507261515</span></a>
+<a class="sourceLine" id="cb42-29" data-line-number="29"><span class="fu">-</span><span class="fl">0.9510565162888059</span></a>
+<a class="sourceLine" id="cb42-30" data-line-number="30"><span class="fu">-</span><span class="fl">0.8600674031939511</span></a>
+<a class="sourceLine" id="cb42-31" data-line-number="31"><span class="fu">-</span><span class="fl">0.7150370920519272</span></a>
+<a class="sourceLine" id="cb42-32" data-line-number="32"><span class="fu">-</span><span class="fl">0.5250783706960173</span></a>
+<a class="sourceLine" id="cb42-33" data-line-number="33"><span class="fu">-</span><span class="fl">0.3021270442083892</span></a></code></pre></div>
+<p>Looks like a beautiful sine wave! It starts out at -0.95, gradually rolls back towards 0, cross over and peaks out at positive 0.97, then swings back around past zero and reaches a minimum at -0.97 before swinging back again. Pretty much a perfect sine wave with period 25. AR(2) works pretty well!</p>
+<p>For kicks, let’s try it with a two-layer fully connected neural network with 20 hidden units, where the first layer is fully recurrent:</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="co">-- first layer is RNN, second layer is normal ANN, 20 hidden units</span></a>
+<a class="sourceLine" id="cb43-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="kw">let</span><span class="ot"> rnn ::</span> <span class="dt">ModelS</span> _ _ (<span class="dt">R</span> <span class="dv">1</span>) (<span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-3" data-line-number="3">          rnn <span class="fu">=</span> feedForward <span class="fu">@</span><span class="dv">20</span> <span class="fu">@</span><span class="dv">1</span> <span class="fu">&lt;*~</span> mapS logistic (fcrnn <span class="fu">@</span><span class="dv">1</span> <span class="fu">@</span><span class="dv">20</span>)</a>
+<a class="sourceLine" id="cb43-4" data-line-number="4">ghci<span class="fu">&gt;</span> trained <span class="ot">&lt;-</span> trainModelIO (trainZero (unrollLast rnn)) <span class="fu">$</span> take <span class="dv">10000</span> samps</a>
+<a class="sourceLine" id="cb43-5" data-line-number="5">ghci<span class="fu">&gt;</span> <span class="kw">let</span> primed <span class="fu">=</span> prime    rnn trained <span class="dv">0</span>      (take <span class="dv">19</span> series)</a>
+<a class="sourceLine" id="cb43-6" data-line-number="6">ghci<span class="fu">&gt;</span> <span class="kw">let</span> output <span class="fu">=</span> feedback rnn trained primed (series <span class="fu">!!</span> <span class="dv">20</span>)</a>
+<a class="sourceLine" id="cb43-7" data-line-number="7">ghci<span class="fu">&gt;</span> mapM_ print <span class="fu">$</span> take <span class="dv">30</span> output</a>
+<a class="sourceLine" id="cb43-8" data-line-number="8">(<span class="fu">-</span><span class="fl">0.9510565162951536</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-9" data-line-number="9">(<span class="fu">-</span><span class="fl">0.8513651168000752</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-10" data-line-number="10">(<span class="fu">-</span><span class="fl">0.7166599836716709</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-11" data-line-number="11">(<span class="fu">-</span><span class="fl">0.5482473595389897</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-12" data-line-number="12">(<span class="fu">-</span><span class="fl">0.34915724320186287</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-13" data-line-number="13">(<span class="fu">-</span><span class="fl">0.12410494333456273</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-14" data-line-number="14">(<span class="fl">0.11796522261125514</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-15" data-line-number="15">(<span class="fl">0.3617267605713303</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-16" data-line-number="16">(<span class="fl">0.5859020418343457</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-17" data-line-number="17">(<span class="fl">0.768017196984538</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-18" data-line-number="18">(<span class="fl">0.8918483864333885</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-19" data-line-number="19">(<span class="fl">0.9520895380310987</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-20" data-line-number="20">(<span class="fl">0.9527522551095625</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-21" data-line-number="21">(<span class="fl">0.9018819269836273</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-22" data-line-number="22">(<span class="fl">0.8071298312549686</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-23" data-line-number="23">(<span class="fl">0.6739841516649296</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-24" data-line-number="24">(<span class="fl">0.5060989906080221</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-25" data-line-number="25">(<span class="fl">0.3068094725343112</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-26" data-line-number="26">(<span class="fl">8.132150399626142e-2</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-27" data-line-number="27">(<span class="fu">-</span><span class="fl">0.16084964907608051</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-28" data-line-number="28">(<span class="fu">-</span><span class="fl">0.404157125663194</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-29" data-line-number="29">(<span class="fu">-</span><span class="fl">0.6277521119177744</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-30" data-line-number="30">(<span class="fu">-</span><span class="fl">0.8099883239222189</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-31" data-line-number="31">(<span class="fu">-</span><span class="fl">0.9351261952804909</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-32" data-line-number="32">(<span class="fu">-</span><span class="fl">0.9975997729210249</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-33" data-line-number="33">(<span class="fu">-</span><span class="fl">1.000820693251437</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-34" data-line-number="34">(<span class="fu">-</span><span class="fl">0.9525015209823966</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-35" data-line-number="35">(<span class="fu">-</span><span class="fl">0.8603987544425211</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-36" data-line-number="36">(<span class="fu">-</span><span class="fl">0.7303128941490123</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-37" data-line-number="37">(<span class="fu">-</span><span class="fl">0.5660763612885787</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a></code></pre></div>
+<p>Also looks nice! Notice that on the second negative peak, the network just perfectly hits -1.00, which is exactly where it’s supposed to turn around. Sounds like an “unreasonably effective” recurrent neural network!</p>
 <section class="footnotes">
 <hr />
 <ol>

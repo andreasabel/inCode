@@ -744,8 +744,10 @@ x + \textbackslash{}phi\_2 s, x)
 {]}(https://latex.codecogs.com/png.latex?\%0Af\_\%7Bc\%2C\%20\%5Cphi\_1\%2C\%20phi\_2\%7D\%28x\%2C\%20s\%29\%20\%3D\%20\%28c\%20\%2B\%20\%5Cphi\_1\%20x\%20\%2B\%20\%5Cphi\_2\%20s\%2C\%20x\%29\%20\%0A
 " f\_\{c, \phi\_1, phi\_2\}(x, s) = (c + \phi\_1 x + \phi\_2 s, x) ``)
 
-There's also the classic fully-connected recurrent neural network layer, whose
-output is a combination of the previous output and the current input:
+There's also the classic
+\href{http://karpathy.github.io/2015/05/21/rnn-effectiveness/}{fully-connected
+recurrent neural network layer}, whose output is a linear combination of the
+(logistic'd) previous output and the current input, plus a bias:
 
 {[} \textbackslash{}begin\{aligned\} s\_t \& = W\_x
 \textbackslash{}mathbf\{x\}\_t + W\_s \textbackslash{}mathbf\{s\}\_\{t-1\} +
@@ -816,7 +818,7 @@ directly:
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L172-L178}
 
 \OtherTok{ar2 ::} \DataTypeTok{ModelS}\NormalTok{ (}\DataTypeTok{Double} \FunctionTok{:&}\NormalTok{ (}\DataTypeTok{Double} \FunctionTok{:&} \DataTypeTok{Double}\NormalTok{)) }\DataTypeTok{Double} \DataTypeTok{Double} \DataTypeTok{Double}
-\NormalTok{ar2 cφ yLast yLastLast }\FunctionTok{=}\NormalTok{ ( c }\FunctionTok{+}\NormalTok{ φ1 }\FunctionTok{*}\NormalTok{ yLast }\FunctionTok{+}\NormalTok{ φ2 }\FunctionTok{+}\NormalTok{ yLastLast, yLast )}
+\NormalTok{ar2 cφ yLast yLastLast }\FunctionTok{=}\NormalTok{ ( c }\FunctionTok{+}\NormalTok{ φ1 }\FunctionTok{*}\NormalTok{ yLast }\FunctionTok{+}\NormalTok{ φ2 }\FunctionTok{*}\NormalTok{ yLastLast, yLast )}
   \KeywordTok{where}
 \NormalTok{    c  }\FunctionTok{=}\NormalTok{ cφ }\FunctionTok{^^.}\NormalTok{ t1}
 \NormalTok{    φ  }\FunctionTok{=}\NormalTok{ cφ }\FunctionTok{^^.}\NormalTok{ t2}
@@ -941,7 +943,7 @@ We made a dummy type \texttt{NoState} to use for our stateless model
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L382-L383}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L400-L401}
 
 \KeywordTok{data} \DataTypeTok{NoState} \FunctionTok{=} \DataTypeTok{NoState}
   \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Generic}\NormalTok{)}
@@ -1146,7 +1148,18 @@ trainable) model. It takes a list of inputs \texttt{R\ 40}s and produces the
 ``final output'' \texttt{R\ 5}. We can now train this by feeding it with
 \texttt{({[}R\ 40{]},\ R\ 5)} pairs: give a history and an expected next output.
 
-Let's see if we can use a two-layer RNN to a sine wave.
+Let's see this play out with our AR(2) model:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{ar2                        ::} \DataTypeTok{ModelS}\NormalTok{ _ _ }\DataTypeTok{Double} \DataTypeTok{Double}
+\NormalTok{unrollLast}\OtherTok{ ar2             ::} \DataTypeTok{ModelS}\NormalTok{ _ _ [}\DataTypeTok{Double}\NormalTok{] }\DataTypeTok{Double}
+\NormalTok{zeroState (unrollLast ar2)}\OtherTok{ ::} \DataTypeTok{Model}\NormalTok{  _   [}\DataTypeTok{Double}\NormalTok{] }\DataTypeTok{Double}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{zeroState\ (unrollLast\ ar2)} is now a trainable stateless model. Let's
+use it to learn a sine wave:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1154,16 +1167,11 @@ Let's see if we can use a two-layer RNN to a sine wave.
 \NormalTok{ghci}\FunctionTok{>}\NormalTok{ series }\FunctionTok{=}\NormalTok{ [ sin (}\DecValTok{2} \FunctionTok{*}\NormalTok{ pi }\FunctionTok{*}\NormalTok{ t }\FunctionTok{/} \DecValTok{25}\NormalTok{) }\FunctionTok{|}\NormalTok{ t }\OtherTok{<-}\NormalTok{ [}\DecValTok{0}\FunctionTok{..}\NormalTok{]              ]}
 \CommentTok{-- chunks of runs and "next results"}
 \NormalTok{ghci}\FunctionTok{>}\NormalTok{ samps  }\FunctionTok{=}\NormalTok{ [ (init c, last c)      }\FunctionTok{|}\NormalTok{ c }\OtherTok{<-}\NormalTok{ chunksOf }\DecValTok{19}\NormalTok{ series ]}
-\CommentTok{-- first layer is RNN, second layer is normal ANN, 20 hidden units}
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\OtherTok{ model0 ::} \DataTypeTok{ModelS}\NormalTok{ _ _ (}\DataTypeTok{R} \DecValTok{1}\NormalTok{) (}\DataTypeTok{R} \DecValTok{1}\NormalTok{)}
-\NormalTok{          model0 }\FunctionTok{=}\NormalTok{ feedForward }\FunctionTok{@}\DecValTok{20} \FunctionTok{@}\DecValTok{1} \FunctionTok{<*~}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{1} \FunctionTok{@}\DecValTok{20}\NormalTok{)}
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\OtherTok{ model  ::} \DataTypeTok{Model}\NormalTok{  _   [}\DataTypeTok{R} \DecValTok{1}\NormalTok{] (}\DataTypeTok{R} \DecValTok{1}\NormalTok{)}
-\NormalTok{          model  }\FunctionTok{=}\NormalTok{ zeroState }\FunctionTok{$}\NormalTok{ unrollLast model0}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ trained }\OtherTok{<-}\NormalTok{ trainModelIO model }\FunctionTok{$}\NormalTok{ take }\DecValTok{10000}\NormalTok{ samps}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ trained }\OtherTok{<-}\NormalTok{ trainModelIO (zeroState (unrollLast ar2)) }\FunctionTok{$}\NormalTok{ take }\DecValTok{10000}\NormalTok{ samps}
 \end{Highlighting}
 \end{Shaded}
 
-Trained! \texttt{trained} is the parameterization of \texttt{model} that will
+Trained! \texttt{trained} is the parameterization of \texttt{ar2} that will
 simulate a sine wave of period 25.
 
 Let's define some helper functions to test our model. First, a function
@@ -1191,18 +1199,17 @@ again by feeding its previous output as its next input:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L278-L288}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L278-L287}
 
 \NormalTok{    return }\FunctionTok{.}\NormalTok{ take }\DecValTok{50} \FunctionTok{$}\NormalTok{ feedback model0 trained primed (series }\FunctionTok{!!} \DecValTok{20}\NormalTok{)}
   \KeywordTok{where}
     \CommentTok{-- sine wave with period 25}
-\OtherTok{    series ::}\NormalTok{ [}\DataTypeTok{H.R} \DecValTok{1}\NormalTok{]}
-\NormalTok{    series }\FunctionTok{=}\NormalTok{ [ H.konst (sin (}\DecValTok{2} \FunctionTok{*}\NormalTok{ pi }\FunctionTok{*}\NormalTok{ t }\FunctionTok{/} \DecValTok{25}\NormalTok{)) }\FunctionTok{|}\NormalTok{ t }\OtherTok{<-}\NormalTok{ [}\DecValTok{0}\FunctionTok{..}\NormalTok{]              ]}
-\NormalTok{    samps  }\FunctionTok{=}\NormalTok{ [ (init c, last c)                }\FunctionTok{|}\NormalTok{ c }\OtherTok{<-}\NormalTok{ chunksOf }\DecValTok{19}\NormalTok{ series ]}
-\OtherTok{    model0 ::} \DataTypeTok{ModelS}\NormalTok{ _ _ (}\DataTypeTok{R} \DecValTok{1}\NormalTok{) (}\DataTypeTok{R} \DecValTok{1}\NormalTok{)}
-\NormalTok{    model0 }\FunctionTok{=}\NormalTok{ feedForward }\FunctionTok{@}\DecValTok{20} \FunctionTok{@}\DecValTok{1}
-         \FunctionTok{<*~}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{1} \FunctionTok{@}\DecValTok{20}\NormalTok{)}
-\OtherTok{    model  ::} \DataTypeTok{Model}\NormalTok{  _   [}\DataTypeTok{R} \DecValTok{1}\NormalTok{] (}\DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\OtherTok{    series ::}\NormalTok{ [}\DataTypeTok{Double}\NormalTok{]}
+\NormalTok{    series }\FunctionTok{=}\NormalTok{ [ sin (}\DecValTok{2} \FunctionTok{*}\NormalTok{ pi }\FunctionTok{*}\NormalTok{ t }\FunctionTok{/} \DecValTok{25}\NormalTok{) }\FunctionTok{|}\NormalTok{ t }\OtherTok{<-}\NormalTok{ [}\DecValTok{0}\FunctionTok{..}\NormalTok{]              ]}
+\NormalTok{    samps  }\FunctionTok{=}\NormalTok{ [ (init c, last c)      }\FunctionTok{|}\NormalTok{ c }\OtherTok{<-}\NormalTok{ chunksOf }\DecValTok{19}\NormalTok{ series ]}
+\OtherTok{    model0 ::} \DataTypeTok{ModelS}\NormalTok{ _ _ }\DataTypeTok{Double} \DataTypeTok{Double}
+\NormalTok{    model0 }\FunctionTok{=}\NormalTok{ ar2}
+\OtherTok{    model  ::} \DataTypeTok{Model}\NormalTok{  _   [}\DataTypeTok{Double}\NormalTok{] }\DataTypeTok{Double}
 \NormalTok{    model  }\FunctionTok{=}\NormalTok{ zeroState }\FunctionTok{$}\NormalTok{ unrollLast model0}
 \end{Highlighting}
 \end{Shaded}
@@ -1212,8 +1219,58 @@ start it running in feedback mode on the 20st item!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ primed }\FunctionTok{=}\NormalTok{ prime model0 trained }\DecValTok{0}\NormalTok{ (take }\DecValTok{19}\NormalTok{ series)}
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ output }\FunctionTok{=}\NormalTok{ feedback model0 trained primed (series }\FunctionTok{!!} \DecValTok{20}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ primed }\FunctionTok{=}\NormalTok{ prime    ar2 trained }\DecValTok{0}\NormalTok{      (take }\DecValTok{19}\NormalTok{ series)}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ output }\FunctionTok{=}\NormalTok{ feedback ar2 trained primed (series }\FunctionTok{!!} \DecValTok{20}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ mapM_ print }\FunctionTok{$}\NormalTok{ take }\DecValTok{30}\NormalTok{ output}
+\FunctionTok{-}\FloatTok{0.9510565162951536}
+\FunctionTok{-}\FloatTok{0.8600674032037106}
+\FunctionTok{-}\FloatTok{0.7150370920644853}
+\FunctionTok{-}\FloatTok{0.5250783707105848}
+\FunctionTok{-}\FloatTok{0.302127044224051}
+\FunctionTok{-}\FloatTok{6.019196440573038e-2}
+\FloatTok{0.18552519790433009}
+\FloatTok{0.41958512971360296}
+\FloatTok{0.627280984694227}
+\FloatTok{0.795562468425788}
+\FloatTok{0.9138558363893832}
+\FloatTok{0.9747282812232584}
+\FloatTok{0.9743549633453022}
+\FloatTok{0.9127593396907665}
+\FloatTok{0.7938116898267549}
+\FloatTok{0.6249859320531274}
+\FloatTok{0.41689000962856815}
+\FloatTok{0.18259935468235244}
+\FunctionTok{-}\FloatTok{6.316468927441621e-2}
+\FunctionTok{-}\FloatTok{0.3049598635029274}
+\FunctionTok{-}\FloatTok{0.5275932879458836}
+\FunctionTok{-}\FloatTok{0.7170760857570087}
+\FunctionTok{-}\FloatTok{0.861502355880794}
+\FunctionTok{-}\FloatTok{0.9517972646026605}
+\FunctionTok{-}\FloatTok{0.9822872507261515}
+\FunctionTok{-}\FloatTok{0.9510565162888059}
+\FunctionTok{-}\FloatTok{0.8600674031939511}
+\FunctionTok{-}\FloatTok{0.7150370920519272}
+\FunctionTok{-}\FloatTok{0.5250783706960173}
+\FunctionTok{-}\FloatTok{0.3021270442083892}
+\end{Highlighting}
+\end{Shaded}
+
+Looks like a beautiful sine wave! It starts out at -0.95, gradually rolls back
+towards 0, cross over and peaks out at positive 0.97, then swings back around
+past zero and reaches a minimum at -0.97 before swinging back again. Pretty much
+a perfect sine wave with period 25. AR(2) works pretty well!
+
+For kicks, let's try it with a two-layer fully connected neural network with 20
+hidden units, where the first layer is fully recurrent:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- first layer is RNN, second layer is normal ANN, 20 hidden units}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\OtherTok{ rnn ::} \DataTypeTok{ModelS}\NormalTok{ _ _ (}\DataTypeTok{R} \DecValTok{1}\NormalTok{) (}\DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{          rnn }\FunctionTok{=}\NormalTok{ feedForward }\FunctionTok{@}\DecValTok{20} \FunctionTok{@}\DecValTok{1} \FunctionTok{<*~}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{1} \FunctionTok{@}\DecValTok{20}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ trained }\OtherTok{<-}\NormalTok{ trainModelIO (trainZero (unrollLast rnn)) }\FunctionTok{$}\NormalTok{ take }\DecValTok{10000}\NormalTok{ samps}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ primed }\FunctionTok{=}\NormalTok{ prime    rnn trained }\DecValTok{0}\NormalTok{      (take }\DecValTok{19}\NormalTok{ series)}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ output }\FunctionTok{=}\NormalTok{ feedback rnn trained primed (series }\FunctionTok{!!} \DecValTok{20}\NormalTok{)}
 \NormalTok{ghci}\FunctionTok{>}\NormalTok{ mapM_ print }\FunctionTok{$}\NormalTok{ take }\DecValTok{30}\NormalTok{ output}
 \NormalTok{(}\FunctionTok{-}\FloatTok{0.9510565162951536}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
 \NormalTok{(}\FunctionTok{-}\FloatTok{0.8513651168000752}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
@@ -1248,10 +1305,8 @@ start it running in feedback mode on the 20st item!
 \end{Highlighting}
 \end{Shaded}
 
-Looks like a beautiful sine wave! It starts out at -0.95, sweeps back towards 0,
-cross over and peaks out at positive 0.95, then swings back around past zero and
-reaches a minimum at -1.00 before swinging back again. Pretty much a perfect
-sine wave with period 25. Sounds like an unreasonably effective recurrent neural
-network!
+Also looks nice! Notice that on the second negative peak, the network just
+perfectly hits -1.00, which is exactly where it's supposed to turn around.
+Sounds like an ``unreasonably effective'' recurrent neural network!
 
 \end{document}
