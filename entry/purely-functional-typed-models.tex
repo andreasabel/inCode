@@ -934,8 +934,8 @@ network:
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{ghci}\FunctionTok{>}\NormalTok{ hybrid }\FunctionTok{=}\NormalTok{ toS }\FunctionTok{@}\NormalTok{_ }\FunctionTok{@}\DataTypeTok{NoState}\NormalTok{ (feedForwardLog' }\FunctionTok{@}\DecValTok{20} \FunctionTok{@}\DecValTok{10}\NormalTok{)}
-           \FunctionTok{<*~}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{20} \FunctionTok{@}\DecValTok{10}\NormalTok{)}
-           \FunctionTok{<*~}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{40} \FunctionTok{@}\DecValTok{20}\NormalTok{)}
+          \FunctionTok{<*~*}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{20} \FunctionTok{@}\DecValTok{10}\NormalTok{)}
+          \FunctionTok{<*~*}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{40} \FunctionTok{@}\DecValTok{20}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -967,6 +967,14 @@ compose a stateless model with a stateful one:
 \NormalTok{    p }\FunctionTok{=}\NormalTok{ pq }\FunctionTok{^^.}\NormalTok{ t1}
 \NormalTok{    q }\FunctionTok{=}\NormalTok{ pq }\FunctionTok{^^.}\NormalTok{ t2}
 \KeywordTok{infixr} \DecValTok{8} \FunctionTok{<*~}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ hybrid }\FunctionTok{=}\NormalTok{ feedForwardLog' }\FunctionTok{@}\DecValTok{20} \FunctionTok{@}\DecValTok{10}
+          \FunctionTok{<*~}\NormalTok{  mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{20} \FunctionTok{@}\DecValTok{10}\NormalTok{)}
+          \FunctionTok{<*~*}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{40} \FunctionTok{@}\DecValTok{20}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1043,8 +1051,8 @@ This is \emph{exactly} the just the normal functional programming
 \emph{\href{http://hackage.haskell.org/package/backprop/docs/Prelude-Backprop.html}{Prelude.Backprop}}
 module)
 
-And, as normal functions, we can also get a version that gets only the ``final''
-result:
+We can also tweak \texttt{unroll}'s result a bit to get a version of
+\texttt{unroll} that shows only the ``final'' result:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1074,8 +1082,8 @@ To see how this applies to our \texttt{threeLayer}:
 
 Did you enjoy the detour through stateful time series models?
 
-Good! Because the whole point of it was to talk about how we can get rid of
-state and bring us back to our original models!
+Good! Because the whole point of it was to talk about how we can \emph{get rid
+of state} and bring us back to our original models!
 
 You knew this had to come, because all of our methods for ``training'' these
 models and learn these parameters involves non-stateful models. Let's see now
@@ -1152,14 +1160,14 @@ Let's see this play out with our AR(2) model:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{ar2                        ::} \DataTypeTok{ModelS}\NormalTok{ _ _ }\DataTypeTok{Double} \DataTypeTok{Double}
+\OtherTok{ar2                        ::} \DataTypeTok{ModelS}\NormalTok{ _ _ }\DataTypeTok{Double}   \DataTypeTok{Double}
 \NormalTok{unrollLast}\OtherTok{ ar2             ::} \DataTypeTok{ModelS}\NormalTok{ _ _ [}\DataTypeTok{Double}\NormalTok{] }\DataTypeTok{Double}
 \NormalTok{zeroState (unrollLast ar2)}\OtherTok{ ::} \DataTypeTok{Model}\NormalTok{  _   [}\DataTypeTok{Double}\NormalTok{] }\DataTypeTok{Double}
 \end{Highlighting}
 \end{Shaded}
 
 \texttt{zeroState\ (unrollLast\ ar2)} is now a trainable stateless model. Let's
-use it to learn a sine wave:
+see if we can use it to learn how to model a sine wave:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1199,18 +1207,20 @@ again by feeding its previous output as its next input:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L278-L287}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L274-L285}
 
-\NormalTok{    return }\FunctionTok{.}\NormalTok{ take }\DecValTok{50} \FunctionTok{$}\NormalTok{ feedback model0 trained primed (series }\FunctionTok{!!} \DecValTok{20}\NormalTok{)}
+\NormalTok{feedback}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ s)}
+    \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ p s a a}
+    \OtherTok{->}\NormalTok{ p}
+    \OtherTok{->}\NormalTok{ s}
+    \OtherTok{->}\NormalTok{ a}
+    \OtherTok{->}\NormalTok{ [a]}
+\NormalTok{feedback f p s0 x0 }\FunctionTok{=}\NormalTok{ unfoldr go (s0, x0)}
   \KeywordTok{where}
-    \CommentTok{-- sine wave with period 25}
-\OtherTok{    series ::}\NormalTok{ [}\DataTypeTok{Double}\NormalTok{]}
-\NormalTok{    series }\FunctionTok{=}\NormalTok{ [ sin (}\DecValTok{2} \FunctionTok{*}\NormalTok{ pi }\FunctionTok{*}\NormalTok{ t }\FunctionTok{/} \DecValTok{25}\NormalTok{) }\FunctionTok{|}\NormalTok{ t }\OtherTok{<-}\NormalTok{ [}\DecValTok{0}\FunctionTok{..}\NormalTok{]              ]}
-\NormalTok{    samps  }\FunctionTok{=}\NormalTok{ [ (init c, last c)      }\FunctionTok{|}\NormalTok{ c }\OtherTok{<-}\NormalTok{ chunksOf }\DecValTok{19}\NormalTok{ series ]}
-\OtherTok{    model0 ::} \DataTypeTok{ModelS}\NormalTok{ _ _ }\DataTypeTok{Double} \DataTypeTok{Double}
-\NormalTok{    model0 }\FunctionTok{=}\NormalTok{ ar2}
-\OtherTok{    model  ::} \DataTypeTok{Model}\NormalTok{  _   [}\DataTypeTok{Double}\NormalTok{] }\DataTypeTok{Double}
-\NormalTok{    model  }\FunctionTok{=}\NormalTok{ zeroState }\FunctionTok{$}\NormalTok{ unrollLast model0}
+\NormalTok{    go (s, x) }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (x, (s', y))}
+      \KeywordTok{where}
+\NormalTok{        (y, s') }\FunctionTok{=}\NormalTok{ evalBP (uncurry }\DataTypeTok{T2} \FunctionTok{.}\NormalTok{ f (constVar p) (constVar x)) s}
 \end{Highlighting}
 \end{Shaded}
 

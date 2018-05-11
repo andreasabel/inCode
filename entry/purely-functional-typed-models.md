@@ -753,8 +753,8 @@ This means we can make a hybrid "recurrent" and "non-recurrent" neural network:
 
 ``` {.haskell}
 ghci> hybrid = toS @_ @NoState (feedForwardLog' @20 @10)
-           <*~ mapS logistic (fcrnn @20 @10)
-           <*~ mapS logistic (fcrnn @40 @20)
+          <*~* mapS logistic (fcrnn @20 @10)
+          <*~* mapS logistic (fcrnn @40 @20)
 ```
 
 We made a dummy type `NoState` to use for our stateless model
@@ -782,6 +782,12 @@ compose a stateless model with a stateful one:
     p = pq ^^. t1
     q = pq ^^. t2
 infixr 8 <*~
+```
+
+``` {.haskell}
+ghci> hybrid = feedForwardLog' @20 @10
+          <*~  mapS logistic (fcrnn @20 @10)
+          <*~* mapS logistic (fcrnn @40 @20)
 ```
 
 Everything is just your simple run-of-the-mill function composition and higher
@@ -844,8 +850,8 @@ definable for all `Traversable` containers (not just lists)! (We use `mapAccumL`
 *[Prelude.Backprop](http://hackage.haskell.org/package/backprop/docs/Prelude-Backprop.html)*
 module)
 
-And, as normal functions, we can also get a version that gets only the "final"
-result:
+We can also tweak `unroll`'s result a bit to get a version of `unroll` that
+shows only the "final" result:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L237-L242
@@ -871,8 +877,8 @@ State-be-gone
 
 Did you enjoy the detour through stateful time series models?
 
-Good! Because the whole point of it was to talk about how we can get rid of
-state and bring us back to our original models!
+Good! Because the whole point of it was to talk about how we can *get rid of
+state* and bring us back to our original models!
 
 You knew this had to come, because all of our methods for "training" these
 models and learn these parameters involves non-stateful models. Let's see now
@@ -941,13 +947,13 @@ and an expected next output.
 Let's see this play out with our AR(2) model:
 
 ``` {.haskell}
-ar2                        :: ModelS _ _ Double Double
+ar2                        :: ModelS _ _ Double   Double
 unrollLast ar2             :: ModelS _ _ [Double] Double
 zeroState (unrollLast ar2) :: Model  _   [Double] Double
 ```
 
-`zeroState (unrollLast ar2)` is now a trainable stateless model. Let's use it to
-learn a sine wave:
+`zeroState (unrollLast ar2)` is now a trainable stateless model. Let's see if we
+can use it to learn how to model a sine wave:
 
 ``` {.haskell}
 -- sine signal with period 25
@@ -981,18 +987,20 @@ Then a function `feedback` that iterates a stateful model over and over again by
 feeding its previous output as its next input:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L278-L287
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L274-L285
 
-    return . take 50 $ feedback model0 trained primed (series !! 20)
+feedback
+    :: (Backprop a, Backprop s)
+    => ModelS p s a a
+    -> p
+    -> s
+    -> a
+    -> [a]
+feedback f p s0 x0 = unfoldr go (s0, x0)
   where
-    -- sine wave with period 25
-    series :: [Double]
-    series = [ sin (2 * pi * t / 25) | t <- [0..]              ]
-    samps  = [ (init c, last c)      | c <- chunksOf 19 series ]
-    model0 :: ModelS _ _ Double Double
-    model0 = ar2
-    model  :: Model  _   [Double] Double
-    model  = zeroState $ unrollLast model0
+    go (s, x) = Just (x, (s', y))
+      where
+        (y, s') = evalBP (uncurry T2 . f (constVar p) (constVar x)) s
 ```
 
 Now let's prime our trained model over the first 19 items in our sine wave and
