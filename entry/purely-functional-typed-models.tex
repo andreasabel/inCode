@@ -323,7 +323,7 @@ containing those values) instead:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L81-L82}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L53-L54}
 
 \KeywordTok{type} \DataTypeTok{Model}\NormalTok{ p a b }\FunctionTok{=}\NormalTok{ forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
                 \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z p }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z a }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z b}
@@ -339,10 +339,11 @@ x +
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L46-L88}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L49-L60}
 
 \KeywordTok{data}\NormalTok{ a }\FunctionTok{:&}\NormalTok{ b }\FunctionTok{=} \FunctionTok{!}\NormalTok{a }\FunctionTok{:&} \FunctionTok{!}\NormalTok{b}
   \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Generic}\NormalTok{)}
+\KeywordTok{infixr} \DecValTok{2} \FunctionTok{:&}
 
 \OtherTok{linReg ::} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{Double} \FunctionTok{:&} \DataTypeTok{Double}\NormalTok{) }\DataTypeTok{Double} \DataTypeTok{Double}
 \NormalTok{linReg ab x }\FunctionTok{=}\NormalTok{ b }\FunctionTok{*}\NormalTok{ x }\FunctionTok{+}\NormalTok{ a}
@@ -381,7 +382,7 @@ y\_x)\^{}2{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cnabla\_p\%20\%28f\%28
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L90-L98}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L62-L70}
 
 \NormalTok{squaredErrorGrad}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ b, }\DataTypeTok{Num}\NormalTok{ b)}
@@ -404,7 +405,7 @@ simple fold over all observations:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L100-L106}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L72-L78}
 
 \NormalTok{trainModel}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Fractional}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Num}\NormalTok{ b, }\DataTypeTok{Backprop}\NormalTok{ b)}
@@ -413,6 +414,26 @@ simple fold over all observations:
     \OtherTok{->}\NormalTok{ [(a,b)]          }\CommentTok{-- ^ list of observations}
     \OtherTok{->}\NormalTok{ p                }\CommentTok{-- ^ updated parameter guess}
 \NormalTok{trainModel f }\FunctionTok{=}\NormalTok{ foldl' }\FunctionTok{$}\NormalTok{ \textbackslash{}p (x,y) }\OtherTok{->}\NormalTok{ p }\FunctionTok{-} \FloatTok{0.1} \FunctionTok{*}\NormalTok{ squaredErrorGrad f x y p}
+\end{Highlighting}
+\end{Shaded}
+
+For convenience, we can define a \texttt{Random} instance for our tuple type
+using the \emph{\href{http://hackage.haskell.org/package/random}{random}}
+library and make a wrapper that uses \texttt{IO} to generate a random initial
+parameter:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L80-L87}
+
+\NormalTok{trainModelIO}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Fractional}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Num}\NormalTok{ b, }\DataTypeTok{Backprop}\NormalTok{ b, }\DataTypeTok{Random}\NormalTok{ p)}
+    \OtherTok{=>} \DataTypeTok{Model}\NormalTok{ p a b      }\CommentTok{-- ^ model to train}
+    \OtherTok{->}\NormalTok{ [(a,b)]          }\CommentTok{-- ^ list of observations}
+    \OtherTok{->} \DataTypeTok{IO}\NormalTok{ p             }\CommentTok{-- ^ updated parameter guess}
+\NormalTok{trainModelIO m xs }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{    p0 }\OtherTok{<-}\NormalTok{ (}\FunctionTok{/} \DecValTok{10}\NormalTok{) }\FunctionTok{.}\NormalTok{ subtract }\FloatTok{0.5} \FunctionTok{<$>}\NormalTok{ randomIO    }\CommentTok{-- Num instance for tuple}
+\NormalTok{    return }\FunctionTok{$}\NormalTok{ trainModel m p0 xs}
 \end{Highlighting}
 \end{Shaded}
 
@@ -426,7 +447,7 @@ or
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{ghci}\FunctionTok{>}\NormalTok{ samps }\FunctionTok{=}\NormalTok{ [(}\DecValTok{1}\NormalTok{,}\DecValTok{1}\NormalTok{),(}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{),(}\DecValTok{3}\NormalTok{,}\DecValTok{5}\NormalTok{),(}\DecValTok{4}\NormalTok{,}\DecValTok{7}\NormalTok{),(}\DecValTok{5}\NormalTok{,}\DecValTok{9}\NormalTok{)]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ trainModel linReg (}\DecValTok{0} \FunctionTok{:&} \DecValTok{0}\NormalTok{) (concat (replicate }\DecValTok{1000}\NormalTok{ samps))}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ trainModelIO linReg }\FunctionTok{$}\NormalTok{ take }\DecValTok{5000}\NormalTok{ (cycle samps)}
 \NormalTok{(}\FunctionTok{-}\FloatTok{1.0000000000000024}\NormalTok{) }\FunctionTok{:&} \FloatTok{2.0000000000000036}
 \end{Highlighting}
 \end{Shaded}
@@ -448,7 +469,7 @@ We can start with a single layer. The model here will also take two parameters
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{import} \DataTypeTok{Numeric.LinearAlgebra.Static.Backprop}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L122-L139}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L94-L111}
 
 \OtherTok{logistic ::} \DataTypeTok{Floating}\NormalTok{ a }\OtherTok{=>}\NormalTok{ a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{logistic x }\FunctionTok{=} \DecValTok{1} \FunctionTok{/}\NormalTok{ (}\DecValTok{1} \FunctionTok{+}\NormalTok{ exp (}\FunctionTok{-}\NormalTok{x))}
@@ -474,7 +495,7 @@ Let's try training a model to learn the simple
 \begin{Highlighting}[]
 \NormalTok{ghci}\FunctionTok{>} \KeywordTok{import} \KeywordTok{qualified} \DataTypeTok{Numeric.LinearAlgebra.Static} \KeywordTok{as} \DataTypeTok{H}
 \NormalTok{ghci}\FunctionTok{>}\NormalTok{ samps }\FunctionTok{=}\NormalTok{ [(H.vec2 }\DecValTok{0} \DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{), (H.vec2 }\DecValTok{1} \DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{), (H.vec2 }\DecValTok{0} \DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{), (H.vec2 }\DecValTok{1} \DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{)]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ trained }\FunctionTok{=}\NormalTok{ trainModel feedForwardLog (}\DecValTok{0} \FunctionTok{:&} \DecValTok{0}\NormalTok{) (concat (replicate }\DecValTok{10000}\NormalTok{ samps))}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ trained }\OtherTok{<-}\NormalTok{ trainModelIO feedForwardLog }\FunctionTok{$}\NormalTok{ take }\DecValTok{10000}\NormalTok{ (cycle samps)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -493,13 +514,13 @@ We have our trained parameters! Let's see if they actually model ``AND''?
 \end{Highlighting}
 \end{Shaded}
 
-Close enough!
+Close enough for me!
 
 \hypertarget{functional-composition}{%
 \subsection{Functional composition}\label{functional-composition}}
 
-Because our functions are simply just normal functions, we can create new,
-complex models from simpler ones using just functional composition.
+Because our functions are simply just \emph{normal functions}, we can create
+new, complex models from simpler ones using just functional composition.
 
 For example, we can map the result of a model to create a new model. Here, we
 compose \texttt{linReg\ ab} (linear regression with parameter \texttt{ab}) with
@@ -509,7 +530,7 @@ regression}} model.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L152-L153}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L124-L125}
 
 \OtherTok{logReg ::} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{Double} \FunctionTok{:&} \DataTypeTok{Double}\NormalTok{) }\DataTypeTok{Double} \DataTypeTok{Double}
 \NormalTok{logReg ab }\FunctionTok{=}\NormalTok{ logistic }\FunctionTok{.}\NormalTok{ linReg ab}
@@ -521,7 +542,7 @@ function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L125-L131}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L97-L103}
 
 \NormalTok{feedForward}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
@@ -537,7 +558,7 @@ And now we can swap out activation functions using simple function composition:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L155-L158}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L127-L130}
 
 \NormalTok{feedForwardLog'}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
@@ -551,7 +572,7 @@ classifier!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L160-L168}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L132-L140}
 
 \OtherTok{softMax ::}\NormalTok{ (}\DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}\NormalTok{, }\DataTypeTok{KnownNat}\NormalTok{ n) }\OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z (}\DataTypeTok{R}\NormalTok{ n) }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z (}\DataTypeTok{R}\NormalTok{ n)}
 \NormalTok{softMax x }\FunctionTok{=}\NormalTok{ konst (}\DecValTok{1} \FunctionTok{/}\NormalTok{ sumElements expx) }\FunctionTok{*}\NormalTok{ expx}
@@ -570,7 +591,7 @@ original parameters separate:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L170-L179}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L142-L151}
 
 \NormalTok{(}\FunctionTok{<~}\NormalTok{)}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ q)}
@@ -605,7 +626,7 @@ We can train it on sample points:
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{ghci}\FunctionTok{>}\NormalTok{ samps }\FunctionTok{=}\NormalTok{ [(H.vec2 }\DecValTok{0} \DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{), (H.vec2 }\DecValTok{1} \DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{), (H.vec2 }\DecValTok{0} \DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{), (H.vec2 }\DecValTok{1} \DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{)]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ trained }\FunctionTok{=}\NormalTok{ trainModel twoLayer p0 (concat (replicate }\DecValTok{10000}\NormalTok{ samps))}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ trained }\OtherTok{<-}\NormalTok{ trainModelIO twoLayer }\FunctionTok{$}\NormalTok{ take }\DecValTok{10000}\NormalTok{ (cycle samps)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -702,20 +723,40 @@ This makes it clear that the output of our model can only depend on current and
 \hypertarget{examples}{%
 \subsection{Examples}\label{examples}}
 
-We can use this to implement a ``rolling mean'' model (different from the
-``Moving Average'' model), who sees an input and outputs the weighted average of
-the input with the previous input:
+We can use this to represent an AR(2) model
+(\href{https://en.wikipedia.org/wiki/Autoregressive_model}{autoregressive model
+with degree 2}), which is a model whose output forecast is a linear regression
+on the \emph{last two} most recent observed values. We can do this by setting
+the ``input'' to be the last observed value, and the ``state'' to be the
+second-to-last observed value:
 
-{[} f\_\textbackslash{}lambda(x, s) = (\textbackslash{}frac\{x +
-\textbackslash{}lambda s\}\{1 + \textbackslash{}lambda\},
-x){]}(https://latex.codecogs.com/png.latex?\%0Af\_\%5Clambda\%28x\%2C\%20s\%29\%20\%3D\%20\%28\%5Cfrac\%7Bx\%20\%2B\%20\%5Clambda\%20s\%7D\%7B1\%20\%2B\%20\%5Clambda\%7D\%2C\%20x\%29\%0A
-" f\_\lambda(x, s) = (\frac{x + \lambda s}{1 + \lambda}, x) ``)
+{[} \textbackslash{}begin\{aligned\} s\_t \& = x\_t
+\textbackslash{}\textbackslash{} y\_t \& = c + \textbackslash{}phi\_1 x\_t +
+\textbackslash{}phi\_2 s\_\{t - 1\}
+\textbackslash{}end\{aligned\}{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cbegin\%7Baligned\%7D\%0As\_t\%20\%26\%20\%3D\%20x\_t\%20\%5C\%5C\%0Ay\_t\%20\%26\%20\%3D\%20c\%20\%2B\%20\%5Cphi\_1\%20x\_t\%20\%2B\%20\%5Cphi\_2\%20s\_\%7Bt\%20-\%201\%7D\%0A\%5Cend\%7Baligned\%7D\%0A
+" \textbackslash{}begin\{aligned\} s\_t \& = x\_t \textbackslash{} y\_t \& = c +
+\phi\_1 x\_t + \phi\emph{2 s}\{t - 1\} \textbackslash{}end\{aligned\} ``)
 
-This is a model parameterized by how much to weight the current input with the
-previous input.
+Or, in our explicit state form:
+
+{[} f\_\{c, \textbackslash{}phi\_1, phi\_2\}(x, s) = (c + \textbackslash{}phi\_1
+x + \textbackslash{}phi\_2 s, x)
+{]}(https://latex.codecogs.com/png.latex?\%0Af\_\%7Bc\%2C\%20\%5Cphi\_1\%2C\%20phi\_2\%7D\%28x\%2C\%20s\%29\%20\%3D\%20\%28c\%20\%2B\%20\%5Cphi\_1\%20x\%20\%2B\%20\%5Cphi\_2\%20s\%2C\%20x\%29\%20\%0A
+" f\_\{c, \phi\_1, phi\_2\}(x, s) = (c + \phi\_1 x + \phi\_2 s, x) ``)
 
 There's also the classic fully-connected recurrent neural network layer, whose
 output is a combination of the previous output and the current input:
+
+{[} \textbackslash{}begin\{aligned\} s\_t \& = W\_x
+\textbackslash{}mathbf\{x\}\_t + W\_s \textbackslash{}mathbf\{s\}\_\{t-1\} +
+\textbackslash{}mathbf\{b\} \textbackslash{}\textbackslash{} y\_t \& =
+\textbackslash{}sigma(s\_t)
+\textbackslash{}end\{aligned\}{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cbegin\%7Baligned\%7D\%0As\_t\%20\%26\%20\%3D\%20W\_x\%20\%5Cmathbf\%7Bx\%7D\_t\%20\%2B\%20W\_s\%20\%5Cmathbf\%7Bs\%7D\_\%7Bt-1\%7D\%20\%2B\%20\%5Cmathbf\%7Bb\%7D\%20\%5C\%5C\%0Ay\_t\%20\%26\%20\%3D\%20\%5Csigma\%28s\_t\%29\%0A\%5Cend\%7Baligned\%7D\%0A
+" \textbackslash{}begin\{aligned\} s\_t \& = W\_x \mathbf{x}\emph{t + W\_s
+\mathbf{s}}\{t-1\} + \mathbf{b} \textbackslash{} y\_t \& = \sigma(s\_t)
+\textbackslash{}end\{aligned\} ``)
+
+Or, in our explicit state form:
 
 {[} f\_\{W\_x, W\_s, \textbackslash{}mathbf\{b\}\}(\textbackslash{}mathbf\{x\},
 \textbackslash{}mathbf\{s\}) = ( W\_x \textbackslash{}mathbf\{x\} + W\_s
@@ -730,7 +771,8 @@ W\_s \mathbf{s} + \mathbf{b} , \sigma(W\_x \mathbf{x} + W\_s \mathbf{s} +
 \hypertarget{the-connection}{%
 \subsection{The connection}\label{the-connection}}
 
-These stateful models seem to be at odds with our previous picture of models.
+This is nice and all, but these stateful models seem to be at odds with our
+previous picture of models.
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -743,9 +785,9 @@ These stateful models seem to be at odds with our previous picture of models.
   descent), and look like they require a different algorithm for training.
 \end{enumerate}
 
-However, because we just have functions, it's easy to transform non-stateful
-models into stateful models, and stateful models to non-stateful models. That's
-just the point of
+However, because these are all \emph{just functions}, we can really just
+manipulate them as normal functions and see that the two aren't too different at
+all.
 
 \hypertarget{functional-stateful-models}{%
 \subsection{Functional Stateful Models}\label{functional-stateful-models}}
@@ -756,7 +798,7 @@ To help us, let's try implementing this in Haskell:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L194-L198}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L166-L170}
 
 \KeywordTok{type} \DataTypeTok{ModelS}\NormalTok{ p s a b }\FunctionTok{=}\NormalTok{ forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
                    \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z p}
@@ -765,5 +807,451 @@ To help us, let's try implementing this in Haskell:
                    \OtherTok{->}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z b, }\DataTypeTok{BVar}\NormalTok{ z s)}
 \end{Highlighting}
 \end{Shaded}
+
+We can implement AR(2) as mentioned before by translating the math formula
+directly:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L172-L178}
+
+\OtherTok{ar2 ::} \DataTypeTok{ModelS}\NormalTok{ (}\DataTypeTok{Double} \FunctionTok{:&}\NormalTok{ (}\DataTypeTok{Double} \FunctionTok{:&} \DataTypeTok{Double}\NormalTok{)) }\DataTypeTok{Double} \DataTypeTok{Double} \DataTypeTok{Double}
+\NormalTok{ar2 cφ yLast yLastLast }\FunctionTok{=}\NormalTok{ ( c }\FunctionTok{+}\NormalTok{ φ1 }\FunctionTok{*}\NormalTok{ yLast }\FunctionTok{+}\NormalTok{ φ2 }\FunctionTok{+}\NormalTok{ yLastLast, yLast )}
+  \KeywordTok{where}
+\NormalTok{    c  }\FunctionTok{=}\NormalTok{ cφ }\FunctionTok{^^.}\NormalTok{ t1}
+\NormalTok{    φ  }\FunctionTok{=}\NormalTok{ cφ }\FunctionTok{^^.}\NormalTok{ t2}
+\NormalTok{    φ1 }\FunctionTok{=}\NormalTok{ φ  }\FunctionTok{^^.}\NormalTok{ t1}
+\NormalTok{    φ2 }\FunctionTok{=}\NormalTok{ φ  }\FunctionTok{^^.}\NormalTok{ t2}
+\end{Highlighting}
+\end{Shaded}
+
+Our implementation of a fully-connected recurrent neural network is a similar
+direct translation:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L180-L189}
+
+\NormalTok{fcrnn}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
+    \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ ((}\DataTypeTok{L}\NormalTok{ o i }\FunctionTok{:&} \DataTypeTok{L}\NormalTok{ o o) }\FunctionTok{:&} \DataTypeTok{R}\NormalTok{ o) (}\DataTypeTok{R}\NormalTok{ o) (}\DataTypeTok{R}\NormalTok{ i) (}\DataTypeTok{R}\NormalTok{ o)}
+\NormalTok{fcrnn wb x s }\FunctionTok{=}\NormalTok{ ( y, logistic y )}
+  \KeywordTok{where}
+\NormalTok{    y  }\FunctionTok{=}\NormalTok{ (wX }\FunctionTok{#>}\NormalTok{ x) }\FunctionTok{+}\NormalTok{ (wS }\FunctionTok{#>}\NormalTok{ s) }\FunctionTok{+}\NormalTok{ b}
+\NormalTok{    w  }\FunctionTok{=}\NormalTok{ wb }\FunctionTok{^^.}\NormalTok{ t1}
+\NormalTok{    b  }\FunctionTok{=}\NormalTok{ wb }\FunctionTok{^^.}\NormalTok{ t2}
+\NormalTok{    wX }\FunctionTok{=}\NormalTok{ w  }\FunctionTok{^^.}\NormalTok{ t1}
+\NormalTok{    wS }\FunctionTok{=}\NormalTok{ w  }\FunctionTok{^^.}\NormalTok{ t2}
+\end{Highlighting}
+\end{Shaded}
+
+Because we again have normal functions, we can write a similar stateful model
+composition function that combines both their parameters and their states:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L191-L204}
+
+\NormalTok{(}\FunctionTok{<*~*}\NormalTok{)}
+\OtherTok{  ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ q, }\DataTypeTok{Backprop}\NormalTok{ s, }\DataTypeTok{Backprop}\NormalTok{ t)}
+    \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{  p        s       b c}
+    \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{       q        t  a b}
+    \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ (p }\FunctionTok{:&}\NormalTok{ q) (s }\FunctionTok{:&}\NormalTok{ t) a c}
+\NormalTok{(f }\FunctionTok{<*~*}\NormalTok{ g) pq x st }\FunctionTok{=} \KeywordTok{let}\NormalTok{ (y, t') }\FunctionTok{=}\NormalTok{ g q x t}
+\NormalTok{                         (z, s') }\FunctionTok{=}\NormalTok{ f p y s}
+                     \KeywordTok{in}\NormalTok{  (z, reTup s' t')}
+  \KeywordTok{where}
+\NormalTok{    p }\FunctionTok{=}\NormalTok{ pq }\FunctionTok{^^.}\NormalTok{ t1}
+\NormalTok{    q }\FunctionTok{=}\NormalTok{ pq }\FunctionTok{^^.}\NormalTok{ t2}
+\NormalTok{    s }\FunctionTok{=}\NormalTok{ st }\FunctionTok{^^.}\NormalTok{ t1}
+\NormalTok{    t }\FunctionTok{=}\NormalTok{ st }\FunctionTok{^^.}\NormalTok{ t2}
+\KeywordTok{infixr} \DecValTok{8} \FunctionTok{<*~*}
+\end{Highlighting}
+\end{Shaded}
+
+(\texttt{reTup} will take two \texttt{BVar}s of values and tuple them back up
+into a \texttt{BVar} of a tuple, essentially the inverse of
+\texttt{\^{}\^{}.\ t1} and \texttt{\^{}\^{}.\ t2})
+
+And maybe even a utility function to map a function on the result of a
+\texttt{ModelS}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L206-L210}
+
+\NormalTok{mapS}
+\OtherTok{    ::}\NormalTok{ (forall s}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ s }\DataTypeTok{W} \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ s b }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s c)}
+    \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p s a b}
+    \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p s a c}
+\NormalTok{mapS f g p x }\FunctionTok{=}\NormalTok{ first f }\FunctionTok{.}\NormalTok{ g p x}
+\end{Highlighting}
+\end{Shaded}
+
+With this we can do some neat things like define a two-layer fully-connected
+recurrent neural network.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ twoLayerRNN }\FunctionTok{=}\NormalTok{ fcrnn }\FunctionTok{@}\DecValTok{10} \FunctionTok{@}\DecValTok{5} \FunctionTok{<*~*}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{20} \FunctionTok{@}\DecValTok{10}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Hey, maybe even a three-layer one:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ threeLayers }\FunctionTok{=}\NormalTok{ fcrnn }\FunctionTok{@}\DecValTok{10} \FunctionTok{@}\DecValTok{5}
+               \FunctionTok{<*~*}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{20} \FunctionTok{@}\DecValTok{10}\NormalTok{)}
+               \FunctionTok{<*~*}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{40} \FunctionTok{@}\DecValTok{20}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{let-there-be-state}{%
+\subsubsection{Let there be State}\label{let-there-be-state}}
+
+Because these are all just normal functions, we can manipulate them just like
+any other function using higher order functions.
+
+For example, we can ``upgrade'' any non-stateful function to a stateful one,
+just by returning a new normal function:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L212-L214}
+
+\OtherTok{toS ::} \DataTypeTok{Model}\NormalTok{  p   a b}
+    \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p s a b}
+\NormalTok{toS f p x s }\FunctionTok{=}\NormalTok{ (f p x, s)}
+\end{Highlighting}
+\end{Shaded}
+
+This means we can make a hybrid ``recurrent'' and ``non-recurrent'' neural
+network:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ hybrid }\FunctionTok{=}\NormalTok{ toS }\FunctionTok{@}\NormalTok{_ }\FunctionTok{@}\DataTypeTok{NoState}\NormalTok{ (feedForwardLog' }\FunctionTok{@}\DecValTok{20} \FunctionTok{@}\DecValTok{10}\NormalTok{)}
+           \FunctionTok{<*~}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{20} \FunctionTok{@}\DecValTok{10}\NormalTok{)}
+           \FunctionTok{<*~}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{40} \FunctionTok{@}\DecValTok{20}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+We made a dummy type \texttt{NoState} to use for our stateless model
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L382-L383}
+
+\KeywordTok{data} \DataTypeTok{NoState} \FunctionTok{=} \DataTypeTok{NoState}
+  \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Generic}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+But we can also be creative with our combinators, as well, and write one to
+compose a stateless model with a stateful one:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L216-L225}
+
+\NormalTok{(}\FunctionTok{<*~}\NormalTok{)}
+\OtherTok{  ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ q)}
+    \OtherTok{=>} \DataTypeTok{Model}\NormalTok{   p         b c}
+    \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{       q  s a b}
+    \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ (p }\FunctionTok{:&}\NormalTok{ q) s a c}
+\NormalTok{(f }\FunctionTok{<*~}\NormalTok{ g) pq x }\FunctionTok{=}\NormalTok{ first (f p) }\FunctionTok{.}\NormalTok{ g q x}
+  \KeywordTok{where}
+\NormalTok{    p }\FunctionTok{=}\NormalTok{ pq }\FunctionTok{^^.}\NormalTok{ t1}
+\NormalTok{    q }\FunctionTok{=}\NormalTok{ pq }\FunctionTok{^^.}\NormalTok{ t2}
+\KeywordTok{infixr} \DecValTok{8} \FunctionTok{<*~}
+\end{Highlighting}
+\end{Shaded}
+
+Everything is just your simple run-of-the-mill function composition and higher
+order functions that Haskellers use every day, so there are many ways to do
+these things --- just like there are many ways to manipulate normal functions.
+
+\hypertarget{unrolling-in-the-deep-learning}{%
+\subsubsection{Unrolling in the Deep
+(Learning)}\label{unrolling-in-the-deep-learning}}
+
+There's something neat we can do with stateful functions --- we can
+``\href{https://machinelearningmastery.com/rnn-unrolling/}{unroll}'' them by
+explicitly propagating their state through several inputs.
+
+This is illustrated very well by
+\href{http://colah.github.io/posts/2015-09-NN-Types-FP/}{Christopher Olah's
+post}, who made a nice diagram:
+
+\begin{figure}
+\centering
+\includegraphics{/img/entries/functional-models/RNN-general.png}
+\caption{Christopher Olah's RNN Unrolling Diagram}
+\end{figure}
+
+If we look at each one of those individual boxes, they all have two inputs
+(normal input, and previous state) and two outputs (normal output, new state).
+
+``Unrolling'' a stateful model means taking a model that takes in an \texttt{X}
+and producing a \texttt{Y} and turning it into a model that takes an
+\texttt{{[}X{]}} and produces a \texttt{{[}Y{]}}, by feeding it each of the
+\texttt{X}s one after the other, propagating the state, and collecting all of
+the \texttt{Y} responses.
+
+The ``type'' of this sounds like:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{unroll ::} \DataTypeTok{Model}\NormalTok{ p s a b }\OtherTok{->} \DataTypeTok{Model}\NormalTok{ p s [a] [b]}
+\end{Highlighting}
+\end{Shaded}
+
+In writing this out as a type, we also note that the \texttt{p} parameter is the
+same, and the \texttt{s} state type is the same. If you're familiar with
+category theory, this looks a little bit like a sort of ``fmap'' under a
+\texttt{Model\ p\ s} category -- it takes a \texttt{a\ -\textgreater{}\ b},
+essentially, and turns it into an \texttt{{[}a{]}\ -\textgreater{}\ {[}b{]}}.
+
+Olah's post suggests that this is a \texttt{mapAccum}, in functional programming
+parlance. And, surely enough, we can actually write this as a
+\texttt{mapAccumL}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L227-L235}
+
+\NormalTok{unroll}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Traversable}\NormalTok{ t, }\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b, }\DataTypeTok{Backprop}\NormalTok{ (t b))}
+    \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ p s a b}
+    \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p s (t a) (t b)}
+\NormalTok{unroll f p xs s0 }\FunctionTok{=}\NormalTok{ swap }\FunctionTok{$}\NormalTok{ mapAccumL f' s0 xs}
+  \KeywordTok{where}
+    \CommentTok{-- we have to re-arrange the order of arguments and tuple a bit to}
+    \CommentTok{-- match what `mapAccumL` expects}
+\NormalTok{    f' s x }\FunctionTok{=}\NormalTok{ swap (f p x s)}
+\end{Highlighting}
+\end{Shaded}
+
+This is \emph{exactly} the just the normal functional programming
+\texttt{mapAccumL} of a stateful function over a container. And,
+\texttt{mapAccumL} is general enough to be definable for all
+\texttt{Traversable} containers (not just lists)! (We use \texttt{mapAccumL}
+``lifted'' for \texttt{BVar}s from the
+\emph{\href{http://hackage.haskell.org/package/backprop/docs/Prelude-Backprop.html}{Prelude.Backprop}}
+module)
+
+And, as normal functions, we can also get a version that gets only the ``final''
+result:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L237-L242}
+
+\NormalTok{unrollLast}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b)}
+    \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ p s a b}
+    \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p s [a] b}
+\NormalTok{unrollLast f }\FunctionTok{=}\NormalTok{ mapS (last }\FunctionTok{.}\NormalTok{ sequenceVar) (unroll f)}
+\CommentTok{-- TODO: switch to (last . toList)}
+\end{Highlighting}
+\end{Shaded}
+
+To see how this applies to our \texttt{threeLayer}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{threeLayers            ::} \DataTypeTok{ModelS}\NormalTok{ _ _ (}\DataTypeTok{R} \DecValTok{40}\NormalTok{) (}\DataTypeTok{R} \DecValTok{5}\NormalTok{)}
+\NormalTok{unroll}\OtherTok{ threeLayers     ::} \DataTypeTok{ModelS}\NormalTok{ _ _ [}\DataTypeTok{R} \DecValTok{40}\NormalTok{] [}\DataTypeTok{R} \DecValTok{5}\NormalTok{]}
+\NormalTok{unrollLast}\OtherTok{ threeLayers ::} \DataTypeTok{ModelS}\NormalTok{ _ _ [}\DataTypeTok{R} \DecValTok{40}\NormalTok{] (}\DataTypeTok{R} \DecValTok{5}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{state-be-gone}{%
+\section{State-be-gone}\label{state-be-gone}}
+
+Did you enjoy the detour through stateful time series models?
+
+Good! Because the whole point of it was to talk about how we can get rid of
+state and bring us back to our original models!
+
+You knew this had to come, because all of our methods for ``training'' these
+models and learn these parameters involves non-stateful models. Let's see now
+how we can turn our functional stateful models into functional non-stateful
+models!
+
+One way is to \emph{fix the initial state and throw away the resulting one}.
+This is very common in machine learning contexts, where many people simply fix
+the initial state to be a zero vector.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L244-L254}
+
+\NormalTok{fixState}
+\OtherTok{    ::}\NormalTok{ s}
+    \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p s a b}
+    \OtherTok{->} \DataTypeTok{Model}\NormalTok{  p   a b}
+\NormalTok{fixState s0 f p x }\FunctionTok{=}\NormalTok{ fst }\FunctionTok{$}\NormalTok{ f p x (constVar s0)}
+
+\NormalTok{zeroState}
+\OtherTok{    ::} \DataTypeTok{Num}\NormalTok{ s}
+    \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ p s a b}
+    \OtherTok{->} \DataTypeTok{Model}\NormalTok{  p   a b}
+\NormalTok{zeroState }\FunctionTok{=}\NormalTok{ fixState }\DecValTok{0}
+\end{Highlighting}
+\end{Shaded}
+
+We use \texttt{constVar\ ::\ a\ -\textgreater{}\ BVar\ s\ a} again to introduce
+a \texttt{BVar} of our initial state, but to indicate that we don't expect to
+track its gradient. \texttt{zeroState} is a nice utility combinator for a common
+design pattern.
+
+Another way is to \emph{treat the initial state as a trainable parameter} (and
+also throw away the final state). This is not done as often, but is still common
+enough to be mentioned often. And, it's just as straightforward!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L256-L263}
+
+\NormalTok{trainState}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ s)}
+    \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{  p    s  a b}
+    \OtherTok{->} \DataTypeTok{Model}\NormalTok{  (p }\FunctionTok{:&}\NormalTok{ s) a b}
+\NormalTok{trainState f ps x }\FunctionTok{=}\NormalTok{ fst }\FunctionTok{$}\NormalTok{ f p x s}
+  \KeywordTok{where}
+\NormalTok{    p }\FunctionTok{=}\NormalTok{ ps }\FunctionTok{^^.}\NormalTok{ t1}
+\NormalTok{    s }\FunctionTok{=}\NormalTok{ ps }\FunctionTok{^^.}\NormalTok{ t2}
+\end{Highlighting}
+\end{Shaded}
+
+Essentially we take a model with trainable parameter \texttt{p} and state
+\texttt{s}, and turn into a model with trainable parameter \texttt{p\ :\&\ s},
+where the \texttt{s} is the initial state.
+
+We can now \emph{train} our recurrent/stateful models, by \textbf{unrolling and
+de-stating}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{threeLayers                        ::} \DataTypeTok{ModelS}\NormalTok{ _ _ (}\DataTypeTok{R} \DecValTok{40}\NormalTok{) (}\DataTypeTok{R} \DecValTok{5}\NormalTok{)}
+\NormalTok{unrollLast}\OtherTok{ threeLayers             ::} \DataTypeTok{ModelS}\NormalTok{ _ _ [}\DataTypeTok{R} \DecValTok{40}\NormalTok{] (}\DataTypeTok{R} \DecValTok{5}\NormalTok{)}
+\NormalTok{zeroState (unrollLast threeLayers)}\OtherTok{ ::} \DataTypeTok{Model}\NormalTok{  _   [}\DataTypeTok{R} \DecValTok{40}\NormalTok{] (}\DataTypeTok{R} \DecValTok{5}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{zeroState\ (unrollLast\ threeLayers)} is now a normal stateless (and
+trainable) model. It takes a list of inputs \texttt{R\ 40}s and produces the
+``final output'' \texttt{R\ 5}. We can now train this by feeding it with
+\texttt{({[}R\ 40{]},\ R\ 5)} pairs: give a history and an expected next output.
+
+Let's see if we can use a two-layer RNN to a sine wave.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- sine signal with period 25}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ series }\FunctionTok{=}\NormalTok{ [ sin (}\DecValTok{2} \FunctionTok{*}\NormalTok{ pi }\FunctionTok{*}\NormalTok{ t }\FunctionTok{/} \DecValTok{25}\NormalTok{) }\FunctionTok{|}\NormalTok{ t }\OtherTok{<-}\NormalTok{ [}\DecValTok{0}\FunctionTok{..}\NormalTok{]              ]}
+\CommentTok{-- chunks of runs and "next results"}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ samps  }\FunctionTok{=}\NormalTok{ [ (init c, last c)      }\FunctionTok{|}\NormalTok{ c }\OtherTok{<-}\NormalTok{ chunksOf }\DecValTok{19}\NormalTok{ series ]}
+\CommentTok{-- first layer is RNN, second layer is normal ANN, 20 hidden units}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\OtherTok{ model0 ::} \DataTypeTok{ModelS}\NormalTok{ _ _ (}\DataTypeTok{R} \DecValTok{1}\NormalTok{) (}\DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{          model0 }\FunctionTok{=}\NormalTok{ feedForward }\FunctionTok{@}\DecValTok{20} \FunctionTok{@}\DecValTok{1} \FunctionTok{<*~}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{1} \FunctionTok{@}\DecValTok{20}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\OtherTok{ model  ::} \DataTypeTok{Model}\NormalTok{  _   [}\DataTypeTok{R} \DecValTok{1}\NormalTok{] (}\DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{          model  }\FunctionTok{=}\NormalTok{ zeroState }\FunctionTok{$}\NormalTok{ unrollLast model0}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ trained }\OtherTok{<-}\NormalTok{ trainModelIO model }\FunctionTok{$}\NormalTok{ take }\DecValTok{10000}\NormalTok{ samps}
+\end{Highlighting}
+\end{Shaded}
+
+Trained! \texttt{trained} is the parameterization of \texttt{model} that will
+simulate a sine wave of period 25.
+
+Let's define some helper functions to test our model. First, a function
+\texttt{prime} that takes a stateful model and gives a ``warmed-up'' state by
+running it over a list of inputs. This will give the model a sense of ``where to
+start''.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L265-L272}
+
+\NormalTok{prime}
+\OtherTok{    ::} \DataTypeTok{Foldable}\NormalTok{ t}
+    \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ p s a b     }\CommentTok{-- ^ model}
+    \OtherTok{->}\NormalTok{ p                  }\CommentTok{-- ^ parameterization}
+    \OtherTok{->}\NormalTok{ s                  }\CommentTok{-- ^ initial state}
+    \OtherTok{->}\NormalTok{ t a                }\CommentTok{-- ^ priming input}
+    \OtherTok{->}\NormalTok{ s                  }\CommentTok{-- ^ primed state}
+\NormalTok{prime f p }\FunctionTok{=}\NormalTok{ foldl' }\FunctionTok{$}\NormalTok{ evalBP2 (\textbackslash{}s x }\OtherTok{->}\NormalTok{ snd }\FunctionTok{$}\NormalTok{ f (constVar p) x s)}
+\end{Highlighting}
+\end{Shaded}
+
+Then a function \texttt{feedback} that iterates a stateful model over and over
+again by feeding its previous output as its next input:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L278-L288}
+
+\NormalTok{    return }\FunctionTok{.}\NormalTok{ take }\DecValTok{50} \FunctionTok{$}\NormalTok{ feedback model0 trained primed (series }\FunctionTok{!!} \DecValTok{20}\NormalTok{)}
+  \KeywordTok{where}
+    \CommentTok{-- sine wave with period 25}
+\OtherTok{    series ::}\NormalTok{ [}\DataTypeTok{H.R} \DecValTok{1}\NormalTok{]}
+\NormalTok{    series }\FunctionTok{=}\NormalTok{ [ H.konst (sin (}\DecValTok{2} \FunctionTok{*}\NormalTok{ pi }\FunctionTok{*}\NormalTok{ t }\FunctionTok{/} \DecValTok{25}\NormalTok{)) }\FunctionTok{|}\NormalTok{ t }\OtherTok{<-}\NormalTok{ [}\DecValTok{0}\FunctionTok{..}\NormalTok{]              ]}
+\NormalTok{    samps  }\FunctionTok{=}\NormalTok{ [ (init c, last c)                }\FunctionTok{|}\NormalTok{ c }\OtherTok{<-}\NormalTok{ chunksOf }\DecValTok{19}\NormalTok{ series ]}
+\OtherTok{    model0 ::} \DataTypeTok{ModelS}\NormalTok{ _ _ (}\DataTypeTok{R} \DecValTok{1}\NormalTok{) (}\DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{    model0 }\FunctionTok{=}\NormalTok{ feedForward }\FunctionTok{@}\DecValTok{20} \FunctionTok{@}\DecValTok{1}
+         \FunctionTok{<*~}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{1} \FunctionTok{@}\DecValTok{20}\NormalTok{)}
+\OtherTok{    model  ::} \DataTypeTok{Model}\NormalTok{  _   [}\DataTypeTok{R} \DecValTok{1}\NormalTok{] (}\DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{    model  }\FunctionTok{=}\NormalTok{ zeroState }\FunctionTok{$}\NormalTok{ unrollLast model0}
+\end{Highlighting}
+\end{Shaded}
+
+Now let's prime our trained model over the first 19 items in our sine wave and
+start it running in feedback mode on the 20st item!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ primed }\FunctionTok{=}\NormalTok{ prime model0 trained }\DecValTok{0}\NormalTok{ (take }\DecValTok{19}\NormalTok{ series)}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ output }\FunctionTok{=}\NormalTok{ feedback model0 trained primed (series }\FunctionTok{!!} \DecValTok{20}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ mapM_ print }\FunctionTok{$}\NormalTok{ take }\DecValTok{30}\NormalTok{ output}
+\NormalTok{(}\FunctionTok{-}\FloatTok{0.9510565162951536}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FunctionTok{-}\FloatTok{0.8513651168000752}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FunctionTok{-}\FloatTok{0.7166599836716709}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FunctionTok{-}\FloatTok{0.5482473595389897}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FunctionTok{-}\FloatTok{0.34915724320186287}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FunctionTok{-}\FloatTok{0.12410494333456273}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{0.11796522261125514}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{0.3617267605713303}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{0.5859020418343457}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{0.768017196984538}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{0.8918483864333885}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{0.9520895380310987}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{0.9527522551095625}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{0.9018819269836273}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{0.8071298312549686}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{0.6739841516649296}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{0.5060989906080221}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{0.3068094725343112}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FloatTok{8.132150399626142e-2}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FunctionTok{-}\FloatTok{0.16084964907608051}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FunctionTok{-}\FloatTok{0.404157125663194}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FunctionTok{-}\FloatTok{0.6277521119177744}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FunctionTok{-}\FloatTok{0.8099883239222189}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FunctionTok{-}\FloatTok{0.9351261952804909}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FunctionTok{-}\FloatTok{0.9975997729210249}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FunctionTok{-}\FloatTok{1.000820693251437}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FunctionTok{-}\FloatTok{0.9525015209823966}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FunctionTok{-}\FloatTok{0.8603987544425211}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FunctionTok{-}\FloatTok{0.7303128941490123}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\NormalTok{(}\FunctionTok{-}\FloatTok{0.5660763612885787}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Looks like a beautiful sine wave! It starts out at -0.95, sweeps back towards 0,
+cross over and peaks out at positive 0.95, then swings back around past zero and
+reaches a minimum at -1.00 before swinging back again. Pretty much a perfect
+sine wave with period 25. Sounds like an unreasonably effective recurrent neural
+network!
 
 \end{document}
