@@ -667,6 +667,28 @@ The nice thing is that these are all just regular (Rank-2) functions,
 so\ldots{}you have two models? Just compose their functions like normal
 functions!
 
+It is tempting to look at something like
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{feedForwardLog }\FunctionTok{@}\DecValTok{4} \FunctionTok{@}\DecValTok{1} \FunctionTok{<~}\NormalTok{ feedForwardLog }\FunctionTok{@}\DecValTok{2} \FunctionTok{@}\DecValTok{4}
+\end{Highlighting}
+\end{Shaded}
+
+and think of it as some sort of abstract, opaque data type with magic inside.
+After all, ``layers'' are ``data'', right? But, at the end of the day, it's all
+just:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{\textbackslash{}pq }\OtherTok{->}\NormalTok{ feedForwardLog }\FunctionTok{@}\DecValTok{4} \FunctionTok{@}\DecValTok{1}\NormalTok{ (pq }\FunctionTok{^^.}\NormalTok{ t1) }\FunctionTok{.}\NormalTok{ feedForwardLog }\FunctionTok{@}\DecValTok{2} \FunctionTok{@}\DecValTok{4}\NormalTok{ (pq }\FunctionTok{^^.}\NormalTok{ t2)}
+\end{Highlighting}
+\end{Shaded}
+
+Just normal function composition -- we're really just defining the
+\emph{function} itself, and \emph{backprop} turns that function into a trainable
+model.
+
 \hypertarget{time-series-models}{%
 \section{Time Series Models}\label{time-series-models}}
 
@@ -1264,7 +1286,7 @@ hidden units, where the first layer is fully recurrent:
 \NormalTok{ghci}\FunctionTok{>}\NormalTok{ trained }\OtherTok{<-}\NormalTok{ trainModelIO (trainZero (unrollLast rnn)) }\FunctionTok{$}\NormalTok{ take }\DecValTok{10000}\NormalTok{ samps}
 \NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ primed }\FunctionTok{=}\NormalTok{ prime    rnn trained }\DecValTok{0}\NormalTok{      (take }\DecValTok{19}\NormalTok{ series)}
 \NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ output }\FunctionTok{=}\NormalTok{ feedback rnn trained primed (series }\FunctionTok{!!} \DecValTok{19}\NormalTok{)}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ mapM_ print }\FunctionTok{$}\NormalTok{ take }\DecValTok{30}\NormalTok{ output}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ mapM_ print }\FunctionTok{$}\NormalTok{ take }\DecValTok{200}\NormalTok{ output}
 \NormalTok{(}\FunctionTok{-}\FloatTok{0.9980267284282716}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
 \NormalTok{(}\FunctionTok{-}\FloatTok{0.9530599469923343}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
 \NormalTok{(}\FunctionTok{-}\FloatTok{0.855333250123637}\OtherTok{ ::} \DataTypeTok{R} \DecValTok{1}\NormalTok{)}
@@ -1282,5 +1304,24 @@ hidden units, where the first layer is fully recurrent:
 
 Also nice! Looks like these RNNs have proven to be quite ``unreasonably
 effective'', eh?
+
+\hypertarget{functions-all-the-way-down}{%
+\subsection{Functions all the way down}\label{functions-all-the-way-down}}
+
+Again, it is very easy to look at something like
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{feedForward }\FunctionTok{@}\DecValTok{30} \FunctionTok{@}\DecValTok{1} \FunctionTok{<*~}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{1} \FunctionTok{@}\DecValTok{30}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+and write it off as some abstract API of opaque data types. Some sort of object
+keeps track of state, and the object has some nice abstracted
+interface\ldots{}right?
+
+But, nope, again, it is all just normal functions that we wrote using normal
+function composition. We define our model as a \emph{function}, and the backprop
+library turns that function into a trainable model.
 
 \end{document}
