@@ -272,11 +272,11 @@ squaredErrorGrad
     -> p                -- ^ Parameter guess
     -> p                -- ^ Gradient
 squaredErrorGrad f x targ = gradBP $ \p ->
-    (f p (constVar x) - constVar targ) ^ 2
+    (f p (auto x) - auto targ) ^ 2
 ```
 
-We use `constVar :: a -> BVar z a`, to lift a normal value to a `BVar` holding
-that value, since our model `f` takes `BVar`s.
+We use `auto :: a -> BVar z a`, to lift a normal value to a `BVar` holding that
+value, since our model `f` takes `BVar`s.
 
 And finally, we can train it using stochastic gradient descent, with just a
 simple fold over all observations:
@@ -955,7 +955,7 @@ fixState
     :: s
     -> ModelS p s a b
     -> Model  p   a b
-fixState s0 f p x = fst $ f p x (constVar s0)
+fixState s0 f p x = fst $ f p x (auto s0)
 
 zeroState
     :: Num s
@@ -964,9 +964,9 @@ zeroState
 zeroState = fixState 0
 ```
 
-We use `constVar :: a -> BVar s a` again to introduce a `BVar` of our initial
-state, but to indicate that we don't expect to track its gradient. `zeroState`
-is a nice utility combinator for a common pattern.
+We use `auto :: a -> BVar s a` again to introduce a `BVar` of our initial state,
+but to indicate that we don't expect to track its gradient. `zeroState` is a
+nice utility combinator for a common pattern.
 
 Another way is to *treat the initial state as a trainable parameter* (and also
 throw away the final state). This is not done as often, but is still common
@@ -1039,7 +1039,7 @@ prime
     -> s                  -- ^ initial state
     -> t a                -- ^ priming input
     -> s                  -- ^ primed state
-prime f p = foldl' $ evalBP2 (\s x -> snd $ f (constVar p) x s)
+prime f p = foldl' $ evalBP2 (\s x -> snd $ f (auto p) x s)
 ```
 
 Then a function `feedback` that iterates a stateful model over and over again by
@@ -1059,7 +1059,7 @@ feedback f p s0 x0 = unfoldr go (x0, s0)
   where
     go (x, s) = Just (x, (y, s'))
       where
-        (y, s') = evalBP (uncurry T2 . f (constVar p) (constVar x)) s
+        (y, s') = evalBP (uncurry T2 . f (auto p) (auto x)) s
 ```
 
 Now let's prime our trained model over the first 19 items in our sine wave and

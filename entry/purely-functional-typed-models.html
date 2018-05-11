@@ -128,8 +128,8 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 <a class="sourceLine" id="cb5-8" data-line-number="8">    <span class="ot">-&gt;</span> p                <span class="co">-- ^ Parameter guess</span></a>
 <a class="sourceLine" id="cb5-9" data-line-number="9">    <span class="ot">-&gt;</span> p                <span class="co">-- ^ Gradient</span></a>
 <a class="sourceLine" id="cb5-10" data-line-number="10">squaredErrorGrad f x targ <span class="fu">=</span> gradBP <span class="fu">$</span> \p <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb5-11" data-line-number="11">    (f p (constVar x) <span class="fu">-</span> constVar targ) <span class="fu">^</span> <span class="dv">2</span></a></code></pre></div>
-<p>We use <code>constVar :: a -&gt; BVar z a</code>, to lift a normal value to a <code>BVar</code> holding that value, since our model <code>f</code> takes <code>BVar</code>s.</p>
+<a class="sourceLine" id="cb5-11" data-line-number="11">    (f p (auto x) <span class="fu">-</span> auto targ) <span class="fu">^</span> <span class="dv">2</span></a></code></pre></div>
+<p>We use <code>auto :: a -&gt; BVar z a</code>, to lift a normal value to a <code>BVar</code> holding that value, since our model <code>f</code> takes <code>BVar</code>s.</p>
 <p>And finally, we can train it using stochastic gradient descent, with just a simple fold over all observations:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L73-L79</span></a>
 <a class="sourceLine" id="cb6-2" data-line-number="2"></a>
@@ -518,14 +518,14 @@ f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
 <a class="sourceLine" id="cb41-4" data-line-number="4"><span class="ot">    ::</span> s</a>
 <a class="sourceLine" id="cb41-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> p s a b</a>
 <a class="sourceLine" id="cb41-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">Model</span>  p   a b</a>
-<a class="sourceLine" id="cb41-7" data-line-number="7">fixState s0 f p x <span class="fu">=</span> fst <span class="fu">$</span> f p x (constVar s0)</a>
+<a class="sourceLine" id="cb41-7" data-line-number="7">fixState s0 f p x <span class="fu">=</span> fst <span class="fu">$</span> f p x (auto s0)</a>
 <a class="sourceLine" id="cb41-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb41-9" data-line-number="9">zeroState</a>
 <a class="sourceLine" id="cb41-10" data-line-number="10"><span class="ot">    ::</span> <span class="dt">Num</span> s</a>
 <a class="sourceLine" id="cb41-11" data-line-number="11">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> p s a b</a>
 <a class="sourceLine" id="cb41-12" data-line-number="12">    <span class="ot">-&gt;</span> <span class="dt">Model</span>  p   a b</a>
 <a class="sourceLine" id="cb41-13" data-line-number="13">zeroState <span class="fu">=</span> fixState <span class="dv">0</span></a></code></pre></div>
-<p>We use <code>constVar :: a -&gt; BVar s a</code> again to introduce a <code>BVar</code> of our initial state, but to indicate that we don’t expect to track its gradient. <code>zeroState</code> is a nice utility combinator for a common pattern.</p>
+<p>We use <code>auto :: a -&gt; BVar s a</code> again to introduce a <code>BVar</code> of our initial state, but to indicate that we don’t expect to track its gradient. <code>zeroState</code> is a nice utility combinator for a common pattern.</p>
 <p>Another way is to <em>treat the initial state as a trainable parameter</em> (and also throw away the final state). This is not done as often, but is still common enough to be mentioned often. And, it’s just as straightforward!</p>
 <div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L257-L264</span></a>
 <a class="sourceLine" id="cb42-2" data-line-number="2"></a>
@@ -564,7 +564,7 @@ f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
 <a class="sourceLine" id="cb46-7" data-line-number="7">    <span class="ot">-&gt;</span> s                  <span class="co">-- ^ initial state</span></a>
 <a class="sourceLine" id="cb46-8" data-line-number="8">    <span class="ot">-&gt;</span> t a                <span class="co">-- ^ priming input</span></a>
 <a class="sourceLine" id="cb46-9" data-line-number="9">    <span class="ot">-&gt;</span> s                  <span class="co">-- ^ primed state</span></a>
-<a class="sourceLine" id="cb46-10" data-line-number="10">prime f p <span class="fu">=</span> foldl&#39; <span class="fu">$</span> evalBP2 (\s x <span class="ot">-&gt;</span> snd <span class="fu">$</span> f (constVar p) x s)</a></code></pre></div>
+<a class="sourceLine" id="cb46-10" data-line-number="10">prime f p <span class="fu">=</span> foldl&#39; <span class="fu">$</span> evalBP2 (\s x <span class="ot">-&gt;</span> snd <span class="fu">$</span> f (auto p) x s)</a></code></pre></div>
 <p>Then a function <code>feedback</code> that iterates a stateful model over and over again by feeding its previous output as its next input:</p>
 <div class="sourceCode" id="cb47"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb47-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L275-L286</span></a>
 <a class="sourceLine" id="cb47-2" data-line-number="2"></a>
@@ -579,7 +579,7 @@ f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
 <a class="sourceLine" id="cb47-11" data-line-number="11">  <span class="kw">where</span></a>
 <a class="sourceLine" id="cb47-12" data-line-number="12">    go (x, s) <span class="fu">=</span> <span class="dt">Just</span> (x, (y, s&#39;))</a>
 <a class="sourceLine" id="cb47-13" data-line-number="13">      <span class="kw">where</span></a>
-<a class="sourceLine" id="cb47-14" data-line-number="14">        (y, s&#39;) <span class="fu">=</span> evalBP (uncurry <span class="dt">T2</span> <span class="fu">.</span> f (constVar p) (constVar x)) s</a></code></pre></div>
+<a class="sourceLine" id="cb47-14" data-line-number="14">        (y, s&#39;) <span class="fu">=</span> evalBP (uncurry <span class="dt">T2</span> <span class="fu">.</span> f (auto p) (auto x)) s</a></code></pre></div>
 <p>Now let’s prime our trained model over the first 19 items in our sine wave and start it running in feedback mode on the 20th item!</p>
 <div class="sourceCode" id="cb48"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb48-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> primed <span class="fu">=</span> prime    ar2 trained <span class="dv">0</span>      (take <span class="dv">19</span> series)</a>
 <a class="sourceLine" id="cb48-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="kw">let</span> output <span class="fu">=</span> feedback ar2 trained primed (series <span class="fu">!!</span> <span class="dv">19</span>)</a>

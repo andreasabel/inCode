@@ -392,12 +392,12 @@ y\_x)\^{}2{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cnabla\_p\%20\%28f\%28
     \OtherTok{->}\NormalTok{ p                }\CommentTok{-- ^ Parameter guess}
     \OtherTok{->}\NormalTok{ p                }\CommentTok{-- ^ Gradient}
 \NormalTok{squaredErrorGrad f x targ }\FunctionTok{=}\NormalTok{ gradBP }\FunctionTok{$}\NormalTok{ \textbackslash{}p }\OtherTok{->}
-\NormalTok{    (f p (constVar x) }\FunctionTok{-}\NormalTok{ constVar targ) }\FunctionTok{^} \DecValTok{2}
+\NormalTok{    (f p (auto x) }\FunctionTok{-}\NormalTok{ auto targ) }\FunctionTok{^} \DecValTok{2}
 \end{Highlighting}
 \end{Shaded}
 
-We use \texttt{constVar\ ::\ a\ -\textgreater{}\ BVar\ z\ a}, to lift a normal
-value to a \texttt{BVar} holding that value, since our model \texttt{f} takes
+We use \texttt{auto\ ::\ a\ -\textgreater{}\ BVar\ z\ a}, to lift a normal value
+to a \texttt{BVar} holding that value, since our model \texttt{f} takes
 \texttt{BVar}s.
 
 And finally, we can train it using stochastic gradient descent, with just a
@@ -1173,7 +1173,7 @@ the initial state to be a zero vector.
 \OtherTok{    ::}\NormalTok{ s}
     \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p s a b}
     \OtherTok{->} \DataTypeTok{Model}\NormalTok{  p   a b}
-\NormalTok{fixState s0 f p x }\FunctionTok{=}\NormalTok{ fst }\FunctionTok{$}\NormalTok{ f p x (constVar s0)}
+\NormalTok{fixState s0 f p x }\FunctionTok{=}\NormalTok{ fst }\FunctionTok{$}\NormalTok{ f p x (auto s0)}
 
 \NormalTok{zeroState}
 \OtherTok{    ::} \DataTypeTok{Num}\NormalTok{ s}
@@ -1183,8 +1183,8 @@ the initial state to be a zero vector.
 \end{Highlighting}
 \end{Shaded}
 
-We use \texttt{constVar\ ::\ a\ -\textgreater{}\ BVar\ s\ a} again to introduce
-a \texttt{BVar} of our initial state, but to indicate that we don't expect to
+We use \texttt{auto\ ::\ a\ -\textgreater{}\ BVar\ s\ a} again to introduce a
+\texttt{BVar} of our initial state, but to indicate that we don't expect to
 track its gradient. \texttt{zeroState} is a nice utility combinator for a common
 pattern.
 
@@ -1269,7 +1269,7 @@ memory of the model.
     \OtherTok{->}\NormalTok{ s                  }\CommentTok{-- ^ initial state}
     \OtherTok{->}\NormalTok{ t a                }\CommentTok{-- ^ priming input}
     \OtherTok{->}\NormalTok{ s                  }\CommentTok{-- ^ primed state}
-\NormalTok{prime f p }\FunctionTok{=}\NormalTok{ foldl' }\FunctionTok{$}\NormalTok{ evalBP2 (\textbackslash{}s x }\OtherTok{->}\NormalTok{ snd }\FunctionTok{$}\NormalTok{ f (constVar p) x s)}
+\NormalTok{prime f p }\FunctionTok{=}\NormalTok{ foldl' }\FunctionTok{$}\NormalTok{ evalBP2 (\textbackslash{}s x }\OtherTok{->}\NormalTok{ snd }\FunctionTok{$}\NormalTok{ f (auto p) x s)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1291,7 +1291,7 @@ again by feeding its previous output as its next input:
   \KeywordTok{where}
 \NormalTok{    go (x, s) }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (x, (y, s'))}
       \KeywordTok{where}
-\NormalTok{        (y, s') }\FunctionTok{=}\NormalTok{ evalBP (uncurry }\DataTypeTok{T2} \FunctionTok{.}\NormalTok{ f (constVar p) (constVar x)) s}
+\NormalTok{        (y, s') }\FunctionTok{=}\NormalTok{ evalBP (uncurry }\DataTypeTok{T2} \FunctionTok{.}\NormalTok{ f (auto p) (auto x)) s}
 \end{Highlighting}
 \end{Shaded}
 
