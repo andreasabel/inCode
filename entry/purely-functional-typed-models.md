@@ -306,7 +306,7 @@ trainModelIO
     -> [(a,b)]          -- ^ list of observations
     -> IO p             -- ^ updated parameter guess
 trainModelIO m xs = do
-    p0 <- (/ 10) . subtract 0.5 <$> randomIO    -- Num instance for tuple
+    p0 <- (/ 10) . subtract 0.5 <$> randomIO
     return $ trainModel m p0 xs
 ```
 
@@ -320,13 +320,15 @@ or
 ghci> samps = [(1,1),(2,3),(3,5),(4,7),(5,9)]
 ghci> trainModelIO linReg $ take 5000 (cycle samps)
 (-1.0000000000000024) :& 2.0000000000000036
+-- roughly:
+(-1.0) :& 2.0
 ```
 
 Neat! After going through all of those observations a thousand times, the model
 nudges itself all the way to the right parameters to fit our model!
 
 The important takeaway is that all we specified was the *function* of the model
-itself. The training part all follows automatically!
+itself. The training part all follows automatically.
 
 ### Feed-forward Neural Network
 
@@ -367,13 +369,13 @@ We have our trained parameters! Let's see if they actually model "AND"?
 
 ``` {.haskell}
 ghci> evalBP2 feedForwardLog trained (H.vec2 0 0)
-(7.468471910660985e-5 :: R 1)
+(7.468471910660985e-5 :: R 1)       -- 0.0
 ghci> evalBP2 feedForwardLog trained (H.vec2 1 0)
-(3.816205998697482e-2 :: R 1)
+(3.816205998697482e-2 :: R 1)       -- 0.0
 ghci> evalBP2 feedForwardLog trained (H.vec2 0 1)
-(3.817490115313559e-2 :: R 1)
+(3.817490115313559e-2 :: R 1)       -- 0.0
 ghci> evalBP2 feedForwardLog trained (H.vec2 1 1)
-(0.9547178031665701 :: R 1)
+(0.9547178031665701 :: R 1)         -- 1.0
 ```
 
 Close enough for me!
@@ -445,7 +447,7 @@ parameters separate:
 
 (<~)
     :: (Backprop p, Backprop q)
-    => Model     p    b c
+    => Model  p       b c
     -> Model       q  a b
     -> Model (p :& q) a c
 (f <~ g) pq = f p . g q
@@ -459,7 +461,8 @@ And now we have a way to chain models! Maybe even make a multiple-layer neural
 network? Let's see if we can get a two-layer model to learn
 [XOR](https://en.wikipedia.org/wiki/Exclusive_or)!
 
-Our model is simple:
+Our model is two feed-forward layers with logistic activation functions, with 4
+hidden layer units:
 
 ``` {.haskell}
 ghci> twoLayer = feedForwardLog' @4 @1 <~ feedForwardLog' @2 @4
@@ -479,13 +482,13 @@ Trained. Now, does it model "XOR"?
 
 ``` {.haskell}
 ghci> evalBP2 twoLayer trained (H.vec2 0 0)
-(3.0812844350410647e-2 :: R 1)
+(3.0812844350410647e-2 :: R 1)          -- 0.0
 ghci> evalBP2 twoLayer trained (H.vec2 1 0)
-(0.959153369985914 :: R 1)
+(0.959153369985914 :: R 1)              -- 1.0
 ghci> evalBP2 twoLayer trained (H.vec2 0 1)
-(0.9834757090696419 :: R 1)
+(0.9834757090696419 :: R 1)             -- 1.0
 ghci> evalBP2 twoLayer trained (H.vec2 1 1)
-(3.6846467867668035e-2 :: R 1)
+(3.6846467867668035e-2 :: R 1)          -- 0.0
 ```
 
 Not bad!
@@ -632,11 +635,12 @@ previous picture of models.
 However, because these are all *just functions*, we can really just manipulate
 them as normal functions and see that the two aren't too different at all.
 
-### Functional Stateful Models
+Functional Stateful Models
+--------------------------
 
 Alright, so what does this mean, and how does it help us?
 
-To help us, let's try implementing this in Haskell:
+To help us see, let's try implementing this in Haskell:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L166-L170
@@ -733,7 +737,7 @@ ghci> threeLayers = fcrnn @10 @5
                <*~* mapS logistic (fcrnn @40 @20)
 ```
 
-#### Let there be State
+### Let there be State
 
 Because these are all just normal functions, we can manipulate them just like
 any other function using higher order functions.
@@ -760,7 +764,7 @@ ghci> hybrid = toS @_ @NoState (feedForwardLog' @20 @10)
 We made a dummy type `NoState` to use for our stateless model
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L400-L401
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L402-L403
 
 data NoState = NoState
   deriving (Show, Generic)
@@ -794,14 +798,14 @@ Everything is just your simple run-of-the-mill function composition and higher
 order functions that Haskellers use every day, so there are many ways to do
 these things --- just like there are many ways to manipulate normal functions.
 
-#### Unrolling in the Deep (Learning)
+### Unrolling in the Deep (Learning)
 
 There's something neat we can do with stateful functions --- we can
 "[unroll](https://machinelearningmastery.com/rnn-unrolling/)" them by explicitly
 propagating their state through several inputs.
 
-This is illustrated very well by [Christopher Olah's
-post](http://colah.github.io/posts/2015-09-NN-Types-FP/), who made a nice
+This is illustrated very well by [Christopher
+Olah](http://colah.github.io/posts/2015-09-NN-Types-FP/), who made a nice
 diagram:
 
 ![Christopher Olah's RNN Unrolling
@@ -824,7 +828,8 @@ unroll :: Model p s a b -> Model p s [a] [b]
 In writing this out as a type, we also note that the `p` parameter is the same,
 and the `s` state type is the same. If you're familiar with category theory,
 this looks a little bit like a sort of "fmap" under a `Model p s` category -- it
-takes a `a -> b`, essentially, and turns it into an `[a] -> [b]`.
+takes a (stateful and backpropagatable) `a -> b` and turns it into an
+`[a] -> [b]`.
 
 Olah's post suggests that this is a `mapAccum`, in functional programming
 parlance. And, surely enough, we can actually write this as a `mapAccumL`:
@@ -834,7 +839,7 @@ parlance. And, surely enough, we can actually write this as a `mapAccumL`:
 
 unroll
     :: (Traversable t, Backprop a, Backprop b, Backprop (t b))
-    => ModelS p s a b
+    => ModelS p s    a     b
     -> ModelS p s (t a) (t b)
 unroll f p xs s0 = swap $ mapAccumL f' s0 xs
   where
@@ -858,7 +863,7 @@ shows only the "final" result:
 
 unrollLast
     :: (Backprop a, Backprop b)
-    => ModelS p s a b
+    => ModelS p s  a  b
     -> ModelS p s [a] b
 unrollLast f = mapS (last . sequenceVar) (unroll f)
 -- TODO: switch to (last . toList)
@@ -872,8 +877,7 @@ unroll threeLayers     :: ModelS _ _ [R 40] [R 5]
 unrollLast threeLayers :: ModelS _ _ [R 40] (R 5)
 ```
 
-State-be-gone
--------------
+### State-be-gone
 
 Did you enjoy the detour through stateful time series models?
 
@@ -907,7 +911,7 @@ zeroState = fixState 0
 
 We use `constVar :: a -> BVar s a` again to introduce a `BVar` of our initial
 state, but to indicate that we don't expect to track its gradient. `zeroState`
-is a nice utility combinator for a common design pattern.
+is a nice utility combinator for a common pattern.
 
 Another way is to *treat the initial state as a trainable parameter* (and also
 throw away the final state). This is not done as often, but is still common
@@ -926,9 +930,9 @@ trainState f ps x = fst $ f p x s
     s = ps ^^. t2
 ```
 
-Essentially we take a model with trainable parameter `p` and state `s`, and turn
-into a model with trainable parameter `p :& s`, where the `s` is the initial
-state.
+`trainState` will take a model with trainable parameter `p` and state `s`, and
+turn it into a model with trainable parameter `p :& s`, where the `s` is the
+(trainable) initial state.
 
 We can now *train* our recurrent/stateful models, by **unrolling and
 de-stating**:
@@ -947,7 +951,7 @@ and an expected next output.
 Let's see this play out with our AR(2) model:
 
 ``` {.haskell}
-ar2                        :: ModelS _ _ Double   Double
+ar2                        :: ModelS _ _  Double  Double
 unrollLast ar2             :: ModelS _ _ [Double] Double
 zeroState (unrollLast ar2) :: Model  _   [Double] Double
 ```
@@ -968,7 +972,7 @@ wave of period 25.
 
 Let's define some helper functions to test our model. First, a function `prime`
 that takes a stateful model and gives a "warmed-up" state by running it over a
-list of inputs. This will give the model a sense of "where to start".
+list of inputs. This serves to essentially initialize the memory of the model.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L265-L272
@@ -991,108 +995,112 @@ feeding its previous output as its next input:
 
 feedback
     :: (Backprop a, Backprop s)
-    => ModelS p s a a
-    -> p
-    -> s
-    -> a
-    -> [a]
-feedback f p s0 x0 = unfoldr go (s0, x0)
+    => ModelS p s a a     -- ^ model
+    -> p                  -- ^ parameterization
+    -> s                  -- ^ initial state
+    -> a                  -- ^ initial input
+    -> [a]                -- ^ inifinite feedback loop
+feedback f p s0 x0 = unfoldr go (x0, s0)
   where
-    go (s, x) = Just (x, (s', y))
+    go (x, s) = Just (x, (y, s'))
       where
         (y, s') = evalBP (uncurry T2 . f (constVar p) (constVar x)) s
 ```
 
 Now let's prime our trained model over the first 19 items in our sine wave and
-start it running in feedback mode on the 20st item!
+start it running in feedback mode on the 20th item!
 
 ``` {.haskell}
 ghci> let primed = prime    ar2 trained 0      (take 19 series)
-ghci> let output = feedback ar2 trained primed (series !! 20)
+ghci> let output = feedback ar2 trained primed (series !! 19)
 ghci> mapM_ print $ take 30 output
--0.9510565162951536
--0.8600674032037106
--0.7150370920644853
--0.5250783707105848
--0.302127044224051
--6.019196440573038e-2
-0.18552519790433009
-0.41958512971360296
-0.627280984694227
-0.795562468425788
-0.9138558363893832
-0.9747282812232584
-0.9743549633453022
-0.9127593396907665
-0.7938116898267549
-0.6249859320531274
-0.41689000962856815
-0.18259935468235244
--6.316468927441621e-2
--0.3049598635029274
--0.5275932879458836
--0.7170760857570087
--0.861502355880794
--0.9517972646026605
--0.9822872507261515
--0.9510565162888059
--0.8600674031939511
--0.7150370920519272
--0.5250783706960173
--0.3021270442083892
+-0.9980267284282716
+-0.9510565162972417
+-0.8443279255081759
+-0.6845471059406962
+-0.48175367412103653
+-0.24868988719256901
+-3.673766846290505e-11
+0.24868988711894977
+0.4817536740469978
+0.6845471058659982
+0.8443279254326351
+0.9510565162207472
+0.9980267283507953
+0.9822872506502898
+0.9048270523889208
+0.7705132427021685
+0.5877852522243431
+0.3681245526237731
+0.12533323351198067
+-0.1253332336071494
+-0.36812455271766376
+-0.5877852523157643
+-0.7705132427900961
+-0.9048270524725681
+-0.9822872507291605
+-0.9980267284247174
+-0.9510565162898851
+-0.844327925497479
+-0.6845471059273313
+-0.48175367410584324
 ```
 
-Looks like a beautiful sine wave! It starts out at -0.95, gradually rolls back
-towards 0, cross over and peaks out at positive 0.97, then swings back around
-past zero and reaches a minimum at -0.97 before swinging back again. Pretty much
-a perfect sine wave with period 25. AR(2) works pretty well!
+Looks like a beautiful sine wave! It starts out at -0.998, gradually rolls back
+towards 0, cross over and peaks out at positive 0.998, then swings back around
+past zero and reaches a minimum at -0.998 before swinging back again. Pretty
+much a perfect sine wave with period 25. This is pretty much as good as it gets,
+so it seems like AR(2) works pretty well!
 
-For kicks, let's try it with a two-layer fully connected neural network with 20
+For kicks, let's try it with a two-layer fully connected neural network with 30
 hidden units, where the first layer is fully recurrent:
 
 ``` {.haskell}
--- first layer is RNN, second layer is normal ANN, 20 hidden units
+-- first layer is RNN, second layer is normal ANN, 30 hidden units
 ghci> let rnn :: ModelS _ _ (R 1) (R 1)
-          rnn = feedForward @20 @1 <*~ mapS logistic (fcrnn @1 @20)
+          rnn = feedForward @30 @1 <*~ mapS logistic (fcrnn @1 @30)
 ghci> trained <- trainModelIO (trainZero (unrollLast rnn)) $ take 10000 samps
 ghci> let primed = prime    rnn trained 0      (take 19 series)
-ghci> let output = feedback rnn trained primed (series !! 20)
+ghci> let output = feedback rnn trained primed (series !! 19)
 ghci> mapM_ print $ take 30 output
-(-0.9510565162951536 :: R 1)
-(-0.8513651168000752 :: R 1)
-(-0.7166599836716709 :: R 1)
-(-0.5482473595389897 :: R 1)
-(-0.34915724320186287 :: R 1)
-(-0.12410494333456273 :: R 1)
-(0.11796522261125514 :: R 1)
-(0.3617267605713303 :: R 1)
-(0.5859020418343457 :: R 1)
-(0.768017196984538 :: R 1)
-(0.8918483864333885 :: R 1)
-(0.9520895380310987 :: R 1)
-(0.9527522551095625 :: R 1)
-(0.9018819269836273 :: R 1)
-(0.8071298312549686 :: R 1)
-(0.6739841516649296 :: R 1)
-(0.5060989906080221 :: R 1)
-(0.3068094725343112 :: R 1)
-(8.132150399626142e-2 :: R 1)
-(-0.16084964907608051 :: R 1)
-(-0.404157125663194 :: R 1)
-(-0.6277521119177744 :: R 1)
-(-0.8099883239222189 :: R 1)
-(-0.9351261952804909 :: R 1)
-(-0.9975997729210249 :: R 1)
-(-1.000820693251437 :: R 1)
-(-0.9525015209823966 :: R 1)
-(-0.8603987544425211 :: R 1)
-(-0.7303128941490123 :: R 1)
-(-0.5660763612885787 :: R 1)
+(-0.9980267284282716 :: R 1)
+(-0.9530599469923343 :: R 1)
+(-0.855333250123637 :: R 1)
+(-0.7138776465246676 :: R 1)
+(-0.5359655931506458 :: R 1)
+(-0.3276007378757607 :: R 1)
+(-9.49789925462907e-2 :: R 1)
+(0.15326329240850092 :: R 1)
+(0.4036006817890014 :: R 1)
+(0.6365988256374424 :: R 1)
+(0.8297644575358999 :: R 1)
+(0.9644601077595601 :: R 1)
+(1.0322337479560069 :: R 1)
+(1.0354328415838387 :: R 1)
+(0.98271304349553 :: R 1)
+(0.8838820861246679 :: R 1)
+(0.7469384572032421 :: R 1)
+(0.5774599954294803 :: R 1)
+(0.37953522246889254 :: R 1)
+(0.1576543900562724 :: R 1)
+(-8.079295377239147e-2 :: R 1)
+(-0.32316184922616614 :: R 1)
+(-0.5509792378000917 :: R 1)
+(-0.7428726769386842 :: R 1)
+(-0.8804772463971613 :: R 1)
+(-0.9537270792131795 :: R 1)
+(-0.9620288708442922 :: R 1)
+(-0.9114012854243098 :: R 1)
+(-0.8104104643872705 :: R 1)
+(-0.6672968115106706 :: R 1)
 ```
 
-Also looks nice! Notice that on the second negative peak, the network just
-perfectly hits -1.00, which is exactly where it's supposed to turn around.
-Sounds like an "unreasonably effective" recurrent neural network!
+Also nice, but not quite as perfect as AR(2). It seems to overshoot the positive
+peak slightly (hitting 1.03) and undershoot the negative peak (only reaching
+-0.96)...but it still seems pretty nice considering that its memory units are
+all sigmoidally squashed, while AR(2) gets to have a continuous memory space. At
+this point we're picking hairs of 1% difference, though! Sounds like these RNNs
+have proven to be quite "unreasonably effective", eh?
 
 [^1]: Those familiar with Haskell idioms might recognize this type as being
     isomorphic to `a -> Reader p b` (or `Kleisli (Reader p) a b`) which roughly
@@ -1100,7 +1108,7 @@ Sounds like an "unreasonably effective" recurrent neural network!
     of type `p`".
 
 [^2]: If you recognized our original stateless model type as `a -> Reader p b`,
-    then you might see too that this is the common Haskell idiom
+    then you might have also recognized that this is the Haskell idiom
     `a -> StateT s (Reader p) b` (or `Kleisli (StateT s (Reader p)) a b`), which
     represents the notion of a "function from `a` to `b` with environment `p`,
     that takes and returns a modified version of some 'state' `s`".
