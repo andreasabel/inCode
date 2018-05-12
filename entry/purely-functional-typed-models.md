@@ -1321,6 +1321,9 @@ from other basic things.
 ::: {.note}
 **Aside: Unified Representation**
 
+This is a small aside for those familiar with Haskell techniques like DataKinds
+and dependent types!
+
 One ugly thing you might have noticed was that we had to give different "types"
 for both our `Model` and `ModelS`, so we cannot re-use useful functions on both.
 For example, `mapS` only works on `ModelS`, but not `Model`. `(<~)` only works
