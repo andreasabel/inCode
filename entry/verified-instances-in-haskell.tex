@@ -111,11 +111,7 @@ it's now as easy as ever.
 
 (The code for this post is available
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/verified-instances/VerifiedInstances.hs}{here}
-if you want to follow along! Some of the examples here involving \texttt{Demote}
-and relying on its injectivity will only work with
-\href{https://github.com/goldfirere/singletons}{singletons HEAD}, even though
-the necessary patches were made seven months ago\footnote{Not sure why it's not
-  on hackage yet, but I will update when it gets there!})
+if you want to follow along!)
 
 \hypertarget{semigroups}{%
 \section{Semigroups}\label{semigroups}}
@@ -240,11 +236,6 @@ back and forth from \texttt{Sing\ x} and \texttt{x}, and get our original
 \NormalTok{             fromSing (sX }\FunctionTok{%<>}\NormalTok{ sY)}
 \end{Highlighting}
 \end{Shaded}
-
-(This works best with singletons HEAD at the moment, because \texttt{Demote} is
-injective. On 2.2 or lower, using this would require an explicit type
-application or annotation at any place you use
-\texttt{\textless{}\textgreater{}} or \texttt{\%\textless{}\textgreater{}})
 
 Now, let's write the instance for \texttt{List}. First, we need to define the
 singletons:
@@ -766,7 +757,7 @@ Let's see some sample implementations.
 \NormalTok{    sBind x f }\FunctionTok{=}\NormalTok{ sConcatMapList f x}
 
 \NormalTok{    returnIdentLeft x g }\FunctionTok{=} \KeywordTok{case}\NormalTok{ sReturn x }\KeywordTok{of}
-      \DataTypeTok{SCons}\NormalTok{ y }\DataTypeTok{SNil} \OtherTok{->} \KeywordTok{case}\NormalTok{ emptyIdentRight (unSingFun1 }\DataTypeTok{Proxy}\NormalTok{ g y) }\KeywordTok{of}
+      \DataTypeTok{SCons}\NormalTok{ y }\DataTypeTok{SNil} \OtherTok{->} \KeywordTok{case}\NormalTok{ emptyIdentRight (unSingFun1 g y) }\KeywordTok{of}
         \DataTypeTok{Refl} \OtherTok{->} \DataTypeTok{Refl}
 
 \NormalTok{    returnIdentRight }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -777,12 +768,12 @@ Let's see some sample implementations.
 \NormalTok{    bindCompose }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
       \DataTypeTok{SNil}       \OtherTok{->}\NormalTok{ \textbackslash{}_ _ }\OtherTok{->} \DataTypeTok{Refl}
       \DataTypeTok{SCons}\NormalTok{ x xs }\OtherTok{->}\NormalTok{ \textbackslash{}g h }\OtherTok{->} \KeywordTok{case}\NormalTok{ bindCompose xs g h }\KeywordTok{of}
-        \DataTypeTok{Refl} \OtherTok{->} \KeywordTok{case}\NormalTok{ unSingFun1 }\DataTypeTok{Proxy}\NormalTok{ g x }\KeywordTok{of}
+        \DataTypeTok{Refl} \OtherTok{->} \KeywordTok{case}\NormalTok{ unSingFun1 g x }\KeywordTok{of}
           \DataTypeTok{SNil}       \OtherTok{->} \DataTypeTok{Refl}
           \DataTypeTok{SCons}\NormalTok{ y ys }\OtherTok{->}
             \KeywordTok{let}\NormalTok{ gxs  }\FunctionTok{=}\NormalTok{ sConcatMapList g xs}
 \NormalTok{                hgxs }\FunctionTok{=}\NormalTok{ sConcatMapList h gxs}
-\NormalTok{                hy   }\FunctionTok{=}\NormalTok{ unSingFun1 }\DataTypeTok{Proxy}\NormalTok{ h y}
+\NormalTok{                hy   }\FunctionTok{=}\NormalTok{ unSingFun1 h y}
 \NormalTok{                hys  }\FunctionTok{=}\NormalTok{ sConcatMapList h ys}
             \KeywordTok{in}  \KeywordTok{case}\NormalTok{ distribConcatMap h ys gxs }\KeywordTok{of}
                   \DataTypeTok{Refl} \OtherTok{->} \KeywordTok{case}\NormalTok{ appendAssoc hy hys hgxs }\KeywordTok{of}
@@ -799,7 +790,7 @@ Let's see some sample implementations.
     \DataTypeTok{SCons}\NormalTok{ x xs }\OtherTok{->}\NormalTok{ \textbackslash{}ys }\OtherTok{->}
       \KeywordTok{case}\NormalTok{ distribConcatMap g xs ys }\KeywordTok{of}
         \DataTypeTok{Refl} \OtherTok{->}
-          \KeywordTok{let}\NormalTok{ gx    }\FunctionTok{=}\NormalTok{ unSingFun1 }\DataTypeTok{Proxy}\NormalTok{ g x}
+          \KeywordTok{let}\NormalTok{ gx    }\FunctionTok{=}\NormalTok{ unSingFun1 g x}
 \NormalTok{              cmgxs }\FunctionTok{=}\NormalTok{ sConcatMapList g xs}
 \NormalTok{              cmgys }\FunctionTok{=}\NormalTok{ sConcatMapList g ys}
           \KeywordTok{in}  \KeywordTok{case}\NormalTok{ appendAssoc gx cmgxs cmgys }\KeywordTok{of}
@@ -813,15 +804,13 @@ function into a value-level function on singletons:
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{unSingFun1}
-\OtherTok{    ::} \DataTypeTok{Proxy}\NormalTok{ (}\OtherTok{f      ::}\NormalTok{ a }\FunctionTok{~>}\NormalTok{ b)}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{  (}\OtherTok{f      ::}\NormalTok{ a }\FunctionTok{~>}\NormalTok{ b)}
+\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{  (}\OtherTok{f      ::}\NormalTok{ a }\FunctionTok{~>}\NormalTok{ b)}
     \OtherTok{->} \DataTypeTok{Sing}\NormalTok{  (}\OtherTok{x      ::}\NormalTok{ a)}
     \OtherTok{->} \DataTypeTok{Sing}\NormalTok{  (f }\FunctionTok{@@}\OtherTok{ x ::}\NormalTok{ b)}
 \end{Highlighting}
 \end{Shaded}
 
-The \texttt{Proxy} argument only exists for historical reasons, I believe. But,
-the crux is that, given a
+The crux is that, given a
 \texttt{Sing\ (f\ ::\ a\ \textasciitilde{}\textgreater{}\ b)} and a
 \texttt{Sing\ (x\ ::\ a)}, we can ``apply'' them to get
 \texttt{Sing\ (f\ @@\ x\ ::\ b)}
