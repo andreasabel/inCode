@@ -1477,7 +1477,7 @@ library is:
 That's really it, I feel! Just the models *as functions*, the combinators, and
 methods to evaluate and train those functions. No "objects" defining layers as
 data (they're not data, they're functions!); just the full freedom of expressing
-a model as any old function you want.
+a model as any old function you want.[^3]
 
 A lot of things come together to make all of this work:
 
@@ -1534,3 +1534,7 @@ into the future of machine learning's gradient-trainable models.
     `a -> StateT s (Reader p) b` (or `Kleisli (StateT s (Reader p)) a b`), which
     represents the notion of a "function from `a` to `b` with environment `p`,
     that takes and returns a modified version of some 'state' `s`".
+
+[^3]: This is the basis behind my work-in-progress
+    [opto](https://github.com/mstksg/opto) and
+    [backprop-learn](https://github.com/mstksg/backprop-learn) libraries.
