@@ -820,7 +820,7 @@ ghci> hybrid = toS @_ @NoState (feedForwardLog' @20 @10)
 We made a dummy type `NoState` to use for our stateless model
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L451-L452
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L440-L441
 
 data NoState = NoState
   deriving (Show, Generic)
@@ -922,7 +922,7 @@ The *backprop* library has a "lifted" `mapAccumL` in in the
 module that we can use:
 
 ``` {.haskell}
-mapAccumL
+Prelude.Backprop.mapAccumL
     :: Traversable t
     => (BVar z a -> BVar z b -> (BVar z a, BVar z c))
     -> BVar z a
@@ -940,7 +940,7 @@ unroll
     :: (Traversable t, Backprop a, Backprop b, Backprop (t b))
     => ModelS p s    a     b
     -> ModelS p s (t a) (t b)
-unroll f p xs s0 = swap $ mapAccumL f' s0 xs
+unroll f p xs s0 = swap $ B.mapAccumL f' s0 xs
   where
     -- we have to re-arrange the order of arguments and tuple a bit to
     -- match what `mapAccumL` expects
@@ -954,14 +954,13 @@ We can also tweak `unroll`'s result a bit to get a version of `unroll` that
 shows only the "final" result:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L235-L240
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L235-L239
 
 unrollLast
-    :: (Backprop a, Backprop b)
-    => ModelS p s  a  b
-    -> ModelS p s [a] b
-unrollLast f = mapS (last . sequenceVar) (unroll f)
--- TODO: switch to (last . toList)
+    :: (Traversable t, Backprop a, Backprop b, Backprop (t b))
+    => ModelS p s    a  b
+    -> ModelS p s (t a) b
+unrollLast f = mapS (last . B.toList) (unroll f)
 ```
 
 To see how this applies to our `threeLayer`:
@@ -991,7 +990,7 @@ very common in machine learning contexts, where many people simply fix the
 initial state to be a zero vector.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L242-L252
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L241-L251
 
 fixState
     :: s
@@ -1015,7 +1014,7 @@ throw away the final state). This is not done as often, but is still common
 enough to be mentioned often. And, it's just as straightforward!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L254-L261
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L253-L260
 
 trainState
     :: (Backprop p, Backprop s)
@@ -1076,7 +1075,7 @@ that takes a stateful model and gives a "warmed-up" state by running it over a
 list of inputs. This serves to essentially initialize the memory of the model.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L263-L270
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L262-L269
 
 prime
     :: Foldable t
@@ -1092,7 +1091,7 @@ Then a function `feedback` that iterates a stateful model over and over again by
 feeding its previous output as its next input:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L272-L283
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L271-L282
 
 feedback
     :: (Backprop a, Backprop s)
@@ -1229,7 +1228,7 @@ types" kinda deal --- you set up the function, and the compiler pretty much
 writes it for you, because the types guide the entire implementation:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L319-L325
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L318-L324
 
 recurrently
     :: (Backprop a, Backprop b)
@@ -1245,7 +1244,7 @@ be stored as the state. We can write this combinator as well, taking the
 function that transforms the previous output into the stored state:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L327-L334
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L326-L333
 
 recurrentlyWith
     :: (Backprop a, Backprop b)
@@ -1279,7 +1278,7 @@ vectors and concatenates them before doing anything:
 -- | Concatenate two vectors
 (#)          :: BVar s (R i) -> BVar s (R o) -> BVar s (R (i + o))
 
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L336-L342
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L335-L341
 
 ffOnSplit
     :: forall i o. (KnownNat i, KnownNat o)
@@ -1307,7 +1306,7 @@ Basically just a recurrent version of `feedForward`! If we abstract out some of
 the manual uncurrying and pre-mapping, we get a nice functional definition:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L344-L347
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L343-L346
 
 fcrnn'
     :: (KnownNat i, KnownNat o)
@@ -1333,7 +1332,7 @@ using `headTail` and `&`, which splits a vector and adds an item to the end,
 respectively.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L349-L357
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L348-L356
 
 lagged
     :: (KnownNat n, 1 <= n)
@@ -1350,7 +1349,7 @@ What can we do with this? Well... we can write a general autoregressive model
 AR(p) of *any* degree, simply by lagging a fully connected ANN layer:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L359-L361
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L358-L360
 
 ar :: (KnownNat n, 1 <= n)
    => ModelS _ (R n) Double Double
@@ -1362,7 +1361,7 @@ write an AR(10) model by just using `ar @10`, and AR(20) model with `ar @20`,
 etc.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L363-L364
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L362-L363
 
 ar2' :: ModelS _ (R 2) Double Double
 ar2' = ar @2

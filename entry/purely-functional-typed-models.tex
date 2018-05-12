@@ -1010,7 +1010,7 @@ We made a dummy type \texttt{NoState} to use for our stateless model
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L451-L452}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L440-L441}
 
 \KeywordTok{data} \DataTypeTok{NoState} \FunctionTok{=} \DataTypeTok{NoState}
   \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Generic}\NormalTok{)}
@@ -1133,7 +1133,7 @@ module that we can use:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{mapAccumL}
+\NormalTok{Prelude.Backprop.mapAccumL}
 \OtherTok{    ::} \DataTypeTok{Traversable}\NormalTok{ t}
     \OtherTok{=>}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z a }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z b }\OtherTok{->}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z a, }\DataTypeTok{BVar}\NormalTok{ z c))}
     \OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z a}
@@ -1154,7 +1154,7 @@ over \texttt{mapAccumL}:
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Traversable}\NormalTok{ t, }\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b, }\DataTypeTok{Backprop}\NormalTok{ (t b))}
     \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ p s    a     b}
     \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p s (t a) (t b)}
-\NormalTok{unroll f p xs s0 }\FunctionTok{=}\NormalTok{ swap }\FunctionTok{$}\NormalTok{ mapAccumL f' s0 xs}
+\NormalTok{unroll f p xs s0 }\FunctionTok{=}\NormalTok{ swap }\FunctionTok{$}\NormalTok{ B.mapAccumL f' s0 xs}
   \KeywordTok{where}
     \CommentTok{-- we have to re-arrange the order of arguments and tuple a bit to}
     \CommentTok{-- match what `mapAccumL` expects}
@@ -1170,14 +1170,13 @@ We can also tweak \texttt{unroll}'s result a bit to get a version of
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L235-L240}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L235-L239}
 
 \NormalTok{unrollLast}
-\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b)}
-    \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ p s  a  b}
-    \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p s [a] b}
-\NormalTok{unrollLast f }\FunctionTok{=}\NormalTok{ mapS (last }\FunctionTok{.}\NormalTok{ sequenceVar) (unroll f)}
-\CommentTok{-- TODO: switch to (last . toList)}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Traversable}\NormalTok{ t, }\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b, }\DataTypeTok{Backprop}\NormalTok{ (t b))}
+    \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ p s    a  b}
+    \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p s (t a) b}
+\NormalTok{unrollLast f }\FunctionTok{=}\NormalTok{ mapS (last }\FunctionTok{.}\NormalTok{ B.toList) (unroll f)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1212,7 +1211,7 @@ the initial state to be a zero vector.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L242-L252}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L241-L251}
 
 \NormalTok{fixState}
 \OtherTok{    ::}\NormalTok{ s}
@@ -1239,7 +1238,7 @@ enough to be mentioned often. And, it's just as straightforward!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L254-L261}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L253-L260}
 
 \NormalTok{trainState}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ s)}
@@ -1308,7 +1307,7 @@ memory of the model.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L263-L270}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L262-L269}
 
 \NormalTok{prime}
 \OtherTok{    ::} \DataTypeTok{Foldable}\NormalTok{ t}
@@ -1326,7 +1325,7 @@ again by feeding its previous output as its next input:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L272-L283}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L271-L282}
 
 \NormalTok{feedback}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ s)}
@@ -1486,7 +1485,7 @@ writes it for you, because the types guide the entire implementation:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L319-L325}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L318-L324}
 
 \NormalTok{recurrently}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b)}
@@ -1504,7 +1503,7 @@ function that transforms the previous output into the stored state:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L327-L334}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L326-L333}
 
 \NormalTok{recurrentlyWith}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b)}
@@ -1541,7 +1540,7 @@ of two vectors and concatenates them before doing anything:
 \CommentTok{-- | Concatenate two vectors}
 \OtherTok{(#)          ::} \DataTypeTok{BVar}\NormalTok{ s (}\DataTypeTok{R}\NormalTok{ i) }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s (}\DataTypeTok{R}\NormalTok{ o) }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s (}\DataTypeTok{R}\NormalTok{ (i }\FunctionTok{+}\NormalTok{ o))}
 
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L336-L342}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L335-L341}
 
 \NormalTok{ffOnSplit}
 \OtherTok{    ::}\NormalTok{ forall i o}\FunctionTok{.}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
@@ -1574,7 +1573,7 @@ definition:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L344-L347}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L343-L346}
 
 \NormalTok{fcrnn'}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
@@ -1604,7 +1603,7 @@ vector and adds an item to the end, respectively.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L349-L357}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L348-L356}
 
 \NormalTok{lagged}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DecValTok{1} \FunctionTok{<=}\NormalTok{ n)}
@@ -1623,7 +1622,7 @@ model AR(p) of \emph{any} degree, simply by lagging a fully connected ANN layer:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L359-L361}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L358-L360}
 
 \OtherTok{ar ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DecValTok{1} \FunctionTok{<=}\NormalTok{ n)}
    \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ _ (}\DataTypeTok{R}\NormalTok{ n) }\DataTypeTok{Double} \DataTypeTok{Double}
@@ -1637,7 +1636,7 @@ AR(20) model with \texttt{ar\ @20}, etc.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L363-L364}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L362-L363}
 
 \OtherTok{ar2' ::} \DataTypeTok{ModelS}\NormalTok{ _ (}\DataTypeTok{R} \DecValTok{2}\NormalTok{) }\DataTypeTok{Double} \DataTypeTok{Double}
 \NormalTok{ar2' }\FunctionTok{=}\NormalTok{ ar }\FunctionTok{@}\DecValTok{2}
