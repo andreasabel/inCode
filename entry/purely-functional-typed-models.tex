@@ -1010,7 +1010,7 @@ We made a dummy type \texttt{NoState} to use for our stateless model
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L441-L442}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L433-L434}
 
 \KeywordTok{data} \DataTypeTok{NoState} \FunctionTok{=} \DataTypeTok{NoState}
   \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Generic}\NormalTok{)}
@@ -1369,7 +1369,7 @@ it approximates the process decently well, with a consistent period:
 \caption{FCRNN Sine Wave}
 \end{figure}
 
-Looks a bit ``unreasonably effective'', eh?
+Not perfect, but still looks a bit ``unreasonably effective'', eh?
 
 For kicks, let's see if we can do any better with the simpler AR(2) model from
 before. Applying all we just used to \texttt{ar2}, we see:
@@ -1428,9 +1428,9 @@ Meaning that the gradient descent has concluded that our AR(2) model is:
 2\}{]}(https://latex.codecogs.com/png.latex?\%0Ay\_t\%20\%3D\%200\%20\%2B\%201.94\%20y\_\%7Bt\%20-\%201\%7D\%20-\%20y\_\%7Bt\%20-\%202\%7D\%0A
 " y\_t = 0 + 1.94 y\_\{t - 1\} - y\_\{t - 2\} ``)
 
-This toy situation appears to do much better than our RNN model, but we have to
-give the RNN a break --- all of the information has to be ``squished'' into
-essentially 30 bits, which might impact the model's accuracy.
+In this toy situation, the AR(2) appears to do much better than our RNN model,
+but we have to give the RNN a break --- all of the information has to be
+``squished'' into essentially 30 bits, which might impact the model's accuracy.
 
 \hypertarget{functions-all-the-way-down}{%
 \section{Functions all the way down}\label{functions-all-the-way-down}}
@@ -1588,6 +1588,8 @@ There are many more such combinators possible! Combinators like
 to us that seemingly exotic things really are just simple applications of
 combinators from other basic things.
 
+/* TODO: LSTM, lag? */
+
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 \textbf{Aside: Unified Representation}
@@ -1708,19 +1710,8 @@ A lot of things come together to make all of this work:
   this is what makes combinators like \texttt{recurrent} and \texttt{unroll} and
   \texttt{zeroState} reasonable: the \emph{compiler} is able to trace how we
   move around our parameter and state, so that we don't have to. It lets us ask
-  questions like ``what is the state, now?'' if we needed, or ``what is the
-  parameter now?''. Remember how we were able to trace out the unrolling and
-  zeroing process:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{ar2                        ::} \DataTypeTok{ModelS}\NormalTok{ _ _  }\DataTypeTok{Double}  \DataTypeTok{Double}
-\NormalTok{unrollLast}\OtherTok{ ar2             ::} \DataTypeTok{ModelS}\NormalTok{ _ _ [}\DataTypeTok{Double}\NormalTok{] }\DataTypeTok{Double}
-\NormalTok{zeroState (unrollLast ar2)}\OtherTok{ ::} \DataTypeTok{Model}\NormalTok{  _   [}\DataTypeTok{Double}\NormalTok{] }\DataTypeTok{Double}
-\end{Highlighting}
-\end{Shaded}
-
-  The fact that this all exists within our language is very powerful.
+  \emph{the compiler} questions like ``what is the state, now?'' if we needed,
+  or ``what is the parameter now?''.
 
   We sometimes even gained insight simply from thinking, in advance, what the
   types of our combinators were. And, if we can phrase our combinators in terms
@@ -1733,5 +1724,7 @@ a result. In an imperative or object-oriented setting with inexpressive or
 dynamic type system would render this approach almost infeasible. I really feel
 like, after working with these types and these sorts of models, we are peering
 into the future of machine learning's gradient-trainable models.
+
+/* TODO: what makes a good frameowkr */
 
 \end{document}

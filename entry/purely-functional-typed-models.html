@@ -434,7 +434,7 @@ f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
 <a class="sourceLine" id="cb31-2" data-line-number="2">          <span class="fu">&lt;*~*</span> mapS logistic (fcrnn <span class="fu">@</span><span class="dv">20</span> <span class="fu">@</span><span class="dv">10</span>)</a>
 <a class="sourceLine" id="cb31-3" data-line-number="3">          <span class="fu">&lt;*~*</span> mapS logistic (fcrnn <span class="fu">@</span><span class="dv">40</span> <span class="fu">@</span><span class="dv">20</span>)</a></code></pre></div>
 <p>We made a dummy type <code>NoState</code> to use for our stateless model</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L441-L442</span></a>
+<div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L433-L434</span></a>
 <a class="sourceLine" id="cb32-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb32-3" data-line-number="3"><span class="kw">data</span> <span class="dt">NoState</span> <span class="fu">=</span> <span class="dt">NoState</span></a>
 <a class="sourceLine" id="cb32-4" data-line-number="4">  <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Generic</span>)</a></code></pre></div>
@@ -607,7 +607,7 @@ f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
 <figure>
 <img src="/img/entries/functional-models/rnnsin.png" title="FCRNN Sine Wave" alt="FCRNN Sine Wave" /><figcaption>FCRNN Sine Wave</figcaption>
 </figure>
-<p>Looks a bit “unreasonably effective”, eh?</p>
+<p>Not perfect, but still looks a bit “unreasonably effective”, eh?</p>
 <p>For kicks, let’s see if we can do any better with the simpler AR(2) model from before. Applying all we just used to <code>ar2</code>, we see:</p>
 <div class="sourceCode" id="cb49"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="ot">ar2                        ::</span> <span class="dt">ModelS</span> _ _  <span class="dt">Double</span>  <span class="dt">Double</span></a>
 <a class="sourceLine" id="cb49-2" data-line-number="2">unrollLast<span class="ot"> ar2             ::</span> <span class="dt">ModelS</span> _ _ [<span class="dt">Double</span>] <span class="dt">Double</span></a>
@@ -639,7 +639,7 @@ y_t = 0 + 1.94 y_{t - 1} - y_{t - 2}
 " title="
 y_t = 0 + 1.94 y_{t - 1} - y_{t - 2}
 " /><br /></p>
-<p>This toy situation appears to do much better than our RNN model, but we have to give the RNN a break — all of the information has to be “squished” into essentially 30 bits, which might impact the model’s accuracy.</p>
+<p>In this toy situation, the AR(2) appears to do much better than our RNN model, but we have to give the RNN a break — all of the information has to be “squished” into essentially 30 bits, which might impact the model’s accuracy.</p>
 <h2 id="functions-all-the-way-down">Functions all the way down</h2>
 <p>Again, it is very easy to look at something like</p>
 <div class="sourceCode" id="cb52"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb52-1" data-line-number="1">feedForward <span class="fu">@</span><span class="dv">30</span> <span class="fu">@</span><span class="dv">1</span> <span class="fu">&lt;*~</span> mapS logistic (fcrnn <span class="fu">@</span><span class="dv">1</span> <span class="fu">@</span><span class="dv">30</span>)</a></code></pre></div>
@@ -706,6 +706,7 @@ y_t = 0 + 1.94 y_{t - 1} - y_{t - 2}
 <a class="sourceLine" id="cb58-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> _ (<span class="dt">R</span> o) (<span class="dt">R</span> i) (<span class="dt">R</span> o)</a>
 <a class="sourceLine" id="cb58-6" data-line-number="6">fcrnn&#39; <span class="fu">=</span> recurrentlyWith logistic (\p <span class="ot">-&gt;</span> feedForward p <span class="fu">.</span> uncurryT (<span class="fu">#</span>))</a></code></pre></div>
 <p>There are many more such combinators possible! Combinators like <code>recurrentlyWith</code> just scratch the surface. Best of all, they help reveal to us that seemingly exotic things really are just simple applications of combinators from other basic things.</p>
+<p>/* TODO: LSTM, lag? */</p>
 <div class="note">
 <p><strong>Aside: Unified Representation</strong></p>
 <p>This is a small aside for those familiar with Haskell techniques like DataKinds and dependent types!</p>
@@ -746,14 +747,11 @@ y_t = 0 + 1.94 y_{t - 1} - y_{t - 2}
 <li><p><em>Differentiable</em> programs, allowing us to write normal functions and have them be automatically differentiable for gradient descent.</p></li>
 <li><p><em>Purely</em> functional programming. If <em>any</em> of these functions were side-effecting and impure functions, the correspondence between functions and mathematical models completely falls apart. This is something we often take for granted when writing Haskell, but in other languages, without purity, no model is sound.</p></li>
 <li><p>A <em>strong expressive static type system</em> makes this all reasonable to work with. A strong type system tells us how we are allowed to combine outputs and inputs of functions, how we can combine parameters, what values parameters contains, what parameters a given model contains, etc.; without this knowledge, it would be impossible to sanely write complex programs.</p>
-<p>This forces us to be aware of what parameters we have, how they combine, etc.; this is what makes combinators like <code>recurrent</code> and <code>unroll</code> and <code>zeroState</code> reasonable: the <em>compiler</em> is able to trace how we move around our parameter and state, so that we don’t have to. It lets us ask questions like “what is the state, now?” if we needed, or “what is the parameter now?”. Remember how we were able to trace out the unrolling and zeroing process:</p>
-<div class="sourceCode" id="cb62"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb62-1" data-line-number="1"><span class="ot">ar2                        ::</span> <span class="dt">ModelS</span> _ _  <span class="dt">Double</span>  <span class="dt">Double</span></a>
-<a class="sourceLine" id="cb62-2" data-line-number="2">unrollLast<span class="ot"> ar2             ::</span> <span class="dt">ModelS</span> _ _ [<span class="dt">Double</span>] <span class="dt">Double</span></a>
-<a class="sourceLine" id="cb62-3" data-line-number="3">zeroState (unrollLast ar2)<span class="ot"> ::</span> <span class="dt">Model</span>  _   [<span class="dt">Double</span>] <span class="dt">Double</span></a></code></pre></div>
-<p>The fact that this all exists within our language is very powerful.</p>
+<p>This forces us to be aware of what parameters we have, how they combine, etc.; this is what makes combinators like <code>recurrent</code> and <code>unroll</code> and <code>zeroState</code> reasonable: the <em>compiler</em> is able to trace how we move around our parameter and state, so that we don’t have to. It lets us ask <em>the compiler</em> questions like “what is the state, now?” if we needed, or “what is the parameter now?”.</p>
 <p>We sometimes even gained insight simply from thinking, in advance, what the types of our combinators were. And, if we can phrase our combinators in terms of our types, the compiler will often be able to write our entire program for us — something only possible for statically typed languages.</p></li>
 </ol>
 <p>If you drop any one of these pieces, you are left with something very clumsy as a result. In an imperative or object-oriented setting with inexpressive or dynamic type system would render this approach almost infeasible. I really feel like, after working with these types and these sorts of models, we are peering into the future of machine learning’s gradient-trainable models.</p>
+<p>/* TODO: what makes a good frameowkr */</p>
 <section class="footnotes">
 <hr />
 <ol>

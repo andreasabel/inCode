@@ -820,7 +820,7 @@ ghci> hybrid = toS @_ @NoState (feedForwardLog' @20 @10)
 We made a dummy type `NoState` to use for our stateless model
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L441-L442
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L433-L434
 
 data NoState = NoState
   deriving (Show, Generic)
@@ -1128,7 +1128,7 @@ approximates the process decently well, with a consistent period:
 
 ![FCRNN Sine Wave](/img/entries/functional-models/rnnsin.png "FCRNN Sine Wave")
 
-Looks a bit "unreasonably effective", eh?
+Not perfect, but still looks a bit "unreasonably effective", eh?
 
 For kicks, let's see if we can do any better with the simpler AR(2) model from
 before. Applying all we just used to `ar2`, we see:
@@ -1179,9 +1179,9 @@ y\_t = 0 + 1.94 y\_{t - 1} - y\_{t - 2}
 y_t = 0 + 1.94 y_{t - 1} - y_{t - 2}
 ")
 
-This toy situation appears to do much better than our RNN model, but we have to
-give the RNN a break --- all of the information has to be "squished" into
-essentially 30 bits, which might impact the model's accuracy.
+In this toy situation, the AR(2) appears to do much better than our RNN model,
+but we have to give the RNN a break --- all of the information has to be
+"squished" into essentially 30 bits, which might impact the model's accuracy.
 
 Functions all the way down
 --------------------------
@@ -1320,6 +1320,8 @@ There are many more such combinators possible! Combinators like
 that seemingly exotic things really are just simple applications of combinators
 from other basic things.
 
+/\* TODO: LSTM, lag? \*/
+
 ::: {.note}
 **Aside: Unified Representation**
 
@@ -1422,18 +1424,9 @@ A lot of things come together to make all of this work:
     This forces us to be aware of what parameters we have, how they combine,
     etc.; this is what makes combinators like `recurrent` and `unroll` and
     `zeroState` reasonable: the *compiler* is able to trace how we move around
-    our parameter and state, so that we don't have to. It lets us ask questions
-    like "what is the state, now?" if we needed, or "what is the parameter
-    now?". Remember how we were able to trace out the unrolling and zeroing
-    process:
-
-    ``` {.haskell}
-    ar2                        :: ModelS _ _  Double  Double
-    unrollLast ar2             :: ModelS _ _ [Double] Double
-    zeroState (unrollLast ar2) :: Model  _   [Double] Double
-    ```
-
-    The fact that this all exists within our language is very powerful.
+    our parameter and state, so that we don't have to. It lets us ask *the
+    compiler* questions like "what is the state, now?" if we needed, or "what is
+    the parameter now?".
 
     We sometimes even gained insight simply from thinking, in advance, what the
     types of our combinators were. And, if we can phrase our combinators in
@@ -1445,6 +1438,8 @@ a result. In an imperative or object-oriented setting with inexpressive or
 dynamic type system would render this approach almost infeasible. I really feel
 like, after working with these types and these sorts of models, we are peering
 into the future of machine learning's gradient-trainable models.
+
+/\* TODO: what makes a good frameowkr \*/
 
 [^1]: Those familiar with Haskell idioms might recognize this type as being
     essentially `a -> Reader p b` (or `Kleisli (Reader p) a b`) which roughly
