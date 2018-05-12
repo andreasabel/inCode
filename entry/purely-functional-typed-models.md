@@ -208,7 +208,7 @@ having it work with `BVar z p` and `BVar z a` (`BVar`s containing those values)
 instead:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L46-L47
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L47-L48
 
 type Model p a b = forall z. Reifies z W
                 => BVar z p -> BVar z a -> BVar z b
@@ -223,7 +223,7 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 ")
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L42-L53
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L43-L54
 
 data a :& b = !a :& !b
   deriving (Show, Generic)
@@ -264,7 +264,7 @@ if we identify a loss function:
 ")
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L55-L63
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L56-L64
 
 squaredErrorGrad
     :: (Backprop p, Backprop b, Num b)
@@ -284,7 +284,7 @@ And finally, we can train it using stochastic gradient descent, with just a
 simple fold over all observations:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L65-L71
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L66-L72
 
 trainModel
     :: (Fractional p, Backprop p, Num b, Backprop b)
@@ -300,7 +300,7 @@ For convenience, we can define a `Random` instance for our tuple type using the
 that uses `IO` to generate a random initial parameter:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L73-L80
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L74-L81
 
 trainModelIO
     :: (Fractional p, Backprop p, Num b, Backprop b, Random p)
@@ -341,7 +341,7 @@ We can start with a single layer. The model here will also take two parameters
 
 ``` {.haskell}
 import Numeric.LinearAlgebra.Static.Backprop
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L87-L104
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L88-L105
 
 logistic :: Floating a => a -> a
 logistic x = 1 / (1 + exp (-x))
@@ -409,7 +409,7 @@ function to create a *[logistic
 regression](https://en.wikipedia.org/wiki/Logistic_regression)* model.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L118-L119
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L119-L120
 
 logReg :: Model (Double :& Double) Double Double
 logReg ab = logistic . linReg ab
@@ -418,7 +418,7 @@ logReg ab = logistic . linReg ab
 We could have even written our `feedForwardLog` without its activation function:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L90-L96
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L91-L97
 
 feedForward
     :: (KnownNat i, KnownNat o)
@@ -432,7 +432,7 @@ feedForward wb x = w #> x + b
 And now we can swap out activation functions using simple function composition:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L121-L124
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L122-L125
 
 feedForwardLog'
     :: (KnownNat i, KnownNat o)
@@ -444,7 +444,7 @@ Maybe even a [softmax](https://en.wikipedia.org/wiki/Softmax_function)
 classifier!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L126-L134
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L127-L135
 
 softMax :: (Reifies z W, KnownNat n) => BVar z (R n) -> BVar z (R n)
 softMax x = konst (1 / sumElements expx) * expx
@@ -461,7 +461,7 @@ We can even write a function to *compose* two models, keeping their two original
 parameters separate:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L136-L145
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L137-L146
 
 (<~)
     :: (Backprop p, Backprop q)
@@ -511,7 +511,7 @@ ghci> evalBP2 twoLayer trained (H.vec2 1 1)
 
 Not bad!
 
-### Possibilities
+### They're Just Functions
 
 We just built a working neural network using normal function composition and
 simple combinators. No need for any objects or mutability or fancy explicit
@@ -542,6 +542,28 @@ just:
 
 Just normal function composition -- we're really just defining the *function*
 itself, and *backprop* turns that function into a trainable model.
+
+In the past I've talked about [layers as
+data](https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html),
+and neural network libraries like
+[grenade](http://hackage.haskell.org/package/grenade-0.1.0) let you manipulate
+neural network layers in a composable way. My previous attempts at neural
+networks like [tensor-ops](https://github.com/mstksg/tensor-ops) also force a
+similar structure of composition of data types. However, I feel this is a bit
+limiting.
+
+You are forced to "compose" your layers in only the ways that the API of the
+data type gives you. You have to use the data type's "function composition"
+functions, or its special "mapping" functions...and for weird things like
+forking compositions like `\f g h x -> f (g x) (h x)` you have to learn how the
+data type offers such an API.
+
+However, such a crazy composition here is "trivial" -- it's all just normal
+functions, so you can just literally write out code like
+`\f g h x -> f (g x) (h x)` (or something very close). You don't have to learn
+any rules of special "layer" data types. At the heart of it all, your model is
+*just a function*. And, with differentiable programming, it's a *trainable
+function*.
 
 Time Series Models
 ------------------
@@ -676,7 +698,7 @@ Alright, so what does this mean, and how does it help us?
 To help us see, let's try implementing this in Haskell:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L161-L165
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L162-L166
 
 type ModelS p s a b = forall z. Reifies z W
                    => BVar z p
@@ -689,7 +711,7 @@ We can implement AR(2) as mentioned before by translating the math formula
 directly:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L167-L173
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L168-L174
 
 ar2 :: ModelS (Double :& (Double :& Double)) Double Double Double
 ar2 cφ yLast yLastLast = ( c + φ1 * yLast + φ2 * yLastLast, yLast )
@@ -704,7 +726,7 @@ Our implementation of a fully-connected recurrent neural network is a similar
 direct translation:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L175-L184
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L176-L185
 
 fcrnn
     :: (KnownNat i, KnownNat o)
@@ -722,7 +744,7 @@ Because we again have normal functions, we can write a similar stateful model
 composition function that combines both their parameters and their states:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L186-L199
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L187-L200
 
 (<*~*)
   :: (Backprop p, Backprop q, Backprop s, Backprop t)
@@ -731,7 +753,7 @@ composition function that combines both their parameters and their states:
     -> ModelS (p :& q) (s :& t) a c
 (f <*~* g) pq x st = let (y, t') = g q x t
                          (z, s') = f p y s
-                     in  (z, reTup s' t')
+                     in  (z, s' #& t')
   where
     p = pq ^^. t1
     q = pq ^^. t2
@@ -740,13 +762,13 @@ composition function that combines both their parameters and their states:
 infixr 8 <*~*
 ```
 
-(`reTup` will take two `BVar`s of values and tuple them back up into a `BVar` of
+(`(#&)` will take two `BVar`s of values and tuple them back up into a `BVar` of
 a tuple, essentially the inverse of `^^. t1` and `^^. t2`)
 
 And maybe even a utility function to map a function on the result of a `ModelS`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L201-L205
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L202-L206
 
 mapS
     :: (forall z. Reifies z W => BVar z b -> BVar z c)
@@ -779,7 +801,7 @@ For example, we can "upgrade" any non-stateful function to a stateful one, just
 by returning a new normal function:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L207-L209
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L208-L210
 
 toS :: Model  p   a b
     -> ModelS p s a b
@@ -797,7 +819,7 @@ ghci> hybrid = toS @_ @NoState (feedForwardLog' @20 @10)
 We made a dummy type `NoState` to use for our stateless model
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L402-L403
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L433-L434
 
 data NoState = NoState
   deriving (Show, Generic)
@@ -807,7 +829,7 @@ But we can also be creative with our combinators, as well, and write one to
 compose a stateless model with a stateful one:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L211-L220
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L212-L221
 
 (<*~)
   :: (Backprop p, Backprop q)
@@ -911,7 +933,7 @@ It is lifted to work with `BVar`s of the items instead of directly on the items.
 With that, we can write `unroll`, which is just a thin wrapper over `mapAccumL`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L222-L230
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L223-L231
 
 unroll
     :: (Traversable t, Backprop a, Backprop b, Backprop (t b))
@@ -931,7 +953,7 @@ We can also tweak `unroll`'s result a bit to get a version of `unroll` that
 shows only the "final" result:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L232-L237
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L233-L238
 
 unrollLast
     :: (Backprop a, Backprop b)
@@ -966,7 +988,7 @@ very common in machine learning contexts, where many people simply fix the
 initial state to be a zero vector.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L239-L249
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L240-L250
 
 fixState
     :: s
@@ -990,7 +1012,7 @@ throw away the final state). This is not done as often, but is still common
 enough to be mentioned often. And, it's just as straightforward!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L251-L258
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L252-L259
 
 trainState
     :: (Backprop p, Backprop s)
@@ -1051,7 +1073,7 @@ that takes a stateful model and gives a "warmed-up" state by running it over a
 list of inputs. This serves to essentially initialize the memory of the model.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L260-L267
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L261-L268
 
 prime
     :: Foldable t
@@ -1067,7 +1089,7 @@ Then a function `feedback` that iterates a stateful model over and over again by
 feeding its previous output as its next input:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L269-L280
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L270-L281
 
 feedback
     :: (Backprop a, Backprop s)
@@ -1172,6 +1194,123 @@ keeps track of state, and the object has some nice abstracted interface...right?
 But, nope, again, it is all just normal functions that we wrote using normal
 function composition. We define our model as a *function*, and the backprop
 library turns that function into a trainable model.
+
+Combinator Fun
+--------------
+
+I really like how we have pretty much free reign over how we can combine and
+manipulate our models, since they are just functions.
+
+Here's one example of how the freedom that "normal functions" gives you can help
+reveal insight. I stumbled upon an interesting way of defining recurrent neural
+networks --- a lot of times, a "recurrent neural network" really just means that
+some function of the *previous* output is used as an "extra input".
+
+This sounds like we can really write a recurrent model as a "normal" model, and
+then use a combinator to feed it back into itself.
+
+To say in types:
+
+``` {.haskell}
+recurrently
+    :: Model  p   (a :& b) b
+    -> ModelS p b  a       b
+```
+
+A "normal, non-stateful model" taking an `a :& b` and returning a `b` can really
+be turned into a stateful model with state `b` (the *previous output*) and only
+taking in an `a` input.
+
+This sort of combinator is a joy to write in Haskell because it's a "follow the
+types" kinda deal --- you set up the function, and the compiler pretty much
+writes it for you, because the types guide the entire implementation:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L317-L323
+
+recurrently
+    :: (Backprop a, Backprop b)
+    => Model  p   (a :& b) b
+    -> ModelS p b  a       b
+recurrently f p x yLast = (y, y)
+  where
+    y = f p (x #& yLast)
+```
+
+In general though, it'd be nice to have *some function* of the previous output
+be stored as the state. We can write this combinator as well, taking the
+function that transforms the previous output into the stored state:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L325-L332
+
+recurrentlyWith
+    :: (Backprop a, Backprop b)
+    => (forall z. Reifies z W => BVar z c -> BVar z b)
+    -> Model  p   (a :& b) c
+    -> ModelS p b  a       c
+recurrentlyWith store f p x yLast = (y, store y)
+  where
+    y = f p (x #& yLast)
+```
+
+Again, once we figure out the *type* our combinator has...the function writes
+itself. The joys of Haskell!
+
+`recurrentlyWith` takes a `c -> b` function and turns a pure model taking an
+`a :& b` into a stateful model with state `b` taking in an `a`. The `c -> b`
+tells you how to turn the previous output into the new state.
+
+To me, `recurrentlyWith` captures the "essence" of what a recurrent model or
+recurrent neural network is --- the network is allowed to "see" its previous
+output.
+
+And the piece de resistance --- we can use this to define a fully connected
+recurrent neural network layer as simply a recurrent version of a normal fully
+connected feed-forward layer.
+
+We can redefine a pre-mapped version of `feedForward` which takes a tuple of two
+vectors and concatenates them before doing anything:
+
+``` {.haskell}
+-- | Concatenate two vectors
+(#)          :: BVar s (R i) -> BVar s (R o) -> BVar s (R (i + o))
+
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L334-L340
+
+ffOnSplit
+    :: forall i o. (KnownNat i, KnownNat o)
+    => Model _ (R i :& R o) (R o)
+ffOnSplit p rIrO = feedForward @(i + o) p (rI # rO)
+  where
+    rI = rIrO ^^. t1
+    rO = rIrO ^^. t2
+```
+
+`ffOnSplit` is a feed-forward layer taking an `R (i + o)`, except we pre-map it
+to take a tuple `R i :& R o` instead.
+
+Now our fully connected recurrent layer is just
+`recurrentlyWith logistic ffOnSplit`:
+
+``` {.haskell}
+fcrnn'
+    :: (KnownNat i, KnownNat o)
+    => ModelS _ (R o) (R i) (R o)
+fcrnn' = recurrentlyWith logistic ffOnSplit
+```
+
+Basically just a recurrent version of `feedForward`! If we abstract out some of
+the manual uncurrying and premapping, we get a nice functional definition:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L342-L345
+
+fcrnn'
+    :: (KnownNat i, KnownNat o)
+    => ModelS _ (R o) (R i) (R o)
+fcrnn' = recurrentlyWith logistic (\p -> feedForward p . uncurryT (#))
+```
 
 [^1]: Those familiar with Haskell idioms might recognize this type as being
     isomorphic to `a -> Reader p b` (or `Kleisli (Reader p) a b`) which roughly
