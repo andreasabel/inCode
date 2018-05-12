@@ -705,8 +705,9 @@ y_t = 0 + 1.94 y_{t - 1} - y_{t - 2}
 <a class="sourceLine" id="cb58-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> _ (<span class="dt">R</span> o) (<span class="dt">R</span> i) (<span class="dt">R</span> o)</a>
 <a class="sourceLine" id="cb58-6" data-line-number="6">fcrnn&#39; <span class="fu">=</span> recurrentlyWith logistic (\p <span class="ot">-&gt;</span> feedForward p <span class="fu">.</span> uncurryT (<span class="fu">#</span>))</a></code></pre></div>
 <p>There are many more such combinators possible! Combinators like <code>recurrentlyWith</code> just scratch the surface. Best of all, they help reveal to us that seemingly exotic things really are just simple applications of combinators from other basic things.</p>
-<h3 id="unified-representation">Unified Representation</h3>
-<p>One ugly thing you might have noticed was that we had to give different “types” for both our <code>Model</code> and <code>ModelS</code>, so we cannot re-use useful functions on both. For example, <code>mapS</code> only works on <code>ModelS</code>, but not <code>Model</code>. <code>(&lt;*~*)</code> only works on two <code>ModelS</code>s, and we had to define a different combinator <code>(&lt;*~)</code>.</p>
+<div class="note">
+<p><strong>Aside: Unified Representation</strong></p>
+<p>One ugly thing you might have noticed was that we had to give different “types” for both our <code>Model</code> and <code>ModelS</code>, so we cannot re-use useful functions on both. For example, <code>mapS</code> only works on <code>ModelS</code>, but not <code>Model</code>. <code>(&lt;~)</code> only works on <code>Model</code>s, <code>(&lt;*~*)</code> only works on two <code>ModelS</code>s, and we had to define a different combinator <code>(&lt;*~)</code>.</p>
 <p>This is not a fundamental limitation! With <em>DataKinds</em> and dependent types we can unify these both under a common type. If we had:</p>
 <div class="sourceCode" id="cb59"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Model</span> (<span class="ot">p ::</span> <span class="dt">Type</span>) (<span class="ot">a ::</span> <span class="dt">Type</span>) (<span class="ot">b ::</span> <span class="dt">Type</span>) <span class="fu">=</span></a>
 <a class="sourceLine" id="cb59-2" data-line-number="2">       forall z<span class="fu">.</span> <span class="dt">Reifies</span> z <span class="dt">W</span></a>
@@ -731,7 +732,9 @@ y_t = 0 + 1.94 y_{t - 1} - y_{t - 2}
 <p>We can then re-define our previous types:</p>
 <div class="sourceCode" id="cb61"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb61-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Model</span>  p   <span class="fu">=</span> <span class="dt">Model&#39;</span> p <span class="ch">&#39;Nothing</span></a>
 <a class="sourceLine" id="cb61-2" data-line-number="2"><span class="kw">type</span> <span class="dt">ModelS</span> p s <span class="fu">=</span> <span class="dt">Model&#39;</span> p (<span class="ch">&#39;Just s)</span></a></code></pre></div>
-<p>And now that we have unified everything under the same type, we can write <code>mapS</code> that takes both stateful and non-stateful models, merge <code>&lt;*~*</code> and <code>&lt;*~</code>, etc., thanks to the power of dependent types.</p>
+<p>And now that we have unified everything under the same type, we can write <code>mapS</code> that takes both stateful and non-stateful models, merge <code>(&lt;~)</code>, <code>(&lt;*~*)</code> and <code>(&lt;*~)</code>, etc., thanks to the power of dependent types.</p>
+<p>Note that dependent types and DataKind shenanigans aren’t necessary for any of this to work — it just has the possibility to make things even more seamless and unified!</p>
+</div>
 <h2 id="a-path-forward">A Path Forward</h2>
 <p>Thank you for making it to the end! I hope at this point you have been able to gain some appreciation for differential programming in a purely functional style, and see the sort of doors that this opens.</p>
 <p>A lot of things come together to make all of this work:</p>
