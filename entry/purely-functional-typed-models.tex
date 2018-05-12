@@ -109,8 +109,9 @@ logistic regression and other statistical models to artificial neural networks,
 feed-forward and recurrent (stateful). I wanted to see to what extent we can
 really apply automatic differentiation and iterative gradient decent-based
 training to all of these different models. Basically, I wanted to see how far we
-can take \emph{differentiable programming} as a paradigm for writing trainable
-models.
+can take \emph{differentiable programming} (a la
+\href{https://www.facebook.com/yann.lecun/posts/10155003011462143}{Yann LeCun})
+as a paradigm for writing trainable models.
 
 I'm starting to see a picture unifying all of these models, painted in the
 language of purely typed functional programming. I'm already applying these to
@@ -120,8 +121,8 @@ or useful.
 
 As a big picture, I really believe that a purely functional typed approach to
 differentiable programming is \emph{the} way to move forward in the future for
-models like artificial neural networks -- and that one day, object-oriented and
-imperative approaches will seem quaint.
+models like artificial neural networks. In this light, the drawbacks of
+object-oriented and imperative approaches becomes very apparent.
 
 I'm not the first person to attempt to build a conceptual framework for these
 types of models in a purely functional typed sense --
@@ -324,7 +325,7 @@ containing those values) instead:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L47-L48}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L48-L49}
 
 \KeywordTok{type} \DataTypeTok{Model}\NormalTok{ p a b }\FunctionTok{=}\NormalTok{ forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
                 \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z p }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z a }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z b}
@@ -340,7 +341,7 @@ x +
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L43-L54}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L44-L55}
 
 \KeywordTok{data}\NormalTok{ a }\FunctionTok{:&}\NormalTok{ b }\FunctionTok{=} \FunctionTok{!}\NormalTok{a }\FunctionTok{:&} \FunctionTok{!}\NormalTok{b}
   \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Generic}\NormalTok{)}
@@ -384,7 +385,7 @@ y\_x)\^{}2{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cnabla\_p\%20\%28f\%28
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L56-L64}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L57-L65}
 
 \NormalTok{squaredErrorGrad}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ b, }\DataTypeTok{Num}\NormalTok{ b)}
@@ -407,7 +408,7 @@ simple fold over all observations:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L66-L72}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L67-L73}
 
 \NormalTok{trainModel}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Fractional}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Num}\NormalTok{ b, }\DataTypeTok{Backprop}\NormalTok{ b)}
@@ -426,7 +427,7 @@ parameter:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L74-L81}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L75-L82}
 
 \NormalTok{trainModelIO}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Fractional}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Num}\NormalTok{ b, }\DataTypeTok{Backprop}\NormalTok{ b, }\DataTypeTok{Random}\NormalTok{ p)}
@@ -473,7 +474,7 @@ We can start with a single layer. The model here will also take two parameters
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{import} \DataTypeTok{Numeric.LinearAlgebra.Static.Backprop}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L88-L105}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L89-L106}
 
 \OtherTok{logistic ::} \DataTypeTok{Floating}\NormalTok{ a }\OtherTok{=>}\NormalTok{ a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{logistic x }\FunctionTok{=} \DecValTok{1} \FunctionTok{/}\NormalTok{ (}\DecValTok{1} \FunctionTok{+}\NormalTok{ exp (}\FunctionTok{-}\NormalTok{x))}
@@ -552,7 +553,7 @@ regression}} model.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L119-L120}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L120-L121}
 
 \OtherTok{logReg ::} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{Double} \FunctionTok{:&} \DataTypeTok{Double}\NormalTok{) }\DataTypeTok{Double} \DataTypeTok{Double}
 \NormalTok{logReg ab }\FunctionTok{=}\NormalTok{ logistic }\FunctionTok{.}\NormalTok{ linReg ab}
@@ -564,7 +565,7 @@ function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L91-L97}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L92-L98}
 
 \NormalTok{feedForward}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
@@ -580,7 +581,7 @@ And now we can swap out activation functions using simple function composition:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L122-L125}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L123-L126}
 
 \NormalTok{feedForwardLog'}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
@@ -594,7 +595,7 @@ classifier!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L127-L135}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L128-L136}
 
 \OtherTok{softMax ::}\NormalTok{ (}\DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}\NormalTok{, }\DataTypeTok{KnownNat}\NormalTok{ n) }\OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z (}\DataTypeTok{R}\NormalTok{ n) }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z (}\DataTypeTok{R}\NormalTok{ n)}
 \NormalTok{softMax x }\FunctionTok{=}\NormalTok{ konst (}\DecValTok{1} \FunctionTok{/}\NormalTok{ sumElements expx) }\FunctionTok{*}\NormalTok{ expx}
@@ -613,7 +614,7 @@ original parameters separate:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L137-L146}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L138-L147}
 
 \NormalTok{(}\FunctionTok{<~}\NormalTok{)}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ q)}
@@ -866,7 +867,7 @@ To help us see, let's try implementing this in Haskell:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L162-L166}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L163-L167}
 
 \KeywordTok{type} \DataTypeTok{ModelS}\NormalTok{ p s a b }\FunctionTok{=}\NormalTok{ forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
                    \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z p}
@@ -881,7 +882,7 @@ directly:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L168-L174}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L169-L175}
 
 \OtherTok{ar2 ::} \DataTypeTok{ModelS}\NormalTok{ (}\DataTypeTok{Double} \FunctionTok{:&}\NormalTok{ (}\DataTypeTok{Double} \FunctionTok{:&} \DataTypeTok{Double}\NormalTok{)) }\DataTypeTok{Double} \DataTypeTok{Double} \DataTypeTok{Double}
 \NormalTok{ar2 cφ yLast yLastLast }\FunctionTok{=}\NormalTok{ ( c }\FunctionTok{+}\NormalTok{ φ1 }\FunctionTok{*}\NormalTok{ yLast }\FunctionTok{+}\NormalTok{ φ2 }\FunctionTok{*}\NormalTok{ yLastLast, yLast )}
@@ -898,7 +899,7 @@ direct translation:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L176-L185}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L177-L186}
 
 \NormalTok{fcrnn}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
@@ -918,7 +919,7 @@ composition function that combines both their parameters and their states:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L187-L200}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L188-L201}
 
 \NormalTok{(}\FunctionTok{<*~*}\NormalTok{)}
 \OtherTok{  ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ q, }\DataTypeTok{Backprop}\NormalTok{ s, }\DataTypeTok{Backprop}\NormalTok{ t)}
@@ -946,7 +947,7 @@ And maybe even a utility function to map a function on the result of a
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L202-L206}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L203-L207}
 
 \NormalTok{mapS}
 \OtherTok{    ::}\NormalTok{ (forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W} \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z b }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z c)}
@@ -986,7 +987,7 @@ just by returning a new normal function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L208-L210}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L209-L211}
 
 \OtherTok{toS ::} \DataTypeTok{Model}\NormalTok{  p   a b}
     \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p s a b}
@@ -1009,7 +1010,7 @@ We made a dummy type \texttt{NoState} to use for our stateless model
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L433-L434}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L441-L442}
 
 \KeywordTok{data} \DataTypeTok{NoState} \FunctionTok{=} \DataTypeTok{NoState}
   \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Generic}\NormalTok{)}
@@ -1021,7 +1022,7 @@ compose a stateless model with a stateful one:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L212-L221}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L213-L222}
 
 \NormalTok{(}\FunctionTok{<*~}\NormalTok{)}
 \OtherTok{  ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ q)}
@@ -1147,7 +1148,7 @@ over \texttt{mapAccumL}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L223-L231}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L224-L232}
 
 \NormalTok{unroll}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Traversable}\NormalTok{ t, }\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b, }\DataTypeTok{Backprop}\NormalTok{ (t b))}
@@ -1169,7 +1170,7 @@ We can also tweak \texttt{unroll}'s result a bit to get a version of
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L233-L238}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L234-L239}
 
 \NormalTok{unrollLast}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b)}
@@ -1209,7 +1210,7 @@ the initial state to be a zero vector.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L240-L250}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L241-L251}
 
 \NormalTok{fixState}
 \OtherTok{    ::}\NormalTok{ s}
@@ -1236,7 +1237,7 @@ enough to be mentioned often. And, it's just as straightforward!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L252-L259}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L253-L260}
 
 \NormalTok{trainState}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ s)}
@@ -1305,7 +1306,7 @@ memory of the model.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L261-L268}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L262-L269}
 
 \NormalTok{prime}
 \OtherTok{    ::} \DataTypeTok{Foldable}\NormalTok{ t}
@@ -1323,7 +1324,7 @@ again by feeding its previous output as its next input:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L270-L281}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L271-L282}
 
 \NormalTok{feedback}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ s)}
@@ -1430,7 +1431,7 @@ give the RNN a break --- all of the information has to be ``squished'' into
 essentially 30 bits, which might impact the model's accuracy.
 
 \hypertarget{functions-all-the-way-down}{%
-\subsection{Functions all the way down}\label{functions-all-the-way-down}}
+\section{Functions all the way down}\label{functions-all-the-way-down}}
 
 Again, it is very easy to look at something like
 
@@ -1449,7 +1450,7 @@ function composition. We define our model as a \emph{function}, and the backprop
 library turns that function into a trainable model.
 
 \hypertarget{combinator-fun}{%
-\section{Combinator Fun}\label{combinator-fun}}
+\subsection{Combinator Fun}\label{combinator-fun}}
 
 I really like how we have pretty much free reign over how we can combine and
 manipulate our models, since they are just functions.
@@ -1483,7 +1484,7 @@ writes it for you, because the types guide the entire implementation:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L317-L323}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L318-L324}
 
 \NormalTok{recurrently}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b)}
@@ -1501,7 +1502,7 @@ function that transforms the previous output into the stored state:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L325-L332}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L326-L333}
 
 \NormalTok{recurrentlyWith}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b)}
@@ -1538,7 +1539,7 @@ of two vectors and concatenates them before doing anything:
 \CommentTok{-- | Concatenate two vectors}
 \OtherTok{(#)          ::} \DataTypeTok{BVar}\NormalTok{ s (}\DataTypeTok{R}\NormalTok{ i) }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s (}\DataTypeTok{R}\NormalTok{ o) }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s (}\DataTypeTok{R}\NormalTok{ (i }\FunctionTok{+}\NormalTok{ o))}
 
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L334-L340}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L335-L341}
 
 \NormalTok{ffOnSplit}
 \OtherTok{    ::}\NormalTok{ forall i o}\FunctionTok{.}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
@@ -1566,12 +1567,12 @@ Now our fully connected recurrent layer is just
 \end{Shaded}
 
 Basically just a recurrent version of \texttt{feedForward}! If we abstract out
-some of the manual uncurrying and premapping, we get a nice functional
+some of the manual uncurrying and pre-mapping, we get a nice functional
 definition:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L342-L345}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L343-L346}
 
 \NormalTok{fcrnn'}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
@@ -1579,5 +1580,122 @@ definition:
 \NormalTok{fcrnn' }\FunctionTok{=}\NormalTok{ recurrentlyWith logistic (\textbackslash{}p }\OtherTok{->}\NormalTok{ feedForward p }\FunctionTok{.}\NormalTok{ uncurryT (}\FunctionTok{#}\NormalTok{))}
 \end{Highlighting}
 \end{Shaded}
+
+There are many more such combinators possible! Combinators like
+\texttt{recurrentlyWith} just scratch the surface. Best of all, they help reveal
+to us that seemingly exotic things really are just simple applications of
+combinators from other basic things.
+
+\hypertarget{unified-representation}{%
+\subsection{Unified Representation}\label{unified-representation}}
+
+One ugly thing you might have noticed was that we had to give different
+``types'' for both our \texttt{Model} and \texttt{ModelS}, so we cannot re-use
+useful functions on both. For example, \texttt{mapS} only works on
+\texttt{ModelS}, but not \texttt{Model}.
+\texttt{(\textless{}*\textasciitilde{}*)} only works on two \texttt{ModelS}s,
+and we had to define a different combinator
+\texttt{(\textless{}*\textasciitilde{})}.
+
+This is not a fundamental limitation! With \emph{DataKinds} and dependent types
+we can unify these both under a common type. If we had:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{Model}\NormalTok{ (}\OtherTok{p ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{a ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{b ::} \DataTypeTok{Type}\NormalTok{) }\FunctionTok{=}
+\NormalTok{       forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
+    \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z p}
+    \OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z a}
+    \OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z b}
+
+\KeywordTok{type} \DataTypeTok{ModelS}\NormalTok{ (}\OtherTok{p ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{s ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{a ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{b ::} \DataTypeTok{Type}\NormalTok{) }\FunctionTok{=}
+\NormalTok{       forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
+    \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z p}
+    \OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z a}
+    \OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z s}
+    \OtherTok{->}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z b, }\DataTypeTok{BVar}\NormalTok{ z s)}
+\end{Highlighting}
+\end{Shaded}
+
+We can unify them by making \texttt{s} be optional, a \texttt{Maybe\ Type}, and
+using the \texttt{Option} type from
+\emph{\href{https://hackage.haskell.org/package/type-combinators/docs/Data-Type-Option.html}{Data.Type.Option}},
+from the
+\emph{\href{https://hackage.haskell.org/package/type-combinators}{type-combinators}}
+package:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{Model'}\NormalTok{ (}\OtherTok{p ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{s ::} \DataTypeTok{Maybe} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{a ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{b ::} \DataTypeTok{Type}\NormalTok{) }\FunctionTok{=}
+\NormalTok{       forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
+    \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z p}
+    \OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z a}
+    \OtherTok{->} \DataTypeTok{Option}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z) s}
+    \OtherTok{->}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z b, }\DataTypeTok{Option}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z) s)}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{Option\ f\ a} contains a value if \texttt{a} is
+\texttt{\textquotesingle{}Just}, and does not if \texttt{a} is
+\texttt{\textquotesingle{}Nothing}.
+
+We can then re-define our previous types:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{Model}\NormalTok{  p   }\FunctionTok{=} \DataTypeTok{Model'}\NormalTok{ p }\CharTok{'Nothing}
+\KeywordTok{type} \DataTypeTok{ModelS}\NormalTok{ p s }\FunctionTok{=} \DataTypeTok{Model'}\NormalTok{ p (}\CharTok{'Just s)}
+\end{Highlighting}
+\end{Shaded}
+
+And now that we have unified everything under the same type, we can write
+\texttt{mapS} that takes both stateful and non-stateful models, merge
+\texttt{\textless{}*\textasciitilde{}*} and
+\texttt{\textless{}*\textasciitilde{}}, etc., thanks to the power of dependent
+types.
+
+\hypertarget{a-path-forward}{%
+\section{A Path Forward}\label{a-path-forward}}
+
+Thank you for making it to the end! I hope at this point you have been able to
+gain some appreciation for differential programming in a purely functional
+style, and see the sort of doors that this opens.
+
+A lot of things come together to make all of this work:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \emph{Differentiable} programs, allowing us to write normal functions and have
+  them be automatically differentiable for gradient descent
+\item
+  \emph{Functional programming}, allowing us to write higher-order functions and
+  combinators that take functions and return functions. This lets us combine and
+  reshape models in arbitrary ways just by using normal function composition and
+  application, instead of being forced into a rigid compositional model.
+\item
+  \emph{Purely} functional programming. If \emph{any} of these functions were
+  side-effecting and impure functions, the correspondence between functions and
+  mathematical models completely falls apart. This is something we often take
+  for granted when writing Haskell, but in other languages, without purity, no
+  model is sound.
+\item
+  A \emph{strong expressive type system} makes this all reasonable to work with.
+  A strong type system tells us how we are allowed to combine outputs and inputs
+  of functions, how we can combine parameters, what values parameters contains,
+  what parameters a given model contains, etc.; without this knowledge, it would
+  be impossible to sanely write complex programs.
+
+  We sometimes even gained insight simply from thinking, in advance, what the
+  types of our combinators were. And, if we can phrase our combinators in terms
+  of our types, the compiler will often be able to write our entire program for
+  us.
+\end{enumerate}
+
+If you drop any one of these pieces, you are left with something very clumsy as
+a result. In an imperative or object-oriented setting with inexpressive or
+dynamic type system would render this approach almost infeasible. I really feel
+like, after working with these types and these sorts of models, we are peering
+into the future of machine learning's gradient-trainable models.
 
 \end{document}
