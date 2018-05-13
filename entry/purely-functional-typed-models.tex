@@ -1686,8 +1686,8 @@ we can unify these both under a common type. If we had:
 \end{Highlighting}
 \end{Shaded}
 
-We can unify them by making \texttt{s} be optional, a \texttt{Maybe\ Type}, and
-using the \texttt{Option} type from
+We can unify them by making either the \texttt{p} or \texttt{s} be optional, a
+\texttt{Maybe\ Type}, and using the \texttt{Option} type from
 \emph{\href{https://hackage.haskell.org/package/type-combinators/docs/Data-Type-Option.html}{Data.Type.Option}},
 from the
 \emph{\href{https://hackage.haskell.org/package/type-combinators}{type-combinators}}
@@ -1695,9 +1695,9 @@ package:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{Model'}\NormalTok{ (}\OtherTok{p ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{s ::} \DataTypeTok{Maybe} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{a ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{b ::} \DataTypeTok{Type}\NormalTok{) }\FunctionTok{=}
+\KeywordTok{type} \DataTypeTok{Model'}\NormalTok{ (}\OtherTok{p ::} \DataTypeTok{Maybe} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{s ::} \DataTypeTok{Maybe} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{a ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{b ::} \DataTypeTok{Type}\NormalTok{) }\FunctionTok{=}
 \NormalTok{       forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
-    \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z p}
+    \OtherTok{=>} \DataTypeTok{Option}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z) p}
     \OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z a}
     \OtherTok{->} \DataTypeTok{Option}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z) s}
     \OtherTok{->}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z b, }\DataTypeTok{Option}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z) s)}
@@ -1706,14 +1706,18 @@ package:
 
 \texttt{Option\ f\ a} contains a value if \texttt{a} is
 \texttt{\textquotesingle{}Just}, and does not if \texttt{a} is
-\texttt{\textquotesingle{}Nothing}.
+\texttt{\textquotesingle{}Nothing}. More precisely, if \texttt{a} is
+\texttt{\textquotesingle{}Just\ b}, it will contain an \texttt{f\ b}. So if
+\texttt{p} is \texttt{\textquotesingle{}Just\ p\textquotesingle{}}, an
+\texttt{Option\ (BVar\ z)\ p} will contain a
+\texttt{BVar\ s\ p\textquotesingle{}}.
 
 We can then re-define our previous types:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{Model}\NormalTok{  p   }\FunctionTok{=} \DataTypeTok{Model'}\NormalTok{ p }\CharTok{'Nothing}
-\KeywordTok{type} \DataTypeTok{ModelS}\NormalTok{ p s }\FunctionTok{=} \DataTypeTok{Model'}\NormalTok{ p (}\CharTok{'Just s)}
+\KeywordTok{type} \DataTypeTok{Model}\NormalTok{  p   }\FunctionTok{=} \DataTypeTok{Model'}\NormalTok{ (}\CharTok{'Just p) '}\DataTypeTok{Nothing}
+\KeywordTok{type} \DataTypeTok{ModelS}\NormalTok{ p s }\FunctionTok{=} \DataTypeTok{Model'}\NormalTok{ (}\CharTok{'Just p) ('}\DataTypeTok{Just}\NormalTok{ s)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1723,6 +1727,20 @@ And now that we have unified everything under the same type, we can write
 \texttt{(\textless{}*\textasciitilde{}*)} and
 \texttt{(\textless{}*\textasciitilde{})}, etc., thanks to the power of dependent
 types.
+
+As an added benefit, we also can unify parameterless functions too, which are
+often useful for composition:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{Func}\NormalTok{ a b }\FunctionTok{=}\NormalTok{ forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W} \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z a }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z b}
+\CommentTok{-- or}
+\KeywordTok{type} \DataTypeTok{Func}     \FunctionTok{=} \DataTypeTok{Model'} \CharTok{'Nothing '}\DataTypeTok{Nothing}
+\end{Highlighting}
+\end{Shaded}
+
+and we can use this with our unified \texttt{(\textless{}\textasciitilde{})}
+etc. to implement functions like \texttt{mapS} for free.
 
 Note that dependent types and DataKind shenanigans aren't necessary for any of
 this to work --- it just has the possibility to make things even more seamless
