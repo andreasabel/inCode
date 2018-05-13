@@ -1456,6 +1456,9 @@ library turns that function into a trainable model.
 I really like how we have pretty much free reign over how we can combine and
 manipulate our models, since they are just functions.
 
+\hypertarget{recurrence-is-a-combinator}{%
+\subsubsection{Recurrence is a Combinator}\label{recurrence-is-a-combinator}}
+
 Here's one example of how the freedom that ``normal functions'' gives you can
 help reveal insight. I stumbled upon an interesting way of defining recurrent
 neural networks --- a lot of times, a ``recurrent neural network'' really just
@@ -1539,7 +1542,6 @@ of two vectors and concatenates them before doing anything:
 \begin{Highlighting}[]
 \CommentTok{-- | Concatenate two vectors}
 \OtherTok{(#)          ::} \DataTypeTok{BVar}\NormalTok{ s (}\DataTypeTok{R}\NormalTok{ i) }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s (}\DataTypeTok{R}\NormalTok{ o) }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s (}\DataTypeTok{R}\NormalTok{ (i }\FunctionTok{+}\NormalTok{ o))}
-
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L335-L341}
 
 \NormalTok{ffOnSplit}
@@ -1581,6 +1583,9 @@ definition:
 \NormalTok{fcrnn' }\FunctionTok{=}\NormalTok{ recurrentlyWith logistic (\textbackslash{}p }\OtherTok{->}\NormalTok{ feedForward p }\FunctionTok{.}\NormalTok{ uncurryT (}\FunctionTok{#}\NormalTok{))}
 \end{Highlighting}
 \end{Shaded}
+
+\hypertarget{lagging-is-a-combinator}{%
+\subsubsection{Lagging is a Combinator}\label{lagging-is-a-combinator}}
 
 Another interesting result -- we can write a ``lagged'' combinator that takes a
 model expecting a vector as an input, and turn it into a stateful model taking a
@@ -1630,6 +1635,9 @@ model AR(p) of \emph{any} degree, simply by lagging a fully connected ANN layer:
 \end{Highlighting}
 \end{Shaded}
 
+(using \texttt{fst\ .\ headTail} to extract the first \texttt{Double} from an
+\texttt{R\ 1})
+
 And that's it! Our original AR(2) \texttt{ar2} is just \texttt{ar\ @2} \ldots{}
 and we can write can write an AR(10) model by just using \texttt{ar\ @10}, and
 AR(20) model with \texttt{ar\ @20}, etc.
@@ -1645,6 +1653,10 @@ AR(20) model with \texttt{ar\ @20}, etc.
 
 Who would have thought that an autoregressive model is just a fully connected
 neural network layer with lag?
+
+Take a fully connected ANN layer and add recurrence --- you get a fully
+connected RNN layer. Take a fully connected ANN layer and add lag --- you get an
+autoregressive model from statistics!
 
 There are many more such combinators possible! Combinators like
 \texttt{recurrentlyWith} and \texttt{lagged} just scratch the surface. Best of
@@ -1754,7 +1766,9 @@ based library is:
   is.
 
   With these, models that seem seemingly very different can be defined in terms
-  of simple combinator applications of other models.
+  of simple combinator applications of other models, and that simple base models
+  can be used to derive other models in surprising ways (like how a feed-forward
+  layer can be turned into a recurrent layer or an autoregressive model)
 \item
   A handy collection of (differentiable) \emph{loss functions}; in this library
   we only used squared error, but in other situations there might be other
@@ -1789,6 +1803,9 @@ A lot of things come together to make all of this work:
 
   We were able to chain, fork, recombine models by just writing normal
   higher-order functions.
+
+  And, through normal higher-order functions, we can see that many models are
+  just ``combinator-applied'' versions of other simpler models!
 \item
   \emph{Differentiable} programs, allowing us to write normal functions and have
   them be automatically differentiable for gradient descent.

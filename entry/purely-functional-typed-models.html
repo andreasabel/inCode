@@ -646,6 +646,7 @@ y_t = 0 + 1.94 y_{t - 1} - y_{t - 2}
 <p>But, nope, again, it is all just normal functions that we wrote using normal function composition. We define our model as a <em>function</em>, and the backprop library turns that function into a trainable model.</p>
 <h3 id="combinator-fun">Combinator Fun</h3>
 <p>I really like how we have pretty much free reign over how we can combine and manipulate our models, since they are just functions.</p>
+<h4 id="recurrence-is-a-combinator">Recurrence is a Combinator</h4>
 <p>Here’s one example of how the freedom that “normal functions” gives you can help reveal insight. I stumbled upon an interesting way of defining recurrent neural networks — a lot of times, a “recurrent neural network” really just means that some function of the <em>previous</em> output is used as an “extra input”.</p>
 <p>This sounds like we can really write a recurrent model as a “normal” model, and then use a combinator to feed it back into itself.</p>
 <p>To say in types:</p>
@@ -681,16 +682,15 @@ y_t = 0 + 1.94 y_{t - 1} - y_{t - 2}
 <p>We can redefine a pre-mapped version of <code>feedForward</code> which takes a tuple of two vectors and concatenates them before doing anything:</p>
 <div class="sourceCode" id="cb56"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb56-1" data-line-number="1"><span class="co">-- | Concatenate two vectors</span></a>
 <a class="sourceLine" id="cb56-2" data-line-number="2"><span class="ot">(#)          ::</span> <span class="dt">BVar</span> s (<span class="dt">R</span> i) <span class="ot">-&gt;</span> <span class="dt">BVar</span> s (<span class="dt">R</span> o) <span class="ot">-&gt;</span> <span class="dt">BVar</span> s (<span class="dt">R</span> (i <span class="fu">+</span> o))</a>
-<a class="sourceLine" id="cb56-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb56-4" data-line-number="4"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L335-L341</span></a>
-<a class="sourceLine" id="cb56-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb56-6" data-line-number="6">ffOnSplit</a>
-<a class="sourceLine" id="cb56-7" data-line-number="7"><span class="ot">    ::</span> forall i o<span class="fu">.</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)</a>
-<a class="sourceLine" id="cb56-8" data-line-number="8">    <span class="ot">=&gt;</span> <span class="dt">Model</span> _ (<span class="dt">R</span> i <span class="fu">:&amp;</span> <span class="dt">R</span> o) (<span class="dt">R</span> o)</a>
-<a class="sourceLine" id="cb56-9" data-line-number="9">ffOnSplit p rIrO <span class="fu">=</span> feedForward <span class="fu">@</span>(i <span class="fu">+</span> o) p (rI <span class="fu">#</span> rO)</a>
-<a class="sourceLine" id="cb56-10" data-line-number="10">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb56-11" data-line-number="11">    rI <span class="fu">=</span> rIrO <span class="fu">^^.</span> t1</a>
-<a class="sourceLine" id="cb56-12" data-line-number="12">    rO <span class="fu">=</span> rIrO <span class="fu">^^.</span> t2</a></code></pre></div>
+<a class="sourceLine" id="cb56-3" data-line-number="3"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L335-L341</span></a>
+<a class="sourceLine" id="cb56-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb56-5" data-line-number="5">ffOnSplit</a>
+<a class="sourceLine" id="cb56-6" data-line-number="6"><span class="ot">    ::</span> forall i o<span class="fu">.</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)</a>
+<a class="sourceLine" id="cb56-7" data-line-number="7">    <span class="ot">=&gt;</span> <span class="dt">Model</span> _ (<span class="dt">R</span> i <span class="fu">:&amp;</span> <span class="dt">R</span> o) (<span class="dt">R</span> o)</a>
+<a class="sourceLine" id="cb56-8" data-line-number="8">ffOnSplit p rIrO <span class="fu">=</span> feedForward <span class="fu">@</span>(i <span class="fu">+</span> o) p (rI <span class="fu">#</span> rO)</a>
+<a class="sourceLine" id="cb56-9" data-line-number="9">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb56-10" data-line-number="10">    rI <span class="fu">=</span> rIrO <span class="fu">^^.</span> t1</a>
+<a class="sourceLine" id="cb56-11" data-line-number="11">    rO <span class="fu">=</span> rIrO <span class="fu">^^.</span> t2</a></code></pre></div>
 <p><code>ffOnSplit</code> is a feed-forward layer taking an <code>R (i + o)</code>, except we pre-map it to take a tuple <code>R i :&amp; R o</code> instead.</p>
 <p>Now our fully connected recurrent layer is just <code>recurrentlyWith logistic ffOnSplit</code>:</p>
 <div class="sourceCode" id="cb57"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb57-1" data-line-number="1">fcrnn&#39;</a>
@@ -704,6 +704,7 @@ y_t = 0 + 1.94 y_{t - 1} - y_{t - 2}
 <a class="sourceLine" id="cb58-4" data-line-number="4"><span class="ot">    ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)</a>
 <a class="sourceLine" id="cb58-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> _ (<span class="dt">R</span> o) (<span class="dt">R</span> i) (<span class="dt">R</span> o)</a>
 <a class="sourceLine" id="cb58-6" data-line-number="6">fcrnn&#39; <span class="fu">=</span> recurrentlyWith logistic (\p <span class="ot">-&gt;</span> feedForward p <span class="fu">.</span> uncurryT (<span class="fu">#</span>))</a></code></pre></div>
+<h4 id="lagging-is-a-combinator">Lagging is a Combinator</h4>
 <p>Another interesting result – we can write a “lagged” combinator that takes a model expecting a vector as an input, and turn it into a stateful model taking a <em>single</em> input, and feeding the original model that input and also a history of the <code>n</code> most recent inputs.</p>
 <p>If that sounds confusing, let’s just try to state it out using types:</p>
 <div class="sourceCode" id="cb59"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="ot">lagged ::</span> <span class="dt">Model</span>  p       (<span class="dt">R</span> (n <span class="fu">+</span> <span class="dv">1</span>)) b</a>
@@ -726,12 +727,14 @@ y_t = 0 + 1.94 y_{t - 1} - y_{t - 2}
 <a class="sourceLine" id="cb61-3" data-line-number="3"><span class="ot">ar ::</span> (<span class="dt">KnownNat</span> n, <span class="dv">1</span> <span class="fu">&lt;=</span> n)</a>
 <a class="sourceLine" id="cb61-4" data-line-number="4">   <span class="ot">=&gt;</span> <span class="dt">ModelS</span> _ (<span class="dt">R</span> n) <span class="dt">Double</span> <span class="dt">Double</span></a>
 <a class="sourceLine" id="cb61-5" data-line-number="5">ar <span class="fu">=</span> lagged (\p <span class="ot">-&gt;</span> fst <span class="fu">.</span> headTail <span class="fu">@</span>_ <span class="fu">@</span><span class="dv">1</span> <span class="fu">.</span> feedForward p)</a></code></pre></div>
+<p>(using <code>fst . headTail</code> to extract the first <code>Double</code> from an <code>R 1</code>)</p>
 <p>And that’s it! Our original AR(2) <code>ar2</code> is just <code>ar @2</code> … and we can write can write an AR(10) model by just using <code>ar @10</code>, and AR(20) model with <code>ar @20</code>, etc.</p>
 <div class="sourceCode" id="cb62"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb62-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L362-L363</span></a>
 <a class="sourceLine" id="cb62-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb62-3" data-line-number="3"><span class="ot">ar2&#39; ::</span> <span class="dt">ModelS</span> _ (<span class="dt">R</span> <span class="dv">2</span>) <span class="dt">Double</span> <span class="dt">Double</span></a>
 <a class="sourceLine" id="cb62-4" data-line-number="4">ar2&#39; <span class="fu">=</span> ar <span class="fu">@</span><span class="dv">2</span></a></code></pre></div>
 <p>Who would have thought that an autoregressive model is just a fully connected neural network layer with lag?</p>
+<p>Take a fully connected ANN layer and add recurrence — you get a fully connected RNN layer. Take a fully connected ANN layer and add lag — you get an autoregressive model from statistics!</p>
 <p>There are many more such combinators possible! Combinators like <code>recurrentlyWith</code> and <code>lagged</code> just scratch the surface. Best of all, they help reveal to us that seemingly exotic things really are just simple applications of combinators from other basic things.</p>
 <div class="note">
 <p><strong>Aside: Unified Representation</strong></p>
@@ -770,7 +773,7 @@ y_t = 0 + 1.94 y_{t - 1} - y_{t - 2}
 <ul>
 <li><p>A handful of small primitive models expressed as normal functions (like <code>linReg</code>, <code>fullyConnected</code>, <code>ar2</code>, <code>lstm</code>, <code>convulotion</code>, etc.)</p></li>
 <li><p>Some useful higher-order functions acting as utility combinators to common patterns of function composition, like <code>map</code>, <code>&lt;~</code>, etc., that are never <em>required</em> but just convenient, since the functional API is already fully featured as it is.</p>
-<p>With these, models that seem seemingly very different can be defined in terms of simple combinator applications of other models.</p></li>
+<p>With these, models that seem seemingly very different can be defined in terms of simple combinator applications of other models, and that simple base models can be used to derive other models in surprising ways (like how a feed-forward layer can be turned into a recurrent layer or an autoregressive model)</p></li>
 <li><p>A handy collection of (differentiable) <em>loss functions</em>; in this library we only used squared error, but in other situations there might be other useful ones like cross-entropy.</p>
 <p>Loss functions can be combined with regularizing terms from parameters, if the regularization functions themselves are differentiable.</p></li>
 <li><p>A handy collection of <em>optimizers</em>, allowing you to take a loss function, a set of samples, and a model, and return the optimal parameters using optimizers like stochastic gradient descent, momentum, adam, etc.</p></li>
@@ -779,7 +782,8 @@ y_t = 0 + 1.94 y_{t - 1} - y_{t - 2}
 <p>A lot of things come together to make all of this work:</p>
 <ol type="1">
 <li><p><em>Functional programming</em>, allowing us to write higher-order functions and combinators that take functions and return functions. This is the entire crux of this approach, and lets us not only draw from mathematical models directly, but also combine and reshape models in arbitrary ways just by using normal function composition and application, instead of being forced into a rigid compositional model.</p>
-<p>We were able to chain, fork, recombine models by just writing normal higher-order functions.</p></li>
+<p>We were able to chain, fork, recombine models by just writing normal higher-order functions.</p>
+<p>And, through normal higher-order functions, we can see that many models are just “combinator-applied” versions of other simpler models!</p></li>
 <li><p><em>Differentiable</em> programs, allowing us to write normal functions and have them be automatically differentiable for gradient descent.</p></li>
 <li><p><em>Purely</em> functional programming. If <em>any</em> of these functions were side-effecting and impure functions, the correspondence between functions and mathematical models completely falls apart. This is something we often take for granted when writing Haskell, but in other languages, without purity, no model is sound.</p></li>
 <li><p>A <em>strong expressive static type system</em> makes this all reasonable to work with. A strong type system tells us how we are allowed to combine outputs and inputs of functions, how we can combine parameters, what values parameters contains, what parameters a given model contains, etc.; without this knowledge, it would be impossible to sanely write complex programs.</p>
