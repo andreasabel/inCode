@@ -227,8 +227,6 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L45-L56
 
 data a :& b = !a :& !b
-  deriving (Show, Generic)
-infixr 2 :&
 
 linReg :: Model (Double :& Double) Double Double
 linReg ab x = b * x + a
@@ -237,9 +235,9 @@ linReg ab x = b * x + a
     b = ab ^^. t2
 ```
 
-(First we define a custom tuple data type; backprop works with normal tuples,
-but using a custom tuple with a `Num` instance will come in handy later for
-training models)
+(First we define a custom tuple data type `:&`; backprop works with normal
+tuples, but using a custom tuple with a `Num` instance will come in handy later
+for training models)
 
 Here `Double :& Double` is a tuple of two `Double`s, which contains the
 parameters (`a` and `b`). We extract the first item using `^^. t1` and the
@@ -487,8 +485,9 @@ hidden layer units:
 ghci> twoLayer = feedForwardLog' @4 @1 <~ feedForwardLog' @2 @4
 ```
 
-Note we use type application syntax to specify the input/output dimensions of
-`feedForwardLog'`.
+Note we use type application syntax (the `@`) to specify the input/output
+dimensions of `feedForwardLog'`; when we write `feedForwardLog' @4 @1`, it means
+to set the `i` type variable to `4` and the `o` type variable to `1`.
 
 We can train it on sample points:
 
@@ -809,22 +808,9 @@ toS :: Model  p   a b
 toS f p x s = (f p x, s)
 ```
 
-This means we can make a hybrid "recurrent" and "non-recurrent" neural network:
-
-``` {.haskell}
-ghci> hybrid = toS @_ @NoState (feedForwardLog' @20 @10)
-          <*~* mapS logistic (fcrnn @20 @10)
-          <*~* mapS logistic (fcrnn @40 @20)
-```
-
-We made a dummy type `NoState` to use for our stateless model
-
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L440-L441
-
-data NoState = NoState
-  deriving (Show, Generic)
-```
+This means we can make a hybrid "recurrent" and "non-recurrent" neural network,
+by making `feedForwardLog'` a model with some dummy state, and re-using
+`(<*~*)`.
 
 But we can also be creative with our combinators, as well, and write one to
 compose a stateless model with a stateful one:
@@ -972,6 +958,9 @@ unrollLast threeLayers :: ModelS _ _ [R 40] (R 5)
 ```
 
 Aren't statically typed languages great?
+
+(Note here we can use `_` as a type variable wildcard when we don't care about
+the type enough to write it)
 
 ### State-be-gone
 

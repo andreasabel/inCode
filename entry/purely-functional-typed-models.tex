@@ -344,8 +344,6 @@ x +
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L45-L56}
 
 \KeywordTok{data}\NormalTok{ a }\FunctionTok{:&}\NormalTok{ b }\FunctionTok{=} \FunctionTok{!}\NormalTok{a }\FunctionTok{:&} \FunctionTok{!}\NormalTok{b}
-  \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Generic}\NormalTok{)}
-\KeywordTok{infixr} \DecValTok{2} \FunctionTok{:&}
 
 \OtherTok{linReg ::} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{Double} \FunctionTok{:&} \DataTypeTok{Double}\NormalTok{) }\DataTypeTok{Double} \DataTypeTok{Double}
 \NormalTok{linReg ab x }\FunctionTok{=}\NormalTok{ b }\FunctionTok{*}\NormalTok{ x }\FunctionTok{+}\NormalTok{ a}
@@ -355,9 +353,9 @@ x +
 \end{Highlighting}
 \end{Shaded}
 
-(First we define a custom tuple data type; backprop works with normal tuples,
-but using a custom tuple with a \texttt{Num} instance will come in handy later
-for training models)
+(First we define a custom tuple data type \texttt{:\&}; backprop works with
+normal tuples, but using a custom tuple with a \texttt{Num} instance will come
+in handy later for training models)
 
 Here \texttt{Double\ :\&\ Double} is a tuple of two \texttt{Double}s, which
 contains the parameters (\texttt{a} and \texttt{b}). We extract the first item
@@ -642,8 +640,11 @@ hidden layer units:
 \end{Highlighting}
 \end{Shaded}
 
-Note we use type application syntax to specify the input/output dimensions of
-\texttt{feedForwardLog\textquotesingle{}}.
+Note we use type application syntax (the \texttt{@}) to specify the input/output
+dimensions of \texttt{feedForwardLog\textquotesingle{}}; when we write
+\texttt{feedForwardLog\textquotesingle{}\ @4\ @1}, it means to set the
+\texttt{i} type variable to \texttt{4} and the \texttt{o} type variable to
+\texttt{1}.
 
 We can train it on sample points:
 
@@ -996,26 +997,8 @@ just by returning a new normal function:
 \end{Shaded}
 
 This means we can make a hybrid ``recurrent'' and ``non-recurrent'' neural
-network:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ hybrid }\FunctionTok{=}\NormalTok{ toS }\FunctionTok{@}\NormalTok{_ }\FunctionTok{@}\DataTypeTok{NoState}\NormalTok{ (feedForwardLog' }\FunctionTok{@}\DecValTok{20} \FunctionTok{@}\DecValTok{10}\NormalTok{)}
-          \FunctionTok{<*~*}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{20} \FunctionTok{@}\DecValTok{10}\NormalTok{)}
-          \FunctionTok{<*~*}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{40} \FunctionTok{@}\DecValTok{20}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-We made a dummy type \texttt{NoState} to use for our stateless model
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L440-L441}
-
-\KeywordTok{data} \DataTypeTok{NoState} \FunctionTok{=} \DataTypeTok{NoState}
-  \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Generic}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
+network, by making \texttt{feedForwardLog\textquotesingle{}} a model with some
+dummy state, and re-using \texttt{(\textless{}*\textasciitilde{}*)}.
 
 But we can also be creative with our combinators, as well, and write one to
 compose a stateless model with a stateful one:
@@ -1191,6 +1174,9 @@ To see how this applies to our \texttt{threeLayer}:
 \end{Shaded}
 
 Aren't statically typed languages great?
+
+(Note here we can use \texttt{\_} as a type variable wildcard when we don't care
+about the type enough to write it)
 
 \hypertarget{state-be-gone}{%
 \subsection{State-be-gone}\label{state-be-gone}}
