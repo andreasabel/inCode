@@ -40,7 +40,9 @@ The code in these posts is written in Haskell, using the
 libraries, but the main themes and messages won't be *about* haskell, but rather
 about differentiable programming in a purely functional typed setting in
 general. This isn't a Haskell post as much as it is an exploration, using
-Haskell syntax/libraries to implement the points.
+Haskell syntax/libraries to implement the points. The *backprop* library is
+roughly equivalent to [autograd](https://github.com/HIPS/autograd) in python, so
+all of the ideas apply there as well.
 
 Essence of a Model
 ------------------
