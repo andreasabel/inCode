@@ -1,7 +1,7 @@
 A Purely Functional Typed Approach to Trainable Models (Part 2)
 ===============================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on May 14, 2018.
 > [Read online!](https://blog.jle.im/entry/purely-functional-typed-models-2.html)
 
 Welcome back! We're going to be jumping right back into describing a vision of a

@@ -1,7 +1,7 @@
 A Purely Functional Typed Approach to Trainable Models (Part 1)
 ===============================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on May 14, 2018.
 > [Read online!](https://blog.jle.im/entry/purely-functional-typed-models-1.html)
 
 With the release of [backprop](http://hackage.haskell.org/package/backprop),
