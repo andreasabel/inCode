@@ -643,8 +643,10 @@ have to come together seamlessly to make this all work.
     about how types interact. This thought process itself often yields important
     insight.
 
-In the next post, we will explore how to reap the surprising benefits of this
-purely functional typed style when applying it to stateful and recurrent models.
+In the [next
+post](https://blog.jle.im/entry/purely-functional-typed-models-2.html), we will
+explore how to reap the surprising benefits of this purely functional typed
+style when applying it to stateful and recurrent models.
 
 [^1]: Those familiar with Haskell idioms might recognize this type as being
     essentially `a -> Reader p b` (or `Kleisli (Reader p) a b`) which roughly

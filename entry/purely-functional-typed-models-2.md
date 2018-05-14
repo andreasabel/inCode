@@ -756,11 +756,13 @@ that we made in this post:
     our entire program for us --- something only possible for statically typed
     languages.
 
-In the next and final post, we'll wrap this up by peeking into the wonderful
-world of functional combinators and look at powerful ones that allow us to unify
-many different model types as really just different combinator applications of
-the same thing. I'll also talk about what I think are essential in building a
-usable framework for working with this in practice.
+In the [next and final
+post](https://blog.jle.im/entry/purely-functional-typed-models-3.html), we'll
+wrap this up by peeking into the wonderful world of functional combinators and
+look at powerful ones that allow us to unify many different model types as
+really just different combinator applications of the same thing. I'll also talk
+about what I think are essential in building a usable framework for working with
+this in practice.
 
 [^1]: If you recognized our original stateless model type as `a -> Reader p b`,
     then you might have also recognized that this is the Haskell idiom
