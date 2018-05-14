@@ -421,6 +421,61 @@ Note that dependent types and DataKind shenanigans aren't necessary for any of
 this to work --- it just has the possibility to make things even more seamless
 and unified.
 
+\hypertarget{fun-with-explicit-types}{%
+\section{Fun with explicit types}\label{fun-with-explicit-types}}
+
+One of the advantages of the statically typed functional approach is that it
+forces you to keep track of parameter types as a part of your model
+manipulation. You can explicitly keep track of them, or let the compiler do it
+for you (and have the information ready when you need it). In what we have been
+doing so far, we have been letting the compiler have the fun. But we can get
+some interesting results with explicit manipulation of types, as well.
+
+For example, an \href{https://en.wikipedia.org/wiki/Autoencoder}{autoencoder} is
+a type of model that composes a function that ``compresses'' information with a
+function that ``decompresses'' it; training an autoencoder involves training the
+composition of those two functions to produce the identity function.
+
+We can represent a simple autoencoder:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{encoder ::} \DataTypeTok{Model}\NormalTok{ q (}\DataTypeTok{R} \DecValTok{100}\NormalTok{) (}\DataTypeTok{R} \DecValTok{5}\NormalTok{)}
+\OtherTok{decoder ::} \DataTypeTok{Model}\NormalTok{ p (}\DataTypeTok{R} \DecValTok{5}\NormalTok{)   (}\DataTypeTok{R} \DecValTok{100}\NormalTok{)}
+
+\OtherTok{autoencoder ::} \DataTypeTok{Model}\NormalTok{ (p }\FunctionTok{:&}\NormalTok{ q) (}\DataTypeTok{R} \DecValTok{100}\NormalTok{) (}\DataTypeTok{R} \DecValTok{100}\NormalTok{)}
+\NormalTok{autoencoder }\FunctionTok{=}\NormalTok{ decoder }\FunctionTok{<~}\NormalTok{ encoder}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{autoencoder} now ``encodes'' a 100-dimensional space into a
+5-dimensional one.
+
+We can train \texttt{autoencoder} on our data set, but keep the ``trained
+parameters'' separate:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ decParam }\FunctionTok{:&}\NormalTok{ encParam }\OtherTok{<-}\NormalTok{ trainModelIO autoencoder }\FunctionTok{$}\NormalTok{ map (\textbackslash{}x }\OtherTok{->}\NormalTok{ (x,x)) samps}
+\end{Highlighting}
+\end{Shaded}
+
+Now \texttt{decParam} and \texttt{encParam} make \texttt{autoencoder} an
+identity function. But, we can just use \texttt{encParam} with \texttt{encoder}
+to \emph{encode} data, and \texttt{decParam} with \texttt{decoder} to
+\emph{decode} data!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{evalBP2 encoder}\OtherTok{ encParam ::} \DataTypeTok{R} \DecValTok{100} \OtherTok{->} \DataTypeTok{R} \DecValTok{5}        \CommentTok{-- trained encoder}
+\NormalTok{evalBP2 decoder}\OtherTok{ decParam ::} \DataTypeTok{R} \DecValTok{5}   \OtherTok{->} \DataTypeTok{R} \DecValTok{100}      \CommentTok{-- trained decoder}
+\end{Highlighting}
+\end{Shaded}
+
+The types help by keeping track of what goes with what, so you don't have to;
+the compiler helps you match up \texttt{encoder} with \texttt{encParam}, and can
+even ``fill in the code'' for you if you leave in a typed hole!
+
 \hypertarget{a-practical-framework}{%
 \section{A Practical Framework}\label{a-practical-framework}}
 
