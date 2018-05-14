@@ -217,7 +217,7 @@ is, we fix the input and vary the parameter, and see what type of outputs we get
 for the same output while we vary the parameter?
 
 If we have an ``expected output'' for our input, then one thing we can do is
-look at \includegraphics{https://latex.codecogs.com/png.latex?f_p\%28x\%29} and
+look at \includegraphics{https://latex.codecogs.com/png.latex?f_x\%28p\%29} and
 see when the result is close to
 \includegraphics{https://latex.codecogs.com/png.latex?y_x} (the expected output
 of our model when given
@@ -269,14 +269,10 @@ That is, we can always calculate the \emph{gradient} of the loss function with
 respect to our parameters. This gives us the direction we can ``nudge'' our
 parameters to make the loss bigger or smaller.
 
-That is, if we get the gradient of the loss with respect to
-\includegraphics{https://latex.codecogs.com/png.latex?p}:
-
-{[} \textbackslash{}nabla\_p \textbackslash{}text\{loss\}(f\_x(p),
-y\_x){]}(https://latex.codecogs.com/png.latex?\%0A\%5Cnabla\_p\%20\%5Ctext\%7Bloss\%7D\%28f\_x\%28p\%29\%2C\%20y\_x\%29\%0A
-" \nabla\_p \text{loss}(f\_x(p), y\_x) ``)
-
-We now have a nice way to ``train'' our model:
+That is, if we get the \emph{gradient} of the loss with respect to
+\includegraphics{https://latex.codecogs.com/png.latex?p}
+(\includegraphics{https://latex.codecogs.com/png.latex?\%5Cnabla_p\%20\%5Ctext\%7Bloss\%7D\%28f_x\%28p\%29\%2C\%20y_x\%29}),
+we now have a nice iterative way to ``train'' our model:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -302,19 +298,22 @@ We now have a nice way to ``train'' our model:
 \end{enumerate}
 
 With every new observation, we see how we can nudge the parameter to make the
-model more accurate, and then we perform that nudge.
+model more accurate, and then we perform that nudge. At the end of it all, we
+wind up just the right \texttt{p} to model the relationship between our
+observation pairs.
 
 \hypertarget{functional-implementation}{%
 \section{Functional Implementation}\label{functional-implementation}}
 
-This naturally lends itself well to a functional implementation. That's because,
-in this light, a model is nothing more than a function. And a model that is
-trainable using SGD is simply a differentiable function.
+What I described naturally lends to a functional implementation. That's because,
+in this light, a model is nothing more than a curried function (a function
+returning a function). A model that is trainable using SGD is simply a
+differentiable function.
 
 Using the \emph{\href{http://hackage.haskell.org/package/backprop}{backprop}}
-library, we can easily write functions to be differentiable.
+library, we can write these differentiable functions as normal functions.
 
-Let's write the type of our models. A model from type \texttt{a} to type
+Let's pick a type for our models. A model from type \texttt{a} to type
 \texttt{b} with parameter \texttt{p} can be written as the type synonym
 
 \begin{Shaded}
@@ -329,7 +328,7 @@ containing those values) instead:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L48-L51}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L49-L52}
 
 \KeywordTok{type} \DataTypeTok{Model}\NormalTok{ p a b }\FunctionTok{=}\NormalTok{ forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
                 \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z p}
@@ -353,29 +352,38 @@ x +
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L44-L57}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L45-L371}
 
 \KeywordTok{data}\NormalTok{ a }\FunctionTok{:&}\NormalTok{ b }\FunctionTok{=} \FunctionTok{!}\NormalTok{a }\FunctionTok{:&} \FunctionTok{!}\NormalTok{b}
 
+\NormalTok{pattern (}\FunctionTok{:&&}\NormalTok{)}
+
 \OtherTok{linReg ::} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{Double} \FunctionTok{:&} \DataTypeTok{Double}\NormalTok{) }\DataTypeTok{Double} \DataTypeTok{Double}
-\NormalTok{linReg ab x }\FunctionTok{=}\NormalTok{ b }\FunctionTok{*}\NormalTok{ x }\FunctionTok{+}\NormalTok{ a}
-  \KeywordTok{where}
-\NormalTok{    a }\FunctionTok{=}\NormalTok{ ab }\FunctionTok{^^.}\NormalTok{ t1}
-\NormalTok{    b }\FunctionTok{=}\NormalTok{ ab }\FunctionTok{^^.}\NormalTok{ t2}
+\NormalTok{linReg (a }\FunctionTok{:&&}\NormalTok{ b) x }\FunctionTok{=}\NormalTok{ b }\FunctionTok{*}\NormalTok{ x }\FunctionTok{+}\NormalTok{ a}
 \end{Highlighting}
 \end{Shaded}
 
-(First we define a custom tuple data type \texttt{:\&}; backprop works with
-normal tuples, but using a custom tuple with a \texttt{Num} instance will come
-in handy later for training models)
+A couple things going on here to help us do things smoothly:
 
-Here \texttt{Double\ :\&\ Double} is a tuple of two \texttt{Double}s, which
-contains the parameters (\texttt{a} and \texttt{b}). We extract the first item
-using \texttt{\^{}\^{}.\ t1} and the second item with \texttt{\^{}\^{}.\ t2}
-(\texttt{t1} and \texttt{t2} being lenses defined for the tuple fields), and
-then talk about the actual function, whose result is \texttt{b\ *\ x\ +\ a}.
-Note that, because \texttt{BVar}s have a \texttt{Num} instance, we can use all
-our normal numeric operators, and the results are still differentiable.
+\begin{itemize}
+\item
+  We define a custom tuple data type \texttt{:\&}; backprop works with normal
+  tuples, but using a custom tuple with a \texttt{Num} instance will come in
+  handy later for training models.
+\item
+  We define a pattern synonym \texttt{:\&\&} that lets us ``pattern match out''
+  \texttt{BVar}s of that tuple type. So if we have a
+  \texttt{BVar\ z\ (a\ :\&\ b)} (a \texttt{BVar} containing a tuple), then
+  matching on \texttt{(x\ :\&\&\ y)} will give us \texttt{x\ ::\ BVar\ z\ a} and
+  \texttt{y\ ::\ BVar\ z\ b}.
+\item
+  With that, we define \texttt{linReg}, whose parameters are a
+  \texttt{Double\ :\&\ Double}, a tuple the two parameters \texttt{a} and
+  \texttt{b}. After pattern matching out the contents, we just write the linear
+  regression formula --- \texttt{b\ *\ x\ +\ a}. We can use normal numeric
+  operations like \texttt{*} and \texttt{+} because \texttt{BVar}s have a
+  \texttt{Num} instance.
+\end{itemize}
 
 We can \emph{run} \texttt{linReg} using \texttt{evalBP2}:
 
@@ -397,7 +405,7 @@ y\_x)\^{}2{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cnabla\_p\%20\%28f\%28
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L59-L67}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L57-L65}
 
 \NormalTok{squaredErrorGrad}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ b, }\DataTypeTok{Num}\NormalTok{ b)}
@@ -420,7 +428,7 @@ simple fold over all observations:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L69-L75}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L67-L73}
 
 \NormalTok{trainModel}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Fractional}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Num}\NormalTok{ b, }\DataTypeTok{Backprop}\NormalTok{ b)}
@@ -439,7 +447,7 @@ parameter:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L77-L84}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L75-L82}
 
 \NormalTok{trainModelIO}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Fractional}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Num}\NormalTok{ b, }\DataTypeTok{Backprop}\NormalTok{ b, }\DataTypeTok{Random}\NormalTok{ p)}
@@ -469,8 +477,8 @@ or
 \end{Highlighting}
 \end{Shaded}
 
-Neat! After going through all of those observations a thousand times, the model
-nudges itself all the way to the right parameters to fit our model!
+Neat --- after going through all of those observations a thousand times, the
+model nudges itself all the way to the right parameters to fit our model!
 
 The important takeaway is that all we specified was the \emph{function} of the
 model itself. The training part all follows automatically.
@@ -478,7 +486,7 @@ model itself. The training part all follows automatically.
 \hypertarget{feed-forward-neural-network}{%
 \subsection{Feed-forward Neural Network}\label{feed-forward-neural-network}}
 
-Here's another example: a feed-forward neural network.
+Here's another example: a fully-connected feed-forward neural network layer.
 
 We can start with a single layer. The model here will also take two parameters
 (a weight matrix and a bias vector), take in a vector, and output a vector.
@@ -486,7 +494,7 @@ We can start with a single layer. The model here will also take two parameters
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{import} \DataTypeTok{Numeric.LinearAlgebra.Static.Backprop}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L91-L108}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L89-L100}
 
 \OtherTok{logistic ::} \DataTypeTok{Floating}\NormalTok{ a }\OtherTok{=>}\NormalTok{ a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{logistic x }\FunctionTok{=} \DecValTok{1} \FunctionTok{/}\NormalTok{ (}\DecValTok{1} \FunctionTok{+}\NormalTok{ exp (}\FunctionTok{-}\NormalTok{x))}
@@ -494,10 +502,7 @@ We can start with a single layer. The model here will also take two parameters
 \NormalTok{feedForwardLog}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
     \OtherTok{=>} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{L}\NormalTok{ o i }\FunctionTok{:&} \DataTypeTok{R}\NormalTok{ o) (}\DataTypeTok{R}\NormalTok{ i) (}\DataTypeTok{R}\NormalTok{ o)}
-\NormalTok{feedForwardLog wb x }\FunctionTok{=}\NormalTok{ logistic (w }\FunctionTok{#>}\NormalTok{ x }\FunctionTok{+}\NormalTok{ b)}
-  \KeywordTok{where}
-\NormalTok{    w }\FunctionTok{=}\NormalTok{ wb }\FunctionTok{^^.}\NormalTok{ t1}
-\NormalTok{    b }\FunctionTok{=}\NormalTok{ wb }\FunctionTok{^^.}\NormalTok{ t2}
+\NormalTok{feedForwardLog (w }\FunctionTok{:&&}\NormalTok{ b) x }\FunctionTok{=}\NormalTok{ logistic (w }\FunctionTok{#>}\NormalTok{ x }\FunctionTok{+}\NormalTok{ b)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -533,7 +538,8 @@ We have our trained parameters! Let's see if they actually model ``AND''?
 
 Close enough for me!
 
-If we inspect the arrived-at parameters, we can see what makes the network tick:
+If we inspect the arrived-at parameters, we can peek into the neural network's
+brain:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -565,27 +571,27 @@ regression}} model.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L122-L123}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L114-L115}
 
 \OtherTok{logReg ::} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{Double} \FunctionTok{:&} \DataTypeTok{Double}\NormalTok{) }\DataTypeTok{Double} \DataTypeTok{Double}
 \NormalTok{logReg ab }\FunctionTok{=}\NormalTok{ logistic }\FunctionTok{.}\NormalTok{ linReg ab}
 \end{Highlighting}
 \end{Shaded}
 
+Here, we use function composition \texttt{(.)}, one of the most common
+combinators in Haskell, saying that \texttt{(f\ .\ g)\ x\ =\ f\ (g\ x)}.
+
 We could have even written our \texttt{feedForwardLog} without its activation
 function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L94-L100}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L92-L95}
 
 \NormalTok{feedForward}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
     \OtherTok{=>} \DataTypeTok{Model}\NormalTok{ (}\DataTypeTok{L}\NormalTok{ o i }\FunctionTok{:&} \DataTypeTok{R}\NormalTok{ o) (}\DataTypeTok{R}\NormalTok{ i) (}\DataTypeTok{R}\NormalTok{ o)}
-\NormalTok{feedForward wb x }\FunctionTok{=}\NormalTok{ w }\FunctionTok{#>}\NormalTok{ x }\FunctionTok{+}\NormalTok{ b}
-  \KeywordTok{where}
-\NormalTok{    w }\FunctionTok{=}\NormalTok{ wb }\FunctionTok{^^.}\NormalTok{ t1}
-\NormalTok{    b }\FunctionTok{=}\NormalTok{ wb }\FunctionTok{^^.}\NormalTok{ t2}
+\NormalTok{feedForward (w }\FunctionTok{:&&}\NormalTok{ b) x }\FunctionTok{=}\NormalTok{ w }\FunctionTok{#>}\NormalTok{ x }\FunctionTok{+}\NormalTok{ b}
 \end{Highlighting}
 \end{Shaded}
 
@@ -593,7 +599,7 @@ And now we can swap out activation functions using simple function composition:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L125-L128}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L117-L120}
 
 \NormalTok{feedForwardLog'}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
@@ -607,7 +613,7 @@ classifier!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L130-L138}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L122-L130}
 
 \OtherTok{softMax ::}\NormalTok{ (}\DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}\NormalTok{, }\DataTypeTok{KnownNat}\NormalTok{ n) }\OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z (}\DataTypeTok{R}\NormalTok{ n) }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z (}\DataTypeTok{R}\NormalTok{ n)}
 \NormalTok{softMax x }\FunctionTok{=}\NormalTok{ konst (}\DecValTok{1} \FunctionTok{/}\NormalTok{ sumElements expx) }\FunctionTok{*}\NormalTok{ expx}
@@ -626,17 +632,14 @@ original parameters separate:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L140-L149}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L132-L138}
 
 \NormalTok{(}\FunctionTok{<~}\NormalTok{)}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ q)}
     \OtherTok{=>} \DataTypeTok{Model}\NormalTok{  p       b c}
     \OtherTok{->} \DataTypeTok{Model}\NormalTok{       q  a b}
     \OtherTok{->} \DataTypeTok{Model}\NormalTok{ (p }\FunctionTok{:&}\NormalTok{ q) a c}
-\NormalTok{(f }\FunctionTok{<~}\NormalTok{ g) pq }\FunctionTok{=}\NormalTok{ f p }\FunctionTok{.}\NormalTok{ g q}
-  \KeywordTok{where}
-\NormalTok{    p }\FunctionTok{=}\NormalTok{ pq }\FunctionTok{^^.}\NormalTok{ t1}
-\NormalTok{    q }\FunctionTok{=}\NormalTok{ pq }\FunctionTok{^^.}\NormalTok{ t2}
+\NormalTok{(f }\FunctionTok{<~}\NormalTok{ g) (p }\FunctionTok{:&&}\NormalTok{ q) }\FunctionTok{=}\NormalTok{ f p }\FunctionTok{.}\NormalTok{ g q}
 \KeywordTok{infixr} \DecValTok{8} \FunctionTok{<~}
 \end{Highlighting}
 \end{Shaded}
@@ -709,7 +712,7 @@ It is tempting to look at something like
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{feedForwardLog }\FunctionTok{@}\DecValTok{4} \FunctionTok{@}\DecValTok{1} \FunctionTok{<~}\NormalTok{ feedForwardLog }\FunctionTok{@}\DecValTok{2} \FunctionTok{@}\DecValTok{4}
+\NormalTok{feedForwardLog }\FunctionTok{@}\DecValTok{4} \FunctionTok{<~}\NormalTok{ feedForwardLog}
 \end{Highlighting}
 \end{Shaded}
 
@@ -719,7 +722,7 @@ just:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{\textbackslash{}pq }\OtherTok{->}\NormalTok{ feedForwardLog }\FunctionTok{@}\DecValTok{4} \FunctionTok{@}\DecValTok{1}\NormalTok{ (pq }\FunctionTok{^^.}\NormalTok{ t1) }\FunctionTok{.}\NormalTok{ feedForwardLog }\FunctionTok{@}\DecValTok{2} \FunctionTok{@}\DecValTok{4}\NormalTok{ (pq }\FunctionTok{^^.}\NormalTok{ t2)}
+\NormalTok{\textbackslash{}(p }\FunctionTok{:&&}\NormalTok{ q) }\OtherTok{->}\NormalTok{ feedForwardLog }\FunctionTok{@}\DecValTok{4}\NormalTok{ p }\FunctionTok{.}\NormalTok{ feedForwardLog q}
 \end{Highlighting}
 \end{Shaded}
 
@@ -769,7 +772,10 @@ have to come together seamlessly to make this all work.
   being forced into a rigid compositional model.
 
   We were able to chain, fork, recombine simple model primitives to make
-  \emph{new} models by just writing normal higher-order functions.
+  \emph{new} models by just writing normal higher-order functions. In fact, as
+  we will see in the upcoming posts, we can actually re-use higher order
+  functions like \texttt{foldl} and \texttt{map} that are already commonly used
+  in functional programming.
 
   In the upcoming posts, we will take this principle to the extreme. We'll
   define more combinators like \texttt{(\textless{}\textasciitilde{})} and see

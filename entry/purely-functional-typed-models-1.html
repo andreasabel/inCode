@@ -46,7 +46,7 @@ f : P \rightarrow (A \rightarrow B)
 " /><br /></p>
 <h3 id="optimizing-models-with-observations">Optimizing Models with Observations</h3>
 <p>Something interesting happens if we flip the script. What if, instead of <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f_p%28x%29" alt="f_p(x)" title="f_p(x)" />, we talked about <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f_x%28p%29" alt="f_x(p)" title="f_x(p)" />? That is, we fix the input and vary the parameter, and see what type of outputs we get for the same output while we vary the parameter?</p>
-<p>If we have an “expected output” for our input, then one thing we can do is look at <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f_p%28x%29" alt="f_p(x)" title="f_p(x)" /> and see when the result is close to <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?y_x" alt="y_x" title="y_x" /> (the expected output of our model when given <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?x" alt="x" title="x" />).</p>
+<p>If we have an “expected output” for our input, then one thing we can do is look at <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f_x%28p%29" alt="f_x(p)" title="f_x(p)" /> and see when the result is close to <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?y_x" alt="y_x" title="y_x" /> (the expected output of our model when given <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?x" alt="x" title="x" />).</p>
 <p>In fact, we can turn this into an optimization problem by trying to pick <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p" alt="p" title="p" /> that minimizes the difference between <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f_x%28p%29" alt="f_x(p)" title="f_x(p)" /> and <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?y_x" alt="y_x" title="y_x" />. We can say that our model with parameter <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p" alt="p" title="p" /> predicts <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?y_x" alt="y_x" title="y_x" /> the best when we minimize:</p>
 <p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0A%28f_x%28p%29%20-%20y_x%29%5E2%0A" alt="
 (f_x(p) - y_x)^2
@@ -65,13 +65,7 @@ f : P \rightarrow (A \rightarrow B)
 <h3 id="stochastic-gradient-descent">Stochastic Gradient Descent</h3>
 <p>If our model is a <em>differentiable function</em>, then we have a nice tool we can use: <em>stochastic gradient descent</em> (SGD).</p>
 <p>That is, we can always calculate the <em>gradient</em> of the loss function with respect to our parameters. This gives us the direction we can “nudge” our parameters to make the loss bigger or smaller.</p>
-<p>That is, if we get the gradient of the loss with respect to <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p" alt="p" title="p" />:</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0A%5Cnabla_p%20%5Ctext%7Bloss%7D%28f_x%28p%29%2C%20y_x%29%0A" alt="
-\nabla_p \text{loss}(f_x(p), y_x)
-" title="
-\nabla_p \text{loss}(f_x(p), y_x)
-" /><br /></p>
-<p>We now have a nice way to “train” our model:</p>
+<p>That is, if we get the <em>gradient</em> of the loss with respect to <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p" alt="p" title="p" /> (<img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Cnabla_p%20%5Ctext%7Bloss%7D%28f_x%28p%29%2C%20y_x%29" alt="\nabla_p \text{loss}(f_x(p), y_x)" title="\nabla_p \text{loss}(f_x(p), y_x)" />), we now have a nice iterative way to “train” our model:</p>
 <ol type="1">
 <li>Start with an initial guess at the parameter</li>
 <li>Look at a random <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%28x%2C%20y_x%29" alt="(x, y_x)" title="(x, y_x)" /> observation pair.</li>
@@ -79,14 +73,14 @@ f : P \rightarrow (A \rightarrow B)
 <li>Nudge <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p" alt="p" title="p" /> in that direction</li>
 <li>Repeat from #2 until satisfied</li>
 </ol>
-<p>With every new observation, we see how we can nudge the parameter to make the model more accurate, and then we perform that nudge.</p>
+<p>With every new observation, we see how we can nudge the parameter to make the model more accurate, and then we perform that nudge. At the end of it all, we wind up just the right <code>p</code> to model the relationship between our observation pairs.</p>
 <h2 id="functional-implementation">Functional Implementation</h2>
-<p>This naturally lends itself well to a functional implementation. That’s because, in this light, a model is nothing more than a function. And a model that is trainable using SGD is simply a differentiable function.</p>
-<p>Using the <em><a href="http://hackage.haskell.org/package/backprop">backprop</a></em> library, we can easily write functions to be differentiable.</p>
-<p>Let’s write the type of our models. A model from type <code>a</code> to type <code>b</code> with parameter <code>p</code> can be written as the type synonym</p>
+<p>What I described naturally lends to a functional implementation. That’s because, in this light, a model is nothing more than a curried function (a function returning a function). A model that is trainable using SGD is simply a differentiable function.</p>
+<p>Using the <em><a href="http://hackage.haskell.org/package/backprop">backprop</a></em> library, we can write these differentiable functions as normal functions.</p>
+<p>Let’s pick a type for our models. A model from type <code>a</code> to type <code>b</code> with parameter <code>p</code> can be written as the type synonym</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Model</span> p a b <span class="fu">=</span> p <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b</a></code></pre></div>
 <p>Not normally differentiable, but we can make it a differentiable function by having it work with <code>BVar z p</code> and <code>BVar z a</code> (<code>BVar</code>s containing those values) instead:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L48-L51</span></a>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L49-L52</span></a>
 <a class="sourceLine" id="cb2-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">type</span> <span class="dt">Model</span> p a b <span class="fu">=</span> forall z<span class="fu">.</span> <span class="dt">Reifies</span> z <span class="dt">W</span></a>
 <a class="sourceLine" id="cb2-4" data-line-number="4">                <span class="ot">=&gt;</span> <span class="dt">BVar</span> z p</a>
@@ -99,17 +93,20 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 " title="
 f_{\alpha, \beta}(x) = \beta x + \alpha
 " /><br /></p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L44-L57</span></a>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L45-L371</span></a>
 <a class="sourceLine" id="cb3-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb3-3" data-line-number="3"><span class="kw">data</span> a <span class="fu">:&amp;</span> b <span class="fu">=</span> <span class="fu">!</span>a <span class="fu">:&amp;</span> <span class="fu">!</span>b</a>
 <a class="sourceLine" id="cb3-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="ot">linReg ::</span> <span class="dt">Model</span> (<span class="dt">Double</span> <span class="fu">:&amp;</span> <span class="dt">Double</span>) <span class="dt">Double</span> <span class="dt">Double</span></a>
-<a class="sourceLine" id="cb3-6" data-line-number="6">linReg ab x <span class="fu">=</span> b <span class="fu">*</span> x <span class="fu">+</span> a</a>
-<a class="sourceLine" id="cb3-7" data-line-number="7">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb3-8" data-line-number="8">    a <span class="fu">=</span> ab <span class="fu">^^.</span> t1</a>
-<a class="sourceLine" id="cb3-9" data-line-number="9">    b <span class="fu">=</span> ab <span class="fu">^^.</span> t2</a></code></pre></div>
-<p>(First we define a custom tuple data type <code>:&amp;</code>; backprop works with normal tuples, but using a custom tuple with a <code>Num</code> instance will come in handy later for training models)</p>
-<p>Here <code>Double :&amp; Double</code> is a tuple of two <code>Double</code>s, which contains the parameters (<code>a</code> and <code>b</code>). We extract the first item using <code>^^. t1</code> and the second item with <code>^^. t2</code> (<code>t1</code> and <code>t2</code> being lenses defined for the tuple fields), and then talk about the actual function, whose result is <code>b * x + a</code>. Note that, because <code>BVar</code>s have a <code>Num</code> instance, we can use all our normal numeric operators, and the results are still differentiable.</p>
+<a class="sourceLine" id="cb3-5" data-line-number="5">pattern (<span class="fu">:&amp;&amp;</span>)</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"><span class="ot">linReg ::</span> <span class="dt">Model</span> (<span class="dt">Double</span> <span class="fu">:&amp;</span> <span class="dt">Double</span>) <span class="dt">Double</span> <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">linReg (a <span class="fu">:&amp;&amp;</span> b) x <span class="fu">=</span> b <span class="fu">*</span> x <span class="fu">+</span> a</a></code></pre></div>
+<p>A couple things going on here to help us do things smoothly:</p>
+<ul>
+<li><p>We define a custom tuple data type <code>:&amp;</code>; backprop works with normal tuples, but using a custom tuple with a <code>Num</code> instance will come in handy later for training models.</p></li>
+<li><p>We define a pattern synonym <code>:&amp;&amp;</code> that lets us “pattern match out” <code>BVar</code>s of that tuple type. So if we have a <code>BVar z (a :&amp; b)</code> (a <code>BVar</code> containing a tuple), then matching on <code>(x :&amp;&amp; y)</code> will give us <code>x :: BVar z a</code> and <code>y :: BVar z b</code>.</p></li>
+<li><p>With that, we define <code>linReg</code>, whose parameters are a <code>Double :&amp; Double</code>, a tuple the two parameters <code>a</code> and <code>b</code>. After pattern matching out the contents, we just write the linear regression formula — <code>b * x + a</code>. We can use normal numeric operations like <code>*</code> and <code>+</code> because <code>BVar</code>s have a <code>Num</code> instance.</p></li>
+</ul>
 <p>We can <em>run</em> <code>linReg</code> using <code>evalBP2</code>:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">ghci<span class="fu">&gt;</span> evalBP2 linReg (<span class="fl">0.3</span> <span class="fu">:&amp;</span> (<span class="fu">-</span><span class="fl">0.1</span>)) <span class="dv">5</span></a>
 <a class="sourceLine" id="cb4-2" data-line-number="2"><span class="fu">-</span><span class="fl">0.2</span>        <span class="co">-- (-0.1) * 5 + 0.3</span></a></code></pre></div>
@@ -119,7 +116,7 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 " title="
 \nabla_p (f(p, x) - y_x)^2
 " /><br /></p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L59-L67</span></a>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L57-L65</span></a>
 <a class="sourceLine" id="cb5-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">squaredErrorGrad</a>
 <a class="sourceLine" id="cb5-4" data-line-number="4"><span class="ot">    ::</span> (<span class="dt">Backprop</span> p, <span class="dt">Backprop</span> b, <span class="dt">Num</span> b)</a>
@@ -132,7 +129,7 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 <a class="sourceLine" id="cb5-11" data-line-number="11">    (f p (auto x) <span class="fu">-</span> auto targ) <span class="fu">^</span> <span class="dv">2</span></a></code></pre></div>
 <p>We use <code>auto :: a -&gt; BVar z a</code>, to lift a normal value to a <code>BVar</code> holding that value, since our model <code>f</code> takes <code>BVar</code>s.</p>
 <p>And finally, we can train it using stochastic gradient descent, with just a simple fold over all observations:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L69-L75</span></a>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L67-L73</span></a>
 <a class="sourceLine" id="cb6-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">trainModel</a>
 <a class="sourceLine" id="cb6-4" data-line-number="4"><span class="ot">    ::</span> (<span class="dt">Fractional</span> p, <span class="dt">Backprop</span> p, <span class="dt">Num</span> b, <span class="dt">Backprop</span> b)</a>
@@ -142,7 +139,7 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 <a class="sourceLine" id="cb6-8" data-line-number="8">    <span class="ot">-&gt;</span> p                <span class="co">-- ^ updated parameter guess</span></a>
 <a class="sourceLine" id="cb6-9" data-line-number="9">trainModel f <span class="fu">=</span> foldl&#39; <span class="fu">$</span> \p (x,y) <span class="ot">-&gt;</span> p <span class="fu">-</span> <span class="fl">0.1</span> <span class="fu">*</span> squaredErrorGrad f x y p</a></code></pre></div>
 <p>For convenience, we can define a <code>Random</code> instance for our tuple type using the <em><a href="http://hackage.haskell.org/package/random">random</a></em> library and make a wrapper that uses <code>IO</code> to generate a random initial parameter:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L77-L84</span></a>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L75-L82</span></a>
 <a class="sourceLine" id="cb7-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">trainModelIO</a>
 <a class="sourceLine" id="cb7-4" data-line-number="4"><span class="ot">    ::</span> (<span class="dt">Fractional</span> p, <span class="dt">Backprop</span> p, <span class="dt">Num</span> b, <span class="dt">Backprop</span> b, <span class="dt">Random</span> p)</a>
@@ -158,13 +155,13 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 <a class="sourceLine" id="cb8-3" data-line-number="3">(<span class="fu">-</span><span class="fl">1.0000000000000024</span>) <span class="fu">:&amp;</span> <span class="fl">2.0000000000000036</span></a>
 <a class="sourceLine" id="cb8-4" data-line-number="4"><span class="co">-- roughly:</span></a>
 <a class="sourceLine" id="cb8-5" data-line-number="5">(<span class="fu">-</span><span class="fl">1.0</span>) <span class="fu">:&amp;</span> <span class="fl">2.0</span></a></code></pre></div>
-<p>Neat! After going through all of those observations a thousand times, the model nudges itself all the way to the right parameters to fit our model!</p>
+<p>Neat — after going through all of those observations a thousand times, the model nudges itself all the way to the right parameters to fit our model!</p>
 <p>The important takeaway is that all we specified was the <em>function</em> of the model itself. The training part all follows automatically.</p>
 <h3 id="feed-forward-neural-network">Feed-forward Neural Network</h3>
-<p>Here’s another example: a feed-forward neural network.</p>
+<p>Here’s another example: a fully-connected feed-forward neural network layer.</p>
 <p>We can start with a single layer. The model here will also take two parameters (a weight matrix and a bias vector), take in a vector, and output a vector.</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">import</span> <span class="dt">Numeric.LinearAlgebra.Static.Backprop</span></a>
-<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L91-L108</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L89-L100</span></a>
 <a class="sourceLine" id="cb9-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4"><span class="ot">logistic ::</span> <span class="dt">Floating</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a</a>
 <a class="sourceLine" id="cb9-5" data-line-number="5">logistic x <span class="fu">=</span> <span class="dv">1</span> <span class="fu">/</span> (<span class="dv">1</span> <span class="fu">+</span> exp (<span class="fu">-</span>x))</a>
@@ -172,10 +169,7 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 <a class="sourceLine" id="cb9-7" data-line-number="7">feedForwardLog</a>
 <a class="sourceLine" id="cb9-8" data-line-number="8"><span class="ot">    ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)</a>
 <a class="sourceLine" id="cb9-9" data-line-number="9">    <span class="ot">=&gt;</span> <span class="dt">Model</span> (<span class="dt">L</span> o i <span class="fu">:&amp;</span> <span class="dt">R</span> o) (<span class="dt">R</span> i) (<span class="dt">R</span> o)</a>
-<a class="sourceLine" id="cb9-10" data-line-number="10">feedForwardLog wb x <span class="fu">=</span> logistic (w <span class="fu">#&gt;</span> x <span class="fu">+</span> b)</a>
-<a class="sourceLine" id="cb9-11" data-line-number="11">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb9-12" data-line-number="12">    w <span class="fu">=</span> wb <span class="fu">^^.</span> t1</a>
-<a class="sourceLine" id="cb9-13" data-line-number="13">    b <span class="fu">=</span> wb <span class="fu">^^.</span> t2</a></code></pre></div>
+<a class="sourceLine" id="cb9-10" data-line-number="10">feedForwardLog (w <span class="fu">:&amp;&amp;</span> b) x <span class="fu">=</span> logistic (w <span class="fu">#&gt;</span> x <span class="fu">+</span> b)</a></code></pre></div>
 <p>Here we use the <code>L n m</code> (an n-by-m matrix) and <code>R n</code> (an n-vector) types from the <em>hmatrix</em> library, and <code>#&gt;</code> for backprop-aware matrix-vector multiplication.</p>
 <p>Let’s try training a model to learn the simple <a href="https://en.wikipedia.org/wiki/Logical_conjunction">logical “AND”</a>:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Numeric.LinearAlgebra.Static</span> <span class="kw">as</span> <span class="dt">H</span></a>
@@ -191,7 +185,7 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 <a class="sourceLine" id="cb11-7" data-line-number="7">ghci<span class="fu">&gt;</span> evalBP2 feedForwardLog trained (H.vec2 <span class="dv">1</span> <span class="dv">1</span>)</a>
 <a class="sourceLine" id="cb11-8" data-line-number="8">(<span class="fl">0.9547178031665701</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)         <span class="co">-- 1.0</span></a></code></pre></div>
 <p>Close enough for me!</p>
-<p>If we inspect the arrived-at parameters, we can see what makes the network tick:</p>
+<p>If we inspect the arrived-at parameters, we can peek into the neural network’s brain:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1">ghci<span class="fu">&gt;</span> trained</a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">(matrix</a>
 <a class="sourceLine" id="cb12-3" data-line-number="3"> [ <span class="fl">4.652034474187562</span>, <span class="fl">4.65355702367007</span> ]<span class="ot"> ::</span> <span class="dt">L</span> <span class="dv">1</span> <span class="dv">2</span>) <span class="fu">:&amp;</span> (<span class="fu">-</span><span class="fl">7.073724083776028</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a></code></pre></div>
@@ -200,29 +194,27 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 <h3 id="functional-composition">Functional composition</h3>
 <p>Because our functions are simply just <em>normal functions</em>, we can create new, complex models from simpler ones using just functional composition.</p>
 <p>For example, we can map the result of a model to create a new model. Here, we compose <code>linReg ab</code> (linear regression with parameter <code>ab</code>) with the logistic function to create a <em><a href="https://en.wikipedia.org/wiki/Logistic_regression">logistic regression</a></em> model.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L122-L123</span></a>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L114-L115</span></a>
 <a class="sourceLine" id="cb13-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb13-3" data-line-number="3"><span class="ot">logReg ::</span> <span class="dt">Model</span> (<span class="dt">Double</span> <span class="fu">:&amp;</span> <span class="dt">Double</span>) <span class="dt">Double</span> <span class="dt">Double</span></a>
 <a class="sourceLine" id="cb13-4" data-line-number="4">logReg ab <span class="fu">=</span> logistic <span class="fu">.</span> linReg ab</a></code></pre></div>
+<p>Here, we use function composition <code>(.)</code>, one of the most common combinators in Haskell, saying that <code>(f . g) x = f (g x)</code>.</p>
 <p>We could have even written our <code>feedForwardLog</code> without its activation function:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L94-L100</span></a>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L92-L95</span></a>
 <a class="sourceLine" id="cb14-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb14-3" data-line-number="3">feedForward</a>
 <a class="sourceLine" id="cb14-4" data-line-number="4"><span class="ot">    ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)</a>
 <a class="sourceLine" id="cb14-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">Model</span> (<span class="dt">L</span> o i <span class="fu">:&amp;</span> <span class="dt">R</span> o) (<span class="dt">R</span> i) (<span class="dt">R</span> o)</a>
-<a class="sourceLine" id="cb14-6" data-line-number="6">feedForward wb x <span class="fu">=</span> w <span class="fu">#&gt;</span> x <span class="fu">+</span> b</a>
-<a class="sourceLine" id="cb14-7" data-line-number="7">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb14-8" data-line-number="8">    w <span class="fu">=</span> wb <span class="fu">^^.</span> t1</a>
-<a class="sourceLine" id="cb14-9" data-line-number="9">    b <span class="fu">=</span> wb <span class="fu">^^.</span> t2</a></code></pre></div>
+<a class="sourceLine" id="cb14-6" data-line-number="6">feedForward (w <span class="fu">:&amp;&amp;</span> b) x <span class="fu">=</span> w <span class="fu">#&gt;</span> x <span class="fu">+</span> b</a></code></pre></div>
 <p>And now we can swap out activation functions using simple function composition:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L125-L128</span></a>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L117-L120</span></a>
 <a class="sourceLine" id="cb15-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb15-3" data-line-number="3">feedForwardLog&#39;</a>
 <a class="sourceLine" id="cb15-4" data-line-number="4"><span class="ot">    ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)</a>
 <a class="sourceLine" id="cb15-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">Model</span> (<span class="dt">L</span> o i <span class="fu">:&amp;</span> <span class="dt">R</span> o) (<span class="dt">R</span> i) (<span class="dt">R</span> o)</a>
 <a class="sourceLine" id="cb15-6" data-line-number="6">feedForwardLog&#39; wb <span class="fu">=</span> logistic <span class="fu">.</span> feedForward wb</a></code></pre></div>
 <p>Maybe even a <a href="https://en.wikipedia.org/wiki/Softmax_function">softmax</a> classifier!</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L130-L138</span></a>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L122-L130</span></a>
 <a class="sourceLine" id="cb16-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb16-3" data-line-number="3"><span class="ot">softMax ::</span> (<span class="dt">Reifies</span> z <span class="dt">W</span>, <span class="dt">KnownNat</span> n) <span class="ot">=&gt;</span> <span class="dt">BVar</span> z (<span class="dt">R</span> n) <span class="ot">-&gt;</span> <span class="dt">BVar</span> z (<span class="dt">R</span> n)</a>
 <a class="sourceLine" id="cb16-4" data-line-number="4">softMax x <span class="fu">=</span> konst (<span class="dv">1</span> <span class="fu">/</span> sumElements expx) <span class="fu">*</span> expx</a>
@@ -234,18 +226,15 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 <a class="sourceLine" id="cb16-10" data-line-number="10">    <span class="ot">=&gt;</span> <span class="dt">Model</span> (<span class="dt">L</span> o i <span class="fu">:&amp;</span> <span class="dt">R</span> o) (<span class="dt">R</span> i) (<span class="dt">R</span> o)</a>
 <a class="sourceLine" id="cb16-11" data-line-number="11">feedForwardSoftMax wb <span class="fu">=</span> logistic <span class="fu">.</span> feedForward wb</a></code></pre></div>
 <p>We can even write a function to <em>compose</em> two models, keeping their two original parameters separate:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L140-L149</span></a>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L132-L138</span></a>
 <a class="sourceLine" id="cb17-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb17-3" data-line-number="3">(<span class="fu">&lt;~</span>)</a>
 <a class="sourceLine" id="cb17-4" data-line-number="4"><span class="ot">    ::</span> (<span class="dt">Backprop</span> p, <span class="dt">Backprop</span> q)</a>
 <a class="sourceLine" id="cb17-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">Model</span>  p       b c</a>
 <a class="sourceLine" id="cb17-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">Model</span>       q  a b</a>
 <a class="sourceLine" id="cb17-7" data-line-number="7">    <span class="ot">-&gt;</span> <span class="dt">Model</span> (p <span class="fu">:&amp;</span> q) a c</a>
-<a class="sourceLine" id="cb17-8" data-line-number="8">(f <span class="fu">&lt;~</span> g) pq <span class="fu">=</span> f p <span class="fu">.</span> g q</a>
-<a class="sourceLine" id="cb17-9" data-line-number="9">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb17-10" data-line-number="10">    p <span class="fu">=</span> pq <span class="fu">^^.</span> t1</a>
-<a class="sourceLine" id="cb17-11" data-line-number="11">    q <span class="fu">=</span> pq <span class="fu">^^.</span> t2</a>
-<a class="sourceLine" id="cb17-12" data-line-number="12"><span class="kw">infixr</span> <span class="dv">8</span> <span class="fu">&lt;~</span></a></code></pre></div>
+<a class="sourceLine" id="cb17-8" data-line-number="8">(f <span class="fu">&lt;~</span> g) (p <span class="fu">:&amp;&amp;</span> q) <span class="fu">=</span> f p <span class="fu">.</span> g q</a>
+<a class="sourceLine" id="cb17-9" data-line-number="9"><span class="kw">infixr</span> <span class="dv">8</span> <span class="fu">&lt;~</span></a></code></pre></div>
 <p>And now we have a way to chain models! Maybe even make a multiple-layer neural network? Let’s see if we can get a two-layer model to learn <a href="https://en.wikipedia.org/wiki/Exclusive_or">XOR</a>!</p>
 <p>Our model is two feed-forward layers with logistic activation functions, with 4 hidden layer units:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span><span class="ot"> twoLayer ::</span> <span class="dt">Model</span> _ (<span class="dt">R</span> <span class="dv">2</span>) (<span class="dt">R</span> <span class="dv">1</span>)</a>
@@ -269,9 +258,9 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 <p>You can build a lot with just these tools alone. By using primitive models and the various combinators, you can create autoencoders, nonlinear regressions, convolutional neural networks, multi-layered neural networks…you can create complex “graphs” of networks that fork and re-combine with themselves.</p>
 <p>The nice thing is that these are all just regular (Rank-2) functions, so…you have two models? Just compose their functions like normal functions!</p>
 <p>It is tempting to look at something like</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1">feedForwardLog <span class="fu">@</span><span class="dv">4</span> <span class="fu">@</span><span class="dv">1</span> <span class="fu">&lt;~</span> feedForwardLog <span class="fu">@</span><span class="dv">2</span> <span class="fu">@</span><span class="dv">4</span></a></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1">feedForwardLog <span class="fu">@</span><span class="dv">4</span> <span class="fu">&lt;~</span> feedForwardLog</a></code></pre></div>
 <p>and think of it as some sort of abstract, opaque data type with magic inside. After all, “layers” are “data”, right? But, at the end of the day, it’s all just:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1">\pq <span class="ot">-&gt;</span> feedForwardLog <span class="fu">@</span><span class="dv">4</span> <span class="fu">@</span><span class="dv">1</span> (pq <span class="fu">^^.</span> t1) <span class="fu">.</span> feedForwardLog <span class="fu">@</span><span class="dv">2</span> <span class="fu">@</span><span class="dv">4</span> (pq <span class="fu">^^.</span> t2)</a></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1">\(p <span class="fu">:&amp;&amp;</span> q) <span class="ot">-&gt;</span> feedForwardLog <span class="fu">@</span><span class="dv">4</span> p <span class="fu">.</span> feedForwardLog q</a></code></pre></div>
 <p>Just normal function composition – we’re really just defining the <em>function</em> itself, and <em>backprop</em> turns that function into a trainable model.</p>
 <p>In the past I’ve talked about <a href="https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html">layers as data</a>, and neural network libraries like <a href="http://hackage.haskell.org/package/grenade-0.1.0">grenade</a> let you manipulate neural network layers in a composable way. My previous attempts at neural networks like <a href="https://github.com/mstksg/tensor-ops">tensor-ops</a> also force a similar structure of composition of data types. However, I feel this is a bit limiting.</p>
 <p>You are forced to “compose” your layers in only the ways that the API of the data type gives you. You have to use the data type’s “function composition” functions, or its special “mapping” functions…and for weird things like forking compositions like <code>\x -&gt; f (g x) (h x)</code> you have to learn how the data type offers such an API.</p>
@@ -281,7 +270,7 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 <ol type="1">
 <li><p><em>Functional programming</em>, allowing us to write higher-order functions and combinators that take functions and return functions.</p>
 <p>This is the entire crux of this approach, and lets us not only draw from mathematical models directly, but also combine and reshape models in arbitrary ways just by using normal function composition and application, instead of being forced into a rigid compositional model.</p>
-<p>We were able to chain, fork, recombine simple model primitives to make <em>new</em> models by just writing normal higher-order functions.</p>
+<p>We were able to chain, fork, recombine simple model primitives to make <em>new</em> models by just writing normal higher-order functions. In fact, as we will see in the upcoming posts, we can actually re-use higher order functions like <code>foldl</code> and <code>map</code> that are already commonly used in functional programming.</p>
 <p>In the upcoming posts, we will take this principle to the extreme. We’ll define more combinators like <code>(&lt;~)</code> and see how many models we think are “fundamental” (like recurrent neural networks, autoregressive models) really are just combinators applied to even simpler models.</p>
 <p>The role of these combinators is not <em>essential</em>, but <em>helpful</em> — we could always fall back on normal function composition, but higher-order functions and combinators let us encapsulate certain repeating design patterns and transformations.</p></li>
 <li><p><em>Differentiable</em> programs, allowing us to write normal functions and have them be automatically differentiable for gradient descent.</p>

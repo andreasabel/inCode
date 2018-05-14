@@ -74,9 +74,10 @@ models](https://en.wikipedia.org/wiki/Autoregressive_model) found in statistics:
   + \ldots
 ")
 
-However, this is a bad way to look at models on time serieses, because nothing
-is stopping the result of a model from depending on a future value (the value at
-time ![t = 3](https://latex.codecogs.com/png.latex?t%20%3D%203 "t = 3"), for
+However, this is a bad way of *implenting* models on time serieses, because
+nothing is stopping the result of a model from depending on a future value (the
+value at time
+![t = 3](https://latex.codecogs.com/png.latex?t%20%3D%203 "t = 3"), for
 instance, might depend explicitly only the value at time
 ![t = 5](https://latex.codecogs.com/png.latex?t%20%3D%205 "t = 5")). Instead, we
 can imagine time series models as explicitly "stateful" models:
@@ -118,7 +119,7 @@ y_t & = c + \phi_1 s_t + \phi_2 s_{t - 1}
 \end{aligned}
 ")
 
-Or, in our explicit state form:
+Or, in our function form:
 
 ![
 f\_{c, \\phi\_1, \\phi\_2}(x, s) = (c + \\phi\_1 x + \\phi\_2 s, x)
@@ -143,7 +144,7 @@ y_t & = \sigma(s_t)
 \end{aligned}
 ")
 
-Or, in our explicit state form:
+Or, in our function form:
 
 ![
 f\_{W\_x, W\_s, \\mathbf{b}}(\\mathbf{x}, \\mathbf{s}) =
@@ -179,7 +180,7 @@ To help us see, let's try implementing this in Haskell. Remember our previous
 `Model` type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L48-L51
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L49-L52
 
 type Model p a b = forall z. Reifies z W
                 => BVar z p
@@ -192,7 +193,7 @@ which represented a differentiable
 We can directly translate this to a new `ModelS` type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L165-L169
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L154-L158
 
 type ModelS p s a b = forall z. Reifies z W
                    => BVar z p
@@ -208,64 +209,52 @@ We can implement AR(2) as mentioned before by translating the math formula
 directly:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L171-L177
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L160-L162
 
 ar2 :: ModelS (Double :& (Double :& Double)) Double Double Double
-ar2 cφ yLast yLastLast = ( c + φ1 * yLast + φ2 * yLastLast, yLast )
-  where
-    c  = cφ ^^. t1
-    φ  = cφ ^^. t2
-    φ1 = φ  ^^. t1
-    φ2 = φ  ^^. t2
+ar2 (c :&& (φ1 :&& φ2)) yLast yLastLast =
+    ( c + φ1 * yLast + φ2 * yLastLast, yLast )
 ```
 
 Our implementation of a fully-connected recurrent neural network is a similar
 direct translation:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L179-L188
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L164-L169
 
 fcrnn
     :: (KnownNat i, KnownNat o)
     => ModelS ((L o i :& L o o) :& R o) (R o) (R i) (R o)
-fcrnn wb x s = ( y, logistic y )
+fcrnn ((wX :&& wS) :&& b) x s = ( y, logistic y )
   where
     y  = (wX #> x) + (wS #> s) + b
-    w  = wb ^^. t1
-    b  = wb ^^. t2
-    wX = w  ^^. t1
-    wS = w  ^^. t2
 ```
 
 Because we again have normal functions, we can write a similar stateful model
 composition function that combines both their parameters and their states:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L190-L203
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L171-L180
 
 (<*~*)
   :: (Backprop p, Backprop q, Backprop s, Backprop t)
     => ModelS  p        s       b c
     -> ModelS       q        t  a b
     -> ModelS (p :& q) (s :& t) a c
-(f <*~* g) pq x st = let (y, t') = g q x t
-                         (z, s') = f p y s
-                     in  (z, s' #& t')
+(f <*~* g) (p :&& q) x (s :&& t) = (z, s' :&& t')
   where
-    p = pq ^^. t1
-    q = pq ^^. t2
-    s = st ^^. t1
-    t = st ^^. t2
+    (y, t') = g q x t
+    (z, s') = f p y s
 infixr 8 <*~*
 ```
 
-(`(#&)` will take two `BVar`s of values and tuple them back up into a `BVar` of
-a tuple, essentially the inverse of `^^. t1` and `^^. t2`)
+(Here we use our handy `(:&&)` pattern to construct a tuple, taking a `BVar z a`
+and a `BVar z b` and returning a `BVar z (a :& b)`)
 
 And maybe even a utility function to map a function on the result of a `ModelS`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L205-L209
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L182-L186
 
 mapS
     :: (forall z. Reifies z W => BVar z b -> BVar z c)
@@ -304,7 +293,7 @@ For example, we can "upgrade" any non-stateful function to a stateful one, just
 by returning a new normal function:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L211-L213
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L188-L190
 
 toS :: Model  p   a b
     -> ModelS p s a b
@@ -319,17 +308,14 @@ But we can also be creative with our combinators, as well, and write one to
 compose a stateless model with a stateful one:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L215-L224
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L192-L198
 
 (<*~)
   :: (Backprop p, Backprop q)
     => Model   p         b c
     -> ModelS       q  s a b
     -> ModelS (p :& q) s a c
-(f <*~ g) pq x = first (f p) . g q x
-  where
-    p = pq ^^. t1
-    q = pq ^^. t2
+(f <*~ g) (p :&& q) x = first (f p) . g q x
 infixr 8 <*~
 ```
 
@@ -424,7 +410,7 @@ With that, we can write `unroll`, which is just a thin wrapper over
 `mapAccumL`:[^2]
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L226-L234
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L200-L208
 
 unroll
     :: (Backprop a, Backprop b)
@@ -446,7 +432,7 @@ shows only the "final" result. All we do is `mapS`
 `BVar` of a sequence.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L236-L240
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L210-L214
 
 unrollLast
     :: (Backprop a, Backprop b)
@@ -459,10 +445,10 @@ Alternatively, we can also recognize that `unrollLast` is really just an awkward
 left fold (`foldl`) in disguise:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L242-L248
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L216-L222
 
 unrollLast'
-    :: (Backprop a, Backprop b)
+    :: Backprop a
     => ModelS p s  a  b
     -> ModelS p s [a] b
 unrollLast' f p xs s0 = foldl' go (undefined, s0) (sequenceVar xs)
@@ -478,16 +464,16 @@ unroll     threeLayers :: ModelS _ _ [R 40] [R 5]
 unrollLast threeLayers :: ModelS _ _ [R 40] (R 5)
 ```
 
-Aren't statically typed languages great?
+Nice that we can trace the evolution of the types within our langage!
 
 ### State-be-gone
 
 Did you enjoy the detour through stateful time series models?
 
-Good! Because the whole point of it was to talk about how we can *get rid of
+Good --- because the whole point of it was to talk about how we can *get rid of
 state* and bring us back to our original models!
 
-You knew this had to come, because all of our methods for "training" these
+You knew this day had to come, because all of our methods for "training" these
 models and learn these parameters involves non-stateful models. Let's see now
 how we can turn our functional stateful models into functional non-stateful
 models!
@@ -497,7 +483,7 @@ very common in machine learning contexts, where many people simply fix the
 initial state to be a zero vector.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L251-L261
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L225-L235
 
 fixState
     :: s
@@ -521,16 +507,13 @@ throw away the final state). This is not done as often, but is still common
 enough to be mentioned often. And, it's just as straightforward!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L263-L270
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L237-L241
 
 trainState
     :: (Backprop p, Backprop s)
     => ModelS  p    s  a b
     -> Model  (p :& s) a b
-trainState f ps x = fst $ f p x s
-  where
-    p = ps ^^. t1
-    s = ps ^^. t2
+trainState f (p :&& s) x = fst $ f p x s
 ```
 
 `trainState` will take a model with trainable parameter `p` and state `s`, and
@@ -551,7 +534,12 @@ model. It takes a list of inputs `R 40`s and produces the "final output" `R 5`.
 We can now train this by feeding it with `([R 40], R 5)` pairs: give a history
 and an expected next output.
 
-### Unreasonably Effective Tests
+It's again nice here how we can track the evolution of the types of out model's
+inputs and outputs within the language. Unrolling and zeroing is a non-trivial
+interaction, so the ability to have the language and compiler track the
+resulting shapes of our models is a huge advantage.
+
+### The Unreasonably Effective
 
 Let's see if we can train a two-layer fully connected neural network with 30
 hidden units, where the first layer is fully recurrent, to learn how to model a
@@ -582,7 +570,7 @@ that takes a stateful model and gives a "warmed-up" state by running it over a
 list of inputs. This serves to essentially initialize the memory of the model.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L272-L279
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L243-L250
 
 prime
     :: Foldable t
@@ -598,7 +586,7 @@ Then a function `feedback` that iterates a stateful model over and over again by
 feeding its previous output as its next input:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L281-L292
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L252-L263
 
 feedback
     :: (Backprop a, Backprop s)
@@ -673,16 +661,18 @@ We can peek inside the parameterization of our learned AR(2):
 ghci> trained
 -2.4013298985824788e-12 :& (1.937166322256747 :& -0.9999999999997953)
 -- approximately
-0.00 :& (1.94 :& -1.00)
+0.0000 :& (1.9372 :& -1.0000)
 ```
 
 Meaning that the gradient descent has concluded that our AR(2) model is:
 
 ![
-y\_t = 0 + 1.94 y\_{t - 1} - y\_{t - 2}
-](https://latex.codecogs.com/png.latex?%0Ay_t%20%3D%200%20%2B%201.94%20y_%7Bt%20-%201%7D%20-%20y_%7Bt%20-%202%7D%0A "
-y_t = 0 + 1.94 y_{t - 1} - y_{t - 2}
+y\_t = 0 + 1.9372 y\_{t - 1} - y\_{t - 2}
+](https://latex.codecogs.com/png.latex?%0Ay_t%20%3D%200%20%2B%201.9372%20y_%7Bt%20-%201%7D%20-%20y_%7Bt%20-%202%7D%0A "
+y_t = 0 + 1.9372 y_{t - 1} - y_{t - 2}
 ")
+
+The power of math!
 
 In this toy situation, the AR(2) appears to do much better than our RNN model,
 but we have to give the RNN a break --- all of the information has to be
@@ -694,7 +684,7 @@ Functions all the way down
 Again, it is very easy to look at something like
 
 ``` {.haskell}
-feedForward @30 @1 <*~ mapS logistic (fcrnn @1 @30)
+feedForward @10 <*~ mapS logistic fcrnn
 ```
 
 and write it off as some abstract API of opaque data types. Some sort of object
@@ -706,8 +696,9 @@ library turns that function into a trainable model.
 
 ### What Makes It Tick
 
-With this, we return to my thesis, which is about the four things I believe are
-essential to making this all work:
+Let's again revisit the four things I mentioned that are essential to making
+this all work at the end of the last post, but update it with new observations
+that we made in this post:
 
 1.  *Functional programming* is the paradigm that allowed us to treat everything
     as normal functions, so that our combinators are all just normal
@@ -765,7 +756,7 @@ essential to making this all work:
     our entire program for us --- something only possible for statically typed
     languages.
 
-In the next and final post, we'll wrap this up by diving into the wonderful
+In the next and final post, we'll wrap this up by peeking into the wonderful
 world of functional combinators and look at powerful ones that allow us to unify
 many different model types as really just different combinator applications of
 the same thing. I'll also talk about what I think are essential in building a

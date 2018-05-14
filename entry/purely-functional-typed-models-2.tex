@@ -171,9 +171,10 @@ found in statistics:
 \text{AR}}\{\phi\_1, \phi\_2, \ldots\}(x, t-1) + \phi\emph{2
 \text{AR}}\{\phi\_1, \phi\_2, \ldots\}(x, t-2) + \ldots ``)
 
-However, this is a bad way to look at models on time serieses, because nothing
-is stopping the result of a model from depending on a future value (the value at
-time \includegraphics{https://latex.codecogs.com/png.latex?t\%20\%3D\%203}, for
+However, this is a bad way of \emph{implenting} models on time serieses, because
+nothing is stopping the result of a model from depending on a future value (the
+value at time
+\includegraphics{https://latex.codecogs.com/png.latex?t\%20\%3D\%203}, for
 instance, might depend explicitly only the value at time
 \includegraphics{https://latex.codecogs.com/png.latex?t\%20\%3D\%205}). Instead,
 we can imagine time series models as explicitly ``stateful'' models:
@@ -215,7 +216,7 @@ second-to-last observed value:
 " \textbackslash{}begin\{aligned\} s\_t \& = x\_t \textbackslash{} y\_t \& = c +
 \phi\_1 s\_t + \phi\emph{2 s}\{t - 1\} \textbackslash{}end\{aligned\} ``)
 
-Or, in our explicit state form:
+Or, in our function form:
 
 {[} f\_\{c, \textbackslash{}phi\_1, \textbackslash{}phi\_2\}(x, s) = (c +
 \textbackslash{}phi\_1 x + \textbackslash{}phi\_2 s,
@@ -236,7 +237,7 @@ recurrent neural network layer}, whose output is a linear combination of the
 \mathbf{s}}\{t-1\} + \mathbf{b} \textbackslash{} y\_t \& = \sigma(s\_t)
 \textbackslash{}end\{aligned\} ``)
 
-Or, in our explicit state form:
+Or, in our function form:
 
 {[} f\_\{W\_x, W\_s, \textbackslash{}mathbf\{b\}\}(\textbackslash{}mathbf\{x\},
 \textbackslash{}mathbf\{s\}) = ( W\_x \textbackslash{}mathbf\{x\} + W\_s
@@ -279,7 +280,7 @@ To help us see, let's try implementing this in Haskell. Remember our previous
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L48-L51}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L49-L52}
 
 \KeywordTok{type} \DataTypeTok{Model}\NormalTok{ p a b }\FunctionTok{=}\NormalTok{ forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
                 \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z p}
@@ -294,7 +295,7 @@ We can directly translate this to a new \texttt{ModelS} type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L165-L169}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L154-L158}
 
 \KeywordTok{type} \DataTypeTok{ModelS}\NormalTok{ p s a b }\FunctionTok{=}\NormalTok{ forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
                    \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z p}
@@ -312,15 +313,11 @@ directly:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L171-L177}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L160-L162}
 
 \OtherTok{ar2 ::} \DataTypeTok{ModelS}\NormalTok{ (}\DataTypeTok{Double} \FunctionTok{:&}\NormalTok{ (}\DataTypeTok{Double} \FunctionTok{:&} \DataTypeTok{Double}\NormalTok{)) }\DataTypeTok{Double} \DataTypeTok{Double} \DataTypeTok{Double}
-\NormalTok{ar2 cφ yLast yLastLast }\FunctionTok{=}\NormalTok{ ( c }\FunctionTok{+}\NormalTok{ φ1 }\FunctionTok{*}\NormalTok{ yLast }\FunctionTok{+}\NormalTok{ φ2 }\FunctionTok{*}\NormalTok{ yLastLast, yLast )}
-  \KeywordTok{where}
-\NormalTok{    c  }\FunctionTok{=}\NormalTok{ cφ }\FunctionTok{^^.}\NormalTok{ t1}
-\NormalTok{    φ  }\FunctionTok{=}\NormalTok{ cφ }\FunctionTok{^^.}\NormalTok{ t2}
-\NormalTok{    φ1 }\FunctionTok{=}\NormalTok{ φ  }\FunctionTok{^^.}\NormalTok{ t1}
-\NormalTok{    φ2 }\FunctionTok{=}\NormalTok{ φ  }\FunctionTok{^^.}\NormalTok{ t2}
+\NormalTok{ar2 (c }\FunctionTok{:&&}\NormalTok{ (φ1 }\FunctionTok{:&&}\NormalTok{ φ2)) yLast yLastLast }\FunctionTok{=}
+\NormalTok{    ( c }\FunctionTok{+}\NormalTok{ φ1 }\FunctionTok{*}\NormalTok{ yLast }\FunctionTok{+}\NormalTok{ φ2 }\FunctionTok{*}\NormalTok{ yLastLast, yLast )}
 \end{Highlighting}
 \end{Shaded}
 
@@ -329,18 +326,14 @@ direct translation:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L179-L188}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L164-L169}
 
 \NormalTok{fcrnn}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
     \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ ((}\DataTypeTok{L}\NormalTok{ o i }\FunctionTok{:&} \DataTypeTok{L}\NormalTok{ o o) }\FunctionTok{:&} \DataTypeTok{R}\NormalTok{ o) (}\DataTypeTok{R}\NormalTok{ o) (}\DataTypeTok{R}\NormalTok{ i) (}\DataTypeTok{R}\NormalTok{ o)}
-\NormalTok{fcrnn wb x s }\FunctionTok{=}\NormalTok{ ( y, logistic y )}
+\NormalTok{fcrnn ((wX }\FunctionTok{:&&}\NormalTok{ wS) }\FunctionTok{:&&}\NormalTok{ b) x s }\FunctionTok{=}\NormalTok{ ( y, logistic y )}
   \KeywordTok{where}
 \NormalTok{    y  }\FunctionTok{=}\NormalTok{ (wX }\FunctionTok{#>}\NormalTok{ x) }\FunctionTok{+}\NormalTok{ (wS }\FunctionTok{#>}\NormalTok{ s) }\FunctionTok{+}\NormalTok{ b}
-\NormalTok{    w  }\FunctionTok{=}\NormalTok{ wb }\FunctionTok{^^.}\NormalTok{ t1}
-\NormalTok{    b  }\FunctionTok{=}\NormalTok{ wb }\FunctionTok{^^.}\NormalTok{ t2}
-\NormalTok{    wX }\FunctionTok{=}\NormalTok{ w  }\FunctionTok{^^.}\NormalTok{ t1}
-\NormalTok{    wS }\FunctionTok{=}\NormalTok{ w  }\FunctionTok{^^.}\NormalTok{ t2}
 \end{Highlighting}
 \end{Shaded}
 
@@ -349,35 +342,31 @@ composition function that combines both their parameters and their states:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L190-L203}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L171-L180}
 
 \NormalTok{(}\FunctionTok{<*~*}\NormalTok{)}
 \OtherTok{  ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ q, }\DataTypeTok{Backprop}\NormalTok{ s, }\DataTypeTok{Backprop}\NormalTok{ t)}
     \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{  p        s       b c}
     \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{       q        t  a b}
     \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ (p }\FunctionTok{:&}\NormalTok{ q) (s }\FunctionTok{:&}\NormalTok{ t) a c}
-\NormalTok{(f }\FunctionTok{<*~*}\NormalTok{ g) pq x st }\FunctionTok{=} \KeywordTok{let}\NormalTok{ (y, t') }\FunctionTok{=}\NormalTok{ g q x t}
-\NormalTok{                         (z, s') }\FunctionTok{=}\NormalTok{ f p y s}
-                     \KeywordTok{in}\NormalTok{  (z, s' }\FunctionTok{#&}\NormalTok{ t')}
+\NormalTok{(f }\FunctionTok{<*~*}\NormalTok{ g) (p }\FunctionTok{:&&}\NormalTok{ q) x (s }\FunctionTok{:&&}\NormalTok{ t) }\FunctionTok{=}\NormalTok{ (z, s' }\FunctionTok{:&&}\NormalTok{ t')}
   \KeywordTok{where}
-\NormalTok{    p }\FunctionTok{=}\NormalTok{ pq }\FunctionTok{^^.}\NormalTok{ t1}
-\NormalTok{    q }\FunctionTok{=}\NormalTok{ pq }\FunctionTok{^^.}\NormalTok{ t2}
-\NormalTok{    s }\FunctionTok{=}\NormalTok{ st }\FunctionTok{^^.}\NormalTok{ t1}
-\NormalTok{    t }\FunctionTok{=}\NormalTok{ st }\FunctionTok{^^.}\NormalTok{ t2}
+\NormalTok{    (y, t') }\FunctionTok{=}\NormalTok{ g q x t}
+\NormalTok{    (z, s') }\FunctionTok{=}\NormalTok{ f p y s}
 \KeywordTok{infixr} \DecValTok{8} \FunctionTok{<*~*}
 \end{Highlighting}
 \end{Shaded}
 
-(\texttt{(\#\&)} will take two \texttt{BVar}s of values and tuple them back up
-into a \texttt{BVar} of a tuple, essentially the inverse of
-\texttt{\^{}\^{}.\ t1} and \texttt{\^{}\^{}.\ t2})
+(Here we use our handy \texttt{(:\&\&)} pattern to construct a tuple, taking a
+\texttt{BVar\ z\ a} and a \texttt{BVar\ z\ b} and returning a
+\texttt{BVar\ z\ (a\ :\&\ b)})
 
 And maybe even a utility function to map a function on the result of a
 \texttt{ModelS}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L205-L209}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L182-L186}
 
 \NormalTok{mapS}
 \OtherTok{    ::}\NormalTok{ (forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W} \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z b }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z c)}
@@ -423,7 +412,7 @@ just by returning a new normal function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L211-L213}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L188-L190}
 
 \OtherTok{toS ::} \DataTypeTok{Model}\NormalTok{  p   a b}
     \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p s a b}
@@ -441,17 +430,14 @@ compose a stateless model with a stateful one:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L215-L224}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L192-L198}
 
 \NormalTok{(}\FunctionTok{<*~}\NormalTok{)}
 \OtherTok{  ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ q)}
     \OtherTok{=>} \DataTypeTok{Model}\NormalTok{   p         b c}
     \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{       q  s a b}
     \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ (p }\FunctionTok{:&}\NormalTok{ q) s a c}
-\NormalTok{(f }\FunctionTok{<*~}\NormalTok{ g) pq x }\FunctionTok{=}\NormalTok{ first (f p) }\FunctionTok{.}\NormalTok{ g q x}
-  \KeywordTok{where}
-\NormalTok{    p }\FunctionTok{=}\NormalTok{ pq }\FunctionTok{^^.}\NormalTok{ t1}
-\NormalTok{    q }\FunctionTok{=}\NormalTok{ pq }\FunctionTok{^^.}\NormalTok{ t2}
+\NormalTok{(f }\FunctionTok{<*~}\NormalTok{ g) (p }\FunctionTok{:&&}\NormalTok{ q) x }\FunctionTok{=}\NormalTok{ first (f p) }\FunctionTok{.}\NormalTok{ g q x}
 \KeywordTok{infixr} \DecValTok{8} \FunctionTok{<*~}
 \end{Highlighting}
 \end{Shaded}
@@ -567,7 +553,7 @@ over \texttt{mapAccumL}:\footnote{In truth, \texttt{mapAccumL} can work with any
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L226-L234}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L200-L208}
 
 \NormalTok{unroll}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b)}
@@ -591,7 +577,7 @@ which gets the last item in a \texttt{BVar} of a sequence.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L236-L240}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L210-L214}
 
 \NormalTok{unrollLast}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b)}
@@ -606,10 +592,10 @@ awkward left fold (\texttt{foldl}) in disguise:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L242-L248}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L216-L222}
 
 \NormalTok{unrollLast'}
-\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b)}
+\OtherTok{    ::} \DataTypeTok{Backprop}\NormalTok{ a}
     \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ p s  a  b}
     \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p s [a] b}
 \NormalTok{unrollLast' f p xs s0 }\FunctionTok{=}\NormalTok{ foldl' go (undefined, s0) (sequenceVar xs)}
@@ -628,17 +614,17 @@ To see how this applies to our \texttt{threeLayer}:
 \end{Highlighting}
 \end{Shaded}
 
-Aren't statically typed languages great?
+Nice that we can trace the evolution of the types within our langage!
 
 \hypertarget{state-be-gone}{%
 \subsection{State-be-gone}\label{state-be-gone}}
 
 Did you enjoy the detour through stateful time series models?
 
-Good! Because the whole point of it was to talk about how we can \emph{get rid
-of state} and bring us back to our original models!
+Good --- because the whole point of it was to talk about how we can \emph{get
+rid of state} and bring us back to our original models!
 
-You knew this had to come, because all of our methods for ``training'' these
+You knew this day had to come, because all of our methods for ``training'' these
 models and learn these parameters involves non-stateful models. Let's see now
 how we can turn our functional stateful models into functional non-stateful
 models!
@@ -649,7 +635,7 @@ the initial state to be a zero vector.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L251-L261}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L225-L235}
 
 \NormalTok{fixState}
 \OtherTok{    ::}\NormalTok{ s}
@@ -676,16 +662,13 @@ enough to be mentioned often. And, it's just as straightforward!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L263-L270}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L237-L241}
 
 \NormalTok{trainState}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ p, }\DataTypeTok{Backprop}\NormalTok{ s)}
     \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{  p    s  a b}
     \OtherTok{->} \DataTypeTok{Model}\NormalTok{  (p }\FunctionTok{:&}\NormalTok{ s) a b}
-\NormalTok{trainState f ps x }\FunctionTok{=}\NormalTok{ fst }\FunctionTok{$}\NormalTok{ f p x s}
-  \KeywordTok{where}
-\NormalTok{    p }\FunctionTok{=}\NormalTok{ ps }\FunctionTok{^^.}\NormalTok{ t1}
-\NormalTok{    s }\FunctionTok{=}\NormalTok{ ps }\FunctionTok{^^.}\NormalTok{ t2}
+\NormalTok{trainState f (p }\FunctionTok{:&&}\NormalTok{ s) x }\FunctionTok{=}\NormalTok{ fst }\FunctionTok{$}\NormalTok{ f p x s}
 \end{Highlighting}
 \end{Shaded}
 
@@ -709,8 +692,13 @@ trainable) model. It takes a list of inputs \texttt{R\ 40}s and produces the
 ``final output'' \texttt{R\ 5}. We can now train this by feeding it with
 \texttt{({[}R\ 40{]},\ R\ 5)} pairs: give a history and an expected next output.
 
-\hypertarget{unreasonably-effective-tests}{%
-\subsection{Unreasonably Effective Tests}\label{unreasonably-effective-tests}}
+It's again nice here how we can track the evolution of the types of out model's
+inputs and outputs within the language. Unrolling and zeroing is a non-trivial
+interaction, so the ability to have the language and compiler track the
+resulting shapes of our models is a huge advantage.
+
+\hypertarget{the-unreasonably-effective}{%
+\subsection{The Unreasonably Effective}\label{the-unreasonably-effective}}
 
 Let's see if we can train a two-layer fully connected neural network with 30
 hidden units, where the first layer is fully recurrent, to learn how to model a
@@ -745,7 +733,7 @@ memory of the model.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L272-L279}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L243-L250}
 
 \NormalTok{prime}
 \OtherTok{    ::} \DataTypeTok{Foldable}\NormalTok{ t}
@@ -763,7 +751,7 @@ again by feeding its previous output as its next input:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L281-L292}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L252-L263}
 
 \NormalTok{feedback}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ s)}
@@ -854,15 +842,17 @@ We can peek inside the parameterization of our learned AR(2):
 \NormalTok{ghci}\FunctionTok{>}\NormalTok{ trained}
 \FunctionTok{-}\FloatTok{2.4013298985824788e-12} \FunctionTok{:&}\NormalTok{ (}\FloatTok{1.937166322256747} \FunctionTok{:&} \FunctionTok{-}\FloatTok{0.9999999999997953}\NormalTok{)}
 \CommentTok{-- approximately}
-\FloatTok{0.00} \FunctionTok{:&}\NormalTok{ (}\FloatTok{1.94} \FunctionTok{:&} \FunctionTok{-}\FloatTok{1.00}\NormalTok{)}
+\FloatTok{0.0000} \FunctionTok{:&}\NormalTok{ (}\FloatTok{1.9372} \FunctionTok{:&} \FunctionTok{-}\FloatTok{1.0000}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 Meaning that the gradient descent has concluded that our AR(2) model is:
 
-{[} y\_t = 0 + 1.94 y\_\{t - 1\} - y\_\{t -
-2\}{]}(https://latex.codecogs.com/png.latex?\%0Ay\_t\%20\%3D\%200\%20\%2B\%201.94\%20y\_\%7Bt\%20-\%201\%7D\%20-\%20y\_\%7Bt\%20-\%202\%7D\%0A
-" y\_t = 0 + 1.94 y\_\{t - 1\} - y\_\{t - 2\} ``)
+{[} y\_t = 0 + 1.9372 y\_\{t - 1\} - y\_\{t -
+2\}{]}(https://latex.codecogs.com/png.latex?\%0Ay\_t\%20\%3D\%200\%20\%2B\%201.9372\%20y\_\%7Bt\%20-\%201\%7D\%20-\%20y\_\%7Bt\%20-\%202\%7D\%0A
+" y\_t = 0 + 1.9372 y\_\{t - 1\} - y\_\{t - 2\} ``)
+
+The power of math!
 
 In this toy situation, the AR(2) appears to do much better than our RNN model,
 but we have to give the RNN a break --- all of the information has to be
@@ -875,7 +865,7 @@ Again, it is very easy to look at something like
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{feedForward }\FunctionTok{@}\DecValTok{30} \FunctionTok{@}\DecValTok{1} \FunctionTok{<*~}\NormalTok{ mapS logistic (fcrnn }\FunctionTok{@}\DecValTok{1} \FunctionTok{@}\DecValTok{30}\NormalTok{)}
+\NormalTok{feedForward }\FunctionTok{@}\DecValTok{10} \FunctionTok{<*~}\NormalTok{ mapS logistic fcrnn}
 \end{Highlighting}
 \end{Shaded}
 
@@ -890,8 +880,9 @@ library turns that function into a trainable model.
 \hypertarget{what-makes-it-tick}{%
 \subsection{What Makes It Tick}\label{what-makes-it-tick}}
 
-With this, we return to my thesis, which is about the four things I believe are
-essential to making this all work:
+Let's again revisit the four things I mentioned that are essential to making
+this all work at the end of the last post, but update it with new observations
+that we made in this post:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -953,7 +944,7 @@ essential to making this all work:
   languages.
 \end{enumerate}
 
-In the next and final post, we'll wrap this up by diving into the wonderful
+In the next and final post, we'll wrap this up by peeking into the wonderful
 world of functional combinators and look at powerful ones that allow us to unify
 many different model types as really just different combinator applications of
 the same thing. I'll also talk about what I think are essential in building a

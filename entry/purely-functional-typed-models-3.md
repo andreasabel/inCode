@@ -18,8 +18,10 @@ haven't, because this is a direct continuation.
 My favorite part about this system really is how we have pretty much free reign
 over how we can combine and manipulate our models, since they are just
 functions. Combinators --- a word I'm going to be using to mean higher-order
-functions that return functions --- tie everything together so well. And the
-best part is that they're never *necessary*; just *helpful*.
+functions that return functions --- tie everything together so well. Some models
+we might have thought were standalone entities might just be derivable from
+other models using basic functional combinators. And the best part is that
+they're never *necessary*; just *helpful*.
 
 Combinator Fun
 --------------
@@ -52,7 +54,7 @@ types" kinda deal --- you set up the function, and the compiler pretty much
 writes it for you, because the types guide the entire implementation:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L328-L334
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L299-L305
 
 recurrently
     :: (Backprop a, Backprop b)
@@ -68,7 +70,7 @@ be stored as the state. We can write this combinator as well, taking the
 function that transforms the previous output into the stored state:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L336-L343
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L307-L314
 
 recurrentlyWith
     :: (Backprop a, Backprop b)
@@ -102,20 +104,19 @@ vectors and concatenates them before doing anything:
 
 ``` {.haskell}
 -- | Concatenate two vectors
-(#) :: BVar s (R i) -> BVar s (R o) -> BVar s (R (i + o))
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L345-L351
+(#) :: BVar z (R i) -> BVar z (R o) -> BVar z (R (i + o))
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L316-L319
 
 ffOnSplit
     :: forall i o. (KnownNat i, KnownNat o)
     => Model _ (R i :& R o) (R o)
-ffOnSplit p rIrO = feedForward @(i + o) p (rI # rO)
-  where
-    rI = rIrO ^^. t1
-    rO = rIrO ^^. t2
+ffOnSplit p (rI :&& rO) = feedForward p (rI # rO)
 ```
 
 `ffOnSplit` is a feed-forward layer taking an `R (i + o)`, except we pre-map it
-to take a tuple `R i :& R o` instead.
+to take a tuple `R i :& R o` instead. This isn't anything special, just some
+plumbing. (Note that the internal `feedForward` takes an input of `R (i + o)`
+here.)
 
 Now our fully connected recurrent layer is just
 `recurrentlyWith logistic ffOnSplit`:
@@ -131,7 +132,7 @@ Basically just a recurrent version of `feedForward`! If we factor out some of
 the manual uncurrying and pre-mapping, we get a nice functional definition:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L353-L356
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L321-L324
 
 fcrnn'
     :: (KnownNat i, KnownNat o)
@@ -159,7 +160,7 @@ using `headTail` and `&`, which splits a vector and adds an item to the end,
 respectively.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L358-L366
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L326-L334
 
 lagged
     :: (KnownNat n, 1 <= n)
@@ -176,11 +177,11 @@ What can we do with this? Well... we can write a general autoregressive model
 AR(p) of *any* degree, simply by lagging a fully connected ANN layer:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L368-L370
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L336-L338
 
 ar :: (KnownNat n, 1 <= n)
    => ModelS _ (R n) Double Double
-ar = lagged (\p -> fst . headTail @_ @1 . feedForward p)
+ar = lagged (\p -> fst . headTail . feedForward @_ @1 p)
 ```
 
 (using `fst . headTail` to extract the first `Double` from an `R 1`)
@@ -190,7 +191,7 @@ write an AR(10) model by just using `ar @10`, and AR(20) model with `ar @20`,
 etc.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L372-L373
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L340-L341
 
 ar2' :: ModelS _ (R 2) Double Double
 ar2' = ar @2
@@ -208,17 +209,19 @@ There are many more such combinators possible! Combinators like
 reveal to us that seemingly exotic things really are just simple applications of
 combinators from other basic things.
 
-::: {.note}
-**Aside: Unified Representation**
+A Unified Representation
+------------------------
 
-This is a small aside for those familiar with Haskell techniques like DataKinds
-and dependent types!
+This section now is a small aside for those familiar with more advanced Haskell
+techniques like DataKinds and dependent types; if you aren't too comfortable
+with these, feel free to skip to the next section! This stuff won't come up
+again later.
 
-One ugly thing you might have noticed was that we had to give different "types"
-for both our `Model` and `ModelS`, so we cannot re-use useful functions on both.
-For example, `mapS` only works on `ModelS`, but not `Model`. `(<~)` only works
-on `Model`s, `(<*~*)` only works on two `ModelS`s, and we had to define a
-different combinator `(<*~)`.
+If you're still reading, one ugly thing you might have noticed was that we had
+to give different "types" for both our `Model` and `ModelS`, so we cannot re-use
+useful functions on both. For example, `mapS` only works on `ModelS`, but not
+`Model`. `(<~)` only works on `Model`s, `(<*~*)` only works on two `ModelS`s,
+and we had to define a different combinator `(<*~)`.
 
 This is not a fundamental limitation! With *DataKinds* and dependent types we
 can unify these both under a common type. If we had:
@@ -256,7 +259,7 @@ type Model' (p :: Maybe Type) (s :: Maybe Type) (a :: Type) (b :: Type) =
 
 `Option f a` contains a value if `a` is `'Just`, and does not if `a` is
 `'Nothing`. More precisely, if `a` is `'Just b`, it will contain an `f b`. So if
-`p` is `'Just p'`, an `Option (BVar z) p` will contain a `BVar s p'`.
+`p` is `'Just p'`, an `Option (BVar z) p` will contain a `BVar z p'`.
 
 We can then re-define our previous types:
 
@@ -283,8 +286,7 @@ and we can use this with our unified `(<~)` etc. to implement functions like
 
 Note that dependent types and DataKind shenanigans aren't necessary for any of
 this to work --- it just has the possibility to make things even more seamless
-and unified!
-:::
+and unified.
 
 A Practical Framework
 ---------------------
@@ -357,8 +359,8 @@ the whole thing would become clumsy.
 
 1.  **Functional Programming**. Higher-order functions and combinators that take
     functions and return functions. Again, this allows us to draw from
-    mathematical models directly, but also full control over how we reshape,
-    redefine, manipulate our models.
+    mathematical models directly, but also gives us full control over how we
+    reshape, redefine, manipulate our models.
 
     We aren't forced to adhere to a limited API provided for our models; it all
     is just normal function application and higher-order functions --- something
@@ -407,8 +409,10 @@ the whole thing would become clumsy.
     types of functions, many of them manipulate parameter types, and almost all
     of them manipulate input and output types. Having a compiler that keeps
     track of this for you and lets you ask questions about them is essential.
-    The compiler also *helps you write your code* --- it tells you what
-    combinators are available to use for what models you have.
+    The compiler also *helps you write your code* --- if you leave a "typed
+    hole" in your code, the compiler will tell you all of the combinators or
+    values available that can fit inside that hole, and it usually is exactly
+    the one you need.
 
     And if you can state your desired model in terms of its types, sometimes the
     combinator applications and functions write themselves. They all act

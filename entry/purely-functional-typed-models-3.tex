@@ -107,8 +107,10 @@ and \href{https://blog.jle.im/entry/purely-functional-typed-models-2.html}{Part
 My favorite part about this system really is how we have pretty much free reign
 over how we can combine and manipulate our models, since they are just
 functions. Combinators --- a word I'm going to be using to mean higher-order
-functions that return functions --- tie everything together so well. And the
-best part is that they're never \emph{necessary}; just \emph{helpful}.
+functions that return functions --- tie everything together so well. Some models
+we might have thought were standalone entities might just be derivable from
+other models using basic functional combinators. And the best part is that
+they're never \emph{necessary}; just \emph{helpful}.
 
 \hypertarget{combinator-fun}{%
 \section{Combinator Fun}\label{combinator-fun}}
@@ -145,7 +147,7 @@ writes it for you, because the types guide the entire implementation:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L328-L334}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L299-L305}
 
 \NormalTok{recurrently}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b)}
@@ -163,7 +165,7 @@ function that transforms the previous output into the stored state:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L336-L343}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L307-L314}
 
 \NormalTok{recurrentlyWith}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b)}
@@ -200,21 +202,20 @@ of two vectors and concatenates them before doing anything:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- | Concatenate two vectors}
-\OtherTok{(#) ::} \DataTypeTok{BVar}\NormalTok{ s (}\DataTypeTok{R}\NormalTok{ i) }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s (}\DataTypeTok{R}\NormalTok{ o) }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ s (}\DataTypeTok{R}\NormalTok{ (i }\FunctionTok{+}\NormalTok{ o))}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L345-L351}
+\OtherTok{(#) ::} \DataTypeTok{BVar}\NormalTok{ z (}\DataTypeTok{R}\NormalTok{ i) }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z (}\DataTypeTok{R}\NormalTok{ o) }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z (}\DataTypeTok{R}\NormalTok{ (i }\FunctionTok{+}\NormalTok{ o))}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L316-L319}
 
 \NormalTok{ffOnSplit}
 \OtherTok{    ::}\NormalTok{ forall i o}\FunctionTok{.}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
     \OtherTok{=>} \DataTypeTok{Model}\NormalTok{ _ (}\DataTypeTok{R}\NormalTok{ i }\FunctionTok{:&} \DataTypeTok{R}\NormalTok{ o) (}\DataTypeTok{R}\NormalTok{ o)}
-\NormalTok{ffOnSplit p rIrO }\FunctionTok{=}\NormalTok{ feedForward }\FunctionTok{@}\NormalTok{(i }\FunctionTok{+}\NormalTok{ o) p (rI }\FunctionTok{#}\NormalTok{ rO)}
-  \KeywordTok{where}
-\NormalTok{    rI }\FunctionTok{=}\NormalTok{ rIrO }\FunctionTok{^^.}\NormalTok{ t1}
-\NormalTok{    rO }\FunctionTok{=}\NormalTok{ rIrO }\FunctionTok{^^.}\NormalTok{ t2}
+\NormalTok{ffOnSplit p (rI }\FunctionTok{:&&}\NormalTok{ rO) }\FunctionTok{=}\NormalTok{ feedForward p (rI }\FunctionTok{#}\NormalTok{ rO)}
 \end{Highlighting}
 \end{Shaded}
 
 \texttt{ffOnSplit} is a feed-forward layer taking an \texttt{R\ (i\ +\ o)},
-except we pre-map it to take a tuple \texttt{R\ i\ :\&\ R\ o} instead.
+except we pre-map it to take a tuple \texttt{R\ i\ :\&\ R\ o} instead. This
+isn't anything special, just some plumbing. (Note that the internal
+\texttt{feedForward} takes an input of \texttt{R\ (i\ +\ o)} here.)
 
 Now our fully connected recurrent layer is just
 \texttt{recurrentlyWith\ logistic\ ffOnSplit}:
@@ -234,7 +235,7 @@ definition:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L353-L356}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L321-L324}
 
 \NormalTok{fcrnn'}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
@@ -267,7 +268,7 @@ vector and adds an item to the end, respectively.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L358-L366}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L326-L334}
 
 \NormalTok{lagged}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DecValTok{1} \FunctionTok{<=}\NormalTok{ n)}
@@ -286,11 +287,11 @@ model AR(p) of \emph{any} degree, simply by lagging a fully connected ANN layer:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L368-L370}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L336-L338}
 
 \OtherTok{ar ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DecValTok{1} \FunctionTok{<=}\NormalTok{ n)}
    \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ _ (}\DataTypeTok{R}\NormalTok{ n) }\DataTypeTok{Double} \DataTypeTok{Double}
-\NormalTok{ar }\FunctionTok{=}\NormalTok{ lagged (\textbackslash{}p }\OtherTok{->}\NormalTok{ fst }\FunctionTok{.}\NormalTok{ headTail }\FunctionTok{@}\NormalTok{_ }\FunctionTok{@}\DecValTok{1} \FunctionTok{.}\NormalTok{ feedForward p)}
+\NormalTok{ar }\FunctionTok{=}\NormalTok{ lagged (\textbackslash{}p }\OtherTok{->}\NormalTok{ fst }\FunctionTok{.}\NormalTok{ headTail }\FunctionTok{.}\NormalTok{ feedForward }\FunctionTok{@}\NormalTok{_ }\FunctionTok{@}\DecValTok{1}\NormalTok{ p)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -303,7 +304,7 @@ AR(20) model with \texttt{ar\ @20}, etc.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L372-L373}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L340-L341}
 
 \OtherTok{ar2' ::} \DataTypeTok{ModelS}\NormalTok{ _ (}\DataTypeTok{R} \DecValTok{2}\NormalTok{) }\DataTypeTok{Double} \DataTypeTok{Double}
 \NormalTok{ar2' }\FunctionTok{=}\NormalTok{ ar }\FunctionTok{@}\DecValTok{2}
@@ -322,19 +323,21 @@ There are many more such combinators possible! Combinators like
 all, they help reveal to us that seemingly exotic things really are just simple
 applications of combinators from other basic things.
 
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+\hypertarget{a-unified-representation}{%
+\section{A Unified Representation}\label{a-unified-representation}}
 
-\textbf{Aside: Unified Representation}
+This section now is a small aside for those familiar with more advanced Haskell
+techniques like DataKinds and dependent types; if you aren't too comfortable
+with these, feel free to skip to the next section! This stuff won't come up
+again later.
 
-This is a small aside for those familiar with Haskell techniques like DataKinds
-and dependent types!
-
-One ugly thing you might have noticed was that we had to give different
-``types'' for both our \texttt{Model} and \texttt{ModelS}, so we cannot re-use
-useful functions on both. For example, \texttt{mapS} only works on
-\texttt{ModelS}, but not \texttt{Model}. \texttt{(\textless{}\textasciitilde{})}
-only works on \texttt{Model}s, \texttt{(\textless{}*\textasciitilde{}*)} only
-works on two \texttt{ModelS}s, and we had to define a different combinator
+If you're still reading, one ugly thing you might have noticed was that we had
+to give different ``types'' for both our \texttt{Model} and \texttt{ModelS}, so
+we cannot re-use useful functions on both. For example, \texttt{mapS} only works
+on \texttt{ModelS}, but not \texttt{Model}.
+\texttt{(\textless{}\textasciitilde{})} only works on \texttt{Model}s,
+\texttt{(\textless{}*\textasciitilde{}*)} only works on two \texttt{ModelS}s,
+and we had to define a different combinator
 \texttt{(\textless{}*\textasciitilde{})}.
 
 This is not a fundamental limitation! With \emph{DataKinds} and dependent types
@@ -381,7 +384,7 @@ package:
 \texttt{\textquotesingle{}Just\ b}, it will contain an \texttt{f\ b}. So if
 \texttt{p} is \texttt{\textquotesingle{}Just\ p\textquotesingle{}}, an
 \texttt{Option\ (BVar\ z)\ p} will contain a
-\texttt{BVar\ s\ p\textquotesingle{}}.
+\texttt{BVar\ z\ p\textquotesingle{}}.
 
 We can then re-define our previous types:
 
@@ -415,9 +418,7 @@ etc. to implement functions like \texttt{mapS} for free.
 
 Note that dependent types and DataKind shenanigans aren't necessary for any of
 this to work --- it just has the possibility to make things even more seamless
-and unified!
-
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+and unified.
 
 \hypertarget{a-practical-framework}{%
 \section{A Practical Framework}\label{a-practical-framework}}
@@ -499,8 +500,8 @@ the whole thing would become clumsy.
 \item
   \textbf{Functional Programming}. Higher-order functions and combinators that
   take functions and return functions. Again, this allows us to draw from
-  mathematical models directly, but also full control over how we reshape,
-  redefine, manipulate our models.
+  mathematical models directly, but also gives us full control over how we
+  reshape, redefine, manipulate our models.
 
   We aren't forced to adhere to a limited API provided for our models; it all is
   just normal function application and higher-order functions --- something that
@@ -549,8 +550,9 @@ the whole thing would become clumsy.
   functions, many of them manipulate parameter types, and almost all of them
   manipulate input and output types. Having a compiler that keeps track of this
   for you and lets you ask questions about them is essential. The compiler also
-  \emph{helps you write your code} --- it tells you what combinators are
-  available to use for what models you have.
+  \emph{helps you write your code} --- if you leave a ``typed hole'' in your
+  code, the compiler will tell you all of the combinators or values available
+  that can fit inside that hole, and it usually is exactly the one you need.
 
   And if you can state your desired model in terms of its types, sometimes the
   combinator applications and functions write themselves. They all act together
