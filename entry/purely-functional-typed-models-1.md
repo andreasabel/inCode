@@ -486,7 +486,7 @@ infixr 8 <~
 
 And now we have a way to chain models! Maybe even make a multiple-layer neural
 network? Let's see if we can get a two-layer model to learn
-[XOR](https://en.wikipedia.org/wiki/Exclusive_or)!
+[XOR](https://en.wikipedia.org/wiki/Exclusive_or) ...
 
 Our model is two feed-forward layers with logistic activation functions, with 4
 hidden layer units:
