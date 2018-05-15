@@ -62,7 +62,7 @@ recurrently
     -> ModelS p b  a       b
 recurrently f p x yLast = (y, y)
   where
-    y = f p (x #& yLast)
+    y = f p (x :&& yLast)
 ```
 
 In general though, it'd be nice to have *some function* of the previous output
@@ -79,7 +79,7 @@ recurrentlyWith
     -> ModelS p b  a       c
 recurrentlyWith store f p x yLast = (y, store y)
   where
-    y = f p (x #& yLast)
+    y = f p (x :&& yLast)
 ```
 
 Again, once we figure out the *type* our combinator has...the function *writes
