@@ -44,6 +44,10 @@ Haskell syntax/libraries to implement the points. The *backprop* library is
 roughly equivalent to [autograd](https://github.com/HIPS/autograd) in python, so
 all of the ideas apply there as well.
 
+The source code for the written code in this module is available [on
+github](https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs),
+if you want to follow along!
+
 Essence of a Model
 ------------------
 
@@ -466,7 +470,7 @@ softMax x = konst (1 / sumElements expx) * expx
 feedForwardSoftMax
     :: (KnownNat i, KnownNat o)
     => Model (L o i :& R o) (R i) (R o)
-feedForwardSoftMax wb = logistic . feedForward wb
+feedForwardSoftMax wb = softMax . feedForward wb
 ```
 
 We can even write a function to *compose* two models, keeping their two original

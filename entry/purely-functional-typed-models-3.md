@@ -23,6 +23,10 @@ we might have thought were standalone entities might just be derivable from
 other models using basic functional combinators. And the best part is that
 they're never *necessary*; just *helpful*.
 
+Again, if you want to follow along, the source code for the written code in this
+module is available [on
+github](https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs).
+
 Combinator Fun
 --------------
 

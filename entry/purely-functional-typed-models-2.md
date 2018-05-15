@@ -45,6 +45,10 @@ things don't fit so cleanly. Today, we're going to be looking at a whole
 different type of model ("time series" models) and see how they are different,
 but also how they are really the same.
 
+For following along, the source code for the written code in this module is all
+available [on
+github](https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs).
+
 Time Series Models
 ------------------
 
