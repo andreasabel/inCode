@@ -238,11 +238,12 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 ")
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L45-L365
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L45-L366
 
 data a :& b = !a :& !b
 
-pattern (:&&)
+pattern (:&&) :: (Backprop a, Backprop b, Reifies z W)
+              => BVar z a -> BVar z b -> BVar z (a :& b)
 
 linReg :: Model (Double :& Double) Double Double
 linReg (a :&& b) x = b * x + a
