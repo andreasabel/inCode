@@ -134,13 +134,13 @@ plus a bias:
 
 ![
 \\begin{aligned}
-s\_t & = W\_x \\mathbf{x}\_t + W\_s \\mathbf{s}\_{t-1} + \\mathbf{b} \\\\
-y\_t & = \\sigma(s\_t)
+s\_t & = \\sigma(y\_t) \\\\
+y\_t & = W\_x \\mathbf{x}\_t + W\_s \\mathbf{s}\_{t-1} + \\mathbf{b}
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0As_t%20%26%20%3D%20W_x%20%5Cmathbf%7Bx%7D_t%20%2B%20W_s%20%5Cmathbf%7Bs%7D_%7Bt-1%7D%20%2B%20%5Cmathbf%7Bb%7D%20%5C%5C%0Ay_t%20%26%20%3D%20%5Csigma%28s_t%29%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0As_t%20%26%20%3D%20%5Csigma%28y_t%29%20%5C%5C%0Ay_t%20%26%20%3D%20W_x%20%5Cmathbf%7Bx%7D_t%20%2B%20W_s%20%5Cmathbf%7Bs%7D_%7Bt-1%7D%20%2B%20%5Cmathbf%7Bb%7D%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-s_t & = W_x \mathbf{x}_t + W_s \mathbf{s}_{t-1} + \mathbf{b} \\
-y_t & = \sigma(s_t)
+s_t & = \sigma(y_t) \\
+y_t & = W_x \mathbf{x}_t + W_s \mathbf{s}_{t-1} + \mathbf{b}
 \end{aligned}
 ")
 
