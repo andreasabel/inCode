@@ -337,12 +337,12 @@ There's something neat we can do with stateful functions --- we can
 "[unroll](https://machinelearningmastery.com/rnn-unrolling/)" them by explicitly
 propagating their state through several inputs.
 
-This is illustrated very well by \[Christopher Olah\]\[colah\], who made a
-diagram that illustrates the idea very well:
+This is illustrated very well by [Christopher
+Olah](http://colah.github.io/posts/2015-09-NN-Types-FP/), who made a diagram
+that illustrates the idea very well:
 
 ![Christopher Olah's RNN Unrolling
 Diagram](/img/entries/functional-models/RNN-general.png "Unrolled RNN")
-\[colah\]: http://colah.github.io/posts/2015-09-NN-Types-FP/
 
 If we look at each one of those individual boxes, they all have two inputs
 (normal input, and previous state) and two outputs (normal output, new state).
