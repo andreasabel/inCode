@@ -325,7 +325,7 @@ f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
 <a class="sourceLine" id="cb24-9" data-line-number="9">    <span class="ot">-&gt;</span> s                  <span class="co">-- ^ primed state</span></a>
 <a class="sourceLine" id="cb24-10" data-line-number="10">prime f p <span class="fu">=</span> foldl&#39; <span class="fu">$</span> evalBP2 (\s x <span class="ot">-&gt;</span> snd <span class="fu">$</span> f (auto p) x s)</a></code></pre></div>
 <p>Then a function <code>feedback</code> that iterates a stateful model over and over again by feeding its previous output as its next input:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L252-L263</span></a>
+<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L252-L264</span></a>
 <a class="sourceLine" id="cb25-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb25-3" data-line-number="3">feedback</a>
 <a class="sourceLine" id="cb25-4" data-line-number="4"><span class="ot">    ::</span> (<span class="dt">Backprop</span> a, <span class="dt">Backprop</span> s)</a>
@@ -338,7 +338,8 @@ f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
 <a class="sourceLine" id="cb25-11" data-line-number="11">  <span class="kw">where</span></a>
 <a class="sourceLine" id="cb25-12" data-line-number="12">    go (x, s) <span class="fu">=</span> <span class="dt">Just</span> (x, (y, s&#39;))</a>
 <a class="sourceLine" id="cb25-13" data-line-number="13">      <span class="kw">where</span></a>
-<a class="sourceLine" id="cb25-14" data-line-number="14">        (y, s&#39;) <span class="fu">=</span> evalBP (uncurry <span class="dt">T2</span> <span class="fu">.</span> f (auto p) (auto x)) s</a></code></pre></div>
+<a class="sourceLine" id="cb25-14" data-line-number="14">        <span class="co">-- &#39;T2&#39; tuples up a pair of &#39;BVar&#39;s into a &#39;BVar&#39; of a tuple</span></a>
+<a class="sourceLine" id="cb25-15" data-line-number="15">        (y, s&#39;) <span class="fu">=</span> evalBP (uncurry <span class="dt">T2</span> <span class="fu">.</span> f (auto p) (auto x)) s</a></code></pre></div>
 <p>Now let’s prime our trained model over the first 19 items in our sine wave and start it running in feedback mode on the 20th item!</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> primed <span class="fu">=</span> prime    rnn trained <span class="dv">0</span>      (take <span class="dv">19</span> series)</a>
 <a class="sourceLine" id="cb26-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="kw">let</span> output <span class="fu">=</span> feedback rnn trained primed (series <span class="fu">!!</span> <span class="dv">19</span>)</a>

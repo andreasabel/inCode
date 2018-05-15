@@ -234,7 +234,7 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 ")
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L45-L364
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L45-L365
 
 data a :& b = !a :& !b
 

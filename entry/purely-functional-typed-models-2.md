@@ -586,7 +586,7 @@ Then a function `feedback` that iterates a stateful model over and over again by
 feeding its previous output as its next input:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L252-L263
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L252-L264
 
 feedback
     :: (Backprop a, Backprop s)
@@ -599,6 +599,7 @@ feedback f p s0 x0 = unfoldr go (x0, s0)
   where
     go (x, s) = Just (x, (y, s'))
       where
+        -- 'T2' tuples up a pair of 'BVar's into a 'BVar' of a tuple
         (y, s') = evalBP (uncurry T2 . f (auto p) (auto x)) s
 ```
 

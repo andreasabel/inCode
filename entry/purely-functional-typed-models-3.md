@@ -54,7 +54,7 @@ types" kinda deal --- you set up the function, and the compiler pretty much
 writes it for you, because the types guide the entire implementation:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L299-L305
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L300-L306
 
 recurrently
     :: (Backprop a, Backprop b)
@@ -70,7 +70,7 @@ be stored as the state. We can write this combinator as well, taking the
 function that transforms the previous output into the stored state:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L307-L314
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L308-L315
 
 recurrentlyWith
     :: (Backprop a, Backprop b)
@@ -105,7 +105,7 @@ vectors and concatenates them before doing anything:
 ``` {.haskell}
 -- | Concatenate two vectors
 (#) :: BVar z (R i) -> BVar z (R o) -> BVar z (R (i + o))
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L316-L319
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L317-L320
 
 ffOnSplit
     :: forall i o. (KnownNat i, KnownNat o)
@@ -132,7 +132,7 @@ Basically just a recurrent version of `feedForward`! If we factor out some of
 the manual uncurrying and pre-mapping, we get a nice functional definition:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L321-L324
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L322-L325
 
 fcrnn'
     :: (KnownNat i, KnownNat o)
@@ -160,7 +160,7 @@ using `headTail` and `&`, which splits a vector and adds an item to the end,
 respectively.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L326-L334
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L327-L335
 
 lagged
     :: (KnownNat n, 1 <= n)
@@ -177,7 +177,7 @@ What can we do with this? Well... we can write a general autoregressive model
 AR(p) of *any* degree, simply by lagging a fully connected ANN layer:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L336-L338
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L337-L339
 
 ar :: (KnownNat n, 1 <= n)
    => ModelS _ (R n) Double Double
@@ -191,7 +191,7 @@ write an AR(10) model by just using `ar @10`, and AR(20) model with `ar @20`,
 etc.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L340-L341
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L341-L342
 
 ar2' :: ModelS _ (R 2) Double Double
 ar2' = ar @2
