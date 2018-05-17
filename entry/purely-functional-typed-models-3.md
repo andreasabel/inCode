@@ -483,7 +483,8 @@ the whole thing would become clumsy.
 Almost all current neural network and deep learning frameworks implement the
 full features that are described here. *tensorflow* and related libraries all
 provide a wrapper around essentially pure graph API. You can get started with
-all of this right away in python with tools like \[autograd\]\[\].
+all of this right away in python with tools like
+[autograd](https://github.com/HIPS/autograd).
 
 What I'm really talking about isn't specifically about Haskell or *backprop*;
 it's more of a *functional approach* to these sorts of models. Currently right
