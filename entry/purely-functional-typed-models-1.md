@@ -569,8 +569,10 @@ and neural network libraries like
 [grenade](http://hackage.haskell.org/package/grenade-0.1.0) let you manipulate
 neural network layers in a composable way. My previous attempts at neural
 networks like [tensor-ops](https://github.com/mstksg/tensor-ops) also force a
-similar structure of composition of data types. However, I feel this is a bit
-limiting.
+similar structure of composition of data types. Frameworks like
+*[tensorflow](https://www.tensorflow.org/)* and
+*[caffe](http://caffe.berkeleyvision.org/)* also treat \[layer as
+data\]\[caffe-layers\]. However, I feel this is a bit limiting.
 
 You are forced to "compose" your layers in only the ways that the API of the
 data type gives you. You have to use the data type's "function composition"

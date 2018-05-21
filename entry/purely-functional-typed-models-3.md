@@ -498,7 +498,13 @@ types isn't just possible, it's immensely beneficial:
     API's require an explicit assumption or promise of purity, anyway, that
     cannot be enforced --- so what's the point?
 -   *Layers as objects* (or as data) is not necessary. *Layers as functions* is
-    the more faithful and extensible way.
+    the more faithful and extensible way. Almost all frameworks (like
+    *[tensorflow](https://www.tensorflow.org/)*,
+    *[caffe](http://caffe.berkeleyvision.org/)*,
+    *[grenade](http://hackage.haskell.org/package/grenade-0.1.0)*) fall into the
+    this
+    [layer-as-data](https://docs.google.com/presentation/d/1UeKXVgRvvxg9OUdh_UiC5G71UMscNPlvArsWER41PsU/edit#slide=id.gc2fcdcce7_216_264)
+    mentality.
 -   A functional and statically typed interface helps you, as a developer,
     *explore options* in ways that an imperative or untyped approach cannot.
     Removing the barrier between the math and the code helps with your thinking.
