@@ -198,8 +198,22 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>The point of this series is to show that a functional and pure API with static types isn’t just possible, it’s immensely beneficial:</p>
 <ul>
 <li>There is no need for an imperative API, even as a wrapper. Even imperative API’s require an explicit assumption or promise of purity, anyway, that cannot be enforced — so what’s the point?</li>
-<li><em>Layers as objects</em> (or as data) is not necessary. <em>Layers as functions</em> is the more faithful and extensible way. Almost all frameworks (like <em><a href="https://www.tensorflow.org/">tensorflow</a></em>, <em><a href="http://caffe.berkeleyvision.org/">caffe</a></em>, <em><a href="http://hackage.haskell.org/package/grenade-0.1.0">grenade</a></em>) fall into the this <a href="https://docs.google.com/presentation/d/1UeKXVgRvvxg9OUdh_UiC5G71UMscNPlvArsWER41PsU/edit#slide=id.gc2fcdcce7_216_264">layer-as-data</a> mentality.</li>
-<li>A functional and statically typed interface helps you, as a developer, <em>explore options</em> in ways that an imperative or untyped approach cannot. Removing the barrier between the math and the code helps with your thinking. It also guides how you look at combinators and creating models from others. Functional approaches also mean you have to think of no implicit state interactions behind the hood.</li>
+<li><p><em>Layers as objects</em> (or as data) is not necessary. <em>Layers as functions</em> is the more faithful and extensible way. Almost all frameworks (like <em><a href="https://www.tensorflow.org/">tensorflow</a></em>, <em><a href="http://caffe.berkeleyvision.org/">caffe</a></em>, <em><a href="http://hackage.haskell.org/package/grenade-0.1.0">grenade</a></em>) fall into the this <a href="https://docs.google.com/presentation/d/1UeKXVgRvvxg9OUdh_UiC5G71UMscNPlvArsWER41PsU/edit#slide=id.gc2fcdcce7_216_264">layer-as-data</a> mentality.</p>
+<p>For example, what if we wanted to turn a model <code>a -&gt; b</code> (predicting b’s from a’s) into a model <code>[a] -&gt; [b]</code> (predicting the contents of a list of b’s from the contents of a list of a’s)?</p>
+<p>In libraries like <em>tensorflow</em> and <em>caffe</em> and <em>grenade</em>, you might have to:</p>
+<ol type="1">
+<li>Create a new data structure</li>
+<li>Use the API of the layer data structure to implement a bunch of methods for your data structure</li>
+<li>Write a “forward” mode</li>
+<li>Write a “backwards” mode</li>
+<li>Define initializers for your data structure</li>
+<li>Write trainers/nudgers for your data structure</li>
+</ol>
+<p>But in this system where layers are functions, this is just:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="ot">overList ::</span> <span class="dt">Model</span> p a b <span class="ot">-&gt;</span> <span class="dt">Model</span> p [a] [b]</a>
+<a class="sourceLine" id="cb18-2" data-line-number="2">overList <span class="fu">=</span> fmap</a></code></pre></div>
+<p>There is some minor boilerplate to make the types line up (so it’s actually <code>\f -&gt; collectVars . map f . sequenceVar</code>), but that’s essentially what it is. No special data structure, no abstract API to work with…just normal functions.</p></li>
+<li><p>A functional and statically typed interface helps you, as a developer, <em>explore options</em> in ways that an imperative or untyped approach cannot. Removing the barrier between the math and the code helps with your thinking. It also guides how you look at combinators and creating models from others. Functional approaches also mean you have to think of no implicit state interactions behind the hood.</p></li>
 </ul>
 <p>In short, other similar frameworks might have some mix of of differentiable and “functional” programming, and some even with purity by contract. But it is specifically the combination of <em>all</em> of these (with static types) adds a lot of value in how you create and use and discover models.</p>
 <p>One thing I excluded from discussion here is performance. Performance is going to be up to the system you use for differentiable programming, and so is not something I can meaningfully talk about. My posts here are simply about interface, and how they can help shape your thought when designing your own models.</p>

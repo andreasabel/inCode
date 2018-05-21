@@ -648,7 +648,6 @@ The point of this series is to show that a functional and pure API with static
 types isn't just possible, it's immensely beneficial:
 
 \begin{itemize}
-\tightlist
 \item
   There is no need for an imperative API, even as a wrapper. Even imperative
   API's require an explicit assumption or promise of purity, anyway, that cannot
@@ -662,6 +661,46 @@ types isn't just possible, it's immensely beneficial:
   into the this
   \href{https://docs.google.com/presentation/d/1UeKXVgRvvxg9OUdh_UiC5G71UMscNPlvArsWER41PsU/edit\#slide=id.gc2fcdcce7_216_264}{layer-as-data}
   mentality.
+
+  For example, what if we wanted to turn a model \texttt{a\ -\textgreater{}\ b}
+  (predicting b's from a's) into a model
+  \texttt{{[}a{]}\ -\textgreater{}\ {[}b{]}} (predicting the contents of a list
+  of b's from the contents of a list of a's)?
+
+  In libraries like \emph{tensorflow} and \emph{caffe} and \emph{grenade}, you
+  might have to:
+
+  \begin{enumerate}
+  \def\labelenumi{\arabic{enumi}.}
+  \tightlist
+  \item
+    Create a new data structure
+  \item
+    Use the API of the layer data structure to implement a bunch of methods for
+    your data structure
+  \item
+    Write a ``forward'' mode
+  \item
+    Write a ``backwards'' mode
+  \item
+    Define initializers for your data structure
+  \item
+    Write trainers/nudgers for your data structure
+  \end{enumerate}
+
+  But in this system where layers are functions, this is just:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{overList ::} \DataTypeTok{Model}\NormalTok{ p a b }\OtherTok{->} \DataTypeTok{Model}\NormalTok{ p [a] [b]}
+\NormalTok{overList }\FunctionTok{=}\NormalTok{ fmap}
+\end{Highlighting}
+\end{Shaded}
+
+  There is some minor boilerplate to make the types line up (so it's actually
+  \texttt{\textbackslash{}f\ -\textgreater{}\ collectVars\ .\ map\ f\ .\ sequenceVar}),
+  but that's essentially what it is. No special data structure, no abstract API
+  to work with\ldots{}just normal functions.
 \item
   A functional and statically typed interface helps you, as a developer,
   \emph{explore options} in ways that an imperative or untyped approach cannot.
