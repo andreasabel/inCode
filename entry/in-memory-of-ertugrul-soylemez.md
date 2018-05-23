@@ -6,7 +6,7 @@ In Memory of Ertugrul Söylemez (1985 - 2018)
 
 I was heartbroken to [find out
 recently](https://byorgey.wordpress.com/2018/05/21/ertugrul-soylemez-1985-2018/)
-that [Ertugrul Solemez](http://ertes.eu/about.html) has passed away suddenly.
+that [Ertugrul Söylemez](http://ertes.eu/about.html) has passed away suddenly.
 Many have come forward to express their sadness about this passing and how much
 this has impacted the Haskell community, and how much of a loss it is for
 functional programming at large.
