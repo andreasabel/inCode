@@ -68,23 +68,23 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <li><p>We’re using the <code>DataKinds</code> extension to create both the <em>type</em> <code>DoorState</code> as well as the <em>kind</em> <code>DoorState</code>.</p>
 <p>Normally, <code>data DoorState = Opened | Closed | Locked</code> in Haskell defines the type <code>DoorState</code> and the value constructors <code>Opened</code>, <code>Closed</code>, and <code>Locked</code>.</p>
 <p>However, with <code>DataKinds</code>, that statement also defines a new <em>kind</em> <code>DoorState</code>, with <em>type</em> constructors <code>'Opened</code>, <code>'Closed</code>, and <code>'Locked</code>. (note the <code>'</code> ticks!)<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="ch">&#39;Opened</span></a>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>k &#39;<span class="dt">Opened</span></a>
 <a class="sourceLine" id="cb4-2" data-line-number="2"><span class="dt">DoorState</span></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="ch">&#39;Locked</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">ghci<span class="fu">&gt;</span> <span class="fu">:</span>k &#39;<span class="dt">Locked</span></a>
 <a class="sourceLine" id="cb4-4" data-line-number="4"><span class="dt">DoorState</span></a></code></pre></div></li>
 </ol>
 <ol start="3" type="1">
 <li><p>We’re defining the <code>Door</code> type with a <em>phantom parameter</em> <code>s</code>. It’s a phantom type because we don’t actually have any <em>values</em> of type <code>s</code> in our data type<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a> …the <code>s</code> is only just there as a dummy parameter for the type.</p>
 <p>We can use <code>UnsafeMkDoor</code> without ever using anything of type <code>s</code>. In reality, a real <code>Door</code> type would be a bit more complicated (and the direct <code>UnsafeMkDoor</code> constructor would be hidden).</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">UnsafeMkDoor</span> <span class="st">&quot;Birch&quot;</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Opened</span></a>
-<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="dt">Door</span> <span class="ch">&#39;Opened</span></a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">UnsafeMkDoor</span> <span class="st">&quot;Iron&quot;</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span></a>
-<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="dt">Door</span> <span class="ch">&#39;Locked</span></a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">UnsafeMkDoor</span> <span class="st">&quot;Birch&quot;</span><span class="ot"> ::</span> <span class="dt">Door</span> &#39;<span class="dt">Opened</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="dt">Door</span> &#39;<span class="dt">Opened</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">UnsafeMkDoor</span> <span class="st">&quot;Iron&quot;</span><span class="ot"> ::</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="dt">Door</span> &#39;<span class="dt">Locked</span></a></code></pre></div>
 <p>We can also use the <em>TypeApplications</em> extension to write this in a bit more convenient way –</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span><span class="ch">&#39;Opened &quot;Birch&quot;</span></a>
-<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="dt">Door</span> <span class="ch">&#39;Opened</span></a>
-<a class="sourceLine" id="cb6-3" data-line-number="3">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span><span class="ch">&#39;Locked &quot;Iron&quot;</span></a>
-<a class="sourceLine" id="cb6-4" data-line-number="4"><span class="dt">Door</span> <span class="ch">&#39;Locked</span></a></code></pre></div></li>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span>&#39;<span class="dt">Opened</span> <span class="st">&quot;Birch&quot;</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="dt">Door</span> &#39;<span class="dt">Opened</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span>&#39;<span class="dt">Locked</span> <span class="st">&quot;Iron&quot;</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4"><span class="dt">Door</span> &#39;<span class="dt">Locked</span></a></code></pre></div></li>
 </ol>
 <p>Alternatively, we can define <code>Door</code> using <a href="https://en.wikibooks.org/wiki/Haskell/GADT#Syntax"><em>GADT</em> syntax</a> (which requires the <code>GADTs</code> extension)<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a>.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Door</span><span class="ot"> ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
@@ -96,15 +96,15 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Well, right off the bat, we can write functions that expect only a certain type of <code>Door</code>, and return a specific type of <code>Door</code>:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L17-L18</span></a>
 <a class="sourceLine" id="cb8-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb8-3" data-line-number="3"><span class="ot">closeDoor ::</span> <span class="dt">Door</span> <span class="ch">&#39;Opened -&gt; Door &#39;</span><span class="dt">Closed</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3"><span class="ot">closeDoor ::</span> <span class="dt">Door</span> &#39;<span class="dt">Opened</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Closed</span></a>
 <a class="sourceLine" id="cb8-4" data-line-number="4">closeDoor (<span class="dt">UnsafeMkDoor</span> m) <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> m</a></code></pre></div>
 <p>So, the <code>closeDoor</code> function will <em>only</em> take a <code>Door 'Opened</code> (an opened door). And it will return a <code>Door 'Closed</code> (a closed door).</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> myDoor <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span><span class="ch">&#39;Opened &quot;Spruce&quot;</span></a>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> myDoor <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span>&#39;<span class="dt">Opened</span> <span class="st">&quot;Spruce&quot;</span></a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t myDoor</a>
-<a class="sourceLine" id="cb9-3" data-line-number="3"><span class="dt">Door</span> <span class="ch">&#39;Opened</span></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3"><span class="dt">Door</span> &#39;<span class="dt">Opened</span></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t closeDoor myDoor</a>
-<a class="sourceLine" id="cb9-5" data-line-number="5"><span class="dt">Door</span> <span class="ch">&#39;Closed</span></a>
-<a class="sourceLine" id="cb9-6" data-line-number="6">ghci<span class="fu">&gt;</span> <span class="kw">let</span> yourDoor <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span><span class="ch">&#39;Closed &quot;Acacia&quot;</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5"><span class="dt">Door</span> &#39;<span class="dt">Closed</span></a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">ghci<span class="fu">&gt;</span> <span class="kw">let</span> yourDoor <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span>&#39;<span class="dt">Closed</span> <span class="st">&quot;Acacia&quot;</span></a>
 <a class="sourceLine" id="cb9-7" data-line-number="7">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t closeDoor yourDoor</a>
 <a class="sourceLine" id="cb9-8" data-line-number="8"><span class="dt">TYPE</span> <span class="dt">ERROR</span><span class="fu">!</span>  <span class="dt">TYPE</span> <span class="dt">ERROR</span><span class="fu">!</span></a></code></pre></div>
 <p>You can think of this as a nice way of catching <em>logic errors</em> at compile-time. If your door type did not have its status in the type, the <code>closeDoor</code> could have been given a closed or locked door, and you’d have to handle and reject it at <em>runtime</em>.</p>
@@ -116,29 +116,29 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>With a couple of state transitions, we can write compositions that are type-checked to all be legal:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L20-L24</span></a>
 <a class="sourceLine" id="cb11-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb11-3" data-line-number="3"><span class="ot">lockDoor ::</span> <span class="dt">Door</span> <span class="ch">&#39;Closed -&gt; Door &#39;</span><span class="dt">Locked</span></a>
+<a class="sourceLine" id="cb11-3" data-line-number="3"><span class="ot">lockDoor ::</span> <span class="dt">Door</span> &#39;<span class="dt">Closed</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span></a>
 <a class="sourceLine" id="cb11-4" data-line-number="4">lockDoor (<span class="dt">UnsafeMkDoor</span> m) <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> m</a>
 <a class="sourceLine" id="cb11-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb11-6" data-line-number="6"><span class="ot">openDoor ::</span> <span class="dt">Door</span> <span class="ch">&#39;Closed -&gt; Door &#39;</span><span class="dt">Opened</span></a>
+<a class="sourceLine" id="cb11-6" data-line-number="6"><span class="ot">openDoor ::</span> <span class="dt">Door</span> &#39;<span class="dt">Closed</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Opened</span></a>
 <a class="sourceLine" id="cb11-7" data-line-number="7">openDoor (<span class="dt">UnsafeMkDoor</span> m) <span class="fu">=</span> (<span class="dt">UnsafeMkDoor</span> m)</a></code></pre></div>
 <div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t closeDoor <span class="fu">.</span> openDoor</a>
-<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="dt">Door</span> <span class="ch">&#39;Closed -&gt; Door &#39;</span><span class="dt">Closed</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="dt">Door</span> &#39;<span class="dt">Closed</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Closed</span></a>
 <a class="sourceLine" id="cb12-3" data-line-number="3">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t lockDoor <span class="fu">.</span> closeDoor <span class="fu">.</span> openDoor</a>
-<a class="sourceLine" id="cb12-4" data-line-number="4"><span class="dt">Door</span> <span class="ch">&#39;Closed -&gt; Door &#39;</span><span class="dt">Locked</span></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4"><span class="dt">Door</span> &#39;<span class="dt">Closed</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span></a>
 <a class="sourceLine" id="cb12-5" data-line-number="5">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t lockDoor <span class="fu">.</span> openDoor</a>
 <a class="sourceLine" id="cb12-6" data-line-number="6"><span class="dt">TYPE</span> <span class="dt">ERROR</span><span class="fu">!</span>  <span class="dt">TYPE</span> <span class="dt">ERROR</span><span class="fu">!</span>  <span class="dt">TYPE</span> <span class="dt">ERROR</span><span class="fu">!</span></a></code></pre></div>
 <p>Because of the type of <code>lockDoor</code>, you <em>cannot</em> lock an opened door! Don’t even try! You’d have to close it first.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> myDoor <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span><span class="ch">&#39;Opened &quot;Spruce&quot;</span></a>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> myDoor <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span>&#39;<span class="dt">Opened</span> <span class="st">&quot;Spruce&quot;</span></a>
 <a class="sourceLine" id="cb13-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t myDoor</a>
-<a class="sourceLine" id="cb13-3" data-line-number="3"><span class="dt">Door</span> <span class="ch">&#39;Opened</span></a>
+<a class="sourceLine" id="cb13-3" data-line-number="3"><span class="dt">Door</span> &#39;<span class="dt">Opened</span></a>
 <a class="sourceLine" id="cb13-4" data-line-number="4">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t lockDoor</a>
-<a class="sourceLine" id="cb13-5" data-line-number="5"><span class="dt">Door</span> <span class="ch">&#39;Closed -&gt; Door &#39;</span><span class="dt">Closed</span></a>
+<a class="sourceLine" id="cb13-5" data-line-number="5"><span class="dt">Door</span> &#39;<span class="dt">Closed</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Closed</span></a>
 <a class="sourceLine" id="cb13-6" data-line-number="6">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t lockDoor myDoor</a>
 <a class="sourceLine" id="cb13-7" data-line-number="7"><span class="dt">TYPE</span> <span class="dt">ERROR</span><span class="fu">!</span>  <span class="dt">TYPE</span> <span class="dt">ERROR</span><span class="fu">!</span>  <span class="dt">TYPE</span> <span class="dt">ERROR</span><span class="fu">!</span></a>
 <a class="sourceLine" id="cb13-8" data-line-number="8">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t closeDoor myDoor</a>
-<a class="sourceLine" id="cb13-9" data-line-number="9"><span class="dt">Door</span> <span class="ch">&#39;Closed</span></a>
+<a class="sourceLine" id="cb13-9" data-line-number="9"><span class="dt">Door</span> &#39;<span class="dt">Closed</span></a>
 <a class="sourceLine" id="cb13-10" data-line-number="10">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t lockDoor (closeDoor myDoor)</a>
-<a class="sourceLine" id="cb13-11" data-line-number="11"><span class="dt">Door</span> <span class="ch">&#39;Locked</span></a></code></pre></div>
+<a class="sourceLine" id="cb13-11" data-line-number="11"><span class="dt">Door</span> &#39;<span class="dt">Locked</span></a></code></pre></div>
 <p><code>lockDoor</code> expects a <code>Door 'Closed</code>, so if you give it a <code>Door 'Opened</code>, that’s a static compile-time type error. But, <code>closeDoor</code> takes a <code>Door 'Opened</code> and returns a <code>Door 'Closed</code> – so <em>that</em> is something that you can call <code>lockDoor</code> with!</p>
 <h3 id="the-phantom-menace">The Phantom Menace</h3>
 <p>However, in standard Haskell, we quickly run into some practical problems if we program with phantom types this way.</p>
@@ -157,8 +157,8 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb16-3" data-line-number="3">mkDoor <span class="dt">Closed</span> <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span></a>
 <a class="sourceLine" id="cb16-4" data-line-number="4">mkDoor <span class="dt">Locked</span> <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span></a></code></pre></div>
 <p>Unfortunately, that’s not how types work in Haskell. Remember that for a polymorphic type <code>forall s. DoorState -&gt; String -&gt; Door s</code>, the <em>caller</em> picks the type variable.</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t mkDoor <span class="dt">Opened</span> <span class="st">&quot;Acacia&quot;</span><span class="ot"> ::</span> <span class="dt">Door</span> <span class="ch">&#39;Closed</span></a>
-<a class="sourceLine" id="cb17-2" data-line-number="2"><span class="dt">Door</span> <span class="ch">&#39;Closed</span></a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t mkDoor <span class="dt">Opened</span> <span class="st">&quot;Acacia&quot;</span><span class="ot"> ::</span> <span class="dt">Door</span> &#39;<span class="dt">Closed</span></a>
+<a class="sourceLine" id="cb17-2" data-line-number="2"><span class="dt">Door</span> &#39;<span class="dt">Closed</span></a></code></pre></div>
 <p>Oops!</p>
 <h3 id="the-fundamental-issue-in-haskell">The Fundamental Issue in Haskell</h3>
 <p>We’ve hit upon a fundamental issue in Haskell’s type system: <strong>type erasure</strong>. In Haskell, types only exist <em>at compile-time</em>, for help with type-checking. They are completely erased at runtime.</p>
@@ -169,22 +169,22 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L26-L29</span></a>
 <a class="sourceLine" id="cb18-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb18-3" data-line-number="3"><span class="kw">data</span> <span class="dt">SingDS</span><span class="ot"> ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb18-4" data-line-number="4">    <span class="dt">SOpened</span><span class="ot"> ::</span> <span class="dt">SingDS</span> <span class="ch">&#39;Opened</span></a>
-<a class="sourceLine" id="cb18-5" data-line-number="5">    <span class="dt">SClosed</span><span class="ot"> ::</span> <span class="dt">SingDS</span> <span class="ch">&#39;Closed</span></a>
-<a class="sourceLine" id="cb18-6" data-line-number="6">    <span class="dt">SLocked</span><span class="ot"> ::</span> <span class="dt">SingDS</span> <span class="ch">&#39;Locked</span></a></code></pre></div>
+<a class="sourceLine" id="cb18-4" data-line-number="4">    <span class="dt">SOpened</span><span class="ot"> ::</span> <span class="dt">SingDS</span> &#39;<span class="dt">Opened</span></a>
+<a class="sourceLine" id="cb18-5" data-line-number="5">    <span class="dt">SClosed</span><span class="ot"> ::</span> <span class="dt">SingDS</span> &#39;<span class="dt">Closed</span></a>
+<a class="sourceLine" id="cb18-6" data-line-number="6">    <span class="dt">SLocked</span><span class="ot"> ::</span> <span class="dt">SingDS</span> &#39;<span class="dt">Locked</span></a></code></pre></div>
 <p>Here we’re using <em>GADT syntax</em> again (but to make an actual GADT). (Also note that <code>Type</code> is a synonym for the <code>*</code> kind, exported from the <em>Data.Kind</em> module) So, if we use <code>SOpened</code>, we will get a <code>SingDS 'Opened</code>. And if we have a <code>SingDS 'Opened</code>, we know that it was constructed using <code>SOpened</code>. Essentially, this gives us three values:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="dt">SOpened</span><span class="ot"> ::</span> <span class="dt">SingDS</span> <span class="ch">&#39;Opened</span></a>
-<a class="sourceLine" id="cb19-2" data-line-number="2"><span class="dt">SClosed</span><span class="ot"> ::</span> <span class="dt">SingDS</span> <span class="ch">&#39;Closed</span></a>
-<a class="sourceLine" id="cb19-3" data-line-number="3"><span class="dt">SLocked</span><span class="ot"> ::</span> <span class="dt">SingDS</span> <span class="ch">&#39;Locked</span></a></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="dt">SOpened</span><span class="ot"> ::</span> <span class="dt">SingDS</span> &#39;<span class="dt">Opened</span></a>
+<a class="sourceLine" id="cb19-2" data-line-number="2"><span class="dt">SClosed</span><span class="ot"> ::</span> <span class="dt">SingDS</span> &#39;<span class="dt">Closed</span></a>
+<a class="sourceLine" id="cb19-3" data-line-number="3"><span class="dt">SLocked</span><span class="ot"> ::</span> <span class="dt">SingDS</span> &#39;<span class="dt">Locked</span></a></code></pre></div>
 <h3 id="the-power-of-the-pattern-match">The Power of the Pattern Match</h3>
 <p>The power of singletons is that we can now <em>pattern match</em> on types, essentially.</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L17-L35</span></a>
 <a class="sourceLine" id="cb20-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb20-3" data-line-number="3"><span class="ot">closeDoor ::</span> <span class="dt">Door</span> <span class="ch">&#39;Opened -&gt; Door &#39;</span><span class="dt">Closed</span></a>
+<a class="sourceLine" id="cb20-3" data-line-number="3"><span class="ot">closeDoor ::</span> <span class="dt">Door</span> &#39;<span class="dt">Opened</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Closed</span></a>
 <a class="sourceLine" id="cb20-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb20-5" data-line-number="5"><span class="ot">lockDoor ::</span> <span class="dt">Door</span> <span class="ch">&#39;Closed -&gt; Door &#39;</span><span class="dt">Locked</span></a>
+<a class="sourceLine" id="cb20-5" data-line-number="5"><span class="ot">lockDoor ::</span> <span class="dt">Door</span> &#39;<span class="dt">Closed</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span></a>
 <a class="sourceLine" id="cb20-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb20-7" data-line-number="7"><span class="ot">lockAnyDoor ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span></a>
+<a class="sourceLine" id="cb20-7" data-line-number="7"><span class="ot">lockAnyDoor ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span></a>
 <a class="sourceLine" id="cb20-8" data-line-number="8">lockAnyDoor sng door <span class="fu">=</span> <span class="kw">case</span> sng <span class="kw">of</span></a>
 <a class="sourceLine" id="cb20-9" data-line-number="9">    <span class="dt">SOpened</span> <span class="ot">-&gt;</span> lockDoor (closeDoor door) <span class="co">-- in this branch, s is &#39;Opened</span></a>
 <a class="sourceLine" id="cb20-10" data-line-number="10">    <span class="dt">SClosed</span> <span class="ot">-&gt;</span> lockDoor door             <span class="co">-- in this branch, s is &#39;Closed</span></a>
@@ -200,7 +200,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 </ul>
 <p>Essentially, our singletons give us <em>runtime values</em> that can be used as <em>witnesses</em> for types and type variables. These values exist at runtime, so they “bypass” type erasure. Types themselves are directly erased, but we can hold on to them using these runtime tokens when we need them.</p>
 <p>Note that we can also write <code>lockAnyDoor</code> using the <em>LambdaCase</em> extension syntactic sugar, which I think offers a lot of extra insight:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="ot">lockAnyDoor ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> (<span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked)</span></a>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="ot">lockAnyDoor ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> (<span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span>)</a>
 <a class="sourceLine" id="cb21-2" data-line-number="2">lockAnyDoor <span class="fu">=</span> \<span class="kw">case</span></a>
 <a class="sourceLine" id="cb21-3" data-line-number="3">    <span class="dt">SOpened</span> <span class="ot">-&gt;</span> lockDoor <span class="fu">.</span> closeDoor  <span class="co">-- in this branch, s is &#39;Opened</span></a>
 <a class="sourceLine" id="cb21-4" data-line-number="4">    <span class="dt">SClosed</span> <span class="ot">-&gt;</span> lockDoor              <span class="co">-- in this branch, s is &#39;Closed</span></a>
@@ -239,30 +239,30 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb25-3" data-line-number="3"><span class="kw">class</span> <span class="dt">SingDSI</span> s <span class="kw">where</span></a>
 <a class="sourceLine" id="cb25-4" data-line-number="4"><span class="ot">    singDS ::</span> <span class="dt">SingDS</span> s</a>
 <a class="sourceLine" id="cb25-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb25-6" data-line-number="6"><span class="kw">instance</span> <span class="dt">SingDSI</span> <span class="ch">&#39;Opened where</span></a>
+<a class="sourceLine" id="cb25-6" data-line-number="6"><span class="kw">instance</span> <span class="dt">SingDSI</span> &#39;<span class="dt">Opened</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb25-7" data-line-number="7">    singDS <span class="fu">=</span> <span class="dt">SOpened</span></a>
-<a class="sourceLine" id="cb25-8" data-line-number="8"><span class="kw">instance</span> <span class="dt">SingDSI</span> <span class="ch">&#39;Closed where</span></a>
+<a class="sourceLine" id="cb25-8" data-line-number="8"><span class="kw">instance</span> <span class="dt">SingDSI</span> &#39;<span class="dt">Closed</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb25-9" data-line-number="9">    singDS <span class="fu">=</span> <span class="dt">SClosed</span></a>
-<a class="sourceLine" id="cb25-10" data-line-number="10"><span class="kw">instance</span> <span class="dt">SingDSI</span> <span class="ch">&#39;Locked where</span></a>
+<a class="sourceLine" id="cb25-10" data-line-number="10"><span class="kw">instance</span> <span class="dt">SingDSI</span> &#39;<span class="dt">Locked</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb25-11" data-line-number="11">    singDS <span class="fu">=</span> <span class="dt">SLocked</span></a></code></pre></div>
 <p>(Note that <em>it’s impossible</em> to write our <code>SingDSI</code> instances improperly! GHC checks to make sure that this is <em>correct</em>)</p>
 <p>And so now we can do:</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L55-L59</span></a>
 <a class="sourceLine" id="cb26-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb26-3" data-line-number="3"><span class="ot">lockAnyDoor_ ::</span> <span class="dt">SingDSI</span> s <span class="ot">=&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span></a>
+<a class="sourceLine" id="cb26-3" data-line-number="3"><span class="ot">lockAnyDoor_ ::</span> <span class="dt">SingDSI</span> s <span class="ot">=&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span></a>
 <a class="sourceLine" id="cb26-4" data-line-number="4">lockAnyDoor_ <span class="fu">=</span> lockAnyDoor singDS</a>
 <a class="sourceLine" id="cb26-5" data-line-number="5"></a>
 <a class="sourceLine" id="cb26-6" data-line-number="6"><span class="ot">doorStatus_ ::</span> <span class="dt">SingDSI</span> s <span class="ot">=&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">DoorState</span></a>
 <a class="sourceLine" id="cb26-7" data-line-number="7">doorStatus_ <span class="fu">=</span> doorStatus singDS</a></code></pre></div>
 <p>Here, type inference will tell GHC that you want <code>singDS :: SingDS s</code>, and it will pull out the proper singleton for the door you want to check!</p>
 <p>Now, we can call <code>lockAnyDoor_</code> <em>without passing in</em> a singleton, explicitly!</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> myDoor <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span><span class="ch">&#39;Opened &quot;Birch&quot;</span></a>
+<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> myDoor <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span>&#39;<span class="dt">Opened</span> <span class="st">&quot;Birch&quot;</span></a>
 <a class="sourceLine" id="cb27-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t lockAnyDoor <span class="dt">SOpened</span> myDoor <span class="co">-- our original method!</span></a>
-<a class="sourceLine" id="cb27-3" data-line-number="3"><span class="dt">Door</span> <span class="ch">&#39;Locked</span></a>
+<a class="sourceLine" id="cb27-3" data-line-number="3"><span class="dt">Door</span> &#39;<span class="dt">Locked</span></a>
 <a class="sourceLine" id="cb27-4" data-line-number="4">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t lockAnyDoor singDS myDoor  <span class="co">-- the power of type inference!</span></a>
-<a class="sourceLine" id="cb27-5" data-line-number="5"><span class="dt">Door</span> <span class="ch">&#39;Locked</span></a>
+<a class="sourceLine" id="cb27-5" data-line-number="5"><span class="dt">Door</span> &#39;<span class="dt">Locked</span></a>
 <a class="sourceLine" id="cb27-6" data-line-number="6">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t lockAnyDoor_ myDoor        <span class="co">-- no explicit singleton being passed!</span></a>
-<a class="sourceLine" id="cb27-7" data-line-number="7"><span class="dt">Door</span> <span class="ch">&#39;Locked</span></a></code></pre></div>
+<a class="sourceLine" id="cb27-7" data-line-number="7"><span class="dt">Door</span> &#39;<span class="dt">Locked</span></a></code></pre></div>
 <h4 id="the-same-power">The Same Power</h4>
 <p>In Haskell, a constraint <code>SingDSI s =&gt;</code> is essentially the same as passing in <code>SingDS s</code> explicitly. Either way, you are passing in a runtime witness that your function can use. You can think of <code>SingDSI s =&gt;</code> as passing it in <em>implicitly</em>, and <code>SingDS s -&gt;</code> as passing it in <em>explicitly</em>.</p>
 <p>So, it’s important to remember that <code>lockAnyDoor</code> and <code>lockAnyDoor_</code> are the “same function”, with the same power. They are just written in different styles – <code>lockAnyDoor</code> is written in explicit style, and <code>lockAnyDoor_</code> is written in implicit style.</p>
@@ -286,7 +286,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Now, we can run our implicit functions (like <code>lockAnyDoor_</code>) by giving them explicit inputs:</p>
 <div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L67-L68</span></a>
 <a class="sourceLine" id="cb29-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb29-3" data-line-number="3"><span class="ot">lockAnyDoor__ ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked</span></a>
+<a class="sourceLine" id="cb29-3" data-line-number="3"><span class="ot">lockAnyDoor__ ::</span> <span class="dt">SingDS</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span></a>
 <a class="sourceLine" id="cb29-4" data-line-number="4">lockAnyDoor__ s d <span class="fu">=</span> withSingDSI s (lockAnyDoor_ d)</a></code></pre></div>
 <p>And the cycle begins anew.</p>
 <p>One interesting thing to point out – note that the type of <code>withSingDSI</code> is very similar to the type of another common combinator:</p>
@@ -301,9 +301,9 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb31-4" data-line-number="4">mkDoor _ <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span></a></code></pre></div>
 <p>We take advantage of the fact that <code>SingDS s</code> “locks in” the <code>s</code> type variable for <code>Door s</code>. We can call it now with values of <code>SingDS</code>:</p>
 <div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb32-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t mkDoor <span class="dt">SOpened</span> <span class="st">&quot;Oak&quot;</span></a>
-<a class="sourceLine" id="cb32-2" data-line-number="2"><span class="dt">Door</span> <span class="ch">&#39;Opened</span></a>
+<a class="sourceLine" id="cb32-2" data-line-number="2"><span class="dt">Door</span> &#39;<span class="dt">Opened</span></a>
 <a class="sourceLine" id="cb32-3" data-line-number="3">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t mkDoor <span class="dt">SLocked</span> <span class="st">&quot;Spruce&quot;</span></a>
-<a class="sourceLine" id="cb32-4" data-line-number="4"><span class="dt">Door</span> <span class="ch">&#39;Locked</span></a></code></pre></div>
+<a class="sourceLine" id="cb32-4" data-line-number="4"><span class="dt">Door</span> &#39;<span class="dt">Locked</span></a></code></pre></div>
 <p>Now we can’t do something silly like pass in <code>SLocked</code> to get a <code>Door 'Opened</code>.</p>
 <h2 id="the-singletons-library">The Singletons Library</h2>
 <p><em>(The code for this post-singletons section is available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs">on github</a>)</em></p>
@@ -312,7 +312,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="kw">data</span> <span class="dt">DoorState</span> <span class="fu">=</span> <span class="dt">Opened</span> <span class="fu">|</span> <span class="dt">Closed</span> <span class="fu">|</span> <span class="dt">Locked</span></a>
 <a class="sourceLine" id="cb33-2" data-line-number="2">  <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</a>
 <a class="sourceLine" id="cb33-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb33-4" data-line-number="4">genSingletons [<span class="ch">&#39;&#39;</span><span class="dt">DoorState</span>]</a>
+<a class="sourceLine" id="cb33-4" data-line-number="4">genSingletons [&#39;&#39;<span class="dt">DoorState</span>]</a>
 <a class="sourceLine" id="cb33-5" data-line-number="5"></a>
 <a class="sourceLine" id="cb33-6" data-line-number="6"><span class="co">-- or</span></a>
 <a class="sourceLine" id="cb33-7" data-line-number="7"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L17-L20</span></a>
@@ -324,27 +324,27 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>This generates, for us:</p>
 <div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb34-1" data-line-number="1"><span class="co">-- not the actual code, but essentially what happens</span></a>
 <a class="sourceLine" id="cb34-2" data-line-number="2"><span class="kw">data</span> <span class="dt">Sing</span><span class="ot"> ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb34-3" data-line-number="3">    <span class="dt">SOpened</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;Opened</span></a>
-<a class="sourceLine" id="cb34-4" data-line-number="4">    <span class="dt">SClosed</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;Closed</span></a>
-<a class="sourceLine" id="cb34-5" data-line-number="5">    <span class="dt">SLocked</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;Locked</span></a></code></pre></div>
+<a class="sourceLine" id="cb34-3" data-line-number="3">    <span class="dt">SOpened</span><span class="ot"> ::</span> <span class="dt">Sing</span> &#39;<span class="dt">Opened</span></a>
+<a class="sourceLine" id="cb34-4" data-line-number="4">    <span class="dt">SClosed</span><span class="ot"> ::</span> <span class="dt">Sing</span> &#39;<span class="dt">Closed</span></a>
+<a class="sourceLine" id="cb34-5" data-line-number="5">    <span class="dt">SLocked</span><span class="ot"> ::</span> <span class="dt">Sing</span> &#39;<span class="dt">Locked</span></a></code></pre></div>
 <p><code>Sing</code> is a poly-kinded type constructor (a “data family”). <code>STrue :: Sing 'True</code> is the singleton for <code>'True</code>, <code>SJust SOpened :: Sing ('Just 'Opened)</code> is the singleton for <code>'Just 'Opened</code>, etc.</p>
 <p>It also generates us instances for <code>SingI</code>, a poly-kinded typeclass:</p>
-<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb35-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">SingI</span> <span class="ch">&#39;Opened where</span></a>
+<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb35-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">SingI</span> &#39;<span class="dt">Opened</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb35-2" data-line-number="2">    sing <span class="fu">=</span> <span class="dt">SOpened</span></a>
-<a class="sourceLine" id="cb35-3" data-line-number="3"><span class="kw">instance</span> <span class="dt">SingI</span> <span class="ch">&#39;Closed where</span></a>
+<a class="sourceLine" id="cb35-3" data-line-number="3"><span class="kw">instance</span> <span class="dt">SingI</span> &#39;<span class="dt">Closed</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb35-4" data-line-number="4">    sing <span class="fu">=</span> <span class="dt">SClosed</span></a>
-<a class="sourceLine" id="cb35-5" data-line-number="5"><span class="kw">instance</span> <span class="dt">SingI</span> <span class="ch">&#39;Locked where</span></a>
+<a class="sourceLine" id="cb35-5" data-line-number="5"><span class="kw">instance</span> <span class="dt">SingI</span> &#39;<span class="dt">Locked</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb35-6" data-line-number="6">    sing <span class="fu">=</span> <span class="dt">SLocked</span></a></code></pre></div>
 <p>Which is basically our <code>SingDSI</code> typeclass, except we have instances for singletons of all kinds! (heh) There’s a <code>SingI</code> instance for <code>'True</code>, a <code>SingI</code> instance for <code>10</code>, a <code>SingI</code> instance for <code>'Just 'Opened</code>, etc.:</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb36-1" data-line-number="1">ghci<span class="fu">&gt;</span><span class="ot"> sing ::</span> <span class="dt">Sing</span> <span class="ch">&#39;True</span></a>
+<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb36-1" data-line-number="1">ghci<span class="fu">&gt;</span><span class="ot"> sing ::</span> <span class="dt">Sing</span> &#39;<span class="dt">True</span></a>
 <a class="sourceLine" id="cb36-2" data-line-number="2"><span class="dt">STrue</span></a>
-<a class="sourceLine" id="cb36-3" data-line-number="3">ghci<span class="fu">&gt;</span><span class="ot"> sing ::</span> <span class="dt">Sing</span> (<span class="ch">&#39;Just &#39;</span><span class="dt">Opened</span>)</a>
+<a class="sourceLine" id="cb36-3" data-line-number="3">ghci<span class="fu">&gt;</span><span class="ot"> sing ::</span> <span class="dt">Sing</span> (&#39;<span class="dt">Just</span> &#39;<span class="dt">Opened</span>)</a>
 <a class="sourceLine" id="cb36-4" data-line-number="4"><span class="dt">SJust</span> <span class="dt">SOpened</span></a></code></pre></div>
 <p>We also have <code>withSingI</code>, which is equivalent to our <code>withSingDSI</code> function earlier.<a href="#fn6" class="footnote-ref" id="fnref6"><sup>6</sup></a></p>
 <div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="ot">withSingI ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> (forall r<span class="fu">.</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> r) <span class="ot">-&gt;</span> r</a></code></pre></div>
 <p>Note that if you have singletons for a kind <code>k</code>, you also have instances for kind <code>Maybe k</code>, as well. And also for <code>[k]</code>, even! The fact that we have a unified way of working with and manipulating singletons of so many different types is a major advantage of using the <em>singletons</em> library to manage your singletons instead of writing them yourself.</p>
 <div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">SOpened</span> <span class="ot">`SCons`</span> <span class="dt">SClosed</span> <span class="ot">`SCons`</span> <span class="dt">SLocked</span> <span class="ot">`SCons`</span> <span class="dt">SNil</span></a>
-<a class="sourceLine" id="cb38-2" data-line-number="2"><span class="dt">Sing</span> <span class="ch">&#39;[ &#39;</span><span class="dt">Opened</span>, <span class="ch">&#39;Closed, &#39;</span><span class="dt">Locked</span> ]</a>
+<a class="sourceLine" id="cb38-2" data-line-number="2"><span class="dt">Sing</span> &#39;[ &#39;<span class="dt">Opened</span>, &#39;<span class="dt">Closed</span>, &#39;<span class="dt">Locked</span> ]</a>
 <a class="sourceLine" id="cb38-3" data-line-number="3"><span class="co">-- &#39;SCons is the singleton for `:` (cons),</span></a>
 <a class="sourceLine" id="cb38-4" data-line-number="4"><span class="co">-- and &#39;SNil is the singleton for `[]` (nil)</span></a></code></pre></div>
 <p>(Remember that, because of <code>DataKinds</code>, <code>Maybe</code> is a kind constructor, who has two type constructors, the type <code>'Nothing</code> and the type constructor <code>'Just :: k -&gt; Maybe k</code>)</p>
@@ -356,9 +356,9 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <li>The <em>type</em> <code>DoorState</code>, whose value constructors are <code>Opened</code>, <code>Closed</code>, and <code>Locked</code>.</li>
 <li>The <em>kind</em> <code>DoorState</code>, whose type constructors are <code>'Opened</code>, <code>'Closed</code>, and <code>'Locked</code></li>
 <li><p>The singletons for <code>'Opened</code>, <code>'Closed</code>, and <code>'Locked</code>:</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="dt">SOpened</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;Opened</span></a>
-<a class="sourceLine" id="cb39-2" data-line-number="2"><span class="dt">SClosed</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;Closed</span></a>
-<a class="sourceLine" id="cb39-3" data-line-number="3"><span class="dt">SLocked</span><span class="ot"> ::</span> <span class="dt">Sing</span> <span class="ch">&#39;Locked</span></a></code></pre></div></li>
+<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="dt">SOpened</span><span class="ot"> ::</span> <span class="dt">Sing</span> &#39;<span class="dt">Opened</span></a>
+<a class="sourceLine" id="cb39-2" data-line-number="2"><span class="dt">SClosed</span><span class="ot"> ::</span> <span class="dt">Sing</span> &#39;<span class="dt">Closed</span></a>
+<a class="sourceLine" id="cb39-3" data-line-number="3"><span class="dt">SLocked</span><span class="ot"> ::</span> <span class="dt">Sing</span> &#39;<span class="dt">Locked</span></a></code></pre></div></li>
 <li><p>The <code>SingI</code> instances for <code>'Opened</code>, <code>'Closed</code>, and <code>'Locked'</code></p></li>
 </ol>
 <p>Kind of confusing, and in the future, when we have real dependent types, we can combine all of these manifestations into the <em>one</em> thing. But for now, we do have to deal with converting between them, and for that, <em>singletons</em> generates for us <code>fromSing :: Sing (s :: DoorState) -&gt; DoorState</code>. <code>fromSing</code> takes us from singletons to term-level values (<em>reflection</em>):</p>
@@ -381,12 +381,12 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <li><p>Write a function to unlock a door, but only if the user enters an odd number (as a password).</p>
 <div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L60-L60</span></a>
 <a class="sourceLine" id="cb41-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb41-3" data-line-number="3"><span class="ot">unlockDoor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> <span class="ch">&#39;Locked -&gt; Maybe (Door &#39;</span><span class="dt">Closed</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb41-3" data-line-number="3"><span class="ot">unlockDoor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> &#39;<span class="dt">Closed</span>)</a></code></pre></div>
 <p>It should return a closed door in <code>Just</code> if the caller gives an odd number, or <code>Nothing</code> otherwise.</p></li>
 <li><p>Write a function that can open any door, taking a password, in “implicit Sing” style:</p>
 <div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L65-L65</span></a>
 <a class="sourceLine" id="cb42-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb42-3" data-line-number="3"><span class="ot">openAnyDoor ::</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> <span class="ch">&#39;Opened)</span></a></code></pre></div>
+<a class="sourceLine" id="cb42-3" data-line-number="3"><span class="ot">openAnyDoor ::</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> &#39;<span class="dt">Opened</span>)</a></code></pre></div>
 <p>This should be written in terms of <code>unlockDoor</code> and <code>openDoor</code> (see above) – that is, you <strong>should not</strong> use <code>UnsafeMkDoor</code> directly for <code>openAnyDoor</code>.</p>
 <p>If the door is already unlocked or opened, it should ignore the <code>Int</code> input.</p></li>
 </ol>

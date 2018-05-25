@@ -230,7 +230,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb17-4" data-line-number="4">    {<span class="ot"> _psOps  ::</span> <span class="dt">P.PointedList</span> <span class="dt">Op</span></a>
 <a class="sourceLine" id="cb17-5" data-line-number="5">    ,<span class="ot"> _psRegs ::</span> <span class="dt">M.Map</span> <span class="dt">Char</span> <span class="dt">Int</span></a>
 <a class="sourceLine" id="cb17-6" data-line-number="6">    }</a>
-<a class="sourceLine" id="cb17-7" data-line-number="7">makeClassy <span class="ch">&#39;&#39;</span><span class="dt">ProgState</span></a></code></pre></div>
+<a class="sourceLine" id="cb17-7" data-line-number="7">makeClassy &#39;&#39;<span class="dt">ProgState</span></a></code></pre></div>
 <p>We store the current program and program head with the <code>PointedList</code>, and also represent the register contents with a <code>Map Char Int</code>.</p>
 <h4 id="brief-aside-on-lenses-with-state">Brief Aside on Lenses with State</h4>
 <p>We’re going to be implementing our interpreters using <em><a href="https://hackage.haskell.org/package/lens">lens</a></em> machinery. Keep in mind that this isn’t necessary — to me, this just makes things a lot simpler. Using <em>lens</em> with classy lenses is one of the things that make programming against <code>State</code> and <code>MonadState</code> with non-trivial state bearable for me, personally! However, keep in mind that the lens aspect is more or less unrelated to the interpreter pattern and is not necessary for it. We’re just using it here to make <code>State</code> and <code>MonadState</code> a little nicer to work with!</p>
@@ -329,7 +329,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb26-4" data-line-number="4">    {<span class="ot"> _tState   ::</span> <span class="dt">ProgState</span></a>
 <a class="sourceLine" id="cb26-5" data-line-number="5">    ,<span class="ot"> _tBuffer  ::</span> [<span class="dt">Int</span>]</a>
 <a class="sourceLine" id="cb26-6" data-line-number="6">    }</a>
-<a class="sourceLine" id="cb26-7" data-line-number="7">makeClassy <span class="ch">&#39;&#39;</span><span class="dt">Thread</span></a>
+<a class="sourceLine" id="cb26-7" data-line-number="7">makeClassy &#39;&#39;<span class="dt">Thread</span></a>
 <a class="sourceLine" id="cb26-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb26-9" data-line-number="9"><span class="kw">instance</span> <span class="dt">HasProgState</span> <span class="dt">Thread</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb26-10" data-line-number="10">    progState <span class="fu">=</span> tState</a></code></pre></div>
@@ -548,12 +548,12 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <div class="sourceCode" id="cb50"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb50-1" data-line-number="1"><span class="co">-- (∈) is a typeclass that has instances whenever f in the type-level list fs</span></a>
 <a class="sourceLine" id="cb50-2" data-line-number="2"><span class="ot">finj ::</span> f ∈ fs <span class="ot">=&gt;</span> f a <span class="ot">-&gt;</span> <span class="dt">FSum</span> fs a</a>
 <a class="sourceLine" id="cb50-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb50-4" data-line-number="4"><span class="ot">finj ::</span> <span class="dt">Mem</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
-<a class="sourceLine" id="cb50-5" data-line-number="5"><span class="ot">finj ::</span> <span class="dt">Com</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
-<a class="sourceLine" id="cb50-6" data-line-number="6"><span class="ot">finj ::</span> <span class="dt">Foo</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a</span></a>
+<a class="sourceLine" id="cb50-4" data-line-number="4"><span class="ot">finj ::</span> <span class="dt">Mem</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> &#39;[<span class="dt">Mem</span>, <span class="dt">Com</span>, <span class="dt">Foo</span>] a</a>
+<a class="sourceLine" id="cb50-5" data-line-number="5"><span class="ot">finj ::</span> <span class="dt">Com</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> &#39;[<span class="dt">Mem</span>, <span class="dt">Com</span>, <span class="dt">Foo</span>] a</a>
+<a class="sourceLine" id="cb50-6" data-line-number="6"><span class="ot">finj ::</span> <span class="dt">Foo</span> a <span class="ot">-&gt;</span> <span class="dt">FSum</span> &#39;[<span class="dt">Mem</span>, <span class="dt">Com</span>, <span class="dt">Foo</span>] a</a>
 <a class="sourceLine" id="cb50-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb50-8" data-line-number="8">singleton (finj (<span class="dt">MGet</span> <span class="ch">&#39;c&#39;</span>))<span class="ot"> ::</span> <span class="dt">Program</span> (<span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo]) Int</span></a>
-<a class="sourceLine" id="cb50-9" data-line-number="9">singleton (finj (<span class="dt">CSnd</span> <span class="dv">3</span>  ))<span class="ot"> ::</span> <span class="dt">Program</span> (<span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo]) Int</span></a></code></pre></div>
+<a class="sourceLine" id="cb50-8" data-line-number="8">singleton (finj (<span class="dt">MGet</span> <span class="ch">&#39;c&#39;</span>))<span class="ot"> ::</span> <span class="dt">Program</span> (<span class="dt">FSum</span> &#39;[<span class="dt">Mem</span>, <span class="dt">Com</span>, <span class="dt">Foo</span>]) <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb50-9" data-line-number="9">singleton (finj (<span class="dt">CSnd</span> <span class="dv">3</span>  ))<span class="ot"> ::</span> <span class="dt">Program</span> (<span class="dt">FSum</span> &#39;[<span class="dt">Mem</span>, <span class="dt">Com</span>, <span class="dt">Foo</span>]) <span class="dt">Int</span></a></code></pre></div>
 <p>There isn’t really a nice built-in way to build handlers for these (like we did earlier using <code>&gt;|&lt;</code>), but you can whip up a utility function with <code>Prod</code> (from <em>type-combinators</em>) and <code>ifoldMapFSum</code>.</p>
 <div class="sourceCode" id="cb51"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb51-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">Handle</span> a r f <span class="fu">=</span> <span class="dt">Handle</span> {<span class="ot"> runHandle ::</span> f a <span class="ot">-&gt;</span> r }</a>
 <a class="sourceLine" id="cb51-2" data-line-number="2"></a>
@@ -565,7 +565,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb52-3" data-line-number="3"><span class="ot">handleFoo ::</span> <span class="dt">Foo</span> a <span class="ot">-&gt;</span> m a</a>
 <a class="sourceLine" id="cb52-4" data-line-number="4"></a>
 <a class="sourceLine" id="cb52-5" data-line-number="5">handleFSum (<span class="dt">Handle</span> handleMem <span class="fu">:&lt;</span> <span class="dt">Handle</span> handleCom <span class="fu">:&lt;</span> <span class="dt">Handle</span> handleFoo <span class="fu">:&lt;</span> Ø)</a>
-<a class="sourceLine" id="cb52-6" data-line-number="6"><span class="ot">    ::</span> <span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo] a -&gt; m a</span></a>
+<a class="sourceLine" id="cb52-6" data-line-number="6"><span class="ot">    ::</span> <span class="dt">FSum</span> &#39;[<span class="dt">Mem</span>, <span class="dt">Com</span>, <span class="dt">Foo</span>] a <span class="ot">-&gt;</span> m a</a>
 <a class="sourceLine" id="cb52-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb52-8" data-line-number="8">interpretWithMonad</a>
 <a class="sourceLine" id="cb52-9" data-line-number="9">        (handleFSum ( <span class="dt">Handle</span> handleMem</a>
@@ -573,7 +573,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb52-11" data-line-number="11">                   <span class="fu">:&lt;</span> <span class="dt">Handle</span> handleFoo</a>
 <a class="sourceLine" id="cb52-12" data-line-number="12">                   <span class="fu">:&lt;</span> Ø)</a>
 <a class="sourceLine" id="cb52-13" data-line-number="13">        )</a>
-<a class="sourceLine" id="cb52-14" data-line-number="14"><span class="ot">    ::</span> <span class="dt">Program</span> (<span class="dt">FSum</span> <span class="ch">&#39;[Mem, Com, Foo]) a -&gt; m a</span></a></code></pre></div>
+<a class="sourceLine" id="cb52-14" data-line-number="14"><span class="ot">    ::</span> <span class="dt">Program</span> (<span class="dt">FSum</span> &#39;[<span class="dt">Mem</span>, <span class="dt">Com</span>, <span class="dt">Foo</span>]) a <span class="ot">-&gt;</span> m a</a></code></pre></div>
 <h3 id="endless-possibilities">Endless Possibilities</h3>
 <p>Hopefully this post inspires you a bit about this fun design pattern! And, if anything, I hope after reading this, you learn to recognize situations where this <em>modular</em> interpreter pattern might be useful in your everyday programming.</p>
 <section class="footnotes">
