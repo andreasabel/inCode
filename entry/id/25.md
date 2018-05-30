@@ -1033,3 +1033,15 @@ me on freenode's \#haskell --- I go by *jle\`* :)
     hard to do *anything* useful with `IO`! We literally can't pass an `IO a`
     into *any* normal function. We need Functor and Monad for us to *ever* work
     at all with our "future values" with normal functions!
+
+---------
+
+Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
+twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
+published under the [CC-BY-NC-ND
+3.0](https://creativecommons.org/licenses/by-nc-nd/3.0/) license. Corrections
+and edits via pull request are welcome and encouraged at [the source
+repository](https://github.com/mstksg/inCode).
+
+If you would like to donate, I am currently accepting bitcoin donations at
+*[3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)*!
