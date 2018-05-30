@@ -38,9 +38,16 @@ on this topic!
 It's easy to recognize `(Int, Double)` as a product between `Int` and `Bool`.
 However, did you know that some types are secretly product types in disguise?
 
-Here's an easy one!
+For example, here's a classic example of a lensable data type
 
-`haskell top foo = 10`
+``` {.haskell}
+data Person = P { _pName :: String
+                , _pAge  :: Int
+                }
+```
+
+`Person` is an algebraic data type --- so-called because it is actually a
+*product* between a `String` and `Int`. `Person` is isomorphic to
 
 [^1]: All of this is disregarding the notorious "bottom" value that inhabits
     every type.
