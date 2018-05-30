@@ -851,7 +851,7 @@ instance (Unfoldable (Vec (n - 1)), n > 0) => Unfoldable (Vec n) where
 ```
 
 The translation is pretty mechanical, but I think that this new formulation
-looks...really nice, and really powerful. "If you can build a list from
+looks...really nice, and really powerful. \"If you can build a list from
 ![n - 1](https://latex.codecogs.com/png.latex?n%20-%201 "n - 1") and
 ![n \> 0](https://latex.codecogs.com/png.latex?n%20%3E%200 "n > 0"), then you
 can build a list for ![n](https://latex.codecogs.com/png.latex?n "n")!

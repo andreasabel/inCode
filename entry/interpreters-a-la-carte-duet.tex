@@ -647,7 +647,7 @@ polymorphically:
 \NormalTok{    \{}\OtherTok{ _psOps  ::} \DataTypeTok{P.PointedList} \DataTypeTok{Op}
 \NormalTok{    ,}\OtherTok{ _psRegs ::} \DataTypeTok{M.Map} \DataTypeTok{Char} \DataTypeTok{Int}
 \NormalTok{    \}}
-\NormalTok{makeClassy }\CharTok{''}\DataTypeTok{ProgState}
+\NormalTok{makeClassy ''}\DataTypeTok{ProgState}
 \end{Highlighting}
 \end{Shaded}
 
@@ -929,7 +929,7 @@ working in the same interpretation context.
 \NormalTok{    \{}\OtherTok{ _tState   ::} \DataTypeTok{ProgState}
 \NormalTok{    ,}\OtherTok{ _tBuffer  ::}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
 \NormalTok{    \}}
-\NormalTok{makeClassy }\CharTok{''}\DataTypeTok{Thread}
+\NormalTok{makeClassy ''}\DataTypeTok{Thread}
 
 \KeywordTok{instance} \DataTypeTok{HasProgState} \DataTypeTok{Thread} \KeywordTok{where}
 \NormalTok{    progState }\FunctionTok{=}\NormalTok{ tState}
@@ -1431,12 +1431,12 @@ If there are no duplicates in your type-level list, you can even use
 \CommentTok{-- (∈) is a typeclass that has instances whenever f in the type-level list fs}
 \OtherTok{finj ::}\NormalTok{ f ∈ fs }\OtherTok{=>}\NormalTok{ f a }\OtherTok{->} \DataTypeTok{FSum}\NormalTok{ fs a}
 
-\OtherTok{finj ::} \DataTypeTok{Mem}\NormalTok{ a }\OtherTok{->} \DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo] a}
-\OtherTok{finj ::} \DataTypeTok{Com}\NormalTok{ a }\OtherTok{->} \DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo] a}
-\OtherTok{finj ::} \DataTypeTok{Foo}\NormalTok{ a }\OtherTok{->} \DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo] a}
+\OtherTok{finj ::} \DataTypeTok{Mem}\NormalTok{ a }\OtherTok{->} \DataTypeTok{FSum}\NormalTok{ '[}\DataTypeTok{Mem}\NormalTok{, }\DataTypeTok{Com}\NormalTok{, }\DataTypeTok{Foo}\NormalTok{] a}
+\OtherTok{finj ::} \DataTypeTok{Com}\NormalTok{ a }\OtherTok{->} \DataTypeTok{FSum}\NormalTok{ '[}\DataTypeTok{Mem}\NormalTok{, }\DataTypeTok{Com}\NormalTok{, }\DataTypeTok{Foo}\NormalTok{] a}
+\OtherTok{finj ::} \DataTypeTok{Foo}\NormalTok{ a }\OtherTok{->} \DataTypeTok{FSum}\NormalTok{ '[}\DataTypeTok{Mem}\NormalTok{, }\DataTypeTok{Com}\NormalTok{, }\DataTypeTok{Foo}\NormalTok{] a}
 
-\NormalTok{singleton (finj (}\DataTypeTok{MGet} \CharTok{'c'}\NormalTok{))}\OtherTok{ ::} \DataTypeTok{Program}\NormalTok{ (}\DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo]) Int}
-\NormalTok{singleton (finj (}\DataTypeTok{CSnd} \DecValTok{3}\NormalTok{  ))}\OtherTok{ ::} \DataTypeTok{Program}\NormalTok{ (}\DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo]) Int}
+\NormalTok{singleton (finj (}\DataTypeTok{MGet} \CharTok{'c'}\NormalTok{))}\OtherTok{ ::} \DataTypeTok{Program}\NormalTok{ (}\DataTypeTok{FSum}\NormalTok{ '[}\DataTypeTok{Mem}\NormalTok{, }\DataTypeTok{Com}\NormalTok{, }\DataTypeTok{Foo}\NormalTok{]) }\DataTypeTok{Int}
+\NormalTok{singleton (finj (}\DataTypeTok{CSnd} \DecValTok{3}\NormalTok{  ))}\OtherTok{ ::} \DataTypeTok{Program}\NormalTok{ (}\DataTypeTok{FSum}\NormalTok{ '[}\DataTypeTok{Mem}\NormalTok{, }\DataTypeTok{Com}\NormalTok{, }\DataTypeTok{Foo}\NormalTok{]) }\DataTypeTok{Int}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1464,7 +1464,7 @@ handlers like:
 \OtherTok{handleFoo ::} \DataTypeTok{Foo}\NormalTok{ a }\OtherTok{->}\NormalTok{ m a}
 
 \NormalTok{handleFSum (}\DataTypeTok{Handle}\NormalTok{ handleMem }\FunctionTok{:<} \DataTypeTok{Handle}\NormalTok{ handleCom }\FunctionTok{:<} \DataTypeTok{Handle}\NormalTok{ handleFoo }\FunctionTok{:<}\NormalTok{ Ø)}
-\OtherTok{    ::} \DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo] a -> m a}
+\OtherTok{    ::} \DataTypeTok{FSum}\NormalTok{ '[}\DataTypeTok{Mem}\NormalTok{, }\DataTypeTok{Com}\NormalTok{, }\DataTypeTok{Foo}\NormalTok{] a }\OtherTok{->}\NormalTok{ m a}
 
 \NormalTok{interpretWithMonad}
 \NormalTok{        (handleFSum ( }\DataTypeTok{Handle}\NormalTok{ handleMem}
@@ -1472,7 +1472,7 @@ handlers like:
                    \FunctionTok{:<} \DataTypeTok{Handle}\NormalTok{ handleFoo}
                    \FunctionTok{:<}\NormalTok{ Ø)}
 \NormalTok{        )}
-\OtherTok{    ::} \DataTypeTok{Program}\NormalTok{ (}\DataTypeTok{FSum} \CharTok{'[Mem, Com, Foo]) a -> m a}
+\OtherTok{    ::} \DataTypeTok{Program}\NormalTok{ (}\DataTypeTok{FSum}\NormalTok{ '[}\DataTypeTok{Mem}\NormalTok{, }\DataTypeTok{Com}\NormalTok{, }\DataTypeTok{Foo}\NormalTok{]) a }\OtherTok{->}\NormalTok{ m a}
 \end{Highlighting}
 \end{Shaded}
 

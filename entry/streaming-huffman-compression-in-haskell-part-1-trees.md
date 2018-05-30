@@ -188,8 +188,8 @@ makeWPT :: Int -> a -> WeightedPT a
 makeWPT w = WPair w . makePT
 ```
 
-The above basically says "to make a `WeightedPT` with weight `w`, first `makePT`
-it, and then add that result it to a `WPair w`.
+The above basically says \"to make a `WeightedPT` with weight `w`, first
+`makePT` it, and then add that result it to a `WPair w`.
 
 ``` {.haskell}
 ghci> let pt = makeWPT 1 'w'

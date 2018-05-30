@@ -297,7 +297,7 @@ foo2 = f x
 
 Where `return x` says "succeed with the value `x`", and `y <-` says "set `y` to
 the value of that success". Of course, `y` is just going to be `x`, because we
-had just said "succeed with the value of `x`. That means that `f y` is the same
+had just said \"succeed with the value of `x`. That means that `f y` is the same
 as `f x`.
 :::
 

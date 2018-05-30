@@ -72,7 +72,7 @@ In Haskell, we represent this object as:
 data Parser a = P (String -> (a, String))
 ```
 
-which reads "The type `Parser a` is an object that you specify by saying
+which reads \"The type `Parser a` is an object that you specify by saying
 '`P f`', where `f` is a function that takes in a string and returns an `a` with
 another string.
 
