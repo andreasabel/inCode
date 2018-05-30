@@ -135,6 +135,9 @@ possible values. I won't go much deeper into this, but there are
 \href{https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types}{many
 useful tutorials already online} on this topic!
 
+\hypertarget{be-productive}{%
+\section{Be Productive!}\label{be-productive}}
+
 It's easy to recognize \texttt{(Int,\ Double)} as a product between \texttt{Int}
 and \texttt{Bool}. However, did you know that some types are secretly product
 types in disguise?
@@ -151,7 +154,401 @@ For example, here's a classic example of a lensable data type
 
 \texttt{Person} is an algebraic data type --- so-called because it is actually a
 \emph{product} between a \texttt{String} and \texttt{Int}. \texttt{Person} is
-isomorphic to
+\emph{isomorphic} to \texttt{(String,\ Int)}. I will be writing this as
+\texttt{Person\ \textless{}\textasciitilde{}\textgreater{}\ (String,\ Int)}.
+
+By \emph{isomorphic}, I mean that there are functions
+\texttt{split\ ::\ Person\ -\textgreater{}\ (String,\ Int)} and
+\texttt{unsplit\ ::\ (String,\ Int)\ -\textgreater{}\ Person} where
+\texttt{unsplit\ .\ split\ =\ id} and \texttt{split\ .\ unsplit\ =\ id}.
+
+In our case, we have:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{split ::} \DataTypeTok{Person} \OtherTok{->}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)}
+\NormalTok{split (}\DataTypeTok{P}\NormalTok{ n a) }\FunctionTok{=}\NormalTok{ (n, a)}
+
+\OtherTok{unsplit ::}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{) }\OtherTok{->} \DataTypeTok{Person}
+\NormalTok{unsplit (n, a) }\FunctionTok{=} \DataTypeTok{P}\NormalTok{ n a}
+\end{Highlighting}
+\end{Shaded}
+
+And we can verify that \texttt{unsplit\ .\ split} is \texttt{id}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{unsplit }\FunctionTok{.}\OtherTok{ split ::} \DataTypeTok{Person} \OtherTok{->} \DataTypeTok{Person}
+\NormalTok{unsplit }\FunctionTok{.}\NormalTok{ split}
+    \FunctionTok{=}\NormalTok{ \textbackslash{}x          }\OtherTok{->}\NormalTok{ unsplit (split x)        }\CommentTok{-- substitute definition of (.)}
+    \FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{P}\NormalTok{ n a }\OtherTok{->}\NormalTok{ unsplit (split (}\DataTypeTok{P}\NormalTok{ n a))  }\CommentTok{-- expand patterns}
+    \FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{P}\NormalTok{ n a }\OtherTok{->}\NormalTok{ unsplit (n, a)           }\CommentTok{-- substitute definition of split}
+    \FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{P}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{P}\NormalTok{ n a                    }\CommentTok{-- substitute definition of unsplit}
+    \FunctionTok{=}\NormalTok{ \textbackslash{}x      }\OtherTok{->}\NormalTok{ x                            }\CommentTok{-- condense patterns}
+    \FunctionTok{=}\NormalTok{ id                                      }\CommentTok{-- definition of id}
+\end{Highlighting}
+\end{Shaded}
+
+And verification of \texttt{split\ .\ unsplit\ =\ id} is left as an exercise.
+
+There are some other interesting products in Haskell, too. One such example is
+\texttt{NonEmpty\ a} being a product between \texttt{a} (the head/first item)
+and \texttt{{[}a{]}} (the tail/rest of the items). This means that
+\texttt{NonEmpty\ a} is isomorphic to \texttt{(a,\ {[}a{]})} --- we have
+\texttt{NonEmpty\ a\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ {[}a{]})}!
+
+Another curious product is the fact that every type \texttt{a} is a product
+between \emph{itself} and unit, \texttt{()}. That is, every type \texttt{a} is
+isomorphic to \texttt{(a,\ ())}. Freaky, right?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- a <~> (a, ())}
+
+\OtherTok{split ::}\NormalTok{ a }\OtherTok{->}\NormalTok{ (a, ())}
+\NormalTok{split x }\FunctionTok{=}\NormalTok{ (x, ())}
+
+\OtherTok{unsplit ::}\NormalTok{ (a, ()) }\OtherTok{->}\NormalTok{ a}
+\NormalTok{unsplit (x, _) }\FunctionTok{=}\NormalTok{ x}
+\end{Highlighting}
+\end{Shaded}
+
+One final interesting ``product in disguise'' is \texttt{Either\ a\ a}. ``But
+wait,'' you say. ``That's a sum\ldots{}right??''
+
+Well, yeah. But in addition, any \texttt{Either\ a\ a} is the product between
+\texttt{Bool} and \texttt{a}. That is, \texttt{Either\ a\ a} is isomorphic to
+\texttt{(Bool,\ a)}. The \texttt{Bool} tells you ``left or right?'' and the
+\texttt{a} is the contents!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- Either a a <~> (Bool, a)}
+
+\OtherTok{split ::} \DataTypeTok{Either}\NormalTok{ a a }\OtherTok{->}\NormalTok{ (}\DataTypeTok{Bool}\NormalTok{, a)}
+\NormalTok{split (}\DataTypeTok{Left}\NormalTok{  x) }\FunctionTok{=}\NormalTok{ (}\DataTypeTok{False}\NormalTok{, x)}
+\NormalTok{split (}\DataTypeTok{Right}\NormalTok{ x) }\FunctionTok{=}\NormalTok{ (}\DataTypeTok{True}\NormalTok{ , x)}
+
+\OtherTok{unsplit ::}\NormalTok{ (}\DataTypeTok{Bool}\NormalTok{, a) }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a a}
+\NormalTok{unsplit (}\DataTypeTok{False}\NormalTok{, x) }\FunctionTok{=} \DataTypeTok{Left}\NormalTok{  x}
+\NormalTok{unsplit (}\DataTypeTok{True}\NormalTok{ , x) }\FunctionTok{=} \DataTypeTok{Right}\NormalTok{ x}
+\end{Highlighting}
+\end{Shaded}
+
+Proving that \texttt{unsplit\ .\ split\ =\ id}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{unsplit }\FunctionTok{.}\OtherTok{ split ::} \DataTypeTok{Either}\NormalTok{ a a }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a a}
+\NormalTok{unsplit }\FunctionTok{.}\NormalTok{ split }\FunctionTok{=}
+    \FunctionTok{=}\NormalTok{ \textbackslash{}x            }\OtherTok{->}\NormalTok{ unsplit (split x)          }\CommentTok{-- substitute definition of (.)}
+      \CommentTok{-- trying case 1}
+    \FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{  y }\OtherTok{->}\NormalTok{ unsplit (split (}\DataTypeTok{Left}\NormalTok{  y))  }\CommentTok{-- expand pattern for case 1}
+    \FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{  y }\OtherTok{->}\NormalTok{ unsplit (}\DataTypeTok{False}\NormalTok{, y)         }\CommentTok{-- substitute definition of split}
+    \FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{  y }\OtherTok{->} \DataTypeTok{Left}\NormalTok{  y                    }\CommentTok{-- substitute definition of unsplit}
+    \FunctionTok{=}\NormalTok{ \textbackslash{}x            }\OtherTok{->}\NormalTok{ x                          }\CommentTok{-- condense pattern for case 1}
+    \FunctionTok{=}\NormalTok{ id                                          }\CommentTok{-- definition of id}
+      \CommentTok{-- trying case 2}
+    \FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Right}\NormalTok{ y }\OtherTok{->}\NormalTok{ unsplit (split (}\DataTypeTok{Right}\NormalTok{ y))  }\CommentTok{-- expand pattern for case 2}
+    \FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Right}\NormalTok{ y }\OtherTok{->}\NormalTok{ unsplit (}\DataTypeTok{True}\NormalTok{ , y)         }\CommentTok{-- substitute definition of split}
+    \FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Right}\NormalTok{ y }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ y                    }\CommentTok{-- substitute definition of unsplit}
+    \FunctionTok{=}\NormalTok{ \textbackslash{}x            }\OtherTok{->}\NormalTok{ x                          }\CommentTok{-- condense pattern for case 2}
+    \FunctionTok{=}\NormalTok{ id                                          }\CommentTok{-- definition of id}
+\end{Highlighting}
+\end{Shaded}
+
+And \texttt{split\ .\ unsplit\ =\ id} is again left as an exercise.
+
+(\texttt{\textbackslash{}case} here is from the \emph{-XLambdaCase} extension)
+
+\hypertarget{lenses}{%
+\subsection{Lenses}\label{lenses}}
+
+So, how do lenses come into the picture?
+
+Let's review a bit. A \texttt{Lens\textquotesingle{}\ s\ a} is a way to
+``access'' an \texttt{a} ``inside'' an \texttt{s}, respecting some laws.
+
+A \texttt{Lens\textquotesingle{}\ s\ a} is a data type with the following API:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{view ::} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ a)                }\CommentTok{-- get the 'a' from an 's'}
+\OtherTok{set  ::} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ s }\OtherTok{->}\NormalTok{ s)           }\CommentTok{-- set the 'a' inside an 's'}
+\end{Highlighting}
+\end{Shaded}
+
+respecting
+\href{https://www.schoolofhaskell.com/school/to-infinity-and-beyond/pick-of-the-week/a-little-lens-starter-tutorial\#the-lens-laws-}{some
+laws} --- get-put, put-get, and put-put.
+
+Abstract mathematical laws are great and all, but I'm going to tell you a secret
+that will render those laws obsolete.
+
+At first, you might naively implement lenses like:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Lens'}\NormalTok{ s a }\FunctionTok{=} \DataTypeTok{Lens'}\NormalTok{ \{}\OtherTok{ view ::}\NormalTok{ s }\OtherTok{->}\NormalTok{ a}
+\NormalTok{                       ,}\OtherTok{ set  ::}\NormalTok{ a }\OtherTok{->}\NormalTok{ s }\OtherTok{->}\NormalTok{ s}
+\NormalTok{                       \}}
+\end{Highlighting}
+\end{Shaded}
+
+But this is bad bad bad. That's because you can use this to represent lenses
+that ``break the laws''. This representation is, to use the technical term,
+``too big''. It allows more more values than are actual lenses.
+
+So, here's the secret: A \texttt{Lens\textquotesingle{}\ s\ a} means that
+\emph{\texttt{s} is a product between \texttt{a} and some type \texttt{x}}.
+
+That means that if it is possible to represent \texttt{s} as some
+\texttt{(a,\ q)} (that is,
+\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}, \emph{then you
+have a lens}! Lenses are nothing more than \textbf{descriptions of products}!
+
+With that in mind, let's re-visit a saner definition of lenses based on the idea
+that lenses embody descriptions of products:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Lens'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.}
+                 \DataTypeTok{Lens'}\NormalTok{ \{}\OtherTok{ split   ::}\NormalTok{ s }\OtherTok{->}\NormalTok{ (a, q)}
+\NormalTok{                       ,}\OtherTok{ unsplit ::}\NormalTok{ (a, q) }\OtherTok{->}\NormalTok{ s}
+\NormalTok{                       \}    }\CommentTok{-- ^ s <~> (a, q)}
+\end{Highlighting}
+\end{Shaded}
+
+Now, if \texttt{split} and \texttt{join} form an isomorphism, \emph{this can
+only represent valid lenses}!{[}\^{}big{]}
+
+This type is technically also ``too big'' (you can write a value where
+\texttt{split} and \texttt{unsplit} do not form an isomorphism), but I think, to
+me, ``\texttt{split} and \texttt{join} must form an isomorphism'' is a much
+clearer and natural law than get-put/put-get/put-put.
+
+We can implement our necessary lens API as so:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{view ::} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ a)}
+\NormalTok{view (}\DataTypeTok{Lens'}\NormalTok{ spl _) }\FunctionTok{=}\NormalTok{ fst }\FunctionTok{.}\NormalTok{ spl}
+
+\OtherTok{set ::} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ s }\OtherTok{->}\NormalTok{ s)}
+\NormalTok{set (}\DataTypeTok{Lens'}\NormalTok{ spl unspl) x y }\FunctionTok{=} \KeywordTok{let}\NormalTok{ (_, q) }\FunctionTok{=}\NormalTok{ spl y}
+                            \KeywordTok{in}\NormalTok{  unspl (x, q)        }\CommentTok{-- "replace" the `a`}
+\end{Highlighting}
+\end{Shaded}
+
+TODO: record wildcards?
+
+The surprising result is that \textbf{every product yields lenses} (one for
+every item in the product), and \textbf{every lens witnesses a product}.
+
+Let's take a look at our first product we talked about:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Person} \FunctionTok{=} \DataTypeTok{P}\NormalTok{ \{}\OtherTok{ _pName ::} \DataTypeTok{String}
+\NormalTok{                ,}\OtherTok{ _pAge  ::} \DataTypeTok{Int}
+\NormalTok{                \}}
+
+\OtherTok{split ::} \DataTypeTok{Person} \OtherTok{->}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)}
+\NormalTok{split (}\DataTypeTok{P}\NormalTok{ n a) }\FunctionTok{=}\NormalTok{ (n, a)}
+
+\OtherTok{unsplit ::}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{) }\OtherTok{->} \DataTypeTok{Person}
+\NormalTok{unsplit (n, a) }\FunctionTok{=} \DataTypeTok{P}\NormalTok{ n a}
+\end{Highlighting}
+\end{Shaded}
+
+Because \texttt{Person} is a product between \texttt{String} and \texttt{Int},
+we get \emph{two lenses}: a \texttt{Lens\textquotesingle{}\ Person\ String} and
+\texttt{Lens\textquotesingle{}\ Person\ Int}. \emph{Every product} gives us a
+lens for every item in the product.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{pName ::} \DataTypeTok{Lens'} \DataTypeTok{Person} \DataTypeTok{String}
+\NormalTok{pName }\FunctionTok{=} \DataTypeTok{Lens'}\NormalTok{ \{ split   }\FunctionTok{=}\NormalTok{ \textbackslash{}(}\DataTypeTok{P}\NormalTok{ n a) }\OtherTok{->}\NormalTok{ (n, a)}
+\NormalTok{              , unsplit }\FunctionTok{=}\NormalTok{ \textbackslash{}(n, a)  }\OtherTok{->} \DataTypeTok{P}\NormalTok{ n a}
+\NormalTok{              \}}
+
+\OtherTok{pAge ::} \DataTypeTok{Lens'} \DataTypeTok{Person} \DataTypeTok{String}
+\NormalTok{pAge }\FunctionTok{=} \DataTypeTok{Lens'}\NormalTok{ \{ split   }\FunctionTok{=}\NormalTok{ \textbackslash{}(}\DataTypeTok{P}\NormalTok{ n a) }\OtherTok{->}\NormalTok{ (a, n)}
+\NormalTok{             , unsplit }\FunctionTok{=}\NormalTok{ \textbackslash{}(a, n)  }\OtherTok{->} \DataTypeTok{P}\NormalTok{ n a}
+\NormalTok{             \}}
+\end{Highlighting}
+\end{Shaded}
+
+The inverse is true too. \textbf{Every lens witnesses a product}. The fact that
+we have a lawful \texttt{pName\ ::\ Lens\textquotesingle{}\ Person\ String}
+means that a \texttt{Person} \emph{must} be a product between \texttt{String}
+and some other (hidden) type.
+
+It can be insightful to look at products that we know and see what lenses those
+correspond to.
+
+For example, our
+\texttt{NonEmpty\ a\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ {[}a{]})}
+product tells us that \texttt{NonEmpty\ a} has at least two lenses: a ``head''
+lens \texttt{Lens\textquotesingle{}\ (NonEmpty\ a)\ a} and a ``tail'' lens
+\texttt{Lens\textquotesingle{}\ (NonEmpty\ a)\ {[}a{]}}.
+
+Our \texttt{a\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ ())} product
+gives some interesting insight. This tells us that we always have an
+``identity'' lens \texttt{Lens\textquotesingle{}\ a\ a}, and a ``unit'' lens
+\texttt{Lens\textquotesingle{}\ a\ ()}, for any \texttt{a}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{identity ::} \DataTypeTok{Lens'}\NormalTok{ a a}
+\NormalTok{identity }\FunctionTok{=} \DataTypeTok{Lens'}\NormalTok{ \{ split   }\FunctionTok{=}\NormalTok{ \textbackslash{}x      }\OtherTok{->}\NormalTok{ (x, ())}
+\NormalTok{                 , unsplit }\FunctionTok{=}\NormalTok{ \textbackslash{}(x, _) }\OtherTok{->}\NormalTok{ x}
+\NormalTok{                 \}}
+
+\OtherTok{unital ::} \DataTypeTok{Lens'}\NormalTok{ a ()}
+\NormalTok{unital }\FunctionTok{=} \DataTypeTok{Lens'}\NormalTok{ \{ split   }\FunctionTok{=}\NormalTok{ \textbackslash{}x       }\OtherTok{->}\NormalTok{ ((), x)}
+\NormalTok{               , unsplit }\FunctionTok{=}\NormalTok{ \textbackslash{}((), x) }\OtherTok{->}\NormalTok{ x}
+\NormalTok{               \}}
+\end{Highlighting}
+\end{Shaded}
+
+In the language of lens, \texttt{identity\ ::\ Lens\textquotesingle{}\ a\ a}
+tells us that all \texttt{a}s have an \texttt{a} ``inside'' them. However, in
+the language of products, this just tells us that \texttt{a} can be represented
+as \texttt{(a,\ ())}. In the language of lens,
+\texttt{unital\ ::\ Lens\textquotesingle{}\ a\ ()} tells us that all \texttt{a}s
+have a \texttt{()} ``inside'' them. In the language of products, this just tells
+us that \texttt{a\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ ())}.
+
+What insight does our
+\texttt{Either\ a\ a\ \textless{}\textasciitilde{}\textgreater{}\ (Bool,\ a)}
+product perspective give us? Well, let's write out their types and see what it
+might suggest:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{mysteryLens1 ::} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Either}\NormalTok{ a a) }\DataTypeTok{Bool}
+\OtherTok{mysteryLens2 ::} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Either}\NormalTok{ a a) a}
+\end{Highlighting}
+\end{Shaded}
+
+Looking at
+\texttt{mysteryLens1\ ::\ Lens\textquotesingle{}\ (Either\ a\ a)\ Bool}, we are
+saying that every \texttt{Either\ a\ a} has some \texttt{Bool} ``inside'' it.
+From our knowledge of our product, we know that this \texttt{Bool} is really a
+\emph{flag} for left-ness or right-ness. Getting the \texttt{Bool} is finding
+out if we're in \texttt{Left} or \texttt{Right}, and flipping the \texttt{Bool}
+``inside'' is really just swapping from \texttt{Left} to \texttt{Right}.
+
+Looking at \texttt{mysteryLens2\ ::\ Lens\textquotesingle{}\ (Either\ a\ a)\ a},
+we are saying that every \texttt{Either\ a\ a} has some \texttt{a} ``inside''
+it. From what we know about the underlying product, the \texttt{a} is just the
+``contained value'', \emph{ignoring} leftness or rightness. Getting the
+\texttt{a} is getting the contained value and losing leftness/rightness, and
+re-setting the \texttt{a} inside is modifying the contained value but preserving
+leftness/rightness.
+
+So that's really the essence of what a \texttt{Lens\textquotesingle{}} is. A
+\texttt{Lens\textquotesingle{}\ s\ a} is the embodiment of the fact that
+\texttt{s} can be represented as a product between \texttt{a} and something else
+--- that \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}. All of
+the lens laws just boil down to this. \textbf{Lenses embody products}.
+
+\hypertarget{strength}{%
+\subsection{Strength}\label{strength}}
+
+You might have heard that lenses aren't \emph{actually} implemented as an ADT in
+practice. In most modern lens libraries, they are represented as higher-order
+functions. In my opinion, however, this is similarly boring :)
+
+If we really do mean that a \texttt{Lens\textquotesingle{}\ s\ a} witnesses an
+isomorphism between \texttt{s} and \texttt{(a,\ q)}\ldots{}then we can represent
+that using a RankN function polymorphic over a \texttt{Profunctor}.
+
+If you are not familiar with profunctors, there's a
+\href{https://ocharles.org.uk/blog/guest-posts/2013-12-22-24-days-of-hackage-profunctors.html}{great
+introduction} on Oliver Charles's Blog written by Tom Ellis. The typeclass
+requires that we have ways to ``re-map'' both ends of the relationship:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{lmap ::} \DataTypeTok{Profunctor}\NormalTok{ p }\OtherTok{=>}\NormalTok{ (a' }\OtherTok{->}\NormalTok{ a)  }\OtherTok{->}\NormalTok{ p a b }\OtherTok{->}\NormalTok{ p a' b}
+\OtherTok{rmap ::} \DataTypeTok{Profunctor}\NormalTok{ p }\OtherTok{=>}\NormalTok{ (b  }\OtherTok{->}\NormalTok{ b') }\OtherTok{->}\NormalTok{ p a b }\OtherTok{->}\NormalTok{ p a  b'}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{lmap} lets you ``pre-apply'' a function, essentially, to the ``input''
+of a \texttt{p\ a\ b}, and \texttt{rmap} lets you ``post-apply'' a function to
+the ``output'' of a \texttt{p\ a\ b}. These definitions are ``generic'' and
+vague enough to allow for many different colorful \texttt{Profunctor} instances
+that have all sorts of interesting implementations of ``pre-apply'' and
+``post-apply''.
+
+However, for this post, I want to propose a specific interpretation of the
+\texttt{Profunctor} typeclass: a \texttt{p\ a\ b} represents a
+\emph{relationship} from \texttt{a} to \texttt{b}. The \texttt{Profunctor}
+typeclass is delightfully vague enough that all of the many different instances
+and choices of \texttt{p} all give very unique and interesting perspectives on
+what a ``relationship from \texttt{a} to \texttt{b}'' even means.
+
+What does this mean for lenses?
+
+Well, a \texttt{Lens\textquotesingle{}\ s\ a} can be thought of as a way to
+``promote'' a \texttt{p\ a\ a} to a \texttt{p\ s\ s}. It lets you promote some
+relationship on \texttt{a} (the internals) to become a full-fledged relationship
+on \texttt{s}.
+
+What does this mean from our ``lenses are products'' perspective? It means that
+if we can turn \texttt{p\ a\ a} into \texttt{p\ (a,\ q)\ (a,\ q)} that
+``ignores'' the \texttt{q}\ldots{}then we can just pre-map and post-map
+\texttt{split} and \texttt{unsplit} to get a \texttt{p\ s\ s}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{rejoinProfunctor}
+\OtherTok{    ::} \DataTypeTok{Profunctor}\NormalTok{ p}
+    \OtherTok{=>}\NormalTok{ p (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{) (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)}
+    \OtherTok{->}\NormalTok{ p }\DataTypeTok{Person} \DataTypeTok{Person}
+\NormalTok{rejoinProfunctor p }\FunctionTok{=}\NormalTok{ p''}
+  \KeywordTok{where}
+\OtherTok{    p'  ::}\NormalTok{ p }\DataTypeTok{Person}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)}
+\NormalTok{    p' }\FunctionTok{=}\NormalTok{ lmap split p         }\CommentTok{-- pre-map split}
+\OtherTok{    p'' ::}\NormalTok{ p }\DataTypeTok{Person} \DataTypeTok{Person}
+\NormalTok{    p'' }\FunctionTok{=}\NormalTok{ rmap unsplit p          }\CommentTok{-- post-map unsplit}
+\NormalTok{    split   (}\DataTypeTok{P}\NormalTok{ n a) }\FunctionTok{=}\NormalTok{ (n, a)}
+\NormalTok{    unsplit (n, a)  }\FunctionTok{=} \DataTypeTok{P}\NormalTok{ n a}
+\end{Highlighting}
+\end{Shaded}
+
+We can make a typeclass for profunctors that have such a ``promote to a
+relationship over a tuple, ignoring the second field''. It's typically called
+\texttt{Strong}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{Profunctor}\NormalTok{ p }\OtherTok{=>} \DataTypeTok{Strong}\NormalTok{ p }\KeywordTok{where}
+\OtherTok{    first ::}\NormalTok{ p a b }\OtherTok{->}\NormalTok{ p (a, q) (b, q)}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{first} takes a \texttt{p\ a\ b} (some relationship from \texttt{a} to
+\texttt{b}) and promotes it to a \texttt{p\ (a,\ q)\ (b,\ q)} (some relationship
+from \texttt{(a,\ q)} to \texttt{(b,\ q)} that \emph{ignores} the \texttt{q}).
+
+With this in mind, we can now use any \texttt{Lens\textquotesingle{}\ s\ a} to
+transform a \texttt{p\ a\ a} into a \texttt{p\ s\ s}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{fromLens'}
+\OtherTok{    ::} \DataTypeTok{Strong}\NormalTok{ p}
+    \OtherTok{=>} \DataTypeTok{Lens'}\NormalTok{ s a}
+    \OtherTok{->}\NormalTok{ p a a}
+    \OtherTok{->}\NormalTok{ p s s}
+\NormalTok{fromLens' (}\DataTypeTok{Lens'}\NormalTok{ spl uns) p }\FunctionTok{=}\NormalTok{ rmap split (lmap unsplit (first p))}
+\end{Highlighting}
+\end{Shaded}
 
 Hi, thanks for reading! You can reach me via email at
 \href{mailto:justin@jle.im}{\nolinkurl{justin@jle.im}}, or at twitter at
