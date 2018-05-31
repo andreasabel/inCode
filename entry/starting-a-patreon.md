@@ -4,8 +4,9 @@ Starting a Patreon
 > Originally posted by [Justin Le](https://blog.jle.im/) on May 30, 2018.
 > [Read online!](https://blog.jle.im/entry/starting-a-patreon.html)
 
-*Short version:* I've [started a Patreon page](https://www.patreon.com/justinle)
-for those who want to help support my writing in my post-doctoral life! :D
+*Short version:* I've [started a Patreon
+page](https://www.patreon.com/justinle/overview) for those who want to help
+support my writing in my post-doctoral life! :D
 
 *Long version:* Hi all! Hope you can excuse the two non-technical and personal
 posts in a row :) To give some context on this announcement, here's some news
@@ -44,7 +45,7 @@ want to start taking my writing and educational passion projects more seriously
 :)
 
 In this light, I'm excited to announce that I am starting a **[Patreon
-page](https://www.patreon.com/justinle)**!
+page](https://www.patreon.com/justinle/overview)**!
 
 Patreon is a service that allows people to support their favorite content
 producers. Users can choose to "become patrons" of content creators by pledging
