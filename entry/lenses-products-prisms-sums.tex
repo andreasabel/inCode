@@ -135,8 +135,8 @@ possible values. I won't go much deeper into this, but there are
 \href{https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types}{many
 useful tutorials already online} on this topic!
 
-\hypertarget{be-productive}{%
-\section{Be Productive!}\label{be-productive}}
+\hypertarget{lets-get-productive}{%
+\section{Let's Get Productive!}\label{lets-get-productive}}
 
 It's easy to recognize \texttt{(Int,\ Double)} as a product between \texttt{Int}
 and \texttt{Bool}. However, did you know that some types are secretly product
@@ -160,7 +160,9 @@ For example, here's a classic example of a lensable data type
 By \emph{isomorphic}, I mean that there are functions
 \texttt{split\ ::\ Person\ -\textgreater{}\ (String,\ Int)} and
 \texttt{unsplit\ ::\ (String,\ Int)\ -\textgreater{}\ Person} where
-\texttt{unsplit\ .\ split\ =\ id} and \texttt{split\ .\ unsplit\ =\ id}.
+\texttt{unsplit\ .\ split\ =\ id} and \texttt{split\ .\ unsplit\ =\ id}. You can
+think of this property as stating formally that you should be able to go from
+one type to the other without ``losing any information''.
 
 In our case, we have:
 
@@ -304,8 +306,13 @@ So, here's the secret: A \texttt{Lens\textquotesingle{}\ s\ a} means that
 
 That means that if it is possible to represent \texttt{s} as some
 \texttt{(a,\ q)} (that is,
-\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}, \emph{then you
+\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}), \emph{then you
 have a lens}! Lenses are nothing more than \textbf{descriptions of products}!
+
+In other words, a \texttt{Lens\textquotesingle{}\ s\ a} is nothing more than a
+witness for an
+\texttt{exists\ q.\ s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}
+isomorphism.
 
 With that in mind, let's re-visit a saner definition of lenses based on the idea
 that lenses embody descriptions of products:
@@ -332,18 +339,35 @@ We can implement our necessary lens API as so:
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{view ::} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ a)}
-\NormalTok{view (}\DataTypeTok{Lens'}\NormalTok{ spl _) }\FunctionTok{=}\NormalTok{ fst }\FunctionTok{.}\NormalTok{ spl}
+\NormalTok{view }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=}\NormalTok{ fst }\FunctionTok{.}\NormalTok{ split}
 
 \OtherTok{set ::} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ s }\OtherTok{->}\NormalTok{ s)}
-\NormalTok{set (}\DataTypeTok{Lens'}\NormalTok{ spl unspl) x y }\FunctionTok{=} \KeywordTok{let}\NormalTok{ (_, q) }\FunctionTok{=}\NormalTok{ spl y}
-                            \KeywordTok{in}\NormalTok{  unspl (x, q)        }\CommentTok{-- "replace" the `a`}
+\NormalTok{set }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} newVal x }\FunctionTok{=}\NormalTok{ unsplit (newVal, q)      }\CommentTok{-- "replace" the `a`}
+  \KeywordTok{where}
+\NormalTok{    (_, q) }\FunctionTok{=}\NormalTok{ split x}
 \end{Highlighting}
 \end{Shaded}
 
-TODO: record wildcards?
+(Using the \emph{-XRecordWildcards} extension, where
+\texttt{Lens\textquotesingle{}\{..\}} binds \texttt{split} and \texttt{unsplit}
+to the fields of the lens)
 
-The surprising result is that \textbf{every product yields lenses} (one for
-every item in the product), and \textbf{every lens witnesses a product}.
+The implementation of the helper function \texttt{over} (which modifies the
+\texttt{a} with a function) is also particularly elegant:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{over ::} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ s)}
+\NormalTok{over }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} f }\FunctionTok{=}\NormalTok{ unsplit }\FunctionTok{.}\NormalTok{ first f }\FunctionTok{.}\NormalTok{ split}
+\end{Highlighting}
+\end{Shaded}
+
+The surprising result of this perspective is that \textbf{every product yields
+lenses} (one for every item in the product), and \textbf{every lens witnesses a
+product}.
+
+\hypertarget{insights-gleamed}{%
+\subsection{Insights Gleamed}\label{insights-gleamed}}
 
 Let's take a look at our first product we talked about:
 
@@ -455,100 +479,103 @@ So that's really the essence of what a \texttt{Lens\textquotesingle{}} is. A
 --- that \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}. All of
 the lens laws just boil down to this. \textbf{Lenses embody products}.
 
-\hypertarget{strength}{%
-\subsection{Strength}\label{strength}}
+\hypertarget{theres-sum-thing-about-prisms}{%
+\section{There's Sum-thing about Prisms}\label{theres-sum-thing-about-prisms}}
 
-You might have heard that lenses aren't \emph{actually} implemented as an ADT in
-practice. In most modern lens libraries, they are represented as higher-order
-functions. In my opinion, however, this is similarly boring :)
+It's easy to recognize \texttt{Either\ Int\ Bool} as a sum between \texttt{Int}
+and \texttt{Bool}. However, did you know that some types are secretly sums in
+disguise?
 
-If we really do mean that a \texttt{Lens\textquotesingle{}\ s\ a} witnesses an
-isomorphism between \texttt{s} and \texttt{(a,\ q)}\ldots{}then we can represent
-that using a RankN function polymorphic over a \texttt{Profunctor}.
-
-If you are not familiar with profunctors, there's a
-\href{https://ocharles.org.uk/blog/guest-posts/2013-12-22-24-days-of-hackage-profunctors.html}{great
-introduction} on Oliver Charles's Blog written by Tom Ellis. The typeclass
-requires that we have ways to ``re-map'' both ends of the relationship:
+For example, here's a data type you might encounter out there in the real world:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{lmap ::} \DataTypeTok{Profunctor}\NormalTok{ p }\OtherTok{=>}\NormalTok{ (a' }\OtherTok{->}\NormalTok{ a)  }\OtherTok{->}\NormalTok{ p a b }\OtherTok{->}\NormalTok{ p a' b}
-\OtherTok{rmap ::} \DataTypeTok{Profunctor}\NormalTok{ p }\OtherTok{=>}\NormalTok{ (b  }\OtherTok{->}\NormalTok{ b') }\OtherTok{->}\NormalTok{ p a b }\OtherTok{->}\NormalTok{ p a  b'}
+\KeywordTok{data} \DataTypeTok{Shape} \FunctionTok{=} \DataTypeTok{Circle}  \DataTypeTok{Double}           \CommentTok{-- radius}
+           \FunctionTok{|} \DataTypeTok{RegPoly} \DataTypeTok{Natural} \DataTypeTok{Double}   \CommentTok{-- number of sides, length of sides}
 \end{Highlighting}
 \end{Shaded}
 
-\texttt{lmap} lets you ``pre-apply'' a function, essentially, to the ``input''
-of a \texttt{p\ a\ b}, and \texttt{rmap} lets you ``post-apply'' a function to
-the ``output'' of a \texttt{p\ a\ b}. These definitions are ``generic'' and
-vague enough to allow for many different colorful \texttt{Profunctor} instances
-that have all sorts of interesting implementations of ``pre-apply'' and
-``post-apply''.
+\texttt{Circle\ 2.9} represents a circle with radius 2.9, and
+\texttt{RegPoly\ 8\ 4.6} represents a octagon (8-sided figure) whose sides all
+have length 4.6.
 
-However, for this post, I want to propose a specific interpretation of the
-\texttt{Profunctor} typeclass: a \texttt{p\ a\ b} represents a
-\emph{relationship} from \texttt{a} to \texttt{b}. The \texttt{Profunctor}
-typeclass is delightfully vague enough that all of the many different instances
-and choices of \texttt{p} all give very unique and interesting perspectives on
-what a ``relationship from \texttt{a} to \texttt{b}'' even means.
-
-What does this mean for lenses?
-
-Well, a \texttt{Lens\textquotesingle{}\ s\ a} can be thought of as a way to
-``promote'' a \texttt{p\ a\ a} to a \texttt{p\ s\ s}. It lets you promote some
-relationship on \texttt{a} (the internals) to become a full-fledged relationship
-on \texttt{s}.
-
-What does this mean from our ``lenses are products'' perspective? It means that
-if we can turn \texttt{p\ a\ a} into \texttt{p\ (a,\ q)\ (a,\ q)} that
-``ignores'' the \texttt{q}\ldots{}then we can just pre-map and post-map
-\texttt{split} and \texttt{unsplit} to get a \texttt{p\ s\ s}:
+\texttt{Shape} is an algebraic data type --- so-called because it is actually a
+\emph{sum} between \texttt{Double} and \texttt{(Natural,\ Double)} (a
+\texttt{Natural} is the non-negative \texttt{Integer} type). \texttt{Shape} is
+\emph{isomorphic} to \texttt{Either\ Double\ (Natural,\ Double)}. To prove it,
+let's witness
+\texttt{Shape\ \textless{}\textasciitilde{}\textgreater{}\ Either\ Double\ (Natural,\ Double)}
+using the functions \texttt{match} and \texttt{inject}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{rejoinProfunctor}
-\OtherTok{    ::} \DataTypeTok{Profunctor}\NormalTok{ p}
-    \OtherTok{=>}\NormalTok{ p (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{) (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)}
-    \OtherTok{->}\NormalTok{ p }\DataTypeTok{Person} \DataTypeTok{Person}
-\NormalTok{rejoinProfunctor p }\FunctionTok{=}\NormalTok{ p''}
-  \KeywordTok{where}
-\OtherTok{    p'  ::}\NormalTok{ p }\DataTypeTok{Person}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)}
-\NormalTok{    p' }\FunctionTok{=}\NormalTok{ lmap split p         }\CommentTok{-- pre-map split}
-\OtherTok{    p'' ::}\NormalTok{ p }\DataTypeTok{Person} \DataTypeTok{Person}
-\NormalTok{    p'' }\FunctionTok{=}\NormalTok{ rmap unsplit p          }\CommentTok{-- post-map unsplit}
-\NormalTok{    split   (}\DataTypeTok{P}\NormalTok{ n a) }\FunctionTok{=}\NormalTok{ (n, a)}
-\NormalTok{    unsplit (n, a)  }\FunctionTok{=} \DataTypeTok{P}\NormalTok{ n a}
+\CommentTok{-- Shape <~> Either Double (Natural, Double)}
+
+\OtherTok{match ::} \DataTypeTok{Shape} \OtherTok{->} \DataTypeTok{Either} \DataTypeTok{Double}\NormalTok{ (}\DataTypeTok{Natural}\NormalTok{, }\DataTypeTok{Double}\NormalTok{)}
+\NormalTok{match (}\DataTypeTok{Circle}\NormalTok{  r  ) }\FunctionTok{=} \DataTypeTok{Left}\NormalTok{ r}
+\NormalTok{match (}\DataTypeTok{RegPoly}\NormalTok{ n s) }\FunctionTok{=} \DataTypeTok{Right}\NormalTok{ (n, s)}
+
+\OtherTok{inject ::} \DataTypeTok{Either} \DataTypeTok{Double}\NormalTok{ (}\DataTypeTok{Natural}\NormalTok{, }\DataTypeTok{Double}\NormalTok{) }\OtherTok{->} \DataTypeTok{Shape}
+\NormalTok{inject (}\DataTypeTok{Left}\NormalTok{   r    ) }\FunctionTok{=} \DataTypeTok{Circle}\NormalTok{  r}
+\NormalTok{inject (}\DataTypeTok{Right}\NormalTok{ (n, s)) }\FunctionTok{=} \DataTypeTok{RegPoly}\NormalTok{ n s}
 \end{Highlighting}
 \end{Shaded}
 
-We can make a typeclass for profunctors that have such a ``promote to a
-relationship over a tuple, ignoring the second field''. It's typically called
-\texttt{Strong}:
+Since \texttt{inject\ .\ match\ =\ id} and \texttt{match\ .\ inject\ =\ id},
+this proves that \texttt{Shape} is a sum in disguise.
+
+Another interesting ``hidden sum'' is the fact that \texttt{{[}a{]}} in Haskell
+is actually a sum between \texttt{()} and \texttt{(a,\ {[}a{]})}. That's right
+--- it's a sum between \texttt{()} and\ldots{}itself?
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{class} \DataTypeTok{Profunctor}\NormalTok{ p }\OtherTok{=>} \DataTypeTok{Strong}\NormalTok{ p }\KeywordTok{where}
-\OtherTok{    first ::}\NormalTok{ p a b }\OtherTok{->}\NormalTok{ p (a, q) (b, q)}
+\CommentTok{-- [a] <~> Either () (a, [a])}
+
+\OtherTok{match ::}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ () (a, [a])}
+\NormalTok{match []     }\FunctionTok{=} \DataTypeTok{Left}\NormalTok{  ()}
+\NormalTok{match (x}\FunctionTok{:}\NormalTok{xs) }\FunctionTok{=} \DataTypeTok{Right}\NormalTok{ (x, xs)}
+
+\OtherTok{inject ::} \DataTypeTok{Either}\NormalTok{ () (a, [a]) }\OtherTok{->}\NormalTok{ [a]}
+\NormalTok{inject (}\DataTypeTok{Left}\NormalTok{   _     ) }\FunctionTok{=}\NormalTok{ []}
+\NormalTok{inject (}\DataTypeTok{Right}\NormalTok{ (x, xs)) }\FunctionTok{=}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
 \end{Highlighting}
 \end{Shaded}
 
-\texttt{first} takes a \texttt{p\ a\ b} (some relationship from \texttt{a} to
-\texttt{b}) and promotes it to a \texttt{p\ (a,\ q)\ (b,\ q)} (some relationship
-from \texttt{(a,\ q)} to \texttt{(b,\ q)} that \emph{ignores} the \texttt{q}).
+If you don't believe me, just verify that \texttt{inject\ .\ match\ =\ id} and
+\texttt{match\ .\ inject\ =\ id} :)
 
-With this in mind, we can now use any \texttt{Lens\textquotesingle{}\ s\ a} to
-transform a \texttt{p\ a\ a} into a \texttt{p\ s\ s}:
+And, if we consider the ``empty data type'' \texttt{Void}, the type with no
+inhabitants:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{fromLens'}
-\OtherTok{    ::} \DataTypeTok{Strong}\NormalTok{ p}
-    \OtherTok{=>} \DataTypeTok{Lens'}\NormalTok{ s a}
-    \OtherTok{->}\NormalTok{ p a a}
-    \OtherTok{->}\NormalTok{ p s s}
-\NormalTok{fromLens' (}\DataTypeTok{Lens'}\NormalTok{ spl uns) p }\FunctionTok{=}\NormalTok{ rmap split (lmap unsplit (first p))}
+\KeywordTok{data} \DataTypeTok{Void}           \CommentTok{-- no constructors, no valid inhabitants}
 \end{Highlighting}
 \end{Shaded}
+
+then we have a curious sum: every type \texttt{a} is a sum between \emph{itself}
+and \texttt{Void}. In other words, \texttt{a} is isomorphic to
+\texttt{Either\ a\ Void}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- a <~> Either a Void}
+
+\OtherTok{match ::}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a }\DataTypeTok{Void}
+\NormalTok{match x }\FunctionTok{=} \DataTypeTok{Left}\NormalTok{ x}
+
+\OtherTok{inject ::} \DataTypeTok{Either}\NormalTok{ a }\DataTypeTok{Void} \OtherTok{->}\NormalTok{ a}
+\NormalTok{inject (}\DataTypeTok{Left}\NormalTok{  x) }\FunctionTok{=}\NormalTok{ x}
+\NormalTok{inject (}\DataTypeTok{Right}\NormalTok{ v) }\FunctionTok{=} \KeywordTok{case}\NormalTok{ v }\KeywordTok{of}
+\NormalTok{                    \{\}  }\CommentTok{-- empty case statement because we have}
+                        \CommentTok{-- no constructors of 'v' we need to}
+                        \CommentTok{-- match on}
+\end{Highlighting}
+\end{Shaded}
+
+Again, if you don't believe me, verify that \texttt{inject\ .\ match\ =\ id} and
+\texttt{match\ .\ inject\ =\ id}!
 
 Hi, thanks for reading! You can reach me via email at
 \href{mailto:justin@jle.im}{\nolinkurl{justin@jle.im}}, or at twitter at

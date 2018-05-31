@@ -35,8 +35,8 @@ already
 online](https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types)
 on this topic!
 
-Be Productive!
---------------
+Let's Get Productive!
+---------------------
 
 It's easy to recognize `(Int, Double)` as a product between `Int` and `Bool`.
 However, did you know that some types are secretly product types in disguise?
@@ -55,7 +55,9 @@ data Person = P { _pName :: String
 
 By *isomorphic*, I mean that there are functions
 `split :: Person -> (String, Int)` and `unsplit :: (String, Int) -> Person`
-where `unsplit . split = id` and `split . unsplit = id`.
+where `unsplit . split = id` and `split . unsplit = id`. You can think of this
+property as stating formally that you should be able to go from one type to the
+other without "losing any information".
 
 In our case, we have:
 
@@ -181,8 +183,11 @@ So, here's the secret: A `Lens' s a` means that *`s` is a product between `a`
 and some type `x`*.
 
 That means that if it is possible to represent `s` as some `(a, q)` (that is,
-`s <~> (a, q)`, *then you have a lens*! Lenses are nothing more than
+`s <~> (a, q)`), *then you have a lens*! Lenses are nothing more than
 **descriptions of products**!
+
+In other words, a `Lens' s a` is nothing more than a witness for an
+`exists q. s <~> (a, q)` isomorphism.
 
 With that in mind, let's re-visit a saner definition of lenses based on the idea
 that lenses embody descriptions of products:
@@ -206,17 +211,30 @@ We can implement our necessary lens API as so:
 
 ``` {.haskell}
 view :: Lens' s a -> (s -> a)
-view (Lens' spl _) = fst . spl
+view Lens'{..} = fst . split
 
 set :: Lens' s a -> (a -> s -> s)
-set (Lens' spl unspl) x y = let (_, q) = spl y
-                            in  unspl (x, q)        -- "replace" the `a`
+set Lens'{..} newVal x = unsplit (newVal, q)      -- "replace" the `a`
+  where
+    (_, q) = split x
 ```
 
-TODO: record wildcards?
+(Using the *-XRecordWildcards* extension, where `Lens'{..}` binds `split` and
+`unsplit` to the fields of the lens)
 
-The surprising result is that **every product yields lenses** (one for every
-item in the product), and **every lens witnesses a product**.
+The implementation of the helper function `over` (which modifies the `a` with a
+function) is also particularly elegant:
+
+``` {.haskell}
+over :: Lens' s a -> (a -> a) -> (s -> s)
+over Lens'{..} f = unsplit . first f . split
+```
+
+The surprising result of this perspective is that **every product yields
+lenses** (one for every item in the product), and **every lens witnesses a
+product**.
+
+### Insights Gleamed
 
 Let's take a look at our first product we talked about:
 
@@ -307,87 +325,87 @@ embodiment of the fact that `s` can be represented as a product between `a` and
 something else --- that `s <~> (a, q)`. All of the lens laws just boil down to
 this. **Lenses embody products**.
 
-### Strength
+There's Sum-thing about Prisms
+------------------------------
 
-You might have heard that lenses aren't *actually* implemented as an ADT in
-practice. In most modern lens libraries, they are represented as higher-order
-functions. In my opinion, however, this is similarly boring :)
+It's easy to recognize `Either Int Bool` as a sum between `Int` and `Bool`.
+However, did you know that some types are secretly sums in disguise?
 
-If we really do mean that a `Lens' s a` witnesses an isomorphism between `s` and
-`(a, q)`...then we can represent that using a RankN function polymorphic over a
-`Profunctor`.
-
-If you are not familiar with profunctors, there's a [great
-introduction](https://ocharles.org.uk/blog/guest-posts/2013-12-22-24-days-of-hackage-profunctors.html)
-on Oliver Charles's Blog written by Tom Ellis. The typeclass requires that we
-have ways to "re-map" both ends of the relationship:
+For example, here's a data type you might encounter out there in the real world:
 
 ``` {.haskell}
-lmap :: Profunctor p => (a' -> a)  -> p a b -> p a' b
-rmap :: Profunctor p => (b  -> b') -> p a b -> p a  b'
+data Shape = Circle  Double           -- radius
+           | RegPoly Natural Double   -- number of sides, length of sides
 ```
 
-`lmap` lets you "pre-apply" a function, essentially, to the "input" of a
-`p a b`, and `rmap` lets you "post-apply" a function to the "output" of a
-`p a b`. These definitions are "generic" and vague enough to allow for many
-different colorful `Profunctor` instances that have all sorts of interesting
-implementations of "pre-apply" and "post-apply".
+`Circle 2.9` represents a circle with radius 2.9, and `RegPoly 8 4.6` represents
+a octagon (8-sided figure) whose sides all have length 4.6.
 
-However, for this post, I want to propose a specific interpretation of the
-`Profunctor` typeclass: a `p a b` represents a *relationship* from `a` to `b`.
-The `Profunctor` typeclass is delightfully vague enough that all of the many
-different instances and choices of `p` all give very unique and interesting
-perspectives on what a "relationship from `a` to `b`" even means.
-
-What does this mean for lenses?
-
-Well, a `Lens' s a` can be thought of as a way to "promote" a `p a a` to a
-`p s s`. It lets you promote some relationship on `a` (the internals) to become
-a full-fledged relationship on `s`.
-
-What does this mean from our "lenses are products" perspective? It means that if
-we can turn `p a a` into `p (a, q) (a, q)` that "ignores" the `q`...then we can
-just pre-map and post-map `split` and `unsplit` to get a `p s s`:
+`Shape` is an algebraic data type --- so-called because it is actually a *sum*
+between `Double` and `(Natural, Double)` (a `Natural` is the non-negative
+`Integer` type). `Shape` is *isomorphic* to `Either Double (Natural, Double)`.
+To prove it, let's witness `Shape <~> Either Double (Natural, Double)` using the
+functions `match` and `inject`:
 
 ``` {.haskell}
-rejoinProfunctor
-    :: Profunctor p
-    => p (String, Int) (String, Int)
-    -> p Person Person
-rejoinProfunctor p = p''
-  where
-    p'  :: p Person (String, Int)
-    p' = lmap split p         -- pre-map split
-    p'' :: p Person Person
-    p'' = rmap unsplit p          -- post-map unsplit
-    split   (P n a) = (n, a)
-    unsplit (n, a)  = P n a
+-- Shape <~> Either Double (Natural, Double)
+
+match :: Shape -> Either Double (Natural, Double)
+match (Circle  r  ) = Left r
+match (RegPoly n s) = Right (n, s)
+
+inject :: Either Double (Natural, Double) -> Shape
+inject (Left   r    ) = Circle  r
+inject (Right (n, s)) = RegPoly n s
 ```
 
-We can make a typeclass for profunctors that have such a "promote to a
-relationship over a tuple, ignoring the second field". It's typically called
-`Strong`:
+Since `inject . match = id` and `match . inject = id`, this proves that `Shape`
+is a sum in disguise.
+
+Another interesting "hidden sum" is the fact that `[a]` in Haskell is actually a
+sum between `()` and `(a, [a])`. That's right --- it's a sum between `()`
+and...itself?
 
 ``` {.haskell}
-class Profunctor p => Strong p where
-    first :: p a b -> p (a, q) (b, q)
+-- [a] <~> Either () (a, [a])
+
+match :: [a] -> Either () (a, [a])
+match []     = Left  ()
+match (x:xs) = Right (x, xs)
+
+inject :: Either () (a, [a]) -> [a]
+inject (Left   _     ) = []
+inject (Right (x, xs)) = x:xs
 ```
 
-`first` takes a `p a b` (some relationship from `a` to `b`) and promotes it to a
-`p (a, q) (b, q)` (some relationship from `(a, q)` to `(b, q)` that *ignores*
-the `q`).
+If you don't believe me, just verify that `inject . match = id` and
+`match . inject = id` :)
 
-With this in mind, we can now use any `Lens' s a` to transform a `p a a` into a
-`p s s`:
+And, if we consider the "empty data type" `Void`, the type with no inhabitants:
 
 ``` {.haskell}
-fromLens'
-    :: Strong p
-    => Lens' s a
-    -> p a a
-    -> p s s
-fromLens' (Lens' spl uns) p = rmap split (lmap unsplit (first p))
+data Void           -- no constructors, no valid inhabitants
 ```
+
+then we have a curious sum: every type `a` is a sum between *itself* and `Void`.
+In other words, `a` is isomorphic to `Either a Void`:
+
+``` {.haskell}
+-- a <~> Either a Void
+
+match :: a -> Either a Void
+match x = Left x
+
+inject :: Either a Void -> a
+inject (Left  x) = x
+inject (Right v) = case v of
+                    {}  -- empty case statement because we have
+                        -- no constructors of 'v' we need to
+                        -- match on
+```
+
+Again, if you don't believe me, verify that `inject . match = id` and
+`match . inject = id`!
 
 [^1]: All of this is disregarding the notorious "bottom" value that inhabits
     every type.

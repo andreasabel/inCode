@@ -19,14 +19,14 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>This post won’t be a “lens tutorial”, but rather a dive into a (what I believe is an) insightful perspective on lenses and prisms that I’ve heard repeated many times, but not yet all gathered together into a single place. In particular, I’m going to talk about the perspective of lenses and prisms as embodying the essences of products and sums (respectively), and how that observation can help you with a more “practical” understanding of lenses and prisms.</p>
 <h2 id="products-and-sums">Products and Sums</h2>
 <p>In Haskell, “products and sums” can roughly be said to correspond to “tuples and <code>Either</code>”. If I have two types <code>A</code> and <code>B</code>, <code>(A, B)</code> is their “product” type. It’s often called an “anonymous product”, because we can make one without having to give it a fancy name. It’s called a product type because <code>A</code> has <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?n" alt="n" title="n" /> possible values and <code>B</code> has <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?m" alt="m" title="m" /> possible values, then <code>(A, B)</code> has <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?n%20%5Ctimes%20m" alt="n \times m" title="n \times m" /> possible values<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>. And, <code>Either A B</code> is their (anonymous) “sum” type. It’s called a sum type because <code>Either A B</code> has <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?n%20%2B%20m" alt="n + m" title="n + m" /> possible values. I won’t go much deeper into this, but there are <a href="https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types">many useful tutorials already online</a> on this topic!</p>
-<h2 id="be-productive">Be Productive!</h2>
+<h2 id="lets-get-productive">Let’s Get Productive!</h2>
 <p>It’s easy to recognize <code>(Int, Double)</code> as a product between <code>Int</code> and <code>Bool</code>. However, did you know that some types are secretly product types in disguise?</p>
 <p>For example, here’s a classic example of a lensable data type</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Person</span> <span class="fu">=</span> <span class="dt">P</span> {<span class="ot"> _pName ::</span> <span class="dt">String</span></a>
 <a class="sourceLine" id="cb1-2" data-line-number="2">                ,<span class="ot"> _pAge  ::</span> <span class="dt">Int</span></a>
 <a class="sourceLine" id="cb1-3" data-line-number="3">                }</a></code></pre></div>
 <p><code>Person</code> is an algebraic data type — so-called because it is actually a <em>product</em> between a <code>String</code> and <code>Int</code>. <code>Person</code> is <em>isomorphic</em> to <code>(String, Int)</code>. I will be writing this as <code>Person &lt;~&gt; (String, Int)</code>.</p>
-<p>By <em>isomorphic</em>, I mean that there are functions <code>split :: Person -&gt; (String, Int)</code> and <code>unsplit :: (String, Int) -&gt; Person</code> where <code>unsplit . split = id</code> and <code>split . unsplit = id</code>.</p>
+<p>By <em>isomorphic</em>, I mean that there are functions <code>split :: Person -&gt; (String, Int)</code> and <code>unsplit :: (String, Int) -&gt; Person</code> where <code>unsplit . split = id</code> and <code>split . unsplit = id</code>. You can think of this property as stating formally that you should be able to go from one type to the other without “losing any information”.</p>
 <p>In our case, we have:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">split ::</span> <span class="dt">Person</span> <span class="ot">-&gt;</span> (<span class="dt">String</span>, <span class="dt">Int</span>)</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">split (<span class="dt">P</span> n a) <span class="fu">=</span> (n, a)</a>
@@ -95,7 +95,8 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb8-3" data-line-number="3">                       }</a></code></pre></div>
 <p>But this is bad bad bad. That’s because you can use this to represent lenses that “break the laws”. This representation is, to use the technical term, “too big”. It allows more more values than are actual lenses.</p>
 <p>So, here’s the secret: A <code>Lens' s a</code> means that <em><code>s</code> is a product between <code>a</code> and some type <code>x</code></em>.</p>
-<p>That means that if it is possible to represent <code>s</code> as some <code>(a, q)</code> (that is, <code>s &lt;~&gt; (a, q)</code>, <em>then you have a lens</em>! Lenses are nothing more than <strong>descriptions of products</strong>!</p>
+<p>That means that if it is possible to represent <code>s</code> as some <code>(a, q)</code> (that is, <code>s &lt;~&gt; (a, q)</code>), <em>then you have a lens</em>! Lenses are nothing more than <strong>descriptions of products</strong>!</p>
+<p>In other words, a <code>Lens' s a</code> is nothing more than a witness for an <code>exists q. s &lt;~&gt; (a, q)</code> isomorphism.</p>
 <p>With that in mind, let’s re-visit a saner definition of lenses based on the idea that lenses embody descriptions of products:</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Lens&#39;</span> s a <span class="fu">=</span> forall q<span class="fu">.</span></a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">                 <span class="dt">Lens&#39;</span> {<span class="ot"> split   ::</span> s <span class="ot">-&gt;</span> (a, q)</a>
@@ -105,87 +106,101 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>This type is technically also “too big” (you can write a value where <code>split</code> and <code>unsplit</code> do not form an isomorphism), but I think, to me, “<code>split</code> and <code>join</code> must form an isomorphism” is a much clearer and natural law than get-put/put-get/put-put.</p>
 <p>We can implement our necessary lens API as so:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">view ::</span> <span class="dt">Lens&#39;</span> s a <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> a)</a>
-<a class="sourceLine" id="cb10-2" data-line-number="2">view (<span class="dt">Lens&#39;</span> spl _) <span class="fu">=</span> fst <span class="fu">.</span> spl</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">view <span class="dt">Lens&#39;</span>{<span class="fu">..</span>} <span class="fu">=</span> fst <span class="fu">.</span> split</a>
 <a class="sourceLine" id="cb10-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb10-4" data-line-number="4"><span class="ot">set ::</span> <span class="dt">Lens&#39;</span> s a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> s <span class="ot">-&gt;</span> s)</a>
-<a class="sourceLine" id="cb10-5" data-line-number="5">set (<span class="dt">Lens&#39;</span> spl unspl) x y <span class="fu">=</span> <span class="kw">let</span> (_, q) <span class="fu">=</span> spl y</a>
-<a class="sourceLine" id="cb10-6" data-line-number="6">                            <span class="kw">in</span>  unspl (x, q)        <span class="co">-- &quot;replace&quot; the `a`</span></a></code></pre></div>
-<p>TODO: record wildcards?</p>
-<p>The surprising result is that <strong>every product yields lenses</strong> (one for every item in the product), and <strong>every lens witnesses a product</strong>.</p>
+<a class="sourceLine" id="cb10-5" data-line-number="5">set <span class="dt">Lens&#39;</span>{<span class="fu">..</span>} newVal x <span class="fu">=</span> unsplit (newVal, q)      <span class="co">-- &quot;replace&quot; the `a`</span></a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">    (_, q) <span class="fu">=</span> split x</a></code></pre></div>
+<p>(Using the <em>-XRecordWildcards</em> extension, where <code>Lens'{..}</code> binds <code>split</code> and <code>unsplit</code> to the fields of the lens)</p>
+<p>The implementation of the helper function <code>over</code> (which modifies the <code>a</code> with a function) is also particularly elegant:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">over ::</span> <span class="dt">Lens&#39;</span> s a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> s)</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">over <span class="dt">Lens&#39;</span>{<span class="fu">..</span>} f <span class="fu">=</span> unsplit <span class="fu">.</span> first f <span class="fu">.</span> split</a></code></pre></div>
+<p>The surprising result of this perspective is that <strong>every product yields lenses</strong> (one for every item in the product), and <strong>every lens witnesses a product</strong>.</p>
+<h3 id="insights-gleamed">Insights Gleamed</h3>
 <p>Let’s take a look at our first product we talked about:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Person</span> <span class="fu">=</span> <span class="dt">P</span> {<span class="ot"> _pName ::</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb11-2" data-line-number="2">                ,<span class="ot"> _pAge  ::</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">                }</a>
-<a class="sourceLine" id="cb11-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb11-5" data-line-number="5"><span class="ot">split ::</span> <span class="dt">Person</span> <span class="ot">-&gt;</span> (<span class="dt">String</span>, <span class="dt">Int</span>)</a>
-<a class="sourceLine" id="cb11-6" data-line-number="6">split (<span class="dt">P</span> n a) <span class="fu">=</span> (n, a)</a>
-<a class="sourceLine" id="cb11-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb11-8" data-line-number="8"><span class="ot">unsplit ::</span> (<span class="dt">String</span>, <span class="dt">Int</span>) <span class="ot">-&gt;</span> <span class="dt">Person</span></a>
-<a class="sourceLine" id="cb11-9" data-line-number="9">unsplit (n, a) <span class="fu">=</span> <span class="dt">P</span> n a</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Person</span> <span class="fu">=</span> <span class="dt">P</span> {<span class="ot"> _pName ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">                ,<span class="ot"> _pAge  ::</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb12-3" data-line-number="3">                }</a>
+<a class="sourceLine" id="cb12-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb12-5" data-line-number="5"><span class="ot">split ::</span> <span class="dt">Person</span> <span class="ot">-&gt;</span> (<span class="dt">String</span>, <span class="dt">Int</span>)</a>
+<a class="sourceLine" id="cb12-6" data-line-number="6">split (<span class="dt">P</span> n a) <span class="fu">=</span> (n, a)</a>
+<a class="sourceLine" id="cb12-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb12-8" data-line-number="8"><span class="ot">unsplit ::</span> (<span class="dt">String</span>, <span class="dt">Int</span>) <span class="ot">-&gt;</span> <span class="dt">Person</span></a>
+<a class="sourceLine" id="cb12-9" data-line-number="9">unsplit (n, a) <span class="fu">=</span> <span class="dt">P</span> n a</a></code></pre></div>
 <p>Because <code>Person</code> is a product between <code>String</code> and <code>Int</code>, we get <em>two lenses</em>: a <code>Lens' Person String</code> and <code>Lens' Person Int</code>. <em>Every product</em> gives us a lens for every item in the product.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">pName ::</span> <span class="dt">Lens&#39;</span> <span class="dt">Person</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb12-2" data-line-number="2">pName <span class="fu">=</span> <span class="dt">Lens&#39;</span> { split   <span class="fu">=</span> \(<span class="dt">P</span> n a) <span class="ot">-&gt;</span> (n, a)</a>
-<a class="sourceLine" id="cb12-3" data-line-number="3">              , unsplit <span class="fu">=</span> \(n, a)  <span class="ot">-&gt;</span> <span class="dt">P</span> n a</a>
-<a class="sourceLine" id="cb12-4" data-line-number="4">              }</a>
-<a class="sourceLine" id="cb12-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb12-6" data-line-number="6"><span class="ot">pAge ::</span> <span class="dt">Lens&#39;</span> <span class="dt">Person</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb12-7" data-line-number="7">pAge <span class="fu">=</span> <span class="dt">Lens&#39;</span> { split   <span class="fu">=</span> \(<span class="dt">P</span> n a) <span class="ot">-&gt;</span> (a, n)</a>
-<a class="sourceLine" id="cb12-8" data-line-number="8">             , unsplit <span class="fu">=</span> \(a, n)  <span class="ot">-&gt;</span> <span class="dt">P</span> n a</a>
-<a class="sourceLine" id="cb12-9" data-line-number="9">             }</a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">pName ::</span> <span class="dt">Lens&#39;</span> <span class="dt">Person</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">pName <span class="fu">=</span> <span class="dt">Lens&#39;</span> { split   <span class="fu">=</span> \(<span class="dt">P</span> n a) <span class="ot">-&gt;</span> (n, a)</a>
+<a class="sourceLine" id="cb13-3" data-line-number="3">              , unsplit <span class="fu">=</span> \(n, a)  <span class="ot">-&gt;</span> <span class="dt">P</span> n a</a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">              }</a>
+<a class="sourceLine" id="cb13-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb13-6" data-line-number="6"><span class="ot">pAge ::</span> <span class="dt">Lens&#39;</span> <span class="dt">Person</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb13-7" data-line-number="7">pAge <span class="fu">=</span> <span class="dt">Lens&#39;</span> { split   <span class="fu">=</span> \(<span class="dt">P</span> n a) <span class="ot">-&gt;</span> (a, n)</a>
+<a class="sourceLine" id="cb13-8" data-line-number="8">             , unsplit <span class="fu">=</span> \(a, n)  <span class="ot">-&gt;</span> <span class="dt">P</span> n a</a>
+<a class="sourceLine" id="cb13-9" data-line-number="9">             }</a></code></pre></div>
 <p>The inverse is true too. <strong>Every lens witnesses a product</strong>. The fact that we have a lawful <code>pName :: Lens' Person String</code> means that a <code>Person</code> <em>must</em> be a product between <code>String</code> and some other (hidden) type.</p>
 <p>It can be insightful to look at products that we know and see what lenses those correspond to.</p>
 <p>For example, our <code>NonEmpty a &lt;~&gt; (a, [a])</code> product tells us that <code>NonEmpty a</code> has at least two lenses: a “head” lens <code>Lens' (NonEmpty a) a</code> and a “tail” lens <code>Lens' (NonEmpty a) [a]</code>.</p>
 <p>Our <code>a &lt;~&gt; (a, ())</code> product gives some interesting insight. This tells us that we always have an “identity” lens <code>Lens' a a</code>, and a “unit” lens <code>Lens' a ()</code>, for any <code>a</code>:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">identity ::</span> <span class="dt">Lens&#39;</span> a a</a>
-<a class="sourceLine" id="cb13-2" data-line-number="2">identity <span class="fu">=</span> <span class="dt">Lens&#39;</span> { split   <span class="fu">=</span> \x      <span class="ot">-&gt;</span> (x, ())</a>
-<a class="sourceLine" id="cb13-3" data-line-number="3">                 , unsplit <span class="fu">=</span> \(x, _) <span class="ot">-&gt;</span> x</a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">                 }</a>
-<a class="sourceLine" id="cb13-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb13-6" data-line-number="6"><span class="ot">unital ::</span> <span class="dt">Lens&#39;</span> a ()</a>
-<a class="sourceLine" id="cb13-7" data-line-number="7">unital <span class="fu">=</span> <span class="dt">Lens&#39;</span> { split   <span class="fu">=</span> \x       <span class="ot">-&gt;</span> ((), x)</a>
-<a class="sourceLine" id="cb13-8" data-line-number="8">               , unsplit <span class="fu">=</span> \((), x) <span class="ot">-&gt;</span> x</a>
-<a class="sourceLine" id="cb13-9" data-line-number="9">               }</a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">identity ::</span> <span class="dt">Lens&#39;</span> a a</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">identity <span class="fu">=</span> <span class="dt">Lens&#39;</span> { split   <span class="fu">=</span> \x      <span class="ot">-&gt;</span> (x, ())</a>
+<a class="sourceLine" id="cb14-3" data-line-number="3">                 , unsplit <span class="fu">=</span> \(x, _) <span class="ot">-&gt;</span> x</a>
+<a class="sourceLine" id="cb14-4" data-line-number="4">                 }</a>
+<a class="sourceLine" id="cb14-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb14-6" data-line-number="6"><span class="ot">unital ::</span> <span class="dt">Lens&#39;</span> a ()</a>
+<a class="sourceLine" id="cb14-7" data-line-number="7">unital <span class="fu">=</span> <span class="dt">Lens&#39;</span> { split   <span class="fu">=</span> \x       <span class="ot">-&gt;</span> ((), x)</a>
+<a class="sourceLine" id="cb14-8" data-line-number="8">               , unsplit <span class="fu">=</span> \((), x) <span class="ot">-&gt;</span> x</a>
+<a class="sourceLine" id="cb14-9" data-line-number="9">               }</a></code></pre></div>
 <p>In the language of lens, <code>identity :: Lens' a a</code> tells us that all <code>a</code>s have an <code>a</code> “inside” them. However, in the language of products, this just tells us that <code>a</code> can be represented as <code>(a, ())</code>. In the language of lens, <code>unital :: Lens' a ()</code> tells us that all <code>a</code>s have a <code>()</code> “inside” them. In the language of products, this just tells us that <code>a &lt;~&gt; (a, ())</code>.</p>
 <p>What insight does our <code>Either a a &lt;~&gt; (Bool, a)</code> product perspective give us? Well, let’s write out their types and see what it might suggest:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">mysteryLens1 ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Either</span> a a) <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb14-2" data-line-number="2"><span class="ot">mysteryLens2 ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Either</span> a a) a</a></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">mysteryLens1 ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Either</span> a a) <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb15-2" data-line-number="2"><span class="ot">mysteryLens2 ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Either</span> a a) a</a></code></pre></div>
 <p>Looking at <code>mysteryLens1 :: Lens' (Either a a) Bool</code>, we are saying that every <code>Either a a</code> has some <code>Bool</code> “inside” it. From our knowledge of our product, we know that this <code>Bool</code> is really a <em>flag</em> for left-ness or right-ness. Getting the <code>Bool</code> is finding out if we’re in <code>Left</code> or <code>Right</code>, and flipping the <code>Bool</code> “inside” is really just swapping from <code>Left</code> to <code>Right</code>.</p>
 <p>Looking at <code>mysteryLens2 :: Lens' (Either a a) a</code>, we are saying that every <code>Either a a</code> has some <code>a</code> “inside” it. From what we know about the underlying product, the <code>a</code> is just the “contained value”, <em>ignoring</em> leftness or rightness. Getting the <code>a</code> is getting the contained value and losing leftness/rightness, and re-setting the <code>a</code> inside is modifying the contained value but preserving leftness/rightness.</p>
 <p>So that’s really the essence of what a <code>Lens'</code> is. A <code>Lens' s a</code> is the embodiment of the fact that <code>s</code> can be represented as a product between <code>a</code> and something else — that <code>s &lt;~&gt; (a, q)</code>. All of the lens laws just boil down to this. <strong>Lenses embody products</strong>.</p>
-<h3 id="strength">Strength</h3>
-<p>You might have heard that lenses aren’t <em>actually</em> implemented as an ADT in practice. In most modern lens libraries, they are represented as higher-order functions. In my opinion, however, this is similarly boring :)</p>
-<p>If we really do mean that a <code>Lens' s a</code> witnesses an isomorphism between <code>s</code> and <code>(a, q)</code>…then we can represent that using a RankN function polymorphic over a <code>Profunctor</code>.</p>
-<p>If you are not familiar with profunctors, there’s a <a href="https://ocharles.org.uk/blog/guest-posts/2013-12-22-24-days-of-hackage-profunctors.html">great introduction</a> on Oliver Charles’s Blog written by Tom Ellis. The typeclass requires that we have ways to “re-map” both ends of the relationship:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">lmap ::</span> <span class="dt">Profunctor</span> p <span class="ot">=&gt;</span> (a&#39; <span class="ot">-&gt;</span> a)  <span class="ot">-&gt;</span> p a b <span class="ot">-&gt;</span> p a&#39; b</a>
-<a class="sourceLine" id="cb15-2" data-line-number="2"><span class="ot">rmap ::</span> <span class="dt">Profunctor</span> p <span class="ot">=&gt;</span> (b  <span class="ot">-&gt;</span> b&#39;) <span class="ot">-&gt;</span> p a b <span class="ot">-&gt;</span> p a  b&#39;</a></code></pre></div>
-<p><code>lmap</code> lets you “pre-apply” a function, essentially, to the “input” of a <code>p a b</code>, and <code>rmap</code> lets you “post-apply” a function to the “output” of a <code>p a b</code>. These definitions are “generic” and vague enough to allow for many different colorful <code>Profunctor</code> instances that have all sorts of interesting implementations of “pre-apply” and “post-apply”.</p>
-<p>However, for this post, I want to propose a specific interpretation of the <code>Profunctor</code> typeclass: a <code>p a b</code> represents a <em>relationship</em> from <code>a</code> to <code>b</code>. The <code>Profunctor</code> typeclass is delightfully vague enough that all of the many different instances and choices of <code>p</code> all give very unique and interesting perspectives on what a “relationship from <code>a</code> to <code>b</code>” even means.</p>
-<p>What does this mean for lenses?</p>
-<p>Well, a <code>Lens' s a</code> can be thought of as a way to “promote” a <code>p a a</code> to a <code>p s s</code>. It lets you promote some relationship on <code>a</code> (the internals) to become a full-fledged relationship on <code>s</code>.</p>
-<p>What does this mean from our “lenses are products” perspective? It means that if we can turn <code>p a a</code> into <code>p (a, q) (a, q)</code> that “ignores” the <code>q</code>…then we can just pre-map and post-map <code>split</code> and <code>unsplit</code> to get a <code>p s s</code>:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1">rejoinProfunctor</a>
-<a class="sourceLine" id="cb16-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Profunctor</span> p</a>
-<a class="sourceLine" id="cb16-3" data-line-number="3">    <span class="ot">=&gt;</span> p (<span class="dt">String</span>, <span class="dt">Int</span>) (<span class="dt">String</span>, <span class="dt">Int</span>)</a>
-<a class="sourceLine" id="cb16-4" data-line-number="4">    <span class="ot">-&gt;</span> p <span class="dt">Person</span> <span class="dt">Person</span></a>
-<a class="sourceLine" id="cb16-5" data-line-number="5">rejoinProfunctor p <span class="fu">=</span> p&#39;&#39;</a>
-<a class="sourceLine" id="cb16-6" data-line-number="6">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb16-7" data-line-number="7"><span class="ot">    p&#39;  ::</span> p <span class="dt">Person</span> (<span class="dt">String</span>, <span class="dt">Int</span>)</a>
-<a class="sourceLine" id="cb16-8" data-line-number="8">    p&#39; <span class="fu">=</span> lmap split p         <span class="co">-- pre-map split</span></a>
-<a class="sourceLine" id="cb16-9" data-line-number="9"><span class="ot">    p&#39;&#39; ::</span> p <span class="dt">Person</span> <span class="dt">Person</span></a>
-<a class="sourceLine" id="cb16-10" data-line-number="10">    p&#39;&#39; <span class="fu">=</span> rmap unsplit p          <span class="co">-- post-map unsplit</span></a>
-<a class="sourceLine" id="cb16-11" data-line-number="11">    split   (<span class="dt">P</span> n a) <span class="fu">=</span> (n, a)</a>
-<a class="sourceLine" id="cb16-12" data-line-number="12">    unsplit (n, a)  <span class="fu">=</span> <span class="dt">P</span> n a</a></code></pre></div>
-<p>We can make a typeclass for profunctors that have such a “promote to a relationship over a tuple, ignoring the second field”. It’s typically called <code>Strong</code>:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="kw">class</span> <span class="dt">Profunctor</span> p <span class="ot">=&gt;</span> <span class="dt">Strong</span> p <span class="kw">where</span></a>
-<a class="sourceLine" id="cb17-2" data-line-number="2"><span class="ot">    first ::</span> p a b <span class="ot">-&gt;</span> p (a, q) (b, q)</a></code></pre></div>
-<p><code>first</code> takes a <code>p a b</code> (some relationship from <code>a</code> to <code>b</code>) and promotes it to a <code>p (a, q) (b, q)</code> (some relationship from <code>(a, q)</code> to <code>(b, q)</code> that <em>ignores</em> the <code>q</code>).</p>
-<p>With this in mind, we can now use any <code>Lens' s a</code> to transform a <code>p a a</code> into a <code>p s s</code>:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1">fromLens&#39;</a>
-<a class="sourceLine" id="cb18-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Strong</span> p</a>
-<a class="sourceLine" id="cb18-3" data-line-number="3">    <span class="ot">=&gt;</span> <span class="dt">Lens&#39;</span> s a</a>
-<a class="sourceLine" id="cb18-4" data-line-number="4">    <span class="ot">-&gt;</span> p a a</a>
-<a class="sourceLine" id="cb18-5" data-line-number="5">    <span class="ot">-&gt;</span> p s s</a>
-<a class="sourceLine" id="cb18-6" data-line-number="6">fromLens&#39; (<span class="dt">Lens&#39;</span> spl uns) p <span class="fu">=</span> rmap split (lmap unsplit (first p))</a></code></pre></div>
+<h2 id="theres-sum-thing-about-prisms">There’s Sum-thing about Prisms</h2>
+<p>It’s easy to recognize <code>Either Int Bool</code> as a sum between <code>Int</code> and <code>Bool</code>. However, did you know that some types are secretly sums in disguise?</p>
+<p>For example, here’s a data type you might encounter out there in the real world:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Shape</span> <span class="fu">=</span> <span class="dt">Circle</span>  <span class="dt">Double</span>           <span class="co">-- radius</span></a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">           <span class="fu">|</span> <span class="dt">RegPoly</span> <span class="dt">Natural</span> <span class="dt">Double</span>   <span class="co">-- number of sides, length of sides</span></a></code></pre></div>
+<p><code>Circle 2.9</code> represents a circle with radius 2.9, and <code>RegPoly 8 4.6</code> represents a octagon (8-sided figure) whose sides all have length 4.6.</p>
+<p><code>Shape</code> is an algebraic data type — so-called because it is actually a <em>sum</em> between <code>Double</code> and <code>(Natural, Double)</code> (a <code>Natural</code> is the non-negative <code>Integer</code> type). <code>Shape</code> is <em>isomorphic</em> to <code>Either Double (Natural, Double)</code>. To prove it, let’s witness <code>Shape &lt;~&gt; Either Double (Natural, Double)</code> using the functions <code>match</code> and <code>inject</code>:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">-- Shape &lt;~&gt; Either Double (Natural, Double)</span></a>
+<a class="sourceLine" id="cb17-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb17-3" data-line-number="3"><span class="ot">match ::</span> <span class="dt">Shape</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Double</span> (<span class="dt">Natural</span>, <span class="dt">Double</span>)</a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">match (<span class="dt">Circle</span>  r  ) <span class="fu">=</span> <span class="dt">Left</span> r</a>
+<a class="sourceLine" id="cb17-5" data-line-number="5">match (<span class="dt">RegPoly</span> n s) <span class="fu">=</span> <span class="dt">Right</span> (n, s)</a>
+<a class="sourceLine" id="cb17-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb17-7" data-line-number="7"><span class="ot">inject ::</span> <span class="dt">Either</span> <span class="dt">Double</span> (<span class="dt">Natural</span>, <span class="dt">Double</span>) <span class="ot">-&gt;</span> <span class="dt">Shape</span></a>
+<a class="sourceLine" id="cb17-8" data-line-number="8">inject (<span class="dt">Left</span>   r    ) <span class="fu">=</span> <span class="dt">Circle</span>  r</a>
+<a class="sourceLine" id="cb17-9" data-line-number="9">inject (<span class="dt">Right</span> (n, s)) <span class="fu">=</span> <span class="dt">RegPoly</span> n s</a></code></pre></div>
+<p>Since <code>inject . match = id</code> and <code>match . inject = id</code>, this proves that <code>Shape</code> is a sum in disguise.</p>
+<p>Another interesting “hidden sum” is the fact that <code>[a]</code> in Haskell is actually a sum between <code>()</code> and <code>(a, [a])</code>. That’s right — it’s a sum between <code>()</code> and…itself?</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="co">-- [a] &lt;~&gt; Either () (a, [a])</span></a>
+<a class="sourceLine" id="cb18-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb18-3" data-line-number="3"><span class="ot">match ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a, [a])</a>
+<a class="sourceLine" id="cb18-4" data-line-number="4">match []     <span class="fu">=</span> <span class="dt">Left</span>  ()</a>
+<a class="sourceLine" id="cb18-5" data-line-number="5">match (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="dt">Right</span> (x, xs)</a>
+<a class="sourceLine" id="cb18-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb18-7" data-line-number="7"><span class="ot">inject ::</span> <span class="dt">Either</span> () (a, [a]) <span class="ot">-&gt;</span> [a]</a>
+<a class="sourceLine" id="cb18-8" data-line-number="8">inject (<span class="dt">Left</span>   _     ) <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb18-9" data-line-number="9">inject (<span class="dt">Right</span> (x, xs)) <span class="fu">=</span> x<span class="fu">:</span>xs</a></code></pre></div>
+<p>If you don’t believe me, just verify that <code>inject . match = id</code> and <code>match . inject = id</code> :)</p>
+<p>And, if we consider the “empty data type” <code>Void</code>, the type with no inhabitants:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Void</span>           <span class="co">-- no constructors, no valid inhabitants</span></a></code></pre></div>
+<p>then we have a curious sum: every type <code>a</code> is a sum between <em>itself</em> and <code>Void</code>. In other words, <code>a</code> is isomorphic to <code>Either a Void</code>:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="co">-- a &lt;~&gt; Either a Void</span></a>
+<a class="sourceLine" id="cb20-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb20-3" data-line-number="3"><span class="ot">match ::</span> a <span class="ot">-&gt;</span> <span class="dt">Either</span> a <span class="dt">Void</span></a>
+<a class="sourceLine" id="cb20-4" data-line-number="4">match x <span class="fu">=</span> <span class="dt">Left</span> x</a>
+<a class="sourceLine" id="cb20-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb20-6" data-line-number="6"><span class="ot">inject ::</span> <span class="dt">Either</span> a <span class="dt">Void</span> <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb20-7" data-line-number="7">inject (<span class="dt">Left</span>  x) <span class="fu">=</span> x</a>
+<a class="sourceLine" id="cb20-8" data-line-number="8">inject (<span class="dt">Right</span> v) <span class="fu">=</span> <span class="kw">case</span> v <span class="kw">of</span></a>
+<a class="sourceLine" id="cb20-9" data-line-number="9">                    {}  <span class="co">-- empty case statement because we have</span></a>
+<a class="sourceLine" id="cb20-10" data-line-number="10">                        <span class="co">-- no constructors of &#39;v&#39; we need to</span></a>
+<a class="sourceLine" id="cb20-11" data-line-number="11">                        <span class="co">-- match on</span></a></code></pre></div>
+<p>Again, if you don’t believe me, verify that <code>inject . match = id</code> and <code>match . inject = id</code>!</p>
 <section class="footnotes">
 <hr />
 <ol>
