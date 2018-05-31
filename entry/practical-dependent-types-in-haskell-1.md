@@ -1072,5 +1072,8 @@ published under the [CC-BY-NC-ND
 and edits via pull request are welcome and encouraged at [the source
 repository](https://github.com/mstksg/inCode).
 
-If you would like to donate, I am currently accepting bitcoin donations at
-*[3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)*!
+If you feel inclined, or this post was particularly helpful for you, why not
+consider [supporting me on Patreon](https://www.patreon.com/justinle), or a BTC
+donation at
+*[3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)*?
+:)
