@@ -5,8 +5,8 @@ Starting a Patreon
 > [Read online!](https://blog.jle.im/entry/starting-a-patreon.html)
 
 *Short version:* I've [started a Patreon
-page](https://www.patreon.com/justinle/overview) for those who want to help
-support my writing in my post-doctoral life! :D
+page](https://www.patreon.com/justinle/overview) for those who want to help me
+sustain my writing in my post-doctoral life! :D
 
 *Long version:* Hi all! Hope you can excuse the two non-technical and personal
 posts in a row :) To give some context on this announcement, here's some news
