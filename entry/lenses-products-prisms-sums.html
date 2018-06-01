@@ -137,7 +137,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb13-7" data-line-number="7">pAge <span class="fu">=</span> <span class="dt">Lens&#39;</span> { split   <span class="fu">=</span> \(<span class="dt">P</span> n a) <span class="ot">-&gt;</span> (a, n)</a>
 <a class="sourceLine" id="cb13-8" data-line-number="8">             , unsplit <span class="fu">=</span> \(a, n)  <span class="ot">-&gt;</span> <span class="dt">P</span> n a</a>
 <a class="sourceLine" id="cb13-9" data-line-number="9">             }</a></code></pre></div>
-<p>These are actually the typical lenses associated with record! You get exactly these lenses if you use <code>makeLenses</code> from the <em>lens</em> package!</p>
+<p>These are actually the typical lenses associated with records! You get exactly these lenses if you use <code>makeLenses</code> from the <em>lens</em> package.</p>
 <p>The inverse is true too. <strong>Every lens witnesses a product</strong>. The fact that we have a lawful <code>pName :: Lens' Person String</code> means that a <code>Person</code> <em>must</em> be a product between <code>String</code> and some other (hidden) type.</p>
 <p>It can be insightful to look at products that we know and see what lenses those correspond to.</p>
 <p>For example, our <code>NonEmpty a &lt;~&gt; (a, [a])</code> product tells us that <code>NonEmpty a</code> has at least two lenses: a “head” lens <code>Lens' (NonEmpty a) a</code> and a “tail” lens <code>Lens' (NonEmpty a) [a]</code>.</p>
@@ -201,78 +201,86 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb20-10" data-line-number="10">                        <span class="co">-- no constructors of &#39;v&#39; we need to</span></a>
 <a class="sourceLine" id="cb20-11" data-line-number="11">                        <span class="co">-- match on</span></a></code></pre></div>
 <p>Again, if you don’t believe me, verify that <code>inject . match = id</code> and <code>match . inject = id</code>!</p>
-<p>One last example – one of my favorite sums from math is the fact that the natural numbers are a sum between … themselves and themselves. <code>Natural &lt;~&gt; Either Natural Natural</code>. Sometimes you might hear this stated as <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?2%20%5Cmathbb%7BN%7D%20%5Cequiv%20%5Cmathbb%7BN%7D" alt="2 \mathbb{N} \equiv \mathbb{N}" title="2 \mathbb{N} \equiv \mathbb{N}" /> (where <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?2%20%5Cmathbb%7BN%7D" alt="2 \mathbb{N}" title="2 \mathbb{N}" /> can be thought of as a fancy way of writing <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Cmathbb%7BN%7D%20%2B%20%5Cmathbb%7BN%7D" alt="\mathbb{N} + \mathbb{N}" title="\mathbb{N} + \mathbb{N}" />). So, the sum of the naturals with themselves is…exactly the naturals?</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="co">-- Natural &lt;~&gt; Either Natural Natural</span></a>
-<a class="sourceLine" id="cb21-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb21-3" data-line-number="3"><span class="ot">match ::</span> <span class="dt">Natural</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Natural</span> <span class="dt">Natural</span></a>
-<a class="sourceLine" id="cb21-4" data-line-number="4">match n <span class="fu">=</span> <span class="kw">case</span> n <span class="ot">`divMod`</span> <span class="dv">2</span> <span class="kw">of</span></a>
-<a class="sourceLine" id="cb21-5" data-line-number="5">    (q, <span class="dv">0</span>) <span class="ot">-&gt;</span> <span class="dt">Left</span>  q       <span class="co">-- even number</span></a>
-<a class="sourceLine" id="cb21-6" data-line-number="6">    (q, <span class="dv">1</span>) <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dv">1</span>       <span class="co">-- odd number</span></a>
-<a class="sourceLine" id="cb21-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb21-8" data-line-number="8"><span class="ot">inject ::</span> <span class="dt">Either</span> <span class="dt">Natural</span> <span class="dt">Natural</span> <span class="ot">-&gt;</span> <span class="dt">Natural</span></a>
-<a class="sourceLine" id="cb21-9" data-line-number="9">inject (<span class="dt">Left</span>  q) <span class="fu">=</span> <span class="dv">2</span> <span class="fu">*</span> q</a>
-<a class="sourceLine" id="cb21-10" data-line-number="10">inject (<span class="dt">Right</span> q) <span class="fu">=</span> <span class="dv">2</span> <span class="fu">*</span> q <span class="fu">+</span> <span class="dv">1</span></a></code></pre></div>
-<p>Go figure!</p>
 <h3 id="through-the-looking-prism">Through the Looking-Prism</h3>
 <p>Now let’s bring prisms into the picture. A <code>Prism' s a</code> also refers to some <code>a</code> “inside” an <code>s</code>, with the following API: <code>preview</code> and <code>review</code><a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a></p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="ot">preview ::</span> <span class="dt">Prism&#39;</span> s a <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)   <span class="co">-- get the &#39;a&#39; in the &#39;s&#39; if it exists</span></a>
-<a class="sourceLine" id="cb22-2" data-line-number="2"><span class="ot">review  ::</span> <span class="dt">Prism&#39;</span> s a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> s)         <span class="co">-- reconstruct the &#39;s&#39; from an &#39;a&#39;</span></a></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="ot">preview ::</span> <span class="dt">Prism&#39;</span> s a <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)   <span class="co">-- get the &#39;a&#39; in the &#39;s&#39; if it exists</span></a>
+<a class="sourceLine" id="cb21-2" data-line-number="2"><span class="ot">review  ::</span> <span class="dt">Prism&#39;</span> s a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> s)         <span class="co">-- reconstruct the &#39;s&#39; from an &#39;a&#39;</span></a></code></pre></div>
 <p>Naively you might implement a prism like this:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Prism&#39;</span> s a <span class="fu">=</span> <span class="dt">Prism&#39;</span> {<span class="ot"> preview ::</span> s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a</a>
-<a class="sourceLine" id="cb23-2" data-line-number="2">                         ,<span class="ot"> review  ::</span> a <span class="ot">-&gt;</span> s</a>
-<a class="sourceLine" id="cb23-3" data-line-number="3">                         }</a></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Prism&#39;</span> s a <span class="fu">=</span> <span class="dt">Prism&#39;</span> {<span class="ot"> preview ::</span> s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a</a>
+<a class="sourceLine" id="cb22-2" data-line-number="2">                         ,<span class="ot"> review  ::</span> a <span class="ot">-&gt;</span> s</a>
+<a class="sourceLine" id="cb22-3" data-line-number="3">                         }</a></code></pre></div>
 <p>But, again, this implementation space is too big. There are way too many values of this type that aren’t <em>actual</em> “lawful” prisms. And the laws are kind of muddled here.</p>
 <p>You might be able to guess where I’m going at this point. Whereas a <code>Lens' s a</code> is nothing more than a witness to the fact that <code>s</code> is a <em>product</em> <code>(a, q)</code> … a <code>Prism' s a</code> is nothing more than a witness to the fact that <code>s</code> is a <em>sum</em> <code>Either a q</code>. If it is possible to represent <code>s</code> as some <code>Either a q</code>…then you have two prisms! Prisms are nothing more than <strong>descriptions of products</strong>!</p>
 <p>A <code>Prism' s a</code> is nothing more than a witness for an <code>exists q. s &lt;~&gt; Either a q</code> isomorphism.</p>
 <p>Under this interpretation, we can write a nice representation of <code>Prism'</code>:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Prism&#39;</span> s a <span class="fu">=</span> forall q<span class="fu">.</span></a>
-<a class="sourceLine" id="cb24-2" data-line-number="2">                  <span class="dt">Prism&#39;</span> {<span class="ot"> match  ::</span> s <span class="ot">-&gt;</span> <span class="dt">Either</span> a q</a>
-<a class="sourceLine" id="cb24-3" data-line-number="3">                         ,<span class="ot"> inject ::</span> <span class="dt">Either</span> a q <span class="ot">-&gt;</span> s</a>
-<a class="sourceLine" id="cb24-4" data-line-number="4">                         }</a></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Prism&#39;</span> s a <span class="fu">=</span> forall q<span class="fu">.</span></a>
+<a class="sourceLine" id="cb23-2" data-line-number="2">                  <span class="dt">Prism&#39;</span> {<span class="ot"> match  ::</span> s <span class="ot">-&gt;</span> <span class="dt">Either</span> a q</a>
+<a class="sourceLine" id="cb23-3" data-line-number="3">                         ,<span class="ot"> inject ::</span> <span class="dt">Either</span> a q <span class="ot">-&gt;</span> s</a>
+<a class="sourceLine" id="cb23-4" data-line-number="4">                         }</a></code></pre></div>
 <p>Now, if <code>match</code> and <code>inject</code> form an isomorphism, <em>this can only represent valid prisms</em>!</p>
 <p>We can now implement the prism API:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="ot">preview ::</span> <span class="dt">Prism&#39;</span> s a <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</a>
-<a class="sourceLine" id="cb25-2" data-line-number="2">preview <span class="dt">Prism&#39;</span>{<span class="fu">..</span>} x <span class="fu">=</span> <span class="kw">case</span> match x <span class="kw">of</span></a>
-<a class="sourceLine" id="cb25-3" data-line-number="3">    <span class="dt">Left</span> _  <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb25-4" data-line-number="4">    <span class="dt">Right</span> y <span class="ot">-&gt;</span> <span class="dt">Just</span> y</a>
-<a class="sourceLine" id="cb25-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb25-6" data-line-number="6"><span class="ot">review  ::</span> <span class="dt">Prism&#39;</span> s a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> s)</a>
-<a class="sourceLine" id="cb25-7" data-line-number="7">review <span class="dt">Prism&#39;</span>{<span class="fu">..</span>} <span class="fu">=</span> inject <span class="fu">.</span> <span class="dt">Left</span></a></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="ot">preview ::</span> <span class="dt">Prism&#39;</span> s a <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</a>
+<a class="sourceLine" id="cb24-2" data-line-number="2">preview <span class="dt">Prism&#39;</span>{<span class="fu">..</span>} x <span class="fu">=</span> <span class="kw">case</span> match x <span class="kw">of</span></a>
+<a class="sourceLine" id="cb24-3" data-line-number="3">    <span class="dt">Left</span> _  <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb24-4" data-line-number="4">    <span class="dt">Right</span> y <span class="ot">-&gt;</span> <span class="dt">Just</span> y</a>
+<a class="sourceLine" id="cb24-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb24-6" data-line-number="6"><span class="ot">review  ::</span> <span class="dt">Prism&#39;</span> s a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> s)</a>
+<a class="sourceLine" id="cb24-7" data-line-number="7">review <span class="dt">Prism&#39;</span>{<span class="fu">..</span>} <span class="fu">=</span> inject <span class="fu">.</span> <span class="dt">Left</span></a></code></pre></div>
 <p>Like for lenses, prisms also admit a particularly elegant formulation for <code>over</code>:</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="ot">over ::</span> <span class="dt">Lens&#39;</span> s a  <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> s)</a>
-<a class="sourceLine" id="cb26-2" data-line-number="2">over <span class="dt">Lens&#39;</span>{<span class="fu">..</span>}  <span class="fu">=</span> inject <span class="fu">.</span> first <span class="fu">.</span> match</a>
-<a class="sourceLine" id="cb26-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb26-4" data-line-number="4"><span class="ot">over ::</span> <span class="dt">Prism&#39;</span> s a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> s)</a>
-<a class="sourceLine" id="cb26-5" data-line-number="5">over <span class="dt">Prism&#39;</span>{<span class="fu">..</span>} <span class="fu">=</span> inject <span class="fu">.</span> first <span class="fu">.</span> match</a></code></pre></div>
-<p>Neat, they’re actually exactly identical! Who would have thought? (For lenses we use the <code>(,)</code> instance for <code>Bifunctor</code> with <code>first</code>, and for prisms we use the <code>Either</code> instance.)</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="ot">over ::</span> <span class="dt">Lens&#39;</span> s a  <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> s)</a>
+<a class="sourceLine" id="cb25-2" data-line-number="2">over <span class="dt">Lens&#39;</span>{<span class="fu">..</span>}  f <span class="fu">=</span> inject <span class="fu">.</span> first f <span class="fu">.</span> match    <span class="co">-- instance Bifunctor (,)</span></a>
+<a class="sourceLine" id="cb25-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb25-4" data-line-number="4"><span class="ot">over ::</span> <span class="dt">Prism&#39;</span> s a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> s)</a>
+<a class="sourceLine" id="cb25-5" data-line-number="5">over <span class="dt">Prism&#39;</span>{<span class="fu">..</span>} f <span class="fu">=</span> inject <span class="fu">.</span> first f <span class="fu">.</span> match    <span class="co">-- instance Bifunctor Either</span></a></code></pre></div>
+<p>Neat, they’re actually exactly identical! Who would have thought?</p>
 <p>So, again, <strong>every sum yields prisms</strong>, and <strong>every prism witnesses one side of a sum</strong>.</p>
 <h3 id="prism-tour">Prism Tour</h3>
 <p>Let’s go back at our example prisms and see what sort of insight we can gain from this perspective.</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Shape</span> <span class="fu">=</span> <span class="dt">Circle</span>  <span class="dt">Double</span></a>
-<a class="sourceLine" id="cb27-2" data-line-number="2">           <span class="fu">|</span> <span class="dt">RegPoly</span> <span class="dt">Natural</span> <span class="dt">Double</span></a>
-<a class="sourceLine" id="cb27-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb27-4" data-line-number="4"><span class="ot">match ::</span> <span class="dt">Shape</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Double</span> (<span class="dt">Natural</span>, <span class="dt">Double</span>)</a>
-<a class="sourceLine" id="cb27-5" data-line-number="5">match (<span class="dt">Circle</span>  r  ) <span class="fu">=</span> <span class="dt">Left</span> r</a>
-<a class="sourceLine" id="cb27-6" data-line-number="6">match (<span class="dt">RegPoly</span> n s) <span class="fu">=</span> <span class="dt">Right</span> (n, s)</a>
-<a class="sourceLine" id="cb27-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb27-8" data-line-number="8"><span class="ot">inject ::</span> <span class="dt">Either</span> <span class="dt">Double</span> (<span class="dt">Natural</span>, <span class="dt">Double</span>) <span class="ot">-&gt;</span> <span class="dt">Shape</span></a>
-<a class="sourceLine" id="cb27-9" data-line-number="9">inject (<span class="dt">Left</span>   r    ) <span class="fu">=</span> <span class="dt">Circle</span>  r</a>
-<a class="sourceLine" id="cb27-10" data-line-number="10">inject (<span class="dt">Right</span> (n, s)) <span class="fu">=</span> <span class="dt">RegPoly</span> n s</a></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Shape</span> <span class="fu">=</span> <span class="dt">Circle</span>  <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb26-2" data-line-number="2">           <span class="fu">|</span> <span class="dt">RegPoly</span> <span class="dt">Natural</span> <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb26-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb26-4" data-line-number="4"><span class="ot">match ::</span> <span class="dt">Shape</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Double</span> (<span class="dt">Natural</span>, <span class="dt">Double</span>)</a>
+<a class="sourceLine" id="cb26-5" data-line-number="5">match (<span class="dt">Circle</span>  r  ) <span class="fu">=</span> <span class="dt">Left</span> r</a>
+<a class="sourceLine" id="cb26-6" data-line-number="6">match (<span class="dt">RegPoly</span> n s) <span class="fu">=</span> <span class="dt">Right</span> (n, s)</a>
+<a class="sourceLine" id="cb26-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb26-8" data-line-number="8"><span class="ot">inject ::</span> <span class="dt">Either</span> <span class="dt">Double</span> (<span class="dt">Natural</span>, <span class="dt">Double</span>) <span class="ot">-&gt;</span> <span class="dt">Shape</span></a>
+<a class="sourceLine" id="cb26-9" data-line-number="9">inject (<span class="dt">Left</span>   r    ) <span class="fu">=</span> <span class="dt">Circle</span>  r</a>
+<a class="sourceLine" id="cb26-10" data-line-number="10">inject (<span class="dt">Right</span> (n, s)) <span class="fu">=</span> <span class="dt">RegPoly</span> n s</a></code></pre></div>
 <p>Because <code>Shape</code> is a sum between <code>Double</code> and <code>(Natural, Double)</code>, we get <em>two prisms</em>:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1"><span class="ot">_Circle ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Shape</span> <span class="dt">Natural</span></a>
-<a class="sourceLine" id="cb28-2" data-line-number="2">_Circle <span class="fu">=</span> <span class="dt">Prism&#39;</span> { match  <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">Circle</span>  r    <span class="ot">-&gt;</span> <span class="dt">Left</span> r</a>
-<a class="sourceLine" id="cb28-3" data-line-number="3">                                  <span class="dt">RegPoly</span> n s  <span class="ot">-&gt;</span> <span class="dt">Right</span> (n, s)</a>
-<a class="sourceLine" id="cb28-4" data-line-number="4">                 , inject <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">Left</span>   r     <span class="ot">-&gt;</span> <span class="dt">Circle</span> r</a>
-<a class="sourceLine" id="cb28-5" data-line-number="5">                                  <span class="dt">Right</span> (n, s) <span class="ot">-&gt;</span> <span class="dt">RegPoly</span> n s</a>
-<a class="sourceLine" id="cb28-6" data-line-number="6">                 }</a>
-<a class="sourceLine" id="cb28-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb28-8" data-line-number="8"><span class="ot">_RegPoly ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Shape</span> (<span class="dt">Natural</span>, <span class="dt">Double</span>)</a>
-<a class="sourceLine" id="cb28-9" data-line-number="9">_RegPoly <span class="fu">=</span> <span class="dt">Prism&#39;</span> { match  <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">Circle</span>  r    <span class="ot">-&gt;</span> <span class="dt">Right</span> r</a>
-<a class="sourceLine" id="cb28-10" data-line-number="10">                                   <span class="dt">RegPoly</span> n s  <span class="ot">-&gt;</span> <span class="dt">Left</span> (n, s)</a>
-<a class="sourceLine" id="cb28-11" data-line-number="11">                  , inject <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">Left</span>  (n, s) <span class="ot">-&gt;</span> <span class="dt">RegPoly</span> n s</a>
-<a class="sourceLine" id="cb28-12" data-line-number="12">                                   <span class="dt">Right</span>  r     <span class="ot">-&gt;</span> <span class="dt">Circle</span> r</a>
-<a class="sourceLine" id="cb28-13" data-line-number="13">                  }</a></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="ot">_Circle ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Shape</span> <span class="dt">Natural</span></a>
+<a class="sourceLine" id="cb27-2" data-line-number="2">_Circle <span class="fu">=</span> <span class="dt">Prism&#39;</span> { match  <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">Circle</span>  r    <span class="ot">-&gt;</span> <span class="dt">Left</span> r</a>
+<a class="sourceLine" id="cb27-3" data-line-number="3">                                  <span class="dt">RegPoly</span> n s  <span class="ot">-&gt;</span> <span class="dt">Right</span> (n, s)</a>
+<a class="sourceLine" id="cb27-4" data-line-number="4">                 , inject <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">Left</span>   r     <span class="ot">-&gt;</span> <span class="dt">Circle</span> r</a>
+<a class="sourceLine" id="cb27-5" data-line-number="5">                                  <span class="dt">Right</span> (n, s) <span class="ot">-&gt;</span> <span class="dt">RegPoly</span> n s</a>
+<a class="sourceLine" id="cb27-6" data-line-number="6">                 }</a>
+<a class="sourceLine" id="cb27-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb27-8" data-line-number="8"><span class="ot">_RegPoly ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Shape</span> (<span class="dt">Natural</span>, <span class="dt">Double</span>)</a>
+<a class="sourceLine" id="cb27-9" data-line-number="9">_RegPoly <span class="fu">=</span> <span class="dt">Prism&#39;</span> { match  <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">Circle</span>  r    <span class="ot">-&gt;</span> <span class="dt">Right</span> r</a>
+<a class="sourceLine" id="cb27-10" data-line-number="10">                                   <span class="dt">RegPoly</span> n s  <span class="ot">-&gt;</span> <span class="dt">Left</span> (n, s)</a>
+<a class="sourceLine" id="cb27-11" data-line-number="11">                  , inject <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">Left</span>  (n, s) <span class="ot">-&gt;</span> <span class="dt">RegPoly</span> n s</a>
+<a class="sourceLine" id="cb27-12" data-line-number="12">                                   <span class="dt">Right</span>  r     <span class="ot">-&gt;</span> <span class="dt">Circle</span> r</a>
+<a class="sourceLine" id="cb27-13" data-line-number="13">                  }</a></code></pre></div>
 <p>And these are actually the typical prisms associated with an ADT. You actually get exactly these if you use <code>makePrisms</code> from the <em>lens</em> package.</p>
+<p>What can we get out of our decomposition of <code>[a]</code> as a sum between <code>()</code> and <code>(a, [a])</code>? Let’s look at them:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1"><span class="ot">_Nil ::</span> <span class="dt">Prism&#39;</span> [a] ()</a>
+<a class="sourceLine" id="cb28-2" data-line-number="2">_Nil <span class="fu">=</span> <span class="dt">Prism&#39;</span> { match  <span class="fu">=</span> \<span class="kw">case</span> []            <span class="ot">-&gt;</span> <span class="dt">Left</span> ()</a>
+<a class="sourceLine" id="cb28-3" data-line-number="3">                               x<span class="fu">:</span>xs          <span class="ot">-&gt;</span> <span class="dt">Right</span> (x, xs)</a>
+<a class="sourceLine" id="cb28-4" data-line-number="4">              , inject <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">Left</span> _        <span class="ot">-&gt;</span> []</a>
+<a class="sourceLine" id="cb28-5" data-line-number="5">                               <span class="dt">Right</span> (x, xs) <span class="ot">-&gt;</span> x<span class="fu">:</span>xs</a>
+<a class="sourceLine" id="cb28-6" data-line-number="6">              }</a>
+<a class="sourceLine" id="cb28-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb28-8" data-line-number="8"><span class="ot">_Cons ::</span> <span class="dt">Prism&#39;</span> [a] (a, [a])</a>
+<a class="sourceLine" id="cb28-9" data-line-number="9">_Cons <span class="fu">=</span> <span class="dt">Prism&#39;</span> { match  <span class="fu">=</span> \<span class="kw">case</span> []            <span class="ot">-&gt;</span> <span class="dt">Right</span> ()</a>
+<a class="sourceLine" id="cb28-10" data-line-number="10">                                x<span class="fu">:</span>xs          <span class="ot">-&gt;</span> <span class="dt">Left</span> (x, xs)</a>
+<a class="sourceLine" id="cb28-11" data-line-number="11">               , inject <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">Left</span>  (x, xs) <span class="ot">-&gt;</span> x<span class="fu">:</span>xs</a>
+<a class="sourceLine" id="cb28-12" data-line-number="12">                                <span class="dt">Right</span> _       <span class="ot">-&gt;</span> []</a>
+<a class="sourceLine" id="cb28-13" data-line-number="13">               }</a></code></pre></div>
+<p>We see a sort of pattern here. And, if we look deeper, we will see that <em>all prisms</em> correspond to some sort of “constructor”.</p>
+<p>After all, what do constructors give you? Two things:</p>
+<ol type="1">
+<li>The ability to “create” a value. This corresponds to <code>review</code>, or <code>inject</code></li>
+<li>The ability to do “case-analysis” or check if a value was created using that constructor. This corresponds to <code>preview</code>, or <code>match</code>.</li>
+</ol>
 <section class="footnotes">
 <hr />
 <ol>

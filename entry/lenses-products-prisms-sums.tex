@@ -404,8 +404,8 @@ lens for every item in the product.
 \end{Highlighting}
 \end{Shaded}
 
-These are actually the typical lenses associated with record! You get exactly
-these lenses if you use \texttt{makeLenses} from the \emph{lens} package!
+These are actually the typical lenses associated with records! You get exactly
+these lenses if you use \texttt{makeLenses} from the \emph{lens} package.
 
 The inverse is true too. \textbf{Every lens witnesses a product}. The fact that
 we have a lawful \texttt{pName\ ::\ Lens\textquotesingle{}\ Person\ String}
@@ -581,34 +581,6 @@ and \texttt{Void}. In other words, \texttt{a} is isomorphic to
 Again, if you don't believe me, verify that \texttt{inject\ .\ match\ =\ id} and
 \texttt{match\ .\ inject\ =\ id}!
 
-One last example -- one of my favorite sums from math is the fact that the
-natural numbers are a sum between \ldots{} themselves and themselves.
-\texttt{Natural\ \textless{}\textasciitilde{}\textgreater{}\ Either\ Natural\ Natural}.
-Sometimes you might hear this stated as
-\includegraphics{https://latex.codecogs.com/png.latex?2\%20\%5Cmathbb\%7BN\%7D\%20\%5Cequiv\%20\%5Cmathbb\%7BN\%7D}
-(where
-\includegraphics{https://latex.codecogs.com/png.latex?2\%20\%5Cmathbb\%7BN\%7D}
-can be thought of as a fancy way of writing
-\includegraphics{https://latex.codecogs.com/png.latex?\%5Cmathbb\%7BN\%7D\%20\%2B\%20\%5Cmathbb\%7BN\%7D}).
-So, the sum of the naturals with themselves is\ldots{}exactly the naturals?
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- Natural <~> Either Natural Natural}
-
-\OtherTok{match ::} \DataTypeTok{Natural} \OtherTok{->} \DataTypeTok{Either} \DataTypeTok{Natural} \DataTypeTok{Natural}
-\NormalTok{match n }\FunctionTok{=} \KeywordTok{case}\NormalTok{ n }\OtherTok{`divMod`} \DecValTok{2} \KeywordTok{of}
-\NormalTok{    (q, }\DecValTok{0}\NormalTok{) }\OtherTok{->} \DataTypeTok{Left}\NormalTok{  q       }\CommentTok{-- even number}
-\NormalTok{    (q, }\DecValTok{1}\NormalTok{) }\OtherTok{->} \DataTypeTok{Right} \DecValTok{1}       \CommentTok{-- odd number}
-
-\OtherTok{inject ::} \DataTypeTok{Either} \DataTypeTok{Natural} \DataTypeTok{Natural} \OtherTok{->} \DataTypeTok{Natural}
-\NormalTok{inject (}\DataTypeTok{Left}\NormalTok{  q) }\FunctionTok{=} \DecValTok{2} \FunctionTok{*}\NormalTok{ q}
-\NormalTok{inject (}\DataTypeTok{Right}\NormalTok{ q) }\FunctionTok{=} \DecValTok{2} \FunctionTok{*}\NormalTok{ q }\FunctionTok{+} \DecValTok{1}
-\end{Highlighting}
-\end{Shaded}
-
-Go figure!
-
 \hypertarget{through-the-looking-prism}{%
 \subsection{Through the Looking-Prism}\label{through-the-looking-prism}}
 
@@ -685,16 +657,14 @@ Like for lenses, prisms also admit a particularly elegant formulation for
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{over ::} \DataTypeTok{Lens'}\NormalTok{ s a  }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ s)}
-\NormalTok{over }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\}  }\FunctionTok{=}\NormalTok{ inject }\FunctionTok{.}\NormalTok{ first }\FunctionTok{.}\NormalTok{ match}
+\NormalTok{over }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\}  f }\FunctionTok{=}\NormalTok{ inject }\FunctionTok{.}\NormalTok{ first f }\FunctionTok{.}\NormalTok{ match    }\CommentTok{-- instance Bifunctor (,)}
 
 \OtherTok{over ::} \DataTypeTok{Prism'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ s)}
-\NormalTok{over }\DataTypeTok{Prism'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=}\NormalTok{ inject }\FunctionTok{.}\NormalTok{ first }\FunctionTok{.}\NormalTok{ match}
+\NormalTok{over }\DataTypeTok{Prism'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} f }\FunctionTok{=}\NormalTok{ inject }\FunctionTok{.}\NormalTok{ first f }\FunctionTok{.}\NormalTok{ match    }\CommentTok{-- instance Bifunctor Either}
 \end{Highlighting}
 \end{Shaded}
 
-Neat, they're actually exactly identical! Who would have thought? (For lenses we
-use the \texttt{(,)} instance for \texttt{Bifunctor} with \texttt{first}, and
-for prisms we use the \texttt{Either} instance.)
+Neat, they're actually exactly identical! Who would have thought?
 
 So, again, \textbf{every sum yields prisms}, and \textbf{every prism witnesses
 one side of a sum}.
@@ -743,6 +713,43 @@ Because \texttt{Shape} is a sum between \texttt{Double} and
 
 And these are actually the typical prisms associated with an ADT. You actually
 get exactly these if you use \texttt{makePrisms} from the \emph{lens} package.
+
+What can we get out of our decomposition of \texttt{{[}a{]}} as a sum between
+\texttt{()} and \texttt{(a,\ {[}a{]})}? Let's look at them:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{_Nil ::} \DataTypeTok{Prism'}\NormalTok{ [a] ()}
+\NormalTok{_Nil }\FunctionTok{=} \DataTypeTok{Prism'}\NormalTok{ \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}\NormalTok{ []            }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ ()}
+\NormalTok{                               x}\FunctionTok{:}\NormalTok{xs          }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ (x, xs)}
+\NormalTok{              , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{ _        }\OtherTok{->}\NormalTok{ []}
+                               \DataTypeTok{Right}\NormalTok{ (x, xs) }\OtherTok{->}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
+\NormalTok{              \}}
+
+\OtherTok{_Cons ::} \DataTypeTok{Prism'}\NormalTok{ [a] (a, [a])}
+\NormalTok{_Cons }\FunctionTok{=} \DataTypeTok{Prism'}\NormalTok{ \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}\NormalTok{ []            }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ ()}
+\NormalTok{                                x}\FunctionTok{:}\NormalTok{xs          }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ (x, xs)}
+\NormalTok{               , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{  (x, xs) }\OtherTok{->}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
+                                \DataTypeTok{Right}\NormalTok{ _       }\OtherTok{->}\NormalTok{ []}
+\NormalTok{               \}}
+\end{Highlighting}
+\end{Shaded}
+
+We see a sort of pattern here. And, if we look deeper, we will see that
+\emph{all prisms} correspond to some sort of ``constructor''.
+
+After all, what do constructors give you? Two things:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  The ability to ``create'' a value. This corresponds to \texttt{review}, or
+  \texttt{inject}
+\item
+  The ability to do ``case-analysis'' or check if a value was created using that
+  constructor. This corresponds to \texttt{preview}, or \texttt{match}.
+\end{enumerate}
 
 Hi, thanks for reading! You can reach me via email at
 \href{mailto:justin@jle.im}{\nolinkurl{justin@jle.im}}, or at twitter at
