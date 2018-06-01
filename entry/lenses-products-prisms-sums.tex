@@ -302,12 +302,13 @@ that ``break the laws''. This representation is, to use the technical term,
 ``too big''. It allows more more values than are actual lenses.
 
 So, here's the secret: A \texttt{Lens\textquotesingle{}\ s\ a} means that
-\emph{\texttt{s} is a product between \texttt{a} and some type \texttt{x}}.
+\emph{\texttt{s} is a product between \texttt{a} and some type \texttt{q}}.
 
 That means that if it is possible to represent \texttt{s} as some
 \texttt{(a,\ q)} (that is,
 \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}), \emph{then you
-have a lens}! Lenses are nothing more than \textbf{descriptions of products}!
+have two lenses}! Lenses are nothing more than \textbf{descriptions of
+products}!
 
 In other words, a \texttt{Lens\textquotesingle{}\ s\ a} is nothing more than a
 witness for an
@@ -327,12 +328,11 @@ that lenses embody descriptions of products:
 \end{Shaded}
 
 Now, if \texttt{split} and \texttt{join} form an isomorphism, \emph{this can
-only represent valid lenses}!{[}\^{}big{]}
-
-This type is technically also ``too big'' (you can write a value where
-\texttt{split} and \texttt{unsplit} do not form an isomorphism), but I think, to
-me, ``\texttt{split} and \texttt{join} must form an isomorphism'' is a much
-clearer and natural law than get-put/put-get/put-put.
+only represent valid lenses}!\footnote{This type is technically also ``too big''
+  (you can write a value where \texttt{split} and \texttt{unsplit} do not form
+  an isomorphism), but I think, to me, ``\texttt{split} and \texttt{join} must
+  form an isomorphism'' is a much clearer and natural law than
+  get-put/put-get/put-put.}
 
 We can implement our necessary lens API as so:
 
@@ -363,8 +363,8 @@ The implementation of the helper function \texttt{over} (which modifies the
 \end{Shaded}
 
 The surprising result of this perspective is that \textbf{every product yields
-lenses} (one for every item in the product), and \textbf{every lens witnesses a
-product}.
+lenses} (one for every item in the product), and \textbf{every lens witnesses
+one side of a product}.
 
 \hypertarget{insights-gleamed}{%
 \subsection{Insights Gleamed}\label{insights-gleamed}}
@@ -403,6 +403,9 @@ lens for every item in the product.
 \NormalTok{             \}}
 \end{Highlighting}
 \end{Shaded}
+
+These are actually the typical lenses associated with record! You get exactly
+these lenses if you use \texttt{makeLenses} from the \emph{lens} package!
 
 The inverse is true too. \textbf{Every lens witnesses a product}. The fact that
 we have a lawful \texttt{pName\ ::\ Lens\textquotesingle{}\ Person\ String}
@@ -608,6 +611,143 @@ Go figure!
 
 \hypertarget{through-the-looking-prism}{%
 \subsection{Through the Looking-Prism}\label{through-the-looking-prism}}
+
+Now let's bring prisms into the picture. A
+\texttt{Prism\textquotesingle{}\ s\ a} also refers to some \texttt{a} ``inside''
+an \texttt{s}, with the following API: \texttt{preview} and
+\texttt{review}\footnote{I didn't invent these names :)}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{preview ::} \DataTypeTok{Prism'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (s }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a)   }\CommentTok{-- get the 'a' in the 's' if it exists}
+\OtherTok{review  ::} \DataTypeTok{Prism'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ s)         }\CommentTok{-- reconstruct the 's' from an 'a'}
+\end{Highlighting}
+\end{Shaded}
+
+Naively you might implement a prism like this:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Prism'}\NormalTok{ s a }\FunctionTok{=} \DataTypeTok{Prism'}\NormalTok{ \{}\OtherTok{ preview ::}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a}
+\NormalTok{                         ,}\OtherTok{ review  ::}\NormalTok{ a }\OtherTok{->}\NormalTok{ s}
+\NormalTok{                         \}}
+\end{Highlighting}
+\end{Shaded}
+
+But, again, this implementation space is too big. There are way too many values
+of this type that aren't \emph{actual} ``lawful'' prisms. And the laws are kind
+of muddled here.
+
+You might be able to guess where I'm going at this point. Whereas a
+\texttt{Lens\textquotesingle{}\ s\ a} is nothing more than a witness to the fact
+that \texttt{s} is a \emph{product} \texttt{(a,\ q)} \ldots{} a
+\texttt{Prism\textquotesingle{}\ s\ a} is nothing more than a witness to the
+fact that \texttt{s} is a \emph{sum} \texttt{Either\ a\ q}. If it is possible to
+represent \texttt{s} as some \texttt{Either\ a\ q}\ldots{}then you have two
+prisms! Prisms are nothing more than \textbf{descriptions of products}!
+
+A \texttt{Prism\textquotesingle{}\ s\ a} is nothing more than a witness for an
+\texttt{exists\ q.\ s\ \textless{}\textasciitilde{}\textgreater{}\ Either\ a\ q}
+isomorphism.
+
+Under this interpretation, we can write a nice representation of
+\texttt{Prism\textquotesingle{}}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Prism'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.}
+                  \DataTypeTok{Prism'}\NormalTok{ \{}\OtherTok{ match  ::}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a q}
+\NormalTok{                         ,}\OtherTok{ inject ::} \DataTypeTok{Either}\NormalTok{ a q }\OtherTok{->}\NormalTok{ s}
+\NormalTok{                         \}}
+\end{Highlighting}
+\end{Shaded}
+
+Now, if \texttt{match} and \texttt{inject} form an isomorphism, \emph{this can
+only represent valid prisms}!
+
+We can now implement the prism API:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{preview ::} \DataTypeTok{Prism'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (s }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a)}
+\NormalTok{preview }\DataTypeTok{Prism'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} x }\FunctionTok{=} \KeywordTok{case}\NormalTok{ match x }\KeywordTok{of}
+    \DataTypeTok{Left}\NormalTok{ _  }\OtherTok{->} \DataTypeTok{Nothing}
+    \DataTypeTok{Right}\NormalTok{ y }\OtherTok{->} \DataTypeTok{Just}\NormalTok{ y}
+
+\OtherTok{review  ::} \DataTypeTok{Prism'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ s)}
+\NormalTok{review }\DataTypeTok{Prism'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=}\NormalTok{ inject }\FunctionTok{.} \DataTypeTok{Left}
+\end{Highlighting}
+\end{Shaded}
+
+Like for lenses, prisms also admit a particularly elegant formulation for
+\texttt{over}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{over ::} \DataTypeTok{Lens'}\NormalTok{ s a  }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ s)}
+\NormalTok{over }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\}  }\FunctionTok{=}\NormalTok{ inject }\FunctionTok{.}\NormalTok{ first }\FunctionTok{.}\NormalTok{ match}
+
+\OtherTok{over ::} \DataTypeTok{Prism'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ s)}
+\NormalTok{over }\DataTypeTok{Prism'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=}\NormalTok{ inject }\FunctionTok{.}\NormalTok{ first }\FunctionTok{.}\NormalTok{ match}
+\end{Highlighting}
+\end{Shaded}
+
+Neat, they're actually exactly identical! Who would have thought? (For lenses we
+use the \texttt{(,)} instance for \texttt{Bifunctor} with \texttt{first}, and
+for prisms we use the \texttt{Either} instance.)
+
+The fact that these are identical actually hint that we can unify the
+representation of \texttt{Lens\textquotesingle{}} and
+\texttt{Prism\textquotesingle{}} to be one single data type. But that is a topic
+for a different day!
+
+So, again, \textbf{every sum yields prisms}, and \textbf{every prism witnesses
+one side of a sum}.
+
+\hypertarget{prism-tour}{%
+\subsection{Prism Tour}\label{prism-tour}}
+
+Let's go back at our example prisms and see what sort of insight we can gain
+from this perspective.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Shape} \FunctionTok{=} \DataTypeTok{Circle}  \DataTypeTok{Double}
+           \FunctionTok{|} \DataTypeTok{RegPoly} \DataTypeTok{Natural} \DataTypeTok{Double}
+
+\OtherTok{match ::} \DataTypeTok{Shape} \OtherTok{->} \DataTypeTok{Either} \DataTypeTok{Double}\NormalTok{ (}\DataTypeTok{Natural}\NormalTok{, }\DataTypeTok{Double}\NormalTok{)}
+\NormalTok{match (}\DataTypeTok{Circle}\NormalTok{  r  ) }\FunctionTok{=} \DataTypeTok{Left}\NormalTok{ r}
+\NormalTok{match (}\DataTypeTok{RegPoly}\NormalTok{ n s) }\FunctionTok{=} \DataTypeTok{Right}\NormalTok{ (n, s)}
+
+\OtherTok{inject ::} \DataTypeTok{Either} \DataTypeTok{Double}\NormalTok{ (}\DataTypeTok{Natural}\NormalTok{, }\DataTypeTok{Double}\NormalTok{) }\OtherTok{->} \DataTypeTok{Shape}
+\NormalTok{inject (}\DataTypeTok{Left}\NormalTok{   r    ) }\FunctionTok{=} \DataTypeTok{Circle}\NormalTok{  r}
+\NormalTok{inject (}\DataTypeTok{Right}\NormalTok{ (n, s)) }\FunctionTok{=} \DataTypeTok{RegPoly}\NormalTok{ n s}
+\end{Highlighting}
+\end{Shaded}
+
+Because \texttt{Shape} is a sum between \texttt{Double} and
+\texttt{(Natural,\ Double)}, we get \emph{two prisms}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{_Circle ::} \DataTypeTok{Prism'} \DataTypeTok{Shape} \DataTypeTok{Natural}
+\NormalTok{_Circle }\FunctionTok{=} \DataTypeTok{Prism'}\NormalTok{ \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Circle}\NormalTok{  r   }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ r}
+                                  \DataTypeTok{RegPoly}\NormalTok{ n s }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ (n, s)}
+\NormalTok{                 , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{   r     }\OtherTok{->} \DataTypeTok{Circle}\NormalTok{ r}
+                                  \DataTypeTok{Right}\NormalTok{ (n, s) }\OtherTok{->} \DataTypeTok{RegPoly}\NormalTok{ n s}
+\NormalTok{                 \}}
+
+\OtherTok{_RegPoly ::} \DataTypeTok{Prism'} \DataTypeTok{Shape}\NormalTok{ (}\DataTypeTok{Natural}\NormalTok{, }\DataTypeTok{Double}\NormalTok{)}
+\NormalTok{_RegPoly }\FunctionTok{=} \DataTypeTok{Prism'}\NormalTok{ \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Circle}\NormalTok{  r   }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ r}
+                                   \DataTypeTok{RegPoly}\NormalTok{ n s }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ (n, s)}
+\NormalTok{                  , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{  (n, s) }\OtherTok{->} \DataTypeTok{RegPoly}\NormalTok{ n s}
+                                   \DataTypeTok{Right}\NormalTok{  r     }\OtherTok{->} \DataTypeTok{Circle}\NormalTok{ r}
+\NormalTok{                  \}}
+\end{Highlighting}
+\end{Shaded}
+
+And these are actually the typical prisms associated with an ADT. You actually
+get exactly these if you use \texttt{makePrisms} from the \emph{lens} package.
 
 Hi, thanks for reading! You can reach me via email at
 \href{mailto:justin@jle.im}{\nolinkurl{justin@jle.im}}, or at twitter at
