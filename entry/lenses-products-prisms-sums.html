@@ -158,7 +158,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Looking at <code>mysteryLens1 :: Lens' (Either a a) Bool</code>, we are saying that every <code>Either a a</code> has some <code>Bool</code> “inside” it. From our knowledge of our product, we know that this <code>Bool</code> is really a <em>flag</em> for left-ness or right-ness. Getting the <code>Bool</code> is finding out if we’re in <code>Left</code> or <code>Right</code>, and flipping the <code>Bool</code> “inside” is really just swapping from <code>Left</code> to <code>Right</code>.</p>
 <p>Looking at <code>mysteryLens2 :: Lens' (Either a a) a</code>, we are saying that every <code>Either a a</code> has some <code>a</code> “inside” it. From what we know about the underlying product, the <code>a</code> is just the “contained value”, <em>ignoring</em> leftness or rightness. Getting the <code>a</code> is getting the contained value and losing leftness/rightness, and re-setting the <code>a</code> inside is modifying the contained value but preserving leftness/rightness.</p>
 <p>So that’s really the essence of what a <code>Lens'</code> is. A <code>Lens' s a</code> is the embodiment of the fact that <code>s</code> can be represented as a product between <code>a</code> and something else — that <code>s &lt;~&gt; (a, q)</code>. All of the lens laws just boil down to this. <strong>Lenses embody products</strong>.</p>
-<h2 id="theres-sum-thing-about-prisms">There’s Sum-thing about Prisms</h2>
+<h2 id="theres-sum-thing-about-this">There’s Sum-thing about This…</h2>
 <p>It’s easy to recognize <code>Either Int Bool</code> as a sum between <code>Int</code> and <code>Bool</code>. However, did you know that some types are secretly sums in disguise?</p>
 <p>For example, here’s a data type you might encounter out there in the real world:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Shape</span> <span class="fu">=</span> <span class="dt">Circle</span>  <span class="dt">Double</span>           <span class="co">-- radius</span></a>
@@ -201,6 +201,19 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb20-10" data-line-number="10">                        <span class="co">-- no constructors of &#39;v&#39; we need to</span></a>
 <a class="sourceLine" id="cb20-11" data-line-number="11">                        <span class="co">-- match on</span></a></code></pre></div>
 <p>Again, if you don’t believe me, verify that <code>inject . match = id</code> and <code>match . inject = id</code>!</p>
+<p>One last example – one of my favorite sums from math is the fact that the natural numbers are a sum between … themselves and themselves. <code>Natural &lt;~&gt; Either Natural Natural</code>. Sometimes you might hear this stated as <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?2%20%5Cmathbb%7BN%7D%20~%20%5Cmathbb%7BN%7D" alt="2 \mathbb{N} ~ \mathbb{N}" title="2 \mathbb{N} ~ \mathbb{N}" /> (where <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?2%20%5Cmathbb%7BN%7D" alt="2 \mathbb{N}" title="2 \mathbb{N}" /> can be thought of as a fancy way of writing <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Cmathbb%7BN%7D%20%2B%20%5Cmathbb%7BN%7D" alt="\mathbb{N} + \mathbb{N}" title="\mathbb{N} + \mathbb{N}" />). So, the sum of the naturals with themselves is…exactly the naturals?</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="co">-- Natural &lt;~&gt; Either Natural Natural</span></a>
+<a class="sourceLine" id="cb21-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb21-3" data-line-number="3"><span class="ot">match ::</span> <span class="dt">Natural</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Natural</span> <span class="dt">Natural</span></a>
+<a class="sourceLine" id="cb21-4" data-line-number="4">match n <span class="fu">=</span> <span class="kw">case</span> n <span class="ot">`divMod`</span> <span class="dv">2</span> <span class="kw">of</span></a>
+<a class="sourceLine" id="cb21-5" data-line-number="5">    (q, <span class="dv">0</span>) <span class="ot">-&gt;</span> <span class="dt">Left</span>  q       <span class="co">-- even number</span></a>
+<a class="sourceLine" id="cb21-6" data-line-number="6">    (q, <span class="dv">1</span>) <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dv">1</span>       <span class="co">-- odd number</span></a>
+<a class="sourceLine" id="cb21-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb21-8" data-line-number="8"><span class="ot">inject ::</span> <span class="dt">Either</span> <span class="dt">Natural</span> <span class="dt">Natural</span> <span class="ot">-&gt;</span> <span class="dt">Natural</span></a>
+<a class="sourceLine" id="cb21-9" data-line-number="9">inject (<span class="dt">Left</span>  q) <span class="fu">=</span> <span class="dv">2</span> <span class="fu">*</span> q</a>
+<a class="sourceLine" id="cb21-10" data-line-number="10">inject (<span class="dt">Right</span> q) <span class="fu">=</span> <span class="dv">2</span> <span class="fu">*</span> q <span class="fu">+</span> <span class="dv">1</span></a></code></pre></div>
+<p>Go figure!</p>
+<h3 id="through-the-looking-prism">Through the Looking-Prism</h3>
 <section class="footnotes">
 <hr />
 <ol>

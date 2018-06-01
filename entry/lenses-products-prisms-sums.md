@@ -325,8 +325,8 @@ embodiment of the fact that `s` can be represented as a product between `a` and
 something else --- that `s <~> (a, q)`. All of the lens laws just boil down to
 this. **Lenses embody products**.
 
-There's Sum-thing about Prisms
-------------------------------
+There's Sum-thing about This...
+-------------------------------
 
 It's easy to recognize `Either Int Bool` as a sum between `Int` and `Bool`.
 However, did you know that some types are secretly sums in disguise?
@@ -406,6 +406,33 @@ inject (Right v) = case v of
 
 Again, if you don't believe me, verify that `inject . match = id` and
 `match . inject = id`!
+
+One last example -- one of my favorite sums from math is the fact that the
+natural numbers are a sum between ... themselves and themselves.
+`Natural <~> Either Natural Natural`. Sometimes you might hear this stated as
+![2 \\mathbb{N} \~ \\mathbb{N}](https://latex.codecogs.com/png.latex?2%20%5Cmathbb%7BN%7D%20~%20%5Cmathbb%7BN%7D "2 \mathbb{N} ~ \mathbb{N}")
+(where
+![2 \\mathbb{N}](https://latex.codecogs.com/png.latex?2%20%5Cmathbb%7BN%7D "2 \mathbb{N}")
+can be thought of as a fancy way of writing
+![\\mathbb{N} + \\mathbb{N}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BN%7D%20%2B%20%5Cmathbb%7BN%7D "\mathbb{N} + \mathbb{N}")).
+So, the sum of the naturals with themselves is...exactly the naturals?
+
+``` {.haskell}
+-- Natural <~> Either Natural Natural
+
+match :: Natural -> Either Natural Natural
+match n = case n `divMod` 2 of
+    (q, 0) -> Left  q       -- even number
+    (q, 1) -> Right 1       -- odd number
+
+inject :: Either Natural Natural -> Natural
+inject (Left  q) = 2 * q
+inject (Right q) = 2 * q + 1
+```
+
+Go figure!
+
+### Through the Looking-Prism
 
 [^1]: All of this is disregarding the notorious "bottom" value that inhabits
     every type.
