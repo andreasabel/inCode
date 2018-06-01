@@ -342,9 +342,8 @@ We can implement our necessary lens API as so:
 \NormalTok{view }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=}\NormalTok{ fst }\FunctionTok{.}\NormalTok{ split}
 
 \OtherTok{set ::} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ s }\OtherTok{->}\NormalTok{ s)}
-\NormalTok{set }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} newVal x }\FunctionTok{=}\NormalTok{ unsplit (newVal, q)      }\CommentTok{-- "replace" the `a`}
-  \KeywordTok{where}
-\NormalTok{    (_, q) }\FunctionTok{=}\NormalTok{ split x}
+\NormalTok{set }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} newVal x }\FunctionTok{=} \KeywordTok{case}\NormalTok{ split x }\KeywordTok{of}
+\NormalTok{    (_, q) }\OtherTok{->}\NormalTok{ unsplit (newVal, q)      }\CommentTok{-- "replace" the `a`}
 \end{Highlighting}
 \end{Shaded}
 
@@ -530,7 +529,9 @@ this proves that \texttt{Shape} is a sum in disguise.
 
 Another interesting ``hidden sum'' is the fact that \texttt{{[}a{]}} in Haskell
 is actually a sum between \texttt{()} and \texttt{(a,\ {[}a{]})}. That's right
---- it's a sum between \texttt{()} and\ldots{}itself?
+--- it's a sum between \texttt{()} and\ldots{}itself? We can interpret this as
+\texttt{()} being one possibility, and \texttt{(a,\ {[}a{]})} (head consed with
+another list) as the other:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -549,8 +550,38 @@ is actually a sum between \texttt{()} and \texttt{(a,\ {[}a{]})}. That's right
 If you don't believe me, just verify that \texttt{inject\ .\ match\ =\ id} and
 \texttt{match\ .\ inject\ =\ id} :)
 
-And, if we consider the ``empty data type'' \texttt{Void}, the type with no
-inhabitants:
+Actually, however, there is another way to deconstruct \texttt{{[}a{]}} as a sum
+in Haskell. You can treat it as a sum between \texttt{()} and
+\texttt{({[}a{]},\ a)} --- where the \texttt{()} represents the empty list and
+the \texttt{({[}a{]},\ a)} represents an ``all but the last item'' list and
+``the last item'':
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- [a] <~> Either () ([a], a)}
+
+\OtherTok{match  ::}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ () ([a], a)}
+\NormalTok{match xs}
+  \FunctionTok{|}\NormalTok{ null xs   }\FunctionTok{=} \DataTypeTok{Left}\NormalTok{  ()}
+  \FunctionTok{|}\NormalTok{ otherwise }\FunctionTok{=} \DataTypeTok{Right}\NormalTok{ (init xs, last xs)}
+
+\OtherTok{inject ::} \DataTypeTok{Either}\NormalTok{ () (a, [a]) }\OtherTok{->}\NormalTok{ [a]}
+\NormalTok{inject (}\DataTypeTok{Left}\NormalTok{   _     ) }\FunctionTok{=}\NormalTok{ []}
+\NormalTok{inject (}\DataTypeTok{Right}\NormalTok{ (xs, x)) }\FunctionTok{=}\NormalTok{ xs }\FunctionTok{++}\NormalTok{ [x]}
+\end{Highlighting}
+\end{Shaded}
+
+I just think it's interesting that the same type can be ``decomposed'' into a
+sum of two different types in multiple ways.
+
+(Fun haskell challenge: the version of \texttt{match} I wrote there is
+conceptually simple, but very inefficient. It traverses the input list three
+times, uses two partial functions, and uses a \texttt{Bool}. Can you write a
+\texttt{match} that does the same thing while traversing the input list only
+once and using no partial functions or \texttt{Bool}s?)
+
+One final curious sum: if we consider the ``empty data type'' \texttt{Void}, the
+type with no inhabitants:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -750,6 +781,9 @@ After all, what do constructors give you? Two things:
   The ability to do ``case-analysis'' or check if a value was created using that
   constructor. This corresponds to \texttt{preview}, or \texttt{match}.
 \end{enumerate}
+
+The API of a ``constructor'' is pretty much exactly the Prism API. In fact, we
+often use Prisms to simulate ``abstract'' constructors.
 
 Hi, thanks for reading! You can reach me via email at
 \href{mailto:justin@jle.im}{\nolinkurl{justin@jle.im}}, or at twitter at
