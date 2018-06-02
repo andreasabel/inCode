@@ -9,8 +9,8 @@ compile a list of all the ways you can compose two functions, `(a -> b)` and
 `(b -> c)` using functions in base and common libraries (and their simple
 manipulations). There are an embarassingly large amount of them, and I'm sure
 that I'll find more over time. If any of you have suggestions, feel free to
-leave a comment or find me on [twitter](https://twitter.com/mstk "Twitter") or
-\#haskell on freenode as *jle\`* :)
+leave a comment or find me on [twitter](https://twitter.com/mstk) or \#haskell
+on freenode as *jle\`* :)
 
 1.  `(.)` (Prelude)
 2.  `fmap` (Prelude)
@@ -19,15 +19,10 @@ leave a comment or find me on [twitter](https://twitter.com/mstk "Twitter") or
 5.  `liftM` (Control.Monad)
 6.  `(.)` (Control.Category)
 7.  `(<<<)` (Control.Category)
-8.  `flip (>>>)` (Control.Category)
-9.  `(<<^)` (Control.Arrow)
-10. `(^<<)` (Control.Arrow)
-11. `flip (^>>)` (Control.Arrow)
-12. `flip (>>^)` (Control.Arrow)
-13. `rmap` (Data.Profunctor)
-14. `dimap id` (Data.Profunctor)
-15. `over mapped` (Control.Lens)
-16. `(mapped %~)` (Control.Lens)
+8.  `(<<^)` (Control.Arrow)
+9.  `(^<<)` (Control.Arrow)
+10. `rmap` (Data.Profunctor)
+11. `dimap id` (Data.Profunctor)
 
 So, am I missing any?
 
