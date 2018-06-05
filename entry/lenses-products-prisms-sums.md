@@ -6,8 +6,7 @@ Lenses embody Products, Prisms embody Sums
 
 I've written about a variety of topics on this blog, but one thing I haven't
 touched in too much detail is the topic of lenses and optics. A big part of this
-is because there are already so many great resources on lenses, like the famous
-(and my favorite) [lenses over tea](https://artyom.me/lens-over-tea-1) series.
+is because there are already so many great resources on lenses.
 
 This post won't be a "lens tutorial", but rather a dive into an insightful
 perspective on lenses and prisms that I've heard repeated many times, but not
@@ -30,7 +29,7 @@ has
 possible values[^1]. And, `Either A B` is their (anonymous) "sum" type. It's
 called a sum type because `Either A B` has
 ![n + m](https://latex.codecogs.com/png.latex?n%20%2B%20m "n + m") possible
-values. I won't go much deeper into this, but there are [many useful tutorials
+values. I won't go much deeper into this, but there are [many useful summaries
 already
 online](https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types)
 on this topic!
@@ -90,7 +89,9 @@ tail/rest of the items). This means that `NonEmpty a` is isomorphic to
 `(a, [a])` --- we have `NonEmpty a <~> (a, [a])`!
 
 Another curious product is the fact that every type `a` is a product between
-*itself* and unit, `()`. That is, every type `a` is isomorphic to `(a, ())`.
+*itself* and unit, `()`. That is, every type `a` is isomorphic to `(a, ())`
+(which follows from the algebraic property
+![x \* 1 = x](https://latex.codecogs.com/png.latex?x%20%2A%201%20%3D%20x "x * 1 = x")).
 Freaky, right?
 
 ``` {.haskell}
@@ -162,10 +163,8 @@ set  :: Lens' s a -> (a -> s -> s)           -- set the 'a' inside an 's'
 
 respecting [some
 laws](https://www.schoolofhaskell.com/school/to-infinity-and-beyond/pick-of-the-week/a-little-lens-starter-tutorial#the-lens-laws-)
---- get-put, put-get, and put-put.
-
-Abstract mathematical laws are great and all, but I'm going to tell you a secret
-that will render those laws obsolete.
+--- get-put, put-get, and put-put. Abstract mathematical laws are great and all,
+but I'm going to tell you a secret that gives a nice restatement of those laws.
 
 At first, you might naively implement lenses like:
 
@@ -184,10 +183,12 @@ and some type `q`*.
 
 That means that if it is possible to represent `s` as some `(a, q)` (that is,
 `s <~> (a, q)`), *then you have two lenses*! Lenses are nothing more than
-**descriptions of products**!
+*descriptions of products*! Another way to think of this is that if you are able
+to "split" a type into two parts without losing any information, then each part
+represents a lens.
 
-In other words, a `Lens' s a` is nothing more than a witness for an
-`exists q. s <~> (a, q)` isomorphism.[^2]
+A `Lens' s a` is nothing more than a witness for an `exists q. s <~> (a, q)`
+isomorphism.[^2]
 
 With that in mind, let's re-visit a saner definition of lenses based on the idea
 that lenses embody descriptions of products:
@@ -317,6 +318,32 @@ know that this `Bool` is really a *flag* for left-ness or right-ness. Getting
 the `Bool` is finding out if we're in `Left` or `Right`, and flipping the `Bool`
 "inside" is really just swapping from `Left` to `Right`.
 
+``` {.haskell}
+flipEither :: Either a a -> Either a a
+flipEither = over mysteryLens1 not
+
+isLeft :: Either a a -> Bool
+isLeft = view mysteryLens1
+```
+
+``` {.haskell}
+ghci> flipEither (Left 'a')
+Right 'a'
+ghci> flipEither (Right 'a')
+Left 'a'
+ghci> isLeft (Left 'a')
+True
+ghci> isLeft (Right 'a')
+False
+```
+
+Note that if we look at lenses as embodying "record fields" (things that give
+you the ability to "get" a field, and "modify" a field --- corresponding with
+`view` and `set`), we can think of `mysteryLens1` as an *abstract record field*
+into the Leftness/Rightness of a value. Thing of lenses as defining abstract
+record fields is a [common tool for backwards
+compatiblity](http://blog.ezyang.com/2016/12/a-tale-of-backwards-compatibility-in-asts/).
+
 Looking at `mysteryLens2 :: Lens' (Either a a) a`, we are saying that every
 `Either a a` has some `a` "inside" it. From what we know about the underlying
 product, the `a` is just the "contained value", *ignoring* leftness or
@@ -324,10 +351,35 @@ rightness. Getting the `a` is getting the contained value and losing
 leftness/rightness, and re-setting the `a` inside is modifying the contained
 value but preserving leftness/rightness.
 
+``` {.haskell}
+fromEither :: Either a a -> a
+fromEither = view mysteryLens2
+
+mapEither :: (a -> a) -> Either a a -> Either a a
+mapEither = over mysteryLens2
+```
+
+``` {.haskell}
+ghci> fromEither (Left 'a')
+'a'
+ghci> mapEither negate (Right 4)
+Right (-4)
+```
+
 So that's really the essence of what a `Lens'` is. A `Lens' s a` is the
 embodiment of the fact that `s` can be represented as a product between `a` and
 something else --- that `s <~> (a, q)`. All of the lens laws just boil down to
 this. **Lenses embody products**.
+
+### What Isn't a Lens?
+
+This perspective also gives you some insight into when things *aren't* lenses.
+For example, is it possible to make a lens that gives you the first item in a
+list?
+
+No, there isn't, because there isn't any type `q` that you could factor out
+`[a]` into as `(a, q)`. That would imply that `[a]` is always "an `a` with
+something else"...but this isn't true with `[]`.
 
 \"Sum-thing\" Interesting
 -------------------------
@@ -368,8 +420,9 @@ is a sum in disguise.
 
 Another interesting "hidden sum" is the fact that `[a]` in Haskell is actually a
 sum between `()` and `(a, [a])`. That's right --- it's a sum between `()`
-and...itself? We can interpret this as `()` being one possibility, and
-`(a, [a])` (head consed with another list) as the other:
+and...itself? Indeed it is pretty bizarre. However, we can interpret this as
+`()` being one possibility (the empty list), and `(a, [a])` (head consed with
+another list) as the other:
 
 ``` {.haskell}
 -- [a] <~> Either () (a, [a])
@@ -386,10 +439,27 @@ inject (Right (x, xs)) = x:xs
 If you don't believe me, just verify that `inject . match = id` and
 `match . inject = id` :)
 
-Actually, however, there is another way to deconstruct `[a]` as a sum in
-Haskell. You can treat it as a sum between `()` and `([a], a)` --- where the
-`()` represents the empty list and the `([a], a)` represents an "all but the
-last item" list and "the last item":
+Another way of looking at this decomposition is by saying that `[a]` is the sum
+between `()` and `NonEmpty a`:
+
+``` {.haskell}
+-- [a] <~> Either () (NonEmpty a)
+
+match :: [a] -> Either () (a, [a])
+match []     = Left  ()
+match (x:xs) = Right (x :| xs)
+
+inject :: Either () (a, [a]) -> [a]
+inject (Left   _       ) = []
+inject (Right (x :| xs)) = x:xs
+```
+
+which says that `[a]` is "either an empty list, or a non-empty list". Whoa.
+
+Actually, there is another way to deconstruct `[a]` as a sum in Haskell. You can
+treat it as a sum between `()` and `([a], a)` --- where the `()` represents the
+empty list and the `([a], a)` represents an "all but the last item" list and
+"the last item":
 
 ``` {.haskell}
 -- [a] <~> Either () ([a], a)
@@ -418,12 +488,14 @@ data Void           -- no constructors, no valid inhabitants
 ```
 
 then we have a curious sum: every type `a` is a sum between *itself* and `Void`.
-In other words, `a` is isomorphic to `Either a Void`:
+In other words, `a` is isomorphic to `Either a Void` (which follows from the
+algebraic property
+![x + 0 = x](https://latex.codecogs.com/png.latex?x%20%2B%200%20%3D%20x "x + 0 = x")):
 
 ``` {.haskell}
 -- a <~> Either a Void
 
--- a useful helper function when working with `Void`
+-- | A useful helper function when working with `Void`
 absurd :: Void -> a
 absurd = \case -- empty case statement because we have
                -- no constructors of 'Void' we need to
@@ -466,7 +538,7 @@ You might be able to guess where I'm going at this point. Whereas a `Lens' s a`
 is nothing more than a witness to the fact that `s` is a *product* `(a, q)` ...
 a `Prism' s a` is nothing more than a witness to the fact that `s` is a *sum*
 `Either a q`. If it is possible to represent `s` as some `Either a q`...then you
-have two prisms! Prisms are nothing more than **descriptions of products**!
+have two prisms! Prisms are nothing more than *descriptions of sums*!
 
 A `Prism' s a` is nothing more than a witness for an
 `exists q. s <~> Either a q` isomorphism.
@@ -477,7 +549,7 @@ Under this interpretation, we can write a nice representation of `Prism'`:
 data Prism' s a = forall q.
                   Prism' { match  :: s -> Either a q
                          , inject :: Either a q -> s
-                         }
+                         }    -- ^ s <~> Either a q
 ```
 
 Now, if `match` and `inject` form an isomorphism, *this can only represent valid
@@ -496,7 +568,7 @@ review Prism'{..} = inject . Left
 ```
 
 Like for lenses, prisms also admit a particularly elegant formulation for
-`over`:
+`over`, which maps a function over the `a` in the `s` if it exists:
 
 ``` {.haskell}
 over :: Lens' s a  -> (a -> a) -> (s -> s)
@@ -554,24 +626,26 @@ And these are actually the typical prisms associated with an ADT. You actually
 get exactly these if you use `makePrisms` from the *lens* package.
 
 What can we get out of our decomposition of `[a]` as a sum between `()` and
-`(a, [a])`? Let's look at them:
+`NonEmpty a`? Let's look at them:
 
 ``` {.haskell}
--- [a] <~> Either () (a, [a])
+-- [a] <~> Either () (NonEmpty a)
 
 _Nil :: Prism' [a] ()
-_Nil = Prism' { match  = \case []            -> Left ()
-                               x:xs          -> Right (x, xs)
-              , inject = \case Left _        -> []
-                               Right (x, xs) -> x:xs
-              }
+_Nil = Prism'
+    { match  = \case []              -> Left ()
+                     x:xs            -> Right (x :| xs)
+    , inject = \case Left _          -> []
+                     Right (x :| xs) -> x:xs
+    }
 
 _Cons :: Prism' [a] (a, [a])
-_Cons = Prism' { match  = \case []            -> Right ()
-                                x:xs          -> Left (x, xs)
-               , inject = \case Left  (x, xs) -> x:xs
-                                Right _       -> []
-               }
+_Cons = Prism'
+    { match  = \case []              -> Right ()
+                     x:xs            -> Left (x :| xs)
+    , inject = \case Left  (x :| xs) -> x:xs
+                     Right _         -> []
+    }
 ```
 
 We see a sort of pattern here. And, if we look deeper, we will see that *all
@@ -587,9 +661,9 @@ The API of a "constructor" is pretty much exactly the Prism API. In fact, we
 often use Prisms to simulate "abstract" constructors.
 
 An *abstract constructor* is exactly what our *other* `[a]` sum decomposition
-gives us! If we look at that isomorphism `[a] <~> Either () ([a], a)` and write
-out the prisms, we see that they correspond to the abstract constructors `_Nil`
-and `_Snoc`:
+gives us! If we look at that isomorphism `[a] <~> Either () ([a], a)` (the
+"tail-and-last" breakdown) and write out the prisms, we see that they correspond
+to the abstract constructors `_Nil` and `_Snoc`:
 
 ``` {.haskell}
 -- [a] <~> Either () ([a], a)
@@ -669,13 +743,30 @@ _head :: Prism' [a] a           -- get the head of a list
 If you think of a prism as just "a lens that might fail" (as it's often taught),
 you might think yes. If you think of a prism as just "a constructor and
 deconstructor", you might also think yes, since you can construct an `[a]` with
-only a single `a`.[^5]
+only a single `a`, so `review :: a -> [a]` is possible.[^5]
 
 However, if you think of it as witnessing a sum, you might see that this prism
 isn't possible. There is no possible type `q` where `[a]` is a sum of `a` and
 `q`. The isomorphism `[a] <~> Either a q` cannot be made for *any* type `q`.
 There is no way to express `[a]` as the sum of `a` and some other type. Try
 thinking of a type `q` --- it's just not possible!
+
+Another example of a non-prism: we have a `Lens' a ()`, but why not a
+`Prism' a ()`?
+
+Well, it's because you can't find any `q` *in general* that can be used to
+represent `a` as `Either () q`. You can do this for *some specific* `a` (like we
+did for `_Nil`), but not for all `a` in general. Try to see if you can!
+
+Algebraically, a `Prism' a ()` can be thought of as solving
+![x = 1 + y](https://latex.codecogs.com/png.latex?x%20%3D%201%20%2B%20y "x = 1 + y")
+for ![y](https://latex.codecogs.com/png.latex?y "y"). If you try, you get
+![y = x - 1](https://latex.codecogs.com/png.latex?y%20%3D%20x%20-%201 "y = x - 1")...or,
+"`a`, minus one possible element". And so we can only have a `Prism' a ()` in
+situations where "`a` minus one possible element" is a type that exists. In the
+case of `_Nil :: Prism' [a] ()`. In this case, "`[a]` minus one possible
+element" *does* exist: it's the non-empty list! (`[a]` minus the possiblity of
+being empty)
 
 excercises:
 
@@ -702,7 +793,7 @@ or `Bool`s?)
     "`split` and `join` must form an isomorphism" is a much clearer and natural
     law than get-put/put-get/put-put.
 
-[^4]: I didn't invent these names :)
+[^4]: I didn't invent these names
 
 [^5]: Although, upon further thought, you might realize that the constructor and
     deconstructor don't match

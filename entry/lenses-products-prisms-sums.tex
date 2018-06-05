@@ -104,9 +104,7 @@ Code}}.}
 
 I've written about a variety of topics on this blog, but one thing I haven't
 touched in too much detail is the topic of lenses and optics. A big part of this
-is because there are already so many great resources on lenses, like the famous
-(and my favorite) \href{https://artyom.me/lens-over-tea-1}{lenses over tea}
-series.
+is because there are already so many great resources on lenses.
 
 This post won't be a ``lens tutorial'', but rather a dive into an insightful
 perspective on lenses and prisms that I've heard repeated many times, but not
@@ -133,7 +131,7 @@ possible values\footnote{All of this is disregarding the notorious ``bottom''
 has \includegraphics{https://latex.codecogs.com/png.latex?n\%20\%2B\%20m}
 possible values. I won't go much deeper into this, but there are
 \href{https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types}{many
-useful tutorials already online} on this topic!
+useful summaries already online} on this topic!
 
 \hypertarget{lets-get-productive}{%
 \section{Let's Get Productive!}\label{lets-get-productive}}
@@ -202,7 +200,9 @@ and \texttt{{[}a{]}} (the tail/rest of the items). This means that
 
 Another curious product is the fact that every type \texttt{a} is a product
 between \emph{itself} and unit, \texttt{()}. That is, every type \texttt{a} is
-isomorphic to \texttt{(a,\ ())}. Freaky, right?
+isomorphic to \texttt{(a,\ ())} (which follows from the algebraic property
+\includegraphics{https://latex.codecogs.com/png.latex?x\%20\%2A\%201\%20\%3D\%20x}).
+Freaky, right?
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -283,10 +283,9 @@ A \texttt{Lens\textquotesingle{}\ s\ a} is a data type with the following API:
 
 respecting
 \href{https://www.schoolofhaskell.com/school/to-infinity-and-beyond/pick-of-the-week/a-little-lens-starter-tutorial\#the-lens-laws-}{some
-laws} --- get-put, put-get, and put-put.
-
-Abstract mathematical laws are great and all, but I'm going to tell you a secret
-that will render those laws obsolete.
+laws} --- get-put, put-get, and put-put. Abstract mathematical laws are great
+and all, but I'm going to tell you a secret that gives a nice restatement of
+those laws.
 
 At first, you might naively implement lenses like:
 
@@ -308,11 +307,11 @@ So, here's the secret: A \texttt{Lens\textquotesingle{}\ s\ a} means that
 That means that if it is possible to represent \texttt{s} as some
 \texttt{(a,\ q)} (that is,
 \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}), \emph{then you
-have two lenses}! Lenses are nothing more than \textbf{descriptions of
-products}!
+have two lenses}! Lenses are nothing more than \emph{descriptions of products}!
+Another way to think of this is that if you are able to ``split'' a type into
+two parts without losing any information, then each part represents a lens.
 
-In other words, a \texttt{Lens\textquotesingle{}\ s\ a} is nothing more than a
-witness for an
+A \texttt{Lens\textquotesingle{}\ s\ a} is nothing more than a witness for an
 \texttt{exists\ q.\ s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}
 isomorphism.\footnote{The
   \texttt{exists\ q.\ s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)} is
@@ -482,6 +481,37 @@ From our knowledge of our product, we know that this \texttt{Bool} is really a
 out if we're in \texttt{Left} or \texttt{Right}, and flipping the \texttt{Bool}
 ``inside'' is really just swapping from \texttt{Left} to \texttt{Right}.
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{flipEither ::} \DataTypeTok{Either}\NormalTok{ a a }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a a}
+\NormalTok{flipEither }\FunctionTok{=}\NormalTok{ over mysteryLens1 not}
+
+\OtherTok{isLeft ::} \DataTypeTok{Either}\NormalTok{ a a }\OtherTok{->} \DataTypeTok{Bool}
+\NormalTok{isLeft }\FunctionTok{=}\NormalTok{ view mysteryLens1}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ flipEither (}\DataTypeTok{Left} \CharTok{'a'}\NormalTok{)}
+\DataTypeTok{Right} \CharTok{'a'}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ flipEither (}\DataTypeTok{Right} \CharTok{'a'}\NormalTok{)}
+\DataTypeTok{Left} \CharTok{'a'}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ isLeft (}\DataTypeTok{Left} \CharTok{'a'}\NormalTok{)}
+\DataTypeTok{True}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ isLeft (}\DataTypeTok{Right} \CharTok{'a'}\NormalTok{)}
+\DataTypeTok{False}
+\end{Highlighting}
+\end{Shaded}
+
+Note that if we look at lenses as embodying ``record fields'' (things that give
+you the ability to ``get'' a field, and ``modify'' a field --- corresponding
+with \texttt{view} and \texttt{set}), we can think of \texttt{mysteryLens1} as
+an \emph{abstract record field} into the Leftness/Rightness of a value. Thing of
+lenses as defining abstract record fields is a
+\href{http://blog.ezyang.com/2016/12/a-tale-of-backwards-compatibility-in-asts/}{common
+tool for backwards compatiblity}.
+
 Looking at \texttt{mysteryLens2\ ::\ Lens\textquotesingle{}\ (Either\ a\ a)\ a},
 we are saying that every \texttt{Either\ a\ a} has some \texttt{a} ``inside''
 it. From what we know about the underlying product, the \texttt{a} is just the
@@ -490,11 +520,42 @@ it. From what we know about the underlying product, the \texttt{a} is just the
 re-setting the \texttt{a} inside is modifying the contained value but preserving
 leftness/rightness.
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{fromEither ::} \DataTypeTok{Either}\NormalTok{ a a }\OtherTok{->}\NormalTok{ a}
+\NormalTok{fromEither }\FunctionTok{=}\NormalTok{ view mysteryLens2}
+
+\OtherTok{mapEither ::}\NormalTok{ (a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a a }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a a}
+\NormalTok{mapEither }\FunctionTok{=}\NormalTok{ over mysteryLens2}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ fromEither (}\DataTypeTok{Left} \CharTok{'a'}\NormalTok{)}
+\CharTok{'a'}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ mapEither negate (}\DataTypeTok{Right} \DecValTok{4}\NormalTok{)}
+\DataTypeTok{Right}\NormalTok{ (}\FunctionTok{-}\DecValTok{4}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
 So that's really the essence of what a \texttt{Lens\textquotesingle{}} is. A
 \texttt{Lens\textquotesingle{}\ s\ a} is the embodiment of the fact that
 \texttt{s} can be represented as a product between \texttt{a} and something else
 --- that \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}. All of
 the lens laws just boil down to this. \textbf{Lenses embody products}.
+
+\hypertarget{what-isnt-a-lens}{%
+\subsection{What Isn't a Lens?}\label{what-isnt-a-lens}}
+
+This perspective also gives you some insight into when things \emph{aren't}
+lenses. For example, is it possible to make a lens that gives you the first item
+in a list?
+
+No, there isn't, because there isn't any type \texttt{q} that you could factor
+out \texttt{{[}a{]}} into as \texttt{(a,\ q)}. That would imply that
+\texttt{{[}a{]}} is always ``an \texttt{a} with something else''\ldots{}but this
+isn't true with \texttt{{[}{]}}.
 
 \hypertarget{sum-thing-interesting}{%
 \section{"Sum-thing" Interesting}\label{sum-thing-interesting}}
@@ -543,9 +604,10 @@ this proves that \texttt{Shape} is a sum in disguise.
 
 Another interesting ``hidden sum'' is the fact that \texttt{{[}a{]}} in Haskell
 is actually a sum between \texttt{()} and \texttt{(a,\ {[}a{]})}. That's right
---- it's a sum between \texttt{()} and\ldots{}itself? We can interpret this as
-\texttt{()} being one possibility, and \texttt{(a,\ {[}a{]})} (head consed with
-another list) as the other:
+--- it's a sum between \texttt{()} and\ldots{}itself? Indeed it is pretty
+bizarre. However, we can interpret this as \texttt{()} being one possibility
+(the empty list), and \texttt{(a,\ {[}a{]})} (head consed with another list) as
+the other:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -564,8 +626,28 @@ another list) as the other:
 If you don't believe me, just verify that \texttt{inject\ .\ match\ =\ id} and
 \texttt{match\ .\ inject\ =\ id} :)
 
-Actually, however, there is another way to deconstruct \texttt{{[}a{]}} as a sum
-in Haskell. You can treat it as a sum between \texttt{()} and
+Another way of looking at this decomposition is by saying that \texttt{{[}a{]}}
+is the sum between \texttt{()} and \texttt{NonEmpty\ a}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- [a] <~> Either () (NonEmpty a)}
+
+\OtherTok{match ::}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ () (a, [a])}
+\NormalTok{match []     }\FunctionTok{=} \DataTypeTok{Left}\NormalTok{  ()}
+\NormalTok{match (x}\FunctionTok{:}\NormalTok{xs) }\FunctionTok{=} \DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)}
+
+\OtherTok{inject ::} \DataTypeTok{Either}\NormalTok{ () (a, [a]) }\OtherTok{->}\NormalTok{ [a]}
+\NormalTok{inject (}\DataTypeTok{Left}\NormalTok{   _       ) }\FunctionTok{=}\NormalTok{ []}
+\NormalTok{inject (}\DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)) }\FunctionTok{=}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
+\end{Highlighting}
+\end{Shaded}
+
+which says that \texttt{{[}a{]}} is ``either an empty list, or a non-empty
+list''. Whoa.
+
+Actually, there is another way to deconstruct \texttt{{[}a{]}} as a sum in
+Haskell. You can treat it as a sum between \texttt{()} and
 \texttt{({[}a{]},\ a)} --- where the \texttt{()} represents the empty list and
 the \texttt{({[}a{]},\ a)} represents an ``all but the last item'' list and
 ``the last item'':
@@ -602,13 +684,14 @@ type with no inhabitants:
 
 then we have a curious sum: every type \texttt{a} is a sum between \emph{itself}
 and \texttt{Void}. In other words, \texttt{a} is isomorphic to
-\texttt{Either\ a\ Void}:
+\texttt{Either\ a\ Void} (which follows from the algebraic property
+\includegraphics{https://latex.codecogs.com/png.latex?x\%20\%2B\%200\%20\%3D\%20x}):
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- a <~> Either a Void}
 
-\CommentTok{-- a useful helper function when working with `Void`}
+\CommentTok{-- | A useful helper function when working with `Void`}
 \OtherTok{absurd ::} \DataTypeTok{Void} \OtherTok{->}\NormalTok{ a}
 \NormalTok{absurd }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \CommentTok{-- empty case statement because we have}
                \CommentTok{-- no constructors of 'Void' we need to}
@@ -632,7 +715,7 @@ Again, if you don't believe me, verify that \texttt{inject\ .\ match\ =\ id} and
 Now let's bring prisms into the picture. A
 \texttt{Prism\textquotesingle{}\ s\ a} also refers to some \texttt{a} ``inside''
 an \texttt{s}, with the following API: \texttt{preview} and
-\texttt{review}\footnote{I didn't invent these names :)}
+\texttt{review}\footnote{I didn't invent these names}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -661,7 +744,7 @@ that \texttt{s} is a \emph{product} \texttt{(a,\ q)} \ldots{} a
 \texttt{Prism\textquotesingle{}\ s\ a} is nothing more than a witness to the
 fact that \texttt{s} is a \emph{sum} \texttt{Either\ a\ q}. If it is possible to
 represent \texttt{s} as some \texttt{Either\ a\ q}\ldots{}then you have two
-prisms! Prisms are nothing more than \textbf{descriptions of products}!
+prisms! Prisms are nothing more than \emph{descriptions of sums}!
 
 A \texttt{Prism\textquotesingle{}\ s\ a} is nothing more than a witness for an
 \texttt{exists\ q.\ s\ \textless{}\textasciitilde{}\textgreater{}\ Either\ a\ q}
@@ -675,7 +758,7 @@ Under this interpretation, we can write a nice representation of
 \KeywordTok{data} \DataTypeTok{Prism'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.}
                   \DataTypeTok{Prism'}\NormalTok{ \{}\OtherTok{ match  ::}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a q}
 \NormalTok{                         ,}\OtherTok{ inject ::} \DataTypeTok{Either}\NormalTok{ a q }\OtherTok{->}\NormalTok{ s}
-\NormalTok{                         \}}
+\NormalTok{                         \}    }\CommentTok{-- ^ s <~> Either a q}
 \end{Highlighting}
 \end{Shaded}
 
@@ -697,7 +780,8 @@ We can now implement the prism API:
 \end{Shaded}
 
 Like for lenses, prisms also admit a particularly elegant formulation for
-\texttt{over}:
+\texttt{over}, which maps a function over the \texttt{a} in the \texttt{s} if it
+exists:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -762,25 +846,27 @@ And these are actually the typical prisms associated with an ADT. You actually
 get exactly these if you use \texttt{makePrisms} from the \emph{lens} package.
 
 What can we get out of our decomposition of \texttt{{[}a{]}} as a sum between
-\texttt{()} and \texttt{(a,\ {[}a{]})}? Let's look at them:
+\texttt{()} and \texttt{NonEmpty\ a}? Let's look at them:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- [a] <~> Either () (a, [a])}
+\CommentTok{-- [a] <~> Either () (NonEmpty a)}
 
 \OtherTok{_Nil ::} \DataTypeTok{Prism'}\NormalTok{ [a] ()}
-\NormalTok{_Nil }\FunctionTok{=} \DataTypeTok{Prism'}\NormalTok{ \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}\NormalTok{ []            }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ ()}
-\NormalTok{                               x}\FunctionTok{:}\NormalTok{xs          }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ (x, xs)}
-\NormalTok{              , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{ _        }\OtherTok{->}\NormalTok{ []}
-                               \DataTypeTok{Right}\NormalTok{ (x, xs) }\OtherTok{->}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
-\NormalTok{              \}}
+\NormalTok{_Nil }\FunctionTok{=} \DataTypeTok{Prism'}
+\NormalTok{    \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}\NormalTok{ []              }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ ()}
+\NormalTok{                     x}\FunctionTok{:}\NormalTok{xs            }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)}
+\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{ _          }\OtherTok{->}\NormalTok{ []}
+                     \DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs) }\OtherTok{->}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
+\NormalTok{    \}}
 
 \OtherTok{_Cons ::} \DataTypeTok{Prism'}\NormalTok{ [a] (a, [a])}
-\NormalTok{_Cons }\FunctionTok{=} \DataTypeTok{Prism'}\NormalTok{ \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}\NormalTok{ []            }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ ()}
-\NormalTok{                                x}\FunctionTok{:}\NormalTok{xs          }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ (x, xs)}
-\NormalTok{               , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{  (x, xs) }\OtherTok{->}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
-                                \DataTypeTok{Right}\NormalTok{ _       }\OtherTok{->}\NormalTok{ []}
-\NormalTok{               \}}
+\NormalTok{_Cons }\FunctionTok{=} \DataTypeTok{Prism'}
+\NormalTok{    \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}\NormalTok{ []              }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ ()}
+\NormalTok{                     x}\FunctionTok{:}\NormalTok{xs            }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)}
+\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{  (x }\FunctionTok{:|}\NormalTok{ xs) }\OtherTok{->}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
+                     \DataTypeTok{Right}\NormalTok{ _         }\OtherTok{->}\NormalTok{ []}
+\NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -806,8 +892,8 @@ often use Prisms to simulate ``abstract'' constructors.
 An \emph{abstract constructor} is exactly what our \emph{other} \texttt{{[}a{]}}
 sum decomposition gives us! If we look at that isomorphism
 \texttt{{[}a{]}\ \textless{}\textasciitilde{}\textgreater{}\ Either\ ()\ ({[}a{]},\ a)}
-and write out the prisms, we see that they correspond to the abstract
-constructors \texttt{\_Nil} and \texttt{\_Snoc}:
+(the ``tail-and-last'' breakdown) and write out the prisms, we see that they
+correspond to the abstract constructors \texttt{\_Nil} and \texttt{\_Snoc}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -904,8 +990,10 @@ is, is the following prism possible?
 If you think of a prism as just ``a lens that might fail'' (as it's often
 taught), you might think yes. If you think of a prism as just ``a constructor
 and deconstructor'', you might also think yes, since you can construct an
-\texttt{{[}a{]}} with only a single \texttt{a}.\footnote{Although, upon further
-  thought, you might realize that the constructor and deconstructor don't match}
+\texttt{{[}a{]}} with only a single \texttt{a}, so
+\texttt{review\ ::\ a\ -\textgreater{}\ {[}a{]}} is possible.\footnote{Although,
+  upon further thought, you might realize that the constructor and deconstructor
+  don't match}
 
 However, if you think of it as witnessing a sum, you might see that this prism
 isn't possible. There is no possible type \texttt{q} where \texttt{{[}a{]}} is a
@@ -914,6 +1002,28 @@ sum of \texttt{a} and \texttt{q}. The isomorphism
 cannot be made for \emph{any} type \texttt{q}. There is no way to express
 \texttt{{[}a{]}} as the sum of \texttt{a} and some other type. Try thinking of a
 type \texttt{q} --- it's just not possible!
+
+Another example of a non-prism: we have a
+\texttt{Lens\textquotesingle{}\ a\ ()}, but why not a
+\texttt{Prism\textquotesingle{}\ a\ ()}?
+
+Well, it's because you can't find any \texttt{q} \emph{in general} that can be
+used to represent \texttt{a} as \texttt{Either\ ()\ q}. You can do this for
+\emph{some specific} \texttt{a} (like we did for \texttt{\_Nil}), but not for
+all \texttt{a} in general. Try to see if you can!
+
+Algebraically, a \texttt{Prism\textquotesingle{}\ a\ ()} can be thought of as
+solving
+\includegraphics{https://latex.codecogs.com/png.latex?x\%20\%3D\%201\%20\%2B\%20y}
+for \includegraphics{https://latex.codecogs.com/png.latex?y}. If you try, you
+get
+\includegraphics{https://latex.codecogs.com/png.latex?y\%20\%3D\%20x\%20-\%201}\ldots{}or,
+``\texttt{a}, minus one possible element''. And so we can only have a
+\texttt{Prism\textquotesingle{}\ a\ ()} in situations where ``\texttt{a} minus
+one possible element'' is a type that exists. In the case of
+\texttt{\_Nil\ ::\ Prism\textquotesingle{}\ {[}a{]}\ ()}. In this case,
+``\texttt{{[}a{]}} minus one possible element'' \emph{does} exist: it's the
+non-empty list! (\texttt{{[}a{]}} minus the possiblity of being empty)
 
 excercises:
 
