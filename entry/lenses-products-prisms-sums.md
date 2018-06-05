@@ -632,7 +632,7 @@ Neat, they're actually exactly identical! Who would have thought?
 So we see now, similar to lenses, **every sum yields prisms**, and **every prism
 witnesses one side of a sum**.
 
-### Prism Tour
+### Prism Wisd'm
 
 Let's go back at our example prisms and see what sort of insight we can gain
 from this perspective.
@@ -734,15 +734,15 @@ _Snoc = Prism' { match  = \xs -> if null xs
                }
 ```
 
-`_Snoc` (`mysteryPrism2`) is an abstract constructor for a list that lets us:
+`_Snoc` is an "abstract constructor" for a list that lets us:
 
 1.  "Construct" an `[a]` given an original list `[a]` and an item to add to the
     end, `a`
 2.  "Deconstruct" an `[a]` into an initial run `[a]` and its last element `a`
     (as a pattern match that might "fail").
 
-And, our final sum, `a <~> Either a Void`...what does that decomposition give
-us, conceptually?
+And, looking at `a <~> Either a Void`...what does that decomposition give us,
+conceptually?
 
 ``` {.haskell}
 -- a <~> Either a Void
@@ -769,7 +769,7 @@ with only an `a` (whoa). In our "sum" perspective, however, it just witnesses
 that an `a <~> Either a Void` sum.
 
 In lens-speak, `_Void :: Prism' a Void` tells us that you can pattern match a
-`Void` out of any `a`...but that that pattern match will never fail.
+`Void` out of any `a`...but that that pattern match will never match.
 Furthermore, it tells us that if you have a value of type `Void`, you can use
 the `_Void` "constructor" to make a value of any type `a`! We have
 `review _Void :: Void -> a`!
@@ -825,8 +825,8 @@ only4 :: Prism' Int ()
 only4 = only 4
 ```
 
-The second prism, `refined4`, basically acts like a "smart constructor" for
-`Not4`, essentially `refineFail` and `unrefine`:
+The second prism, `refined4`, basically acts like a "abstract (smart)
+constructor" for `Not4`, essentially `refineFail` and `unrefine`:
 
 ``` {.haskell}
 makeNot4 :: Int -> Maybe Not4
@@ -838,8 +838,8 @@ fromNot4 = review refined4
 
 ### Prism or Not
 
-To me, however, one of the most useful things about this prism perspective is
-that it helps me see what *isn't* a prism.
+To me, again, one of the most useful things about this prism perspective is that
+it helps me see what *isn't* a prism.
 
 For example, is it possible to have a prism into the *head* of a list? That is,
 is the following prism possible?
@@ -852,14 +852,144 @@ If you think of a prism as just "a lens that might fail" (as it's often taught),
 you might think yes. If you think of a prism as just "a constructor and
 deconstructor", you might also think yes, since you can construct an `[a]` with
 only a single `a`. You can definitely "implement" this prism using our "too big"
-representation, in terms of `preview` and `review`. These viewpoints of prisms
-will fail you and lead you astray.
+representation, in terms of `preview` and `review`. Both of these viewpoints of
+prisms will fail you and lead you astray.
 
 However, if you think of it as witnessing a sum, you might see that this prism
 isn't possible. There is no possible type `q` where `[a]` is a sum of `a` and
 `q`. The isomorphism `[a] <~> Either a q` cannot be made for *any* type `q`.
 There is no way to express `[a]` as the sum of `a` and some other type. Try
 thinking of a type `q` --- it's just not possible!
+
+The Path to Profunctors
+-----------------------
+
+As a finale, I'd like to show how these dual perspectives (lenses are witneses
+to products and prisms are witnesses to sum) make their implementation in terms
+of "profunctor optics" very natural.
+
+First, some background -- a "profunctor optic" is a way of expressing things
+like lenses and prisms in terms of "profunctor transformers". Lenses, prisms,
+etc. would not be record types, but rather functions that takes a profunctor and
+returns a new profunctor.
+
+A profunctor `p` has values of type `p a b`, and you can roughly think of
+`p a b` as "a relationship between `a` and `b`".
+
+The `Profunctor` typeclass `p` gives us a function called `iso`, that lets us
+transform a profunctor in terms of an isomorphism.
+
+If type `s` is isomorphic to type `a` (`s <~> a`), then we can use:
+
+``` {.haskell}
+-- s <~> a
+
+iso :: Profunctor p
+    => (s -> a)         -- ^ one half of the isomorphism
+    -> (a -> s)         -- ^ the other half of the isomorphism
+    -> p a a
+    -> p s s
+```
+
+Given the `s -> a` and `a -> s` functions that witness `s <~> a`, we can
+transform a `p a a` into a `p s s` (a relationship on `a`s to be a relationship
+on `s`).
+
+### Profunctor Lens
+
+A profunctor lens (one way of implementing) `Lens' s a` is a function:
+
+``` {.haskell}
+p a a -> p s s
+```
+
+You can think of it as taking a "relationship on `a`is" and turning it into a
+"relationship on `s`s".
+
+With a lens, we are saying that `s` is isomorphic to `(a, q)`. That means that
+we have, at our disposal:
+
+``` {.haskell}
+iso split unsplit
+    :: Profunctor p
+    => p (a, q) (a, q) -> p s s
+```
+
+In order to get a `p a a -> p s s`, we need a way to turn a `p a a` into a
+`p (a, q) (a, q)`. This says "take a relationship on `a`s and turn it into a
+relationship on `(a, q)`, *ignoring* the `q`".
+
+The typeclass `Strong` gives us just that:
+
+``` {.haskell}
+first' :: Strong p => p a a -> p (a, q) (a, q)
+```
+
+And so we now have a definition of a profunctor lens:
+
+``` {.haskell}
+makeLens
+    :: Strong p
+    => (s -> (a, q))        -- ^ split
+    -> ((a, q) -> s)        -- ^ unsplit
+    -> p a a                -- ^ relationship on a
+    -> p s s                -- ^ relationship on s
+makeLens split unsplit = iso split unsplit  -- ^ p (a, q) (a, q) -> p s s
+                       . first'             -- ^ p a a -> p (a, q) (a, q)
+```
+
+Essentially, `iso split unsplit . first'` promotes a `p a a` to a `p s s`. And
+since `s <~> (a, q)`, it promotes a relationship on a "part" to be a
+relationship on a "whole". A lens!
+
+### Profunctor Prisms
+
+A profunctor prism (one way of implementing) `Prism' s a` is a function:
+
+``` {.haskell}
+p a a -> p s s
+```
+
+You can also think of this as taking a "relationship on `a`is" and turning it
+into a "relationship on `s`s".
+
+With a prism, we are saying that `s` is isomorphic to `Either a q`. That means
+that we have, at our disposal:
+
+``` {.haskell}
+iso match inject
+    :: Profunctor p
+    => p (Either a q) (Either a q)
+    -> p s s
+```
+
+In order to get a `p a a -> p s s`, we need a way to turn a `p a a` into a
+`p (Either a q) (Either a q)`. This says "take a relationship on `a`s and turn
+it into a relationship on `Either a q`, *ignoring* the `q`".
+
+The typeclass `Choice` gives us just that:
+
+``` {.haskell}
+left :: Choice p => p a a -> p (Either a q) (Either a q)
+```
+
+And so we now have a definition of a profunctor prism:
+
+``` {.haskell}
+makePrism
+    :: Choice p
+    => (s -> (a, q))        -- ^ match
+    -> ((a, q) -> s)        -- ^ inject
+    -> p a a                -- ^ relationship on a
+    -> p s s                -- ^ relationship on s
+makePrism match inject =
+    iso match inject   -- ^ p (Either a q) (Either a q) -> p s s
+  . left'              -- ^ p a a -> p (Either a q) (Either a q)
+```
+
+Essentially, `iso match inject . left'` promotes a `p a a` to a `p s s`. And
+since `s <~> Either a q`, it promotes a relationship on a "potential branch" to
+be a relationship on a "whole". A prism!
 
 Exercises
 ---------

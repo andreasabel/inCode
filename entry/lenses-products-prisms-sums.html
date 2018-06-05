@@ -307,7 +307,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb31-5" data-line-number="5">over <span class="dt">Prism&#39;</span>{<span class="fu">..</span>} f <span class="fu">=</span> inject <span class="fu">.</span> first f <span class="fu">.</span> match    <span class="co">-- instance Bifunctor Either</span></a></code></pre></div>
 <p>Neat, they’re actually exactly identical! Who would have thought?</p>
 <p>So we see now, similar to lenses, <strong>every sum yields prisms</strong>, and <strong>every prism witnesses one side of a sum</strong>.</p>
-<h3 id="prism-tour">Prism Tour</h3>
+<h3 id="prism-wisdm">Prism Wisd’m</h3>
 <p>Let’s go back at our example prisms and see what sort of insight we can gain from this perspective.</p>
 <div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Shape</span> <span class="fu">=</span> <span class="dt">Circle</span>  <span class="dt">Double</span></a>
 <a class="sourceLine" id="cb32-2" data-line-number="2">           <span class="fu">|</span> <span class="dt">RegPoly</span> <span class="dt">Natural</span> <span class="dt">Double</span></a>
@@ -379,12 +379,12 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb35-15" data-line-number="15">               , inject <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">Left</span>  (xs, x) <span class="ot">-&gt;</span> xs <span class="fu">++</span> [x]</a>
 <a class="sourceLine" id="cb35-16" data-line-number="16">                                <span class="dt">Right</span> _       <span class="ot">-&gt;</span> []</a>
 <a class="sourceLine" id="cb35-17" data-line-number="17">               }</a></code></pre></div>
-<p><code>_Snoc</code> (<code>mysteryPrism2</code>) is an abstract constructor for a list that lets us:</p>
+<p><code>_Snoc</code> is an “abstract constructor” for a list that lets us:</p>
 <ol type="1">
 <li>“Construct” an <code>[a]</code> given an original list <code>[a]</code> and an item to add to the end, <code>a</code></li>
 <li>“Deconstruct” an <code>[a]</code> into an initial run <code>[a]</code> and its last element <code>a</code> (as a pattern match that might “fail”).</li>
 </ol>
-<p>And, our final sum, <code>a &lt;~&gt; Either a Void</code>…what does that decomposition give us, conceptually?</p>
+<p>And, looking at <code>a &lt;~&gt; Either a Void</code>…what does that decomposition give us, conceptually?</p>
 <div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb36-1" data-line-number="1"><span class="co">-- a &lt;~&gt; Either a Void</span></a>
 <a class="sourceLine" id="cb36-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb36-3" data-line-number="3"><span class="ot">identity ::</span> <span class="dt">Prism&#39;</span> a a</a>
@@ -402,7 +402,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb36-15" data-line-number="15">                   <span class="dt">Right</span> x <span class="ot">-&gt;</span> x</a>
 <a class="sourceLine" id="cb36-16" data-line-number="16">               }</a></code></pre></div>
 <p>In lens-speak, <code>identity :: Prism' a a</code> tells us that all <code>a</code>s have an <code>a</code> “inside” them (since <code>match</code> always matches) and that you can construct an <code>a</code> with only an <code>a</code> (whoa). In our “sum” perspective, however, it just witnesses that an <code>a &lt;~&gt; Either a Void</code> sum.</p>
-<p>In lens-speak, <code>_Void :: Prism' a Void</code> tells us that you can pattern match a <code>Void</code> out of any <code>a</code>…but that that pattern match will never fail. Furthermore, it tells us that if you have a value of type <code>Void</code>, you can use the <code>_Void</code> “constructor” to make a value of any type <code>a</code>! We have <code>review _Void :: Void -&gt; a</code>!</p>
+<p>In lens-speak, <code>_Void :: Prism' a Void</code> tells us that you can pattern match a <code>Void</code> out of any <code>a</code>…but that that pattern match will never match. Furthermore, it tells us that if you have a value of type <code>Void</code>, you can use the <code>_Void</code> “constructor” to make a value of any type <code>a</code>! We have <code>review _Void :: Void -&gt; a</code>!</p>
 <p>However, in our “sum” perspective, it is nothing more than the witness of the fact that <code>a</code> is the sum of <code>a</code> and <code>Void</code>.</p>
 <p>And finally, let’s look at our deconstruction of <code>Int</code> and <code>Reinfed (NotEqualTo 4) Int</code>. What prisms does this yield, and what insight do we get?</p>
 <div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="ot">only4 ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Int</span> ()</a>
@@ -436,18 +436,76 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb39-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb39-4" data-line-number="4"><span class="ot">only4 ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Int</span> ()</a>
 <a class="sourceLine" id="cb39-5" data-line-number="5">only4 <span class="fu">=</span> only <span class="dv">4</span></a></code></pre></div>
-<p>The second prism, <code>refined4</code>, basically acts like a “smart constructor” for <code>Not4</code>, essentially <code>refineFail</code> and <code>unrefine</code>:</p>
+<p>The second prism, <code>refined4</code>, basically acts like a “abstract (smart) constructor” for <code>Not4</code>, essentially <code>refineFail</code> and <code>unrefine</code>:</p>
 <div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="ot">makeNot4 ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Not4</span></a>
 <a class="sourceLine" id="cb40-2" data-line-number="2">makeNot4 <span class="fu">=</span> preview refined4</a>
 <a class="sourceLine" id="cb40-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb40-4" data-line-number="4"><span class="ot">fromNot4 ::</span> <span class="dt">Not4</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
 <a class="sourceLine" id="cb40-5" data-line-number="5">fromNot4 <span class="fu">=</span> review refined4</a></code></pre></div>
 <h3 id="prism-or-not">Prism or Not</h3>
-<p>To me, however, one of the most useful things about this prism perspective is that it helps me see what <em>isn’t</em> a prism.</p>
+<p>To me, again, one of the most useful things about this prism perspective is that it helps me see what <em>isn’t</em> a prism.</p>
 <p>For example, is it possible to have a prism into the <em>head</em> of a list? That is, is the following prism possible?</p>
 <div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="ot">_head ::</span> <span class="dt">Prism&#39;</span> [a] a           <span class="co">-- get the head of a list</span></a></code></pre></div>
-<p>If you think of a prism as just “a lens that might fail” (as it’s often taught), you might think yes. If you think of a prism as just “a constructor and deconstructor”, you might also think yes, since you can construct an <code>[a]</code> with only a single <code>a</code>. You can definitely “implement” this prism using our “too big” representation, in terms of <code>preview</code> and <code>review</code>. These viewpoints of prisms will fail you and lead you astray.</p>
+<p>If you think of a prism as just “a lens that might fail” (as it’s often taught), you might think yes. If you think of a prism as just “a constructor and deconstructor”, you might also think yes, since you can construct an <code>[a]</code> with only a single <code>a</code>. You can definitely “implement” this prism using our “too big” representation, in terms of <code>preview</code> and <code>review</code>. Both of these viewpoints of prisms will fail you and lead you astray.</p>
 <p>However, if you think of it as witnessing a sum, you might see that this prism isn’t possible. There is no possible type <code>q</code> where <code>[a]</code> is a sum of <code>a</code> and <code>q</code>. The isomorphism <code>[a] &lt;~&gt; Either a q</code> cannot be made for <em>any</em> type <code>q</code>. There is no way to express <code>[a]</code> as the sum of <code>a</code> and some other type. Try thinking of a type <code>q</code> — it’s just not possible!</p>
+<h2 id="the-path-to-profunctors">The Path to Profunctors</h2>
+<p>As a finale, I’d like to show how these dual perspectives (lenses are witneses to products and prisms are witnesses to sum) make their implementation in terms of “profunctor optics” very natural.</p>
+<p>First, some background – a “profunctor optic” is a way of expressing things like lenses and prisms in terms of “profunctor transformers”. Lenses, prisms, etc. would not be record types, but rather functions that takes a profunctor and returns a new profunctor.</p>
+<p>A profunctor <code>p</code> has values of type <code>p a b</code>, and you can roughly think of <code>p a b</code> as “a relationship between <code>a</code> and <code>b</code>”.</p>
+<p>The <code>Profunctor</code> typeclass <code>p</code> gives us a function called <code>iso</code>, that lets us transform a profunctor in terms of an isomorphism.</p>
+<p>If type <code>s</code> is isomorphic to type <code>a</code> (<code>s &lt;~&gt; a</code>), then we can use:</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="co">-- s &lt;~&gt; a</span></a>
+<a class="sourceLine" id="cb42-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb42-3" data-line-number="3"><span class="ot">iso ::</span> <span class="dt">Profunctor</span> p</a>
+<a class="sourceLine" id="cb42-4" data-line-number="4">    <span class="ot">=&gt;</span> (s <span class="ot">-&gt;</span> a)         <span class="co">-- ^ one half of the isomorphism</span></a>
+<a class="sourceLine" id="cb42-5" data-line-number="5">    <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> s)         <span class="co">-- ^ the other half of the isomorphism</span></a>
+<a class="sourceLine" id="cb42-6" data-line-number="6">    <span class="ot">-&gt;</span> p a a</a>
+<a class="sourceLine" id="cb42-7" data-line-number="7">    <span class="ot">-&gt;</span> p s s</a></code></pre></div>
+<p>Given the <code>s -&gt; a</code> and <code>a -&gt; s</code> functions that witness <code>s &lt;~&gt; a</code>, we can transform a <code>p a a</code> into a <code>p s s</code> (a relationship on <code>a</code>s to be a relationship on <code>s</code>).</p>
+<h3 id="profunctor-lens">Profunctor Lens</h3>
+<p>A profunctor lens (one way of implementing) <code>Lens' s a</code> is a function:</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb43-1" data-line-number="1">p a a <span class="ot">-&gt;</span> p s s</a></code></pre></div>
+<p>You can think of it as taking a “relationship on <code>a</code>is” and turning it into a “relationship on <code>s</code>s”.</p>
+<p>With a lens, we are saying that <code>s</code> is isomorphic to <code>(a, q)</code>. That means that we have, at our disposal:</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb44-1" data-line-number="1">iso split unsplit</a>
+<a class="sourceLine" id="cb44-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Profunctor</span> p</a>
+<a class="sourceLine" id="cb44-3" data-line-number="3">    <span class="ot">=&gt;</span> p (a, q) (a, q) <span class="ot">-&gt;</span> p s s</a></code></pre></div>
+<p>In order to get a <code>p a a -&gt; p s s</code>, we need a way to turn a <code>p a a</code> into a <code>p (a, q) (a, q)</code>. This says “take a relationship on <code>a</code>s and turn it into a relationship on <code>(a, q)</code>, <em>ignoring</em> the <code>q</code>”.</p>
+<p>The typeclass <code>Strong</code> gives us just that:</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb45-1" data-line-number="1"><span class="ot">first&#39; ::</span> <span class="dt">Strong</span> p <span class="ot">=&gt;</span> p a a <span class="ot">-&gt;</span> p (a, q) (a, q)</a></code></pre></div>
+<p>And so we now have a definition of a profunctor lens:</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb46-1" data-line-number="1">makeLens</a>
+<a class="sourceLine" id="cb46-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Strong</span> p</a>
+<a class="sourceLine" id="cb46-3" data-line-number="3">    <span class="ot">=&gt;</span> (s <span class="ot">-&gt;</span> (a, q))        <span class="co">-- ^ split</span></a>
+<a class="sourceLine" id="cb46-4" data-line-number="4">    <span class="ot">-&gt;</span> ((a, q) <span class="ot">-&gt;</span> s)        <span class="co">-- ^ unsplit</span></a>
+<a class="sourceLine" id="cb46-5" data-line-number="5">    <span class="ot">-&gt;</span> p a a                <span class="co">-- ^ relationship on a</span></a>
+<a class="sourceLine" id="cb46-6" data-line-number="6">    <span class="ot">-&gt;</span> p s s                <span class="co">-- ^ relationship on s</span></a>
+<a class="sourceLine" id="cb46-7" data-line-number="7">makeLens split unsplit <span class="fu">=</span> iso split unsplit  <span class="co">-- ^ p (a, q) (a, q) -&gt; p s s</span></a>
+<a class="sourceLine" id="cb46-8" data-line-number="8">                       <span class="fu">.</span> first&#39;             <span class="co">-- ^ p a a -&gt; p (a, q) (a, q)</span></a></code></pre></div>
+<p>Essentially, <code>iso split unsplit . first'</code> promotes a <code>p a a</code> to a <code>p s s</code>. And since <code>s &lt;~&gt; (a, q)</code>, it promotes a relationship on a “part” to be a relationship on a “whole”. A lens!</p>
+<h3 id="profunctor-prisms">Profunctor Prisms</h3>
+<p>A profunctor prism (one way of implementing) <code>Prism' s a</code> is a function:</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb47-1" data-line-number="1">p a a <span class="ot">-&gt;</span> p s s</a></code></pre></div>
+<p>You can also think of this as taking a “relationship on <code>a</code>is” and turning it into a “relationship on <code>s</code>s”.</p>
+<p>With a prism, we are saying that <code>s</code> is isomorphic to <code>Either a q</code>. That means that we have, at our disposal:</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb48-1" data-line-number="1">iso match inject</a>
+<a class="sourceLine" id="cb48-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Profunctor</span> p</a>
+<a class="sourceLine" id="cb48-3" data-line-number="3">    <span class="ot">=&gt;</span> p (<span class="dt">Either</span> a q) (<span class="dt">Either</span> a q)</a>
+<a class="sourceLine" id="cb48-4" data-line-number="4">    <span class="ot">-&gt;</span> p s s</a></code></pre></div>
+<p>In order to get a <code>p a a -&gt; p s s</code>, we need a way to turn a <code>p a a</code> into a <code>p (Either a q) (Either a q)</code>. This says “take a relationship on <code>a</code>s and turn it into a relationship on <code>Either a q</code>, <em>ignoring</em> the <code>q</code>”.</p>
+<p>The typeclass <code>Choice</code> gives us just that:</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="ot">left ::</span> <span class="dt">Choice</span> p <span class="ot">=&gt;</span> p a a <span class="ot">-&gt;</span> p (<span class="dt">Either</span> a q) (<span class="dt">Either</span> a q)</a></code></pre></div>
+<p>And so we now have a definition of a profunctor prism:</p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb50-1" data-line-number="1">makePrism</a>
+<a class="sourceLine" id="cb50-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Choice</span> p</a>
+<a class="sourceLine" id="cb50-3" data-line-number="3">    <span class="ot">=&gt;</span> (s <span class="ot">-&gt;</span> (a, q))        <span class="co">-- ^ match</span></a>
+<a class="sourceLine" id="cb50-4" data-line-number="4">    <span class="ot">-&gt;</span> ((a, q) <span class="ot">-&gt;</span> s)        <span class="co">-- ^ inject</span></a>
+<a class="sourceLine" id="cb50-5" data-line-number="5">    <span class="ot">-&gt;</span> p a a                <span class="co">-- ^ relationship on a</span></a>
+<a class="sourceLine" id="cb50-6" data-line-number="6">    <span class="ot">-&gt;</span> p s s                <span class="co">-- ^ relationship on s</span></a>
+<a class="sourceLine" id="cb50-7" data-line-number="7">makePrism match inject <span class="fu">=</span></a>
+<a class="sourceLine" id="cb50-8" data-line-number="8">    iso match inject   <span class="co">-- ^ p (Either a q) (Either a q) -&gt; p s s</span></a>
+<a class="sourceLine" id="cb50-9" data-line-number="9">  <span class="fu">.</span> left&#39;              <span class="co">-- ^ p a a -&gt; p (Either a q) (Either a q)</span></a></code></pre></div>
+<p>Essentially, <code>iso match inject . left'</code> promotes a <code>p a a</code> to a <code>p s s</code>. And since <code>s &lt;~&gt; Either a q</code>, it promotes a relationship on a “potential branch” to be a relationship on a “whole”. A prism!</p>
 <h2 id="exercises">Exercises</h2>
 <ol type="1">
 <li>Is (a, Void) a decomp</li>
