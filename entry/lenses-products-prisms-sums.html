@@ -204,61 +204,76 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb21-8" data-line-number="8">inject (<span class="dt">Left</span>   r    ) <span class="fu">=</span> <span class="dt">Circle</span>  r</a>
 <a class="sourceLine" id="cb21-9" data-line-number="9">inject (<span class="dt">Right</span> (n, s)) <span class="fu">=</span> <span class="dt">RegPoly</span> n s</a></code></pre></div>
 <p>Since <code>inject . match = id</code> and <code>match . inject = id</code>, this proves that <code>Shape</code> is a sum in disguise.</p>
-<p>Another interesting “hidden sum” is the fact that <code>[a]</code> in Haskell is actually a sum between <code>()</code> and <code>(a, [a])</code>. That’s right — it’s a sum between <code>()</code> and…itself? Indeed it is pretty bizarre. However, we can interpret this as <code>()</code> being one possibility (the empty list), and <code>(a, [a])</code> (head consed with another list) as the other:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="co">-- [a] &lt;~&gt; Either () (a, [a])</span></a>
+<p>Another interesting “hidden sum” is the fact that <code>[a]</code> in Haskell is actually a sum between <code>()</code> and <code>(a, [a])</code>. That’s right — it’s a sum between <code>()</code> and…itself? Indeed it is pretty bizarre.</p>
+<p>However, if we think of <code>()</code> as the possibility of an empty list, and <code>(a, [a])</code> as the possibility of <code>NonEmpty a</code> (the “head” of a list consed with the rest of the list), then saying that <code>[a]</code> is a sum between <code>()</code> and <code>NonEmpty a</code> is saying that <code>[a]</code> is “either an empty list or a non-empty list”. Whoa. Take <em>that</em>, <a href="https://en.wikipedia.org/wiki/Constructivism_(mathematics)">LEM denialists</a>.</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="co">-- [a] &lt;~&gt; Either () (NonEmpty a)</span></a>
 <a class="sourceLine" id="cb22-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb22-3" data-line-number="3"><span class="ot">match ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a, [a])</a>
+<a class="sourceLine" id="cb22-3" data-line-number="3"><span class="ot">match ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Either</span> () (<span class="dt">NonEmpty</span> a)</a>
 <a class="sourceLine" id="cb22-4" data-line-number="4">match []     <span class="fu">=</span> <span class="dt">Left</span>  ()</a>
-<a class="sourceLine" id="cb22-5" data-line-number="5">match (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="dt">Right</span> (x, xs)</a>
+<a class="sourceLine" id="cb22-5" data-line-number="5">match (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="dt">Right</span> (x <span class="fu">:|</span> xs)</a>
 <a class="sourceLine" id="cb22-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb22-7" data-line-number="7"><span class="ot">inject ::</span> <span class="dt">Either</span> () (a, [a]) <span class="ot">-&gt;</span> [a]</a>
-<a class="sourceLine" id="cb22-8" data-line-number="8">inject (<span class="dt">Left</span>   _     ) <span class="fu">=</span> []</a>
-<a class="sourceLine" id="cb22-9" data-line-number="9">inject (<span class="dt">Right</span> (x, xs)) <span class="fu">=</span> x<span class="fu">:</span>xs</a></code></pre></div>
-<p>If you don’t believe me, just verify that <code>inject . match = id</code> and <code>match . inject = id</code> :)</p>
-<p>Another way of looking at this decomposition is by saying that <code>[a]</code> is the sum between <code>()</code> and <code>NonEmpty a</code>:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="co">-- [a] &lt;~&gt; Either () (NonEmpty a)</span></a>
+<a class="sourceLine" id="cb22-7" data-line-number="7"><span class="ot">inject ::</span> <span class="dt">Either</span> () (<span class="dt">NonEmpty</span> a) <span class="ot">-&gt;</span> [a]</a>
+<a class="sourceLine" id="cb22-8" data-line-number="8">inject (<span class="dt">Left</span>   _       ) <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb22-9" data-line-number="9">inject (<span class="dt">Right</span> (x <span class="fu">:|</span> xs)) <span class="fu">=</span> x<span class="fu">:</span>xs</a></code></pre></div>
+<p>And, actually, there is another way to deconstruct <code>[a]</code> as a sum in Haskell. You can treat it as a sum between <code>()</code> and <code>([a], a)</code> — where the <code>()</code> represents the empty list and the <code>([a], a)</code> represents an “all but the last item” list and “the last item”:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="co">-- [a] &lt;~&gt; Either () ([a], a)</span></a>
 <a class="sourceLine" id="cb23-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb23-3" data-line-number="3"><span class="ot">match ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a, [a])</a>
-<a class="sourceLine" id="cb23-4" data-line-number="4">match []     <span class="fu">=</span> <span class="dt">Left</span>  ()</a>
-<a class="sourceLine" id="cb23-5" data-line-number="5">match (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="dt">Right</span> (x <span class="fu">:|</span> xs)</a>
-<a class="sourceLine" id="cb23-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb23-7" data-line-number="7"><span class="ot">inject ::</span> <span class="dt">Either</span> () (a, [a]) <span class="ot">-&gt;</span> [a]</a>
-<a class="sourceLine" id="cb23-8" data-line-number="8">inject (<span class="dt">Left</span>   _       ) <span class="fu">=</span> []</a>
-<a class="sourceLine" id="cb23-9" data-line-number="9">inject (<span class="dt">Right</span> (x <span class="fu">:|</span> xs)) <span class="fu">=</span> x<span class="fu">:</span>xs</a></code></pre></div>
-<p>which says that <code>[a]</code> is “either an empty list, or a non-empty list”. Whoa.</p>
-<p>Actually, there is another way to deconstruct <code>[a]</code> as a sum in Haskell. You can treat it as a sum between <code>()</code> and <code>([a], a)</code> — where the <code>()</code> represents the empty list and the <code>([a], a)</code> represents an “all but the last item” list and “the last item”:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="co">-- [a] &lt;~&gt; Either () ([a], a)</span></a>
-<a class="sourceLine" id="cb24-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb24-3" data-line-number="3"><span class="ot">match  ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Either</span> () ([a], a)</a>
-<a class="sourceLine" id="cb24-4" data-line-number="4">match xs</a>
-<a class="sourceLine" id="cb24-5" data-line-number="5">  <span class="fu">|</span> null xs   <span class="fu">=</span> <span class="dt">Left</span>  ()</a>
-<a class="sourceLine" id="cb24-6" data-line-number="6">  <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="dt">Right</span> (init xs, last xs)</a>
-<a class="sourceLine" id="cb24-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb24-8" data-line-number="8"><span class="co">-- init gives you all but the last item:</span></a>
-<a class="sourceLine" id="cb24-9" data-line-number="9"><span class="co">-- &gt; init [1,2,3] = [1,2]</span></a>
-<a class="sourceLine" id="cb24-10" data-line-number="10"></a>
-<a class="sourceLine" id="cb24-11" data-line-number="11"><span class="ot">inject ::</span> <span class="dt">Either</span> () (a, [a]) <span class="ot">-&gt;</span> [a]</a>
-<a class="sourceLine" id="cb24-12" data-line-number="12">inject (<span class="dt">Left</span>   _     ) <span class="fu">=</span> []</a>
-<a class="sourceLine" id="cb24-13" data-line-number="13">inject (<span class="dt">Right</span> (xs, x)) <span class="fu">=</span> xs <span class="fu">++</span> [x]</a></code></pre></div>
+<a class="sourceLine" id="cb23-3" data-line-number="3"><span class="ot">match  ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Either</span> () ([a], a)</a>
+<a class="sourceLine" id="cb23-4" data-line-number="4">match xs</a>
+<a class="sourceLine" id="cb23-5" data-line-number="5">  <span class="fu">|</span> null xs   <span class="fu">=</span> <span class="dt">Left</span>  ()</a>
+<a class="sourceLine" id="cb23-6" data-line-number="6">  <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="dt">Right</span> (init xs, last xs)</a>
+<a class="sourceLine" id="cb23-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb23-8" data-line-number="8"><span class="co">-- init gives you all but the last item:</span></a>
+<a class="sourceLine" id="cb23-9" data-line-number="9"><span class="co">-- &gt; init [1,2,3] = [1,2]</span></a>
+<a class="sourceLine" id="cb23-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb23-11" data-line-number="11"><span class="ot">inject ::</span> <span class="dt">Either</span> () (a, [a]) <span class="ot">-&gt;</span> [a]</a>
+<a class="sourceLine" id="cb23-12" data-line-number="12">inject (<span class="dt">Left</span>   _     ) <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb23-13" data-line-number="13">inject (<span class="dt">Right</span> (xs, x)) <span class="fu">=</span> xs <span class="fu">++</span> [x]</a></code></pre></div>
 <p>I just think it’s interesting that the same type can be “decomposed” into a sum of two different types in multiple ways.</p>
 <p>Another curious sum: if we consider the “empty data type” <code>Void</code>, the type with no inhabitants:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Void</span>           <span class="co">-- no constructors, no valid inhabitants</span></a></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Void</span>           <span class="co">-- no constructors, no valid inhabitants</span></a></code></pre></div>
 <p>then we have a curious sum: every type <code>a</code> is a sum between <em>itself</em> and <code>Void</code>. In other words, <code>a</code> is isomorphic to <code>Either a Void</code> (which follows from the algebraic property <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?x%20%2B%200%20%3D%20x" alt="x + 0 = x" title="x + 0 = x" />):</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co">-- a &lt;~&gt; Either a Void</span></a>
-<a class="sourceLine" id="cb26-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb26-3" data-line-number="3"><span class="co">-- | A useful helper function when working with `Void`</span></a>
-<a class="sourceLine" id="cb26-4" data-line-number="4"><span class="ot">absurd ::</span> <span class="dt">Void</span> <span class="ot">-&gt;</span> a</a>
-<a class="sourceLine" id="cb26-5" data-line-number="5">absurd <span class="fu">=</span> \<span class="kw">case</span> <span class="co">-- empty case statement because we have</span></a>
-<a class="sourceLine" id="cb26-6" data-line-number="6">               <span class="co">-- no constructors of &#39;Void&#39; we need to</span></a>
-<a class="sourceLine" id="cb26-7" data-line-number="7">               <span class="co">-- match on</span></a>
-<a class="sourceLine" id="cb26-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb26-9" data-line-number="9"><span class="ot">match ::</span> a <span class="ot">-&gt;</span> <span class="dt">Either</span> a <span class="dt">Void</span></a>
-<a class="sourceLine" id="cb26-10" data-line-number="10">match x <span class="fu">=</span> <span class="dt">Left</span> x</a>
-<a class="sourceLine" id="cb26-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb26-12" data-line-number="12"><span class="ot">inject ::</span> <span class="dt">Either</span> a <span class="dt">Void</span> <span class="ot">-&gt;</span> a</a>
-<a class="sourceLine" id="cb26-13" data-line-number="13">inject (<span class="dt">Left</span>  x) <span class="fu">=</span> x</a>
-<a class="sourceLine" id="cb26-14" data-line-number="14">inject (<span class="dt">Right</span> v) <span class="fu">=</span> absurd v</a></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co">-- a &lt;~&gt; Either a Void</span></a>
+<a class="sourceLine" id="cb25-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb25-3" data-line-number="3"><span class="co">-- | A useful helper function when working with `Void`</span></a>
+<a class="sourceLine" id="cb25-4" data-line-number="4"><span class="ot">absurd ::</span> <span class="dt">Void</span> <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb25-5" data-line-number="5">absurd <span class="fu">=</span> \<span class="kw">case</span> <span class="co">-- empty case statement because we have</span></a>
+<a class="sourceLine" id="cb25-6" data-line-number="6">               <span class="co">-- no constructors of &#39;Void&#39; we need to</span></a>
+<a class="sourceLine" id="cb25-7" data-line-number="7">               <span class="co">-- match on</span></a>
+<a class="sourceLine" id="cb25-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb25-9" data-line-number="9"><span class="ot">match ::</span> a <span class="ot">-&gt;</span> <span class="dt">Either</span> a <span class="dt">Void</span></a>
+<a class="sourceLine" id="cb25-10" data-line-number="10">match x <span class="fu">=</span> <span class="dt">Left</span> x</a>
+<a class="sourceLine" id="cb25-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb25-12" data-line-number="12"><span class="ot">inject ::</span> <span class="dt">Either</span> a <span class="dt">Void</span> <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb25-13" data-line-number="13">inject (<span class="dt">Left</span>  x) <span class="fu">=</span> x</a>
+<a class="sourceLine" id="cb25-14" data-line-number="14">inject (<span class="dt">Right</span> v) <span class="fu">=</span> absurd v</a></code></pre></div>
 <p>Again, if you don’t believe me, verify that <code>inject . match = id</code> and <code>match . inject = id</code>!</p>
+<p>One final example: earlier, we said that every type can be decomposed as a <em>product</em> involving <code>()</code>. Algebraically, finding that mystery type is easy — we solve <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?x%20%3D%201%20%2A%20y" alt="x = 1 * y" title="x = 1 * y" /> for <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?y" alt="y" title="y" /> (since <code>()</code> is 1), and we see <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?y%20%3D%20x" alt="y = x" title="y = x" />. This tells us that every type is a product between <code>()</code> and itself (<code>a &lt;~&gt; ((), a)</code>).</p>
+<p>However, can every type be decomposed as a <em>sum</em> involving <code>()</code>?</p>
+<p>Algebraically, we need to find this mystery type by solving <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?x%20%3D%201%20%2B%20y" alt="x = 1 + y" title="x = 1 + y" /> for <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?y" alt="y" title="y" />, and the result is <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?y%20%3D%20x%20-%201" alt="y = x - 1" title="y = x - 1" />. We can interpret <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?x%20-%201" alt="x - 1" title="x - 1" /> as “<code>a</code>, minus one potential element”.</p>
+<p>This type isn’t expressible in general in Haskell, so <em>no</em>, not <em>every</em> type can be decomposed as a sum involving <code>()</code>. The necessary and sufficient condition is that there must exist some type that is the same as your original type but with one missing element.</p>
+<p>Oh, hey! Remember our <code>[a] &lt;~&gt; Either () (NonEmpty a)</code> decomposition? That’s exactly this! We can <code>NonEmpty a</code> is our mystery type: it’s exactly a list <code>[a]</code> minus one potential element (the empty list).</p>
+<p>There’s another way to go about this: we can talk about <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?x%20-%201" alt="x - 1" title="x - 1" /> by specifying one single “forbidden element”. This isn’t explicitly possible in Haskell, but we can simulate this by using an abstract type. We have this ability using “refinement types”. For example, using the <a href="http://hackage.haskell.org/package/refined">refined</a> library, a <code>Refined (NotEqualTo 4) Int</code> is a type that is the same as <code>Int</code>, except the <code>4</code> value is forbidden.</p>
+<p>We can use it to implement a <code>Int &lt;~&gt; Either () (Refined (NotEqualTo 4) Int)</code> witness:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co">-- | Like `Int`, but cannot be constructed if it is 4</span></a>
+<a class="sourceLine" id="cb26-2" data-line-number="2"><span class="kw">type</span> <span class="dt">Not4</span> <span class="fu">=</span> <span class="dt">Refined</span> (<span class="dt">NotEqualTo</span> <span class="dv">4</span>) <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb26-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb26-4" data-line-number="4"><span class="co">-- | Provided by the &#39;refined&#39; library that lets us refine and unrefine a type</span></a>
+<a class="sourceLine" id="cb26-5" data-line-number="5"><span class="ot">refineFail ::</span> <span class="dt">Int</span>  <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Not4</span></a>
+<a class="sourceLine" id="cb26-6" data-line-number="6"><span class="ot">unrefine   ::</span> <span class="dt">Not4</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb26-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb26-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb26-9" data-line-number="9"><span class="co">-- | The &quot;safe constructor&quot;</span></a>
+<a class="sourceLine" id="cb26-10" data-line-number="10"><span class="ot">match ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> () <span class="dt">Not4</span></a>
+<a class="sourceLine" id="cb26-11" data-line-number="11">match n <span class="fu">=</span> <span class="kw">case</span> refineFail n <span class="kw">of</span></a>
+<a class="sourceLine" id="cb26-12" data-line-number="12">    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Left</span> ()          <span class="co">-- the value was 4, so we return `Left`</span></a>
+<a class="sourceLine" id="cb26-13" data-line-number="13">    <span class="dt">Just</span> x  <span class="ot">-&gt;</span> <span class="dt">Right</span> x          <span class="co">-- value was succesfully refined</span></a>
+<a class="sourceLine" id="cb26-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb26-15" data-line-number="15"><span class="co">-- | The &quot;safe extractor&quot;</span></a>
+<a class="sourceLine" id="cb26-16" data-line-number="16"><span class="ot">inject ::</span> <span class="dt">Either</span> () <span class="dt">Not4</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb26-17" data-line-number="17">inject (<span class="dt">Left</span>  _) <span class="fu">=</span> <span class="dv">4</span></a>
+<a class="sourceLine" id="cb26-18" data-line-number="18">inject (<span class="dt">Right</span> x) <span class="fu">=</span> unrefine x</a></code></pre></div>
+<p>In fact, if we can parameterize an isomorphism on a specific value, <em>all</em> types with at least one value can be expressed as a sum involving <code>()</code>! It’s always <code>()</code> plus the type itself minus that given specific value.</p>
 <h3 id="through-the-looking-prism">Through the Looking-Prism</h3>
 <p>Now let’s bring prisms into the picture. A <code>Prism' s a</code> also refers to some <code>a</code> “inside” an <code>s</code>, with the following API: <code>preview</code> and <code>review</code><a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a></p>
 <div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="ot">preview ::</span> <span class="dt">Prism&#39;</span> s a <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)   <span class="co">-- get the &#39;a&#39; in the &#39;s&#39; if it exists</span></a>
@@ -387,21 +402,57 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb36-15" data-line-number="15">                   <span class="dt">Right</span> x <span class="ot">-&gt;</span> x</a>
 <a class="sourceLine" id="cb36-16" data-line-number="16">               }</a></code></pre></div>
 <p>In lens-speak, <code>identity :: Prism' a a</code> tells us that all <code>a</code>s have an <code>a</code> “inside” them (since <code>match</code> always matches) and that you can construct an <code>a</code> with only an <code>a</code> (whoa). In our “sum” perspective, however, it just witnesses that an <code>a &lt;~&gt; Either a Void</code> sum.</p>
-<p>In lens-speak, <code>_Void :: Prism' a Void</code> tells us that you can pattern match a <code>Void</code> out of any <code>a</code>…but that that pattern match will never fail. Furthermore, it tells us that if you have a value of type <code>Void</code>, you can use the <code>_Void</code> “constructor” to make a value of any type <code>a</code>! That is, <code>review :: Prism' a Void -&gt; (Void -&gt; a)</code>!</p>
+<p>In lens-speak, <code>_Void :: Prism' a Void</code> tells us that you can pattern match a <code>Void</code> out of any <code>a</code>…but that that pattern match will never fail. Furthermore, it tells us that if you have a value of type <code>Void</code>, you can use the <code>_Void</code> “constructor” to make a value of any type <code>a</code>! We have <code>review _Void :: Void -&gt; a</code>!</p>
 <p>However, in our “sum” perspective, it is nothing more than the witness of the fact that <code>a</code> is the sum of <code>a</code> and <code>Void</code>.</p>
+<p>And finally, let’s look at our deconstruction of <code>Int</code> and <code>Reinfed (NotEqualTo 4) Int</code>. What prisms does this yield, and what insight do we get?</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="ot">only4 ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Int</span> ()</a>
+<a class="sourceLine" id="cb37-2" data-line-number="2">only4 <span class="fu">=</span> <span class="dt">Prism&#39;</span></a>
+<a class="sourceLine" id="cb37-3" data-line-number="3">    { match  <span class="fu">=</span> \n <span class="ot">-&gt;</span> <span class="kw">case</span> refineFail n <span class="kw">of</span></a>
+<a class="sourceLine" id="cb37-4" data-line-number="4">                       <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Left</span> ()</a>
+<a class="sourceLine" id="cb37-5" data-line-number="5">                       <span class="dt">Just</span> x  <span class="ot">-&gt;</span> <span class="dt">Right</span> x</a>
+<a class="sourceLine" id="cb37-6" data-line-number="6">    , inject <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">Left</span>  _ <span class="ot">-&gt;</span> <span class="dv">4</span></a>
+<a class="sourceLine" id="cb37-7" data-line-number="7">                     <span class="dt">Right</span> x <span class="ot">-&gt;</span> unrefine x</a>
+<a class="sourceLine" id="cb37-8" data-line-number="8">    }</a>
+<a class="sourceLine" id="cb37-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb37-10" data-line-number="10"><span class="ot">refined4 ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Int</span> <span class="dt">Not4</span></a>
+<a class="sourceLine" id="cb37-11" data-line-number="11">refined4 <span class="fu">=</span> <span class="dt">Prism&#39;</span></a>
+<a class="sourceLine" id="cb37-12" data-line-number="12">    { match  <span class="fu">=</span> \n <span class="ot">-&gt;</span> <span class="kw">case</span> refineFail n <span class="kw">of</span></a>
+<a class="sourceLine" id="cb37-13" data-line-number="13">                       <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> ()</a>
+<a class="sourceLine" id="cb37-14" data-line-number="14">                       <span class="dt">Just</span> x  <span class="ot">-&gt;</span> <span class="dt">Left</span> x</a>
+<a class="sourceLine" id="cb37-15" data-line-number="15">    , inject <span class="fu">=</span> \<span class="kw">case</span> <span class="dt">Left</span>  x <span class="ot">-&gt;</span> unrefine x</a>
+<a class="sourceLine" id="cb37-16" data-line-number="16">                     <span class="dt">Right</span> _ <span class="ot">-&gt;</span> <span class="dv">4</span></a>
+<a class="sourceLine" id="cb37-17" data-line-number="17">    }</a></code></pre></div>
+<p>The first prism, <code>only4</code>, is a prism that basically “only matches” on the <code>Int</code> if it is <code>4</code>. We can use it to implement “is equal to four”, and “get a 4”</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co">-- | Checks if a value is 4</span></a>
+<a class="sourceLine" id="cb38-2" data-line-number="2"><span class="ot">isEqualTo4 ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb38-3" data-line-number="3">isEqualTo4 <span class="fu">=</span> isJust <span class="fu">.</span> preview only4</a>
+<a class="sourceLine" id="cb38-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb38-5" data-line-number="5"><span class="co">-- | Just is &#39;4&#39;</span></a>
+<a class="sourceLine" id="cb38-6" data-line-number="6"><span class="ot">four ::</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb38-7" data-line-number="7">four <span class="fu">=</span> review ()</a></code></pre></div>
+<p>The name <code>only4</code> is inspired by the <code>only</code> combinator from the <em>lens</em> library, which lets you provide a value you want to “restrict”.</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- | From the lens library; lets you provide the value you want to &quot;restrict&quot;</span></a>
+<a class="sourceLine" id="cb39-2" data-line-number="2"><span class="ot">only ::</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Prism&#39;</span> a ()</a>
+<a class="sourceLine" id="cb39-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb39-4" data-line-number="4"><span class="ot">only4 ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Int</span> ()</a>
+<a class="sourceLine" id="cb39-5" data-line-number="5">only4 <span class="fu">=</span> only <span class="dv">4</span></a></code></pre></div>
+<p>The second prism, <code>refined4</code>, basically acts like a “smart constructor” for <code>Not4</code>, essentially <code>refineFail</code> and <code>unrefine</code>:</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="ot">makeNot4 ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Not4</span></a>
+<a class="sourceLine" id="cb40-2" data-line-number="2">makeNot4 <span class="fu">=</span> preview refined4</a>
+<a class="sourceLine" id="cb40-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb40-4" data-line-number="4"><span class="ot">fromNot4 ::</span> <span class="dt">Not4</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb40-5" data-line-number="5">fromNot4 <span class="fu">=</span> review refined4</a></code></pre></div>
 <h3 id="prism-or-not">Prism or Not</h3>
 <p>To me, however, one of the most useful things about this prism perspective is that it helps me see what <em>isn’t</em> a prism.</p>
 <p>For example, is it possible to have a prism into the <em>head</em> of a list? That is, is the following prism possible?</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="ot">_head ::</span> <span class="dt">Prism&#39;</span> [a] a           <span class="co">-- get the head of a list</span></a></code></pre></div>
-<p>If you think of a prism as just “a lens that might fail” (as it’s often taught), you might think yes. If you think of a prism as just “a constructor and deconstructor”, you might also think yes, since you can construct an <code>[a]</code> with only a single <code>a</code>, so <code>review :: a -&gt; [a]</code> is possible.<a href="#fn5" class="footnote-ref" id="fnref5"><sup>5</sup></a></p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="ot">_head ::</span> <span class="dt">Prism&#39;</span> [a] a           <span class="co">-- get the head of a list</span></a></code></pre></div>
+<p>If you think of a prism as just “a lens that might fail” (as it’s often taught), you might think yes. If you think of a prism as just “a constructor and deconstructor”, you might also think yes, since you can construct an <code>[a]</code> with only a single <code>a</code>. You can definitely “implement” this prism using our “too big” representation, in terms of <code>preview</code> and <code>review</code>. These viewpoints of prisms will fail you and lead you astray.</p>
 <p>However, if you think of it as witnessing a sum, you might see that this prism isn’t possible. There is no possible type <code>q</code> where <code>[a]</code> is a sum of <code>a</code> and <code>q</code>. The isomorphism <code>[a] &lt;~&gt; Either a q</code> cannot be made for <em>any</em> type <code>q</code>. There is no way to express <code>[a]</code> as the sum of <code>a</code> and some other type. Try thinking of a type <code>q</code> — it’s just not possible!</p>
-<p>Another example of a non-prism: we have a <code>Lens' a ()</code>, but why not a <code>Prism' a ()</code>?</p>
-<p>Well, it’s because you can’t find any <code>q</code> <em>in general</em> that can be used to represent <code>a</code> as <code>Either () q</code>. You can do this for <em>some specific</em> <code>a</code> (like we did for <code>_Nil</code>), but not for all <code>a</code> in general. Try to see if you can!</p>
-<p>Algebraically, a <code>Prism' a ()</code> can be thought of as solving <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?x%20%3D%201%20%2B%20y" alt="x = 1 + y" title="x = 1 + y" /> for <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?y" alt="y" title="y" />. If you try, you get <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?y%20%3D%20x%20-%201" alt="y = x - 1" title="y = x - 1" />…or, “<code>a</code>, minus one possible element”. And so we can only have a <code>Prism' a ()</code> in situations where “<code>a</code> minus one possible element” is a type that exists. In the case of <code>_Nil :: Prism' [a] ()</code>. In this case, “<code>[a]</code> minus one possible element” <em>does</em> exist: it’s the non-empty list! (<code>[a]</code> minus the possiblity of being empty)</p>
-<p>excercises:</p>
+<h2 id="exercises">Exercises</h2>
 <ol type="1">
 <li>Is (a, Void) a decomp</li>
 <li>what does the (Bool, a) &lt;~&gt; Either a a sum give us</li>
+<li>Write a lens composition</li>
 </ol>
 <p>(Fun haskell challenge: the version of <code>match</code> I wrote there is conceptually simple, but very inefficient. It traverses the input list three times, uses two partial functions, and uses a <code>Bool</code>. Can you write a <code>match</code> that does the same thing while traversing the input list only once and using no partial functions or <code>Bool</code>s?)</p>
 <section class="footnotes">
@@ -411,7 +462,6 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <li id="fn2"><p>The <code>exists q. s &lt;~&gt; (a, q)</code> is a way of saying that <code>Lens' s a</code> witnesses an isomorphism between <code>s</code> and the product of <code>a</code> and some “hidden” type <code>q</code>. A <code>Lens' s a</code> is a statement that some <code>q</code> <em>exists</em> in the first place. If no such type exists, no lens is possible. And, for many lenses, <code>q</code> might be an abstract type.<a href="#fnref2" class="footnote-back">↩</a></p></li>
 <li id="fn3"><p>This type is technically also “too big” (you can write a value where <code>split</code> and <code>unsplit</code> do not form an isomorphism), but I think, to me, “<code>split</code> and <code>join</code> must form an isomorphism” is a much clearer and natural law than get-put/put-get/put-put.<a href="#fnref3" class="footnote-back">↩</a></p></li>
 <li id="fn4"><p>I didn’t invent these names<a href="#fnref4" class="footnote-back">↩</a></p></li>
-<li id="fn5"><p>Although, upon further thought, you might realize that the constructor and deconstructor don’t match<a href="#fnref5" class="footnote-back">↩</a></p></li>
 </ol>
 </section></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
 <p>If you feel inclined, or this post was particularly helpful for you, why not consider <a href="https://www.patreon.com/justinle/overview">supporting me on Patreon</a>, or a <a href="bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU">BTC donation</a>? :)</p></div><div class="clear"></div><ul class="entry-series"></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing &quot;in Code&quot;!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
