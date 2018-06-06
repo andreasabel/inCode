@@ -1218,7 +1218,7 @@ exercises!
     possible?
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L26-L52
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L28-L54
 
     data Lens' s a = forall q. Lens'
         { split   :: s -> (a, q)
@@ -1247,7 +1247,7 @@ exercises!
     you need to either pattern match or use *-XRecordWildcards*.
 
     These implementations are pretty hairy (solutions [online
-    here](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L26-L64)),
+    here](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L28-L66)),
     and it's a sort of testament as to why we don't use this actual
     implementation in practice. In fact, for profunctor optics, we just have:
 
@@ -1287,7 +1287,7 @@ supporter at the "Amazing" level, Sam Stites! :)
     the same thing using only a single fold and no partial functions or `Bool`s?
 
     I managed to write one [using a difference
-    list](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L15-L22)!
+    list](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L16-L24)!
 
 [^5]: I didn't invent these names :)
 
