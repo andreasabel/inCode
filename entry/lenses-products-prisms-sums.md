@@ -1215,8 +1215,10 @@ exercises!
 Special Thanks
 --------------
 
-This post is made possible by the support of my patrons on
-[patreon](https://www.patreon.com/justinle/overview), especially Sam Stites :)
+I am very humbled to be supported by an amazing community on
+[Patreon](https://www.patreon.com/justinle/overview), who make it possible for
+me to devote time to research and writing these posts. Very special thanks to my
+supporter at the "Amazing" level, Sam Stites! :)
 
 [^1]: All of this is disregarding the notorious "bottom" value that inhabits
     every type.
