@@ -608,7 +608,10 @@ is a sum between \texttt{()} and \texttt{NonEmpty\ a} is saying that
 \texttt{{[}a{]}} is ``either an empty list or a non-empty list''. Whoa. Take
 \emph{that},
 \href{https://en.wikipedia.org/wiki/Constructivism_(mathematics)}{LEM
-denialists}.
+denialists}.\footnote{Technically, LEM denialists and constructivists are
+  somewhat vindicated here, because it is not strictly true in Haskell that a
+  list is either an empty list or a non-empty list. It can actually
+  \href{https://wiki.haskell.org/Bottom}{be neither}.}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -628,7 +631,13 @@ And, actually, there is another way to deconstruct \texttt{{[}a{]}} as a sum in
 Haskell. You can treat it as a sum between \texttt{()} and
 \texttt{({[}a{]},\ a)} --- where the \texttt{()} represents the empty list and
 the \texttt{({[}a{]},\ a)} represents an ``all but the last item'' list and
-``the last item'':
+``the last item'':\footnote{Fun haskell challenge: the version of \texttt{match}
+  for the
+  \texttt{{[}a{]}\ \textless{}\textasciitilde{}\textgreater{}\ Either\ ()\ ({[}a{]},\ a)}
+  isomorphism I wrote there is conceptually simple, but very inefficient. It
+  traverses the input list three times, uses two partial functions, and uses a
+  \texttt{Bool}. Can you write a \texttt{match} that does the same thing using
+  only a single fold and no partial functions or \texttt{Bool}s?}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1303,11 +1312,10 @@ just apply the essential
 \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ Either\ a\ q} isomorphism
 that defines a prism. And so \texttt{p\ a\ a\ -\textgreater{}\ p\ s\ s}, going
 through the \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ Either\ a\ q}
-isomorphism, is a lens!
+isomorphism, is a prism!
 
-\hypertarget{recovering-the-original-functionality}{%
-\subsection{Recovering the Original
-Functionality}\label{recovering-the-original-functionality}}
+\hypertarget{recovering-the-functionality}{%
+\subsection{Recovering the Functionality}\label{recovering-the-functionality}}
 
 We can recover the original functionality by just picking specific values of
 \texttt{p} that, when transformed, give us the operations we want.
@@ -1329,20 +1337,28 @@ so we just make a profunctor \texttt{p} where \texttt{p\ s\ s} contains an
 
 And when you give this to a lens (a ``profunctor transformer''), you get a
 \texttt{(View\ a)\ s\ s}, which is a newtype wrapper over an
-\texttt{s\ -\textgreater{}\ a}! Note that you can't give this to a prism, since
-it is not possible to write a \texttt{Choice} instance for \texttt{View\ a}.
+\texttt{s\ -\textgreater{}\ a}!
+
+Note that you can't give this to a prism, since it is not possible to write a
+\texttt{Choice} instance for \texttt{View\ a}. Thus we naturally limit
+\texttt{view} to work only for lenses (because they have \texttt{Strong}) and
+not for prisms (because prisms require \texttt{Choice} to work).
 
 For a more detailed look on implementing the entire lens and prism API in terms
-of profunctors, check out Oleg Grenrus's amazing {[}Glassery{]}{[}{]}!
+of profunctors, check out Oleg Grenrus's amazing
+\href{http://oleg.fi/gists/posts/2017-04-18-glassery.html}{Glassery}!
 
 To me, this perspective makes it really clear to see ``why'' profunctor lenses
-and profunctor prisms are implemented the way they are. They are just
-\emph{profunctor transformers} that \emph{transform along the decomposition}
-that the lenses and prisms represent. For profunctor lenses, the profunctors get
-transformed to ``parts of a whole'' profunctors, using \texttt{Strong}. For
-profunctor prisms, the profunctors get transformed to ``branches of a
-possibility'' profunctors, using \texttt{Choice}. Even their types clearly show
-what is going on:
+and profunctor prisms are implemented the way they are. At first, the profunctor
+optics definitions seemed really opaque and arbitrary to me, and I had no idea
+why \texttt{Strong} and \texttt{Choice} corresponded to lenses and prisms.
+
+But now, I know that lenses are prisms can be seen as just \emph{profunctor
+transformers} that \emph{transform along the decomposition} that the lenses and
+prisms represent. For profunctor lenses, the profunctors get transformed to
+``parts of a whole'' profunctors, using \texttt{Strong}. For profunctor prisms,
+the profunctors get transformed to ``branches of a possibility'' profunctors,
+using \texttt{Choice}. Even their types clearly show what is going on:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1354,6 +1370,13 @@ what is going on:
 \end{Highlighting}
 \end{Shaded}
 
+In fact, \texttt{Strong} and \texttt{Choice} fit lenses and prisms like a glove
+so well that sometimes I wonder if Edward Kmett just invented those typeclasses
+custom-made to represent lenses and prisms.
+
+Or\ldots{}maybe lenses and prisms were invented custom-made based on
+\texttt{Strong} and \texttt{Choice}?
+
 \hypertarget{closing-out}{%
 \section{Closing out}\label{closing-out}}
 
@@ -1364,7 +1387,7 @@ lenses and prisms I often see, and also it helps me reason about when it
 \emph{doesn't} make sense to have a lens or prism. It has also distilled the
 lens and prism laws into something trivial that can be stated succinctly (``it
 must be an isomorphism''), and also made the profunctor optics form seem
-extremely natural.
+uncannily natural.
 
 Some small notes need to be made to bridge this view with the way they are
 actually implemented in practice:
@@ -1385,14 +1408,12 @@ Lens' outer inner
 =================
  outer ---> (inner, q)
                |
-               |
                v
  outer <--- (inner, q)
 
 Prism' outer inner
 =================
  outer ---> Either inner q
-                     |
                      |
                      v
  outer <--- Either inner q
@@ -1439,17 +1460,38 @@ Prism s t a b
   lens. It is just a normal lens where we re-label the type variables of all of
   the involved pieces to aid in our discourse.
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Lens}\NormalTok{ s t a b }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.} \DataTypeTok{Lens}
+\NormalTok{    \{}\OtherTok{ split   ::}\NormalTok{ s }\OtherTok{->}\NormalTok{ (a, q)        }\CommentTok{-- before (with s and a)}
+\NormalTok{    ,}\OtherTok{ unsplit ::}\NormalTok{ (b, q) }\OtherTok{->}\NormalTok{ t        }\CommentTok{-- after  (with t and b)}
+\NormalTok{    \}}
+
+\OtherTok{view ::} \DataTypeTok{Lens}\NormalTok{ s t a b }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ a)}
+\OtherTok{set  ::} \DataTypeTok{Lens}\NormalTok{ s t a b }\OtherTok{->}\NormalTok{ (b }\OtherTok{->}\NormalTok{ s }\OtherTok{->}\NormalTok{ t)}
+
+\KeywordTok{data} \DataTypeTok{Prism}\NormalTok{ s t a b }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.} \DataTypeTok{Prism}
+\NormalTok{    \{}\OtherTok{ match  ::}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a q     }\CommentTok{-- before (with s and a)}
+\NormalTok{    ,}\OtherTok{ inject ::} \DataTypeTok{Either}\NormalTok{ b q }\OtherTok{->}\NormalTok{ t     }\CommentTok{-- after  (with t and b)}
+\NormalTok{    \}}
+
+
+\OtherTok{matching ::} \DataTypeTok{Prism}\NormalTok{ s t a b }\OtherTok{->}\NormalTok{ (s }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ t a)}
+\OtherTok{review   ::} \DataTypeTok{Prism}\NormalTok{ s t a b }\OtherTok{->}\NormalTok{ (b }\OtherTok{->}\NormalTok{ t)}
+\end{Highlighting}
+\end{Shaded}
+
   We still require \texttt{unsplit\ .\ split\ =\ id},
   \texttt{split\ .\ unsplit\ =\ id}, \texttt{inject\ .\ match\ =\ id}, and
   \texttt{match\ .\ inject\ =\ id}. They're all still \emph{isomorphisms}. We're
   just \emph{relabeling our type variables} here to let us be more expressive
   with how we talk about all of the moving parts.
 
-  These aren't ``polymorphic isomorphism'' --- they're the same old isomorphisms
-  we have been working with this entire time, and if we compose them, they
-  should yield \texttt{id} when the type variables match up. These are just
-  isomorphisms where we re-label the type variables to help us talk about what
-  goes in and what goes out.
+  Lens families can be used to implement ``type changing lenses'' where tweaking
+  the inner type can cause the outer type to also change appropriately. However,
+  in this case, \texttt{unsplit\ .\ split\ =\ id} and
+  \texttt{inject\ .\ match\ =\ id} should always still be enforced in the
+  situation where the types do not change.
 \item
   In practice, the \texttt{q} to factor out your type into (in the
   \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)} and
@@ -1470,25 +1512,57 @@ Prism s t a b
 \end{enumerate}
 
 \hypertarget{exercises}{%
-\section{Exercises}\label{exercises}}
+\subsection{Exercises}\label{exercises}}
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  Is (a, Void) a decomp
-\item
-  what does the (Bool, a) \textless{}\textasciitilde{}\textgreater{} Either a a
-  sum give us
-\item
-  Write a lens composition
-\end{enumerate}
+To help solidify your understanding on this perspective, here are some
+exercises!
 
-(Fun haskell challenge: the version of \texttt{match} I wrote there is
-conceptually simple, but very inefficient. It traverses the input list three
-times, uses two partial functions, and uses a \texttt{Bool}. Can you write a
-\texttt{match} that does the same thing while traversing the input list only
-once and using no partial functions or \texttt{Bool}s?)
+\begin{itemize}
+\item
+  We discussed the conditions where a type \texttt{a} can be expressed as a sum
+  involving \texttt{()} and you can have a
+  \texttt{Prism\textquotesingle{}\ a\ ()}.
+
+  Under what conditions can you express a type \texttt{a} is a \emph{product}
+  involving \texttt{Void}, and you can have a
+  \texttt{Lens\textquotesingle{}\ a\ Void}?
+\item
+  We found that by interpreting \texttt{Either\ a\ a} as a product
+  \texttt{(Bool,\ a)} gives us two interesting lenses:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{leftOrRight ::} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Either}\NormalTok{ a a) }\DataTypeTok{Bool}
+\OtherTok{theContents ::} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Either}\NormalTok{ a a) a}
+\end{Highlighting}
+\end{Shaded}
+
+  We concluded that the first lens lets us flip between \texttt{Left} and
+  \texttt{Right} or check if a value was \texttt{Left} or \texttt{Right}, and
+  that the second lens gets into the contents regardless of leftness or
+  rightness.
+
+  However, there's a flip side, as well. \texttt{(Bool,\ a)} can be expressed as
+  a \emph{sum} between \texttt{a} and itself, \texttt{Either\ a\ a}. This gives
+  us two prisms:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{mysteryPrism1 ::} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Bool}\NormalTok{, a) a}
+\OtherTok{mysteryPrism2 ::} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Bool}\NormalTok{, a) a}
+\end{Highlighting}
+\end{Shaded}
+
+  What do these prisms do? What is \texttt{preview} and \texttt{review} for
+  them?
+\end{itemize}
+
+\hypertarget{special-thanks}{%
+\section{Special Thanks}\label{special-thanks}}
+
+This post is made possible by the support of my patrons on
+\href{https://www.patreon.com/justinle/overview}{patreon}, especially Sam Stites
+:)
 
 Hi, thanks for reading! You can reach me via email at
 \href{mailto:justin@jle.im}{\nolinkurl{justin@jle.im}}, or at twitter at

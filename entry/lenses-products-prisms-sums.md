@@ -428,7 +428,7 @@ as the possibility of `NonEmpty a` (the "head" of a list consed with the rest of
 the list), then saying that `[a]` is a sum between `()` and `NonEmpty a` is
 saying that `[a]` is "either an empty list or a non-empty list". Whoa. Take
 *that*, [LEM
-denialists](https://en.wikipedia.org/wiki/Constructivism_(mathematics)).
+denialists](https://en.wikipedia.org/wiki/Constructivism_(mathematics)).[^3]
 
 ``` {.haskell}
 -- [a] <~> Either () (NonEmpty a)
@@ -445,7 +445,7 @@ inject (Right (x :| xs)) = x:xs
 And, actually, there is another way to deconstruct `[a]` as a sum in Haskell.
 You can treat it as a sum between `()` and `([a], a)` --- where the `()`
 represents the empty list and the `([a], a)` represents an "all but the last
-item" list and "the last item":
+item" list and "the last item":[^4]
 
 ``` {.haskell}
 -- [a] <~> Either () ([a], a)
@@ -565,7 +565,7 @@ with at least one value can be expressed as a sum involving `()`! It's always
 ### Through the Looking-Prism
 
 Now let's bring prisms into the picture. A `Prism' s a` also refers to some `a`
-"inside" an `s`, with the following API: `preview` and `review`[^3]
+"inside" an `s`, with the following API: `preview` and `review`[^5]
 
 ``` {.haskell}
 preview :: Prism' s a -> (s -> Maybe a)   -- get the 'a' in the 's' if it exists
@@ -1008,9 +1008,9 @@ Essentially, `iso match inject . left'` promotes a `p a a` to a `p s s`. It uses
 `left'` to turn the `p a a` into a `p (Either a q) (Either a q)`, turning a
 relationship on the part to be a relationship on the whole. Then we just apply
 the essential `s <~> Either a q` isomorphism that defines a prism. And so
-`p a a -> p s s`, going through the `s <~> Either a q` isomorphism, is a lens!
+`p a a -> p s s`, going through the `s <~> Either a q` isomorphism, is a prism!
 
-### Recovering the Original Functionality
+### Recovering the Functionality
 
 We can recover the original functionality by just picking specific values of `p`
 that, when transformed, give us the operations we want.
@@ -1027,15 +1027,23 @@ instance Strong (View a)
 ```
 
 And when you give this to a lens (a "profunctor transformer"), you get a
-`(View a) s s`, which is a newtype wrapper over an `s -> a`! Note that you can't
-give this to a prism, since it is not possible to write a `Choice` instance for
-`View a`.
+`(View a) s s`, which is a newtype wrapper over an `s -> a`!
+
+Note that you can't give this to a prism, since it is not possible to write a
+`Choice` instance for `View a`. Thus we naturally limit `view` to work only for
+lenses (because they have `Strong`) and not for prisms (because prisms require
+`Choice` to work).
 
 For a more detailed look on implementing the entire lens and prism API in terms
-of profunctors, check out Oleg Grenrus's amazing \[Glassery\]\[\]!
+of profunctors, check out Oleg Grenrus's amazing
+[Glassery](http://oleg.fi/gists/posts/2017-04-18-glassery.html)!
 
 To me, this perspective makes it really clear to see "why" profunctor lenses and
-profunctor prisms are implemented the way they are. They are just *profunctor
+profunctor prisms are implemented the way they are. At first, the profunctor
+optics definitions seemed really opaque and arbitrary to me, and I had no idea
+why `Strong` and `Choice` corresponded to lenses and prisms.
+
+But now, I know that lenses are prisms can be seen as just *profunctor
 transformers* that *transform along the decomposition* that the lenses and
 prisms represent. For profunctor lenses, the profunctors get transformed to
 "parts of a whole" profunctors, using `Strong`. For profunctor prisms, the
@@ -1050,6 +1058,13 @@ first' :: p a a -> p (a, q) (a, q)
 left'  :: p a a -> p (Either a q) (Either a q)
 ```
 
+In fact, `Strong` and `Choice` fit lenses and prisms like a glove so well that
+sometimes I wonder if Edward Kmett just invented those typeclasses custom-made
+to represent lenses and prisms.
+
+Or...maybe lenses and prisms were invented custom-made based on `Strong` and
+`Choice`?
+
 Closing out
 -----------
 
@@ -1059,7 +1074,7 @@ them when you see them. I know for me, it has helped me understand the odd
 lenses and prisms I often see, and also it helps me reason about when it
 *doesn't* make sense to have a lens or prism. It has also distilled the lens and
 prism laws into something trivial that can be stated succinctly ("it must be an
-isomorphism"), and also made the profunctor optics form seem extremely natural.
+isomorphism"), and also made the profunctor optics form seem uncannily natural.
 
 Some small notes need to be made to bridge this view with the way they are
 actually implemented in practice:
@@ -1076,14 +1091,12 @@ actually implemented in practice:
         =================
          outer ---> (inner, q)
                        |
-                       |
                        v
          outer <--- (inner, q)
 
         Prism' outer inner
         =================
          outer ---> Either inner q
-                             |
                              |
                              v
          outer <--- Either inner q
@@ -1124,16 +1137,35 @@ actually implemented in practice:
     just a normal lens where we re-label the type variables of all of the
     involved pieces to aid in our discourse.
 
+    ``` {.haskell}
+    data Lens s t a b = forall q. Lens
+        { split   :: s -> (a, q)        -- before (with s and a)
+        , unsplit :: (b, q) -> t        -- after  (with t and b)
+        }
+
+    view :: Lens s t a b -> (s -> a)
+    set  :: Lens s t a b -> (b -> s -> t)
+
+    data Prism s t a b = forall q. Prism
+        { match  :: s -> Either a q     -- before (with s and a)
+        , inject :: Either b q -> t     -- after  (with t and b)
+        }
+
+
+    matching :: Prism s t a b -> (s -> Either t a)
+    review   :: Prism s t a b -> (b -> t)
+    ```
+
     We still require `unsplit . split = id`, `split . unsplit = id`,
     `inject . match = id`, and `match . inject = id`. They're all still
     *isomorphisms*. We're just *relabeling our type variables* here to let us be
     more expressive with how we talk about all of the moving parts.
 
-    These aren't "polymorphic isomorphism" --- they're the same old isomorphisms
-    we have been working with this entire time, and if we compose them, they
-    should yield `id` when the type variables match up. These are just
-    isomorphisms where we re-label the type variables to help us talk about what
-    goes in and what goes out.
+    Lens families can be used to implement "type changing lenses" where tweaking
+    the inner type can cause the outer type to also change appropriately.
+    However, in this case, `unsplit . split = id` and `inject . match = id`
+    should always still be enforced in the situation where the types do not
+    change.
 
 2.  In practice, the `q` to factor out your type into (in the `s <~> (a, q)` and
     `s <~> Either a q`) might not be an actual literal type. In most cases, it's
@@ -1147,18 +1179,44 @@ actually implemented in practice:
     round-trip of `unsplit . split = id` and `inject . match = id`, this
     enforces just the spirit of the hidden abstract type.
 
-Exercises
----------
+### Exercises
 
-1.  Is (a, Void) a decomp
-2.  what does the (Bool, a) \<\~\> Either a a sum give us
-3.  Write a lens composition
+To help solidify your understanding on this perspective, here are some
+exercises!
 
-(Fun haskell challenge: the version of `match` I wrote there is conceptually
-simple, but very inefficient. It traverses the input list three times, uses two
-partial functions, and uses a `Bool`. Can you write a `match` that does the same
-thing while traversing the input list only once and using no partial functions
-or `Bool`s?)
+-   We discussed the conditions where a type `a` can be expressed as a sum
+    involving `()` and you can have a `Prism' a ()`.
+
+    Under what conditions can you express a type `a` is a *product* involving
+    `Void`, and you can have a `Lens' a Void`?
+
+-   We found that by interpreting `Either a a` as a product `(Bool, a)` gives us
+    two interesting lenses:
+
+    ``` {.haskell}
+    leftOrRight :: Lens' (Either a a) Bool
+    theContents :: Lens' (Either a a) a
+    ```
+
+    We concluded that the first lens lets us flip between `Left` and `Right` or
+    check if a value was `Left` or `Right`, and that the second lens gets into
+    the contents regardless of leftness or rightness.
+
+    However, there's a flip side, as well. `(Bool, a)` can be expressed as a
+    *sum* between `a` and itself, `Either a a`. This gives us two prisms:
+
+    ``` {.haskell}
+    mysteryPrism1 :: Lens' (Bool, a) a
+    mysteryPrism2 :: Lens' (Bool, a) a
+    ```
+
+    What do these prisms do? What is `preview` and `review` for them?
+
+Special Thanks
+--------------
+
+This post is made possible by the support of my patrons on
+[patreon](https://www.patreon.com/justinle/overview), especially Sam Stites :)
 
 [^1]: All of this is disregarding the notorious "bottom" value that inhabits
     every type.
@@ -1168,7 +1226,18 @@ or `Bool`s?)
     "`split` and `join` must form an isomorphism" is a much clearer and natural
     law than get-put/put-get/put-put.
 
-[^3]: I didn't invent these names
+[^3]: Technically, LEM denialists and constructivists are somewhat vindicated
+    here, because it is not strictly true in Haskell that a list is either an
+    empty list or a non-empty list. It can actually [be
+    neither](https://wiki.haskell.org/Bottom).
+
+[^4]: Fun haskell challenge: the version of `match` for the
+    `[a] <~> Either () ([a], a)` isomorphism I wrote there is conceptually
+    simple, but very inefficient. It traverses the input list three times, uses
+    two partial functions, and uses a `Bool`. Can you write a `match` that does
+    the same thing using only a single fold and no partial functions or `Bool`s?
+
+[^5]: I didn't invent these names
 
 ---------
 
