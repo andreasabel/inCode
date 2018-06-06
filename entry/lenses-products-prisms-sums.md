@@ -85,9 +85,9 @@ unsplit . split
 And verification of `split . unsplit = id` is left as an exercise.
 
 There are some other interesting products in Haskell, too. One such example is
-`NonEmpty a` being a product between `a` (the head/first item) and `[a]` (the
-tail/rest of the items). This means that `NonEmpty a` is isomorphic to
-`(a, [a])` --- we have `NonEmpty a <~> (a, [a])`!
+`NonEmpty a` (the type of a non-empty list) being a product between `a` (the
+head/first item) and `[a]` (the tail/rest of the items). This means that
+`NonEmpty a` is isomorphic to `(a, [a])` --- we have `NonEmpty a <~> (a, [a])`!
 
 Another curious product is the fact that every type `a` is a product between
 *itself* and unit, `()`. That is, every type `a` is isomorphic to `(a, ())`
@@ -165,7 +165,7 @@ set  :: Lens' s a -> (a -> s -> s)           -- set the 'a' inside an 's'
 respecting [some
 laws](https://www.schoolofhaskell.com/school/to-infinity-and-beyond/pick-of-the-week/a-little-lens-starter-tutorial#the-lens-laws-)
 --- get-put, put-get, and put-put. Abstract mathematical laws are great and all,
-but I'm going to tell you a secret that gives a nice restatement of those laws.
+but I'm going to tell you a secret that subsumes those laws.
 
 At first, you might naively implement lenses like:
 
@@ -189,8 +189,8 @@ That means that if it is possible to represent `s` as some `(a, q)` (that is,
 to "split" a type into two parts without losing any information, then each part
 represents a lens.
 
-A `Lens' s a` is nothing more than a witness for the fact that there is some `q`
-where `s <~> (a, q)`.
+A `Lens' s a` is nothing more than a witness for the fact that there exists some
+`q` where `s <~> (a, q)`.
 
 With that in mind, let's re-visit a saner definition of lenses based on the idea
 that lenses embody descriptions of products:
@@ -202,8 +202,10 @@ data Lens' s a = forall q. Lens'
     }    -- ^ s <~> (a, q)
 ```
 
-(the `forall q.` is the *-XExistentialQuantification* extension, and allows us
-to hide type variables in consructors)
+(The `forall q.` is the *-XExistentialQuantification* extension, and allows us
+to hide type variables in constructors. Note that this disallows us from using
+`split` and `unsplit` as record accessors functions, so we have to pattern match
+to get the contents)
 
 Now, if `split` and `join` form an isomorphism, *this can only represent valid
 lenses*![^2]
@@ -242,12 +244,6 @@ Let's take a look at our first product we talked about:
 data Person = P { _pName :: String
                 , _pAge  :: Int
                 }
-
-split :: Person -> (String, Int)
-split (P n a) = (n, a)
-
-unsplit :: (String, Int) -> Person
-unsplit (n, a) = P n a
 ```
 
 Because `Person` is a product between `String` and `Int`, we get *two lenses*: a
@@ -342,7 +338,7 @@ False
 Note that if we look at lenses as embodying "record fields" (things that give
 you the ability to "get" a field, and "modify" a field --- corresponding with
 `view` and `set`), we can think of `mysteryLens1` as an *abstract record field*
-into the Leftness/Rightness of a value. Thing of lenses as defining abstract
+into the Leftness/Rightness of a value. Thinking of lenses as defining abstract
 record fields is a [common tool for backwards
 compatiblity](http://blog.ezyang.com/2016/12/a-tale-of-backwards-compatibility-in-asts/).
 
@@ -382,6 +378,8 @@ list?
 No, there isn't, because there isn't any type `q` that you could factor out
 `[a]` into as `(a, q)`. That would imply that `[a]` is always "an `a` with
 something else"...but this isn't true with `[]`.
+
+TODO: try writing it
 
 \"Sum-thing\" Interesting
 -------------------------
@@ -561,7 +559,8 @@ inject (Right x) = unrefine x
 
 In fact, if we can parameterize an isomorphism on a specific value, *all* types
 with at least one value can be expressed as a sum involving `()`! It's always
-`()` plus the type itself minus that given specific value.
+`()` plus the type itself minus that given specific value. (In practice, this is
+only possible to represent in Haskell if we can test for equality)
 
 ### Through the Looking-Prism
 
@@ -604,7 +603,7 @@ data Prism' s a = forall q. Prism'
     }    -- ^ s <~> Either a q
 ```
 
-Now, if `match` and `inject` form an isomorphism, *this can only represent valid
+If `match` and `inject` form an isomorphism, *this can only represent valid
 prisms*!
 
 We can now implement the prism API:
@@ -643,14 +642,6 @@ from this perspective.
 ``` {.haskell}
 data Shape = Circle  Double
            | RegPoly Natural Double
-
-match :: Shape -> Either Double (Natural, Double)
-match (Circle  r  ) = Left r
-match (RegPoly n s) = Right (n, s)
-
-inject :: Either Double (Natural, Double) -> Shape
-inject (Left   r    ) = Circle  r
-inject (Right (n, s)) = RegPoly n s
 ```
 
 Because `Shape` is a sum between `Double` and `(Natural, Double)`, we get *two
@@ -677,6 +668,17 @@ _RegPoly = Prism' { match  = \case Circle  r    -> Right r
 And these are actually the typical prisms associated with an ADT. You actually
 get exactly these if you use `makePrisms` from the *lens* package.
 
+If it isn't clear what's going on, let's look at the type of `preview` and
+`review` for `_Circle`:
+
+``` {.haskell}
+preview _Circle :: Shape   -> Maybe Natural
+review  _Circle :: Natural -> Shape
+```
+
+We essentially get the ability to "pattern match" and "construct" the `Circle`
+constructor.
+
 What can we get out of our decomposition of `[a]` as a sum between `()` and
 `NonEmpty a`? Let's look at them:
 
@@ -691,7 +693,7 @@ _Nil = Prism'
                      Right (x :| xs) -> x:xs
     }
 
-_Cons :: Prism' [a] (a, [a])
+_Cons :: Prism' [a] (NonEmpty a)
 _Cons = Prism'
     { match  = \case []              -> Right ()
                      x:xs            -> Left (x :| xs)
@@ -700,17 +702,31 @@ _Cons = Prism'
     }
 ```
 
+To clarify, we can look at `preview` and `review` for all of these:
+
+``` {.haskell}
+preview _Nil  :: [a] -> Maybe ()
+preview _Cons :: [a] -> Maybe (NonEmpty a)
+
+review  _Nil  :: ()         -> [a]
+review  _Cons :: NonEmpty a -> [a]
+```
+
+It looks like the `()` branch's `preview` corresponds to a prism that matches on
+an empty list, and the `NonEmpty a` branch corresponds to a prism that matches
+on a non-empty list. And the `()` branch's `review` corresponds to constructing
+an empty list, and the `NonEmpty a` branch corresponds to constructing a
+non-empty list.
+
 We see a sort of pattern here. And, if we look deeper, we will see that *all
 prisms* correspond to some sort of "constructor".
 
-After all, what do constructors give you? Two things:
+After all, what do constructors give you? Two things: the ability to "construct"
+a value, and the ability to do "case-analysis" or "pattern match" a value.
 
-1.  The ability to "create" a value. This corresponds to `review`, or `inject`
-2.  The ability to do "case-analysis" or check if a value was created using that
-    constructor. This corresponds to `preview`, or `match`.
-
-The API of a "constructor" is pretty much exactly the Prism API. In fact, we
-often use Prisms to simulate "abstract" constructors.
+The API of a "constructor" is pretty much exactly the Prism API, where `preview`
+is "matching" and `review` is "constructing". In fact, we often use Prisms to
+simulate "abstract" constructors.
 
 An *abstract constructor* is exactly what our *other* `[a]` sum decomposition
 gives us! If we look at that isomorphism `[a] <~> Either () ([a], a)` (the
@@ -863,6 +879,8 @@ isn't possible. There is no possible type `q` where `[a]` is a sum of `a` and
 `q`. The isomorphism `[a] <~> Either a q` cannot be made for *any* type `q`.
 There is no way to express `[a]` as the sum of `a` and some other type. Try
 thinking of a type `q` --- it's just not possible!
+
+TODO: try
 
 The Path to Profunctors
 -----------------------
@@ -1197,6 +1215,8 @@ actually implemented in practice:
 
     This passes `inject . match = id`, but not `match . inject = id` if we pass
     in the "illegal" value `Right 'a'`.
+
+    TODO: at for sets or maps
 
 ### Exercises
 

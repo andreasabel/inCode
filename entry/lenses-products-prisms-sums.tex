@@ -194,9 +194,10 @@ And we can verify that \texttt{unsplit\ .\ split} is \texttt{id}:
 And verification of \texttt{split\ .\ unsplit\ =\ id} is left as an exercise.
 
 There are some other interesting products in Haskell, too. One such example is
-\texttt{NonEmpty\ a} being a product between \texttt{a} (the head/first item)
-and \texttt{{[}a{]}} (the tail/rest of the items). This means that
-\texttt{NonEmpty\ a} is isomorphic to \texttt{(a,\ {[}a{]})} --- we have
+\texttt{NonEmpty\ a} (the type of a non-empty list) being a product between
+\texttt{a} (the head/first item) and \texttt{{[}a{]}} (the tail/rest of the
+items). This means that \texttt{NonEmpty\ a} is isomorphic to
+\texttt{(a,\ {[}a{]})} --- we have
 \texttt{NonEmpty\ a\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ {[}a{]})}!
 
 Another curious product is the fact that every type \texttt{a} is a product
@@ -285,8 +286,7 @@ A \texttt{Lens\textquotesingle{}\ s\ a} is a data type with the following API:
 respecting
 \href{https://www.schoolofhaskell.com/school/to-infinity-and-beyond/pick-of-the-week/a-little-lens-starter-tutorial\#the-lens-laws-}{some
 laws} --- get-put, put-get, and put-put. Abstract mathematical laws are great
-and all, but I'm going to tell you a secret that gives a nice restatement of
-those laws.
+and all, but I'm going to tell you a secret that subsumes those laws.
 
 At first, you might naively implement lenses like:
 
@@ -314,7 +314,7 @@ Another way to think of this is that if you are able to ``split'' a type into
 two parts without losing any information, then each part represents a lens.
 
 A \texttt{Lens\textquotesingle{}\ s\ a} is nothing more than a witness for the
-fact that there is some \texttt{q} where
+fact that there exists some \texttt{q} where
 \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}.
 
 With that in mind, let's re-visit a saner definition of lenses based on the idea
@@ -329,8 +329,10 @@ that lenses embody descriptions of products:
 \end{Highlighting}
 \end{Shaded}
 
-(the \texttt{forall\ q.} is the \emph{-XExistentialQuantification} extension,
-and allows us to hide type variables in consructors)
+(The \texttt{forall\ q.} is the \emph{-XExistentialQuantification} extension,
+and allows us to hide type variables in constructors. Note that this disallows
+us from using \texttt{split} and \texttt{unsplit} as record accessors functions,
+so we have to pattern match to get the contents)
 
 Now, if \texttt{split} and \texttt{join} form an isomorphism, \emph{this can
 only represent valid lenses}!\footnote{This type is technically also ``too big''
@@ -380,12 +382,6 @@ Let's take a look at our first product we talked about:
 \KeywordTok{data} \DataTypeTok{Person} \FunctionTok{=} \DataTypeTok{P}\NormalTok{ \{}\OtherTok{ _pName ::} \DataTypeTok{String}
 \NormalTok{                ,}\OtherTok{ _pAge  ::} \DataTypeTok{Int}
 \NormalTok{                \}}
-
-\OtherTok{split ::} \DataTypeTok{Person} \OtherTok{->}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)}
-\NormalTok{split (}\DataTypeTok{P}\NormalTok{ n a) }\FunctionTok{=}\NormalTok{ (n, a)}
-
-\OtherTok{unsplit ::}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{) }\OtherTok{->} \DataTypeTok{Person}
-\NormalTok{unsplit (n, a) }\FunctionTok{=} \DataTypeTok{P}\NormalTok{ n a}
 \end{Highlighting}
 \end{Shaded}
 
@@ -502,8 +498,8 @@ out if we're in \texttt{Left} or \texttt{Right}, and flipping the \texttt{Bool}
 Note that if we look at lenses as embodying ``record fields'' (things that give
 you the ability to ``get'' a field, and ``modify'' a field --- corresponding
 with \texttt{view} and \texttt{set}), we can think of \texttt{mysteryLens1} as
-an \emph{abstract record field} into the Leftness/Rightness of a value. Thing of
-lenses as defining abstract record fields is a
+an \emph{abstract record field} into the Leftness/Rightness of a value. Thinking
+of lenses as defining abstract record fields is a
 \href{http://blog.ezyang.com/2016/12/a-tale-of-backwards-compatibility-in-asts/}{common
 tool for backwards compatiblity}.
 
@@ -551,6 +547,8 @@ No, there isn't, because there isn't any type \texttt{q} that you could factor
 out \texttt{{[}a{]}} into as \texttt{(a,\ q)}. That would imply that
 \texttt{{[}a{]}} is always ``an \texttt{a} with something else''\ldots{}but this
 isn't true with \texttt{{[}{]}}.
+
+TODO: try writing it
 
 \hypertarget{sum-thing-interesting}{%
 \section{"Sum-thing" Interesting}\label{sum-thing-interesting}}
@@ -771,6 +769,8 @@ witness:
 In fact, if we can parameterize an isomorphism on a specific value, \emph{all}
 types with at least one value can be expressed as a sum involving \texttt{()}!
 It's always \texttt{()} plus the type itself minus that given specific value.
+(In practice, this is only possible to represent in Haskell if we can test for
+equality)
 
 \hypertarget{through-the-looking-prism}{%
 \subsection{Through the Looking-Prism}\label{through-the-looking-prism}}
@@ -826,8 +826,8 @@ Under this interpretation, we can write a nice representation of
 \end{Highlighting}
 \end{Shaded}
 
-Now, if \texttt{match} and \texttt{inject} form an isomorphism, \emph{this can
-only represent valid prisms}!
+If \texttt{match} and \texttt{inject} form an isomorphism, \emph{this can only
+represent valid prisms}!
 
 We can now implement the prism API:
 
@@ -872,14 +872,6 @@ from this perspective.
 \begin{Highlighting}[]
 \KeywordTok{data} \DataTypeTok{Shape} \FunctionTok{=} \DataTypeTok{Circle}  \DataTypeTok{Double}
            \FunctionTok{|} \DataTypeTok{RegPoly} \DataTypeTok{Natural} \DataTypeTok{Double}
-
-\OtherTok{match ::} \DataTypeTok{Shape} \OtherTok{->} \DataTypeTok{Either} \DataTypeTok{Double}\NormalTok{ (}\DataTypeTok{Natural}\NormalTok{, }\DataTypeTok{Double}\NormalTok{)}
-\NormalTok{match (}\DataTypeTok{Circle}\NormalTok{  r  ) }\FunctionTok{=} \DataTypeTok{Left}\NormalTok{ r}
-\NormalTok{match (}\DataTypeTok{RegPoly}\NormalTok{ n s) }\FunctionTok{=} \DataTypeTok{Right}\NormalTok{ (n, s)}
-
-\OtherTok{inject ::} \DataTypeTok{Either} \DataTypeTok{Double}\NormalTok{ (}\DataTypeTok{Natural}\NormalTok{, }\DataTypeTok{Double}\NormalTok{) }\OtherTok{->} \DataTypeTok{Shape}
-\NormalTok{inject (}\DataTypeTok{Left}\NormalTok{   r    ) }\FunctionTok{=} \DataTypeTok{Circle}\NormalTok{  r}
-\NormalTok{inject (}\DataTypeTok{Right}\NormalTok{ (n, s)) }\FunctionTok{=} \DataTypeTok{RegPoly}\NormalTok{ n s}
 \end{Highlighting}
 \end{Shaded}
 
@@ -909,6 +901,19 @@ Because \texttt{Shape} is a sum between \texttt{Double} and
 And these are actually the typical prisms associated with an ADT. You actually
 get exactly these if you use \texttt{makePrisms} from the \emph{lens} package.
 
+If it isn't clear what's going on, let's look at the type of \texttt{preview}
+and \texttt{review} for \texttt{\_Circle}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{preview}\OtherTok{ _Circle ::} \DataTypeTok{Shape}   \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Natural}
+\NormalTok{review}\OtherTok{  _Circle ::} \DataTypeTok{Natural} \OtherTok{->} \DataTypeTok{Shape}
+\end{Highlighting}
+\end{Shaded}
+
+We essentially get the ability to ``pattern match'' and ``construct'' the
+\texttt{Circle} constructor.
+
 What can we get out of our decomposition of \texttt{{[}a{]}} as a sum between
 \texttt{()} and \texttt{NonEmpty\ a}? Let's look at them:
 
@@ -924,7 +929,7 @@ What can we get out of our decomposition of \texttt{{[}a{]}} as a sum between
                      \DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs) }\OtherTok{->}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
 \NormalTok{    \}}
 
-\OtherTok{_Cons ::} \DataTypeTok{Prism'}\NormalTok{ [a] (a, [a])}
+\OtherTok{_Cons ::} \DataTypeTok{Prism'}\NormalTok{ [a] (}\DataTypeTok{NonEmpty}\NormalTok{ a)}
 \NormalTok{_Cons }\FunctionTok{=} \DataTypeTok{Prism'}
 \NormalTok{    \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}\NormalTok{ []              }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ ()}
 \NormalTok{                     x}\FunctionTok{:}\NormalTok{xs            }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)}
@@ -934,24 +939,35 @@ What can we get out of our decomposition of \texttt{{[}a{]}} as a sum between
 \end{Highlighting}
 \end{Shaded}
 
+To clarify, we can look at \texttt{preview} and \texttt{review} for all of
+these:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{preview}\OtherTok{ _Nil  ::}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ ()}
+\NormalTok{preview}\OtherTok{ _Cons ::}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{NonEmpty}\NormalTok{ a)}
+
+\NormalTok{review}\OtherTok{  _Nil  ::}\NormalTok{ ()         }\OtherTok{->}\NormalTok{ [a]}
+\NormalTok{review}\OtherTok{  _Cons ::} \DataTypeTok{NonEmpty}\NormalTok{ a }\OtherTok{->}\NormalTok{ [a]}
+\end{Highlighting}
+\end{Shaded}
+
+It looks like the \texttt{()} branch's \texttt{preview} corresponds to a prism
+that matches on an empty list, and the \texttt{NonEmpty\ a} branch corresponds
+to a prism that matches on a non-empty list. And the \texttt{()} branch's
+\texttt{review} corresponds to constructing an empty list, and the
+\texttt{NonEmpty\ a} branch corresponds to constructing a non-empty list.
+
 We see a sort of pattern here. And, if we look deeper, we will see that
 \emph{all prisms} correspond to some sort of ``constructor''.
 
-After all, what do constructors give you? Two things:
+After all, what do constructors give you? Two things: the ability to
+``construct'' a value, and the ability to do ``case-analysis'' or ``pattern
+match'' a value.
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  The ability to ``create'' a value. This corresponds to \texttt{review}, or
-  \texttt{inject}
-\item
-  The ability to do ``case-analysis'' or check if a value was created using that
-  constructor. This corresponds to \texttt{preview}, or \texttt{match}.
-\end{enumerate}
-
-The API of a ``constructor'' is pretty much exactly the Prism API. In fact, we
-often use Prisms to simulate ``abstract'' constructors.
+The API of a ``constructor'' is pretty much exactly the Prism API, where
+\texttt{preview} is ``matching'' and \texttt{review} is ``constructing''. In
+fact, we often use Prisms to simulate ``abstract'' constructors.
 
 An \emph{abstract constructor} is exactly what our \emph{other} \texttt{{[}a{]}}
 sum decomposition gives us! If we look at that isomorphism
@@ -1134,6 +1150,8 @@ sum of \texttt{a} and \texttt{q}. The isomorphism
 cannot be made for \emph{any} type \texttt{q}. There is no way to express
 \texttt{{[}a{]}} as the sum of \texttt{a} and some other type. Try thinking of a
 type \texttt{q} --- it's just not possible!
+
+TODO: try
 
 \hypertarget{the-path-to-profunctors}{%
 \section{The Path to Profunctors}\label{the-path-to-profunctors}}
@@ -1536,6 +1554,8 @@ Prism s t a b
   This passes \texttt{inject\ .\ match\ =\ id}, but not
   \texttt{match\ .\ inject\ =\ id} if we pass in the ``illegal'' value
   \texttt{Right\ \textquotesingle{}a\textquotesingle{}}.
+
+  TODO: at for sets or maps
 \end{enumerate}
 
 \hypertarget{exercises}{%
