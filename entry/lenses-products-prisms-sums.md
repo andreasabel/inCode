@@ -1242,6 +1242,10 @@ exercises!
     Roughtly speaking, composition of lenses or prisms are meant to
     "successively zoom in" to deeper and deeper parts of an initial structure.
 
+    A note for you if you try this --- because the `q` type is existential, you
+    can't use `split`, `unsplit`, `match`, or `inject` as record accessors, and
+    you need to either pattern match or use *-XRecordWildcards*.
+
     These implementations are pretty hairy (solutions [online
     here](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L26-L64)),
     and it's a sort of testament as to why we don't use this actual
