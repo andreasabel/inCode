@@ -1086,7 +1086,7 @@ actually implemented in practice:
                              |
                              |
                              v
-         outer <--- Eitner inner q
+         outer <--- Either inner q
 
     We can simply *re-label* the inputs and outputs to have different types,
     like so:
@@ -1135,15 +1135,17 @@ actually implemented in practice:
     isomorphisms where we re-label the type variables to help us talk about what
     goes in and what goes out.
 
-2.  In practice, it is very inconvenient to actually declare an actual type `q`
+2.  In practice, the `q` to factor out your type into (in the `s <~> (a, q)` and
+    `s <~> Either a q`) might not be an actual literal type. In most cases, it's
+    alright to treat it as a theoretical "abstract" type that follows the
+    behavior you want given a restricted interface. For example, the
+    `only 'a' :: Prism' Char ()` prism matches only on `'a'`, and it is the sum
+    of `Char` and a theoretical abstract `Char` type that excludes `'a'`.
 
-(inner, q) --\>
-
-Either inner q --\>
-
-( a , q) --\> ( b , q) --\>
-
-Either a q --\> Either b q --\>
+    To formalize this, sometimes we can say that only "one direction" of the
+    isomorphism has to be strictly true in practice. If we only enforce that the
+    round-trip of `unsplit . split = id` and `inject . match = id`, this
+    enforces just the spirit of the hidden abstract type.
 
 Exercises
 ---------
