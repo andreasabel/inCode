@@ -107,11 +107,12 @@ touched in too much detail is the topic of lenses and optics. A big part of this
 is because there are already so many great resources on lenses.
 
 This post won't be a ``lens tutorial'', but rather a dive into an insightful
-perspective on lenses and prisms that I've heard repeated many times, but not
-yet all compiled into a single place. In particular, I'm going to talk about the
-perspective of lenses and prisms as embodying the essences of products and sums
-(respectively), and how that observation can help you with a more ``practical''
-understanding of lenses and prisms.
+perspective on lenses and prisms that I've heard repeated many times (and always
+credited to Edward Kmett), but not yet all compiled into a single place. In
+particular, I'm going to talk about the perspective of lenses and prisms as
+embodying the essences of products and sums (respectively), and how that
+observation can help you with a more ``practical'' understanding of lenses and
+prisms.
 
 \hypertarget{an-algebraic-recap}{%
 \section{An Algebraic Recap}\label{an-algebraic-recap}}
@@ -311,16 +312,9 @@ have two lenses}! Lenses are nothing more than \emph{descriptions of products}!
 Another way to think of this is that if you are able to ``split'' a type into
 two parts without losing any information, then each part represents a lens.
 
-A \texttt{Lens\textquotesingle{}\ s\ a} is nothing more than a witness for an
-\texttt{exists\ q.\ s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}
-isomorphism.\footnote{The
-  \texttt{exists\ q.\ s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)} is
-  a way of saying that \texttt{Lens\textquotesingle{}\ s\ a} witnesses an
-  isomorphism between \texttt{s} and the product of \texttt{a} and some
-  ``hidden'' type \texttt{q}. A \texttt{Lens\textquotesingle{}\ s\ a} is a
-  statement that some \texttt{q} \emph{exists} in the first place. If no such
-  type exists, no lens is possible. And, for many lenses, \texttt{q} might be an
-  abstract type.}
+A \texttt{Lens\textquotesingle{}\ s\ a} is nothing more than a witness for the
+fact that there is some \texttt{q} where
+\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}.
 
 With that in mind, let's re-visit a saner definition of lenses based on the idea
 that lenses embody descriptions of products:
@@ -1136,7 +1130,7 @@ of ``profunctor optics'' very natural.
 First, some background -- a ``profunctor optic'' is a way of expressing things
 like lenses and prisms in terms of ``profunctor transformers''. Lenses, prisms,
 etc. would not be record types, but rather functions that takes a profunctor and
-returns a new profunctor.
+return a new profunctor.
 
 A profunctor \texttt{p} has values of type \texttt{p\ a\ b}, and you can roughly
 think of \texttt{p\ a\ b} as ``a relationship between \texttt{a} and
@@ -1146,25 +1140,32 @@ The \texttt{Profunctor} typeclass \texttt{p} gives us a function called
 \texttt{iso}, that lets us transform a profunctor in terms of an isomorphism.
 
 If type \texttt{s} is isomorphic to type \texttt{a}
-(\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ a}), then we can use:
+(\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ a}), then we can the
+function \texttt{iso}, that the \texttt{Profunctor} class gives us:
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- s <~> a}
 
-\OtherTok{iso ::} \DataTypeTok{Profunctor}\NormalTok{ p}
-    \OtherTok{=>}\NormalTok{ (s }\OtherTok{->}\NormalTok{ a)         }\CommentTok{-- ^ one half of the isomorphism}
-    \OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ s)         }\CommentTok{-- ^ the other half of the isomorphism}
-    \OtherTok{->}\NormalTok{ p a a}
-    \OtherTok{->}\NormalTok{ p s s}
+\CommentTok{-- | The real `iso` is actually a little more polymorphic}
+\KeywordTok{class} \DataTypeTok{Profunctor}\NormalTok{ p }\KeywordTok{where}
+\OtherTok{    iso ::} \DataTypeTok{Profunctor}\NormalTok{ p}
+        \OtherTok{=>}\NormalTok{ (s }\OtherTok{->}\NormalTok{ a)         }\CommentTok{-- ^ one half of the isomorphism}
+        \OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ s)         }\CommentTok{-- ^ the other half of the isomorphism}
+        \OtherTok{->}\NormalTok{ p a a}
+        \OtherTok{->}\NormalTok{ p s s}
 \end{Highlighting}
 \end{Shaded}
 
 Given the \texttt{s\ -\textgreater{}\ a} and \texttt{a\ -\textgreater{}\ s}
 functions that witness
-\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ a}, we can transform a
-\texttt{p\ a\ a} into a \texttt{p\ s\ s} (a relationship on \texttt{a}s to be a
-relationship on \texttt{s}).
+\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ a}, the
+\texttt{Profunctor} typeclass lets us transform a \texttt{p\ a\ a} into a
+\texttt{p\ s\ s} (a relationship on \texttt{a}s to be a relationship on
+\texttt{s}).
+
+(The \texttt{Profunctor} typeclass actually just provides \texttt{dimap}, but I
+am using the common alias \texttt{iso\ =\ dimap} to enforce the connection)
 
 \hypertarget{profunctor-lens}{%
 \subsection{Profunctor Lens}\label{profunctor-lens}}
@@ -1178,7 +1179,7 @@ A profunctor lens (one way of implementing)
 \end{Highlighting}
 \end{Shaded}
 
-You can think of it as taking a ``relationship on \texttt{a}is'' and turning it
+You can think of it as taking a ``relationship on \texttt{a}s'' and turning it
 into a ``relationship on \texttt{s}s''.
 
 With a lens, we are saying that \texttt{s} is isomorphic to \texttt{(a,\ q)}.
@@ -1197,11 +1198,15 @@ turn a \texttt{p\ a\ a} into a \texttt{p\ (a,\ q)\ (a,\ q)}. This says ``take a
 relationship on \texttt{a}s and turn it into a relationship on \texttt{(a,\ q)},
 \emph{ignoring} the \texttt{q}''.
 
-The typeclass \texttt{Strong} gives us just that:
+The typeclass \texttt{Strong} gives us just that!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{first' ::} \DataTypeTok{Strong}\NormalTok{ p }\OtherTok{=>}\NormalTok{ p a a }\OtherTok{->}\NormalTok{ p (a, q) (a, q)}
+\CommentTok{-- | The real `first'` is actually a little more polymorphic}
+\KeywordTok{class} \DataTypeTok{Profunctor}\NormalTok{ p }\OtherTok{=>} \DataTypeTok{Strong}\NormalTok{ p }\KeywordTok{where}
+\NormalTok{    first'}
+\OtherTok{        ::}\NormalTok{ p a a                }\CommentTok{-- ^ relationship on part}
+        \OtherTok{->}\NormalTok{ p (a, q) (a, q)      }\CommentTok{-- ^ relationship on whole}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1221,9 +1226,14 @@ And so we now have a definition of a profunctor lens:
 \end{Shaded}
 
 Essentially, \texttt{iso\ split\ unsplit\ .\ first\textquotesingle{}} promotes a
-\texttt{p\ a\ a} to a \texttt{p\ s\ s}. And since
-\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}, it promotes a
-relationship on a ``part'' to be a relationship on a ``whole''. A lens!
+\texttt{p\ a\ a} to a \texttt{p\ s\ s}. It uses \texttt{first\textquotesingle{}}
+to turn the \texttt{p\ a\ a} into a \texttt{p\ (a,\ q)\ (a,\ q)}, turning a
+relationship on the part to be a relationship on the whole. Then we just apply
+the essential \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}
+isomorphism that defines a lens. And so
+\texttt{p\ a\ a\ -\textgreater{}\ p\ s\ s}, going through the
+\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)} isomorphism, is
+a lens!
 
 \hypertarget{profunctor-prisms}{%
 \subsection{Profunctor Prisms}\label{profunctor-prisms}}
@@ -1237,7 +1247,7 @@ A profunctor prism (one way of implementing)
 \end{Highlighting}
 \end{Shaded}
 
-You can also think of this as taking a ``relationship on \texttt{a}is'' and
+You can also think of this as taking a ``relationship on \texttt{a}s'' and
 turning it into a ``relationship on \texttt{s}s''.
 
 With a prism, we are saying that \texttt{s} is isomorphic to
@@ -1261,7 +1271,11 @@ The typeclass \texttt{Choice} gives us just that:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{left ::} \DataTypeTok{Choice}\NormalTok{ p }\OtherTok{=>}\NormalTok{ p a a }\OtherTok{->}\NormalTok{ p (}\DataTypeTok{Either}\NormalTok{ a q) (}\DataTypeTok{Either}\NormalTok{ a q)}
+\CommentTok{-- | The real `left'` is actually a little more polymorphic}
+\KeywordTok{class} \DataTypeTok{Profunctor}\NormalTok{ p }\OtherTok{=>} \DataTypeTok{Choice}\NormalTok{ p }\KeywordTok{where}
+\NormalTok{    left'}
+\OtherTok{        ::}\NormalTok{ p a a                        }\CommentTok{-- ^ relationship on branch}
+        \OtherTok{->}\NormalTok{ p (}\DataTypeTok{Either}\NormalTok{ a q) (}\DataTypeTok{Either}\NormalTok{ a q)  }\CommentTok{-- ^ relationship on all possibilities}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1282,10 +1296,83 @@ And so we now have a definition of a profunctor prism:
 \end{Shaded}
 
 Essentially, \texttt{iso\ match\ inject\ .\ left\textquotesingle{}} promotes a
-\texttt{p\ a\ a} to a \texttt{p\ s\ s}. And since
-\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ Either\ a\ q}, it
-promotes a relationship on a ``potential branch'' to be a relationship on a
-``whole''. A prism!
+\texttt{p\ a\ a} to a \texttt{p\ s\ s}. It uses \texttt{left\textquotesingle{}}
+to turn the \texttt{p\ a\ a} into a \texttt{p\ (Either\ a\ q)\ (Either\ a\ q)},
+turning a relationship on the part to be a relationship on the whole. Then we
+just apply the essential
+\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ Either\ a\ q} isomorphism
+that defines a prism. And so \texttt{p\ a\ a\ -\textgreater{}\ p\ s\ s}, going
+through the \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ Either\ a\ q}
+isomorphism, is a lens!
+
+\hypertarget{recovering-the-original-functionality}{%
+\subsection{Recovering the Original
+Functionality}\label{recovering-the-original-functionality}}
+
+We can recover the original functionality by just picking specific values of
+\texttt{p} that, when transformed, give us the operations we want.
+
+For example, we want
+\texttt{view\ ::\ Lens\textquotesingle{}\ s\ a\ -\textgreater{}\ (s\ -\textgreater{}\ a)},
+so we just make a profunctor \texttt{p} where \texttt{p\ s\ s} contains an
+\texttt{s\ -\textgreater{}\ a}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- | `(View a) s s` is just an `s -> a`}
+\KeywordTok{newtype} \DataTypeTok{View}\NormalTok{ a s r }\FunctionTok{=} \DataTypeTok{View}\NormalTok{ \{}\OtherTok{ runView ::}\NormalTok{ s }\OtherTok{->}\NormalTok{ a \}}
+
+\KeywordTok{instance} \DataTypeTok{Profunctor}\NormalTok{ (}\DataTypeTok{View}\NormalTok{ a)}
+\KeywordTok{instance} \DataTypeTok{Strong}\NormalTok{ (}\DataTypeTok{View}\NormalTok{ a)}
+\end{Highlighting}
+\end{Shaded}
+
+And when you give this to a lens (a ``profunctor transformer''), you get a
+\texttt{(View\ a)\ s\ s}, which is a newtype wrapper over an
+\texttt{s\ -\textgreater{}\ a}! Note that you can't give this to a prism, since
+it is not possible to write a \texttt{Choice} instance for \texttt{View\ a}.
+
+For a more detailed look on implementing the entire lens and prism API in terms
+of profunctors, check out Oleg Grenrus's amazing {[}Glassery{]}{[}{]}!
+
+To me, this perspective makes it really clear to see ``why'' profunctor lenses
+and profunctor prisms are implemented the way they are. They are just
+\emph{profunctor transformers} that \emph{transform along the decomposition}
+that the lenses and prisms represent. For profunctor lenses, the profunctors get
+transformed to ``parts of a whole'' profunctors, using \texttt{Strong}. For
+profunctor prisms, the profunctors get transformed to ``branches of a
+possibility'' profunctors, using \texttt{Choice}. Even their types clearly show
+what is going on:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- [Lens]  s <~> (a, q)}
+\OtherTok{first' ::}\NormalTok{ p a a }\OtherTok{->}\NormalTok{ p (a, q) (a, q)}
+
+\CommentTok{-- [Prism] s <~> Either a q}
+\OtherTok{left'  ::}\NormalTok{ p a a }\OtherTok{->}\NormalTok{ p (}\DataTypeTok{Either}\NormalTok{ a q) (}\DataTypeTok{Either}\NormalTok{ a q)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{closing-out}{%
+\section{Closing out}\label{closing-out}}
+
+Hopefully this perspective --- that products yield lenses and sums yield prisms
+--- helps you navigate how you discover lenses and prisms, and how you interpret
+them when you see them. I know for me, it has helped me understand the odd
+lenses and prisms I often see, and also it helps me reason about when it
+\emph{doesn't} make sense to have a lens or prism. It has also distilled the
+lens and prism laws into something trivial that can be stated succinctly (``it
+must be an isomorphism''), and also made the profunctor optics form seem
+extremely natural.
+
+(inner, q) --\textgreater{}
+
+Either inner q --\textgreater{}
+
+( a , q) --\textgreater{} ( b , q) --\textgreater{}
+
+Either a q --\textgreater{} Either b q --\textgreater{}
 
 \hypertarget{exercises}{%
 \section{Exercises}\label{exercises}}

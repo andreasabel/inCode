@@ -9,11 +9,12 @@ touched in too much detail is the topic of lenses and optics. A big part of this
 is because there are already so many great resources on lenses.
 
 This post won't be a "lens tutorial", but rather a dive into an insightful
-perspective on lenses and prisms that I've heard repeated many times, but not
-yet all compiled into a single place. In particular, I'm going to talk about the
-perspective of lenses and prisms as embodying the essences of products and sums
-(respectively), and how that observation can help you with a more "practical"
-understanding of lenses and prisms.
+perspective on lenses and prisms that I've heard repeated many times (and always
+credited to Edward Kmett), but not yet all compiled into a single place. In
+particular, I'm going to talk about the perspective of lenses and prisms as
+embodying the essences of products and sums (respectively), and how that
+observation can help you with a more "practical" understanding of lenses and
+prisms.
 
 An Algebraic Recap
 ------------------
@@ -187,8 +188,8 @@ That means that if it is possible to represent `s` as some `(a, q)` (that is,
 to "split" a type into two parts without losing any information, then each part
 represents a lens.
 
-A `Lens' s a` is nothing more than a witness for an `exists q. s <~> (a, q)`
-isomorphism.[^2]
+A `Lens' s a` is nothing more than a witness for the fact that there is some `q`
+where `s <~> (a, q)`.
 
 With that in mind, let's re-visit a saner definition of lenses based on the idea
 that lenses embody descriptions of products:
@@ -204,7 +205,7 @@ data Lens' s a = forall q.
 to hide type variables in consructors)
 
 Now, if `split` and `join` form an isomorphism, *this can only represent valid
-lenses*![^3]
+lenses*![^2]
 
 We can implement our necessary lens API as so:
 
@@ -564,7 +565,7 @@ with at least one value can be expressed as a sum involving `()`! It's always
 ### Through the Looking-Prism
 
 Now let's bring prisms into the picture. A `Prism' s a` also refers to some `a`
-"inside" an `s`, with the following API: `preview` and `review`[^4]
+"inside" an `s`, with the following API: `preview` and `review`[^3]
 
 ``` {.haskell}
 preview :: Prism' s a -> (s -> Maybe a)   -- get the 'a' in the 's' if it exists
@@ -871,7 +872,7 @@ of "profunctor optics" very natural.
 First, some background -- a "profunctor optic" is a way of expressing things
 like lenses and prisms in terms of "profunctor transformers". Lenses, prisms,
 etc. would not be record types, but rather functions that takes a profunctor and
-returns a new profunctor.
+return a new profunctor.
 
 A profunctor `p` has values of type `p a b`, and you can roughly think of
 `p a b` as "a relationship between `a` and `b`".
@@ -879,21 +880,27 @@ A profunctor `p` has values of type `p a b`, and you can roughly think of
 The `Profunctor` typeclass `p` gives us a function called `iso`, that lets us
 transform a profunctor in terms of an isomorphism.
 
-If type `s` is isomorphic to type `a` (`s <~> a`), then we can use:
+If type `s` is isomorphic to type `a` (`s <~> a`), then we can the function
+`iso`, that the `Profunctor` class gives us:
 
 ``` {.haskell}
 -- s <~> a
 
-iso :: Profunctor p
-    => (s -> a)         -- ^ one half of the isomorphism
-    -> (a -> s)         -- ^ the other half of the isomorphism
-    -> p a a
-    -> p s s
+-- | The real `iso` is actually a little more polymorphic
+class Profunctor p where
+    iso :: Profunctor p
+        => (s -> a)         -- ^ one half of the isomorphism
+        -> (a -> s)         -- ^ the other half of the isomorphism
+        -> p a a
+        -> p s s
 ```
 
-Given the `s -> a` and `a -> s` functions that witness `s <~> a`, we can
-transform a `p a a` into a `p s s` (a relationship on `a`s to be a relationship
-on `s`).
+Given the `s -> a` and `a -> s` functions that witness `s <~> a`, the
+`Profunctor` typeclass lets us transform a `p a a` into a `p s s` (a
+relationship on `a`s to be a relationship on `s`).
+
+(The `Profunctor` typeclass actually just provides `dimap`, but I am using the
+common alias `iso = dimap` to enforce the connection)
 
 ### Profunctor Lens
 
@@ -903,7 +910,7 @@ A profunctor lens (one way of implementing) `Lens' s a` is a function:
 p a a -> p s s
 ```
 
-You can think of it as taking a "relationship on `a`is" and turning it into a
+You can think of it as taking a "relationship on `a`s" and turning it into a
 "relationship on `s`s".
 
 With a lens, we are saying that `s` is isomorphic to `(a, q)`. That means that
@@ -919,10 +926,14 @@ In order to get a `p a a -> p s s`, we need a way to turn a `p a a` into a
 `p (a, q) (a, q)`. This says "take a relationship on `a`s and turn it into a
 relationship on `(a, q)`, *ignoring* the `q`".
 
-The typeclass `Strong` gives us just that:
+The typeclass `Strong` gives us just that!
 
 ``` {.haskell}
-first' :: Strong p => p a a -> p (a, q) (a, q)
+-- | The real `first'` is actually a little more polymorphic
+class Profunctor p => Strong p where
+    first'
+        :: p a a                -- ^ relationship on part
+        -> p (a, q) (a, q)      -- ^ relationship on whole
 ```
 
 And so we now have a definition of a profunctor lens:
@@ -938,9 +949,11 @@ makeLens split unsplit = iso split unsplit  -- ^ p (a, q) (a, q) -> p s s
                        . first'             -- ^ p a a -> p (a, q) (a, q)
 ```
 
-Essentially, `iso split unsplit . first'` promotes a `p a a` to a `p s s`. And
-since `s <~> (a, q)`, it promotes a relationship on a "part" to be a
-relationship on a "whole". A lens!
+Essentially, `iso split unsplit . first'` promotes a `p a a` to a `p s s`. It
+uses `first'` to turn the `p a a` into a `p (a, q) (a, q)`, turning a
+relationship on the part to be a relationship on the whole. Then we just apply
+the essential `s <~> (a, q)` isomorphism that defines a lens. And so
+`p a a -> p s s`, going through the `s <~> (a, q)` isomorphism, is a lens!
 
 ### Profunctor Prisms
 
@@ -950,7 +963,7 @@ A profunctor prism (one way of implementing) `Prism' s a` is a function:
 p a a -> p s s
 ```
 
-You can also think of this as taking a "relationship on `a`is" and turning it
+You can also think of this as taking a "relationship on `a`s" and turning it
 into a "relationship on `s`s".
 
 With a prism, we are saying that `s` is isomorphic to `Either a q`. That means
@@ -970,7 +983,11 @@ it into a relationship on `Either a q`, *ignoring* the `q`".
 The typeclass `Choice` gives us just that:
 
 ``` {.haskell}
-left :: Choice p => p a a -> p (Either a q) (Either a q)
+-- | The real `left'` is actually a little more polymorphic
+class Profunctor p => Choice p where
+    left'
+        :: p a a                        -- ^ relationship on branch
+        -> p (Either a q) (Either a q)  -- ^ relationship on all possibilities
 ```
 
 And so we now have a definition of a profunctor prism:
@@ -987,9 +1004,70 @@ makePrism match inject =
   . left'              -- ^ p a a -> p (Either a q) (Either a q)
 ```
 
-Essentially, `iso match inject . left'` promotes a `p a a` to a `p s s`. And
-since `s <~> Either a q`, it promotes a relationship on a "potential branch" to
-be a relationship on a "whole". A prism!
+Essentially, `iso match inject . left'` promotes a `p a a` to a `p s s`. It uses
+`left'` to turn the `p a a` into a `p (Either a q) (Either a q)`, turning a
+relationship on the part to be a relationship on the whole. Then we just apply
+the essential `s <~> Either a q` isomorphism that defines a prism. And so
+`p a a -> p s s`, going through the `s <~> Either a q` isomorphism, is a lens!
+
+### Recovering the Original Functionality
+
+We can recover the original functionality by just picking specific values of `p`
+that, when transformed, give us the operations we want.
+
+For example, we want `view :: Lens' s a -> (s -> a)`, so we just make a
+profunctor `p` where `p s s` contains an `s -> a`.
+
+``` {.haskell}
+-- | `(View a) s s` is just an `s -> a`
+newtype View a s r = View { runView :: s -> a }
+
+instance Profunctor (View a)
+instance Strong (View a)
+```
+
+And when you give this to a lens (a "profunctor transformer"), you get a
+`(View a) s s`, which is a newtype wrapper over an `s -> a`! Note that you can't
+give this to a prism, since it is not possible to write a `Choice` instance for
+`View a`.
+
+For a more detailed look on implementing the entire lens and prism API in terms
+of profunctors, check out Oleg Grenrus's amazing \[Glassery\]\[\]!
+
+To me, this perspective makes it really clear to see "why" profunctor lenses and
+profunctor prisms are implemented the way they are. They are just *profunctor
+transformers* that *transform along the decomposition* that the lenses and
+prisms represent. For profunctor lenses, the profunctors get transformed to
+"parts of a whole" profunctors, using `Strong`. For profunctor prisms, the
+profunctors get transformed to "branches of a possibility" profunctors, using
+`Choice`. Even their types clearly show what is going on:
+
+``` {.haskell}
+-- [Lens]  s <~> (a, q)
+first' :: p a a -> p (a, q) (a, q)
+
+-- [Prism] s <~> Either a q
+left'  :: p a a -> p (Either a q) (Either a q)
+```
+
+Closing out
+-----------
+
+Hopefully this perspective --- that products yield lenses and sums yield prisms
+--- helps you navigate how you discover lenses and prisms, and how you interpret
+them when you see them. I know for me, it has helped me understand the odd
+lenses and prisms I often see, and also it helps me reason about when it
+*doesn't* make sense to have a lens or prism. It has also distilled the lens and
+prism laws into something trivial that can be stated succinctly ("it must be an
+isomorphism"), and also made the profunctor optics form seem extremely natural.
+
+(inner, q) --\>
+
+Either inner q --\>
+
+( a , q) --\> ( b , q) --\>
+
+Either a q --\> Either b q --\>
 
 Exercises
 ---------
@@ -1007,18 +1085,12 @@ or `Bool`s?)
 [^1]: All of this is disregarding the notorious "bottom" value that inhabits
     every type.
 
-[^2]: The `exists q. s <~> (a, q)` is a way of saying that `Lens' s a` witnesses
-    an isomorphism between `s` and the product of `a` and some "hidden" type
-    `q`. A `Lens' s a` is a statement that some `q` *exists* in the first place.
-    If no such type exists, no lens is possible. And, for many lenses, `q` might
-    be an abstract type.
-
-[^3]: This type is technically also "too big" (you can write a value where
+[^2]: This type is technically also "too big" (you can write a value where
     `split` and `unsplit` do not form an isomorphism), but I think, to me,
     "`split` and `join` must form an isomorphism" is a much clearer and natural
     law than get-put/put-get/put-put.
 
-[^4]: I didn't invent these names
+[^3]: I didn't invent these names
 
 ---------
 
