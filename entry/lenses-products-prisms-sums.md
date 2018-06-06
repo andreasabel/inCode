@@ -1239,7 +1239,10 @@ supporter at the "Amazing" level, Sam Stites! :)
     two partial functions, and uses a `Bool`. Can you write a `match` that does
     the same thing using only a single fold and no partial functions or `Bool`s?
 
-[^5]: I didn't invent these names
+    I managed to write one [using a difference
+    list](https://gist.github.com/mstksg/89fcb48f4b5c5b64f981c4cd3b0f37e4)!
+
+[^5]: I didn't invent these names :)
 
 ---------
 
