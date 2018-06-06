@@ -170,9 +170,10 @@ but I'm going to tell you a secret that gives a nice restatement of those laws.
 At first, you might naively implement lenses like:
 
 ``` {.haskell}
-data Lens' s a = Lens' { view :: s -> a
-                       , set  :: a -> s -> s
-                       }
+data Lens' s a = Lens'
+    { view :: s -> a
+    , set  :: a -> s -> s
+    }
 ```
 
 But this is bad bad bad. That's because you can use this to represent lenses
@@ -195,10 +196,10 @@ With that in mind, let's re-visit a saner definition of lenses based on the idea
 that lenses embody descriptions of products:
 
 ``` {.haskell}
-data Lens' s a = forall q.
-                 Lens' { split   :: s -> (a, q)
-                       , unsplit :: (a, q) -> s
-                       }    -- ^ s <~> (a, q)
+data Lens' s a = forall q. Lens'
+    { split   :: s -> (a, q)
+    , unsplit :: (a, q) -> s
+    }    -- ^ s <~> (a, q)
 ```
 
 (the `forall q.` is the *-XExistentialQuantification* extension, and allows us
@@ -575,9 +576,10 @@ review  :: Prism' s a -> (a -> s)         -- reconstruct the 's' from an 'a'
 Naively you might implement a prism like this:
 
 ``` {.haskell}
-data Prism' s a = Prism' { preview :: s -> Maybe a
-                         , review  :: a -> s
-                         }
+data Prism' s a = Prism'
+    { preview :: s -> Maybe a
+    , review  :: a -> s
+    }
 ```
 
 But, again, this implementation space is too big. There are way too many values
@@ -596,10 +598,10 @@ A `Prism' s a` is nothing more than a witness for an
 Under this interpretation, we can write a nice representation of `Prism'`:
 
 ``` {.haskell}
-data Prism' s a = forall q.
-                  Prism' { match  :: s -> Either a q
-                         , inject :: Either a q -> s
-                         }    -- ^ s <~> Either a q
+data Prism' s a = forall q. Prism'
+    { match  :: s -> Either a q
+    , inject :: Either a q -> s
+    }    -- ^ s <~> Either a q
 ```
 
 Now, if `match` and `inject` form an isomorphism, *this can only represent valid
@@ -1212,6 +1214,47 @@ exercises!
 
     What do these prisms do? What is `preview` and `review` for them?
 
+-   Can you write combinators to "compose" lenses and prisms? Is it even
+    possible?
+
+    ``` {.haskell}
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L26-L52
+
+    data Lens' s a = forall q. Lens'
+        { split   :: s -> (a, q)
+        , unsplit :: (a, q) -> s
+        }
+
+    (.&.) :: Lens' a b
+          -> Lens' b c
+          -> Lens' a c
+
+    data Prism' s a = forall q. Prism'
+        { match  :: s -> Either a q
+        , inject :: Either a q -> s
+        }
+
+    (.|.) :: Prism' a b
+          -> Prism' b c
+          -> Prism' a c
+    ```
+
+    Roughtly speaking, composition of lenses or prisms are meant to
+    "successively zoom in" to deeper and deeper parts of an initial structure.
+
+    These implementations are pretty hairy (solutions [online
+    here](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L26-L64)),
+    and it's a sort of testament as to why we don't use this actual
+    implementation in practice. In fact, for profunctor optics, we just have:
+
+    ``` {.haskell}
+    (.&.) = (.)
+    (.|.) = (.)
+    ```
+
+    Using `(.)` from `Prelude`. Definitely much simpler! (And it's one main
+    reason why they're the most popular representation)
+
 Special Thanks
 --------------
 
@@ -1240,7 +1283,7 @@ supporter at the "Amazing" level, Sam Stites! :)
     the same thing using only a single fold and no partial functions or `Bool`s?
 
     I managed to write one [using a difference
-    list](https://gist.github.com/mstksg/89fcb48f4b5c5b64f981c4cd3b0f37e4)!
+    list](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L15-L22)!
 
 [^5]: I didn't invent these names :)
 

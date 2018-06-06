@@ -292,9 +292,10 @@ At first, you might naively implement lenses like:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Lens'}\NormalTok{ s a }\FunctionTok{=} \DataTypeTok{Lens'}\NormalTok{ \{}\OtherTok{ view ::}\NormalTok{ s }\OtherTok{->}\NormalTok{ a}
-\NormalTok{                       ,}\OtherTok{ set  ::}\NormalTok{ a }\OtherTok{->}\NormalTok{ s }\OtherTok{->}\NormalTok{ s}
-\NormalTok{                       \}}
+\KeywordTok{data} \DataTypeTok{Lens'}\NormalTok{ s a }\FunctionTok{=} \DataTypeTok{Lens'}
+\NormalTok{    \{}\OtherTok{ view ::}\NormalTok{ s }\OtherTok{->}\NormalTok{ a}
+\NormalTok{    ,}\OtherTok{ set  ::}\NormalTok{ a }\OtherTok{->}\NormalTok{ s }\OtherTok{->}\NormalTok{ s}
+\NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -321,10 +322,10 @@ that lenses embody descriptions of products:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Lens'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.}
-                 \DataTypeTok{Lens'}\NormalTok{ \{}\OtherTok{ split   ::}\NormalTok{ s }\OtherTok{->}\NormalTok{ (a, q)}
-\NormalTok{                       ,}\OtherTok{ unsplit ::}\NormalTok{ (a, q) }\OtherTok{->}\NormalTok{ s}
-\NormalTok{                       \}    }\CommentTok{-- ^ s <~> (a, q)}
+\KeywordTok{data} \DataTypeTok{Lens'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.} \DataTypeTok{Lens'}
+\NormalTok{    \{}\OtherTok{ split   ::}\NormalTok{ s }\OtherTok{->}\NormalTok{ (a, q)}
+\NormalTok{    ,}\OtherTok{ unsplit ::}\NormalTok{ (a, q) }\OtherTok{->}\NormalTok{ s}
+\NormalTok{    \}    }\CommentTok{-- ^ s <~> (a, q)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -640,8 +641,8 @@ the \texttt{({[}a{]},\ a)} represents an ``all but the last item'' list and
   only a single fold and no partial functions or \texttt{Bool}s?
 
   I managed to write one
-  \href{https://gist.github.com/mstksg/89fcb48f4b5c5b64f981c4cd3b0f37e4}{using a
-  difference list}!}
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs\#L15-L22}{using
+  a difference list}!}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -790,9 +791,10 @@ Naively you might implement a prism like this:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Prism'}\NormalTok{ s a }\FunctionTok{=} \DataTypeTok{Prism'}\NormalTok{ \{}\OtherTok{ preview ::}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a}
-\NormalTok{                         ,}\OtherTok{ review  ::}\NormalTok{ a }\OtherTok{->}\NormalTok{ s}
-\NormalTok{                         \}}
+\KeywordTok{data} \DataTypeTok{Prism'}\NormalTok{ s a }\FunctionTok{=} \DataTypeTok{Prism'}
+\NormalTok{    \{}\OtherTok{ preview ::}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a}
+\NormalTok{    ,}\OtherTok{ review  ::}\NormalTok{ a }\OtherTok{->}\NormalTok{ s}
+\NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -817,10 +819,10 @@ Under this interpretation, we can write a nice representation of
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Prism'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.}
-                  \DataTypeTok{Prism'}\NormalTok{ \{}\OtherTok{ match  ::}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a q}
-\NormalTok{                         ,}\OtherTok{ inject ::} \DataTypeTok{Either}\NormalTok{ a q }\OtherTok{->}\NormalTok{ s}
-\NormalTok{                         \}    }\CommentTok{-- ^ s <~> Either a q}
+\KeywordTok{data} \DataTypeTok{Prism'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.} \DataTypeTok{Prism'}
+\NormalTok{    \{}\OtherTok{ match  ::}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a q}
+\NormalTok{    ,}\OtherTok{ inject ::} \DataTypeTok{Either}\NormalTok{ a q }\OtherTok{->}\NormalTok{ s}
+\NormalTok{    \}    }\CommentTok{-- ^ s <~> Either a q}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1559,6 +1561,51 @@ exercises!
 
   What do these prisms do? What is \texttt{preview} and \texttt{review} for
   them?
+\item
+  Can you write combinators to ``compose'' lenses and prisms? Is it even
+  possible?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L26-L52}
+
+\KeywordTok{data} \DataTypeTok{Lens'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.} \DataTypeTok{Lens'}
+\NormalTok{    \{}\OtherTok{ split   ::}\NormalTok{ s }\OtherTok{->}\NormalTok{ (a, q)}
+\NormalTok{    ,}\OtherTok{ unsplit ::}\NormalTok{ (a, q) }\OtherTok{->}\NormalTok{ s}
+\NormalTok{    \}}
+
+\OtherTok{(.&.) ::} \DataTypeTok{Lens'}\NormalTok{ a b}
+      \OtherTok{->} \DataTypeTok{Lens'}\NormalTok{ b c}
+      \OtherTok{->} \DataTypeTok{Lens'}\NormalTok{ a c}
+
+\KeywordTok{data} \DataTypeTok{Prism'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.} \DataTypeTok{Prism'}
+\NormalTok{    \{}\OtherTok{ match  ::}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a q}
+\NormalTok{    ,}\OtherTok{ inject ::} \DataTypeTok{Either}\NormalTok{ a q }\OtherTok{->}\NormalTok{ s}
+\NormalTok{    \}}
+
+\OtherTok{(.|.) ::} \DataTypeTok{Prism'}\NormalTok{ a b}
+      \OtherTok{->} \DataTypeTok{Prism'}\NormalTok{ b c}
+      \OtherTok{->} \DataTypeTok{Prism'}\NormalTok{ a c}
+\end{Highlighting}
+\end{Shaded}
+
+  Roughtly speaking, composition of lenses or prisms are meant to ``successively
+  zoom in'' to deeper and deeper parts of an initial structure.
+
+  These implementations are pretty hairy (solutions
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs\#L26-L64}{online
+  here}), and it's a sort of testament as to why we don't use this actual
+  implementation in practice. In fact, for profunctor optics, we just have:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{(}\FunctionTok{.&.}\NormalTok{) }\FunctionTok{=}\NormalTok{ (}\FunctionTok{.}\NormalTok{)}
+\NormalTok{(}\FunctionTok{.|.}\NormalTok{) }\FunctionTok{=}\NormalTok{ (}\FunctionTok{.}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+  Using \texttt{(.)} from \texttt{Prelude}. Definitely much simpler! (And it's
+  one main reason why they're the most popular representation)
 \end{itemize}
 
 \hypertarget{special-thanks}{%

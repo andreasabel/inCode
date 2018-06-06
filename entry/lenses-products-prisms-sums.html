@@ -89,18 +89,19 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb7-2" data-line-number="2"><span class="ot">set  ::</span> <span class="dt">Lens&#39;</span> s a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> s <span class="ot">-&gt;</span> s)           <span class="co">-- set the &#39;a&#39; inside an &#39;s&#39;</span></a></code></pre></div>
 <p>respecting <a href="https://www.schoolofhaskell.com/school/to-infinity-and-beyond/pick-of-the-week/a-little-lens-starter-tutorial#the-lens-laws-">some laws</a> — get-put, put-get, and put-put. Abstract mathematical laws are great and all, but I’m going to tell you a secret that gives a nice restatement of those laws.</p>
 <p>At first, you might naively implement lenses like:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Lens&#39;</span> s a <span class="fu">=</span> <span class="dt">Lens&#39;</span> {<span class="ot"> view ::</span> s <span class="ot">-&gt;</span> a</a>
-<a class="sourceLine" id="cb8-2" data-line-number="2">                       ,<span class="ot"> set  ::</span> a <span class="ot">-&gt;</span> s <span class="ot">-&gt;</span> s</a>
-<a class="sourceLine" id="cb8-3" data-line-number="3">                       }</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Lens&#39;</span> s a <span class="fu">=</span> <span class="dt">Lens&#39;</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">    {<span class="ot"> view ::</span> s <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">    ,<span class="ot"> set  ::</span> a <span class="ot">-&gt;</span> s <span class="ot">-&gt;</span> s</a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">    }</a></code></pre></div>
 <p>But this is bad bad bad. That’s because you can use this to represent lenses that “break the laws”. This representation is, to use the technical term, “too big”. It allows more more values than are actual lenses.</p>
 <p>So, here’s the secret: A <code>Lens' s a</code> means that <em><code>s</code> is a product between <code>a</code> and some type <code>q</code></em>.</p>
 <p>That means that if it is possible to represent <code>s</code> as some <code>(a, q)</code> (that is, <code>s &lt;~&gt; (a, q)</code>), <em>then you have two lenses</em>! Lenses are nothing more than <em>descriptions of products</em>! Another way to think of this is that if you are able to “split” a type into two parts without losing any information, then each part represents a lens.</p>
 <p>A <code>Lens' s a</code> is nothing more than a witness for the fact that there is some <code>q</code> where <code>s &lt;~&gt; (a, q)</code>.</p>
 <p>With that in mind, let’s re-visit a saner definition of lenses based on the idea that lenses embody descriptions of products:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Lens&#39;</span> s a <span class="fu">=</span> forall q<span class="fu">.</span></a>
-<a class="sourceLine" id="cb9-2" data-line-number="2">                 <span class="dt">Lens&#39;</span> {<span class="ot"> split   ::</span> s <span class="ot">-&gt;</span> (a, q)</a>
-<a class="sourceLine" id="cb9-3" data-line-number="3">                       ,<span class="ot"> unsplit ::</span> (a, q) <span class="ot">-&gt;</span> s</a>
-<a class="sourceLine" id="cb9-4" data-line-number="4">                       }    <span class="co">-- ^ s &lt;~&gt; (a, q)</span></a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Lens&#39;</span> s a <span class="fu">=</span> forall q<span class="fu">.</span> <span class="dt">Lens&#39;</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">    {<span class="ot"> split   ::</span> s <span class="ot">-&gt;</span> (a, q)</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">    ,<span class="ot"> unsplit ::</span> (a, q) <span class="ot">-&gt;</span> s</a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">    }    <span class="co">-- ^ s &lt;~&gt; (a, q)</span></a></code></pre></div>
 <p>(the <code>forall q.</code> is the <em>-XExistentialQuantification</em> extension, and allows us to hide type variables in consructors)</p>
 <p>Now, if <code>split</code> and <code>join</code> form an isomorphism, <em>this can only represent valid lenses</em>!<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></p>
 <p>We can implement our necessary lens API as so:</p>
@@ -279,17 +280,18 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="ot">preview ::</span> <span class="dt">Prism&#39;</span> s a <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)   <span class="co">-- get the &#39;a&#39; in the &#39;s&#39; if it exists</span></a>
 <a class="sourceLine" id="cb27-2" data-line-number="2"><span class="ot">review  ::</span> <span class="dt">Prism&#39;</span> s a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> s)         <span class="co">-- reconstruct the &#39;s&#39; from an &#39;a&#39;</span></a></code></pre></div>
 <p>Naively you might implement a prism like this:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Prism&#39;</span> s a <span class="fu">=</span> <span class="dt">Prism&#39;</span> {<span class="ot"> preview ::</span> s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a</a>
-<a class="sourceLine" id="cb28-2" data-line-number="2">                         ,<span class="ot"> review  ::</span> a <span class="ot">-&gt;</span> s</a>
-<a class="sourceLine" id="cb28-3" data-line-number="3">                         }</a></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Prism&#39;</span> s a <span class="fu">=</span> <span class="dt">Prism&#39;</span></a>
+<a class="sourceLine" id="cb28-2" data-line-number="2">    {<span class="ot"> preview ::</span> s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a</a>
+<a class="sourceLine" id="cb28-3" data-line-number="3">    ,<span class="ot"> review  ::</span> a <span class="ot">-&gt;</span> s</a>
+<a class="sourceLine" id="cb28-4" data-line-number="4">    }</a></code></pre></div>
 <p>But, again, this implementation space is too big. There are way too many values of this type that aren’t <em>actual</em> “lawful” prisms. And the laws are kind of muddled here.</p>
 <p>You might be able to guess where I’m going at this point. Whereas a <code>Lens' s a</code> is nothing more than a witness to the fact that <code>s</code> is a <em>product</em> <code>(a, q)</code> … a <code>Prism' s a</code> is nothing more than a witness to the fact that <code>s</code> is a <em>sum</em> <code>Either a q</code>. If it is possible to represent <code>s</code> as some <code>Either a q</code>…then you have two prisms! Prisms are nothing more than <em>descriptions of sums</em>!</p>
 <p>A <code>Prism' s a</code> is nothing more than a witness for an <code>exists q. s &lt;~&gt; Either a q</code> isomorphism.</p>
 <p>Under this interpretation, we can write a nice representation of <code>Prism'</code>:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Prism&#39;</span> s a <span class="fu">=</span> forall q<span class="fu">.</span></a>
-<a class="sourceLine" id="cb29-2" data-line-number="2">                  <span class="dt">Prism&#39;</span> {<span class="ot"> match  ::</span> s <span class="ot">-&gt;</span> <span class="dt">Either</span> a q</a>
-<a class="sourceLine" id="cb29-3" data-line-number="3">                         ,<span class="ot"> inject ::</span> <span class="dt">Either</span> a q <span class="ot">-&gt;</span> s</a>
-<a class="sourceLine" id="cb29-4" data-line-number="4">                         }    <span class="co">-- ^ s &lt;~&gt; Either a q</span></a></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Prism&#39;</span> s a <span class="fu">=</span> forall q<span class="fu">.</span> <span class="dt">Prism&#39;</span></a>
+<a class="sourceLine" id="cb29-2" data-line-number="2">    {<span class="ot"> match  ::</span> s <span class="ot">-&gt;</span> <span class="dt">Either</span> a q</a>
+<a class="sourceLine" id="cb29-3" data-line-number="3">    ,<span class="ot"> inject ::</span> <span class="dt">Either</span> a q <span class="ot">-&gt;</span> s</a>
+<a class="sourceLine" id="cb29-4" data-line-number="4">    }    <span class="co">-- ^ s &lt;~&gt; Either a q</span></a></code></pre></div>
 <p>Now, if <code>match</code> and <code>inject</code> form an isomorphism, <em>this can only represent valid prisms</em>!</p>
 <p>We can now implement the prism API:</p>
 <div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb30-1" data-line-number="1"><span class="ot">preview ::</span> <span class="dt">Prism&#39;</span> s a <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</a>
@@ -609,6 +611,31 @@ Prism s t a b
 <div class="sourceCode" id="cb57"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="ot">mysteryPrism1 ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Bool</span>, a) a</a>
 <a class="sourceLine" id="cb57-2" data-line-number="2"><span class="ot">mysteryPrism2 ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Bool</span>, a) a</a></code></pre></div>
 <p>What do these prisms do? What is <code>preview</code> and <code>review</code> for them?</p></li>
+<li><p>Can you write combinators to “compose” lenses and prisms? Is it even possible?</p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb58-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L26-L52</span></a>
+<a class="sourceLine" id="cb58-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb58-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Lens&#39;</span> s a <span class="fu">=</span> forall q<span class="fu">.</span> <span class="dt">Lens&#39;</span></a>
+<a class="sourceLine" id="cb58-4" data-line-number="4">    {<span class="ot"> split   ::</span> s <span class="ot">-&gt;</span> (a, q)</a>
+<a class="sourceLine" id="cb58-5" data-line-number="5">    ,<span class="ot"> unsplit ::</span> (a, q) <span class="ot">-&gt;</span> s</a>
+<a class="sourceLine" id="cb58-6" data-line-number="6">    }</a>
+<a class="sourceLine" id="cb58-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb58-8" data-line-number="8"><span class="ot">(.&amp;.) ::</span> <span class="dt">Lens&#39;</span> a b</a>
+<a class="sourceLine" id="cb58-9" data-line-number="9">      <span class="ot">-&gt;</span> <span class="dt">Lens&#39;</span> b c</a>
+<a class="sourceLine" id="cb58-10" data-line-number="10">      <span class="ot">-&gt;</span> <span class="dt">Lens&#39;</span> a c</a>
+<a class="sourceLine" id="cb58-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb58-12" data-line-number="12"><span class="kw">data</span> <span class="dt">Prism&#39;</span> s a <span class="fu">=</span> forall q<span class="fu">.</span> <span class="dt">Prism&#39;</span></a>
+<a class="sourceLine" id="cb58-13" data-line-number="13">    {<span class="ot"> match  ::</span> s <span class="ot">-&gt;</span> <span class="dt">Either</span> a q</a>
+<a class="sourceLine" id="cb58-14" data-line-number="14">    ,<span class="ot"> inject ::</span> <span class="dt">Either</span> a q <span class="ot">-&gt;</span> s</a>
+<a class="sourceLine" id="cb58-15" data-line-number="15">    }</a>
+<a class="sourceLine" id="cb58-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb58-17" data-line-number="17"><span class="ot">(.|.) ::</span> <span class="dt">Prism&#39;</span> a b</a>
+<a class="sourceLine" id="cb58-18" data-line-number="18">      <span class="ot">-&gt;</span> <span class="dt">Prism&#39;</span> b c</a>
+<a class="sourceLine" id="cb58-19" data-line-number="19">      <span class="ot">-&gt;</span> <span class="dt">Prism&#39;</span> a c</a></code></pre></div>
+<p>Roughtly speaking, composition of lenses or prisms are meant to “successively zoom in” to deeper and deeper parts of an initial structure.</p>
+<p>These implementations are pretty hairy (solutions <a href="https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L26-L64">online here</a>), and it’s a sort of testament as to why we don’t use this actual implementation in practice. In fact, for profunctor optics, we just have:</p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb59-1" data-line-number="1">(<span class="fu">.&amp;.</span>) <span class="fu">=</span> (<span class="fu">.</span>)</a>
+<a class="sourceLine" id="cb59-2" data-line-number="2">(<span class="fu">.|.</span>) <span class="fu">=</span> (<span class="fu">.</span>)</a></code></pre></div>
+<p>Using <code>(.)</code> from <code>Prelude</code>. Definitely much simpler! (And it’s one main reason why they’re the most popular representation)</p></li>
 </ul>
 <h2 id="special-thanks">Special Thanks</h2>
 <p>I am very humbled to be supported by an amazing community on <a href="https://www.patreon.com/justinle/overview">Patreon</a>, who make it possible for me to devote time to research and writing these posts. Very special thanks to my supporter at the “Amazing” level, Sam Stites! :)</p>
@@ -619,7 +646,7 @@ Prism s t a b
 <li id="fn2"><p>This type is technically also “too big” (you can write a value where <code>split</code> and <code>unsplit</code> do not form an isomorphism), but I think, to me, “<code>split</code> and <code>join</code> must form an isomorphism” is a much clearer and natural law than get-put/put-get/put-put.<a href="#fnref2" class="footnote-back">↩</a></p></li>
 <li id="fn3"><p>Technically, LEM denialists and constructivists are somewhat vindicated here, because it is not strictly true in Haskell that a list is either an empty list or a non-empty list. It can actually <a href="https://wiki.haskell.org/Bottom">be neither</a>.<a href="#fnref3" class="footnote-back">↩</a></p></li>
 <li id="fn4"><p>Fun haskell challenge: the version of <code>match</code> for the <code>[a] &lt;~&gt; Either () ([a], a)</code> isomorphism I wrote there is conceptually simple, but very inefficient. It traverses the input list three times, uses two partial functions, and uses a <code>Bool</code>. Can you write a <code>match</code> that does the same thing using only a single fold and no partial functions or <code>Bool</code>s?</p>
-<p>I managed to write one <a href="https://gist.github.com/mstksg/89fcb48f4b5c5b64f981c4cd3b0f37e4">using a difference list</a>!<a href="#fnref4" class="footnote-back">↩</a></p></li>
+<p>I managed to write one <a href="https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L15-L22">using a difference list</a>!<a href="#fnref4" class="footnote-back">↩</a></p></li>
 <li id="fn5"><p>I didn’t invent these names :)<a href="#fnref5" class="footnote-back">↩</a></p></li>
 </ol>
 </section></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
