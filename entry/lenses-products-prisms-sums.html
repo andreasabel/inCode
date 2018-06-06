@@ -535,6 +535,48 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb52-5" data-line-number="5"><span class="ot">left&#39;  ::</span> p a a <span class="ot">-&gt;</span> p (<span class="dt">Either</span> a q) (<span class="dt">Either</span> a q)</a></code></pre></div>
 <h2 id="closing-out">Closing out</h2>
 <p>Hopefully this perspective — that products yield lenses and sums yield prisms — helps you navigate how you discover lenses and prisms, and how you interpret them when you see them. I know for me, it has helped me understand the odd lenses and prisms I often see, and also it helps me reason about when it <em>doesn’t</em> make sense to have a lens or prism. It has also distilled the lens and prism laws into something trivial that can be stated succinctly (“it must be an isomorphism”), and also made the profunctor optics form seem extremely natural.</p>
+<p>Some small notes need to be made to bridge this view with the way they are actually implemented in practice:</p>
+<ol type="1">
+<li><p>We have been dealing with <code>Lens' outer inner</code> and <code>Prism' outer inner</code>, which are known as “simple” optics. In practice, this can be generalized by giving the “input” outer/inner values and “output” outer/inner values different type variables.</p>
+<p>For example, so far all our operations have basically been navigating between the isomorphisms that lenses and prisms represent:</p>
+<pre><code>Lens&#39; outer inner
+=================
+ outer ---&gt; (inner, q)
+               |
+               |
+               v
+ outer &lt;--- (inner, q)
+
+Prism&#39; outer inner
+=================
+ outer ---&gt; Either inner q
+                     |
+                     |
+                     v
+ outer &lt;--- Eitner inner q</code></pre>
+<p>We can simply <em>re-label</em> the inputs and outputs to have different types, like so:</p>
+<pre><code>Lens s t a b
+============
+   s   ---&gt; (  a  , q)
+               |
+               |
+               v
+   t   ---&gt; (  b  , q)
+
+Prism s t a b
+=============
+   s   ---&gt; Either   a   q
+                     |
+                     |
+                     v
+   t   ---&gt; Either   b   q</code></pre>
+<p>Essentially, we’re just deciding to give the inputs and outputs different type variables. The main thing this helps is with is giving us the ability to distinguish inputs from outputs when we talk about these things.</p>
+<p>For example, before, with <code>Lens' outer inner</code>, if I say “the <code>outer</code>”, you won’t know if I mean the <code>outer</code> “before” we use the lens, or the <code>outer</code> <em>after</em> we use the lens. However, with <code>Lens s t a b</code>, if I say “the <code>s</code>”, you know that I just mean “the <code>outer</code> <em>before</em> we use the lens”, and if I say “the <code>t</code>”, you know that I mean “the <code>outer</code> <em>after</em> we use the lens”.</p>
+<p><code>Lens s t a b</code> (which is a version of <code>Lens' outer inner</code> where we relabel the type variables of the inputs and outputs) is called a <a href="http://comonad.com/reader/2012/mirrored-lenses/">lens family</a>. Be careful to never call it a “polymorphic lens”. It <strong>not</strong> a polymorphic lens. It is just a normal lens where we re-label the type variables of all of the involved pieces to aid in our discourse.</p>
+<p>We still require <code>unsplit . split = id</code>, <code>split . unsplit = id</code>, <code>inject . match = id</code>, and <code>match . inject = id</code>. They’re all still <em>isomorphisms</em>. We’re just <em>relabeling our type variables</em> here to let us be more expressive with how we talk about all of the moving parts.</p>
+<p>These aren’t “polymorphic isomorphism” — they’re the same old isomorphisms we have been working with this entire time, and if we compose them, they should yield <code>id</code> when the type variables match up. These are just isomorphisms where we re-label the type variables to help us talk about what goes in and what goes out.</p></li>
+<li><p>In practice, it is very inconvenient to actually declare an actual type <code>q</code></p></li>
+</ol>
 <p>(inner, q) –&gt;    </p>
 <p>Either inner q –&gt;     </p>
 <p>( a , q) –&gt;     ( b , q) –&gt;</p>

@@ -1366,6 +1366,95 @@ lens and prism laws into something trivial that can be stated succinctly (``it
 must be an isomorphism''), and also made the profunctor optics form seem
 extremely natural.
 
+Some small notes need to be made to bridge this view with the way they are
+actually implemented in practice:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  We have been dealing with \texttt{Lens\textquotesingle{}\ outer\ inner} and
+  \texttt{Prism\textquotesingle{}\ outer\ inner}, which are known as ``simple''
+  optics. In practice, this can be generalized by giving the ``input''
+  outer/inner values and ``output'' outer/inner values different type variables.
+
+  For example, so far all our operations have basically been navigating between
+  the isomorphisms that lenses and prisms represent:
+
+\begin{verbatim}
+Lens' outer inner
+=================
+ outer ---> (inner, q)
+               |
+               |
+               v
+ outer <--- (inner, q)
+
+Prism' outer inner
+=================
+ outer ---> Either inner q
+                     |
+                     |
+                     v
+ outer <--- Eitner inner q
+\end{verbatim}
+
+  We can simply \emph{re-label} the inputs and outputs to have different types,
+  like so:
+
+\begin{verbatim}
+Lens s t a b
+============
+   s   ---> (  a  , q)
+               |
+               |
+               v
+   t   ---> (  b  , q)
+
+Prism s t a b
+=============
+   s   ---> Either   a   q
+                     |
+                     |
+                     v
+   t   ---> Either   b   q
+\end{verbatim}
+
+  Essentially, we're just deciding to give the inputs and outputs different type
+  variables. The main thing this helps is with is giving us the ability to
+  distinguish inputs from outputs when we talk about these things.
+
+  For example, before, with \texttt{Lens\textquotesingle{}\ outer\ inner}, if I
+  say ``the \texttt{outer}'', you won't know if I mean the \texttt{outer}
+  ``before'' we use the lens, or the \texttt{outer} \emph{after} we use the
+  lens. However, with \texttt{Lens\ s\ t\ a\ b}, if I say ``the \texttt{s}'',
+  you know that I just mean ``the \texttt{outer} \emph{before} we use the
+  lens'', and if I say ``the \texttt{t}'', you know that I mean ``the
+  \texttt{outer} \emph{after} we use the lens''.
+
+  \texttt{Lens\ s\ t\ a\ b} (which is a version of
+  \texttt{Lens\textquotesingle{}\ outer\ inner} where we relabel the type
+  variables of the inputs and outputs) is called a
+  \href{http://comonad.com/reader/2012/mirrored-lenses/}{lens family}. Be
+  careful to never call it a ``polymorphic lens''. It \textbf{not} a polymorphic
+  lens. It is just a normal lens where we re-label the type variables of all of
+  the involved pieces to aid in our discourse.
+
+  We still require \texttt{unsplit\ .\ split\ =\ id},
+  \texttt{split\ .\ unsplit\ =\ id}, \texttt{inject\ .\ match\ =\ id}, and
+  \texttt{match\ .\ inject\ =\ id}. They're all still \emph{isomorphisms}. We're
+  just \emph{relabeling our type variables} here to let us be more expressive
+  with how we talk about all of the moving parts.
+
+  These aren't ``polymorphic isomorphism'' --- they're the same old isomorphisms
+  we have been working with this entire time, and if we compose them, they
+  should yield \texttt{id} when the type variables match up. These are just
+  isomorphisms where we re-label the type variables to help us talk about what
+  goes in and what goes out.
+\item
+  In practice, it is very inconvenient to actually declare an actual type
+  \texttt{q}
+\end{enumerate}
+
 (inner, q) --\textgreater{}
 
 Either inner q --\textgreater{}
