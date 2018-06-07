@@ -44,7 +44,7 @@ However, did you know that some types are secretly product types in disguise?
 For example, here's a classic example of a data type often used with *lens*:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L100-L103
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L101-L104
 
 data Person = P
     { _pName :: String
@@ -202,7 +202,7 @@ that lenses embody descriptions of products:
 
 ``` {.haskell}
 -- | s <~> (a, q)
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L35-L38
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L36-L39
 
 data Lens' s a = forall q. Lens'
     { split   :: s -> (a, q)
@@ -221,7 +221,7 @@ lenses*![^2]
 We can implement our necessary lens API as so:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L77-L82
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L78-L83
 
 view :: Lens' s a -> (s -> a)
 view Lens'{..} = fst . split
@@ -238,7 +238,7 @@ The implementation of the helper function `over` (which modifies the `a` with a
 function) is also particularly elegant:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L84-L85
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L85-L86
 
 overL :: Lens' s a -> (a -> a) -> (s -> s)
 overL Lens'{..}  f = unsplit . first f . split   -- instance Bifunctor (,)
@@ -253,7 +253,7 @@ side of a product**.
 Let's take a look at our first product we talked about:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L100-L103
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L101-L104
 
 data Person = P
     { _pName :: String
@@ -267,7 +267,7 @@ for every item in the product.
 
 ``` {.haskell}
 -- Person <~> (String, Int)
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L101-L103
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L102-L104
 
     { _pName :: String
     , _pAge  :: Int
@@ -297,7 +297,7 @@ for any `a`:
 
 ``` {.haskell}
 -- a <~> (a, ())
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L117-L127
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L118-L128
 
 identityL :: Lens' a a
 identityL = Lens'
@@ -322,7 +322,7 @@ What insight does our `Either a a <~> (Bool, a)` product perspective give us?
 Well, let's write out their types and see what it might suggest:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L129-L139
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L130-L140
 
 mysteryLens1 :: Lens' (Either a a) Bool
 
@@ -336,7 +336,7 @@ the `Bool` is finding out if we're in `Left` or `Right`, and flipping the `Bool`
 "inside" is really just swapping from `Left` to `Right`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L149-L153
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L150-L154
 
 flipEither :: Either a a -> Either a a
 flipEither = overL mysteryLens1 not
@@ -371,7 +371,7 @@ leftness/rightness, and re-setting the `a` inside is modifying the contained
 value but preserving leftness/rightness.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L155-L159
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L156-L160
 
 fromEither :: Either a a -> a
 fromEither = view mysteryLens2
@@ -420,7 +420,7 @@ However, did you know that some types are secretly sums in disguise?
 For example, here's a data type you might encounter out there in the real world:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L163-L164
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L177-L178
 
 data Shape = Circle  Double           -- radius
            | RegPoly Natural Double   -- number of sides, length of sides
@@ -501,7 +501,7 @@ Another curious sum: if we consider the "empty data type" `Void`, the type with
 no inhabitants:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L166-L171
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L180-L185
 
 data Void           -- no constructors, no valid inhabitants
 
@@ -571,7 +571,7 @@ witness:
 
 ``` {.haskell}
 -- | Like `Int`, but cannot be constructed if it is 4
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L250-L250
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L264-L264
 
 type Not4 = Refined (NotEqualTo 4) Int
 
@@ -633,7 +633,7 @@ Under this interpretation, we can write a nice representation of `Prism'`:
 
 ``` {.haskell}
 -- | s <~> Either a q
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L54-L57
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L55-L58
 
 data Prism' s a = forall q. Prism'
     { match  :: s -> Either a q
@@ -647,7 +647,7 @@ prisms*!
 We can now implement the prism API:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L87-L90
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L88-L91
 
 preview :: Prism' s a -> (s -> Maybe a)
 preview Prism'{..} x = case match x of
@@ -664,7 +664,7 @@ Like for lenses, prisms also admit a particularly elegant formulation for
 `over`, which maps a function over the `a` in the `s` if it exists:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L84-L96
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L85-L97
 
 overL :: Lens' s a -> (a -> a) -> (s -> s)
 overL Lens'{..}  f = unsplit . first f . split   -- instance Bifunctor (,)
@@ -684,7 +684,7 @@ Let's go back at our example prisms and see what sort of insight we can gain
 from this perspective.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L163-L164
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L177-L178
 
 data Shape = Circle  Double           -- radius
            | RegPoly Natural Double   -- number of sides, length of sides
@@ -695,7 +695,7 @@ prisms*:
 
 ``` {.haskell}
 -- Shape <~> Either Natural (Natural, Double)
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L173-L191
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L187-L205
 
 _Circle :: Prism' Shape Double
 _Circle = Prism'
@@ -737,7 +737,7 @@ What can we get out of our decomposition of `[a]` as a sum between `()` and
 
 ``` {.haskell}
 -- [a] <~> Either () (NonEmpty a)
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L193-L211
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L207-L225
 
 _Nil :: Prism' [a] ()
 _Nil = Prism'
@@ -793,7 +793,7 @@ to the abstract constructors `_Nil` and `_Snoc`:
 
 ``` {.haskell}
 -- [a] <~> Either () ([a], a)
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L213-L231
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L227-L245
 
 _Nil' :: Prism' [a] ()
 _Nil' = Prism'
@@ -828,7 +828,7 @@ conceptually?
 
 ``` {.haskell}
 -- a <~> Either a Void
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L233-L248
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L247-L262
 
 identityP :: Prism' a a
 identityP = Prism'
@@ -866,7 +866,7 @@ And finally, let's look at our deconstruction of `Int` and
 we get?
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L252-L270
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L266-L284
 
 only4 :: Prism' Int ()
 only4 = Prism'
@@ -893,7 +893,7 @@ The first prism, `only4`, is a prism that basically "only matches" on the `Int`
 if it is `4`. We can use it to implement "is equal to four", and "get a 4"
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L272-L276
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L286-L290
 
 isEqualTo4 :: Int -> Bool   -- Checks if a value is 4
 isEqualTo4 = isJust . preview only4
@@ -917,7 +917,7 @@ The second prism, `refined4`, basically acts like a "abstract (smart)
 constructor" for `Not4`, essentially `refineFail` and `unrefine`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L278-L282
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L292-L296
 
 makeNot4 :: Int -> Maybe Not4
 makeNot4 = preview refined4
@@ -1273,27 +1273,36 @@ actually implemented in practice:
 2.  In practice, the `q` to factor out your type into (in the `s <~> (a, q)` and
     `s <~> Either a q`) might not be an actual literal type. In most cases, it's
     alright to treat it as a theoretical "abstract" type that follows the
-    behavior you want given a restricted interface. For example, the
-    `only 'a' :: Prism' Char ()` prism matches only on `'a'`, and it is the sum
-    of `Char` and a theoretical abstract `Char` type that excludes `'a'`.
+    behavior you want given a restricted interface. This is "safe" because, if
+    you notice, none of the methods in the lens or prism APIs (`view`, `set`,
+    `preview`, `review`) ever let an external user directly manipulate a value
+    of type `q`.
+
+    For example, the `only 'a' :: Prism' Char ()` prism matches only on `'a'`,
+    and it is the sum of `Char` and a theoretical abstract `Char` type that
+    excludes `'a'`.
 
     To formalize this, sometimes we can say that only "one direction" of the
     isomorphism has to be strictly true in practice. If we only enforce that the
     round-trip of `unsplit . split = id` and `inject . match = id`, this
-    enforces just the spirit of the hidden abstract type.
+    enforces just the spirit of the hidden abstract type. This is \"\"
 
     For example, our "`only 'a'`" can be witnessed by:
 
     ``` {.haskell}
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L162-L306
+
     type CharButNotA = Char
 
-    match :: Char -> Either () CharButNotA
-    match 'a' = Left ()
-    match x   = Right x
-
-    inject :: Either () CharButNotA -> Char
-    inject (Left  _) = 'a'
-    inject (Right x) = x
+    onlyA :: Prism' Char ()
+    onlyA = Prism'
+        { match  = \case
+            'a' -> Left ()
+            x   -> Right (x :: CharButNotA)
+        , inject = \case
+            Left  _ -> 'a'
+            Right x -> x        -- Right contains a CharButNotA
+        }
     ```
 
     This passes `inject . match = id`, but not `match . inject = id` if we pass
@@ -1305,7 +1314,7 @@ actually implemented in practice:
     ``` {.haskell}
     -- import qualified Data.Set as S
 
-    contains 'a' :: Lens'(S.Set Char) Bool
+    contains 'a' :: Lens' (S.Set Char) Bool
 
     -- check if a set contains an element
     view (contains 'a') :: S.Set Char -> Bool
@@ -1326,12 +1335,20 @@ actually implemented in practice:
     possibly contain `'a'`:
 
     ``` {.haskell}
-    split :: S.Set Char -> (Bool, S.Set CharButNotA)
-    split s = ('a' `S.member` s, S.delete 'a' s)
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L162-L173
 
-    unsplit :: (Bool, S.Set CharButNotA) -> S.Set Char
-    unsplit (False, s) = s
-    unsplit (True , s) = S.insert a s
+    type CharButNotA = Char
+
+    containsA :: Lens' (S.Set Char) Bool
+    containsA = Lens'
+        { split   = \s ->
+            ( 'a' `S.member` s
+            , 'a' `S.delete` s      :: S.Set CharButNotA
+            )
+        , unsplit = \case
+            (False, s) -> s
+            (True , s) -> 'a' `S.insert` (s :: S.Set CharButNotA)
+        }
     ```
 
     Again, only `unsplit . split = id` is technically true.
@@ -1373,7 +1390,7 @@ exercises!
     possible?
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L35-L61
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L36-L62
 
     data Lens' s a = forall q. Lens'
         { split   :: s -> (a, q)
@@ -1402,7 +1419,7 @@ exercises!
     you need to either pattern match or use *-XRecordWildcards*.
 
     These implementations are pretty hairy (solutions [online
-    here](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L35-L73)),
+    here](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L36-L74)),
     and it's a sort of testament as to why we don't use this actual
     implementation in practice. In fact, for profunctor optics, we just have:
 
@@ -1444,7 +1461,7 @@ TODO: move all lenses and prisms to file
     the same thing using only a single fold and no partial functions or `Bool`s?
 
     I managed to write one [using a difference
-    list](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L23-L31)!
+    list](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L24-L32)!
 
 [^5]: If you're verifying that `match . inject = id` for the `Either a Void`
     decomposition, here's a hint: no values exist that are constructed using
