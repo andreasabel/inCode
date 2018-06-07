@@ -146,9 +146,12 @@ For example, here's a classic example of a data type often used with
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Person} \FunctionTok{=} \DataTypeTok{P}\NormalTok{ \{}\OtherTok{ _pName ::} \DataTypeTok{String}
-\NormalTok{                ,}\OtherTok{ _pAge  ::} \DataTypeTok{Int}
-\NormalTok{                \}}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L100-L103}
+
+\KeywordTok{data} \DataTypeTok{Person} \FunctionTok{=} \DataTypeTok{P}
+\NormalTok{    \{}\OtherTok{ _pName ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ _pAge  ::} \DataTypeTok{Int}
+\NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -162,7 +165,9 @@ By \emph{isomorphic}, I mean that there are functions
 \texttt{unsplit\ ::\ (String,\ Int)\ -\textgreater{}\ Person} where
 \texttt{unsplit\ .\ split\ =\ id} and \texttt{split\ .\ unsplit\ =\ id}. You can
 think of this property as stating formally that you should be able to go from
-one type to the other without ``losing any information''.
+one type to the other without ``losing any information''. Every single item in
+one type gets paired to a specific item in the other, and vice versa, and
+neither type is ``too big'' or ``too small''.
 
 In our case, we have:
 
@@ -322,10 +327,13 @@ that lenses embody descriptions of products:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- | s <~> (a, q)}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L35-L38}
+
 \KeywordTok{data} \DataTypeTok{Lens'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.} \DataTypeTok{Lens'}
 \NormalTok{    \{}\OtherTok{ split   ::}\NormalTok{ s }\OtherTok{->}\NormalTok{ (a, q)}
 \NormalTok{    ,}\OtherTok{ unsplit ::}\NormalTok{ (a, q) }\OtherTok{->}\NormalTok{ s}
-\NormalTok{    \}    }\CommentTok{-- ^ s <~> (a, q)}
+\NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -345,6 +353,8 @@ We can implement our necessary lens API as so:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L77-L82}
+
 \OtherTok{view ::} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ a)}
 \NormalTok{view }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=}\NormalTok{ fst }\FunctionTok{.}\NormalTok{ split}
 
@@ -363,8 +373,10 @@ The implementation of the helper function \texttt{over} (which modifies the
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{over ::} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ s)}
-\NormalTok{over }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} f }\FunctionTok{=}\NormalTok{ unsplit }\FunctionTok{.}\NormalTok{ first f }\FunctionTok{.}\NormalTok{ split}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L84-L85}
+
+\OtherTok{overL ::} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ s)}
+\NormalTok{overL }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\}  f }\FunctionTok{=}\NormalTok{ unsplit }\FunctionTok{.}\NormalTok{ first f }\FunctionTok{.}\NormalTok{ split   }\CommentTok{-- instance Bifunctor (,)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -379,9 +391,12 @@ Let's take a look at our first product we talked about:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Person} \FunctionTok{=} \DataTypeTok{P}\NormalTok{ \{}\OtherTok{ _pName ::} \DataTypeTok{String}
-\NormalTok{                ,}\OtherTok{ _pAge  ::} \DataTypeTok{Int}
-\NormalTok{                \}}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L100-L103}
+
+\KeywordTok{data} \DataTypeTok{Person} \FunctionTok{=} \DataTypeTok{P}
+\NormalTok{    \{}\OtherTok{ _pName ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ _pAge  ::} \DataTypeTok{Int}
+\NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -393,16 +408,14 @@ lens for every item in the product.
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- Person <~> (String, Int)}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L101-L103}
 
-\OtherTok{pName ::} \DataTypeTok{Lens'} \DataTypeTok{Person} \DataTypeTok{String}
-\NormalTok{pName }\FunctionTok{=} \DataTypeTok{Lens'}\NormalTok{ \{ split   }\FunctionTok{=}\NormalTok{ \textbackslash{}(}\DataTypeTok{P}\NormalTok{ n a) }\OtherTok{->}\NormalTok{ (n, a)}
-\NormalTok{              , unsplit }\FunctionTok{=}\NormalTok{ \textbackslash{}(n, a)  }\OtherTok{->} \DataTypeTok{P}\NormalTok{ n a}
-\NormalTok{              \}}
+\NormalTok{    \{}\OtherTok{ _pName ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ _pAge  ::} \DataTypeTok{Int}
+\NormalTok{    \}}
 
-\OtherTok{pAge ::} \DataTypeTok{Lens'} \DataTypeTok{Person} \DataTypeTok{Int}
-\NormalTok{pAge }\FunctionTok{=} \DataTypeTok{Lens'}\NormalTok{ \{ split   }\FunctionTok{=}\NormalTok{ \textbackslash{}(}\DataTypeTok{P}\NormalTok{ n a) }\OtherTok{->}\NormalTok{ (a, n)}
-\NormalTok{             , unsplit }\FunctionTok{=}\NormalTok{ \textbackslash{}(a, n)  }\OtherTok{->} \DataTypeTok{P}\NormalTok{ n a}
-\NormalTok{             \}}
+\NormalTok{    ,}\OtherTok{ _pAge  ::} \DataTypeTok{Int}
+\NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -431,20 +444,23 @@ gives some interesting insight. This tells us that we always have an
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- a <~> (a, ())}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L117-L127}
 
-\OtherTok{identity ::} \DataTypeTok{Lens'}\NormalTok{ a a}
-\NormalTok{identity }\FunctionTok{=} \DataTypeTok{Lens'}\NormalTok{ \{ split   }\FunctionTok{=}\NormalTok{ \textbackslash{}x      }\OtherTok{->}\NormalTok{ (x, ())}
-\NormalTok{                 , unsplit }\FunctionTok{=}\NormalTok{ \textbackslash{}(x, _) }\OtherTok{->}\NormalTok{ x}
-\NormalTok{                 \}}
+\OtherTok{identityL ::} \DataTypeTok{Lens'}\NormalTok{ a a}
+\NormalTok{identityL }\FunctionTok{=} \DataTypeTok{Lens'}
+\NormalTok{    \{ split   }\FunctionTok{=}\NormalTok{ \textbackslash{}x      }\OtherTok{->}\NormalTok{ (x, ())}
+\NormalTok{    , unsplit }\FunctionTok{=}\NormalTok{ \textbackslash{}(x, _) }\OtherTok{->}\NormalTok{ x}
+\NormalTok{    \}}
 
 \OtherTok{united ::} \DataTypeTok{Lens'}\NormalTok{ a ()}
-\NormalTok{united }\FunctionTok{=} \DataTypeTok{Lens'}\NormalTok{ \{ split   }\FunctionTok{=}\NormalTok{ \textbackslash{}x       }\OtherTok{->}\NormalTok{ ((), x)}
-\NormalTok{               , unsplit }\FunctionTok{=}\NormalTok{ \textbackslash{}((), x) }\OtherTok{->}\NormalTok{ x}
-\NormalTok{               \}}
+\NormalTok{united }\FunctionTok{=} \DataTypeTok{Lens'}
+\NormalTok{    \{ split   }\FunctionTok{=}\NormalTok{ \textbackslash{}x       }\OtherTok{->}\NormalTok{ ((), x)}
+\NormalTok{    , unsplit }\FunctionTok{=}\NormalTok{ \textbackslash{}((), x) }\OtherTok{->}\NormalTok{ x}
+\NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
 
-In the language of lens, \texttt{identity\ ::\ Lens\textquotesingle{}\ a\ a}
+In the language of lens, \texttt{identityL\ ::\ Lens\textquotesingle{}\ a\ a}
 tells us that all \texttt{a}s have an \texttt{a} ``inside'' them. However, in
 the language of products, this just tells us that \texttt{a} can be represented
 as \texttt{(a,\ ())}. In the language of lens,
@@ -459,7 +475,10 @@ might suggest:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L129-L139}
+
 \OtherTok{mysteryLens1 ::} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Either}\NormalTok{ a a) }\DataTypeTok{Bool}
+
 \OtherTok{mysteryLens2 ::} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Either}\NormalTok{ a a) a}
 \end{Highlighting}
 \end{Shaded}
@@ -474,11 +493,13 @@ out if we're in \texttt{Left} or \texttt{Right}, and flipping the \texttt{Bool}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{flipEither ::} \DataTypeTok{Either}\NormalTok{ a a }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a a}
-\NormalTok{flipEither }\FunctionTok{=}\NormalTok{ over mysteryLens1 not}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L149-L153}
 
-\OtherTok{isLeft ::} \DataTypeTok{Either}\NormalTok{ a a }\OtherTok{->} \DataTypeTok{Bool}
-\NormalTok{isLeft }\FunctionTok{=}\NormalTok{ view mysteryLens1}
+\OtherTok{flipEither ::} \DataTypeTok{Either}\NormalTok{ a a }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a a}
+\NormalTok{flipEither }\FunctionTok{=}\NormalTok{ overL mysteryLens1 not}
+
+\OtherTok{isRight ::} \DataTypeTok{Either}\NormalTok{ a a }\OtherTok{->} \DataTypeTok{Bool}
+\NormalTok{isRight }\FunctionTok{=}\NormalTok{ view mysteryLens1}
 \end{Highlighting}
 \end{Shaded}
 
@@ -488,10 +509,10 @@ out if we're in \texttt{Left} or \texttt{Right}, and flipping the \texttt{Bool}
 \DataTypeTok{Right} \CharTok{'a'}
 \NormalTok{ghci}\FunctionTok{>}\NormalTok{ flipEither (}\DataTypeTok{Right} \CharTok{'a'}\NormalTok{)}
 \DataTypeTok{Left} \CharTok{'a'}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ isLeft (}\DataTypeTok{Left} \CharTok{'a'}\NormalTok{)}
-\DataTypeTok{True}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ isLeft (}\DataTypeTok{Right} \CharTok{'a'}\NormalTok{)}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ isRight (}\DataTypeTok{Left} \CharTok{'a'}\NormalTok{)}
 \DataTypeTok{False}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ isRight (}\DataTypeTok{Right} \CharTok{'a'}\NormalTok{)}
+\DataTypeTok{True}
 \end{Highlighting}
 \end{Shaded}
 
@@ -513,11 +534,13 @@ leftness/rightness.
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L155-L159}
+
 \OtherTok{fromEither ::} \DataTypeTok{Either}\NormalTok{ a a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{fromEither }\FunctionTok{=}\NormalTok{ view mysteryLens2}
 
 \OtherTok{mapEither ::}\NormalTok{ (a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a a }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a a}
-\NormalTok{mapEither }\FunctionTok{=}\NormalTok{ over mysteryLens2}
+\NormalTok{mapEither }\FunctionTok{=}\NormalTok{ overL mysteryLens2}
 \end{Highlighting}
 \end{Shaded}
 
@@ -544,11 +567,20 @@ lenses. For example, is it possible to make a lens that gives you the first item
 in a list?
 
 No, there isn't, because there isn't any type \texttt{q} that you could factor
-out \texttt{{[}a{]}} into as \texttt{(a,\ q)}. That would imply that
-\texttt{{[}a{]}} is always ``an \texttt{a} with something else''\ldots{}but this
-isn't true with \texttt{{[}{]}}.
+out \texttt{{[}a{]}} into as \texttt{(a,\ q)}.
 
-TODO: try writing it
+After all, even if such a \texttt{q} existed, how would you implement
+\texttt{split}?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{split ::}\NormalTok{ [a] }\OtherTok{->}\NormalTok{ (a, }\DataTypeTok{MysteryType}\NormalTok{)}
+\NormalTok{split [] }\FunctionTok{=}\NormalTok{ ( }\FunctionTok{????}\NormalTok{, mysteryValue )}
+\end{Highlighting}
+\end{Shaded}
+
+There would be no \texttt{a} to put into the first item in the tuple, no matter
+what choice of \texttt{q} you have
 
 \hypertarget{sum-thing-interesting}{%
 \section{"Sum-thing" Interesting}\label{sum-thing-interesting}}
@@ -561,6 +593,8 @@ For example, here's a data type you might encounter out there in the real world:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L163-L164}
+
 \KeywordTok{data} \DataTypeTok{Shape} \FunctionTok{=} \DataTypeTok{Circle}  \DataTypeTok{Double}           \CommentTok{-- radius}
            \FunctionTok{|} \DataTypeTok{RegPoly} \DataTypeTok{Natural} \DataTypeTok{Double}   \CommentTok{-- number of sides, length of sides}
 \end{Highlighting}
@@ -639,7 +673,7 @@ the \texttt{({[}a{]},\ a)} represents an ``all but the last item'' list and
   only a single fold and no partial functions or \texttt{Bool}s?
 
   I managed to write one
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs\#L16-L24}{using
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs\#L23-L31}{using
   a difference list}!}
 
 \begin{Shaded}
@@ -668,7 +702,14 @@ type with no inhabitants:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L166-L171}
+
 \KeywordTok{data} \DataTypeTok{Void}           \CommentTok{-- no constructors, no valid inhabitants}
+
+\OtherTok{absurd ::} \DataTypeTok{Void} \OtherTok{->}\NormalTok{ a     }\CommentTok{-- A useful helper function when working with `Void`}
+\NormalTok{absurd }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \CommentTok{-- empty case statement because we have}
+               \CommentTok{-- no constructors of 'Void' we need to}
+               \CommentTok{-- match on}
 \end{Highlighting}
 \end{Shaded}
 
@@ -681,12 +722,6 @@ and \texttt{Void}. In other words, \texttt{a} is isomorphic to
 \begin{Highlighting}[]
 \CommentTok{-- a <~> Either a Void}
 
-\CommentTok{-- | A useful helper function when working with `Void`}
-\OtherTok{absurd ::} \DataTypeTok{Void} \OtherTok{->}\NormalTok{ a}
-\NormalTok{absurd }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \CommentTok{-- empty case statement because we have}
-               \CommentTok{-- no constructors of 'Void' we need to}
-               \CommentTok{-- match on}
-
 \OtherTok{match ::}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a }\DataTypeTok{Void}
 \NormalTok{match x }\FunctionTok{=} \DataTypeTok{Left}\NormalTok{ x}
 
@@ -697,7 +732,11 @@ and \texttt{Void}. In other words, \texttt{a} is isomorphic to
 \end{Shaded}
 
 Again, if you don't believe me, verify that \texttt{inject\ .\ match\ =\ id} and
-\texttt{match\ .\ inject\ =\ id}!
+\texttt{match\ .\ inject\ =\ id}!\footnote{If you're verifying that
+  \texttt{match\ .\ inject\ =\ id} for the \texttt{Either\ a\ Void}
+  decomposition, here's a hint: no values exist that are constructed using
+  \texttt{Right}, so you don't ever have to handle the second case of
+  \texttt{inject}.}
 
 One final example: earlier, we said that every type can be decomposed as a
 \emph{product} involving \texttt{()}. Algebraically, finding that mystery type
@@ -746,6 +785,8 @@ witness:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- | Like `Int`, but cannot be constructed if it is 4}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L250-L250}
+
 \KeywordTok{type} \DataTypeTok{Not4} \FunctionTok{=} \DataTypeTok{Refined}\NormalTok{ (}\DataTypeTok{NotEqualTo} \DecValTok{4}\NormalTok{) }\DataTypeTok{Int}
 
 \CommentTok{-- | Provided by the 'refined' library that lets us refine and unrefine a type}
@@ -819,10 +860,13 @@ Under this interpretation, we can write a nice representation of
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- | s <~> Either a q}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L54-L57}
+
 \KeywordTok{data} \DataTypeTok{Prism'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.} \DataTypeTok{Prism'}
 \NormalTok{    \{}\OtherTok{ match  ::}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a q}
 \NormalTok{    ,}\OtherTok{ inject ::} \DataTypeTok{Either}\NormalTok{ a q }\OtherTok{->}\NormalTok{ s}
-\NormalTok{    \}    }\CommentTok{-- ^ s <~> Either a q}
+\NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -833,13 +877,17 @@ We can now implement the prism API:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L87-L90}
+
 \OtherTok{preview ::} \DataTypeTok{Prism'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (s }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a)}
 \NormalTok{preview }\DataTypeTok{Prism'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} x }\FunctionTok{=} \KeywordTok{case}\NormalTok{ match x }\KeywordTok{of}
-    \DataTypeTok{Left}\NormalTok{ _  }\OtherTok{->} \DataTypeTok{Nothing}
-    \DataTypeTok{Right}\NormalTok{ y }\OtherTok{->} \DataTypeTok{Just}\NormalTok{ y}
+    \DataTypeTok{Left}\NormalTok{  y }\OtherTok{->} \DataTypeTok{Just}\NormalTok{ y}
+    \DataTypeTok{Right}\NormalTok{ _ }\OtherTok{->} \DataTypeTok{Nothing}
 
-\OtherTok{review  ::} \DataTypeTok{Prism'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ s)}
-\NormalTok{review }\DataTypeTok{Prism'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=}\NormalTok{ inject }\FunctionTok{.} \DataTypeTok{Left}
+\OtherTok{preview ::} \DataTypeTok{Prism'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (s }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a)}
+\NormalTok{preview }\DataTypeTok{Prism'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} x }\FunctionTok{=} \KeywordTok{case}\NormalTok{ match x }\KeywordTok{of}
+    \DataTypeTok{Left}\NormalTok{  y }\OtherTok{->} \DataTypeTok{Just}\NormalTok{ y}
+    \DataTypeTok{Right}\NormalTok{ _ }\OtherTok{->} \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
 
@@ -849,11 +897,13 @@ exists:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{over ::} \DataTypeTok{Lens'}\NormalTok{ s a  }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ s)}
-\NormalTok{over }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\}  f }\FunctionTok{=}\NormalTok{ inject }\FunctionTok{.}\NormalTok{ first f }\FunctionTok{.}\NormalTok{ match    }\CommentTok{-- instance Bifunctor (,)}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L84-L96}
 
-\OtherTok{over ::} \DataTypeTok{Prism'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ s)}
-\NormalTok{over }\DataTypeTok{Prism'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} f }\FunctionTok{=}\NormalTok{ inject }\FunctionTok{.}\NormalTok{ first f }\FunctionTok{.}\NormalTok{ match    }\CommentTok{-- instance Bifunctor Either}
+\OtherTok{overL ::} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ s)}
+\NormalTok{overL }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\}  f }\FunctionTok{=}\NormalTok{ unsplit }\FunctionTok{.}\NormalTok{ first f }\FunctionTok{.}\NormalTok{ split   }\CommentTok{-- instance Bifunctor (,)}
+
+\OtherTok{overP ::} \DataTypeTok{Prism'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ s)}
+\NormalTok{overP }\DataTypeTok{Prism'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} f }\FunctionTok{=}\NormalTok{ inject }\FunctionTok{.}\NormalTok{ first f }\FunctionTok{.}\NormalTok{ match    }\CommentTok{-- instance Bifunctor Either}
 \end{Highlighting}
 \end{Shaded}
 
@@ -870,8 +920,10 @@ from this perspective.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Shape} \FunctionTok{=} \DataTypeTok{Circle}  \DataTypeTok{Double}
-           \FunctionTok{|} \DataTypeTok{RegPoly} \DataTypeTok{Natural} \DataTypeTok{Double}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L163-L164}
+
+\KeywordTok{data} \DataTypeTok{Shape} \FunctionTok{=} \DataTypeTok{Circle}  \DataTypeTok{Double}           \CommentTok{-- radius}
+           \FunctionTok{|} \DataTypeTok{RegPoly} \DataTypeTok{Natural} \DataTypeTok{Double}   \CommentTok{-- number of sides, length of sides}
 \end{Highlighting}
 \end{Shaded}
 
@@ -881,20 +933,27 @@ Because \texttt{Shape} is a sum between \texttt{Double} and
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- Shape <~> Either Natural (Natural, Double)}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L173-L191}
 
-\OtherTok{_Circle ::} \DataTypeTok{Prism'} \DataTypeTok{Shape} \DataTypeTok{Natural}
-\NormalTok{_Circle }\FunctionTok{=} \DataTypeTok{Prism'}\NormalTok{ \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Circle}\NormalTok{  r    }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ r}
-                                  \DataTypeTok{RegPoly}\NormalTok{ n s  }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ (n, s)}
-\NormalTok{                 , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{   r     }\OtherTok{->} \DataTypeTok{Circle}\NormalTok{ r}
-                                  \DataTypeTok{Right}\NormalTok{ (n, s) }\OtherTok{->} \DataTypeTok{RegPoly}\NormalTok{ n s}
-\NormalTok{                 \}}
+\OtherTok{_Circle ::} \DataTypeTok{Prism'} \DataTypeTok{Shape} \DataTypeTok{Double}
+\NormalTok{_Circle }\FunctionTok{=} \DataTypeTok{Prism'}
+\NormalTok{    \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{Circle}\NormalTok{  r    }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ r}
+        \DataTypeTok{RegPoly}\NormalTok{ n s  }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ (n, s)}
+\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{Left}\NormalTok{   r     }\OtherTok{->} \DataTypeTok{Circle}\NormalTok{ r}
+        \DataTypeTok{Right}\NormalTok{ (n, s) }\OtherTok{->} \DataTypeTok{RegPoly}\NormalTok{ n s}
+\NormalTok{    \}}
 
 \OtherTok{_RegPoly ::} \DataTypeTok{Prism'} \DataTypeTok{Shape}\NormalTok{ (}\DataTypeTok{Natural}\NormalTok{, }\DataTypeTok{Double}\NormalTok{)}
-\NormalTok{_RegPoly }\FunctionTok{=} \DataTypeTok{Prism'}\NormalTok{ \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Circle}\NormalTok{  r    }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ r}
-                                   \DataTypeTok{RegPoly}\NormalTok{ n s  }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ (n, s)}
-\NormalTok{                  , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{  (n, s) }\OtherTok{->} \DataTypeTok{RegPoly}\NormalTok{ n s}
-                                   \DataTypeTok{Right}\NormalTok{  r     }\OtherTok{->} \DataTypeTok{Circle}\NormalTok{ r}
-\NormalTok{                  \}}
+\NormalTok{_RegPoly }\FunctionTok{=} \DataTypeTok{Prism'}
+\NormalTok{    \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{Circle}\NormalTok{  r    }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ r}
+        \DataTypeTok{RegPoly}\NormalTok{ n s  }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ (n, s)}
+\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{Left}\NormalTok{  (n, s) }\OtherTok{->} \DataTypeTok{RegPoly}\NormalTok{ n s}
+        \DataTypeTok{Right}\NormalTok{  r     }\OtherTok{->} \DataTypeTok{Circle}\NormalTok{ r}
+\NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -920,21 +979,26 @@ What can we get out of our decomposition of \texttt{{[}a{]}} as a sum between
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- [a] <~> Either () (NonEmpty a)}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L193-L211}
 
 \OtherTok{_Nil ::} \DataTypeTok{Prism'}\NormalTok{ [a] ()}
 \NormalTok{_Nil }\FunctionTok{=} \DataTypeTok{Prism'}
-\NormalTok{    \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}\NormalTok{ []              }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ ()}
-\NormalTok{                     x}\FunctionTok{:}\NormalTok{xs            }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)}
-\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{ _          }\OtherTok{->}\NormalTok{ []}
-                     \DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs) }\OtherTok{->}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
+\NormalTok{    \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+\NormalTok{        []              }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ ()}
+\NormalTok{        x}\FunctionTok{:}\NormalTok{xs            }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)}
+\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{Left}\NormalTok{ _          }\OtherTok{->}\NormalTok{ []}
+        \DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs) }\OtherTok{->}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
 \NormalTok{    \}}
 
 \OtherTok{_Cons ::} \DataTypeTok{Prism'}\NormalTok{ [a] (}\DataTypeTok{NonEmpty}\NormalTok{ a)}
 \NormalTok{_Cons }\FunctionTok{=} \DataTypeTok{Prism'}
-\NormalTok{    \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}\NormalTok{ []              }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ ()}
-\NormalTok{                     x}\FunctionTok{:}\NormalTok{xs            }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)}
-\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{  (x }\FunctionTok{:|}\NormalTok{ xs) }\OtherTok{->}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
-                     \DataTypeTok{Right}\NormalTok{ _         }\OtherTok{->}\NormalTok{ []}
+\NormalTok{    \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+\NormalTok{        []              }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ ()}
+\NormalTok{        x}\FunctionTok{:}\NormalTok{xs            }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)}
+\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{Left}\NormalTok{  (x }\FunctionTok{:|}\NormalTok{ xs) }\OtherTok{->}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
+        \DataTypeTok{Right}\NormalTok{ _         }\OtherTok{->}\NormalTok{ []}
 \NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
@@ -978,22 +1042,27 @@ correspond to the abstract constructors \texttt{\_Nil} and \texttt{\_Snoc}:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- [a] <~> Either () ([a], a)}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L213-L231}
 
-\OtherTok{_Nil ::} \DataTypeTok{Prism'}\NormalTok{ [a] ()}
-\NormalTok{_Nil }\FunctionTok{=} \DataTypeTok{Prism'}\NormalTok{ \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}xs }\OtherTok{->} \KeywordTok{if}\NormalTok{ null xs}
-                                  \KeywordTok{then} \DataTypeTok{Left}\NormalTok{  ()}
-                                  \KeywordTok{else} \DataTypeTok{Right}\NormalTok{ (init xs, last xs)}
-\NormalTok{              , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{ _        }\OtherTok{->}\NormalTok{ []}
-                               \DataTypeTok{Right}\NormalTok{ (xs, x) }\OtherTok{->}\NormalTok{ xs }\FunctionTok{++}\NormalTok{ [x]}
-\NormalTok{              \}}
+\OtherTok{_Nil' ::} \DataTypeTok{Prism'}\NormalTok{ [a] ()}
+\NormalTok{_Nil' }\FunctionTok{=} \DataTypeTok{Prism'}
+\NormalTok{    \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}xs }\OtherTok{->} \KeywordTok{if}\NormalTok{ null xs}
+        \KeywordTok{then} \DataTypeTok{Left}\NormalTok{  ()}
+        \KeywordTok{else} \DataTypeTok{Right}\NormalTok{ (init xs, last xs)}
+\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{Left}\NormalTok{ _        }\OtherTok{->}\NormalTok{ []}
+        \DataTypeTok{Right}\NormalTok{ (xs, x) }\OtherTok{->}\NormalTok{ xs }\FunctionTok{++}\NormalTok{ [x]}
+\NormalTok{    \}}
 
 \OtherTok{_Snoc ::} \DataTypeTok{Prism'}\NormalTok{ [a] ([a], a)}
-\NormalTok{_Snoc }\FunctionTok{=} \DataTypeTok{Prism'}\NormalTok{ \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}xs }\OtherTok{->} \KeywordTok{if}\NormalTok{ null xs}
-                                   \KeywordTok{then} \DataTypeTok{Right}\NormalTok{ ()}
-                                   \KeywordTok{else} \DataTypeTok{Left}\NormalTok{  (init xs, last xs)}
-\NormalTok{               , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{  (xs, x) }\OtherTok{->}\NormalTok{ xs }\FunctionTok{++}\NormalTok{ [x]}
-                                \DataTypeTok{Right}\NormalTok{ _       }\OtherTok{->}\NormalTok{ []}
-\NormalTok{               \}}
+\NormalTok{_Snoc }\FunctionTok{=} \DataTypeTok{Prism'}
+\NormalTok{    \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}xs }\OtherTok{->} \KeywordTok{if}\NormalTok{ null xs}
+        \KeywordTok{then} \DataTypeTok{Right}\NormalTok{ ()}
+        \KeywordTok{else} \DataTypeTok{Left}\NormalTok{  (init xs, last xs)}
+\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{Left}\NormalTok{  (xs, x) }\OtherTok{->}\NormalTok{ xs }\FunctionTok{++}\NormalTok{ [x]}
+        \DataTypeTok{Right}\NormalTok{ _       }\OtherTok{->}\NormalTok{ []}
+\NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1017,25 +1086,27 @@ does that decomposition give us, conceptually?
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- a <~> Either a Void}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L233-L248}
 
-\OtherTok{identity ::} \DataTypeTok{Prism'}\NormalTok{ a a}
-\NormalTok{identity }\FunctionTok{=} \DataTypeTok{Prism'}\NormalTok{ \{ match }\FunctionTok{=} \DataTypeTok{Left}
-\NormalTok{                  , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-                      \DataTypeTok{Left}\NormalTok{  x }\OtherTok{->}\NormalTok{ x}
-                      \DataTypeTok{Right}\NormalTok{ v }\OtherTok{->}\NormalTok{ absurd v}
-\NormalTok{                  \}}
-
+\OtherTok{identityP ::} \DataTypeTok{Prism'}\NormalTok{ a a}
+\NormalTok{identityP }\FunctionTok{=} \DataTypeTok{Prism'}
+\NormalTok{    \{ match }\FunctionTok{=} \DataTypeTok{Left}
+\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{Left}\NormalTok{  x }\OtherTok{->}\NormalTok{ x}
+        \DataTypeTok{Right}\NormalTok{ v }\OtherTok{->}\NormalTok{ absurd v}
+\NormalTok{    \}}
 
 \OtherTok{_Void ::} \DataTypeTok{Prism'}\NormalTok{ a }\DataTypeTok{Void}
-\NormalTok{_Void }\FunctionTok{=} \DataTypeTok{Prism'}\NormalTok{ \{ match }\FunctionTok{=} \DataTypeTok{Right}
-\NormalTok{               , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-                   \DataTypeTok{Left}\NormalTok{  v }\OtherTok{->}\NormalTok{ absurd v}
-                   \DataTypeTok{Right}\NormalTok{ x }\OtherTok{->}\NormalTok{ x}
-\NormalTok{               \}}
+\NormalTok{_Void }\FunctionTok{=} \DataTypeTok{Prism'}
+\NormalTok{    \{ match }\FunctionTok{=} \DataTypeTok{Right}
+\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{Left}\NormalTok{  v }\OtherTok{->}\NormalTok{ absurd v}
+        \DataTypeTok{Right}\NormalTok{ x }\OtherTok{->}\NormalTok{ x}
+\NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
 
-In lens-speak, \texttt{identity\ ::\ Prism\textquotesingle{}\ a\ a} tells us
+In lens-speak, \texttt{identityP\ ::\ Prism\textquotesingle{}\ a\ a} tells us
 that all \texttt{a}s have an \texttt{a} ``inside'' them (since \texttt{match}
 always matches) and that you can construct an \texttt{a} with only an \texttt{a}
 (whoa). In our ``sum'' perspective, however, it just witnesses that an
@@ -1057,22 +1128,26 @@ insight do we get?
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L252-L270}
+
 \OtherTok{only4 ::} \DataTypeTok{Prism'} \DataTypeTok{Int}\NormalTok{ ()}
 \NormalTok{only4 }\FunctionTok{=} \DataTypeTok{Prism'}
 \NormalTok{    \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}n }\OtherTok{->} \KeywordTok{case}\NormalTok{ refineFail n }\KeywordTok{of}
-                       \DataTypeTok{Nothing} \OtherTok{->} \DataTypeTok{Left}\NormalTok{ ()}
-                       \DataTypeTok{Just}\NormalTok{ x  }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ x}
-\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{  _ }\OtherTok{->} \DecValTok{4}
-                     \DataTypeTok{Right}\NormalTok{ x }\OtherTok{->}\NormalTok{ unrefine x}
+        \DataTypeTok{Nothing} \OtherTok{->} \DataTypeTok{Left}\NormalTok{ ()}
+        \DataTypeTok{Just}\NormalTok{ x  }\OtherTok{->} \DataTypeTok{Right}\NormalTok{ (}\OtherTok{x ::} \DataTypeTok{Not4}\NormalTok{)}
+\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{Left}\NormalTok{  _ }\OtherTok{->} \DecValTok{4}
+        \DataTypeTok{Right}\NormalTok{ x }\OtherTok{->}\NormalTok{ unrefine x}
 \NormalTok{    \}}
 
 \OtherTok{refined4 ::} \DataTypeTok{Prism'} \DataTypeTok{Int} \DataTypeTok{Not4}
 \NormalTok{refined4 }\FunctionTok{=} \DataTypeTok{Prism'}
 \NormalTok{    \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}n }\OtherTok{->} \KeywordTok{case}\NormalTok{ refineFail n }\KeywordTok{of}
-                       \DataTypeTok{Nothing} \OtherTok{->} \DataTypeTok{Right}\NormalTok{ ()}
-                       \DataTypeTok{Just}\NormalTok{ x  }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ x}
-\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case} \DataTypeTok{Left}\NormalTok{  x }\OtherTok{->}\NormalTok{ unrefine x}
-                     \DataTypeTok{Right}\NormalTok{ _ }\OtherTok{->} \DecValTok{4}
+        \DataTypeTok{Nothing} \OtherTok{->} \DataTypeTok{Right}\NormalTok{ ()}
+        \DataTypeTok{Just}\NormalTok{ x  }\OtherTok{->} \DataTypeTok{Left}\NormalTok{ x}
+\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{Left}\NormalTok{  x }\OtherTok{->}\NormalTok{ unrefine x}
+        \DataTypeTok{Right}\NormalTok{ _ }\OtherTok{->} \DecValTok{4}
 \NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
@@ -1083,13 +1158,13 @@ four'', and ``get a 4''
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- | Checks if a value is 4}
-\OtherTok{isEqualTo4 ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Bool}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L272-L276}
+
+\OtherTok{isEqualTo4 ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Bool}   \CommentTok{-- Checks if a value is 4}
 \NormalTok{isEqualTo4 }\FunctionTok{=}\NormalTok{ isJust }\FunctionTok{.}\NormalTok{ preview only4}
 
-\CommentTok{-- | Just is '4'}
-\OtherTok{four ::} \DataTypeTok{Int}
-\NormalTok{four }\FunctionTok{=}\NormalTok{ review ()}
+\OtherTok{four ::} \DataTypeTok{Int}     \CommentTok{-- Is simply `4`}
+\NormalTok{four }\FunctionTok{=}\NormalTok{ review only4 ()}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1112,6 +1187,8 @@ constructor'' for \texttt{Not4}, essentially \texttt{refineFail} and
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L278-L282}
+
 \OtherTok{makeNot4 ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Not4}
 \NormalTok{makeNot4 }\FunctionTok{=}\NormalTok{ preview refined4}
 
@@ -1151,7 +1228,21 @@ cannot be made for \emph{any} type \texttt{q}. There is no way to express
 \texttt{{[}a{]}} as the sum of \texttt{a} and some other type. Try thinking of a
 type \texttt{q} --- it's just not possible!
 
-TODO: try
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{match ::}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a }\DataTypeTok{MysteryType}
+\NormalTok{match []     }\FunctionTok{=} \DataTypeTok{Right}\NormalTok{ mysteryValue}
+\NormalTok{match (x}\FunctionTok{:}\NormalTok{xs) }\FunctionTok{=} \DataTypeTok{Left}\NormalTok{ x                       }\CommentTok{-- will we lose `xs`?}
+
+\OtherTok{inject ::} \DataTypeTok{Either}\NormalTok{ a }\DataTypeTok{MysteryType} \OtherTok{->}\NormalTok{ [a]}
+\NormalTok{inject (}\DataTypeTok{Left}\NormalTok{ x)  }\FunctionTok{=}\NormalTok{ x}\FunctionTok{:????}                   \CommentTok{-- yes, we lost `xs`}
+\NormalTok{inject (}\DataTypeTok{Right}\NormalTok{ v) }\FunctionTok{=}\NormalTok{ []}
+\end{Highlighting}
+\end{Shaded}
+
+From this attempt, we see that no matter what \texttt{q} we pick, we will ``lose
+\texttt{xs}''. There's no way to ``store'' the tail of the list in
+\texttt{match} in order to recover it later in \texttt{inject}.
 
 \hypertarget{the-path-to-profunctors}{%
 \section{The Path to Profunctors}\label{the-path-to-profunctors}}
@@ -1555,7 +1646,48 @@ Prism s t a b
   \texttt{match\ .\ inject\ =\ id} if we pass in the ``illegal'' value
   \texttt{Right\ \textquotesingle{}a\textquotesingle{}}.
 
-  TODO: at for sets or maps
+  For an example of a lens where this abstract type perspective is useful, there
+  is the \texttt{contains\ \textquotesingle{}a\textquotesingle{}} lens for sets:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- import qualified Data.Set as S}
+
+\NormalTok{contains }\CharTok{'a'}\OtherTok{ ::} \DataTypeTok{Lens'}\NormalTok{(}\DataTypeTok{S.Set} \DataTypeTok{Char}\NormalTok{) }\DataTypeTok{Bool}
+
+\CommentTok{-- check if a set contains an element}
+\NormalTok{view (contains }\CharTok{'a'}\NormalTok{)}\OtherTok{ ::} \DataTypeTok{S.Set} \DataTypeTok{Char} \OtherTok{->} \DataTypeTok{Bool}
+
+\CommentTok{-- force a set to contain or not contain 'a'}
+\NormalTok{set (contains }\CharTok{'a'}\NormalTok{)}\OtherTok{ ::} \DataTypeTok{Bool} \OtherTok{->} \DataTypeTok{S.Set} \DataTypeTok{Char} \OtherTok{->} \DataTypeTok{S.Set} \DataTypeTok{Char}
+
+\CommentTok{-- toggle membership in a set}
+\NormalTok{over (contains }\CharTok{'a'}\NormalTok{)}\OtherTok{ not ::} \DataTypeTok{S.Set} \DataTypeTok{Char} \OtherTok{->} \DataTypeTok{S.Set} \DataTypeTok{Char}
+\end{Highlighting}
+\end{Shaded}
+
+  \texttt{contains\ \textquotesingle{}a\textquotesingle{}} is a lens into a
+  \texttt{Bool} from a \texttt{S.Set}, where the \texttt{Bool} indicates if the
+  set ``contains'' \texttt{a} or not. What product does this represent?
+
+  Well, essentially,
+  \texttt{Set\ Char\ \textless{}\textasciitilde{}\textgreater{}\ (Bool,\ Set\ CharButNotA)}.
+  It's an abstract product betweein ``the set contains
+  \texttt{\textquotesingle{}a\textquotesingle{}} or not'' and a set that could
+  not possibly contain \texttt{\textquotesingle{}a\textquotesingle{}}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{split ::} \DataTypeTok{S.Set} \DataTypeTok{Char} \OtherTok{->}\NormalTok{ (}\DataTypeTok{Bool}\NormalTok{, }\DataTypeTok{S.Set} \DataTypeTok{CharButNotA}\NormalTok{)}
+\NormalTok{split s }\FunctionTok{=}\NormalTok{ (}\CharTok{'a'} \OtherTok{`S.member`}\NormalTok{ s, S.delete }\CharTok{'a'}\NormalTok{ s)}
+
+\OtherTok{unsplit ::}\NormalTok{ (}\DataTypeTok{Bool}\NormalTok{, }\DataTypeTok{S.Set} \DataTypeTok{CharButNotA}\NormalTok{) }\OtherTok{->} \DataTypeTok{S.Set} \DataTypeTok{Char}
+\NormalTok{unsplit (}\DataTypeTok{False}\NormalTok{, s) }\FunctionTok{=}\NormalTok{ s}
+\NormalTok{unsplit (}\DataTypeTok{True}\NormalTok{ , s) }\FunctionTok{=}\NormalTok{ S.insert a s}
+\end{Highlighting}
+\end{Shaded}
+
+  Again, only \texttt{unsplit\ .\ split\ =\ id} is technically true.
 \end{enumerate}
 
 \hypertarget{exercises}{%
@@ -1608,7 +1740,7 @@ exercises!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L28-L54}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L35-L61}
 
 \KeywordTok{data} \DataTypeTok{Lens'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.} \DataTypeTok{Lens'}
 \NormalTok{    \{}\OtherTok{ split   ::}\NormalTok{ s }\OtherTok{->}\NormalTok{ (a, q)}
@@ -1639,7 +1771,7 @@ exercises!
   use \emph{-XRecordWildcards}.
 
   These implementations are pretty hairy (solutions
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs\#L28-L66}{online
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs\#L35-L73}{online
   here}), and it's a sort of testament as to why we don't use this actual
   implementation in practice. In fact, for profunctor optics, we just have:
 
@@ -1661,6 +1793,8 @@ I am very humbled to be supported by an amazing community on
 \href{https://www.patreon.com/justinle/overview}{Patreon}, who make it possible
 for me to devote time to research and writing these posts. Very special thanks
 to my supporter at the ``Amazing'' level, Sam Stites! :)
+
+TODO: move all lenses and prisms to file
 
 Hi, thanks for reading! You can reach me via email at
 \href{mailto:justin@jle.im}{\nolinkurl{justin@jle.im}}, or at twitter at
