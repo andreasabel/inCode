@@ -1442,8 +1442,6 @@ I am very humbled to be supported by an amazing community on
 me to devote time to research and writing these posts. Very special thanks to my
 supporter at the "Amazing" level, Sam Stites! :)
 
-TODO: move all lenses and prisms to file
-
 [^1]: All of this is disregarding the notorious "bottom" value that inhabits
     every type.
 
