@@ -1467,33 +1467,10 @@ supporter at the "Amazing" level, Sam Stites! :)
     An *abstract constructor* is exactly what our *other* `[a]` sum
     decomposition gives us! If we look at that isomorphism
     `[a] <~> Either () ([a], a)` (the "tail-and-last" breakdown) and write out
-    the prisms, we see that they correspond to the abstract constructors `_Nil`
-    and `_Snoc`:
-
-    ``` {.haskell}
-    -- [a] <~> Either () ([a], a)
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L249-L267
-
-    _Nil' :: Prism' [a] ()
-    _Nil' = Prism'
-        { match  = \xs -> if null xs
-            then Left  ()
-            else Right (init xs, last xs)
-        , inject = \case
-            Left _        -> []
-            Right (xs, x) -> xs ++ [x]
-        }
-
-    _Snoc :: Prism' [a] ([a], a)
-    _Snoc = Prism'
-        { match  = \xs -> if null xs
-            then Right ()
-            else Left  (init xs, last xs)
-        , inject = \case
-            Left  (xs, x) -> xs ++ [x]
-            Right _       -> []
-        }
-    ```
+    the prisms, we see that they correspond to the abstract constructors
+    [`_Nil`](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L249-L257)
+    and
+    [`_Snoc`](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L259-L267).
 
     `_Snoc` is an "abstract constructor" for a list that lets us "construct" an
     `[a]` given an original list and an item to add to the end, and also
