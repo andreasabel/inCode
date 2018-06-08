@@ -571,8 +571,9 @@ neural network layers in a composable way. My previous attempts at neural
 networks like [tensor-ops](https://github.com/mstksg/tensor-ops) also force a
 similar structure of composition of data types. Frameworks like
 *[tensorflow](https://www.tensorflow.org/)* and
-*[caffe](http://caffe.berkeleyvision.org/)* also treat \[layer as
-data\]\[caffe-layers\]. However, I feel this is a bit limiting.
+*[caffe](http://caffe.berkeleyvision.org/)* also treat [layer as
+data](https://docs.google.com/presentation/d/1UeKXVgRvvxg9OUdh_UiC5G71UMscNPlvArsWER41PsU/edit#slide=id.gc2fcdcce7_216_264).
+However, I feel this is a bit limiting.
 
 You are forced to "compose" your layers in only the ways that the API of the
 data type gives you. You have to use the data type's "function composition"
