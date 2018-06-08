@@ -1295,6 +1295,7 @@ actually implemented in practice:
     ```
 
     Again, only `unsplit . split = id` is technically true.
+    `split . unsplit = id` will fail if the input set contains `'a'`.\`
 
 ### Exercises
 
