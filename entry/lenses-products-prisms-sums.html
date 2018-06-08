@@ -22,7 +22,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h2 id="lets-get-productive">Let’s Get Productive!</h2>
 <p>It’s easy to recognize <code>(Int, Double)</code> as a product between <code>Int</code> and <code>Bool</code>. However, did you know that some types are secretly product types in disguise?</p>
 <p>For example, here’s a classic example of a data type often used with <em>lens</em>:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L123-L126</span></a>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L129-L132</span></a>
 <a class="sourceLine" id="cb1-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Person</span> <span class="fu">=</span> <span class="dt">P</span></a>
 <a class="sourceLine" id="cb1-4" data-line-number="4">    {<span class="ot"> _pName ::</span> <span class="dt">String</span></a>
@@ -102,7 +102,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>A <code>Lens' s a</code> is nothing more than a witness for the fact that there exists some <code>q</code> where <code>s &lt;~&gt; (a, q)</code>.</p>
 <p>With that in mind, let’s re-visit a saner definition of lenses based on the idea that lenses embody descriptions of products:</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">-- | s &lt;~&gt; (a, q)</span></a>
-<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L59-L62</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L65-L68</span></a>
 <a class="sourceLine" id="cb9-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4"><span class="kw">data</span> <span class="dt">Lens&#39;</span> s a <span class="fu">=</span> forall q<span class="fu">.</span> <span class="dt">Lens&#39;</span></a>
 <a class="sourceLine" id="cb9-5" data-line-number="5">    {<span class="ot"> split   ::</span> s <span class="ot">-&gt;</span> (a, q)</a>
@@ -111,7 +111,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>(The <code>forall q.</code> is the <em>-XExistentialQuantification</em> extension, and allows us to hide type variables in constructors. Note that this disallows us from using <code>split</code> and <code>unsplit</code> as record accessors functions, so we have to pattern match to get the contents)</p>
 <p>Now, if <code>split</code> and <code>join</code> form an isomorphism, <em>this can only represent valid lenses</em>!<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></p>
 <p>We can implement our necessary lens API as so:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L100-L105</span></a>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L106-L111</span></a>
 <a class="sourceLine" id="cb10-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb10-3" data-line-number="3"><span class="ot">view ::</span> <span class="dt">Lens&#39;</span> s a <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> a)</a>
 <a class="sourceLine" id="cb10-4" data-line-number="4">view <span class="dt">Lens&#39;</span>{<span class="fu">..</span>} <span class="fu">=</span> fst <span class="fu">.</span> split</a>
@@ -121,14 +121,14 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb10-8" data-line-number="8">    (_, q) <span class="ot">-&gt;</span> unsplit (newVal, q)      <span class="co">-- &quot;replace&quot; the `a`</span></a></code></pre></div>
 <p>(Using the <em>-XRecordWildcards</em> extension, where <code>Lens'{..}</code> binds <code>split</code> and <code>unsplit</code> to the fields of the lens)</p>
 <p>The implementation of the helper function <code>over</code> (which modifies the <code>a</code> with a function) is also particularly elegant:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L107-L108</span></a>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L113-L114</span></a>
 <a class="sourceLine" id="cb11-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb11-3" data-line-number="3"><span class="ot">overL ::</span> <span class="dt">Lens&#39;</span> s a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> s)</a>
 <a class="sourceLine" id="cb11-4" data-line-number="4">overL <span class="dt">Lens&#39;</span>{<span class="fu">..</span>}  f <span class="fu">=</span> unsplit <span class="fu">.</span> first f <span class="fu">.</span> split   <span class="co">-- instance Bifunctor (,)</span></a></code></pre></div>
 <p>The surprising result of this perspective is that <strong>every product yields lenses</strong> (one for every item in the product), and <strong>every lens witnesses one side of a product</strong>.</p>
 <h3 id="insights-gleamed">Insights Gleamed</h3>
 <p>Let’s take a look at our first product we talked about:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L123-L126</span></a>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L129-L132</span></a>
 <a class="sourceLine" id="cb12-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb12-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Person</span> <span class="fu">=</span> <span class="dt">P</span></a>
 <a class="sourceLine" id="cb12-4" data-line-number="4">    {<span class="ot"> _pName ::</span> <span class="dt">String</span></a>
@@ -136,7 +136,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb12-6" data-line-number="6">    }</a></code></pre></div>
 <p>Because <code>Person</code> is a product between <code>String</code> and <code>Int</code>, we get <em>two lenses</em>: a <code>Lens' Person String</code> and <code>Lens' Person Int</code>. <em>Every product</em> gives us a lens for every item in the product.</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- Person &lt;~&gt; (String, Int)</span></a>
-<a class="sourceLine" id="cb13-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L128-L138</span></a>
+<a class="sourceLine" id="cb13-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L134-L144</span></a>
 <a class="sourceLine" id="cb13-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb13-4" data-line-number="4"><span class="ot">pName ::</span> <span class="dt">Lens&#39;</span> <span class="dt">Person</span> <span class="dt">String</span></a>
 <a class="sourceLine" id="cb13-5" data-line-number="5">pName <span class="fu">=</span> <span class="dt">Lens&#39;</span></a>
@@ -155,7 +155,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>For example, our <code>NonEmpty a &lt;~&gt; (a, [a])</code> product tells us that <code>NonEmpty a</code> has at least two lenses: a “head” lens <code>Lens' (NonEmpty a) a</code> and a “tail” lens <code>Lens' (NonEmpty a) [a]</code>.</p>
 <p>Our <code>a &lt;~&gt; (a, ())</code> product gives some interesting insight. This tells us that we always have an “identity” lens <code>Lens' a a</code>, and a “unit” lens <code>Lens' a ()</code>, for any <code>a</code>:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="co">-- a &lt;~&gt; (a, ())</span></a>
-<a class="sourceLine" id="cb14-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L140-L150</span></a>
+<a class="sourceLine" id="cb14-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L146-L156</span></a>
 <a class="sourceLine" id="cb14-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb14-4" data-line-number="4"><span class="ot">identityL ::</span> <span class="dt">Lens&#39;</span> a a</a>
 <a class="sourceLine" id="cb14-5" data-line-number="5">identityL <span class="fu">=</span> <span class="dt">Lens&#39;</span></a>
@@ -170,13 +170,13 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb14-14" data-line-number="14">    }</a></code></pre></div>
 <p>In the language of lens, <code>identityL :: Lens' a a</code> tells us that all <code>a</code>s have an <code>a</code> “inside” them. However, in the language of products, this just tells us that <code>a</code> can be represented as <code>(a, ())</code>. In the language of lens, <code>united :: Lens' a ()</code> tells us that all <code>a</code>s have a <code>()</code> “inside” them. In the language of products, this just tells us that <code>a &lt;~&gt; (a, ())</code>.</p>
 <p>What insight does our <code>Either a a &lt;~&gt; (Bool, a)</code> product perspective give us? Well, let’s write out their types and see what it might suggest:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L152-L162</span></a>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L158-L168</span></a>
 <a class="sourceLine" id="cb15-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb15-3" data-line-number="3"><span class="ot">mysteryLens1 ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Either</span> a a) <span class="dt">Bool</span></a>
 <a class="sourceLine" id="cb15-4" data-line-number="4"></a>
 <a class="sourceLine" id="cb15-5" data-line-number="5"><span class="ot">mysteryLens2 ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Either</span> a a) a</a></code></pre></div>
 <p>Looking at <code>mysteryLens1 :: Lens' (Either a a) Bool</code>, we are saying that every <code>Either a a</code> has some <code>Bool</code> “inside” it. From our knowledge of our product, we know that this <code>Bool</code> is really a <em>flag</em> for left-ness or right-ness. Getting the <code>Bool</code> is finding out if we’re in <code>Left</code> or <code>Right</code>, and flipping the <code>Bool</code> “inside” is really just swapping from <code>Left</code> to <code>Right</code>.<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a></p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L172-L176</span></a>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L178-L182</span></a>
 <a class="sourceLine" id="cb16-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb16-3" data-line-number="3"><span class="ot">flipEither ::</span> <span class="dt">Either</span> a a <span class="ot">-&gt;</span> <span class="dt">Either</span> a a</a>
 <a class="sourceLine" id="cb16-4" data-line-number="4">flipEither <span class="fu">=</span> overL mysteryLens1 not</a>
@@ -192,7 +192,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb17-7" data-line-number="7">ghci<span class="fu">&gt;</span> isRight (<span class="dt">Right</span> <span class="ch">&#39;a&#39;</span>)</a>
 <a class="sourceLine" id="cb17-8" data-line-number="8"><span class="dt">True</span></a></code></pre></div>
 <p>Looking at <code>mysteryLens2 :: Lens' (Either a a) a</code>, we are saying that every <code>Either a a</code> has some <code>a</code> “inside” it. From what we know about the underlying product, the <code>a</code> is just the “contained value”, <em>ignoring</em> leftness or rightness. Getting the <code>a</code> is getting the contained value and losing leftness/rightness, and re-setting the <code>a</code> inside is modifying the contained value but preserving leftness/rightness.</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L178-L182</span></a>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L184-L188</span></a>
 <a class="sourceLine" id="cb18-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb18-3" data-line-number="3"><span class="ot">fromEither ::</span> <span class="dt">Either</span> a a <span class="ot">-&gt;</span> a</a>
 <a class="sourceLine" id="cb18-4" data-line-number="4">fromEither <span class="fu">=</span> view mysteryLens2</a>
@@ -214,7 +214,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h2 id="sum-thing-interesting">&quot;Sum-thing&quot; Interesting</h2>
 <p>It’s easy to recognize <code>Either Int Bool</code> as a sum between <code>Int</code> and <code>Bool</code>. However, did you know that some types are secretly sums in disguise?</p>
 <p>For example, here’s a data type you might encounter out there in the real world:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L199-L200</span></a>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L205-L206</span></a>
 <a class="sourceLine" id="cb21-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb21-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Shape</span> <span class="fu">=</span> <span class="dt">Circle</span>  <span class="dt">Double</span>           <span class="co">-- radius</span></a>
 <a class="sourceLine" id="cb21-4" data-line-number="4">           <span class="fu">|</span> <span class="dt">RegPoly</span> <span class="dt">Natural</span> <span class="dt">Double</span>   <span class="co">-- number of sides, length of sides</span></a></code></pre></div>
@@ -242,7 +242,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb24-8" data-line-number="8">inject (<span class="dt">Left</span>   _       ) <span class="fu">=</span> []</a>
 <a class="sourceLine" id="cb24-9" data-line-number="9">inject (<span class="dt">Right</span> (x <span class="fu">:|</span> xs)) <span class="fu">=</span> x<span class="fu">:</span>xs</a></code></pre></div>
 <p>Another curious sum: if we consider the “empty data type” <code>Void</code>, the type with no inhabitants:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L202-L207</span></a>
+<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L208-L213</span></a>
 <a class="sourceLine" id="cb25-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb25-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Void</span>           <span class="co">-- no constructors, no valid inhabitants</span></a>
 <a class="sourceLine" id="cb25-4" data-line-number="4"></a>
@@ -268,7 +268,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>There’s another way to go about this: we can talk about <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?x%20-%201" alt="x - 1" title="x - 1" /> by specifying one single “forbidden element”. This isn’t explicitly possible in Haskell, but we can simulate this by using an abstract type. We have this ability using “refinement types”. For example, using the <a href="http://hackage.haskell.org/package/refined">refined</a> library, a <code>Refined (NotEqualTo 4) Int</code> is a type that is the same as <code>Int</code>, except the <code>4</code> value is forbidden.</p>
 <p>We can use it to implement a <code>Int &lt;~&gt; Either () (Refined (NotEqualTo 4) Int)</code> witness:</p>
 <div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="co">-- | Like `Int`, but cannot be constructed if it is 4</span></a>
-<a class="sourceLine" id="cb27-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L286-L286</span></a>
+<a class="sourceLine" id="cb27-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L292-L292</span></a>
 <a class="sourceLine" id="cb27-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb27-4" data-line-number="4"><span class="kw">type</span> <span class="dt">Not4</span> <span class="fu">=</span> <span class="dt">Refined</span> (<span class="dt">NotEqualTo</span> <span class="dv">4</span>) <span class="dt">Int</span></a>
 <a class="sourceLine" id="cb27-5" data-line-number="5"></a>
@@ -302,7 +302,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>A <code>Prism' s a</code> is nothing more than a witness for an <code>exists q. s &lt;~&gt; Either a q</code> isomorphism.</p>
 <p>Under this interpretation, we can write a nice representation of <code>Prism'</code>:</p>
 <div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb30-1" data-line-number="1"><span class="co">-- | s &lt;~&gt; Either a q</span></a>
-<a class="sourceLine" id="cb30-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L78-L81</span></a>
+<a class="sourceLine" id="cb30-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L84-L87</span></a>
 <a class="sourceLine" id="cb30-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb30-4" data-line-number="4"><span class="kw">data</span> <span class="dt">Prism&#39;</span> s a <span class="fu">=</span> forall q<span class="fu">.</span> <span class="dt">Prism&#39;</span></a>
 <a class="sourceLine" id="cb30-5" data-line-number="5">    {<span class="ot"> match  ::</span> s <span class="ot">-&gt;</span> <span class="dt">Either</span> a q</a>
@@ -310,7 +310,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb30-7" data-line-number="7">    }</a></code></pre></div>
 <p>If <code>match</code> and <code>inject</code> form an isomorphism, <em>this can only represent valid prisms</em>!</p>
 <p>We can now implement the prism API:</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L110-L113</span></a>
+<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L116-L119</span></a>
 <a class="sourceLine" id="cb31-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb31-3" data-line-number="3"><span class="ot">preview ::</span> <span class="dt">Prism&#39;</span> s a <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</a>
 <a class="sourceLine" id="cb31-4" data-line-number="4">preview <span class="dt">Prism&#39;</span>{<span class="fu">..</span>} x <span class="fu">=</span> <span class="kw">case</span> match x <span class="kw">of</span></a>
@@ -322,7 +322,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb31-10" data-line-number="10">    <span class="dt">Left</span>  y <span class="ot">-&gt;</span> <span class="dt">Just</span> y</a>
 <a class="sourceLine" id="cb31-11" data-line-number="11">    <span class="dt">Right</span> _ <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a></code></pre></div>
 <p>Like for lenses, prisms also admit a particularly elegant formulation for <code>over</code>, which maps a function over the <code>a</code> in the <code>s</code> if it exists:</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L107-L119</span></a>
+<div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L113-L125</span></a>
 <a class="sourceLine" id="cb32-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb32-3" data-line-number="3"><span class="ot">overL ::</span> <span class="dt">Lens&#39;</span> s a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> s)</a>
 <a class="sourceLine" id="cb32-4" data-line-number="4">overL <span class="dt">Lens&#39;</span>{<span class="fu">..</span>}  f <span class="fu">=</span> unsplit <span class="fu">.</span> first f <span class="fu">.</span> split   <span class="co">-- instance Bifunctor (,)</span></a>
@@ -333,13 +333,13 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>So we see now, similar to lenses, <strong>every sum yields prisms</strong>, and <strong>every prism witnesses one side of a sum</strong>.</p>
 <h3 id="prism-wisdm">Prism Wisd’m</h3>
 <p>Let’s go back at our example prisms and see what sort of insight we can gain from this perspective.</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L199-L200</span></a>
+<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L205-L206</span></a>
 <a class="sourceLine" id="cb33-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb33-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Shape</span> <span class="fu">=</span> <span class="dt">Circle</span>  <span class="dt">Double</span>           <span class="co">-- radius</span></a>
 <a class="sourceLine" id="cb33-4" data-line-number="4">           <span class="fu">|</span> <span class="dt">RegPoly</span> <span class="dt">Natural</span> <span class="dt">Double</span>   <span class="co">-- number of sides, length of sides</span></a></code></pre></div>
 <p>Because <code>Shape</code> is a sum between <code>Double</code> and <code>(Natural, Double)</code>, we get <em>two prisms</em>:</p>
 <div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb34-1" data-line-number="1"><span class="co">-- Shape &lt;~&gt; Either Natural (Natural, Double)</span></a>
-<a class="sourceLine" id="cb34-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L209-L227</span></a>
+<a class="sourceLine" id="cb34-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L215-L233</span></a>
 <a class="sourceLine" id="cb34-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb34-4" data-line-number="4"><span class="ot">_Circle ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Shape</span> <span class="dt">Double</span></a>
 <a class="sourceLine" id="cb34-5" data-line-number="5">_Circle <span class="fu">=</span> <span class="dt">Prism&#39;</span></a>
@@ -367,7 +367,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>We essentially get the ability to “pattern match” and “construct” the <code>Circle</code> constructor.</p>
 <p>What can we get out of our decomposition of <code>[a]</code> as a sum between <code>()</code> and <code>NonEmpty a</code>? Let’s look at them:</p>
 <div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb36-1" data-line-number="1"><span class="co">-- [a] &lt;~&gt; Either () (NonEmpty a)</span></a>
-<a class="sourceLine" id="cb36-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L229-L247</span></a>
+<a class="sourceLine" id="cb36-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L235-L253</span></a>
 <a class="sourceLine" id="cb36-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb36-4" data-line-number="4"><span class="ot">_Nil ::</span> <span class="dt">Prism&#39;</span> [a] ()</a>
 <a class="sourceLine" id="cb36-5" data-line-number="5">_Nil <span class="fu">=</span> <span class="dt">Prism&#39;</span></a>
@@ -397,7 +397,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>It looks like the <code>()</code> branch’s <code>preview</code> corresponds to a prism that matches on an empty list, and the <code>NonEmpty a</code> branch corresponds to a prism that matches on a non-empty list. And the <code>()</code> branch’s <code>review</code> corresponds to constructing an empty list, and the <code>NonEmpty a</code> branch corresponds to constructing a non-empty list.<a href="#fn8" class="footnote-ref" id="fnref8"><sup>8</sup></a></p>
 <p>And, looking at <code>a &lt;~&gt; Either a Void</code>…what does that decomposition give us, conceptually?</p>
 <div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co">-- a &lt;~&gt; Either a Void</span></a>
-<a class="sourceLine" id="cb38-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L269-L284</span></a>
+<a class="sourceLine" id="cb38-2" data-line-number="2"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L275-L290</span></a>
 <a class="sourceLine" id="cb38-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb38-4" data-line-number="4"><span class="ot">identityP ::</span> <span class="dt">Prism&#39;</span> a a</a>
 <a class="sourceLine" id="cb38-5" data-line-number="5">identityP <span class="fu">=</span> <span class="dt">Prism&#39;</span></a>
@@ -418,7 +418,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>In lens-speak, <code>_Void :: Prism' a Void</code> tells us that you can pattern match a <code>Void</code> out of any <code>a</code>…but that that pattern match will never match. Furthermore, it tells us that if you have a value of type <code>Void</code>, you can use the <code>_Void</code> “constructor” to make a value of any type <code>a</code>! We have <code>review _Void :: Void -&gt; a</code>!</p>
 <p>However, in our “sum” perspective, it is nothing more than the witness of the fact that <code>a</code> is the sum of <code>a</code> and <code>Void</code>.</p>
 <p>And finally, let’s look at our deconstruction of <code>Int</code> and <code>Reinfed (NotEqualTo 4) Int</code>. What prisms does this yield, and what insight do we get?</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L288-L306</span></a>
+<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L294-L312</span></a>
 <a class="sourceLine" id="cb39-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb39-3" data-line-number="3"><span class="ot">only4 ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Int</span> ()</a>
 <a class="sourceLine" id="cb39-4" data-line-number="4">only4 <span class="fu">=</span> <span class="dt">Prism&#39;</span></a>
@@ -440,7 +440,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb39-20" data-line-number="20">        <span class="dt">Right</span> _ <span class="ot">-&gt;</span> <span class="dv">4</span></a>
 <a class="sourceLine" id="cb39-21" data-line-number="21">    }</a></code></pre></div>
 <p>The first prism, <code>only4</code>, is a prism that basically “only matches” on the <code>Int</code> if it is <code>4</code>. We can use it to implement “is equal to four”, and “get a 4”</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L308-L312</span></a>
+<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L314-L318</span></a>
 <a class="sourceLine" id="cb40-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb40-3" data-line-number="3"><span class="ot">isEqualTo4 ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>   <span class="co">-- Checks if a value is 4</span></a>
 <a class="sourceLine" id="cb40-4" data-line-number="4">isEqualTo4 <span class="fu">=</span> isJust <span class="fu">.</span> preview only4</a>
@@ -454,7 +454,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb41-4" data-line-number="4"><span class="ot">only4 ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Int</span> ()</a>
 <a class="sourceLine" id="cb41-5" data-line-number="5">only4 <span class="fu">=</span> only <span class="dv">4</span></a></code></pre></div>
 <p>The second prism, <code>refined4</code>, basically acts like a “abstract (smart) constructor” for <code>Not4</code>, essentially <code>refineFail</code> and <code>unrefine</code>:</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L314-L318</span></a>
+<div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L320-L324</span></a>
 <a class="sourceLine" id="cb42-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb42-3" data-line-number="3"><span class="ot">makeNot4 ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Not4</span></a>
 <a class="sourceLine" id="cb42-4" data-line-number="4">makeNot4 <span class="fu">=</span> preview refined4</a>
@@ -509,7 +509,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb48-4" data-line-number="4"><span class="ot">        ::</span> p a b                <span class="co">-- ^ relationship on part</span></a>
 <a class="sourceLine" id="cb48-5" data-line-number="5">        <span class="ot">-&gt;</span> p (a, q) (b, q)      <span class="co">-- ^ relationship on whole</span></a></code></pre></div>
 <p>And so we now have a definition of a profunctor lens:</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L339-L347</span></a>
+<div class="sourceCode" id="cb49"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L345-L353</span></a>
 <a class="sourceLine" id="cb49-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb49-3" data-line-number="3">makeLens</a>
 <a class="sourceLine" id="cb49-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Strong</span> p</a>
@@ -543,7 +543,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb53-4" data-line-number="4"><span class="ot">        ::</span> p a b                        <span class="co">-- ^ relationship on branch</span></a>
 <a class="sourceLine" id="cb53-5" data-line-number="5">        <span class="ot">-&gt;</span> p (<span class="dt">Either</span> a q) (<span class="dt">Either</span> b q)  <span class="co">-- ^ relationship on all possibilities</span></a></code></pre></div>
 <p>And so we now have a definition of a profunctor prism:</p>
-<div class="sourceCode" id="cb54"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb54-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L349-L357</span></a>
+<div class="sourceCode" id="cb54"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb54-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L355-L363</span></a>
 <a class="sourceLine" id="cb54-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb54-3" data-line-number="3">makePrism</a>
 <a class="sourceLine" id="cb54-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Choice</span> p</a>
@@ -635,7 +635,7 @@ Prism s t a b
 <p>For example, the <code>only 'a' :: Prism' Char ()</code> prism matches only on <code>'a'</code>, and it is the sum of <code>Char</code> and a theoretical abstract <code>Char</code> type that excludes <code>'a'</code>.</p>
 <p>To formalize this, sometimes we can say that only “one direction” of the isomorphism has to be strictly true in practice. If we only enforce that the round-trip of <code>unsplit . split = id</code> and <code>inject . match = id</code>, this enforces just the spirit of the hidden abstract type. This is &quot;&quot;</p>
 <p>For example, our “<code>only 'a'</code>” can be witnessed by:</p>
-<div class="sourceCode" id="cb60"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb60-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L184-L328</span></a>
+<div class="sourceCode" id="cb60"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb60-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L190-L334</span></a>
 <a class="sourceLine" id="cb60-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb60-3" data-line-number="3"><span class="kw">type</span> <span class="dt">CharButNotA</span> <span class="fu">=</span> <span class="dt">Char</span></a>
 <a class="sourceLine" id="cb60-4" data-line-number="4"></a>
@@ -664,7 +664,7 @@ Prism s t a b
 <a class="sourceLine" id="cb61-12" data-line-number="12">over (contains <span class="ch">&#39;a&#39;</span>)<span class="ot"> not ::</span> <span class="dt">S.Set</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">S.Set</span> <span class="dt">Char</span></a></code></pre></div>
 <p><code>contains 'a'</code> is a lens into a <code>Bool</code> from a <code>S.Set</code>, where the <code>Bool</code> indicates if the set “contains” <code>a</code> or not. What product does this represent?</p>
 <p>Well, essentially, <code>Set Char &lt;~&gt; (Bool, Set CharButNotA)</code>. It’s an abstract product betweein “the set contains <code>'a'</code> or not” and a set that could not possibly contain <code>'a'</code>:</p>
-<div class="sourceCode" id="cb62"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb62-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L184-L195</span></a>
+<div class="sourceCode" id="cb62"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb62-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L190-L201</span></a>
 <a class="sourceLine" id="cb62-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb62-3" data-line-number="3"><span class="kw">type</span> <span class="dt">CharButNotA</span> <span class="fu">=</span> <span class="dt">Char</span></a>
 <a class="sourceLine" id="cb62-4" data-line-number="4"></a>
@@ -692,14 +692,14 @@ Prism s t a b
 <a class="sourceLine" id="cb63-2" data-line-number="2"><span class="ot">theContents ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Either</span> a a) a</a></code></pre></div>
 <p>We concluded that the first lens lets us flip between <code>Left</code> and <code>Right</code> or check if a value was <code>Left</code> or <code>Right</code>, and that the second lens gets into the contents regardless of leftness or rightness.</p>
 <p>However, there’s a flip side, as well. <code>(Bool, a)</code> can be expressed as a <em>sum</em> between <code>a</code> and itself, <code>Either a a</code>. This gives us two prisms:</p>
-<div class="sourceCode" id="cb64"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb64-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L37-L47</span></a>
+<div class="sourceCode" id="cb64"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb64-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L43-L53</span></a>
 <a class="sourceLine" id="cb64-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb64-3" data-line-number="3"><span class="ot">mysteryPrism1 ::</span> <span class="dt">Prism&#39;</span> (<span class="dt">Bool</span>, a) a</a>
 <a class="sourceLine" id="cb64-4" data-line-number="4"></a>
 <a class="sourceLine" id="cb64-5" data-line-number="5"><span class="ot">mysteryPrism2 ::</span> <span class="dt">Prism&#39;</span> (<span class="dt">Bool</span>, a) a</a></code></pre></div>
 <p>What do these prisms do? What is <code>preview</code> and <code>review</code> for them?</p></li>
 <li><p>Can you write combinators to “compose” lenses and prisms? Is it even possible?</p>
-<div class="sourceCode" id="cb65"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb65-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L59-L85</span></a>
+<div class="sourceCode" id="cb65"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb65-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L65-L91</span></a>
 <a class="sourceLine" id="cb65-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb65-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Lens&#39;</span> s a <span class="fu">=</span> forall q<span class="fu">.</span> <span class="dt">Lens&#39;</span></a>
 <a class="sourceLine" id="cb65-4" data-line-number="4">    {<span class="ot"> split   ::</span> s <span class="ot">-&gt;</span> (a, q)</a>
@@ -720,7 +720,7 @@ Prism s t a b
 <a class="sourceLine" id="cb65-19" data-line-number="19">      <span class="ot">-&gt;</span> <span class="dt">Prism&#39;</span> a c</a></code></pre></div>
 <p>Roughtly speaking, composition of lenses or prisms are meant to “successively zoom in” to deeper and deeper parts of an initial structure.</p>
 <p>A note for you if you try this — because the <code>q</code> type is existential, you can’t use <code>split</code>, <code>unsplit</code>, <code>match</code>, or <code>inject</code> as record accessors, and you need to either pattern match or use <em>-XRecordWildcards</em>.</p>
-<p>These implementations are pretty hairy (solutions <a href="https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L59-L96">online here</a>), and it’s a sort of testament as to why we don’t use this actual implementation in practice. In fact, for profunctor optics, we just have:</p>
+<p>These implementations are pretty hairy (solutions <a href="https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L65-L102">online here</a>), and it’s a sort of testament as to why we don’t use this actual implementation in practice. In fact, for profunctor optics, we just have:</p>
 <div class="sourceCode" id="cb66"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb66-1" data-line-number="1">(<span class="fu">.&amp;.</span>) <span class="fu">=</span> (<span class="fu">.</span>)</a>
 <a class="sourceLine" id="cb66-2" data-line-number="2">(<span class="fu">.|.</span>) <span class="fu">=</span> (<span class="fu">.</span>)</a></code></pre></div>
 <p>Using <code>(.)</code> from <code>Prelude</code>. Definitely much simpler! (And it’s one main reason why they’re the most popular representation)</p></li>
@@ -750,13 +750,13 @@ Prism s t a b
 <a class="sourceLine" id="cb23-13" data-line-number="13">inject (<span class="dt">Right</span> (xs, x)) <span class="fu">=</span> xs <span class="fu">++</span> [x]</a></code></pre></div>
 <p>I just think it’s interesting that the same type can be “decomposed” into a sum of two different types in multiple ways.</p>
 <p>Fun haskell challenge: the version of <code>match</code> for the <code>[a] &lt;~&gt; Either () ([a], a)</code> isomorphism I wrote there is conceptually simple, but very inefficient. It traverses the input list three times, uses two partial functions, and uses a <code>Bool</code>. Can you write a <code>match</code> that does the same thing using only a single fold and no partial functions or <code>Bool</code>s?</p>
-<p>I managed to write one <a href="https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L25-L33">using a difference list</a>!<a href="#fnref5" class="footnote-back">↩</a></p></li>
+<p>I managed to write one <a href="https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L31-L39">using a difference list</a>!<a href="#fnref5" class="footnote-back">↩</a></p></li>
 <li id="fn6"><p>If you’re verifying that <code>match . inject = id</code> for the <code>Either a Void</code> decomposition, here’s a hint: no values exist that are constructed using <code>Right</code>, so you don’t ever have to handle the second case of <code>inject</code>.<a href="#fnref6" class="footnote-back">↩</a></p></li>
 <li id="fn7"><p>I didn’t invent these names :)<a href="#fnref7" class="footnote-back">↩</a></p></li>
 <li id="fn8"><p>We see a sort of pattern here. And, if we look deeper, we will see that <em>all prisms</em> correspond to some sort of “constructor”.</p>
 <p>After all, what do constructors give you? Two things: the ability to “construct” a value, and the ability to do “case-analysis” or “pattern match” a value.</p>
 <p>The API of a “constructor” is pretty much exactly the Prism API, where <code>preview</code> is “matching” and <code>review</code> is “constructing”. In fact, we often use Prisms to simulate “abstract” constructors.</p>
-<p>An <em>abstract constructor</em> is exactly what our <em>other</em> <code>[a]</code> sum decomposition gives us! If we look at that isomorphism <code>[a] &lt;~&gt; Either () ([a], a)</code> (the “tail-and-last” breakdown) and write out the prisms, we see that they correspond to the abstract constructors <a href="https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L249-L257"><code>_Nil</code></a> and <a href="https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L259-L267"><code>_Snoc</code></a>.</p>
+<p>An <em>abstract constructor</em> is exactly what our <em>other</em> <code>[a]</code> sum decomposition gives us! If we look at that isomorphism <code>[a] &lt;~&gt; Either () ([a], a)</code> (the “tail-and-last” breakdown) and write out the prisms, we see that they correspond to the abstract constructors <a href="https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L255-L263"><code>_Nil</code></a> and <a href="https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L265-L273"><code>_Snoc</code></a>.</p>
 <p><code>_Snoc</code> is an “abstract constructor” for a list that lets us “construct” an <code>[a]</code> given an original list and an item to add to the end, and also “deconstruct” an <code>[a]</code> into an initial run and its last element (as a pattern match that might “fail”).<a href="#fnref8" class="footnote-back">↩</a></p></li>
 </ol>
 </section></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
