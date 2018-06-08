@@ -44,7 +44,7 @@ However, did you know that some types are secretly product types in disguise?
 For example, here's a classic example of a data type often used with *lens*:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L122-L125
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L123-L126
 
 data Person = P
     { _pName :: String
@@ -95,8 +95,8 @@ head/first item) and `[a]` (the tail/rest of the items). This means that
 `NonEmpty a` is isomorphic to `(a, [a])` --- we have `NonEmpty a <~> (a, [a])`!
 
 Another curious product is the fact that every type `a` is a product between
-*itself* and unit, `()`. That is, every type `a` is isomorphic to `(a, ())`
-(which follows from the algebraic property
+*itself* and unit, `()`. Every type `a` is isomorphic to `(a, ())` (which
+follows from the algebraic property
 ![x \* 1 = x](https://latex.codecogs.com/png.latex?x%20%2A%201%20%3D%20x "x * 1 = x")).
 Freaky, right?
 
@@ -114,8 +114,8 @@ One final interesting "product in disguise" is `Either a a`. "But wait," you
 say. "That's a sum...right??"
 
 Well, yeah. But in addition, any `Either a a` is the product between `Bool` and
-`a`. That is, `Either a a` is isomorphic to `(Bool, a)`. The `Bool` tells you
-"left or right?" and the `a` is the contents!
+`a`. In other words, `Either a a` is isomorphic to `(Bool, a)`. The `Bool` tells
+you "left or right?" and the `a` is the contents!
 
 ``` {.haskell}
 -- Either a a <~> (Bool, a)
@@ -188,7 +188,7 @@ big". It allows more more values than are actual lenses.
 So, here's the secret: A `Lens' s a` means that *`s` is a product between `a`
 and some type `q`*.
 
-That means that if it is possible to represent `s` as some `(a, q)` (that is,
+That means that if it is possible to represent `s` as some `(a, q)` (or,
 `s <~> (a, q)`), *then you have two lenses*! Lenses are nothing more than
 *descriptions of products*! Another way to think of this is that if you are able
 to "split" a type into two parts without losing any information, then each part
@@ -202,7 +202,7 @@ that lenses embody descriptions of products:
 
 ``` {.haskell}
 -- | s <~> (a, q)
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L58-L61
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L59-L62
 
 data Lens' s a = forall q. Lens'
     { split   :: s -> (a, q)
@@ -221,7 +221,7 @@ lenses*![^2]
 We can implement our necessary lens API as so:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L99-L104
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L100-L105
 
 view :: Lens' s a -> (s -> a)
 view Lens'{..} = fst . split
@@ -238,7 +238,7 @@ The implementation of the helper function `over` (which modifies the `a` with a
 function) is also particularly elegant:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L106-L107
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L107-L108
 
 overL :: Lens' s a -> (a -> a) -> (s -> s)
 overL Lens'{..}  f = unsplit . first f . split   -- instance Bifunctor (,)
@@ -253,7 +253,7 @@ side of a product**.
 Let's take a look at our first product we talked about:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L122-L125
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L123-L126
 
 data Person = P
     { _pName :: String
@@ -267,13 +267,18 @@ for every item in the product.
 
 ``` {.haskell}
 -- Person <~> (String, Int)
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L123-L125
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L128-L138
 
-    { _pName :: String
-    , _pAge  :: Int
+pName :: Lens' Person String
+pName = Lens'
+    { split   = \(P n a) -> (n, a)
+    , unsplit = \(n, a)  -> P n a
     }
 
-    , _pAge  :: Int
+pAge :: Lens' Person Int
+pAge = Lens'
+    { split   = \(P n a) -> (a, n)
+    , unsplit = \(a, n)  -> P n a
     }
 ```
 
@@ -297,7 +302,7 @@ for any `a`:
 
 ``` {.haskell}
 -- a <~> (a, ())
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L139-L149
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L140-L150
 
 identityL :: Lens' a a
 identityL = Lens'
@@ -322,7 +327,7 @@ What insight does our `Either a a <~> (Bool, a)` product perspective give us?
 Well, let's write out their types and see what it might suggest:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L151-L161
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L152-L162
 
 mysteryLens1 :: Lens' (Either a a) Bool
 
@@ -333,10 +338,10 @@ Looking at `mysteryLens1 :: Lens' (Either a a) Bool`, we are saying that every
 `Either a a` has some `Bool` "inside" it. From our knowledge of our product, we
 know that this `Bool` is really a *flag* for left-ness or right-ness. Getting
 the `Bool` is finding out if we're in `Left` or `Right`, and flipping the `Bool`
-"inside" is really just swapping from `Left` to `Right`.
+"inside" is really just swapping from `Left` to `Right`.[^3]
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L171-L175
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L172-L176
 
 flipEither :: Either a a -> Either a a
 flipEither = overL mysteryLens1 not
@@ -356,13 +361,6 @@ ghci> isRight (Right 'a')
 True
 ```
 
-Note that if we look at lenses as embodying "record fields" (things that give
-you the ability to "get" a field, and "modify" a field --- corresponding with
-`view` and `set`), we can think of `mysteryLens1` as an *abstract record field*
-into the Leftness/Rightness of a value. Thinking of lenses as defining abstract
-record fields is a [common tool for backwards
-compatiblity](http://blog.ezyang.com/2016/12/a-tale-of-backwards-compatibility-in-asts/).
-
 Looking at `mysteryLens2 :: Lens' (Either a a) a`, we are saying that every
 `Either a a` has some `a` "inside" it. From what we know about the underlying
 product, the `a` is just the "contained value", *ignoring* leftness or
@@ -371,7 +369,7 @@ leftness/rightness, and re-setting the `a` inside is modifying the contained
 value but preserving leftness/rightness.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L177-L181
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L178-L182
 
 fromEither :: Either a a -> a
 fromEither = view mysteryLens2
@@ -420,7 +418,7 @@ However, did you know that some types are secretly sums in disguise?
 For example, here's a data type you might encounter out there in the real world:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L198-L199
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L199-L200
 
 data Shape = Circle  Double           -- radius
            | RegPoly Natural Double   -- number of sides, length of sides
@@ -459,7 +457,7 @@ as the possibility of `NonEmpty a` (the "head" of a list consed with the rest of
 the list), then saying that `[a]` is a sum between `()` and `NonEmpty a` is
 saying that `[a]` is "either an empty list or a non-empty list". Whoa. Take
 *that*, [LEM
-denialists](https://en.wikipedia.org/wiki/Constructivism_(mathematics)).[^3]
+denialists](https://en.wikipedia.org/wiki/Constructivism_(mathematics)).[^4][^5]
 
 ``` {.haskell}
 -- [a] <~> Either () (NonEmpty a)
@@ -473,35 +471,11 @@ inject (Left   _       ) = []
 inject (Right (x :| xs)) = x:xs
 ```
 
-And, actually, there is another way to deconstruct `[a]` as a sum in Haskell.
-You can treat it as a sum between `()` and `([a], a)` --- where the `()`
-represents the empty list and the `([a], a)` represents an "all but the last
-item" list and "the last item":[^4]
-
-``` {.haskell}
--- [a] <~> Either () ([a], a)
-
-match  :: [a] -> Either () ([a], a)
-match xs
-  | null xs   = Left  ()
-  | otherwise = Right (init xs, last xs)
-
--- init gives you all but the last item:
--- > init [1,2,3] = [1,2]
-
-inject :: Either () (a, [a]) -> [a]
-inject (Left   _     ) = []
-inject (Right (xs, x)) = xs ++ [x]
-```
-
-I just think it's interesting that the same type can be "decomposed" into a sum
-of two different types in multiple ways.
-
 Another curious sum: if we consider the "empty data type" `Void`, the type with
 no inhabitants:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L201-L206
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L202-L207
 
 data Void           -- no constructors, no valid inhabitants
 
@@ -528,7 +502,7 @@ inject (Right v) = absurd v
 ```
 
 Again, if you don't believe me, verify that `inject . match = id` and
-`match . inject = id`![^5]
+`match . inject = id`![^6]
 
 One final example: earlier, we said that every type can be decomposed as a
 *product* involving `()`. Algebraically, finding that mystery type is easy ---
@@ -571,7 +545,7 @@ witness:
 
 ``` {.haskell}
 -- | Like `Int`, but cannot be constructed if it is 4
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L285-L285
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L286-L286
 
 type Not4 = Refined (NotEqualTo 4) Int
 
@@ -600,7 +574,7 @@ only possible to represent in Haskell if we can test for equality)
 ### Through the Looking-Prism
 
 Now let's bring prisms into the picture. A `Prism' s a` also refers to some `a`
-"inside" an `s`, with the following API: `preview` and `review`[^6]
+"inside" an `s`, with the following API: `preview` and `review`[^7]
 
 ``` {.haskell}
 preview :: Prism' s a -> (s -> Maybe a)   -- get the 'a' in the 's' if it exists
@@ -633,7 +607,7 @@ Under this interpretation, we can write a nice representation of `Prism'`:
 
 ``` {.haskell}
 -- | s <~> Either a q
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L77-L80
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L78-L81
 
 data Prism' s a = forall q. Prism'
     { match  :: s -> Either a q
@@ -647,7 +621,7 @@ prisms*!
 We can now implement the prism API:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L109-L112
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L110-L113
 
 preview :: Prism' s a -> (s -> Maybe a)
 preview Prism'{..} x = case match x of
@@ -664,7 +638,7 @@ Like for lenses, prisms also admit a particularly elegant formulation for
 `over`, which maps a function over the `a` in the `s` if it exists:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L106-L118
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L107-L119
 
 overL :: Lens' s a -> (a -> a) -> (s -> s)
 overL Lens'{..}  f = unsplit . first f . split   -- instance Bifunctor (,)
@@ -684,7 +658,7 @@ Let's go back at our example prisms and see what sort of insight we can gain
 from this perspective.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L198-L199
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L199-L200
 
 data Shape = Circle  Double           -- radius
            | RegPoly Natural Double   -- number of sides, length of sides
@@ -695,7 +669,7 @@ prisms*:
 
 ``` {.haskell}
 -- Shape <~> Either Natural (Natural, Double)
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L208-L226
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L209-L227
 
 _Circle :: Prism' Shape Double
 _Circle = Prism'
@@ -737,7 +711,7 @@ What can we get out of our decomposition of `[a]` as a sum between `()` and
 
 ``` {.haskell}
 -- [a] <~> Either () (NonEmpty a)
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L228-L246
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L229-L247
 
 _Nil :: Prism' [a] ()
 _Nil = Prism'
@@ -774,61 +748,14 @@ It looks like the `()` branch's `preview` corresponds to a prism that matches on
 an empty list, and the `NonEmpty a` branch corresponds to a prism that matches
 on a non-empty list. And the `()` branch's `review` corresponds to constructing
 an empty list, and the `NonEmpty a` branch corresponds to constructing a
-non-empty list.
-
-We see a sort of pattern here. And, if we look deeper, we will see that *all
-prisms* correspond to some sort of "constructor".
-
-After all, what do constructors give you? Two things: the ability to "construct"
-a value, and the ability to do "case-analysis" or "pattern match" a value.
-
-The API of a "constructor" is pretty much exactly the Prism API, where `preview`
-is "matching" and `review` is "constructing". In fact, we often use Prisms to
-simulate "abstract" constructors.
-
-An *abstract constructor* is exactly what our *other* `[a]` sum decomposition
-gives us! If we look at that isomorphism `[a] <~> Either () ([a], a)` (the
-"tail-and-last" breakdown) and write out the prisms, we see that they correspond
-to the abstract constructors `_Nil` and `_Snoc`:
-
-``` {.haskell}
--- [a] <~> Either () ([a], a)
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L248-L266
-
-_Nil' :: Prism' [a] ()
-_Nil' = Prism'
-    { match  = \xs -> if null xs
-        then Left  ()
-        else Right (init xs, last xs)
-    , inject = \case
-        Left _        -> []
-        Right (xs, x) -> xs ++ [x]
-    }
-
-_Snoc :: Prism' [a] ([a], a)
-_Snoc = Prism'
-    { match  = \xs -> if null xs
-        then Right ()
-        else Left  (init xs, last xs)
-    , inject = \case
-        Left  (xs, x) -> xs ++ [x]
-        Right _       -> []
-    }
-```
-
-`_Snoc` is an "abstract constructor" for a list that lets us:
-
-1.  "Construct" an `[a]` given an original list `[a]` and an item to add to the
-    end, `a`
-2.  "Deconstruct" an `[a]` into an initial run `[a]` and its last element `a`
-    (as a pattern match that might "fail").
+non-empty list.[^8]
 
 And, looking at `a <~> Either a Void`...what does that decomposition give us,
 conceptually?
 
 ``` {.haskell}
 -- a <~> Either a Void
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L268-L283
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L269-L284
 
 identityP :: Prism' a a
 identityP = Prism'
@@ -866,7 +793,7 @@ And finally, let's look at our deconstruction of `Int` and
 we get?
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L287-L305
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L288-L306
 
 only4 :: Prism' Int ()
 only4 = Prism'
@@ -893,7 +820,7 @@ The first prism, `only4`, is a prism that basically "only matches" on the `Int`
 if it is `4`. We can use it to implement "is equal to four", and "get a 4"
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L307-L311
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L308-L312
 
 isEqualTo4 :: Int -> Bool   -- Checks if a value is 4
 isEqualTo4 = isJust . preview only4
@@ -917,7 +844,7 @@ The second prism, `refined4`, basically acts like a "abstract (smart)
 constructor" for `Not4`, essentially `refineFail` and `unrefine`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L313-L317
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L314-L318
 
 makeNot4 :: Int -> Maybe Not4
 makeNot4 = preview refined4
@@ -941,9 +868,10 @@ _head :: Prism' [a] a           -- get the head of a list
 If you think of a prism as just "a lens that might fail" (as it's often taught),
 you might think yes. If you think of a prism as just "a constructor and
 deconstructor", you might also think yes, since you can construct an `[a]` with
-only a single `a`. You can definitely "implement" this prism using our "too big"
-representation, in terms of `preview` and `review`. Both of these viewpoints of
-prisms will fail you and lead you astray.
+only a single `a`. You can definitely "implement" this prism incorrectly using
+our "too big" representation, in terms of `preview` and `review`, and it will
+still typecheck. Both of these viewpoints of prisms will fail you and lead you
+astray.
 
 However, if you think of it as witnessing a sum, you might see that this prism
 isn't possible. There is no possible type `q` where `[a]` is a sum of `a` and
@@ -980,7 +908,7 @@ return a new profunctor.
 A profunctor `p` has values of type `p a b`, and you can roughly think of
 `p a b` as "a relationship between `a` and `b`".
 
-The `Profunctor` typeclass `p` gives us a function called `iso`, that lets us
+The `Profunctor` typeclass `p` gives us a function called `iso` that lets us
 transform a profunctor in terms of an isomorphism.
 
 If type `s` is isomorphic to type `a` (`s <~> a`), then we can the function
@@ -989,7 +917,8 @@ If type `s` is isomorphic to type `a` (`s <~> a`), then we can the function
 ``` {.haskell}
 -- s <~> a
 
--- | The real `iso` is actually a little more polymorphic
+-- | The real `iso` is actually a little more polymorphic.  It's also normally
+-- called `dimap`, but `iso` is its common alias.
 class Profunctor p where
     iso :: Profunctor p
         => (s -> a)         -- ^ one half of the isomorphism
@@ -1001,9 +930,6 @@ class Profunctor p where
 Given the `s -> a` and `a -> s` functions that witness `s <~> a`, the
 `Profunctor` typeclass lets us transform a `p a a` into a `p s s` (a
 relationship on `a`s to be a relationship on `s`).
-
-(The `Profunctor` typeclass actually just provides `dimap`, but I am using the
-common alias `iso = dimap` to enforce the connection)
 
 ### Profunctor Lens
 
@@ -1022,34 +948,38 @@ we have, at our disposal:
 ``` {.haskell}
 iso split unsplit
     :: Profunctor p
-    => p (a, q) (a, q) -> p s s
+    => p (a, q) (a, q)
+    -> p s s
 ```
 
-In order to get a `p a a -> p s s`, we need a way to turn a `p a a` into a
-`p (a, q) (a, q)`. This says "take a relationship on `a`s and turn it into a
-relationship on `(a, q)`, *ignoring* the `q`".
+With that, in order to get a `p a a -> p s s`, we need a way to turn a `p a a`
+into a `p (a, q) (a, q)`. This says "take a relationship on `a`s and turn it
+into a relationship on `(a, q)`, *ignoring* the `q`".
 
-The typeclass `Strong` gives us just that!
+There happens to be a typeclass called `Strong` that gives us just that!
 
 ``` {.haskell}
--- | The real `first'` is actually a little more polymorphic
+-- | The "operate on a part of a whole" typeclass
 class Profunctor p => Strong p where
     first'
-        :: p a a                -- ^ relationship on part
-        -> p (a, q) (a, q)      -- ^ relationship on whole
+        :: p a b                -- ^ relationship on part
+        -> p (a, q) (b, q)      -- ^ relationship on whole
 ```
 
 And so we now have a definition of a profunctor lens:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L339-L347
+
 makeLens
     :: Strong p
     => (s -> (a, q))        -- ^ split
     -> ((a, q) -> s)        -- ^ unsplit
     -> p a a                -- ^ relationship on a
     -> p s s                -- ^ relationship on s
-makeLens split unsplit = iso split unsplit  -- ^ p (a, q) (a, q) -> p s s
-                       . first'             -- ^ p a a -> p (a, q) (a, q)
+makeLens split unsplit =
+    iso split unsplit  -- ^ p (a, q) (a, q) -> p s s
+  . first'             -- ^ p a a -> p (a, q) (a, q)
 ```
 
 Essentially, `iso split unsplit . first'` promotes a `p a a` to a `p s s`. It
@@ -1057,6 +987,14 @@ uses `first'` to turn the `p a a` into a `p (a, q) (a, q)`, turning a
 relationship on the part to be a relationship on the whole. Then we just apply
 the essential `s <~> (a, q)` isomorphism that defines a lens. And so
 `p a a -> p s s`, going through the `s <~> (a, q)` isomorphism, is a lens!
+
+``` {.haskell}
+-- | The "forall p" means that that the `Lens` is defined to work for all
+-- possible profunctors as long as it has an instance of `Strong`
+type Lens' s a = forall p. Strong p
+              => p a a
+              -> p s s
+```
 
 ### Profunctor Prisms
 
@@ -1079,27 +1017,30 @@ iso match inject
     -> p s s
 ```
 
-In order to get a `p a a -> p s s`, we need a way to turn a `p a a` into a
-`p (Either a q) (Either a q)`. This says "take a relationship on `a`s and turn
-it into a relationship on `Either a q`, *ignoring* the `q`".
+With that tool in hand, in order to get a `p a a -> p s s`, we need a way to
+turn a `p a a` into a `p (Either a q) (Either a q)`. This says "take a
+relationship on `a`s and turn it into a relationship on `Either a q`, doing
+nothing if the `q` pops up".
 
-The typeclass `Choice` gives us just that:
+Luckily, there happens to be a typeclass called `Choice` that gives us just!
 
 ``` {.haskell}
--- | The real `left'` is actually a little more polymorphic
+-- | The "operate on a branch of a possibility" typeclass
 class Profunctor p => Choice p where
     left'
-        :: p a a                        -- ^ relationship on branch
-        -> p (Either a q) (Either a q)  -- ^ relationship on all possibilities
+        :: p a b                        -- ^ relationship on branch
+        -> p (Either a q) (Either b q)  -- ^ relationship on all possibilities
 ```
 
 And so we now have a definition of a profunctor prism:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L349-L357
+
 makePrism
     :: Choice p
-    => (s -> (a, q))        -- ^ match
-    -> ((a, q) -> s)        -- ^ inject
+    => (s -> Either a q)    -- ^ match
+    -> (Either a q -> s)    -- ^ inject
     -> p a a                -- ^ relationship on a
     -> p s s                -- ^ relationship on s
 makePrism match inject =
@@ -1232,6 +1173,8 @@ actually implemented in practice:
     *after* we use the lens. However, with `Lens s t a b`, if I say "the `s`",
     you know that I just mean "the `outer` *before* we use the lens", and if I
     say "the `t`", you know that I mean "the `outer` *after* we use the lens".
+    The profunctor optics version of lens becomes
+    `Lens s t a b = p a b -> p s t`.
 
     `Lens s t a b` (which is a version of `Lens' outer inner` where we relabel
     the type variables of the inputs and outputs) is called a [lens
@@ -1271,8 +1214,8 @@ actually implemented in practice:
     change.
 
 2.  In practice, the `q` to factor out your type into (in the `s <~> (a, q)` and
-    `s <~> Either a q`) might not be an actual literal type. In most cases, it's
-    alright to treat it as a theoretical "abstract" type that follows the
+    `s <~> Either a q`) might not be an actual "concrete" type. In most cases,
+    it's alright to treat it as a theoretical "abstract" type that follows the
     behavior you want given a restricted interface. This is "safe" because, if
     you notice, none of the methods in the lens or prism APIs (`view`, `set`,
     `preview`, `review`) ever let an external user directly manipulate a value
@@ -1290,7 +1233,7 @@ actually implemented in practice:
     For example, our "`only 'a'`" can be witnessed by:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L183-L327
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L184-L328
 
     type CharButNotA = Char
 
@@ -1335,7 +1278,7 @@ actually implemented in practice:
     possibly contain `'a'`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L183-L194
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L184-L195
 
     type CharButNotA = Char
 
@@ -1356,13 +1299,22 @@ actually implemented in practice:
 ### Exercises
 
 To help solidify your understanding on this perspective, here are some
-exercises!
+exercises! Most of them are conceptual and open-ended.
 
 -   We discussed the conditions where a type `a` can be expressed as a sum
     involving `()` and you can have a `Prism' a ()`.
 
-    Under what conditions can you express a type `a` is a *product* involving
-    `Void`, and you can have a `Lens' a Void`? (Hint: use the algebra!)
+    Under what conditions can you express a type `a` as a *product* involving
+    `Void`, and you can have a `Lens' a Void`? (Hint: use the algebra!) What
+    would this lens do (what are `view` and `set`)?
+
+-   We discussed the conditions where a type `a` can be expressed as a product
+    involving `()` and you can have `Lens' a ()`.
+
+    Under what conditions can you express a type `a` as a product involving
+    `Bool` (`a <~> (Bool, q)`), and you can have a `Lens' a Bool`? (Hint: use
+    the algebra!) What would this lens do (what are `view` and `set`)? And what
+    about the `Lens' a q`?
 
 -   We found that by interpreting `Either a a` as a product `(Bool, a)` gives us
     two interesting lenses:
@@ -1380,7 +1332,7 @@ exercises!
     *sum* between `a` and itself, `Either a a`. This gives us two prisms:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L36-L46
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L37-L47
 
     mysteryPrism1 :: Prism' (Bool, a) a
 
@@ -1393,7 +1345,7 @@ exercises!
     possible?
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L58-L84
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L59-L85
 
     data Lens' s a = forall q. Lens'
         { split   :: s -> (a, q)
@@ -1422,7 +1374,7 @@ exercises!
     you need to either pattern match or use *-XRecordWildcards*.
 
     These implementations are pretty hairy (solutions [online
-    here](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L58-L95)),
+    here](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L59-L96)),
     and it's a sort of testament as to why we don't use this actual
     implementation in practice. In fact, for profunctor optics, we just have:
 
@@ -1450,25 +1402,105 @@ supporter at the "Amazing" level, Sam Stites! :)
     "`split` and `join` must form an isomorphism" is a much clearer and natural
     law than get-put/put-get/put-put.
 
-[^3]: Technically, LEM denialists and constructivists are somewhat vindicated
+[^3]: Note that if we look at lenses as embodying "record fields" (things that
+    give you the ability to "get" a field, and "modify" a field ---
+    corresponding with `view` and `set`), we can think of `mysteryLens1` as an
+    *abstract record field* into the Leftness/Rightness of a value. Thinking of
+    lenses as defining abstract record fields is a [common tool for backwards
+    compatiblity](http://blog.ezyang.com/2016/12/a-tale-of-backwards-compatibility-in-asts/).
+
+[^4]: Technically, LEM denialists and constructivists are somewhat vindicated
     here, because it is not strictly true in Haskell that a list is either an
     empty list or a non-empty list. It can actually [be
     neither](https://wiki.haskell.org/Bottom).
 
-[^4]: Fun haskell challenge: the version of `match` for the
+[^5]: And, actually, there is another way to deconstruct `[a]` as a sum in
+    Haskell. You can treat it as a sum between `()` and `([a], a)` --- where the
+    `()` represents the empty list and the `([a], a)` represents an "all but the
+    last item" list and "the last item":
+
+    ``` {.haskell}
+    -- [a] <~> Either () ([a], a)
+
+    match  :: [a] -> Either () ([a], a)
+    match xs
+      | null xs   = Left  ()
+      | otherwise = Right (init xs, last xs)
+
+    -- init gives you all but the last item:
+    -- > init [1,2,3] = [1,2]
+
+    inject :: Either () (a, [a]) -> [a]
+    inject (Left   _     ) = []
+    inject (Right (xs, x)) = xs ++ [x]
+    ```
+
+    I just think it's interesting that the same type can be "decomposed" into a
+    sum of two different types in multiple ways.
+
+    Fun haskell challenge: the version of `match` for the
     `[a] <~> Either () ([a], a)` isomorphism I wrote there is conceptually
     simple, but very inefficient. It traverses the input list three times, uses
     two partial functions, and uses a `Bool`. Can you write a `match` that does
     the same thing using only a single fold and no partial functions or `Bool`s?
 
     I managed to write one [using a difference
-    list](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L24-L32)!
+    list](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L25-L33)!
 
-[^5]: If you're verifying that `match . inject = id` for the `Either a Void`
+[^6]: If you're verifying that `match . inject = id` for the `Either a Void`
     decomposition, here's a hint: no values exist that are constructed using
     `Right`, so you don't ever have to handle the second case of `inject`.
 
-[^6]: I didn't invent these names :)
+[^7]: I didn't invent these names :)
+
+[^8]: We see a sort of pattern here. And, if we look deeper, we will see that
+    *all prisms* correspond to some sort of "constructor".
+
+    After all, what do constructors give you? Two things: the ability to
+    "construct" a value, and the ability to do "case-analysis" or "pattern
+    match" a value.
+
+    The API of a "constructor" is pretty much exactly the Prism API, where
+    `preview` is "matching" and `review` is "constructing". In fact, we often
+    use Prisms to simulate "abstract" constructors.
+
+    An *abstract constructor* is exactly what our *other* `[a]` sum
+    decomposition gives us! If we look at that isomorphism
+    `[a] <~> Either () ([a], a)` (the "tail-and-last" breakdown) and write out
+    the prisms, we see that they correspond to the abstract constructors `_Nil`
+    and `_Snoc`:
+
+    ``` {.haskell}
+    -- [a] <~> Either () ([a], a)
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L249-L267
+
+    _Nil' :: Prism' [a] ()
+    _Nil' = Prism'
+        { match  = \xs -> if null xs
+            then Left  ()
+            else Right (init xs, last xs)
+        , inject = \case
+            Left _        -> []
+            Right (xs, x) -> xs ++ [x]
+        }
+
+    _Snoc :: Prism' [a] ([a], a)
+    _Snoc = Prism'
+        { match  = \xs -> if null xs
+            then Right ()
+            else Left  (init xs, last xs)
+        , inject = \case
+            Left  (xs, x) -> xs ++ [x]
+            Right _       -> []
+        }
+    ```
+
+    `_Snoc` is an "abstract constructor" for a list that lets us:
+
+    1.  "Construct" an `[a]` given an original list `[a]` and an item to add to
+        the end, `a`
+    2.  "Deconstruct" an `[a]` into an initial run `[a]` and its last element
+        `a` (as a pattern match that might "fail").
 
 ---------
 

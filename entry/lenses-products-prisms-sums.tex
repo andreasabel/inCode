@@ -59,6 +59,7 @@
 \newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
 \newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
 \newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\usepackage{fancyvrb}
 \usepackage{graphicx}
 \makeatletter
 \def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
@@ -91,6 +92,7 @@
 \setlength{\parskip}{6pt plus 2pt minus 1pt}
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
+\VerbatimFootnotes % allows verbatim text in footnotes
 
 \title{Lenses embody Products, Prisms embody Sums}
 \author{Justin Le}
@@ -146,7 +148,7 @@ For example, here's a classic example of a data type often used with
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L122-L125}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L123-L126}
 
 \KeywordTok{data} \DataTypeTok{Person} \FunctionTok{=} \DataTypeTok{P}
 \NormalTok{    \{}\OtherTok{ _pName ::} \DataTypeTok{String}
@@ -206,8 +208,8 @@ items). This means that \texttt{NonEmpty\ a} is isomorphic to
 \texttt{NonEmpty\ a\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ {[}a{]})}!
 
 Another curious product is the fact that every type \texttt{a} is a product
-between \emph{itself} and unit, \texttt{()}. That is, every type \texttt{a} is
-isomorphic to \texttt{(a,\ ())} (which follows from the algebraic property
+between \emph{itself} and unit, \texttt{()}. Every type \texttt{a} is isomorphic
+to \texttt{(a,\ ())} (which follows from the algebraic property
 \includegraphics{https://latex.codecogs.com/png.latex?x\%20\%2A\%201\%20\%3D\%20x}).
 Freaky, right?
 
@@ -227,9 +229,9 @@ One final interesting ``product in disguise'' is \texttt{Either\ a\ a}. ``But
 wait,'' you say. ``That's a sum\ldots{}right??''
 
 Well, yeah. But in addition, any \texttt{Either\ a\ a} is the product between
-\texttt{Bool} and \texttt{a}. That is, \texttt{Either\ a\ a} is isomorphic to
-\texttt{(Bool,\ a)}. The \texttt{Bool} tells you ``left or right?'' and the
-\texttt{a} is the contents!
+\texttt{Bool} and \texttt{a}. In other words, \texttt{Either\ a\ a} is
+isomorphic to \texttt{(Bool,\ a)}. The \texttt{Bool} tells you ``left or
+right?'' and the \texttt{a} is the contents!
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -312,7 +314,7 @@ So, here's the secret: A \texttt{Lens\textquotesingle{}\ s\ a} means that
 \emph{\texttt{s} is a product between \texttt{a} and some type \texttt{q}}.
 
 That means that if it is possible to represent \texttt{s} as some
-\texttt{(a,\ q)} (that is,
+\texttt{(a,\ q)} (or,
 \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}), \emph{then you
 have two lenses}! Lenses are nothing more than \emph{descriptions of products}!
 Another way to think of this is that if you are able to ``split'' a type into
@@ -328,7 +330,7 @@ that lenses embody descriptions of products:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- | s <~> (a, q)}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L58-L61}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L59-L62}
 
 \KeywordTok{data} \DataTypeTok{Lens'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.} \DataTypeTok{Lens'}
 \NormalTok{    \{}\OtherTok{ split   ::}\NormalTok{ s }\OtherTok{->}\NormalTok{ (a, q)}
@@ -353,7 +355,7 @@ We can implement our necessary lens API as so:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L99-L104}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L100-L105}
 
 \OtherTok{view ::} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ a)}
 \NormalTok{view }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=}\NormalTok{ fst }\FunctionTok{.}\NormalTok{ split}
@@ -373,7 +375,7 @@ The implementation of the helper function \texttt{over} (which modifies the
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L106-L107}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L107-L108}
 
 \OtherTok{overL ::} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ s)}
 \NormalTok{overL }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\}  f }\FunctionTok{=}\NormalTok{ unsplit }\FunctionTok{.}\NormalTok{ first f }\FunctionTok{.}\NormalTok{ split   }\CommentTok{-- instance Bifunctor (,)}
@@ -391,7 +393,7 @@ Let's take a look at our first product we talked about:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L122-L125}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L123-L126}
 
 \KeywordTok{data} \DataTypeTok{Person} \FunctionTok{=} \DataTypeTok{P}
 \NormalTok{    \{}\OtherTok{ _pName ::} \DataTypeTok{String}
@@ -408,13 +410,18 @@ lens for every item in the product.
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- Person <~> (String, Int)}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L123-L125}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L128-L138}
 
-\NormalTok{    \{}\OtherTok{ _pName ::} \DataTypeTok{String}
-\NormalTok{    ,}\OtherTok{ _pAge  ::} \DataTypeTok{Int}
+\OtherTok{pName ::} \DataTypeTok{Lens'} \DataTypeTok{Person} \DataTypeTok{String}
+\NormalTok{pName }\FunctionTok{=} \DataTypeTok{Lens'}
+\NormalTok{    \{ split   }\FunctionTok{=}\NormalTok{ \textbackslash{}(}\DataTypeTok{P}\NormalTok{ n a) }\OtherTok{->}\NormalTok{ (n, a)}
+\NormalTok{    , unsplit }\FunctionTok{=}\NormalTok{ \textbackslash{}(n, a)  }\OtherTok{->} \DataTypeTok{P}\NormalTok{ n a}
 \NormalTok{    \}}
 
-\NormalTok{    ,}\OtherTok{ _pAge  ::} \DataTypeTok{Int}
+\OtherTok{pAge ::} \DataTypeTok{Lens'} \DataTypeTok{Person} \DataTypeTok{Int}
+\NormalTok{pAge }\FunctionTok{=} \DataTypeTok{Lens'}
+\NormalTok{    \{ split   }\FunctionTok{=}\NormalTok{ \textbackslash{}(}\DataTypeTok{P}\NormalTok{ n a) }\OtherTok{->}\NormalTok{ (a, n)}
+\NormalTok{    , unsplit }\FunctionTok{=}\NormalTok{ \textbackslash{}(a, n)  }\OtherTok{->} \DataTypeTok{P}\NormalTok{ n a}
 \NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
@@ -444,7 +451,7 @@ gives some interesting insight. This tells us that we always have an
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- a <~> (a, ())}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L139-L149}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L140-L150}
 
 \OtherTok{identityL ::} \DataTypeTok{Lens'}\NormalTok{ a a}
 \NormalTok{identityL }\FunctionTok{=} \DataTypeTok{Lens'}
@@ -475,7 +482,7 @@ might suggest:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L151-L161}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L152-L162}
 
 \OtherTok{mysteryLens1 ::} \DataTypeTok{Lens'}\NormalTok{ (}\DataTypeTok{Either}\NormalTok{ a a) }\DataTypeTok{Bool}
 
@@ -489,11 +496,19 @@ saying that every \texttt{Either\ a\ a} has some \texttt{Bool} ``inside'' it.
 From our knowledge of our product, we know that this \texttt{Bool} is really a
 \emph{flag} for left-ness or right-ness. Getting the \texttt{Bool} is finding
 out if we're in \texttt{Left} or \texttt{Right}, and flipping the \texttt{Bool}
-``inside'' is really just swapping from \texttt{Left} to \texttt{Right}.
+``inside'' is really just swapping from \texttt{Left} to
+\texttt{Right}.\footnote{Note that if we look at lenses as embodying ``record
+  fields'' (things that give you the ability to ``get'' a field, and ``modify''
+  a field --- corresponding with \texttt{view} and \texttt{set}), we can think
+  of \texttt{mysteryLens1} as an \emph{abstract record field} into the
+  Leftness/Rightness of a value. Thinking of lenses as defining abstract record
+  fields is a
+  \href{http://blog.ezyang.com/2016/12/a-tale-of-backwards-compatibility-in-asts/}{common
+  tool for backwards compatiblity}.}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L171-L175}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L172-L176}
 
 \OtherTok{flipEither ::} \DataTypeTok{Either}\NormalTok{ a a }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a a}
 \NormalTok{flipEither }\FunctionTok{=}\NormalTok{ overL mysteryLens1 not}
@@ -516,14 +531,6 @@ out if we're in \texttt{Left} or \texttt{Right}, and flipping the \texttt{Bool}
 \end{Highlighting}
 \end{Shaded}
 
-Note that if we look at lenses as embodying ``record fields'' (things that give
-you the ability to ``get'' a field, and ``modify'' a field --- corresponding
-with \texttt{view} and \texttt{set}), we can think of \texttt{mysteryLens1} as
-an \emph{abstract record field} into the Leftness/Rightness of a value. Thinking
-of lenses as defining abstract record fields is a
-\href{http://blog.ezyang.com/2016/12/a-tale-of-backwards-compatibility-in-asts/}{common
-tool for backwards compatiblity}.
-
 Looking at \texttt{mysteryLens2\ ::\ Lens\textquotesingle{}\ (Either\ a\ a)\ a},
 we are saying that every \texttt{Either\ a\ a} has some \texttt{a} ``inside''
 it. From what we know about the underlying product, the \texttt{a} is just the
@@ -534,7 +541,7 @@ leftness/rightness.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L177-L181}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L178-L182}
 
 \OtherTok{fromEither ::} \DataTypeTok{Either}\NormalTok{ a a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{fromEither }\FunctionTok{=}\NormalTok{ view mysteryLens2}
@@ -593,7 +600,7 @@ For example, here's a data type you might encounter out there in the real world:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L198-L199}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L199-L200}
 
 \KeywordTok{data} \DataTypeTok{Shape} \FunctionTok{=} \DataTypeTok{Circle}  \DataTypeTok{Double}           \CommentTok{-- radius}
            \FunctionTok{|} \DataTypeTok{RegPoly} \DataTypeTok{Natural} \DataTypeTok{Double}   \CommentTok{-- number of sides, length of sides}
@@ -644,37 +651,11 @@ is a sum between \texttt{()} and \texttt{NonEmpty\ a} is saying that
 denialists}.\footnote{Technically, LEM denialists and constructivists are
   somewhat vindicated here, because it is not strictly true in Haskell that a
   list is either an empty list or a non-empty list. It can actually
-  \href{https://wiki.haskell.org/Bottom}{be neither}.}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- [a] <~> Either () (NonEmpty a)}
-
-\OtherTok{match ::}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ () (}\DataTypeTok{NonEmpty}\NormalTok{ a)}
-\NormalTok{match []     }\FunctionTok{=} \DataTypeTok{Left}\NormalTok{  ()}
-\NormalTok{match (x}\FunctionTok{:}\NormalTok{xs) }\FunctionTok{=} \DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)}
-
-\OtherTok{inject ::} \DataTypeTok{Either}\NormalTok{ () (}\DataTypeTok{NonEmpty}\NormalTok{ a) }\OtherTok{->}\NormalTok{ [a]}
-\NormalTok{inject (}\DataTypeTok{Left}\NormalTok{   _       ) }\FunctionTok{=}\NormalTok{ []}
-\NormalTok{inject (}\DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)) }\FunctionTok{=}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
-\end{Highlighting}
-\end{Shaded}
-
-And, actually, there is another way to deconstruct \texttt{{[}a{]}} as a sum in
-Haskell. You can treat it as a sum between \texttt{()} and
-\texttt{({[}a{]},\ a)} --- where the \texttt{()} represents the empty list and
-the \texttt{({[}a{]},\ a)} represents an ``all but the last item'' list and
-``the last item'':\footnote{Fun haskell challenge: the version of \texttt{match}
-  for the
-  \texttt{{[}a{]}\ \textless{}\textasciitilde{}\textgreater{}\ Either\ ()\ ({[}a{]},\ a)}
-  isomorphism I wrote there is conceptually simple, but very inefficient. It
-  traverses the input list three times, uses two partial functions, and uses a
-  \texttt{Bool}. Can you write a \texttt{match} that does the same thing using
-  only a single fold and no partial functions or \texttt{Bool}s?
-
-  I managed to write one
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs\#L24-L32}{using
-  a difference list}!}
+  \href{https://wiki.haskell.org/Bottom}{be neither}.}\footnote{And, actually,
+  there is another way to deconstruct \texttt{{[}a{]}} as a sum in Haskell. You
+  can treat it as a sum between \texttt{()} and \texttt{({[}a{]},\ a)} --- where
+  the \texttt{()} represents the empty list and the \texttt{({[}a{]},\ a)}
+  represents an ``all but the last item'' list and ``the last item'':
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -694,15 +675,40 @@ the \texttt{({[}a{]},\ a)} represents an ``all but the last item'' list and
 \end{Highlighting}
 \end{Shaded}
 
-I just think it's interesting that the same type can be ``decomposed'' into a
-sum of two different types in multiple ways.
+  I just think it's interesting that the same type can be ``decomposed'' into a
+  sum of two different types in multiple ways.
+
+  Fun haskell challenge: the version of \texttt{match} for the
+  \texttt{{[}a{]}\ \textless{}\textasciitilde{}\textgreater{}\ Either\ ()\ ({[}a{]},\ a)}
+  isomorphism I wrote there is conceptually simple, but very inefficient. It
+  traverses the input list three times, uses two partial functions, and uses a
+  \texttt{Bool}. Can you write a \texttt{match} that does the same thing using
+  only a single fold and no partial functions or \texttt{Bool}s?
+
+  I managed to write one
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs\#L25-L33}{using
+  a difference list}!}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- [a] <~> Either () (NonEmpty a)}
+
+\OtherTok{match ::}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ () (}\DataTypeTok{NonEmpty}\NormalTok{ a)}
+\NormalTok{match []     }\FunctionTok{=} \DataTypeTok{Left}\NormalTok{  ()}
+\NormalTok{match (x}\FunctionTok{:}\NormalTok{xs) }\FunctionTok{=} \DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)}
+
+\OtherTok{inject ::} \DataTypeTok{Either}\NormalTok{ () (}\DataTypeTok{NonEmpty}\NormalTok{ a) }\OtherTok{->}\NormalTok{ [a]}
+\NormalTok{inject (}\DataTypeTok{Left}\NormalTok{   _       ) }\FunctionTok{=}\NormalTok{ []}
+\NormalTok{inject (}\DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)) }\FunctionTok{=}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
+\end{Highlighting}
+\end{Shaded}
 
 Another curious sum: if we consider the ``empty data type'' \texttt{Void}, the
 type with no inhabitants:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L201-L206}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L202-L207}
 
 \KeywordTok{data} \DataTypeTok{Void}           \CommentTok{-- no constructors, no valid inhabitants}
 
@@ -785,7 +791,7 @@ witness:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- | Like `Int`, but cannot be constructed if it is 4}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L285-L285}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L286-L286}
 
 \KeywordTok{type} \DataTypeTok{Not4} \FunctionTok{=} \DataTypeTok{Refined}\NormalTok{ (}\DataTypeTok{NotEqualTo} \DecValTok{4}\NormalTok{) }\DataTypeTok{Int}
 
@@ -861,7 +867,7 @@ Under this interpretation, we can write a nice representation of
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- | s <~> Either a q}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L77-L80}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L78-L81}
 
 \KeywordTok{data} \DataTypeTok{Prism'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.} \DataTypeTok{Prism'}
 \NormalTok{    \{}\OtherTok{ match  ::}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a q}
@@ -877,7 +883,7 @@ We can now implement the prism API:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L109-L112}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L110-L113}
 
 \OtherTok{preview ::} \DataTypeTok{Prism'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (s }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a)}
 \NormalTok{preview }\DataTypeTok{Prism'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} x }\FunctionTok{=} \KeywordTok{case}\NormalTok{ match x }\KeywordTok{of}
@@ -897,7 +903,7 @@ exists:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L106-L118}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L107-L119}
 
 \OtherTok{overL ::} \DataTypeTok{Lens'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ (s }\OtherTok{->}\NormalTok{ s)}
 \NormalTok{overL }\DataTypeTok{Lens'}\NormalTok{\{}\FunctionTok{..}\NormalTok{\}  f }\FunctionTok{=}\NormalTok{ unsplit }\FunctionTok{.}\NormalTok{ first f }\FunctionTok{.}\NormalTok{ split   }\CommentTok{-- instance Bifunctor (,)}
@@ -920,7 +926,7 @@ from this perspective.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L198-L199}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L199-L200}
 
 \KeywordTok{data} \DataTypeTok{Shape} \FunctionTok{=} \DataTypeTok{Circle}  \DataTypeTok{Double}           \CommentTok{-- radius}
            \FunctionTok{|} \DataTypeTok{RegPoly} \DataTypeTok{Natural} \DataTypeTok{Double}   \CommentTok{-- number of sides, length of sides}
@@ -933,7 +939,7 @@ Because \texttt{Shape} is a sum between \texttt{Double} and
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- Shape <~> Either Natural (Natural, Double)}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L208-L226}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L209-L227}
 
 \OtherTok{_Circle ::} \DataTypeTok{Prism'} \DataTypeTok{Shape} \DataTypeTok{Double}
 \NormalTok{_Circle }\FunctionTok{=} \DataTypeTok{Prism'}
@@ -979,7 +985,7 @@ What can we get out of our decomposition of \texttt{{[}a{]}} as a sum between
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- [a] <~> Either () (NonEmpty a)}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L228-L246}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L229-L247}
 
 \OtherTok{_Nil ::} \DataTypeTok{Prism'}\NormalTok{ [a] ()}
 \NormalTok{_Nil }\FunctionTok{=} \DataTypeTok{Prism'}
@@ -1020,29 +1026,28 @@ It looks like the \texttt{()} branch's \texttt{preview} corresponds to a prism
 that matches on an empty list, and the \texttt{NonEmpty\ a} branch corresponds
 to a prism that matches on a non-empty list. And the \texttt{()} branch's
 \texttt{review} corresponds to constructing an empty list, and the
-\texttt{NonEmpty\ a} branch corresponds to constructing a non-empty list.
+\texttt{NonEmpty\ a} branch corresponds to constructing a non-empty
+list.\footnote{We see a sort of pattern here. And, if we look deeper, we will
+  see that \emph{all prisms} correspond to some sort of ``constructor''.
 
-We see a sort of pattern here. And, if we look deeper, we will see that
-\emph{all prisms} correspond to some sort of ``constructor''.
+  After all, what do constructors give you? Two things: the ability to
+  ``construct'' a value, and the ability to do ``case-analysis'' or ``pattern
+  match'' a value.
 
-After all, what do constructors give you? Two things: the ability to
-``construct'' a value, and the ability to do ``case-analysis'' or ``pattern
-match'' a value.
+  The API of a ``constructor'' is pretty much exactly the Prism API, where
+  \texttt{preview} is ``matching'' and \texttt{review} is ``constructing''. In
+  fact, we often use Prisms to simulate ``abstract'' constructors.
 
-The API of a ``constructor'' is pretty much exactly the Prism API, where
-\texttt{preview} is ``matching'' and \texttt{review} is ``constructing''. In
-fact, we often use Prisms to simulate ``abstract'' constructors.
-
-An \emph{abstract constructor} is exactly what our \emph{other} \texttt{{[}a{]}}
-sum decomposition gives us! If we look at that isomorphism
-\texttt{{[}a{]}\ \textless{}\textasciitilde{}\textgreater{}\ Either\ ()\ ({[}a{]},\ a)}
-(the ``tail-and-last'' breakdown) and write out the prisms, we see that they
-correspond to the abstract constructors \texttt{\_Nil} and \texttt{\_Snoc}:
+  An \emph{abstract constructor} is exactly what our \emph{other}
+  \texttt{{[}a{]}} sum decomposition gives us! If we look at that isomorphism
+  \texttt{{[}a{]}\ \textless{}\textasciitilde{}\textgreater{}\ Either\ ()\ ({[}a{]},\ a)}
+  (the ``tail-and-last'' breakdown) and write out the prisms, we see that they
+  correspond to the abstract constructors \texttt{\_Nil} and \texttt{\_Snoc}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- [a] <~> Either () ([a], a)}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L248-L266}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L249-L267}
 
 \OtherTok{_Nil' ::} \DataTypeTok{Prism'}\NormalTok{ [a] ()}
 \NormalTok{_Nil' }\FunctionTok{=} \DataTypeTok{Prism'}
@@ -1066,18 +1071,18 @@ correspond to the abstract constructors \texttt{\_Nil} and \texttt{\_Snoc}:
 \end{Highlighting}
 \end{Shaded}
 
-\texttt{\_Snoc} is an ``abstract constructor'' for a list that lets us:
+  \texttt{\_Snoc} is an ``abstract constructor'' for a list that lets us:
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  ``Construct'' an \texttt{{[}a{]}} given an original list \texttt{{[}a{]}} and
-  an item to add to the end, \texttt{a}
-\item
-  ``Deconstruct'' an \texttt{{[}a{]}} into an initial run \texttt{{[}a{]}} and
-  its last element \texttt{a} (as a pattern match that might ``fail'').
-\end{enumerate}
+  \begin{enumerate}
+  \def\labelenumi{\arabic{enumi}.}
+  \tightlist
+  \item
+    ``Construct'' an \texttt{{[}a{]}} given an original list \texttt{{[}a{]}}
+    and an item to add to the end, \texttt{a}
+  \item
+    ``Deconstruct'' an \texttt{{[}a{]}} into an initial run \texttt{{[}a{]}} and
+    its last element \texttt{a} (as a pattern match that might ``fail'').
+  \end{enumerate}}
 
 And, looking at
 \texttt{a\ \textless{}\textasciitilde{}\textgreater{}\ Either\ a\ Void}\ldots{}what
@@ -1086,7 +1091,7 @@ does that decomposition give us, conceptually?
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- a <~> Either a Void}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L268-L283}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L269-L284}
 
 \OtherTok{identityP ::} \DataTypeTok{Prism'}\NormalTok{ a a}
 \NormalTok{identityP }\FunctionTok{=} \DataTypeTok{Prism'}
@@ -1128,7 +1133,7 @@ insight do we get?
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L287-L305}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L288-L306}
 
 \OtherTok{only4 ::} \DataTypeTok{Prism'} \DataTypeTok{Int}\NormalTok{ ()}
 \NormalTok{only4 }\FunctionTok{=} \DataTypeTok{Prism'}
@@ -1158,7 +1163,7 @@ four'', and ``get a 4''
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L307-L311}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L308-L312}
 
 \OtherTok{isEqualTo4 ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Bool}   \CommentTok{-- Checks if a value is 4}
 \NormalTok{isEqualTo4 }\FunctionTok{=}\NormalTok{ isJust }\FunctionTok{.}\NormalTok{ preview only4}
@@ -1187,7 +1192,7 @@ constructor'' for \texttt{Not4}, essentially \texttt{refineFail} and
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L313-L317}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L314-L318}
 
 \OtherTok{makeNot4 ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Not4}
 \NormalTok{makeNot4 }\FunctionTok{=}\NormalTok{ preview refined4}
@@ -1216,9 +1221,9 @@ If you think of a prism as just ``a lens that might fail'' (as it's often
 taught), you might think yes. If you think of a prism as just ``a constructor
 and deconstructor'', you might also think yes, since you can construct an
 \texttt{{[}a{]}} with only a single \texttt{a}. You can definitely ``implement''
-this prism using our ``too big'' representation, in terms of \texttt{preview}
-and \texttt{review}. Both of these viewpoints of prisms will fail you and lead
-you astray.
+this prism incorrectly using our ``too big'' representation, in terms of
+\texttt{preview} and \texttt{review}, and it will still typecheck. Both of these
+viewpoints of prisms will fail you and lead you astray.
 
 However, if you think of it as witnessing a sum, you might see that this prism
 isn't possible. There is no possible type \texttt{q} where \texttt{{[}a{]}} is a
@@ -1261,7 +1266,7 @@ think of \texttt{p\ a\ b} as ``a relationship between \texttt{a} and
 \texttt{b}''.
 
 The \texttt{Profunctor} typeclass \texttt{p} gives us a function called
-\texttt{iso}, that lets us transform a profunctor in terms of an isomorphism.
+\texttt{iso} that lets us transform a profunctor in terms of an isomorphism.
 
 If type \texttt{s} is isomorphic to type \texttt{a}
 (\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ a}), then we can the
@@ -1271,7 +1276,8 @@ function \texttt{iso}, that the \texttt{Profunctor} class gives us:
 \begin{Highlighting}[]
 \CommentTok{-- s <~> a}
 
-\CommentTok{-- | The real `iso` is actually a little more polymorphic}
+\CommentTok{-- | The real `iso` is actually a little more polymorphic.  It's also normally}
+\CommentTok{-- called `dimap`, but `iso` is its common alias.}
 \KeywordTok{class} \DataTypeTok{Profunctor}\NormalTok{ p }\KeywordTok{where}
 \OtherTok{    iso ::} \DataTypeTok{Profunctor}\NormalTok{ p}
         \OtherTok{=>}\NormalTok{ (s }\OtherTok{->}\NormalTok{ a)         }\CommentTok{-- ^ one half of the isomorphism}
@@ -1287,9 +1293,6 @@ functions that witness
 \texttt{Profunctor} typeclass lets us transform a \texttt{p\ a\ a} into a
 \texttt{p\ s\ s} (a relationship on \texttt{a}s to be a relationship on
 \texttt{s}).
-
-(The \texttt{Profunctor} typeclass actually just provides \texttt{dimap}, but I
-am using the common alias \texttt{iso\ =\ dimap} to enforce the connection)
 
 \hypertarget{profunctor-lens}{%
 \subsection{Profunctor Lens}\label{profunctor-lens}}
@@ -1313,24 +1316,25 @@ That means that we have, at our disposal:
 \begin{Highlighting}[]
 \NormalTok{iso split unsplit}
 \OtherTok{    ::} \DataTypeTok{Profunctor}\NormalTok{ p}
-    \OtherTok{=>}\NormalTok{ p (a, q) (a, q) }\OtherTok{->}\NormalTok{ p s s}
+    \OtherTok{=>}\NormalTok{ p (a, q) (a, q)}
+    \OtherTok{->}\NormalTok{ p s s}
 \end{Highlighting}
 \end{Shaded}
 
-In order to get a \texttt{p\ a\ a\ -\textgreater{}\ p\ s\ s}, we need a way to
-turn a \texttt{p\ a\ a} into a \texttt{p\ (a,\ q)\ (a,\ q)}. This says ``take a
-relationship on \texttt{a}s and turn it into a relationship on \texttt{(a,\ q)},
-\emph{ignoring} the \texttt{q}''.
+With that, in order to get a \texttt{p\ a\ a\ -\textgreater{}\ p\ s\ s}, we need
+a way to turn a \texttt{p\ a\ a} into a \texttt{p\ (a,\ q)\ (a,\ q)}. This says
+``take a relationship on \texttt{a}s and turn it into a relationship on
+\texttt{(a,\ q)}, \emph{ignoring} the \texttt{q}''.
 
-The typeclass \texttt{Strong} gives us just that!
+There happens to be a typeclass called \texttt{Strong} that gives us just that!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- | The real `first'` is actually a little more polymorphic}
+\CommentTok{-- | The "operate on a part of a whole" typeclass}
 \KeywordTok{class} \DataTypeTok{Profunctor}\NormalTok{ p }\OtherTok{=>} \DataTypeTok{Strong}\NormalTok{ p }\KeywordTok{where}
 \NormalTok{    first'}
-\OtherTok{        ::}\NormalTok{ p a a                }\CommentTok{-- ^ relationship on part}
-        \OtherTok{->}\NormalTok{ p (a, q) (a, q)      }\CommentTok{-- ^ relationship on whole}
+\OtherTok{        ::}\NormalTok{ p a b                }\CommentTok{-- ^ relationship on part}
+        \OtherTok{->}\NormalTok{ p (a, q) (b, q)      }\CommentTok{-- ^ relationship on whole}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1338,14 +1342,17 @@ And so we now have a definition of a profunctor lens:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L339-L347}
+
 \NormalTok{makeLens}
 \OtherTok{    ::} \DataTypeTok{Strong}\NormalTok{ p}
     \OtherTok{=>}\NormalTok{ (s }\OtherTok{->}\NormalTok{ (a, q))        }\CommentTok{-- ^ split}
     \OtherTok{->}\NormalTok{ ((a, q) }\OtherTok{->}\NormalTok{ s)        }\CommentTok{-- ^ unsplit}
     \OtherTok{->}\NormalTok{ p a a                }\CommentTok{-- ^ relationship on a}
     \OtherTok{->}\NormalTok{ p s s                }\CommentTok{-- ^ relationship on s}
-\NormalTok{makeLens split unsplit }\FunctionTok{=}\NormalTok{ iso split unsplit  }\CommentTok{-- ^ p (a, q) (a, q) -> p s s}
-                       \FunctionTok{.}\NormalTok{ first'             }\CommentTok{-- ^ p a a -> p (a, q) (a, q)}
+\NormalTok{makeLens split unsplit }\FunctionTok{=}
+\NormalTok{    iso split unsplit  }\CommentTok{-- ^ p (a, q) (a, q) -> p s s}
+  \FunctionTok{.}\NormalTok{ first'             }\CommentTok{-- ^ p a a -> p (a, q) (a, q)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1358,6 +1365,16 @@ isomorphism that defines a lens. And so
 \texttt{p\ a\ a\ -\textgreater{}\ p\ s\ s}, going through the
 \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)} isomorphism, is
 a lens!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- | The "forall p" means that that the `Lens` is defined to work for all}
+\CommentTok{-- possible profunctors as long as it has an instance of `Strong`}
+\KeywordTok{type} \DataTypeTok{Lens'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall p}\FunctionTok{.} \DataTypeTok{Strong}\NormalTok{ p}
+              \OtherTok{=>}\NormalTok{ p a a}
+              \OtherTok{->}\NormalTok{ p s s}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{profunctor-prisms}{%
 \subsection{Profunctor Prisms}\label{profunctor-prisms}}
@@ -1386,20 +1403,22 @@ With a prism, we are saying that \texttt{s} is isomorphic to
 \end{Highlighting}
 \end{Shaded}
 
-In order to get a \texttt{p\ a\ a\ -\textgreater{}\ p\ s\ s}, we need a way to
-turn a \texttt{p\ a\ a} into a \texttt{p\ (Either\ a\ q)\ (Either\ a\ q)}. This
-says ``take a relationship on \texttt{a}s and turn it into a relationship on
-\texttt{Either\ a\ q}, \emph{ignoring} the \texttt{q}''.
+With that tool in hand, in order to get a
+\texttt{p\ a\ a\ -\textgreater{}\ p\ s\ s}, we need a way to turn a
+\texttt{p\ a\ a} into a \texttt{p\ (Either\ a\ q)\ (Either\ a\ q)}. This says
+``take a relationship on \texttt{a}s and turn it into a relationship on
+\texttt{Either\ a\ q}, doing nothing if the \texttt{q} pops up''.
 
-The typeclass \texttt{Choice} gives us just that:
+Luckily, there happens to be a typeclass called \texttt{Choice} that gives us
+just!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- | The real `left'` is actually a little more polymorphic}
+\CommentTok{-- | The "operate on a branch of a possibility" typeclass}
 \KeywordTok{class} \DataTypeTok{Profunctor}\NormalTok{ p }\OtherTok{=>} \DataTypeTok{Choice}\NormalTok{ p }\KeywordTok{where}
 \NormalTok{    left'}
-\OtherTok{        ::}\NormalTok{ p a a                        }\CommentTok{-- ^ relationship on branch}
-        \OtherTok{->}\NormalTok{ p (}\DataTypeTok{Either}\NormalTok{ a q) (}\DataTypeTok{Either}\NormalTok{ a q)  }\CommentTok{-- ^ relationship on all possibilities}
+\OtherTok{        ::}\NormalTok{ p a b                        }\CommentTok{-- ^ relationship on branch}
+        \OtherTok{->}\NormalTok{ p (}\DataTypeTok{Either}\NormalTok{ a q) (}\DataTypeTok{Either}\NormalTok{ b q)  }\CommentTok{-- ^ relationship on all possibilities}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1407,10 +1426,12 @@ And so we now have a definition of a profunctor prism:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L349-L357}
+
 \NormalTok{makePrism}
 \OtherTok{    ::} \DataTypeTok{Choice}\NormalTok{ p}
-    \OtherTok{=>}\NormalTok{ (s }\OtherTok{->}\NormalTok{ (a, q))        }\CommentTok{-- ^ match}
-    \OtherTok{->}\NormalTok{ ((a, q) }\OtherTok{->}\NormalTok{ s)        }\CommentTok{-- ^ inject}
+    \OtherTok{=>}\NormalTok{ (s }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a q)    }\CommentTok{-- ^ match}
+    \OtherTok{->}\NormalTok{ (}\DataTypeTok{Either}\NormalTok{ a q }\OtherTok{->}\NormalTok{ s)    }\CommentTok{-- ^ inject}
     \OtherTok{->}\NormalTok{ p a a                }\CommentTok{-- ^ relationship on a}
     \OtherTok{->}\NormalTok{ p s s                }\CommentTok{-- ^ relationship on s}
 \NormalTok{makePrism match inject }\FunctionTok{=}
@@ -1565,7 +1586,9 @@ Prism s t a b
   lens. However, with \texttt{Lens\ s\ t\ a\ b}, if I say ``the \texttt{s}'',
   you know that I just mean ``the \texttt{outer} \emph{before} we use the
   lens'', and if I say ``the \texttt{t}'', you know that I mean ``the
-  \texttt{outer} \emph{after} we use the lens''.
+  \texttt{outer} \emph{after} we use the lens''. The profunctor optics version
+  of lens becomes
+  \texttt{Lens\ s\ t\ a\ b\ =\ p\ a\ b\ -\textgreater{}\ p\ s\ t}.
 
   \texttt{Lens\ s\ t\ a\ b} (which is a version of
   \texttt{Lens\textquotesingle{}\ outer\ inner} where we relabel the type
@@ -1611,8 +1634,8 @@ Prism s t a b
   In practice, the \texttt{q} to factor out your type into (in the
   \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)} and
   \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ Either\ a\ q}) might
-  not be an actual literal type. In most cases, it's alright to treat it as a
-  theoretical ``abstract'' type that follows the behavior you want given a
+  not be an actual ``concrete'' type. In most cases, it's alright to treat it as
+  a theoretical ``abstract'' type that follows the behavior you want given a
   restricted interface. This is ``safe'' because, if you notice, none of the
   methods in the lens or prism APIs (\texttt{view}, \texttt{set},
   \texttt{preview}, \texttt{review}) ever let an external user directly
@@ -1635,7 +1658,7 @@ Prism s t a b
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L183-L327}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L184-L328}
 
 \KeywordTok{type} \DataTypeTok{CharButNotA} \FunctionTok{=} \DataTypeTok{Char}
 
@@ -1687,7 +1710,7 @@ Prism s t a b
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L183-L194}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L184-L195}
 
 \KeywordTok{type} \DataTypeTok{CharButNotA} \FunctionTok{=} \DataTypeTok{Char}
 
@@ -1711,7 +1734,7 @@ Prism s t a b
 \subsection{Exercises}\label{exercises}}
 
 To help solidify your understanding on this perspective, here are some
-exercises!
+exercises! Most of them are conceptual and open-ended.
 
 \begin{itemize}
 \item
@@ -1719,9 +1742,21 @@ exercises!
   involving \texttt{()} and you can have a
   \texttt{Prism\textquotesingle{}\ a\ ()}.
 
-  Under what conditions can you express a type \texttt{a} is a \emph{product}
+  Under what conditions can you express a type \texttt{a} as a \emph{product}
   involving \texttt{Void}, and you can have a
-  \texttt{Lens\textquotesingle{}\ a\ Void}? (Hint: use the algebra!)
+  \texttt{Lens\textquotesingle{}\ a\ Void}? (Hint: use the algebra!) What would
+  this lens do (what are \texttt{view} and \texttt{set})?
+\item
+  We discussed the conditions where a type \texttt{a} can be expressed as a
+  product involving \texttt{()} and you can have
+  \texttt{Lens\textquotesingle{}\ a\ ()}.
+
+  Under what conditions can you express a type \texttt{a} as a product involving
+  \texttt{Bool}
+  (\texttt{a\ \textless{}\textasciitilde{}\textgreater{}\ (Bool,\ q)}), and you
+  can have a \texttt{Lens\textquotesingle{}\ a\ Bool}? (Hint: use the algebra!)
+  What would this lens do (what are \texttt{view} and \texttt{set})? And what
+  about the \texttt{Lens\textquotesingle{}\ a\ q}?
 \item
   We found that by interpreting \texttt{Either\ a\ a} as a product
   \texttt{(Bool,\ a)} gives us two interesting lenses:
@@ -1744,7 +1779,7 @@ exercises!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L36-L46}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L37-L47}
 
 \OtherTok{mysteryPrism1 ::} \DataTypeTok{Prism'}\NormalTok{ (}\DataTypeTok{Bool}\NormalTok{, a) a}
 
@@ -1760,7 +1795,7 @@ exercises!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L58-L84}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L59-L85}
 
 \KeywordTok{data} \DataTypeTok{Lens'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall q}\FunctionTok{.} \DataTypeTok{Lens'}
 \NormalTok{    \{}\OtherTok{ split   ::}\NormalTok{ s }\OtherTok{->}\NormalTok{ (a, q)}
@@ -1791,7 +1826,7 @@ exercises!
   use \emph{-XRecordWildcards}.
 
   These implementations are pretty hairy (solutions
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs\#L58-L95}{online
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs\#L59-L96}{online
   here}), and it's a sort of testament as to why we don't use this actual
   implementation in practice. In fact, for profunctor optics, we just have:
 
