@@ -1495,12 +1495,10 @@ supporter at the "Amazing" level, Sam Stites! :)
         }
     ```
 
-    `_Snoc` is an "abstract constructor" for a list that lets us:
-
-    1.  "Construct" an `[a]` given an original list `[a]` and an item to add to
-        the end, `a`
-    2.  "Deconstruct" an `[a]` into an initial run `[a]` and its last element
-        `a` (as a pattern match that might "fail").
+    `_Snoc` is an "abstract constructor" for a list that lets us "construct" an
+    `[a]` given an original list and an item to add to the end, and also
+    "deconstruct" an `[a]` into an initial run and its last element (as a
+    pattern match that might "fail").
 
 ---------
 
