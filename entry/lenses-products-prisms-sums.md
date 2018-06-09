@@ -1397,7 +1397,8 @@ Special Thanks
 
 I am very humbled to be supported by an amazing community, who make it possible
 for me to devote time to research and writing these posts. Very special thanks
-to my supporter at the "Amazing" level on \[patron\]\[\], Sam Stites! :)
+to my supporter at the "Amazing" level on
+[patreon](https://www.patreon.com/justinle/overview), Sam Stites! :)
 
 [^1]: All of this is disregarding the notorious "bottom" value that inhabits
     every type.
