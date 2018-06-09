@@ -343,7 +343,7 @@ Looking at `mysteryLens1 :: Lens' (Either a a) Bool`, we are saying that every
 `Either a a` has some `Bool` "inside" it. From our knowledge of our product, we
 know that this `Bool` is really a *flag* for left-ness or right-ness. Getting
 the `Bool` is finding out if we're in `Left` or `Right`, and flipping the `Bool`
-"inside" is really just swapping from `Left` to `Right`.[^3]
+"inside" is really just swapping from `Left` to `Right`.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L178-L182
@@ -365,6 +365,17 @@ False
 ghci> isRight (Right 'a')
 True
 ```
+
+::: {.note}
+**Aside**
+
+Note that if we look at lenses as embodying "record fields" (things that give
+you the ability to "get" a field, and "modify" a field --- corresponding with
+`view` and `set`), we can think of `mysteryLens1` as an *abstract record field*
+into the Leftness/Rightness of a value. Thinking of lenses as defining abstract
+record fields is a [common tool for backwards
+compatiblity](http://blog.ezyang.com/2016/12/a-tale-of-backwards-compatibility-in-asts/).
+:::
 
 Looking at `mysteryLens2 :: Lens' (Either a a) a`, we are saying that every
 `Either a a` has some `a` "inside" it. From what we know about the underlying
@@ -462,7 +473,7 @@ as the possibility of `NonEmpty a` (the "head" of a list consed with the rest of
 the list), then saying that `[a]` is a sum between `()` and `NonEmpty a` is
 saying that `[a]` is "either an empty list or a non-empty list". Whoa. Take
 *that*, [LEM
-denialists](https://en.wikipedia.org/wiki/Constructivism_(mathematics)).[^4][^5]
+denialists](https://en.wikipedia.org/wiki/Constructivism_(mathematics)).[^3]
 
 ``` {.haskell}
 -- [a] <~> Either () (NonEmpty a)
@@ -475,6 +486,43 @@ inject :: Either () (NonEmpty a) -> [a]
 inject (Left   _       ) = []
 inject (Right (x :| xs)) = x:xs
 ```
+
+::: {.note}
+**Aside**
+
+And, actually, there is another way to deconstruct `[a]` as a sum in Haskell.
+You can treat it as a sum between `()` and `([a], a)` --- where the `()`
+represents the empty list and the `([a], a)` represents an "all but the last
+item" list and "the last item":
+
+``` {.haskell}
+-- [a] <~> Either () ([a], a)
+
+match  :: [a] -> Either () ([a], a)
+match xs
+  | null xs   = Left  ()
+  | otherwise = Right (init xs, last xs)
+
+-- init gives you all but the last item:
+-- > init [1,2,3] = [1,2]
+
+inject :: Either () (a, [a]) -> [a]
+inject (Left   _     ) = []
+inject (Right (xs, x)) = xs ++ [x]
+```
+
+I just think it's interesting that the same type can be "decomposed" into a sum
+of two different types in multiple ways.
+
+Fun haskell challenge: the version of `match` for the
+`[a] <~> Either () ([a], a)` isomorphism I wrote there is conceptually simple,
+but very inefficient. It traverses the input list three times, uses two partial
+functions, and uses a `Bool`. Can you write a `match` that does the same thing
+using only a single fold and no partial functions or `Bool`s?
+
+I managed to write one [using a difference
+list](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L31-L39)!
+:::
 
 Another curious sum: if we consider the "empty data type" `Void`, the type with
 no inhabitants:
@@ -507,7 +555,7 @@ inject (Right v) = absurd v
 ```
 
 Again, if you don't believe me, verify that `inject . match = id` and
-`match . inject = id`![^6]
+`match . inject = id`![^4]
 
 One final example: earlier, we said that every type can be decomposed as a
 *product* involving `()`. Algebraically, finding that mystery type is easy ---
@@ -579,7 +627,7 @@ only possible to represent in Haskell if we can test for equality)
 ### Through the Looking-Prism
 
 Now let's bring prisms into the picture. A `Prism' s a` also refers to some `a`
-"inside" an `s`, with the following API: `preview` and `review`[^7]
+"inside" an `s`, with the following API: `preview` and `review`[^5]
 
 ``` {.haskell}
 preview :: Prism' s a -> (s -> Maybe a)   -- get the 'a' in the 's' if it exists
@@ -753,7 +801,55 @@ It looks like the `()` branch's `preview` corresponds to a prism that matches on
 an empty list, and the `NonEmpty a` branch corresponds to a prism that matches
 on a non-empty list. And the `()` branch's `review` corresponds to constructing
 an empty list, and the `NonEmpty a` branch corresponds to constructing a
-non-empty list.[^8]
+non-empty list.
+
+::: {.note}
+**Aside**
+
+We see a sort of pattern here. And, if we look deeper, we will see that *all
+prisms* correspond to some sort of "constructor".
+
+After all, what do constructors give you? Two things: the ability to "construct"
+a value, and the ability to do "case-analysis" or "pattern match" a value.
+
+The API of a "constructor" is pretty much exactly the Prism API, where `preview`
+is "matching" and `review` is "constructing". In fact, we often use Prisms to
+simulate "abstract" constructors.
+
+An *abstract constructor* is exactly what our *other* `[a]` sum decomposition
+gives us! If we look at that isomorphism `[a] <~> Either () ([a], a)` (the
+"tail-and-last" breakdown) and write out the prisms, we see that they correspond
+to the abstract constructors `_Nil` and `_Snoc`:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L255-L273
+
+_Nil' :: Prism' [a] ()
+_Nil' = Prism'
+    { match  = \xs -> if null xs
+        then Left  ()
+        else Right (init xs, last xs)
+    , inject = \case
+        Left _        -> []
+        Right (xs, x) -> xs ++ [x]
+    }
+
+_Snoc :: Prism' [a] ([a], a)
+_Snoc = Prism'
+    { match  = \xs -> if null xs
+        then Right ()
+        else Left  (init xs, last xs)
+    , inject = \case
+        Left  (xs, x) -> xs ++ [x]
+        Right _       -> []
+    }
+```
+
+`_Snoc` is an "abstract constructor" for a list that lets us "construct" an
+`[a]` given an original list and an item to add to the end, and also
+"deconstruct" an `[a]` into an initial run and its last element (as a pattern
+match that might "fail").
+:::
 
 And, looking at `a <~> Either a Void`...what does that decomposition give us,
 conceptually?
@@ -1163,9 +1259,9 @@ version of lens becomes `Lens s t a b = p a b -> p s t`.
 `Lens s t a b` (which is a version of `Lens' outer inner` where we relabel the
 type variables of the inputs and outputs) is called a [lens
 family](http://comonad.com/reader/2012/mirrored-lenses/). Be careful to never
-call it a "polymorphic lens". It **not** a polymorphic lens. It is just a normal
-lens where we re-label the type variables of all of the involved pieces to aid
-in our discourse.
+call it a "polymorphic lens". It is just a normal lens where we re-label the
+type variables of all of the involved pieces to aid in our discourse. It is
+often also called a "type-changing lens".
 
 ``` {.haskell}
 data Lens s t a b = forall q. Lens
@@ -1385,80 +1481,18 @@ to my supporter at the "Amazing" level on
     "`split` and `join` must form an isomorphism" is a much clearer and natural
     law than get-put/put-get/put-put.
 
-[^3]: Note that if we look at lenses as embodying "record fields" (things that
-    give you the ability to "get" a field, and "modify" a field ---
-    corresponding with `view` and `set`), we can think of `mysteryLens1` as an
-    *abstract record field* into the Leftness/Rightness of a value. Thinking of
-    lenses as defining abstract record fields is a [common tool for backwards
-    compatiblity](http://blog.ezyang.com/2016/12/a-tale-of-backwards-compatibility-in-asts/).
-
-[^4]: Technically, LEM denialists and constructivists are somewhat vindicated
+[^3]: Technically, LEM denialists and constructivists are somewhat vindicated
     here, because it is not strictly true in Haskell that a list is either an
     empty list or a non-empty list. It can actually [be
-    neither](https://wiki.haskell.org/Bottom).
+    neither](https://wiki.haskell.org/Bottom). Being able to say that a list is
+    either an empty list or a non-empty list is exactly the same as assuming the
+    law of the excluded middle in Haskell.
 
-[^5]: And, actually, there is another way to deconstruct `[a]` as a sum in
-    Haskell. You can treat it as a sum between `()` and `([a], a)` --- where the
-    `()` represents the empty list and the `([a], a)` represents an "all but the
-    last item" list and "the last item":
-
-    ``` {.haskell}
-    -- [a] <~> Either () ([a], a)
-
-    match  :: [a] -> Either () ([a], a)
-    match xs
-      | null xs   = Left  ()
-      | otherwise = Right (init xs, last xs)
-
-    -- init gives you all but the last item:
-    -- > init [1,2,3] = [1,2]
-
-    inject :: Either () (a, [a]) -> [a]
-    inject (Left   _     ) = []
-    inject (Right (xs, x)) = xs ++ [x]
-    ```
-
-    I just think it's interesting that the same type can be "decomposed" into a
-    sum of two different types in multiple ways.
-
-    Fun haskell challenge: the version of `match` for the
-    `[a] <~> Either () ([a], a)` isomorphism I wrote there is conceptually
-    simple, but very inefficient. It traverses the input list three times, uses
-    two partial functions, and uses a `Bool`. Can you write a `match` that does
-    the same thing using only a single fold and no partial functions or `Bool`s?
-
-    I managed to write one [using a difference
-    list](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L31-L39)!
-
-[^6]: If you're verifying that `match . inject = id` for the `Either a Void`
+[^4]: If you're verifying that `match . inject = id` for the `Either a Void`
     decomposition, here's a hint: no values exist that are constructed using
     `Right`, so you don't ever have to handle the second case of `inject`.
 
-[^7]: I didn't invent these names :)
-
-[^8]: We see a sort of pattern here. And, if we look deeper, we will see that
-    *all prisms* correspond to some sort of "constructor".
-
-    After all, what do constructors give you? Two things: the ability to
-    "construct" a value, and the ability to do "case-analysis" or "pattern
-    match" a value.
-
-    The API of a "constructor" is pretty much exactly the Prism API, where
-    `preview` is "matching" and `review` is "constructing". In fact, we often
-    use Prisms to simulate "abstract" constructors.
-
-    An *abstract constructor* is exactly what our *other* `[a]` sum
-    decomposition gives us! If we look at that isomorphism
-    `[a] <~> Either () ([a], a)` (the "tail-and-last" breakdown) and write out
-    the prisms, we see that they correspond to the abstract constructors
-    [`_Nil`](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L255-L263)
-    and
-    [`_Snoc`](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L265-L273).
-
-    `_Snoc` is an "abstract constructor" for a list that lets us "construct" an
-    `[a]` given an original list and an item to add to the end, and also
-    "deconstruct" an `[a]` into an initial run and its last element (as a
-    pattern match that might "fail").
+[^5]: I didn't invent these names :)
 
 ---------
 

@@ -59,7 +59,6 @@
 \newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
 \newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
 \newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
-\usepackage{fancyvrb}
 \usepackage{graphicx}
 \makeatletter
 \def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
@@ -92,7 +91,6 @@
 \setlength{\parskip}{6pt plus 2pt minus 1pt}
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
-\VerbatimFootnotes % allows verbatim text in footnotes
 
 \title{Lenses embody Products, Prisms embody Sums}
 \author{Justin Le}
@@ -502,15 +500,7 @@ saying that every \texttt{Either\ a\ a} has some \texttt{Bool} ``inside'' it.
 From our knowledge of our product, we know that this \texttt{Bool} is really a
 \emph{flag} for left-ness or right-ness. Getting the \texttt{Bool} is finding
 out if we're in \texttt{Left} or \texttt{Right}, and flipping the \texttt{Bool}
-``inside'' is really just swapping from \texttt{Left} to
-\texttt{Right}.\footnote{Note that if we look at lenses as embodying ``record
-  fields'' (things that give you the ability to ``get'' a field, and ``modify''
-  a field --- corresponding with \texttt{view} and \texttt{set}), we can think
-  of \texttt{mysteryLens1} as an \emph{abstract record field} into the
-  Leftness/Rightness of a value. Thinking of lenses as defining abstract record
-  fields is a
-  \href{http://blog.ezyang.com/2016/12/a-tale-of-backwards-compatibility-in-asts/}{common
-  tool for backwards compatiblity}.}
+``inside'' is really just swapping from \texttt{Left} to \texttt{Right}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -536,6 +526,20 @@ out if we're in \texttt{Left} or \texttt{Right}, and flipping the \texttt{Bool}
 \DataTypeTok{True}
 \end{Highlighting}
 \end{Shaded}
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\textbf{Aside}
+
+Note that if we look at lenses as embodying ``record fields'' (things that give
+you the ability to ``get'' a field, and ``modify'' a field --- corresponding
+with \texttt{view} and \texttt{set}), we can think of \texttt{mysteryLens1} as
+an \emph{abstract record field} into the Leftness/Rightness of a value. Thinking
+of lenses as defining abstract record fields is a
+\href{http://blog.ezyang.com/2016/12/a-tale-of-backwards-compatibility-in-asts/}{common
+tool for backwards compatiblity}.
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 Looking at \texttt{mysteryLens2\ ::\ Lens\textquotesingle{}\ (Either\ a\ a)\ a},
 we are saying that every \texttt{Either\ a\ a} has some \texttt{a} ``inside''
@@ -657,11 +661,33 @@ is a sum between \texttt{()} and \texttt{NonEmpty\ a} is saying that
 denialists}.\footnote{Technically, LEM denialists and constructivists are
   somewhat vindicated here, because it is not strictly true in Haskell that a
   list is either an empty list or a non-empty list. It can actually
-  \href{https://wiki.haskell.org/Bottom}{be neither}.}\footnote{And, actually,
-  there is another way to deconstruct \texttt{{[}a{]}} as a sum in Haskell. You
-  can treat it as a sum between \texttt{()} and \texttt{({[}a{]},\ a)} --- where
-  the \texttt{()} represents the empty list and the \texttt{({[}a{]},\ a)}
-  represents an ``all but the last item'' list and ``the last item'':
+  \href{https://wiki.haskell.org/Bottom}{be neither}. Being able to say that a
+  list is either an empty list or a non-empty list is exactly the same as
+  assuming the law of the excluded middle in Haskell.}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- [a] <~> Either () (NonEmpty a)}
+
+\OtherTok{match ::}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ () (}\DataTypeTok{NonEmpty}\NormalTok{ a)}
+\NormalTok{match []     }\FunctionTok{=} \DataTypeTok{Left}\NormalTok{  ()}
+\NormalTok{match (x}\FunctionTok{:}\NormalTok{xs) }\FunctionTok{=} \DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)}
+
+\OtherTok{inject ::} \DataTypeTok{Either}\NormalTok{ () (}\DataTypeTok{NonEmpty}\NormalTok{ a) }\OtherTok{->}\NormalTok{ [a]}
+\NormalTok{inject (}\DataTypeTok{Left}\NormalTok{   _       ) }\FunctionTok{=}\NormalTok{ []}
+\NormalTok{inject (}\DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)) }\FunctionTok{=}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\textbf{Aside}
+
+And, actually, there is another way to deconstruct \texttt{{[}a{]}} as a sum in
+Haskell. You can treat it as a sum between \texttt{()} and
+\texttt{({[}a{]},\ a)} --- where the \texttt{()} represents the empty list and
+the \texttt{({[}a{]},\ a)} represents an ``all but the last item'' list and
+``the last item'':
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -681,33 +707,21 @@ denialists}.\footnote{Technically, LEM denialists and constructivists are
 \end{Highlighting}
 \end{Shaded}
 
-  I just think it's interesting that the same type can be ``decomposed'' into a
-  sum of two different types in multiple ways.
+I just think it's interesting that the same type can be ``decomposed'' into a
+sum of two different types in multiple ways.
 
-  Fun haskell challenge: the version of \texttt{match} for the
-  \texttt{{[}a{]}\ \textless{}\textasciitilde{}\textgreater{}\ Either\ ()\ ({[}a{]},\ a)}
-  isomorphism I wrote there is conceptually simple, but very inefficient. It
-  traverses the input list three times, uses two partial functions, and uses a
-  \texttt{Bool}. Can you write a \texttt{match} that does the same thing using
-  only a single fold and no partial functions or \texttt{Bool}s?
+Fun haskell challenge: the version of \texttt{match} for the
+\texttt{{[}a{]}\ \textless{}\textasciitilde{}\textgreater{}\ Either\ ()\ ({[}a{]},\ a)}
+isomorphism I wrote there is conceptually simple, but very inefficient. It
+traverses the input list three times, uses two partial functions, and uses a
+\texttt{Bool}. Can you write a \texttt{match} that does the same thing using
+only a single fold and no partial functions or \texttt{Bool}s?
 
-  I managed to write one
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs\#L31-L39}{using
-  a difference list}!}
+I managed to write one
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs\#L31-L39}{using
+a difference list}!
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- [a] <~> Either () (NonEmpty a)}
-
-\OtherTok{match ::}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ () (}\DataTypeTok{NonEmpty}\NormalTok{ a)}
-\NormalTok{match []     }\FunctionTok{=} \DataTypeTok{Left}\NormalTok{  ()}
-\NormalTok{match (x}\FunctionTok{:}\NormalTok{xs) }\FunctionTok{=} \DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)}
-
-\OtherTok{inject ::} \DataTypeTok{Either}\NormalTok{ () (}\DataTypeTok{NonEmpty}\NormalTok{ a) }\OtherTok{->}\NormalTok{ [a]}
-\NormalTok{inject (}\DataTypeTok{Left}\NormalTok{   _       ) }\FunctionTok{=}\NormalTok{ []}
-\NormalTok{inject (}\DataTypeTok{Right}\NormalTok{ (x }\FunctionTok{:|}\NormalTok{ xs)) }\FunctionTok{=}\NormalTok{ x}\FunctionTok{:}\NormalTok{xs}
-\end{Highlighting}
-\end{Shaded}
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 Another curious sum: if we consider the ``empty data type'' \texttt{Void}, the
 type with no inhabitants:
@@ -1032,31 +1046,61 @@ It looks like the \texttt{()} branch's \texttt{preview} corresponds to a prism
 that matches on an empty list, and the \texttt{NonEmpty\ a} branch corresponds
 to a prism that matches on a non-empty list. And the \texttt{()} branch's
 \texttt{review} corresponds to constructing an empty list, and the
-\texttt{NonEmpty\ a} branch corresponds to constructing a non-empty
-list.\footnote{We see a sort of pattern here. And, if we look deeper, we will
-  see that \emph{all prisms} correspond to some sort of ``constructor''.
+\texttt{NonEmpty\ a} branch corresponds to constructing a non-empty list.
 
-  After all, what do constructors give you? Two things: the ability to
-  ``construct'' a value, and the ability to do ``case-analysis'' or ``pattern
-  match'' a value.
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
-  The API of a ``constructor'' is pretty much exactly the Prism API, where
-  \texttt{preview} is ``matching'' and \texttt{review} is ``constructing''. In
-  fact, we often use Prisms to simulate ``abstract'' constructors.
+\textbf{Aside}
 
-  An \emph{abstract constructor} is exactly what our \emph{other}
-  \texttt{{[}a{]}} sum decomposition gives us! If we look at that isomorphism
-  \texttt{{[}a{]}\ \textless{}\textasciitilde{}\textgreater{}\ Either\ ()\ ({[}a{]},\ a)}
-  (the ``tail-and-last'' breakdown) and write out the prisms, we see that they
-  correspond to the abstract constructors
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs\#L255-L263}{\texttt{\_Nil}}
-  and
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs\#L265-L273}{\texttt{\_Snoc}}.
+We see a sort of pattern here. And, if we look deeper, we will see that
+\emph{all prisms} correspond to some sort of ``constructor''.
 
-  \texttt{\_Snoc} is an ``abstract constructor'' for a list that lets us
-  ``construct'' an \texttt{{[}a{]}} given an original list and an item to add to
-  the end, and also ``deconstruct'' an \texttt{{[}a{]}} into an initial run and
-  its last element (as a pattern match that might ``fail'').}
+After all, what do constructors give you? Two things: the ability to
+``construct'' a value, and the ability to do ``case-analysis'' or ``pattern
+match'' a value.
+
+The API of a ``constructor'' is pretty much exactly the Prism API, where
+\texttt{preview} is ``matching'' and \texttt{review} is ``constructing''. In
+fact, we often use Prisms to simulate ``abstract'' constructors.
+
+An \emph{abstract constructor} is exactly what our \emph{other} \texttt{{[}a{]}}
+sum decomposition gives us! If we look at that isomorphism
+\texttt{{[}a{]}\ \textless{}\textasciitilde{}\textgreater{}\ Either\ ()\ ({[}a{]},\ a)}
+(the ``tail-and-last'' breakdown) and write out the prisms, we see that they
+correspond to the abstract constructors \texttt{\_Nil} and \texttt{\_Snoc}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L255-L273}
+
+\OtherTok{_Nil' ::} \DataTypeTok{Prism'}\NormalTok{ [a] ()}
+\NormalTok{_Nil' }\FunctionTok{=} \DataTypeTok{Prism'}
+\NormalTok{    \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}xs }\OtherTok{->} \KeywordTok{if}\NormalTok{ null xs}
+        \KeywordTok{then} \DataTypeTok{Left}\NormalTok{  ()}
+        \KeywordTok{else} \DataTypeTok{Right}\NormalTok{ (init xs, last xs)}
+\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{Left}\NormalTok{ _        }\OtherTok{->}\NormalTok{ []}
+        \DataTypeTok{Right}\NormalTok{ (xs, x) }\OtherTok{->}\NormalTok{ xs }\FunctionTok{++}\NormalTok{ [x]}
+\NormalTok{    \}}
+
+\OtherTok{_Snoc ::} \DataTypeTok{Prism'}\NormalTok{ [a] ([a], a)}
+\NormalTok{_Snoc }\FunctionTok{=} \DataTypeTok{Prism'}
+\NormalTok{    \{ match  }\FunctionTok{=}\NormalTok{ \textbackslash{}xs }\OtherTok{->} \KeywordTok{if}\NormalTok{ null xs}
+        \KeywordTok{then} \DataTypeTok{Right}\NormalTok{ ()}
+        \KeywordTok{else} \DataTypeTok{Left}\NormalTok{  (init xs, last xs)}
+\NormalTok{    , inject }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+        \DataTypeTok{Left}\NormalTok{  (xs, x) }\OtherTok{->}\NormalTok{ xs }\FunctionTok{++}\NormalTok{ [x]}
+        \DataTypeTok{Right}\NormalTok{ _       }\OtherTok{->}\NormalTok{ []}
+\NormalTok{    \}}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{\_Snoc} is an ``abstract constructor'' for a list that lets us
+``construct'' an \texttt{{[}a{]}} given an original list and an item to add to
+the end, and also ``deconstruct'' an \texttt{{[}a{]}} into an initial run and
+its last element (as a pattern match that might ``fail'').
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 And, looking at
 \texttt{a\ \textless{}\textasciitilde{}\textgreater{}\ Either\ a\ Void}\ldots{}what
@@ -1549,9 +1593,9 @@ we use the lens''. The profunctor optics version of lens becomes
 \texttt{Lens\textquotesingle{}\ outer\ inner} where we relabel the type
 variables of the inputs and outputs) is called a
 \href{http://comonad.com/reader/2012/mirrored-lenses/}{lens family}. Be careful
-to never call it a ``polymorphic lens''. It \textbf{not} a polymorphic lens. It
-is just a normal lens where we re-label the type variables of all of the
-involved pieces to aid in our discourse.
+to never call it a ``polymorphic lens''. It is just a normal lens where we
+re-label the type variables of all of the involved pieces to aid in our
+discourse. It is often also called a ``type-changing lens''.
 
 \begin{Shaded}
 \begin{Highlighting}[]
