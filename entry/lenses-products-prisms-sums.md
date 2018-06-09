@@ -1075,8 +1075,10 @@ instance Profunctor (View a)
 instance Strong (View a)
 ```
 
-And when you give this to a lens (a "profunctor transformer"), you get a
-`(View a) s s`, which is a newtype wrapper over an `s -> a`!
+And when you give this to a lens (a "profunctor transformer" `p a a -> p s s`),
+you get a `(View a) s s`, which is a newtype wrapper over an `s -> a`! You've
+tricked the profunctor transformer into giving you the `s -> a` you always
+wanted.
 
 Note that you can't give this to a prism, since it is not possible to write a
 `Choice` instance for `View a`. Thus we naturally limit `view` to work only for
@@ -1138,38 +1140,14 @@ variables.
 For example, so far all our operations have basically been navigating between
 the isomorphisms that lenses and prisms represent:
 
-    Lens' outer inner
-    =================
-     outer ---> (inner, q)
-                   |
-                   v
-     outer <--- (inner, q)
-
-    Prism' outer inner
-    =================
-     outer ---> Either inner q
-                         |
-                         v
-     outer <--- Either inner q
+![`Lens' inner outer` and `Prism' inner outer`
+isomorphisms](/img/entries/lenses-and-prisms/lensprism1.png "Lens' inner outer")
 
 We can simply *re-label* the inputs and outputs to have different types, like
 so:
 
-    Lens s t a b
-    ============
-       s   ---> (  a  , q)
-                   |
-                   |
-                   v
-       t   ---> (  b  , q)
-
-    Prism s t a b
-    =============
-       s   ---> Either   a   q
-                         |
-                         |
-                         v
-       t   ---> Either   b   q
+![`Lens' inner outer` and `Prism' inner outer`
+isomorphisms](/img/entries/lenses-and-prisms/lensprism2.png "Lens s t a b")
 
 Essentially, we're just deciding to give the inputs and outputs different type
 variables. The main thing this helps is with is giving us the ability to
@@ -1202,7 +1180,6 @@ data Prism s t a b = forall q. Prism
     { match  :: s -> Either a q     -- before (with s and a)
     , inject :: Either b q -> t     -- after  (with t and b)
     }
-
 
 matching :: Prism s t a b -> (s -> Either t a)
 review   :: Prism s t a b -> (b -> t)

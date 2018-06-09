@@ -1445,9 +1445,11 @@ so we just make a profunctor \texttt{p} where \texttt{p\ s\ s} contains an
 \end{Highlighting}
 \end{Shaded}
 
-And when you give this to a lens (a ``profunctor transformer''), you get a
-\texttt{(View\ a)\ s\ s}, which is a newtype wrapper over an
-\texttt{s\ -\textgreater{}\ a}!
+And when you give this to a lens (a ``profunctor transformer''
+\texttt{p\ a\ a\ -\textgreater{}\ p\ s\ s}), you get a \texttt{(View\ a)\ s\ s},
+which is a newtype wrapper over an \texttt{s\ -\textgreater{}\ a}! You've
+tricked the profunctor transformer into giving you the
+\texttt{s\ -\textgreater{}\ a} you always wanted.
 
 Note that you can't give this to a prism, since it is not possible to write a
 \texttt{Choice} instance for \texttt{View\ a}. Thus we naturally limit
@@ -1513,42 +1515,22 @@ values and ``output'' outer/inner values different type variables.
 For example, so far all our operations have basically been navigating between
 the isomorphisms that lenses and prisms represent:
 
-\begin{verbatim}
-Lens' outer inner
-=================
- outer ---> (inner, q)
-               |
-               v
- outer <--- (inner, q)
-
-Prism' outer inner
-=================
- outer ---> Either inner q
-                     |
-                     v
- outer <--- Either inner q
-\end{verbatim}
+\begin{figure}
+\centering
+\includegraphics{/img/entries/lenses-and-prisms/lensprism1.png}
+\caption{\texttt{Lens\textquotesingle{}\ inner\ outer} and
+\texttt{Prism\textquotesingle{}\ inner\ outer} isomorphisms}
+\end{figure}
 
 We can simply \emph{re-label} the inputs and outputs to have different types,
 like so:
 
-\begin{verbatim}
-Lens s t a b
-============
-   s   ---> (  a  , q)
-               |
-               |
-               v
-   t   ---> (  b  , q)
-
-Prism s t a b
-=============
-   s   ---> Either   a   q
-                     |
-                     |
-                     v
-   t   ---> Either   b   q
-\end{verbatim}
+\begin{figure}
+\centering
+\includegraphics{/img/entries/lenses-and-prisms/lensprism2.png}
+\caption{\texttt{Lens\textquotesingle{}\ inner\ outer} and
+\texttt{Prism\textquotesingle{}\ inner\ outer} isomorphisms}
+\end{figure}
 
 Essentially, we're just deciding to give the inputs and outputs different type
 variables. The main thing this helps is with is giving us the ability to
@@ -1585,7 +1567,6 @@ involved pieces to aid in our discourse.
 \NormalTok{    \{}\OtherTok{ match  ::}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ a q     }\CommentTok{-- before (with s and a)}
 \NormalTok{    ,}\OtherTok{ inject ::} \DataTypeTok{Either}\NormalTok{ b q }\OtherTok{->}\NormalTok{ t     }\CommentTok{-- after  (with t and b)}
 \NormalTok{    \}}
-
 
 \OtherTok{matching ::} \DataTypeTok{Prism}\NormalTok{ s t a b }\OtherTok{->}\NormalTok{ (s }\OtherTok{->} \DataTypeTok{Either}\NormalTok{ t a)}
 \OtherTok{review   ::} \DataTypeTok{Prism}\NormalTok{ s t a b }\OtherTok{->}\NormalTok{ (b }\OtherTok{->}\NormalTok{ t)}

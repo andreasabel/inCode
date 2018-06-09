@@ -564,7 +564,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb55-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb55-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Profunctor</span> (<span class="dt">View</span> a)</a>
 <a class="sourceLine" id="cb55-5" data-line-number="5"><span class="kw">instance</span> <span class="dt">Strong</span> (<span class="dt">View</span> a)</a></code></pre></div>
-<p>And when you give this to a lens (a “profunctor transformer”), you get a <code>(View a) s s</code>, which is a newtype wrapper over an <code>s -&gt; a</code>!</p>
+<p>And when you give this to a lens (a “profunctor transformer” <code>p a a -&gt; p s s</code>), you get a <code>(View a) s s</code>, which is a newtype wrapper over an <code>s -&gt; a</code>! You’ve tricked the profunctor transformer into giving you the <code>s -&gt; a</code> you always wanted.</p>
 <p>Note that you can’t give this to a prism, since it is not possible to write a <code>Choice</code> instance for <code>View a</code>. Thus we naturally limit <code>view</code> to work only for lenses (because they have <code>Strong</code>) and not for prisms (because prisms require <code>Choice</code> to work).</p>
 <p>For a more detailed look on implementing the entire lens and prism API in terms of profunctors, check out Oleg Grenrus’s amazing <a href="http://oleg.fi/gists/posts/2017-04-18-glassery.html">Glassery</a>!</p>
 <p>To me, this perspective makes it really clear to see “why” profunctor lenses and profunctor prisms are implemented the way they are. At first, the profunctor optics definitions seemed really opaque and arbitrary to me, and I had no idea why <code>Strong</code> and <code>Choice</code> corresponded to lenses and prisms.</p>
@@ -582,54 +582,31 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h3 id="lens-families">Lens Families</h3>
 <p>We have been dealing with <code>Lens' outer inner</code> and <code>Prism' outer inner</code>, which are known as “simple” optics. In practice, this can be generalized by giving the “input” outer/inner values and “output” outer/inner values different type variables.</p>
 <p>For example, so far all our operations have basically been navigating between the isomorphisms that lenses and prisms represent:</p>
-<pre><code>Lens&#39; outer inner
-=================
- outer ---&gt; (inner, q)
-               |
-               v
- outer &lt;--- (inner, q)
-
-Prism&#39; outer inner
-=================
- outer ---&gt; Either inner q
-                     |
-                     v
- outer &lt;--- Either inner q</code></pre>
+<figure>
+<img src="/img/entries/lenses-and-prisms/lensprism1.png" title="Lens&#39; inner outer" alt="Lens&#39; inner outer and Prism&#39; inner outer isomorphisms" /><figcaption><code>Lens' inner outer</code> and <code>Prism' inner outer</code> isomorphisms</figcaption>
+</figure>
 <p>We can simply <em>re-label</em> the inputs and outputs to have different types, like so:</p>
-<pre><code>Lens s t a b
-============
-   s   ---&gt; (  a  , q)
-               |
-               |
-               v
-   t   ---&gt; (  b  , q)
-
-Prism s t a b
-=============
-   s   ---&gt; Either   a   q
-                     |
-                     |
-                     v
-   t   ---&gt; Either   b   q</code></pre>
+<figure>
+<img src="/img/entries/lenses-and-prisms/lensprism2.png" title="Lens s t a b" alt="Lens&#39; inner outer and Prism&#39; inner outer isomorphisms" /><figcaption><code>Lens' inner outer</code> and <code>Prism' inner outer</code> isomorphisms</figcaption>
+</figure>
 <p>Essentially, we’re just deciding to give the inputs and outputs different type variables. The main thing this helps is with is giving us the ability to distinguish inputs from outputs when we talk about these things.</p>
 <p>For example, before, with <code>Lens' outer inner</code>, if I say “the <code>outer</code>”, you won’t know if I mean the <code>outer</code> “before” we use the lens, or the <code>outer</code> <em>after</em> we use the lens. However, with <code>Lens s t a b</code>, if I say “the <code>s</code>”, you know that I just mean “the <code>outer</code> <em>before</em> we use the lens”, and if I say “the <code>t</code>”, you know that I mean “the <code>outer</code> <em>after</em> we use the lens”. The profunctor optics version of lens becomes <code>Lens s t a b = p a b -&gt; p s t</code>.</p>
 <p><code>Lens s t a b</code> (which is a version of <code>Lens' outer inner</code> where we relabel the type variables of the inputs and outputs) is called a <a href="http://comonad.com/reader/2012/mirrored-lenses/">lens family</a>. Be careful to never call it a “polymorphic lens”. It <strong>not</strong> a polymorphic lens. It is just a normal lens where we re-label the type variables of all of the involved pieces to aid in our discourse.</p>
-<div class="sourceCode" id="cb59"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Lens</span> s t a b <span class="fu">=</span> forall q<span class="fu">.</span> <span class="dt">Lens</span></a>
-<a class="sourceLine" id="cb59-2" data-line-number="2">    {<span class="ot"> split   ::</span> s <span class="ot">-&gt;</span> (a, q)        <span class="co">-- before (with s and a)</span></a>
-<a class="sourceLine" id="cb59-3" data-line-number="3">    ,<span class="ot"> unsplit ::</span> (b, q) <span class="ot">-&gt;</span> t        <span class="co">-- after  (with t and b)</span></a>
-<a class="sourceLine" id="cb59-4" data-line-number="4">    }</a>
-<a class="sourceLine" id="cb59-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb59-6" data-line-number="6"><span class="ot">view ::</span> <span class="dt">Lens</span> s t a b <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> a)</a>
-<a class="sourceLine" id="cb59-7" data-line-number="7"><span class="ot">set  ::</span> <span class="dt">Lens</span> s t a b <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> s <span class="ot">-&gt;</span> t)</a>
-<a class="sourceLine" id="cb59-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb59-9" data-line-number="9"><span class="kw">data</span> <span class="dt">Prism</span> s t a b <span class="fu">=</span> forall q<span class="fu">.</span> <span class="dt">Prism</span></a>
-<a class="sourceLine" id="cb59-10" data-line-number="10">    {<span class="ot"> match  ::</span> s <span class="ot">-&gt;</span> <span class="dt">Either</span> a q     <span class="co">-- before (with s and a)</span></a>
-<a class="sourceLine" id="cb59-11" data-line-number="11">    ,<span class="ot"> inject ::</span> <span class="dt">Either</span> b q <span class="ot">-&gt;</span> t     <span class="co">-- after  (with t and b)</span></a>
-<a class="sourceLine" id="cb59-12" data-line-number="12">    }</a>
-<a class="sourceLine" id="cb59-13" data-line-number="13"></a>
-<a class="sourceLine" id="cb59-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb59-15" data-line-number="15"><span class="ot">matching ::</span> <span class="dt">Prism</span> s t a b <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> <span class="dt">Either</span> t a)</a>
-<a class="sourceLine" id="cb59-16" data-line-number="16"><span class="ot">review   ::</span> <span class="dt">Prism</span> s t a b <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> t)</a></code></pre></div>
+<div class="sourceCode" id="cb57"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Lens</span> s t a b <span class="fu">=</span> forall q<span class="fu">.</span> <span class="dt">Lens</span></a>
+<a class="sourceLine" id="cb57-2" data-line-number="2">    {<span class="ot"> split   ::</span> s <span class="ot">-&gt;</span> (a, q)        <span class="co">-- before (with s and a)</span></a>
+<a class="sourceLine" id="cb57-3" data-line-number="3">    ,<span class="ot"> unsplit ::</span> (b, q) <span class="ot">-&gt;</span> t        <span class="co">-- after  (with t and b)</span></a>
+<a class="sourceLine" id="cb57-4" data-line-number="4">    }</a>
+<a class="sourceLine" id="cb57-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb57-6" data-line-number="6"><span class="ot">view ::</span> <span class="dt">Lens</span> s t a b <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> a)</a>
+<a class="sourceLine" id="cb57-7" data-line-number="7"><span class="ot">set  ::</span> <span class="dt">Lens</span> s t a b <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> s <span class="ot">-&gt;</span> t)</a>
+<a class="sourceLine" id="cb57-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb57-9" data-line-number="9"><span class="kw">data</span> <span class="dt">Prism</span> s t a b <span class="fu">=</span> forall q<span class="fu">.</span> <span class="dt">Prism</span></a>
+<a class="sourceLine" id="cb57-10" data-line-number="10">    {<span class="ot"> match  ::</span> s <span class="ot">-&gt;</span> <span class="dt">Either</span> a q     <span class="co">-- before (with s and a)</span></a>
+<a class="sourceLine" id="cb57-11" data-line-number="11">    ,<span class="ot"> inject ::</span> <span class="dt">Either</span> b q <span class="ot">-&gt;</span> t     <span class="co">-- after  (with t and b)</span></a>
+<a class="sourceLine" id="cb57-12" data-line-number="12">    }</a>
+<a class="sourceLine" id="cb57-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb57-14" data-line-number="14"><span class="ot">matching ::</span> <span class="dt">Prism</span> s t a b <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> <span class="dt">Either</span> t a)</a>
+<a class="sourceLine" id="cb57-15" data-line-number="15"><span class="ot">review   ::</span> <span class="dt">Prism</span> s t a b <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> t)</a></code></pre></div>
 <p>We still require <code>unsplit . split = id</code>, <code>split . unsplit = id</code>, <code>inject . match = id</code>, and <code>match . inject = id</code>. They’re all still <em>isomorphisms</em>. We’re just <em>relabeling our type variables</em> here to let us be more expressive with how we talk about all of the moving parts.</p>
 <p>Lens families can be used to implement “type changing lenses” where tweaking the inner type can cause the outer type to also change appropriately. However, in this case, <code>unsplit . split = id</code> and <code>inject . match = id</code> should always still be enforced in the situation where the types do not change.</p>
 <h3 id="abstract-factors-and-addends">Abstract Factors and Addends</h3>
@@ -637,49 +614,49 @@ Prism s t a b
 <p>For example, the <code>only 'a' :: Prism' Char ()</code> prism matches only on <code>'a'</code>, and it is the sum of <code>Char</code> and a theoretical abstract <code>Char</code> type that excludes <code>'a'</code>.</p>
 <p>To formalize this, sometimes we can say that only “one direction” of the isomorphism has to be strictly true in practice. If we only enforce that the round-trip of <code>unsplit . split = id</code> and <code>inject . match = id</code>, this enforces just the spirit of the hidden abstract type. This is &quot;&quot;</p>
 <p>For example, our “<code>only 'a'</code>” can be witnessed by:</p>
-<div class="sourceCode" id="cb60"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb60-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L190-L334</span></a>
+<div class="sourceCode" id="cb58"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb58-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L190-L334</span></a>
+<a class="sourceLine" id="cb58-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb58-3" data-line-number="3"><span class="kw">type</span> <span class="dt">CharButNotA</span> <span class="fu">=</span> <span class="dt">Char</span></a>
+<a class="sourceLine" id="cb58-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb58-5" data-line-number="5"><span class="ot">onlyA ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Char</span> ()</a>
+<a class="sourceLine" id="cb58-6" data-line-number="6">onlyA <span class="fu">=</span> <span class="dt">Prism&#39;</span></a>
+<a class="sourceLine" id="cb58-7" data-line-number="7">    { match  <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb58-8" data-line-number="8">        <span class="ch">&#39;a&#39;</span> <span class="ot">-&gt;</span> <span class="dt">Left</span> ()</a>
+<a class="sourceLine" id="cb58-9" data-line-number="9">        x   <span class="ot">-&gt;</span> <span class="dt">Right</span> (<span class="ot">x ::</span> <span class="dt">CharButNotA</span>)</a>
+<a class="sourceLine" id="cb58-10" data-line-number="10">    , inject <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb58-11" data-line-number="11">        <span class="dt">Left</span>  _ <span class="ot">-&gt;</span> <span class="ch">&#39;a&#39;</span></a>
+<a class="sourceLine" id="cb58-12" data-line-number="12">        <span class="dt">Right</span> x <span class="ot">-&gt;</span> x        <span class="co">-- Right contains a CharButNotA</span></a>
+<a class="sourceLine" id="cb58-13" data-line-number="13">    }</a></code></pre></div>
+<p>This passes <code>inject . match = id</code>, but not <code>match . inject = id</code> if we pass in the “illegal” value <code>Right 'a'</code>.</p>
+<p>For an example of a lens where this abstract type perspective is useful, there is the <code>contains 'a'</code> lens for sets:</p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="co">-- import qualified Data.Set as S</span></a>
+<a class="sourceLine" id="cb59-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb59-3" data-line-number="3">contains <span class="ch">&#39;a&#39;</span><span class="ot"> ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">S.Set</span> <span class="dt">Char</span>) <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb59-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb59-5" data-line-number="5"><span class="co">-- check if a set contains an element</span></a>
+<a class="sourceLine" id="cb59-6" data-line-number="6">view (contains <span class="ch">&#39;a&#39;</span>)<span class="ot"> ::</span> <span class="dt">S.Set</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb59-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb59-8" data-line-number="8"><span class="co">-- force a set to contain or not contain &#39;a&#39;</span></a>
+<a class="sourceLine" id="cb59-9" data-line-number="9">set (contains <span class="ch">&#39;a&#39;</span>)<span class="ot"> ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">S.Set</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">S.Set</span> <span class="dt">Char</span></a>
+<a class="sourceLine" id="cb59-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb59-11" data-line-number="11"><span class="co">-- toggle membership in a set</span></a>
+<a class="sourceLine" id="cb59-12" data-line-number="12">over (contains <span class="ch">&#39;a&#39;</span>)<span class="ot"> not ::</span> <span class="dt">S.Set</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">S.Set</span> <span class="dt">Char</span></a></code></pre></div>
+<p><code>contains 'a'</code> is a lens into a <code>Bool</code> from a <code>S.Set</code>, where the <code>Bool</code> indicates if the set “contains” <code>a</code> or not. What product does this represent?</p>
+<p>Well, essentially, <code>Set Char &lt;~&gt; (Bool, Set CharButNotA)</code>. It’s an abstract product betweein “the set contains <code>'a'</code> or not” and a set that could not possibly contain <code>'a'</code>:</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb60-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L190-L201</span></a>
 <a class="sourceLine" id="cb60-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb60-3" data-line-number="3"><span class="kw">type</span> <span class="dt">CharButNotA</span> <span class="fu">=</span> <span class="dt">Char</span></a>
 <a class="sourceLine" id="cb60-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb60-5" data-line-number="5"><span class="ot">onlyA ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Char</span> ()</a>
-<a class="sourceLine" id="cb60-6" data-line-number="6">onlyA <span class="fu">=</span> <span class="dt">Prism&#39;</span></a>
-<a class="sourceLine" id="cb60-7" data-line-number="7">    { match  <span class="fu">=</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb60-8" data-line-number="8">        <span class="ch">&#39;a&#39;</span> <span class="ot">-&gt;</span> <span class="dt">Left</span> ()</a>
-<a class="sourceLine" id="cb60-9" data-line-number="9">        x   <span class="ot">-&gt;</span> <span class="dt">Right</span> (<span class="ot">x ::</span> <span class="dt">CharButNotA</span>)</a>
-<a class="sourceLine" id="cb60-10" data-line-number="10">    , inject <span class="fu">=</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb60-11" data-line-number="11">        <span class="dt">Left</span>  _ <span class="ot">-&gt;</span> <span class="ch">&#39;a&#39;</span></a>
-<a class="sourceLine" id="cb60-12" data-line-number="12">        <span class="dt">Right</span> x <span class="ot">-&gt;</span> x        <span class="co">-- Right contains a CharButNotA</span></a>
-<a class="sourceLine" id="cb60-13" data-line-number="13">    }</a></code></pre></div>
-<p>This passes <code>inject . match = id</code>, but not <code>match . inject = id</code> if we pass in the “illegal” value <code>Right 'a'</code>.</p>
-<p>For an example of a lens where this abstract type perspective is useful, there is the <code>contains 'a'</code> lens for sets:</p>
-<div class="sourceCode" id="cb61"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb61-1" data-line-number="1"><span class="co">-- import qualified Data.Set as S</span></a>
-<a class="sourceLine" id="cb61-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb61-3" data-line-number="3">contains <span class="ch">&#39;a&#39;</span><span class="ot"> ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">S.Set</span> <span class="dt">Char</span>) <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb61-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb61-5" data-line-number="5"><span class="co">-- check if a set contains an element</span></a>
-<a class="sourceLine" id="cb61-6" data-line-number="6">view (contains <span class="ch">&#39;a&#39;</span>)<span class="ot"> ::</span> <span class="dt">S.Set</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb61-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb61-8" data-line-number="8"><span class="co">-- force a set to contain or not contain &#39;a&#39;</span></a>
-<a class="sourceLine" id="cb61-9" data-line-number="9">set (contains <span class="ch">&#39;a&#39;</span>)<span class="ot"> ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">S.Set</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">S.Set</span> <span class="dt">Char</span></a>
-<a class="sourceLine" id="cb61-10" data-line-number="10"></a>
-<a class="sourceLine" id="cb61-11" data-line-number="11"><span class="co">-- toggle membership in a set</span></a>
-<a class="sourceLine" id="cb61-12" data-line-number="12">over (contains <span class="ch">&#39;a&#39;</span>)<span class="ot"> not ::</span> <span class="dt">S.Set</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">S.Set</span> <span class="dt">Char</span></a></code></pre></div>
-<p><code>contains 'a'</code> is a lens into a <code>Bool</code> from a <code>S.Set</code>, where the <code>Bool</code> indicates if the set “contains” <code>a</code> or not. What product does this represent?</p>
-<p>Well, essentially, <code>Set Char &lt;~&gt; (Bool, Set CharButNotA)</code>. It’s an abstract product betweein “the set contains <code>'a'</code> or not” and a set that could not possibly contain <code>'a'</code>:</p>
-<div class="sourceCode" id="cb62"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb62-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L190-L201</span></a>
-<a class="sourceLine" id="cb62-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb62-3" data-line-number="3"><span class="kw">type</span> <span class="dt">CharButNotA</span> <span class="fu">=</span> <span class="dt">Char</span></a>
-<a class="sourceLine" id="cb62-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb62-5" data-line-number="5"><span class="ot">containsA ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">S.Set</span> <span class="dt">Char</span>) <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb62-6" data-line-number="6">containsA <span class="fu">=</span> <span class="dt">Lens&#39;</span></a>
-<a class="sourceLine" id="cb62-7" data-line-number="7">    { split   <span class="fu">=</span> \s <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb62-8" data-line-number="8">        ( <span class="ch">&#39;a&#39;</span> <span class="ot">`S.member`</span> s</a>
-<a class="sourceLine" id="cb62-9" data-line-number="9">        , <span class="ch">&#39;a&#39;</span> <span class="ot">`S.delete` s      ::</span> <span class="dt">S.Set</span> <span class="dt">CharButNotA</span></a>
-<a class="sourceLine" id="cb62-10" data-line-number="10">        )</a>
-<a class="sourceLine" id="cb62-11" data-line-number="11">    , unsplit <span class="fu">=</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb62-12" data-line-number="12">        (<span class="dt">False</span>, s) <span class="ot">-&gt;</span> s</a>
-<a class="sourceLine" id="cb62-13" data-line-number="13">        (<span class="dt">True</span> , s) <span class="ot">-&gt;</span> <span class="ch">&#39;a&#39;</span> <span class="ot">`S.insert`</span> (<span class="ot">s ::</span> <span class="dt">S.Set</span> <span class="dt">CharButNotA</span>)</a>
-<a class="sourceLine" id="cb62-14" data-line-number="14">    }</a></code></pre></div>
+<a class="sourceLine" id="cb60-5" data-line-number="5"><span class="ot">containsA ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">S.Set</span> <span class="dt">Char</span>) <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb60-6" data-line-number="6">containsA <span class="fu">=</span> <span class="dt">Lens&#39;</span></a>
+<a class="sourceLine" id="cb60-7" data-line-number="7">    { split   <span class="fu">=</span> \s <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb60-8" data-line-number="8">        ( <span class="ch">&#39;a&#39;</span> <span class="ot">`S.member`</span> s</a>
+<a class="sourceLine" id="cb60-9" data-line-number="9">        , <span class="ch">&#39;a&#39;</span> <span class="ot">`S.delete` s      ::</span> <span class="dt">S.Set</span> <span class="dt">CharButNotA</span></a>
+<a class="sourceLine" id="cb60-10" data-line-number="10">        )</a>
+<a class="sourceLine" id="cb60-11" data-line-number="11">    , unsplit <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb60-12" data-line-number="12">        (<span class="dt">False</span>, s) <span class="ot">-&gt;</span> s</a>
+<a class="sourceLine" id="cb60-13" data-line-number="13">        (<span class="dt">True</span> , s) <span class="ot">-&gt;</span> <span class="ch">&#39;a&#39;</span> <span class="ot">`S.insert`</span> (<span class="ot">s ::</span> <span class="dt">S.Set</span> <span class="dt">CharButNotA</span>)</a>
+<a class="sourceLine" id="cb60-14" data-line-number="14">    }</a></code></pre></div>
 <p>Again, only <code>unsplit . split = id</code> is technically true. <code>split . unsplit = id</code> will fail if the input set contains <code>'a'</code>.</p>
 <h3 id="exercises">Exercises</h3>
 <p>To help solidify your understanding on this perspective, here are some exercises! Most of them are conceptual and open-ended.</p>
@@ -689,41 +666,41 @@ Prism s t a b
 <li><p>We discussed the conditions where a type <code>a</code> can be expressed as a product involving <code>()</code> and you can have <code>Lens' a ()</code>.</p>
 <p>Under what conditions can you express a type <code>a</code> as a product involving <code>Bool</code> (<code>a &lt;~&gt; (Bool, q)</code>), and you can have a <code>Lens' a Bool</code>? (Hint: use the algebra!) What would this lens do (what are <code>view</code> and <code>set</code>)? And what about the <code>Lens' a q</code>?</p></li>
 <li><p>We found that by interpreting <code>Either a a</code> as a product <code>(Bool, a)</code> gives us two interesting lenses:</p>
-<div class="sourceCode" id="cb63"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb63-1" data-line-number="1"><span class="ot">leftOrRight ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Either</span> a a) <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb63-2" data-line-number="2"><span class="ot">theContents ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Either</span> a a) a</a></code></pre></div>
+<div class="sourceCode" id="cb61"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb61-1" data-line-number="1"><span class="ot">leftOrRight ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Either</span> a a) <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb61-2" data-line-number="2"><span class="ot">theContents ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Either</span> a a) a</a></code></pre></div>
 <p>We concluded that the first lens lets us flip between <code>Left</code> and <code>Right</code> or check if a value was <code>Left</code> or <code>Right</code>, and that the second lens gets into the contents regardless of leftness or rightness.</p>
 <p>However, there’s a flip side, as well. <code>(Bool, a)</code> can be expressed as a <em>sum</em> between <code>a</code> and itself, <code>Either a a</code>. This gives us two prisms:</p>
-<div class="sourceCode" id="cb64"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb64-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L43-L53</span></a>
-<a class="sourceLine" id="cb64-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb64-3" data-line-number="3"><span class="ot">mysteryPrism1 ::</span> <span class="dt">Prism&#39;</span> (<span class="dt">Bool</span>, a) a</a>
-<a class="sourceLine" id="cb64-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb64-5" data-line-number="5"><span class="ot">mysteryPrism2 ::</span> <span class="dt">Prism&#39;</span> (<span class="dt">Bool</span>, a) a</a></code></pre></div>
+<div class="sourceCode" id="cb62"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb62-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L43-L53</span></a>
+<a class="sourceLine" id="cb62-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb62-3" data-line-number="3"><span class="ot">mysteryPrism1 ::</span> <span class="dt">Prism&#39;</span> (<span class="dt">Bool</span>, a) a</a>
+<a class="sourceLine" id="cb62-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb62-5" data-line-number="5"><span class="ot">mysteryPrism2 ::</span> <span class="dt">Prism&#39;</span> (<span class="dt">Bool</span>, a) a</a></code></pre></div>
 <p>What do these prisms do? What is <code>preview</code> and <code>review</code> for them?</p></li>
 <li><p>Can you write combinators to “compose” lenses and prisms? Is it even possible?</p>
-<div class="sourceCode" id="cb65"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb65-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L65-L91</span></a>
-<a class="sourceLine" id="cb65-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb65-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Lens&#39;</span> s a <span class="fu">=</span> forall q<span class="fu">.</span> <span class="dt">Lens&#39;</span></a>
-<a class="sourceLine" id="cb65-4" data-line-number="4">    {<span class="ot"> split   ::</span> s <span class="ot">-&gt;</span> (a, q)</a>
-<a class="sourceLine" id="cb65-5" data-line-number="5">    ,<span class="ot"> unsplit ::</span> (a, q) <span class="ot">-&gt;</span> s</a>
-<a class="sourceLine" id="cb65-6" data-line-number="6">    }</a>
-<a class="sourceLine" id="cb65-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb65-8" data-line-number="8"><span class="ot">(.&amp;.) ::</span> <span class="dt">Lens&#39;</span> a b</a>
-<a class="sourceLine" id="cb65-9" data-line-number="9">      <span class="ot">-&gt;</span> <span class="dt">Lens&#39;</span> b c</a>
-<a class="sourceLine" id="cb65-10" data-line-number="10">      <span class="ot">-&gt;</span> <span class="dt">Lens&#39;</span> a c</a>
-<a class="sourceLine" id="cb65-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb65-12" data-line-number="12"><span class="kw">data</span> <span class="dt">Prism&#39;</span> s a <span class="fu">=</span> forall q<span class="fu">.</span> <span class="dt">Prism&#39;</span></a>
-<a class="sourceLine" id="cb65-13" data-line-number="13">    {<span class="ot"> match  ::</span> s <span class="ot">-&gt;</span> <span class="dt">Either</span> a q</a>
-<a class="sourceLine" id="cb65-14" data-line-number="14">    ,<span class="ot"> inject ::</span> <span class="dt">Either</span> a q <span class="ot">-&gt;</span> s</a>
-<a class="sourceLine" id="cb65-15" data-line-number="15">    }</a>
-<a class="sourceLine" id="cb65-16" data-line-number="16"></a>
-<a class="sourceLine" id="cb65-17" data-line-number="17"><span class="ot">(.|.) ::</span> <span class="dt">Prism&#39;</span> a b</a>
-<a class="sourceLine" id="cb65-18" data-line-number="18">      <span class="ot">-&gt;</span> <span class="dt">Prism&#39;</span> b c</a>
-<a class="sourceLine" id="cb65-19" data-line-number="19">      <span class="ot">-&gt;</span> <span class="dt">Prism&#39;</span> a c</a></code></pre></div>
+<div class="sourceCode" id="cb63"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb63-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L65-L91</span></a>
+<a class="sourceLine" id="cb63-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb63-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Lens&#39;</span> s a <span class="fu">=</span> forall q<span class="fu">.</span> <span class="dt">Lens&#39;</span></a>
+<a class="sourceLine" id="cb63-4" data-line-number="4">    {<span class="ot"> split   ::</span> s <span class="ot">-&gt;</span> (a, q)</a>
+<a class="sourceLine" id="cb63-5" data-line-number="5">    ,<span class="ot"> unsplit ::</span> (a, q) <span class="ot">-&gt;</span> s</a>
+<a class="sourceLine" id="cb63-6" data-line-number="6">    }</a>
+<a class="sourceLine" id="cb63-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb63-8" data-line-number="8"><span class="ot">(.&amp;.) ::</span> <span class="dt">Lens&#39;</span> a b</a>
+<a class="sourceLine" id="cb63-9" data-line-number="9">      <span class="ot">-&gt;</span> <span class="dt">Lens&#39;</span> b c</a>
+<a class="sourceLine" id="cb63-10" data-line-number="10">      <span class="ot">-&gt;</span> <span class="dt">Lens&#39;</span> a c</a>
+<a class="sourceLine" id="cb63-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb63-12" data-line-number="12"><span class="kw">data</span> <span class="dt">Prism&#39;</span> s a <span class="fu">=</span> forall q<span class="fu">.</span> <span class="dt">Prism&#39;</span></a>
+<a class="sourceLine" id="cb63-13" data-line-number="13">    {<span class="ot"> match  ::</span> s <span class="ot">-&gt;</span> <span class="dt">Either</span> a q</a>
+<a class="sourceLine" id="cb63-14" data-line-number="14">    ,<span class="ot"> inject ::</span> <span class="dt">Either</span> a q <span class="ot">-&gt;</span> s</a>
+<a class="sourceLine" id="cb63-15" data-line-number="15">    }</a>
+<a class="sourceLine" id="cb63-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb63-17" data-line-number="17"><span class="ot">(.|.) ::</span> <span class="dt">Prism&#39;</span> a b</a>
+<a class="sourceLine" id="cb63-18" data-line-number="18">      <span class="ot">-&gt;</span> <span class="dt">Prism&#39;</span> b c</a>
+<a class="sourceLine" id="cb63-19" data-line-number="19">      <span class="ot">-&gt;</span> <span class="dt">Prism&#39;</span> a c</a></code></pre></div>
 <p>Roughtly speaking, composition of lenses or prisms are meant to “successively zoom in” to deeper and deeper parts of an initial structure.</p>
 <p>A note for you if you try this — because the <code>q</code> type is existential, you can’t use <code>split</code>, <code>unsplit</code>, <code>match</code>, or <code>inject</code> as record accessors, and you need to either pattern match or use <em>-XRecordWildcards</em>.</p>
 <p>These implementations are pretty hairy (solutions <a href="https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L65-L102">online here</a>), and it’s a sort of testament as to why we don’t use this actual implementation in practice. In fact, for profunctor optics, we just have:</p>
-<div class="sourceCode" id="cb66"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb66-1" data-line-number="1">(<span class="fu">.&amp;.</span>) <span class="fu">=</span> (<span class="fu">.</span>)</a>
-<a class="sourceLine" id="cb66-2" data-line-number="2">(<span class="fu">.|.</span>) <span class="fu">=</span> (<span class="fu">.</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb64"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb64-1" data-line-number="1">(<span class="fu">.&amp;.</span>) <span class="fu">=</span> (<span class="fu">.</span>)</a>
+<a class="sourceLine" id="cb64-2" data-line-number="2">(<span class="fu">.|.</span>) <span class="fu">=</span> (<span class="fu">.</span>)</a></code></pre></div>
 <p>Using <code>(.)</code> from <code>Prelude</code>. Definitely much simpler! (And it’s one main reason why they’re the most popular representation)</p></li>
 </ul>
 <h2 id="special-thanks">Special Thanks</h2>
