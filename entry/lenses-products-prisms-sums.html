@@ -578,9 +578,9 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Or…maybe lenses and prisms were invented custom-made based on <code>Strong</code> and <code>Choice</code>?</p>
 <h2 id="closing-out">Closing out</h2>
 <p>Hopefully this perspective — that products yield lenses and sums yield prisms — helps you navigate how you discover lenses and prisms, and how you interpret them when you see them. I know for me, it has helped me understand the odd lenses and prisms I often see, and also it helps me reason about when it <em>doesn’t</em> make sense to have a lens or prism. It has also distilled the lens and prism laws into something trivial that can be stated succinctly (“it must be an isomorphism”), and also made the profunctor optics form seem uncannily natural.</p>
-<p>Some small notes need to be made to bridge this view with the way they are actually implemented in practice:</p>
-<ol type="1">
-<li><p>We have been dealing with <code>Lens' outer inner</code> and <code>Prism' outer inner</code>, which are known as “simple” optics. In practice, this can be generalized by giving the “input” outer/inner values and “output” outer/inner values different type variables.</p>
+<p>Some small notes need to be made to bridge this view with the way they are actually implemented in practice.</p>
+<h3 id="lens-families">Lens Families</h3>
+<p>We have been dealing with <code>Lens' outer inner</code> and <code>Prism' outer inner</code>, which are known as “simple” optics. In practice, this can be generalized by giving the “input” outer/inner values and “output” outer/inner values different type variables.</p>
 <p>For example, so far all our operations have basically been navigating between the isomorphisms that lenses and prisms represent:</p>
 <pre><code>Lens&#39; outer inner
 =================
@@ -631,8 +631,9 @@ Prism s t a b
 <a class="sourceLine" id="cb59-15" data-line-number="15"><span class="ot">matching ::</span> <span class="dt">Prism</span> s t a b <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> <span class="dt">Either</span> t a)</a>
 <a class="sourceLine" id="cb59-16" data-line-number="16"><span class="ot">review   ::</span> <span class="dt">Prism</span> s t a b <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> t)</a></code></pre></div>
 <p>We still require <code>unsplit . split = id</code>, <code>split . unsplit = id</code>, <code>inject . match = id</code>, and <code>match . inject = id</code>. They’re all still <em>isomorphisms</em>. We’re just <em>relabeling our type variables</em> here to let us be more expressive with how we talk about all of the moving parts.</p>
-<p>Lens families can be used to implement “type changing lenses” where tweaking the inner type can cause the outer type to also change appropriately. However, in this case, <code>unsplit . split = id</code> and <code>inject . match = id</code> should always still be enforced in the situation where the types do not change.</p></li>
-<li><p>In practice, the <code>q</code> to factor out your type into (in the <code>s &lt;~&gt; (a, q)</code> and <code>s &lt;~&gt; Either a q</code>) might not be an actual “concrete” type. In most cases, it’s alright to treat it as a theoretical “abstract” type that follows the behavior you want given a restricted interface. This is “safe” because, if you notice, none of the methods in the lens or prism APIs (<code>view</code>, <code>set</code>, <code>preview</code>, <code>review</code>) ever let an external user directly manipulate a value of type <code>q</code>.</p>
+<p>Lens families can be used to implement “type changing lenses” where tweaking the inner type can cause the outer type to also change appropriately. However, in this case, <code>unsplit . split = id</code> and <code>inject . match = id</code> should always still be enforced in the situation where the types do not change.</p>
+<h3 id="abstract-factors-and-addends">Abstract Factors and Addends</h3>
+<p>In practice, the <code>q</code> to factor out your type into (in the <code>s &lt;~&gt; (a, q)</code> and <code>s &lt;~&gt; Either a q</code>) might not be an actual “concrete” type. In most cases, it’s alright to treat it as a theoretical “abstract” type that follows the behavior you want given a restricted interface. This is “safe” because, if you notice, none of the methods in the lens or prism APIs (<code>view</code>, <code>set</code>, <code>preview</code>, <code>review</code>) ever let an external user directly manipulate a value of type <code>q</code>.</p>
 <p>For example, the <code>only 'a' :: Prism' Char ()</code> prism matches only on <code>'a'</code>, and it is the sum of <code>Char</code> and a theoretical abstract <code>Char</code> type that excludes <code>'a'</code>.</p>
 <p>To formalize this, sometimes we can say that only “one direction” of the isomorphism has to be strictly true in practice. If we only enforce that the round-trip of <code>unsplit . split = id</code> and <code>inject . match = id</code>, this enforces just the spirit of the hidden abstract type. This is &quot;&quot;</p>
 <p>For example, our “<code>only 'a'</code>” can be witnessed by:</p>
@@ -679,8 +680,7 @@ Prism s t a b
 <a class="sourceLine" id="cb62-12" data-line-number="12">        (<span class="dt">False</span>, s) <span class="ot">-&gt;</span> s</a>
 <a class="sourceLine" id="cb62-13" data-line-number="13">        (<span class="dt">True</span> , s) <span class="ot">-&gt;</span> <span class="ch">&#39;a&#39;</span> <span class="ot">`S.insert`</span> (<span class="ot">s ::</span> <span class="dt">S.Set</span> <span class="dt">CharButNotA</span>)</a>
 <a class="sourceLine" id="cb62-14" data-line-number="14">    }</a></code></pre></div>
-<p>Again, only <code>unsplit . split = id</code> is technically true. <code>split . unsplit = id</code> will fail if the input set contains <code>'a'</code>.`</p></li>
-</ol>
+<p>Again, only <code>unsplit . split = id</code> is technically true. <code>split . unsplit = id</code> will fail if the input set contains <code>'a'</code>.</p>
 <h3 id="exercises">Exercises</h3>
 <p>To help solidify your understanding on this perspective, here are some exercises! Most of them are conceptual and open-ended.</p>
 <ul>

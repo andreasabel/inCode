@@ -1500,18 +1500,18 @@ must be an isomorphism''), and also made the profunctor optics form seem
 uncannily natural.
 
 Some small notes need to be made to bridge this view with the way they are
-actually implemented in practice:
+actually implemented in practice.
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  We have been dealing with \texttt{Lens\textquotesingle{}\ outer\ inner} and
-  \texttt{Prism\textquotesingle{}\ outer\ inner}, which are known as ``simple''
-  optics. In practice, this can be generalized by giving the ``input''
-  outer/inner values and ``output'' outer/inner values different type variables.
+\hypertarget{lens-families}{%
+\subsection{Lens Families}\label{lens-families}}
 
-  For example, so far all our operations have basically been navigating between
-  the isomorphisms that lenses and prisms represent:
+We have been dealing with \texttt{Lens\textquotesingle{}\ outer\ inner} and
+\texttt{Prism\textquotesingle{}\ outer\ inner}, which are known as ``simple''
+optics. In practice, this can be generalized by giving the ``input'' outer/inner
+values and ``output'' outer/inner values different type variables.
+
+For example, so far all our operations have basically been navigating between
+the isomorphisms that lenses and prisms represent:
 
 \begin{verbatim}
 Lens' outer inner
@@ -1529,8 +1529,8 @@ Prism' outer inner
  outer <--- Either inner q
 \end{verbatim}
 
-  We can simply \emph{re-label} the inputs and outputs to have different types,
-  like so:
+We can simply \emph{re-label} the inputs and outputs to have different types,
+like so:
 
 \begin{verbatim}
 Lens s t a b
@@ -1550,27 +1550,26 @@ Prism s t a b
    t   ---> Either   b   q
 \end{verbatim}
 
-  Essentially, we're just deciding to give the inputs and outputs different type
-  variables. The main thing this helps is with is giving us the ability to
-  distinguish inputs from outputs when we talk about these things.
+Essentially, we're just deciding to give the inputs and outputs different type
+variables. The main thing this helps is with is giving us the ability to
+distinguish inputs from outputs when we talk about these things.
 
-  For example, before, with \texttt{Lens\textquotesingle{}\ outer\ inner}, if I
-  say ``the \texttt{outer}'', you won't know if I mean the \texttt{outer}
-  ``before'' we use the lens, or the \texttt{outer} \emph{after} we use the
-  lens. However, with \texttt{Lens\ s\ t\ a\ b}, if I say ``the \texttt{s}'',
-  you know that I just mean ``the \texttt{outer} \emph{before} we use the
-  lens'', and if I say ``the \texttt{t}'', you know that I mean ``the
-  \texttt{outer} \emph{after} we use the lens''. The profunctor optics version
-  of lens becomes
-  \texttt{Lens\ s\ t\ a\ b\ =\ p\ a\ b\ -\textgreater{}\ p\ s\ t}.
+For example, before, with \texttt{Lens\textquotesingle{}\ outer\ inner}, if I
+say ``the \texttt{outer}'', you won't know if I mean the \texttt{outer}
+``before'' we use the lens, or the \texttt{outer} \emph{after} we use the lens.
+However, with \texttt{Lens\ s\ t\ a\ b}, if I say ``the \texttt{s}'', you know
+that I just mean ``the \texttt{outer} \emph{before} we use the lens'', and if I
+say ``the \texttt{t}'', you know that I mean ``the \texttt{outer} \emph{after}
+we use the lens''. The profunctor optics version of lens becomes
+\texttt{Lens\ s\ t\ a\ b\ =\ p\ a\ b\ -\textgreater{}\ p\ s\ t}.
 
-  \texttt{Lens\ s\ t\ a\ b} (which is a version of
-  \texttt{Lens\textquotesingle{}\ outer\ inner} where we relabel the type
-  variables of the inputs and outputs) is called a
-  \href{http://comonad.com/reader/2012/mirrored-lenses/}{lens family}. Be
-  careful to never call it a ``polymorphic lens''. It \textbf{not} a polymorphic
-  lens. It is just a normal lens where we re-label the type variables of all of
-  the involved pieces to aid in our discourse.
+\texttt{Lens\ s\ t\ a\ b} (which is a version of
+\texttt{Lens\textquotesingle{}\ outer\ inner} where we relabel the type
+variables of the inputs and outputs) is called a
+\href{http://comonad.com/reader/2012/mirrored-lenses/}{lens family}. Be careful
+to never call it a ``polymorphic lens''. It \textbf{not} a polymorphic lens. It
+is just a normal lens where we re-label the type variables of all of the
+involved pieces to aid in our discourse.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1593,42 +1592,45 @@ Prism s t a b
 \end{Highlighting}
 \end{Shaded}
 
-  We still require \texttt{unsplit\ .\ split\ =\ id},
-  \texttt{split\ .\ unsplit\ =\ id}, \texttt{inject\ .\ match\ =\ id}, and
-  \texttt{match\ .\ inject\ =\ id}. They're all still \emph{isomorphisms}. We're
-  just \emph{relabeling our type variables} here to let us be more expressive
-  with how we talk about all of the moving parts.
+We still require \texttt{unsplit\ .\ split\ =\ id},
+\texttt{split\ .\ unsplit\ =\ id}, \texttt{inject\ .\ match\ =\ id}, and
+\texttt{match\ .\ inject\ =\ id}. They're all still \emph{isomorphisms}. We're
+just \emph{relabeling our type variables} here to let us be more expressive with
+how we talk about all of the moving parts.
 
-  Lens families can be used to implement ``type changing lenses'' where tweaking
-  the inner type can cause the outer type to also change appropriately. However,
-  in this case, \texttt{unsplit\ .\ split\ =\ id} and
-  \texttt{inject\ .\ match\ =\ id} should always still be enforced in the
-  situation where the types do not change.
-\item
-  In practice, the \texttt{q} to factor out your type into (in the
-  \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)} and
-  \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ Either\ a\ q}) might
-  not be an actual ``concrete'' type. In most cases, it's alright to treat it as
-  a theoretical ``abstract'' type that follows the behavior you want given a
-  restricted interface. This is ``safe'' because, if you notice, none of the
-  methods in the lens or prism APIs (\texttt{view}, \texttt{set},
-  \texttt{preview}, \texttt{review}) ever let an external user directly
-  manipulate a value of type \texttt{q}.
+Lens families can be used to implement ``type changing lenses'' where tweaking
+the inner type can cause the outer type to also change appropriately. However,
+in this case, \texttt{unsplit\ .\ split\ =\ id} and
+\texttt{inject\ .\ match\ =\ id} should always still be enforced in the
+situation where the types do not change.
 
-  For example, the
-  \texttt{only\ \textquotesingle{}a\textquotesingle{}\ ::\ Prism\textquotesingle{}\ Char\ ()}
-  prism matches only on \texttt{\textquotesingle{}a\textquotesingle{}}, and it
-  is the sum of \texttt{Char} and a theoretical abstract \texttt{Char} type that
-  excludes \texttt{\textquotesingle{}a\textquotesingle{}}.
+\hypertarget{abstract-factors-and-addends}{%
+\subsection{Abstract Factors and Addends}\label{abstract-factors-and-addends}}
 
-  To formalize this, sometimes we can say that only ``one direction'' of the
-  isomorphism has to be strictly true in practice. If we only enforce that the
-  round-trip of \texttt{unsplit\ .\ split\ =\ id} and
-  \texttt{inject\ .\ match\ =\ id}, this enforces just the spirit of the hidden
-  abstract type. This is ""
+In practice, the \texttt{q} to factor out your type into (in the
+\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)} and
+\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ Either\ a\ q}) might not
+be an actual ``concrete'' type. In most cases, it's alright to treat it as a
+theoretical ``abstract'' type that follows the behavior you want given a
+restricted interface. This is ``safe'' because, if you notice, none of the
+methods in the lens or prism APIs (\texttt{view}, \texttt{set},
+\texttt{preview}, \texttt{review}) ever let an external user directly manipulate
+a value of type \texttt{q}.
 
-  For example, our ``\texttt{only\ \textquotesingle{}a\textquotesingle{}}'' can
-  be witnessed by:
+For example, the
+\texttt{only\ \textquotesingle{}a\textquotesingle{}\ ::\ Prism\textquotesingle{}\ Char\ ()}
+prism matches only on \texttt{\textquotesingle{}a\textquotesingle{}}, and it is
+the sum of \texttt{Char} and a theoretical abstract \texttt{Char} type that
+excludes \texttt{\textquotesingle{}a\textquotesingle{}}.
+
+To formalize this, sometimes we can say that only ``one direction'' of the
+isomorphism has to be strictly true in practice. If we only enforce that the
+round-trip of \texttt{unsplit\ .\ split\ =\ id} and
+\texttt{inject\ .\ match\ =\ id}, this enforces just the spirit of the hidden
+abstract type. This is ""
+
+For example, our ``\texttt{only\ \textquotesingle{}a\textquotesingle{}}'' can be
+witnessed by:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1648,12 +1650,12 @@ Prism s t a b
 \end{Highlighting}
 \end{Shaded}
 
-  This passes \texttt{inject\ .\ match\ =\ id}, but not
-  \texttt{match\ .\ inject\ =\ id} if we pass in the ``illegal'' value
-  \texttt{Right\ \textquotesingle{}a\textquotesingle{}}.
+This passes \texttt{inject\ .\ match\ =\ id}, but not
+\texttt{match\ .\ inject\ =\ id} if we pass in the ``illegal'' value
+\texttt{Right\ \textquotesingle{}a\textquotesingle{}}.
 
-  For an example of a lens where this abstract type perspective is useful, there
-  is the \texttt{contains\ \textquotesingle{}a\textquotesingle{}} lens for sets:
+For an example of a lens where this abstract type perspective is useful, there
+is the \texttt{contains\ \textquotesingle{}a\textquotesingle{}} lens for sets:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1672,15 +1674,15 @@ Prism s t a b
 \end{Highlighting}
 \end{Shaded}
 
-  \texttt{contains\ \textquotesingle{}a\textquotesingle{}} is a lens into a
-  \texttt{Bool} from a \texttt{S.Set}, where the \texttt{Bool} indicates if the
-  set ``contains'' \texttt{a} or not. What product does this represent?
+\texttt{contains\ \textquotesingle{}a\textquotesingle{}} is a lens into a
+\texttt{Bool} from a \texttt{S.Set}, where the \texttt{Bool} indicates if the
+set ``contains'' \texttt{a} or not. What product does this represent?
 
-  Well, essentially,
-  \texttt{Set\ Char\ \textless{}\textasciitilde{}\textgreater{}\ (Bool,\ Set\ CharButNotA)}.
-  It's an abstract product betweein ``the set contains
-  \texttt{\textquotesingle{}a\textquotesingle{}} or not'' and a set that could
-  not possibly contain \texttt{\textquotesingle{}a\textquotesingle{}}:
+Well, essentially,
+\texttt{Set\ Char\ \textless{}\textasciitilde{}\textgreater{}\ (Bool,\ Set\ CharButNotA)}.
+It's an abstract product betweein ``the set contains
+\texttt{\textquotesingle{}a\textquotesingle{}} or not'' and a set that could not
+possibly contain \texttt{\textquotesingle{}a\textquotesingle{}}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1701,10 +1703,9 @@ Prism s t a b
 \end{Highlighting}
 \end{Shaded}
 
-  Again, only \texttt{unsplit\ .\ split\ =\ id} is technically true.
-  \texttt{split\ .\ unsplit\ =\ id} will fail if the input set contains
-  \texttt{\textquotesingle{}a\textquotesingle{}}.`
-\end{enumerate}
+Again, only \texttt{unsplit\ .\ split\ =\ id} is technically true.
+\texttt{split\ .\ unsplit\ =\ id} will fail if the input set contains
+\texttt{\textquotesingle{}a\textquotesingle{}}.
 
 \hypertarget{exercises}{%
 \subsection{Exercises}\label{exercises}}
