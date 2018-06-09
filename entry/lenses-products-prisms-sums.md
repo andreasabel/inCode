@@ -1141,13 +1141,13 @@ For example, so far all our operations have basically been navigating between
 the isomorphisms that lenses and prisms represent:
 
 ![`Lens' inner outer` and `Prism' inner outer`
-isomorphisms](/img/entries/lenses-and-prisms/lensprism1.png "Lens' inner outer"){width="25%"}
+isomorphisms](/img/entries/lenses-and-prisms/lensprism1.png "Lens' inner outer")
 
 We can simply *re-label* the inputs and outputs to have different types, like
 so:
 
 ![`Lens' inner outer` and `Prism' inner outer`
-isomorphisms](/img/entries/lenses-and-prisms/lensprism2.png "Lens s t a b"){width="25%"}
+isomorphisms](/img/entries/lenses-and-prisms/lensprism2.png "Lens s t a b")
 
 Essentially, we're just deciding to give the inputs and outputs different type
 variables. The main thing this helps is with is giving us the ability to
