@@ -858,8 +858,6 @@ source](https://github.com/mstksg/inCode/tree/master/code-samples/huffman), or
 [playing with it online](https://www.fpcomplete.com/user/jle/huffman-encoding)
 on [fpcomplete](http://www.fpcomplete.com)!
 
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

@@ -301,14 +301,6 @@ choices.
 
 Happy Haskelling!
 
-[^1]: For some reason this runs pretty slowly if you use `runghc`/`runHaskell`,
-    but it runs in the blink of an eye when you actually compile it (and
-    especially with optimizations on). The difference is pretty striking...and I
-    don't really know what's going on here, to be honest. If anyone does know a
-    good explanation, I'd love to hear it :)
-
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
@@ -319,3 +311,9 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: For some reason this runs pretty slowly if you use `runghc`/`runHaskell`,
+    but it runs in the blink of an eye when you actually compile it (and
+    especially with optimizations on). The difference is pretty striking...and I
+    don't really know what's going on here, to be honest. If anyone does know a
+    good explanation, I'd love to hear it :)

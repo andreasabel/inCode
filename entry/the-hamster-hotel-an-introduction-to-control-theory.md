@@ -132,10 +132,6 @@ For a genius the likes of which the world has never seen, it may be *possible*.
 
 But ... there *has* to be a better way.
 
-[^1]: It's not
-
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
@@ -146,3 +142,5 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: It's not

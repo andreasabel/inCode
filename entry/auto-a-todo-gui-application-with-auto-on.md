@@ -611,8 +611,6 @@ As always, feel free to ask questions in the comments, hop over to
 as the [All About Auto](http://blog.jle.im/entries/series/+all-about-auto)
 series progresses!
 
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

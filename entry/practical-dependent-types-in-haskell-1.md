@@ -1048,6 +1048,17 @@ some of the concepts! The links are to the solutions in the source file.
     SNat `SCons` SNat `SCons` SNil
     ```
 
+Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
+twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
+published under the [CC-BY-NC-ND
+3.0](https://creativecommons.org/licenses/by-nc-nd/3.0/) license. Corrections
+and edits via pull request are welcome and encouraged at [the source
+repository](https://github.com/mstksg/inCode).
+
+If you feel inclined, or this post was particularly helpful for you, why not
+consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
+or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
 [^1]: This sentence is the story of my Haskell life.
 
 [^2]: Okay, maybe not *literally* every one. But, pretty much every one.
@@ -1062,16 +1073,3 @@ some of the concepts! The links are to the solutions in the source file.
     with Andras Kovacs. The [old
     version](https://github.com/mstksg/inCode/blob/697c1f726b9ab9c3f9830ed5521bfeee6ec10727/entry/practical-dependent-types-in-haskell-1.md#singletons-and-induction)
     is still online at github, if you want to look at it or compare!
-
----------
-
-Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
-twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
-published under the [CC-BY-NC-ND
-3.0](https://creativecommons.org/licenses/by-nc-nd/3.0/) license. Corrections
-and edits via pull request are welcome and encouraged at [the source
-repository](https://github.com/mstksg/inCode).
-
-If you feel inclined, or this post was particularly helpful for you, why not
-consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
-or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)

@@ -769,6 +769,17 @@ really just different combinator applications of the same thing. I'll also talk
 about what I think are essential in building a usable framework for working with
 this in practice.
 
+Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
+twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
+published under the [CC-BY-NC-ND
+3.0](https://creativecommons.org/licenses/by-nc-nd/3.0/) license. Corrections
+and edits via pull request are welcome and encouraged at [the source
+repository](https://github.com/mstksg/inCode).
+
+If you feel inclined, or this post was particularly helpful for you, why not
+consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
+or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
 [^1]: If you recognized our original stateless model type as `a -> Reader p b`,
     then you might have also recognized that this is the Haskell idiom
     `a -> StateT s (Reader p) b` (or `Kleisli (StateT s (Reader p)) a b`), which
@@ -781,16 +792,3 @@ this in practice.
     [vector-sized](http://hackage.haskell.org/package/vector-sized) library,
     since they can enforce that the network always gets unrolled over the same
     number of items.
-
----------
-
-Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
-twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
-published under the [CC-BY-NC-ND
-3.0](https://creativecommons.org/licenses/by-nc-nd/3.0/) license. Corrections
-and edits via pull request are welcome and encouraged at [the source
-repository](https://github.com/mstksg/inCode).
-
-If you feel inclined, or this post was particularly helpful for you, why not
-consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
-or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)

@@ -1467,6 +1467,17 @@ for me to devote time to researching and writing these posts. Very special
 thanks to my supporter at the "Amazing" level on
 [patreon](https://www.patreon.com/justinle/overview), Sam Stites! :)
 
+Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
+twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
+published under the [CC-BY-NC-ND
+3.0](https://creativecommons.org/licenses/by-nc-nd/3.0/) license. Corrections
+and edits via pull request are welcome and encouraged at [the source
+repository](https://github.com/mstksg/inCode).
+
+If you feel inclined, or this post was particularly helpful for you, why not
+consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
+or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
 [^1]: All of this is disregarding the notorious "bottom" value that inhabits
     every type.
 
@@ -1497,16 +1508,3 @@ thanks to my supporter at the "Amazing" level on
     `a` and another type, but that `a` will not represent the head of the list.
     It represents only item in a list in the case that the list is a one-item
     list.
-
----------
-
-Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
-twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
-published under the [CC-BY-NC-ND
-3.0](https://creativecommons.org/licenses/by-nc-nd/3.0/) license. Corrections
-and edits via pull request are welcome and encouraged at [the source
-repository](https://github.com/mstksg/inCode).
-
-If you feel inclined, or this post was particularly helpful for you, why not
-consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
-or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)

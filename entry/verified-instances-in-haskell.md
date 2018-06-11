@@ -653,12 +653,6 @@ recommend that you do it for fun! The code in this post is available
 [here](https://github.com/mstksg/inCode/tree/master/code-samples/verified-instances/VerifiedInstances.hs)
 if you want to play around!
 
-[^1]: In full *singletons* style, this should actually be expressed in terms of
-    the the *partially applied* (defunctionalized) `<>`. However, I'm giving the
-    non-defunctionalized versions here for clarity.
-
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
@@ -669,3 +663,7 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: In full *singletons* style, this should actually be expressed in terms of
+    the the *partially applied* (defunctionalized) `<>`. However, I'm giving the
+    non-defunctionalized versions here for clarity.

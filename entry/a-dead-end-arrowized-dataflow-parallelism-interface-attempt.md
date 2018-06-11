@@ -653,17 +653,6 @@ up my thought process up in written form somewhere so that I could look back on
 them, or so that people can see what doesn't work and/or possibly learn :) And
 of course for entertainment in case I am hilariously awful.
 
-[^1]: Technically, all `ParArrow` computations are pure, so you might not loose
-    too much by just returning a `b` instead of an `IO b` with
-    `unsafePerformIO`, but...
-
-[^2]: Actually, this is technically not true; while I was writing this article
-    another idea came to me by using some sort of state machine/automation arrow
-    to wait on the results and pass them on, but that's still in the first
-    stages of being thought through :)
-
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
@@ -674,3 +663,12 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: Technically, all `ParArrow` computations are pure, so you might not loose
+    too much by just returning a `b` instead of an `IO b` with
+    `unsafePerformIO`, but...
+
+[^2]: Actually, this is technically not true; while I was writing this article
+    another idea came to me by using some sort of state machine/automation arrow
+    to wait on the results and pass them on, but that's still in the first
+    stages of being thought through :)

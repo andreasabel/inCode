@@ -263,13 +263,6 @@ properties of a particle given an arbitrary quantum potential.
 
 Now let's implement it.
 
-[^1]: Why is it called the "Path Integral" formulation? When we add up something
-    at every single point on a path, we are mathematically perfoming a "Path
-    Integral". So Path Integral Formulation means "physics based on the adding
-    up stuff for every point on a path".
-
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
@@ -280,3 +273,8 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: Why is it called the "Path Integral" formulation? When we add up something
+    at every single point on a path, we are mathematically perfoming a "Path
+    Integral". So Path Integral Formulation means "physics based on the adding
+    up stuff for every point on a path".

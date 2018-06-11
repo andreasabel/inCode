@@ -1384,6 +1384,17 @@ Feel free as always to leave a comment or a [tweet](https://twitter.com/mstk),
 or find me the freenode `#haskell` channel, as *jle\`*. I always welcome
 feedback, suggestions, or questions!
 
+Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
+twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
+published under the [CC-BY-NC-ND
+3.0](https://creativecommons.org/licenses/by-nc-nd/3.0/) license. Corrections
+and edits via pull request are welcome and encouraged at [the source
+repository](https://github.com/mstksg/inCode).
+
+If you feel inclined, or this post was particularly helpful for you, why not
+consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
+or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
 [^1]: Users who are used to GHC 8.0 and below might remember `Nat` coming from
     *[GHC.TypeLits](http://hackage.haskell.org/package/base/docs/GHC-TypeLits.html)*.
     Well, GHC 8.2 is here, `TypeLits` is out, `TypeNats` is in. The difference
@@ -1404,16 +1415,3 @@ feedback, suggestions, or questions!
     compile-time, and knew that `n` was less than or equal to `m`, we could
     construct an `LTE n m` and call `takeVec` directly, and not return a
     `Maybe`.
-
----------
-
-Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
-twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
-published under the [CC-BY-NC-ND
-3.0](https://creativecommons.org/licenses/by-nc-nd/3.0/) license. Corrections
-and edits via pull request are welcome and encouraged at [the source
-repository](https://github.com/mstksg/inCode).
-
-If you feel inclined, or this post was particularly helpful for you, why not
-consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
-or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)

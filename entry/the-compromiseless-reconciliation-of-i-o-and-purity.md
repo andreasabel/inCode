@@ -485,17 +485,6 @@ reasoning](http://u.jle.im/19JxV5S) because you're dealing with pure "inert"
 compositions --- this is something you could never get if you dealt with
 executing the actual functions themselves!
 
-[^1]: So, the astute reader will note that I am slightly blurring the line
-    between purity and non-strictness/laziness. While it is true that pure
-    languages can be strict, and ordering *can* matter, this demonstration is to
-    mostly illustrate that declarations of items and objects don't *necessarily*
-    have to correspond to evaluation, execution and IO --- an important point
-    for the next section.
-
-[^2]: Technically, the full type would be `ParsecT s u m Int`.
-
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
@@ -506,3 +495,12 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: So, the astute reader will note that I am slightly blurring the line
+    between purity and non-strictness/laziness. While it is true that pure
+    languages can be strict, and ordering *can* matter, this demonstration is to
+    mostly illustrate that declarations of items and objects don't *necessarily*
+    have to correspond to evaluation, execution and IO --- an important point
+    for the next section.
+
+[^2]: Technically, the full type would be `ParsecT s u m Int`.

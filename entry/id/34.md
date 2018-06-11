@@ -199,16 +199,6 @@ state, because not all of the tests are written yet. But the API should be
 stable and updates before `0.3.x` are going to all be backwards compatible
 (API-wise) bug fixes or filling in holes.
 
-[^1]: One could still use a subset of pipes that does not stream effects, but
-    merely values, and *that* does somewhat fill a similar role; this is used in
-    the [mvc](https://hackage.haskell.org/package/mvc) library to build similar
-    applications that *auto* tries to build. However, due to mvc's "global
-    state" nature, you lose many of the local statefulness idioms in *auto*, and
-    a lot of *auto*'s benefits and design philosophies go away, for other
-    reasons as well.
-
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
@@ -219,3 +209,11 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: One could still use a subset of pipes that does not stream effects, but
+    merely values, and *that* does somewhat fill a similar role; this is used in
+    the [mvc](https://hackage.haskell.org/package/mvc) library to build similar
+    applications that *auto* tries to build. However, due to mvc's "global
+    state" nature, you lose many of the local statefulness idioms in *auto*, and
+    a lot of *auto*'s benefits and design philosophies go away, for other
+    reasons as well.

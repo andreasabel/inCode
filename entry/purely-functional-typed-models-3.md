@@ -560,12 +560,6 @@ understanding of models and building new models is something that I take
 advantage of every day in my own modeling and research. I hope it can be helpful
 to you, as well!
 
-[^1]: This is the basis behind my work-in-progress
-    [opto](https://github.com/mstksg/opto) and
-    [backprop-learn](https://github.com/mstksg/backprop-learn) libraries.
-
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
@@ -576,3 +570,7 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: This is the basis behind my work-in-progress
+    [opto](https://github.com/mstksg/opto) and
+    [backprop-learn](https://github.com/mstksg/backprop-learn) libraries.

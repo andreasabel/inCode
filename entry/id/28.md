@@ -1605,6 +1605,17 @@ So, what's next?
 
 Happy Haskelling!
 
+Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
+twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
+published under the [CC-BY-NC-ND
+3.0](https://creativecommons.org/licenses/by-nc-nd/3.0/) license. Corrections
+and edits via pull request are welcome and encouraged at [the source
+repository](https://github.com/mstksg/inCode).
+
+If you feel inclined, or this post was particularly helpful for you, why not
+consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
+or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
 [^1]: Some of you might recall an earlier plan for this post that would include
     FRP. Unfortunately, I've refactored FRP into a completely new topic, because
     I've realized that the two aren't exactly as related as I had led you all to
@@ -1635,16 +1646,3 @@ Happy Haskelling!
     if you have a normal `Auto a (Maybe b)`; this is the approach that many
     libraries like [*auto*](https://github.com/mstksg/auto.) take --- write
     switching combinators on normal `Auto a (Maybe b)`'s instead.
-
----------
-
-Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
-twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
-published under the [CC-BY-NC-ND
-3.0](https://creativecommons.org/licenses/by-nc-nd/3.0/) license. Corrections
-and edits via pull request are welcome and encouraged at [the source
-repository](https://github.com/mstksg/inCode).
-
-If you feel inclined, or this post was particularly helpful for you, why not
-consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
-or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)

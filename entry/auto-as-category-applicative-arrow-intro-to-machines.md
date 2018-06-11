@@ -1001,14 +1001,6 @@ before Part 3 :)
         It might be more fun to use this one as a component of a larger `Auto`,
         and see what you can use it for!
 
-[^1]: Remember, we can write `a -> b` as `(->) a b`; like other operators,
-    `(->)` can be used both infix and prefix.
-
-[^2]: This was originally a typo but I like the word so much that I'm just going
-    to leave it in here.
-
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
@@ -1019,3 +1011,9 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: Remember, we can write `a -> b` as `(->) a b`; like other operators,
+    `(->)` can be used both infix and prefix.
+
+[^2]: This was originally a typo but I like the word so much that I'm just going
+    to leave it in here.

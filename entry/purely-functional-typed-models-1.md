@@ -660,17 +660,6 @@ post](https://blog.jle.im/entry/purely-functional-typed-models-2.html), we will
 explore how to reap the surprising benefits of this purely functional typed
 style when applying it to stateful and recurrent models.
 
-[^1]: Those familiar with Haskell idioms might recognize this type as being
-    essentially `a -> Reader p b` (or `Kleisli (Reader p) a b`) which roughly
-    represents the notion of "A function from `a` to `b` with an 'environment'
-    of type `p`".
-
-[^2]: Note that this is only sound as a loss function for a single "scalar
-    value", like `Double` or a one-vector. In general, we'd have this take a
-    loss function as a parameter.
-
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
@@ -681,3 +670,12 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: Those familiar with Haskell idioms might recognize this type as being
+    essentially `a -> Reader p b` (or `Kleisli (Reader p) a b`) which roughly
+    represents the notion of "A function from `a` to `b` with an 'environment'
+    of type `p`".
+
+[^2]: Note that this is only sound as a loss function for a single "scalar
+    value", like `Double` or a one-vector. In general, we'd have this take a
+    loss function as a parameter.

@@ -479,15 +479,6 @@ ways! I'd love to hear :D
 And if you're interested in the implementation using some of those Haskell
 tricks I mentioned above, stay tuned :)
 
-[^1]: Alternatively, we could assume that the halfway point (or even the first
-    body) is always at
-    ![\\langle 0, 0 \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%200%2C%200%20%5Crangle "\langle 0, 0 \rangle"),
-    but this doesn't give us as pretty of plots. The center of mass is a nice
-    reference point because newton's third law implies that it remains
-    stationary forever.
-
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
@@ -498,3 +489,10 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: Alternatively, we could assume that the halfway point (or even the first
+    body) is always at
+    ![\\langle 0, 0 \\rangle](https://latex.codecogs.com/png.latex?%5Clangle%200%2C%200%20%5Crangle "\langle 0, 0 \rangle"),
+    but this doesn't give us as pretty of plots. The center of mass is a nice
+    reference point because newton's third law implies that it remains
+    stationary forever.

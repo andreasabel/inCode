@@ -347,10 +347,6 @@ pretty hard to arrive at and a big headache and overall not worth the time to
 dig into. So you're going to have to take my second-hand word for it.
 :::
 
-[^1]: More accurately, "about a year"
-
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
@@ -361,3 +357,5 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: More accurately, "about a year"

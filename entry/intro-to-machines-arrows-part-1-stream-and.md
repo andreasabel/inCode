@@ -947,16 +947,6 @@ full power of machine composition. And we'll even be able to re-implement *many*
 of the complex machines of this post with compositions of smaller, simpler
 Autos.
 
-[^1]: It is somewhat important to note here that the semantics of FRP do not
-    inherently involve machines. We'll learn more about this later. For now,
-    remember that this series will chiefly study the low-level *implementation*
-    of AFRP, which may or may not be related to the *semantics*/abstractions of
-    FRP --- in an ideal world we wouldn't even have to worry about
-    implementation and just work on the level of the abstractions.
-    Unfortunately, we don't live in an ideal world :(
-
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
@@ -967,3 +957,11 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: It is somewhat important to note here that the semantics of FRP do not
+    inherently involve machines. We'll learn more about this later. For now,
+    remember that this series will chiefly study the low-level *implementation*
+    of AFRP, which may or may not be related to the *semantics*/abstractions of
+    FRP --- in an ideal world we wouldn't even have to worry about
+    implementation and just work on the level of the abstractions.
+    Unfortunately, we don't live in an ideal world :(

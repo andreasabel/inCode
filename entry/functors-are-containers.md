@@ -14,8 +14,6 @@ Fallacy](https://byorgey.wordpress.com/2009/01/12/abstraction-intuition-and-the-
 
 But one interesting thing that I realized
 
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

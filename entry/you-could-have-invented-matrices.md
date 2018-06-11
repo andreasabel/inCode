@@ -1014,8 +1014,6 @@ are. Furthermore, I hope that it gives some insight on why matrices are useful
 in linear algebra, and also how similar encodings can help you with manipulating
 other types of functions!
 
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

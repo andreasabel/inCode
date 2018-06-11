@@ -854,12 +854,6 @@ or comments/suggestions, feel free to leave a comment down below or drop by
 freenode's *\#haskell-auto* or *\#haskell-game*, where I go by *jle\`*! And, as
 always, happy Haskelling!
 
-[^1]: `scanB f x0 :: Auto m (Blip a) b`, but there's also
-    `accumB f x0 :: Auto m a (Blip a) (Blip b)`, which emits whenever the input
-    emits only.
-
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
@@ -870,3 +864,7 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: `scanB f x0 :: Auto m (Blip a) b`, but there's also
+    `accumB f x0 :: Auto m a (Blip a) (Blip b)`, which emits whenever the input
+    emits only.

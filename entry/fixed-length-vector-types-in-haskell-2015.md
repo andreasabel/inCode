@@ -1059,19 +1059,6 @@ the samples
 Please let me know if I got anything wrong, or if there are any techniques that
 I should mention here that are out and in the wild today :)
 
-[^1]: Can we get them out of Prelude? Please? :)
-
-[^2]: By the way, the GHC wiki seems to claim that [using *OverloadedLists* this
-    way is
-    impossible](https://ghc.haskell.org/trac/ghc/wiki/OverloadedLists#Length-indexedobservedVectors).
-    Anyone know what's going on here? Did we move fast and break everything?
-
-[^3]: Interestingly enough, I think this is something where you could have the
-    best of both situations with the Template Haskell method. But I'd hope for
-    something that works on the beautiful TypeLits :'(
-
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
@@ -1082,3 +1069,14 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: Can we get them out of Prelude? Please? :)
+
+[^2]: By the way, the GHC wiki seems to claim that [using *OverloadedLists* this
+    way is
+    impossible](https://ghc.haskell.org/trac/ghc/wiki/OverloadedLists#Length-indexedobservedVectors).
+    Anyone know what's going on here? Did we move fast and break everything?
+
+[^3]: Interestingly enough, I think this is something where you could have the
+    best of both situations with the Template Haskell method. But I'd hope for
+    something that works on the beautiful TypeLits :'(

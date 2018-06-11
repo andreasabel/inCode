@@ -38,8 +38,6 @@ maybe --- just maybe --- they can be useful to other humans.
 
 So anyways, this is it. Welcome to **in Code**!
 
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

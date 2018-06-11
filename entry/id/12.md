@@ -551,6 +551,17 @@ newList             -- a new list based on old list; f "chained" to `oldList`.
 Is there more than one way to think about chaining them, even? And in what ways
 we can define this "chaining" to represent success/failure? Until next time!
 
+Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
+twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
+published under the [CC-BY-NC-ND
+3.0](https://creativecommons.org/licenses/by-nc-nd/3.0/) license. Corrections
+and edits via pull request are welcome and encouraged at [the source
+repository](https://github.com/mstksg/inCode).
+
+If you feel inclined, or this post was particularly helpful for you, why not
+consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
+or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
 [^1]: I have to give a fair disclaimer here. MonadPlus, as it is currently
     implemented, actually serves two functionalities/purposes. However, its
     functionality not related to success/failure is actually (except for a few
@@ -577,16 +588,3 @@ we can define this "chaining" to represent success/failure? Until next time!
     constrained. The easiest way is to constrain the `Left` type to be a monoid
     and make `mzero = Left mempty`. Alternatively, if your Left is a String, you
     can just put in whatever default error message you want.
-
----------
-
-Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
-twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
-published under the [CC-BY-NC-ND
-3.0](https://creativecommons.org/licenses/by-nc-nd/3.0/) license. Corrections
-and edits via pull request are welcome and encouraged at [the source
-repository](https://github.com/mstksg/inCode).
-
-If you feel inclined, or this post was particularly helpful for you, why not
-consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
-or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)

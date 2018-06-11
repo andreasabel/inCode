@@ -637,14 +637,6 @@ pipes. After that, we will also be looking at how to profile code, applying some
 optimization tricks we can do to get things just right, and other things to wrap
 up.
 
-[^1]: Note --- this section was largely rewritten; it used to contain a rather
-    involved yet misled tutorial about the Writer monad, as suggested by old
-    links/titles. This can [still be found
-    here](https://github.com/mstksg/inCode/blob/master/copy/entries/.huffman-2-writer.md),
-    if you want to read through it.
-
----------
-
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
@@ -655,3 +647,9 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: Note --- this section was largely rewritten; it used to contain a rather
+    involved yet misled tutorial about the Writer monad, as suggested by old
+    links/titles. This can [still be found
+    here](https://github.com/mstksg/inCode/blob/master/copy/entries/.huffman-2-writer.md),
+    if you want to read through it.
