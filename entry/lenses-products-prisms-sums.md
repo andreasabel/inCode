@@ -561,7 +561,7 @@ that there must exist some type that is the same as your original type but with
 one missing element.
 
 Oh, hey! Remember our `[a] <~> Either () (NonEmpty a)` decomposition? That's
-exactly this! We can `NonEmpty a` is our mystery type: it's exactly a list `[a]`
+exactly this! Here, `NonEmpty a` is our mystery type: it's exactly a list `[a]`
 minus one potential element (the empty list).
 
 There's another way to go about this: we can talk about
