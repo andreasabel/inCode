@@ -1059,6 +1059,8 @@ the samples
 Please let me know if I got anything wrong, or if there are any techniques that
 I should mention here that are out and in the wild today :)
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

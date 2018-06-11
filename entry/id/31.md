@@ -255,6 +255,8 @@ Some side notes
     In short: use Monad when you are talking about IO's monadic properties;
     don't use it when you aren't. Simple, right?
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

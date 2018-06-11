@@ -687,6 +687,8 @@ freenode's *\#haskell* (where I am usually idling as *jle\`*), or on the
 Please let me know if you end up doing anything interesting with the library ---
 I'd love to hear about it! And, until next time, happy Haskelling!
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

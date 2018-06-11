@@ -260,6 +260,8 @@ I'd also in the future like to make my preprocessor a bit more robust and also
 take more languages to determine the right comment syntax. But...I probably
 wouldn't do this until the need actually arises :)
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

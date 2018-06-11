@@ -854,6 +854,8 @@ or comments/suggestions, feel free to leave a comment down below or drop by
 freenode's *\#haskell-auto* or *\#haskell-game*, where I go by *jle\`*! And, as
 always, happy Haskelling!
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

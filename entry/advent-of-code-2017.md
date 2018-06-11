@@ -29,6 +29,8 @@ fun! [glguy](https://twitter.com/glguy) has been maintaining the semi-official
 [Haskell Leaderboard](adventofcode.com/2017/leaderboard/private) (join code
 `43100-84040706`) -- come join us!
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

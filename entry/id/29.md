@@ -178,6 +178,8 @@ and chain.
 
 *mtl* is not a Monad transformer library. How liberating!
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

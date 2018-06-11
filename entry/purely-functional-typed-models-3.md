@@ -560,6 +560,8 @@ understanding of models and building new models is something that I take
 advantage of every day in my own modeling and research. I hope it can be helpful
 to you, as well!
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

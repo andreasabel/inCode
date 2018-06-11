@@ -142,6 +142,8 @@ Put in a rather abstract way, if you think of a `RandF Double` as something that
 "contains" a random `Double`, waiting to be computed...then `fmap show` applies
 `show` to the "contained" random `Double`.
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

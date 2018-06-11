@@ -233,6 +233,8 @@ This reflection post has been to help me organize my thoughts, but I hope they
 can be useful for those of you looking for new technologies to learn and ways to
 implement/approach your stack or next programming project, as well!
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

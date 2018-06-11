@@ -947,6 +947,8 @@ full power of machine composition. And we'll even be able to re-implement *many*
 of the complex machines of this post with compositions of smaller, simpler
 Autos.
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

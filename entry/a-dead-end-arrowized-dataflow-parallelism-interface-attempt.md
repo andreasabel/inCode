@@ -653,6 +653,8 @@ up my thought process up in written form somewhere so that I could look back on
 them, or so that people can see what doesn't work and/or possibly learn :) And
 of course for entertainment in case I am hilariously awful.
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

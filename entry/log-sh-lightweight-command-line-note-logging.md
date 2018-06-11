@@ -147,6 +147,8 @@ Hopefully this script ends up being as useful to you as it has to me. Feel free
 to leave any comments on questions/bugs/improvements, and I'm always happy to
 take contributions and pull requests.
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

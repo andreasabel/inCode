@@ -178,6 +178,8 @@ to. And then I'll be starting in the fall. I'm excited to see how this journey
 winds up in four years, but I know that this is the start of an exciting next
 stage of my life!
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

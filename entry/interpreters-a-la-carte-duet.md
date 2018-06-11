@@ -1155,6 +1155,8 @@ Hopefully this post inspires you a bit about this fun design pattern! And, if
 anything, I hope after reading this, you learn to recognize situations where
 this *modular* interpreter pattern might be useful in your everyday programming.
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

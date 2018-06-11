@@ -660,6 +660,8 @@ post](https://blog.jle.im/entry/purely-functional-typed-models-2.html), we will
 explore how to reap the surprising benefits of this purely functional typed
 style when applying it to stateful and recurrent models.
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

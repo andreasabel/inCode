@@ -551,6 +551,8 @@ newList             -- a new list based on old list; f "chained" to `oldList`.
 Is there more than one way to think about chaining them, even? And in what ways
 we can define this "chaining" to represent success/failure? Until next time!
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

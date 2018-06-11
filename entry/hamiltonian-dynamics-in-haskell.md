@@ -1382,6 +1382,8 @@ clarifications, feel free to leave a comment, drop me a
 [tweet](https://twitter.com/mstk "Twitter"), or find me on the freenode
 *\#haskell* channel (where I usually idle as *jle\`*!)
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

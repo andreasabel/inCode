@@ -199,6 +199,8 @@ state, because not all of the tests are written yet. But the API should be
 stable and updates before `0.3.x` are going to all be backwards compatible
 (API-wise) bug fixes or filling in holes.
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

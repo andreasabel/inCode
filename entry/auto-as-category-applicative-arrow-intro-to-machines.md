@@ -1001,6 +1001,8 @@ before Part 3 :)
         It might be more fun to use this one as a component of a larger `Auto`,
         and see what you can use it for!
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

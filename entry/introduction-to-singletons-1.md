@@ -854,6 +854,8 @@ for a comparison, if you are still unfamiliar.
 
     If the door is already unlocked or opened, it should ignore the `Int` input.
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

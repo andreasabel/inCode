@@ -769,6 +769,8 @@ really just different combinator applications of the same thing. I'll also talk
 about what I think are essential in building a usable framework for working with
 this in practice.
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

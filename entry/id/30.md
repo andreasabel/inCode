@@ -347,6 +347,8 @@ pretty hard to arrive at and a big headache and overall not worth the time to
 dig into. So you're going to have to take my second-hand word for it.
 :::
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

@@ -486,6 +486,8 @@ let me know in the comments or via
 (Credit to [computionist](https://twitter.com/computionist) and
 [bitemyapp](https://twitter.com/bitemyapp) for proofreading/helpful suggestions)
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

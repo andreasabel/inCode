@@ -485,6 +485,8 @@ reasoning](http://u.jle.im/19JxV5S) because you're dealing with pure "inert"
 compositions --- this is something you could never get if you dealt with
 executing the actual functions themselves!
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

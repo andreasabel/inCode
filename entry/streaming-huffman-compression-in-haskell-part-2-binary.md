@@ -637,6 +637,8 @@ pipes. After that, we will also be looking at how to profile code, applying some
 optimization tricks we can do to get things just right, and other things to wrap
 up.
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND

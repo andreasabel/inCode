@@ -653,6 +653,8 @@ recommend that you do it for fun! The code in this post is available
 [here](https://github.com/mstksg/inCode/tree/master/code-samples/verified-instances/VerifiedInstances.hs)
 if you want to play around!
 
+--------------------------------------------------------------------------------
+
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
 twitter at [\@mstk](https://twitter.com/mstk)! This post and all others are
 published under the [CC-BY-NC-ND
