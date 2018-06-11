@@ -216,8 +216,8 @@ data Lens' s a = forall q. Lens'
     }
 ```
 
-Now, if `split` and `join` form an isomorphism, *this can only represent valid
-lenses*![^2]
+Now, if `split` and `unsplit` form an isomorphism, *this can only represent
+valid lenses*![^2]
 
 (The `forall q.` is the *-XExistentialQuantification* extension, and allows us
 to hide type variables in constructors. Note that this disallows us from using
@@ -1487,8 +1487,8 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 
 [^2]: This type is technically also "too big" (you can write a value where
     `split` and `unsplit` do not form an isomorphism), but I think, to me,
-    "`split` and `join` must form an isomorphism" is a much clearer and natural
-    law than get-put/put-get/put-put.
+    "`split` and `unsplit` must form an isomorphism" is a much clearer and
+    natural law than get-put/put-get/put-put.
 
 [^3]: Technically, LEM denialists and constructivists are somewhat vindicated
     here, because it is not strictly true in Haskell that a list is either an
