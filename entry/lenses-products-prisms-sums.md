@@ -1136,6 +1136,8 @@ the essential `s <~> Either a q` isomorphism that defines a prism. And so
 ::: {.note}
 **Aside**
 
+Alright, those are great, but how to we actually *use* a `p a a -> p s s`?
+
 We can recover the original functionality of lenses and prisms by just picking
 specific values of `p` that, when transformed, give us the operations we want.
 
