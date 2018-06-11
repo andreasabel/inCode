@@ -634,8 +634,8 @@ a `Prism' s a` is nothing more than a witness to the fact that `s` is a *sum*
 `Either a q`. If it is possible to represent `s` as some `Either a q`...then you
 have two prisms! Prisms are nothing more than *descriptions of sums*!
 
-A `Prism' s a` is nothing more than a witness for an
-`exists q. s <~> Either a q` isomorphism.
+A `Prism' s a` is nothing more than saying that there exists some type `q` that
+can be used to witness a `s <~> Either a q` isomorphism.
 
 Under this interpretation, we can write a nice representation of `Prism'`:
 
