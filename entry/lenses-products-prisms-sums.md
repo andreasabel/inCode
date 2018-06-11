@@ -939,8 +939,8 @@ fromNot4 = review refined4
 
 ### Prism or Not
 
-To me, again, one of the most useful things about this prism perspective is that
-it helps me see what *isn't* a prism.
+To me, one of the most useful things about this prism perspective is that it
+helps me see what *isn't* a prism.
 
 For example, is it possible to have a prism into the *head* of a list? That is,
 is the following prism possible?
