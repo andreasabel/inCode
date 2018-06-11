@@ -94,6 +94,7 @@
 
 \title{Lenses embody Products, Prisms embody Sums}
 \author{Justin Le}
+\date{June 11, 2018}
 
 \begin{document}
 \maketitle
@@ -106,13 +107,13 @@ I've written about a variety of topics on this blog, but one thing I haven't
 touched in too much detail is the topic of lenses and optics. A big part of this
 is because there are already so many great resources on lenses.
 
-This post won't be a ``lens tutorial'', but rather a dive into an insightful
-perspective on lenses and prisms that I've heard repeated many times (and always
-credited to Edward Kmett), but not yet all compiled into a single place. In
-particular, I'm going to talk about the perspective of lenses and prisms as
-embodying the essences of products and sums (respectively), and how that
-observation can help you with a more ``practical'' understanding of lenses and
-prisms.
+This post won't be a ``lens tutorial'', but rather a dive into an perspective on
+lenses and prisms that I've heard repeated many times (and always credited to
+Edward Kmett) but never quite expanded on in-depth. In particular, I'm going to
+talk about the perspective of lenses and prisms as embodying the essences of
+products and sums (respectively), the insights that perspective brings, how well
+it flows into the ``profunctor optics'' formulation, and how you can apply these
+observations to practical usage of lenses and prisms.
 
 The ``final code'' in this post is
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs}{available
@@ -233,9 +234,9 @@ One final interesting ``product in disguise'' is \texttt{Either\ a\ a}. ``But
 wait,'' you say. ``That's a sum\ldots{}right??''
 
 Well, yeah. But in addition, any \texttt{Either\ a\ a} is the product between
-\texttt{Bool} and \texttt{a}. In other words, \texttt{Either\ a\ a} is
-isomorphic to \texttt{(Bool,\ a)}. The \texttt{Bool} tells you ``left or
-right?'' and the \texttt{a} is the contents!
+\texttt{Bool} and \texttt{a}. We can say that \texttt{Either\ a\ a} is
+isomorphic to \texttt{(Bool,\ a)}! The \texttt{Bool} tells you ``left or
+right?'' and the \texttt{a} is the contents:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -283,7 +284,7 @@ And \texttt{split\ .\ unsplit\ =\ id} is again left as an exercise.
 So, how do lenses come into the picture?
 
 Let's review a bit. A \texttt{Lens\textquotesingle{}\ s\ a} is a way to
-``access'' an \texttt{a} ``inside'' an \texttt{s}, respecting some laws.
+``access'' an \texttt{a} ``inside'' an \texttt{s}, \emph{respecting some laws}.
 
 A \texttt{Lens\textquotesingle{}\ s\ a} is a data type with the following API:
 
@@ -295,9 +296,9 @@ A \texttt{Lens\textquotesingle{}\ s\ a} is a data type with the following API:
 \end{Shaded}
 
 respecting
-\href{https://www.schoolofhaskell.com/school/to-infinity-and-beyond/pick-of-the-week/a-little-lens-starter-tutorial\#the-lens-laws-}{some
-laws} --- get-put, put-get, and put-put. Abstract mathematical laws are great
-and all, but I'm going to tell you a secret that subsumes those laws.
+\href{https://www.schoolofhaskell.com/school/to-infinity-and-beyond/pick-of-the-week/a-little-lens-starter-tutorial\#the-lens-laws-}{the
+lens laws} --- get-put, put-get, and put-put. Abstract mathematical laws are
+great and all, but I'm going to tell you a secret that subsumes those laws.
 
 At first, you might naively implement lenses like:
 
@@ -314,12 +315,13 @@ But this is bad bad bad. That's because you can use this to represent lenses
 that ``break the laws''. This representation is, to use the technical term,
 ``too big''. It allows more more values than are actual lenses.
 
-So, here's the secret: A \texttt{Lens\textquotesingle{}\ s\ a} means that
-\emph{\texttt{s} is a product between \texttt{a} and some type \texttt{q}}.
+So, here's the secret: A \texttt{Lens\textquotesingle{}\ s\ a} is nothing more
+than a way of saying that \emph{\texttt{s} is a product between \texttt{a} and
+some type \texttt{q}}.
 
 That means that if it is possible to represent \texttt{s} as some
-\texttt{(a,\ q)} (or,
-\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}), \emph{then you
+\texttt{(v,\ w)} (or,
+\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (v,\ w)}), \emph{then you
 have two lenses}! Lenses are nothing more than \emph{descriptions of products}!
 Another way to think of this is that if you are able to ``split'' a type into
 two parts without losing any information, then each part represents a lens.
@@ -343,17 +345,17 @@ that lenses embody descriptions of products:
 \end{Highlighting}
 \end{Shaded}
 
-(The \texttt{forall\ q.} is the \emph{-XExistentialQuantification} extension,
-and allows us to hide type variables in constructors. Note that this disallows
-us from using \texttt{split} and \texttt{unsplit} as record accessors functions,
-so we have to pattern match to get the contents)
-
 Now, if \texttt{split} and \texttt{join} form an isomorphism, \emph{this can
 only represent valid lenses}!\footnote{This type is technically also ``too big''
   (you can write a value where \texttt{split} and \texttt{unsplit} do not form
   an isomorphism), but I think, to me, ``\texttt{split} and \texttt{join} must
   form an isomorphism'' is a much clearer and natural law than
   get-put/put-get/put-put.}
+
+(The \texttt{forall\ q.} is the \emph{-XExistentialQuantification} extension,
+and allows us to hide type variables in constructors. Note that this disallows
+us from using \texttt{split} and \texttt{unsplit} as record accessors functions,
+so we have to pattern match to get the contents)
 
 We can implement our necessary lens API as so:
 
@@ -527,19 +529,13 @@ out if we're in \texttt{Left} or \texttt{Right}, and flipping the \texttt{Bool}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
-
-\textbf{Aside}
-
-Note that if we look at lenses as embodying ``record fields'' (things that give
-you the ability to ``get'' a field, and ``modify'' a field --- corresponding
-with \texttt{view} and \texttt{set}), we can think of \texttt{mysteryLens1} as
-an \emph{abstract record field} into the Leftness/Rightness of a value. Thinking
-of lenses as defining abstract record fields is a
+If we think about lenses as embodying ``record fields'' (things that give you
+the ability to ``get'' a field, and ``modify'' a field --- corresponding with
+\texttt{view} and \texttt{set}), we can think of \texttt{mysteryLens1} as an
+\emph{abstract record field} into the Leftness/Rightness of a value. Thinking of
+lenses as defining abstract record fields is a
 \href{http://blog.ezyang.com/2016/12/a-tale-of-backwards-compatibility-in-asts/}{common
 tool for backwards compatiblity}.
-
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 Looking at \texttt{mysteryLens2\ ::\ Lens\textquotesingle{}\ (Either\ a\ a)\ a},
 we are saying that every \texttt{Either\ a\ a} has some \texttt{a} ``inside''
@@ -575,29 +571,6 @@ So that's really the essence of what a \texttt{Lens\textquotesingle{}} is. A
 \texttt{s} can be represented as a product between \texttt{a} and something else
 --- that \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)}. All of
 the lens laws just boil down to this. \textbf{Lenses embody products}.
-
-\hypertarget{what-isnt-a-lens}{%
-\subsection{What Isn't a Lens?}\label{what-isnt-a-lens}}
-
-This perspective also gives you some insight into when things \emph{aren't}
-lenses. For example, is it possible to make a lens that gives you the first item
-in a list?
-
-No, there isn't, because there isn't any type \texttt{q} that you could factor
-out \texttt{{[}a{]}} into as \texttt{(a,\ q)}.
-
-After all, even if such a \texttt{q} existed, how would you implement
-\texttt{split}?
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{split ::}\NormalTok{ [a] }\OtherTok{->}\NormalTok{ (a, }\DataTypeTok{MysteryType}\NormalTok{)}
-\NormalTok{split [] }\FunctionTok{=}\NormalTok{ ( }\FunctionTok{????}\NormalTok{, mysteryValue )}
-\end{Highlighting}
-\end{Shaded}
-
-There would be no \texttt{a} to put into the first item in the tuple, no matter
-what choice of \texttt{q} you have
 
 \hypertarget{sum-thing-interesting}{%
 \section{"Sum-thing" Interesting}\label{sum-thing-interesting}}
@@ -648,8 +621,8 @@ this proves that \texttt{Shape} is a sum in disguise.
 
 Another interesting ``hidden sum'' is the fact that \texttt{{[}a{]}} in Haskell
 is actually a sum between \texttt{()} and \texttt{(a,\ {[}a{]})}. That's right
---- it's a sum between \texttt{()} and\ldots{}itself? Indeed it is pretty
-bizarre.
+--- it's a sum between \texttt{()} and\ldots{}itself with a value? Indeed it is
+pretty bizarre.
 
 However, if we think of \texttt{()} as the possibility of an empty list, and
 \texttt{(a,\ {[}a{]})} as the possibility of \texttt{NonEmpty\ a} (the ``head''
@@ -811,8 +784,6 @@ witness:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- | Like `Int`, but cannot be constructed if it is 4}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L292-L292}
-
 \KeywordTok{type} \DataTypeTok{Not4} \FunctionTok{=} \DataTypeTok{Refined}\NormalTok{ (}\DataTypeTok{NotEqualTo} \DecValTok{4}\NormalTok{) }\DataTypeTok{Int}
 
 \CommentTok{-- | Provided by the 'refined' library that lets us refine and unrefine a type}
@@ -843,8 +814,8 @@ equality)
 \subsection{Through the Looking-Prism}\label{through-the-looking-prism}}
 
 Now let's bring prisms into the picture. A
-\texttt{Prism\textquotesingle{}\ s\ a} also refers to some \texttt{a} ``inside''
-an \texttt{s}, with the following API: \texttt{preview} and
+\texttt{Prism\textquotesingle{}\ s\ a} also refers to some \texttt{a} ``possibly
+inside'' an \texttt{s}, with the following API: \texttt{preview} and
 \texttt{review}\footnote{I didn't invent these names :)}
 
 \begin{Shaded}
@@ -853,6 +824,10 @@ an \texttt{s}, with the following API: \texttt{preview} and
 \OtherTok{review  ::} \DataTypeTok{Prism'}\NormalTok{ s a }\OtherTok{->}\NormalTok{ (a }\OtherTok{->}\NormalTok{ s)         }\CommentTok{-- reconstruct the 's' from an 'a'}
 \end{Highlighting}
 \end{Shaded}
+
+If you think of a prism as representing an abstract constructor, the
+\texttt{preview} is the ``pattern match'', and the \texttt{review} is the
+``constructing''.
 
 Naively you might implement a prism like this:
 
@@ -1136,22 +1111,24 @@ always matches) and that you can construct an \texttt{a} with only an \texttt{a}
 \texttt{a\ \textless{}\textasciitilde{}\textgreater{}\ Either\ a\ Void} sum.
 
 In lens-speak, \texttt{\_Void\ ::\ Prism\textquotesingle{}\ a\ Void} tells us
-that you can pattern match a \texttt{Void} out of any \texttt{a}\ldots{}but that
-that pattern match will never match. Furthermore, it tells us that if you have a
-value of type \texttt{Void}, you can use the \texttt{\_Void} ``constructor'' to
-make a value of any type \texttt{a}! We have
+that you can pattern match a \texttt{Void} out of any \texttt{a} (and that match
+will always fail). Furthermore, it tells us that if you have a value of type
+\texttt{Void}, you can use the \texttt{\_Void} ``constructor'' to make a value
+of any type \texttt{a}! We have
 \texttt{review\ \_Void\ ::\ Void\ -\textgreater{}\ a}!
 
 However, in our ``sum'' perspective, it is nothing more than the witness of the
 fact that \texttt{a} is the sum of \texttt{a} and \texttt{Void}.
 
 And finally, let's look at our deconstruction of \texttt{Int} and
-\texttt{Reinfed\ (NotEqualTo\ 4)\ Int}. What prisms does this yield, and what
+\texttt{Refined\ (NotEqualTo\ 4)\ Int}. What prisms does this yield, and what
 insight do we get?
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L294-L312}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L292-L312}
+
+\KeywordTok{type} \DataTypeTok{Not4} \FunctionTok{=} \DataTypeTok{Refined}\NormalTok{ (}\DataTypeTok{NotEqualTo} \DecValTok{4}\NormalTok{) }\DataTypeTok{Int}
 
 \OtherTok{only4 ::} \DataTypeTok{Prism'} \DataTypeTok{Int}\NormalTok{ ()}
 \NormalTok{only4 }\FunctionTok{=} \DataTypeTok{Prism'}
@@ -1238,10 +1215,12 @@ is, is the following prism possible?
 If you think of a prism as just ``a lens that might fail'' (as it's often
 taught), you might think yes. If you think of a prism as just ``a constructor
 and deconstructor'', you might also think yes, since you can construct an
-\texttt{{[}a{]}} with only a single \texttt{a}. You can definitely ``implement''
-this prism incorrectly using our ``too big'' representation, in terms of
-\texttt{preview} and \texttt{review}, and it will still typecheck. Both of these
-viewpoints of prisms will fail you and lead you astray.
+\texttt{{[}a{]}} with only a single \texttt{a}.\footnote{Although, upon further
+  inspection, you might realize that the constructor and deconstructor don't
+  match} You can definitely ``implement'' this prism incorrectly naively, in
+terms of \texttt{preview} and \texttt{review}, and it would still typecheck.
+
+Both of these viewpoints of prisms will fail you and lead you astray.
 
 However, if you think of it as witnessing a sum, you might see that this prism
 isn't possible. There is no possible type \texttt{q} where \texttt{{[}a{]}} is a
@@ -1315,7 +1294,7 @@ functions that witness
 \hypertarget{profunctor-lens}{%
 \subsection{Profunctor Lens}\label{profunctor-lens}}
 
-A profunctor lens (one way of implementing)
+A ``profunctor lens'' (which is a specific way of implementing lenses)
 \texttt{Lens\textquotesingle{}\ s\ a} is a function:
 
 \begin{Shaded}
@@ -1374,6 +1353,9 @@ And so we now have a definition of a profunctor lens:
 \end{Highlighting}
 \end{Shaded}
 
+\texttt{makeLens\ split\ unsplit\ ::\ Strong\ p\ =\textgreater{}\ p\ a\ a\ -\textgreater{}\ p\ s\ s}
+is a profunctor lens!
+
 Essentially, \texttt{iso\ split\ unsplit\ .\ first\textquotesingle{}} promotes a
 \texttt{p\ a\ a} to a \texttt{p\ s\ s}. It uses \texttt{first\textquotesingle{}}
 to turn the \texttt{p\ a\ a} into a \texttt{p\ (a,\ q)\ (a,\ q)}, turning a
@@ -1383,16 +1365,6 @@ isomorphism that defines a lens. And so
 \texttt{p\ a\ a\ -\textgreater{}\ p\ s\ s}, going through the
 \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ (a,\ q)} isomorphism, is
 a lens!
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- | The "forall p" means that that the `Lens` is defined to work for all}
-\CommentTok{-- possible profunctors as long as it has an instance of `Strong`}
-\KeywordTok{type} \DataTypeTok{Lens'}\NormalTok{ s a }\FunctionTok{=}\NormalTok{ forall p}\FunctionTok{.} \DataTypeTok{Strong}\NormalTok{ p}
-              \OtherTok{=>}\NormalTok{ p a a}
-              \OtherTok{->}\NormalTok{ p s s}
-\end{Highlighting}
-\end{Shaded}
 
 \hypertarget{profunctor-prisms}{%
 \subsection{Profunctor Prisms}\label{profunctor-prisms}}
@@ -1428,7 +1400,7 @@ With that tool in hand, in order to get a
 \texttt{Either\ a\ q}, doing nothing if the \texttt{q} pops up''.
 
 Luckily, there happens to be a typeclass called \texttt{Choice} that gives us
-just!
+\emph{exactly} that!
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1458,6 +1430,9 @@ And so we now have a definition of a profunctor prism:
 \end{Highlighting}
 \end{Shaded}
 
+\texttt{makeLens\ match\ inject\ ::\ Choice\ p\ =\textgreater{}\ p\ a\ a\ -\textgreater{}\ p\ s\ s}
+is a profunctor prism!
+
 Essentially, \texttt{iso\ match\ inject\ .\ left\textquotesingle{}} promotes a
 \texttt{p\ a\ a} to a \texttt{p\ s\ s}. It uses \texttt{left\textquotesingle{}}
 to turn the \texttt{p\ a\ a} into a \texttt{p\ (Either\ a\ q)\ (Either\ a\ q)},
@@ -1468,11 +1443,13 @@ that defines a prism. And so \texttt{p\ a\ a\ -\textgreater{}\ p\ s\ s}, going
 through the \texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ Either\ a\ q}
 isomorphism, is a prism!
 
-\hypertarget{recovering-the-functionality}{%
-\subsection{Recovering the Functionality}\label{recovering-the-functionality}}
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
-We can recover the original functionality by just picking specific values of
-\texttt{p} that, when transformed, give us the operations we want.
+\textbf{Aside}
+
+We can recover the original functionality of lenses and prisms by just picking
+specific values of \texttt{p} that, when transformed, give us the operations we
+want.
 
 For example, we want
 \texttt{view\ ::\ Lens\textquotesingle{}\ s\ a\ -\textgreater{}\ (s\ -\textgreater{}\ a)},
@@ -1495,14 +1472,20 @@ which is a newtype wrapper over an \texttt{s\ -\textgreater{}\ a}! You've
 tricked the profunctor transformer into giving you the
 \texttt{s\ -\textgreater{}\ a} you always wanted.
 
-Note that you can't give this to a prism, since it is not possible to write a
-\texttt{Choice} instance for \texttt{View\ a}. Thus we naturally limit
-\texttt{view} to work only for lenses (because they have \texttt{Strong}) and
-not for prisms (because prisms require \texttt{Choice} to work).
+Note that you can't give a \texttt{(View\ a)\ s\ s} to a prism, since it is not
+possible to write a \texttt{Choice} instance for \texttt{View\ a}. Thus we
+naturally limit \texttt{view} to work only for lenses (because they have
+\texttt{Strong}) and not for prisms (because prisms require \texttt{Choice} to
+work).
 
 For a more detailed look on implementing the entire lens and prism API in terms
 of profunctors, check out Oleg Grenrus's amazing
 \href{http://oleg.fi/gists/posts/2017-04-18-glassery.html}{Glassery}!
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\hypertarget{motivation}{%
+\subsection{Motivation}\label{motivation}}
 
 To me, this perspective makes it really clear to see ``why'' profunctor lenses
 and profunctor prisms are implemented the way they are. At first, the profunctor
@@ -1545,8 +1528,11 @@ lens and prism laws into something trivial that can be stated succinctly (``it
 must be an isomorphism''), and also made the profunctor optics form seem
 uncannily natural.
 
-Some small notes need to be made to bridge this view with the way they are
-actually implemented in practice.
+The rest of this post describes small notes that bridge this view to the way
+lenses and prisms are actually implemented in real life, by clarifying what lens
+families (and ``type-changing lenses'') are in this view, and also how we
+sometimes get away with using an abstract \texttt{q} type. At the end, there are
+also exercises and questions (mostly conceptual) to test your understanding!
 
 \hypertarget{lens-families}{%
 \subsection{Lens Families}\label{lens-families}}
@@ -1566,14 +1552,20 @@ the isomorphisms that lenses and prisms represent:
 \texttt{Prism\textquotesingle{}\ inner\ outer} isomorphisms}
 \end{figure}
 
-We can simply \emph{re-label} the inputs and outputs to have different types,
-like so:
+Note how it is kind of complicated to talk about specific parts. If I say ``the
+value of type \texttt{inner}'', do I mean the value ``before'' we use the lens,
+or ``after'' we use the lens? There are two \texttt{inner}-typed values in our
+picture.
+
+A ``Lens family'' is a trick we can do to make talking about things easier. We
+use the same lenses, but we \emph{re-label} the ``before'' and ``after'' (input
+and output) with different type variables, like so:
 
 \begin{figure}
 \centering
 \includegraphics{/img/entries/lenses-and-prisms/lensprism2.png}
-\caption{\texttt{Lens\textquotesingle{}\ inner\ outer} and
-\texttt{Prism\textquotesingle{}\ inner\ outer} isomorphisms}
+\caption{\texttt{Lens\ s\ t\ a\ b} and \texttt{Prism\ s\ t\ a\ b} isomorphisms,
+as a lens family}
 \end{figure}
 
 Essentially, we're just deciding to give the inputs and outputs different type
@@ -1623,11 +1615,11 @@ We still require \texttt{unsplit\ .\ split\ =\ id},
 just \emph{relabeling our type variables} here to let us be more expressive with
 how we talk about all of the moving parts.
 
-Lens families can be used to implement ``type changing lenses'' where tweaking
-the inner type can cause the outer type to also change appropriately. However,
-in this case, \texttt{unsplit\ .\ split\ =\ id} and
-\texttt{inject\ .\ match\ =\ id} should always still be enforced in the
-situation where the types do not change.
+Lens families can also be used to implement ``type changing lenses'' where
+tweaking the inner type can cause the outer type to also change appropriately.
+But \texttt{s}, \texttt{t}, \texttt{a}, and \texttt{b} can't just be whatever
+you want. They have to be picked so that \texttt{unsplit\ .\ split} and
+\texttt{inject\ .\ match} can typecheck.
 
 \hypertarget{abstract-factors-and-addends}{%
 \subsection{Abstract Factors and Addends}\label{abstract-factors-and-addends}}
@@ -1651,8 +1643,8 @@ excludes \texttt{\textquotesingle{}a\textquotesingle{}}.
 To formalize this, sometimes we can say that only ``one direction'' of the
 isomorphism has to be strictly true in practice. If we only enforce that the
 round-trip of \texttt{unsplit\ .\ split\ =\ id} and
-\texttt{inject\ .\ match\ =\ id}, this enforces just the spirit of the hidden
-abstract type. This is ""
+\texttt{inject\ .\ match\ =\ id}, this enforces the ``spirit'' of the hidden
+abstract type.
 
 For example, our ``\texttt{only\ \textquotesingle{}a\textquotesingle{}}'' can be
 witnessed by:
@@ -1847,8 +1839,8 @@ exercises! Most of them are conceptual and open-ended.
 \section{Special Thanks}\label{special-thanks}}
 
 I am very humbled to be supported by an amazing community, who make it possible
-for me to devote time to research and writing these posts. Very special thanks
-to my supporter at the ``Amazing'' level on
+for me to devote time to researching and writing these posts. Very special
+thanks to my supporter at the ``Amazing'' level on
 \href{https://www.patreon.com/justinle/overview}{patreon}, Sam Stites! :)
 
 Hi, thanks for reading! You can reach me via email at
