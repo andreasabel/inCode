@@ -1463,7 +1463,7 @@ exercises! Most of them are conceptual and open-ended.
     ```
 
     Using `(.)` from `Prelude`. Definitely much simpler! (And it's one main
-    reason why they're the most popular representation)
+    reason why they're among the most popular representation)
 
 Special Thanks
 --------------
