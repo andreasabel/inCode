@@ -43,7 +43,7 @@ on this topic!
 Let's Get Productive!
 ---------------------
 
-It's easy to recognize `(Int, Double)` as a product between `Int` and `Bool`.
+It's easy to recognize `(Int, Bool)` as a product between `Int` and `Bool`.
 However, did you know that some types are secretly product types in disguise?
 
 For example, here's a classic example of a data type often used with *lens*:
