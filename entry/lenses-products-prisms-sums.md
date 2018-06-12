@@ -1383,15 +1383,15 @@ exercises! Most of them are conceptual and open-ended.
 
     Under what conditions can you express a type `a` as a *product* involving
     `Void`, and you can have a `Lens' a Void`? (Hint: use the algebra!) What
-    would this lens do (what are `view` and `set`)?
+    would this lens do (what are `view`, `set`, and `over`)?
 
 -   We discussed the conditions where a type `a` can be expressed as a product
     involving `()` and you can have `Lens' a ()`.
 
     Under what conditions can you express a type `a` as a product involving
     `Bool` (`a <~> (Bool, q)`), and you can have a `Lens' a Bool`? (Hint: use
-    the algebra!) What would this lens do (what are `view` and `set`)? And what
-    about the `Lens' a q`?
+    the algebra!) What would this lens do (what are `view`, `set`, and `over`)?
+    And what about the `Lens' a q`?
 
 -   We found that by interpreting `Either a a` as a product `(Bool, a)` gives us
     two interesting lenses:
@@ -1416,14 +1416,14 @@ exercises! Most of them are conceptual and open-ended.
     mysteryPrism2 :: Prism' (Bool, a) a
     ```
 
-    What do these prisms do? What is `preview` and `review` for them?
+    What do these prisms do? What is `preview`, `review`, `over` for them?
 
 -   Alright, now time to write code. Another "interesting" product is the fact
     that `Bool -> a` is isomorphic to `(a, a)`. That is, `Bool -> a` is a
     product between `a` and itself.
 
     Can you write the corresponding two `Lens' (Bool -> a) a`s? And, what do
-    they mean? (what are `view`, `set` for those lenses?) [Solutions
+    they mean? (what are `view`, `set`, `over` for those lenses?) [Solutions
     online](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L43-L55)
 
 -   Can you write combinators to "compose" lenses and prisms? Is it even
