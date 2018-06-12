@@ -525,19 +525,15 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>As a finale, I’d like to show how these dual perspectives (lenses are witneses to products and prisms are witnesses to sum) make their implementation in terms of “profunctor optics” very natural.</p>
 <p>First, some background – a “profunctor optic” is a way of expressing things like lenses and prisms in terms of “profunctor transformers”. Lenses, prisms, etc. would not be record types, but rather functions that takes a profunctor and return a new profunctor.</p>
 <p>A profunctor <code>p</code> has values of type <code>p a b</code>, and you can roughly think of <code>p a b</code> as “a relationship between <code>a</code> and <code>b</code>”.</p>
-<p>The <code>Profunctor</code> typeclass <code>p</code> gives us a function called <code>iso</code> that lets us transform a profunctor in terms of an isomorphism.</p>
-<p>If type <code>s</code> is isomorphic to type <code>a</code> (<code>s &lt;~&gt; a</code>), then we can the function <code>iso</code>, that the <code>Profunctor</code> class gives us:</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb45-1" data-line-number="1"><span class="co">-- s &lt;~&gt; a</span></a>
-<a class="sourceLine" id="cb45-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb45-3" data-line-number="3"><span class="co">-- | The real `iso` is actually a little more polymorphic.  It&#39;s also normally</span></a>
-<a class="sourceLine" id="cb45-4" data-line-number="4"><span class="co">-- called `dimap`, but `iso` is its common alias.</span></a>
-<a class="sourceLine" id="cb45-5" data-line-number="5"><span class="kw">class</span> <span class="dt">Profunctor</span> p <span class="kw">where</span></a>
-<a class="sourceLine" id="cb45-6" data-line-number="6"><span class="ot">    iso ::</span> <span class="dt">Profunctor</span> p</a>
-<a class="sourceLine" id="cb45-7" data-line-number="7">        <span class="ot">=&gt;</span> (s <span class="ot">-&gt;</span> a)         <span class="co">-- ^ one half of the isomorphism</span></a>
-<a class="sourceLine" id="cb45-8" data-line-number="8">        <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> s)         <span class="co">-- ^ the other half of the isomorphism</span></a>
-<a class="sourceLine" id="cb45-9" data-line-number="9">        <span class="ot">-&gt;</span> p a a</a>
-<a class="sourceLine" id="cb45-10" data-line-number="10">        <span class="ot">-&gt;</span> p s s</a></code></pre></div>
-<p>Given the <code>s -&gt; a</code> and <code>a -&gt; s</code> functions that witness <code>s &lt;~&gt; a</code>, the <code>Profunctor</code> typeclass lets us transform a <code>p a a</code> into a <code>p s s</code> (a relationship on <code>a</code>s to be a relationship on <code>s</code>).</p>
+<p>The <code>Profunctor</code> typeclass <code>p</code> gives us a few functions. We can use them to create a function that transforms a profunctor in terms of an isomorphism.</p>
+<p>If type <code>s</code> is isomorphic to type <code>a</code> (<code>s &lt;~&gt; a</code>), then we can the function <code>iso</code>, that the <code>Profunctor</code> class gives us:[^iso]</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb45-1" data-line-number="1"><span class="ot">iso ::</span> <span class="dt">Profunctor</span> p</a>
+<a class="sourceLine" id="cb45-2" data-line-number="2">    <span class="ot">=&gt;</span> (s <span class="ot">-&gt;</span> a)         <span class="co">-- ^ one half of the isomorphism</span></a>
+<a class="sourceLine" id="cb45-3" data-line-number="3">    <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> s)         <span class="co">-- ^ the other half of the isomorphism</span></a>
+<a class="sourceLine" id="cb45-4" data-line-number="4">    <span class="ot">-&gt;</span> p a a</a>
+<a class="sourceLine" id="cb45-5" data-line-number="5">    <span class="ot">-&gt;</span> p s s</a>
+<a class="sourceLine" id="cb45-6" data-line-number="6">iso <span class="fu">=</span> dimap         <span class="co">-- `dimap` comes from the `Profunctor` typeclass</span></a></code></pre></div>
+<p>Given the <code>s -&gt; a</code> and <code>a -&gt; s</code> functions that witness <code>s &lt;~&gt; a</code>, we can use <code>iso</code> (defined using <code>Profunctor</code> typeclass methods) to transform a <code>p a a</code> into a <code>p s s</code> (a relationship on <code>a</code>s to be a relationship on <code>s</code>) according to an isomorphism.</p>
 <h3 id="profunctor-lens">Profunctor Lens</h3>
 <p>A “profunctor lens” (which is a specific way of implementing lenses) <code>Lens' s a</code> is a function:</p>
 <div class="sourceCode" id="cb46"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb46-1" data-line-number="1">p a a <span class="ot">-&gt;</span> p s s</a></code></pre></div>
