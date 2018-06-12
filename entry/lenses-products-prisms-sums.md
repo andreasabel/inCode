@@ -1068,7 +1068,8 @@ makeLens split unsplit =
   . first'             -- ^ p a a -> p (a, q) (a, q)
 ```
 
-`makeLens split unsplit :: Strong p => p a a -> p s s` is a profunctor lens!
+`makeLens split unsplit :: Strong p => p a a -> p s s` is a profunctor lens (a
+"profunctor transformer")!
 
 Essentially, `iso split unsplit . first'` promotes a `p a a` to a `p s s`. It
 uses `first'` to turn the `p a a` into a `p (a, q) (a, q)`, turning a
@@ -1129,7 +1130,8 @@ makePrism match inject =
   . left'              -- ^ p a a -> p (Either a q) (Either a q)
 ```
 
-`makeLens match inject :: Choice p => p a a -> p s s` is a profunctor prism!
+`makeLens match inject :: Choice p => p a a -> p s s` is a profunctor prism (a
+"profunctor transformer")!
 
 Essentially, `iso match inject . left'` promotes a `p a a` to a `p s s`. It uses
 `left'` to turn the `p a a` into a `p (Either a q) (Either a q)`, turning a
