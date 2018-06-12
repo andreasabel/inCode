@@ -249,8 +249,8 @@ pattern x :+/- dx <- Un x (sqrt->dx)
     x :+/- dx = Un x (dx*dx)
 ```
 
-(Note that the type signature you need for this is different depending on if
-you're in GHC 8.0 and GHC 7.10; they're mutually incompatible. How unfortunate!)
+(Note that GHC 8.0 introduces a new type signature format for pattern synonyms,
+so this will only work in GHC 8.0 or above as-is)
 
 Now, people can pattern match on `x :+/- dx` and receive the mean and
 uncertainty directly. Neat!
