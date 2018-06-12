@@ -634,12 +634,11 @@ is a sum between \texttt{()} and \texttt{NonEmpty\ a} is saying that
 \texttt{{[}a{]}} is ``either an empty list or a non-empty list''. Whoa. Take
 \emph{that},
 \href{https://en.wikipedia.org/wiki/Constructivism_(mathematics)}{LEM
-denialists}.\footnote{Technically, LEM denialists and constructivists are
-  somewhat vindicated here, because it is not strictly true in Haskell that a
-  list is either an empty list or a non-empty list. It can actually
-  \href{https://wiki.haskell.org/Bottom}{be neither}. Being able to say that a
-  list is either an empty list or a non-empty list is exactly the same as
-  assuming the law of the excluded middle in Haskell.}
+denialists}.\footnote{Technically,
+  \href{https://en.wikipedia.org/wiki/Law_of_excluded_middle}{LEM} denialists
+  and constructivists are somewhat vindicated here, because it is not strictly
+  true in Haskell that a list is either an empty list or a non-empty list. It
+  can actually \href{https://wiki.haskell.org/Bottom}{be neither}.}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -852,8 +851,10 @@ You might be able to guess where I'm going at this point. Whereas a
 that \texttt{s} is a \emph{product} \texttt{(a,\ q)} \ldots{} a
 \texttt{Prism\textquotesingle{}\ s\ a} is nothing more than a witness to the
 fact that \texttt{s} is a \emph{sum} \texttt{Either\ a\ q}. If it is possible to
-represent \texttt{s} as some \texttt{Either\ a\ q}\ldots{}then you have two
-prisms! Prisms are nothing more than \emph{descriptions of sums}!
+represent \texttt{s} as some \texttt{Either\ v\ w}\ldots{}then you have
+\emph{two prisms}! Prisms are nothing more than \emph{descriptions of sums}! If
+you are able to ``split'' a type into one of two possibilities, then each
+possibility represents a prism.
 
 A \texttt{Prism\textquotesingle{}\ s\ a} is nothing more than saying that there
 exists some type \texttt{q} that can be used to witness a
@@ -1262,21 +1263,21 @@ to products and prisms are witnesses to sum) make their implementation in terms
 of ``profunctor optics'' very natural.
 
 First, some background -- a ``profunctor optic'' is a way of expressing things
-like lenses and prisms in terms of ``profunctor transformers''. Lenses, prisms,
-etc. would not be record types, but rather functions that takes a profunctor and
-return a new profunctor.
+like lenses and prisms in terms of ``profunctor value transformers''. Lenses,
+prisms, etc. would not be record types, but rather functions that takes a
+profunctor value and return a new profunctor value.
 
 A profunctor \texttt{p} has values of type \texttt{p\ a\ b}, and you can roughly
-think of \texttt{p\ a\ b} as ``a relationship between \texttt{a} and
-\texttt{b}''.
+think of \texttt{p\ a\ b} (a profunctor value) as ``a relationship between
+\texttt{a} and \texttt{b}''.
 
 The \texttt{Profunctor} typeclass \texttt{p} gives us a few functions. We can
-use them to create a function that transforms a profunctor in terms of an
+use them to create a function that transforms a profunctor value in terms of an
 isomorphism.
 
 If type \texttt{s} is isomorphic to type \texttt{a}
 (\texttt{s\ \textless{}\textasciitilde{}\textgreater{}\ a}), then we can the
-function \texttt{iso}, that the \texttt{Profunctor} class gives us:{[}\^{}iso{]}
+function \texttt{iso}, that the \texttt{Profunctor} class gives us:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1359,7 +1360,7 @@ And so we now have a definition of a profunctor lens:
 \end{Shaded}
 
 \texttt{makeLens\ split\ unsplit\ ::\ Strong\ p\ =\textgreater{}\ p\ a\ a\ -\textgreater{}\ p\ s\ s}
-is a profunctor lens (a ``profunctor transformer'')!
+is a profunctor lens (a ``profunctor value transformer'')!
 
 Essentially, \texttt{iso\ split\ unsplit\ .\ first\textquotesingle{}} promotes a
 \texttt{p\ a\ a} to a \texttt{p\ s\ s}. It uses \texttt{first\textquotesingle{}}
@@ -1436,7 +1437,7 @@ And so we now have a definition of a profunctor prism:
 \end{Shaded}
 
 \texttt{makeLens\ match\ inject\ ::\ Choice\ p\ =\textgreater{}\ p\ a\ a\ -\textgreater{}\ p\ s\ s}
-is a profunctor prism (a ``profunctor transformer'')!
+is a profunctor prism (a ``profunctor value transformer'')!
 
 Essentially, \texttt{iso\ match\ inject\ .\ left\textquotesingle{}} promotes a
 \texttt{p\ a\ a} to a \texttt{p\ s\ s}. It uses \texttt{left\textquotesingle{}}
@@ -1477,7 +1478,7 @@ so we just make a profunctor \texttt{p} where \texttt{p\ s\ s} contains an
 And when you give this to a lens (a ``profunctor transformer''
 \texttt{p\ a\ a\ -\textgreater{}\ p\ s\ s}), you get a \texttt{(View\ a)\ s\ s},
 which is a newtype wrapper over an \texttt{s\ -\textgreater{}\ a}! You've
-tricked the profunctor transformer into giving you the
+tricked the profunctor value transformer into giving you the
 \texttt{s\ -\textgreater{}\ a} you always wanted.
 
 Note that you can't give a \texttt{(View\ a)\ s\ s} to a prism, since it is not
@@ -1501,11 +1502,12 @@ optics definitions seemed really opaque and arbitrary to me, and I had no idea
 why \texttt{Strong} and \texttt{Choice} corresponded to lenses and prisms.
 
 But now, I know that lenses are prisms can be seen as just \emph{profunctor
-transformers} that \emph{transform along the decomposition} that the lenses and
-prisms represent. For profunctor lenses, the profunctors get transformed to
-``parts of a whole'' profunctors, using \texttt{Strong}. For profunctor prisms,
-the profunctors get transformed to ``branches of a possibility'' profunctors,
-using \texttt{Choice}. Even their types clearly show what is going on:
+value transformers} that \emph{transform along the decomposition} that the
+lenses and prisms represent. For profunctor lenses, the profunctor values get
+transformed to ``parts of a whole'' profunctor values, using \texttt{Strong}.
+For profunctor prisms, the profunctor values get transformed to ``branches of a
+possibility'' profunctor values, using \texttt{Choice}. Even their types clearly
+show what is going on:
 
 \begin{Shaded}
 \begin{Highlighting}[]
