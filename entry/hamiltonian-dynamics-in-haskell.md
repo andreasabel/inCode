@@ -1292,10 +1292,8 @@ be at equilibrium, and our initial angular velocity
 will be 0.1 radians/sec (clockwise), as we try to induce harmonic motion:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L180-L207
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L182-L207
 
--- | A pendulum system, parameterized by its angle clockwise from
--- equilibrium
 pendulum :: System 2 1
 pendulum = mkSystem (vec2 5 5) coords pot      -- 5kg particle
   where

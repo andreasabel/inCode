@@ -585,33 +585,31 @@ x(t + \Delta t) = x(t) + \dot{x}(t) \Delta t
 <p>Exactly what we’d expect! The <code>x</code> positions increase steadily, and the <code>y</code> positions increase, slow down, and start decreasing.</p>
 <p>We can try a slightly more complicated example that validates (and justifies) all of the work we’ve done – let’s simulate a simple pendulum. The state of a pendulum is characterized by one coordinate <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Ctheta" alt="\theta" title="\theta" />, which refers to the angular (clockwise) from the equilibrium “hanging straight down” position. <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Ctheta%20%3D%200" alt="\theta = 0" title="\theta = 0" /> corresponds to 6 o’ clock, <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Ctheta%20%3D%20%5Cpi%2F2" alt="\theta = \pi/2" title="\theta = \pi/2" /> corresponds to 9 o’ clock, <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Ctheta%20%3D%20-%20%5Cpi%20%2F%202" alt="\theta = - \pi / 2" title="\theta = - \pi / 2" /> corresponds to 3 o’ clock, etc. For a pendulum of length <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?l" alt="l" title="l" />, we can translate that as <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Clangle%20x%2C%20y%20%5Crangle%20%3D%20%5Clangle%20-%20l%20sin%28%5Ctheta%29%2C%20-%20l%20cos%28%5Ctheta%29%20%5Crangle" alt="\langle x, y \rangle = \langle - l sin(\theta), - l cos(\theta) \rangle" title="\langle x, y \rangle = \langle - l sin(\theta), - l cos(\theta) \rangle" />.</p>
 <p>Let’s set up that system! We’ll put it under normal gravity potential, again (<img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?U%28x%2Cy%29%20%3D%209.8%20y" alt="U(x,y) = 9.8 y" title="U(x,y) = 9.8 y" />). Our initial position <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Ctheta_0" alt="\theta_0" title="\theta_0" /> will be at equilibrium, and our initial angular velocity <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?v_%7B%5Ctheta%200%7D" alt="v_{\theta 0}" title="v_{\theta 0}" /> will be 0.1 radians/sec (clockwise), as we try to induce harmonic motion:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L180-L207</span></a>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L182-L207</span></a>
 <a class="sourceLine" id="cb22-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb22-3" data-line-number="3"><span class="co">-- | A pendulum system, parameterized by its angle clockwise from</span></a>
-<a class="sourceLine" id="cb22-4" data-line-number="4"><span class="co">-- equilibrium</span></a>
-<a class="sourceLine" id="cb22-5" data-line-number="5"><span class="ot">pendulum ::</span> <span class="dt">System</span> <span class="dv">2</span> <span class="dv">1</span></a>
-<a class="sourceLine" id="cb22-6" data-line-number="6">pendulum <span class="fu">=</span> mkSystem (vec2 <span class="dv">5</span> <span class="dv">5</span>) coords pot      <span class="co">-- 5kg particle</span></a>
-<a class="sourceLine" id="cb22-7" data-line-number="7">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb22-8" data-line-number="8">    <span class="co">-- &lt;x,y&gt; = &lt;-0.5 sin(theta), -0.5 cos(theta)&gt;</span></a>
-<a class="sourceLine" id="cb22-9" data-line-number="9">    <span class="co">-- pendulum of length 0.25</span></a>
-<a class="sourceLine" id="cb22-10" data-line-number="10"><span class="ot">    coords ::</span> <span class="dt">RealFloat</span> a <span class="ot">=&gt;</span> <span class="dt">V.Vector</span> <span class="dv">1</span> a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> <span class="dv">2</span> a</a>
-<a class="sourceLine" id="cb22-11" data-line-number="11">    coords (V.head<span class="ot">-&gt;</span>theta) <span class="fu">=</span> V.fromTuple (<span class="fu">-</span> <span class="fl">0.25</span> <span class="fu">*</span> sin theta, <span class="fu">-</span> <span class="fl">0.25</span> <span class="fu">*</span> cos theta)</a>
-<a class="sourceLine" id="cb22-12" data-line-number="12">    <span class="co">-- potential energy of gravity field</span></a>
-<a class="sourceLine" id="cb22-13" data-line-number="13">    <span class="co">-- U(x,y) = 9.8 * y</span></a>
-<a class="sourceLine" id="cb22-14" data-line-number="14"><span class="ot">    pot ::</span> <span class="dt">RealFloat</span> a <span class="ot">=&gt;</span> <span class="dt">V.Vector</span> <span class="dv">1</span> a <span class="ot">-&gt;</span> a</a>
-<a class="sourceLine" id="cb22-15" data-line-number="15">    pot q <span class="fu">=</span> <span class="fl">9.8</span> <span class="fu">*</span> (coords q <span class="ot">`V.index`</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb22-16" data-line-number="16"></a>
-<a class="sourceLine" id="cb22-17" data-line-number="17"><span class="ot">pendulumConfig0 ::</span> <span class="dt">Config</span> <span class="dv">1</span></a>
-<a class="sourceLine" id="cb22-18" data-line-number="18">pendulumConfig0 <span class="fu">=</span> <span class="dt">Config</span></a>
-<a class="sourceLine" id="cb22-19" data-line-number="19">    { confPositions  <span class="fu">=</span> <span class="dv">0</span></a>
-<a class="sourceLine" id="cb22-20" data-line-number="20">    , confVelocities <span class="fu">=</span> <span class="fl">0.1</span></a>
-<a class="sourceLine" id="cb22-21" data-line-number="21">    }</a>
-<a class="sourceLine" id="cb22-22" data-line-number="22"></a>
-<a class="sourceLine" id="cb22-23" data-line-number="23"><span class="ot">pendulumMain ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb22-24" data-line-number="24">pendulumMain <span class="fu">=</span></a>
-<a class="sourceLine" id="cb22-25" data-line-number="25">    mapM_ (disp <span class="dv">3</span> <span class="fu">.</span> phasePositions)  <span class="co">-- position with 2 digits of precision</span></a>
-<a class="sourceLine" id="cb22-26" data-line-number="26">  <span class="fu">.</span> take <span class="dv">25</span>                          <span class="co">-- 25 steps</span></a>
-<a class="sourceLine" id="cb22-27" data-line-number="27">  <span class="fu">$</span> runSystem pendulum <span class="fl">0.1</span> (toPhase pendulum pendulumConfig0)</a></code></pre></div>
+<a class="sourceLine" id="cb22-3" data-line-number="3"><span class="ot">pendulum ::</span> <span class="dt">System</span> <span class="dv">2</span> <span class="dv">1</span></a>
+<a class="sourceLine" id="cb22-4" data-line-number="4">pendulum <span class="fu">=</span> mkSystem (vec2 <span class="dv">5</span> <span class="dv">5</span>) coords pot      <span class="co">-- 5kg particle</span></a>
+<a class="sourceLine" id="cb22-5" data-line-number="5">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb22-6" data-line-number="6">    <span class="co">-- &lt;x,y&gt; = &lt;-0.5 sin(theta), -0.5 cos(theta)&gt;</span></a>
+<a class="sourceLine" id="cb22-7" data-line-number="7">    <span class="co">-- pendulum of length 0.25</span></a>
+<a class="sourceLine" id="cb22-8" data-line-number="8"><span class="ot">    coords ::</span> <span class="dt">RealFloat</span> a <span class="ot">=&gt;</span> <span class="dt">V.Vector</span> <span class="dv">1</span> a <span class="ot">-&gt;</span> <span class="dt">V.Vector</span> <span class="dv">2</span> a</a>
+<a class="sourceLine" id="cb22-9" data-line-number="9">    coords (V.head<span class="ot">-&gt;</span>theta) <span class="fu">=</span> V.fromTuple (<span class="fu">-</span> <span class="fl">0.25</span> <span class="fu">*</span> sin theta, <span class="fu">-</span> <span class="fl">0.25</span> <span class="fu">*</span> cos theta)</a>
+<a class="sourceLine" id="cb22-10" data-line-number="10">    <span class="co">-- potential energy of gravity field</span></a>
+<a class="sourceLine" id="cb22-11" data-line-number="11">    <span class="co">-- U(x,y) = 9.8 * y</span></a>
+<a class="sourceLine" id="cb22-12" data-line-number="12"><span class="ot">    pot ::</span> <span class="dt">RealFloat</span> a <span class="ot">=&gt;</span> <span class="dt">V.Vector</span> <span class="dv">1</span> a <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb22-13" data-line-number="13">    pot q <span class="fu">=</span> <span class="fl">9.8</span> <span class="fu">*</span> (coords q <span class="ot">`V.index`</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb22-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb22-15" data-line-number="15"><span class="ot">pendulumConfig0 ::</span> <span class="dt">Config</span> <span class="dv">1</span></a>
+<a class="sourceLine" id="cb22-16" data-line-number="16">pendulumConfig0 <span class="fu">=</span> <span class="dt">Config</span></a>
+<a class="sourceLine" id="cb22-17" data-line-number="17">    { confPositions  <span class="fu">=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb22-18" data-line-number="18">    , confVelocities <span class="fu">=</span> <span class="fl">0.1</span></a>
+<a class="sourceLine" id="cb22-19" data-line-number="19">    }</a>
+<a class="sourceLine" id="cb22-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb22-21" data-line-number="21"><span class="ot">pendulumMain ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb22-22" data-line-number="22">pendulumMain <span class="fu">=</span></a>
+<a class="sourceLine" id="cb22-23" data-line-number="23">    mapM_ (disp <span class="dv">3</span> <span class="fu">.</span> phasePositions)  <span class="co">-- position with 2 digits of precision</span></a>
+<a class="sourceLine" id="cb22-24" data-line-number="24">  <span class="fu">.</span> take <span class="dv">25</span>                          <span class="co">-- 25 steps</span></a>
+<a class="sourceLine" id="cb22-25" data-line-number="25">  <span class="fu">$</span> runSystem pendulum <span class="fl">0.1</span> (toPhase pendulum pendulumConfig0)</a></code></pre></div>
 <p>This pendulum should wobble back and forth, ever so slightly, around equilibrium.</p>
 <div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>l Hamilton.hs</a>
 <a class="sourceLine" id="cb23-2" data-line-number="2">ghci<span class="fu">&gt;</span> pendulumMain</a>

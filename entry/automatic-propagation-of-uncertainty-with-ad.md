@@ -241,11 +241,9 @@ basically "abstract" away the data type itself, and let people pattern match on
 a mean and standard deviation:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L29-L34
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L28-L31
 
--- pattern (:+/-) :: () => Floating a => a -> a -> Uncert a
--- [GHC 8.0:]
--- pattern (:+/-) :: Floating a => a -> a -> Uncert a
+pattern (:+/-) :: Floating a => a -> a -> Uncert a
 pattern x :+/- dx <- Un x (sqrt->dx)
   where
     x :+/- dx = Un x (dx*dx)
@@ -258,7 +256,7 @@ Now, people can pattern match on `x :+/- dx` and receive the mean and
 uncertainty directly. Neat!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L36-L37
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L33-L34
 
 uStdev :: Floating a => Uncert a -> a
 uStdev (_ :+/- dx) = dx
@@ -380,7 +378,7 @@ vy = dfx^2 * vx
 Putting it all together:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L39-L47
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L36-L44
 
 liftU :: Fractional a
       => (forall s. AD s (Tower a) -> AD s (Tower a))
@@ -482,7 +480,7 @@ We need a couple of helpers, first --- one to get the "diagonal" of our hessian,
 because we only care about the repeated partials:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L49-L53
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L46-L50
 
 diag :: [[a]] -> [a]
 diag = \case
@@ -495,7 +493,7 @@ And then a "dot product", utility function, which just multiplies two lists
 together component-by-component and sums the results:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-L56
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L52-L53
 
 dot :: Num a => [a] -> [a] -> a
 dot xs ys = sum (zipWith (*) xs ys)
@@ -504,7 +502,7 @@ dot xs ys = sum (zipWith (*) xs ys)
 And now we can write our multi-variate function lifter:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L58-L75
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L55-L72
 
 liftUF :: (Traversable f, Fractional a)
        => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a))
@@ -533,7 +531,7 @@ things you can use `hessian'` on)
 And we can write some nice helper functions so we can use them more naturally:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L77-L90
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/uncertain/Uncertain.hs#L74-L87
 
 liftU2 :: Fractional a
        => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))

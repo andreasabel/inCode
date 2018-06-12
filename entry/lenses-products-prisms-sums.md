@@ -655,17 +655,15 @@ prisms*!
 We can now implement the prism API:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L132-L135
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L132-L138
 
 preview :: Prism' s a -> (s -> Maybe a)
 preview Prism'{..} x = case match x of
     Left  y -> Just y
     Right _ -> Nothing
 
-preview :: Prism' s a -> (s -> Maybe a)
-preview Prism'{..} x = case match x of
-    Left  y -> Just y
-    Right _ -> Nothing
+review  :: Prism' s a -> (a -> s)
+review Prism'{..} = inject . Left
 ```
 
 Like for lenses, prisms also admit a particularly elegant formulation for
