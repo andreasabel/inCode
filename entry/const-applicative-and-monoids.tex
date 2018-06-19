@@ -309,6 +309,28 @@ that we have Applicative laws and expectations means we can look at the
 implementation of \texttt{sequenceA\_} and know with certainty (and make bold
 claims about) how \texttt{sequenceA\_} combines effects.
 
+For example, we can always make the program substitution:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sequenceA_ xs }\FunctionTok{*>}\NormalTok{ sequenceA_ ys}
+\CommentTok{-- can be substituted with}
+\NormalTok{sequenceA_ (xs }\FunctionTok{++}\NormalTok{ ys)}
+\end{Highlighting}
+\end{Shaded}
+
+If \texttt{sequenceA\_} combines all the effects in \texttt{xs} once, and
+\texttt{sequenceA\_} combines all the effects in \texttt{ys} once, and
+\texttt{*\textgreater{}} combines the effects of either side once, then this is
+a \emph{legal substitution} that doesn't change what your program does.
+
+However, if the \texttt{Applicative} instance doesn't have any rules, we can't
+do this. For example, the original form uses \texttt{pure\ ()} \emph{twice}
+(once for each list's \texttt{{[}{]}} end), and the second form uses
+\texttt{pure\ ()} \emph{once} (since there's only one list). If
+\texttt{pure\ ()} was allowed to have effects\ldots{}then the first version
+would have more effects than the second.
+
 \hypertarget{back-to-const}{%
 \section{Back to Const}\label{back-to-const}}
 
