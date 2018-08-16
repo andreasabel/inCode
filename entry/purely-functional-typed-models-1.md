@@ -217,7 +217,7 @@ having it work with `BVar z p` and `BVar z a` (`BVar`s containing those values)
 instead:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L49-L52
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L52-L55
 
 type Model p a b = forall z. Reifies z W
                 => BVar z p
@@ -238,7 +238,7 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 ")
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L45-L366
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L48-L369
 
 data a :& b = !a :& !b
 
@@ -283,7 +283,7 @@ if we identify a loss function:[^2]
 ")
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L57-L65
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L60-L68
 
 squaredErrorGrad
     :: (Backprop p, Backprop b, Num b)
@@ -303,7 +303,7 @@ And finally, we can train it using stochastic gradient descent, with just a
 simple fold over all observations:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L67-L73
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L70-L76
 
 trainModel
     :: (Fractional p, Backprop p, Num b, Backprop b)
@@ -319,7 +319,7 @@ For convenience, we can define a `Random` instance for our tuple type using the
 that uses `IO` to generate a random initial parameter:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L75-L82
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L78-L85
 
 trainModelIO
     :: (Fractional p, Backprop p, Num b, Backprop b, Random p)
@@ -360,7 +360,7 @@ We can start with a single layer. The model here will also take two parameters
 
 ``` {.haskell}
 import Numeric.LinearAlgebra.Static.Backprop
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L89-L100
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L92-L103
 
 logistic :: Floating a => a -> a
 logistic x = 1 / (1 + exp (-x))
@@ -426,7 +426,7 @@ function to create a *[logistic
 regression](https://en.wikipedia.org/wiki/Logistic_regression)* model.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L114-L115
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L117-L118
 
 logReg :: Model (Double :& Double) Double Double
 logReg ab = logistic . linReg ab
@@ -438,7 +438,7 @@ Haskell, saying that `(f . g) x = f (g x)`.
 We could have even written our `feedForwardLog` without its activation function:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L92-L95
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L95-L98
 
 feedForward
     :: (KnownNat i, KnownNat o)
@@ -449,7 +449,7 @@ feedForward (w :&& b) x = w #> x + b
 And now we can swap out activation functions using simple function composition:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L117-L120
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L120-L123
 
 feedForwardLog'
     :: (KnownNat i, KnownNat o)
@@ -461,7 +461,7 @@ Maybe even a [softmax](https://en.wikipedia.org/wiki/Softmax_function)
 classifier!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L122-L130
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L125-L133
 
 softMax :: (Reifies z W, KnownNat n) => BVar z (R n) -> BVar z (R n)
 softMax x = konst (1 / sumElements expx) * expx
@@ -478,7 +478,7 @@ We can even write a function to *compose* two models, keeping their two original
 parameters separate:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L132-L138
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L135-L141
 
 (<~)
     :: (Backprop p, Backprop q)

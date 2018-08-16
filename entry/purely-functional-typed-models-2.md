@@ -184,7 +184,7 @@ To help us see, let's try implementing this in Haskell. Remember our previous
 `Model` type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L49-L52
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L52-L55
 
 type Model p a b = forall z. Reifies z W
                 => BVar z p
@@ -197,7 +197,7 @@ which represented a differentiable
 We can directly translate this to a new `ModelS` type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L154-L158
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L157-L161
 
 type ModelS p s a b = forall z. Reifies z W
                    => BVar z p
@@ -213,7 +213,7 @@ We can implement AR(2) as mentioned before by translating the math formula
 directly:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L160-L162
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L163-L165
 
 ar2 :: ModelS (Double :& (Double :& Double)) Double Double Double
 ar2 (c :&& (φ1 :&& φ2)) yLast yLastLast =
@@ -224,7 +224,7 @@ Our implementation of a fully-connected recurrent neural network is a similar
 direct translation:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L164-L169
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L167-L172
 
 fcrnn
     :: (KnownNat i, KnownNat o)
@@ -238,7 +238,7 @@ Because we again have normal functions, we can write a similar stateful model
 composition function that combines both their parameters and their states:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L171-L180
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L174-L183
 
 (<*~*)
   :: (Backprop p, Backprop q, Backprop s, Backprop t)
@@ -258,7 +258,7 @@ and a `BVar z b` and returning a `BVar z (a :& b)`)
 And maybe even a utility function to map a function on the result of a `ModelS`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L182-L186
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L185-L189
 
 mapS
     :: (forall z. Reifies z W => BVar z b -> BVar z c)
@@ -297,7 +297,7 @@ For example, we can "upgrade" any non-stateful function to a stateful one, just
 by returning a new normal function:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L188-L190
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L191-L193
 
 toS :: Model  p   a b
     -> ModelS p s a b
@@ -312,7 +312,7 @@ But we can also be creative with our combinators, as well, and write one to
 compose a stateless model with a stateful one:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L192-L198
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L195-L201
 
 (<*~)
   :: (Backprop p, Backprop q)
@@ -414,7 +414,7 @@ With that, we can write `unroll`, which is just a thin wrapper over
 `mapAccumL`:[^2]
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L200-L208
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L203-L211
 
 unroll
     :: (Backprop a, Backprop b)
@@ -436,7 +436,7 @@ shows only the "final" result. All we do is `mapS`
 `BVar` of a sequence.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L210-L214
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L213-L217
 
 unrollLast
     :: (Backprop a, Backprop b)
@@ -449,7 +449,7 @@ Alternatively, we can also recognize that `unrollLast` is really just an awkward
 left fold (`foldl`) in disguise:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L216-L222
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L219-L225
 
 unrollLast'
     :: Backprop a
@@ -487,7 +487,7 @@ very common in machine learning contexts, where many people simply fix the
 initial state to be a zero vector.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L225-L235
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L228-L238
 
 fixState
     :: s
@@ -511,7 +511,7 @@ throw away the final state). This is not done as often, but is still common
 enough to be mentioned often. And, it's just as straightforward!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L237-L241
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L240-L244
 
 trainState
     :: (Backprop p, Backprop s)
@@ -574,7 +574,7 @@ that takes a stateful model and gives a "warmed-up" state by running it over a
 list of inputs. This serves to essentially initialize the memory of the model.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L243-L250
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L246-L253
 
 prime
     :: Foldable t
@@ -590,7 +590,7 @@ Then a function `feedback` that iterates a stateful model over and over again by
 feeding its previous output as its next input:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L252-L264
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L255-L267
 
 feedback
     :: (Backprop a, Backprop s)
