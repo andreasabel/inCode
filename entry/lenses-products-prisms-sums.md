@@ -9,12 +9,14 @@ touched in too much detail is the topic of lenses and optics. A big part of this
 is because there are already so many great resources on lenses.
 
 This post won't be a "lens tutorial", but rather a dive into an perspective on
-lenses and prisms that I've heard repeated many times (and always credited to
-Edward Kmett) but never quite expanded on in-depth. In particular, I'm going to
-talk about the perspective of lenses and prisms as embodying the essences of
-products and sums (respectively), the insights that perspective brings, how well
-it flows into the "profunctor optics" formulation, and how you can apply these
-observations to practical usage of lenses and prisms.
+lenses and prisms that I've heard repeated many times (usually credited to
+Edward Kmett, but shachaf has helped me trace the origins back to [this
+paste](https://lpaste.net/77766) by Reid Barton) but never quite expanded on
+in-depth. In particular, I'm going to talk about the perspective of lenses and
+prisms as embodying the essences of products and sums (respectively), the
+insights that perspective brings, how well it flows into the "profunctor optics"
+formulation, and how you can apply these observations to practical usage of
+lenses and prisms.
 
 The "final code" in this post is [available
 online](https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs)
