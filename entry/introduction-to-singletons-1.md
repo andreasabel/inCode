@@ -108,12 +108,13 @@ absolute or relative (`Path 'Absolute` vs. `Path 'Relative`). For a simple
 example, let's check out a simple DSL for a type-safe door:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L12-L15
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L12-L16
 
 data DoorState = Opened | Closed | Locked
   deriving (Show, Eq)
 
 data Door (s :: DoorState) = UnsafeMkDoor { doorMaterial :: String }
+                  -- requires -XDataKinds
 ```
 
 A couple things going on here:
@@ -195,7 +196,7 @@ Well, right off the bat, we can write functions that expect only a certain type
 of `Door`, and return a specific type of `Door`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L17-L18
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L18-L19
 
 closeDoor :: Door 'Opened -> Door 'Closed
 closeDoor (UnsafeMkDoor m) = UnsafeMkDoor m
@@ -238,7 +239,7 @@ With a couple of state transitions, we can write compositions that are
 type-checked to all be legal:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L20-L24
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L21-L25
 
 lockDoor :: Door 'Closed -> Door 'Locked
 lockDoor (UnsafeMkDoor m) = UnsafeMkDoor m
@@ -349,7 +350,7 @@ with exactly one inhabitant. It is written so that pattern matching on the
 *constructor* of that value reveals the unique type parameter.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L26-L29
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L27-L30
 
 data SingDS :: DoorState -> Type where
     SOpened :: SingDS 'Opened
@@ -375,7 +376,7 @@ The power of singletons is that we can now *pattern match* on types,
 essentially.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L17-L35
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L18-L36
 
 closeDoor :: Door 'Opened -> Door 'Closed
 
@@ -469,7 +470,7 @@ to match the `s` in the `Door s` they give.
 Since we don't even care about the `door`, we could also just write:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L37-L40
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L38-L41
 
 fromSingDS :: SingDS s -> DoorState
 fromSingDS SOpened = Opened
@@ -480,7 +481,7 @@ fromSingDS SLocked = Locked
 Which we can use to write a nicer `doorStatus`
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L42-L43
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L43-L44
 
 doorStatus :: SingDS s -> Door s -> DoorState
 doorStatus s _ = fromSingDS s
@@ -497,7 +498,7 @@ it be nice if we could have it be passed implicitly? We can actually leverage
 typeclasses to give us this ability:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L45-L53
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L46-L54
 
 class SingDSI s where
     singDS :: SingDS s
@@ -516,7 +517,7 @@ checks to make sure that this is *correct*)
 And so now we can do:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L55-L59
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L56-L60
 
 lockAnyDoor_ :: SingDSI s => Door s -> Door 'Locked
 lockAnyDoor_ = lockAnyDoor singDS
@@ -563,7 +564,7 @@ actually a little trickier. The typical way to do this is with a CPS-like
 utility function:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L61-L65
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L62-L66
 
 withSingDSI :: SingDS s -> (SingDSI s => r) -> r
 withSingDSI sng x = case sng of
@@ -593,7 +594,7 @@ Now, we can run our implicit functions (like `lockAnyDoor_`) by giving them
 explicit inputs:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L67-L68
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L68-L69
 
 lockAnyDoor__ :: SingDS s -> Door s -> Door 'Locked
 lockAnyDoor__ s d = withSingDSI s (lockAnyDoor_ d)
@@ -620,7 +621,7 @@ that value.
 We can write a nice version of `mkDoor` using singletons:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L70-L71
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door.hs#L71-L72
 
 mkDoor :: SingDS s -> String -> Door s
 mkDoor _ = UnsafeMkDoor
