@@ -176,20 +176,21 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1">withDoor</a>
 <a class="sourceLine" id="cb18-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">DoorState</span></a>
 <a class="sourceLine" id="cb18-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb18-4" data-line-number="4">    <span class="ot">-&gt;</span> (forall s<span class="fu">.</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r</a>
-<a class="sourceLine" id="cb18-5" data-line-number="5">withDoor s m f <span class="fu">=</span> <span class="kw">case</span> s <span class="kw">of</span></a>
-<a class="sourceLine" id="cb18-6" data-line-number="6">    <span class="dt">Opened</span> <span class="ot">-&gt;</span> f <span class="dt">SOpened</span> (mkDoor <span class="dt">SOpened</span> m)</a>
-<a class="sourceLine" id="cb18-7" data-line-number="7">    <span class="dt">Closed</span> <span class="ot">-&gt;</span> f <span class="dt">SClosed</span> (mkDoor <span class="dt">SClosed</span> m)</a>
-<a class="sourceLine" id="cb18-8" data-line-number="8">    <span class="dt">Locked</span> <span class="ot">-&gt;</span> f <span class="dt">SLocked</span> (mkDoor <span class="dt">SLocked</span> m)</a></code></pre></div>
+<a class="sourceLine" id="cb18-4" data-line-number="4">    <span class="ot">-&gt;</span> (forall s<span class="fu">.</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> r)</a>
+<a class="sourceLine" id="cb18-5" data-line-number="5">    <span class="ot">-&gt;</span> r</a>
+<a class="sourceLine" id="cb18-6" data-line-number="6">withDoor s m f <span class="fu">=</span> <span class="kw">case</span> s <span class="kw">of</span></a>
+<a class="sourceLine" id="cb18-7" data-line-number="7">    <span class="dt">Opened</span> <span class="ot">-&gt;</span> f <span class="dt">SOpened</span> (mkDoor <span class="dt">SOpened</span> m)</a>
+<a class="sourceLine" id="cb18-8" data-line-number="8">    <span class="dt">Closed</span> <span class="ot">-&gt;</span> f <span class="dt">SClosed</span> (mkDoor <span class="dt">SClosed</span> m)</a>
+<a class="sourceLine" id="cb18-9" data-line-number="9">    <span class="dt">Locked</span> <span class="ot">-&gt;</span> f <span class="dt">SLocked</span> (mkDoor <span class="dt">SLocked</span> m)</a></code></pre></div>
 <p>With a Rank-N Type, <code>withDoor</code> takes a <code>DoorState</code> and a <code>String</code> and a <em>function to handle a <code>Door s</code> polymorphically</em>. The caller of <code>withDoor</code> must provide a handler that can handle <em>any</em> <code>s</code>, in a uniform and parametrically polymorphic way. The function then gives the result of the handler function called on the resulting <code>Sing s</code> and <code>Door s</code>.</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1">ghci<span class="fu">&gt;</span> withDoor <span class="dt">Opened</span> <span class="st">&quot;Birch&quot;</span> <span class="fu">$</span> \s d <span class="ot">-&gt;</span> <span class="kw">case</span> s <span class="kw">of</span></a>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1">ghci<span class="fu">&gt;</span> withDoor <span class="dt">Opened</span> <span class="st">&quot;Birch&quot;</span> <span class="fu">$</span> \s _ <span class="ot">-&gt;</span> <span class="kw">case</span> s <span class="kw">of</span></a>
 <a class="sourceLine" id="cb19-2" data-line-number="2">         <span class="dt">SOpened</span> <span class="ot">-&gt;</span> <span class="st">&quot;Opened door!&quot;</span></a>
 <a class="sourceLine" id="cb19-3" data-line-number="3">         <span class="dt">SClosed</span> <span class="ot">-&gt;</span> <span class="st">&quot;Closed door!&quot;</span></a>
 <a class="sourceLine" id="cb19-4" data-line-number="4">         <span class="dt">SLocked</span> <span class="ot">-&gt;</span> <span class="st">&quot;Locked door!&quot;</span></a>
 <a class="sourceLine" id="cb19-5" data-line-number="5"><span class="dt">Opened</span> door<span class="fu">!</span></a></code></pre></div>
 <p>The key to making this work is that your handler function <em>has to be polymorphic</em> over all possible <code>s</code>s. This way, it can handle any potential <code>s</code> that the producer gives. Essentially, the producer is “returning” an <code>s</code> – existentially quantified.</p>
 <h3 id="reification">Reification</h3>
-<p>The general pattern we are exploring here is called <strong>reification</strong> – we’re taking a dynamic run-time value, and lifting it to the type level as a type (here, the type variable <code>s</code>). You can think of reification as the opposite of reflection, and imagine the two as being the “gateway” between the type-safe and unsafe world. In the dynamic world of a <code>DoorState</code> term-level value, you have no type safety. You live in the world of <code>SomeDoor</code>, <code>closeSomeOpenedDoor</code>, <code>lockAnySomeDoor</code>, etc. But, you can <em>reify</em> your <code>DoorState</code> value to a <em>type</em>, and enter the type-safe world of <code>Door s</code>, <code>closeDoor</code>, <code>lockDoor</code>, and <code>lockAnyDoor</code>.</p>
+<p>The general pattern we are exploring here is called <strong>reification</strong> – we’re taking a dynamic run-time value, and lifting it to the type level as a type (here, the type variable <code>s</code>). Reification is often considered as the opposite of reflection, and we can imagine the two as being the “gateway” between the type-safe and unsafe world. In the dynamic world of a <code>DoorState</code> term-level value, you have no type safety. You live in the world of <code>SomeDoor</code>, <code>closeSomeOpenedDoor</code>, <code>lockAnySomeDoor</code>, etc. But, you can <em>reify</em> your <code>DoorState</code> value to a <em>type</em>, and enter the type-safe world of <code>Door s</code>, <code>closeDoor</code>, <code>lockDoor</code>, and <code>lockAnyDoor</code>.</p>
 <p>The <em>singletons</em> library automatically generates functions to directly reify <code>DoorState</code> values:</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="ot">toSing       ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">DoorState</span></a>
 <a class="sourceLine" id="cb20-2" data-line-number="2"><span class="ot">withSomeSing ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> (forall s<span class="fu">.</span> <span class="dt">Sing</span> s        <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r</a>
@@ -248,99 +249,119 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb30-4" data-line-number="4"><span class="ot">fromDoor ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
 <a class="sourceLine" id="cb30-5" data-line-number="5">fromDoor s d <span class="fu">=</span> withSingI s (fromDoor_ d)</a></code></pre></div>
 <p>Again, the same function – just two different styles of calling them.</p>
+<p>Here’s a nice trick to make this a little more clean: <em>singletons-2.4</em> offers a nice pattern synonym <code>Sing</code> to reflect this symmetry. The pattern <code>Sing :: SingI a =&gt; Sing a</code> acts both as a constructor and a witness for <code>SingI</code> and <code>Sing</code>:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="ot">doorStatus_ ::</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">DoorState</span></a>
+<a class="sourceLine" id="cb31-2" data-line-number="2">doorStatus_ <span class="fu">=</span> doorStatus <span class="dt">Sing</span>           <span class="co">-- using Sing constructs the Sing s</span></a>
+<a class="sourceLine" id="cb31-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb31-4" data-line-number="4"><span class="ot">lockAnyDoor_ ::</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span></a>
+<a class="sourceLine" id="cb31-5" data-line-number="5">lockAnyDoor_ <span class="fu">=</span> lockAnyDoor <span class="dt">Sing</span>         <span class="co">-- using Sing constructs the Sing s</span></a>
+<a class="sourceLine" id="cb31-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb31-7" data-line-number="7"><span class="ot">lockAnyDoor ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span></a>
+<a class="sourceLine" id="cb31-8" data-line-number="8">lockAnyDoor <span class="dt">Sing</span> d <span class="fu">=</span> lockAnyDoor_ d     <span class="co">-- matching on Sing introduces SingI s</span></a>
+<a class="sourceLine" id="cb31-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb31-10" data-line-number="10"><span class="ot">fromDoor ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
+<a class="sourceLine" id="cb31-11" data-line-number="11">fromDoor <span class="dt">Sing</span> d <span class="fu">=</span> fromDoor_ d           <span class="co">-- matching on Sing introduces SingI s</span></a></code></pre></div>
 <h3 id="reflection-and-reification">Reflection and Reification</h3>
 <p>Reflection is the process of bringing a type-level thing to a value at the term level (“losing” the type information in the process) and reification is the process of bringing a value at the <em>term level</em> to the <em>type level</em>.</p>
 <p>Reflection and reification can be thought of as the gateways between the untyped/unsafe world and the typed/safe world. Reflection takes you from the typed world to the untyped world (from <code>Sing s</code> to <code>DoorState</code>) and reification takes you from the untyped world to the typed world (from <code>DoorState</code> to <code>Sing s</code>).</p>
 <p>One limitation in Haskell is that there is no actual link between the type <code>DoorState</code> and its <em>values</em> with the <em>kind</em> <code>DoorState</code> with its <em>types</em>. Sure, the constructors have the same names, but the language doesn’t actually link them together for us.</p>
 <h4 id="singkind">SingKind</h4>
 <p>The <em>singletons</em> library handles this by using a typeclass with associated types to implement a generalized reflection and reification process. It gives us the <code>SingKind</code> “kindclass”:</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="kw">class</span> <span class="dt">SingKind</span> k <span class="kw">where</span>      <span class="co">-- `k` is a kind!</span></a>
-<a class="sourceLine" id="cb31-2" data-line-number="2">    <span class="co">-- | Associate a kind k with its reflected type</span></a>
-<a class="sourceLine" id="cb31-3" data-line-number="3">    <span class="kw">type</span> <span class="dt">Demote</span> k <span class="fu">=</span> (<span class="ot">r ::</span> <span class="dt">Type</span>)</a>
-<a class="sourceLine" id="cb31-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb31-5" data-line-number="5">    <span class="co">-- | Reflect a singleton to its term-level value</span></a>
-<a class="sourceLine" id="cb31-6" data-line-number="6"><span class="ot">    fromSing ::</span> <span class="dt">Sing</span> (<span class="ot">a ::</span> k) <span class="ot">-&gt;</span> <span class="dt">Demote</span> k</a>
-<a class="sourceLine" id="cb31-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb31-8" data-line-number="8">    <span class="co">-- | Reify a term-level value to the type level, as an existentially</span></a>
-<a class="sourceLine" id="cb31-9" data-line-number="9">    <span class="co">-- quantified singleton</span></a>
-<a class="sourceLine" id="cb31-10" data-line-number="10"><span class="ot">    toSing ::</span> <span class="dt">Demote</span> k <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> k</a></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="kw">class</span> <span class="dt">SingKind</span> k <span class="kw">where</span>      <span class="co">-- `k` is a kind!</span></a>
+<a class="sourceLine" id="cb32-2" data-line-number="2">    <span class="co">-- | Associate a kind k with its reflected type</span></a>
+<a class="sourceLine" id="cb32-3" data-line-number="3">    <span class="kw">type</span> <span class="dt">Demote</span> k <span class="fu">=</span> (<span class="ot">r ::</span> <span class="dt">Type</span>)</a>
+<a class="sourceLine" id="cb32-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb32-5" data-line-number="5">    <span class="co">-- | Reflect a singleton to its term-level value</span></a>
+<a class="sourceLine" id="cb32-6" data-line-number="6"><span class="ot">    fromSing ::</span> <span class="dt">Sing</span> (<span class="ot">a ::</span> k) <span class="ot">-&gt;</span> <span class="dt">Demote</span> k</a>
+<a class="sourceLine" id="cb32-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb32-8" data-line-number="8">    <span class="co">-- | Reify a term-level value to the type level, as an existentially</span></a>
+<a class="sourceLine" id="cb32-9" data-line-number="9">    <span class="co">-- quantified singleton</span></a>
+<a class="sourceLine" id="cb32-10" data-line-number="10"><span class="ot">    toSing ::</span> <span class="dt">Demote</span> k <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> k</a></code></pre></div>
 <p>Instances of <code>SingKind</code> are (promoted) <em>kinds</em> like <code>Bool</code>-the-kind, <code>DoorState</code>-the-kind, etc., and <code>Demote</code> is an associated type/type family that associates each instance with the <em>type</em> it is promoted from. (Note – writing these type signatures requires the <code>-XTypeInType</code> extension, which lets us treat kinds as types)</p>
 <p>For example, remember how <code>data DoorState = Opened | Closed | Locked</code> created the <em>type</em> <code>DoorState</code> (with value constructors <code>Opened</code>, <code>Closed</code>, and <code>Locked</code>), and also the <em>kind</em> <code>DoorState</code> (with <em>type</em> constructors <code>'Opened</code>, <code>'Closed</code>, and <code>'Locked</code>). Our <em>kind</em> <code>DoorState</code> would be the instance of <code>SingKind</code>, and <code>Demote DoorState</code> would be the <em>type</em> <code>DoorState</code>.</p>
 <p>The reason we need an explicit <code>Demote</code> associated type is, again, that GHC doesn’t actually link the type and its promoted kind. <code>Demote</code> lets us explicitly specify what type a <code>Kind</code> should expect its term-level reflected values to be. (And, like most things in this post, <code>Demote</code> will hopefully one day become obsolete, along with the rest of <code>SingKind</code>)</p>
 <h4 id="examples">Examples</h4>
 <p>To illustrate explicitly, here is the automatically generated instance of <code>SingKind</code> for the <code>DoorState</code> <em>kind</em>:</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">SingKind</span> <span class="dt">DoorState</span> <span class="kw">where</span>       <span class="co">-- the *kind* DoorState</span></a>
-<a class="sourceLine" id="cb32-2" data-line-number="2">    <span class="kw">type</span> <span class="dt">Demote</span> <span class="dt">DoorState</span> <span class="fu">=</span> <span class="dt">DoorState</span>   <span class="co">-- the *type* DoorState</span></a>
-<a class="sourceLine" id="cb32-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb32-4" data-line-number="4">    fromSing</a>
-<a class="sourceLine" id="cb32-5" data-line-number="5"><span class="ot">        ::</span> <span class="dt">Sing</span> (<span class="ot">s ::</span> <span class="dt">DoorState</span>)        <span class="co">-- the *kind* DoorState</span></a>
-<a class="sourceLine" id="cb32-6" data-line-number="6">        <span class="ot">-&gt;</span> <span class="dt">DoorState</span>                    <span class="co">-- the *type* DoorState</span></a>
-<a class="sourceLine" id="cb32-7" data-line-number="7">    fromSing <span class="fu">=</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb32-8" data-line-number="8">        <span class="dt">SOpened</span> <span class="ot">-&gt;</span> <span class="dt">Opened</span></a>
-<a class="sourceLine" id="cb32-9" data-line-number="9">        <span class="dt">SClosed</span> <span class="ot">-&gt;</span> <span class="dt">Closed</span></a>
-<a class="sourceLine" id="cb32-10" data-line-number="10">        <span class="dt">SLocked</span> <span class="ot">-&gt;</span> <span class="dt">Locked</span></a>
-<a class="sourceLine" id="cb32-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb32-12" data-line-number="12">    toSing</a>
-<a class="sourceLine" id="cb32-13" data-line-number="13"><span class="ot">        ::</span> <span class="dt">DoorState</span>                    <span class="co">-- the *type* DoorState</span></a>
-<a class="sourceLine" id="cb32-14" data-line-number="14">        <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">DoorState</span>           <span class="co">-- the *kind* DoorState</span></a>
-<a class="sourceLine" id="cb32-15" data-line-number="15">    toSing <span class="fu">=</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb32-16" data-line-number="16">        <span class="dt">Opened</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">SOpened</span></a>
-<a class="sourceLine" id="cb32-17" data-line-number="17">        <span class="dt">Closed</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">SClosed</span></a>
-<a class="sourceLine" id="cb32-18" data-line-number="18">        <span class="dt">Locked</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">SLocked</span></a></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">SingKind</span> <span class="dt">DoorState</span> <span class="kw">where</span>       <span class="co">-- the *kind* DoorState</span></a>
+<a class="sourceLine" id="cb33-2" data-line-number="2">    <span class="kw">type</span> <span class="dt">Demote</span> <span class="dt">DoorState</span> <span class="fu">=</span> <span class="dt">DoorState</span>   <span class="co">-- the *type* DoorState</span></a>
+<a class="sourceLine" id="cb33-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb33-4" data-line-number="4">    fromSing</a>
+<a class="sourceLine" id="cb33-5" data-line-number="5"><span class="ot">        ::</span> <span class="dt">Sing</span> (<span class="ot">s ::</span> <span class="dt">DoorState</span>)        <span class="co">-- the *kind* DoorState</span></a>
+<a class="sourceLine" id="cb33-6" data-line-number="6">        <span class="ot">-&gt;</span> <span class="dt">DoorState</span>                    <span class="co">-- the *type* DoorState</span></a>
+<a class="sourceLine" id="cb33-7" data-line-number="7">    fromSing <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb33-8" data-line-number="8">        <span class="dt">SOpened</span> <span class="ot">-&gt;</span> <span class="dt">Opened</span></a>
+<a class="sourceLine" id="cb33-9" data-line-number="9">        <span class="dt">SClosed</span> <span class="ot">-&gt;</span> <span class="dt">Closed</span></a>
+<a class="sourceLine" id="cb33-10" data-line-number="10">        <span class="dt">SLocked</span> <span class="ot">-&gt;</span> <span class="dt">Locked</span></a>
+<a class="sourceLine" id="cb33-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb33-12" data-line-number="12">    toSing</a>
+<a class="sourceLine" id="cb33-13" data-line-number="13"><span class="ot">        ::</span> <span class="dt">DoorState</span>                    <span class="co">-- the *type* DoorState</span></a>
+<a class="sourceLine" id="cb33-14" data-line-number="14">        <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">DoorState</span>           <span class="co">-- the *kind* DoorState</span></a>
+<a class="sourceLine" id="cb33-15" data-line-number="15">    toSing <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb33-16" data-line-number="16">        <span class="dt">Opened</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">SOpened</span></a>
+<a class="sourceLine" id="cb33-17" data-line-number="17">        <span class="dt">Closed</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">SClosed</span></a>
+<a class="sourceLine" id="cb33-18" data-line-number="18">        <span class="dt">Locked</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">SLocked</span></a></code></pre></div>
 <p>If you are unfamiliar with how associated types work, <code>type Demote DoorState = DoorState</code> means that wherever we see <code>Demote DoorState</code> (with <code>DoorState</code> the <em>kind</em>), we replace it with <code>DoorState</code> (the <em>type</em>). That’s why the type of our reflection function <code>fromSing :: Sing s -&gt; Demote DoorState</code> can be simplified to <code>fromSing :: Sing s -&gt; DoorState</code>.</p>
 <p>Let’s take a look at the instance for <code>Bool</code>, to compare:</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="co">-- Bool singletons have two constructors:</span></a>
-<a class="sourceLine" id="cb33-2" data-line-number="2"><span class="dt">SFalse</span><span class="ot"> ::</span> <span class="dt">Sing</span> &#39;<span class="dt">False</span></a>
-<a class="sourceLine" id="cb33-3" data-line-number="3"><span class="dt">STrue</span><span class="ot">  ::</span> <span class="dt">Sing</span> &#39;<span class="dt">True</span></a>
-<a class="sourceLine" id="cb33-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb33-5" data-line-number="5"><span class="kw">instance</span> <span class="dt">SingKind</span> <span class="dt">Bool</span> <span class="kw">where</span>    <span class="co">-- the *kind* Bool</span></a>
-<a class="sourceLine" id="cb33-6" data-line-number="6">    <span class="kw">type</span> <span class="dt">Demote</span> <span class="dt">Bool</span> <span class="fu">=</span> <span class="dt">Bool</span>     <span class="co">-- the *type* Bool</span></a>
-<a class="sourceLine" id="cb33-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb33-8" data-line-number="8">    fromSing</a>
-<a class="sourceLine" id="cb33-9" data-line-number="9"><span class="ot">        ::</span> <span class="dt">Sing</span> (<span class="ot">b ::</span> <span class="dt">Bool</span>)        <span class="co">-- the *kind* Bool</span></a>
-<a class="sourceLine" id="cb33-10" data-line-number="10">        <span class="ot">-&gt;</span> <span class="dt">Bool</span>                    <span class="co">-- the *type* Bool</span></a>
-<a class="sourceLine" id="cb33-11" data-line-number="11">    fromSing <span class="fu">=</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb33-12" data-line-number="12">        <span class="dt">SFalse</span> <span class="ot">-&gt;</span> <span class="dt">False</span></a>
-<a class="sourceLine" id="cb33-13" data-line-number="13">        <span class="dt">STrue</span>  <span class="ot">-&gt;</span> <span class="dt">True</span></a>
-<a class="sourceLine" id="cb33-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb33-15" data-line-number="15">    toSing</a>
-<a class="sourceLine" id="cb33-16" data-line-number="16"><span class="ot">        ::</span> <span class="dt">Bool</span>                    <span class="co">-- the *type* Bool</span></a>
-<a class="sourceLine" id="cb33-17" data-line-number="17">        <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">Bool</span>           <span class="co">-- the *kind* Bool</span></a>
-<a class="sourceLine" id="cb33-18" data-line-number="18">    toSing <span class="fu">=</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb33-19" data-line-number="19">        <span class="dt">False</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">SFalse</span></a>
-<a class="sourceLine" id="cb33-20" data-line-number="20">        <span class="dt">True</span>  <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">STrue</span></a></code></pre></div>
-<p>And a more sophisticated example, let’s look at the instance for <code>Maybe</code>:</p>
-<div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb34-1" data-line-number="1"><span class="co">-- Maybe singletons have two constructors:</span></a>
-<a class="sourceLine" id="cb34-2" data-line-number="2"><span class="dt">SNothing</span><span class="ot"> ::</span> <span class="dt">Sing</span> &#39;<span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb34-3" data-line-number="3"><span class="dt">SJust</span><span class="ot">    ::</span> <span class="dt">Sing</span> x <span class="ot">-&gt;</span> <span class="dt">Sing</span> (&#39;<span class="dt">Just</span> x)</a>
+<div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb34-1" data-line-number="1"><span class="co">-- Bool singletons have two constructors:</span></a>
+<a class="sourceLine" id="cb34-2" data-line-number="2"><span class="dt">SFalse</span><span class="ot"> ::</span> <span class="dt">Sing</span> &#39;<span class="dt">False</span></a>
+<a class="sourceLine" id="cb34-3" data-line-number="3"><span class="dt">STrue</span><span class="ot">  ::</span> <span class="dt">Sing</span> &#39;<span class="dt">True</span></a>
 <a class="sourceLine" id="cb34-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb34-5" data-line-number="5"><span class="kw">instance</span> <span class="dt">SingKind</span> k <span class="ot">=&gt;</span> <span class="dt">SingKind</span> (<span class="dt">Maybe</span> k) <span class="kw">where</span>     <span class="co">-- the *kind* Maybe</span></a>
-<a class="sourceLine" id="cb34-6" data-line-number="6">    <span class="kw">type</span> <span class="dt">Demote</span> (<span class="dt">Maybe</span> k) <span class="fu">=</span> <span class="dt">Maybe</span> (<span class="dt">Demote</span> k)        <span class="co">-- the *type* Maybe</span></a>
+<a class="sourceLine" id="cb34-5" data-line-number="5"><span class="kw">instance</span> <span class="dt">SingKind</span> <span class="dt">Bool</span> <span class="kw">where</span>    <span class="co">-- the *kind* Bool</span></a>
+<a class="sourceLine" id="cb34-6" data-line-number="6">    <span class="kw">type</span> <span class="dt">Demote</span> <span class="dt">Bool</span> <span class="fu">=</span> <span class="dt">Bool</span>     <span class="co">-- the *type* Bool</span></a>
 <a class="sourceLine" id="cb34-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb34-8" data-line-number="8">    fromSing</a>
-<a class="sourceLine" id="cb34-9" data-line-number="9"><span class="ot">        ::</span> <span class="dt">Sing</span> (<span class="ot">m ::</span> <span class="dt">Maybe</span> k)        <span class="co">-- the *kind* Maybe</span></a>
-<a class="sourceLine" id="cb34-10" data-line-number="10">        <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Demote</span> k)           <span class="co">-- the *type* Maybe</span></a>
+<a class="sourceLine" id="cb34-9" data-line-number="9"><span class="ot">        ::</span> <span class="dt">Sing</span> (<span class="ot">b ::</span> <span class="dt">Bool</span>)        <span class="co">-- the *kind* Bool</span></a>
+<a class="sourceLine" id="cb34-10" data-line-number="10">        <span class="ot">-&gt;</span> <span class="dt">Bool</span>                    <span class="co">-- the *type* Bool</span></a>
 <a class="sourceLine" id="cb34-11" data-line-number="11">    fromSing <span class="fu">=</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb34-12" data-line-number="12">        <span class="dt">SNothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb34-13" data-line-number="13">        <span class="dt">SJust</span> sx <span class="ot">-&gt;</span> <span class="dt">Just</span> (fromSing sx)</a>
+<a class="sourceLine" id="cb34-12" data-line-number="12">        <span class="dt">SFalse</span> <span class="ot">-&gt;</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb34-13" data-line-number="13">        <span class="dt">STrue</span>  <span class="ot">-&gt;</span> <span class="dt">True</span></a>
 <a class="sourceLine" id="cb34-14" data-line-number="14"></a>
 <a class="sourceLine" id="cb34-15" data-line-number="15">    toSing</a>
-<a class="sourceLine" id="cb34-16" data-line-number="16"><span class="ot">        ::</span> <span class="dt">Maybe</span> (<span class="dt">Demote</span> k)             <span class="co">-- the *type* Maybe</span></a>
-<a class="sourceLine" id="cb34-17" data-line-number="17">        <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> (<span class="dt">Maybe</span> k)           <span class="co">-- the *kind* Maybe</span></a>
+<a class="sourceLine" id="cb34-16" data-line-number="16"><span class="ot">        ::</span> <span class="dt">Bool</span>                    <span class="co">-- the *type* Bool</span></a>
+<a class="sourceLine" id="cb34-17" data-line-number="17">        <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">Bool</span>           <span class="co">-- the *kind* Bool</span></a>
 <a class="sourceLine" id="cb34-18" data-line-number="18">    toSing <span class="fu">=</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb34-19" data-line-number="19">        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">SNothing</span></a>
-<a class="sourceLine" id="cb34-20" data-line-number="20">        <span class="dt">Just</span> x  <span class="ot">-&gt;</span> <span class="kw">case</span> toSing x <span class="kw">of</span></a>
-<a class="sourceLine" id="cb34-21" data-line-number="21">          <span class="dt">SomeSing</span> sx <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> (<span class="dt">SJust</span> sx)</a></code></pre></div>
+<a class="sourceLine" id="cb34-19" data-line-number="19">        <span class="dt">False</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">SFalse</span></a>
+<a class="sourceLine" id="cb34-20" data-line-number="20">        <span class="dt">True</span>  <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">STrue</span></a></code></pre></div>
+<p>And a more sophisticated example, let’s look at the instance for <code>Maybe</code>:</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb35-1" data-line-number="1"><span class="co">-- Maybe singletons have two constructors:</span></a>
+<a class="sourceLine" id="cb35-2" data-line-number="2"><span class="dt">SNothing</span><span class="ot"> ::</span> <span class="dt">Sing</span> &#39;<span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb35-3" data-line-number="3"><span class="dt">SJust</span><span class="ot">    ::</span> <span class="dt">Sing</span> x <span class="ot">-&gt;</span> <span class="dt">Sing</span> (&#39;<span class="dt">Just</span> x)</a>
+<a class="sourceLine" id="cb35-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb35-5" data-line-number="5"><span class="kw">instance</span> <span class="dt">SingKind</span> k <span class="ot">=&gt;</span> <span class="dt">SingKind</span> (<span class="dt">Maybe</span> k) <span class="kw">where</span>     <span class="co">-- the *kind* Maybe</span></a>
+<a class="sourceLine" id="cb35-6" data-line-number="6">    <span class="kw">type</span> <span class="dt">Demote</span> (<span class="dt">Maybe</span> k) <span class="fu">=</span> <span class="dt">Maybe</span> (<span class="dt">Demote</span> k)        <span class="co">-- the *type* Maybe</span></a>
+<a class="sourceLine" id="cb35-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb35-8" data-line-number="8">    fromSing</a>
+<a class="sourceLine" id="cb35-9" data-line-number="9"><span class="ot">        ::</span> <span class="dt">Sing</span> (<span class="ot">m ::</span> <span class="dt">Maybe</span> k)        <span class="co">-- the *kind* Maybe</span></a>
+<a class="sourceLine" id="cb35-10" data-line-number="10">        <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Demote</span> k)           <span class="co">-- the *type* Maybe</span></a>
+<a class="sourceLine" id="cb35-11" data-line-number="11">    fromSing <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb35-12" data-line-number="12">        <span class="dt">SNothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb35-13" data-line-number="13">        <span class="dt">SJust</span> sx <span class="ot">-&gt;</span> <span class="dt">Just</span> (fromSing sx)</a>
+<a class="sourceLine" id="cb35-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb35-15" data-line-number="15">    toSing</a>
+<a class="sourceLine" id="cb35-16" data-line-number="16"><span class="ot">        ::</span> <span class="dt">Maybe</span> (<span class="dt">Demote</span> k)             <span class="co">-- the *type* Maybe</span></a>
+<a class="sourceLine" id="cb35-17" data-line-number="17">        <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> (<span class="dt">Maybe</span> k)           <span class="co">-- the *kind* Maybe</span></a>
+<a class="sourceLine" id="cb35-18" data-line-number="18">    toSing <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb35-19" data-line-number="19">        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">SNothing</span></a>
+<a class="sourceLine" id="cb35-20" data-line-number="20">        <span class="dt">Just</span> x  <span class="ot">-&gt;</span> <span class="kw">case</span> toSing x <span class="kw">of</span></a>
+<a class="sourceLine" id="cb35-21" data-line-number="21">          <span class="dt">SomeSing</span> sx <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> (<span class="dt">SJust</span> sx)</a></code></pre></div>
 <p>This definition, I think, is a real testament to the usefulness of having all of our singletons be unified under the same system. Because of how <code>SingKind</code> works, <code>Demote (Maybe DoorState)</code> is evaluated to <code>Maybe (Demote DoorState)</code>, which is simplified to <code>Maybe DoorState</code>. This means that if we have a way to reify <code>DoorState</code> values, we also have a way to reify <code>Maybe DoorState</code> values! And, if we have a way to reflect <code>DoorState</code> singletons, we also have a way to reflect <code>Maybe DoorState</code> singletons!</p>
 <h4 id="somesing">SomeSing</h4>
 <p>Throughout all of this, we utilize <code>SomeSing</code> as a generic poly-kinded existential wrapper:</p>
-<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb35-1" data-line-number="1"><span class="kw">data</span> <span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb35-2" data-line-number="2">    <span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="dt">Sing</span> (<span class="ot">x ::</span> k) <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> k</a></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb36-1" data-line-number="1"><span class="kw">data</span> <span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb36-2" data-line-number="2">    <span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="dt">Sing</span> (<span class="ot">x ::</span> k) <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> k</a></code></pre></div>
 <p>Basically, this says that <code>SomeSing k</code> contains a <code>Sing x</code>, where <code>x</code> is of kind <code>k</code>. This is why we had, earlier:</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb36-1" data-line-number="1"><span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="dt">Sing</span> (<span class="ot">s ::</span> <span class="dt">DoorState</span>) <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">DoorState</span></a>
-<a class="sourceLine" id="cb36-2" data-line-number="2"><span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="dt">Sing</span> (<span class="ot">s ::</span> <span class="dt">Bool</span>)      <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb36-3" data-line-number="3"><span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="dt">Sing</span> (<span class="ot">s ::</span> <span class="dt">Maybe</span> k)   <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> (<span class="dt">Maybe</span> k)</a></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="dt">Sing</span> (<span class="ot">s ::</span> <span class="dt">DoorState</span>) <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">DoorState</span></a>
+<a class="sourceLine" id="cb37-2" data-line-number="2"><span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="dt">Sing</span> (<span class="ot">s ::</span> <span class="dt">Bool</span>)      <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb37-3" data-line-number="3"><span class="dt">SomeSing</span><span class="ot"> ::</span> <span class="dt">Sing</span> (<span class="ot">s ::</span> <span class="dt">Maybe</span> k)   <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> (<span class="dt">Maybe</span> k)</a></code></pre></div>
 <p>If we use <code>SomeSing</code> with, say, <code>SClosed</code>, we get <code>SomeSing :: Sing 'Closed -&gt; SomeSing DoorState</code>. <code>SomeSing</code> is an indexed type that tells us the <em>kind</em> of the type variable we existentially quantifying over. The value <code>SomeSing STrue</code> would have the type <code>SomeSing Bool</code>. The value <code>SomeSing (SJust SClosed)</code> would have the type <code>SomeSing (Maybe DoorState)</code>.</p>
+<p>And, like for <code>SomeDoor</code>, it is important to remember that <code>SomeSing a</code>, for kind <code>a</code>, is <em>isomorphic</em> to the type <code>a</code>. This isomorphism is witnessed by <code>fromSing</code> and <code>toSing</code>, but here’s, visually, how things match up for <code>DoorState</code>:</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="dt">Opened</span>   <span class="fu">&lt;~&gt;</span>    <span class="dt">SomeSing</span> <span class="dt">SOpened</span></a>
+<a class="sourceLine" id="cb38-2" data-line-number="2"><span class="dt">Closed</span>   <span class="fu">&lt;~&gt;</span>    <span class="dt">SomeSing</span> <span class="dt">SClosed</span></a>
+<a class="sourceLine" id="cb38-3" data-line-number="3"><span class="dt">Locked</span>   <span class="fu">&lt;~&gt;</span>    <span class="dt">SomeSing</span> <span class="dt">SLocked</span></a></code></pre></div>
+<p>And how they match up for <code>Maybe Bool</code>:</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="dt">Nothing</span>      <span class="fu">&lt;~&gt;</span>  <span class="dt">SomeSing</span> <span class="dt">SNothing</span></a>
+<a class="sourceLine" id="cb39-2" data-line-number="2"><span class="dt">Just</span> <span class="dt">False</span>   <span class="fu">&lt;~&gt;</span>  <span class="dt">SomeSing</span> (<span class="dt">SJust</span> <span class="dt">SFalse</span>)</a>
+<a class="sourceLine" id="cb39-3" data-line-number="3"><span class="dt">Just</span> <span class="dt">True</span>    <span class="fu">&lt;~&gt;</span>  <span class="dt">SomeSing</span> (<span class="dt">SJust</span> <span class="dt">STrue</span>)</a></code></pre></div>
 <h2 id="looking-forward">Looking Forward</h2>
 <p>Between these first two parts, we explored a specific use case that would benefit from dependent types (simple phantom types for state transitions) and explored how the <em>singletons</em> and design pattern help us implement the functionality necessary to make things useful, and snuck in some concepts from dependently typed programming as well. We then took a step back to explore the <em>singletons</em> library in a more “universal” way, and saw how it is generalized to many different types.</p>
 <p>The code is available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs">here</a> for you to play around with yourself!</p>
@@ -351,66 +372,66 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Check out the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs">sample code</a> for solutions!</p>
 <ol type="1">
 <li><p>Let’s revisit our original redundant <code>SomeDoor</code>, compared to our final <code>SomeDoor</code>:</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L58-L89</span></a>
-<a class="sourceLine" id="cb37-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb37-3" data-line-number="3"><span class="kw">data</span> <span class="dt">OldSomeDoor</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb37-4" data-line-number="4">    <span class="dt">OldMkSomeDoor</span><span class="ot"> ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">OldSomeDoor</span></a>
-<a class="sourceLine" id="cb37-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb37-6" data-line-number="6"><span class="kw">data</span> <span class="dt">SomeDoor</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb37-7" data-line-number="7">    <span class="dt">MkSomeDoor</span><span class="ot"> ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L58-L89</span></a>
+<a class="sourceLine" id="cb40-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb40-3" data-line-number="3"><span class="kw">data</span> <span class="dt">OldSomeDoor</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb40-4" data-line-number="4">    <span class="dt">OldMkSomeDoor</span><span class="ot"> ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">OldSomeDoor</span></a>
+<a class="sourceLine" id="cb40-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb40-6" data-line-number="6"><span class="kw">data</span> <span class="dt">SomeDoor</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb40-7" data-line-number="7">    <span class="dt">MkSomeDoor</span><span class="ot"> ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a></code></pre></div>
 <p>To help convince yourself that the two are equal, write functions converting between the two:</p>
-<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L91-L94</span></a>
-<a class="sourceLine" id="cb38-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb38-3" data-line-number="3"><span class="ot">toOld ::</span> <span class="dt">SomeDoor</span> <span class="ot">-&gt;</span> <span class="dt">OldSomeDoor</span></a>
-<a class="sourceLine" id="cb38-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb38-5" data-line-number="5"><span class="ot">fromOld ::</span> <span class="dt">OldSomeDoor</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a></code></pre></div>
+<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L91-L94</span></a>
+<a class="sourceLine" id="cb41-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb41-3" data-line-number="3"><span class="ot">toOld ::</span> <span class="dt">SomeDoor</span> <span class="ot">-&gt;</span> <span class="dt">OldSomeDoor</span></a>
+<a class="sourceLine" id="cb41-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb41-5" data-line-number="5"><span class="ot">fromOld ::</span> <span class="dt">OldSomeDoor</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a></code></pre></div>
 <p><strong>Avoid directly pattern matching on the singletons or constructors</strong>. Instead, use <em>singletons</em> library tools like <code>toSing</code>, <code>withSomeSing</code>, <code>fromSing</code>, etc.</p></li>
 <li><p>Previously, we had an <code>unlockDoor</code> function that took an <code>Int</code> (the “password”) with a <code>Door 'Locked</code> and returned a <code>Maybe (Door 'Closed)</code>. It returns a <code>Door 'Closed</code> (unlocked door) in <code>Just</code> if an odd number was given, and <code>Nothing</code> otherwise (a failed unlock)</p>
 <p>Use this to implement a that would return a <code>SomeDoor</code>. Re-use the “password” logic from the original <code>unlockDoor</code>. If the door is successfully unlocked (with a <code>Just</code>), return the unlocked door in a <code>SomeDoor</code>. Otherwise, <em>return the original locked door</em> (in a <code>SomeDoor</code>).</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L97-L102</span></a>
-<a class="sourceLine" id="cb39-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb39-3" data-line-number="3"><span class="ot">unlockDoor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> &#39;<span class="dt">Closed</span>)</a>
-<a class="sourceLine" id="cb39-4" data-line-number="4">unlockDoor n (<span class="dt">UnsafeMkDoor</span> m)</a>
-<a class="sourceLine" id="cb39-5" data-line-number="5">    <span class="fu">|</span> n <span class="ot">`mod`</span> <span class="dv">2</span> <span class="fu">==</span> <span class="dv">1</span> <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">UnsafeMkDoor</span> m)</a>
-<a class="sourceLine" id="cb39-6" data-line-number="6">    <span class="fu">|</span> otherwise      <span class="fu">=</span> <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb39-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb39-8" data-line-number="8"><span class="ot">unlockSomeDoor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
-<a class="sourceLine" id="cb39-9" data-line-number="9">unlockSomeDoor <span class="fu">=</span> <span class="fu">???</span></a></code></pre></div></li>
+<div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L97-L102</span></a>
+<a class="sourceLine" id="cb42-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb42-3" data-line-number="3"><span class="ot">unlockDoor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> &#39;<span class="dt">Closed</span>)</a>
+<a class="sourceLine" id="cb42-4" data-line-number="4">unlockDoor n (<span class="dt">UnsafeMkDoor</span> m)</a>
+<a class="sourceLine" id="cb42-5" data-line-number="5">    <span class="fu">|</span> n <span class="ot">`mod`</span> <span class="dv">2</span> <span class="fu">==</span> <span class="dv">1</span> <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">UnsafeMkDoor</span> m)</a>
+<a class="sourceLine" id="cb42-6" data-line-number="6">    <span class="fu">|</span> otherwise      <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb42-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb42-8" data-line-number="8"><span class="ot">unlockSomeDoor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
+<a class="sourceLine" id="cb42-9" data-line-number="9">unlockSomeDoor <span class="fu">=</span> <span class="fu">???</span></a></code></pre></div></li>
 <li><p>Implement <code>openAnyDoor'</code> in the same style, with respect to <code>openAnyDoor</code>:</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L107-L116</span></a>
-<a class="sourceLine" id="cb40-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb40-3" data-line-number="3"><span class="ot">openAnyDoor ::</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> &#39;<span class="dt">Opened</span>)</a>
-<a class="sourceLine" id="cb40-4" data-line-number="4">openAnyDoor n <span class="fu">=</span> openAnyDoor_ sing</a>
-<a class="sourceLine" id="cb40-5" data-line-number="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb40-6" data-line-number="6"><span class="ot">    openAnyDoor_ ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> &#39;<span class="dt">Opened</span>)</a>
-<a class="sourceLine" id="cb40-7" data-line-number="7">    openAnyDoor_ <span class="fu">=</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb40-8" data-line-number="8">      <span class="dt">SOpened</span> <span class="ot">-&gt;</span> <span class="dt">Just</span></a>
-<a class="sourceLine" id="cb40-9" data-line-number="9">      <span class="dt">SClosed</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">.</span> openDoor</a>
-<a class="sourceLine" id="cb40-10" data-line-number="10">      <span class="dt">SLocked</span> <span class="ot">-&gt;</span> fmap openDoor <span class="fu">.</span> unlockDoor n</a>
-<a class="sourceLine" id="cb40-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb40-12" data-line-number="12"><span class="ot">openAnySomeDoor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
-<a class="sourceLine" id="cb40-13" data-line-number="13">openAnySomeDoor <span class="fu">=</span> <span class="fu">???</span></a></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L107-L116</span></a>
+<a class="sourceLine" id="cb43-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb43-3" data-line-number="3"><span class="ot">openAnyDoor ::</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> &#39;<span class="dt">Opened</span>)</a>
+<a class="sourceLine" id="cb43-4" data-line-number="4">openAnyDoor n <span class="fu">=</span> openAnyDoor_ sing</a>
+<a class="sourceLine" id="cb43-5" data-line-number="5">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb43-6" data-line-number="6"><span class="ot">    openAnyDoor_ ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> &#39;<span class="dt">Opened</span>)</a>
+<a class="sourceLine" id="cb43-7" data-line-number="7">    openAnyDoor_ <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb43-8" data-line-number="8">      <span class="dt">SOpened</span> <span class="ot">-&gt;</span> <span class="dt">Just</span></a>
+<a class="sourceLine" id="cb43-9" data-line-number="9">      <span class="dt">SClosed</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">.</span> openDoor</a>
+<a class="sourceLine" id="cb43-10" data-line-number="10">      <span class="dt">SLocked</span> <span class="ot">-&gt;</span> fmap openDoor <span class="fu">.</span> unlockDoor n</a>
+<a class="sourceLine" id="cb43-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb43-12" data-line-number="12"><span class="ot">openAnySomeDoor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
+<a class="sourceLine" id="cb43-13" data-line-number="13">openAnySomeDoor <span class="fu">=</span> <span class="fu">???</span></a></code></pre></div>
 <p>Remember to re-use <code>openAnyDoor</code>.</p></li>
 <li><p>Write the <code>SingKind</code> instance for the promoted kind of a custom list type:</p>
-<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L122-L128</span></a>
-<a class="sourceLine" id="cb41-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb41-3" data-line-number="3"><span class="kw">data</span> <span class="dt">List</span> a <span class="fu">=</span> <span class="dt">Nil</span> <span class="fu">|</span> <span class="dt">Cons</span> a (<span class="dt">List</span> a)</a>
-<a class="sourceLine" id="cb41-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb41-5" data-line-number="5"><span class="kw">data</span> <span class="kw">instance</span> <span class="dt">Sing</span> (<span class="ot">x ::</span> <span class="dt">List</span> k) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb41-6" data-line-number="6">    <span class="dt">SNil</span><span class="ot">  ::</span> <span class="dt">Sing</span> &#39;<span class="dt">Nil</span></a>
-<a class="sourceLine" id="cb41-7" data-line-number="7">    <span class="dt">SCons</span><span class="ot"> ::</span> <span class="dt">Sing</span> x <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs <span class="ot">-&gt;</span> <span class="dt">Sing</span> (&#39;<span class="dt">Cons</span> x xs)</a>
-<a class="sourceLine" id="cb41-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb41-9" data-line-number="9"><span class="kw">instance</span> <span class="dt">SingKind</span> k <span class="ot">=&gt;</span> <span class="dt">SingKind</span> (<span class="dt">List</span> k) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb41-10" data-line-number="10">    <span class="kw">type</span> <span class="dt">Demote</span> (<span class="dt">List</span> k) <span class="fu">=</span> <span class="fu">???</span></a>
-<a class="sourceLine" id="cb41-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb41-12" data-line-number="12"><span class="ot">    fromSing ::</span> <span class="dt">Sing</span> (<span class="ot">xs ::</span> <span class="dt">List</span> k) <span class="ot">-&gt;</span> <span class="dt">List</span> (<span class="dt">Demote</span> k)</a>
-<a class="sourceLine" id="cb41-13" data-line-number="13">    fromSing <span class="fu">=</span> <span class="fu">???</span></a>
-<a class="sourceLine" id="cb41-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb41-15" data-line-number="15"><span class="ot">    toSing ::</span> <span class="dt">List</span> (<span class="dt">Demote</span> k) <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> (<span class="dt">List</span> k)</a>
-<a class="sourceLine" id="cb41-16" data-line-number="16">    toSing <span class="fu">=</span> <span class="fu">???</span></a></code></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb44-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L122-L128</span></a>
+<a class="sourceLine" id="cb44-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb44-3" data-line-number="3"><span class="kw">data</span> <span class="dt">List</span> a <span class="fu">=</span> <span class="dt">Nil</span> <span class="fu">|</span> <span class="dt">Cons</span> a (<span class="dt">List</span> a)</a>
+<a class="sourceLine" id="cb44-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb44-5" data-line-number="5"><span class="kw">data</span> <span class="kw">instance</span> <span class="dt">Sing</span> (<span class="ot">x ::</span> <span class="dt">List</span> k) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb44-6" data-line-number="6">    <span class="dt">SNil</span><span class="ot">  ::</span> <span class="dt">Sing</span> &#39;<span class="dt">Nil</span></a>
+<a class="sourceLine" id="cb44-7" data-line-number="7">    <span class="dt">SCons</span><span class="ot"> ::</span> <span class="dt">Sing</span> x <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs <span class="ot">-&gt;</span> <span class="dt">Sing</span> (&#39;<span class="dt">Cons</span> x xs)</a>
+<a class="sourceLine" id="cb44-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb44-9" data-line-number="9"><span class="kw">instance</span> <span class="dt">SingKind</span> k <span class="ot">=&gt;</span> <span class="dt">SingKind</span> (<span class="dt">List</span> k) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb44-10" data-line-number="10">    <span class="kw">type</span> <span class="dt">Demote</span> (<span class="dt">List</span> k) <span class="fu">=</span> <span class="fu">???</span></a>
+<a class="sourceLine" id="cb44-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb44-12" data-line-number="12"><span class="ot">    fromSing ::</span> <span class="dt">Sing</span> (<span class="ot">xs ::</span> <span class="dt">List</span> k) <span class="ot">-&gt;</span> <span class="dt">List</span> (<span class="dt">Demote</span> k)</a>
+<a class="sourceLine" id="cb44-13" data-line-number="13">    fromSing <span class="fu">=</span> <span class="fu">???</span></a>
+<a class="sourceLine" id="cb44-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb44-15" data-line-number="15"><span class="ot">    toSing ::</span> <span class="dt">List</span> (<span class="dt">Demote</span> k) <span class="ot">-&gt;</span> <span class="dt">SomeSing</span> (<span class="dt">List</span> k)</a>
+<a class="sourceLine" id="cb44-16" data-line-number="16">    toSing <span class="fu">=</span> <span class="fu">???</span></a></code></pre></div>
 <p>The singletons for <code>List</code> are:</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="dt">SNil</span><span class="ot">  ::</span> <span class="dt">Sing</span> &#39;<span class="dt">Nil</span></a>
-<a class="sourceLine" id="cb42-2" data-line-number="2"><span class="dt">SCons</span><span class="ot"> ::</span> <span class="dt">Sing</span> x <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs <span class="ot">-&gt;</span> <span class="dt">Sing</span> (&#39;<span class="dt">Cons</span> x xs)</a></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb45-1" data-line-number="1"><span class="dt">SNil</span><span class="ot">  ::</span> <span class="dt">Sing</span> &#39;<span class="dt">Nil</span></a>
+<a class="sourceLine" id="cb45-2" data-line-number="2"><span class="dt">SCons</span><span class="ot"> ::</span> <span class="dt">Sing</span> x <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs <span class="ot">-&gt;</span> <span class="dt">Sing</span> (&#39;<span class="dt">Cons</span> x xs)</a></code></pre></div>
 <p>Note that the built-in singletons for the list type also uses these same constructor names, for <code>[]</code> and <code>:</code>.</p></li>
 </ol>
 <section class="footnotes">
