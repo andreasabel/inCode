@@ -1,0 +1,242 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+    \usepackage{xltxtra,xunicode}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{\usepackage{microtype}}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\newenvironment{Shaded}{}{}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex]{hyperref}
+\else
+  \usepackage[unicode=true]{hyperref}
+\fi
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            pdfauthor={Justin Le},
+            pdftitle={Introduction to Singletons (Part 3)},
+            colorlinks=true,
+            citecolor=blue,
+            urlcolor=blue,
+            linkcolor=magenta,
+            pdfborder={0 0 0}}
+\urlstyle{same}  % don't use monospace font for urls
+% Make links footnotes instead of hotlinks:
+\renewcommand{\href}[2]{#2\footnote{\url{#1}}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\setcounter{secnumdepth}{0}
+
+\title{Introduction to Singletons (Part 3)}
+\author{Justin Le}
+
+\begin{document}
+\maketitle
+
+\emph{Originally posted on
+\textbf{\href{https://blog.jle.im/entry/introduction-to-singletons-3.html}{in
+Code}}.}
+
+Welcome back! This article is part 3 of our journey through the \emph{singleton
+design pattern}, and the great
+\emph{\href{http://hackage.haskell.org/package/singletons}{singletons}} library!
+
+This post will be a continuation of
+\href{https://blog.jle.im/entry/introduction-to-singletons-1.html}{Part 1} and
+\href{https://blog.jle.im/entry/introduction-to-singletons-2.html}{Part 2}, so
+if you haven't read those first, now would be a good time to pause and do so and
+also work on some of the exercises. Today we will be expanding on the ideas in
+those posts by working with more complex relationships between values and
+lifting functions on values to functions on types. Like the previous posts, we
+will start by writing things ``by hand'', and then jumping into the singletons
+library and seeing how the framework gives you tools to work with these ideas in
+a smoother way.
+
+Code in this post is built on \emph{GHC 8.4.3} with the
+\emph{\href{https://www.stackage.org/lts-12.9}{lts-12.9}} snapshot (so,
+singletons-2.4.1).
+
+\hypertarget{review}{%
+\section{Review}\label{review}}
+
+In the first post we looked at the \texttt{Door} type, indexed with a phantom
+type of kind \texttt{DoorState}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{$}\NormalTok{(singletons [d|}
+\NormalTok{  data DoorState = Opened | Closed | Locked}
+\NormalTok{    deriving (Show, Eq)}
+\NormalTok{  |])}
+
+\KeywordTok{data} \DataTypeTok{Door}\OtherTok{ ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{UnsafeMkDoor}\OtherTok{ ::}\NormalTok{ \{}\OtherTok{ doorMaterial ::} \DataTypeTok{String}\NormalTok{ \} }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s}
+\end{Highlighting}
+\end{Shaded}
+
+This gives us (at least) three distinct types
+\texttt{Door\ \textquotesingle{}Opened},
+\texttt{Door\ \textquotesingle{}Closed}, and
+\texttt{Door\ \textquotesingle{}Locked}, which can be used to represent opened,
+closed, and locked doors, respectively.
+
+This scheme gives us a few super-powers:
+
+\begin{itemize}
+\item
+  The fact that these are three \emph{distinct} types allows us to enforce
+  type-safety by prohibiting operations on certain types of doors.
+
+  We saw this in the types of functions like
+  \texttt{openDoor\ ::\ Door\ \textquotesingle{}Opened\ -\textgreater{}\ Door\ \textquotesingle{}Closed},
+  which can only work on non-locked and closed doors.
+\item
+  Because the types are distinct, this allows our functions to be more
+  expressive by stating how they change door states, programmatically.
+
+  We saw this to a certain extent in functions like \texttt{openDoor},
+  \texttt{closeDoor}, and \texttt{lockDoor}, where the function type signatures
+  tell the user how the input and output doors are related. However, we will be
+  taking this to a new level in this post.
+\item
+  But, because these types are all ``derived'' from the same type, we can also
+  write functions that work on \emph{all} \texttt{Door}s. We saw this in
+  functions like \texttt{lockAnyDoor}, and we also exploit this in our
+  definition of \texttt{SomeDoor}.
+
+  Essentially we also get a fourth type ``for free'':
+  \texttt{forall\ s.\ Door\ s}, the type that can be used as any door. It's a
+  subtype of all three of the above types!\footnote{Some subtle points for those
+    more familiar with Haskell's type system: In Haskell, we say that a type
+    \texttt{B} is a subtype of type \texttt{A} if, wherever a function expects
+    an \texttt{A}, we can give a \texttt{B} instead. Any function that expects a
+    \texttt{Door\ \textquotesingle{}Opened} will take a
+    \texttt{forall\ s.\ Door\ s} (a type that can be instantiated with any
+    \texttt{s}). However, the opposite is not true --- if a Rank-N function
+    expects a \texttt{forall\ s.\ Door\ s}, you cannot give it a
+    \texttt{Door\ \textquotesingle{}Opened}.}
+\end{itemize}
+
+Then we talked about situations where we want to ``not care'' about the door
+status in the type system, or when we want to return a door with a state that is
+not known statically, and must be determined dynamically at runtime. After going
+through many ``analogous'' and equivalent type, we arrived at the existential
+wrapper \texttt{SomeDoor}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{SomeDoor}\OtherTok{ ::} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{MkSomeDoor}\OtherTok{ ::} \DataTypeTok{Sing}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{SomeDoor}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{mkSomeDoor ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{SomeDoor}
+\NormalTok{mkSomeDoor ds mat }\FunctionTok{=}\NormalTok{ withSomeSing ds }\FunctionTok{$}\NormalTok{ \textbackslash{}dsSing }\OtherTok{->}
+    \DataTypeTok{MkSomeDoor}\NormalTok{ dsSing mat}
+\end{Highlighting}
+\end{Shaded}
+
+We must be careful to pack the \texttt{Sing\ s} with the \texttt{Door\ s}, so
+that we can pattern match at runtime to determine what the original \texttt{s}
+was.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{checkOpened ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{Bool}
+\NormalTok{checkOpened (}\DataTypeTok{MkSomeDoor} \DataTypeTok{SOpened}\NormalTok{ _) }\FunctionTok{=} \DataTypeTok{True}
+\NormalTok{checkOpened (}\DataTypeTok{MkSomeDoor} \DataTypeTok{SClosed}\NormalTok{ _) }\FunctionTok{=} \DataTypeTok{False}
+\NormalTok{checkOpened (}\DataTypeTok{MkSomeDoor} \DataTypeTok{SLocked}\NormalTok{ _) }\FunctionTok{=} \DataTypeTok{False}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ x }\FunctionTok{=}\NormalTok{ mkSomeDoor }\DataTypeTok{Opened} \StringTok{"Oak"}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ y }\FunctionTok{=}\NormalTok{ mkSomeDoor }\DataTypeTok{Closed} \StringTok{"Spruce"}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ checkOpened x}
+\DataTypeTok{True}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ checkOpened y}
+\DataTypeTok{False}
+\end{Highlighting}
+\end{Shaded}
+
+Finally, we talked a bit about the ``unified'' singleton system that the
+\emph{singleton} library offers. This included things like \texttt{SingI} to
+implicitly pass singletons, and the \texttt{SingKind} kind-class that associates
+types with their lifted kinds and lets you reify and reflect with functions like
+\texttt{withSomeSing} and \texttt{fromSing}.
+
+\hypertarget{signoff}{%
+\section{Signoff}\label{signoff}}
+
+Hi, thanks for reading! You can reach me via email at
+\href{mailto:justin@jle.im}{\nolinkurl{justin@jle.im}}, or at twitter at
+\href{https://twitter.com/mstk}{@mstk}! This post and all others are published
+under the \href{https://creativecommons.org/licenses/by-nc-nd/3.0/}{CC-BY-NC-ND
+3.0} license. Corrections and edits via pull request are welcome and encouraged
+at \href{https://github.com/mstksg/inCode}{the source repository}.
+
+If you feel inclined, or this post was particularly helpful for you, why not
+consider \href{https://www.patreon.com/justinle/overview}{supporting me on
+Patreon}, or a \href{bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU}{BTC donation}?
+:)
+
+\end{document}
