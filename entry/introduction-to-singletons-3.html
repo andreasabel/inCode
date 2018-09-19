@@ -55,6 +55,95 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb5-5" data-line-number="5">ghci<span class="fu">&gt;</span> checkOpened y</a>
 <a class="sourceLine" id="cb5-6" data-line-number="6"><span class="dt">False</span></a></code></pre></div>
 <p>Finally, we talked a bit about the “unified” singleton system that the <em>singleton</em> library offers. This included things like <code>SingI</code> to implicitly pass singletons, and the <code>SingKind</code> kind-class that associates types with their lifted kinds and lets you reify and reflect with functions like <code>withSomeSing</code> and <code>fromSing</code>.</p>
+<h2 id="expressive-relationships">Expressive Relationships</h2>
+<p>Let’s write a function that “knocks” on a door in IO:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">knock ::</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">knock d <span class="fu">=</span> putStrLn <span class="fu">$</span> <span class="st">&quot;Knock knock on &quot;</span> <span class="fu">++</span> doorMaterial d <span class="fu">++</span> <span class="st">&quot; door!&quot;</span></a></code></pre></div>
+<p>Hm. This doesn’t seem right. We can’t knock on an opened door..can we? We could try enforcing this by writing:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">knockClosed ::</span> <span class="dt">Door</span> &#39;<span class="dt">Closed</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">knockClosed d <span class="fu">=</span> putStrLn <span class="fu">$</span> <span class="st">&quot;Knock knock on &quot;</span> <span class="fu">++</span> doorMaterial d <span class="fu">++</span> <span class="st">&quot; door!&quot;</span></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4"><span class="ot">knockLocked ::</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">knockLocked d <span class="fu">=</span> putStrLn <span class="fu">$</span> <span class="st">&quot;Knock knock on &quot;</span> <span class="fu">++</span> doorMaterial d <span class="fu">++</span> <span class="st">&quot; door!&quot;</span></a></code></pre></div>
+<p>But, that means that the user must pick between one of two functions to open their door. This isn’t quite what we wanted…we want the function to work only for closed or locked doors, and not opened doors.</p>
+<p>There are a couple of ways of doing this — we’re going to look at two possible ways involving singletons and the <em>singletons</em> library. Both of these methods allow us to write dependently typed functions that are “type-safe” in more expressive ways than before.</p>
+<h3 id="dependently-typed-proofs">Dependently Typed Proofs</h3>
+<p>The first way to do this is with a dependently-typed “proof” that an operation is legal.</p>
+<p><em>Proofs</em> (in the dependently typed and Curry-Howard sense) are witnesses to some type-level predicate or proposition.</p>
+<p>A value-level predicate in Haskell is (generally) a function of type <code>a -&gt; Bool</code>. Given a value of type <code>a</code>, if the function returns <code>True</code>, then the predicate is satisfied. If it returns <code>False</code>, it is not.</p>
+<p>A type-level predicate is (generally) a type constructor of kind <code>k -&gt; Type</code>. Given a type of kind <code>k</code>, if <em>a value exists of that type</em>, then the predicate is satisfied. If no value exists, it is not. A value that “proves” a predicate is called a <em>witness</em> or a <em>proof</em>.</p>
+<p>We can define a predicate <code>Knockable :: DoorState -&gt; Type</code> as a GADT that only has values if given <code>'Closed</code> and <code>'Locked</code>, but not <code>'Opened</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Knockable</span><span class="ot"> ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">    <span class="dt">KnockClosed</span><span class="ot"> ::</span> <span class="dt">Knockable</span> &#39;<span class="dt">Closed</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">    <span class="dt">KnockLocked</span><span class="ot"> ::</span> <span class="dt">Knockable</span> &#39;<span class="dt">Locked</span></a></code></pre></div>
+<p>Now, we have a value of type <code>Knockable 'Closed</code> and <code>Knockable 'Locked</code> (<code>KnockClosed</code> and <code>KnockLocked</code>, respectively), but no value of type <code>Knockable 'Opened</code>. How can we use this?</p>
+<p>Well, we can make a version of <code>knock</code> that requires a proof that <code>s</code> is <code>Knockable</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">knock ::</span> <span class="dt">Knockable</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">knock _ d <span class="fu">=</span> putStrLn <span class="fu">$</span> <span class="st">&quot;Knock knock on &quot;</span> <span class="fu">++</span> doorMaterial d <span class="fu">++</span> <span class="st">&quot; door!&quot;</span></a></code></pre></div>
+<p><code>knock</code> can now only be called with <code>Closed</code> and <code>Locked</code> doors — do you see why? There is no way to call <code>knock</code> with <code>s ~ 'Opened</code>…because there is no way to pass a value of <code>Knockable 'Opened</code>. No such value exists! There’s no compiler error because it’s “not even wrong”!</p>
+<p>This works well if we want to do things at compile-time</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1">ghci<span class="fu">&gt;</span> knock <span class="dt">KnockClosed</span> (<span class="dt">UnsafeMkDoor</span> <span class="fu">@</span>&#39;<span class="dt">Closed</span> <span class="st">&quot;Birch&quot;</span>)</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="dt">Knock</span> knock on <span class="dt">Birch</span> door<span class="fu">!</span></a></code></pre></div>
+<h4 id="let-the-compiler-prove-it-for-you">Let the compiler prove it for you</h4>
+<p>We can even make it more seamless to use by auto-generating proofs at compile-time, with a general class like <code>Auto</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="kw">class</span> <span class="dt">Provable</span> p a <span class="kw">where</span></a>
+<a class="sourceLine" id="cb11-2" data-line-number="2"><span class="ot">    auto ::</span> p a</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Provable</span> <span class="dt">Knockable</span> &#39;<span class="dt">Closed</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">    auto <span class="fu">=</span> <span class="dt">KnockClosed</span></a>
+<a class="sourceLine" id="cb11-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb11-7" data-line-number="7"><span class="kw">instance</span> <span class="dt">Provable</span> <span class="dt">Knockable</span> &#39;<span class="dt">Locked</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb11-8" data-line-number="8">    auto <span class="fu">=</span> <span class="dt">KnockLocked</span></a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1">ghci<span class="fu">&gt;</span> knock auto (<span class="dt">UnsafeMkDoor</span> <span class="fu">@</span>&#39;<span class="dt">Closed</span> <span class="st">&quot;Acacia&quot;</span>)</a>
+<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="dt">Knock</span> knock on <span class="dt">Acacia</span> door<span class="fu">!</span></a>
+<a class="sourceLine" id="cb12-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">ghci<span class="fu">&gt;</span> knock auto (<span class="dt">UnsafeMkDoor</span> <span class="fu">@</span>&#39;<span class="dt">Opened</span> <span class="st">&quot;Jungle&quot;</span>)</a>
+<a class="sourceLine" id="cb12-5" data-line-number="5"><span class="dt">COMPILER</span> <span class="dt">ERROR</span><span class="fu">!!</span> <span class="dt">COMPILER</span> <span class="dt">ERROR</span><span class="fu">!!</span></a></code></pre></div>
+<p>Such a typeclass exists in libraries like <em><a href="http://hackage.haskell.org/package/type-combinators">type-combinators</a></em> (called <code>Known</code>), and in dependently typed languages like Idris <code>auto</code> is actually a built-in language keyword that does this automatically!</p>
+<h4 id="decidable-preducates">Decidable Preducates</h4>
+<p>However, all of this only works if you know what <code>s</code> is at compile-time. What if you don’t? What if you are retrieving <code>s</code> at runtime (like from a <code>SomeDoor</code> or <code>withSomeSing</code>), or you are forced to handle all possible <code>s</code>s?</p>
+<p>There’s a property of some predicates called “decidability”. We say that a predicate is <em>decidable</em> if, for any input type, we can say whether or not the predicate is satisfiable.</p>
+<p>We say that a predicate <code>p</code> in Haskell is decidable if we can write:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1">decidePred</a>
+<a class="sourceLine" id="cb13-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Sing</span> a               <span class="co">-- ^ given a type</span></a>
+<a class="sourceLine" id="cb13-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (p a)       <span class="co">-- ^ return a decision</span></a></code></pre></div>
+<p>Where:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Decision</span> a <span class="fu">=</span> <span class="dt">Proved</span> a                  <span class="co">-- ^ a value of a exists</span></a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">                <span class="fu">|</span> <span class="dt">Disproved</span> (<span class="dt">Refuted</span> a)     <span class="co">-- ^ a value of a cannot exist</span></a>
+<a class="sourceLine" id="cb14-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb14-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb14-5" data-line-number="5"><span class="co">-- | The data type with no values</span></a>
+<a class="sourceLine" id="cb14-6" data-line-number="6"><span class="kw">data</span> <span class="dt">Void</span></a>
+<a class="sourceLine" id="cb14-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb14-8" data-line-number="8"><span class="co">-- | &#39;a&#39; cannot exist</span></a>
+<a class="sourceLine" id="cb14-9" data-line-number="9"><span class="kw">type</span> <span class="dt">Refuted</span> a <span class="fu">=</span> a <span class="ot">-&gt;</span> <span class="dt">Void</span></a></code></pre></div>
+<p>(These types are all from the <em>base</em> and <em>singletons</em> library, mostly in the <em>Data.Singletons.Decide</em> module)</p>
+<p><code>Decision a</code> is kinda like a <code>Maybe a</code>, except instead of <code>Nothing</code>, we include a proof that the predicate is <em>not</em> true.</p>
+<p>For those unfamiliar with the <code>a -&gt; Void</code> idiom, <code>a -&gt; Void</code> is a type we use in Haskell to represent the fact that it is impossible to construct a value of type <code>a</code>. That’s because if you could, then you could give it to an <code>a -&gt; Void</code> to get a value of type <code>Void</code>, which is impossible to have.</p>
+<p>It’s a lot to handle up-front, so let’s look at an example. Is <code>Knockable</code> a decidable predicate? Yes!</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">isKnockable ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">Knockable</span> s)</a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">isKnockable <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb15-3" data-line-number="3">    <span class="dt">SOpened</span> <span class="ot">-&gt;</span> <span class="dt">Disproved</span> <span class="fu">$</span> \<span class="kw">case</span>            <span class="co">-- s ~ &#39;Opened</span></a>
+<a class="sourceLine" id="cb15-4" data-line-number="4">    <span class="dt">SClosed</span> <span class="ot">-&gt;</span> <span class="dt">Proved</span> <span class="dt">KnockClosed</span>           <span class="co">-- s ~ &#39;Closed</span></a>
+<a class="sourceLine" id="cb15-5" data-line-number="5">    <span class="dt">SLocked</span> <span class="ot">-&gt;</span> <span class="dt">Proved</span> <span class="dt">KnockLocked</span>           <span class="co">-- s ~ &#39;Locked</span></a></code></pre></div>
+<p>This definition should seem pretty straightforward for the <code>SClosed</code> and <code>SLocked</code> branches. <code>isKnockable SClosed :: Decision (Knockable 'Closed)</code>, we give <code>Proved KnockClosed</code>, which gives us just that!</p>
+<p>However, <code>isKnockable SOpened :: Decision (Knockable 'Opened)</code>. We can’t use <code>Proved :: a -&gt; Decision a</code>, because no such value of type <code>Knockable 'Opened</code> exists. So, we have to say that we <em>disprove</em> it: we have to prove to GHC that no such type could possibly exist. We do this by providing a function of type <code>Refuted (Knockable 'Opened)</code>, or type <code>Knockable 'Opened -&gt; Void</code>.</p>
+<p>We can write it like this:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">disproveOpened ::</span> <span class="dt">Knockable</span> &#39;<span class="dt">Opened</span> <span class="ot">-&gt;</span> <span class="dt">Void</span></a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">disproveOpened <span class="fu">=</span> \<span class="kw">case</span></a></code></pre></div>
+<p>And we’re good to go!</p>
+<p>How does this work?</p>
+<p>Well, remember, we have to pattern match on the possible inputs. However, we can’t use any of the “legal” patterns:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="ot">disproveOpened ::</span> <span class="dt">Knockable</span> &#39;<span class="dt">Opened</span> <span class="ot">-&gt;</span> <span class="dt">Void</span></a>
+<a class="sourceLine" id="cb17-2" data-line-number="2">disproveOpened <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb17-3" data-line-number="3">    <span class="dt">KnockClosed</span> <span class="ot">-&gt;</span> <span class="fu">...</span>    <span class="co">-- not a valid pattern, since it&#39;s `Knockable &#39;Closed`</span></a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">    <span class="dt">KnockLocked</span> <span class="ot">-&gt;</span> <span class="fu">...</span>    <span class="co">-- not a valid pattern, since it&#39;s `Knockable &#39;Locked`</span></a></code></pre></div>
+<p>If you include either of those patterns, GHC will complain. So, there is no valid pattern to match on… so <code>disproveOpened = \case</code> is enough to write the function <code>Knockable 'Opened -&gt; Void</code>.</p>
+<p>We can use this decision function, finally, to handle an arbitrary <code>Door</code> whose status we not know until runtime:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="ot">knockSomeDoor ::</span> <span class="dt">SomeDoor</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb18-2" data-line-number="2">knockSomeDoor (<span class="dt">MkSomeDoor</span> s d) <span class="fu">=</span> <span class="kw">case</span> isKnockable s <span class="kw">of</span></a>
+<a class="sourceLine" id="cb18-3" data-line-number="3">    <span class="dt">Proved</span> k    <span class="ot">-&gt;</span> knock k d</a>
+<a class="sourceLine" id="cb18-4" data-line-number="4">    <span class="dt">Disproved</span> _ <span class="ot">-&gt;</span> putStrLn <span class="st">&quot;No knocking allowed!&quot;</span></a></code></pre></div>
 <section class="footnotes">
 <hr />
 <ol>

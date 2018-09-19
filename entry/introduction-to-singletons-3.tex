@@ -224,6 +224,259 @@ implicitly pass singletons, and the \texttt{SingKind} kind-class that associates
 types with their lifted kinds and lets you reify and reflect with functions like
 \texttt{withSomeSing} and \texttt{fromSing}.
 
+\hypertarget{expressive-relationships}{%
+\section{Expressive Relationships}\label{expressive-relationships}}
+
+Let's write a function that ``knocks'' on a door in IO:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{knock ::} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{knock d }\FunctionTok{=}\NormalTok{ putStrLn }\FunctionTok{$} \StringTok{"Knock knock on "} \FunctionTok{++}\NormalTok{ doorMaterial d }\FunctionTok{++} \StringTok{" door!"}
+\end{Highlighting}
+\end{Shaded}
+
+Hm. This doesn't seem right. We can't knock on an opened door..can we? We could
+try enforcing this by writing:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{knockClosed ::} \DataTypeTok{Door}\NormalTok{ '}\DataTypeTok{Closed} \OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{knockClosed d }\FunctionTok{=}\NormalTok{ putStrLn }\FunctionTok{$} \StringTok{"Knock knock on "} \FunctionTok{++}\NormalTok{ doorMaterial d }\FunctionTok{++} \StringTok{" door!"}
+
+\OtherTok{knockLocked ::} \DataTypeTok{Door}\NormalTok{ '}\DataTypeTok{Locked} \OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{knockLocked d }\FunctionTok{=}\NormalTok{ putStrLn }\FunctionTok{$} \StringTok{"Knock knock on "} \FunctionTok{++}\NormalTok{ doorMaterial d }\FunctionTok{++} \StringTok{" door!"}
+\end{Highlighting}
+\end{Shaded}
+
+But, that means that the user must pick between one of two functions to open
+their door. This isn't quite what we wanted\ldots{}we want the function to work
+only for closed or locked doors, and not opened doors.
+
+There are a couple of ways of doing this --- we're going to look at two possible
+ways involving singletons and the \emph{singletons} library. Both of these
+methods allow us to write dependently typed functions that are ``type-safe'' in
+more expressive ways than before.
+
+\hypertarget{dependently-typed-proofs}{%
+\subsection{Dependently Typed Proofs}\label{dependently-typed-proofs}}
+
+The first way to do this is with a dependently-typed ``proof'' that an operation
+is legal.
+
+\emph{Proofs} (in the dependently typed and Curry-Howard sense) are witnesses to
+some type-level predicate or proposition.
+
+A value-level predicate in Haskell is (generally) a function of type
+\texttt{a\ -\textgreater{}\ Bool}. Given a value of type \texttt{a}, if the
+function returns \texttt{True}, then the predicate is satisfied. If it returns
+\texttt{False}, it is not.
+
+A type-level predicate is (generally) a type constructor of kind
+\texttt{k\ -\textgreater{}\ Type}. Given a type of kind \texttt{k}, if \emph{a
+value exists of that type}, then the predicate is satisfied. If no value exists,
+it is not. A value that ``proves'' a predicate is called a \emph{witness} or a
+\emph{proof}.
+
+We can define a predicate
+\texttt{Knockable\ ::\ DoorState\ -\textgreater{}\ Type} as a GADT that only has
+values if given \texttt{\textquotesingle{}Closed} and
+\texttt{\textquotesingle{}Locked}, but not \texttt{\textquotesingle{}Opened}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Knockable}\OtherTok{ ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{KnockClosed}\OtherTok{ ::} \DataTypeTok{Knockable}\NormalTok{ '}\DataTypeTok{Closed}
+    \DataTypeTok{KnockLocked}\OtherTok{ ::} \DataTypeTok{Knockable}\NormalTok{ '}\DataTypeTok{Locked}
+\end{Highlighting}
+\end{Shaded}
+
+Now, we have a value of type \texttt{Knockable\ \textquotesingle{}Closed} and
+\texttt{Knockable\ \textquotesingle{}Locked} (\texttt{KnockClosed} and
+\texttt{KnockLocked}, respectively), but no value of type
+\texttt{Knockable\ \textquotesingle{}Opened}. How can we use this?
+
+Well, we can make a version of \texttt{knock} that requires a proof that
+\texttt{s} is \texttt{Knockable}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{knock ::} \DataTypeTok{Knockable}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{knock _ d }\FunctionTok{=}\NormalTok{ putStrLn }\FunctionTok{$} \StringTok{"Knock knock on "} \FunctionTok{++}\NormalTok{ doorMaterial d }\FunctionTok{++} \StringTok{" door!"}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{knock} can now only be called with \texttt{Closed} and \texttt{Locked}
+doors --- do you see why? There is no way to call \texttt{knock} with
+\texttt{s\ \textasciitilde{}\ \textquotesingle{}Opened}\ldots{}because there is
+no way to pass a value of \texttt{Knockable\ \textquotesingle{}Opened}. No such
+value exists! There's no compiler error because it's ``not even wrong''!
+
+This works well if we want to do things at compile-time
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ knock }\DataTypeTok{KnockClosed}\NormalTok{ (}\DataTypeTok{UnsafeMkDoor} \FunctionTok{@}\NormalTok{'}\DataTypeTok{Closed} \StringTok{"Birch"}\NormalTok{)}
+\DataTypeTok{Knock}\NormalTok{ knock on }\DataTypeTok{Birch}\NormalTok{ door}\FunctionTok{!}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{let-the-compiler-prove-it-for-you}{%
+\subsubsection{Let the compiler prove it for
+you}\label{let-the-compiler-prove-it-for-you}}
+
+We can even make it more seamless to use by auto-generating proofs at
+compile-time, with a general class like \texttt{Auto}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{Provable}\NormalTok{ p a }\KeywordTok{where}
+\OtherTok{    auto ::}\NormalTok{ p a}
+
+\KeywordTok{instance} \DataTypeTok{Provable} \DataTypeTok{Knockable}\NormalTok{ '}\DataTypeTok{Closed} \KeywordTok{where}
+\NormalTok{    auto }\FunctionTok{=} \DataTypeTok{KnockClosed}
+
+\KeywordTok{instance} \DataTypeTok{Provable} \DataTypeTok{Knockable}\NormalTok{ '}\DataTypeTok{Locked} \KeywordTok{where}
+\NormalTok{    auto }\FunctionTok{=} \DataTypeTok{KnockLocked}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ knock auto (}\DataTypeTok{UnsafeMkDoor} \FunctionTok{@}\NormalTok{'}\DataTypeTok{Closed} \StringTok{"Acacia"}\NormalTok{)}
+\DataTypeTok{Knock}\NormalTok{ knock on }\DataTypeTok{Acacia}\NormalTok{ door}\FunctionTok{!}
+
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ knock auto (}\DataTypeTok{UnsafeMkDoor} \FunctionTok{@}\NormalTok{'}\DataTypeTok{Opened} \StringTok{"Jungle"}\NormalTok{)}
+\DataTypeTok{COMPILER} \DataTypeTok{ERROR}\FunctionTok{!!} \DataTypeTok{COMPILER} \DataTypeTok{ERROR}\FunctionTok{!!}
+\end{Highlighting}
+\end{Shaded}
+
+Such a typeclass exists in libraries like
+\emph{\href{http://hackage.haskell.org/package/type-combinators}{type-combinators}}
+(called \texttt{Known}), and in dependently typed languages like Idris
+\texttt{auto} is actually a built-in language keyword that does this
+automatically!
+
+\hypertarget{decidable-preducates}{%
+\subsubsection{Decidable Preducates}\label{decidable-preducates}}
+
+However, all of this only works if you know what \texttt{s} is at compile-time.
+What if you don't? What if you are retrieving \texttt{s} at runtime (like from a
+\texttt{SomeDoor} or \texttt{withSomeSing}), or you are forced to handle all
+possible \texttt{s}s?
+
+There's a property of some predicates called ``decidability''. We say that a
+predicate is \emph{decidable} if, for any input type, we can say whether or not
+the predicate is satisfiable.
+
+We say that a predicate \texttt{p} in Haskell is decidable if we can write:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{decidePred}
+\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ a               }\CommentTok{-- ^ given a type}
+    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (p a)       }\CommentTok{-- ^ return a decision}
+\end{Highlighting}
+\end{Shaded}
+
+Where:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Decision}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{Proved}\NormalTok{ a                  }\CommentTok{-- ^ a value of a exists}
+                \FunctionTok{|} \DataTypeTok{Disproved}\NormalTok{ (}\DataTypeTok{Refuted}\NormalTok{ a)     }\CommentTok{-- ^ a value of a cannot exist}
+
+
+\CommentTok{-- | The data type with no values}
+\KeywordTok{data} \DataTypeTok{Void}
+
+\CommentTok{-- | 'a' cannot exist}
+\KeywordTok{type} \DataTypeTok{Refuted}\NormalTok{ a }\FunctionTok{=}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Void}
+\end{Highlighting}
+\end{Shaded}
+
+(These types are all from the \emph{base} and \emph{singletons} library, mostly
+in the \emph{Data.Singletons.Decide} module)
+
+\texttt{Decision\ a} is kinda like a \texttt{Maybe\ a}, except instead of
+\texttt{Nothing}, we include a proof that the predicate is \emph{not} true.
+
+For those unfamiliar with the \texttt{a\ -\textgreater{}\ Void} idiom,
+\texttt{a\ -\textgreater{}\ Void} is a type we use in Haskell to represent the
+fact that it is impossible to construct a value of type \texttt{a}. That's
+because if you could, then you could give it to an
+\texttt{a\ -\textgreater{}\ Void} to get a value of type \texttt{Void}, which is
+impossible to have.
+
+It's a lot to handle up-front, so let's look at an example. Is
+\texttt{Knockable} a decidable predicate? Yes!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{isKnockable ::} \DataTypeTok{Sing}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{Knockable}\NormalTok{ s)}
+\NormalTok{isKnockable }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{SOpened} \OtherTok{->} \DataTypeTok{Disproved} \FunctionTok{$}\NormalTok{ \textbackslash{}}\KeywordTok{case}            \CommentTok{-- s ~ 'Opened}
+    \DataTypeTok{SClosed} \OtherTok{->} \DataTypeTok{Proved} \DataTypeTok{KnockClosed}           \CommentTok{-- s ~ 'Closed}
+    \DataTypeTok{SLocked} \OtherTok{->} \DataTypeTok{Proved} \DataTypeTok{KnockLocked}           \CommentTok{-- s ~ 'Locked}
+\end{Highlighting}
+\end{Shaded}
+
+This definition should seem pretty straightforward for the \texttt{SClosed} and
+\texttt{SLocked} branches.
+\texttt{isKnockable\ SClosed\ ::\ Decision\ (Knockable\ \textquotesingle{}Closed)},
+we give \texttt{Proved\ KnockClosed}, which gives us just that!
+
+However,
+\texttt{isKnockable\ SOpened\ ::\ Decision\ (Knockable\ \textquotesingle{}Opened)}.
+We can't use \texttt{Proved\ ::\ a\ -\textgreater{}\ Decision\ a}, because no
+such value of type \texttt{Knockable\ \textquotesingle{}Opened} exists. So, we
+have to say that we \emph{disprove} it: we have to prove to GHC that no such
+type could possibly exist. We do this by providing a function of type
+\texttt{Refuted\ (Knockable\ \textquotesingle{}Opened)}, or type
+\texttt{Knockable\ \textquotesingle{}Opened\ -\textgreater{}\ Void}.
+
+We can write it like this:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{disproveOpened ::} \DataTypeTok{Knockable}\NormalTok{ '}\DataTypeTok{Opened} \OtherTok{->} \DataTypeTok{Void}
+\NormalTok{disproveOpened }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+\end{Highlighting}
+\end{Shaded}
+
+And we're good to go!
+
+How does this work?
+
+Well, remember, we have to pattern match on the possible inputs. However, we
+can't use any of the ``legal'' patterns:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{disproveOpened ::} \DataTypeTok{Knockable}\NormalTok{ '}\DataTypeTok{Opened} \OtherTok{->} \DataTypeTok{Void}
+\NormalTok{disproveOpened }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{KnockClosed} \OtherTok{->} \FunctionTok{...}    \CommentTok{-- not a valid pattern, since it's `Knockable 'Closed`}
+    \DataTypeTok{KnockLocked} \OtherTok{->} \FunctionTok{...}    \CommentTok{-- not a valid pattern, since it's `Knockable 'Locked`}
+\end{Highlighting}
+\end{Shaded}
+
+If you include either of those patterns, GHC will complain. So, there is no
+valid pattern to match on\ldots{} so
+\texttt{disproveOpened\ =\ \textbackslash{}case} is enough to write the function
+\texttt{Knockable\ \textquotesingle{}Opened\ -\textgreater{}\ Void}.
+
+We can use this decision function, finally, to handle an arbitrary \texttt{Door}
+whose status we not know until runtime:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{knockSomeDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{knockSomeDoor (}\DataTypeTok{MkSomeDoor}\NormalTok{ s d) }\FunctionTok{=} \KeywordTok{case}\NormalTok{ isKnockable s }\KeywordTok{of}
+    \DataTypeTok{Proved}\NormalTok{ k    }\OtherTok{->}\NormalTok{ knock k d}
+    \DataTypeTok{Disproved}\NormalTok{ _ }\OtherTok{->}\NormalTok{ putStrLn }\StringTok{"No knocking allowed!"}
+\end{Highlighting}
+\end{Shaded}
+
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
 
