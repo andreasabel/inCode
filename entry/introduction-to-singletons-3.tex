@@ -224,8 +224,9 @@ implicitly pass singletons, and the \texttt{SingKind} kind-class that associates
 types with their lifted kinds and lets you reify and reflect with functions like
 \texttt{withSomeSing} and \texttt{fromSing}.
 
-\hypertarget{expressive-relationships}{%
-\section{Expressive Relationships}\label{expressive-relationships}}
+\hypertarget{path-to-expressive-relationships}{%
+\section{Path to Expressive
+Relationships}\label{path-to-expressive-relationships}}
 
 Let's write a function that ``knocks'' on a door in IO:
 
@@ -259,7 +260,7 @@ methods allow us to write dependently typed functions that are ``type-safe'' in
 more expressive ways than before.
 
 \hypertarget{dependently-typed-proofs}{%
-\subsection{Dependently Typed Proofs}\label{dependently-typed-proofs}}
+\section{Dependently Typed Proofs}\label{dependently-typed-proofs}}
 
 The first way to do this is with a dependently-typed ``proof'' that an operation
 is legal.
@@ -322,7 +323,7 @@ This works well if we want to do things at compile-time
 \end{Shaded}
 
 \hypertarget{let-the-compiler-prove-it-for-you}{%
-\subsubsection{Let the compiler prove it for
+\subsection{Let the compiler prove it for
 you}\label{let-the-compiler-prove-it-for-you}}
 
 We can even make it more seamless to use by auto-generating proofs at
@@ -358,7 +359,7 @@ Such a typeclass exists in libraries like
 automatically!
 
 \hypertarget{decidable-preducates}{%
-\subsubsection{Decidable Preducates}\label{decidable-preducates}}
+\subsection{Decidable Preducates}\label{decidable-preducates}}
 
 However, all of this only works if you know what \texttt{s} is at compile-time.
 What if you don't? What if you are retrieving \texttt{s} at runtime (like from a
@@ -390,7 +391,7 @@ Where:
 \CommentTok{-- | The data type with no values}
 \KeywordTok{data} \DataTypeTok{Void}
 
-\CommentTok{-- | 'a' cannot exist}
+\CommentTok{-- | 'a' cannot exist.  Commonly also called `Not`}
 \KeywordTok{type} \DataTypeTok{Refuted}\NormalTok{ a }\FunctionTok{=}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Void}
 \end{Highlighting}
 \end{Shaded}
@@ -401,7 +402,8 @@ in the \emph{Data.Singletons.Decide} module)
 \texttt{Decision\ a} is kinda like a \texttt{Maybe\ a}, except instead of
 \texttt{Nothing}, we include a proof that the predicate is \emph{not} true.
 
-For those unfamiliar with the \texttt{a\ -\textgreater{}\ Void} idiom,
+For those unfamiliar with the \texttt{a\ -\textgreater{}\ Void} idiom (often
+called \texttt{Not\ a}, or \texttt{Refuted\ a}),
 \texttt{a\ -\textgreater{}\ Void} is a type we use in Haskell to represent the
 fact that it is impossible to construct a value of type \texttt{a}. That's
 because if you could, then you could give it to an
@@ -470,12 +472,155 @@ whose status we not know until runtime:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{knockSomeDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{knockSomeDoor}
+\OtherTok{    ::} \DataTypeTok{SomeDoor}     \CommentTok{-- ^ status not known until you pattern match at runtime}
+    \OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{knockSomeDoor (}\DataTypeTok{MkSomeDoor}\NormalTok{ s d) }\FunctionTok{=} \KeywordTok{case}\NormalTok{ isKnockable s }\KeywordTok{of}
     \DataTypeTok{Proved}\NormalTok{ k    }\OtherTok{->}\NormalTok{ knock k d}
     \DataTypeTok{Disproved}\NormalTok{ _ }\OtherTok{->}\NormalTok{ putStrLn }\StringTok{"No knocking allowed!"}
 \end{Highlighting}
 \end{Shaded}
+
+\hypertarget{perspective-on-proofs}{%
+\subsection{Perspective on Proofs}\label{perspective-on-proofs}}
+
+We briefly touched on a very simple version of a dependently typed proof, and
+how to ``prove'' properties.
+
+If you have heard things about dependently typed programming before, you might
+have heard that a lot of it involves ``proving properties about your programs''
+and ``forcing you to provide proofs for all of your actions''. The idea of a
+``proof'' might seem a bit scary and ``mathematical'' to those coming from a
+software development world.
+
+However, as we just saw, working with proofs and decisions of proofs can be as
+simple as a couple lines of GADTs and dependent pattern matches:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Knockable}\OtherTok{ ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{KnockClosed}\OtherTok{ ::} \DataTypeTok{Knockable}\NormalTok{ '}\DataTypeTok{Closed}
+    \DataTypeTok{KnockLocked}\OtherTok{ ::} \DataTypeTok{Knockable}\NormalTok{ '}\DataTypeTok{Locked}
+
+\OtherTok{isKnockable ::} \DataTypeTok{Sing}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{Knockable}\NormalTok{ s)}
+\NormalTok{isKnockable }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{SOpened} \OtherTok{->} \DataTypeTok{Disproved} \FunctionTok{$}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{SClosed} \OtherTok{->} \DataTypeTok{Proved} \DataTypeTok{KnockClosed}
+    \DataTypeTok{SLocked} \OtherTok{->} \DataTypeTok{Proved} \DataTypeTok{KnockLocked}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{Knockable} is our \emph{predicate}, values of type \texttt{Knockable\ s}
+are our \emph{proofs} (or witnesses), and \texttt{isKnockable} is our
+\emph{decision function}. So, when we see a function like:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{knock ::} \DataTypeTok{Knockable}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
+\end{Highlighting}
+\end{Shaded}
+
+We can read the type signature as: ``Knocking requires both a \texttt{Door\ s}
+and a \emph{proof} that the door's status is \texttt{Knockable}''. It makes it
+impossible for us to run \texttt{knock} on a status that is not
+\texttt{Knockable}, like, say, \texttt{\textquotesingle{}Opened}.
+
+In this light, the role of a proof is like a ``key'' that a type (like
+\texttt{\textquotesingle{}Closed}) must provide to ``unlock'' functions like
+\texttt{knock}.\footnote{Sorry to mix up similar metaphors like this! Definitely
+  not intentional :)} A \emph{decision function} is a function to generate these
+proofs (or prove that they are impossible) for given types.
+
+A lot of people think of proofs as ``compiler tricks'', or things that exist
+only to appease the compiler. And, in a sense, this is true. Compilers of
+languages that encourage heavy usage of proofs (like Agda, Coq, Idris) actually
+implement something called \emph{proof erasure}. That is, values like
+\texttt{KnockClosed} and \texttt{KnockLocked} might never exist at runtime,
+since they never actually \emph{do} anything at runtime. They only exist as ways
+to limit or enable specific programs from compiling, and serve no purpose after
+compilation. GHC Haskell does not implement proof erasure at the time of this
+post (Current GHC version 8.4), but if proofs like this become commonplace, you
+might be reading this during a time where GHC Haskell erases proofs like
+\texttt{Knockable} witnesses :)
+
+\hypertarget{singletons-and-proofs}{%
+\subsection{Singletons and Proofs}\label{singletons-and-proofs}}
+
+Proofs might not play a role at run-time, but generating them with types
+requires being able to pattern match and work with \emph{types} at run-time.
+Because of this, singletons play an important role in working with proofs in
+Haskell.
+
+After all, remember the type of our decision function:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{isKnockable ::} \DataTypeTok{Sing}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{Knockable}\NormalTok{ a)}
+\end{Highlighting}
+\end{Shaded}
+
+Decision functions should be able to fully exploit the structure of any types
+they are scrutinizing in order to make their decision.
+
+In this light, the \emph{singletons} library provides many tools for working
+with proofs and decisions. In fact, the entire \emph{Data.Singletons.Decide}
+module is dedicated to working with proofs and decisions. It provides the
+\texttt{Decision} data type and \texttt{Refuted} type synonym, both featured
+above.
+
+It also re-exports a particularly useful predicate from \emph{base},
+\emph{propositional equality}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data}\OtherTok{ (:~:) ::}\NormalTok{ k }\OtherTok{->}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{Refl}\OtherTok{ ::}\NormalTok{ a }\FunctionTok{:~:}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+Like how \texttt{Knockable} is a predicate that a given status is ``knockable'',
+\texttt{\textquotesingle{}Blah\ :\textasciitilde{}:} is a predicate that a given
+type is \emph{equal to} \texttt{\textquotesingle{}Blah}. A value of type
+\texttt{Knockable\ s} is a proof that \texttt{s} is knockable, and a value of
+type \texttt{\textquotesingle{}Blah\ :\textasciitilde{}:\ a} is a proof that
+\texttt{a} is \emph{equal to} \texttt{\textquotesingle{}Blah}.
+
+If you are having trouble seeing how, note the constructors that it allows.
+Remember that we limit \texttt{Knockable\ s} to only having ``knockable''
+\texttt{s} by only allowing two constructors, so we can only construct valid
+values. The same thing happens here --
+\texttt{\textquotesingle{}Blah\ :\textasciitilde{}:} only has \emph{one single
+constructor}:
+\texttt{Refl\ ::\ \textquotesingle{}Blah\ :\textasciitilde{}:\ \textquotesingle{}Blah}.
+The only valid constructor is one where the left hand side is equal to the right
+hand side.
+
+It also offers the ``kindclass'' \texttt{SDecide}, which provides \emph{decision
+functions} for the \texttt{a\ :\textasciitilde{}:} predicate:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{SDecide}\NormalTok{ k }\KeywordTok{where}
+\OtherTok{    (%~) ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{a ::}\NormalTok{ k) }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{b ::}\NormalTok{ k) }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{Sing}\NormalTok{ (a }\FunctionTok{:~:}\NormalTok{ b))}
+\end{Highlighting}
+\end{Shaded}
+
+For example, \texttt{Bool} is an instance of \texttt{SDecide}, so we have a
+function:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{(}\DataTypeTok{STrue} \FunctionTok{%~}\NormalTok{)}\OtherTok{ ::} \DataTypeTok{Sing}\NormalTok{ b }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ ('}\DataTypeTok{True} \FunctionTok{:~:}\NormalTok{ b)}
+\end{Highlighting}
+\end{Shaded}
+
+Which is a decision function to check if \texttt{b} is equal to
+\texttt{\textquotesingle{}True}.
+
+\hypertarget{type-level-functions}{%
+\section{Type Level Functions}\label{type-level-functions}}
+
+Hi
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
