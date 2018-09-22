@@ -224,9 +224,8 @@ implicitly pass singletons, and the \texttt{SingKind} kind-class that associates
 types with their lifted kinds and lets you reify and reflect with functions like
 \texttt{withSomeSing} and \texttt{fromSing}.
 
-\hypertarget{path-to-expressive-relationships}{%
-\section{Path to Expressive
-Relationships}\label{path-to-expressive-relationships}}
+\hypertarget{more-expressive-restrictions}{%
+\section{More Expressive Restrictions}\label{more-expressive-restrictions}}
 
 Let's write a function that ``knocks'' on a door in IO:
 
@@ -260,7 +259,7 @@ methods allow us to write dependently typed functions that are ``type-safe'' in
 more expressive ways than before.
 
 \hypertarget{dependently-typed-proofs}{%
-\section{Dependently Typed Proofs}\label{dependently-typed-proofs}}
+\subsection{Dependently Typed Proofs}\label{dependently-typed-proofs}}
 
 The first way to do this is with a dependently-typed ``proof'' that an operation
 is legal.
@@ -323,7 +322,7 @@ This works well if we want to do things at compile-time
 \end{Shaded}
 
 \hypertarget{let-the-compiler-prove-it-for-you}{%
-\subsection{Let the compiler prove it for
+\subsubsection{Let the compiler prove it for
 you}\label{let-the-compiler-prove-it-for-you}}
 
 We can even make it more seamless to use by auto-generating proofs at
@@ -359,16 +358,16 @@ Such a typeclass exists in libraries like
 automatically!
 
 \hypertarget{decidable-predicates}{%
-\subsection{Decidable Predicates}\label{decidable-predicates}}
+\subsubsection{Decidable Predicates}\label{decidable-predicates}}
 
 However, all of this only works if you know what \texttt{s} is at compile-time.
 What if you don't? What if you are retrieving \texttt{s} at runtime (like from a
 \texttt{SomeDoor} or \texttt{withSomeSing}), or you are forced to handle all
 possible \texttt{s}s?
 
-There's a property of some predicates called ``decidability''. We say that a
-predicate is \emph{decidable} if, for any input type, we can say whether or not
-the predicate is satisfiable.
+To do this, we're going to take advantage of a property of some predicates
+called ``decidability''. We say that a predicate is \emph{decidable} if, for any
+input type, we can say whether or not the predicate is satisfiable.
 
 We say that a predicate \texttt{p} in Haskell is decidable if we can write:
 
@@ -387,7 +386,6 @@ Where:
 \KeywordTok{data} \DataTypeTok{Decision}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{Proved}\NormalTok{ a                  }\CommentTok{-- ^ a value of a exists}
                 \FunctionTok{|} \DataTypeTok{Disproved}\NormalTok{ (}\DataTypeTok{Refuted}\NormalTok{ a)     }\CommentTok{-- ^ a value of a cannot exist}
 
-
 \CommentTok{-- | The data type with no values}
 \KeywordTok{data} \DataTypeTok{Void}
 
@@ -395,9 +393,6 @@ Where:
 \KeywordTok{type} \DataTypeTok{Refuted}\NormalTok{ a }\FunctionTok{=}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Void}
 \end{Highlighting}
 \end{Shaded}
-
-(These types are all from the \emph{base} and \emph{singletons} library, mostly
-in the \emph{Data.Singletons.Decide} module)
 
 \texttt{Decision\ a} is kinda like a \texttt{Maybe\ a}, except instead of
 \texttt{Nothing}, we include a proof that the predicate is \emph{not} true.
@@ -410,8 +405,22 @@ because if you could, then you could give it to an
 \texttt{a\ -\textgreater{}\ Void} to get a value of type \texttt{Void}, which is
 impossible to have.
 
-It's a lot to handle up-front, so let's look at an example. Is
+It's a lot to handle all at once, so let's look at an example. Is
 \texttt{Knockable} a decidable predicate? Yes!
+
+We need to write a function:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{isKnockable ::} \DataTypeTok{Sing}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{Knockable}\NormalTok{ s)}
+\end{Highlighting}
+\end{Shaded}
+
+I recommend taking a moment and trying to implement this yourself. Remember to
+enable \texttt{-Wall} to make sure you're handling all potential pattern
+matching cases.
+
+Are you ready? Here's a solution:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -442,7 +451,7 @@ We can write it like this:
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{disproveOpened ::} \DataTypeTok{Knockable}\NormalTok{ '}\DataTypeTok{Opened} \OtherTok{->} \DataTypeTok{Void}
-\NormalTok{disproveOpened }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+\NormalTok{disproveOpened k }\FunctionTok{=} \KeywordTok{case}\NormalTok{ k }\KeywordTok{of}\NormalTok{ \{\}             }\CommentTok{-- empty pattern match}
 \end{Highlighting}
 \end{Shaded}
 
@@ -456,7 +465,7 @@ can't use any of the ``legal'' patterns:
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{disproveOpened ::} \DataTypeTok{Knockable}\NormalTok{ '}\DataTypeTok{Opened} \OtherTok{->} \DataTypeTok{Void}
-\NormalTok{disproveOpened }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+\NormalTok{disproveOpened k }\FunctionTok{=} \KeywordTok{case}\NormalTok{ k }\KeywordTok{of}
     \DataTypeTok{KnockClosed} \OtherTok{->} \FunctionTok{...}    \CommentTok{-- not a valid pattern, since it's `Knockable 'Closed`}
     \DataTypeTok{KnockLocked} \OtherTok{->} \FunctionTok{...}    \CommentTok{-- not a valid pattern, since it's `Knockable 'Locked`}
 \end{Highlighting}
@@ -482,7 +491,7 @@ whose status we not know until runtime:
 \end{Shaded}
 
 \hypertarget{perspective-on-proofs}{%
-\subsection{Perspective on Proofs}\label{perspective-on-proofs}}
+\subsubsection{Perspective on Proofs}\label{perspective-on-proofs}}
 
 We briefly touched on a very simple version of a dependently typed proof, and
 how to ``prove'' properties.
@@ -531,25 +540,24 @@ In this light, the role of a proof is like a ``key'' that a type (like
   not intentional :)} A \emph{decision function} is a function to generate these
 proofs (or prove that they are impossible) for given types.
 
-A lot of people think of proofs as ``compiler tricks'', or things that exist
-only to appease the compiler. And, in a sense, this is true. Compilers of
-languages that encourage heavy usage of proofs (like Agda, Coq, Idris) actually
-implement something called \emph{proof erasure}. That is, values like
-\texttt{KnockClosed} and \texttt{KnockLocked} might never exist at runtime,
-since they never actually \emph{do} anything at runtime. They only exist as ways
-to limit or enable specific programs from compiling, and serve no purpose after
-compilation. GHC Haskell does not implement proof erasure at the time of this
-post (Current GHC version 8.4), but if proofs like this become commonplace, you
-might be reading this during a time where GHC Haskell erases proofs like
-\texttt{Knockable} witnesses :)
+Proofs are often thought of as ``compiler tricks'', or things that exist only to
+appease the compiler. Compilers of languages that encourage heavy usage of
+proofs (like Agda, Coq, Idris) actually implement something called \emph{proof
+erasure}. That is, values like \texttt{KnockClosed} and \texttt{KnockLocked}
+might never exist at runtime, since they never actually \emph{do} anything at
+runtime. They only exist as ways to limit or enable specific programs from
+compiling, and serve no purpose after compilation. GHC Haskell does not
+implement proof erasure at the time of this post (current GHC version 8.6), but
+if proofs like this become commonplace, you might be reading this during a time
+where GHC Haskell erases proofs like \texttt{Knockable} witnesses :)
 
-\hypertarget{singletons-and-proofs}{%
-\subsection{Singletons and Proofs}\label{singletons-and-proofs}}
+\hypertarget{the-role-of-singletons}{%
+\subsubsection{The Role of Singletons}\label{the-role-of-singletons}}
 
-Proofs might not play a role at run-time, but generating them with types
-requires being able to pattern match and work with \emph{types} at run-time.
-Because of this, singletons play an important role in working with proofs in
-Haskell.
+Proofs themselves might not play a role at run-time, but generating/deciding
+them with types requires being able to pattern match and work with \emph{types}
+at run-time. Because of this, singletons play an important practical role in
+working with proofs in Haskell.
 
 After all, remember the type of our decision function:
 
@@ -559,8 +567,8 @@ After all, remember the type of our decision function:
 \end{Highlighting}
 \end{Shaded}
 
-Decision functions should be able to fully exploit the structure of any types
-they are scrutinizing in order to make their decision.
+The \texttt{Sing} allows \texttt{isKnockable} to pattern match and inspect the
+\emph{type} \texttt{a} to create your proof.
 
 In this light, the \emph{singletons} library provides many tools for working
 with proofs and decisions. In fact, the entire \emph{Data.Singletons.Decide}
@@ -601,7 +609,9 @@ functions} for the \texttt{a\ :\textasciitilde{}:} predicate:
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{class} \DataTypeTok{SDecide}\NormalTok{ k }\KeywordTok{where}
-\OtherTok{    (%~) ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{a ::}\NormalTok{ k) }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{b ::}\NormalTok{ k) }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{Sing}\NormalTok{ (a }\FunctionTok{:~:}\NormalTok{ b))}
+\OtherTok{    (%~) ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{a ::}\NormalTok{ k)}
+         \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{b ::}\NormalTok{ k)}
+         \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (a }\FunctionTok{:~:}\NormalTok{ b)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -614,17 +624,18 @@ function:
 \end{Highlighting}
 \end{Shaded}
 
-Which is a decision function to check if \texttt{b} is equal to
-\texttt{\textquotesingle{}True}.
+which is a decision function to check if \texttt{b} is equal to
+\texttt{\textquotesingle{}True}. You can sort of imagine \texttt{SDecide} as a
+type-level \texttt{Eq} typeclass, but for ``type equality''.
 
 \hypertarget{type-level-functions}{%
-\section{Type Level Functions}\label{type-level-functions}}
+\subsection{Type Level Functions}\label{type-level-functions}}
 
-Dependently typed proofs are nice because they exploit the ``structure'' of data
-types you create. Essentially, we create a data type (predicate) in a way so
-that it is impossible to create an ``invalid'' data type. And, often, if we
-write our proofs in a clever enough way, we can actually use and combine proofs
-to generate new proofs.
+Dependently typed proofs are useful because they are constructed to exploit the
+``structure'' of the types you create. Essentially, we create a data type
+(predicate) in a way so that it is impossible to create an ``invalid'' proof.
+And, often, if we write our proofs in a clever enough way, we can actually use
+and combine proofs to generate new proofs.
 
 Personally I find this to be the source of a lot of the ``fun'' of dependently
 typed programming --- our proofs become first class values, and if we define
@@ -636,11 +647,11 @@ type of stuff is covered in introductions to dependently typed programming
 proper. However, this is a singletons post, so I'm just here to give a taste of
 it to the extent that it is related to singletons :)
 
-We're going to now look at a method that is less ``structural''. In practice,
-carefully constructing predicates and proofs provides some up-front cost in
-thinking about how to best express your predicate, and is sometimes not
-straightforward. Here is another way to express a similar \texttt{knock} that is
-slightly more mechanical.
+We're now going to look at a method that is less ``structural''. In practice,
+carefully constructing predicates and proofs (ones more complicated than the one
+we just looked at) requires some up-front cost in thinking about how to best
+express your predicate, and is sometimes not straightforward. Here is another
+way to express a similar \texttt{knock} that is slightly more mechanical.
 
 Something we can do is define a type that expresses knockable-or-not-knockable,
 as a value:
@@ -727,7 +738,7 @@ going through a new type for the sake of example, and it can be useful because a
 type like \texttt{Pass} might potentially have even more constructors!)
 
 \hypertarget{deciding-at-runtime}{%
-\subsection{Deciding at Runtime}\label{deciding-at-runtime}}
+\subsubsection{Deciding at Runtime}\label{deciding-at-runtime}}
 
 One nice thing about this way is that the compiler will provide the proof for
 us. However, how can we run into the same issue as before --- what happens if we
@@ -795,6 +806,23 @@ First we use \texttt{sPassState\ s} to check the ``pass state'' of the
 \texttt{s}. Then, we match on the \texttt{Pass}: if it's \texttt{Allow}, like
 the type signature of \texttt{knock} requires, we can run \texttt{knock}. If
 not, then we cannot!
+
+\hypertarget{a-comparison}{%
+\subsection{A Comparison}\label{a-comparison}}
+
+\hypertarget{type-level-functions-as-relationships}{%
+\section{Type-Level Functions as
+Relationships}\label{type-level-functions-as-relationships}}
+
+\hypertarget{lets-fold}{%
+\subsection{Let's Fold}\label{lets-fold}}
+
+\hypertarget{the-problem-with-higher-order-functions}{%
+\subsection{The Problem with Higher Order
+Functions}\label{the-problem-with-higher-order-functions}}
+
+\hypertarget{next-steps}{%
+\section{Next Steps}\label{next-steps}}
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
