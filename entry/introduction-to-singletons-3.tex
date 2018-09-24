@@ -654,7 +654,10 @@ express your predicate, and is sometimes not straightforward. Here is another
 way to express a similar \texttt{knock} that is slightly more mechanical.
 
 Something we can do is define a type that expresses knockable-or-not-knockable,
-as a value:
+as a value:\footnote{Really, we could just use \texttt{Bool} instead of defining
+  a \texttt{Pass} type. We're just going through a new type for the sake of
+  example, and it can be useful because a type like \texttt{Pass} might
+  potentially have even more constructors!}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -722,20 +725,13 @@ everyone is sad.
 \NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ door1 }\FunctionTok{=} \DataTypeTok{UnsafeMkDoor} \FunctionTok{@}\NormalTok{'}\DataTypeTok{Closed} \StringTok{"Oak"}
 \NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ door2 }\FunctionTok{=} \DataTypeTok{UnsafeMkDoor} \FunctionTok{@}\NormalTok{'}\DataTypeTok{Opened} \StringTok{"Spruce"}
 \NormalTok{ghci}\FunctionTok{>}\NormalTok{ knock door1}
-\DataTypeTok{Knock}\NormalTok{ knock on }\DataTypeTok{Oak}\NormalTok{ door}\FunctionTok{!}
+\CommentTok{-- Knock knock on Oak door!}
 \NormalTok{ghci}\FunctionTok{>}\NormalTok{ knock door2}
 \DataTypeTok{COMPILE} \DataTypeTok{ERROR}\FunctionTok{!}
 \CommentTok{--     • Couldn't match type ‘'Allow’ with ‘'Obstruct’}
 \CommentTok{--             arising from a use of ‘knock’}
 \end{Highlighting}
 \end{Shaded}
-
-(Note that we could have just used \texttt{Bool} instead of defining a
-\texttt{Pass} type, and defining something like a \texttt{Knockable} type
-family, and test on
-\texttt{Knockable\ s\ \textasciitilde{}\ \textquotesingle{}True}. We're just
-going through a new type for the sake of example, and it can be useful because a
-type like \texttt{Pass} might potentially have even more constructors!)
 
 \hypertarget{deciding-at-runtime}{%
 \subsubsection{Deciding at Runtime}\label{deciding-at-runtime}}
@@ -806,6 +802,89 @@ First we use \texttt{sPassState\ s} to check the ``pass state'' of the
 \texttt{s}. Then, we match on the \texttt{Pass}: if it's \texttt{Allow}, like
 the type signature of \texttt{knock} requires, we can run \texttt{knock}. If
 not, then we cannot!
+
+\hypertarget{singletons-library-to-the-rescue}{%
+\subsubsection{Singletons Library to the
+Rescue}\label{singletons-library-to-the-rescue}}
+
+At the high level, we defined a ``function'' on types (\texttt{PassState}),
+using type families.
+
+And, just like we have to define singletons (\texttt{SOpened}, \texttt{SClosed},
+etc.) at the value level to mirror what is happening at the type level, we also
+have to define \emph{singleton functions} (\texttt{sPassState}) at the value
+level to mirror what is happening at the type level.
+
+Defining singletons for our types is a tedious and mechanical process.
+Similarly, defining singletonized functions for our type families is also a
+tedious and mechanical process. This is where the \emph{singletons} library
+comes in: it provides us Template Haskell tools to automatically define type
+families and their associated singleton functions:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{$}\NormalTok{(singletons [d|}
+\NormalTok{  data Pass = Obstruct | Allow}
+
+\NormalTok{  passState :: DoorState -> Pass}
+\NormalTok{  passState Opened = Allow}
+\NormalTok{  passState Closed = Obstruct}
+\NormalTok{  passState Locked = Obstruct}
+\NormalTok{  |])}
+\end{Highlighting}
+\end{Shaded}
+
+The above declaration would normally declare the following things:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  The \emph{type} \texttt{Pass} with the data constructors
+  \texttt{Obstruct\ ::\ Pass} and \texttt{Allow\ ::\ Pass}
+\item
+  The \emph{kind} \texttt{Pass} with the type constructors
+  \texttt{\textquotesingle{}Obstruct\ ::\ Pass} and
+  \texttt{\textquotesingle{}Allow\ ::\ Pass}.
+\item
+  The value-level function \texttt{passState} with the type
+  \texttt{DoorSate\ -\textgreater{}\ Pass}.
+\end{enumerate}
+
+However, with singleton's template haskell, this also generates:\footnote{In the
+  spirit of full disclosure, the Template Haskell also generates some other
+  things (known as defunctionalization symbols), which we will be talking about
+  in the next part of this series.}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  The \emph{singleton family} for \texttt{Pass}, with data constructors
+  \texttt{SObstruct\ ::\ Sing\ \textquotesingle{}Obstruct} and
+  \texttt{SAllow\ ::\ Sing\ \textquotesingle{}Allow} (or, using the generated
+  \texttt{SPass} type synonym,
+  \texttt{SObstruct\ ::\ SPass\ \textquotesingle{}Obstruct} and
+  \texttt{SAllow\ ::\ SPass\ \textquotesingle{}Allow})
+\item
+  The relevant \texttt{SingKind}, \texttt{SingI} instances, etc. for
+  \texttt{Pass}'s singletons.
+\item
+  The \emph{type family} \texttt{PassState\ (s\ ::\ DoorState)\ ::\ Pass}, like
+  we defined above
+\item
+  The \emph{singleton function}
+  \texttt{sPassState\ ::\ Sing\ s\ -\textgreater{}\ Sing\ (PassState\ s)}, like
+  we defined above.
+\end{enumerate}
+
+The naming convention for functions with normal names takes a function like
+\texttt{myFunction} and generates the type family \texttt{MyFunction} and the
+singleton function \texttt{sMyFunction}.
+
+The naming convention for functions with symbolic names (operators) takes an
+operator like \texttt{++} and generates the type family \texttt{++} (keeping the
+identical name) and the singleton function \texttt{\%++}.
 
 \hypertarget{a-comparison}{%
 \subsection{A Comparison}\label{a-comparison}}

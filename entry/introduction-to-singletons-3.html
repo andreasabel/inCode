@@ -190,7 +190,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Personally I find this to be the source of a lot of the “fun” of dependently typed programming — our proofs become first class values, and if we define them in a nice enough way, we can use manipulate them to create new proofs. That’s because they’re just first-class values!</p>
 <p>However, a full exploration of this is well beyond the scope of this post. This type of stuff is covered in introductions to dependently typed programming proper. However, this is a singletons post, so I’m just here to give a taste of it to the extent that it is related to singletons :)</p>
 <p>We’re now going to look at a method that is less “structural”. In practice, carefully constructing predicates and proofs (ones more complicated than the one we just looked at) requires some up-front cost in thinking about how to best express your predicate, and is sometimes not straightforward. Here is another way to express a similar <code>knock</code> that is slightly more mechanical.</p>
-<p>Something we can do is define a type that expresses knockable-or-not-knockable, as a value:</p>
+<p>Something we can do is define a type that expresses knockable-or-not-knockable, as a value:<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a></p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="fu">$</span>(singletons [d|</a>
 <a class="sourceLine" id="cb26-2" data-line-number="2">  data Pass = Obstruct | Allow</a>
 <a class="sourceLine" id="cb26-3" data-line-number="3">  |])</a></code></pre></div>
@@ -213,12 +213,11 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb30-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> door1 <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span>&#39;<span class="dt">Closed</span> <span class="st">&quot;Oak&quot;</span></a>
 <a class="sourceLine" id="cb30-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="kw">let</span> door2 <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span>&#39;<span class="dt">Opened</span> <span class="st">&quot;Spruce&quot;</span></a>
 <a class="sourceLine" id="cb30-3" data-line-number="3">ghci<span class="fu">&gt;</span> knock door1</a>
-<a class="sourceLine" id="cb30-4" data-line-number="4"><span class="dt">Knock</span> knock on <span class="dt">Oak</span> door<span class="fu">!</span></a>
+<a class="sourceLine" id="cb30-4" data-line-number="4"><span class="co">-- Knock knock on Oak door!</span></a>
 <a class="sourceLine" id="cb30-5" data-line-number="5">ghci<span class="fu">&gt;</span> knock door2</a>
 <a class="sourceLine" id="cb30-6" data-line-number="6"><span class="dt">COMPILE</span> <span class="dt">ERROR</span><span class="fu">!</span></a>
 <a class="sourceLine" id="cb30-7" data-line-number="7"><span class="co">--     • Couldn&#39;t match type ‘&#39;Allow’ with ‘&#39;Obstruct’</span></a>
 <a class="sourceLine" id="cb30-8" data-line-number="8"><span class="co">--             arising from a use of ‘knock’</span></a></code></pre></div>
-<p>(Note that we could have just used <code>Bool</code> instead of defining a <code>Pass</code> type, and defining something like a <code>Knockable</code> type family, and test on <code>Knockable s ~ 'True</code>. We’re just going through a new type for the sake of example, and it can be useful because a type like <code>Pass</code> might potentially have even more constructors!)</p>
 <h4 id="deciding-at-runtime">Deciding at Runtime</h4>
 <p>One nice thing about this way is that the compiler will provide the proof for us. However, how can we run into the same issue as before — what happens if we don’t know <code>s</code> until runtime? How do we prove to the compiler that <code>Passable s</code> is <code>'Allow</code>?</p>
 <p>Remember that type families take <em>types</em> as inputs, so we can’t write:</p>
@@ -248,6 +247,33 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb33-5" data-line-number="5">    <span class="dt">SAllow</span> <span class="ot">-&gt;</span> knock d                           <span class="co">-- ^ `PassState s ~ &#39;Allow`</span></a>
 <a class="sourceLine" id="cb33-6" data-line-number="6">    _      <span class="ot">-&gt;</span> putStrLn <span class="st">&quot;No knocking allowed!&quot;</span>   <span class="co">-- ^ `PassState s ~ &#39;Obstruct`</span></a></code></pre></div>
 <p>First we use <code>sPassState s</code> to check the “pass state” of the <code>s</code>. Then, we match on the <code>Pass</code>: if it’s <code>Allow</code>, like the type signature of <code>knock</code> requires, we can run <code>knock</code>. If not, then we cannot!</p>
+<h4 id="singletons-library-to-the-rescue">Singletons Library to the Rescue</h4>
+<p>At the high level, we defined a “function” on types (<code>PassState</code>), using type families.</p>
+<p>And, just like we have to define singletons (<code>SOpened</code>, <code>SClosed</code>, etc.) at the value level to mirror what is happening at the type level, we also have to define <em>singleton functions</em> (<code>sPassState</code>) at the value level to mirror what is happening at the type level.</p>
+<p>Defining singletons for our types is a tedious and mechanical process. Similarly, defining singletonized functions for our type families is also a tedious and mechanical process. This is where the <em>singletons</em> library comes in: it provides us Template Haskell tools to automatically define type families and their associated singleton functions:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb34-1" data-line-number="1"><span class="fu">$</span>(singletons [d|</a>
+<a class="sourceLine" id="cb34-2" data-line-number="2">  data Pass = Obstruct | Allow</a>
+<a class="sourceLine" id="cb34-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb34-4" data-line-number="4">  passState :: DoorState -&gt; Pass</a>
+<a class="sourceLine" id="cb34-5" data-line-number="5">  passState Opened = Allow</a>
+<a class="sourceLine" id="cb34-6" data-line-number="6">  passState Closed = Obstruct</a>
+<a class="sourceLine" id="cb34-7" data-line-number="7">  passState Locked = Obstruct</a>
+<a class="sourceLine" id="cb34-8" data-line-number="8">  |])</a></code></pre></div>
+<p>The above declaration would normally declare the following things:</p>
+<ol type="1">
+<li>The <em>type</em> <code>Pass</code> with the data constructors <code>Obstruct :: Pass</code> and <code>Allow :: Pass</code></li>
+<li>The <em>kind</em> <code>Pass</code> with the type constructors <code>'Obstruct :: Pass</code> and <code>'Allow :: Pass</code>.</li>
+<li>The value-level function <code>passState</code> with the type <code>DoorSate -&gt; Pass</code>.</li>
+</ol>
+<p>However, with singleton’s template haskell, this also generates:<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a></p>
+<ol type="1">
+<li>The <em>singleton family</em> for <code>Pass</code>, with data constructors <code>SObstruct :: Sing 'Obstruct</code> and <code>SAllow :: Sing 'Allow</code> (or, using the generated <code>SPass</code> type synonym, <code>SObstruct :: SPass 'Obstruct</code> and <code>SAllow :: SPass 'Allow</code>)</li>
+<li>The relevant <code>SingKind</code>, <code>SingI</code> instances, etc. for <code>Pass</code>’s singletons.</li>
+<li>The <em>type family</em> <code>PassState (s :: DoorState) :: Pass</code>, like we defined above</li>
+<li>The <em>singleton function</em> <code>sPassState :: Sing s -&gt; Sing (PassState s)</code>, like we defined above.</li>
+</ol>
+<p>The naming convention for functions with normal names takes a function like <code>myFunction</code> and generates the type family <code>MyFunction</code> and the singleton function <code>sMyFunction</code>.</p>
+<p>The naming convention for functions with symbolic names (operators) takes an operator like <code>++</code> and generates the type family <code>++</code> (keeping the identical name) and the singleton function <code>%++</code>.</p>
 <h3 id="a-comparison">A Comparison</h3>
 <h2 id="type-level-functions-as-relationships">Type-Level Functions as Relationships</h2>
 <h3 id="lets-fold">Let’s Fold</h3>
@@ -258,6 +284,8 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <ol>
 <li id="fn1"><p>Some subtle points for those more familiar with Haskell’s type system: In Haskell, we say that a type <code>B</code> is a subtype of type <code>A</code> if, wherever a function expects an <code>A</code>, we can give a <code>B</code> instead. Any function that expects a <code>Door 'Opened</code> will take a <code>forall s. Door s</code> (a type that can be instantiated with any <code>s</code>). However, the opposite is not true — if a Rank-N function expects a <code>forall s. Door s</code>, you cannot give it a <code>Door 'Opened</code>.<a href="#fnref1" class="footnote-back">↩</a></p></li>
 <li id="fn2"><p>Sorry to mix up similar metaphors like this! Definitely not intentional :)<a href="#fnref2" class="footnote-back">↩</a></p></li>
+<li id="fn3"><p>Really, we could just use <code>Bool</code> instead of defining a <code>Pass</code> type. We’re just going through a new type for the sake of example, and it can be useful because a type like <code>Pass</code> might potentially have even more constructors!<a href="#fnref3" class="footnote-back">↩</a></p></li>
+<li id="fn4"><p>In the spirit of full disclosure, the Template Haskell also generates some other things (known as defunctionalization symbols), which we will be talking about in the next part of this series.<a href="#fnref4" class="footnote-back">↩</a></p></li>
 </ol>
 </section></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
 <p>If you feel inclined, or this post was particularly helpful for you, why not consider <a href="https://www.patreon.com/justinle/overview">supporting me on Patreon</a>, or a <a href="bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU">BTC donation</a>? :)</p></div><div class="clear"></div><ul class="entry-series"><li><div>This entry is a part of a series called <b>&quot;Introduction to Singletons&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+introduction-to-singletons.html" class="tag-a-series" title="+Introduction to Singletons"> series history</a>.</div></li></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/dependent-types.html" class="tag-a-tag">#dependent types</a></li><li><a href="https://blog.jle.im/entries/tagged/functional-programming.html" class="tag-a-tag">#functional programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/singletons.html" class="tag-a-tag">#singletons</a></li><li><a href="https://blog.jle.im/entries/tagged/types.html" class="tag-a-tag">#types</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/series/+introduction-to-singletons.html" class="tag-a-series">+Introduction to Singletons</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing &quot;in Code&quot;!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {

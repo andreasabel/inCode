@@ -467,7 +467,7 @@ express your predicate, and is sometimes not straightforward. Here is another
 way to express a similar `knock` that is slightly more mechanical.
 
 Something we can do is define a type that expresses knockable-or-not-knockable,
-as a value:
+as a value:[^3]
 
 ``` {.haskell}
 $(singletons [d|
@@ -520,18 +520,12 @@ not satisfied and everyone is sad.
 ghci> let door1 = UnsafeMkDoor @'Closed "Oak"
 ghci> let door2 = UnsafeMkDoor @'Opened "Spruce"
 ghci> knock door1
-Knock knock on Oak door!
+-- Knock knock on Oak door!
 ghci> knock door2
 COMPILE ERROR!
 --     • Couldn't match type ‘'Allow’ with ‘'Obstruct’
 --             arising from a use of ‘knock’
 ```
-
-(Note that we could have just used `Bool` instead of defining a `Pass` type, and
-defining something like a `Knockable` type family, and test on
-`Knockable s ~ 'True`. We're just going through a new type for the sake of
-example, and it can be useful because a type like `Pass` might potentially have
-even more constructors!)
 
 #### Deciding at Runtime
 
@@ -594,6 +588,61 @@ First we use `sPassState s` to check the "pass state" of the `s`. Then, we match
 on the `Pass`: if it's `Allow`, like the type signature of `knock` requires, we
 can run `knock`. If not, then we cannot!
 
+#### Singletons Library to the Rescue
+
+At the high level, we defined a "function" on types (`PassState`), using type
+families.
+
+And, just like we have to define singletons (`SOpened`, `SClosed`, etc.) at the
+value level to mirror what is happening at the type level, we also have to
+define *singleton functions* (`sPassState`) at the value level to mirror what is
+happening at the type level.
+
+Defining singletons for our types is a tedious and mechanical process.
+Similarly, defining singletonized functions for our type families is also a
+tedious and mechanical process. This is where the *singletons* library comes in:
+it provides us Template Haskell tools to automatically define type families and
+their associated singleton functions:
+
+``` {.haskell}
+$(singletons [d|
+  data Pass = Obstruct | Allow
+
+  passState :: DoorState -> Pass
+  passState Opened = Allow
+  passState Closed = Obstruct
+  passState Locked = Obstruct
+  |])
+```
+
+The above declaration would normally declare the following things:
+
+1.  The *type* `Pass` with the data constructors `Obstruct :: Pass` and
+    `Allow :: Pass`
+2.  The *kind* `Pass` with the type constructors `'Obstruct :: Pass` and
+    `'Allow :: Pass`.
+3.  The value-level function `passState` with the type `DoorSate -> Pass`.
+
+However, with singleton's template haskell, this also generates:[^4]
+
+1.  The *singleton family* for `Pass`, with data constructors
+    `SObstruct :: Sing 'Obstruct` and `SAllow :: Sing 'Allow` (or, using the
+    generated `SPass` type synonym, `SObstruct :: SPass 'Obstruct` and
+    `SAllow :: SPass 'Allow`)
+2.  The relevant `SingKind`, `SingI` instances, etc. for `Pass`'s singletons.
+3.  The *type family* `PassState (s :: DoorState) :: Pass`, like we defined
+    above
+4.  The *singleton function* `sPassState :: Sing s -> Sing (PassState s)`, like
+    we defined above.
+
+The naming convention for functions with normal names takes a function like
+`myFunction` and generates the type family `MyFunction` and the singleton
+function `sMyFunction`.
+
+The naming convention for functions with symbolic names (operators) takes an
+operator like `++` and generates the type family `++` (keeping the identical
+name) and the singleton function `%++`.
+
 ### A Comparison
 
 Type-Level Functions as Relationships
@@ -628,3 +677,11 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     `Door 'Opened`.
 
 [^2]: Sorry to mix up similar metaphors like this! Definitely not intentional :)
+
+[^3]: Really, we could just use `Bool` instead of defining a `Pass` type. We're
+    just going through a new type for the sake of example, and it can be useful
+    because a type like `Pass` might potentially have even more constructors!
+
+[^4]: In the spirit of full disclosure, the Template Haskell also generates some
+    other things (known as defunctionalization symbols), which we will be
+    talking about in the next part of this series.
