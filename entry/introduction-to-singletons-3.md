@@ -111,9 +111,10 @@ A **value-level predicate** in Haskell is (generally) a function of type
 predicate is satisfied. If it returns `False`, it is not.
 
 A **type-level predicate** is (generally) a type constructor of kind
-`k -> Type`. Given a type of kind `k`, if *a value exists of that type*, then
-the predicate is satisfied. If no value exists, it is not. That value, if it
-exists, is called a *witness* or a *proof*.
+`k -> Type`. Given a type of kind `k`, if *a value exists of that type* (or, if
+a value can be constructed), then the predicate is satisfied. If no value
+exists, it is not. That value, if it exists, is called a *witness* or a
+*proof*.[^1]
 
 We can define a predicate `Knockable :: DoorState -> Type` as a GADT that only
 has values if given `'Closed` and `'Locked`, but not `'Opened`:
@@ -326,7 +327,7 @@ We can read the type signature as: "Knocking requires both a `Door s` and a
 run `knock` on a status that is not `Knockable`, like, say, `'Opened`.
 
 In this light, the role of a proof is like a "key" that a type (like `'Closed`)
-must provide to "unlock" functions like `knock`.[^1] A *decision function* is a
+must provide to "unlock" functions like `knock`.[^2] A *decision function* is a
 function to generate these proofs (or prove that they are impossible) for given
 types.
 
@@ -405,7 +406,7 @@ of imagine `SDecide` as a type-level `Eq` typeclass, but for "type equality".
 
 We're now going to look at a different method useful for restricting how we can
 call functions. Something we can do is define a type that expresses
-knockable-or-not-knockable, as a value:[^2]
+knockable-or-not-knockable, as a value:[^3]
 
 ``` {.haskell}
 $(singletons [d|
@@ -562,7 +563,7 @@ The above declaration would normally declare the following things:
     `'Allow :: Pass`.
 3.  The value-level function `statePass` with the type `DoorSate -> Pass`.
 
-However, with singleton's template haskell, this also generates:[^3]
+However, with singleton's template haskell, this also generates:[^4]
 
 1.  The *singleton family* for `Pass`, with data constructors
     `SObstruct :: Sing 'Obstruct` and `SAllow :: Sing 'Allow` (or, using the
@@ -580,7 +581,7 @@ function `sMyFunction`.
 
 The naming convention for functions with symbolic names (operators) takes an
 operator like `++` and generates the type family `++` (keeping the identical
-name) and the singleton function `%++`.[^4]
+name) and the singleton function `%++`.[^5]
 
 ### A Comparison
 
@@ -774,15 +775,21 @@ If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 
-[^1]: Sorry to mix up similar metaphors like this! Definitely not intentional :)
+[^1]: All of this is ignoring the "bottom" value that is an occupant of every
+    type in Haskell. We can use bottom to subvert pretty much all proofs in
+    Haskell, unfortunately, so the discussion from this point forward assumes we
+    are talking about a subset of haskell where all values are non-bottom and
+    all functions are total.
 
-[^2]: Really, we could just use `Bool` instead of defining a `Pass` type. We're
+[^2]: Sorry to mix up similar metaphors like this! Definitely not intentional :)
+
+[^3]: Really, we could just use `Bool` instead of defining a `Pass` type. We're
     just going through a new type for the sake of example, and it can be useful
     because a type like `Pass` might potentially have even more constructors!
 
-[^3]: In the spirit of full disclosure, the Template Haskell also generates some
+[^4]: In the spirit of full disclosure, the Template Haskell also generates some
     other things (known as *defunctionalization symbols*), which we will be
     talking about in the next part of this series.
 
-[^4]: Note that this is a change since *singletons-2.4*. In previous versions,
+[^5]: Note that this is a change since *singletons-2.4*. In previous versions,
     `++` would generate the type family `:++` and the singleton function `%:++`.
