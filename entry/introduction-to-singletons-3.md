@@ -20,6 +20,14 @@ to work with these ideas in a smoother way.
 
 Code in this post is built on *GHC 8.4.3* with the
 *[lts-12.9](https://www.stackage.org/lts-12.9)* snapshot (so, singletons-2.4.1).
+Again, you can download the source for this file
+[here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs),
+and, if *stack* is installed, you can drop into a ghci session with all of the
+bindings in scope executing it:
+
+``` {.bash}
+$ ./Door3.hs
+```
 
 Review
 ------
@@ -28,16 +36,15 @@ In the first post we looked at the `Door` type, indexed with a phantom type of
 kind `DoorState`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L28-L31
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L28-L34
 
 $(singletons [d|
   data DoorState = Opened | Closed | Locked
     deriving (Show, Eq)
   |])
 
-  data DoorState = Opened | Closed | Locked
-    deriving (Show, Eq)
-  |])
+data Door :: DoorState -> Type where
+    UnsafeMkDoor :: { doorMaterial :: String } -> Door s
 ```
 
 This gives us (at least) three distinct types `Door 'Opened`, `Door 'Closed`,
@@ -475,8 +482,9 @@ Remember that type families take *types* as inputs, so we can't write:
 
 ``` {.haskell}
 knockSomeDoor :: SomeDoor -> IO ()
-knockSomeDoor (MkSomeDoor s d) = case StatePass s of
-                                  -- ...
+knockSomeDoor (MkSomeDoor s d) =
+    case StatePass s of
+      -- ...
 ```
 
 because `s`, a value, can't be given to `StatePass`.
@@ -1025,7 +1033,7 @@ Exercises
         prev Locked = Closed
     ```
 
-    Try to manually promote this instance for `DoorState` to the type level:
+    Can you manually promote this instance for `DoorState` to the type level?
 
     ``` {.haskell}
     -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L198-L207

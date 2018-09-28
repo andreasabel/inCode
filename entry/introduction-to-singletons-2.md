@@ -14,6 +14,14 @@ suggest taking some time to to through the exercises if you haven't already!
 
 Again, code is built on *GHC 8.4.3* with the
 *[lts-12.9](https://www.stackage.org/lts-12.9)* snapshot (so, singletons-2.4.1).
+All of the code is also available
+[here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs),
+and you can drop into a ghci session with all of the bindings in scope by
+executing the file:
+
+``` {.bash}
+$ ./Door2.hs
+```
 
 Review
 ------
