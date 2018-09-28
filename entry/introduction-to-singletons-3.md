@@ -18,6 +18,12 @@ Like the previous posts, we will start by writing things "by hand", and then
 jumping into the singletons library and seeing how the framework gives you tools
 to work with these ideas in a smoother way.
 
+The first half of today's post doesn't deal *directly* with the *singletons*
+library and the singleton design pattern, but, like usage of phantom types, is a
+design pattern that the usage of singletons greatly enhances. The second part of
+today's post deals directly with the lifting of functions to the type level,
+which is made practical by the usage of singletons and the *singletons* library.
+
 Code in this post is built on *GHC 8.4.3* with the
 *[lts-12.9](https://www.stackage.org/lts-12.9)* snapshot (so, singletons-2.4.1).
 Again, you can download the source for this file
@@ -810,6 +816,12 @@ questions in the comments, or in freenode `#haskell`, where I idle as *jle\`*!
 
 Exercises
 ---------
+
+Here are some exercises to help cement your understanding of the concepts here!
+Feel free to start from [the sample source
+code](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs);
+it contains all of the solutions, but you can delete everything after the
+comment `-- Exercises` if you wish to start on your own!
 
 1.  We talk about predicates as type constructors with type `k -> Type`. This
     fits a lot of things we've seen before (all instances of `Functor`, for
