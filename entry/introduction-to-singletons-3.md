@@ -814,7 +814,7 @@ Exercises
     What is the type of its *decision function*? Can you implement it?
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L100-L105).
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L100-L105)!
 
 2.  (This next one is a little hard, and is only tangentially related to
     singletons, so feel free to skip it!)
@@ -870,7 +870,7 @@ Exercises
         ```
 
     Solutions available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L107-L136).
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L107-L136)!
 
 3.  Instead of creating an entire `Knocked` type, we could have just said "as
     long as the door is not `'Opened`, you can knock". This means we could write
@@ -903,7 +903,7 @@ Exercises
     ```
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L138-L144).
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L138-L144)!
 
     *Note:* `knockedRefute` is fairly straightforward, but `knockedRefute` is
     definitely trickier, so don't be discouraged!
@@ -961,7 +961,7 @@ Exercises
     ```
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L155-L164).
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L155-L164)!
 
 5.  With the function that inverts `Pass`:
 
@@ -996,7 +996,7 @@ Exercises
     Again, implement it in terms of `knockInv`, not `knock`.
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L172-L181).
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L172-L181)!
 
 6.  Let's work with a toy typeclass called `Cycle`, based on `Enum`
 
@@ -1027,12 +1027,16 @@ Exercises
 
     Try to manually promote this instance for `DoorState` to the type level:
 
-    \`\`\`\`haskell -- source:
-    https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L198-L201
+    ``` {.haskell}
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L198-L207
 
     instance PCycle DoorState where
 
-    instance SCycle DoorState \`\`\`
+    instance SCycle DoorState where
+    ```
+
+    Solution available
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L189-L216)!
 
 --------------------------------------------------------------------------------
 
