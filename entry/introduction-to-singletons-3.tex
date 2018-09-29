@@ -107,12 +107,11 @@ on types. Like the previous posts, we will start by writing things ``by hand'',
 and then jumping into the singletons library and seeing how the framework gives
 you tools to work with these ideas in a smoother way.
 
-The first half of today's post doesn't deal \emph{directly} with the
-\emph{singletons} library and the singleton design pattern, but, like usage of
-phantom types, is a design pattern that the usage of singletons greatly
-enhances. The second part of today's post deals directly with the lifting of
-functions to the type level, which is made practical by the usage of singletons
-and the \emph{singletons} library.
+The first half of today's post will introduce a new application and design
+pattern that the usage of singletons greatly enhances. The second part of
+today's post deals directly with the lifting of functions to the type level,
+which is made practical by the usage of singletons and the \emph{singletons}
+library.
 
 Code in this post is built on \emph{GHC 8.4.3} with the
 \emph{\href{https://www.stackage.org/lts-12.9}{lts-12.9}} snapshot (so,
@@ -215,9 +214,13 @@ types of restrictions that might be more complicated than just ``cannot be
 \hypertarget{dependently-typed-proofs}{%
 \section{Dependently Typed Proofs}\label{dependently-typed-proofs}}
 
-One way to do this is with a dependently-typed ``proof'' that an operation is
-legal. \emph{Proofs} (in the dependently typed/constructivist/Curry-Howard
-sense) are witnesses to some type-level predicate or proposition.
+To look at our first way of tackling this restriction problem, we're going to
+explore a very fun \emph{new application} of singletons and DataKinds. Hooray!
+
+This new application is the usage of the dependently-typed ``proof'' to prove
+that an operation is legal. \emph{Proofs} (in the dependently
+typed/constructivist/Curry-Howard sense) are witnesses to some type-level
+predicate or proposition.
 
 A \textbf{value-level predicate} in Haskell is (generally) a function of type
 \texttt{a\ -\textgreater{}\ Bool}. Given a value of type \texttt{a}, if the
@@ -360,13 +363,13 @@ Where:
 \texttt{Decision\ a} is like a \texttt{Maybe\ a}, except instead of
 \texttt{Nothing}, we include a proof that the predicate is \emph{not} true.
 
-For those unfamiliar with the \texttt{a\ -\textgreater{}\ Void} idiom (often
-called \texttt{Not\ a}, or \texttt{Refuted\ a}),
-\texttt{a\ -\textgreater{}\ Void} is a type we use in Haskell to represent the
-fact that it is impossible to construct a value of type \texttt{a}. That's
+The \texttt{a\ -\textgreater{}\ Void} idiom (often called \texttt{Not\ a}, or
+\texttt{Refuted\ a}) is type we use in Haskell and other languages to represent
+the fact that it is impossible to construct a value of type \texttt{a}. That's
 because if you could, then you could give it to an
 \texttt{a\ -\textgreater{}\ Void} to get a value of type \texttt{Void}, which is
-impossible to have.
+impossible to have. So, if a possible function \texttt{a\ -\textgreater{}\ Void}
+exists, it necessarily means that a value of type \texttt{a} cannot exist.
 
 It's a lot to handle all at once, so let's look at an example. Is
 \texttt{Knockable} a decidable predicate? Yes!
@@ -807,12 +810,12 @@ We went over two methods of using phantom types with the singleton library and
 dependent types to restrict how certain functions can be called, on a more
 non-trivial level.
 
-Our first method was using ``dependently typed proofs''. These are useful
-because they are constructed to exploit the ``structure'' of the types you
-create. Essentially, we create a data type (predicate) in a way so that it is
-impossible to create an ``invalid'' proof. And, often, if we write our proofs in
-a clever enough way, we can actually use and combine proofs to generate new
-proofs.
+Our first method was using a new application of singletons and DataKinds,
+``dependently typed proofs''. These are useful because they are constructed to
+exploit the ``structure'' of the types you create. Essentially, we create a data
+type (predicate) in a way so that it is impossible to create an ``invalid''
+proof. And, often, if we write our proofs in a clever enough way, we can
+actually use and combine proofs to generate new proofs.
 
 Personally, I find this to be the source of a lot of the ``fun'' of dependently
 typed programming --- our proofs become first class values, and if we define
