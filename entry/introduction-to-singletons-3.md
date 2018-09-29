@@ -23,9 +23,9 @@ pattern that the usage of singletons greatly enhances. The second part of
 today's post deals directly with the lifting of functions to the type level,
 which is made practical by the usage of singletons and the *singletons* library.
 
-Code in this post is built on *GHC 8.4.3* with the
-*[lts-12.9](https://www.stackage.org/lts-12.9)* snapshot (so, singletons-2.4.1).
-Again, you can download the source for this file
+Code in this post is built on *GHC 8.6.1* with the
+*[nightly-2018-09-29](https://www.stackage.org/nightly-2018-09-29)* snapshot
+(so, singletons-2.5). Again, you can download the source for this file
 [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs),
 and, if *stack* is installed, you can drop into a ghci session with all of the
 bindings in scope executing it:
@@ -41,7 +41,7 @@ In the first post we looked at the `Door` type, indexed with a phantom type of
 kind `DoorState`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L28-L34
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L29-L35
 
 $(singletons [d|
   data DoorState = Opened | Closed | Locked
@@ -65,7 +65,7 @@ through many "analogous" and equivalent type, we arrived at the existential
 wrapper `SomeDoor`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L36-L41
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L37-L42
 
 data SomeDoor :: Type where
     MkSomeDoor :: Sing s -> Door s -> SomeDoor
@@ -133,7 +133,7 @@ We can define a predicate `Knockable :: DoorState -> Type` as a GADT that only
 has values if given `'Closed` and `'Locked`, but not `'Opened`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L43-L45
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L44-L46
 
 data Knockable :: DoorState -> Type where
     KnockClosed :: Knockable 'Closed
@@ -148,7 +148,7 @@ Well, we can make a version of `knock` that requires a proof that `s` is
 `Knockable`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L47-L48
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L48-L49
 
 knock :: Knockable s -> Door s -> IO ()
 knock _ d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
@@ -172,7 +172,7 @@ We can even make it more seamless to use by auto-generating proofs at
 compile-time, with a general class like `Auto`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L50-L57
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L51-L58
 
 class Provable p a where
     auto :: p a
@@ -254,7 +254,7 @@ cases.
 Are you ready? Here's a solution:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L59-L63
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L60-L64
 
 isKnockable :: Sing s -> Decision (Knockable s)
 isKnockable = \case
@@ -276,7 +276,7 @@ no such type could possibly exist. We do this by providing a function of type
 We can write it like this:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L65-L66
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L66-L67
 
 disproveOpened :: Knockable 'Opened -> Void
 disproveOpened k = case k of {}             -- empty pattern match
@@ -304,7 +304,7 @@ We can use this decision function, finally, to handle an arbitrary `Door` whose
 status we not know until runtime:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L68-L73
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L69-L74
 
 knockSomeDoor
     :: SomeDoor     -- ^ status not known until you pattern match at runtime
@@ -457,7 +457,7 @@ make sense in "fully applied" form, with all arguments given syntactically.
 Armed with this type family, we can write a new version of `knock`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L85-L86
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L86-L87
 
 knockP :: (StatePass s ~ 'Obstruct) => Door s -> IO ()
 knockP d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
@@ -532,7 +532,7 @@ type family it's mirroring.
 With our new tool, we can now write:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L88-L93
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L89-L94
 
 knockSomeDoorP
     :: SomeDoor     -- ^ status not known until you pattern match at runtime
@@ -839,7 +839,7 @@ comment `-- Exercises` if you wish to start on your own!
     What is the type of its *decision function*? Can you implement it?
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L100-L105)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L101-L106)!
 
 2.  (This next one is a little hard, and is only tangentially related to
     singletons, so feel free to skip it!)
@@ -853,7 +853,7 @@ comment `-- Exercises` if you wish to start on your own!
         have inhabitants)
 
         ``` {.haskell}
-        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L108-L108
+        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L109-L109
 
             And :: p a -> q a -> And p q a
         ```
@@ -864,7 +864,7 @@ comment `-- Exercises` if you wish to start on your own!
         are true (aka, have inhabitants)
 
         ``` {.haskell}
-        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L111-L111
+        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L112-L112
 
             OrLeft  :: p a -> Or p q a
         ```
@@ -879,7 +879,7 @@ comment `-- Exercises` if you wish to start on your own!
         are. Can we write the decision functions?
 
         ``` {.haskell}
-        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L114-L129
+        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L115-L130
 
         decideAnd
             :: (forall x. Sing x -> Decision (p x))
@@ -895,7 +895,7 @@ comment `-- Exercises` if you wish to start on your own!
         ```
 
     Solutions available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L107-L136)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L108-L137)!
 
 3.  Instead of creating an entire `Knocked` type, we could have just said "as
     long as the door is not `'Opened`, you can knock". This means we could write
@@ -914,7 +914,7 @@ comment `-- Exercises` if you wish to start on your own!
     is the same as `Knockable`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L138-L141
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L139-L142
 
     knockedRefute
         :: forall s. SingI s
@@ -928,7 +928,7 @@ comment `-- Exercises` if you wish to start on your own!
     ```
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L138-L144)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L139-L145)!
 
     *Note:* `knockedRefute` is fairly straightforward, but `knockedRefute` is
     definitely trickier, so don't be discouraged!
@@ -952,7 +952,7 @@ comment `-- Exercises` if you wish to start on your own!
     constraint instead:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L155-L156
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L156-L157
 
     knockRefl :: (StatePass s :~: 'Obstruct) -> Door s -> IO ()
     knockRefl _ d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
@@ -962,7 +962,7 @@ comment `-- Exercises` if you wish to start on your own!
     `knockSomeDoorRefl`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L158-L161
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L159-L162
 
     knockSomeDoorRefl
         :: SomeDoor
@@ -973,7 +973,7 @@ comment `-- Exercises` if you wish to start on your own!
     Remember not to use `knock`!
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L155-L164).
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L156-L165).
 
     Assume that `DoorState` has an instance of `SDecide`, so you can use `(%~)`.
     This should be derived automatically as long as you derive `Eq`:
@@ -986,7 +986,7 @@ comment `-- Exercises` if you wish to start on your own!
     ```
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L155-L164)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L156-L165)!
 
 5.  With the function that inverts `Pass`:
 
@@ -1001,7 +1001,7 @@ comment `-- Exercises` if you wish to start on your own!
     Implement `knock` in a way that lets you knock if `invertPass` is `Allow`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L172-L173
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L173-L174
 
     knockInv :: (InvertPass (StatePass s) ~ 'Allow) => Door s -> IO ()
     knockInv d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
@@ -1010,7 +1010,7 @@ comment `-- Exercises` if you wish to start on your own!
     And write `knockSomeDoor` in terms of it:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L175-L178
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L176-L179
 
     knockSomeDoorInv
         :: SomeDoor
@@ -1021,7 +1021,7 @@ comment `-- Exercises` if you wish to start on your own!
     Again, implement it in terms of `knockInv`, not `knock`.
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L172-L181)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L173-L182)!
 
 6.  Let's work with a toy typeclass called `Cycle`, based on `Enum`
 
@@ -1038,7 +1038,7 @@ comment `-- Exercises` if you wish to start on your own!
     pred-ing the first item
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L189-L196
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L190-L197
 
     instance Cycle DoorState where
         next Opened = Closed
@@ -1053,7 +1053,7 @@ comment `-- Exercises` if you wish to start on your own!
     Can you manually promote this instance for `DoorState` to the type level?
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L198-L207
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L199-L208
 
     instance PCycle DoorState where
 
@@ -1061,7 +1061,7 @@ comment `-- Exercises` if you wish to start on your own!
     ```
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L189-L216)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L190-L217)!
 
 --------------------------------------------------------------------------------
 

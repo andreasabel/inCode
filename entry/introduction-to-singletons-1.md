@@ -39,8 +39,9 @@ neural
 networks](https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html)
 series, but the concepts are introduced in different contexts.
 
-All code is built on *GHC 8.4.3* and with the
-*[lts-12.9](https://www.stackage.org/lts-12.9)* snapshot (so, singletons-2.4.1).
+All code is built on *GHC 8.6.1* and with the
+*[nightly-2018-09-29](https://www.stackage.org/nightly-2018-09-29)* snapshot
+(so, singletons-2.5).
 
 The content in the first section of this post, describing the singleton design
 pattern, uses the following extensions:
@@ -658,7 +659,7 @@ data DoorState = Opened | Closed | Locked
 genSingletons [''DoorState]
 
 -- or
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L20-L23
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L21-L24
 
 $(singletons [d|
   data DoorState = Opened | Closed | Locked
@@ -838,7 +839,7 @@ for a comparison, if you are still unfamiliar.
     (as a password).
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L63-L63
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L64-L64
 
     unlockDoor :: Int -> Door 'Locked -> Maybe (Door 'Closed)
     ```
@@ -850,7 +851,7 @@ for a comparison, if you are still unfamiliar.
     Sing" style:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L68-L68
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L69-L69
 
     openAnyDoor :: SingI s => Int -> Door s -> Maybe (Door 'Opened)
     ```

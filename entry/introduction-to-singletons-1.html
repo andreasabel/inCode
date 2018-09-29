@@ -21,7 +21,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>I definitely am writing this post with the hope that it will be obsolete in a year or two. When dependent types come to Haskell, singletons will be nothing more than a painful historical note. But for now, singletons might be the best way to get your foot into the door and experience the thrill and benefits of dependently typed programming <em>today</em>!</p>
 <h3 id="prerequisites">Prerequisites</h3>
 <p>These posts will assume no knowledge of dependent types, and, for now, only basic to intermediate Haskell knowledge (Types, kinds, typeclasses, data types, functions). The material in this post <em>overlaps</em> with my <a href="https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html">dependently typed neural networks</a> series, but the concepts are introduced in different contexts.</p>
-<p>All code is built on <em>GHC 8.4.3</em> and with the <em><a href="https://www.stackage.org/lts-12.9">lts-12.9</a></em> snapshot (so, singletons-2.4.1).</p>
+<p>All code is built on <em>GHC 8.6.1</em> and with the <em><a href="https://www.stackage.org/nightly-2018-09-29">nightly-2018-09-29</a></em> snapshot (so, singletons-2.5).</p>
 <p>The content in the first section of this post, describing the singleton design pattern, uses the following extensions:</p>
 <ul>
 <li>DataKinds</li>
@@ -316,7 +316,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb33-4" data-line-number="4">genSingletons [&#39;&#39;<span class="dt">DoorState</span>]</a>
 <a class="sourceLine" id="cb33-5" data-line-number="5"></a>
 <a class="sourceLine" id="cb33-6" data-line-number="6"><span class="co">-- or</span></a>
-<a class="sourceLine" id="cb33-7" data-line-number="7"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L20-L23</span></a>
+<a class="sourceLine" id="cb33-7" data-line-number="7"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L21-L24</span></a>
 <a class="sourceLine" id="cb33-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb33-9" data-line-number="9"><span class="fu">$</span>(singletons [d|</a>
 <a class="sourceLine" id="cb33-10" data-line-number="10">  data DoorState = Opened | Closed | Locked</a>
@@ -382,12 +382,12 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>These should be written in the singletons library style, with <code>Sing</code> instead of <code>SingDS</code> and <code>SingI</code> instead of <code>SingDSI</code>. Review the <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs">singletons file</a> for a comparison, if you are still unfamiliar.</p>
 <ol type="1">
 <li><p>Write a function to unlock a door, but only if the user enters an odd number (as a password).</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L63-L63</span></a>
+<div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L64-L64</span></a>
 <a class="sourceLine" id="cb42-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb42-3" data-line-number="3"><span class="ot">unlockDoor ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> &#39;<span class="dt">Locked</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> &#39;<span class="dt">Closed</span>)</a></code></pre></div>
 <p>It should return a closed door in <code>Just</code> if the caller gives an odd number, or <code>Nothing</code> otherwise.</p></li>
 <li><p>Write a function that can open any door, taking a password, in “implicit Sing” style:</p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L68-L68</span></a>
+<div class="sourceCode" id="cb43"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/DoorSingletons.hs#L69-L69</span></a>
 <a class="sourceLine" id="cb43-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb43-3" data-line-number="3"><span class="ot">openAnyDoor ::</span> <span class="dt">SingI</span> s <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Door</span> &#39;<span class="dt">Opened</span>)</a></code></pre></div>
 <p>This should be written in terms of <code>unlockDoor</code> and <code>openDoor</code> (see above) – that is, you <strong>should not</strong> use <code>UnsafeMkDoor</code> directly for <code>openAnyDoor</code>.</p>
