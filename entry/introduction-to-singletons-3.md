@@ -112,7 +112,7 @@ Dependently Typed Proofs
 ------------------------
 
 To look at our first way of tackling this restriction problem, we're going to
-explore a very fun *new application* of singletons and DataKinds. Hooray!
+explore a fun *new application* of singletons and DataKinds.
 
 This new application is the usage of the dependently-typed "proof" to prove that
 an operation is legal. *Proofs* (in the dependently
@@ -159,12 +159,12 @@ why? There is no way to call `knock` with `s ~ 'Opened`...because there is no
 way to pass a value of `Knockable 'Opened`. No such value exists! There's no
 compiler error because it's "not even wrong"!
 
-This works well if we want to do things at compile-time
-
 ``` {.haskell}
 ghci> knock KnockClosed (UnsafeMkDoor @'Closed "Birch")
 Knock knock on Birch door!
 ```
+
+This works well if we want to do things at compile-time
 
 ### Let the compiler prove it for you
 
@@ -344,7 +344,7 @@ function to generate these proofs (or prove that they are impossible) for given
 types.
 
 On one level, you can think of proofs as "compiler tricks", or things that exist
-only to appease the compiler. In fact, Compilers of languages that encourage
+only to appease the compiler. In fact, compilers of languages that encourage
 heavy usage of proofs (like Agda, Coq, Idris) actually implement something
 called *proof erasure*. That is, in those languages, values like `KnockClosed`
 and `KnockLocked` might never exist at runtime, since they never actually *do*
