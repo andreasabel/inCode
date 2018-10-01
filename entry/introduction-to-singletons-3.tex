@@ -100,12 +100,12 @@ design pattern}, and the great
 This post will be a continuation of
 \href{https://blog.jle.im/entry/introduction-to-singletons-1.html}{Part 1} and
 \href{https://blog.jle.im/entry/introduction-to-singletons-2.html}{Part 2}, so
-if you haven't read those first, now would be a good time to pause and do so and
-also work on some of the exercises. Today we will be expanding on the ideas in
-those posts by working with more complex ways to \emph{restrict functions} based
-on types. Like the previous posts, we will start by writing things ``by hand'',
-and then jumping into the singletons library and seeing how the framework gives
-you tools to work with these ideas in a smoother way.
+if you haven't read those first, now would be a good time to pause and do so
+(and also try to complete the exercises). Today we will be expanding on the
+ideas in those posts by working with more complex ways to \emph{restrict
+functions} based on types. Like the previous posts, we will start by writing
+things ``by hand'', and then jumping into the singletons library and seeing how
+the framework gives you tools to work with these ideas in a smoother way.
 
 The first half of today's post will introduce a new application and design
 pattern that the usage of singletons greatly enhances. The second part of
@@ -115,7 +115,9 @@ library.
 
 Code in this post is built on \emph{GHC 8.6.1} with the
 \emph{\href{https://www.stackage.org/nightly-2018-09-29}{nightly-2018-09-29}}
-snapshot (so, singletons-2.5). Again, you can download the source for this file
+snapshot (so, \emph{singletons-2.5}). However, unless noted, all of the code
+should still work with \emph{GHC 8.4} and \emph{singletons-2.4}. Again, you can
+download the source for this file
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs}{here},
 and, if \emph{stack} is installed, you can drop into a ghci session with all of
 the bindings in scope executing it:
@@ -178,11 +180,14 @@ wrapper \texttt{SomeDoor}:
 that we can pattern match at runtime to determine what the original \texttt{s}
 was.)
 
-Finally, we talked a bit about the ``unified'' singleton system that the
-\emph{singleton} library offers. This included things like \texttt{SingI} to
-implicitly pass singletons, and the \texttt{SingKind} kind-class that associates
-types with their lifted kinds and lets you reify and reflect with functions like
-\texttt{withSomeSing} and \texttt{fromSing}.
+For the rest of this post, \texttt{SomeDoor} will essentially be used as a
+stand-in for a \texttt{Door\ s} that we do not know the state (the \texttt{s})
+of until runtime, because to use a \texttt{SomeDoor}, we pattern-match at
+runtime. In general you'll encounter types at runtime in a variety of different
+situations (discussed more deeply in
+\href{https://blog.jle.im/entry/introduction-to-singletons-2.html}{Part 2}), but
+\texttt{SomeDoor} is a nice nugget that we can examine to demonstrate more
+general points.
 
 \hypertarget{a-need-for-more-expressive-restrictions}{%
 \section{A Need for More Expressive
@@ -198,12 +203,12 @@ Let's write a function that ``knocks'' on a door in IO:
 \end{Shaded}
 
 Hm. This doesn't feel right. We can't knock on an opened door..can we? Is there
-a way we can restrict this function to only work on \emph{opened} doors? Or,
+a way we can restrict this function to only work on \emph{non-opened} doors? Or,
 more generally, is there a way to be more expressive in the manner in which we
 can restrict functions?
 
 There are a couple of ways of doing this --- we're going to look at two possible
-ways involving singletons and the \emph{singletons} library. Both of these
+ways that singletons and the \emph{singletons} library help with. Both of these
 methods allow us to write dependently typed functions that are ``type-safe'' in
 more expressive ways than before.
 
@@ -220,7 +225,7 @@ explore a fun \emph{new application} of singletons and DataKinds.
 This new application is the usage of the dependently-typed ``proof'' to prove
 that an operation is legal. \emph{Proofs} (in the dependently
 typed/constructivist/Curry-Howard sense) are witnesses to some type-level
-predicate or proposition.
+\emph{predicate} or proposition.
 
 A \textbf{value-level predicate} in Haskell is (generally) a function of type
 \texttt{a\ -\textgreater{}\ Bool}. Given a value of type \texttt{a}, if the
@@ -335,7 +340,8 @@ called ``decidability''. We say that a predicate is \emph{decidable} if, for any
 input type, we can say whether or not the predicate is satisfiable.
 
 We say that a predicate \texttt{P} in Haskell is \emph{decidable} if we can
-write:
+always prove, for any input, if the predicate holds or does not hold.
+Concretely, it means that we can write a total function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -445,6 +451,8 @@ If you include either of those patterns, GHC will complain. So, there is no
 valid pattern to match on\ldots{} so
 \texttt{disproveOpened\ =\ \textbackslash{}case\ \{\}} is enough to write the
 function \texttt{Knockable\ \textquotesingle{}Opened\ -\textgreater{}\ Void}.
+This only works because \texttt{disproveOpened} is a \textbf{complete pattern
+match}, and therefore total.
 
 We can use this decision function, finally, to handle an arbitrary \texttt{Door}
 whose status we not know until runtime:
@@ -476,12 +484,12 @@ like we only ever use the true situation? After all, we ignore the
 \texttt{Refuted\ (Knockable\ s)} in our implementation of
 \texttt{knockSomeDoor}.
 
-One answer is that, we \emph{do} use the contents of \texttt{Disproved} in
+One answer is that we \emph{do} use the contents of \texttt{Disproved} in
 practice. In \texttt{knockSomeDoor}, we matched on \texttt{Disproved\ \_} and
 threw away the counter-proof\ldots{}however, as we see later in the exercises,
 there are situations where the contents of \texttt{Disproved} are used.
 
-However, the deeper answer to me is that it keeps the author of the function
+However, a deeper answer to me is that it keeps the author of the function
 accountable. You can't just say ``this predicate isn't true''\ldots{}you have to
 \emph{earn} it. And often, the act of trying to earn your disproof (or not being
 able to) helps you iron out bad assumptions you've made.
@@ -576,7 +584,9 @@ to limit or enable specific programs from compiling, and serve no purpose after
 compilation. GHC Haskell does not implement proof erasure at the time of this
 post (current GHC version 8.6), but if proofs like this become commonplace, you
 might be reading this during a time where GHC Haskell erases proofs like
-\texttt{Knockable} witnesses!
+\texttt{Knockable} witnesses!\footnote{Note, however, that we are a little lucky
+  in our case. In the case of our implementation of \texttt{knock}, we match on
+  a wildcard pattern, so the input proof is never evaluated.}
 
 \hypertarget{the-role-of-singletons}{%
 \subsection{The Role of Singletons}\label{the-role-of-singletons}}
@@ -685,7 +695,7 @@ family}) from \texttt{DoorState} to a \texttt{Pass}:
 \end{Shaded}
 
 We've briefly touched on type families before (in talking about
-\texttt{SingKind}), but, for a quick review, type families act a bit like
+\texttt{SingKind}), but, as a quick review: type families act a bit like
 type-level functions. They take types as input arguments and return types in
 return.
 
@@ -717,10 +727,10 @@ Armed with this type family, we can write a new version of \texttt{knock}:
 
 \texttt{a\ \textasciitilde{}\ b} is a constraint for \emph{type equality}. This
 constraint means that calling \texttt{knock} requires that \texttt{StatePass\ s}
-being \emph{equal} to \texttt{\textquotesingle{}Allow}. So, if attempt to call
-\texttt{knock} with a \texttt{\textquotesingle{}Locked} door,
-\texttt{StatePass\ \textquotesingle{}Locked} is
-\texttt{\textquotesingle{}Allow}, so the constraint is satisfied and everyone is
+is \emph{equal to} (or unifies with) \texttt{\textquotesingle{}Allow}. So, if we
+attempt to call \texttt{knock} with a \texttt{\textquotesingle{}Locked} door,
+then because \texttt{StatePass\ \textquotesingle{}Locked} is
+\texttt{\textquotesingle{}Allow}, the constraint is satisfied and everyone is
 happy. If we attempt to call \texttt{knock} with an
 \texttt{\textquotesingle{}Opened} door,
 \texttt{StatePass\ \textquotesingle{}Opened} is
@@ -744,8 +754,8 @@ everyone is sad.
 \subsection{Deciding at Runtime}\label{deciding-at-runtime}}
 
 One nice thing is that, if we know \texttt{s} at compile-time, we can call this
-function without having to pass any manual proofs. However, how can we run into
-the same issue as before --- what happens if we don't know \texttt{s} until
+function without having to pass any manual proofs. However, we have to deal with
+the same issue as before: what happens if we don't know \texttt{s} until
 runtime? How do we prove to the compiler that \texttt{Passable\ s} is
 \texttt{\textquotesingle{}Allow}?
 
@@ -880,12 +890,12 @@ We went over two methods of using phantom types with the singleton library and
 dependent types to restrict how certain functions can be called, on a more
 non-trivial level.
 
-Our first method was using a new application of singletons and DataKinds,
-``dependently typed proofs''. These are useful because they are constructed to
-exploit the ``structure'' of the types you create. Essentially, we create a data
-type (predicate) in a way so that it is impossible to create an ``invalid''
-proof. And, often, if we write our proofs in a clever enough way, we can
-actually use and combine proofs to generate new proofs.
+Our first method was leveraging ``dependently typed proofs''. These are useful
+because they are constructed to exploit the ``structure'' of the types you
+create. Essentially, we create a data type (predicate) in a way so that it is
+impossible to create an ``invalid'' proof. And, often, if we write our proofs in
+a clever enough way, we can actually use and combine proofs to generate new
+proofs. (More examples in the exercises)
 
 Personally, I find this to be the source of a lot of the ``fun'' of dependently
 typed programming --- our proofs become first class values, and if we define
@@ -905,10 +915,11 @@ even made simpler with singletons --- you can just write your term-level
 relationship as a normal function, and you can now just directly use your
 function at the type level.
 
-In fact, consider if there were more than two \texttt{Pass} --- for example,
-allow, obstruct, or partial. In that case, we can restrict a function based on
-the \texttt{Pass} being equal to any of the three or more. Using the dependently
-typed proof version, we would have to create a new GADT for each one.
+In fact, consider if there were more than two \texttt{Pass} (maybe allow,
+obstruct, or partial?). In that case, we can easily restrict a function based on
+the \texttt{Pass} being equal to any of the three or more by using the
+\texttt{\textasciitilde{}} constraint. Using the dependently typed proof
+version, though, we would have to create a new GADT for each situation.
 
 In a way, type-level functions deliver on the promise of blurring the line
 between type and value. Our term-level functions are now type-level functions!
@@ -1006,8 +1017,7 @@ example:
 \end{Highlighting}
 \end{Shaded}
 
-The \emph{singletons} library would promote this (and you can do this using the
-same template haskell splices we've been using this entire time, too) as:
+The \emph{singletons} library promotes this as:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1123,8 +1133,7 @@ with both easier.
 
 When we first looked at the idea of phantom type parameters, using them to
 \emph{restrict} how functions are called was definitely one of the promises I
-made. I think, at this point, we've gone over a good portion of how this promise
-is fulfilled in practice.
+made. By now, this promise has hopefully been fully realized.
 
 However, the \emph{other} promise we made about the usefulness of phantom type
 parameters is that we can use them be more expressive in what our functions do.
@@ -1290,10 +1299,42 @@ matches!
     incorrectly define \texttt{decideAnd} and \texttt{decideOr}. You can't
     accidentally say false when it's true, or true when it's false --- your
     implementation is guarunteed correct.
+  \item
+    Now let's use \texttt{And} and \texttt{Or} to prove some useful facts about
+    \texttt{Knockable} and
+    \texttt{(\textquotesingle{}Opened\ :\textasciitilde{}:)}. We know that it's
+    impossible for something to be both \texttt{Knockable} \emph{and}
+    \texttt{(\textquotesingle{}Opened\ :\textasciitilde{}:)} (that is, both
+    knockable \emph{and} equal to \texttt{\textquotesingle{}Opened}). Write such
+    a witness:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L150-L152}
+
+\NormalTok{knockableNotOpened}
+\OtherTok{    ::}\NormalTok{ forall s}\FunctionTok{.} \DataTypeTok{SingI}\NormalTok{ s}
+    \OtherTok{=>} \DataTypeTok{Refuted}\NormalTok{ (}\DataTypeTok{And} \DataTypeTok{Knockable}\NormalTok{ ((}\FunctionTok{:~:}\NormalTok{) '}\DataTypeTok{Opened}\NormalTok{) s)}
+\end{Highlighting}
+\end{Shaded}
+
+    We also know that a given \texttt{DoorState} is either \texttt{Knockable} or
+    \texttt{(\textquotesingle{}Opened\ :\textasciitilde{}:)}\ldots{}there's no
+    in-between. Write such a witness:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L158-L160}
+
+\NormalTok{knockableOrOpened}
+\OtherTok{    ::}\NormalTok{ forall s}\FunctionTok{.} \DataTypeTok{SingI}\NormalTok{ s}
+    \OtherTok{=>} \DataTypeTok{Or} \DataTypeTok{Knockable}\NormalTok{ ((}\FunctionTok{:~:}\NormalTok{) '}\DataTypeTok{Opened}\NormalTok{) s}
+\end{Highlighting}
+\end{Shaded}
   \end{enumerate}
 
   Solutions available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L119-L148}{here}!
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L119-L165}{here}!
 \item
   Instead of creating an entire \texttt{Knocked} type, we could have just said
   ``as long as the door is not \texttt{\textquotesingle{}Opened}, you can
@@ -1319,7 +1360,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L151-L162}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L168-L179}
 
 \NormalTok{knockedRefute}
 \OtherTok{    ::}\NormalTok{ forall s}\FunctionTok{.} \DataTypeTok{SingI}\NormalTok{ s}
@@ -1334,7 +1375,7 @@ matches!
 \end{Shaded}
 
   Solution available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L151-L166}{here}!
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L168-L183}{here}!
 
   \emph{Note:} \texttt{knockedRefute} is fairly straightforward, but
   \texttt{refuteKnocked} is definitely trickier, so don't be discouraged!
@@ -1356,7 +1397,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L169-L170}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L186-L187}
 
 \OtherTok{knockRefl ::}\NormalTok{ (}\DataTypeTok{StatePass}\NormalTok{ s }\FunctionTok{:~:}\NormalTok{ '}\DataTypeTok{Obstruct}\NormalTok{) }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{knockRefl _ d }\FunctionTok{=}\NormalTok{ putStrLn }\FunctionTok{$} \StringTok{"Knock knock on "} \FunctionTok{++}\NormalTok{ doorMaterial d }\FunctionTok{++} \StringTok{" door!"}
@@ -1368,7 +1409,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L172-L175}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L189-L192}
 
 \NormalTok{knockSomeDoorRefl}
 \OtherTok{    ::} \DataTypeTok{SomeDoor}
@@ -1380,7 +1421,7 @@ matches!
   Remember not to use \texttt{knock}!
 
   Solution available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L169-L178}{here}.
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L186-L195}{here}.
 
   Assume that \texttt{DoorState} has an instance of \texttt{SDecide}, so you can
   use \texttt{(\%\textasciitilde{})}. This should be derived automatically as
@@ -1412,7 +1453,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L187-L188}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L204-L205}
 
 \OtherTok{knockInv ::}\NormalTok{ (}\DataTypeTok{InvertPass}\NormalTok{ (}\DataTypeTok{StatePass}\NormalTok{ s) }\FunctionTok{~}\NormalTok{ '}\DataTypeTok{Allow}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{knockInv d }\FunctionTok{=}\NormalTok{ putStrLn }\FunctionTok{$} \StringTok{"Knock knock on "} \FunctionTok{++}\NormalTok{ doorMaterial d }\FunctionTok{++} \StringTok{" door!"}
@@ -1423,7 +1464,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L190-L193}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L207-L210}
 
 \NormalTok{knockSomeDoorInv}
 \OtherTok{    ::} \DataTypeTok{SomeDoor}
@@ -1436,7 +1477,7 @@ matches!
   \texttt{knock}.
 
   Solution available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L187-L196}{here}!
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L204-L213}{here}!
 \item
   Let's work with a toy typeclass called \texttt{Cycle}, based on \texttt{Enum}
 
@@ -1456,7 +1497,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L205-L212}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L222-L229}
 
 \KeywordTok{instance} \DataTypeTok{Cycle} \DataTypeTok{DoorState} \KeywordTok{where}
 \NormalTok{    next }\DataTypeTok{Opened} \FunctionTok{=} \DataTypeTok{Closed}
@@ -1474,7 +1515,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L214-L223}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L231-L240}
 
 \KeywordTok{instance} \DataTypeTok{PCycle} \DataTypeTok{DoorState} \KeywordTok{where}
 
@@ -1483,7 +1524,7 @@ matches!
 \end{Shaded}
 
   Solution available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L205-L232}{here}!
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L222-L249}{here}!
 \end{enumerate}
 
 \hypertarget{signoff}{%

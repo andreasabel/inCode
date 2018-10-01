@@ -11,8 +11,8 @@ design pattern*, and the great
 This post will be a continuation of [Part
 1](https://blog.jle.im/entry/introduction-to-singletons-1.html) and [Part
 2](https://blog.jle.im/entry/introduction-to-singletons-2.html), so if you
-haven't read those first, now would be a good time to pause and do so and also
-work on some of the exercises. Today we will be expanding on the ideas in those
+haven't read those first, now would be a good time to pause and do so (and also
+try to complete the exercises). Today we will be expanding on the ideas in those
 posts by working with more complex ways to *restrict functions* based on types.
 Like the previous posts, we will start by writing things "by hand", and then
 jumping into the singletons library and seeing how the framework gives you tools
@@ -25,7 +25,9 @@ which is made practical by the usage of singletons and the *singletons* library.
 
 Code in this post is built on *GHC 8.6.1* with the
 *[nightly-2018-09-29](https://www.stackage.org/nightly-2018-09-29)* snapshot
-(so, singletons-2.5). Again, you can download the source for this file
+(so, *singletons-2.5*). However, unless noted, all of the code should still work
+with *GHC 8.4* and *singletons-2.4*. Again, you can download the source for this
+file
 [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs),
 and, if *stack* is installed, you can drop into a ghci session with all of the
 bindings in scope executing it:
@@ -78,11 +80,12 @@ mkSomeDoor ds mat = withSomeSing ds $ \dsSing ->
 (We must be careful to pack the `Sing s` with the `Door s`, so that we can
 pattern match at runtime to determine what the original `s` was.)
 
-Finally, we talked a bit about the "unified" singleton system that the
-*singleton* library offers. This included things like `SingI` to implicitly pass
-singletons, and the `SingKind` kind-class that associates types with their
-lifted kinds and lets you reify and reflect with functions like `withSomeSing`
-and `fromSing`.
+For the rest of this post, `SomeDoor` will essentially be used as a stand-in for
+a `Door s` that we do not know the state (the `s`) of until runtime, because to
+use a `SomeDoor`, we pattern-match at runtime. In general you'll encounter types
+at runtime in a variety of different situations (discussed more deeply in [Part
+2](https://blog.jle.im/entry/introduction-to-singletons-2.html)), but `SomeDoor`
+is a nice nugget that we can examine to demonstrate more general points.
 
 A Need for More Expressive Restrictions
 ---------------------------------------
@@ -95,14 +98,14 @@ knock d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
 ```
 
 Hm. This doesn't feel right. We can't knock on an opened door..can we? Is there
-a way we can restrict this function to only work on *opened* doors? Or, more
+a way we can restrict this function to only work on *non-opened* doors? Or, more
 generally, is there a way to be more expressive in the manner in which we can
 restrict functions?
 
 There are a couple of ways of doing this --- we're going to look at two possible
-ways involving singletons and the *singletons* library. Both of these methods
-allow us to write dependently typed functions that are "type-safe" in more
-expressive ways than before.
+ways that singletons and the *singletons* library help with. Both of these
+methods allow us to write dependently typed functions that are "type-safe" in
+more expressive ways than before.
 
 Note that we'll be exploring ways that are "generalizable" --- to different
 types of restrictions that might be more complicated than just "cannot be
@@ -117,7 +120,7 @@ explore a fun *new application* of singletons and DataKinds.
 This new application is the usage of the dependently-typed "proof" to prove that
 an operation is legal. *Proofs* (in the dependently
 typed/constructivist/Curry-Howard sense) are witnesses to some type-level
-predicate or proposition.
+*predicate* or proposition.
 
 A **value-level predicate** in Haskell is (generally) a function of type
 `a -> Bool`. Given a value of type `a`, if the function returns `True`, then the
@@ -207,7 +210,9 @@ To do this, we're going to take advantage of a property of some predicates
 called "decidability". We say that a predicate is *decidable* if, for any input
 type, we can say whether or not the predicate is satisfiable.
 
-We say that a predicate `P` in Haskell is *decidable* if we can write:
+We say that a predicate `P` in Haskell is *decidable* if we can always prove,
+for any input, if the predicate holds or does not hold. Concretely, it means
+that we can write a total function:
 
 ``` {.haskell}
 decidePred
@@ -298,7 +303,8 @@ disproveOpened k = case k of
 
 If you include either of those patterns, GHC will complain. So, there is no
 valid pattern to match on... so `disproveOpened = \case {}` is enough to write
-the function `Knockable 'Opened -> Void`.
+the function `Knockable 'Opened -> Void`. This only works because
+`disproveOpened` is a **complete pattern match**, and therefore total.
 
 We can use this decision function, finally, to handle an arbitrary `Door` whose
 status we not know until runtime:
@@ -325,12 +331,12 @@ In other words, why do we care about proving both true or false, when it looks
 like we only ever use the true situation? After all, we ignore the
 `Refuted (Knockable s)` in our implementation of `knockSomeDoor`.
 
-One answer is that, we *do* use the contents of `Disproved` in practice. In
+One answer is that we *do* use the contents of `Disproved` in practice. In
 `knockSomeDoor`, we matched on `Disproved _` and threw away the
 counter-proof...however, as we see later in the exercises, there are situations
 where the contents of `Disproved` are used.
 
-However, the deeper answer to me is that it keeps the author of the function
+However, a deeper answer to me is that it keeps the author of the function
 accountable. You can't just say "this predicate isn't true"...you have to *earn*
 it. And often, the act of trying to earn your disproof (or not being able to)
 helps you iron out bad assumptions you've made.
@@ -411,7 +417,7 @@ anything at runtime. They only exist as ways to limit or enable specific
 programs from compiling, and serve no purpose after compilation. GHC Haskell
 does not implement proof erasure at the time of this post (current GHC version
 8.6), but if proofs like this become commonplace, you might be reading this
-during a time where GHC Haskell erases proofs like `Knockable` witnesses!
+during a time where GHC Haskell erases proofs like `Knockable` witnesses![^3]
 
 ### The Role of Singletons
 
@@ -478,7 +484,7 @@ Type Level Functions
 
 We're now going to look at a different method useful for restricting how we can
 call functions. Something we can do is define a type that expresses
-knockable-or-not-knockable, as a value:[^3]
+knockable-or-not-knockable, as a value:[^4]
 
 ``` {.haskell}
 $(singletons [d|
@@ -497,7 +503,7 @@ type family StatePass (s :: DoorState) :: Pass where
 ```
 
 We've briefly touched on type families before (in talking about `SingKind`),
-but, for a quick review, type families act a bit like type-level functions. They
+but, as a quick review: type families act a bit like type-level functions. They
 take types as input arguments and return types in return.
 
 We can inspect how type families are applied by using the `:kind!` command in
@@ -523,11 +529,11 @@ knockP d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
 ```
 
 `a ~ b` is a constraint for *type equality*. This constraint means that calling
-`knock` requires that `StatePass s` being *equal* to `'Allow`. So, if attempt to
-call `knock` with a `'Locked` door, `StatePass 'Locked` is `'Allow`, so the
-constraint is satisfied and everyone is happy. If we attempt to call `knock`
-with an `'Opened` door, `StatePass 'Opened` is `'Obstruct`, so the constraint is
-not satisfied and everyone is sad.
+`knock` requires that `StatePass s` is *equal to* (or unifies with) `'Allow`.
+So, if we attempt to call `knock` with a `'Locked` door, then because
+`StatePass 'Locked` is `'Allow`, the constraint is satisfied and everyone is
+happy. If we attempt to call `knock` with an `'Opened` door, `StatePass 'Opened`
+is `'Obstruct`, so the constraint is not satisfied and everyone is sad.
 
 ``` {.haskell}
 ghci> let door1 = UnsafeMkDoor @'Closed "Oak"
@@ -543,9 +549,9 @@ COMPILE ERROR!
 ### Deciding at Runtime
 
 One nice thing is that, if we know `s` at compile-time, we can call this
-function without having to pass any manual proofs. However, how can we run into
-the same issue as before --- what happens if we don't know `s` until runtime?
-How do we prove to the compiler that `Passable s` is `'Allow`?
+function without having to pass any manual proofs. However, we have to deal with
+the same issue as before: what happens if we don't know `s` until runtime? How
+do we prove to the compiler that `Passable s` is `'Allow`?
 
 Remember that type families take *types* as inputs, so we can't write:
 
@@ -633,7 +639,7 @@ $(singletons [d|
 The above declaration would normally declare only the value-level function
 `statePass` with the type `DoorSate -> Pass`.
 
-However, with singleton's template haskell, this also generates:[^4]
+However, with singleton's template haskell, this also generates:[^5]
 
 -   The *type family* `StatePass (s :: DoorState) :: Pass`, like we defined
     above
@@ -646,7 +652,7 @@ function `sMyFunction`.
 
 The naming convention for functions with symbolic names (operators) takes an
 operator like `++` and generates the type family `++` (keeping the identical
-name) and the singleton function `%++`.[^5]
+name) and the singleton function `%++`.[^6]
 
 A Comparison
 ------------
@@ -655,12 +661,12 @@ We went over two methods of using phantom types with the singleton library and
 dependent types to restrict how certain functions can be called, on a more
 non-trivial level.
 
-Our first method was using a new application of singletons and DataKinds,
-"dependently typed proofs". These are useful because they are constructed to
-exploit the "structure" of the types you create. Essentially, we create a data
-type (predicate) in a way so that it is impossible to create an "invalid" proof.
-And, often, if we write our proofs in a clever enough way, we can actually use
-and combine proofs to generate new proofs.
+Our first method was leveraging "dependently typed proofs". These are useful
+because they are constructed to exploit the "structure" of the types you create.
+Essentially, we create a data type (predicate) in a way so that it is impossible
+to create an "invalid" proof. And, often, if we write our proofs in a clever
+enough way, we can actually use and combine proofs to generate new proofs. (More
+examples in the exercises)
 
 Personally, I find this to be the source of a lot of the "fun" of dependently
 typed programming --- our proofs become first class values, and if we define
@@ -680,10 +686,11 @@ even made simpler with singletons --- you can just write your term-level
 relationship as a normal function, and you can now just directly use your
 function at the type level.
 
-In fact, consider if there were more than two `Pass` --- for example, allow,
-obstruct, or partial. In that case, we can restrict a function based on the
-`Pass` being equal to any of the three or more. Using the dependently typed
-proof version, we would have to create a new GADT for each one.
+In fact, consider if there were more than two `Pass` (maybe allow, obstruct, or
+partial?). In that case, we can easily restrict a function based on the `Pass`
+being equal to any of the three or more by using the `~` constraint. Using the
+dependently typed proof version, though, we would have to create a new GADT for
+each situation.
 
 In a way, type-level functions deliver on the promise of blurring the line
 between type and value. Our term-level functions are now type-level functions!
@@ -770,8 +777,7 @@ class Eq a where
     (/=) :: a -> a -> Bool
 ```
 
-The *singletons* library would promote this (and you can do this using the same
-template haskell splices we've been using this entire time, too) as:
+The *singletons* library promotes this as:
 
 ``` {.haskell}
 class PEq a where
@@ -862,9 +868,8 @@ functions" (a familiar friend in a new context), their trade-offs, and how the
 *singletons* library provides tools to make working with both easier.
 
 When we first looked at the idea of phantom type parameters, using them to
-*restrict* how functions are called was definitely one of the promises I made. I
-think, at this point, we've gone over a good portion of how this promise is
-fulfilled in practice.
+*restrict* how functions are called was definitely one of the promises I made.
+By now, this promise has hopefully been fully realized.
 
 However, the *other* promise we made about the usefulness of phantom type
 parameters is that we can use them be more expressive in what our functions do.
@@ -912,7 +917,7 @@ None of these implementations should require any incomplete pattern matches!
 
     You may have heard of the principle of "double negation", where *not
     (not p)* implies *p*. So, we should be able to say that
-    `Refuted (Refuted (Knockable s))` implies `Knockable s`.[^6] If something is
+    `Refuted (Refuted (Knockable s))` implies `Knockable s`.[^7] If something is
     not "not knockable", then it must be knockable, right?
 
     Try writing `refuteRefuteKnockable` to verify this principle --- at least
@@ -940,7 +945,7 @@ None of these implementations should require any incomplete pattern matches!
     absurd :: forall a. Void -> a
     ```
 
-    If you have a `Void`, you can make a value of any type![^7]
+    If you have a `Void`, you can make a value of any type![^8]
 
 3.  (This next one is fairly difficult compared to the others, and is only
     tangentially related to singletons, so feel free to skip it!)
@@ -1002,8 +1007,32 @@ None of these implementations should require any incomplete pattern matches!
         accidentally say false when it's true, or true when it's false --- your
         implementation is guarunteed correct.
 
+    d.  Now let's use `And` and `Or` to prove some useful facts about
+        `Knockable` and `('Opened :~:)`. We know that it's impossible for
+        something to be both `Knockable` *and* `('Opened :~:)` (that is, both
+        knockable *and* equal to `'Opened`). Write such a witness:
+
+        ``` {.haskell}
+        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L150-L152
+
+        knockableNotOpened
+            :: forall s. SingI s
+            => Refuted (And Knockable ((:~:) 'Opened) s)
+        ```
+
+        We also know that a given `DoorState` is either `Knockable` or
+        `('Opened :~:)`...there's no in-between. Write such a witness:
+
+        ``` {.haskell}
+        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L158-L160
+
+        knockableOrOpened
+            :: forall s. SingI s
+            => Or Knockable ((:~:) 'Opened) s
+        ```
+
     Solutions available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L119-L148)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L119-L165)!
 
 4.  Instead of creating an entire `Knocked` type, we could have just said "as
     long as the door is not `'Opened`, you can knock". This means we could write
@@ -1024,7 +1053,7 @@ None of these implementations should require any incomplete pattern matches!
     predicate as `Knockable s`!
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L151-L162
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L168-L179
 
     knockedRefute
         :: forall s. SingI s
@@ -1038,7 +1067,7 @@ None of these implementations should require any incomplete pattern matches!
     ```
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L151-L166)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L168-L183)!
 
     *Note:* `knockedRefute` is fairly straightforward, but `refuteKnocked` is
     definitely trickier, so don't be discouraged!
@@ -1056,7 +1085,7 @@ None of these implementations should require any incomplete pattern matches!
     constraint instead:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L169-L170
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L186-L187
 
     knockRefl :: (StatePass s :~: 'Obstruct) -> Door s -> IO ()
     knockRefl _ d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
@@ -1066,7 +1095,7 @@ None of these implementations should require any incomplete pattern matches!
     `knockSomeDoorRefl`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L172-L175
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L189-L192
 
     knockSomeDoorRefl
         :: SomeDoor
@@ -1077,7 +1106,7 @@ None of these implementations should require any incomplete pattern matches!
     Remember not to use `knock`!
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L169-L178).
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L186-L195).
 
     Assume that `DoorState` has an instance of `SDecide`, so you can use `(%~)`.
     This should be derived automatically as long as you derive `Eq`:
@@ -1102,7 +1131,7 @@ None of these implementations should require any incomplete pattern matches!
     Implement `knock` in a way that lets you knock if `invertPass` is `Allow`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L187-L188
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L204-L205
 
     knockInv :: (InvertPass (StatePass s) ~ 'Allow) => Door s -> IO ()
     knockInv d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
@@ -1111,7 +1140,7 @@ None of these implementations should require any incomplete pattern matches!
     And write `knockSomeDoor` in terms of it:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L190-L193
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L207-L210
 
     knockSomeDoorInv
         :: SomeDoor
@@ -1122,7 +1151,7 @@ None of these implementations should require any incomplete pattern matches!
     Remember again to implement it in terms of `knockInv`, *not* `knock`.
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L187-L196)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L204-L213)!
 
 7.  Let's work with a toy typeclass called `Cycle`, based on `Enum`
 
@@ -1139,7 +1168,7 @@ None of these implementations should require any incomplete pattern matches!
     pred-ing the first item
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L205-L212
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L222-L229
 
     instance Cycle DoorState where
         next Opened = Closed
@@ -1154,7 +1183,7 @@ None of these implementations should require any incomplete pattern matches!
     Can you manually promote this instance for `DoorState` to the type level?
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L214-L223
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L231-L240
 
     instance PCycle DoorState where
 
@@ -1162,7 +1191,7 @@ None of these implementations should require any incomplete pattern matches!
     ```
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L205-L232)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L222-L249)!
 
 --------------------------------------------------------------------------------
 
@@ -1185,22 +1214,26 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 
 [^2]: Sorry to mix up similar metaphors like this! Definitely not intentional :)
 
-[^3]: Really, we could just use `Bool` instead of defining a `Pass` type. We're
+[^3]: Note, however, that we are a little lucky in our case. In the case of our
+    implementation of `knock`, we match on a wildcard pattern, so the input
+    proof is never evaluated.
+
+[^4]: Really, we could just use `Bool` instead of defining a `Pass` type. We're
     just going through a new type for the sake of example, and it can be useful
     because a type like `Pass` might potentially have even more constructors!
 
-[^4]: In the spirit of full disclosure, the Template Haskell also generates some
+[^5]: In the spirit of full disclosure, the Template Haskell also generates some
     other things (known as *defunctionalization symbols*), which we will be
     talking about in the next part of this series.
 
-[^5]: Note that this is a change since *singletons-2.4*. In previous versions,
+[^6]: Note that this is a change since *singletons-2.4*. In previous versions,
     `++` would generate the type family `:++` and the singleton function `%:++`.
 
-[^6]: Double negation is not true in general, but it is true in the case that
+[^7]: Double negation is not true in general, but it is true in the case that
     our predicate is *decidable*. That's because `Decision a` is essentially a
     witness to the [excluded
     middle](https://en.wikipedia.org/wiki/Law_of_excluded_middle) for that
     specific predicate, from which double negation can be derived.
 
-[^7]: It's the good ol' [Principle of
+[^8]: It's the good ol' [Principle of
     Explosion](https://en.wikipedia.org/wiki/Principle_of_explosion)
