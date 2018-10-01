@@ -528,6 +528,10 @@ Note also that this is why it's very important to always have \texttt{-Wall}
 (Warn all) on when writing dependently typed proofs, to ensure that GHC warns
 you when your pattern matches are incomplete and you know your proof is invalid.
 
+In the examples, we see two more non-trivial examples of decision functions
+(\texttt{and\ p\ q} and \texttt{or\ p\ q}) that are impossible to implement
+incorrectly, due to the structure of the predicates.
+
 \hypertarget{perspective-on-proofs}{%
 \subsection{Perspective on Proofs}\label{perspective-on-proofs}}
 
@@ -947,6 +951,8 @@ namespace. So, with singletons, you get functions like:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\NormalTok{fst}\OtherTok{ ::}\NormalTok{ (a, b) }\OtherTok{->}\NormalTok{ a}
+
 \KeywordTok{type}\NormalTok{ family }\DataTypeTok{Fst}\NormalTok{ (}\OtherTok{t ::}\NormalTok{ (a, b))}\OtherTok{ ::}\NormalTok{ a}
 
 \OtherTok{sFst ::} \DataTypeTok{Sing}\NormalTok{ t }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ (}\DataTypeTok{Fst}\NormalTok{ t)}
@@ -957,6 +963,8 @@ and
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\OtherTok{isLeft ::} \DataTypeTok{Either}\NormalTok{ a b }\OtherTok{->} \DataTypeTok{Bool}
+
 \KeywordTok{type}\NormalTok{ family }\DataTypeTok{IsLeft}\NormalTok{ (}\OtherTok{t ::} \DataTypeTok{Either}\NormalTok{ a b)}\OtherTok{ ::} \DataTypeTok{Bool}
 
 \OtherTok{sIsLeft ::} \DataTypeTok{Sing}\NormalTok{ t }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ (}\DataTypeTok{IsLeft}\NormalTok{ t)}
@@ -967,7 +975,9 @@ and
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{type}\NormalTok{ family (}\OtherTok{xs ::}\NormalTok{ [a]) }\FunctionTok{++}\NormalTok{ (}\OtherTok{ys ::}\NormalTok{ [b])}\OtherTok{ ::}\NormalTok{ [b]}
+\OtherTok{(++) ::}\NormalTok{ [a] }\OtherTok{->}\NormalTok{ [a] }\OtherTok{->}\NormalTok{ [a]}
+
+\KeywordTok{type}\NormalTok{ family (}\OtherTok{xs ::}\NormalTok{ [a]) }\FunctionTok{++}\NormalTok{ (}\OtherTok{ys ::}\NormalTok{ [a])}\OtherTok{ ::}\NormalTok{ [a]}
 
 \OtherTok{(%++) ::} \DataTypeTok{Sing}\NormalTok{ xs }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ ys }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ (xs }\FunctionTok{++}\NormalTok{ ys)}
 \end{Highlighting}
@@ -1126,8 +1136,8 @@ which we know closes a door just by looking at its type)
 
 This goes beyond simple restrictions, and we will begin discussing this in the
 next post! We'll explore using type-level functions to express more non-trivial
-and complex relationships, and also talk about code re-use using higher-order
-functions via singleton's defunctionalization system.
+and complex relationships, and also talk about code re-use using
+\emph{higher-order functions} via singleton's defunctionalization system.
 
 That's it for now --- check out the exercises, and feel free to ask any
 questions in the comments, or in freenode \texttt{\#haskell}, where I idle as
@@ -1170,7 +1180,12 @@ matches!
 
   You may have heard of the principle of ``double negation'', where \emph{not
   (not p)} implies \emph{p}. So, we should be able to say that
-  \texttt{Refuted\ (Refuted\ (Knockable\ s))} implies \texttt{Knockable\ s}. If
+  \texttt{Refuted\ (Refuted\ (Knockable\ s))} implies
+  \texttt{Knockable\ s}.\footnote{Double negation is not true in general, but it
+    is true in the case that our predicate is \emph{decidable}. That's because
+    \texttt{Decision\ a} is essentially a witness to the
+    \href{https://en.wikipedia.org/wiki/Law_of_excluded_middle}{excluded middle}
+    for that specific predicate, from which double negation can be derived.} If
   something is not ``not knockable'', then it must be knockable, right?
 
   Try writing \texttt{refuteRefuteKnockable} to verify this principle --- at
@@ -1187,12 +1202,12 @@ matches!
 \end{Highlighting}
 \end{Shaded}
 
+  While not required, I recommend using \texttt{isKnockable} and writing your
+  implementation in terms of it! Use \texttt{sing} to give \texttt{isKnockable}
+  the singleton it needs.
+
   Solution available
   \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L109-L116}{here}!
-
-  \emph{Note:} While not required, I recommend using \texttt{isKnockable} and
-  writing your implementation in terms of it! Use \texttt{sing} to give
-  \texttt{isKnockable} the singleton it needs.
 
   \emph{Hint:} You might find \texttt{absurd} (from \emph{Data.Void}) helpful:
 
@@ -1207,8 +1222,8 @@ matches!
     \href{https://en.wikipedia.org/wiki/Principle_of_explosion}{Principle of
     Explosion}}
 \item
-  (This next one is a little hard, and is only tangentially related to
-  singletons, so feel free to skip it!)
+  (This next one is fairly difficult compared to the others, and is only
+  tangentially related to singletons, so feel free to skip it!)
 
   Type-level predicates are logical constructs, so we should be able to define
   concepts like ``and'' and ``or'' with them.
@@ -1267,6 +1282,14 @@ matches!
     \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{Or}\NormalTok{ p q a)}
 \end{Highlighting}
 \end{Shaded}
+
+    These functions actually demonstrate, I feel, why \texttt{Decision} having
+    both a \texttt{Proved\ a} and \texttt{Disproved\ (Refuted\ a)} branch is
+    very useful. This is because, if you wrote the \emph{structure} of
+    \texttt{And} and \texttt{Or} correctly, it's \emph{impossible} to
+    incorrectly define \texttt{decideAnd} and \texttt{decideOr}. You can't
+    accidentally say false when it's true, or true when it's false --- your
+    implementation is guarunteed correct.
   \end{enumerate}
 
   Solutions available
@@ -1409,7 +1432,8 @@ matches!
 \end{Highlighting}
 \end{Shaded}
 
-  Again, implement it in terms of \texttt{knockInv}, not \texttt{knock}.
+  Remember again to implement it in terms of \texttt{knockInv}, \emph{not}
+  \texttt{knock}.
 
   Solution available
   \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L187-L196}{here}!

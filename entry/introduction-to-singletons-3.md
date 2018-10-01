@@ -369,6 +369,10 @@ Note also that this is why it's very important to always have `-Wall` (Warn all)
 on when writing dependently typed proofs, to ensure that GHC warns you when your
 pattern matches are incomplete and you know your proof is invalid.
 
+In the examples, we see two more non-trivial examples of decision functions
+(`and p q` and `or p q`) that are impossible to implement incorrectly, due to
+the structure of the predicates.
+
 ### Perspective on Proofs
 
 We just briefly touched on a very simple version of a dependently typed proof,
@@ -720,6 +724,8 @@ You can find most of these in the *Data.Singletons.Prelude* module namespace.
 So, with singletons, you get functions like:
 
 ``` {.haskell}
+fst :: (a, b) -> a
+
 type family Fst (t :: (a, b)) :: a
 
 sFst :: Sing t -> Sing (Fst t)
@@ -728,6 +734,8 @@ sFst :: Sing t -> Sing (Fst t)
 and
 
 ``` {.haskell}
+isLeft :: Either a b -> Bool
+
 type family IsLeft (t :: Either a b) :: Bool
 
 sIsLeft :: Sing t -> Sing (IsLeft t)
@@ -736,7 +744,9 @@ sIsLeft :: Sing t -> Sing (IsLeft t)
 and
 
 ``` {.haskell}
-type family (xs :: [a]) ++ (ys :: [b]) :: [b]
+(++) :: [a] -> [a] -> [a]
+
+type family (xs :: [a]) ++ (ys :: [a]) :: [a]
 
 (%++) :: Sing xs -> Sing ys -> Sing (xs ++ ys)
 ```
@@ -866,8 +876,8 @@ looking at its type)
 
 This goes beyond simple restrictions, and we will begin discussing this in the
 next post! We'll explore using type-level functions to express more non-trivial
-and complex relationships, and also talk about code re-use using higher-order
-functions via singleton's defunctionalization system.
+and complex relationships, and also talk about code re-use using *higher-order
+functions* via singleton's defunctionalization system.
 
 That's it for now --- check out the exercises, and feel free to ask any
 questions in the comments, or in freenode `#haskell`, where I idle as *jle\`*!
@@ -902,8 +912,8 @@ None of these implementations should require any incomplete pattern matches!
 
     You may have heard of the principle of "double negation", where *not
     (not p)* implies *p*. So, we should be able to say that
-    `Refuted (Refuted (Knockable s))` implies `Knockable s`. If something is not
-    "not knockable", then it must be knockable, right?
+    `Refuted (Refuted (Knockable s))` implies `Knockable s`.[^6] If something is
+    not "not knockable", then it must be knockable, right?
 
     Try writing `refuteRefuteKnockable` to verify this principle --- at least
     for the `Knockable` predicate.
@@ -917,12 +927,12 @@ None of these implementations should require any incomplete pattern matches!
         -> Knockable s
     ```
 
-    Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L109-L116)!
-
-    *Note:* While not required, I recommend using `isKnockable` and writing your
+    While not required, I recommend using `isKnockable` and writing your
     implementation in terms of it! Use `sing` to give `isKnockable` the
     singleton it needs.
+
+    Solution available
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L109-L116)!
 
     *Hint:* You might find `absurd` (from *Data.Void*) helpful:
 
@@ -930,10 +940,10 @@ None of these implementations should require any incomplete pattern matches!
     absurd :: forall a. Void -> a
     ```
 
-    If you have a `Void`, you can make a value of any type![^6]
+    If you have a `Void`, you can make a value of any type![^7]
 
-3.  (This next one is a little hard, and is only tangentially related to
-    singletons, so feel free to skip it!)
+3.  (This next one is fairly difficult compared to the others, and is only
+    tangentially related to singletons, so feel free to skip it!)
 
     Type-level predicates are logical constructs, so we should be able to define
     concepts like "and" and "or" with them.
@@ -984,6 +994,13 @@ None of these implementations should require any incomplete pattern matches!
             -> Sing a
             -> Decision (Or p q a)
         ```
+
+        These functions actually demonstrate, I feel, why `Decision` having both
+        a `Proved a` and `Disproved (Refuted a)` branch is very useful. This is
+        because, if you wrote the *structure* of `And` and `Or` correctly, it's
+        *impossible* to incorrectly define `decideAnd` and `decideOr`. You can't
+        accidentally say false when it's true, or true when it's false --- your
+        implementation is guarunteed correct.
 
     Solutions available
     [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L119-L148)!
@@ -1102,7 +1119,7 @@ None of these implementations should require any incomplete pattern matches!
     knockSomeDoorInv (MkSomeDoor s d) =
     ```
 
-    Again, implement it in terms of `knockInv`, not `knock`.
+    Remember again to implement it in terms of `knockInv`, *not* `knock`.
 
     Solution available
     [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L187-L196)!
@@ -1179,5 +1196,11 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 [^5]: Note that this is a change since *singletons-2.4*. In previous versions,
     `++` would generate the type family `:++` and the singleton function `%:++`.
 
-[^6]: It's the good ol' [Principle of
+[^6]: Double negation is not true in general, but it is true in the case that
+    our predicate is *decidable*. That's because `Decision a` is essentially a
+    witness to the [excluded
+    middle](https://en.wikipedia.org/wiki/Law_of_excluded_middle) for that
+    specific predicate, from which double negation can be derived.
+
+[^7]: It's the good ol' [Principle of
     Explosion](https://en.wikipedia.org/wiki/Principle_of_explosion)
