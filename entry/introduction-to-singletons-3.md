@@ -1005,23 +1005,23 @@ None of these implementations should require any incomplete pattern matches!
     is the same as `Knockable`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L151-L154
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L151-L162
 
     knockedRefute
         :: forall s. SingI s
         => Knockable s
         -> Refuted (s :~: 'Opened)
 
-    knockedRefute
+    refuteKnocked
         :: forall s. SingI s
-        => Knockable s
-        -> Refuted (s :~: 'Opened)
+        => Refuted (s :~: 'Opened)
+        -> Knockable s
     ```
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L151-L157)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L151-L166)!
 
-    *Note:* `knockedRefute` is fairly straightforward, but `knockedRefute` is
+    *Note:* `knockedRefute` is fairly straightforward, but `refuteKnocked` is
     definitely trickier, so don't be discouraged!
 
     *Hint:* See the note about `absurd` from Exercise 2!
