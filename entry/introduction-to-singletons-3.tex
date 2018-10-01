@@ -235,7 +235,7 @@ is called a \emph{witness} or a \emph{proof}.\footnote{All of this is ignoring
   the ``bottom'' value that is an occupant of every type in Haskell. We can use
   bottom to subvert pretty much all proofs in Haskell, unfortunately, so the
   discussion from this point forward assumes we are talking about a subset of
-  haskell where all values are non-bottom and all functions are total.}
+  Haskell where all values are non-bottom and all functions are total.}
 
 We can define a predicate
 \texttt{Knockable\ ::\ DoorState\ -\textgreater{}\ Type} as a GADT that only has
@@ -394,7 +394,7 @@ Are you ready? Here's a solution:
 
 \OtherTok{isKnockable ::} \DataTypeTok{Sing}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{Knockable}\NormalTok{ s)}
 \NormalTok{isKnockable }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-    \DataTypeTok{SOpened} \OtherTok{->} \DataTypeTok{Disproved} \FunctionTok{$}\NormalTok{ \textbackslash{}}\KeywordTok{case}            \CommentTok{-- s ~ 'Opened}
+    \DataTypeTok{SOpened} \OtherTok{->} \DataTypeTok{Disproved} \FunctionTok{$}\NormalTok{ \textbackslash{}}\KeywordTok{case}\NormalTok{ \{\}         }\CommentTok{-- s ~ 'Opened}
     \DataTypeTok{SClosed} \OtherTok{->} \DataTypeTok{Proved} \DataTypeTok{KnockClosed}           \CommentTok{-- s ~ 'Closed}
     \DataTypeTok{SLocked} \OtherTok{->} \DataTypeTok{Proved} \DataTypeTok{KnockLocked}           \CommentTok{-- s ~ 'Locked}
 \end{Highlighting}
@@ -461,6 +461,72 @@ whose status we not know until runtime:
     \DataTypeTok{Disproved}\NormalTok{ _ }\OtherTok{->}\NormalTok{ putStrLn }\StringTok{"No knocking allowed!"}
 \end{Highlighting}
 \end{Shaded}
+
+\hypertarget{decision}{%
+\subsection{Decision}\label{decision}}
+
+The definition of the \texttt{Decision} data type might be surprising if you're
+first seeing it. You want to prove something\ldots{}so why would you care about
+the case where it's ``not true''? Why not just have something like
+\texttt{Maybe}, where you have
+\texttt{data\ Decision\ a\ =\ Proved\ a\ \textbar{}\ Disproved}?
+
+In other words, why do we care about proving both true or false, when it looks
+like we only ever use the true situation? After all, we ignore the
+\texttt{Refuted\ (Knockable\ s)} in our implementation of
+\texttt{knockSomeDoor}.
+
+One answer is that, we \emph{do} use the contents of \texttt{Disproved} in
+practice. In \texttt{knockSomeDoor}, we matched on \texttt{Disproved\ \_} and
+threw away the counter-proof\ldots{}however, as we see later in the exercises,
+there are situations where the contents of \texttt{Disproved} are used.
+
+However, the deeper answer to me is that it keeps the author of the function
+accountable. You can't just say ``this predicate isn't true''\ldots{}you have to
+\emph{earn} it. And often, the act of trying to earn your disproof (or not being
+able to) helps you iron out bad assumptions you've made.
+
+For example, if we used \texttt{Maybe} instead of \texttt{Decision}, we could
+write:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{isKnockable ::} \DataTypeTok{Sing}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ s}
+\NormalTok{isKnockable }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{SOpened} \OtherTok{->} \DataTypeTok{Nothing}
+    \DataTypeTok{SClosed} \OtherTok{->} \DataTypeTok{Nothing}
+    \DataTypeTok{SLocked} \OtherTok{->} \DataTypeTok{Just} \DataTypeTok{KnockLocked}
+\end{Highlighting}
+\end{Shaded}
+
+We might falsely claim that \texttt{SClosed} is not knockable. So, if the user
+of our bad \texttt{isKnockable} gets \texttt{Nothing}, they don't know if their
+input is not knockable or knockable\ldots{}they know \emph{nothing} about the
+knockability status of \texttt{\textquotesingle{}Opened} or
+\texttt{\textquotesingle{}Closed}.
+
+However, we can't write this bad implementation with \texttt{Decision}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{isKnockable ::} \DataTypeTok{Sing}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ s}
+\NormalTok{isKnockable }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{SOpened} \OtherTok{->} \DataTypeTok{Disproved} \FunctionTok{$}\NormalTok{ \textbackslash{}}\KeywordTok{case}\NormalTok{ \{\}}
+    \DataTypeTok{SClosed} \OtherTok{->} \DataTypeTok{Disproved} \FunctionTok{$} \CommentTok{-- ????}
+    \DataTypeTok{SLocked} \OtherTok{->} \DataTypeTok{Proved} \DataTypeTok{KnockLocked}
+\end{Highlighting}
+\end{Shaded}
+
+There is no valid thing you can put in the \texttt{????}! That's because you
+need to write a function of type
+\texttt{Knocked\ \textquotesingle{}Closed\ -\textgreater{}\ Void}\ldots{}but no
+such (total or non-partial) function exists. We can't write
+\texttt{\textbackslash{}case\ \{\}}, because that's an incomplete pattern match
+--- it's missing a match on the \texttt{KnockClosed} pattern.
+
+Note also that this is why it's very important to always have \texttt{-Wall}
+(Warn all) on when writing dependently typed proofs, to ensure that GHC warns
+you when your pattern matches are incomplete and you know your proof is invalid.
 
 \hypertarget{perspective-on-proofs}{%
 \subsection{Perspective on Proofs}\label{perspective-on-proofs}}
@@ -1078,6 +1144,10 @@ sample source code}; it contains all of the solutions, but you can delete
 everything after the comment \texttt{-\/-\ Exercises} if you wish to start on
 your own!
 
+\textbf{Remember to enable -Wall} to ensure that all of your functions are
+total! None of these implementations should require any incomplete pattern
+matches!
+
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
@@ -1096,6 +1166,48 @@ your own!
   Solution available
   \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L101-L106}{here}!
 \item
+  Now let's practice working with predicates, singletons, and negation via
+  \texttt{Refuted} together.
+
+  You may have heard of the principle of ``double negation'', where \emph{not
+  (not p)} implies \emph{p}. So, we should be able to say that
+  \texttt{Refuted\ (Refuted\ (Knockable\ s))} implies \texttt{Knockable\ s}. If
+  something is not ``not knockable'', then it must be knockable, right?
+
+  Try writing \texttt{refuteRefuteKnockable} to verify this principle --- at
+  least for the \texttt{Knockable} predicate.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L109-L112}
+
+\NormalTok{refuteRefuteKnockable}
+\OtherTok{    ::}\NormalTok{ forall s}\FunctionTok{.} \DataTypeTok{SingI}\NormalTok{ s}
+    \OtherTok{=>} \DataTypeTok{Refuted}\NormalTok{ (}\DataTypeTok{Refuted}\NormalTok{ (}\DataTypeTok{Knockable}\NormalTok{ s))}
+    \OtherTok{->} \DataTypeTok{Knockable}\NormalTok{ s}
+\end{Highlighting}
+\end{Shaded}
+
+  Solution available
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L109-L116}{here}!
+
+  \emph{Note:} While not required, I recommend using \texttt{isKnockable} and
+  writing your implementation in terms of it! Use \texttt{sing} to give
+  \texttt{isKnockable} the singleton it needs.
+
+  \emph{Hint:} You might find \texttt{absurd} (from \emph{Data.Void}) helpful:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{absurd ::}\NormalTok{ forall a}\FunctionTok{.} \DataTypeTok{Void} \OtherTok{->}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+  If you have a \texttt{Void}, you can make a value of any type!\footnote{It's
+    the good ol'
+    \href{https://en.wikipedia.org/wiki/Principle_of_explosion}{Principle of
+    Explosion}}
+\item
   (This next one is a little hard, and is only tangentially related to
   singletons, so feel free to skip it!)
 
@@ -1111,7 +1223,7 @@ your own!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L109-L109}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L120-L120}
 
     \DataTypeTok{And}\OtherTok{ ::}\NormalTok{ p a }\OtherTok{->}\NormalTok{ q a }\OtherTok{->} \DataTypeTok{And}\NormalTok{ p q a}
 \end{Highlighting}
@@ -1124,7 +1236,7 @@ your own!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L112-L112}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L123-L123}
 
     \DataTypeTok{OrLeft}\OtherTok{  ::}\NormalTok{ p a }\OtherTok{->} \DataTypeTok{Or}\NormalTok{ p q a}
 \end{Highlighting}
@@ -1141,7 +1253,7 @@ your own!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L115-L130}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L126-L141}
 
 \NormalTok{decideAnd}
 \OtherTok{    ::}\NormalTok{ (forall x}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (p x))}
@@ -1159,7 +1271,7 @@ your own!
   \end{enumerate}
 
   Solutions available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L108-L137}{here}!
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L119-L148}{here}!
 \item
   Instead of creating an entire \texttt{Knocked} type, we could have just said
   ``as long as the door is not \texttt{\textquotesingle{}Opened}, you can
@@ -1182,7 +1294,7 @@ your own!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L139-L142}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L151-L154}
 
 \NormalTok{knockedRefute}
 \OtherTok{    ::}\NormalTok{ forall s}\FunctionTok{.} \DataTypeTok{SingI}\NormalTok{ s}
@@ -1197,23 +1309,12 @@ your own!
 \end{Shaded}
 
   Solution available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L139-L145}{here}!
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L151-L157}{here}!
 
   \emph{Note:} \texttt{knockedRefute} is fairly straightforward, but
   \texttt{knockedRefute} is definitely trickier, so don't be discouraged!
 
-  \emph{Hint:} You might find \texttt{absurd} (from \emph{Data.Void}) helpful:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{absurd ::}\NormalTok{ forall a}\FunctionTok{.} \DataTypeTok{Void} \OtherTok{->}\NormalTok{ a}
-\end{Highlighting}
-\end{Shaded}
-
-  If you have a \texttt{Void}, you can make a value of any type!\footnote{It's
-    the good ol'
-    \href{https://en.wikipedia.org/wiki/Principle_of_explosion}{Principle of
-    Explosion}}
+  \emph{Hint:} See the note about \texttt{absurd} from Exercise 2!
 \item
   On our type level function version of \texttt{knock}, we wrote, with a
   constraint:
@@ -1230,7 +1331,7 @@ your own!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L156-L157}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L169-L170}
 
 \OtherTok{knockRefl ::}\NormalTok{ (}\DataTypeTok{StatePass}\NormalTok{ s }\FunctionTok{:~:}\NormalTok{ '}\DataTypeTok{Obstruct}\NormalTok{) }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{knockRefl _ d }\FunctionTok{=}\NormalTok{ putStrLn }\FunctionTok{$} \StringTok{"Knock knock on "} \FunctionTok{++}\NormalTok{ doorMaterial d }\FunctionTok{++} \StringTok{" door!"}
@@ -1242,7 +1343,7 @@ your own!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L159-L162}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L172-L175}
 
 \NormalTok{knockSomeDoorRefl}
 \OtherTok{    ::} \DataTypeTok{SomeDoor}
@@ -1254,7 +1355,7 @@ your own!
   Remember not to use \texttt{knock}!
 
   Solution available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L156-L165}{here}.
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L169-L178}{here}.
 
   Assume that \texttt{DoorState} has an instance of \texttt{SDecide}, so you can
   use \texttt{(\%\textasciitilde{})}. This should be derived automatically as
@@ -1268,9 +1369,6 @@ your own!
 \NormalTok{  |])}
 \end{Highlighting}
 \end{Shaded}
-
-  Solution available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L156-L165}{here}!
 \item
   With the function that inverts \texttt{Pass}:
 
@@ -1289,7 +1387,7 @@ your own!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L173-L174}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L187-L188}
 
 \OtherTok{knockInv ::}\NormalTok{ (}\DataTypeTok{InvertPass}\NormalTok{ (}\DataTypeTok{StatePass}\NormalTok{ s) }\FunctionTok{~}\NormalTok{ '}\DataTypeTok{Allow}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{knockInv d }\FunctionTok{=}\NormalTok{ putStrLn }\FunctionTok{$} \StringTok{"Knock knock on "} \FunctionTok{++}\NormalTok{ doorMaterial d }\FunctionTok{++} \StringTok{" door!"}
@@ -1300,7 +1398,7 @@ your own!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L176-L179}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L190-L193}
 
 \NormalTok{knockSomeDoorInv}
 \OtherTok{    ::} \DataTypeTok{SomeDoor}
@@ -1312,7 +1410,7 @@ your own!
   Again, implement it in terms of \texttt{knockInv}, not \texttt{knock}.
 
   Solution available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L173-L182}{here}!
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L187-L196}{here}!
 \item
   Let's work with a toy typeclass called \texttt{Cycle}, based on \texttt{Enum}
 
@@ -1332,7 +1430,7 @@ your own!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L190-L197}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L205-L212}
 
 \KeywordTok{instance} \DataTypeTok{Cycle} \DataTypeTok{DoorState} \KeywordTok{where}
 \NormalTok{    next }\DataTypeTok{Opened} \FunctionTok{=} \DataTypeTok{Closed}
@@ -1350,7 +1448,7 @@ your own!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L199-L208}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L214-L223}
 
 \KeywordTok{instance} \DataTypeTok{PCycle} \DataTypeTok{DoorState} \KeywordTok{where}
 
@@ -1359,7 +1457,7 @@ your own!
 \end{Shaded}
 
   Solution available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L190-L217}{here}!
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L205-L232}{here}!
 \end{enumerate}
 
 \hypertarget{signoff}{%
