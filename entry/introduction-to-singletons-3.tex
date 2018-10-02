@@ -137,7 +137,7 @@ type of kind \texttt{DoorState}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L29-L35}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L30-L36}
 
 \FunctionTok{$}\NormalTok{(singletons [d|}
 \NormalTok{  data DoorState = Opened | Closed | Locked}
@@ -166,7 +166,7 @@ wrapper \texttt{SomeDoor}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L37-L42}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L38-L43}
 
 \KeywordTok{data} \DataTypeTok{SomeDoor}\OtherTok{ ::} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{MkSomeDoor}\OtherTok{ ::} \DataTypeTok{Sing}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{SomeDoor}
@@ -250,7 +250,7 @@ values if given \texttt{\textquotesingle{}Closed} and
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L44-L46}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L45-L47}
 
 \KeywordTok{data} \DataTypeTok{Knockable}\OtherTok{ ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{KnockClosed}\OtherTok{ ::} \DataTypeTok{Knockable}\NormalTok{ '}\DataTypeTok{Closed}
@@ -268,7 +268,7 @@ Well, we can make a version of \texttt{knock} that requires a proof that
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L48-L49}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L49-L50}
 
 \OtherTok{knock ::} \DataTypeTok{Knockable}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{knock _ d }\FunctionTok{=}\NormalTok{ putStrLn }\FunctionTok{$} \StringTok{"Knock knock on "} \FunctionTok{++}\NormalTok{ doorMaterial d }\FunctionTok{++} \StringTok{" door!"}
@@ -299,7 +299,7 @@ compile-time, with a general class like \texttt{Auto}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L51-L58}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L52-L59}
 
 \KeywordTok{class} \DataTypeTok{Provable}\NormalTok{ p a }\KeywordTok{where}
 \OtherTok{    auto ::}\NormalTok{ p a}
@@ -390,14 +390,16 @@ We need to write a function:
 \end{Shaded}
 
 I recommend taking a moment and trying to implement this yourself. Remember to
-enable \texttt{-Wall} to make sure you're handling all potential pattern
-matching cases.
+enable \texttt{-Werror=incomplete-patterns}\footnote{Thanks to
+  \href{https://www.reddit.com/r/haskell/comments/9kkbci/introduction_to_singletons_part_3_dependently/e70nc7k/}{Darwin226
+  on reddit} for this tip!} (or at least \texttt{-Wall}) to make sure you're
+handling all potential pattern matching cases.
 
 Are you ready? Here's a solution:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L60-L64}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L61-L65}
 
 \OtherTok{isKnockable ::} \DataTypeTok{Sing}\NormalTok{ s }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{Knockable}\NormalTok{ s)}
 \NormalTok{isKnockable }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -425,7 +427,7 @@ We can write it like this:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L66-L67}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L67-L68}
 
 \OtherTok{disproveOpened ::} \DataTypeTok{Knockable}\NormalTok{ '}\DataTypeTok{Opened} \OtherTok{->} \DataTypeTok{Void}
 \NormalTok{disproveOpened k }\FunctionTok{=} \KeywordTok{case}\NormalTok{ k }\KeywordTok{of}\NormalTok{ \{\}             }\CommentTok{-- empty pattern match}
@@ -460,7 +462,7 @@ whose status we not know until runtime:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L69-L74}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L70-L75}
 
 \NormalTok{knockSomeDoor}
 \OtherTok{    ::} \DataTypeTok{SomeDoor}     \CommentTok{-- ^ status not known until you pattern match at runtime}
@@ -533,9 +535,10 @@ such (total or non-partial) function exists. We can't write
 \texttt{\textbackslash{}case\ \{\}}, because that's an incomplete pattern match
 --- it's missing a match on the \texttt{KnockClosed} pattern.
 
-Note also that this is why it's very important to always have \texttt{-Wall}
-(Warn all) on when writing dependently typed proofs, to ensure that GHC warns
-you when your pattern matches are incomplete and you know your proof is invalid.
+Note also that this is why it's very important to always have
+\texttt{-Werror=incomplete-patterns} (or at least \texttt{-Wall} --- warn all)
+on when writing dependently typed proofs, to ensure that GHC warns you when your
+pattern matches are incomplete and you know your proof is invalid.
 
 In the examples, we see two more non-trivial examples of decision functions
 (\texttt{and\ p\ q} and \texttt{or\ p\ q}) that are impossible to implement
@@ -719,7 +722,7 @@ Armed with this type family, we can write a new version of \texttt{knock}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L86-L87}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L87-L88}
 
 \OtherTok{knockP ::}\NormalTok{ (}\DataTypeTok{StatePass}\NormalTok{ s }\FunctionTok{~}\NormalTok{ '}\DataTypeTok{Obstruct}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{knockP d }\FunctionTok{=}\NormalTok{ putStrLn }\FunctionTok{$} \StringTok{"Knock knock on "} \FunctionTok{++}\NormalTok{ doorMaterial d }\FunctionTok{++} \StringTok{" door!"}
@@ -809,7 +812,7 @@ With our new tool, we can now write:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L89-L94}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L90-L95}
 
 \NormalTok{knockSomeDoorP}
 \OtherTok{    ::} \DataTypeTok{SomeDoor}     \CommentTok{-- ^ status not known until you pattern match at runtime}
@@ -1163,9 +1166,9 @@ sample source code}; it contains all of the solutions, but you can delete
 everything after the comment \texttt{-\/-\ Exercises} if you wish to start on
 your own!
 
-\textbf{Remember to enable -Wall} to ensure that all of your functions are
-total! None of these implementations should require any incomplete pattern
-matches!
+\textbf{Remember to enable \texttt{-Werror=incomplete-patterns} or
+\texttt{-Wall}} to ensure that all of your functions are total! None of these
+implementations should require any incomplete pattern matches!
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -1183,7 +1186,7 @@ matches!
   What is the type of its \emph{decision function}? Can you implement it?
 
   Solution available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L101-L106}{here}!
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L102-L107}{here}!
 \item
   Now let's practice working with predicates, singletons, and negation via
   \texttt{Refuted} together.
@@ -1203,7 +1206,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L109-L112}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L110-L113}
 
 \NormalTok{refuteRefuteKnockable}
 \OtherTok{    ::}\NormalTok{ forall s}\FunctionTok{.} \DataTypeTok{SingI}\NormalTok{ s}
@@ -1217,7 +1220,7 @@ matches!
   the singleton it needs.
 
   Solution available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L109-L116}{here}!
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L110-L117}{here}!
 
   \emph{Hint:} You might find \texttt{absurd} (from \emph{Data.Void}) helpful:
 
@@ -1247,7 +1250,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L120-L120}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L121-L121}
 
     \DataTypeTok{And}\OtherTok{ ::}\NormalTok{ p a }\OtherTok{->}\NormalTok{ q a }\OtherTok{->} \DataTypeTok{And}\NormalTok{ p q a}
 \end{Highlighting}
@@ -1260,7 +1263,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L123-L123}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L124-L124}
 
     \DataTypeTok{OrLeft}\OtherTok{  ::}\NormalTok{ p a }\OtherTok{->} \DataTypeTok{Or}\NormalTok{ p q a}
 \end{Highlighting}
@@ -1277,7 +1280,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L126-L141}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L127-L142}
 
 \NormalTok{decideAnd}
 \OtherTok{    ::}\NormalTok{ (forall x}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (p x))}
@@ -1311,7 +1314,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L150-L152}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L151-L153}
 
 \NormalTok{knockableNotOpened}
 \OtherTok{    ::}\NormalTok{ forall s}\FunctionTok{.} \DataTypeTok{SingI}\NormalTok{ s}
@@ -1325,7 +1328,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L157-L159}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L158-L160}
 
 \NormalTok{knockableOrOpened}
 \OtherTok{    ::}\NormalTok{ forall s}\FunctionTok{.} \DataTypeTok{SingI}\NormalTok{ s}
@@ -1335,7 +1338,7 @@ matches!
   \end{enumerate}
 
   Solutions available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L119-L163}{here}!
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L120-L164}{here}!
 \item
   Instead of creating an entire \texttt{Knocked} type, we could have just said
   ``as long as the door is not \texttt{\textquotesingle{}Opened}, you can
@@ -1361,7 +1364,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L166-L177}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L167-L178}
 
 \NormalTok{knockedRefute}
 \OtherTok{    ::}\NormalTok{ forall s}\FunctionTok{.} \DataTypeTok{SingI}\NormalTok{ s}
@@ -1376,7 +1379,7 @@ matches!
 \end{Shaded}
 
   Solution available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L166-L181}{here}!
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L167-L182}{here}!
 
   \emph{Note:} \texttt{knockedRefute} is fairly straightforward, but
   \texttt{refuteKnocked} is definitely trickier, so don't be discouraged!
@@ -1398,7 +1401,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L184-L185}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L185-L186}
 
 \OtherTok{knockRefl ::}\NormalTok{ (}\DataTypeTok{StatePass}\NormalTok{ s }\FunctionTok{:~:}\NormalTok{ '}\DataTypeTok{Obstruct}\NormalTok{) }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{knockRefl _ d }\FunctionTok{=}\NormalTok{ putStrLn }\FunctionTok{$} \StringTok{"Knock knock on "} \FunctionTok{++}\NormalTok{ doorMaterial d }\FunctionTok{++} \StringTok{" door!"}
@@ -1410,7 +1413,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L187-L190}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L188-L191}
 
 \NormalTok{knockSomeDoorRefl}
 \OtherTok{    ::} \DataTypeTok{SomeDoor}
@@ -1422,7 +1425,7 @@ matches!
   Remember not to use \texttt{knock}!
 
   Solution available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L184-L193}{here}.
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L185-L194}{here}.
 
   Assume that \texttt{DoorState} has an instance of \texttt{SDecide}, so you can
   use \texttt{(\%\textasciitilde{})}. This should be derived automatically as
@@ -1454,7 +1457,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L202-L203}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L203-L204}
 
 \OtherTok{knockInv ::}\NormalTok{ (}\DataTypeTok{InvertPass}\NormalTok{ (}\DataTypeTok{StatePass}\NormalTok{ s) }\FunctionTok{~}\NormalTok{ '}\DataTypeTok{Allow}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{knockInv d }\FunctionTok{=}\NormalTok{ putStrLn }\FunctionTok{$} \StringTok{"Knock knock on "} \FunctionTok{++}\NormalTok{ doorMaterial d }\FunctionTok{++} \StringTok{" door!"}
@@ -1465,7 +1468,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L205-L208}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L206-L209}
 
 \NormalTok{knockSomeDoorInv}
 \OtherTok{    ::} \DataTypeTok{SomeDoor}
@@ -1478,7 +1481,7 @@ matches!
   \texttt{knock}.
 
   Solution available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L202-L211}{here}!
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L203-L212}{here}!
 \item
   Let's work with a toy typeclass called \texttt{Cycle}, based on \texttt{Enum}
 
@@ -1498,7 +1501,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L220-L227}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L221-L228}
 
 \KeywordTok{instance} \DataTypeTok{Cycle} \DataTypeTok{DoorState} \KeywordTok{where}
 \NormalTok{    next }\DataTypeTok{Opened} \FunctionTok{=} \DataTypeTok{Closed}
@@ -1516,7 +1519,7 @@ matches!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L229-L238}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L230-L239}
 
 \KeywordTok{instance} \DataTypeTok{PCycle} \DataTypeTok{DoorState} \KeywordTok{where}
 
@@ -1525,7 +1528,7 @@ matches!
 \end{Shaded}
 
   Solution available
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L220-L247}{here}!
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs\#L221-L248}{here}!
 \end{enumerate}
 
 \hypertarget{special-thanks}{%

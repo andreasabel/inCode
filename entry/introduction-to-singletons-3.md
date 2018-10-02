@@ -43,7 +43,7 @@ In the first post we looked at the `Door` type, indexed with a phantom type of
 kind `DoorState`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L29-L35
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L30-L36
 
 $(singletons [d|
   data DoorState = Opened | Closed | Locked
@@ -67,7 +67,7 @@ through many "analogous" and equivalent type, we arrived at the existential
 wrapper `SomeDoor`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L37-L42
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L38-L43
 
 data SomeDoor :: Type where
     MkSomeDoor :: Sing s -> Door s -> SomeDoor
@@ -136,7 +136,7 @@ We can define a predicate `Knockable :: DoorState -> Type` as a GADT that only
 has values if given `'Closed` and `'Locked`, but not `'Opened`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L44-L46
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L45-L47
 
 data Knockable :: DoorState -> Type where
     KnockClosed :: Knockable 'Closed
@@ -151,7 +151,7 @@ Well, we can make a version of `knock` that requires a proof that `s` is
 `Knockable`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L48-L49
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L49-L50
 
 knock :: Knockable s -> Door s -> IO ()
 knock _ d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
@@ -175,7 +175,7 @@ We can even make it more seamless to use by auto-generating proofs at
 compile-time, with a general class like `Auto`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L51-L58
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L52-L59
 
 class Provable p a where
     auto :: p a
@@ -253,13 +253,13 @@ isKnockable :: Sing s -> Decision (Knockable s)
 ```
 
 I recommend taking a moment and trying to implement this yourself. Remember to
-enable `-Wall` to make sure you're handling all potential pattern matching
-cases.
+enable `-Werror=incomplete-patterns`[^2] (or at least `-Wall`) to make sure
+you're handling all potential pattern matching cases.
 
 Are you ready? Here's a solution:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L60-L64
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L61-L65
 
 isKnockable :: Sing s -> Decision (Knockable s)
 isKnockable = \case
@@ -281,7 +281,7 @@ no such type could possibly exist. We do this by providing a function of type
 We can write it like this:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L66-L67
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L67-L68
 
 disproveOpened :: Knockable 'Opened -> Void
 disproveOpened k = case k of {}             -- empty pattern match
@@ -310,7 +310,7 @@ We can use this decision function, finally, to handle an arbitrary `Door` whose
 status we not know until runtime:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L69-L74
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L70-L75
 
 knockSomeDoor
     :: SomeDoor     -- ^ status not known until you pattern match at runtime
@@ -371,9 +371,10 @@ write a function of type `Knocked 'Closed -> Void`...but no such (total or
 non-partial) function exists. We can't write `\case {}`, because that's an
 incomplete pattern match --- it's missing a match on the `KnockClosed` pattern.
 
-Note also that this is why it's very important to always have `-Wall` (Warn all)
-on when writing dependently typed proofs, to ensure that GHC warns you when your
-pattern matches are incomplete and you know your proof is invalid.
+Note also that this is why it's very important to always have
+`-Werror=incomplete-patterns` (or at least `-Wall` --- warn all) on when writing
+dependently typed proofs, to ensure that GHC warns you when your pattern matches
+are incomplete and you know your proof is invalid.
 
 In the examples, we see two more non-trivial examples of decision functions
 (`and p q` and `or p q`) that are impossible to implement incorrectly, due to
@@ -404,7 +405,7 @@ We can read the type signature as: "Knocking requires both a `Door s` and a
 run `knock` on a status that is not `Knockable`, like, say, `'Opened`.
 
 In this light, the role of a proof is like a "key" that a type (like `'Closed`)
-must provide to "unlock" functions like `knock`.[^2] A *decision function* is a
+must provide to "unlock" functions like `knock`.[^3] A *decision function* is a
 function to generate these proofs (or prove that they are impossible) for given
 types.
 
@@ -417,7 +418,7 @@ anything at runtime. They only exist as ways to limit or enable specific
 programs from compiling, and serve no purpose after compilation. GHC Haskell
 does not implement proof erasure at the time of this post (current GHC version
 8.6), but if proofs like this become commonplace, you might be reading this
-during a time where GHC Haskell erases proofs like `Knockable` witnesses![^3]
+during a time where GHC Haskell erases proofs like `Knockable` witnesses![^4]
 
 ### The Role of Singletons
 
@@ -484,7 +485,7 @@ Type Level Functions
 
 We're now going to look at a different method useful for restricting how we can
 call functions. Something we can do is define a type that expresses
-knockable-or-not-knockable, as a value:[^4]
+knockable-or-not-knockable, as a value:[^5]
 
 ``` {.haskell}
 $(singletons [d|
@@ -522,7 +523,7 @@ make sense in "fully applied" form, with all arguments given syntactically.
 Armed with this type family, we can write a new version of `knock`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L86-L87
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L87-L88
 
 knockP :: (StatePass s ~ 'Obstruct) => Door s -> IO ()
 knockP d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
@@ -597,7 +598,7 @@ type family it's mirroring.
 With our new tool, we can now write:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L89-L94
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L90-L95
 
 knockSomeDoorP
     :: SomeDoor     -- ^ status not known until you pattern match at runtime
@@ -639,7 +640,7 @@ $(singletons [d|
 The above declaration would normally declare only the value-level function
 `statePass` with the type `DoorSate -> Pass`.
 
-However, with singleton's template haskell, this also generates:[^5]
+However, with singleton's template haskell, this also generates:[^6]
 
 -   The *type family* `StatePass (s :: DoorState) :: Pass`, like we defined
     above
@@ -652,7 +653,7 @@ function `sMyFunction`.
 
 The naming convention for functions with symbolic names (operators) takes an
 operator like `++` and generates the type family `++` (keeping the identical
-name) and the singleton function `%++`.[^6]
+name) and the singleton function `%++`.[^7]
 
 A Comparison
 ------------
@@ -896,8 +897,9 @@ code](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3
 it contains all of the solutions, but you can delete everything after the
 comment `-- Exercises` if you wish to start on your own!
 
-**Remember to enable -Wall** to ensure that all of your functions are total!
-None of these implementations should require any incomplete pattern matches!
+**Remember to enable `-Werror=incomplete-patterns` or `-Wall`** to ensure that
+all of your functions are total! None of these implementations should require
+any incomplete pattern matches!
 
 1.  We talk about predicates as type constructors with type `k -> Type`. This
     fits a lot of things we've seen before (all instances of `Functor`, for
@@ -910,21 +912,21 @@ None of these implementations should require any incomplete pattern matches!
     What is the type of its *decision function*? Can you implement it?
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L101-L106)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L102-L107)!
 
 2.  Now let's practice working with predicates, singletons, and negation via
     `Refuted` together.
 
     You may have heard of the principle of "double negation", where *not
     (not p)* implies *p*. So, we should be able to say that
-    `Refuted (Refuted (Knockable s))` implies `Knockable s`.[^7] If something is
+    `Refuted (Refuted (Knockable s))` implies `Knockable s`.[^8] If something is
     not "not knockable", then it must be knockable, right?
 
     Try writing `refuteRefuteKnockable` to verify this principle --- at least
     for the `Knockable` predicate.
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L109-L112
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L110-L113
 
     refuteRefuteKnockable
         :: forall s. SingI s
@@ -937,7 +939,7 @@ None of these implementations should require any incomplete pattern matches!
     singleton it needs.
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L109-L116)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L110-L117)!
 
     *Hint:* You might find `absurd` (from *Data.Void*) helpful:
 
@@ -945,7 +947,7 @@ None of these implementations should require any incomplete pattern matches!
     absurd :: forall a. Void -> a
     ```
 
-    If you have a `Void`, you can make a value of any type![^8]
+    If you have a `Void`, you can make a value of any type![^9]
 
 3.  (This next one is fairly difficult compared to the others, and is only
     tangentially related to singletons, so feel free to skip it!)
@@ -959,7 +961,7 @@ None of these implementations should require any incomplete pattern matches!
         have inhabitants)
 
         ``` {.haskell}
-        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L120-L120
+        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L121-L121
 
             And :: p a -> q a -> And p q a
         ```
@@ -970,7 +972,7 @@ None of these implementations should require any incomplete pattern matches!
         are true (aka, have inhabitants)
 
         ``` {.haskell}
-        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L123-L123
+        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L124-L124
 
             OrLeft  :: p a -> Or p q a
         ```
@@ -985,7 +987,7 @@ None of these implementations should require any incomplete pattern matches!
         are. Can we write the decision functions?
 
         ``` {.haskell}
-        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L126-L141
+        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L127-L142
 
         decideAnd
             :: (forall x. Sing x -> Decision (p x))
@@ -1013,7 +1015,7 @@ None of these implementations should require any incomplete pattern matches!
         knockable *and* equal to `'Opened`). Write such a witness:
 
         ``` {.haskell}
-        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L150-L152
+        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L151-L153
 
         knockableNotOpened
             :: forall s. SingI s
@@ -1024,7 +1026,7 @@ None of these implementations should require any incomplete pattern matches!
         `('Opened :~:)`...there's no in-between. Write such a witness:
 
         ``` {.haskell}
-        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L157-L159
+        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L158-L160
 
         knockableOrOpened
             :: forall s. SingI s
@@ -1032,7 +1034,7 @@ None of these implementations should require any incomplete pattern matches!
         ```
 
     Solutions available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L119-L163)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L120-L164)!
 
 4.  Instead of creating an entire `Knocked` type, we could have just said "as
     long as the door is not `'Opened`, you can knock". This means we could write
@@ -1053,7 +1055,7 @@ None of these implementations should require any incomplete pattern matches!
     predicate as `Knockable s`!
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L166-L177
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L167-L178
 
     knockedRefute
         :: forall s. SingI s
@@ -1067,7 +1069,7 @@ None of these implementations should require any incomplete pattern matches!
     ```
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L166-L181)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L167-L182)!
 
     *Note:* `knockedRefute` is fairly straightforward, but `refuteKnocked` is
     definitely trickier, so don't be discouraged!
@@ -1085,7 +1087,7 @@ None of these implementations should require any incomplete pattern matches!
     constraint instead:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L184-L185
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L185-L186
 
     knockRefl :: (StatePass s :~: 'Obstruct) -> Door s -> IO ()
     knockRefl _ d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
@@ -1095,7 +1097,7 @@ None of these implementations should require any incomplete pattern matches!
     `knockSomeDoorRefl`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L187-L190
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L188-L191
 
     knockSomeDoorRefl
         :: SomeDoor
@@ -1106,7 +1108,7 @@ None of these implementations should require any incomplete pattern matches!
     Remember not to use `knock`!
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L184-L193).
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L185-L194).
 
     Assume that `DoorState` has an instance of `SDecide`, so you can use `(%~)`.
     This should be derived automatically as long as you derive `Eq`:
@@ -1131,7 +1133,7 @@ None of these implementations should require any incomplete pattern matches!
     Implement `knock` in a way that lets you knock if `invertPass` is `Allow`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L202-L203
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L203-L204
 
     knockInv :: (InvertPass (StatePass s) ~ 'Allow) => Door s -> IO ()
     knockInv d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
@@ -1140,7 +1142,7 @@ None of these implementations should require any incomplete pattern matches!
     And write `knockSomeDoor` in terms of it:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L205-L208
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L206-L209
 
     knockSomeDoorInv
         :: SomeDoor
@@ -1151,7 +1153,7 @@ None of these implementations should require any incomplete pattern matches!
     Remember again to implement it in terms of `knockInv`, *not* `knock`.
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L202-L211)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L203-L212)!
 
 7.  Let's work with a toy typeclass called `Cycle`, based on `Enum`
 
@@ -1168,7 +1170,7 @@ None of these implementations should require any incomplete pattern matches!
     pred-ing the first item
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L220-L227
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L221-L228
 
     instance Cycle DoorState where
         next Opened = Closed
@@ -1183,7 +1185,7 @@ None of these implementations should require any incomplete pattern matches!
     Can you manually promote this instance for `DoorState` to the type level?
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L229-L238
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L230-L239
 
     instance PCycle DoorState where
 
@@ -1191,7 +1193,7 @@ None of these implementations should require any incomplete pattern matches!
     ```
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L220-L247)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L221-L248)!
 
 Special Thanks
 --------------
@@ -1221,28 +1223,32 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     are talking about a subset of Haskell where all values are non-bottom and
     all functions are total.
 
-[^2]: Sorry to mix up similar metaphors like this! Definitely not intentional :)
+[^2]: Thanks to [Darwin226 on
+    reddit](https://www.reddit.com/r/haskell/comments/9kkbci/introduction_to_singletons_part_3_dependently/e70nc7k/)
+    for this tip!
 
-[^3]: Note, however, that we are a little lucky in our case. In the case of our
+[^3]: Sorry to mix up similar metaphors like this! Definitely not intentional :)
+
+[^4]: Note, however, that we are a little lucky in our case. In the case of our
     implementation of `knock`, we match on a wildcard pattern, so the input
     proof is never evaluated.
 
-[^4]: Really, we could just use `Bool` instead of defining a `Pass` type. We're
+[^5]: Really, we could just use `Bool` instead of defining a `Pass` type. We're
     just going through a new type for the sake of example, and it can be useful
     because a type like `Pass` might potentially have even more constructors!
 
-[^5]: In the spirit of full disclosure, the Template Haskell also generates some
+[^6]: In the spirit of full disclosure, the Template Haskell also generates some
     other things (known as *defunctionalization symbols*), which we will be
     talking about in the next part of this series.
 
-[^6]: Note that this is a change since *singletons-2.4*. In previous versions,
+[^7]: Note that this is a change since *singletons-2.4*. In previous versions,
     `++` would generate the type family `:++` and the singleton function `%:++`.
 
-[^7]: Double negation is not true in general, but it is true in the case that
+[^8]: Double negation is not true in general, but it is true in the case that
     our predicate is *decidable*. That's because `Decision a` is essentially a
     witness to the [excluded
     middle](https://en.wikipedia.org/wiki/Law_of_excluded_middle) for that
     specific predicate, from which double negation can be derived.
 
-[^8]: It's the good ol' [Principle of
+[^9]: It's the good ol' [Principle of
     Explosion](https://en.wikipedia.org/wiki/Principle_of_explosion)
