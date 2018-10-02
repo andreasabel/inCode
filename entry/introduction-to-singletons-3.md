@@ -263,9 +263,9 @@ Are you ready? Here's a solution:
 
 isKnockable :: Sing s -> Decision (Knockable s)
 isKnockable = \case
-    SOpened -> Disproved $ \case {}         -- s ~ 'Opened
-    SClosed -> Proved KnockClosed           -- s ~ 'Closed
-    SLocked -> Proved KnockLocked           -- s ~ 'Locked
+    SOpened -> Disproved $ \case {}    -- s ~ 'Opened
+    SClosed -> Proved KnockClosed      -- s ~ 'Closed
+    SLocked -> Proved KnockLocked      -- s ~ 'Locked
 ```
 
 This definition should seem pretty straightforward for the `SClosed` and
@@ -303,7 +303,8 @@ disproveOpened k = case k of
 
 If you include either of those patterns, GHC will complain. So, there is no
 valid pattern to match on... so `disproveOpened = \case {}` is enough to write
-the function `Knockable 'Opened -> Void`. This only works because
+the function `Knockable 'Opened -> Void`, since there is no constructor for a
+value of type `Knockable 'Opened` to match on. This only works because
 `disproveOpened` is a **complete pattern match**, and therefore total.
 
 We can use this decision function, finally, to handle an arbitrary `Door` whose
