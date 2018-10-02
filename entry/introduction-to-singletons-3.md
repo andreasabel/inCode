@@ -1204,6 +1204,9 @@ thanks to my two supporters at the "Amazing" level on
 [patreon](https://www.patreon.com/justinle/overview), Sam Stites and Josh Vera!
 :)
 
+Thanks also to [Koz Ross](https://twitter.com/KozRoss) for helping proofread
+this post!
+
 --------------------------------------------------------------------------------
 
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
