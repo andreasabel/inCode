@@ -10,7 +10,7 @@
 , { info =
       { level = < Amazing = {=} | Support : {} >, twitter = [] : Optional Text }
   , name =
-      "Sam Stite"
+      "Sam Stites"
   }
 , { info =
       { level = < Support = {=} | Amazing : {} >, twitter = [] : Optional Text }
