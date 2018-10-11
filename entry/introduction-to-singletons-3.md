@@ -197,7 +197,8 @@ COMPILER ERROR!! COMPILER ERROR!!
 
 Such a typeclass exists in libraries like
 *[type-combinators](http://hackage.haskell.org/package/type-combinators)*
-(called `Known`), and in dependently typed languages like Idris, `auto` is
+(called `Known`) and *[decidable](http://hackage.haskell.org/package/decidable)*
+(called `Provable`), and in dependently typed languages like Idris, `auto` is
 actually a built-in language keyword that does this automatically!
 
 ### Decidable Predicates
@@ -320,6 +321,11 @@ knockSomeDoor (MkSomeDoor s d) = case isKnockable s of
     Proved k    -> knock k d
     Disproved _ -> putStrLn "No knocking allowed!"
 ```
+
+While arguably less useful than one provable predicates, a typeclass for
+decidable predicates is also possible; the aptly-named
+[decidable](http://hackage.haskell.org/package/decidable) package offers such a
+typeclass, called `Decidable`!
 
 ### Decision
 
