@@ -177,13 +177,13 @@ compile-time, with a general class like `Auto`:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L52-L59
 
-class Provable p a where
+class Proved p a where
     auto :: p a
 
-instance Provable Knockable 'Closed where
+instance Proved Knockable 'Closed where
     auto = KnockClosed
 
-instance Provable Knockable 'Locked where
+instance Proved Knockable 'Locked where
     auto = KnockLocked
 ```
 
@@ -197,8 +197,9 @@ COMPILER ERROR!! COMPILER ERROR!!
 
 Such a typeclass exists in libraries like
 *[type-combinators](http://hackage.haskell.org/package/type-combinators)*
-(called `Known`). In dependently typed languages like Idris, `auto` is actually
-a built-in language keyword that does this automatically!
+(called `Known`) and [decidable](http://hackage.haskell.org/package/decidable)
+(called `Auto`). In dependently typed languages like Idris, `auto` is actually a
+built-in language keyword that does this automatically!
 
 ### Decidable Predicates
 

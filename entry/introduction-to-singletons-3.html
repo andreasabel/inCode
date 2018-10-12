@@ -75,20 +75,20 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>We can even make it more seamless to use by auto-generating proofs at compile-time, with a general class like <code>Auto</code>:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L52-L59</span></a>
 <a class="sourceLine" id="cb8-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb8-3" data-line-number="3"><span class="kw">class</span> <span class="dt">Provable</span> p a <span class="kw">where</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3"><span class="kw">class</span> <span class="dt">Proved</span> p a <span class="kw">where</span></a>
 <a class="sourceLine" id="cb8-4" data-line-number="4"><span class="ot">    auto ::</span> p a</a>
 <a class="sourceLine" id="cb8-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb8-6" data-line-number="6"><span class="kw">instance</span> <span class="dt">Provable</span> <span class="dt">Knockable</span> &#39;<span class="dt">Closed</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6"><span class="kw">instance</span> <span class="dt">Proved</span> <span class="dt">Knockable</span> &#39;<span class="dt">Closed</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb8-7" data-line-number="7">    auto <span class="fu">=</span> <span class="dt">KnockClosed</span></a>
 <a class="sourceLine" id="cb8-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb8-9" data-line-number="9"><span class="kw">instance</span> <span class="dt">Provable</span> <span class="dt">Knockable</span> &#39;<span class="dt">Locked</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb8-9" data-line-number="9"><span class="kw">instance</span> <span class="dt">Proved</span> <span class="dt">Knockable</span> &#39;<span class="dt">Locked</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb8-10" data-line-number="10">    auto <span class="fu">=</span> <span class="dt">KnockLocked</span></a></code></pre></div>
 <div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1">ghci<span class="fu">&gt;</span> knock auto (<span class="dt">UnsafeMkDoor</span> <span class="fu">@</span>&#39;<span class="dt">Closed</span> <span class="st">&quot;Acacia&quot;</span>)</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2"><span class="dt">Knock</span> knock on <span class="dt">Acacia</span> door<span class="fu">!</span></a>
 <a class="sourceLine" id="cb9-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">ghci<span class="fu">&gt;</span> knock auto (<span class="dt">UnsafeMkDoor</span> <span class="fu">@</span>&#39;<span class="dt">Opened</span> <span class="st">&quot;Jungle&quot;</span>)</a>
 <a class="sourceLine" id="cb9-5" data-line-number="5"><span class="dt">COMPILER</span> <span class="dt">ERROR</span><span class="fu">!!</span> <span class="dt">COMPILER</span> <span class="dt">ERROR</span><span class="fu">!!</span></a></code></pre></div>
-<p>Such a typeclass exists in libraries like <em><a href="http://hackage.haskell.org/package/type-combinators">type-combinators</a></em> (called <code>Known</code>). In dependently typed languages like Idris, <code>auto</code> is actually a built-in language keyword that does this automatically!</p>
+<p>Such a typeclass exists in libraries like <em><a href="http://hackage.haskell.org/package/type-combinators">type-combinators</a></em> (called <code>Known</code>) and <a href="http://hackage.haskell.org/package/decidable">decidable</a> (called <code>Auto</code>). In dependently typed languages like Idris, <code>auto</code> is actually a built-in language keyword that does this automatically!</p>
 <h3 id="decidable-predicates">Decidable Predicates</h3>
 <p>However, all of this only works if you know what <code>s</code> is at compile-time. What if you don’t? What if you are retrieving <code>s</code> at runtime (like from a <code>SomeDoor</code> or <code>withSomeSing</code>), or you are forced to handle all possible <code>s</code>s?</p>
 <p>To do this, we’re going to take advantage of a property of some predicates called “decidability”. We say that a predicate is <em>decidable</em> if, for any input type, we can say whether or not the predicate is satisfiable.</p>
