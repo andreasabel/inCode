@@ -197,9 +197,8 @@ COMPILER ERROR!! COMPILER ERROR!!
 
 Such a typeclass exists in libraries like
 *[type-combinators](http://hackage.haskell.org/package/type-combinators)*
-(called `Known`) and *[decidable](http://hackage.haskell.org/package/decidable)*
-(called `Provable`), and in dependently typed languages like Idris, `auto` is
-actually a built-in language keyword that does this automatically!
+(called `Known`). In dependently typed languages like Idris, `auto` is actually
+a built-in language keyword that does this automatically!
 
 ### Decidable Predicates
 
