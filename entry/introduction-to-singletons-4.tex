@@ -309,7 +309,7 @@ value-level ones. If you can write a value-level function, you can write a
 type-level function!
 
 \hypertarget{kicking-it-up-a-notch}{%
-\section{Kicking it up a notch}\label{kicking-it-up-a-notch}}
+\subsection{Kicking it up a notch}\label{kicking-it-up-a-notch}}
 
 Alright, so let's see how far we can really take this!
 
@@ -379,15 +379,15 @@ We can pattern match and collapse an entire list down item-by-item:
 \end{Highlighting}
 \end{Shaded}
 
-Again, remember that this also defines the type family \texttt{MergeStates} and
-the singleton function
-\texttt{sMergeStates\ ::\ Sing\ ss\ -\textgreater{}\ Sing\ (MergeStates\ ss)}.
+Again, remember that this also defines the type family \texttt{MergeStateList}
+and the singleton function
+\texttt{sMergeStateList\ ::\ Sing\ ss\ -\textgreater{}\ Sing\ (MergeStateList\ ss)}.
 
 With this, we can write \texttt{collapseHallway}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{collapseHallway ::} \DataTypeTok{Hallway}\NormalTok{ ss }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ (}\DataTypeTok{MergeStates}\NormalTok{ ss)}
+\OtherTok{collapseHallway ::} \DataTypeTok{Hallway}\NormalTok{ ss }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ (}\DataTypeTok{MergeStateList}\NormalTok{ ss)}
 \NormalTok{collapseHallway }\DataTypeTok{HEnd}       \FunctionTok{=} \DataTypeTok{UnsafeMkDoor} \StringTok{"End of Hallway"}
 \NormalTok{collapseHallway (d }\FunctionTok{:<#}\NormalTok{ ds) }\FunctionTok{=}\NormalTok{ d }\OtherTok{`mergeDoor`}\NormalTok{ collapseHallway ds}
 \end{Highlighting}
@@ -403,6 +403,498 @@ structure of \texttt{mergeStates}, this all typechecks, and we're done!
 \OtherTok{    ::} \DataTypeTok{Door}\NormalTok{ '}\DataTypeTok{Locked}
 \end{Highlighting}
 \end{Shaded}
+
+Note one nice benefit -- the door state of
+\texttt{collapseHallway\ (door1\ :\textless{}\#\ door2\ :\textless{}\#\ door3\ :\textless{}\#\ HEnd)}
+is known at compile-time to be \texttt{Door\ \textquotesingle{}Locked}, if the
+types of all of the component doors are also known!
+
+\hypertarget{functional-programming}{%
+\section{Functional Programming}\label{functional-programming}}
+
+We went over that all a bit fast, but some of you might have noticed that the
+definition of \texttt{mergeStates} bears a really strong resemblance to a very
+common Haskell list processing pattern:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{mergeStates ::}\NormalTok{ [}\DataTypeTok{DoorState}\NormalTok{] }\OtherTok{->} \DataTypeTok{DoorState}
+\NormalTok{mergeStates []     }\FunctionTok{=} \DataTypeTok{Opened}               \CommentTok{-- ^ the identity of mergeState}
+\NormalTok{mergeStates (s}\FunctionTok{:}\NormalTok{ss) }\FunctionTok{=}\NormalTok{ s }\OtherTok{`mergeState`}\NormalTok{ mergeStates ss}
+\end{Highlighting}
+\end{Shaded}
+
+We replace all \texttt{{[}{]}} with \texttt{Opened}, and all \texttt{(:)} with
+\texttt{mergeState}. Yup --- this is exactly a \texttt{foldr}!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{mergeStates ::}\NormalTok{ [}\DataTypeTok{DoorState}\NormalTok{] }\OtherTok{->} \DataTypeTok{DoorState}
+\NormalTok{mergeState }\FunctionTok{=}\NormalTok{ foldr mergeState }\DataTypeTok{Opened}
+\end{Highlighting}
+\end{Shaded}
+
+In Haskell, we are always encouraged to use higher-order functions whenever
+possible instead of explicit recursion, both because explicit recursion opens
+you up to a lot of potential bugs, and also because using established
+higher-order functions make your code more readable.
+
+So, as Haskellers, let us hold ourselves to a higher standard and not be
+satisfied with a \texttt{MergeState} written using explicit recursion. Let us
+instead go \emph{full fold}! ONWARD HO!
+
+\hypertarget{the-problem}{%
+\subsection{The Problem}\label{the-problem}}
+
+Initial attempts to write a higher-order type-level function as a type family,
+however, serve to temper our enthusiasm.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type}\NormalTok{ family }\DataTypeTok{MergeState}\NormalTok{ (}\OtherTok{s ::} \DataTypeTok{DoorState}\NormalTok{) (}\OtherTok{t ::} \DataTypeTok{DoorState}\NormalTok{)}\OtherTok{ ::} \DataTypeTok{DoorState} \KeywordTok{where}
+    \DataTypeTok{MergeState}\NormalTok{ s t }\FunctionTok{=} \DataTypeTok{Max}\NormalTok{ s t}
+
+\KeywordTok{type}\NormalTok{ family }\DataTypeTok{Foldr}\NormalTok{ (}\OtherTok{f ::}\NormalTok{ j }\OtherTok{->}\NormalTok{ k }\OtherTok{->}\NormalTok{ k) (}\OtherTok{z ::}\NormalTok{ k) (}\OtherTok{xs ::}\NormalTok{ [j])}\OtherTok{ ::}\NormalTok{ k }\KeywordTok{where}
+    \DataTypeTok{Foldr}\NormalTok{ f z '[]       }\FunctionTok{=}\NormalTok{ z}
+    \DataTypeTok{Foldr}\NormalTok{ f z (x '}\FunctionTok{:}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ f x (}\DataTypeTok{Foldr}\NormalTok{ f z xs)}
+\end{Highlighting}
+\end{Shaded}
+
+So far so good right? So we should expect to be able to write
+\texttt{MergeStateList} using \texttt{Foldr}, \texttt{MergeState}, and
+\texttt{\textquotesingle{}Opened}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type}\NormalTok{ family }\DataTypeTok{MergeStateList}\NormalTok{ (}\OtherTok{ss ::}\NormalTok{ [}\DataTypeTok{DoorState}\NormalTok{])}\OtherTok{ ::} \DataTypeTok{DoorState} \KeywordTok{where}
+    \DataTypeTok{MergeStateList}\NormalTok{ ss }\FunctionTok{=} \DataTypeTok{Foldr} \DataTypeTok{MergeState}\NormalTok{ '}\DataTypeTok{Opened}\NormalTok{ ss}
+\end{Highlighting}
+\end{Shaded}
+
+Ah, but the compiler is here to tell you this isn't allowed in Haskell:
+
+\begin{verbatim}
+    • The type family ‘MergeState’ should have 2 arguments, but has been given none
+    • In the equations for closed type family ‘MergeStateList’
+      In the type family declaration for ‘MergeStateList’
+\end{verbatim}
+
+What happened? To figure out, we have to remember that pesky restriction on type
+synonyms and type families: they \emph{cannot} be partially applied, and must
+always be fully applied. For the most part, only \emph{type constructors} (like
+\texttt{Maybe}, \texttt{Either}, \texttt{IO}) and lifted DataKinds data
+constructors (like \texttt{\textquotesingle{}Just},
+\texttt{\textquotesingle{}(:)}) in Haskell can ever be partially applied at the
+type level. We therefore can't use \texttt{MergeState} as an argument to
+\texttt{Foldr}, because \texttt{MergeState} must always be fully applied.
+
+Unfortunately for us, this makes our \texttt{Foldr} effectively useless. That's
+because we're always going to want to pass in type families (like
+\texttt{MergeState}), so there's pretty much literally no way to ever actually
+call \texttt{Foldr} except with type constructors or lifted DataKinds data
+constructors.
+
+So\ldots{}back to the drawing board?
+
+\hypertarget{defunctionalization}{%
+\section{Defunctionalization}\label{defunctionalization}}
+
+I like to mentally think of the \emph{singletons} library as having two parts:
+the first is linking lifted DataKinds types with run-time values to allow us to
+manipulate types at runtime as first-class values. The second is a system for
+effective \emph{functional programming} at the type level.
+
+To make a working \texttt{Foldr}, we're going to have to jump into that second
+half:
+\emph{\href{https://en.wikipedia.org/wiki/Defunctionalization}{defunctionalization}}.
+
+Defunctionalization is a technique invented in the early 70's to convert
+higher-order functions into first-order functions. The main idea is:
+
+\begin{itemize}
+\tightlist
+\item
+  Instead of working with \emph{functions}, work with \emph{symbols representing
+  functions}.
+\item
+  Build your final functions and values by composing and combining these
+  symbols.
+\item
+  At the end of it all, have a single \texttt{Apply} function interpret all of
+  your symbols and produce the value you want.
+\end{itemize}
+
+In \emph{singletons} these symbols are implemented as ``dummy'' empty data
+constructors, and \texttt{Apply} is a type family.
+
+To help us understand singleton's defunctionalization system better, let's build
+our own defunctionalization system from scratch.
+
+First, a little trick to make things easier to read:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{TyFun}\NormalTok{ a b}
+\KeywordTok{type}\NormalTok{ a }\FunctionTok{~>}\NormalTok{ b }\FunctionTok{=} \DataTypeTok{TyFun}\NormalTok{ a b }\OtherTok{->} \DataTypeTok{Type}
+
+\KeywordTok{infixr} \DecValTok{0} \FunctionTok{~>}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{our-first-symbols}{%
+\subsection{Our First Symbols}\label{our-first-symbols}}
+
+Now we can define a dummy data type like \texttt{Id}, which represents the
+identity function \texttt{id}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Id}\OtherTok{ ::}\NormalTok{ a }\FunctionTok{~>}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+Don't worry too much about \texttt{TyFun}, it's all just a type-level tag that
+makes it convenient to write
+\texttt{Id\ ::\ a\ \textasciitilde{}\textgreater{}\ a}. The actual kind of
+\texttt{Id} is \texttt{Id\ ::\ TyFun\ a\ a\ -\textgreater{}\ Type}; you can
+imagine \texttt{TyFun\ a\ a} as a phantom parameter that signifies that
+\texttt{Id} represents a function from \texttt{a} to \texttt{a}.
+
+Now, \texttt{Id} is not a function\ldots{}it's a \emph{dummy type constructor}
+that \emph{represents} a function \texttt{a\ -\textgreater{}\ a}. A type
+constructor of kind \texttt{a\ \textasciitilde{}\textgreater{}\ a} represents a
+\emph{defunctionalization symbol} -- a type constructor that represents a
+function from \texttt{a} to \texttt{a}.
+
+To interpret it, we need to write our global interpreter function:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type}\NormalTok{ family }\DataTypeTok{Apply}\NormalTok{ (}\OtherTok{f ::}\NormalTok{ a }\FunctionTok{~>}\NormalTok{ b) (}\OtherTok{x ::}\NormalTok{ a)}\OtherTok{ ::}\NormalTok{ b}
+\end{Highlighting}
+\end{Shaded}
+
+That's the syntax for the definition of an \emph{open} type family in Haskell:
+users are free to add their own instances, just like how type classes are
+normally open in Haskell.
+
+Let's tell \texttt{Apply} how to interpret \texttt{Id}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type}\NormalTok{ insatnce }\DataTypeTok{Apply} \DataTypeTok{Id}\NormalTok{ x }\FunctionTok{=}\NormalTok{ x}
+\end{Highlighting}
+\end{Shaded}
+
+The above is the actual function definition, like writing \texttt{id\ x\ =\ x}.
+We can now \emph{call} \texttt{Id} to get an actual type in return:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ kind}\FunctionTok{!} \DataTypeTok{Apply} \DataTypeTok{Id}\NormalTok{ '}\DataTypeTok{True}
+\NormalTok{'}\DataTypeTok{True}
+\end{Highlighting}
+\end{Shaded}
+
+Let's define another one! We'll implement \texttt{Not}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Not}\OtherTok{ ::} \DataTypeTok{Bool} \FunctionTok{~>} \DataTypeTok{Bool}
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply} \DataTypeTok{Not}\NormalTok{ '}\DataTypeTok{False} \FunctionTok{=}\NormalTok{ '}\DataTypeTok{True}
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply} \DataTypeTok{Not}\NormalTok{ '}\DataTypeTok{True}  \FunctionTok{=}\NormalTok{ '}\DataTypeTok{False}
+\end{Highlighting}
+\end{Shaded}
+
+We can try it out:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{kind}\FunctionTok{!} \DataTypeTok{Apply} \DataTypeTok{Not}\NormalTok{ '}\DataTypeTok{True}
+\NormalTok{'}\DataTypeTok{False}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{kind}\FunctionTok{!} \DataTypeTok{Apply} \DataTypeTok{Not}\NormalTok{ '}\DataTypeTok{False}
+\NormalTok{'}\DataTypeTok{True}
+\end{Highlighting}
+\end{Shaded}
+
+It can be convenient to define an infix synonym for \texttt{Apply}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type}\NormalTok{ f }\FunctionTok{@@}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{Apply}\NormalTok{ f a}
+
+\KeywordTok{infixl} \DecValTok{9} \FunctionTok{@@}
+\end{Highlighting}
+\end{Shaded}
+
+Then we can wrote:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{kind}\FunctionTok{!} \DataTypeTok{Not} \FunctionTok{@@}\NormalTok{ '}\DataTypeTok{False}
+\NormalTok{'}\DataTypeTok{True}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{kind}\FunctionTok{!} \DataTypeTok{Id} \FunctionTok{@@}\NormalTok{ '}\DataTypeTok{True}
+\NormalTok{'}\DataTypeTok{True}
+\end{Highlighting}
+\end{Shaded}
+
+Remember, \texttt{Id} and \texttt{Not} are not actual functions --- they're just
+dummy data types (``defunctionalization symbols''), and we define the functions
+they represent through the global \texttt{Apply} type function.
+
+\hypertarget{a-bit-of-principle}{%
+\subsection{A Bit of Principle}\label{a-bit-of-principle}}
+
+So we've got the basics of defunctionalization --- instead of using functions
+directly, use dummy symbols that encode your functions that are interpreted
+using \texttt{Apply}. Let's add a bit of principle to make this all a bit more
+scalable.
+
+The singletons library adopts a few conventions for linking all of these
+together. Using the \texttt{Not} function as an example, if we wanted to lift
+the function:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{not}\OtherTok{ ::} \DataTypeTok{Bool} \OtherTok{->} \DataTypeTok{Bool}
+\NormalTok{not }\DataTypeTok{False} \FunctionTok{=} \DataTypeTok{True}
+\NormalTok{not }\DataTypeTok{True}  \FunctionTok{=} \DataTypeTok{Flse}
+\end{Highlighting}
+\end{Shaded}
+
+We already know about the type family and singleton function this would produce:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type}\NormalTok{ family }\DataTypeTok{Not}\NormalTok{ (}\OtherTok{x ::} \DataTypeTok{Bool}\NormalTok{)}\OtherTok{ ::} \DataTypeTok{Bool} \KeywordTok{where}
+    \DataTypeTok{Not}\NormalTok{ '}\DataTypeTok{False} \FunctionTok{=}\NormalTok{ '}\DataTypeTok{True}
+    \DataTypeTok{Not}\NormalTok{ '}\DataTypeTok{True}  \FunctionTok{=}\NormalTok{ '}\DataTypeTok{False}
+
+\OtherTok{sNot ::} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ (}\DataTypeTok{Not}\NormalTok{ x)}
+\NormalTok{sNot }\DataTypeTok{SFalse} \FunctionTok{=} \DataTypeTok{STrue}
+\NormalTok{sNot }\DataTypeTok{STrue}  \FunctionTok{=} \DataTypeTok{SFalse}
+\end{Highlighting}
+\end{Shaded}
+
+But the singletons library also produces the following \emph{defunctionalization
+symbols}, according to a naming convention:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{NotSym0}\OtherTok{ ::} \DataTypeTok{Bool} \FunctionTok{~>} \DataTypeTok{Bool}
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply} \DataTypeTok{NotSym0}\NormalTok{ x }\FunctionTok{=} \DataTypeTok{Not}\NormalTok{ x}
+
+\CommentTok{-- also generated for consistency}
+\KeywordTok{type} \DataTypeTok{NotSym1}\NormalTok{ x }\FunctionTok{=} \DataTypeTok{Not}\NormalTok{ x}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{NotSym0} is the \emph{defunctionalization symbol} associated with the
+\texttt{Not} type family, defined so that \texttt{NotSym0\ @@\ x\ =\ Not\ x}.
+Its purpose is to allow us to \emph{pass in} \texttt{Not} as an \emph{un-applied
+function}. The \texttt{Sym0} suffix is a naming convention, and the 0 stands for
+``expects 0 arguments''. Similarly for \texttt{NotSym1} -- the 1 stands for
+``expects 1 argument''.
+
+Let's look at a slightly more complicated example -- a two-argument function.
+Let's define the boolean ``and'':
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{$}\NormalTok{(singletons [d|}
+\NormalTok{  and :: Bool -> (Bool -> Bool)}
+\NormalTok{  and False _ = False}
+\NormalTok{  and True  x = x}
+\NormalTok{  ])}
+\end{Highlighting}
+\end{Shaded}
+
+this will generate:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type}\NormalTok{ family }\DataTypeTok{And}\NormalTok{ (}\OtherTok{x ::} \DataTypeTok{Bool}\NormalTok{) (}\OtherTok{y ::} \DataTypeTok{Bool}\NormalTok{)}\OtherTok{ ::} \DataTypeTok{Bool} \KeywordTok{where}
+    \DataTypeTok{And}\NormalTok{ '}\DataTypeTok{False}\NormalTok{ x }\FunctionTok{=}\NormalTok{ '}\DataTypeTok{False}
+    \DataTypeTok{And}\NormalTok{ '}\DataTypeTok{True}\NormalTok{  x }\FunctionTok{=}\NormalTok{ x}
+
+\OtherTok{sAnd ::} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ y }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ (}\DataTypeTok{And}\NormalTok{ x y)}
+\NormalTok{sAnd }\DataTypeTok{SFalse}\NormalTok{ x }\FunctionTok{=} \DataTypeTok{SFalse}
+\NormalTok{sAnd }\DataTypeTok{STrue}\NormalTok{  x }\FunctionTok{=}\NormalTok{ x}
+\end{Highlighting}
+\end{Shaded}
+
+And the defunctionalization symbols:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{AndSym0}\OtherTok{ ::} \DataTypeTok{Bool} \FunctionTok{~>}\NormalTok{ (}\DataTypeTok{Bool} \FunctionTok{~>} \DataTypeTok{Bool}\NormalTok{)}
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply} \DataTypeTok{AndSym0}\NormalTok{ x }\FunctionTok{=} \DataTypeTok{AndSym1}\NormalTok{ x}
+
+\KeywordTok{data} \DataTypeTok{AndSym1}\NormalTok{ (}\OtherTok{x ::} \DataTypeTok{Bool}\NormalTok{)}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{Bool} \FunctionTok{~>} \DataTypeTok{Bool}\NormalTok{)}
+\CommentTok{-- or}
+\KeywordTok{data} \DataTypeTok{AndSym1}\OtherTok{ ::} \DataTypeTok{Bool} \OtherTok{->}\NormalTok{ (}\DataTypeTok{Bool} \FunctionTok{~>} \DataTypeTok{Bool}\NormalTok{)}
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply}\NormalTok{ (}\DataTypeTok{AndSym1}\NormalTok{ x) y }\FunctionTok{=} \DataTypeTok{And}\NormalTok{ x y}
+
+\KeywordTok{type} \DataTypeTok{AndSym2}\NormalTok{ x y }\FunctionTok{=} \DataTypeTok{And}\NormalTok{ x y}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{AndSym0} is a defunctionalization symbol representing a ``fully
+unapplied'' version of \texttt{And}. \texttt{AndSym1\ x} is a
+defunctionalization symbol representing a ``partially applied'' version of
+\texttt{And} --- partially applied to \texttt{x} (its kind is
+\texttt{AndSym1\ ::\ Bool\ -\textgreater{}\ (Bool\ \textasciitilde{}\textgreater{}\ Bool)}).
+
+The application of \texttt{AndSym0} to \texttt{x} gives you \texttt{AndSym1\ x}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{kind}\FunctionTok{!} \DataTypeTok{AndSym0} \FunctionTok{@@}\NormalTok{ '}\DataTypeTok{False}
+\DataTypeTok{AndSym1}\NormalTok{ '}\DataTypeTok{False}
+\end{Highlighting}
+\end{Shaded}
+
+Remember its kind
+\texttt{AndSym0\ ::\ Bool\ \textasciitilde{}\textgreater{}\ (Bool\ \textasciitilde{}\textgreater{}\ Bool)}
+(or just
+\texttt{AndSym0\ ::\ Bool\ \textasciitilde{}\textgreater{}\ Bool\ \textasciitilde{}\textgreater{}\ Bool}):
+it takes a \texttt{Bool}, and returns a
+\texttt{Bool\ \textasciitilde{}\textgreater{}\ Bool} defunctionalization symbol.
+
+The application of \texttt{AndSym1\ x} to \texttt{y} gives you
+\texttt{And\ x\ y}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{kind}\FunctionTok{!} \DataTypeTok{AndSym1}\NormalTok{ '}\DataTypeTok{False} \FunctionTok{@@}\NormalTok{ '}\DataTypeTok{True}
+\NormalTok{'}\DataTypeTok{False}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{kind}\FunctionTok{!} \DataTypeTok{AndSym1}\NormalTok{ '}\DataTypeTok{True}  \FunctionTok{@@}\NormalTok{ '}\DataTypeTok{True}
+\NormalTok{'}\DataTypeTok{True}
+\end{Highlighting}
+\end{Shaded}
+
+A note to remember: \texttt{AndSym1\ \textquotesingle{}True} is the
+defunctionalization symbol, and \emph{not} \texttt{AndSym1} itself.
+\texttt{AndSym1} has kind
+\texttt{Bool\ -\textgreater{}\ (Bool\ \textasciitilde{}\textgreater{}\ Bool)},
+but \texttt{AndSym1\ \textquotesingle{}True} has kind
+\texttt{Bool\ \textasciitilde{}\textgreater{}\ Bool} --- the kind of a
+defunctionalization symbol.
+
+\hypertarget{bring-me-a-higher-order}{%
+\section{Bring Me a Higher Order}\label{bring-me-a-higher-order}}
+
+Okay, so now we have these tokens that represent ``unapplied'' versions of
+functions. So what?
+
+Well, remember the problem with our implementation of \texttt{Foldr}? We
+couldn't pass in a type family, since type families must be passed fully
+applied. So, instead of having \texttt{Foldr} expect a type family\ldots{}we can
+make it expect a \emph{defunctionalization symbol} instead! Remember,
+defunctionalization symbols represent the ``unapplied'' versions of type
+families, so they are exactly the tools we need!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type}\NormalTok{ family }\DataTypeTok{Foldr}\NormalTok{ (}\OtherTok{f ::}\NormalTok{ j }\FunctionTok{~>}\NormalTok{ k }\FunctionTok{~>}\NormalTok{ k) (}\OtherTok{z ::}\NormalTok{ k) (}\OtherTok{xs ::}\NormalTok{ [j])}\OtherTok{ ::}\NormalTok{ k }\KeywordTok{where}
+    \DataTypeTok{Foldr}\NormalTok{ f z '[]       }\FunctionTok{=}\NormalTok{ z}
+    \DataTypeTok{Foldr}\NormalTok{ f z (x '}\FunctionTok{:}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ (f }\FunctionTok{@@}\NormalTok{ x) }\FunctionTok{@@} \DataTypeTok{Foldr}\NormalTok{ f z xs}
+\end{Highlighting}
+\end{Shaded}
+
+The difference is that instead of taking a type family or type constructor
+\texttt{f\ ::\ j\ -\textgreater{}\ k\ -\textgreater{}\ k}, we have it take the
+\emph{defunctionalization symbol}
+\texttt{f\ ::\ j\ \textasciitilde{}\textgreater{}\ (k\ \textasciitilde{}\textgreater{}\ k)}.
+
+Instead of taking a type family or type constructor, we take that dummy type
+constructor.
+
+Now we just need to have our defunctionalization symbols for
+\texttt{MergeStateList}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type}\NormalTok{ family }\DataTypeTok{MergeState}\NormalTok{ (}\OtherTok{s ::} \DataTypeTok{DoorState}\NormalTok{) (}\OtherTok{t ::} \DataTypeTok{DoorState}\NormalTok{)}\OtherTok{ ::} \DataTypeTok{DoorState} \KeywordTok{where}
+    \DataTypeTok{MergeState}\NormalTok{ s t }\FunctionTok{=}\NormalTok{ s}
+
+\KeywordTok{data} \DataTypeTok{MergeStateSym0}\OtherTok{ ::} \DataTypeTok{DoorState} \FunctionTok{~>} \DataTypeTok{DoorState} \FunctionTok{~>} \DataTypeTok{DoorState}
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply} \DataTypeTok{MergeStateSym0}\NormalTok{ s }\FunctionTok{=} \DataTypeTok{MergeStateSym1}\NormalTok{ s}
+
+\KeywordTok{data} \DataTypeTok{MergeStateSym1}\OtherTok{ ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{DoorState} \FunctionTok{~>} \DataTypeTok{DoorState}
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply}\NormalTok{ (}\DataTypeTok{MergeStateSym1}\NormalTok{ s) t }\FunctionTok{=} \DataTypeTok{MergeState}\NormalTok{ s t}
+
+\KeywordTok{type} \DataTypeTok{MergeStateSym2}\NormalTok{ s t }\FunctionTok{=} \DataTypeTok{MergeState}\NormalTok{ s t}
+\end{Highlighting}
+\end{Shaded}
+
+And now we can write \texttt{MergeStateList}!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type}\NormalTok{ family }\DataTypeTok{MergeStateList}\NormalTok{ (}\OtherTok{ss ::}\NormalTok{ [}\DataTypeTok{DoorState}\NormalTok{])}\OtherTok{ ::} \DataTypeTok{DoorState} \KeywordTok{where}
+    \DataTypeTok{MergeStateList}\NormalTok{ ss }\FunctionTok{=} \DataTypeTok{Foldr} \DataTypeTok{MergeStateSym0}\NormalTok{ '}\DataTypeTok{Opened}\NormalTok{ ss}
+\end{Highlighting}
+\end{Shaded}
+
+This compiles!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{kind}\FunctionTok{!} \DataTypeTok{MergeStateList}\NormalTok{ '[ '}\DataTypeTok{Closed}\NormalTok{, '}\DataTypeTok{Opened}\NormalTok{, '}\DataTypeTok{Locked}\NormalTok{ ]}
+\NormalTok{'}\DataTypeTok{Closed}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{kind}\FunctionTok{!} \DataTypeTok{MergeStateList}\NormalTok{ '[ '}\DataTypeTok{Closed}\NormalTok{, '}\DataTypeTok{Opened}\NormalTok{ ]}
+\NormalTok{'}\DataTypeTok{Closed}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{collapseHallway ::} \DataTypeTok{Hallway}\NormalTok{ ss }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ (}\DataTypeTok{MergeStateList}\NormalTok{ ss)}
+\NormalTok{collapseHallway }\DataTypeTok{HEnd}       \FunctionTok{=} \DataTypeTok{UnsafeMkDoor} \StringTok{"End of Hallway"}
+\NormalTok{collapseHallway (d }\FunctionTok{:<#}\NormalTok{ ds) }\FunctionTok{=}\NormalTok{ d }\OtherTok{`mergeDoor`}\NormalTok{ collapseHallway ds}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{singletons-to-the-rescue}{%
+\subsection{Singletons to the Rescue}\label{singletons-to-the-rescue}}
+
+Admittedly this is all a huge mess of boilerplate. The code we had to write more
+than tripled, and we also have an unsightly number of defunctionalization
+symbols and \texttt{Apply} instance boilerplate for every function.
+
+Luckily, the \emph{singletons} library is here to help. You can just write:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{$}\NormalTok{(singletons [d|}
+\NormalTok{  data DoorState = Opened | Closed | Locked}
+\NormalTok{    deriving (Show, Eq, Ord)}
+
+\NormalTok{  mergeState :: DoorState -> DoorState -> DoorState}
+\NormalTok{  mergeState = max}
+
+\NormalTok{  foldr :: (a -> b -> b) -> b -> [a] -> b}
+\NormalTok{  foldr _ z []     = z}
+\NormalTok{  foldr f z (x:xs) = f x (foldr f z xs)}
+
+\NormalTok{  mergeStateList :: [DoorState] -> DoorState}
+\NormalTok{  mergeStateList = foldr mergeState Opened}
+\NormalTok{  |])}
+\end{Highlighting}
+\end{Shaded}
+
+And all of these defunctionalization symbols are generated for you;
+\emph{singletons} is also able to recognize that \texttt{foldr} is a
+higher-order function and translate its lifted version to take a
+defunctionalization symbol
+\texttt{a\ \textasciitilde{}\textgreater{}\ b\ \textasciitilde{}\textgreater{}\ b}.
+
+It's okay to stay ``in the world of singletons'' for the most part, and let
+singletons handle the composition of functions for you. However, it's still
+important to know what the \emph{singletons} library generates, because
+sometimes it's still useful to manually create defunctionalization symbols and
+work with them.
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
