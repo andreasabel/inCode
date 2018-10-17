@@ -463,53 +463,60 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb65-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Knockable</span> s</a>
 <a class="sourceLine" id="cb65-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">Knockable</span> t</a>
 <a class="sourceLine" id="cb65-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">Knockable</span> (<span class="dt">MergeState</span> s t)</a></code></pre></div>
-<p><code>mergeIsKnockable</code> is only implementable if the merging of two DoorStates that are knockable is also knockable. See if you can write the implementation!</p></li>
+<p><code>mergedIsKnockable</code> is only implementable if the merging of two DoorStates that are knockable is also knockable. See if you can write the implementation!</p></li>
 <li><p>Write a function to append two hallways together.</p>
 <div class="sourceCode" id="cb66"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb66-1" data-line-number="1">appendHallways</a>
 <a class="sourceLine" id="cb66-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Hallway</span> ss</a>
 <a class="sourceLine" id="cb66-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">Hallway</span> ts</a>
 <a class="sourceLine" id="cb66-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">Hallway</span> <span class="fu">????</span></a></code></pre></div>
 <p>Try to figure out what <code>???</code> should be. Try not to use any type families from <em>singletons</em> — implement any type families you might need from scratch!</p>
-<p>Remember the important principle that your type family must mirror the implementation of the functions that use it.</p></li>
+<p>Remember the important principle that your type family must mirror the implementation of the functions that use it.</p>
+<p>And, for fun, use <code>appendHallways</code> to implement <code>appendSomeHallways</code>:</p>
+<div class="sourceCode" id="cb67"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb67-1" data-line-number="1"><span class="kw">type</span> <span class="dt">SomeHallway</span> <span class="fu">=</span> <span class="dt">Sigma</span> [<span class="dt">DoorState</span>] (<span class="dt">TyCon1</span> <span class="dt">Hallway</span>)</a>
+<a class="sourceLine" id="cb67-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb67-3" data-line-number="3">appendSomeHallways</a>
+<a class="sourceLine" id="cb67-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">SomeHallway</span></a>
+<a class="sourceLine" id="cb67-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">SomeHallway</span></a>
+<a class="sourceLine" id="cb67-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">SomeHallway</span></a></code></pre></div></li>
 <li><p>Can you use <code>Sigma</code> to define a door that must be knockable?</p>
 <p>To do this, try directly defining the defunctionalization symbol <code>KnockableDoor :: DoorState ~&gt; Type</code> (or use singletons to generate it for you) so that:</p>
-<div class="sourceCode" id="cb67"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb67-1" data-line-number="1"><span class="kw">type</span> <span class="dt">SomeKnockableDoor</span> <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">DoorState</span> <span class="dt">KnockableDoor</span></a></code></pre></div>
+<div class="sourceCode" id="cb68"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb68-1" data-line-number="1"><span class="kw">type</span> <span class="dt">SomeKnockableDoor</span> <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">DoorState</span> <span class="dt">KnockableDoor</span></a></code></pre></div>
 <p>will contain a <code>Door</code> that must be knockable.</p>
 <p>Try doing it for both (a) the “dependent proof” version (with the <code>Knockable</code> data type) and for (b) the type family version (with the <code>StatePass</code> type family).</p>
 <p><em>Hint:</em> Look at the definition of <code>SomeDoor</code> in terms of <code>Sigma</code>:</p>
-<div class="sourceCode" id="cb68"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb68-1" data-line-number="1"><span class="kw">type</span> <span class="dt">SomeDoor</span> <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">DoorState</span> (<span class="dt">TyCon1</span> <span class="dt">Door</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb69"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb69-1" data-line-number="1"><span class="kw">type</span> <span class="dt">SomeDoor</span> <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">DoorState</span> (<span class="dt">TyCon1</span> <span class="dt">Door</span>)</a></code></pre></div>
 <p><em>Hint</em>: Try having <code>KnockableDoor</code> return a tuple.</p></li>
 <li><p>Take a look at the API of the <em><a href="http://hackage.haskell.org/package/singletons-2.5/docs/Data-Singletons-TypeLits.html">Data.Singletons.TypeLits</a></em> module, based on the API exposed in <em><a href="http://hackage.haskell.org/package/base-4.12.0.0/docs/GHC-TypeNats.html">GHC.TypeNats</a></em> module from <em>base</em>.</p>
 <p>Using this, you can use <code>Sigma</code> to create a predicate that a given <code>Nat</code> number is even:</p>
-<div class="sourceCode" id="cb69"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb69-1" data-line-number="1"><span class="kw">data</span> <span class="dt">IsHalfOf</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="fu">~&gt;</span> <span class="dt">Type</span></a>
-<a class="sourceLine" id="cb69-2" data-line-number="2"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">IsHalfOf</span> n) m <span class="fu">=</span> n <span class="fu">:~:</span> (m <span class="fu">*</span> <span class="dv">2</span>)</a>
-<a class="sourceLine" id="cb69-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb69-4" data-line-number="4"><span class="kw">type</span> <span class="dt">IsEven</span> n <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">Nat</span> (<span class="dt">IsHalfOf</span> n)</a></code></pre></div>
+<div class="sourceCode" id="cb70"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb70-1" data-line-number="1"><span class="kw">data</span> <span class="dt">IsHalfOf</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="fu">~&gt;</span> <span class="dt">Type</span></a>
+<a class="sourceLine" id="cb70-2" data-line-number="2"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">IsHalfOf</span> n) m <span class="fu">=</span> n <span class="fu">:~:</span> (m <span class="fu">*</span> <span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb70-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb70-4" data-line-number="4"><span class="kw">type</span> <span class="dt">IsEven</span> n <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">Nat</span> (<span class="dt">IsHalfOf</span> n)</a></code></pre></div>
 <p><code>(*)</code> is multiplication from the <em><a href="http://hackage.haskell.org/package/singletons-2.5/docs/Data-Singletons-Prelude-Num.html">Data.Singletons.Prelude.Num</a></em> module. (You must have the <em>-XNoStarIsType</em> extension on for this to work in GHC 8.6+), and <code>:~:</code> is the predicate of equality from Part 3.</p>
 <p>The only way to construct an <code>IsEven n</code> is to provide a number <code>m</code> where <code>m * 2</code> is <code>n</code>:</p>
-<div class="sourceCode" id="cb70"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb70-1" data-line-number="1"><span class="ot">tenIsEven ::</span> <span class="dt">IsEven</span> <span class="dv">10</span></a>
-<a class="sourceLine" id="cb70-2" data-line-number="2">tenIsEven <span class="fu">=</span> <span class="dv">5</span> <span class="fu">:&amp;:</span> <span class="dt">Refl</span>      <span class="co">-- Refl is the constructor of type n :~: (m * 2)</span></a>
-<a class="sourceLine" id="cb70-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb70-4" data-line-number="4"><span class="co">-- won&#39;t compile</span></a>
-<a class="sourceLine" id="cb70-5" data-line-number="5"><span class="ot">sevenIsEven ::</span> <span class="dt">IsEven</span> <span class="dv">10</span></a>
-<a class="sourceLine" id="cb70-6" data-line-number="6">sevenIsEven <span class="fu">=</span> <span class="dv">4</span> <span class="fu">:&amp;:</span> <span class="dt">Refl</span></a>
-<a class="sourceLine" id="cb70-7" data-line-number="7">    <span class="co">-- won&#39;t compile, because we need something of type `(4 * 2) :~: 7`,</span></a>
-<a class="sourceLine" id="cb70-8" data-line-number="8">    <span class="co">-- but Refl must have type `a :~: a`; `8 :~: 7` is not constructable</span></a>
-<a class="sourceLine" id="cb70-9" data-line-number="9">    <span class="co">-- using `Refl`.</span></a></code></pre></div>
+<div class="sourceCode" id="cb71"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb71-1" data-line-number="1"><span class="ot">tenIsEven ::</span> <span class="dt">IsEven</span> <span class="dv">10</span></a>
+<a class="sourceLine" id="cb71-2" data-line-number="2">tenIsEven <span class="fu">=</span> <span class="dv">5</span> <span class="fu">:&amp;:</span> <span class="dt">Refl</span>      <span class="co">-- Refl is the constructor of type n :~: (m * 2)</span></a>
+<a class="sourceLine" id="cb71-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb71-4" data-line-number="4"><span class="co">-- won&#39;t compile</span></a>
+<a class="sourceLine" id="cb71-5" data-line-number="5"><span class="ot">sevenIsEven ::</span> <span class="dt">IsEven</span> <span class="dv">10</span></a>
+<a class="sourceLine" id="cb71-6" data-line-number="6">sevenIsEven <span class="fu">=</span> <span class="dv">4</span> <span class="fu">:&amp;:</span> <span class="dt">Refl</span></a>
+<a class="sourceLine" id="cb71-7" data-line-number="7">    <span class="co">-- won&#39;t compile, because we need something of type `(4 * 2) :~: 7`,</span></a>
+<a class="sourceLine" id="cb71-8" data-line-number="8">    <span class="co">-- but Refl must have type `a :~: a`; `8 :~: 7` is not constructable</span></a>
+<a class="sourceLine" id="cb71-9" data-line-number="9">    <span class="co">-- using `Refl`.</span></a></code></pre></div>
 <p>Write a similar type <code>IsOdd n</code> that can only be constructed if <code>n</code> is <em>odd</em>.</p>
-<div class="sourceCode" id="cb71"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb71-1" data-line-number="1"><span class="kw">type</span> <span class="dt">IsOdd</span> n <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">Nat</span> (<span class="fu">????</span> n)</a></code></pre></div></li>
+<div class="sourceCode" id="cb72"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb72-1" data-line-number="1"><span class="kw">type</span> <span class="dt">IsOdd</span> n <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">Nat</span> (<span class="fu">????</span> n)</a></code></pre></div></li>
 <li><p>A common beginner Haskeller exercise is to implement <code>map</code> in terms of <code>foldr</code>:</p>
-<div class="sourceCode" id="cb72"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb72-1" data-line-number="1">map<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] _<span class="fu">&gt;</span> [b]</a>
-<a class="sourceLine" id="cb72-2" data-line-number="2">map f <span class="fu">=</span> foldr ((<span class="fu">:</span>) <span class="fu">.</span> f) []</a></code></pre></div>
+<div class="sourceCode" id="cb73"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb73-1" data-line-number="1">map<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] _<span class="fu">&gt;</span> [b]</a>
+<a class="sourceLine" id="cb73-2" data-line-number="2">map f <span class="fu">=</span> foldr ((<span class="fu">:</span>) <span class="fu">.</span> f) []</a></code></pre></div>
 <p>Let’s do the same thing at the type level, manually.</p>
 <p>Directly implement a type-level <code>Map</code>, with kind <code>(j ~&gt; k) -&gt; [j] -&gt; [k]</code>, in terms of <code>Foldr</code>:</p>
-<div class="sourceCode" id="cb73"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb73-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Map</span> f xs <span class="fu">=</span> <span class="dt">Foldr</span> <span class="fu">????</span> <span class="fu">????</span> xs</a></code></pre></div>
+<div class="sourceCode" id="cb74"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb74-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Map</span> f xs <span class="fu">=</span> <span class="dt">Foldr</span> <span class="fu">????</span> <span class="fu">????</span> xs</a></code></pre></div>
 <p>Try to mirror the value-level definition, passing in <code>(:) . f</code>.</p></li>
 <li><p>Make a <code>SomeHallway</code> from a list of <code>SomeDoor</code>:</p>
-<div class="sourceCode" id="cb74"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb74-1" data-line-number="1"><span class="kw">type</span> <span class="dt">SomeDoor</span>    <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">DoorState</span>   (<span class="dt">TyCon1</span> <span class="dt">Door</span>)</a>
-<a class="sourceLine" id="cb74-2" data-line-number="2"><span class="kw">type</span> <span class="dt">SomeHallway</span> <span class="fu">=</span> <span class="dt">Sigma</span> [<span class="dt">DoorState</span>] (<span class="dt">TyCon1</span> <span class="dt">Hallway</span>)</a>
-<a class="sourceLine" id="cb74-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb74-4" data-line-number="4"><span class="ot">mkSomeHallway ::</span> [<span class="dt">SomeDoor</span>] <span class="ot">-&gt;</span> <span class="dt">SomeHallway</span></a></code></pre></div></li>
+<div class="sourceCode" id="cb75"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb75-1" data-line-number="1"><span class="kw">type</span> <span class="dt">SomeDoor</span>    <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">DoorState</span>   (<span class="dt">TyCon1</span> <span class="dt">Door</span>)</a>
+<a class="sourceLine" id="cb75-2" data-line-number="2"><span class="kw">type</span> <span class="dt">SomeHallway</span> <span class="fu">=</span> <span class="dt">Sigma</span> [<span class="dt">DoorState</span>] (<span class="dt">TyCon1</span> <span class="dt">Hallway</span>)</a>
+<a class="sourceLine" id="cb75-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb75-4" data-line-number="4"><span class="ot">mkSomeHallway ::</span> [<span class="dt">SomeDoor</span>] <span class="ot">-&gt;</span> <span class="dt">SomeHallway</span></a></code></pre></div></li>
 </ol>
 <h2 id="special-thanks">Special Thanks</h2>
 <p>I am very humbled to be supported by an amazing community, who make it possible for me to devote time to researching and writing these posts. Very special thanks to my two supporters at the “Amazing” level on [patreon][], Sam Stites and Josh Vera! :)</p></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
