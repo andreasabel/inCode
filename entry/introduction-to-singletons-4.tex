@@ -889,6 +889,15 @@ This compiles!
 \end{Highlighting}
 \end{Shaded}
 
+(Note: Unfortunately, we do have to use our our own \texttt{Foldr} here, instead
+of using the one that comes with \emph{singletons}, because of some
+\href{https://github.com/goldfirere/singletons/issues/339}{outstanding issues}
+with how the singletons TH processes alternative implementations of
+\texttt{foldr} from Prelude. In general, the issue is that we should only expect
+type families to work with singletons if the definition of the type family
+perfectly matches the structure of how we implement our value-level functions
+like \texttt{collapseHallway})
+
 \hypertarget{singletons-to-to-make-things-nicer}{%
 \subsection{Singletons to to make things
 nicer}\label{singletons-to-to-make-things-nicer}}
@@ -930,6 +939,20 @@ important to know what the \emph{singletons} library generates, because
 sometimes it's still useful to manually create defunctionalization symbols and
 work with them.
 
+The naming convention for non-symbolic names (non-operators) like
+\texttt{myFunction} are just to call them \texttt{MyFunctionSym0} for the
+completely unapplied defunctionalization symbol, \texttt{MyFunctionSym1} for the
+type constructor that expects one argument before returning a
+defunctionalization symbol, \texttt{MyFunctionSym2} for the type constructor
+that expects two arguments before returning a defunctionalization symbol, etc.
+
+For operator names like \texttt{++}, the naming convention is to have
+\texttt{++@\#@\$} be the completely unapplied defunctionalization symbol,
+\texttt{++@\#@\$\$} be the type constructor that expects one argument before
+returning a defunctionalization symbol, \texttt{++@\#@\$\$\$} be the type
+constructor that takes two arguments before returning a defunctionalization
+symbol, etc.
+
 \hypertarget{thoughts-on-symbols}{%
 \section{Thoughts on Symbols}\label{thoughts-on-symbols}}
 
@@ -939,7 +962,7 @@ them more and more, you start to appreciate them on a deeper level.
 
 At the end of the day, you can compare defunctionalization as turning
 ``functions'' into just constructors you can \emph{match} on, just like any
-other data or type consturctor. That's because they \emph{are} just type
+other data or type constructor. That's because they \emph{are} just type
 constructors!
 
 In a sense, defining defunctionalization symbols is a lot like working with
@@ -971,7 +994,8 @@ match on dummy constructors representing type functions.
 
 And a bit of the magic here, also, is the fact that you don't always need to
 make our own defunctionalization symbols from scratch --- you can create them
-based on other ones in a compositional way.
+based on other ones in a compositional way. This is the basis of libraries like
+\emph{\href{http://hackage.haskell.org/package/decidable}{decidable}}.
 
 For example, suppose we wanted to build defunctionalization symbols for
 \texttt{MergeStateList}. We can actually build them directly from
@@ -1048,6 +1072,8 @@ The \emph{type} of the \texttt{Door\ x} depends on the \emph{value} of the
 We made \texttt{SomeDoor} pretty ad-hoc. But what if we wanted to make some
 other predicate? Well, we can make a \emph{generic} dependent pair by
 \emph{parameterizing it on he dependence} between the first and second field.
+Singletons provides the \texttt{Sigma} type, in the \emph{Data.Singletons.Sigma}
+module:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1081,8 +1107,13 @@ This is a simple relationship, but one can imagine a \texttt{Sigma}
 parameterized on an even more complex type-level function. We'll explore more of
 these in the exercises!
 
-\hypertarget{singletons-of-functions}{%
-\subsection{Singletons of Functions}\label{singletons-of-functions}}
+\texttt{Sigma} is an interesting data type that is ubiquitous in dependently
+typed programming. It shows up everywhere, and is also very useful in the
+statement of dependently typed proofs.
+
+\hypertarget{singletons-of-defunctionalization-symboles}{%
+\subsection{Singletons of Defunctionalization
+Symboles}\label{singletons-of-defunctionalization-symboles}}
 
 One last thing to tie it all together -- let's write \texttt{collapseHallway} in
 a way that we don't know the types of the doors.
@@ -1147,7 +1178,7 @@ function for us:
 Where
 \texttt{(@@)\ ::\ Sing\ f\ -\textgreater{}\ Sing\ x\ -\textgreater{}\ Sing\ (f\ @@\ x)}
 (or \texttt{applySing}) is the singleton/value-level counterpart of
-\texttt{Apply} or \texttt{(@@)}.
+\texttt{Apply} or \texttt{(@@)}.{[}\^{}slamda{]}
 
 So we can write:
 
@@ -1169,6 +1200,17 @@ We can use the \texttt{singFun} family of functions:
 \end{Highlighting}
 \end{Shaded}
 
+But, also, we have a \texttt{SingI} instance for \texttt{MergeStateSym0}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{sing ::} \DataTypeTok{Sing} \DataTypeTok{MergeStateSym0}
+\CommentTok{-- or}
+\NormalTok{sing }\FunctionTok{@}\NormalTok{_ }\FunctionTok{@}\DataTypeTok{MergeStateSym0}         \CommentTok{-- singletons 2.4}
+\NormalTok{sing }\FunctionTok{@}\DataTypeTok{MergeStateSym0}            \CommentTok{-- singletons 2.5}
+\end{Highlighting}
+\end{Shaded}
+
 And finally, we get our answer:
 
 \begin{Shaded}
@@ -1181,6 +1223,214 @@ And finally, we get our answer:
 
 \hypertarget{closing-up}{%
 \section{Closing Up}\label{closing-up}}
+
+Woo! Congratulations, you've made it to the end of the this Introduction to
+Singletons tetralogy! This last and final part understandably ramps things up
+pretty quickly, so don't be afraid to re-read it a few times until it all sinks
+in before jumping into the exercises.
+
+I hope you enjoyed this journey deep into the motivation, philosophy, mechanics,
+and usage of this great library. Hopefully these toy examples have been able to
+show you a lot of ways that type-level programming can help your programs today,
+both in type safety and in writing more expressive programs. And also, I hope
+that you can also see now how to leverage the full power of the
+\emph{singletons} library to make those gains a reality.
+
+There are a few corners of the library we haven't gone over (like the TypeLits-
+and TypeRep-based singletons), but I'd like to hope as well that this series has
+equipped you to be able to dive into the library documentation and decipher what
+it holds, armed with the knowledge you now have.
+
+As always, please try out the exercises, which are designed to help solidify the
+concepts we went over here! And if you ever have any future questions, feel free
+to leave a comment
+
+That's it for now --- check out the exercises, and feel free to ask any
+questions in the comments or find me on \href{https://twitter.com/mstk}{twitter}
+or in freenode \texttt{\#haskell}, where I idle as \emph{jle`}!
+
+Happy Haskelling!
+
+\hypertarget{exercises}{%
+\section{Exercises}\label{exercises}}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  Let's try combining type families with proofs! In doing so, hopefully we can
+  also see the value of using dependent proofs to show how we can manipulate
+  proofs as first-class values that the compiler can verify.
+
+  Remember \texttt{Knockable} from Part 3?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L45-L47}
+
+\KeywordTok{data} \DataTypeTok{Knockable}\OtherTok{ ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{KnockClosed}\OtherTok{ ::} \DataTypeTok{Knockable}\NormalTok{ '}\DataTypeTok{Closed}
+    \DataTypeTok{KnockLocked}\OtherTok{ ::} \DataTypeTok{Knockable}\NormalTok{ '}\DataTypeTok{Locked}
+\end{Highlighting}
+\end{Shaded}
+
+  Closed and Locked doors are knockable. But, if you merge two knockable
+  doors\ldots{}is the result \emph{also} always knockable?
+
+  I say yes, but don't take my word for it. Prove it using \texttt{Knockable}!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mergedIsKnockable}
+\OtherTok{    ::} \DataTypeTok{Knockable}\NormalTok{ s}
+    \OtherTok{->} \DataTypeTok{Knockable}\NormalTok{ t}
+    \OtherTok{->} \DataTypeTok{Knockable}\NormalTok{ (}\DataTypeTok{MergeState}\NormalTok{ s t)}
+\end{Highlighting}
+\end{Shaded}
+
+  \texttt{mergeIsKnockable} is only implementable if the merging of two
+  DoorStates that are knockable is also knockable. See if you can write the
+  implementation!
+\item
+  Write a function to append two hallways together.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{appendHallways}
+\OtherTok{    ::} \DataTypeTok{Hallway}\NormalTok{ ss}
+    \OtherTok{->} \DataTypeTok{Hallway}\NormalTok{ ts}
+    \OtherTok{->} \DataTypeTok{Hallway} \FunctionTok{????}
+\end{Highlighting}
+\end{Shaded}
+
+  Try to figure out what \texttt{???} should be. Try not to use any type
+  families from \emph{singletons} --- implement any type families you might need
+  from scratch!
+
+  Remember the important principle that your type family must mirror the
+  implementation of the functions that use it.
+\item
+  Can you use \texttt{Sigma} to define a door that must be knockable?
+
+  To do this, try directly defining the defunctionalization symbol
+  \texttt{KnockableDoor\ ::\ DoorState\ \textasciitilde{}\textgreater{}\ Type}
+  (or use singletons to generate it for you) so that:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{SomeKnockableDoor} \FunctionTok{=} \DataTypeTok{Sigma} \DataTypeTok{DoorState} \DataTypeTok{KnockableDoor}
+\end{Highlighting}
+\end{Shaded}
+
+  will contain a \texttt{Door} that must be knockable.
+
+  Try doing it for both (a) the ``dependent proof'' version (with the
+  \texttt{Knockable} data type) and for (b) the type family version (with the
+  \texttt{StatePass} type family).
+
+  \emph{Hint:} Look at the definition of \texttt{SomeDoor} in terms of
+  \texttt{Sigma}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{SomeDoor} \FunctionTok{=} \DataTypeTok{Sigma} \DataTypeTok{DoorState}\NormalTok{ (}\DataTypeTok{TyCon1} \DataTypeTok{Door}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+  \emph{Hint}: Try having \texttt{KnockableDoor} return a tuple.
+\item
+  Take a look at the API of the
+  \emph{\href{http://hackage.haskell.org/package/singletons-2.5/docs/Data-Singletons-TypeLits.html}{Data.Singletons.TypeLits}}
+  module, based on the API exposed in
+  \emph{\href{http://hackage.haskell.org/package/base-4.12.0.0/docs/GHC-TypeNats.html}{GHC.TypeNats}}
+  module from \emph{base}.
+
+  Using this, you can use \texttt{Sigma} to create a predicate that a given
+  \texttt{Nat} number is even:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{IsHalfOf}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Nat} \FunctionTok{~>} \DataTypeTok{Type}
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply}\NormalTok{ (}\DataTypeTok{IsHalfOf}\NormalTok{ n) m }\FunctionTok{=}\NormalTok{ n }\FunctionTok{:~:}\NormalTok{ (m }\FunctionTok{*} \DecValTok{2}\NormalTok{)}
+
+\KeywordTok{type} \DataTypeTok{IsEven}\NormalTok{ n }\FunctionTok{=} \DataTypeTok{Sigma} \DataTypeTok{Nat}\NormalTok{ (}\DataTypeTok{IsHalfOf}\NormalTok{ n)}
+\end{Highlighting}
+\end{Shaded}
+
+  \texttt{(*)} is multiplication from the
+  \emph{\href{http://hackage.haskell.org/package/singletons-2.5/docs/Data-Singletons-Prelude-Num.html}{Data.Singletons.Prelude.Num}}
+  module. (You must have the \emph{-XNoStarIsType} extension on for this to work
+  in GHC 8.6+), and \texttt{:\textasciitilde{}:} is the predicate of equality
+  from Part 3.
+
+  The only way to construct an \texttt{IsEven\ n} is to provide a number
+  \texttt{m} where \texttt{m\ *\ 2} is \texttt{n}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{tenIsEven ::} \DataTypeTok{IsEven} \DecValTok{10}
+\NormalTok{tenIsEven }\FunctionTok{=} \DecValTok{5} \FunctionTok{:&:} \DataTypeTok{Refl}      \CommentTok{-- Refl is the constructor of type n :~: (m * 2)}
+
+\CommentTok{-- won't compile}
+\OtherTok{sevenIsEven ::} \DataTypeTok{IsEven} \DecValTok{10}
+\NormalTok{sevenIsEven }\FunctionTok{=} \DecValTok{4} \FunctionTok{:&:} \DataTypeTok{Refl}
+    \CommentTok{-- won't compile, because we need something of type `(4 * 2) :~: 7`,}
+    \CommentTok{-- but Refl must have type `a :~: a`; `8 :~: 7` is not constructable}
+    \CommentTok{-- using `Refl`.}
+\end{Highlighting}
+\end{Shaded}
+
+  Write a similar type \texttt{IsOdd\ n} that can only be constructed if
+  \texttt{n} is \emph{odd}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{IsOdd}\NormalTok{ n }\FunctionTok{=} \DataTypeTok{Sigma} \DataTypeTok{Nat}\NormalTok{ (}\FunctionTok{????}\NormalTok{ n)}
+\end{Highlighting}
+\end{Shaded}
+\item
+  A common beginner Haskeller exercise is to implement \texttt{map} in terms of
+  \texttt{foldr}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{map}\OtherTok{ ::}\NormalTok{ (a }\OtherTok{->}\NormalTok{ b) }\OtherTok{->}\NormalTok{ [a] _}\FunctionTok{>}\NormalTok{ [b]}
+\NormalTok{map f }\FunctionTok{=}\NormalTok{ foldr ((}\FunctionTok{:}\NormalTok{) }\FunctionTok{.}\NormalTok{ f) []}
+\end{Highlighting}
+\end{Shaded}
+
+  Let's do the same thing at the type level, manually.
+
+  Directly implement a type-level \texttt{Map}, with kind
+  \texttt{(j\ \textasciitilde{}\textgreater{}\ k)\ -\textgreater{}\ {[}j{]}\ -\textgreater{}\ {[}k{]}},
+  in terms of \texttt{Foldr}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{Map}\NormalTok{ f xs }\FunctionTok{=} \DataTypeTok{Foldr} \FunctionTok{????} \FunctionTok{????}\NormalTok{ xs}
+\end{Highlighting}
+\end{Shaded}
+
+  Try to mirror the value-level definition, passing in \texttt{(:)\ .\ f}.
+\item
+  Make a \texttt{SomeHallway} from a list of \texttt{SomeDoor}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{SomeDoor}    \FunctionTok{=} \DataTypeTok{Sigma} \DataTypeTok{DoorState}\NormalTok{   (}\DataTypeTok{TyCon1} \DataTypeTok{Door}\NormalTok{)}
+\KeywordTok{type} \DataTypeTok{SomeHallway} \FunctionTok{=} \DataTypeTok{Sigma}\NormalTok{ [}\DataTypeTok{DoorState}\NormalTok{] (}\DataTypeTok{TyCon1} \DataTypeTok{Hallway}\NormalTok{)}
+
+\OtherTok{mkSomeHallway ::}\NormalTok{ [}\DataTypeTok{SomeDoor}\NormalTok{] }\OtherTok{->} \DataTypeTok{SomeHallway}
+\end{Highlighting}
+\end{Shaded}
+\end{enumerate}
+
+\hypertarget{special-thanks}{%
+\section{Special Thanks}\label{special-thanks}}
+
+I am very humbled to be supported by an amazing community, who make it possible
+for me to devote time to researching and writing these posts. Very special
+thanks to my two supporters at the ``Amazing'' level on {[}patreon{]}{[}{]}, Sam
+Stites and Josh Vera! :)
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
