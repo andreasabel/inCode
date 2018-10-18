@@ -22,7 +22,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" data-line-number="1">$ <span class="ex">./Door3.hs</span></a></code></pre></div>
 <h2 id="review">Review</h2>
 <p>In the first post we looked at the <code>Door</code> type, indexed with a phantom type of kind <code>DoorState</code>.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L30-L36</span></a>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L29-L35</span></a>
 <a class="sourceLine" id="cb2-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb2-3" data-line-number="3"><span class="fu">$</span>(singletons [d|</a>
 <a class="sourceLine" id="cb2-4" data-line-number="4">  data DoorState = Opened | Closed | Locked</a>
@@ -33,7 +33,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb2-9" data-line-number="9">    <span class="dt">UnsafeMkDoor</span><span class="ot"> ::</span> {<span class="ot"> doorMaterial ::</span> <span class="dt">String</span> } <span class="ot">-&gt;</span> <span class="dt">Door</span> s</a></code></pre></div>
 <p>This gives us (at least) three distinct types <code>Door 'Opened</code>, <code>Door 'Closed</code>, and <code>Door 'Locked</code>, which can be used to represent opened, closed, and locked doors, respectively. We talked in previous posts about how we can use this for for a lot of enat tings, including enforcing type-safety, talking about how inputs relate to outputs, and uniting functions polymorphic on all door states.</p>
 <p>Then we talked about situations where we want to “not care” about the door status in the type system, or when we want to return a door with a state that is not known statically, and must be determined dynamically at runtime. After going through many “analogous” and equivalent type, we arrived at the existential wrapper <code>SomeDoor</code>:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L38-L43</span></a>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L37-L42</span></a>
 <a class="sourceLine" id="cb3-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb3-3" data-line-number="3"><span class="kw">data</span> <span class="dt">SomeDoor</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb3-4" data-line-number="4">    <span class="dt">MkSomeDoor</span><span class="ot"> ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
@@ -56,14 +56,14 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>A <strong>value-level predicate</strong> in Haskell is (generally) a function of type <code>a -&gt; Bool</code>. Given a value of type <code>a</code>, if the function returns <code>True</code>, then the predicate is satisfied. If it returns <code>False</code>, it is not.</p>
 <p>A <strong>type-level predicate</strong> is (generally) a type constructor of kind <code>k -&gt; Type</code>. Given a type of kind <code>k</code>, if <em>a value exists of that type</em> (or, if a value can be constructed), then the predicate is satisfied. If no value exists, it is not. That value, if it exists, is called a <em>witness</em> or a <em>proof</em>.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
 <p>We can define a predicate <code>Knockable :: DoorState -&gt; Type</code> as a GADT that only has values if given <code>'Closed</code> and <code>'Locked</code>, but not <code>'Opened</code>:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L45-L47</span></a>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L44-L46</span></a>
 <a class="sourceLine" id="cb5-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb5-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Knockable</span><span class="ot"> ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb5-4" data-line-number="4">    <span class="dt">KnockClosed</span><span class="ot"> ::</span> <span class="dt">Knockable</span> &#39;<span class="dt">Closed</span></a>
 <a class="sourceLine" id="cb5-5" data-line-number="5">    <span class="dt">KnockLocked</span><span class="ot"> ::</span> <span class="dt">Knockable</span> &#39;<span class="dt">Locked</span></a></code></pre></div>
 <p>Now, we have a value of type <code>Knockable 'Closed</code> and <code>Knockable 'Locked</code> (<code>KnockClosed</code> and <code>KnockLocked</code>, respectively), but no value of type <code>Knockable 'Opened</code>. How can we use this?</p>
 <p>Well, we can make a version of <code>knock</code> that requires a proof that <code>s</code> is <code>Knockable</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L49-L50</span></a>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L48-L49</span></a>
 <a class="sourceLine" id="cb6-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb6-3" data-line-number="3"><span class="ot">knock ::</span> <span class="dt">Knockable</span> s <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">knock _ d <span class="fu">=</span> putStrLn <span class="fu">$</span> <span class="st">&quot;Knock knock on &quot;</span> <span class="fu">++</span> doorMaterial d <span class="fu">++</span> <span class="st">&quot; door!&quot;</span></a></code></pre></div>
@@ -73,7 +73,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>This works well if we want to do things at compile-time</p>
 <h3 id="let-the-compiler-prove-it-for-you">Let the compiler prove it for you</h3>
 <p>We can even make it more seamless to use by auto-generating proofs at compile-time, with a general class like <code>Auto</code>:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L52-L59</span></a>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L51-L58</span></a>
 <a class="sourceLine" id="cb8-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb8-3" data-line-number="3"><span class="kw">class</span> <span class="dt">Proved</span> p a <span class="kw">where</span></a>
 <a class="sourceLine" id="cb8-4" data-line-number="4"><span class="ot">    auto ::</span> p a</a>
@@ -112,7 +112,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">isKnockable ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">Knockable</span> s)</a></code></pre></div>
 <p>I recommend taking a moment and trying to implement this yourself. Remember to enable <code>-Werror=incomplete-patterns</code><a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a> (or at least <code>-Wall</code>) to make sure you’re handling all potential pattern matching cases.</p>
 <p>Are you ready? Here’s a solution:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L61-L65</span></a>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L60-L64</span></a>
 <a class="sourceLine" id="cb13-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb13-3" data-line-number="3"><span class="ot">isKnockable ::</span> <span class="dt">Sing</span> s <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">Knockable</span> s)</a>
 <a class="sourceLine" id="cb13-4" data-line-number="4">isKnockable <span class="fu">=</span> \<span class="kw">case</span></a>
@@ -122,7 +122,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>This definition should seem pretty straightforward for the <code>SClosed</code> and <code>SLocked</code> branches. <code>isKnockable SClosed :: Decision (Knockable 'Closed)</code>, we give <code>Proved KnockClosed</code>, which gives us just that!</p>
 <p>However, <code>isKnockable SOpened :: Decision (Knockable 'Opened)</code>. We can’t use <code>Proved :: a -&gt; Decision a</code>, because no such value of type <code>Knockable 'Opened</code> exists. So, we have to say that we <em>disprove</em> it: we have to prove to GHC that no such type could possibly exist. We do this by providing a function of type <code>Refuted (Knockable 'Opened)</code>, or type <code>Knockable 'Opened -&gt; Void</code>.</p>
 <p>We can write it like this:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L67-L68</span></a>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L66-L67</span></a>
 <a class="sourceLine" id="cb14-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb14-3" data-line-number="3"><span class="ot">disproveOpened ::</span> <span class="dt">Knockable</span> &#39;<span class="dt">Opened</span> <span class="ot">-&gt;</span> <span class="dt">Void</span></a>
 <a class="sourceLine" id="cb14-4" data-line-number="4">disproveOpened k <span class="fu">=</span> <span class="kw">case</span> k <span class="kw">of</span> {}             <span class="co">-- empty pattern match</span></a></code></pre></div>
@@ -135,7 +135,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb15-4" data-line-number="4">    <span class="dt">KnockLocked</span> <span class="ot">-&gt;</span> <span class="fu">...</span>    <span class="co">-- not a valid pattern, since it&#39;s `Knockable &#39;Locked`</span></a></code></pre></div>
 <p>If you include either of those patterns, GHC will complain. So, there is no valid pattern to match on… so <code>disproveOpened = \case {}</code> is enough to write the function <code>Knockable 'Opened -&gt; Void</code>, since there is no constructor for a value of type <code>Knockable 'Opened</code> to match on. This only works because <code>disproveOpened</code> is a <strong>complete pattern match</strong>, and therefore total.</p>
 <p>We can use this decision function, finally, to handle an arbitrary <code>Door</code> whose status we not know until runtime:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L70-L75</span></a>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L69-L74</span></a>
 <a class="sourceLine" id="cb16-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb16-3" data-line-number="3">knockSomeDoor</a>
 <a class="sourceLine" id="cb16-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">SomeDoor</span>     <span class="co">-- ^ status not known until you pattern match at runtime</span></a>
@@ -211,7 +211,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb26-4" data-line-number="4">&#39;<span class="dt">Obstruct</span></a></code></pre></div>
 <p>Like type synonyms, type families can’t be partially applied. They only ever make sense in “fully applied” form, with all arguments given syntactically.</p>
 <p>Armed with this type family, we can write a new version of <code>knock</code>:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L87-L88</span></a>
+<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L86-L87</span></a>
 <a class="sourceLine" id="cb27-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb27-3" data-line-number="3"><span class="ot">knockP ::</span> (<span class="dt">StatePass</span> s <span class="fu">~</span> &#39;<span class="dt">Obstruct</span>) <span class="ot">=&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb27-4" data-line-number="4">knockP d <span class="fu">=</span> putStrLn <span class="fu">$</span> <span class="st">&quot;Knock knock on &quot;</span> <span class="fu">++</span> doorMaterial d <span class="fu">++</span> <span class="st">&quot; door!&quot;</span></a></code></pre></div>
@@ -247,7 +247,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb30-10" data-line-number="10">    <span class="dt">SLocked</span> <span class="ot">-&gt;</span> <span class="dt">SObstruct</span></a></code></pre></div>
 <p>We have to be very careful with how we define <code>sStatePass</code>, because GHC isn’t too smart. It’ll reject any definition that isn’t structurally identical to the type family it’s mirroring.</p>
 <p>With our new tool, we can now write:</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L90-L95</span></a>
+<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L89-L94</span></a>
 <a class="sourceLine" id="cb31-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb31-3" data-line-number="3">knockSomeDoorP</a>
 <a class="sourceLine" id="cb31-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">SomeDoor</span>     <span class="co">-- ^ status not known until you pattern match at runtime</span></a>
@@ -378,18 +378,18 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <li><p>We talk about predicates as type constructors with type <code>k -&gt; Type</code>. This fits a lot of things we’ve seen before (all instances of <code>Functor</code>, for example), but some predicates are more interesting than others.</p>
 <p>What is the interpretation of <code>SDoorState</code> as a predicate? (remember, <code>SDoorState s</code> is the type synonym for <code>Sing (s :: DoorState)</code>) What “traditional” (that is, <code>a -&gt; Bool</code>) predicate does it correspond to?</p>
 <p>What is the type of its <em>decision function</em>? Can you implement it?</p>
-<p>Solution available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L102-L107">here</a>!</p></li>
+<p>Solution available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L101-L106">here</a>!</p></li>
 <li><p>Now let’s practice working with predicates, singletons, and negation via <code>Refuted</code> together.</p>
 <p>You may have heard of the principle of “double negation”, where <em>not (not p)</em> implies <em>p</em>. So, we should be able to say that <code>Refuted (Refuted (Knockable s))</code> implies <code>Knockable s</code>.<a href="#fn8" class="footnote-ref" id="fnref8"><sup>8</sup></a> If something is not “not knockable”, then it must be knockable, right?</p>
 <p>Try writing <code>refuteRefuteKnockable</code> to verify this principle — at least for the <code>Knockable</code> predicate.</p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L110-L113</span></a>
+<div class="sourceCode" id="cb43"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L109-L112</span></a>
 <a class="sourceLine" id="cb43-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb43-3" data-line-number="3">refuteRefuteKnockable</a>
 <a class="sourceLine" id="cb43-4" data-line-number="4"><span class="ot">    ::</span> forall s<span class="fu">.</span> <span class="dt">SingI</span> s</a>
 <a class="sourceLine" id="cb43-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">Refuted</span> (<span class="dt">Refuted</span> (<span class="dt">Knockable</span> s))</a>
 <a class="sourceLine" id="cb43-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">Knockable</span> s</a></code></pre></div>
 <p>While not required, I recommend using <code>isKnockable</code> and writing your implementation in terms of it! Use <code>sing</code> to give <code>isKnockable</code> the singleton it needs.</p>
-<p>Solution available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L110-L117">here</a>!</p>
+<p>Solution available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L109-L116">here</a>!</p>
 <p><em>Hint:</em> You might find <code>absurd</code> (from <em>Data.Void</em>) helpful:</p>
 <div class="sourceCode" id="cb44"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb44-1" data-line-number="1"><span class="ot">absurd ::</span> forall a<span class="fu">.</span> <span class="dt">Void</span> <span class="ot">-&gt;</span> a</a></code></pre></div>
 <p>If you have a <code>Void</code>, you can make a value of any type!<a href="#fn9" class="footnote-ref" id="fnref9"><sup>9</sup></a></p></li>
@@ -397,17 +397,17 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Type-level predicates are logical constructs, so we should be able to define concepts like “and” and “or” with them.</p>
 <ol type="a">
 <li><p>Define a predicate constructor <code>And</code> that takes two predicates and returns a new predicate. This new predicate is true (aka, has an inhabitant) if and only if the two original predicates are true (aka, have inhabitants)</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb45-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L121-L121</span></a>
+<div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb45-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L120-L120</span></a>
 <a class="sourceLine" id="cb45-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb45-3" data-line-number="3">    <span class="dt">And</span><span class="ot"> ::</span> p a <span class="ot">-&gt;</span> q a <span class="ot">-&gt;</span> <span class="dt">And</span> p q a</a></code></pre></div></li>
 <li><p>Define a predicate constructor <code>Or</code> that takes two predicates and returns a new predicate. This new predicate is true (aka, has an inhabitant) if and only if at least one of the two original predicates are true (aka, have inhabitants)</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb46-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L124-L124</span></a>
+<div class="sourceCode" id="cb46"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb46-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L123-L123</span></a>
 <a class="sourceLine" id="cb46-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb46-3" data-line-number="3">    <span class="dt">OrLeft</span><span class="ot">  ::</span> p a <span class="ot">-&gt;</span> <span class="dt">Or</span> p q a</a></code></pre></div>
 <p>There are potentially multiple non-trivial variations of this type.</p>
 <p>Do <code>And</code> and <code>Or</code> look similar to any types you might have encountered in the past? Maybe, perhaps, similiar to types that are a part of basic beginner Haskell concepts?</p></li>
 <li><p>Maybe surprisingly, <code>And p q</code> and <code>Or p q</code> are decidable if <code>p</code> and <code>q</code> are. Can we write the decision functions?</p>
-<div class="sourceCode" id="cb47"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb47-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L127-L142</span></a>
+<div class="sourceCode" id="cb47"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb47-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L126-L141</span></a>
 <a class="sourceLine" id="cb47-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb47-3" data-line-number="3">decideAnd</a>
 <a class="sourceLine" id="cb47-4" data-line-number="4"><span class="ot">    ::</span> (forall x<span class="fu">.</span> <span class="dt">Sing</span> x <span class="ot">-&gt;</span> <span class="dt">Decision</span> (p x))</a>
@@ -422,25 +422,25 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb47-13" data-line-number="13">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">Or</span> p q a)</a></code></pre></div>
 <p>These functions actually demonstrate, I feel, why <code>Decision</code> having both a <code>Proved a</code> and <code>Disproved (Refuted a)</code> branch is very useful. This is because, if you wrote the <em>structure</em> of <code>And</code> and <code>Or</code> correctly, it’s <em>impossible</em> to incorrectly define <code>decideAnd</code> and <code>decideOr</code>. You can’t accidentally say false when it’s true, or true when it’s false — your implementation is guarunteed correct.</p></li>
 <li><p>Now let’s use <code>And</code> and <code>Or</code> to prove some useful facts about <code>Knockable</code> and <code>('Opened :~:)</code>. We know that it’s impossible for something to be both <code>Knockable</code> <em>and</em> <code>('Opened :~:)</code> (that is, both knockable <em>and</em> equal to <code>'Opened</code>). Write such a witness:</p>
-<div class="sourceCode" id="cb48"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb48-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L151-L153</span></a>
+<div class="sourceCode" id="cb48"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb48-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L150-L152</span></a>
 <a class="sourceLine" id="cb48-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb48-3" data-line-number="3">knockableNotOpened</a>
 <a class="sourceLine" id="cb48-4" data-line-number="4"><span class="ot">    ::</span> forall s<span class="fu">.</span> <span class="dt">SingI</span> s</a>
 <a class="sourceLine" id="cb48-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">Refuted</span> (<span class="dt">And</span> <span class="dt">Knockable</span> ((<span class="fu">:~:</span>) &#39;<span class="dt">Opened</span>) s)</a></code></pre></div>
 <p>We also know that a given <code>DoorState</code> is either <code>Knockable</code> or <code>('Opened :~:)</code>…there’s no in-between. Write such a witness:</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L158-L160</span></a>
+<div class="sourceCode" id="cb49"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L157-L159</span></a>
 <a class="sourceLine" id="cb49-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb49-3" data-line-number="3">knockableOrOpened</a>
 <a class="sourceLine" id="cb49-4" data-line-number="4"><span class="ot">    ::</span> forall s<span class="fu">.</span> <span class="dt">SingI</span> s</a>
 <a class="sourceLine" id="cb49-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">Or</span> <span class="dt">Knockable</span> ((<span class="fu">:~:</span>) &#39;<span class="dt">Opened</span>) s</a></code></pre></div></li>
 </ol>
-<p>Solutions available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L120-L164">here</a>!</p></li>
+<p>Solutions available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L119-L163">here</a>!</p></li>
 <li><p>Instead of creating an entire <code>Knocked</code> type, we could have just said “as long as the door is not <code>'Opened</code>, you can knock”. This means we could write <code>knock</code> as:</p>
 <div class="sourceCode" id="cb50"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb50-1" data-line-number="1"><span class="ot">knock ::</span> <span class="dt">Refuted</span> (s <span class="fu">:~:</span> &#39;<span class="dt">Opened</span>) <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a></code></pre></div>
 <p>Which we must pass a proof that <code>s</code> is not equal to <code>'Opened</code> in order to open our door.</p>
 <p>Is this really the same thing? Is <code>Refuted (s :~: 'Opened)</code> the same thing as <code>Knockable s</code>?</p>
 <p>Let’s try to say that the two things are the same! Write the following functions to show that <code>Refuted (s :~: 'Opened)</code> is the same logical predicate as <code>Knockable s</code>!</p>
-<div class="sourceCode" id="cb51"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb51-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L167-L178</span></a>
+<div class="sourceCode" id="cb51"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb51-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L166-L177</span></a>
 <a class="sourceLine" id="cb51-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb51-3" data-line-number="3">knockedRefute</a>
 <a class="sourceLine" id="cb51-4" data-line-number="4"><span class="ot">    ::</span> forall s<span class="fu">.</span> <span class="dt">SingI</span> s</a>
@@ -451,26 +451,26 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb51-9" data-line-number="9"><span class="ot">    ::</span> forall s<span class="fu">.</span> <span class="dt">SingI</span> s</a>
 <a class="sourceLine" id="cb51-10" data-line-number="10">    <span class="ot">=&gt;</span> <span class="dt">Refuted</span> (s <span class="fu">:~:</span> &#39;<span class="dt">Opened</span>)</a>
 <a class="sourceLine" id="cb51-11" data-line-number="11">    <span class="ot">-&gt;</span> <span class="dt">Knockable</span> s</a></code></pre></div>
-<p>Solution available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L167-L182">here</a>!</p>
+<p>Solution available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L166-L181">here</a>!</p>
 <p><em>Note:</em> <code>knockedRefute</code> is fairly straightforward, but <code>refuteKnocked</code> is definitely trickier, so don’t be discouraged!</p>
 <p><em>Hint:</em> See the note about <code>absurd</code> from Exercise 2!</p></li>
 <li><p>On our type level function version of <code>knock</code>, we wrote, with a constraint:</p>
 <div class="sourceCode" id="cb52"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb52-1" data-line-number="1"><span class="ot">knock ::</span> (<span class="dt">StatePass</span> s <span class="fu">~</span> &#39;<span class="dt">Obstruct</span>) <span class="ot">=&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb52-2" data-line-number="2">knock d <span class="fu">=</span> putStrLn <span class="fu">$</span> <span class="st">&quot;Knock knock on &quot;</span> <span class="fu">++</span> doorMaterial d <span class="fu">++</span> <span class="st">&quot; door!&quot;</span></a></code></pre></div>
 <p>We can muddy the waters a bit, for fun, by having this take a proof of the constraint instead:</p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb53-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L185-L186</span></a>
+<div class="sourceCode" id="cb53"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb53-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L184-L185</span></a>
 <a class="sourceLine" id="cb53-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb53-3" data-line-number="3"><span class="ot">knockRefl ::</span> (<span class="dt">StatePass</span> s <span class="fu">:~:</span> &#39;<span class="dt">Obstruct</span>) <span class="ot">-&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb53-4" data-line-number="4">knockRefl _ d <span class="fu">=</span> putStrLn <span class="fu">$</span> <span class="st">&quot;Knock knock on &quot;</span> <span class="fu">++</span> doorMaterial d <span class="fu">++</span> <span class="st">&quot; door!&quot;</span></a></code></pre></div>
 <p>Rewrite a version of <code>knockSomeDoor</code> in terms of <code>knockRefl</code>, called <code>knockSomeDoorRefl</code>:</p>
-<div class="sourceCode" id="cb54"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb54-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L188-L191</span></a>
+<div class="sourceCode" id="cb54"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb54-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L187-L190</span></a>
 <a class="sourceLine" id="cb54-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb54-3" data-line-number="3">knockSomeDoorRefl</a>
 <a class="sourceLine" id="cb54-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">SomeDoor</span></a>
 <a class="sourceLine" id="cb54-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb54-6" data-line-number="6">knockSomeDoorRefl (<span class="dt">MkSomeDoor</span> s d) <span class="fu">=</span></a></code></pre></div>
 <p>Remember not to use <code>knock</code>!</p>
-<p>Solution available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L185-L194">here</a>.</p>
+<p>Solution available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L184-L193">here</a>.</p>
 <p>Assume that <code>DoorState</code> has an instance of <code>SDecide</code>, so you can use <code>(%~)</code>. This should be derived automatically as long as you derive <code>Eq</code>:</p>
 <div class="sourceCode" id="cb55"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb55-1" data-line-number="1"><span class="fu">$</span>(singletons [d|</a>
 <a class="sourceLine" id="cb55-2" data-line-number="2">  data DoorState = Opened | Closed | Locked</a>
@@ -483,19 +483,19 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb56-4" data-line-number="4">  invertPass Allow    = Obstruct</a>
 <a class="sourceLine" id="cb56-5" data-line-number="5">|])</a></code></pre></div>
 <p>Implement <code>knock</code> in a way that lets you knock if <code>invertPass</code> is <code>Allow</code>:</p>
-<div class="sourceCode" id="cb57"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L203-L204</span></a>
+<div class="sourceCode" id="cb57"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L202-L203</span></a>
 <a class="sourceLine" id="cb57-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb57-3" data-line-number="3"><span class="ot">knockInv ::</span> (<span class="dt">InvertPass</span> (<span class="dt">StatePass</span> s) <span class="fu">~</span> &#39;<span class="dt">Allow</span>) <span class="ot">=&gt;</span> <span class="dt">Door</span> s <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb57-4" data-line-number="4">knockInv d <span class="fu">=</span> putStrLn <span class="fu">$</span> <span class="st">&quot;Knock knock on &quot;</span> <span class="fu">++</span> doorMaterial d <span class="fu">++</span> <span class="st">&quot; door!&quot;</span></a></code></pre></div>
 <p>And write <code>knockSomeDoor</code> in terms of it:</p>
-<div class="sourceCode" id="cb58"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb58-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L206-L209</span></a>
+<div class="sourceCode" id="cb58"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb58-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L205-L208</span></a>
 <a class="sourceLine" id="cb58-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb58-3" data-line-number="3">knockSomeDoorInv</a>
 <a class="sourceLine" id="cb58-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">SomeDoor</span></a>
 <a class="sourceLine" id="cb58-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb58-6" data-line-number="6">knockSomeDoorInv (<span class="dt">MkSomeDoor</span> s d) <span class="fu">=</span></a></code></pre></div>
 <p>Remember again to implement it in terms of <code>knockInv</code>, <em>not</em> <code>knock</code>.</p>
-<p>Solution available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L203-L212">here</a>!</p></li>
+<p>Solution available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L202-L211">here</a>!</p></li>
 <li><p>Let’s work with a toy typeclass called <code>Cycle</code>, based on <code>Enum</code></p>
 <div class="sourceCode" id="cb59"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="fu">$</span>(singletons [d|</a>
 <a class="sourceLine" id="cb59-2" data-line-number="2">  class Cycle a where</a>
@@ -503,7 +503,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb59-4" data-line-number="4">    prev :: a -&gt; a</a>
 <a class="sourceLine" id="cb59-5" data-line-number="5">  |])</a></code></pre></div>
 <p><code>next</code> is like <code>succ</code>, but loops over to the first item after the last constructor. <code>prev</code> is like <code>pred</code>, but loops over to the last item if pred-ing the first item</p>
-<div class="sourceCode" id="cb60"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb60-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L221-L228</span></a>
+<div class="sourceCode" id="cb60"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb60-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L220-L227</span></a>
 <a class="sourceLine" id="cb60-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb60-3" data-line-number="3"><span class="kw">instance</span> <span class="dt">Cycle</span> <span class="dt">DoorState</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb60-4" data-line-number="4">    next <span class="dt">Opened</span> <span class="fu">=</span> <span class="dt">Closed</span></a>
@@ -514,12 +514,12 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb60-9" data-line-number="9">    prev <span class="dt">Closed</span> <span class="fu">=</span> <span class="dt">Opened</span></a>
 <a class="sourceLine" id="cb60-10" data-line-number="10">    prev <span class="dt">Locked</span> <span class="fu">=</span> <span class="dt">Closed</span></a></code></pre></div>
 <p>Can you manually promote this instance for <code>DoorState</code> to the type level?</p>
-<div class="sourceCode" id="cb61"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb61-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L230-L239</span></a>
+<div class="sourceCode" id="cb61"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb61-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L229-L238</span></a>
 <a class="sourceLine" id="cb61-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb61-3" data-line-number="3"><span class="kw">instance</span> <span class="dt">PCycle</span> <span class="dt">DoorState</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb61-4" data-line-number="4"></a>
 <a class="sourceLine" id="cb61-5" data-line-number="5"><span class="kw">instance</span> <span class="dt">SCycle</span> <span class="dt">DoorState</span> <span class="kw">where</span></a></code></pre></div>
-<p>Solution available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L221-L248">here</a>!</p></li>
+<p>Solution available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L220-L247">here</a>!</p></li>
 </ol>
 <h2 id="special-thanks">Special Thanks</h2>
 <p>I am very humbled to be supported by an amazing community, who make it possible for me to devote time to researching and writing these posts. Very special thanks to my two supporters at the “Amazing” level on <a href="https://www.patreon.com/justinle/overview">patreon</a>, Sam Stites and Josh Vera! :)</p>

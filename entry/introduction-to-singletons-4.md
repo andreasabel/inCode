@@ -24,7 +24,7 @@ Just as a quick review, this entire series we have been working with a `Door`
 type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L30-L36
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L23-L29
 
 $(singletons [d|
   data DoorState = Opened | Closed | Locked
@@ -96,7 +96,7 @@ manipulate the singletons representing `s` and `StatePass s`.
 We used this as a constraint to restrict how we can call our functions:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L87-L88
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L86-L87
 
 knockP :: (StatePass s ~ 'Obstruct) => Door s -> IO ()
 knockP d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
@@ -157,7 +157,7 @@ $(singletons [d|
 This makes writing `mergeDoor`'s type fairly straightforward!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L46-L50
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L39-L43
 
 mergeDoor
     :: Door s
@@ -170,7 +170,7 @@ And, with the help of singletons, we can also write this for our doors where we
 don't know the types until runtime:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L52-L54
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L45-L47
 
 mergeSomeDoor :: SomeDoor -> SomeDoor -> SomeDoor
 mergeSomeDoor (MkSomeDoor s d) (MkSomeDoor t e) =
@@ -208,7 +208,7 @@ by a door. We'll structure it like a linked list, and store the list of all door
 states as a type-level list as a type parameter:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L56-L64
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L49-L57
 
 data Hallway :: [DoorState] -> Type where
     HEnd  :: Hallway '[]        -- ^ end of the hallway, a stretch with no
@@ -264,7 +264,7 @@ singleton function `sMergeStateList :: Sing ss -> Sing (MergeStateList ss)`.
 With this, we can write `collapseHallway`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L56-L64
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L49-L57
 
 data Hallway :: [DoorState] -> Type where
     HEnd  :: Hallway '[]        -- ^ end of the hallway, a stretch with no
@@ -391,7 +391,7 @@ our own defunctionalization system from scratch.
 First, a little trick to make things easier to read:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L27-L30
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L14-L17
 
 data TyFun a b
 type a ~> b = TyFun a b -> Type
@@ -405,7 +405,7 @@ Now we can define a dummy data type like `Id`, which represents the identity
 function `id`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L38-L38
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L25-L25
 
 data Id :: a ~> a
 ```
@@ -423,7 +423,7 @@ from `a` to `a`.
 To interpret it, we need to write our global interpreter function:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L32-L32
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L19-L19
 
 type family Apply (f :: a ~> b) (x :: a) :: b
 ```
@@ -435,7 +435,7 @@ open in Haskell.
 Let's tell `Apply` how to interpret `Id`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L39-L39
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L26-L26
 
 type instance Apply Id x = x
 ```
@@ -451,7 +451,7 @@ ghci> :kind! Apply Id 'True
 Let's define another one! We'll implement `Not`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L41-L43
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L28-L30
 
 data Not :: Bool ~> Bool
 type instance Apply Not 'False = 'True
@@ -470,7 +470,7 @@ ghci> :kind! Apply Not 'False
 It can be convenient to define an infix synonym for `Apply`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L34-L36
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L21-L23
 
 type f @@ a = Apply f a
 
@@ -607,7 +607,7 @@ One extra interesting defunctionalization symbol we can write: we turn lift any
 type constructor into a "free" defunctionalization symbol:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L45-L51
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L32-L38
 
 data TyCon1
         :: (j -> k)     -- ^ take a type constructor
@@ -645,7 +645,7 @@ represent the "unapplied" versions of type families, so they are exactly the
 tools we need!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L53-L55
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L40-L42
 
 type family Foldr (f :: j ~> k ~> k) (z :: k) (xs :: [j]) :: k where
     Foldr f z '[]       = z
@@ -662,7 +662,7 @@ constructor.
 Now we just need to have our defunctionalization symbols for `MergeStateList`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L67-L73
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L54-L60
 
 data MergeStateSym0 :: DoorState ~> DoorState ~> DoorState
 type instance Apply MergeStateSym0 s = MergeStateSym1 s
@@ -676,7 +676,7 @@ type MergeStateSym2 s t = MergeState s t
 And now we can write `MergeStateList`!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L75-L75
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L62-L62
 
 type MergeStateList ss = Foldr MergeStateSym0 'Opened ss
 ```
@@ -694,7 +694,7 @@ ghci> :kind! MergeStateList '[ 'Closed, 'Opened ]
 ```
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L90-L92
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L77-L79
 
 collapseHallway :: Hallway ss -> Door (MergeStateList ss)
 collapseHallway HEnd       = UnsafeMkDoor "End of Hallway"
@@ -738,6 +738,9 @@ And all of these defunctionalization symbols are generated for you; *singletons*
 is also able to recognize that `foldr` is a higher-order function and translate
 its lifted version to take a defunctionalization symbol `a ~> b ~> b`.
 
+That the template haskell also generates `SingI` instances for all of your
+defunctionalization symbols, too --- more on that in a bit!
+
 It's okay to stay "in the world of singletons" for the most part, and let
 singletons handle the composition of functions for you. However, it's still
 important to know what the *singletons* library generates, because sometimes
@@ -757,8 +760,43 @@ constructor that expects one argument before returning a defunctionalization
 symbol, `++@#@$$$` be the type constructor that takes two arguments before
 returning a defunctionalization symbol, etc.
 
-Note also that the template haskell also generates `SingI` instances for all of
-your defunctionalization symbols, too --- more on that in a bit!
+Another helpful thing that *singletons* does is that it also generates
+defunctionalization symbols for type families and type synonyms you define in
+the Template Haskell, as well --- so if you write
+
+``` {.haskell}
+$(singletons [d|
+  type MyTypeFamily (b :: Bool) :: Type where
+    MyTypeFamily 'False = Int
+    MyTypeFamily 'True  = String
+  |])
+```
+
+and
+
+``` {.haskell}
+$(singletons [d|
+  type MyTypeSynonym a = (a, [a])
+  |])
+```
+
+*singletons* will generate:
+
+``` {.haskell}
+data MyTypeFamilySym0 :: Bool ~> Type
+type instance Apply MyTypeFamilySym0 b = MyTypeFamily b
+
+type MyTypeFamilySym1 b = MyTypeFamily b
+```
+
+and
+
+``` {.haskell}
+data MyTypeSynonymSym0 :: Type ~> Type
+type instance Apply MyTypeSynonym b = MyTypeSynonym a
+
+type MyTypeSynonymSym1 a = MyTypeSynonym a
+```
 
 Thoughts on Symbols
 -------------------
@@ -808,7 +846,7 @@ symbols for `Foldr`!
 Check out the defunctionalization symbols for `Foldr`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L94-L103
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L81-L90
 
 data FoldrSym0 :: (j ~> k ~> k) ~> k ~> [j] ~> k
 type instance Apply FoldrSym0 f = FoldrSym1 f
@@ -826,7 +864,7 @@ We can actually use these to *define* our `MergeStateList` defunctionalization
 symbols, since *defunctionalization symbols are first-class*:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L105-L105
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L92-L92
 
 type MergeStateListSym0 = FoldrSym2 MergeStateSym0 'Opened
 ```
@@ -1055,7 +1093,7 @@ Exercises
     Remember `Knockable` from Part 3?
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L45-L47
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L107-L109
 
     data Knockable :: DoorState -> Type where
         KnockClosed :: Knockable 'Closed
@@ -1068,6 +1106,8 @@ Exercises
     I say yes, but don't take my word for it. Prove it using `Knockable`!
 
     ``` {.haskell}
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L111-L114
+
     mergedIsKnockable
         :: Knockable s
         -> Knockable t
@@ -1094,9 +1134,11 @@ Exercises
     Remember the important principle that your type family must mirror the
     implementation of the functions that use it.
 
-    And, for fun, use `appendHallways` to implement `appendSomeHallways`:
+    Next, for fun, use `appendHallways` to implement `appendSomeHallways`:
 
     ``` {.haskell}
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L79-L142
+
     type SomeHallway = Sigma [DoorState] (TyCon1 Hallway)
 
     appendSomeHallways
@@ -1109,7 +1151,7 @@ Exercises
 
     To do this, try directly defining the defunctionalization symbol
     `KnockableDoor :: DoorState ~> Type` (or use singletons to generate it for
-    you) so that:
+    you --- remember that *singletons* can also promote type families) so that:
 
     ``` {.haskell}
     type SomeKnockableDoor = Sigma DoorState KnockableDoor
@@ -1188,16 +1230,25 @@ Exercises
     type Map f xs = Foldr ???? ???? xs
     ```
 
-    Try to mirror the value-level definition, passing in `(:) . f`.
+    Try to mirror the value-level definition, passing in `(:) . f`, and use the
+    promoted version of `(.)` from the *singletons* library, in
+    *[Data.Singletons.Prelude](http://hackage.haskell.org/package/singletons-2.5/docs/Data-Singletons-Prelude.html)*.
+    You might find `TyCon2` helpful!
 
 6.  Make a `SomeHallway` from a list of `SomeDoor`:
 
     ``` {.haskell}
-    type SomeDoor    = Sigma DoorState   (TyCon1 Door)
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L49-L189
+
+    type SomeDoor = Sigma DoorState (TyCon1 Door)
+
     type SomeHallway = Sigma [DoorState] (TyCon1 Hallway)
 
     mkSomeHallway :: [SomeDoor] -> SomeHallway
     ```
+
+    Remember that the singleton constructors for list are `SNil` (for `[]`) and
+    `SCons` (for `(:)`)!
 
 Special Thanks
 --------------
