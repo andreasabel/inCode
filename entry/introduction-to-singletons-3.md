@@ -1031,7 +1031,8 @@ any incomplete pattern matches!
         ```
 
         We also know that a given `DoorState` is either `Knockable` or
-        `('Opened :~:)`...there's no in-between. Write such a witness:
+        `('Opened :~:)` --- at least one of these is always true. Write such a
+        witness:
 
         ``` {.haskell}
         -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L157-L159
