@@ -252,9 +252,9 @@ We can pattern match and collapse an entire list down item-by-item:
 
 ``` {.haskell}
 $(singletons [d|
-  mergeStates :: [DoorState] -> DoorState
-  mergeStates []     = Opened               -- ^ the identity of mergeState
-  mergeStates (s:ss) = s `mergeState` mergeStates ss
+  mergeStateList :: [DoorState] -> DoorState
+  mergeStateList []     = Opened               -- ^ the identity of mergeState
+  mergeStateList (s:ss) = s `mergeState` mergeStateList ss
   |])
 ```
 
@@ -264,13 +264,21 @@ singleton function `sMergeStateList :: Sing ss -> Sing (MergeStateList ss)`.
 With this, we can write `collapseHallway`:
 
 ``` {.haskell}
-collapseHallway :: Hallway ss -> Door (MergeStateList ss)
-collapseHallway HEnd       = UnsafeMkDoor "End of Hallway"
-collapseHallway (d :<# ds) = d `mergeDoor` collapseHallway ds
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L56-L64
+
+data Hallway :: [DoorState] -> Type where
+    HEnd  :: Hallway '[]        -- ^ end of the hallway, a stretch with no
+                                --   doors
+    (:<#) :: Door s
+          -> Hallway ss
+          -> Hallway (s ': ss)  -- ^ A door connected to a hallway is a new
+                                --   hallway, and we track the door's state
+                                --   in the list of hallway door states
+infixr 5 :<#
 ```
 
 Now, because the structure of `collapseHallway` perfectly mirrors the structure
-of `mergeStates`, this all typechecks, and we're done!
+of `mergeStateList`, this all typechecks, and we're done!
 
 ``` {.haskell}
 ghci> collapseHallway (door1 :<# door2 :<# door3 :<# HEnd)
@@ -286,21 +294,23 @@ Functional Programming
 ----------------------
 
 We went over that all a bit fast, but some of you might have noticed that the
-definition of `mergeStates` bears a really strong resemblance to a very common
-Haskell list processing pattern:
+definition of `mergeStateList` bears a really strong resemblance to a very
+common Haskell list processing pattern:
 
 ``` {.haskell}
-mergeStates :: [DoorState] -> DoorState
-mergeStates []     = Opened               -- ^ the identity of mergeState
-mergeStates (s:ss) = s `mergeState` mergeStates ss
+mergeStateList :: [DoorState] -> DoorState
+mergeStateList []     = Opened               -- ^ the identity of mergeState
+mergeStateList (s:ss) = s `mergeState` mergeStateList ss
 ```
 
-We replace all `[]` with `Opened`, and all `(:)` with `mergeState`. Yup --- this
-is exactly a `foldr`!
+The algorithm is to basically `[]` with `Opened`, and all `(:)` with
+`mergeState`. If this sounds familiar, that's because this is exactly a *right
+fold*! (In fact, [hlint](http://hackage.haskell.org/package/hlint) actually made
+this suggestion to me while I was writing this)
 
 ``` {.haskell}
-mergeStates :: [DoorState] -> DoorState
-mergeState = foldr mergeState Opened
+mergeStateList :: [DoorState] -> DoorState
+mergeStateList = foldr mergeState Opened
 ```
 
 In Haskell, we are always encouraged to use higher-order functions whenever
@@ -318,9 +328,6 @@ Initial attempts to write a higher-order type-level function as a type family,
 however, serve to temper our enthusiasm.
 
 ``` {.haskell}
-type family MergeState (s :: DoorState) (t :: DoorState) :: DoorState where
-    MergeState s t = Max s t
-
 type family Foldr (f :: j -> k -> k) (z :: k) (xs :: [j]) :: k where
     Foldr f z '[]       = z
     Foldr f z (x ': xs) = f x (Foldr f z xs)
@@ -384,6 +391,8 @@ our own defunctionalization system from scratch.
 First, a little trick to make things easier to read:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L27-L30
+
 data TyFun a b
 type a ~> b = TyFun a b -> Type
 
@@ -396,6 +405,8 @@ Now we can define a dummy data type like `Id`, which represents the identity
 function `id`:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L38-L38
+
 data Id :: a ~> a
 ```
 
@@ -412,6 +423,8 @@ from `a` to `a`.
 To interpret it, we need to write our global interpreter function:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L32-L32
+
 type family Apply (f :: a ~> b) (x :: a) :: b
 ```
 
@@ -422,6 +435,8 @@ open in Haskell.
 Let's tell `Apply` how to interpret `Id`:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L39-L39
+
 type instance Apply Id x = x
 ```
 
@@ -436,6 +451,8 @@ ghci> :kind! Apply Id 'True
 Let's define another one! We'll implement `Not`:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L41-L43
+
 data Not :: Bool ~> Bool
 type instance Apply Not 'False = 'True
 type instance Apply Not 'True  = 'False
@@ -453,6 +470,8 @@ ghci> :kind! Apply Not 'False
 It can be convenient to define an infix synonym for `Apply`:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L34-L36
+
 type f @@ a = Apply f a
 
 infixl 9 @@
@@ -588,12 +607,13 @@ One extra interesting defunctionalization symbol we can write: we turn lift any
 type constructor into a "free" defunctionalization symbol:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L45-L51
+
 data TyCon1
         :: (j -> k)     -- ^ take a type constructor
         -> (j ~> k)     -- ^ return a defunctionalization symbol
-
 -- alternatively
-data TyCon1 (t :: j -> k) :: j ~> k
+-- data TyCon1 (t :: j -> k) :: j ~> k
 
 type instance Apply (TyCon1 t) a = t a
 ```
@@ -625,6 +645,8 @@ represent the "unapplied" versions of type families, so they are exactly the
 tools we need!
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L53-L55
+
 type family Foldr (f :: j ~> k ~> k) (z :: k) (xs :: [j]) :: k where
     Foldr f z '[]       = z
     Foldr f z (x ': xs) = (f @@ x) @@ Foldr f z xs
@@ -640,8 +662,7 @@ constructor.
 Now we just need to have our defunctionalization symbols for `MergeStateList`:
 
 ``` {.haskell}
-type family MergeState (s :: DoorState) (t :: DoorState) :: DoorState where
-    MergeState s t = s
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L67-L73
 
 data MergeStateSym0 :: DoorState ~> DoorState ~> DoorState
 type instance Apply MergeStateSym0 s = MergeStateSym1 s
@@ -655,6 +676,8 @@ type MergeStateSym2 s t = MergeState s t
 And now we can write `MergeStateList`!
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L75-L75
+
 type MergeStateList ss = Foldr MergeStateSym0 'Opened ss
 ```
 
@@ -671,6 +694,8 @@ ghci> :kind! MergeStateList '[ 'Closed, 'Opened ]
 ```
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L90-L92
+
 collapseHallway :: Hallway ss -> Door (MergeStateList ss)
 collapseHallway HEnd       = UnsafeMkDoor "End of Hallway"
 collapseHallway (d :<# ds) = d `mergeDoor` collapseHallway ds
@@ -783,17 +808,26 @@ symbols for `Foldr`!
 Check out the defunctionalization symbols for `Foldr`:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L94-L103
+
 data FoldrSym0 :: (j ~> k ~> k) ~> k ~> [j] ~> k
+type instance Apply FoldrSym0 f = FoldrSym1 f
 
 data FoldrSym1 :: (j ~> k ~> k) -> k ~> [j] ~> k
+type instance Apply (FoldrSym1 f) z = FoldrSym2 f z
 
 data FoldrSym2 :: (j ~> k ~> k) -> k -> [j] ~> k
+type instance Apply (FoldrSym2 f z) xs = Foldr f z xs
+
+type FoldrSym3 f z xs = Foldr f z xs
 ```
 
 We can actually use these to *define* our `MergeStateList` defunctionalization
 symbols, since *defunctionalization symbols are first-class*:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L105-L105
+
 type MergeStateListSym0 = FoldrSym2 MergeStateSym0 'Opened
 ```
 
@@ -841,6 +875,9 @@ he dependence* between the first and second field. Singletons provides the
 ``` {.haskell}
 data Sigma k :: (k ~> Type) -> Type where
     (:&:) :: Sing x -> (f @@ x) -> Sigma k f
+
+-- also available through fancy type synonym
+type Σ k = Sigma k
 ```
 
 If you squint carefully, you can see that `Sigma k` is just `SomeDoor`, but
@@ -850,6 +887,8 @@ parameterized on an arbitrary function `f` and have it hold an `f @@ x`.
 We can actually define `SomeDoor` in terms of `Sigma`:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L49-L53
+
 type SomeDoor = Sigma DoorState (TyCon1 Door)
 
 mkSomeDoor :: DoorState -> String -> SomeDoor
@@ -879,12 +918,16 @@ that we don't know the types of the doors.
 Luckily, we now have a `SomeHallway` type for free:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L79-L79
+
 type SomeHallway = Sigma [DoorState] (TyCon1 Hallway)
 ```
 
 The easy way would be to just use `sMergeStateList` that we defned:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L83
+
 collapseSomeHallway :: SomeHallway -> SomeDoor
 collapseSomeHallway (ss :&: d) = sMergeStateList ss
                              :&: collapseHallway d
@@ -894,13 +937,17 @@ But what if we didn't write `sMergeStateList`, and we constructed our
 defunctionalization symbols from scratch?
 
 ``` {.haskell}
-collapseHallway
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L91-L95
+
+collapseHallway'
     :: Hallway ss
     -> Door (FoldrSym2 MergeStateSym0 'Opened @@ ss)
+collapseHallway' HEnd       = UnsafeMkDoor "End of Hallway"
+collapseHallway' (d :<# ds) = d `mergeDoor` collapseHallway' ds
 
-collapseSomeHallway :: SomeHallway -> SomeDoor
-collapseSomeHallway (ss :&: d) = ???    -- what goes here?
-                             :&: collapseHallway d
+collapseSomeHallway' :: SomeHallway -> SomeDoor
+collapseSomeHallway' (ss :&: d) = ???    -- what goes here?
+                              :&: collapseHallway' d
 ```
 
 This will be our final defunctionalization lesson. How do we turn a singleton of
@@ -929,9 +976,9 @@ singleton/value-level counterpart of `Apply` or `(@@)`.\[\^slamda\]
 So we can write:
 
 ``` {.haskell}
-collapseSomeHallway :: SomeHallway -> SomeDoor
-collapseSomeHallway (ss :&: d) = sFoldr ???? SOpened ss
-                             :&: collapseHallway d
+collapseSomeHallway' :: SomeHallway -> SomeDoor
+collapseSomeHallway' (ss :&: d) = sFoldr ???? SOpened ss
+                              :&: collapseHallway d
 ```
 
 But how do we get a `Sing MergeStateSym0`?
@@ -939,7 +986,8 @@ But how do we get a `Sing MergeStateSym0`?
 We can use the `singFun` family of functions:
 
 ``` {.haskell}
-singFun2 @MergeStateSym0 :: Sing MergeStateSym0
+singFun2 @MergeStateSym0 sMergeState
+    :: Sing MergeStateSym0
 ```
 
 But, also, conveniently, the *singletons* library generates a `SingI` instance
@@ -956,9 +1004,14 @@ sing @MergeStateSym0            -- singletons 2.5
 And finally, we get our answer:
 
 ``` {.haskell}
-collapseSomeHallway :: SomeHallway -> SomeDoor
-collapseSomeHallway (ss :&: d) = sFoldr (singFun2 @MergeStateSym0) SOpened ss
-                             :&: collapseHallway d
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L97-L102
+
+collapseSomeHallway' :: SomeHallway -> SomeDoor
+collapseSomeHallway' (ss :&: d) =
+        sFoldr (singFun2 @MergeStateSym0 sMergeState) SOpened ss
+     -- or
+     -- sFoldr (sing @MergeStateSym0) SOpened ss
+    :&: collapseHallway' d
 ```
 
 Closing Up
