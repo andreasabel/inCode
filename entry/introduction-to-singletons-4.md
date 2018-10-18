@@ -24,9 +24,11 @@ Just as a quick review, this entire series we have been working with a `Door`
 type:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L30-L36
+
 $(singletons [d|
   data DoorState = Opened | Closed | Locked
-    deriving (Show, Eq)
+    deriving (Show, Eq, Ord)
   |])
 
 data Door :: DoorState -> Type where
@@ -53,7 +55,7 @@ or not we can walk through or knock on a door:
 ``` {.haskell}
 $(singletons [d|
   data Pass = Obstruct | Allow
-    deriving (Show, Eq)
+    deriving (Show, Eq, Ord)
   |])
 ```
 
@@ -94,6 +96,8 @@ manipulate the singletons representing `s` and `StatePass s`.
 We used this as a constraint to restrict how we can call our functions:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L87-L88
+
 knockP :: (StatePass s ~ 'Obstruct) => Door s -> IO ()
 knockP d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
 ```
@@ -108,7 +112,6 @@ In the past we have settled with very simple relationships, like:
 
 ``` {.haskell}
 closeDoor :: Door 'Opened -> Door 'Closed
-closeDoor (UnsafeMkDoor m) = UnsafeMkDoor m
 ```
 
 This means that the relationship between the input and output is that the input
@@ -154,6 +157,8 @@ $(singletons [d|
 This makes writing `mergeDoor`'s type fairly straightforward!
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L46-L50
+
 mergeDoor
     :: Door s
     -> Door t
@@ -165,8 +170,10 @@ And, with the help of singletons, we can also write this for our doors where we
 don't know the types until runtime:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L52-L54
+
 mergeSomeDoor :: SomeDoor -> SomeDoor -> SomeDoor
-mergSomeDoor (MkSomeDoor s d) (MkSomeDoor t e) =
+mergeSomeDoor (MkSomeDoor s d) (MkSomeDoor t e) =
     MkSomeDoor (sMergeState s t) (mergeDoor d e)
 ```
 
@@ -201,16 +208,16 @@ by a door. We'll structure it like a linked list, and store the list of all door
 states as a type-level list as a type parameter:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L56-L64
+
 data Hallway :: [DoorState] -> Type where
-    HEnd  :: Hallway '[]
-    -- ^ end of the hallway, a stretch with no doors
+    HEnd  :: Hallway '[]        -- ^ end of the hallway, a stretch with no
+                                --   doors
     (:<#) :: Door s
           -> Hallway ss
-          -> Hallway (s ': ss)
-    -- ^ A door connected to a hallway is a new
-    --   hallway, and we track the door's state in the list
-    --   of hallway door states
-
+          -> Hallway (s ': ss)  -- ^ A door connected to a hallway is a new
+                                --   hallway, and we track the door's state
+                                --   in the list of hallway door states
 infixr 5 :<#
 ```
 
@@ -844,6 +851,10 @@ We can actually define `SomeDoor` in terms of `Sigma`:
 
 ``` {.haskell}
 type SomeDoor = Sigma DoorState (TyCon1 Door)
+
+mkSomeDoor :: DoorState -> String -> SomeDoor
+mkSomeDoor ds mat = withSomeSing ds $ \dsSing ->
+    dsSing :&: UnsafeMkDoor mat
 ```
 
 (Remember `TyCon1` is the defunctionalization symbol constructor that turns any
