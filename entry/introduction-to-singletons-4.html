@@ -585,41 +585,46 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb75-2" data-line-number="2"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">IsHalfOf</span> n) m <span class="fu">=</span> n <span class="fu">:~:</span> (m <span class="fu">*</span> <span class="dv">2</span>)</a>
 <a class="sourceLine" id="cb75-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb75-4" data-line-number="4"><span class="kw">type</span> <span class="dt">IsEven</span> n <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">Nat</span> (<span class="dt">IsHalfOf</span> n)</a></code></pre></div>
-<p><code>(*)</code> is multiplication from the <em><a href="http://hackage.haskell.org/package/singletons-2.5/docs/Data-Singletons-Prelude-Num.html">Data.Singletons.Prelude.Num</a></em> module. (<strong>You must have the <em>-XNoStarIsType</em> extension on</strong> for this to work in GHC 8.6+), and <code>:~:</code> is the predicate of equality from Part 3.</p>
+<p><code>(*)</code> is multiplication from the <em><a href="http://hackage.haskell.org/package/singletons-2.5/docs/Data-Singletons-Prelude-Num.html">Data.Singletons.Prelude.Num</a></em> module. (<strong>You must have the <em>-XNoStarIsType</em> extension on</strong> for this to work in GHC 8.6+), and <code>:~:</code> is the predicate of equality from Part 3:</p>
+<div class="sourceCode" id="cb76"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb76-1" data-line-number="1"><span class="kw">data</span><span class="ot"> (:~:) ::</span> k <span class="ot">-&gt;</span> k <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb76-2" data-line-number="2">    <span class="dt">Refl</span><span class="ot"> ::</span> a <span class="fu">:~:</span> a</a></code></pre></div>
+<p>(It’s only possible to make a value of type <code>a :~: b</code> using <code>Refl :: a :~: a</code>, so it’s only possible to make a value of that type when <code>a</code> and <code>b</code> are equal. I like to use <code>Refl</code> with type application syntax, like <code>Refl @a</code>, so it’s clear what we are saying is the same on both sides; <code>Refl @a :: a :~: a</code>)</p>
 <p>The only way to construct an <code>IsEven n</code> is to provide a number <code>m</code> where <code>m * 2</code> is <code>n</code>. We can do this by using <code>SNat @m</code>, which is the singleton constructor for the <code>Nat</code> kind (just like how <code>STrue</code> and <code>SFalse</code> are the singleton constructors for the <code>Bool</code> kind):</p>
-<div class="sourceCode" id="cb76"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb76-1" data-line-number="1"><span class="ot">tenIsEven ::</span> <span class="dt">IsEven</span> <span class="dv">10</span></a>
-<a class="sourceLine" id="cb76-2" data-line-number="2">tenIsEven <span class="fu">=</span> <span class="dt">SNat</span> <span class="fu">@</span><span class="dv">5</span> <span class="fu">:&amp;:</span> <span class="dt">Refl</span>      <span class="co">-- Refl is the constructor of type n :~: (m * 2)</span></a>
-<a class="sourceLine" id="cb76-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb76-4" data-line-number="4"><span class="co">-- won&#39;t compile</span></a>
-<a class="sourceLine" id="cb76-5" data-line-number="5"><span class="ot">sevenIsEven ::</span> <span class="dt">IsEven</span> <span class="dv">10</span></a>
-<a class="sourceLine" id="cb76-6" data-line-number="6">sevenIsEven <span class="fu">=</span> <span class="dt">SNat</span> <span class="fu">@</span><span class="dv">4</span> <span class="fu">:&amp;:</span> <span class="dt">Refl</span></a>
-<a class="sourceLine" id="cb76-7" data-line-number="7">    <span class="co">-- won&#39;t compile, because we need something of type `(4 * 2) :~: 7`,</span></a>
-<a class="sourceLine" id="cb76-8" data-line-number="8">    <span class="co">-- but Refl must have type `a :~: a`; `8 :~: 7` is not constructable</span></a>
-<a class="sourceLine" id="cb76-9" data-line-number="9">    <span class="co">-- using `Refl`.</span></a></code></pre></div>
+<div class="sourceCode" id="cb77"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb77-1" data-line-number="1"><span class="ot">tenIsEven ::</span> <span class="dt">IsEven</span> <span class="dv">10</span></a>
+<a class="sourceLine" id="cb77-2" data-line-number="2">tenIsEven <span class="fu">=</span> <span class="dt">SNat</span> <span class="fu">@</span><span class="dv">5</span> <span class="fu">:&amp;:</span> <span class="dt">Refl</span> <span class="fu">@</span><span class="dv">10</span></a>
+<a class="sourceLine" id="cb77-3" data-line-number="3">    <span class="co">-- Refl is the constructor of type n :~: (m * 2)</span></a>
+<a class="sourceLine" id="cb77-4" data-line-number="4">    <span class="co">-- here, we use it as Refl @10 :: 10 :~: 10</span></a>
+<a class="sourceLine" id="cb77-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb77-6" data-line-number="6"><span class="co">-- won&#39;t compile</span></a>
+<a class="sourceLine" id="cb77-7" data-line-number="7"><span class="ot">sevenIsEven ::</span> <span class="dt">IsEven</span> <span class="dv">10</span></a>
+<a class="sourceLine" id="cb77-8" data-line-number="8">sevenIsEven <span class="fu">=</span> <span class="dt">SNat</span> <span class="fu">@</span><span class="dv">4</span> <span class="fu">:&amp;:</span> <span class="dt">Refl</span></a>
+<a class="sourceLine" id="cb77-9" data-line-number="9">    <span class="co">-- won&#39;t compile, because we need something of type `(4 * 2) :~: 7`,</span></a>
+<a class="sourceLine" id="cb77-10" data-line-number="10">    <span class="co">-- but Refl must have type `a :~: a`; `8 :~: 7` is not constructable</span></a>
+<a class="sourceLine" id="cb77-11" data-line-number="11">    <span class="co">-- using `Refl`.  Neither `Refl @8` nor `Refl @7` will work.</span></a></code></pre></div>
 <p>Write a similar type <code>IsOdd n</code> that can only be constructed if <code>n</code> is <em>odd</em>.</p>
-<div class="sourceCode" id="cb77"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb77-1" data-line-number="1"><span class="kw">type</span> <span class="dt">IsOdd</span> n <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">Nat</span> (<span class="fu">????</span> n)</a></code></pre></div>
+<div class="sourceCode" id="cb78"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb78-1" data-line-number="1"><span class="kw">type</span> <span class="dt">IsOdd</span> n <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">Nat</span> (<span class="fu">????</span> n)</a></code></pre></div>
 <p>And construct a proof that <code>7</code> is odd:</p>
-<div class="sourceCode" id="cb78"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb78-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L196-L196</span></a>
-<a class="sourceLine" id="cb78-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb78-3" data-line-number="3"><span class="ot">sevenIsOdd ::</span> <span class="dt">IsOdd</span> <span class="dv">7</span></a></code></pre></div>
+<div class="sourceCode" id="cb79"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb79-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L196-L196</span></a>
+<a class="sourceLine" id="cb79-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb79-3" data-line-number="3"><span class="ot">sevenIsOdd ::</span> <span class="dt">IsOdd</span> <span class="dv">7</span></a></code></pre></div>
 <p><a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L165-L165">Solution here!</a></p>
 <p>On a sad note, one exercise I’d like to be able to add is to ask you to write decision functions and proofs of not-even or not-odd, but unfortunately, <code>Nat</code> is not rich enough to support this out of the box without a lot of extra tooling!</p></li>
 <li><p>A common beginner Haskeller exercise is to implement <code>map</code> in terms of <code>foldr</code>:</p>
-<div class="sourceCode" id="cb79"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb79-1" data-line-number="1">map<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] _<span class="fu">&gt;</span> [b]</a>
-<a class="sourceLine" id="cb79-2" data-line-number="2">map f <span class="fu">=</span> foldr ((<span class="fu">:</span>) <span class="fu">.</span> f) []</a></code></pre></div>
+<div class="sourceCode" id="cb80"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb80-1" data-line-number="1">map<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] _<span class="fu">&gt;</span> [b]</a>
+<a class="sourceLine" id="cb80-2" data-line-number="2">map f <span class="fu">=</span> foldr ((<span class="fu">:</span>) <span class="fu">.</span> f) []</a></code></pre></div>
 <p>Let’s do the same thing at the type level, manually.</p>
 <p>Directly implement a type-level <code>Map</code>, with kind <code>(j ~&gt; k) -&gt; [j] -&gt; [k]</code>, in terms of <code>Foldr</code>:</p>
-<div class="sourceCode" id="cb80"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb80-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Map</span> f xs <span class="fu">=</span> <span class="dt">Foldr</span> <span class="fu">????</span> <span class="fu">????</span> xs</a></code></pre></div>
+<div class="sourceCode" id="cb81"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb81-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Map</span> f xs <span class="fu">=</span> <span class="dt">Foldr</span> <span class="fu">????</span> <span class="fu">????</span> xs</a></code></pre></div>
 <p>Try to mirror the value-level definition, passing in <code>(:) . f</code>, and use the promoted version of <code>(.)</code> from the <em>singletons</em> library, in <em><a href="http://hackage.haskell.org/package/singletons-2.5/docs/Data-Singletons-Prelude.html">Data.Singletons.Prelude</a></em>. You might find <code>TyCon2</code> helpful!</p>
 <p><a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L183-L183">Solution here!</a></p></li>
 <li><p>Make a <code>SomeHallway</code> from a list of <code>SomeDoor</code>:</p>
-<div class="sourceCode" id="cb81"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb81-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L203</span></a>
-<a class="sourceLine" id="cb81-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb81-3" data-line-number="3"><span class="kw">type</span> <span class="dt">SomeDoor</span> <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">DoorState</span> (<span class="dt">TyCon1</span> <span class="dt">Door</span>)</a>
-<a class="sourceLine" id="cb81-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb81-5" data-line-number="5"><span class="kw">type</span> <span class="dt">SomeHallway</span> <span class="fu">=</span> <span class="dt">Sigma</span> [<span class="dt">DoorState</span>] (<span class="dt">TyCon1</span> <span class="dt">Hallway</span>)</a>
-<a class="sourceLine" id="cb81-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb81-7" data-line-number="7"><span class="ot">mkSomeHallway ::</span> [<span class="dt">SomeDoor</span>] <span class="ot">-&gt;</span> <span class="dt">SomeHallway</span></a></code></pre></div>
+<div class="sourceCode" id="cb82"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb82-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L203</span></a>
+<a class="sourceLine" id="cb82-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb82-3" data-line-number="3"><span class="kw">type</span> <span class="dt">SomeDoor</span> <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">DoorState</span> (<span class="dt">TyCon1</span> <span class="dt">Door</span>)</a>
+<a class="sourceLine" id="cb82-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb82-5" data-line-number="5"><span class="kw">type</span> <span class="dt">SomeHallway</span> <span class="fu">=</span> <span class="dt">Sigma</span> [<span class="dt">DoorState</span>] (<span class="dt">TyCon1</span> <span class="dt">Hallway</span>)</a>
+<a class="sourceLine" id="cb82-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb82-7" data-line-number="7"><span class="ot">mkSomeHallway ::</span> [<span class="dt">SomeDoor</span>] <span class="ot">-&gt;</span> <span class="dt">SomeHallway</span></a></code></pre></div>
 <p>Remember that the singleton constructors for list are <code>SNil</code> (for <code>[]</code>) and <code>SCons</code> (for <code>(:)</code>)!</p>
 <p><a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L183-L183">Solution here!</a></p></li>
 </ol>

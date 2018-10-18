@@ -1527,7 +1527,21 @@ all of your functions are total!
   \emph{\href{http://hackage.haskell.org/package/singletons-2.5/docs/Data-Singletons-Prelude-Num.html}{Data.Singletons.Prelude.Num}}
   module. (\textbf{You must have the \emph{-XNoStarIsType} extension on} for
   this to work in GHC 8.6+), and \texttt{:\textasciitilde{}:} is the predicate
-  of equality from Part 3.
+  of equality from Part 3:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data}\OtherTok{ (:~:) ::}\NormalTok{ k }\OtherTok{->}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{Refl}\OtherTok{ ::}\NormalTok{ a }\FunctionTok{:~:}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+  (It's only possible to make a value of type \texttt{a\ :\textasciitilde{}:\ b}
+  using \texttt{Refl\ ::\ a\ :\textasciitilde{}:\ a}, so it's only possible to
+  make a value of that type when \texttt{a} and \texttt{b} are equal. I like to
+  use \texttt{Refl} with type application syntax, like \texttt{Refl\ @a}, so
+  it's clear what we are saying is the same on both sides;
+  \texttt{Refl\ @a\ ::\ a\ :\textasciitilde{}:\ a})
 
   The only way to construct an \texttt{IsEven\ n} is to provide a number
   \texttt{m} where \texttt{m\ *\ 2} is \texttt{n}. We can do this by using
@@ -1538,14 +1552,16 @@ all of your functions are total!
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{tenIsEven ::} \DataTypeTok{IsEven} \DecValTok{10}
-\NormalTok{tenIsEven }\FunctionTok{=} \DataTypeTok{SNat} \FunctionTok{@}\DecValTok{5} \FunctionTok{:&:} \DataTypeTok{Refl}      \CommentTok{-- Refl is the constructor of type n :~: (m * 2)}
+\NormalTok{tenIsEven }\FunctionTok{=} \DataTypeTok{SNat} \FunctionTok{@}\DecValTok{5} \FunctionTok{:&:} \DataTypeTok{Refl} \FunctionTok{@}\DecValTok{10}
+    \CommentTok{-- Refl is the constructor of type n :~: (m * 2)}
+    \CommentTok{-- here, we use it as Refl @10 :: 10 :~: 10}
 
 \CommentTok{-- won't compile}
 \OtherTok{sevenIsEven ::} \DataTypeTok{IsEven} \DecValTok{10}
 \NormalTok{sevenIsEven }\FunctionTok{=} \DataTypeTok{SNat} \FunctionTok{@}\DecValTok{4} \FunctionTok{:&:} \DataTypeTok{Refl}
     \CommentTok{-- won't compile, because we need something of type `(4 * 2) :~: 7`,}
     \CommentTok{-- but Refl must have type `a :~: a`; `8 :~: 7` is not constructable}
-    \CommentTok{-- using `Refl`.}
+    \CommentTok{-- using `Refl`.  Neither `Refl @8` nor `Refl @7` will work.}
 \end{Highlighting}
 \end{Shaded}
 
