@@ -925,7 +925,7 @@ parameterized on an arbitrary function `f` and have it hold an `f @@ x`.
 We can actually define `SomeDoor` in terms of `Sigma`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L49-L53
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L55
 
 type SomeDoor = Sigma DoorState (TyCon1 Door)
 
@@ -956,7 +956,7 @@ that we don't know the types of the doors.
 Luckily, we now have a `SomeHallway` type for free:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L79-L79
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L81
 
 type SomeHallway = Sigma [DoorState] (TyCon1 Hallway)
 ```
@@ -964,7 +964,7 @@ type SomeHallway = Sigma [DoorState] (TyCon1 Hallway)
 The easy way would be to just use `sMergeStateList` that we defned:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L83
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L83-L85
 
 collapseSomeHallway :: SomeHallway -> SomeDoor
 collapseSomeHallway (ss :&: d) = sMergeStateList ss
@@ -975,7 +975,7 @@ But what if we didn't write `sMergeStateList`, and we constructed our
 defunctionalization symbols from scratch?
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L91-L95
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L93-L97
 
 collapseHallway'
     :: Hallway ss
@@ -1042,7 +1042,7 @@ sing @MergeStateSym0            -- singletons 2.5
 And finally, we get our answer:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L97-L102
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L99-L104
 
 collapseSomeHallway' :: SomeHallway -> SomeDoor
 collapseSomeHallway' (ss :&: d) =
@@ -1072,19 +1072,36 @@ and TypeRep-based singletons), but I'd like to hope as well that this series has
 equipped you to be able to dive into the library documentation and decipher what
 it holds, armed with the knowledge you now have.
 
+You can download the source code here ---
+[Door4Final.hs](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs)
+contains the final versions of all our definitions, and
+\[Defunctionalization.hs\]\[\] contains all of our
+defunctionalization-from-scratch work. These are designed as stack scripts that
+you can load into ghci. Just execute the scripts:
+
+``` {.bash}
+$ ./Door4Final.hs
+ghci>
+```
+
+And you'll be dropped into a ghci session with all of the definitions in scope!
+
 As always, please try out the exercises, which are designed to help solidify the
 concepts we went over here! And if you ever have any future questions, feel free
-to leave a comment
+to leave a comment or find me on [twitter](https://twitter.com/mstk "Twitter")
+or in freenode `#haskell`, where I idle as *jle\`*!
 
-That's it for now --- check out the exercises, and feel free to ask any
-questions in the comments or find me on
-[twitter](https://twitter.com/mstk "Twitter") or in freenode `#haskell`, where I
-idle as *jle\`*!
-
-Happy Haskelling!
+Until next time, Happy Haskelling!
 
 Exercises
 ---------
+
+Here are your final exercises for this series! Start from [this sample source
+code](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs),
+which has all of the definitions that the exercises and their solutions require.
+Just make sure to delete all of the parts after the `-- Exercise` comment if you
+don't want to be spoiled! Remember again to enable `-Werror=incomplete-patterns`
+or `-Wall` to ensure that all of your functions are total!
 
 1.  Let's try combining type families with proofs! In doing so, hopefully we can
     also see the value of using dependent proofs to show how we can manipulate
@@ -1093,7 +1110,7 @@ Exercises
     Remember `Knockable` from Part 3?
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L107-L109
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L109-L111
 
     data Knockable :: DoorState -> Type where
         KnockClosed :: Knockable 'Closed
@@ -1106,7 +1123,7 @@ Exercises
     I say yes, but don't take my word for it. Prove it using `Knockable`!
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L111-L114
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L126-L129
 
     mergedIsKnockable
         :: Knockable s
@@ -1117,6 +1134,9 @@ Exercises
     `mergedIsKnockable` is only implementable if the merging of two DoorStates
     that are knockable is also knockable. See if you can write the
     implementation!
+
+    [Solution
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L101-L101)
 
 2.  Write a function to append two hallways together.
 
@@ -1137,7 +1157,7 @@ Exercises
     Next, for fun, use `appendHallways` to implement `appendSomeHallways`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L79-L142
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L157
 
     type SomeHallway = Sigma [DoorState] (TyCon1 Hallway)
 
@@ -1146,6 +1166,9 @@ Exercises
         -> SomeHallway
         -> SomeHallway
     ```
+
+    [Solution
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L108-L108)
 
 3.  Can you use `Sigma` to define a door that must be knockable?
 
@@ -1162,6 +1185,12 @@ Exercises
     Try doing it for both (a) the "dependent proof" version (with the
     `Knockable` data type) and for (b) the type family version (with the
     `StatePass` type family).
+
+    [Solutions
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L118-L118)
+    I gave four different ways of doing it, for a full range of manual
+    vs. auto-promoted defunctionalization symbols and `Knockable` vs.
+    `Pass`-based methods.
 
     *Hint:* Look at the definition of `SomeDoor` in terms of `Sigma`:
 
@@ -1189,19 +1218,21 @@ Exercises
 
     `(*)` is multiplication from the
     *[Data.Singletons.Prelude.Num](http://hackage.haskell.org/package/singletons-2.5/docs/Data-Singletons-Prelude-Num.html)*
-    module. (You must have the *-XNoStarIsType* extension on for this to work in
-    GHC 8.6+), and `:~:` is the predicate of equality from Part 3.
+    module. (**You must have the *-XNoStarIsType* extension on** for this to
+    work in GHC 8.6+), and `:~:` is the predicate of equality from Part 3.
 
     The only way to construct an `IsEven n` is to provide a number `m` where
-    `m * 2` is `n`:
+    `m * 2` is `n`. We can do this by using `SNat @m`, which is the singleton
+    constructor for the `Nat` kind (just like how `STrue` and `SFalse` are the
+    singleton constructors for the `Bool` kind):
 
     ``` {.haskell}
     tenIsEven :: IsEven 10
-    tenIsEven = 5 :&: Refl      -- Refl is the constructor of type n :~: (m * 2)
+    tenIsEven = SNat @5 :&: Refl      -- Refl is the constructor of type n :~: (m * 2)
 
     -- won't compile
     sevenIsEven :: IsEven 10
-    sevenIsEven = 4 :&: Refl
+    sevenIsEven = SNat @4 :&: Refl
         -- won't compile, because we need something of type `(4 * 2) :~: 7`,
         -- but Refl must have type `a :~: a`; `8 :~: 7` is not constructable
         -- using `Refl`.
@@ -1212,6 +1243,22 @@ Exercises
     ``` {.haskell}
     type IsOdd n = Sigma Nat (???? n)
     ```
+
+    And construct a proof that `7` is odd:
+
+    ``` {.haskell}
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L196-L196
+
+    sevenIsOdd :: IsOdd 7
+    ```
+
+    [Solution
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L165-L165)
+
+    On a sad note, one exercise I'd like to be able to add is to ask you to
+    write decision functions and proofs of not-even or not-odd, but
+    unfortunately, `Nat` is not rich enough to support this out of the box
+    without a lot of extra tooling!
 
 5.  A common beginner Haskeller exercise is to implement `map` in terms of
     `foldr`:
@@ -1235,10 +1282,13 @@ Exercises
     *[Data.Singletons.Prelude](http://hackage.haskell.org/package/singletons-2.5/docs/Data-Singletons-Prelude.html)*.
     You might find `TyCon2` helpful!
 
+    [Solution
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L183-L183)
+
 6.  Make a `SomeHallway` from a list of `SomeDoor`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L49-L189
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L203
 
     type SomeDoor = Sigma DoorState (TyCon1 Door)
 
@@ -1249,6 +1299,9 @@ Exercises
 
     Remember that the singleton constructors for list are `SNil` (for `[]`) and
     `SCons` (for `(:)`)!
+
+    [Solution
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L183-L183)
 
 Special Thanks
 --------------
