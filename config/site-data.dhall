@@ -25,21 +25,14 @@
         "mstk"
     }
 , blobs =
-    [ { renderBranch =
-          [ "gh-pages" ] : Optional Text
-      , sourceBranch =
-          [ "master" ] : Optional Text
-      , tree =
-          "https://github.com/mstksg/inCode/tree"
-      }
-    ] : Optional
-        { renderBranch :
-            Optional Text
-        , sourceBranch :
-            Optional Text
-        , tree :
-            Text
-        }
+    Some
+    { renderBranch =
+        Some "gh-pages"
+    , sourceBranch =
+        Some "master"
+    , tree =
+        "https://github.com/mstksg/inCode/tree"
+    }
 , blogPrefs =
     { feedEntries =
         10
@@ -53,7 +46,7 @@
         8
     }
 , codeSamples =
-    [ "code-samples" ] : Optional Text
+    Some "code-samples"
 , copyright =
     "2018 Justin Le"
 , desc =
@@ -80,14 +73,14 @@
     { base =
         "blog.jle.im"
     , port =
-        [] : Optional Natural
+        None Natural
     , root =
-        [] : Optional Text
+        None Text
     , secure =
         True
     }
 , interactive =
-    [ "https://www.fpcomplete.com/user/jle/" ] : Optional Text
+    Some "https://www.fpcomplete.com/user/jle/"
 , license =
     "CC-BY-NC-ND 3.0"
 , licenseLink =
