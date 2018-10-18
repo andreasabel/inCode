@@ -969,9 +969,9 @@ any incomplete pattern matches!
         have inhabitants)
 
         ``` {.haskell}
-        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L120-L120
+        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L119-L119
 
-            And :: p a -> q a -> And p q a
+        data And :: (k -> Type) -> (k -> Type) -> (k -> Type) where
         ```
 
     b.  Define a predicate constructor `Or` that takes two predicates and
@@ -980,9 +980,9 @@ any incomplete pattern matches!
         are true (aka, have inhabitants)
 
         ``` {.haskell}
-        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L123-L123
+        -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L122-L122
 
-            OrLeft  :: p a -> Or p q a
+        data Or :: (k -> Type) -> (k -> Type) -> (k -> Type) where
         ```
 
         There are potentially multiple non-trivial variations of this type.
