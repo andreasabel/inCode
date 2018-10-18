@@ -1296,7 +1296,7 @@ or `-Wall` to ensure that all of your functions are total!
     You might find `TyCon2` helpful!
 
     [Solution
-    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L183-L183)
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L185-L185)
 
 6.  Make a `SomeHallway` from a list of `SomeDoor`:
 
@@ -1314,7 +1314,7 @@ or `-Wall` to ensure that all of your functions are total!
     `SCons` (for `(:)`)!
 
     [Solution
-    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L183-L183)
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L185-L185)
 
 Special Thanks
 --------------

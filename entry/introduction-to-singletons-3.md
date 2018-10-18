@@ -1077,7 +1077,7 @@ any incomplete pattern matches!
     ```
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L166-L181)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L166-L183)!
 
     *Note:* `knockedRefute` is fairly straightforward, but `refuteKnocked` is
     definitely trickier, so don't be discouraged!
@@ -1095,7 +1095,7 @@ any incomplete pattern matches!
     constraint instead:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L184-L185
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L186-L187
 
     knockRefl :: (StatePass s :~: 'Obstruct) -> Door s -> IO ()
     knockRefl _ d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
@@ -1105,7 +1105,7 @@ any incomplete pattern matches!
     `knockSomeDoorRefl`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L187-L190
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L189-L192
 
     knockSomeDoorRefl
         :: SomeDoor
@@ -1116,7 +1116,7 @@ any incomplete pattern matches!
     Remember not to use `knock`!
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L184-L193).
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L186-L195).
 
     Assume that `DoorState` has an instance of `SDecide`, so you can use `(%~)`.
     This should be derived automatically as long as you derive `Eq`:
@@ -1141,7 +1141,7 @@ any incomplete pattern matches!
     Implement `knock` in a way that lets you knock if `invertPass` is `Allow`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L202-L203
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L204-L205
 
     knockInv :: (InvertPass (StatePass s) ~ 'Allow) => Door s -> IO ()
     knockInv d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
@@ -1150,7 +1150,7 @@ any incomplete pattern matches!
     And write `knockSomeDoor` in terms of it:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L205-L208
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L207-L210
 
     knockSomeDoorInv
         :: SomeDoor
@@ -1161,7 +1161,7 @@ any incomplete pattern matches!
     Remember again to implement it in terms of `knockInv`, *not* `knock`.
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L202-L211)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L204-L213)!
 
 7.  Let's work with a toy typeclass called `Cycle`, based on `Enum`
 
@@ -1178,7 +1178,7 @@ any incomplete pattern matches!
     pred-ing the first item
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L220-L227
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L222-L229
 
     instance Cycle DoorState where
         next Opened = Closed
@@ -1193,7 +1193,7 @@ any incomplete pattern matches!
     Can you manually promote this instance for `DoorState` to the type level?
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L229-L238
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L231-L240
 
     instance PCycle DoorState where
 
@@ -1201,7 +1201,7 @@ any incomplete pattern matches!
     ```
 
     Solution available
-    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L220-L247)!
+    [here](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L222-L249)!
 
 Special Thanks
 --------------
