@@ -186,7 +186,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <pre><code>    • The type family ‘MergeState’ should have 2 arguments, but has been given none
     • In the equations for closed type family ‘MergeStateList’
       In the type family declaration for ‘MergeStateList’</code></pre>
-<p>What happened? To figure out, we have to remember that pesky restriction on type synonyms and type families: they <em>cannot</em> be partially applied, and must always be fully applied. For the most part, only <em>type constructors</em> (like <code>Maybe</code>, <code>Either</code>, <code>IO</code>) and lifted DataKinds data constructors (like <code>'Just</code>, <code>'(:)</code>) in Haskell can ever be partially applied at the type level. We therefore can’t use <code>MergeState</code> as an argument to <code>Foldr</code>, because <code>MergeState</code> must always be fully applied.</p>
+<p>What happened? To figure out, we have to remember that pesky restriction on type synonyms and type families: they can <em>not</em> be partially applied, and must always be fully applied. For the most part, only <em>type constructors</em> (like <code>Maybe</code>, <code>Either</code>, <code>IO</code>) and lifted DataKinds data constructors (like <code>'Just</code>, <code>'(:)</code>) in Haskell can ever be partially applied at the type level. We therefore can’t use <code>MergeState</code> as an argument to <code>Foldr</code>, because <code>MergeState</code> must always be fully applied.</p>
 <p>Unfortunately for us, this makes our <code>Foldr</code> effectively useless. That’s because we’re always going to want to pass in type families (like <code>MergeState</code>), so there’s pretty much literally no way to ever actually call <code>Foldr</code> except with type constructors or lifted DataKinds data constructors.</p>
 <p>So…back to the drawing board?</p>
 <h2 id="defunctionalization">Defunctionalization</h2>
@@ -212,8 +212,8 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L25-L25</span></a>
 <a class="sourceLine" id="cb25-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb25-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Id</span><span class="ot"> ::</span> a <span class="fu">~&gt;</span> a</a></code></pre></div>
-<p>Don’t worry too much about <code>TyFun</code>, it’s all just a type-level tag that makes it convenient to write <code>Id :: a ~&gt; a</code>. The actual kind of <code>Id</code> is <code>Id :: TyFun a a -&gt; Type</code>; you can imagine <code>TyFun a a</code> as a phantom parameter that signifies that <code>Id</code> represents a function from <code>a</code> to <code>a</code>.</p>
-<p>Now, <code>Id</code> is not a function…it’s a <em>dummy type constructor</em> that <em>represents</em> a function <code>a -&gt; a</code>. A type constructor of kind <code>a ~&gt; a</code> represents a <em>defunctionalization symbol</em> – a type constructor that represents a function from <code>a</code> to <code>a</code>.</p>
+<p>The “actual” kind of <code>Id</code> is <code>Id :: TyFun a a -&gt; Type</code>; you can imagine <code>TyFun a a</code> as a phantom parameter that signifies that <code>Id</code> represents a function from <code>a</code> to <code>a</code>. It’s essentially a nice trick to allow you to write <code>Id :: a ~&gt; a</code> as a kind signature.</p>
+<p>Now, <code>Id</code> is <em>not</em> a function…it’s a <em>dummy type constructor</em> that <em>represents</em> a function <code>a -&gt; a</code>. A type constructor of kind <code>a ~&gt; a</code> represents a <em>defunctionalization symbol</em> – a type constructor that represents a function from <code>a</code> to <code>a</code>.</p>
 <p>To interpret it, we need to write our global interpreter function:</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L19-L19</span></a>
 <a class="sourceLine" id="cb26-2" data-line-number="2"></a>
@@ -270,6 +270,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb35-4" data-line-number="4"><span class="co">-- also generated for consistency</span></a>
 <a class="sourceLine" id="cb35-5" data-line-number="5"><span class="kw">type</span> <span class="dt">NotSym1</span> x <span class="fu">=</span> <span class="dt">Not</span> x</a></code></pre></div>
 <p><code>NotSym0</code> is the <em>defunctionalization symbol</em> associated with the <code>Not</code> type family, defined so that <code>NotSym0 @@ x = Not x</code>. Its purpose is to allow us to <em>pass in</em> <code>Not</code> as an <em>un-applied function</em>. The <code>Sym0</code> suffix is a naming convention, and the 0 stands for “expects 0 arguments”. Similarly for <code>NotSym1</code> – the 1 stands for “expects 1 argument”.</p>
+<h4 id="two-argument-functions">Two-Argument Functions</h4>
 <p>Let’s look at a slightly more complicated example – a two-argument function. Let’s define the boolean “and”:</p>
 <div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb36-1" data-line-number="1"><span class="fu">$</span>(singletons [d|</a>
 <a class="sourceLine" id="cb36-2" data-line-number="2">  and :: Bool -&gt; (Bool -&gt; Bool)</a>
@@ -305,6 +306,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb40-3" data-line-number="3">ghci<span class="fu">&gt;</span> <span class="fu">:</span>kind<span class="fu">!</span> <span class="dt">AndSym1</span> &#39;<span class="dt">True</span>  <span class="fu">@@</span> &#39;<span class="dt">True</span></a>
 <a class="sourceLine" id="cb40-4" data-line-number="4">&#39;<span class="dt">True</span></a></code></pre></div>
 <p>A note to remember: <code>AndSym1 'True</code> is the defunctionalization symbol, and <em>not</em> <code>AndSym1</code> itself. <code>AndSym1</code> has kind <code>Bool -&gt; (Bool ~&gt; Bool)</code>, but <code>AndSym1 'True</code> has kind <code>Bool ~&gt; Bool</code> — the kind of a defunctionalization symbol.</p>
+<h4 id="symbols-for-type-constructors">Symbols for type constructors</h4>
 <p>One extra interesting defunctionalization symbol we can write: we turn lift any type constructor into a “free” defunctionalization symbol:</p>
 <div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L32-L38</span></a>
 <a class="sourceLine" id="cb41-2" data-line-number="2"></a>

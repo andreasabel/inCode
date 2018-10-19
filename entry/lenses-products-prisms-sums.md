@@ -523,9 +523,9 @@ absurd = \case -- empty case statement because we have
                -- match on
 ```
 
-then we have a curious sum: every type `a` is a sum between *itself* and `Void`.
-In other words, `a` is isomorphic to `Either a Void` (which follows from the
-algebraic property
+then we have an interesting sum: every type `a` is a sum between *itself* and
+`Void`. In other words, `a` is isomorphic to `Either a Void` (which follows from
+the algebraic property
 ![x + 0 = x](https://latex.codecogs.com/png.latex?x%20%2B%200%20%3D%20x "x + 0 = x")):
 
 ``` {.haskell}
