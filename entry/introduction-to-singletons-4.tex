@@ -341,6 +341,12 @@ all door states as a type-level list as a type parameter:
 \end{Highlighting}
 \end{Shaded}
 
+(If you need a refresher on type-level lists, check out
+\href{https://blog.jle.im/entry/introduction-to-singletons-1.html\#the-singletons-library}{the
+quick introduction in Part 1} and
+\href{https://blog.jle.im/entry/introduction-to-singletons-2.html\#exercises}{Exercise
+4 in Part 2})
+
 So we might have:
 
 \begin{Shaded}
@@ -494,13 +500,14 @@ Ah, but the compiler is here to tell you this isn't allowed in Haskell:
 \end{verbatim}
 
 What happened? To figure out, we have to remember that pesky restriction on type
-synonyms and type families: they can \emph{not} be partially applied, and must
-always be fully applied. For the most part, only \emph{type constructors} (like
-\texttt{Maybe}, \texttt{Either}, \texttt{IO}) and lifted DataKinds data
-constructors (like \texttt{\textquotesingle{}Just},
-\texttt{\textquotesingle{}(:)}) in Haskell can ever be partially applied at the
-type level. We therefore can't use \texttt{MergeState} as an argument to
-\texttt{Foldr}, because \texttt{MergeState} must always be fully applied.
+synonyms and type families: they can \emph{not} be used partially applied
+(``unsaturated''), and must always be fully applied (``saturated''). For the
+most part, only \emph{type constructors} (like \texttt{Maybe}, \texttt{Either},
+\texttt{IO}) and lifted DataKinds data constructors (like
+\texttt{\textquotesingle{}Just}, \texttt{\textquotesingle{}(:)}) in Haskell can
+ever be partially applied at the type level. We therefore can't use
+\texttt{MergeState} as an argument to \texttt{Foldr}, because
+\texttt{MergeState} must always be fully applied.
 
 Unfortunately for us, this makes our \texttt{Foldr} effectively useless. That's
 because we're always going to want to pass in type families (like
@@ -522,8 +529,9 @@ To make a working \texttt{Foldr}, we're going to have to jump into that second
 half:
 \emph{\href{https://en.wikipedia.org/wiki/Defunctionalization}{defunctionalization}}.
 
-Defunctionalization is a technique invented in the early 70's to convert
-higher-order functions into first-order functions. The main idea is:
+Defunctionalization is a technique invented in the early 70's as a way of
+compiling higher-order functions into first-order functions in target languages.
+The main idea is:
 
 \begin{itemize}
 \tightlist
@@ -769,9 +777,10 @@ And the defunctionalization symbols:
 \end{Shaded}
 
 \texttt{AndSym0} is a defunctionalization symbol representing a ``fully
-unapplied'' version of \texttt{And}. \texttt{AndSym1\ x} is a
-defunctionalization symbol representing a ``partially applied'' version of
-\texttt{And} --- partially applied to \texttt{x} (its kind is
+unapplied'' (``completely unsaturated'') version of \texttt{And}.
+\texttt{AndSym1\ x} is a defunctionalization symbol representing a ``partially
+applied'' version of \texttt{And} --- partially applied to \texttt{x} (its kind
+is
 \texttt{AndSym1\ ::\ Bool\ -\textgreater{}\ (Bool\ \textasciitilde{}\textgreater{}\ Bool)}).
 
 The application of \texttt{AndSym0} to \texttt{x} gives you \texttt{AndSym1\ x}:
@@ -1042,6 +1051,63 @@ and
 \end{Highlighting}
 \end{Shaded}
 
+\hypertarget{bringing-it-all-together}{%
+\subsubsection{Bringing it All Together}\label{bringing-it-all-together}}
+
+Just to show off the library, remember that \emph{singletons} also promotes
+typeclasses?
+
+Because \texttt{DoorState} is a monoid with respect to merging, we can actually
+write and promote a \texttt{Monoid} instance:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{$}\NormalTok{(singletons [d|}
+\NormalTok{  instance Semigroup DoorState where}
+\NormalTok{      (<>) = mergeState}
+\NormalTok{  instance Monoid DoorState where}
+\NormalTok{      mempty  = Opened}
+\NormalTok{      mappend = (<>)}
+\NormalTok{  |])}
+\end{Highlighting}
+\end{Shaded}
+
+We can promote \texttt{fold}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{$}\NormalTok{(singletons [d|}
+\NormalTok{  fold :: Monoid b => [b] -> b}
+\NormalTok{  fold []     = mempty}
+\NormalTok{  fold (x:xs) = x <> fold xs}
+\NormalTok{  |])}
+\end{Highlighting}
+\end{Shaded}
+
+And we can write \texttt{collapseHallway} in terms of those instead :)
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L105-L114}
+
+\NormalTok{collapseHallway'}
+\OtherTok{    ::} \DataTypeTok{Hallway}\NormalTok{ ss}
+    \OtherTok{->} \DataTypeTok{Door}\NormalTok{ (}\DataTypeTok{Fold}\NormalTok{ ss)}
+\NormalTok{collapseHallway' }\DataTypeTok{HEnd}       \FunctionTok{=} \DataTypeTok{UnsafeMkDoor} \StringTok{"End of Hallway"}
+\NormalTok{collapseHallway' (d }\FunctionTok{:<#}\NormalTok{ ds) }\FunctionTok{=}\NormalTok{ d }\OtherTok{`mergeDoor`}\NormalTok{ collapseHallway' ds}
+
+\OtherTok{collapseSomeHallway' ::} \DataTypeTok{SomeHallway} \OtherTok{->} \DataTypeTok{SomeDoor}
+\NormalTok{collapseSomeHallway' (ss }\FunctionTok{:&:}\NormalTok{ d) }\FunctionTok{=}
+\NormalTok{        sFold ss}
+    \FunctionTok{:&:}\NormalTok{ collapseHallway' d}
+\end{Highlighting}
+\end{Shaded}
+
+(Note again unfortunately that we have to define our own \texttt{fold} instead
+of using the one from \emph{singletons} and the \texttt{SFoldable} typeclass,
+because of \href{https://github.com/goldfirere/singletons/issues/339}{issue
+\#339})
+
 \hypertarget{thoughts-on-symbols}{%
 \section{Thoughts on Symbols}\label{thoughts-on-symbols}}
 
@@ -1214,13 +1280,12 @@ This is a simple relationship, but one can imagine a \texttt{Sigma}
 parameterized on an even more complex type-level function. We'll explore more of
 these in the exercises!
 
-\texttt{Sigma} is an interesting data type that is ubiquitous in dependently
-typed programming. It shows up everywhere, and is also very useful in the
-statement of dependently typed proofs.
+For some context, \texttt{Sigma} is an interesting data type (the ``dependent
+sum'') that is ubiquitous in dependently typed programming.
 
-\hypertarget{singletons-of-defunctionalization-symboles}{%
+\hypertarget{singletons-of-defunctionalization-symbols}{%
 \subsection{Singletons of Defunctionalization
-Symboles}\label{singletons-of-defunctionalization-symboles}}
+Symbols}\label{singletons-of-defunctionalization-symbols}}
 
 One last thing to tie it all together -- let's write \texttt{collapseHallway} in
 a way that we don't know the types of the doors.
@@ -1235,7 +1300,7 @@ Luckily, we now have a \texttt{SomeHallway} type for free:
 \end{Highlighting}
 \end{Shaded}
 
-The easy way would be to just use \texttt{sMergeStateList} that we defned:
+The easy way would be to just use \texttt{sMergeStateList} that we defined:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1252,17 +1317,17 @@ defunctionalization symbols from scratch?
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L93-L97}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L116-L120}
 
-\NormalTok{collapseHallway'}
+\NormalTok{collapseHallway''}
 \OtherTok{    ::} \DataTypeTok{Hallway}\NormalTok{ ss}
     \OtherTok{->} \DataTypeTok{Door}\NormalTok{ (}\DataTypeTok{FoldrSym2} \DataTypeTok{MergeStateSym0}\NormalTok{ '}\DataTypeTok{Opened} \FunctionTok{@@}\NormalTok{ ss)}
-\NormalTok{collapseHallway' }\DataTypeTok{HEnd}       \FunctionTok{=} \DataTypeTok{UnsafeMkDoor} \StringTok{"End of Hallway"}
-\NormalTok{collapseHallway' (d }\FunctionTok{:<#}\NormalTok{ ds) }\FunctionTok{=}\NormalTok{ d }\OtherTok{`mergeDoor`}\NormalTok{ collapseHallway' ds}
+\NormalTok{collapseHallway'' }\DataTypeTok{HEnd}       \FunctionTok{=} \DataTypeTok{UnsafeMkDoor} \StringTok{"End of Hallway"}
+\NormalTok{collapseHallway'' (d }\FunctionTok{:<#}\NormalTok{ ds) }\FunctionTok{=}\NormalTok{ d }\OtherTok{`mergeDoor`}\NormalTok{ collapseHallway'' ds}
 
-\OtherTok{collapseSomeHallway' ::} \DataTypeTok{SomeHallway} \OtherTok{->} \DataTypeTok{SomeDoor}
-\NormalTok{collapseSomeHallway' (ss }\FunctionTok{:&:}\NormalTok{ d) }\FunctionTok{=} \FunctionTok{???}    \CommentTok{-- what goes here?}
-                              \FunctionTok{:&:}\NormalTok{ collapseHallway' d}
+\OtherTok{collapseSomeHallway'' ::} \DataTypeTok{SomeHallway} \OtherTok{->} \DataTypeTok{SomeDoor}
+\NormalTok{collapseSomeHallway'' (ss }\FunctionTok{:&:}\NormalTok{ d) }\FunctionTok{=} \FunctionTok{???}    \CommentTok{-- what goes here?}
+                               \FunctionTok{:&:}\NormalTok{ collapseHallway'' d}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1299,9 +1364,9 @@ So we can write:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{collapseSomeHallway' ::} \DataTypeTok{SomeHallway} \OtherTok{->} \DataTypeTok{SomeDoor}
-\NormalTok{collapseSomeHallway' (ss }\FunctionTok{:&:}\NormalTok{ d) }\FunctionTok{=}\NormalTok{ sFoldr }\FunctionTok{????} \DataTypeTok{SOpened}\NormalTok{ ss}
-                              \FunctionTok{:&:}\NormalTok{ collapseHallway d}
+\OtherTok{collapseSomeHallway'' ::} \DataTypeTok{SomeHallway} \OtherTok{->} \DataTypeTok{SomeDoor}
+\NormalTok{collapseSomeHallway'' (ss }\FunctionTok{:&:}\NormalTok{ d) }\FunctionTok{=}\NormalTok{ sFoldr }\FunctionTok{????} \DataTypeTok{SOpened}\NormalTok{ ss}
+                               \FunctionTok{:&:}\NormalTok{ collapseHallwa''y d}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1333,14 +1398,14 @@ And finally, we get our answer:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L99-L104}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L122-L127}
 
-\OtherTok{collapseSomeHallway' ::} \DataTypeTok{SomeHallway} \OtherTok{->} \DataTypeTok{SomeDoor}
-\NormalTok{collapseSomeHallway' (ss }\FunctionTok{:&:}\NormalTok{ d) }\FunctionTok{=}
+\OtherTok{collapseSomeHallway'' ::} \DataTypeTok{SomeHallway} \OtherTok{->} \DataTypeTok{SomeDoor}
+\NormalTok{collapseSomeHallway'' (ss }\FunctionTok{:&:}\NormalTok{ d) }\FunctionTok{=}
 \NormalTok{        sFoldr (singFun2 }\FunctionTok{@}\DataTypeTok{MergeStateSym0}\NormalTok{ sMergeState) }\DataTypeTok{SOpened}\NormalTok{ ss}
      \CommentTok{-- or}
      \CommentTok{-- sFoldr (sing @MergeStateSym0) SOpened ss}
-    \FunctionTok{:&:}\NormalTok{ collapseHallway' d}
+    \FunctionTok{:&:}\NormalTok{ collapseHallway'' d}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1385,7 +1450,39 @@ concepts we went over here! And if you ever have any future questions, feel free
 to leave a comment or find me on \href{https://twitter.com/mstk}{twitter} or in
 freenode \texttt{\#haskell}, where I idle as \emph{jle`}!
 
-Until next time, Happy Haskelling!
+\hypertarget{looking-forward}{%
+\subsection{Looking Forward}\label{looking-forward}}
+
+Some final things to note before truly embracing singletons: remember that, as a
+library, \emph{singletons} was always meant to become obsolete. It's a library
+that only exists because Haskell doesn't have real dependent types yet.
+
+\href{https://ghc.haskell.org/trac/ghc/wiki/DependentHaskell}{Dependent Haskell}
+is coming some day! It's mostly driven by one solo man, Richard Eisenberg, but
+every year buzz does get bigger. In a
+\href{https://typesandkinds.wordpress.com/2016/07/24/dependent-types-in-haskell-progress-report/\#comment-13327}{recent
+progress report}, we do know that we realistically won't have dependent types
+before 2020. That means that this tutorial will still remain relevant for at
+least another two years :)
+
+How will things be different in a world of Haskell with real dependent types?
+Well, for a good guess, take a look at
+\href{https://github.com/goldfirere/thesis}{Richard Eisenberg's Dissertation}!
+
+One day, hopefully, we won't need singletons to work with types at the
+value-level; we would just be able to directly pattern match and manipulate the
+types within the language. And some day, I hope we won't need any more dances
+with defunctionalization symbols to write higher-order functions at the type
+level --- maybe we'll have a nicer way to work with partially applied type-level
+functions (maybe they'll just be normal functions?), and we don't need to think
+any different about higher-order or first-order functions.
+
+So, as a final word --- Happy Haskelling, everyone! May you leverage
+\emph{singletons} to its full potential, and may we also all dream of a day
+where \emph{singletons} becomes obsolete. But may we all enjoy the wonderful
+journey along the way.
+
+Until next time!
 
 \hypertarget{exercises}{%
 \section{Exercises}\label{exercises}}
@@ -1409,7 +1506,7 @@ all of your functions are total!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L109-L111}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L133-L135}
 
 \KeywordTok{data} \DataTypeTok{Knockable}\OtherTok{ ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{KnockClosed}\OtherTok{ ::} \DataTypeTok{Knockable}\NormalTok{ '}\DataTypeTok{Closed}
@@ -1424,7 +1521,7 @@ all of your functions are total!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L126-L129}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L150-L153}
 
 \NormalTok{mergedIsKnockable}
 \OtherTok{    ::} \DataTypeTok{Knockable}\NormalTok{ s}
@@ -1463,7 +1560,7 @@ all of your functions are total!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L157}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L181}
 
 \KeywordTok{type} \DataTypeTok{SomeHallway} \FunctionTok{=} \DataTypeTok{Sigma}\NormalTok{ [}\DataTypeTok{DoorState}\NormalTok{] (}\DataTypeTok{TyCon1} \DataTypeTok{Hallway}\NormalTok{)}
 
@@ -1585,7 +1682,7 @@ all of your functions are total!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L196-L196}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L220-L220}
 
 \OtherTok{sevenIsOdd ::} \DataTypeTok{IsOdd} \DecValTok{7}
 \end{Highlighting}
@@ -1634,7 +1731,7 @@ all of your functions are total!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L203}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L227}
 
 \KeywordTok{type} \DataTypeTok{SomeDoor} \FunctionTok{=} \DataTypeTok{Sigma} \DataTypeTok{DoorState}\NormalTok{ (}\DataTypeTok{TyCon1} \DataTypeTok{Door}\NormalTok{)}
 

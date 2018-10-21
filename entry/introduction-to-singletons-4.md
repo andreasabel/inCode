@@ -221,6 +221,12 @@ data Hallway :: [DoorState] -> Type where
 infixr 5 :<#
 ```
 
+(If you need a refresher on type-level lists, check out [the quick introduction
+in Part
+1](https://blog.jle.im/entry/introduction-to-singletons-1.html#the-singletons-library)
+and [Exercise 4 in Part
+2](https://blog.jle.im/entry/introduction-to-singletons-2.html#exercises))
+
 So we might have:
 
 ``` {.haskell}
@@ -347,12 +353,12 @@ Ah, but the compiler is here to tell you this isn't allowed in Haskell:
           In the type family declaration for ‘MergeStateList’
 
 What happened? To figure out, we have to remember that pesky restriction on type
-synonyms and type families: they can *not* be partially applied, and must always
-be fully applied. For the most part, only *type constructors* (like `Maybe`,
-`Either`, `IO`) and lifted DataKinds data constructors (like `'Just`, `'(:)`) in
-Haskell can ever be partially applied at the type level. We therefore can't use
-`MergeState` as an argument to `Foldr`, because `MergeState` must always be
-fully applied.
+synonyms and type families: they can *not* be used partially applied
+("unsaturated"), and must always be fully applied ("saturated"). For the most
+part, only *type constructors* (like `Maybe`, `Either`, `IO`) and lifted
+DataKinds data constructors (like `'Just`, `'(:)`) in Haskell can ever be
+partially applied at the type level. We therefore can't use `MergeState` as an
+argument to `Foldr`, because `MergeState` must always be fully applied.
 
 Unfortunately for us, this makes our `Foldr` effectively useless. That's because
 we're always going to want to pass in type families (like `MergeState`), so
@@ -372,8 +378,9 @@ effective *functional programming* at the type level.
 To make a working `Foldr`, we're going to have to jump into that second half:
 *[defunctionalization](https://en.wikipedia.org/wiki/Defunctionalization)*.
 
-Defunctionalization is a technique invented in the early 70's to convert
-higher-order functions into first-order functions. The main idea is:
+Defunctionalization is a technique invented in the early 70's as a way of
+compiling higher-order functions into first-order functions in target languages.
+The main idea is:
 
 -   Instead of working with *functions*, work with *symbols representing
     functions*.
@@ -576,9 +583,9 @@ type AndSym2 x y = And x y
 ```
 
 `AndSym0` is a defunctionalization symbol representing a "fully unapplied"
-version of `And`. `AndSym1 x` is a defunctionalization symbol representing a
-"partially applied" version of `And` --- partially applied to `x` (its kind is
-`AndSym1 :: Bool -> (Bool ~> Bool)`).
+("completely unsaturated") version of `And`. `AndSym1 x` is a
+defunctionalization symbol representing a "partially applied" version of `And`
+--- partially applied to `x` (its kind is `AndSym1 :: Bool -> (Bool ~> Bool)`).
 
 The application of `AndSym0` to `x` gives you `AndSym1 x`:
 
@@ -802,6 +809,55 @@ type instance Apply MyTypeSynonym b = MyTypeSynonym a
 type MyTypeSynonymSym1 a = MyTypeSynonym a
 ```
 
+#### Bringing it All Together
+
+Just to show off the library, remember that *singletons* also promotes
+typeclasses?
+
+Because `DoorState` is a monoid with respect to merging, we can actually write
+and promote a `Monoid` instance:
+
+``` {.haskell}
+$(singletons [d|
+  instance Semigroup DoorState where
+      (<>) = mergeState
+  instance Monoid DoorState where
+      mempty  = Opened
+      mappend = (<>)
+  |])
+```
+
+We can promote `fold`:
+
+``` {.haskell}
+$(singletons [d|
+  fold :: Monoid b => [b] -> b
+  fold []     = mempty
+  fold (x:xs) = x <> fold xs
+  |])
+```
+
+And we can write `collapseHallway` in terms of those instead :)
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L105-L114
+
+collapseHallway'
+    :: Hallway ss
+    -> Door (Fold ss)
+collapseHallway' HEnd       = UnsafeMkDoor "End of Hallway"
+collapseHallway' (d :<# ds) = d `mergeDoor` collapseHallway' ds
+
+collapseSomeHallway' :: SomeHallway -> SomeDoor
+collapseSomeHallway' (ss :&: d) =
+        sFold ss
+    :&: collapseHallway' d
+```
+
+(Note again unfortunately that we have to define our own `fold` instead of using
+the one from *singletons* and the `SFoldable` typeclass, because of [issue
+\#339](https://github.com/goldfirere/singletons/issues/339))
+
 Thoughts on Symbols
 -------------------
 
@@ -948,11 +1004,10 @@ This is a simple relationship, but one can imagine a `Sigma` parameterized on an
 even more complex type-level function. We'll explore more of these in the
 exercises!
 
-`Sigma` is an interesting data type that is ubiquitous in dependently typed
-programming. It shows up everywhere, and is also very useful in the statement of
-dependently typed proofs.
+For some context, `Sigma` is an interesting data type (the "dependent sum") that
+is ubiquitous in dependently typed programming.
 
-### Singletons of Defunctionalization Symboles
+### Singletons of Defunctionalization Symbols
 
 One last thing to tie it all together -- let's write `collapseHallway` in a way
 that we don't know the types of the doors.
@@ -965,7 +1020,7 @@ Luckily, we now have a `SomeHallway` type for free:
 type SomeHallway = Sigma [DoorState] (TyCon1 Hallway)
 ```
 
-The easy way would be to just use `sMergeStateList` that we defned:
+The easy way would be to just use `sMergeStateList` that we defined:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L83-L85
@@ -979,17 +1034,17 @@ But what if we didn't write `sMergeStateList`, and we constructed our
 defunctionalization symbols from scratch?
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L93-L97
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L116-L120
 
-collapseHallway'
+collapseHallway''
     :: Hallway ss
     -> Door (FoldrSym2 MergeStateSym0 'Opened @@ ss)
-collapseHallway' HEnd       = UnsafeMkDoor "End of Hallway"
-collapseHallway' (d :<# ds) = d `mergeDoor` collapseHallway' ds
+collapseHallway'' HEnd       = UnsafeMkDoor "End of Hallway"
+collapseHallway'' (d :<# ds) = d `mergeDoor` collapseHallway'' ds
 
-collapseSomeHallway' :: SomeHallway -> SomeDoor
-collapseSomeHallway' (ss :&: d) = ???    -- what goes here?
-                              :&: collapseHallway' d
+collapseSomeHallway'' :: SomeHallway -> SomeDoor
+collapseSomeHallway'' (ss :&: d) = ???    -- what goes here?
+                               :&: collapseHallway'' d
 ```
 
 This will be our final defunctionalization lesson. How do we turn a singleton of
@@ -1018,9 +1073,9 @@ singleton/value-level counterpart of `Apply` or `(@@)`.\[\^slamda\]
 So we can write:
 
 ``` {.haskell}
-collapseSomeHallway' :: SomeHallway -> SomeDoor
-collapseSomeHallway' (ss :&: d) = sFoldr ???? SOpened ss
-                              :&: collapseHallway d
+collapseSomeHallway'' :: SomeHallway -> SomeDoor
+collapseSomeHallway'' (ss :&: d) = sFoldr ???? SOpened ss
+                               :&: collapseHallwa''y d
 ```
 
 But how do we get a `Sing MergeStateSym0`?
@@ -1046,14 +1101,14 @@ sing @MergeStateSym0            -- singletons 2.5
 And finally, we get our answer:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L99-L104
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L122-L127
 
-collapseSomeHallway' :: SomeHallway -> SomeDoor
-collapseSomeHallway' (ss :&: d) =
+collapseSomeHallway'' :: SomeHallway -> SomeDoor
+collapseSomeHallway'' (ss :&: d) =
         sFoldr (singFun2 @MergeStateSym0 sMergeState) SOpened ss
      -- or
      -- sFoldr (sing @MergeStateSym0) SOpened ss
-    :&: collapseHallway' d
+    :&: collapseHallway'' d
 ```
 
 Closing Up
@@ -1095,7 +1150,38 @@ concepts we went over here! And if you ever have any future questions, feel free
 to leave a comment or find me on [twitter](https://twitter.com/mstk "Twitter")
 or in freenode `#haskell`, where I idle as *jle\`*!
 
-Until next time, Happy Haskelling!
+### Looking Forward
+
+Some final things to note before truly embracing singletons: remember that, as a
+library, *singletons* was always meant to become obsolete. It's a library that
+only exists because Haskell doesn't have real dependent types yet.
+
+[Dependent Haskell](https://ghc.haskell.org/trac/ghc/wiki/DependentHaskell) is
+coming some day! It's mostly driven by one solo man, Richard Eisenberg, but
+every year buzz does get bigger. In a [recent progress
+report](https://typesandkinds.wordpress.com/2016/07/24/dependent-types-in-haskell-progress-report/#comment-13327),
+we do know that we realistically won't have dependent types before 2020. That
+means that this tutorial will still remain relevant for at least another two
+years :)
+
+How will things be different in a world of Haskell with real dependent types?
+Well, for a good guess, take a look at [Richard Eisenberg's
+Dissertation](https://github.com/goldfirere/thesis)!
+
+One day, hopefully, we won't need singletons to work with types at the
+value-level; we would just be able to directly pattern match and manipulate the
+types within the language. And some day, I hope we won't need any more dances
+with defunctionalization symbols to write higher-order functions at the type
+level --- maybe we'll have a nicer way to work with partially applied type-level
+functions (maybe they'll just be normal functions?), and we don't need to think
+any different about higher-order or first-order functions.
+
+So, as a final word --- Happy Haskelling, everyone! May you leverage
+*singletons* to its full potential, and may we also all dream of a day where
+*singletons* becomes obsolete. But may we all enjoy the wonderful journey along
+the way.
+
+Until next time!
 
 Exercises
 ---------
@@ -1114,7 +1200,7 @@ or `-Wall` to ensure that all of your functions are total!
     Remember `Knockable` from Part 3?
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L109-L111
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L133-L135
 
     data Knockable :: DoorState -> Type where
         KnockClosed :: Knockable 'Closed
@@ -1127,7 +1213,7 @@ or `-Wall` to ensure that all of your functions are total!
     I say yes, but don't take my word for it. Prove it using `Knockable`!
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L126-L129
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L150-L153
 
     mergedIsKnockable
         :: Knockable s
@@ -1161,7 +1247,7 @@ or `-Wall` to ensure that all of your functions are total!
     Next, for fun, use `appendHallways` to implement `appendSomeHallways`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L157
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L181
 
     type SomeHallway = Sigma [DoorState] (TyCon1 Hallway)
 
@@ -1264,7 +1350,7 @@ or `-Wall` to ensure that all of your functions are total!
     And construct a proof that `7` is odd:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L196-L196
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L220-L220
 
     sevenIsOdd :: IsOdd 7
     ```
@@ -1305,7 +1391,7 @@ or `-Wall` to ensure that all of your functions are total!
 6.  Make a `SomeHallway` from a list of `SomeDoor`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L203
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L227
 
     type SomeDoor = Sigma DoorState (TyCon1 Door)
 

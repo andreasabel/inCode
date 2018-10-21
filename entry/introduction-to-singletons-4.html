@@ -130,6 +130,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb13-9" data-line-number="9">                                <span class="co">--   hallway, and we track the door&#39;s state</span></a>
 <a class="sourceLine" id="cb13-10" data-line-number="10">                                <span class="co">--   in the list of hallway door states</span></a>
 <a class="sourceLine" id="cb13-11" data-line-number="11"><span class="kw">infixr</span> <span class="dv">5</span> <span class="fu">:&lt;#</span></a></code></pre></div>
+<p>(If you need a refresher on type-level lists, check out <a href="https://blog.jle.im/entry/introduction-to-singletons-1.html#the-singletons-library">the quick introduction in Part 1</a> and <a href="https://blog.jle.im/entry/introduction-to-singletons-2.html#exercises">Exercise 4 in Part 2</a>)</p>
 <p>So we might have:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> door1 <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span>&#39;<span class="dt">Closed</span> <span class="st">&quot;Oak&quot;</span></a>
 <a class="sourceLine" id="cb14-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="kw">let</span> door2 <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="fu">@</span>&#39;<span class="dt">Opened</span> <span class="st">&quot;Spruce&quot;</span></a>
@@ -186,13 +187,13 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <pre><code>    • The type family ‘MergeState’ should have 2 arguments, but has been given none
     • In the equations for closed type family ‘MergeStateList’
       In the type family declaration for ‘MergeStateList’</code></pre>
-<p>What happened? To figure out, we have to remember that pesky restriction on type synonyms and type families: they can <em>not</em> be partially applied, and must always be fully applied. For the most part, only <em>type constructors</em> (like <code>Maybe</code>, <code>Either</code>, <code>IO</code>) and lifted DataKinds data constructors (like <code>'Just</code>, <code>'(:)</code>) in Haskell can ever be partially applied at the type level. We therefore can’t use <code>MergeState</code> as an argument to <code>Foldr</code>, because <code>MergeState</code> must always be fully applied.</p>
+<p>What happened? To figure out, we have to remember that pesky restriction on type synonyms and type families: they can <em>not</em> be used partially applied (“unsaturated”), and must always be fully applied (“saturated”). For the most part, only <em>type constructors</em> (like <code>Maybe</code>, <code>Either</code>, <code>IO</code>) and lifted DataKinds data constructors (like <code>'Just</code>, <code>'(:)</code>) in Haskell can ever be partially applied at the type level. We therefore can’t use <code>MergeState</code> as an argument to <code>Foldr</code>, because <code>MergeState</code> must always be fully applied.</p>
 <p>Unfortunately for us, this makes our <code>Foldr</code> effectively useless. That’s because we’re always going to want to pass in type families (like <code>MergeState</code>), so there’s pretty much literally no way to ever actually call <code>Foldr</code> except with type constructors or lifted DataKinds data constructors.</p>
 <p>So…back to the drawing board?</p>
 <h2 id="defunctionalization">Defunctionalization</h2>
 <p>I like to mentally think of the <em>singletons</em> library as having two parts: the first is linking lifted DataKinds types with run-time values to allow us to manipulate types at runtime as first-class values. The second is a system for effective <em>functional programming</em> at the type level.</p>
 <p>To make a working <code>Foldr</code>, we’re going to have to jump into that second half: <em><a href="https://en.wikipedia.org/wiki/Defunctionalization">defunctionalization</a></em>.</p>
-<p>Defunctionalization is a technique invented in the early 70’s to convert higher-order functions into first-order functions. The main idea is:</p>
+<p>Defunctionalization is a technique invented in the early 70’s as a way of compiling higher-order functions into first-order functions in target languages. The main idea is:</p>
 <ul>
 <li>Instead of working with <em>functions</em>, work with <em>symbols representing functions</em>.</li>
 <li>Build your final functions and values by composing and combining these symbols.</li>
@@ -295,7 +296,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb38-7" data-line-number="7"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">AndSym1</span> x) y <span class="fu">=</span> <span class="dt">And</span> x y</a>
 <a class="sourceLine" id="cb38-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb38-9" data-line-number="9"><span class="kw">type</span> <span class="dt">AndSym2</span> x y <span class="fu">=</span> <span class="dt">And</span> x y</a></code></pre></div>
-<p><code>AndSym0</code> is a defunctionalization symbol representing a “fully unapplied” version of <code>And</code>. <code>AndSym1 x</code> is a defunctionalization symbol representing a “partially applied” version of <code>And</code> — partially applied to <code>x</code> (its kind is <code>AndSym1 :: Bool -&gt; (Bool ~&gt; Bool)</code>).</p>
+<p><code>AndSym0</code> is a defunctionalization symbol representing a “fully unapplied” (“completely unsaturated”) version of <code>And</code>. <code>AndSym1 x</code> is a defunctionalization symbol representing a “partially applied” version of <code>And</code> — partially applied to <code>x</code> (its kind is <code>AndSym1 :: Bool -&gt; (Bool ~&gt; Bool)</code>).</p>
 <p>The application of <code>AndSym0</code> to <code>x</code> gives you <code>AndSym1 x</code>:</p>
 <div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>kind<span class="fu">!</span> <span class="dt">AndSym0</span> <span class="fu">@@</span> &#39;<span class="dt">False</span></a>
 <a class="sourceLine" id="cb39-2" data-line-number="2"><span class="dt">AndSym1</span> &#39;<span class="dt">False</span></a></code></pre></div>
@@ -401,232 +402,268 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb52-2" data-line-number="2"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> <span class="dt">MyTypeSynonym</span> b <span class="fu">=</span> <span class="dt">MyTypeSynonym</span> a</a>
 <a class="sourceLine" id="cb52-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb52-4" data-line-number="4"><span class="kw">type</span> <span class="dt">MyTypeSynonymSym1</span> a <span class="fu">=</span> <span class="dt">MyTypeSynonym</span> a</a></code></pre></div>
+<h4 id="bringing-it-all-together">Bringing it All Together</h4>
+<p>Just to show off the library, remember that <em>singletons</em> also promotes typeclasses?</p>
+<p>Because <code>DoorState</code> is a monoid with respect to merging, we can actually write and promote a <code>Monoid</code> instance:</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb53-1" data-line-number="1"><span class="fu">$</span>(singletons [d|</a>
+<a class="sourceLine" id="cb53-2" data-line-number="2">  instance Semigroup DoorState where</a>
+<a class="sourceLine" id="cb53-3" data-line-number="3">      (&lt;&gt;) = mergeState</a>
+<a class="sourceLine" id="cb53-4" data-line-number="4">  instance Monoid DoorState where</a>
+<a class="sourceLine" id="cb53-5" data-line-number="5">      mempty  = Opened</a>
+<a class="sourceLine" id="cb53-6" data-line-number="6">      mappend = (&lt;&gt;)</a>
+<a class="sourceLine" id="cb53-7" data-line-number="7">  |])</a></code></pre></div>
+<p>We can promote <code>fold</code>:</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb54-1" data-line-number="1"><span class="fu">$</span>(singletons [d|</a>
+<a class="sourceLine" id="cb54-2" data-line-number="2">  fold :: Monoid b =&gt; [b] -&gt; b</a>
+<a class="sourceLine" id="cb54-3" data-line-number="3">  fold []     = mempty</a>
+<a class="sourceLine" id="cb54-4" data-line-number="4">  fold (x:xs) = x &lt;&gt; fold xs</a>
+<a class="sourceLine" id="cb54-5" data-line-number="5">  |])</a></code></pre></div>
+<p>And we can write <code>collapseHallway</code> in terms of those instead :)</p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb55-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L105-L114</span></a>
+<a class="sourceLine" id="cb55-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb55-3" data-line-number="3">collapseHallway&#39;</a>
+<a class="sourceLine" id="cb55-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Hallway</span> ss</a>
+<a class="sourceLine" id="cb55-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Door</span> (<span class="dt">Fold</span> ss)</a>
+<a class="sourceLine" id="cb55-6" data-line-number="6">collapseHallway&#39; <span class="dt">HEnd</span>       <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="st">&quot;End of Hallway&quot;</span></a>
+<a class="sourceLine" id="cb55-7" data-line-number="7">collapseHallway&#39; (d <span class="fu">:&lt;#</span> ds) <span class="fu">=</span> d <span class="ot">`mergeDoor`</span> collapseHallway&#39; ds</a>
+<a class="sourceLine" id="cb55-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb55-9" data-line-number="9"><span class="ot">collapseSomeHallway&#39; ::</span> <span class="dt">SomeHallway</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
+<a class="sourceLine" id="cb55-10" data-line-number="10">collapseSomeHallway&#39; (ss <span class="fu">:&amp;:</span> d) <span class="fu">=</span></a>
+<a class="sourceLine" id="cb55-11" data-line-number="11">        sFold ss</a>
+<a class="sourceLine" id="cb55-12" data-line-number="12">    <span class="fu">:&amp;:</span> collapseHallway&#39; d</a></code></pre></div>
+<p>(Note again unfortunately that we have to define our own <code>fold</code> instead of using the one from <em>singletons</em> and the <code>SFoldable</code> typeclass, because of <a href="https://github.com/goldfirere/singletons/issues/339">issue #339</a>)</p>
 <h2 id="thoughts-on-symbols">Thoughts on Symbols</h2>
 <p>Defunctionalization symbols may feel like a bit of a mess, and the naming convention is arguably less than aesthetically satisfying. But, as you work with them more and more, you start to appreciate them on a deeper level.</p>
 <p>At the end of the day, you can compare defunctionalization as turning “functions” into just constructors you can <em>match</em> on, just like any other data or type constructor. That’s because they <em>are</em> just type constructors!</p>
 <p>In a sense, defining defunctionalization symbols is a lot like working with <em>pattern synonyms</em> of your functions, instead of directly passing the functions themselves. At the type family and type class level, you can “pattern match” on these functions.</p>
 <p>For a comparison at the value level – you can’t pattern match on <code>(+)</code>, <code>(-)</code>, <code>(*)</code>, and <code>(/)</code>:</p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb53-1" data-line-number="1"><span class="co">-- Doesn&#39;t work like you think it does</span></a>
-<a class="sourceLine" id="cb53-2" data-line-number="2"><span class="ot">invertOperation ::</span> (<span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Dobule</span> <span class="ot">-&gt;</span> <span class="dt">Double</span>) <span class="ot">-&gt;</span> (<span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Double</span>)</a>
-<a class="sourceLine" id="cb53-3" data-line-number="3">invertOperation (<span class="fu">+</span>) <span class="fu">=</span> (<span class="fu">-</span>)</a>
-<a class="sourceLine" id="cb53-4" data-line-number="4">invertOperation (<span class="fu">-</span>) <span class="fu">=</span> (<span class="fu">+</span>)</a>
-<a class="sourceLine" id="cb53-5" data-line-number="5">invertOperation (<span class="fu">*</span>) <span class="fu">=</span> (<span class="fu">/</span>)</a>
-<a class="sourceLine" id="cb53-6" data-line-number="6">invertOperation (<span class="fu">/</span>) <span class="fu">=</span> (<span class="fu">*</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb56"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb56-1" data-line-number="1"><span class="co">-- Doesn&#39;t work like you think it does</span></a>
+<a class="sourceLine" id="cb56-2" data-line-number="2"><span class="ot">invertOperation ::</span> (<span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Dobule</span> <span class="ot">-&gt;</span> <span class="dt">Double</span>) <span class="ot">-&gt;</span> (<span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Double</span>)</a>
+<a class="sourceLine" id="cb56-3" data-line-number="3">invertOperation (<span class="fu">+</span>) <span class="fu">=</span> (<span class="fu">-</span>)</a>
+<a class="sourceLine" id="cb56-4" data-line-number="4">invertOperation (<span class="fu">-</span>) <span class="fu">=</span> (<span class="fu">+</span>)</a>
+<a class="sourceLine" id="cb56-5" data-line-number="5">invertOperation (<span class="fu">*</span>) <span class="fu">=</span> (<span class="fu">/</span>)</a>
+<a class="sourceLine" id="cb56-6" data-line-number="6">invertOperation (<span class="fu">/</span>) <span class="fu">=</span> (<span class="fu">*</span>)</a></code></pre></div>
 <p>You can’t quite match on the equality of functions to some list of patterns. But, what you <em>can</em> do is create constructors representing your functions, and match on those.</p>
 <p>This essentially fixes the “type lambda problem” of type inference and typeclass resolution. You can’t match on arbitrary lambdas, but you <em>can</em> match on dummy constructors representing type functions.</p>
 <p>And a bit of the magic here, also, is the fact that you don’t always need to make our own defunctionalization symbols from scratch — you can create them based on other ones in a compositional way. This is the basis of libraries like <em><a href="http://hackage.haskell.org/package/decidable">decidable</a></em>.</p>
 <p>For example, suppose we wanted to build defunctionalization symbols for <code>MergeStateList</code>. We can actually build them directly from defunctionalization symbols for <code>Foldr</code>!</p>
 <p>Check out the defunctionalization symbols for <code>Foldr</code>:</p>
-<div class="sourceCode" id="cb54"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb54-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L81-L90</span></a>
-<a class="sourceLine" id="cb54-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb54-3" data-line-number="3"><span class="kw">data</span> <span class="dt">FoldrSym0</span><span class="ot"> ::</span> (j <span class="fu">~&gt;</span> k <span class="fu">~&gt;</span> k) <span class="fu">~&gt;</span> k <span class="fu">~&gt;</span> [j] <span class="fu">~&gt;</span> k</a>
-<a class="sourceLine" id="cb54-4" data-line-number="4"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> <span class="dt">FoldrSym0</span> f <span class="fu">=</span> <span class="dt">FoldrSym1</span> f</a>
-<a class="sourceLine" id="cb54-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb54-6" data-line-number="6"><span class="kw">data</span> <span class="dt">FoldrSym1</span><span class="ot"> ::</span> (j <span class="fu">~&gt;</span> k <span class="fu">~&gt;</span> k) <span class="ot">-&gt;</span> k <span class="fu">~&gt;</span> [j] <span class="fu">~&gt;</span> k</a>
-<a class="sourceLine" id="cb54-7" data-line-number="7"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">FoldrSym1</span> f) z <span class="fu">=</span> <span class="dt">FoldrSym2</span> f z</a>
-<a class="sourceLine" id="cb54-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb54-9" data-line-number="9"><span class="kw">data</span> <span class="dt">FoldrSym2</span><span class="ot"> ::</span> (j <span class="fu">~&gt;</span> k <span class="fu">~&gt;</span> k) <span class="ot">-&gt;</span> k <span class="ot">-&gt;</span> [j] <span class="fu">~&gt;</span> k</a>
-<a class="sourceLine" id="cb54-10" data-line-number="10"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">FoldrSym2</span> f z) xs <span class="fu">=</span> <span class="dt">Foldr</span> f z xs</a>
-<a class="sourceLine" id="cb54-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb54-12" data-line-number="12"><span class="kw">type</span> <span class="dt">FoldrSym3</span> f z xs <span class="fu">=</span> <span class="dt">Foldr</span> f z xs</a></code></pre></div>
+<div class="sourceCode" id="cb57"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L81-L90</span></a>
+<a class="sourceLine" id="cb57-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb57-3" data-line-number="3"><span class="kw">data</span> <span class="dt">FoldrSym0</span><span class="ot"> ::</span> (j <span class="fu">~&gt;</span> k <span class="fu">~&gt;</span> k) <span class="fu">~&gt;</span> k <span class="fu">~&gt;</span> [j] <span class="fu">~&gt;</span> k</a>
+<a class="sourceLine" id="cb57-4" data-line-number="4"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> <span class="dt">FoldrSym0</span> f <span class="fu">=</span> <span class="dt">FoldrSym1</span> f</a>
+<a class="sourceLine" id="cb57-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb57-6" data-line-number="6"><span class="kw">data</span> <span class="dt">FoldrSym1</span><span class="ot"> ::</span> (j <span class="fu">~&gt;</span> k <span class="fu">~&gt;</span> k) <span class="ot">-&gt;</span> k <span class="fu">~&gt;</span> [j] <span class="fu">~&gt;</span> k</a>
+<a class="sourceLine" id="cb57-7" data-line-number="7"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">FoldrSym1</span> f) z <span class="fu">=</span> <span class="dt">FoldrSym2</span> f z</a>
+<a class="sourceLine" id="cb57-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb57-9" data-line-number="9"><span class="kw">data</span> <span class="dt">FoldrSym2</span><span class="ot"> ::</span> (j <span class="fu">~&gt;</span> k <span class="fu">~&gt;</span> k) <span class="ot">-&gt;</span> k <span class="ot">-&gt;</span> [j] <span class="fu">~&gt;</span> k</a>
+<a class="sourceLine" id="cb57-10" data-line-number="10"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">FoldrSym2</span> f z) xs <span class="fu">=</span> <span class="dt">Foldr</span> f z xs</a>
+<a class="sourceLine" id="cb57-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb57-12" data-line-number="12"><span class="kw">type</span> <span class="dt">FoldrSym3</span> f z xs <span class="fu">=</span> <span class="dt">Foldr</span> f z xs</a></code></pre></div>
 <p>We can actually use these to <em>define</em> our <code>MergeStateList</code> defunctionalization symbols, since <em>defunctionalization symbols are first-class</em>:</p>
-<div class="sourceCode" id="cb55"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb55-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L92-L92</span></a>
-<a class="sourceLine" id="cb55-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb55-3" data-line-number="3"><span class="kw">type</span> <span class="dt">MergeStateListSym0</span> <span class="fu">=</span> <span class="dt">FoldrSym2</span> <span class="dt">MergeStateSym0</span> &#39;<span class="dt">Opened</span></a></code></pre></div>
+<div class="sourceCode" id="cb58"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb58-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L92-L92</span></a>
+<a class="sourceLine" id="cb58-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb58-3" data-line-number="3"><span class="kw">type</span> <span class="dt">MergeStateListSym0</span> <span class="fu">=</span> <span class="dt">FoldrSym2</span> <span class="dt">MergeStateSym0</span> &#39;<span class="dt">Opened</span></a></code></pre></div>
 <p>And you can just write <code>collapseHallway</code> as:</p>
-<div class="sourceCode" id="cb56"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb56-1" data-line-number="1"><span class="ot">collapseHallway ::</span> <span class="dt">Hallway</span> ss <span class="ot">-&gt;</span> <span class="dt">Door</span> (<span class="dt">MergeStateListSym0</span> <span class="fu">@@</span> ss)</a>
-<a class="sourceLine" id="cb56-2" data-line-number="2"><span class="co">-- or</span></a>
-<a class="sourceLine" id="cb56-3" data-line-number="3"><span class="ot">collapseHallway ::</span> <span class="dt">Hallway</span> ss <span class="ot">-&gt;</span> <span class="dt">Door</span> (<span class="dt">FoldrSym2</span> <span class="dt">MergeStateSym0</span> &#39;<span class="dt">Opened</span> <span class="fu">@@</span> ss)</a></code></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="ot">collapseHallway ::</span> <span class="dt">Hallway</span> ss <span class="ot">-&gt;</span> <span class="dt">Door</span> (<span class="dt">MergeStateListSym0</span> <span class="fu">@@</span> ss)</a>
+<a class="sourceLine" id="cb59-2" data-line-number="2"><span class="co">-- or</span></a>
+<a class="sourceLine" id="cb59-3" data-line-number="3"><span class="ot">collapseHallway ::</span> <span class="dt">Hallway</span> ss <span class="ot">-&gt;</span> <span class="dt">Door</span> (<span class="dt">FoldrSym2</span> <span class="dt">MergeStateSym0</span> &#39;<span class="dt">Opened</span> <span class="fu">@@</span> ss)</a></code></pre></div>
 <p>You never have to actually define <code>MergeStateList</code> as a function or type family!</p>
 <p>The whole time, we’re just building defunctionalization symbols in terms of other defunctionalization symbols. And, at the end, when we finally want to interpret the complex function we construct, we use <code>Apply</code>, or <code>@@</code>.</p>
 <p>You can think of <code>FoldrSym1</code> and <code>FoldrSym2</code> as <em>defunctionalization symbol constructors</em> – they’re combinators that take in defunctionalization symbols (like <code>MergeStateSym0</code>) and <em>return new ones</em>.</p>
 <h3 id="sigma">Sigma</h3>
 <p>Let’s look at a nice tool that is made possible using defunctionalization symbols: <em>dependent pairs</em>. I talk a bit about dependent pairs (or dependent sums) in <a href="https://blog.jle.im/entry/introduction-to-singletons-2.html">part 2</a> of this series, and also in my [dependent types in Haskell][dth] series.</p>
 <p>Essentially, a dependent pair is a tuple where the <em>type</em> of the second field depends on the <em>value</em> of the first one. This is basically what <code>SomeDoor</code> was:</p>
-<div class="sourceCode" id="cb57"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="kw">data</span> <span class="dt">SomeDoor</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb57-2" data-line-number="2">    <span class="dt">MkSomeDoor</span><span class="ot"> ::</span> <span class="dt">Sing</span> x <span class="ot">-&gt;</span> <span class="dt">Door</span> x <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a></code></pre></div>
+<div class="sourceCode" id="cb60"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb60-1" data-line-number="1"><span class="kw">data</span> <span class="dt">SomeDoor</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb60-2" data-line-number="2">    <span class="dt">MkSomeDoor</span><span class="ot"> ::</span> <span class="dt">Sing</span> x <span class="ot">-&gt;</span> <span class="dt">Door</span> x <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a></code></pre></div>
 <p>The <em>type</em> of the <code>Door x</code> depends on the <em>value</em> of the <code>Sing x</code>, which you can read as essentially storing the <code>x</code>.</p>
 <p>We made <code>SomeDoor</code> pretty ad-hoc. But what if we wanted to make some other predicate? Well, we can make a <em>generic</em> dependent pair by <em>parameterizing it on he dependence</em> between the first and second field. Singletons provides the <code>Sigma</code> type, in the <em>Data.Singletons.Sigma</em> module:</p>
-<div class="sourceCode" id="cb58"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb58-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Sigma</span><span class="ot"> k ::</span> (k <span class="fu">~&gt;</span> <span class="dt">Type</span>) <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb58-2" data-line-number="2"><span class="ot">    (:&amp;:) ::</span> <span class="dt">Sing</span> x <span class="ot">-&gt;</span> (f <span class="fu">@@</span> x) <span class="ot">-&gt;</span> <span class="dt">Sigma</span> k f</a>
-<a class="sourceLine" id="cb58-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb58-4" data-line-number="4"><span class="co">-- also available through fancy type synonym</span></a>
-<a class="sourceLine" id="cb58-5" data-line-number="5"><span class="kw">type</span> Σ k <span class="fu">=</span> <span class="dt">Sigma</span> k</a></code></pre></div>
+<div class="sourceCode" id="cb61"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb61-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Sigma</span><span class="ot"> k ::</span> (k <span class="fu">~&gt;</span> <span class="dt">Type</span>) <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb61-2" data-line-number="2"><span class="ot">    (:&amp;:) ::</span> <span class="dt">Sing</span> x <span class="ot">-&gt;</span> (f <span class="fu">@@</span> x) <span class="ot">-&gt;</span> <span class="dt">Sigma</span> k f</a>
+<a class="sourceLine" id="cb61-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb61-4" data-line-number="4"><span class="co">-- also available through fancy type synonym</span></a>
+<a class="sourceLine" id="cb61-5" data-line-number="5"><span class="kw">type</span> Σ k <span class="fu">=</span> <span class="dt">Sigma</span> k</a></code></pre></div>
 <p>If you squint carefully, you can see that <code>Sigma k</code> is just <code>SomeDoor</code>, but <em>parameterized over <code>Door</code></em>. Instead of always holding <code>Door x</code>, we can have it parameterized on an arbitrary function <code>f</code> and have it hold an <code>f @@ x</code>.</p>
 <p>We can actually define <code>SomeDoor</code> in terms of <code>Sigma</code>:</p>
-<div class="sourceCode" id="cb59"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L55</span></a>
-<a class="sourceLine" id="cb59-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb59-3" data-line-number="3"><span class="kw">type</span> <span class="dt">SomeDoor</span> <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">DoorState</span> (<span class="dt">TyCon1</span> <span class="dt">Door</span>)</a>
-<a class="sourceLine" id="cb59-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb59-5" data-line-number="5"><span class="ot">mkSomeDoor ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
-<a class="sourceLine" id="cb59-6" data-line-number="6">mkSomeDoor ds mat <span class="fu">=</span> withSomeSing ds <span class="fu">$</span> \dsSing <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb59-7" data-line-number="7">    dsSing <span class="fu">:&amp;:</span> <span class="dt">UnsafeMkDoor</span> mat</a></code></pre></div>
+<div class="sourceCode" id="cb62"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb62-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L55</span></a>
+<a class="sourceLine" id="cb62-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb62-3" data-line-number="3"><span class="kw">type</span> <span class="dt">SomeDoor</span> <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">DoorState</span> (<span class="dt">TyCon1</span> <span class="dt">Door</span>)</a>
+<a class="sourceLine" id="cb62-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb62-5" data-line-number="5"><span class="ot">mkSomeDoor ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
+<a class="sourceLine" id="cb62-6" data-line-number="6">mkSomeDoor ds mat <span class="fu">=</span> withSomeSing ds <span class="fu">$</span> \dsSing <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb62-7" data-line-number="7">    dsSing <span class="fu">:&amp;:</span> <span class="dt">UnsafeMkDoor</span> mat</a></code></pre></div>
 <p>(Remember <code>TyCon1</code> is the defunctionalization symbol constructor that turns any normal type constructor <code>j -&gt; k</code> into a defunctionalization symbol <code>j ~&gt; k</code>)</p>
 <p>That’s because a <code>Sigma DoorState (TyCon1 Door)</code> contains a <code>Sing (x :: DoorState)</code> and a <code>TyCon1 Door @@ x</code>, or a <code>Door x</code>.</p>
 <p>This is a simple relationship, but one can imagine a <code>Sigma</code> parameterized on an even more complex type-level function. We’ll explore more of these in the exercises!</p>
-<p><code>Sigma</code> is an interesting data type that is ubiquitous in dependently typed programming. It shows up everywhere, and is also very useful in the statement of dependently typed proofs.</p>
-<h3 id="singletons-of-defunctionalization-symboles">Singletons of Defunctionalization Symboles</h3>
+<p>For some context, <code>Sigma</code> is an interesting data type (the “dependent sum”) that is ubiquitous in dependently typed programming.</p>
+<h3 id="singletons-of-defunctionalization-symbols">Singletons of Defunctionalization Symbols</h3>
 <p>One last thing to tie it all together – let’s write <code>collapseHallway</code> in a way that we don’t know the types of the doors.</p>
 <p>Luckily, we now have a <code>SomeHallway</code> type for free:</p>
-<div class="sourceCode" id="cb60"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb60-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L81</span></a>
-<a class="sourceLine" id="cb60-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb60-3" data-line-number="3"><span class="kw">type</span> <span class="dt">SomeHallway</span> <span class="fu">=</span> <span class="dt">Sigma</span> [<span class="dt">DoorState</span>] (<span class="dt">TyCon1</span> <span class="dt">Hallway</span>)</a></code></pre></div>
-<p>The easy way would be to just use <code>sMergeStateList</code> that we defned:</p>
-<div class="sourceCode" id="cb61"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb61-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L83-L85</span></a>
-<a class="sourceLine" id="cb61-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb61-3" data-line-number="3"><span class="ot">collapseSomeHallway ::</span> <span class="dt">SomeHallway</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
-<a class="sourceLine" id="cb61-4" data-line-number="4">collapseSomeHallway (ss <span class="fu">:&amp;:</span> d) <span class="fu">=</span> sMergeStateList ss</a>
-<a class="sourceLine" id="cb61-5" data-line-number="5">                             <span class="fu">:&amp;:</span> collapseHallway d</a></code></pre></div>
+<div class="sourceCode" id="cb63"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb63-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L81</span></a>
+<a class="sourceLine" id="cb63-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb63-3" data-line-number="3"><span class="kw">type</span> <span class="dt">SomeHallway</span> <span class="fu">=</span> <span class="dt">Sigma</span> [<span class="dt">DoorState</span>] (<span class="dt">TyCon1</span> <span class="dt">Hallway</span>)</a></code></pre></div>
+<p>The easy way would be to just use <code>sMergeStateList</code> that we defined:</p>
+<div class="sourceCode" id="cb64"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb64-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L83-L85</span></a>
+<a class="sourceLine" id="cb64-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb64-3" data-line-number="3"><span class="ot">collapseSomeHallway ::</span> <span class="dt">SomeHallway</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
+<a class="sourceLine" id="cb64-4" data-line-number="4">collapseSomeHallway (ss <span class="fu">:&amp;:</span> d) <span class="fu">=</span> sMergeStateList ss</a>
+<a class="sourceLine" id="cb64-5" data-line-number="5">                             <span class="fu">:&amp;:</span> collapseHallway d</a></code></pre></div>
 <p>But what if we didn’t write <code>sMergeStateList</code>, and we constructed our defunctionalization symbols from scratch?</p>
-<div class="sourceCode" id="cb62"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb62-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L93-L97</span></a>
-<a class="sourceLine" id="cb62-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb62-3" data-line-number="3">collapseHallway&#39;</a>
-<a class="sourceLine" id="cb62-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Hallway</span> ss</a>
-<a class="sourceLine" id="cb62-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Door</span> (<span class="dt">FoldrSym2</span> <span class="dt">MergeStateSym0</span> &#39;<span class="dt">Opened</span> <span class="fu">@@</span> ss)</a>
-<a class="sourceLine" id="cb62-6" data-line-number="6">collapseHallway&#39; <span class="dt">HEnd</span>       <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="st">&quot;End of Hallway&quot;</span></a>
-<a class="sourceLine" id="cb62-7" data-line-number="7">collapseHallway&#39; (d <span class="fu">:&lt;#</span> ds) <span class="fu">=</span> d <span class="ot">`mergeDoor`</span> collapseHallway&#39; ds</a>
-<a class="sourceLine" id="cb62-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb62-9" data-line-number="9"><span class="ot">collapseSomeHallway&#39; ::</span> <span class="dt">SomeHallway</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
-<a class="sourceLine" id="cb62-10" data-line-number="10">collapseSomeHallway&#39; (ss <span class="fu">:&amp;:</span> d) <span class="fu">=</span> <span class="fu">???</span>    <span class="co">-- what goes here?</span></a>
-<a class="sourceLine" id="cb62-11" data-line-number="11">                              <span class="fu">:&amp;:</span> collapseHallway&#39; d</a></code></pre></div>
+<div class="sourceCode" id="cb65"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb65-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L116-L120</span></a>
+<a class="sourceLine" id="cb65-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb65-3" data-line-number="3">collapseHallway&#39;&#39;</a>
+<a class="sourceLine" id="cb65-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Hallway</span> ss</a>
+<a class="sourceLine" id="cb65-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Door</span> (<span class="dt">FoldrSym2</span> <span class="dt">MergeStateSym0</span> &#39;<span class="dt">Opened</span> <span class="fu">@@</span> ss)</a>
+<a class="sourceLine" id="cb65-6" data-line-number="6">collapseHallway&#39;&#39; <span class="dt">HEnd</span>       <span class="fu">=</span> <span class="dt">UnsafeMkDoor</span> <span class="st">&quot;End of Hallway&quot;</span></a>
+<a class="sourceLine" id="cb65-7" data-line-number="7">collapseHallway&#39;&#39; (d <span class="fu">:&lt;#</span> ds) <span class="fu">=</span> d <span class="ot">`mergeDoor`</span> collapseHallway&#39;&#39; ds</a>
+<a class="sourceLine" id="cb65-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb65-9" data-line-number="9"><span class="ot">collapseSomeHallway&#39;&#39; ::</span> <span class="dt">SomeHallway</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
+<a class="sourceLine" id="cb65-10" data-line-number="10">collapseSomeHallway&#39;&#39; (ss <span class="fu">:&amp;:</span> d) <span class="fu">=</span> <span class="fu">???</span>    <span class="co">-- what goes here?</span></a>
+<a class="sourceLine" id="cb65-11" data-line-number="11">                               <span class="fu">:&amp;:</span> collapseHallway&#39;&#39; d</a></code></pre></div>
 <p>This will be our final defunctionalization lesson. How do we turn a singleton of <code>ss</code> into a singleton of <code>FoldrSym2 MergeStateSym0 'Opened @@ s</code> ?</p>
 <p>First – we have <code>Foldr</code> at the value level, as <code>sFoldr</code>. We glossed over this earlier, but <em>singletons</em> generates the following function for us:</p>
-<div class="sourceCode" id="cb63"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb63-1" data-line-number="1"><span class="kw">type</span> family <span class="dt">Foldr</span> (<span class="ot">f ::</span> j <span class="fu">~&gt;</span> k <span class="fu">~&gt;</span> k) (<span class="ot">z ::</span> k) (<span class="ot">xs ::</span> [j])<span class="ot"> ::</span> k <span class="kw">where</span></a>
-<a class="sourceLine" id="cb63-2" data-line-number="2">    <span class="dt">Foldr</span> f z &#39;[]       <span class="fu">=</span> z</a>
-<a class="sourceLine" id="cb63-3" data-line-number="3">    <span class="dt">Foldr</span> f z (x &#39;<span class="fu">:</span> xs) <span class="fu">=</span> (f <span class="fu">@@</span> x) <span class="fu">@@</span> <span class="dt">Foldr</span> f z xs</a>
-<a class="sourceLine" id="cb63-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb63-5" data-line-number="5">sFoldr</a>
-<a class="sourceLine" id="cb63-6" data-line-number="6"><span class="ot">    ::</span> <span class="dt">Sing</span> (<span class="ot">f ::</span> j <span class="fu">~&gt;</span> k <span class="fu">~&gt;</span> k)</a>
-<a class="sourceLine" id="cb63-7" data-line-number="7">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ot">z ::</span> k)</a>
-<a class="sourceLine" id="cb63-8" data-line-number="8">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ot">xs ::</span> [j])</a>
-<a class="sourceLine" id="cb63-9" data-line-number="9">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="dt">Foldr</span> f z<span class="ot"> xs ::</span> k)</a>
-<a class="sourceLine" id="cb63-10" data-line-number="10">sFoldr f z <span class="dt">SNil</span>           <span class="fu">=</span> z</a>
-<a class="sourceLine" id="cb63-11" data-line-number="11">sFoldr f z (x <span class="ot">`SCons`</span> xs) <span class="fu">=</span> (f <span class="fu">@@</span> x) <span class="fu">@@</span> sFoldr f z xs</a></code></pre></div>
+<div class="sourceCode" id="cb66"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb66-1" data-line-number="1"><span class="kw">type</span> family <span class="dt">Foldr</span> (<span class="ot">f ::</span> j <span class="fu">~&gt;</span> k <span class="fu">~&gt;</span> k) (<span class="ot">z ::</span> k) (<span class="ot">xs ::</span> [j])<span class="ot"> ::</span> k <span class="kw">where</span></a>
+<a class="sourceLine" id="cb66-2" data-line-number="2">    <span class="dt">Foldr</span> f z &#39;[]       <span class="fu">=</span> z</a>
+<a class="sourceLine" id="cb66-3" data-line-number="3">    <span class="dt">Foldr</span> f z (x &#39;<span class="fu">:</span> xs) <span class="fu">=</span> (f <span class="fu">@@</span> x) <span class="fu">@@</span> <span class="dt">Foldr</span> f z xs</a>
+<a class="sourceLine" id="cb66-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb66-5" data-line-number="5">sFoldr</a>
+<a class="sourceLine" id="cb66-6" data-line-number="6"><span class="ot">    ::</span> <span class="dt">Sing</span> (<span class="ot">f ::</span> j <span class="fu">~&gt;</span> k <span class="fu">~&gt;</span> k)</a>
+<a class="sourceLine" id="cb66-7" data-line-number="7">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ot">z ::</span> k)</a>
+<a class="sourceLine" id="cb66-8" data-line-number="8">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="ot">xs ::</span> [j])</a>
+<a class="sourceLine" id="cb66-9" data-line-number="9">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> (<span class="dt">Foldr</span> f z<span class="ot"> xs ::</span> k)</a>
+<a class="sourceLine" id="cb66-10" data-line-number="10">sFoldr f z <span class="dt">SNil</span>           <span class="fu">=</span> z</a>
+<a class="sourceLine" id="cb66-11" data-line-number="11">sFoldr f z (x <span class="ot">`SCons`</span> xs) <span class="fu">=</span> (f <span class="fu">@@</span> x) <span class="fu">@@</span> sFoldr f z xs</a></code></pre></div>
 <p>Where <code>(@@) :: Sing f -&gt; Sing x -&gt; Sing (f @@ x)</code> (or <code>applySing</code>) is the singleton/value-level counterpart of <code>Apply</code> or <code>(@@)</code>.[^slamda]</p>
 <p>So we can write:</p>
-<div class="sourceCode" id="cb64"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb64-1" data-line-number="1"><span class="ot">collapseSomeHallway&#39; ::</span> <span class="dt">SomeHallway</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
-<a class="sourceLine" id="cb64-2" data-line-number="2">collapseSomeHallway&#39; (ss <span class="fu">:&amp;:</span> d) <span class="fu">=</span> sFoldr <span class="fu">????</span> <span class="dt">SOpened</span> ss</a>
-<a class="sourceLine" id="cb64-3" data-line-number="3">                              <span class="fu">:&amp;:</span> collapseHallway d</a></code></pre></div>
+<div class="sourceCode" id="cb67"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb67-1" data-line-number="1"><span class="ot">collapseSomeHallway&#39;&#39; ::</span> <span class="dt">SomeHallway</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
+<a class="sourceLine" id="cb67-2" data-line-number="2">collapseSomeHallway&#39;&#39; (ss <span class="fu">:&amp;:</span> d) <span class="fu">=</span> sFoldr <span class="fu">????</span> <span class="dt">SOpened</span> ss</a>
+<a class="sourceLine" id="cb67-3" data-line-number="3">                               <span class="fu">:&amp;:</span> collapseHallwa&#39;&#39;y d</a></code></pre></div>
 <p>But how do we get a <code>Sing MergeStateSym0</code>?</p>
 <p>We can use the <code>singFun</code> family of functions:</p>
-<div class="sourceCode" id="cb65"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb65-1" data-line-number="1">singFun2 <span class="fu">@</span><span class="dt">MergeStateSym0</span> sMergeState</a>
-<a class="sourceLine" id="cb65-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Sing</span> <span class="dt">MergeStateSym0</span></a></code></pre></div>
+<div class="sourceCode" id="cb68"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb68-1" data-line-number="1">singFun2 <span class="fu">@</span><span class="dt">MergeStateSym0</span> sMergeState</a>
+<a class="sourceLine" id="cb68-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Sing</span> <span class="dt">MergeStateSym0</span></a></code></pre></div>
 <p>But, also, conveniently, the <em>singletons</em> library generates a <code>SingI</code> instance for <code>MergeStateSym0</code>, if you defined <code>mergeState</code> using the <em>singletons</em> template haskell:</p>
-<div class="sourceCode" id="cb66"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb66-1" data-line-number="1"><span class="ot">sing ::</span> <span class="dt">Sing</span> <span class="dt">MergeStateSym0</span></a>
-<a class="sourceLine" id="cb66-2" data-line-number="2"><span class="co">-- or</span></a>
-<a class="sourceLine" id="cb66-3" data-line-number="3">sing <span class="fu">@</span>_ <span class="fu">@</span><span class="dt">MergeStateSym0</span>         <span class="co">-- singletons 2.4</span></a>
-<a class="sourceLine" id="cb66-4" data-line-number="4">sing <span class="fu">@</span><span class="dt">MergeStateSym0</span>            <span class="co">-- singletons 2.5</span></a></code></pre></div>
+<div class="sourceCode" id="cb69"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb69-1" data-line-number="1"><span class="ot">sing ::</span> <span class="dt">Sing</span> <span class="dt">MergeStateSym0</span></a>
+<a class="sourceLine" id="cb69-2" data-line-number="2"><span class="co">-- or</span></a>
+<a class="sourceLine" id="cb69-3" data-line-number="3">sing <span class="fu">@</span>_ <span class="fu">@</span><span class="dt">MergeStateSym0</span>         <span class="co">-- singletons 2.4</span></a>
+<a class="sourceLine" id="cb69-4" data-line-number="4">sing <span class="fu">@</span><span class="dt">MergeStateSym0</span>            <span class="co">-- singletons 2.5</span></a></code></pre></div>
 <p>And finally, we get our answer:</p>
-<div class="sourceCode" id="cb67"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb67-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L99-L104</span></a>
-<a class="sourceLine" id="cb67-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb67-3" data-line-number="3"><span class="ot">collapseSomeHallway&#39; ::</span> <span class="dt">SomeHallway</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
-<a class="sourceLine" id="cb67-4" data-line-number="4">collapseSomeHallway&#39; (ss <span class="fu">:&amp;:</span> d) <span class="fu">=</span></a>
-<a class="sourceLine" id="cb67-5" data-line-number="5">        sFoldr (singFun2 <span class="fu">@</span><span class="dt">MergeStateSym0</span> sMergeState) <span class="dt">SOpened</span> ss</a>
-<a class="sourceLine" id="cb67-6" data-line-number="6">     <span class="co">-- or</span></a>
-<a class="sourceLine" id="cb67-7" data-line-number="7">     <span class="co">-- sFoldr (sing @MergeStateSym0) SOpened ss</span></a>
-<a class="sourceLine" id="cb67-8" data-line-number="8">    <span class="fu">:&amp;:</span> collapseHallway&#39; d</a></code></pre></div>
+<div class="sourceCode" id="cb70"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb70-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L122-L127</span></a>
+<a class="sourceLine" id="cb70-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb70-3" data-line-number="3"><span class="ot">collapseSomeHallway&#39;&#39; ::</span> <span class="dt">SomeHallway</span> <span class="ot">-&gt;</span> <span class="dt">SomeDoor</span></a>
+<a class="sourceLine" id="cb70-4" data-line-number="4">collapseSomeHallway&#39;&#39; (ss <span class="fu">:&amp;:</span> d) <span class="fu">=</span></a>
+<a class="sourceLine" id="cb70-5" data-line-number="5">        sFoldr (singFun2 <span class="fu">@</span><span class="dt">MergeStateSym0</span> sMergeState) <span class="dt">SOpened</span> ss</a>
+<a class="sourceLine" id="cb70-6" data-line-number="6">     <span class="co">-- or</span></a>
+<a class="sourceLine" id="cb70-7" data-line-number="7">     <span class="co">-- sFoldr (sing @MergeStateSym0) SOpened ss</span></a>
+<a class="sourceLine" id="cb70-8" data-line-number="8">    <span class="fu">:&amp;:</span> collapseHallway&#39;&#39; d</a></code></pre></div>
 <h2 id="closing-up">Closing Up</h2>
 <p>Woo! Congratulations, you’ve made it to the end of the this Introduction to Singletons tetralogy! This last and final part understandably ramps things up pretty quickly, so don’t be afraid to re-read it a few times until it all sinks in before jumping into the exercises.</p>
 <p>I hope you enjoyed this journey deep into the motivation, philosophy, mechanics, and usage of this great library. Hopefully these toy examples have been able to show you a lot of ways that type-level programming can help your programs today, both in type safety and in writing more expressive programs. And also, I hope that you can also see now how to leverage the full power of the <em>singletons</em> library to make those gains a reality.</p>
 <p>There are a few corners of the library we haven’t gone over (like the TypeLits- and TypeRep-based singletons), but I’d like to hope as well that this series has equipped you to be able to dive into the library documentation and decipher what it holds, armed with the knowledge you now have.</p>
 <p>You can download the source code here — <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs">Door4Final.hs</a> contains the final versions of all our definitions, and [Defunctionalization.hs][] contains all of our defunctionalization-from-scratch work. These are designed as stack scripts that you can load into ghci. Just execute the scripts:</p>
-<div class="sourceCode" id="cb68"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb68-1" data-line-number="1">$ <span class="ex">./Door4Final.hs</span></a>
-<a class="sourceLine" id="cb68-2" data-line-number="2"><span class="ex">ghci</span><span class="op">&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb71"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb71-1" data-line-number="1">$ <span class="ex">./Door4Final.hs</span></a>
+<a class="sourceLine" id="cb71-2" data-line-number="2"><span class="ex">ghci</span><span class="op">&gt;</span></a></code></pre></div>
 <p>And you’ll be dropped into a ghci session with all of the definitions in scope!</p>
 <p>As always, please try out the exercises, which are designed to help solidify the concepts we went over here! And if you ever have any future questions, feel free to leave a comment or find me on <a href="https://twitter.com/mstk" title="Twitter">twitter</a> or in freenode <code>#haskell</code>, where I idle as <em>jle`</em>!</p>
-<p>Until next time, Happy Haskelling!</p>
+<h3 id="looking-forward">Looking Forward</h3>
+<p>Some final things to note before truly embracing singletons: remember that, as a library, <em>singletons</em> was always meant to become obsolete. It’s a library that only exists because Haskell doesn’t have real dependent types yet.</p>
+<p><a href="https://ghc.haskell.org/trac/ghc/wiki/DependentHaskell">Dependent Haskell</a> is coming some day! It’s mostly driven by one solo man, Richard Eisenberg, but every year buzz does get bigger. In a <a href="https://typesandkinds.wordpress.com/2016/07/24/dependent-types-in-haskell-progress-report/#comment-13327">recent progress report</a>, we do know that we realistically won’t have dependent types before 2020. That means that this tutorial will still remain relevant for at least another two years :)</p>
+<p>How will things be different in a world of Haskell with real dependent types? Well, for a good guess, take a look at <a href="https://github.com/goldfirere/thesis">Richard Eisenberg’s Dissertation</a>!</p>
+<p>One day, hopefully, we won’t need singletons to work with types at the value-level; we would just be able to directly pattern match and manipulate the types within the language. And some day, I hope we won’t need any more dances with defunctionalization symbols to write higher-order functions at the type level — maybe we’ll have a nicer way to work with partially applied type-level functions (maybe they’ll just be normal functions?), and we don’t need to think any different about higher-order or first-order functions.</p>
+<p>So, as a final word — Happy Haskelling, everyone! May you leverage <em>singletons</em> to its full potential, and may we also all dream of a day where <em>singletons</em> becomes obsolete. But may we all enjoy the wonderful journey along the way.</p>
+<p>Until next time!</p>
 <h2 id="exercises">Exercises</h2>
 <p>Here are your final exercises for this series! Start from <a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs">this sample source code</a>, which has all of the definitions that the exercises and their solutions require. Just make sure to delete all of the parts after the <code>-- Exercise</code> comment if you don’t want to be spoiled! Remember again to enable <code>-Werror=incomplete-patterns</code> or <code>-Wall</code> to ensure that all of your functions are total!</p>
 <ol type="1">
 <li><p>Let’s try combining type families with proofs! In doing so, hopefully we can also see the value of using dependent proofs to show how we can manipulate proofs as first-class values that the compiler can verify.</p>
 <p>Remember <code>Knockable</code> from Part 3?</p>
-<div class="sourceCode" id="cb69"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb69-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L109-L111</span></a>
-<a class="sourceLine" id="cb69-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb69-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Knockable</span><span class="ot"> ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb69-4" data-line-number="4">    <span class="dt">KnockClosed</span><span class="ot"> ::</span> <span class="dt">Knockable</span> &#39;<span class="dt">Closed</span></a>
-<a class="sourceLine" id="cb69-5" data-line-number="5">    <span class="dt">KnockLocked</span><span class="ot"> ::</span> <span class="dt">Knockable</span> &#39;<span class="dt">Locked</span></a></code></pre></div>
+<div class="sourceCode" id="cb72"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb72-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L133-L135</span></a>
+<a class="sourceLine" id="cb72-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb72-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Knockable</span><span class="ot"> ::</span> <span class="dt">DoorState</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb72-4" data-line-number="4">    <span class="dt">KnockClosed</span><span class="ot"> ::</span> <span class="dt">Knockable</span> &#39;<span class="dt">Closed</span></a>
+<a class="sourceLine" id="cb72-5" data-line-number="5">    <span class="dt">KnockLocked</span><span class="ot"> ::</span> <span class="dt">Knockable</span> &#39;<span class="dt">Locked</span></a></code></pre></div>
 <p>Closed and Locked doors are knockable. But, if you merge two knockable doors…is the result <em>also</em> always knockable?</p>
 <p>I say yes, but don’t take my word for it. Prove it using <code>Knockable</code>!</p>
-<div class="sourceCode" id="cb70"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb70-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L126-L129</span></a>
-<a class="sourceLine" id="cb70-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb70-3" data-line-number="3">mergedIsKnockable</a>
-<a class="sourceLine" id="cb70-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Knockable</span> s</a>
-<a class="sourceLine" id="cb70-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Knockable</span> t</a>
-<a class="sourceLine" id="cb70-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">Knockable</span> (<span class="dt">MergeState</span> s t)</a></code></pre></div>
+<div class="sourceCode" id="cb73"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb73-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L150-L153</span></a>
+<a class="sourceLine" id="cb73-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb73-3" data-line-number="3">mergedIsKnockable</a>
+<a class="sourceLine" id="cb73-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Knockable</span> s</a>
+<a class="sourceLine" id="cb73-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Knockable</span> t</a>
+<a class="sourceLine" id="cb73-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">Knockable</span> (<span class="dt">MergeState</span> s t)</a></code></pre></div>
 <p><code>mergedIsKnockable</code> is only implementable if the merging of two DoorStates that are knockable is also knockable. See if you can write the implementation!</p>
 <p><a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L101-L101">Solution here!</a></p></li>
 <li><p>Write a function to append two hallways together.</p>
-<div class="sourceCode" id="cb71"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb71-1" data-line-number="1">appendHallways</a>
-<a class="sourceLine" id="cb71-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Hallway</span> ss</a>
-<a class="sourceLine" id="cb71-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">Hallway</span> ts</a>
-<a class="sourceLine" id="cb71-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">Hallway</span> <span class="fu">????</span></a></code></pre></div>
+<div class="sourceCode" id="cb74"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb74-1" data-line-number="1">appendHallways</a>
+<a class="sourceLine" id="cb74-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Hallway</span> ss</a>
+<a class="sourceLine" id="cb74-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">Hallway</span> ts</a>
+<a class="sourceLine" id="cb74-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">Hallway</span> <span class="fu">????</span></a></code></pre></div>
 <p>Try to figure out what <code>???</code> should be. Try not to use any type families from <em>singletons</em> — implement any type families you might need from scratch!</p>
 <p>Remember the important principle that your type family must mirror the implementation of the functions that use it.</p>
 <p>Next, for fun, use <code>appendHallways</code> to implement <code>appendSomeHallways</code>:</p>
-<div class="sourceCode" id="cb72"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb72-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L157</span></a>
-<a class="sourceLine" id="cb72-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb72-3" data-line-number="3"><span class="kw">type</span> <span class="dt">SomeHallway</span> <span class="fu">=</span> <span class="dt">Sigma</span> [<span class="dt">DoorState</span>] (<span class="dt">TyCon1</span> <span class="dt">Hallway</span>)</a>
-<a class="sourceLine" id="cb72-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb72-5" data-line-number="5">appendSomeHallways</a>
-<a class="sourceLine" id="cb72-6" data-line-number="6"><span class="ot">    ::</span> <span class="dt">SomeHallway</span></a>
-<a class="sourceLine" id="cb72-7" data-line-number="7">    <span class="ot">-&gt;</span> <span class="dt">SomeHallway</span></a>
-<a class="sourceLine" id="cb72-8" data-line-number="8">    <span class="ot">-&gt;</span> <span class="dt">SomeHallway</span></a></code></pre></div>
+<div class="sourceCode" id="cb75"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb75-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L181</span></a>
+<a class="sourceLine" id="cb75-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb75-3" data-line-number="3"><span class="kw">type</span> <span class="dt">SomeHallway</span> <span class="fu">=</span> <span class="dt">Sigma</span> [<span class="dt">DoorState</span>] (<span class="dt">TyCon1</span> <span class="dt">Hallway</span>)</a>
+<a class="sourceLine" id="cb75-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb75-5" data-line-number="5">appendSomeHallways</a>
+<a class="sourceLine" id="cb75-6" data-line-number="6"><span class="ot">    ::</span> <span class="dt">SomeHallway</span></a>
+<a class="sourceLine" id="cb75-7" data-line-number="7">    <span class="ot">-&gt;</span> <span class="dt">SomeHallway</span></a>
+<a class="sourceLine" id="cb75-8" data-line-number="8">    <span class="ot">-&gt;</span> <span class="dt">SomeHallway</span></a></code></pre></div>
 <p><a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L108-L108">Solution here!</a></p></li>
 <li><p>Can you use <code>Sigma</code> to define a door that must be knockable?</p>
 <p>To do this, try directly defining the defunctionalization symbol <code>KnockableDoor :: DoorState ~&gt; Type</code> (or use singletons to generate it for you — remember that <em>singletons</em> can also promote type families) so that:</p>
-<div class="sourceCode" id="cb73"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb73-1" data-line-number="1"><span class="kw">type</span> <span class="dt">SomeKnockableDoor</span> <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">DoorState</span> <span class="dt">KnockableDoor</span></a></code></pre></div>
+<div class="sourceCode" id="cb76"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb76-1" data-line-number="1"><span class="kw">type</span> <span class="dt">SomeKnockableDoor</span> <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">DoorState</span> <span class="dt">KnockableDoor</span></a></code></pre></div>
 <p>will contain a <code>Door</code> that must be knockable.</p>
 <p>Try doing it for both (a) the “dependent proof” version (with the <code>Knockable</code> data type) and for (b) the type family version (with the <code>StatePass</code> type family).</p>
 <p><a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L118-L118">Solutions here!</a> I gave four different ways of doing it, for a full range of manual vs. auto-promoted defunctionalization symbols and <code>Knockable</code> vs. <code>Pass</code>-based methods.</p>
 <p><em>Hint:</em> Look at the definition of <code>SomeDoor</code> in terms of <code>Sigma</code>:</p>
-<div class="sourceCode" id="cb74"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb74-1" data-line-number="1"><span class="kw">type</span> <span class="dt">SomeDoor</span> <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">DoorState</span> (<span class="dt">TyCon1</span> <span class="dt">Door</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb77"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb77-1" data-line-number="1"><span class="kw">type</span> <span class="dt">SomeDoor</span> <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">DoorState</span> (<span class="dt">TyCon1</span> <span class="dt">Door</span>)</a></code></pre></div>
 <p><em>Hint</em>: Try having <code>KnockableDoor</code> return a tuple.</p></li>
 <li><p>Take a look at the API of the <em><a href="http://hackage.haskell.org/package/singletons-2.5/docs/Data-Singletons-TypeLits.html">Data.Singletons.TypeLits</a></em> module, based on the API exposed in <em><a href="http://hackage.haskell.org/package/base-4.12.0.0/docs/GHC-TypeNats.html">GHC.TypeNats</a></em> module from <em>base</em>.</p>
 <p>Using this, you can use <code>Sigma</code> to create a predicate that a given <code>Nat</code> number is even:</p>
-<div class="sourceCode" id="cb75"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb75-1" data-line-number="1"><span class="kw">data</span> <span class="dt">IsHalfOf</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="fu">~&gt;</span> <span class="dt">Type</span></a>
-<a class="sourceLine" id="cb75-2" data-line-number="2"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">IsHalfOf</span> n) m <span class="fu">=</span> n <span class="fu">:~:</span> (m <span class="fu">*</span> <span class="dv">2</span>)</a>
-<a class="sourceLine" id="cb75-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb75-4" data-line-number="4"><span class="kw">type</span> <span class="dt">IsEven</span> n <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">Nat</span> (<span class="dt">IsHalfOf</span> n)</a></code></pre></div>
+<div class="sourceCode" id="cb78"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb78-1" data-line-number="1"><span class="kw">data</span> <span class="dt">IsHalfOf</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="fu">~&gt;</span> <span class="dt">Type</span></a>
+<a class="sourceLine" id="cb78-2" data-line-number="2"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">IsHalfOf</span> n) m <span class="fu">=</span> n <span class="fu">:~:</span> (m <span class="fu">*</span> <span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb78-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb78-4" data-line-number="4"><span class="kw">type</span> <span class="dt">IsEven</span> n <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">Nat</span> (<span class="dt">IsHalfOf</span> n)</a></code></pre></div>
 <p><code>(*)</code> is multiplication from the <em><a href="http://hackage.haskell.org/package/singletons-2.5/docs/Data-Singletons-Prelude-Num.html">Data.Singletons.Prelude.Num</a></em> module. (<strong>You must have the <em>-XNoStarIsType</em> extension on</strong> for this to work in GHC 8.6+), and <code>:~:</code> is the predicate of equality from Part 3:</p>
-<div class="sourceCode" id="cb76"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb76-1" data-line-number="1"><span class="kw">data</span><span class="ot"> (:~:) ::</span> k <span class="ot">-&gt;</span> k <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb76-2" data-line-number="2">    <span class="dt">Refl</span><span class="ot"> ::</span> a <span class="fu">:~:</span> a</a></code></pre></div>
+<div class="sourceCode" id="cb79"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb79-1" data-line-number="1"><span class="kw">data</span><span class="ot"> (:~:) ::</span> k <span class="ot">-&gt;</span> k <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb79-2" data-line-number="2">    <span class="dt">Refl</span><span class="ot"> ::</span> a <span class="fu">:~:</span> a</a></code></pre></div>
 <p>(It’s only possible to make a value of type <code>a :~: b</code> using <code>Refl :: a :~: a</code>, so it’s only possible to make a value of that type when <code>a</code> and <code>b</code> are equal. I like to use <code>Refl</code> with type application syntax, like <code>Refl @a</code>, so it’s clear what we are saying is the same on both sides; <code>Refl @a :: a :~: a</code>)</p>
 <p>The only way to construct an <code>IsEven n</code> is to provide a number <code>m</code> where <code>m * 2</code> is <code>n</code>. We can do this by using <code>SNat @m</code>, which is the singleton constructor for the <code>Nat</code> kind (just like how <code>STrue</code> and <code>SFalse</code> are the singleton constructors for the <code>Bool</code> kind):</p>
-<div class="sourceCode" id="cb77"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb77-1" data-line-number="1"><span class="ot">tenIsEven ::</span> <span class="dt">IsEven</span> <span class="dv">10</span></a>
-<a class="sourceLine" id="cb77-2" data-line-number="2">tenIsEven <span class="fu">=</span> <span class="dt">SNat</span> <span class="fu">@</span><span class="dv">5</span> <span class="fu">:&amp;:</span> <span class="dt">Refl</span> <span class="fu">@</span><span class="dv">10</span></a>
-<a class="sourceLine" id="cb77-3" data-line-number="3">    <span class="co">-- Refl is the constructor of type n :~: (m * 2)</span></a>
-<a class="sourceLine" id="cb77-4" data-line-number="4">    <span class="co">-- here, we use it as Refl @10 :: 10 :~: 10</span></a>
-<a class="sourceLine" id="cb77-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb77-6" data-line-number="6"><span class="co">-- won&#39;t compile</span></a>
-<a class="sourceLine" id="cb77-7" data-line-number="7"><span class="ot">sevenIsEven ::</span> <span class="dt">IsEven</span> <span class="dv">10</span></a>
-<a class="sourceLine" id="cb77-8" data-line-number="8">sevenIsEven <span class="fu">=</span> <span class="dt">SNat</span> <span class="fu">@</span><span class="dv">4</span> <span class="fu">:&amp;:</span> <span class="dt">Refl</span></a>
-<a class="sourceLine" id="cb77-9" data-line-number="9">    <span class="co">-- won&#39;t compile, because we need something of type `(4 * 2) :~: 7`,</span></a>
-<a class="sourceLine" id="cb77-10" data-line-number="10">    <span class="co">-- but Refl must have type `a :~: a`; `8 :~: 7` is not constructable</span></a>
-<a class="sourceLine" id="cb77-11" data-line-number="11">    <span class="co">-- using `Refl`.  Neither `Refl @8` nor `Refl @7` will work.</span></a></code></pre></div>
+<div class="sourceCode" id="cb80"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb80-1" data-line-number="1"><span class="ot">tenIsEven ::</span> <span class="dt">IsEven</span> <span class="dv">10</span></a>
+<a class="sourceLine" id="cb80-2" data-line-number="2">tenIsEven <span class="fu">=</span> <span class="dt">SNat</span> <span class="fu">@</span><span class="dv">5</span> <span class="fu">:&amp;:</span> <span class="dt">Refl</span> <span class="fu">@</span><span class="dv">10</span></a>
+<a class="sourceLine" id="cb80-3" data-line-number="3">    <span class="co">-- Refl is the constructor of type n :~: (m * 2)</span></a>
+<a class="sourceLine" id="cb80-4" data-line-number="4">    <span class="co">-- here, we use it as Refl @10 :: 10 :~: 10</span></a>
+<a class="sourceLine" id="cb80-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb80-6" data-line-number="6"><span class="co">-- won&#39;t compile</span></a>
+<a class="sourceLine" id="cb80-7" data-line-number="7"><span class="ot">sevenIsEven ::</span> <span class="dt">IsEven</span> <span class="dv">10</span></a>
+<a class="sourceLine" id="cb80-8" data-line-number="8">sevenIsEven <span class="fu">=</span> <span class="dt">SNat</span> <span class="fu">@</span><span class="dv">4</span> <span class="fu">:&amp;:</span> <span class="dt">Refl</span></a>
+<a class="sourceLine" id="cb80-9" data-line-number="9">    <span class="co">-- won&#39;t compile, because we need something of type `(4 * 2) :~: 7`,</span></a>
+<a class="sourceLine" id="cb80-10" data-line-number="10">    <span class="co">-- but Refl must have type `a :~: a`; `8 :~: 7` is not constructable</span></a>
+<a class="sourceLine" id="cb80-11" data-line-number="11">    <span class="co">-- using `Refl`.  Neither `Refl @8` nor `Refl @7` will work.</span></a></code></pre></div>
 <p>Write a similar type <code>IsOdd n</code> that can only be constructed if <code>n</code> is <em>odd</em>.</p>
-<div class="sourceCode" id="cb78"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb78-1" data-line-number="1"><span class="kw">type</span> <span class="dt">IsOdd</span> n <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">Nat</span> (<span class="fu">????</span> n)</a></code></pre></div>
+<div class="sourceCode" id="cb81"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb81-1" data-line-number="1"><span class="kw">type</span> <span class="dt">IsOdd</span> n <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">Nat</span> (<span class="fu">????</span> n)</a></code></pre></div>
 <p>And construct a proof that <code>7</code> is odd:</p>
-<div class="sourceCode" id="cb79"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb79-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L196-L196</span></a>
-<a class="sourceLine" id="cb79-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb79-3" data-line-number="3"><span class="ot">sevenIsOdd ::</span> <span class="dt">IsOdd</span> <span class="dv">7</span></a></code></pre></div>
+<div class="sourceCode" id="cb82"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb82-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L220-L220</span></a>
+<a class="sourceLine" id="cb82-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb82-3" data-line-number="3"><span class="ot">sevenIsOdd ::</span> <span class="dt">IsOdd</span> <span class="dv">7</span></a></code></pre></div>
 <p><a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L165-L165">Solution here!</a></p>
 <p>On a sad note, one exercise I’d like to be able to add is to ask you to write decision functions and proofs for <code>IsEven</code> and <code>IsOdd</code>. Unfortunately, <code>Nat</code> is not rich enough to support this out of the box without a lot of extra tooling!</p></li>
 <li><p>A common beginner Haskeller exercise is to implement <code>map</code> in terms of <code>foldr</code>:</p>
-<div class="sourceCode" id="cb80"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb80-1" data-line-number="1">map<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] _<span class="fu">&gt;</span> [b]</a>
-<a class="sourceLine" id="cb80-2" data-line-number="2">map f <span class="fu">=</span> foldr ((<span class="fu">:</span>) <span class="fu">.</span> f) []</a></code></pre></div>
+<div class="sourceCode" id="cb83"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb83-1" data-line-number="1">map<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] _<span class="fu">&gt;</span> [b]</a>
+<a class="sourceLine" id="cb83-2" data-line-number="2">map f <span class="fu">=</span> foldr ((<span class="fu">:</span>) <span class="fu">.</span> f) []</a></code></pre></div>
 <p>Let’s do the same thing at the type level, manually.</p>
 <p>Directly implement a type-level <code>Map</code>, with kind <code>(j ~&gt; k) -&gt; [j] -&gt; [k]</code>, in terms of <code>Foldr</code>:</p>
-<div class="sourceCode" id="cb81"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb81-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Map</span> f xs <span class="fu">=</span> <span class="dt">Foldr</span> <span class="fu">????</span> <span class="fu">????</span> xs</a></code></pre></div>
+<div class="sourceCode" id="cb84"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb84-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Map</span> f xs <span class="fu">=</span> <span class="dt">Foldr</span> <span class="fu">????</span> <span class="fu">????</span> xs</a></code></pre></div>
 <p>Try to mirror the value-level definition, passing in <code>(:) . f</code>, and use the promoted version of <code>(.)</code> from the <em>singletons</em> library, in <em><a href="http://hackage.haskell.org/package/singletons-2.5/docs/Data-Singletons-Prelude.html">Data.Singletons.Prelude</a></em>. You might find <code>TyCon2</code> helpful!</p>
 <p><a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L185-L185">Solution here!</a></p></li>
 <li><p>Make a <code>SomeHallway</code> from a list of <code>SomeDoor</code>:</p>
-<div class="sourceCode" id="cb82"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb82-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L203</span></a>
-<a class="sourceLine" id="cb82-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb82-3" data-line-number="3"><span class="kw">type</span> <span class="dt">SomeDoor</span> <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">DoorState</span> (<span class="dt">TyCon1</span> <span class="dt">Door</span>)</a>
-<a class="sourceLine" id="cb82-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb82-5" data-line-number="5"><span class="kw">type</span> <span class="dt">SomeHallway</span> <span class="fu">=</span> <span class="dt">Sigma</span> [<span class="dt">DoorState</span>] (<span class="dt">TyCon1</span> <span class="dt">Hallway</span>)</a>
-<a class="sourceLine" id="cb82-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb82-7" data-line-number="7"><span class="ot">mkSomeHallway ::</span> [<span class="dt">SomeDoor</span>] <span class="ot">-&gt;</span> <span class="dt">SomeHallway</span></a></code></pre></div>
+<div class="sourceCode" id="cb85"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb85-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L227</span></a>
+<a class="sourceLine" id="cb85-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb85-3" data-line-number="3"><span class="kw">type</span> <span class="dt">SomeDoor</span> <span class="fu">=</span> <span class="dt">Sigma</span> <span class="dt">DoorState</span> (<span class="dt">TyCon1</span> <span class="dt">Door</span>)</a>
+<a class="sourceLine" id="cb85-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb85-5" data-line-number="5"><span class="kw">type</span> <span class="dt">SomeHallway</span> <span class="fu">=</span> <span class="dt">Sigma</span> [<span class="dt">DoorState</span>] (<span class="dt">TyCon1</span> <span class="dt">Hallway</span>)</a>
+<a class="sourceLine" id="cb85-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb85-7" data-line-number="7"><span class="ot">mkSomeHallway ::</span> [<span class="dt">SomeDoor</span>] <span class="ot">-&gt;</span> <span class="dt">SomeHallway</span></a></code></pre></div>
 <p>Remember that the singleton constructors for list are <code>SNil</code> (for <code>[]</code>) and <code>SCons</code> (for <code>(:)</code>)!</p>
 <p><a href="https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L185-L185">Solution here!</a></p></li>
 </ol>
