@@ -17,6 +17,11 @@ building on the concepts in those posts in a pretty heavy way.
 Today we're going to jump straight into *functional programming* at the type
 level!
 
+Code in this post is built on *GHC 8.6.1* with the
+*[nightly-2018-09-29](https://www.stackage.org/nightly-2018-09-29)* snapshot
+(so, *singletons-2.5*). However, unless noted, all of the code should still work
+with *GHC 8.4* and *singletons-2.4*.
+
 Review
 ------
 
@@ -815,7 +820,7 @@ Just to show off the library, remember that *singletons* also promotes
 typeclasses?
 
 Because `DoorState` is a monoid with respect to merging, we can actually write
-and promote a `Monoid` instance:
+and promote a `Monoid` instance: (requires *singletons-2.5* or higher)
 
 ``` {.haskell}
 $(singletons [d|
@@ -840,7 +845,7 @@ $(singletons [d|
 And we can write `collapseHallway` in terms of those instead :)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L105-L114
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L106-L115
 
 collapseHallway'
     :: Hallway ss
@@ -1034,7 +1039,7 @@ But what if we didn't write `sMergeStateList`, and we constructed our
 defunctionalization symbols from scratch?
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L116-L120
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L119-L123
 
 collapseHallway''
     :: Hallway ss
@@ -1101,7 +1106,7 @@ sing @MergeStateSym0            -- singletons 2.5
 And finally, we get our answer:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L122-L127
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L125-L130
 
 collapseSomeHallway'' :: SomeHallway -> SomeDoor
 collapseSomeHallway'' (ss :&: d) =
@@ -1200,7 +1205,7 @@ or `-Wall` to ensure that all of your functions are total!
     Remember `Knockable` from Part 3?
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L133-L135
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L136-L138
 
     data Knockable :: DoorState -> Type where
         KnockClosed :: Knockable 'Closed
@@ -1213,7 +1218,7 @@ or `-Wall` to ensure that all of your functions are total!
     I say yes, but don't take my word for it. Prove it using `Knockable`!
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L150-L153
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L153-L156
 
     mergedIsKnockable
         :: Knockable s
@@ -1247,7 +1252,7 @@ or `-Wall` to ensure that all of your functions are total!
     Next, for fun, use `appendHallways` to implement `appendSomeHallways`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L181
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L184
 
     type SomeHallway = Sigma [DoorState] (TyCon1 Hallway)
 
@@ -1350,7 +1355,7 @@ or `-Wall` to ensure that all of your functions are total!
     And construct a proof that `7` is odd:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L220-L220
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L223-L223
 
     sevenIsOdd :: IsOdd 7
     ```
@@ -1391,7 +1396,7 @@ or `-Wall` to ensure that all of your functions are total!
 6.  Make a `SomeHallway` from a list of `SomeDoor`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L227
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L230
 
     type SomeDoor = Sigma DoorState (TyCon1 Door)
 
