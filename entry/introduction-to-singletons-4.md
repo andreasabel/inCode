@@ -1,7 +1,7 @@
 Introduction to Singletons (Part 4)
 ===================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on October 22, 2018.
 > [Read online!](https://blog.jle.im/entry/introduction-to-singletons-4.html)
 
 Hi again! Welcome back; let's jump right into part 4 of our journey through the
@@ -1175,9 +1175,10 @@ Dissertation](https://github.com/goldfirere/thesis)!
 
 One day, hopefully, we won't need singletons to work with types at the
 value-level; we would just be able to directly pattern match and manipulate the
-types within the language. And some day, I hope we won't need any more dances
-with defunctionalization symbols to write higher-order functions at the type
-level --- maybe we'll have a nicer way to work with partially applied type-level
+types within the language and use them as first-class values, with a nice story
+for dependent sums. And some day, I hope we won't need any more dances with
+defunctionalization symbols to write higher-order functions at the type level
+--- maybe we'll have a nicer way to work with partially applied type-level
 functions (maybe they'll just be normal functions?), and we don't need to think
 any different about higher-order or first-order functions.
 
@@ -1194,9 +1195,10 @@ Exercises
 Here are your final exercises for this series! Start from [this sample source
 code](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs),
 which has all of the definitions that the exercises and their solutions require.
-Just make sure to delete all of the parts after the `-- Exercise` comment if you
-don't want to be spoiled! Remember again to enable `-Werror=incomplete-patterns`
-or `-Wall` to ensure that all of your functions are total!
+Just make sure to delete all of the parts after the `-- Exercises` comment if
+you don't want to be spoiled! Remember again to enable
+`-Werror=incomplete-patterns` or `-Wall` to ensure that all of your functions
+are total!
 
 1.  Let's try combining type families with proofs! In doing so, hopefully we can
     also see the value of using dependent proofs to show how we can manipulate
@@ -1419,6 +1421,9 @@ for me to devote time to researching and writing these posts. Very special
 thanks to my two supporters at the "Amazing" level on
 [patreon](https://www.patreon.com/justinle/overview), Sam Stites and Josh Vera!
 :)
+
+Thanks also to [Koz Ross](https://twitter.com/KozRoss) for helping proofread
+this post!
 
 --------------------------------------------------------------------------------
 
