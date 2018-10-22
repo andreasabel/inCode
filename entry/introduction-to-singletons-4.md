@@ -4,8 +4,8 @@ Introduction to Singletons (Part 4)
 > Originally posted by [Justin Le](https://blog.jle.im/).
 > [Read online!](https://blog.jle.im/entry/introduction-to-singletons-4.html)
 
-Hi again! Welcome back; let's jump right into part 4 of our journey through the
-*singleton design pattern* and the great
+Hi again! Welcome back; let's jump right into the fourth and final part of our
+journey through the *singleton design pattern* and the great
 *[singletons](http://hackage.haskell.org/package/singletons)* library!
 
 Please check out [the first three parts of the
