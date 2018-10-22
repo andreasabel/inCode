@@ -1,7 +1,7 @@
 Introduction to Singletons (Part 4)
 ===================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on October 22, 2018.
 > [Read online!](https://blog.jle.im/entry/introduction-to-singletons-4.html)
 
 Hi again! Welcome back; let's jump right into the fourth and final part of our
