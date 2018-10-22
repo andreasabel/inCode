@@ -1073,7 +1073,7 @@ sFoldr f z (x `SCons` xs) = (f @@ x) @@ sFoldr f z xs
 ```
 
 Where `(@@) :: Sing f -> Sing x -> Sing (f @@ x)` (or `applySing`) is the
-singleton/value-level counterpart of `Apply` or `(@@)`.\[\^slamda\]
+singleton/value-level counterpart of `Apply` or `(@@)`.[^1]
 
 So we can write:
 
@@ -1438,3 +1438,8 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: `(@@)` (and as we see shortly, the `singFun` functions) are all
+    implemented in terms of `SLambda`, the "singleton" for functions.
+    Understanding the details of the implementation of `SLambda` aren't
+    particularly important.
