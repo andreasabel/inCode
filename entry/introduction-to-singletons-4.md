@@ -967,7 +967,9 @@ read as essentially storing the `x`.
 We made `SomeDoor` pretty ad-hoc. But what if we wanted to make some other
 predicate? Well, we can make a *generic* dependent pair by *parameterizing it on
 the dependence* between the first and second field. Singletons provides the
-`Sigma` type, in the *Data.Singletons.Sigma* module:
+`Sigma` type, in the
+*[Data.Singletons.Sigma](http://hackage.haskell.org/package/singletons-2.5/docs/Data-Singletons-Sigma.html)*
+module:
 
 ``` {.haskell}
 data Sigma k :: (k ~> Type) -> Type where
