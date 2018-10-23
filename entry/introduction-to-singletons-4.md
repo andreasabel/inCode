@@ -717,7 +717,7 @@ general, the issue is that we should only expect type families to work with
 singletons if the definition of the type family perfectly matches the structure
 of how we implement our value-level functions like `collapseHallway`)
 
-### Singletons to to make things nicer
+### Singletons to make things nicer
 
 Admittedly this is all a huge mess of boilerplate. The code we had to write more
 than tripled, and we also have an unsightly number of defunctionalization
