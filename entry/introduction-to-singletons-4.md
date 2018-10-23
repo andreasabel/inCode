@@ -949,7 +949,9 @@ constructors* -- they're combinators that take in defunctionalization symbols
 Let's look at a nice tool that is made possible using defunctionalization
 symbols: *dependent pairs*. I talk a bit about dependent pairs (or dependent
 sums) in [part 2](https://blog.jle.im/entry/introduction-to-singletons-2.html)
-of this series, and also in my \[dependent types in Haskell\]\[dth\] series.
+of this series, and also in my [dependent types in
+Haskell](https://blog.jle.im/entry/practical-dependent-types-in-haskell-2.html)
+series.
 
 Essentially, a dependent pair is a tuple where the *type* of the second field
 depends on the *value* of the first one. This is basically what `SomeDoor` was:
