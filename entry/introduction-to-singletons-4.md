@@ -481,7 +481,7 @@ type f @@ a = Apply f a
 infixl 9 @@
 ```
 
-Then we can wrote:
+Then we can write:
 
 ``` {.haskell}
 ghci> :kind! Not @@ 'False
