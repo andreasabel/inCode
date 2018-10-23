@@ -1230,7 +1230,7 @@ are total.
     implementation!
 
     [Solution
-    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L101-L101)
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L151-L151)
 
 2.  Write a function to append two hallways together.
 
@@ -1261,7 +1261,7 @@ are total.
     ```
 
     [Solution
-    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L108-L108)
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L166-L166)
 
 3.  Can you use `Sigma` to define a door that must be knockable?
 
@@ -1280,7 +1280,7 @@ are total.
     `StatePass` type family).
 
     [Solutions
-    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L118-L118)
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L189-L189)
     I gave four different ways of doing it, for a full range of manual
     vs. auto-promoted defunctionalization symbols and `Knockable` vs.
     `Pass`-based methods.
@@ -1359,7 +1359,7 @@ are total.
     ```
 
     [Solution
-    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L165-L165)
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L217-L217)
 
     On a sad note, one exercise I'd like to be able to add is to ask you to
     write decision functions and proofs for `IsEven` and `IsOdd`. Unfortunately,
@@ -1389,7 +1389,7 @@ are total.
     You might find `TyCon2` helpful!
 
     [Solution
-    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L185-L185)
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L226-L226)
 
 6.  Make a `SomeHallway` from a list of `SomeDoor`:
 
@@ -1407,7 +1407,7 @@ are total.
     `SCons` (for `(:)`)!
 
     [Solution
-    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L185-L185)
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L226-L226)
 
 Special Thanks
 --------------
