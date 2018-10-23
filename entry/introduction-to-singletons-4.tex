@@ -96,7 +96,7 @@ Code}}.}
 
 Hi again! Welcome back; let's jump right into the fourth and final part of our
 journey through the \emph{singleton design pattern} and the great
-\emph{\href{http://hackage.haskell.org/package/singletons}{singletons}} library!
+\emph{\href{http://hackage.haskell.org/package/singletons}{singletons}} library.
 
 Please check out
 \href{https://blog.jle.im/entries/series/+introduction-to-singletons.html}{the
@@ -106,9 +106,7 @@ exercises, since we are going to be building on the concepts in those posts in a
 pretty heavy way.
 
 Today we're going to jump straight into \emph{functional programming} at the
-type level!
-
-Code in this post is built on \emph{GHC 8.6.1} with the
+type level. Code in this post is built on \emph{GHC 8.6.1} with the
 \emph{\href{https://www.stackage.org/nightly-2018-09-29}{nightly-2018-09-29}}
 snapshot (so, \emph{singletons-2.5}). However, unless noted, all of the code
 should still work with \emph{GHC 8.4} and \emph{singletons-2.4}.
@@ -271,7 +269,7 @@ closed, merging locked with closed is locked.
 \end{Highlighting}
 \end{Shaded}
 
-This makes writing \texttt{mergeDoor}'s type fairly straightforward!
+This makes writing \texttt{mergeDoor}'s type clean to read:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -319,12 +317,12 @@ And so now we have full expressiveness in determining input and output
 relationships! Once we unlock the power of type-level functions with
 \emph{singletons}, writing type-level relationships become as simple as writing
 value-level ones. If you can write a value-level function, you can write a
-type-level function!
+\emph{type-level} function.
 
 \hypertarget{kicking-it-up-a-notch}{%
 \subsection{Kicking it up a notch}\label{kicking-it-up-a-notch}}
 
-Alright, so let's see how far we can really take this!
+How far we can really take this?
 
 Let's make a data type that represents a \emph{series of hallways}, each linked
 by a door. A hallway is either an empty stretch with no door, or two hallways
@@ -406,17 +404,11 @@ With this, we can write \texttt{collapseHallway}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L49-L57}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L65-L67}
 
-\KeywordTok{data} \DataTypeTok{Hallway}\OtherTok{ ::}\NormalTok{ [}\DataTypeTok{DoorState}\NormalTok{] }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
-    \DataTypeTok{HEnd}\OtherTok{  ::} \DataTypeTok{Hallway}\NormalTok{ '[]        }\CommentTok{-- ^ end of the hallway, a stretch with no}
-                                \CommentTok{--   doors}
-\OtherTok{    (:<#) ::} \DataTypeTok{Door}\NormalTok{ s}
-          \OtherTok{->} \DataTypeTok{Hallway}\NormalTok{ ss}
-          \OtherTok{->} \DataTypeTok{Hallway}\NormalTok{ (s '}\FunctionTok{:}\NormalTok{ ss)  }\CommentTok{-- ^ A door connected to a hallway is a new}
-                                \CommentTok{--   hallway, and we track the door's state}
-                                \CommentTok{--   in the list of hallway door states}
-\KeywordTok{infixr} \DecValTok{5} \FunctionTok{:<#}
+\OtherTok{collapseHallway ::} \DataTypeTok{Hallway}\NormalTok{ ss }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ (}\DataTypeTok{MergeStateList}\NormalTok{ ss)}
+\NormalTok{collapseHallway }\DataTypeTok{HEnd}       \FunctionTok{=} \DataTypeTok{UnsafeMkDoor} \StringTok{"End of Hallway"}
+\NormalTok{collapseHallway (d }\FunctionTok{:<#}\NormalTok{ ds) }\FunctionTok{=}\NormalTok{ d }\OtherTok{`mergeDoor`}\NormalTok{ collapseHallway ds}
 \end{Highlighting}
 \end{Shaded}
 
@@ -471,7 +463,7 @@ higher-order functions make your code more readable.
 
 So, as Haskellers, let us hold ourselves to a higher standard and not be
 satisfied with a \texttt{MergeState} written using explicit recursion. Let us
-instead go \emph{full fold}! ONWARD HO!
+instead go \emph{full fold} --- ONWARD HO!
 
 \hypertarget{the-problem}{%
 \subsection{The Problem}\label{the-problem}}
@@ -871,7 +863,7 @@ functions. So what?
 Well, remember the problem with our implementation of \texttt{Foldr}? We
 couldn't pass in a type family, since type families must be passed fully
 applied. So, instead of having \texttt{Foldr} expect a type family\ldots{}we can
-make it expect a \emph{defunctionalization symbol} instead! Remember,
+make it expect a \emph{defunctionalization symbol} instead. Remember,
 defunctionalization symbols represent the ``unapplied'' versions of type
 families, so they are exactly the tools we need!
 
@@ -910,7 +902,7 @@ Now we just need to have our defunctionalization symbols for
 \end{Highlighting}
 \end{Shaded}
 
-And now we can write \texttt{MergeStateList}!
+And now we can write \texttt{MergeStateList}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -989,7 +981,7 @@ defunctionalization symbol
 \texttt{a\ \textasciitilde{}\textgreater{}\ b\ \textasciitilde{}\textgreater{}\ b}.
 
 That the template haskell also generates \texttt{SingI} instances for all of
-your defunctionalization symbols, too --- more on that in a bit!
+your defunctionalization symbols, too (more on that in a bit).
 
 It's okay to stay ``in the world of singletons'' for the most part, and let
 singletons handle the composition of functions for you. However, it's still
@@ -1161,7 +1153,7 @@ based on other ones in a compositional way. This is the basis of libraries like
 
 For example, suppose we wanted to build defunctionalization symbols for
 \texttt{MergeStateList}. We can actually build them directly from
-defunctionalization symbols for \texttt{Foldr}!
+defunctionalization symbols for \texttt{Foldr}.
 
 Check out the defunctionalization symbols for \texttt{Foldr}:
 
@@ -1285,7 +1277,7 @@ That's because a \texttt{Sigma\ DoorState\ (TyCon1\ Door)} contains a
 
 This is a simple relationship, but one can imagine a \texttt{Sigma}
 parameterized on an even more complex type-level function. We'll explore more of
-these in the exercises!
+these in the exercises.
 
 For some context, \texttt{Sigma} is an interesting data type (the ``dependent
 sum'') that is ubiquitous in dependently typed programming.
@@ -1454,12 +1446,12 @@ stack scripts that you can load into ghci. Just execute the scripts:
 \end{Highlighting}
 \end{Shaded}
 
-And you'll be dropped into a ghci session with all of the definitions in scope!
+And you'll be dropped into a ghci session with all of the definitions in scope.
 
 As always, please try out the exercises, which are designed to help solidify the
 concepts we went over here! And if you ever have any future questions, feel free
 to leave a comment or find me on \href{https://twitter.com/mstk}{twitter} or in
-freenode \texttt{\#haskell}, where I idle as \emph{jle`}!
+freenode \texttt{\#haskell}, where I idle as \emph{jle`}.
 
 \hypertarget{looking-forward}{%
 \subsection{Looking Forward}\label{looking-forward}}
@@ -1503,9 +1495,9 @@ Here are your final exercises for this series! Start from
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs}{this
 sample source code}, which has all of the definitions that the exercises and
 their solutions require. Just make sure to delete all of the parts after the
-\texttt{-\/-\ Exercises} comment if you don't want to be spoiled! Remember again
+\texttt{-\/-\ Exercises} comment if you don't want to be spoiled. Remember again
 to enable \texttt{-Werror=incomplete-patterns} or \texttt{-Wall} to ensure that
-all of your functions are total!
+all of your functions are total.
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -1560,9 +1552,8 @@ all of your functions are total!
 \end{Highlighting}
 \end{Shaded}
 
-  Try to figure out what \texttt{???} should be. Try not to use any type
-  families from \emph{singletons} --- implement any type families you might need
-  from scratch!
+  from \emph{singletons} --- implement any type families you might need from
+  scratch!
 
   Remember the important principle that your type family must mirror the
   implementation of the functions that use it.

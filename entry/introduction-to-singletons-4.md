@@ -6,7 +6,7 @@ Introduction to Singletons (Part 4)
 
 Hi again! Welcome back; let's jump right into the fourth and final part of our
 journey through the *singleton design pattern* and the great
-*[singletons](http://hackage.haskell.org/package/singletons)* library!
+*[singletons](http://hackage.haskell.org/package/singletons)* library.
 
 Please check out [the first three parts of the
 series](https://blog.jle.im/entries/series/+introduction-to-singletons.html) and
@@ -15,9 +15,7 @@ recommend trying out some or all of the exercises, since we are going to be
 building on the concepts in those posts in a pretty heavy way.
 
 Today we're going to jump straight into *functional programming* at the type
-level!
-
-Code in this post is built on *GHC 8.6.1* with the
+level. Code in this post is built on *GHC 8.6.1* with the
 *[nightly-2018-09-29](https://www.stackage.org/nightly-2018-09-29)* snapshot
 (so, *singletons-2.5*). However, unless noted, all of the code should still work
 with *GHC 8.4* and *singletons-2.4*.
@@ -159,7 +157,7 @@ $(singletons [d|
   |])
 ```
 
-This makes writing `mergeDoor`'s type fairly straightforward!
+This makes writing `mergeDoor`'s type clean to read:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L39-L43
@@ -201,11 +199,11 @@ And so now we have full expressiveness in determining input and output
 relationships! Once we unlock the power of type-level functions with
 *singletons*, writing type-level relationships become as simple as writing
 value-level ones. If you can write a value-level function, you can write a
-type-level function!
+*type-level* function.
 
 ### Kicking it up a notch
 
-Alright, so let's see how far we can really take this!
+How far we can really take this?
 
 Let's make a data type that represents a *series of hallways*, each linked by a
 door. A hallway is either an empty stretch with no door, or two hallways linked
@@ -275,17 +273,11 @@ singleton function `sMergeStateList :: Sing ss -> Sing (MergeStateList ss)`.
 With this, we can write `collapseHallway`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L49-L57
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L65-L67
 
-data Hallway :: [DoorState] -> Type where
-    HEnd  :: Hallway '[]        -- ^ end of the hallway, a stretch with no
-                                --   doors
-    (:<#) :: Door s
-          -> Hallway ss
-          -> Hallway (s ': ss)  -- ^ A door connected to a hallway is a new
-                                --   hallway, and we track the door's state
-                                --   in the list of hallway door states
-infixr 5 :<#
+collapseHallway :: Hallway ss -> Door (MergeStateList ss)
+collapseHallway HEnd       = UnsafeMkDoor "End of Hallway"
+collapseHallway (d :<# ds) = d `mergeDoor` collapseHallway ds
 ```
 
 Now, because the structure of `collapseHallway` perfectly mirrors the structure
@@ -331,7 +323,7 @@ higher-order functions make your code more readable.
 
 So, as Haskellers, let us hold ourselves to a higher standard and not be
 satisfied with a `MergeState` written using explicit recursion. Let us instead
-go *full fold*! ONWARD HO!
+go *full fold* --- ONWARD HO!
 
 ### The Problem
 
@@ -656,7 +648,7 @@ functions. So what?
 Well, remember the problem with our implementation of `Foldr`? We couldn't pass
 in a type family, since type families must be passed fully applied. So, instead
 of having `Foldr` expect a type family...we can make it expect a
-*defunctionalization symbol* instead! Remember, defunctionalization symbols
+*defunctionalization symbol* instead. Remember, defunctionalization symbols
 represent the "unapplied" versions of type families, so they are exactly the
 tools we need!
 
@@ -689,7 +681,7 @@ type instance Apply (MergeStateSym1 s) t = MergeState s t
 type MergeStateSym2 s t = MergeState s t
 ```
 
-And now we can write `MergeStateList`!
+And now we can write `MergeStateList`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Defunctionalization.hs#L62-L62
@@ -755,7 +747,7 @@ is also able to recognize that `foldr` is a higher-order function and translate
 its lifted version to take a defunctionalization symbol `a ~> b ~> b`.
 
 That the template haskell also generates `SingI` instances for all of your
-defunctionalization symbols, too --- more on that in a bit!
+defunctionalization symbols, too (more on that in a bit).
 
 It's okay to stay "in the world of singletons" for the most part, and let
 singletons handle the composition of functions for you. However, it's still
@@ -906,7 +898,7 @@ based on other ones in a compositional way. This is the basis of libraries like
 
 For example, suppose we wanted to build defunctionalization symbols for
 `MergeStateList`. We can actually build them directly from defunctionalization
-symbols for `Foldr`!
+symbols for `Foldr`.
 
 Check out the defunctionalization symbols for `Foldr`:
 
@@ -1007,7 +999,7 @@ That's because a `Sigma DoorState (TyCon1 Door)` contains a
 
 This is a simple relationship, but one can imagine a `Sigma` parameterized on an
 even more complex type-level function. We'll explore more of these in the
-exercises!
+exercises.
 
 For some context, `Sigma` is an interesting data type (the "dependent sum") that
 is ubiquitous in dependently typed programming.
@@ -1149,12 +1141,12 @@ $ ./Door4Final.hs
 ghci>
 ```
 
-And you'll be dropped into a ghci session with all of the definitions in scope!
+And you'll be dropped into a ghci session with all of the definitions in scope.
 
 As always, please try out the exercises, which are designed to help solidify the
 concepts we went over here! And if you ever have any future questions, feel free
 to leave a comment or find me on [twitter](https://twitter.com/mstk "Twitter")
-or in freenode `#haskell`, where I idle as *jle\`*!
+or in freenode `#haskell`, where I idle as *jle\`*.
 
 ### Looking Forward
 
@@ -1197,9 +1189,9 @@ Here are your final exercises for this series! Start from [this sample source
 code](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs),
 which has all of the definitions that the exercises and their solutions require.
 Just make sure to delete all of the parts after the `-- Exercises` comment if
-you don't want to be spoiled! Remember again to enable
+you don't want to be spoiled. Remember again to enable
 `-Werror=incomplete-patterns` or `-Wall` to ensure that all of your functions
-are total!
+are total.
 
 1.  Let's try combining type families with proofs! In doing so, hopefully we can
     also see the value of using dependent proofs to show how we can manipulate
@@ -1245,7 +1237,6 @@ are total!
         -> Hallway ????
     ```
 
-    Try to figure out what `???` should be. Try not to use any type families
     from *singletons* --- implement any type families you might need from
     scratch!
 
