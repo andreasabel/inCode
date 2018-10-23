@@ -1417,8 +1417,8 @@ are total!
 Special Thanks
 --------------
 
-None of this post would be made possible without the hard work and effort of the
-amazing *singletons* library maintainers --- especially [Richard
+None of this entire series would be possible without the hard work and effort of
+the amazing *singletons* library authors and maintainers --- especially [Richard
 Eisenberg](https://github.com/goldfirere) and [Ryan
 Scott](https://github.com/RyanGlScott).
 
