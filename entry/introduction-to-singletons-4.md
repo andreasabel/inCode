@@ -1183,10 +1183,10 @@ defunctionalization symbols to write higher-order functions at the type level
 functions (maybe they'll just be normal functions?), and we don't need to think
 any different about higher-order or first-order functions.
 
-So, as a final word --- Happy Haskelling, everyone! May you leverage
-*singletons* to its full potential, and may we also all dream of a day where
-*singletons* becomes obsolete. But may we all enjoy the wonderful journey along
-the way.
+So, as a final word --- Happy Haskelling, everyone! May you leverage the great
+*singletons* library to its full potential, and may we also all dream of a day
+where *singletons* becomes obsolete. But may we all enjoy the wonderful journey
+along the way.
 
 Until next time!
 
@@ -1416,6 +1416,11 @@ are total!
 
 Special Thanks
 --------------
+
+None of this post would be made possible without the hard work and effort of the
+amazing *singletons* library maintainers --- especially [Richard
+Eisenberg](https://github.com/goldfirere) and [Ryan
+Scott](https://github.com/RyanGlScott).
 
 I am very humbled to be supported by an amazing community, who make it possible
 for me to devote time to researching and writing these posts. Very special
