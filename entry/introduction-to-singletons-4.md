@@ -99,7 +99,7 @@ manipulate the singletons representing `s` and `StatePass s`.
 We used this as a constraint to restrict how we can call our functions:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L86-L87
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door3.hs#L89-L90
 
 knockP :: (StatePass s ~ 'Obstruct) => Door s -> IO ()
 knockP d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
