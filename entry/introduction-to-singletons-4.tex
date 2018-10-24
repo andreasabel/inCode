@@ -119,7 +119,7 @@ Just as a quick review, this entire series we have been working with a
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L23-L29}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L23-L32}
 
 \FunctionTok{$}\NormalTok{(singletons [d|}
 \NormalTok{  data DoorState = Opened | Closed | Locked}
@@ -128,6 +128,9 @@ Just as a quick review, this entire series we have been working with a
 
 \KeywordTok{data} \DataTypeTok{Door}\OtherTok{ ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{UnsafeMkDoor}\OtherTok{ ::}\NormalTok{ \{}\OtherTok{ doorMaterial ::} \DataTypeTok{String}\NormalTok{ \} }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ s}
+
+\OtherTok{mkDoor ::} \DataTypeTok{Sing}\NormalTok{ s }\OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Door}\NormalTok{ s}
+\NormalTok{mkDoor _ }\FunctionTok{=} \DataTypeTok{UnsafeMkDoor}
 \end{Highlighting}
 \end{Shaded}
 
@@ -143,7 +146,7 @@ a singleton to let us recover the type information once we want it again:
 
 \OtherTok{mkSomeDoor ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{SomeDoor}
 \NormalTok{mkSomeDoor ds mat }\FunctionTok{=}\NormalTok{ withSomeSing ds }\FunctionTok{$}\NormalTok{ \textbackslash{}dsSing }\OtherTok{->}
-    \DataTypeTok{MkSomeDoor}\NormalTok{ dsSing (}\DataTypeTok{UnsafeMkDoor}\NormalTok{ mat)}
+    \DataTypeTok{MkSomeDoor}\NormalTok{ dsSing (mkDoor dsSing mat)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -273,7 +276,7 @@ This makes writing \texttt{mergeDoor}'s type clean to read:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L39-L43}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L42-L46}
 
 \NormalTok{mergeDoor}
 \OtherTok{    ::} \DataTypeTok{Door}\NormalTok{ s}
@@ -288,7 +291,7 @@ don't know the types until runtime:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L45-L47}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L48-L50}
 
 \OtherTok{mergeSomeDoor ::} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{SomeDoor} \OtherTok{->} \DataTypeTok{SomeDoor}
 \NormalTok{mergeSomeDoor (}\DataTypeTok{MkSomeDoor}\NormalTok{ s d) (}\DataTypeTok{MkSomeDoor}\NormalTok{ t e) }\FunctionTok{=}
@@ -331,7 +334,7 @@ all door states as a type-level list as a type parameter:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L49-L57}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L52-L60}
 
 \KeywordTok{data} \DataTypeTok{Hallway}\OtherTok{ ::}\NormalTok{ [}\DataTypeTok{DoorState}\NormalTok{] }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{HEnd}\OtherTok{  ::} \DataTypeTok{Hallway}\NormalTok{ '[]        }\CommentTok{-- ^ end of the hallway, a stretch with no}
@@ -355,9 +358,9 @@ So we might have:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ door1 }\FunctionTok{=} \DataTypeTok{UnsafeMkDoor} \FunctionTok{@}\NormalTok{'}\DataTypeTok{Closed} \StringTok{"Oak"}
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ door2 }\FunctionTok{=} \DataTypeTok{UnsafeMkDoor} \FunctionTok{@}\NormalTok{'}\DataTypeTok{Opened} \StringTok{"Spruce"}
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ door3 }\FunctionTok{=} \DataTypeTok{UnsafeMkDoor} \FunctionTok{@}\NormalTok{'}\DataTypeTok{Locked} \StringTok{"Acacia"}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ door1 }\FunctionTok{=}\NormalTok{ mkDoor }\DataTypeTok{SClosed} \StringTok{"Oak"}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ door2 }\FunctionTok{=}\NormalTok{ mkDoor }\DataTypeTok{SOpened} \StringTok{"Spruce"}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ door3 }\FunctionTok{=}\NormalTok{ mkDoor }\DataTypeTok{SLocked} \StringTok{"Acacia"}
 \NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t door1 }\FunctionTok{:<#}\NormalTok{ door2 }\FunctionTok{:<#}\NormalTok{ door3 }\FunctionTok{:<#} \DataTypeTok{HEnd}
 \DataTypeTok{Hallway}\NormalTok{ '[ '}\DataTypeTok{Closed}\NormalTok{, '}\DataTypeTok{Opened}\NormalTok{, '}\DataTypeTok{Locked}\NormalTok{ ]}
 \end{Highlighting}
@@ -404,10 +407,10 @@ With this, we can write \texttt{collapseHallway}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L65-L67}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L68-L70}
 
 \OtherTok{collapseHallway ::} \DataTypeTok{Hallway}\NormalTok{ ss }\OtherTok{->} \DataTypeTok{Door}\NormalTok{ (}\DataTypeTok{MergeStateList}\NormalTok{ ss)}
-\NormalTok{collapseHallway }\DataTypeTok{HEnd}       \FunctionTok{=} \DataTypeTok{UnsafeMkDoor} \StringTok{"End of Hallway"}
+\NormalTok{collapseHallway }\DataTypeTok{HEnd}       \FunctionTok{=}\NormalTok{ mkDoor }\DataTypeTok{SOpened} \StringTok{"End of Hallway"}
 \NormalTok{collapseHallway (d }\FunctionTok{:<#}\NormalTok{ ds) }\FunctionTok{=}\NormalTok{ d }\OtherTok{`mergeDoor`}\NormalTok{ collapseHallway ds}
 \end{Highlighting}
 \end{Shaded}
@@ -1088,7 +1091,7 @@ And we can write \texttt{collapseHallway} in terms of those instead :)
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L106-L115}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L109-L118}
 
 \NormalTok{collapseHallway'}
 \OtherTok{    ::} \DataTypeTok{Hallway}\NormalTok{ ss}
@@ -1261,13 +1264,13 @@ We can actually define \texttt{SomeDoor} in terms of \texttt{Sigma}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L55}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L54-L58}
 
 \KeywordTok{type} \DataTypeTok{SomeDoor} \FunctionTok{=} \DataTypeTok{Sigma} \DataTypeTok{DoorState}\NormalTok{ (}\DataTypeTok{TyCon1} \DataTypeTok{Door}\NormalTok{)}
 
 \OtherTok{mkSomeDoor ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{SomeDoor}
 \NormalTok{mkSomeDoor ds mat }\FunctionTok{=}\NormalTok{ withSomeSing ds }\FunctionTok{$}\NormalTok{ \textbackslash{}dsSing }\OtherTok{->}
-\NormalTok{    dsSing }\FunctionTok{:&:} \DataTypeTok{UnsafeMkDoor}\NormalTok{ mat}
+\NormalTok{    dsSing }\FunctionTok{:&:}\NormalTok{ mkDoor dsSing mat}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1297,7 +1300,7 @@ Luckily, we now have a \texttt{SomeHallway} type for free:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L81}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L84-L84}
 
 \KeywordTok{type} \DataTypeTok{SomeHallway} \FunctionTok{=} \DataTypeTok{Sigma}\NormalTok{ [}\DataTypeTok{DoorState}\NormalTok{] (}\DataTypeTok{TyCon1} \DataTypeTok{Hallway}\NormalTok{)}
 \end{Highlighting}
@@ -1307,7 +1310,7 @@ The easy way would be to just use \texttt{sMergeStateList} that we defined:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L83-L85}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L86-L88}
 
 \OtherTok{collapseSomeHallway ::} \DataTypeTok{SomeHallway} \OtherTok{->} \DataTypeTok{SomeDoor}
 \NormalTok{collapseSomeHallway (ss }\FunctionTok{:&:}\NormalTok{ d) }\FunctionTok{=}\NormalTok{ sMergeStateList ss}
@@ -1320,7 +1323,7 @@ defunctionalization symbols from scratch?
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L119-L123}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L122-L126}
 
 \NormalTok{collapseHallway''}
 \OtherTok{    ::} \DataTypeTok{Hallway}\NormalTok{ ss}
@@ -1404,7 +1407,7 @@ And finally, we get our answer:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L125-L130}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L128-L133}
 
 \OtherTok{collapseSomeHallway'' ::} \DataTypeTok{SomeHallway} \OtherTok{->} \DataTypeTok{SomeDoor}
 \NormalTok{collapseSomeHallway'' (ss }\FunctionTok{:&:}\NormalTok{ d) }\FunctionTok{=}
@@ -1514,7 +1517,7 @@ all of your functions are total.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L136-L138}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L139-L141}
 
 \KeywordTok{data} \DataTypeTok{Knockable}\OtherTok{ ::} \DataTypeTok{DoorState} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{KnockClosed}\OtherTok{ ::} \DataTypeTok{Knockable}\NormalTok{ '}\DataTypeTok{Closed}
@@ -1529,7 +1532,7 @@ all of your functions are total.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L153-L156}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L156-L159}
 
 \NormalTok{mergedIsKnockable}
 \OtherTok{    ::} \DataTypeTok{Knockable}\NormalTok{ s}
@@ -1542,7 +1545,7 @@ all of your functions are total.
   DoorStates that are knockable is also knockable. See if you can write the
   implementation!
 
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs\#L151-L151}{Solution
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs\#L154-L154}{Solution
   here!}
 \item
   Write a function to append two hallways together.
@@ -1567,7 +1570,7 @@ all of your functions are total.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L184}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L84-L187}
 
 \KeywordTok{type} \DataTypeTok{SomeHallway} \FunctionTok{=} \DataTypeTok{Sigma}\NormalTok{ [}\DataTypeTok{DoorState}\NormalTok{] (}\DataTypeTok{TyCon1} \DataTypeTok{Hallway}\NormalTok{)}
 
@@ -1578,7 +1581,7 @@ all of your functions are total.
 \end{Highlighting}
 \end{Shaded}
 
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs\#L166-L166}{Solution
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs\#L169-L169}{Solution
   here!}
 \item
   Can you use \texttt{Sigma} to define a door that must be knockable?
@@ -1600,7 +1603,7 @@ all of your functions are total.
   \texttt{Knockable} data type) and for (b) the type family version (with the
   \texttt{StatePass} type family).
 
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs\#L189-L189}{Solutions
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs\#L192-L192}{Solutions
   here!} I gave four different ways of doing it, for a full range of manual
   vs.~auto-promoted defunctionalization symbols and \texttt{Knockable} vs.
   \texttt{Pass}-based methods.
@@ -1689,13 +1692,13 @@ all of your functions are total.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L223-L223}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L226-L226}
 
 \OtherTok{sevenIsOdd ::} \DataTypeTok{IsOdd} \DecValTok{7}
 \end{Highlighting}
 \end{Shaded}
 
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs\#L217-L217}{Solution
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs\#L220-L220}{Solution
   here!}
 
   On a sad note, one exercise I'd like to be able to add is to ask you to write
@@ -1731,14 +1734,14 @@ all of your functions are total.
   \emph{\href{http://hackage.haskell.org/package/singletons-2.5/docs/Data-Singletons-Prelude.html}{Data.Singletons.Prelude}}.
   You might find \texttt{TyCon2} helpful!
 
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs\#L226-L226}{Solution
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs\#L229-L229}{Solution
   here!}
 \item
   Make a \texttt{SomeHallway} from a list of \texttt{SomeDoor}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L230}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L54-L233}
 
 \KeywordTok{type} \DataTypeTok{SomeDoor} \FunctionTok{=} \DataTypeTok{Sigma} \DataTypeTok{DoorState}\NormalTok{ (}\DataTypeTok{TyCon1} \DataTypeTok{Door}\NormalTok{)}
 
@@ -1751,7 +1754,7 @@ all of your functions are total.
   Remember that the singleton constructors for list are \texttt{SNil} (for
   \texttt{{[}{]}}) and \texttt{SCons} (for \texttt{(:)})!
 
-  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs\#L226-L226}{Solution
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs\#L229-L229}{Solution
   here!}
 \end{enumerate}
 

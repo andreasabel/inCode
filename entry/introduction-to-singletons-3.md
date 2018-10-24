@@ -77,7 +77,7 @@ data SomeDoor :: Type where
 
 mkSomeDoor :: DoorState -> String -> SomeDoor
 mkSomeDoor ds mat = withSomeSing ds $ \dsSing ->
-    MkSomeDoor dsSing (UnsafeMkDoor mat)
+    MkSomeDoor dsSing (mkDoor dsSing mat)
 ```
 
 (We must be careful to pack the `Sing s` with the `Door s`, so that we can

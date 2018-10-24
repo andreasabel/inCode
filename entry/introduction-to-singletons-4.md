@@ -27,7 +27,7 @@ Just as a quick review, this entire series we have been working with a `Door`
 type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L23-L29
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L23-L32
 
 $(singletons [d|
   data DoorState = Opened | Closed | Locked
@@ -36,6 +36,9 @@ $(singletons [d|
 
 data Door :: DoorState -> Type where
     UnsafeMkDoor :: { doorMaterial :: String } -> Door s
+
+mkDoor :: Sing s -> String -> Door s
+mkDoor _ = UnsafeMkDoor
 ```
 
 And we talked about using `Sing s`, or `SDoorState s`, to represent the state of
@@ -49,7 +52,7 @@ data SomeDoor :: Type where
 
 mkSomeDoor :: DoorState -> String -> SomeDoor
 mkSomeDoor ds mat = withSomeSing ds $ \dsSing ->
-    MkSomeDoor dsSing (UnsafeMkDoor mat)
+    MkSomeDoor dsSing (mkDoor dsSing mat)
 ```
 
 In Part 3 we talked about a `Pass` data type that we used to talk about whether
@@ -160,7 +163,7 @@ $(singletons [d|
 This makes writing `mergeDoor`'s type clean to read:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L39-L43
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L42-L46
 
 mergeDoor
     :: Door s
@@ -173,7 +176,7 @@ And, with the help of singletons, we can also write this for our doors where we
 don't know the types until runtime:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L45-L47
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L48-L50
 
 mergeSomeDoor :: SomeDoor -> SomeDoor -> SomeDoor
 mergeSomeDoor (MkSomeDoor s d) (MkSomeDoor t e) =
@@ -211,7 +214,7 @@ by a door. We'll structure it like a linked list, and store the list of all door
 states as a type-level list as a type parameter:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L49-L57
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L52-L60
 
 data Hallway :: [DoorState] -> Type where
     HEnd  :: Hallway '[]        -- ^ end of the hallway, a stretch with no
@@ -233,9 +236,9 @@ and [Exercise 4 in Part
 So we might have:
 
 ``` {.haskell}
-ghci> let door1 = UnsafeMkDoor @'Closed "Oak"
-ghci> let door2 = UnsafeMkDoor @'Opened "Spruce"
-ghci> let door3 = UnsafeMkDoor @'Locked "Acacia"
+ghci> let door1 = mkDoor SClosed "Oak"
+ghci> let door2 = mkDoor SOpened "Spruce"
+ghci> let door3 = mkDoor SLocked "Acacia"
 ghci> :t door1 :<# door2 :<# door3 :<# HEnd
 Hallway '[ 'Closed, 'Opened, 'Locked ]
 ```
@@ -273,10 +276,10 @@ singleton function `sMergeStateList :: Sing ss -> Sing (MergeStateList ss)`.
 With this, we can write `collapseHallway`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L65-L67
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L68-L70
 
 collapseHallway :: Hallway ss -> Door (MergeStateList ss)
-collapseHallway HEnd       = UnsafeMkDoor "End of Hallway"
+collapseHallway HEnd       = mkDoor SOpened "End of Hallway"
 collapseHallway (d :<# ds) = d `mergeDoor` collapseHallway ds
 ```
 
@@ -837,7 +840,7 @@ $(singletons [d|
 And we can write `collapseHallway` in terms of those instead :)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L106-L115
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L109-L118
 
 collapseHallway'
     :: Hallway ss
@@ -986,13 +989,13 @@ parameterized on an arbitrary function `f` and have it hold an `f @@ x`.
 We can actually define `SomeDoor` in terms of `Sigma`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L55
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L54-L58
 
 type SomeDoor = Sigma DoorState (TyCon1 Door)
 
 mkSomeDoor :: DoorState -> String -> SomeDoor
 mkSomeDoor ds mat = withSomeSing ds $ \dsSing ->
-    dsSing :&: UnsafeMkDoor mat
+    dsSing :&: mkDoor dsSing mat
 ```
 
 (Remember `TyCon1` is the defunctionalization symbol constructor that turns any
@@ -1016,7 +1019,7 @@ that we don't know the types of the doors.
 Luckily, we now have a `SomeHallway` type for free:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L81
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L84-L84
 
 type SomeHallway = Sigma [DoorState] (TyCon1 Hallway)
 ```
@@ -1024,7 +1027,7 @@ type SomeHallway = Sigma [DoorState] (TyCon1 Hallway)
 The easy way would be to just use `sMergeStateList` that we defined:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L83-L85
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L86-L88
 
 collapseSomeHallway :: SomeHallway -> SomeDoor
 collapseSomeHallway (ss :&: d) = sMergeStateList ss
@@ -1035,7 +1038,7 @@ But what if we didn't write `sMergeStateList`, and we constructed our
 defunctionalization symbols from scratch?
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L119-L123
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L122-L126
 
 collapseHallway''
     :: Hallway ss
@@ -1102,7 +1105,7 @@ sing @MergeStateSym0            -- singletons 2.5
 And finally, we get our answer:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L125-L130
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L128-L133
 
 collapseSomeHallway'' :: SomeHallway -> SomeDoor
 collapseSomeHallway'' (ss :&: d) =
@@ -1204,7 +1207,7 @@ are total.
     Remember `Knockable` from Part 3?
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L136-L138
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L139-L141
 
     data Knockable :: DoorState -> Type where
         KnockClosed :: Knockable 'Closed
@@ -1217,7 +1220,7 @@ are total.
     I say yes, but don't take my word for it. Prove it using `Knockable`!
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L153-L156
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L156-L159
 
     mergedIsKnockable
         :: Knockable s
@@ -1230,7 +1233,7 @@ are total.
     implementation!
 
     [Solution
-    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L151-L151)
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L154-L154)
 
 2.  Write a function to append two hallways together.
 
@@ -1250,7 +1253,7 @@ are total.
     Next, for fun, use `appendHallways` to implement `appendSomeHallways`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L81-L184
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L84-L187
 
     type SomeHallway = Sigma [DoorState] (TyCon1 Hallway)
 
@@ -1261,7 +1264,7 @@ are total.
     ```
 
     [Solution
-    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L166-L166)
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L169-L169)
 
 3.  Can you use `Sigma` to define a door that must be knockable?
 
@@ -1280,7 +1283,7 @@ are total.
     `StatePass` type family).
 
     [Solutions
-    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L189-L189)
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L192-L192)
     I gave four different ways of doing it, for a full range of manual
     vs. auto-promoted defunctionalization symbols and `Knockable` vs.
     `Pass`-based methods.
@@ -1353,13 +1356,13 @@ are total.
     And construct a proof that `7` is odd:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L223-L223
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L226-L226
 
     sevenIsOdd :: IsOdd 7
     ```
 
     [Solution
-    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L217-L217)
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L220-L220)
 
     On a sad note, one exercise I'd like to be able to add is to ask you to
     write decision functions and proofs for `IsEven` and `IsOdd`. Unfortunately,
@@ -1389,12 +1392,12 @@ are total.
     You might find `TyCon2` helpful!
 
     [Solution
-    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L226-L226)
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L229-L229)
 
 6.  Make a `SomeHallway` from a list of `SomeDoor`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L51-L230
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L54-L233
 
     type SomeDoor = Sigma DoorState (TyCon1 Door)
 
@@ -1407,7 +1410,7 @@ are total.
     `SCons` (for `(:)`)!
 
     [Solution
-    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L226-L226)
+    here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L229-L229)
 
 Special Thanks
 --------------
