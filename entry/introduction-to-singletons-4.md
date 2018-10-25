@@ -1445,4 +1445,4 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 [^1]: `(@@)` (and as we see shortly, the `singFun` functions) are all
     implemented in terms of `SLambda`, the "singleton" for functions.
     Understanding the details of the implementation of `SLambda` aren't
-    particularly important.
+    particularly important for the purposes of this introduction.
