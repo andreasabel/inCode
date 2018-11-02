@@ -196,7 +196,7 @@ First, we'll define the types we need to specify our state:
 \FunctionTok{$}\NormalTok{(singletons [d|}
 \NormalTok{  data Piece = PX | PO}
 \NormalTok{    deriving (Eq, Ord)}
-  
+
 \NormalTok{  type Board = [[Maybe Piece]]}
 \NormalTok{  |])}
 \end{Highlighting}
@@ -310,7 +310,7 @@ particular, we need:
 \end{enumerate}
 
 \hypertarget{update}{%
-\section{Update}\label{update}}
+\subsection{Update}\label{update}}
 
 Let's go about what thinking about what defines a valid update. Remember, the
 kind we wanted was:
@@ -408,7 +408,7 @@ it means that the ``final board'' is fully determined from only \texttt{i},
 \texttt{j}, \texttt{p}, and \texttt{b}.
 
 \hypertarget{coord}{%
-\subsection{Coord}\label{coord}}
+\subsubsection{Coord}\label{coord}}
 
 Now we need to define \texttt{Coord}. We're going to do that in terms of a
 simpler type that is essentially the same for normal lists --- a type:
@@ -534,57 +534,97 @@ However, in order to be used with \texttt{MkUpdate}, the final field has to be
 \texttt{\textquotesingle{}Nothing}, not
 \texttt{\textquotesingle{}Just\ \textquotesingle{}PX}. So, type error.
 
-We can also use this with \texttt{GameState}, using \texttt{undefined} as a
-placeholder for our \texttt{InPlay} witness, since we haven't defined it yet:
+\hypertarget{type-safe-play}{%
+\subsection{Type-safe Play}\label{type-safe-play}}
+
+At the end of this all, we finally have enough to write a truly type-safe
+\texttt{play} function that allows us to play a round of our game!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t }\DataTypeTok{GSStart}
-\DataTypeTok{GameState}
-\NormalTok{    '}\DataTypeTok{PX}
-\NormalTok{    '[ '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
-\NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
-\NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
-\NormalTok{     ]}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L100-L106}
 
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ s1 }\FunctionTok{=} \DataTypeTok{GSUpdate}\NormalTok{ undefined (}\DataTypeTok{MkUpdate}\NormalTok{ (}\DataTypeTok{SelS} \DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{))}
-             \FunctionTok{$} \DataTypeTok{GSStart}
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t s1}
-\DataTypeTok{GameState}
-\NormalTok{    '}\DataTypeTok{PO}         \CommentTok{-- Player switches correclty!}
+\NormalTok{play}
+\OtherTok{    ::}\NormalTok{ forall i j p b}\FunctionTok{.}\NormalTok{ ()}
+    \OtherTok{=>} \DataTypeTok{InPlay} \FunctionTok{@@}\NormalTok{ b}
+    \OtherTok{->} \DataTypeTok{Coord}\NormalTok{ '(i, j) b '}\DataTypeTok{Nothing}
+    \OtherTok{->} \DataTypeTok{GameState}\NormalTok{ p b}
+    \OtherTok{->} \DataTypeTok{GameState}\NormalTok{ (}\DataTypeTok{AltP}\NormalTok{ p) (}\DataTypeTok{PlaceBoard}\NormalTok{ i j p b)}
+\NormalTok{play r c }\FunctionTok{=} \DataTypeTok{GSUpdate}\NormalTok{ r (}\DataTypeTok{MkUpdate}\NormalTok{ c)}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{play} is basically the entirety of our game engine! (Minus defining
+\texttt{InPlay}, which we will take care of later). It'll take our new move and
+a proof that the game is still in play, and return a updated new game state. Our
+entire game is done, and type-safe! It's impossible to play a game in an
+incorrect way! (once we define \texttt{InPlay}).
+
+Let's try out a few rounds in ghci, using \texttt{undefined} instead of a proper
+\texttt{InPlay} for now:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ g1 }\FunctionTok{=}\NormalTok{ play undefined (}\DataTypeTok{SelS} \DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{) }\DataTypeTok{GSStart}   \CommentTok{-- X plays (1,1)}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t g1}
+\DataTypeTok{GameState}\NormalTok{ '}\DataTypeTok{PO}
 \NormalTok{    '[ '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
 \NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
 \NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
 \NormalTok{     ]}
 
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ s2 }\FunctionTok{=} \DataTypeTok{GSUpdate}\NormalTok{ undefined (}\DataTypeTok{MkUpdate}\NormalTok{ (}\DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelZ}\NormalTok{))}
-             \FunctionTok{$}\NormalTok{ s1}
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t s2}
-\DataTypeTok{GameState}
-\NormalTok{    '}\DataTypeTok{PX}
-\NormalTok{    '[ '[ '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PO}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
-\NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ g2 }\FunctionTok{=}\NormalTok{ play undefined (}\DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{) g1   }\CommentTok{-- O plays (0,1)}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t g2}
+\DataTypeTok{GameState}\NormalTok{ '}\DataTypeTok{PX}
+\NormalTok{    '[ '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PO}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{     ]}
+
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ g3 }\FunctionTok{=}\NormalTok{ play undefined (}\DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{) g2   }\CommentTok{-- X plays (1,0)}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t g3}
+\DataTypeTok{GameState}\NormalTok{ '}\DataTypeTok{PO}
+\NormalTok{    '[ '[ '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PO}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{     , '[ '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{, '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
 \NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
 \NormalTok{     ]}
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ s3 }\FunctionTok{=} \DataTypeTok{GSUpdate}\NormalTok{ undefined (}\DataTypeTok{MkUpdate}\NormalTok{ (}\DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelZ}\NormalTok{))}
-             \FunctionTok{$}\NormalTok{ s2}
-\NormalTok{    • }\DataTypeTok{Couldn't}\NormalTok{ match }\KeywordTok{type}\NormalTok{ ‘'}\DataTypeTok{Nothing}\NormalTok{’ with ‘'}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PO}\NormalTok{’}
+
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ g4 }\FunctionTok{=}\NormalTok{ play undefined (}\DataTypeTok{SelS} \DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{) g3   }\CommentTok{-- O plays (1,1)}
+\NormalTok{    • }\DataTypeTok{Couldn't}\NormalTok{ match }\KeywordTok{type}\NormalTok{ ‘'}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{’ with ‘'}\DataTypeTok{Nothing}\NormalTok{’}
+
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ g4 }\FunctionTok{=}\NormalTok{ play undefined (}\DataTypeTok{SelS}\NormalTok{ (}\DataTypeTok{SelS}\NormalTok{ (}\DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{)) }\FunctionTok{:$:} \DataTypeTok{SelZ}\NormalTok{) g3  }\CommentTok{-- O plays (3,0)}
+\NormalTok{    • }\DataTypeTok{Couldn't}\NormalTok{ match }\KeywordTok{type}\NormalTok{ ‘'[]’ with ‘'}\DataTypeTok{Nothing}\NormalTok{ '}\FunctionTok{:}\NormalTok{ as’}
 \end{Highlighting}
 \end{Shaded}
 
-We see that \texttt{GSUpdate} appropriately alternates the player each turn,
-keeps track of our updated boards, and also cannot be constructed if we give an
-illegal move (that is, if we try to place a piece where a piece has already been
-placed). Note that type inference allows us to not have to manually specify the
-board at each point in time.
+\texttt{play} enforces:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Turns are always alternating X, then O
+\item
+  We cannot place a piece in a previously-played spot
+\item
+  We cannot place a piece out-of-bounds.
+\end{enumerate}
 
 \hypertarget{decision-functions-and-views}{%
 \section{Decision Functions and Views}\label{decision-functions-and-views}}
 
-Now for an important part of any ``type-safe'' application: \emph{decision
-functions} and dependent \emph{views}. \emph{Decision functions} let you slowly
-refine your more general values (types) into more specific valid types.
-\emph{Views} let you sort out your our values into more ``useful'' perspectives.
+This seems nice, but we're forgetting an important part. \texttt{play} requires
+us to only give valid inputs, and enforces that the inputs are valid. However,
+how do we \emph{create} valid inputs, in a way that satisfies \texttt{play}?
+
+As we'll see, this is one of the core problems that dependently typed
+programming gives us tools to solve.
+
+At this point, we've reached the important part of any ``type-safe''
+application: \emph{decision functions} and dependent \emph{views}.
+\emph{Decision functions} let you slowly refine your more general values (types)
+into more specific valid types. \emph{Views} let you sort out your our values
+into more ``useful'' perspectives.
 
 We're going to allow for users to pick to move at any natural number pair
 (\texttt{(N,\ N)}), but only \emph{some} of those natural numbers can become
@@ -627,7 +667,7 @@ out-of-bounds coordinate):
 \CommentTok{-- list}
 \KeywordTok{data} \DataTypeTok{OutOfBounds}\OtherTok{ n ::} \DataTypeTok{Predicate}\NormalTok{ [k]}
 
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L105-L115}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L113-L123}
 
 \KeywordTok{data} \DataTypeTok{Pick}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{, }\DataTypeTok{Board}\NormalTok{) }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
     \CommentTok{-- | We are out of bounds in x}
@@ -747,7 +787,7 @@ In our case, writing a view function would look like this:
 \begin{Highlighting}[]
 \KeywordTok{instance} \DataTypeTok{Provable}\NormalTok{ (}\DataTypeTok{TyPred} \DataTypeTok{Pick}\NormalTok{) }\KeywordTok{where}
 \OtherTok{    prove ::} \DataTypeTok{Sing}\NormalTok{ ijb }\OtherTok{->} \DataTypeTok{Pick}\NormalTok{ ijb}
-\NormalTok{    prove (}\DataTypeTok{STuple3}\NormalTok{ sI sJ sB) }\FunctionTok{=}\NormalTok{ undefined}
+\NormalTok{    prove (}\DataTypeTok{STuple3}\NormalTok{ i j b) }\FunctionTok{=}\NormalTok{ undefined}
         \CommentTok{-- ^ STuple3 is the singleton for three-tuples}
 \end{Highlighting}
 \end{Shaded}
@@ -849,7 +889,7 @@ There's a better name for this --- we'll call it \texttt{InBounds}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L100-L100}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L108-L108}
 
 \KeywordTok{type} \DataTypeTok{InBounds}\NormalTok{    n }\FunctionTok{=} \DataTypeTok{Found}\NormalTok{ (}\DataTypeTok{TyPP}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ n))}
 \end{Highlighting}
@@ -863,7 +903,7 @@ And \emph{decidable} is nice because it offers a predicate combinator
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L102-L102}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L110-L110}
 
 \KeywordTok{type} \DataTypeTok{OutOfBounds}\NormalTok{ n }\FunctionTok{=} \DataTypeTok{Not}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ n)}
 \end{Highlighting}
@@ -945,8 +985,7 @@ given input, using \texttt{:kind!}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- what is the type of the witness for `InBounds 'Z1 ?}
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{kind}\FunctionTok{!} \DataTypeTok{InBounds}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{kind}\FunctionTok{!} \DataTypeTok{InBounds}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]  }\CommentTok{-- what is the type of the witness for `InBounds 'Z1 ?}
 \NormalTok{Σ }\DataTypeTok{Nat}\NormalTok{ (}\DataTypeTok{TyPP}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ '[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]))}
 \end{Highlighting}
 \end{Shaded}
@@ -1053,7 +1092,7 @@ functions --- one for each case.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L120-L148}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L129-L157}
 
 \OtherTok{inBounds ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ n }\FunctionTok{@@}\NormalTok{ xs)}
 \NormalTok{inBounds }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -1109,7 +1148,7 @@ functions --- one for each case.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L129-L131}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L138-L140}
 
 \NormalTok{inBounds_znil}
 \OtherTok{    ::} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[])}
@@ -1132,7 +1171,7 @@ functions --- one for each case.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L133-L137}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L142-L146}
 
 \NormalTok{inBounds_zcons}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ x}
@@ -1150,7 +1189,7 @@ functions --- one for each case.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L139-L142}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L148-L151}
 
 \NormalTok{inBounds_snil}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
@@ -1186,7 +1225,7 @@ functions --- one for each case.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L144-L157}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L153-L166}
 
 \NormalTok{inBounds_scons}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
@@ -1211,13 +1250,16 @@ functions --- one for each case.
 \end{enumerate}
 
 Finally, we can wrap everything up by providing our first ever
-\texttt{Decidable} instance:
+\texttt{Decidable} instance. We need to give \texttt{inBounds} a
+\texttt{Sing\ n}, so we can do that using \texttt{sing\ ::\ Sing\ n}, provided
+that the instance has a \texttt{SingI\ n} constraint.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L117-L118}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L125-L127}
 
 \KeywordTok{instance} \DataTypeTok{SingI}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{Decidable}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ n) }\KeywordTok{where}
+\OtherTok{    decide ::} \DataTypeTok{Sing}\NormalTok{ xs }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ n }\FunctionTok{@@}\NormalTok{ xs)}
 \NormalTok{    decide }\FunctionTok{=}\NormalTok{ inBounds sing}
 \end{Highlighting}
 \end{Shaded}
@@ -1229,6 +1271,203 @@ Now that we can decide \texttt{InBounds}, let's finally prove \texttt{Pick}.
 
 Again, for learning purposes, we'll define \texttt{pick} as its own function and
 then write an instance for \texttt{Provable}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pick}
+\OtherTok{    ::}\NormalTok{ forall i j b}\FunctionTok{.}\NormalTok{ ()}
+    \OtherTok{=>} \DataTypeTok{Sing}\NormalTok{ i}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ j}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ b}
+    \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+\NormalTok{pick }\DataTypeTok{Sing} \DataTypeTok{Sing}\NormalTok{ b }\FunctionTok{=}
+\end{Highlighting}
+\end{Shaded}
+
+We'll match with the \texttt{Sing} constructor for \texttt{Sing\ i} and
+\texttt{Sing\ j}; the \texttt{Sing} constructor is a pattern synonym that, if
+matched on, brings \texttt{SingI\ i} and \texttt{SingI\ j} instances into scope.
+
+Remember, the goal is to try to prove we have a valid pick. We want to create
+something with the \texttt{PickValid} constructor if we can:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{PickValid}\OtherTok{  ::} \DataTypeTok{Coord}\NormalTok{ '(i, j) b '}\DataTypeTok{Nothing} \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+
+\OtherTok{(:$:) ::} \DataTypeTok{Sel}\NormalTok{ i rows row}
+      \OtherTok{->} \DataTypeTok{Sel}\NormalTok{ j row  p}
+      \OtherTok{->} \DataTypeTok{Coord}\NormalTok{ '(i, j) rows p}
+\end{Highlighting}
+\end{Shaded}
+
+So we need a
+\texttt{Coord\ \textquotesingle{}(i,\ j)\ b\ \textquotesingle{}Nothing}, which
+means we need a \texttt{Sel\ i\ b\ row} and a
+\texttt{Sel\ j\ row\ \textquotesingle{}Nothing}. Let's use our decision
+functions we wrote to get these! In particular, we can use
+\texttt{decide\ @(InBounds\ i)\ b} to get our \texttt{Sel\ i\ b\ row}, and then
+use \texttt{decide\ @(InBounds\ j)\ row} to get our \texttt{Sel\ j\ row\ piece}!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pick}
+\OtherTok{    ::}\NormalTok{ forall i j b}\FunctionTok{.}\NormalTok{ ()}
+    \OtherTok{=>} \DataTypeTok{Sing}\NormalTok{ i}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ j}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ b}
+    \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+\NormalTok{pick }\DataTypeTok{Sing} \DataTypeTok{Sing}\NormalTok{ b }\FunctionTok{=} \KeywordTok{case}\NormalTok{ decide }\FunctionTok{@}\NormalTok{(}\DataTypeTok{InBounds}\NormalTok{ i) b }\KeywordTok{of}
+    \DataTypeTok{Proved}\NormalTok{ (row }\FunctionTok{:&:}\NormalTok{ selX) }\OtherTok{->} \KeywordTok{case}\NormalTok{ decide }\FunctionTok{@}\NormalTok{(}\DataTypeTok{InBounds}\NormalTok{ j) row }\KeywordTok{of}
+      \DataTypeTok{Proved}\NormalTok{ (p }\FunctionTok{:&:}\NormalTok{ selY) }\OtherTok{->}
+        \KeywordTok{let}\NormalTok{ c }\FunctionTok{=}\NormalTok{ selX }\FunctionTok{:$:}\NormalTok{ selY}
+        \KeywordTok{in}  \CommentTok{-- success???}
+\end{Highlighting}
+\end{Shaded}
+
+Just to clarify what's going on, let's give types to the names above:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{b    ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{b   ::}\NormalTok{ board        )}
+\OtherTok{row  ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{row ::}\NormalTok{ [}\DataTypeTok{Maybe} \DataTypeTok{Piece}\NormalTok{])}
+\OtherTok{selX ::} \DataTypeTok{Sel}\NormalTok{ i b row}
+\OtherTok{p    ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{p   ::} \DataTypeTok{Maybe} \DataTypeTok{Piece}\NormalTok{  )}
+\OtherTok{selY ::} \DataTypeTok{Sel}\NormalTok{ j row p}
+\OtherTok{c    ::} \DataTypeTok{Coord}\NormalTok{ '(i, j) b p}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{row} above is the \texttt{Sing} that comes attached with all \texttt{Σ}
+constructors, which is why we can give it to \texttt{decide\ @(InBounds\ j)},
+which expects a singleton of the list.
+
+So, now we have \texttt{Coord\ \textquotesingle{}(i,\ j)\ b\ p}. We know that
+\texttt{i} and \texttt{j} are in-bounds. But, we need to know that \texttt{p} is
+\texttt{\textquotesingle{}Nothing} before we can use it with \texttt{PickValid}.
+To do that, we can pattern match on \texttt{p}, because it's the singleton that
+comes with the \texttt{Σ} constructor:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pick}
+\OtherTok{    ::}\NormalTok{ forall i j b}\FunctionTok{.}\NormalTok{ ()}
+    \OtherTok{=>} \DataTypeTok{Sing}\NormalTok{ i}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ j}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ b}
+    \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+\NormalTok{pick }\DataTypeTok{Sing} \DataTypeTok{Sing}\NormalTok{ b }\FunctionTok{=} \KeywordTok{case}\NormalTok{ decide }\FunctionTok{@}\NormalTok{(}\DataTypeTok{InBounds}\NormalTok{ i) b }\KeywordTok{of}
+    \DataTypeTok{Proved}\NormalTok{ (row }\FunctionTok{:&:}\NormalTok{ selX) }\OtherTok{->} \KeywordTok{case}\NormalTok{ decide }\FunctionTok{@}\NormalTok{(}\DataTypeTok{InBounds}\NormalTok{ j) row }\KeywordTok{of}
+      \DataTypeTok{Proved}\NormalTok{ (p }\FunctionTok{:&:}\NormalTok{ selY) }\OtherTok{->}
+        \KeywordTok{let}\NormalTok{ c }\FunctionTok{=}\NormalTok{ selX }\FunctionTok{:$:}\NormalTok{ selY}
+        \KeywordTok{in}  \KeywordTok{case}\NormalTok{ p }\KeywordTok{of}
+              \DataTypeTok{SNothing} \OtherTok{->} \DataTypeTok{PickValid}\NormalTok{   c}
+              \DataTypeTok{SJust}\NormalTok{ p' }\OtherTok{->} \DataTypeTok{PickPlayed}\NormalTok{  c p'}
+\end{Highlighting}
+\end{Shaded}
+
+Finally, knowing that \texttt{p} is \texttt{\textquotesingle{}Nothing}, we can
+create \texttt{PickValid}!
+
+As a bonus, if we know that \texttt{p} is
+\texttt{\textquotesingle{}Just\ p\textquotesingle{}}, we can create
+\texttt{PickPlayed}, which is the constructor for an in-bounds pick but pointing
+to a spot that is already occupied by piece \texttt{p\textquotesingle{}}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{PickPlayed}\OtherTok{ ::} \DataTypeTok{Coord}\NormalTok{ '(i, j) b ('}\DataTypeTok{Just}\NormalTok{ p)}
+           \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ p}
+           \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+\end{Highlighting}
+\end{Shaded}
+
+We now have to deal with the situations where things are out of bounds.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{PickOoBX}\OtherTok{ ::} \DataTypeTok{OutOfBounds}\NormalTok{ i }\FunctionTok{@@}\NormalTok{ b}
+         \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+\DataTypeTok{PickOoBY}\OtherTok{ ::} \DataTypeTok{Sel}\NormalTok{ i b row}
+         \OtherTok{->} \DataTypeTok{OutOfBounds}\NormalTok{ j }\FunctionTok{@@}\NormalTok{ row}
+         \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+\end{Highlighting}
+\end{Shaded}
+
+However, thanks to the
+\emph{\href{https://hackage.haskell.org/package/decidable}{decidable}} library,
+things work out nicely. That's because \texttt{OutOfBounds\ n} we defined as:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L110-L110}
+
+\KeywordTok{type} \DataTypeTok{OutOfBounds}\NormalTok{ n }\FunctionTok{=} \DataTypeTok{Not}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ n)}
+\end{Highlighting}
+\end{Shaded}
+
+and \texttt{Not}, the predicate combinator, is defined as:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Not}\OtherTok{ ::} \DataTypeTok{Predicate}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Predicate}\NormalTok{ k}
+
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply}\NormalTok{ (}\DataTypeTok{Not}\NormalTok{ p) x }\FunctionTok{=}\NormalTok{ (p }\FunctionTok{@@}\NormalTok{ x) }\OtherTok{->} \DataTypeTok{Void}
+\end{Highlighting}
+\end{Shaded}
+
+That is, a witness of \texttt{Not\ p\ @@\ x} is
+\texttt{p\ @@\ x\ -\textgreater{}\ Void}. That means that \texttt{PickOoBX}
+expects an \texttt{InBounds\ i\ @@\ b\ -\textgreater{}\ Void}, and
+\texttt{PickOoBY} expects an
+\texttt{InBounds\ j\ @@\ row\ -\textgreater{}\ Void}. And that's \emph{exactly}
+what the \texttt{Disproved} branches give!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L168-L186}
+
+\NormalTok{pick}
+\OtherTok{    ::}\NormalTok{ forall i j b}\FunctionTok{.}\NormalTok{ ()}
+    \OtherTok{=>} \DataTypeTok{Sing}\NormalTok{ i}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ j}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ b}
+    \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+\NormalTok{pick }\DataTypeTok{Sing} \DataTypeTok{Sing}\NormalTok{ b }\FunctionTok{=} \KeywordTok{case}\NormalTok{ decide }\FunctionTok{@}\NormalTok{(}\DataTypeTok{InBounds}\NormalTok{ i) b }\KeywordTok{of}
+    \DataTypeTok{Proved}\NormalTok{ (row }\FunctionTok{:&:}\NormalTok{ selX) }\OtherTok{->} \KeywordTok{case}\NormalTok{ decide }\FunctionTok{@}\NormalTok{(}\DataTypeTok{InBounds}\NormalTok{ j) row }\KeywordTok{of}
+      \DataTypeTok{Proved}\NormalTok{ (p }\FunctionTok{:&:}\NormalTok{ selY) }\OtherTok{->}
+        \KeywordTok{let}\NormalTok{ c }\FunctionTok{=}\NormalTok{ selX }\FunctionTok{:$:}\NormalTok{ selY}
+        \KeywordTok{in}  \KeywordTok{case}\NormalTok{ p }\KeywordTok{of}
+              \DataTypeTok{SNothing} \OtherTok{->} \DataTypeTok{PickValid}\NormalTok{   c}
+              \DataTypeTok{SJust}\NormalTok{ p' }\OtherTok{->} \DataTypeTok{PickPlayed}\NormalTok{  c p'}
+      \DataTypeTok{Disproved}\NormalTok{ vY }\OtherTok{->} \DataTypeTok{PickOoBY}\NormalTok{ selX vY    }\CommentTok{-- vY :: InBounds j @@ row -> Void}
+                                          \CommentTok{-- vY :: Not (InBounds j) @@ row}
+                                          \CommentTok{-- vY :: OutOfBounds j @@ row}
+    \DataTypeTok{Disproved}\NormalTok{ vX }\OtherTok{->} \DataTypeTok{PickOoBX}\NormalTok{ vX   }\CommentTok{-- vX :: InBounds i @@ b   -> Void}
+                                  \CommentTok{-- vX :: Not (InBounds i) @@ b}
+                                  \CommentTok{-- vX :: OutOfBounds i @@ b}
+\end{Highlighting}
+\end{Shaded}
+
+And that's it!
+
+Now to just tie it all together with a \texttt{Provable} instance, using the
+\texttt{STuple3} singletons constructor:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L188-L190}
+
+\KeywordTok{instance} \DataTypeTok{Provable}\NormalTok{ (}\DataTypeTok{TyPred} \DataTypeTok{Pick}\NormalTok{) }\KeywordTok{where}
+\OtherTok{    prove ::} \DataTypeTok{Sing}\NormalTok{ ijb }\OtherTok{->} \DataTypeTok{Pick}\NormalTok{ ijb}
+\NormalTok{    prove (}\DataTypeTok{STuple3}\NormalTok{ i j b) }\FunctionTok{=}\NormalTok{ pick i j b}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{play-ball}{%
+\section{Play Ball}\label{play-ball}}
+
+Bringing it all together, we can write our function
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
