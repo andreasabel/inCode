@@ -113,7 +113,7 @@ $(singletons [d|
 Let's just throw in a quick proof as a sanity check:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L59-L61
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L60-L62
 
 altP_cyclic :: Sing p -> AltP (AltP p) :~: p
 altP_cyclic SPX = Refl @'PX
@@ -126,7 +126,7 @@ two helper types that we will implement later. First, we'll use the
 the kind of a *type-level predicate*.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L63-L63
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L64-L64
 
 data InPlay :: Predicate Board
 ```
@@ -138,7 +138,7 @@ We also need to define a type for a valid update by a given player onto a given
 board:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L78-L78
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L79-L79
 
 data Update :: Piece -> Board -> Board -> Type where
 ```
@@ -149,7 +149,7 @@ player `p` to create a board `b2`.
 And finally, our valid state constructor:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L65-L76
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L66-L77
 
 data GameState :: Piece -> Board -> Type where
     -- | The empty board is a valid state
@@ -184,7 +184,7 @@ Let's go about what thinking about what defines a valid update. Remember, the
 kind we wanted was:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L78-L78
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L79-L79
 
 data Update :: Piece -> Board -> Board -> Type where
 ```
@@ -227,7 +227,7 @@ For that, we'll introduce a common helper type to say *what* the piece at spot
 *(i, j)* is:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L92-L92
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L93-L93
 
 data Coord :: (N, N) -> [[k]] -> k -> Type where
 ```
@@ -239,7 +239,7 @@ And we require `Update` to only be constructable if the spot at *(i, j)* is
 `Nothing`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L78-L83
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L79-L84
 
 data Update :: Piece -> Board -> Board -> Type where
     MkUpdate
@@ -261,7 +261,7 @@ Now we need to define `Coord`. We're going to do that in terms of a simpler type
 that is essentially the same for normal lists --- a type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L85-L85
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L86-L86
 
 data Sel :: N -> [k] -> k -> Type where
 ```
@@ -277,7 +277,7 @@ data type. We can mention our induction rules:
     list `b ': as`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L85-L90
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L86-L91
 
 data Sel :: N -> [k] -> k -> Type where
     -- | The first item in a list is at index ''Z'
@@ -300,7 +300,7 @@ etc.
 We can then use this to define `Coord`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L92-L97
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L93-L98
 
 data Coord :: (N, N) -> [[k]] -> k -> Type where
     (:$:) :: forall i j rows row p. ()
@@ -436,7 +436,7 @@ We'll call these potential "views" out of `(N, N)` with respect to some board
 -- list
 data OutOfBounds n :: Predicate [k]
 
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L104-L114
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L105-L115
 
 data Pick :: (N, N, Board) -> Type where
     -- | We are out of bounds in x
@@ -537,7 +537,7 @@ In our case, writing a view function would look like this:
 
 ``` {.haskell}
 instance Provable (TyPred Pick) where
-    prove :: Sing '(i, j, b) -> Pick '(i, j, b)
+    prove :: Sing ijb -> Pick ijb
     prove (STuple3 sI sJ sB) = undefined
         -- ^ STuple3 is the singleton for three-tuples
 ```
@@ -619,7 +619,7 @@ at position `n`.
 There's a better name for this --- we'll call it `InBounds`
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L99-L99
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L100-L100
 
 type InBounds    n = Found (TyPP (Sel n))
 ```
@@ -631,7 +631,7 @@ And *decidable* is nice because it offers a predicate combinator `Not`, which
 gives the negation of any predicate:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L101-L101
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L102-L102
 
 type OutOfBounds n = Not (InBounds n)
 ```
@@ -778,7 +778,7 @@ Again, for learning's sake, ket's split these branches into four helper
 functions --- one for each case.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L116-L123
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L120-L148
 
 inBounds :: Sing n -> Sing xs -> Decision (InBounds n @@ xs)
 inBounds = \case
@@ -788,6 +788,24 @@ inBounds = \case
     SS n -> \case
       SNil         -> inBounds_snil n
       x `SCons` xs -> inBounds_scons n x xs
+
+inBounds_znil
+    :: Decision (InBounds 'Z @@ '[])
+
+inBounds_zcons
+    :: Sing x
+    -> Sing xs
+    -> Decision (InBounds 'Z @@ (x ': xs))
+
+inBounds_snil
+    :: Sing n
+    -> Decision (InBounds ('S n) @@ '[])
+
+inBounds_scons
+    :: Sing n
+    -> Sing x
+    -> Sing xs
+    -> Decision (InBounds ('S n) @@ (x ': xs))
 
 inBounds_znil  :: Decision (InBounds 'Z @@ '[])
 
@@ -810,9 +828,10 @@ inBounds_scons :: Sing n -> Sing x -> Sing xs
     `InBounds 'Z @@ '[] -> Void`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L125-L126
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L129-L131
 
-    inBounds_znil  :: Decision (InBounds 'Z @@ '[])
+    inBounds_znil
+        :: Decision (InBounds 'Z @@ '[])
     inBounds_znil = Disproved $ \(_ :&: s) -> case s of {}
     ```
 
@@ -827,10 +846,12 @@ inBounds_scons :: Sing n -> Sing x -> Sing xs
     *yes*, there does, and that item is `x`, and the `Sel` is `SelZ`!
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L128-L130
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L133-L137
 
-    inBounds_zcons :: Sing x -> Sing xs
-                   -> Decision (InBounds 'Z @@ (x ': xs))
+    inBounds_zcons
+        :: Sing x
+        -> Sing xs
+        -> Decision (InBounds 'Z @@ (x ': xs))
     inBounds_zcons x _ = Proved (x :&: SelZ)
     ```
 
@@ -839,10 +860,11 @@ inBounds_scons :: Sing n -> Sing x -> Sing xs
     to use the same strategy for the first branch:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L132-L134
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L139-L142
 
-    inBounds_snil  :: Sing n
-                   -> Decision (InBounds ('S n) @@ '[])
+    inBounds_snil
+        :: Sing n
+        -> Decision (InBounds ('S n) @@ '[])
     inBounds_snil _ = Disproved $ \(_ :&: s) -> case s of {}
     ```
 
@@ -864,10 +886,13 @@ inBounds_scons :: Sing n -> Sing x -> Sing xs
         in the `'S n` spot in `x ': xs`.
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L136-L146
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L144-L157
 
-    inBounds_scons :: Sing n -> Sing x -> Sing xs
-                   -> Decision (InBounds ('S n) @@ (x ': xs))
+    inBounds_scons
+        :: Sing n
+        -> Sing x
+        -> Sing xs
+        -> Decision (InBounds ('S n) @@ (x ': xs))
     inBounds_scons n _ xs = case inBounds n xs of
         Proved (y :&: s) ->       -- if xs has y in its n spot
           Proved (y :&: SelS s)   -- then (x : xs) has y in its (S n) spot
@@ -882,6 +907,23 @@ inBounds_scons :: Sing n -> Sing x -> Sing xs
     If you have problems understanding this, try playing around with typed holes
     in GHC, or trying to guess what types everything has in the implementation
     above, until you can figure out what is happening when.
+
+Finally, we can wrap everything up by providing our first ever `Decidable`
+instance:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L117-L118
+
+instance SingI n => Decidable (InBounds n) where
+    decide = inBounds sing
+```
+
+### Proving Pick
+
+Now that we can decide `InBounds`, let's finally prove `Pick`.
+
+Again, for learning purposes, we'll define `pick` as its own function and then
+write an instance for `Provable`.
 
 --------------------------------------------------------------------------------
 
