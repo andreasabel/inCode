@@ -81,10 +81,36 @@ First, we'll define the types we need to specify our state:
 
 ``` {.haskell}
 $(singletons [d|
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L37-L51
+
   data Piece = PX | PO
     deriving (Eq, Ord)
   
   type Board = [[Maybe Piece]]
+
+  emptyBoard :: Board
+  emptyBoard = [[Nothing, Nothing, Nothing]
+               ,[Nothing, Nothing, Nothing]
+               ,[Nothing, Nothing, Nothing]
+               ]
+
+  altP :: Piece -> Piece
+  altP PX = PO
+  altP PO = PX
+  |])
+
+  type Board = [[Maybe Piece]]
+
+  emptyBoard :: Board
+  emptyBoard = [[Nothing, Nothing, Nothing]
+               ,[Nothing, Nothing, Nothing]
+               ,[Nothing, Nothing, Nothing]
+               ]
+
+  altP :: Piece -> Piece
+  altP PX = PO
+  altP PO = PX
+  |])
   |])
 ```
 
@@ -98,21 +124,31 @@ transformations:
 
 ``` {.haskell}
 $(singletons [d|
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L42-L51
+
   emptyBoard :: Board
-  emptyBoard = [ [Nothing, Nothing, Nothing]
-               , [Nothing, Nothing, Nothing]
-               , [Nothing, Nothing, Nothing]
+  emptyBoard = [[Nothing, Nothing, Nothing]
+               ,[Nothing, Nothing, Nothing]
+               ,[Nothing, Nothing, Nothing]
                ]
 
   altP :: Piece -> Piece
   altP PX = PO
   altP PO = PX
   |])
+
+  altP :: Piece -> Piece
+  altP PX = PO
+  altP PO = PX
+  |])
+  |])
 ```
 
 Let's just throw in a quick proof as a sanity check:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L59-L61
+
 altP_cyclic :: Sing p -> AltP (AltP p) :~: p
 altP_cyclic SPX = Refl @'PX
 altP_cyclic SPO = Refl @'PO
