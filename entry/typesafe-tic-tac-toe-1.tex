@@ -1,0 +1,616 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+    \usepackage{xltxtra,xunicode}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{\usepackage{microtype}}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\newenvironment{Shaded}{}{}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex]{hyperref}
+\else
+  \usepackage[unicode=true]{hyperref}
+\fi
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            pdfauthor={Justin Le},
+            pdftitle={Type-safe Tic Tac Toe (Part 1)},
+            colorlinks=true,
+            citecolor=blue,
+            urlcolor=blue,
+            linkcolor=magenta,
+            pdfborder={0 0 0}}
+\urlstyle{same}  % don't use monospace font for urls
+% Make links footnotes instead of hotlinks:
+\renewcommand{\href}[2]{#2\footnote{\url{#1}}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\setcounter{secnumdepth}{0}
+
+\title{Type-safe Tic Tac Toe (Part 1)}
+\author{Justin Le}
+
+\begin{document}
+\maketitle
+
+\emph{Originally posted on
+\textbf{\href{https://blog.jle.im/entry/typesafe-tic-tac-toe-1.html}{in Code}}.}
+
+One problem with adoption of dependent types in everyday programming, I think,
+is that most examples out there are sort of small and self-contained. There
+aren't \emph{too} many larger-scale examples out there showing how dependent
+types can permeate your whole program to make everything more robust and
+error-free.
+
+So, this series will be implementing a type-safe \emph{tic tac toe} game (a
+medium-scale Haskell app) that can be played both on the console (using
+Haskeline) and in the browser (using Miso), using some custom built AI. We will:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Build up our core game engine, talking about what it really means to be type
+  safe
+\item
+  Use our type-safe engine to build type-safe controllers (AI, GUI)
+\end{enumerate}
+
+This series will also be a mini-tutorial on the
+\emph{\href{https://hackage.haskell.org/package/decidable}{decidable}} package
+that I just recently released :) We will also be heavily using the
+\emph{\href{https://hackage.haskell.org/package/singletons}{singletons}}
+library. Where relevant, I will explain singletons concepts in brief. If you
+want a more in-depth introduction to the \emph{singletons} library, however,
+check out my
+\href{https://blog.jle.im/entries/series/+introduction-to-singletons.html}{Introduction
+to Singletons} series!
+
+\hypertarget{type-safety}{%
+\section{Type-Safety}\label{type-safety}}
+
+First off, we should ask the question: what does it mean to be type-safe?
+
+?????
+
+\hypertarget{the-specification}{%
+\section{The Specification}\label{the-specification}}
+
+We're going to create a type that represents a \emph{valid} game state. The goal
+is to make a GADT where you can only construct values whose types represent
+\emph{valid} game states. If we have a value of this type, then we know that the
+game state must be valid.
+
+A good way to start with this is by thinking of \emph{induction rules} for
+defining a valid state.
+
+We'll say that there are two parts of a game state:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  The current board
+\item
+  The current player
+\end{enumerate}
+
+and that there are two ways of ``constructing'' a valid state:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  The empty board with player X is a valid state.
+\item
+  If we have:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    A valid state with board \emph{b} and current player \emph{p}
+  \item
+    The game is still in play
+  \item
+    We can add a valid move by player \emph{p} to board \emph{b}
+  \end{itemize}
+
+  Then the result of this move represents a new valid board \emph{b}, with
+  swapped player \emph{p}.
+\end{enumerate}
+
+This is a denotative way to talk about what it means for a state to be valid.
+
+Note that our ``type safety'' is only as strong as the specification we just
+wrote. Type safety using dependent types isn't omnipotent, and it can't read
+your mind. However, there is a nice assurance that as long as your
+\emph{specification} is right, your program will work as expected. And hey, it's
+a step up from the untyped case, where you can have a specification wrong, but
+implement it incorrectly. With ``type-safety'', you cut out one huge area where
+bugs come from: the implementation.
+
+Alright, let's do this!
+
+\hypertarget{valid-state}{%
+\section{Valid State}\label{valid-state}}
+
+First, we'll define the types we need to specify our state:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{$}\NormalTok{(singletons [d|}
+\NormalTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L38-L53}
+
+\NormalTok{  data Piece = PX | PO}
+\NormalTok{    deriving (Eq, Ord)}
+  
+\NormalTok{  type Board = [[Maybe Piece]]}
+
+\NormalTok{  emptyBoard :: Board}
+\NormalTok{  emptyBoard = [[Nothing, Nothing, Nothing]}
+\NormalTok{               ,[Nothing, Nothing, Nothing]}
+\NormalTok{               ,[Nothing, Nothing, Nothing]}
+\NormalTok{               ]}
+
+\NormalTok{  altP :: Piece -> Piece}
+\NormalTok{  altP PX = PO}
+\NormalTok{  altP PO = PX}
+
+\NormalTok{  |])}
+
+  \KeywordTok{type} \DataTypeTok{Board} \FunctionTok{=}\NormalTok{ [[}\DataTypeTok{Maybe} \DataTypeTok{Piece}\NormalTok{]]}
+
+\OtherTok{  emptyBoard ::} \DataTypeTok{Board}
+\NormalTok{  emptyBoard }\FunctionTok{=}\NormalTok{ [[}\DataTypeTok{Nothing}\NormalTok{, }\DataTypeTok{Nothing}\NormalTok{, }\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{               ,[}\DataTypeTok{Nothing}\NormalTok{, }\DataTypeTok{Nothing}\NormalTok{, }\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{               ,[}\DataTypeTok{Nothing}\NormalTok{, }\DataTypeTok{Nothing}\NormalTok{, }\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{               ]}
+
+\OtherTok{  altP ::} \DataTypeTok{Piece} \OtherTok{->} \DataTypeTok{Piece}
+\NormalTok{  altP }\DataTypeTok{PX} \FunctionTok{=} \DataTypeTok{PO}
+\NormalTok{  altP }\DataTypeTok{PO} \FunctionTok{=} \DataTypeTok{PX}
+
+  \FunctionTok{|}\NormalTok{])}
+  \FunctionTok{|}\NormalTok{])}
+\end{Highlighting}
+\end{Shaded}
+
+A \texttt{Piece} will also represent our player -- either \texttt{PX} or
+\texttt{PO}. Our \texttt{Board} will be a list of lists of
+\texttt{Maybe\ Piece}. If the spot contains \texttt{Nothing}, the spot is
+unplayed; if the spot is \texttt{Just\ p}, then it means the spot has been
+played by \texttt{p}.
+
+And some values and functions we need to talk about empty boards and state
+transformations:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{$}\NormalTok{(singletons [d|}
+\NormalTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L43-L53}
+
+\NormalTok{  emptyBoard :: Board}
+\NormalTok{  emptyBoard = [[Nothing, Nothing, Nothing]}
+\NormalTok{               ,[Nothing, Nothing, Nothing]}
+\NormalTok{               ,[Nothing, Nothing, Nothing]}
+\NormalTok{               ]}
+
+\NormalTok{  altP :: Piece -> Piece}
+\NormalTok{  altP PX = PO}
+\NormalTok{  altP PO = PX}
+
+\NormalTok{  |])}
+
+\OtherTok{  altP ::} \DataTypeTok{Piece} \OtherTok{->} \DataTypeTok{Piece}
+\NormalTok{  altP }\DataTypeTok{PX} \FunctionTok{=} \DataTypeTok{PO}
+\NormalTok{  altP }\DataTypeTok{PO} \FunctionTok{=} \DataTypeTok{PX}
+
+  \FunctionTok{|}\NormalTok{])}
+  \FunctionTok{|}\NormalTok{])}
+\end{Highlighting}
+\end{Shaded}
+
+Let's just throw in a quick proof as a sanity check:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L63-L65}
+
+\OtherTok{altP_cyclic ::} \DataTypeTok{Sing}\NormalTok{ p }\OtherTok{->} \DataTypeTok{AltP}\NormalTok{ (}\DataTypeTok{AltP}\NormalTok{ p) }\FunctionTok{:~:}\NormalTok{ p}
+\NormalTok{altP_cyclic }\DataTypeTok{SPX} \FunctionTok{=} \DataTypeTok{Refl} \FunctionTok{@}\NormalTok{'}\DataTypeTok{PX}
+\NormalTok{altP_cyclic }\DataTypeTok{SPO} \FunctionTok{=} \DataTypeTok{Refl} \FunctionTok{@}\NormalTok{'}\DataTypeTok{PO}
+\end{Highlighting}
+\end{Shaded}
+
+With that in mind, we can write our valid state constructor. We'll do that with
+two helper types that we will implement later. First, we'll use the
+\href{https://hackage.haskell.org/package/decidable}{decidable} library to talk
+about the kind of a \emph{type-level predicate}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{InPlay}\OtherTok{ ::} \DataTypeTok{Predicate} \DataTypeTok{Board}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{InPlay} is a predicate that a given board is in-play; a value of type
+\texttt{InPlay\ @@\ b} is a witness or proof that a board is in play.
+
+We also need to define a type for a valid update by a given player onto a given
+board:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Update}\OtherTok{ ::} \DataTypeTok{Piece} \OtherTok{->} \DataTypeTok{Board} \OtherTok{->} \DataTypeTok{Board} \OtherTok{->} \DataTypeTok{Type}
+\end{Highlighting}
+\end{Shaded}
+
+A value of type \texttt{Update\ p\ b1\ b2} will represent a valid update to
+board \texttt{b1} by player \texttt{p} to create a board \texttt{b2}.
+
+And finally, our valid state constructor:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{GameState}\OtherTok{ ::} \DataTypeTok{Piece} \OtherTok{->} \DataTypeTok{Board} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \CommentTok{-- | The empty board is a valid state}
+    \DataTypeTok{GSStart}
+\OtherTok{        ::} \DataTypeTok{GameState}\NormalTok{ '}\DataTypeTok{PX} \DataTypeTok{EmptyBoard}
+    \CommentTok{-- | We can also construct a valid game state if we have:}
+    \DataTypeTok{GSUpdate}
+\OtherTok{        ::}\NormalTok{ forall p b1 b2}\FunctionTok{.}\NormalTok{ ()}
+        \OtherTok{=>} \DataTypeTok{InPlay}          \FunctionTok{@@}\NormalTok{ b1     }\CommentTok{-- ^ a proof that b1 is in play}
+        \OtherTok{->} \DataTypeTok{Update}\NormalTok{    p        b1 b2  }\CommentTok{-- ^ a valid update}
+        \OtherTok{->} \DataTypeTok{GameState}\NormalTok{ p        b1     }\CommentTok{-- ^ a proof that p, b1 are a valid state}
+        \CommentTok{-- ---------------------------- then}
+        \OtherTok{->} \DataTypeTok{GameState}\NormalTok{ (}\DataTypeTok{AltP}\NormalTok{ p)    b2  }\CommentTok{-- ^ AltP p, b2 is a valid satte}
+\end{Highlighting}
+\end{Shaded}
+
+And that's it --- a verified-correct representation of a game state, directly
+transcribed from our plain-language denotative specification.
+
+Now we just need to talk about \texttt{InPlay} and \texttt{Update}. In
+particular, we need:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  A definition of \texttt{Update}, and a way to turn user-input into a valid
+  \texttt{Update} (or reject it if it isn't valid).
+\item
+  A definition of \texttt{InPlay}, and a way to decide whether or not a given
+  board \texttt{b} is \texttt{InPlay}. This is something that the appropriately
+  named \emph{\href{https://hackage.haskell.org/package/decidable}{decidable}}
+  library will help us with.
+\end{enumerate}
+
+\hypertarget{update}{%
+\section{Update}\label{update}}
+
+Let's go about what thinking about what defines a valid update. Remember, the
+kind we wanted was:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Update}\OtherTok{ ::} \DataTypeTok{Piece} \OtherTok{->} \DataTypeTok{Board} \OtherTok{->} \DataTypeTok{Board} \OtherTok{->} \DataTypeTok{Type}
+\end{Highlighting}
+\end{Shaded}
+
+An \texttt{Update\ p\ b1\ b2} will be a valid update of \texttt{b1} by player
+\texttt{p} to produce \texttt{b2}. So, we need to:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Produce \texttt{b2} from \texttt{b1}
+\item
+  Be sure that the move is valid --- namely, that it is placed in a clean spot
+  so that it doesn't overwrite any previous moves.
+\end{enumerate}
+
+Producing \texttt{b2} from \texttt{b1} is simple enough as a type family. In
+fact, we can just use the
+\emph{\href{https://hackage.haskell.org/package/lens-typelevel}{lens-typelevel}}
+library to update our nested list:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{$}\NormalTok{(singletonsOnly [d|}
+\NormalTok{  placeBoard :: N -> N -> Piece -> Board -> Board}
+\NormalTok{  placeBoard i j p = set (ixList i . ixList j) (Just p)}
+\NormalTok{  |])}
+\end{Highlighting}
+\end{Shaded}
+
+This is just lenses --- \texttt{set\ l\ x} is a function that sets the field
+specified by \texttt{l} to \texttt{x}. Here, we set the jth item of the ith list
+to be \texttt{Just\ p}. That means we can now produce \texttt{b2} from
+\texttt{b1} -- it's just \texttt{PlaceBoard\ i\ j\ p\ b1}.
+
+Here, \texttt{N} is the peano nat type (a lot of libraries define it, but it's
+also defined as a uility in \emph{lens-typelevel}). It's essentially
+\texttt{{[}(){]}} (which makes it useful as an index type), or:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{N} \FunctionTok{=} \DataTypeTok{Z} \FunctionTok{|} \DataTypeTok{S} \DataTypeTok{N}
+\end{Highlighting}
+\end{Shaded}
+
+A natural number is either zero, or the successor of another natural number.
+\texttt{S\ (S\ Z)}, for example, would represent 2.
+
+The trickier part is making sure that the spot at \emph{(i, j)} isn't already
+taken. For that, we'll introduce a common helper type to say \emph{what} the
+piece at spot \emph{(i, j)} is:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Coord}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{) }\OtherTok{->}\NormalTok{ [[k]] }\OtherTok{->}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Type}
+\end{Highlighting}
+\end{Shaded}
+
+A \texttt{Coord\ \textquotesingle{}(i,\ j)\ xss\ x} is a data type that
+specifies that the jth item in the ith list in \texttt{b} is \texttt{p}.
+
+And we require \texttt{Update} to only be constructable if the spot at \emph{(i,
+j)} is \texttt{Nothing}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Update}\OtherTok{ ::} \DataTypeTok{Piece} \OtherTok{->} \DataTypeTok{Board} \OtherTok{->} \DataTypeTok{Board} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{MkUpdate}\OtherTok{ ::}\NormalTok{ forall i j p b}\FunctionTok{.}\NormalTok{ ()}
+             \OtherTok{=>} \DataTypeTok{Coord}\NormalTok{ '(i, j) b '}\DataTypeTok{Nothing}
+             \OtherTok{->} \DataTypeTok{Update}\NormalTok{ p b (}\DataTypeTok{PlaceBoard}\NormalTok{ i j p b)}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{Update} is now defined so that, for \texttt{Update\ p\ b1\ b2},
+\texttt{b2} is the update via placement of a piece \texttt{p} at some position
+in \texttt{b1}, where the placement does not overwrite a previous piece. Note
+that our \texttt{MkUpdate} constructor only has four ``free'' variables,
+\texttt{i}, \texttt{j}, \texttt{p}, and \texttt{b}. If we use \texttt{MkUpdate},
+it means that the ``final board'' is fully determined from only \texttt{i},
+\texttt{j}, \texttt{p}, and \texttt{b}.
+
+\hypertarget{coord}{%
+\subsection{Coord}\label{coord}}
+
+Now we need to define \texttt{Coord}. We're going to do that in terms of a
+simpler type that is essentially the same for normal lists --- a type:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Sel}\OtherTok{ ::} \DataTypeTok{N} \OtherTok{->}\NormalTok{ [k] }\OtherTok{->}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Type}
+\end{Highlighting}
+\end{Shaded}
+
+A value of type \texttt{Sel\ n\ xs\ x} says that the nth item in \texttt{xs} is
+\texttt{x}.
+
+We can define this type inductively, similar to the common
+\href{http://hackage.haskell.org/package/type-combinators-0.2.4.3/docs/Data-Type-Index.html}{\texttt{Index}}
+data type. We can mention our induction rules:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  The first item in a list as at index 0 (\texttt{Z})
+\item
+  If an item is at index \texttt{n} in list \texttt{as}, then it is also at
+  index \texttt{S\ n} in list \texttt{b\ \textquotesingle{}:\ as}.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Sel}\OtherTok{ ::} \DataTypeTok{N} \OtherTok{->}\NormalTok{ [k] }\OtherTok{->}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{SelZ}\OtherTok{ ::} \DataTypeTok{Sel}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ (a '}\FunctionTok{:}\NormalTok{ as) a}
+    \DataTypeTok{SelS}\OtherTok{ ::} \DataTypeTok{Sel}\NormalTok{ n  as        a }\OtherTok{->} \DataTypeTok{Sel}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) (b '}\FunctionTok{:}\NormalTok{ bs) a}
+\end{Highlighting}
+\end{Shaded}
+
+For example, for the type-level list \texttt{\textquotesingle{}{[}10,5,2,8{]}},
+we can make values:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{SelZ}\OtherTok{             ::} \DataTypeTok{Sel}\NormalTok{         '}\DataTypeTok{Z}\NormalTok{   '[}\DecValTok{10}\NormalTok{,}\DecValTok{5}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{8}\NormalTok{] }\DecValTok{10}
+\DataTypeTok{SelS} \DataTypeTok{SelZ}\OtherTok{        ::} \DataTypeTok{Sel}\NormalTok{     ('}\DataTypeTok{S}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{)  '[}\DecValTok{10}\NormalTok{,}\DecValTok{5}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{8}\NormalTok{] }\DecValTok{5}
+\DataTypeTok{SelS}\NormalTok{ (}\DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{)}\OtherTok{ ::} \DataTypeTok{Sel}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{)) '[}\DecValTok{10}\NormalTok{,}\DecValTok{5}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{8}\NormalTok{] }\DecValTok{2}
+\end{Highlighting}
+\end{Shaded}
+
+etc.
+
+We can then use this to define \texttt{Coord}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Coord}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{) }\OtherTok{->}\NormalTok{ [[k]] }\OtherTok{->}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+\OtherTok{    (:$:) ::}\NormalTok{ forall i j rows row piece}\FunctionTok{.}\NormalTok{ ()}
+          \OtherTok{=>} \DataTypeTok{Sel}\NormalTok{ i rows row}
+          \OtherTok{->} \DataTypeTok{Sel}\NormalTok{ j row  piece}
+          \OtherTok{->} \DataTypeTok{Coord}\NormalTok{ '(i, j) rows piece}
+\end{Highlighting}
+\end{Shaded}
+
+A \texttt{Coord\ \textquotesingle{}(i,\ j)\ rows\ piece} contains a selection
+into the ith list in \texttt{rows}, to get \texttt{row}, and a selection into
+the jth item in \texttt{row}, to get \texttt{piece}.
+
+\hypertarget{trying-it-out}{%
+\subsection{Trying it out}\label{trying-it-out}}
+
+That's it! Let's see if we can generate some sensible \texttt{Update}s, and
+maybe even play a sample game.
+
+We'll start with the \texttt{EmptyBoard}, and let's add a piece by \texttt{PX}
+at the middle spot, index (1,1). This means we want
+\texttt{SelS\ SelZ\ :\$:\ SelS\ SelZ} (a \texttt{Coord} with two indexes into
+spots 1 and 1) applied to \texttt{MkUpdate}. We'll use \emph{-XTypeApplications}
+to specify the type variables \texttt{p} and \texttt{b}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t }\DataTypeTok{MkUpdate} \FunctionTok{@}\NormalTok{_ }\FunctionTok{@}\NormalTok{_ }\FunctionTok{@}\NormalTok{'}\DataTypeTok{PX} \FunctionTok{@}\DataTypeTok{EmptyBoard}\NormalTok{ (}\DataTypeTok{SelS} \DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{)}
+\DataTypeTok{Update}
+\NormalTok{  '}\DataTypeTok{PX}
+\NormalTok{  '[ '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{],}
+\NormalTok{     '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{],}
+\NormalTok{     '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{   ]}
+\NormalTok{  '[ '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{],}
+\NormalTok{     '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{],}
+\NormalTok{     '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{  ]}
+\end{Highlighting}
+\end{Shaded}
+
+Nice! This update produces exactly he board expected.
+
+Let's see if we can see if this prevents us from creating an illegal board.
+We'll take the result board and see if we can place a \texttt{PO} piece there:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let} \DataTypeTok{NewBoard} \FunctionTok{=}\NormalTok{ '[ '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{ ]}
+\NormalTok{                      , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ ]}
+\NormalTok{                      , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{ ]}
+\NormalTok{                      ]}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{MkUpdate} \FunctionTok{@}\NormalTok{_ }\FunctionTok{@}\NormalTok{_ }\FunctionTok{@}\NormalTok{'}\DataTypeTok{PO} \FunctionTok{@}\DataTypeTok{NewBoard}\NormalTok{ (}\DataTypeTok{SelS} \DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{)}
+\NormalTok{    • }\DataTypeTok{Couldn't}\NormalTok{ match }\KeywordTok{type}\NormalTok{ ‘'}\DataTypeTok{Nothing}\NormalTok{’ with ‘'}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{’}
+\end{Highlighting}
+\end{Shaded}
+
+Right! That's because \texttt{SelS\ SelZ\ :\&:\ SelS\ SellZ}, applied to
+\texttt{NewBoard}, gives
+\texttt{Coord\ \textquotesingle{}(\textquotesingle{}S\ \textquotesingle{}Z,\ \textquotesingle{}S\ \textquotesingle{}Z)\ NewBoard\ (\textquotesingle{}Just\ \textquotesingle{}PX)}.
+However, in order to be used with \texttt{MkUpdate}, the final field has to be
+\texttt{\textquotesingle{}Nothing}, not
+\texttt{\textquotesingle{}Just\ \textquotesingle{}PX}. So, type error.
+
+We can also use this with \texttt{GameState}, using \texttt{undefined} as a
+placeholder for our \texttt{InPlay} witness, since we haven't defined it yet:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t }\DataTypeTok{GSStart}
+\DataTypeTok{GameState}
+\NormalTok{    '}\DataTypeTok{PX}
+\NormalTok{    '[ '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{     ]}
+
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ s1 }\FunctionTok{=} \DataTypeTok{GSUpdate}\NormalTok{ undefined (}\DataTypeTok{MkUpdate}\NormalTok{ (}\DataTypeTok{SelS} \DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{))}
+             \FunctionTok{$} \DataTypeTok{GSStart}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t s1}
+\DataTypeTok{GameState}
+\NormalTok{    '}\DataTypeTok{PO}         \CommentTok{-- Player switches correclty!}
+\NormalTok{    '[ '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{     ]}
+
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ s2 }\FunctionTok{=} \DataTypeTok{GSUpdate}\NormalTok{ undefined (}\DataTypeTok{MkUpdate}\NormalTok{ (}\DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelZ}\NormalTok{))}
+             \FunctionTok{$}\NormalTok{ s1}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t s2}
+\DataTypeTok{GameState}
+\NormalTok{    '}\DataTypeTok{PX}
+\NormalTok{    '[ '[ '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PO}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{     ]}
+\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ s3 }\FunctionTok{=} \DataTypeTok{GSUpdate}\NormalTok{ undefined (}\DataTypeTok{MkUpdate}\NormalTok{ (}\DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelZ}\NormalTok{))}
+             \FunctionTok{$}\NormalTok{ s2}
+\NormalTok{    • }\DataTypeTok{Couldn't}\NormalTok{ match }\KeywordTok{type}\NormalTok{ ‘'}\DataTypeTok{Nothing}\NormalTok{’ with ‘'}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PO}\NormalTok{’}
+\end{Highlighting}
+\end{Shaded}
+
+We see that \texttt{GSUpdate} appropriately alternates the player each turn,
+keeps track of our updated boards, and also cannot be constructed if we give an
+illegal move (that is, if we try to place a piece where a piece has already been
+placed). Note that type inference allows us to not have to manually specify the
+board at each point in time.
+
+\hypertarget{creating-updates-from-user-input}{%
+\subsection{Creating Updates from User
+Input}\label{creating-updates-from-user-input}}
+
+Yay!
+
+\hypertarget{signoff}{%
+\section{Signoff}\label{signoff}}
+
+Hi, thanks for reading! You can reach me via email at
+\href{mailto:justin@jle.im}{\nolinkurl{justin@jle.im}}, or at twitter at
+\href{https://twitter.com/mstk}{@mstk}! This post and all others are published
+under the \href{https://creativecommons.org/licenses/by-nc-nd/3.0/}{CC-BY-NC-ND
+3.0} license. Corrections and edits via pull request are welcome and encouraged
+at \href{https://github.com/mstksg/inCode}{the source repository}.
+
+If you feel inclined, or this post was particularly helpful for you, why not
+consider \href{https://www.patreon.com/justinle/overview}{supporting me on
+Patreon}, or a \href{bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU}{BTC donation}?
+:)
+
+\end{document}
