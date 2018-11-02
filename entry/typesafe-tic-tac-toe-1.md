@@ -81,38 +81,10 @@ First, we'll define the types we need to specify our state:
 
 ``` {.haskell}
 $(singletons [d|
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L38-L53
-
   data Piece = PX | PO
     deriving (Eq, Ord)
   
   type Board = [[Maybe Piece]]
-
-  emptyBoard :: Board
-  emptyBoard = [[Nothing, Nothing, Nothing]
-               ,[Nothing, Nothing, Nothing]
-               ,[Nothing, Nothing, Nothing]
-               ]
-
-  altP :: Piece -> Piece
-  altP PX = PO
-  altP PO = PX
-
-  |])
-
-  type Board = [[Maybe Piece]]
-
-  emptyBoard :: Board
-  emptyBoard = [[Nothing, Nothing, Nothing]
-               ,[Nothing, Nothing, Nothing]
-               ,[Nothing, Nothing, Nothing]
-               ]
-
-  altP :: Piece -> Piece
-  altP PX = PO
-  altP PO = PX
-
-  |])
   |])
 ```
 
@@ -126,32 +98,22 @@ transformations:
 
 ``` {.haskell}
 $(singletons [d|
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L43-L53
-
   emptyBoard :: Board
-  emptyBoard = [[Nothing, Nothing, Nothing]
-               ,[Nothing, Nothing, Nothing]
-               ,[Nothing, Nothing, Nothing]
+  emptyBoard = [ [Nothing, Nothing, Nothing]
+               , [Nothing, Nothing, Nothing]
+               , [Nothing, Nothing, Nothing]
                ]
 
   altP :: Piece -> Piece
   altP PX = PO
   altP PO = PX
-
-  |])
-
-  altP :: Piece -> Piece
-  altP PX = PO
-  altP PO = PX
-
-  |])
   |])
 ```
 
 Let's just throw in a quick proof as a sanity check:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L63-L65
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L59-L61
 
 altP_cyclic :: Sing p -> AltP (AltP p) :~: p
 altP_cyclic SPX = Refl @'PX
@@ -164,6 +126,8 @@ two helper types that we will implement later. First, we'll use the
 the kind of a *type-level predicate*.
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L63-L63
+
 data InPlay :: Predicate Board
 ```
 
@@ -174,7 +138,9 @@ We also need to define a type for a valid update by a given player onto a given
 board:
 
 ``` {.haskell}
-data Update :: Piece -> Board -> Board -> Type
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L91-L91
+
+data Update :: Piece -> Board -> Board -> Type where
 ```
 
 A value of type `Update p b1 b2` will represent a valid update to board `b1` by
@@ -183,6 +149,8 @@ player `p` to create a board `b2`.
 And finally, our valid state constructor:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L65-L76
+
 data GameState :: Piece -> Board -> Type where
     -- | The empty board is a valid state
     GSStart
@@ -216,7 +184,9 @@ Let's go about what thinking about what defines a valid update. Remember, the
 kind we wanted was:
 
 ``` {.haskell}
-data Update :: Piece -> Board -> Board -> Type
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L91-L91
+
+data Update :: Piece -> Board -> Board -> Type where
 ```
 
 An `Update p b1 b2` will be a valid update of `b1` by player `p` to produce
@@ -257,7 +227,9 @@ For that, we'll introduce a common helper type to say *what* the piece at spot
 *(i, j)* is:
 
 ``` {.haskell}
-data Coord :: (N, N) -> [[k]] -> k -> Type
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L85-L85
+
+data Coord :: (N, N) -> [[k]] -> k -> Type where
 ```
 
 A `Coord '(i, j) xss x` is a data type that specifies that the jth item in the
@@ -267,6 +239,8 @@ And we require `Update` to only be constructable if the spot at *(i, j)* is
 `Nothing`:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L91-L94
+
 data Update :: Piece -> Board -> Board -> Type where
     MkUpdate :: forall i j p b. ()
              => Coord '(i, j) b 'Nothing
@@ -285,7 +259,9 @@ Now we need to define `Coord`. We're going to do that in terms of a simpler type
 that is essentially the same for normal lists --- a type:
 
 ``` {.haskell}
-data Sel :: N -> [k] -> k -> Type
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L78-L78
+
+data Sel :: N -> [k] -> k -> Type where
 ```
 
 A value of type `Sel n xs x` says that the nth item in `xs` is `x`.
@@ -299,9 +275,14 @@ data type. We can mention our induction rules:
     list `b ': as`.
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L78-L83
+
 data Sel :: N -> [k] -> k -> Type where
+    -- | The first item in a list is at index ''Z'
     SelZ :: Sel 'Z (a ': as) a
-    SelS :: Sel n  as        a -> Sel ('S n) (b ': bs) a
+    SelS :: Sel n  as        a      -- ^ If item @a@ is at index @n@ in list @as@
+         -- ---------------------------- then
+         -> Sel ('S n) (b ': bs) a  -- ^ Item @a@ is at index @''S' n@ in list @b ': bs@
 ```
 
 For example, for the type-level list `'[10,5,2,8]`, we can make values:
@@ -317,11 +298,13 @@ etc.
 We can then use this to define `Coord`:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L85-L89
+
 data Coord :: (N, N) -> [[k]] -> k -> Type where
-    (:$:) :: forall i j rows row piece. ()
+    (:$:) :: forall i j rows row p. ()
           => Sel i rows row
-          -> Sel j row  piece
-          -> Coord '(i, j) rows piece
+          -> Sel j row  p
+          -> Coord '(i, j) rows p
 ```
 
 A `Coord '(i, j) rows piece` contains a selection into the ith list in `rows`,
