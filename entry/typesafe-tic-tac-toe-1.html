@@ -508,10 +508,10 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb52-10" data-line-number="10">        <span class="kw">let</span> c <span class="fu">=</span> selX <span class="fu">:$:</span> selY</a>
 <a class="sourceLine" id="cb52-11" data-line-number="11">        <span class="kw">in</span>  <span class="co">-- success???</span></a></code></pre></div>
 <p>Just to clarify what’s going on, let’s give types to the names above:</p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb53-1" data-line-number="1"><span class="ot">b    ::</span> <span class="dt">Sing</span> (<span class="ot">b   ::</span> board        )</a>
-<a class="sourceLine" id="cb53-2" data-line-number="2"><span class="ot">row  ::</span> <span class="dt">Sing</span> (<span class="ot">row ::</span> [<span class="dt">Maybe</span> <span class="dt">Piece</span>])</a>
+<div class="sourceCode" id="cb53"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb53-1" data-line-number="1"><span class="ot">b    ::</span> <span class="dt">Sing</span> (<span class="ot">b   ::</span> [[<span class="dt">Maybe</span> <span class="dt">Piece</span>]])</a>
+<a class="sourceLine" id="cb53-2" data-line-number="2"><span class="ot">row  ::</span> <span class="dt">Sing</span> (<span class="ot">row ::</span>  [<span class="dt">Maybe</span> <span class="dt">Piece</span>] )</a>
 <a class="sourceLine" id="cb53-3" data-line-number="3"><span class="ot">selX ::</span> <span class="dt">Sel</span> i b row</a>
-<a class="sourceLine" id="cb53-4" data-line-number="4"><span class="ot">p    ::</span> <span class="dt">Sing</span> (<span class="ot">p   ::</span> <span class="dt">Maybe</span> <span class="dt">Piece</span>  )</a>
+<a class="sourceLine" id="cb53-4" data-line-number="4"><span class="ot">p    ::</span> <span class="dt">Sing</span> (<span class="ot">p   ::</span>   <span class="dt">Maybe</span> <span class="dt">Piece</span>  )</a>
 <a class="sourceLine" id="cb53-5" data-line-number="5"><span class="ot">selY ::</span> <span class="dt">Sel</span> j row p</a>
 <a class="sourceLine" id="cb53-6" data-line-number="6"><span class="ot">c    ::</span> <span class="dt">Coord</span> &#39;(i, j) b p</a></code></pre></div>
 <p><code>row</code> above is the <code>Sing</code> that comes attached with all <code>Σ</code> constructors, which is why we can give it to <code>decide @(InBounds j)</code>, which expects a singleton of the list.</p>
@@ -527,8 +527,8 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb54-9" data-line-number="9">      <span class="dt">Proved</span> (p <span class="fu">:&amp;:</span> selY) <span class="ot">-&gt;</span></a>
 <a class="sourceLine" id="cb54-10" data-line-number="10">        <span class="kw">let</span> c <span class="fu">=</span> selX <span class="fu">:$:</span> selY</a>
 <a class="sourceLine" id="cb54-11" data-line-number="11">        <span class="kw">in</span>  <span class="kw">case</span> p <span class="kw">of</span></a>
-<a class="sourceLine" id="cb54-12" data-line-number="12">              <span class="dt">SNothing</span> <span class="ot">-&gt;</span> <span class="dt">PickValid</span>   c</a>
-<a class="sourceLine" id="cb54-13" data-line-number="13">              <span class="dt">SJust</span> p&#39; <span class="ot">-&gt;</span> <span class="dt">PickPlayed</span>  c p&#39;</a></code></pre></div>
+<a class="sourceLine" id="cb54-12" data-line-number="12">              <span class="dt">SNothing</span> <span class="ot">-&gt;</span> <span class="dt">PickValid</span>   c     <span class="co">-- p is &#39;Nothing</span></a>
+<a class="sourceLine" id="cb54-13" data-line-number="13">              <span class="dt">SJust</span> q  <span class="ot">-&gt;</span> <span class="dt">PickPlayed</span>  c q   <span class="co">-- p is &#39;Just q</span></a></code></pre></div>
 <p>Finally, knowing that <code>p</code> is <code>'Nothing</code>, we can create <code>PickValid</code>!</p>
 <p>As a bonus, if we know that <code>p</code> is <code>'Just p</code>, we can create <code>PickPlayed</code>, which is the constructor for an in-bounds pick but pointing to a spot that is already occupied by piece <code>p'</code>.</p>
 <div class="sourceCode" id="cb55"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb55-1" data-line-number="1"><span class="dt">PickPlayed</span><span class="ot"> ::</span> <span class="dt">Coord</span> &#39;(i, j) b (&#39;<span class="dt">Just</span> p)</a>
@@ -562,8 +562,8 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb59-11" data-line-number="11">      <span class="dt">Proved</span> (p <span class="fu">:&amp;:</span> selY) <span class="ot">-&gt;</span></a>
 <a class="sourceLine" id="cb59-12" data-line-number="12">        <span class="kw">let</span> c <span class="fu">=</span> selX <span class="fu">:$:</span> selY</a>
 <a class="sourceLine" id="cb59-13" data-line-number="13">        <span class="kw">in</span>  <span class="kw">case</span> p <span class="kw">of</span></a>
-<a class="sourceLine" id="cb59-14" data-line-number="14">              <span class="dt">SNothing</span> <span class="ot">-&gt;</span> <span class="dt">PickValid</span>   c</a>
-<a class="sourceLine" id="cb59-15" data-line-number="15">              <span class="dt">SJust</span> p&#39; <span class="ot">-&gt;</span> <span class="dt">PickPlayed</span>  c p&#39;</a>
+<a class="sourceLine" id="cb59-14" data-line-number="14">              <span class="dt">SNothing</span> <span class="ot">-&gt;</span> <span class="dt">PickValid</span>   c     <span class="co">-- p is &#39;Nothing</span></a>
+<a class="sourceLine" id="cb59-15" data-line-number="15">              <span class="dt">SJust</span> q  <span class="ot">-&gt;</span> <span class="dt">PickPlayed</span>  c q   <span class="co">-- p is &#39;Just q</span></a>
 <a class="sourceLine" id="cb59-16" data-line-number="16">      <span class="dt">Disproved</span> vY <span class="ot">-&gt;</span> <span class="dt">PickOoBY</span> selX vY    <span class="co">-- vY :: InBounds j @@ row -&gt; Void</span></a>
 <a class="sourceLine" id="cb59-17" data-line-number="17">                                          <span class="co">-- vY :: Not (InBounds j) @@ row</span></a>
 <a class="sourceLine" id="cb59-18" data-line-number="18">                                          <span class="co">-- vY :: OutOfBounds j @@ row</span></a>

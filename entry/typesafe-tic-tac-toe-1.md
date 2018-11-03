@@ -989,10 +989,10 @@ pick Sing Sing b = case decide @(InBounds i) b of
 Just to clarify what's going on, let's give types to the names above:
 
 ``` {.haskell}
-b    :: Sing (b   :: board        )
-row  :: Sing (row :: [Maybe Piece])
+b    :: Sing (b   :: [[Maybe Piece]])
+row  :: Sing (row ::  [Maybe Piece] )
 selX :: Sel i b row
-p    :: Sing (p   :: Maybe Piece  )
+p    :: Sing (p   ::   Maybe Piece  )
 selY :: Sel j row p
 c    :: Coord '(i, j) b p
 ```
@@ -1018,8 +1018,8 @@ pick Sing Sing b = case decide @(InBounds i) b of
       Proved (p :&: selY) ->
         let c = selX :$: selY
         in  case p of
-              SNothing -> PickValid   c
-              SJust p' -> PickPlayed  c p'
+              SNothing -> PickValid   c     -- p is 'Nothing
+              SJust q  -> PickPlayed  c q   -- p is 'Just q
 ```
 
 Finally, knowing that `p` is `'Nothing`, we can create `PickValid`!
@@ -1081,8 +1081,8 @@ pick Sing Sing b = case decide @(InBounds i) b of
       Proved (p :&: selY) ->
         let c = selX :$: selY
         in  case p of
-              SNothing -> PickValid   c
-              SJust p' -> PickPlayed  c p'
+              SNothing -> PickValid   c     -- p is 'Nothing
+              SJust q  -> PickPlayed  c q   -- p is 'Just q
       Disproved vY -> PickOoBY selX vY    -- vY :: InBounds j @@ row -> Void
                                           -- vY :: Not (InBounds j) @@ row
                                           -- vY :: OutOfBounds j @@ row
