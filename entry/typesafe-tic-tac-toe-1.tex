@@ -809,7 +809,7 @@ fail.
 \hypertarget{parampred}{%
 \subsection{ParamPred}\label{parampred}}
 
-Another useful type synonym that \emph{decidable} gives is in
+Another useful kind synonym that \emph{decidable} gives is in
 \emph{Data.Type.Predicate.Param}, the ``parameterized predicate'':
 
 \begin{Shaded}
@@ -831,7 +831,7 @@ predicate combinator:
 \end{Shaded}
 
 \texttt{Found\ MyPP} is a predicate that, for any \texttt{x\ ::\ k}, we can find
-\emph{some} \texttt{y\ ::\ v} that satisfies \texttt{MyPP\ x\ y}.
+\emph{some} \texttt{y\ ::\ v} that satisfies \texttt{MyPP\ x\ @@\ y}.
 
 Again, the library is constructed so that you shouldn't need to define a
 \texttt{ParamPred} by hand; you can just use combinators and constructors.
@@ -924,7 +924,7 @@ satisfiable, but
 \texttt{InBounds\ (\textquotesingle{}S\ \textquotesingle{}Z)\ \textquotesingle{}{[}{]}}
 is not.
 
-To implement our view of \texttt{Pic}, we would like a function that can
+To implement our view of \texttt{Pick}, we would like a function that can
 \emph{decide} whether or not \texttt{InBounds\ n} is satisfied by a given list
 \texttt{xs}. What we want is a \emph{decision function}:
 
@@ -986,7 +986,7 @@ given input, using \texttt{:kind!}:
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{kind}\FunctionTok{!} \DataTypeTok{InBounds}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]  }\CommentTok{-- what is the type of the witness for `InBounds 'Z1 ?}
-\NormalTok{Σ }\DataTypeTok{Nat}\NormalTok{ (}\DataTypeTok{TyPP}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ '[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]))}
+\NormalTok{Σ }\DataTypeTok{Nat}\NormalTok{ (}\DataTypeTok{TyPP}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{) '[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{])}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1120,17 +1120,6 @@ functions --- one for each case.
     \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ x}
     \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
     \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) }\FunctionTok{@@}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
-
-\OtherTok{inBounds_znil  ::} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[])}
-
-\OtherTok{inBounds_zcons ::} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-               \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
-
-\OtherTok{inBounds_snil  ::} \DataTypeTok{Sing}\NormalTok{ n}
-               \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) }\FunctionTok{@@}\NormalTok{ '[])}
-
-\OtherTok{inBounds_scons ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-               \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) }\FunctionTok{@@}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1225,7 +1214,7 @@ functions --- one for each case.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L155-L168}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L155-L167}
 
 \NormalTok{inBounds_scons}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
@@ -1235,8 +1224,7 @@ functions --- one for each case.
 \NormalTok{inBounds_scons n _ xs }\FunctionTok{=} \KeywordTok{case}\NormalTok{ inBounds n xs }\KeywordTok{of}
     \DataTypeTok{Proved}\NormalTok{ (y }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->}       \CommentTok{-- if xs has y in its n spot}
       \DataTypeTok{Proved}\NormalTok{ (y }\FunctionTok{:&:} \DataTypeTok{SelS}\NormalTok{ s)   }\CommentTok{-- then (x : xs) has y in its (S n) spot}
-    \CommentTok{-- v is a disproof that an item is in n spot in xs}
-    \DataTypeTok{Disproved}\NormalTok{ v      }\OtherTok{->} \DataTypeTok{Disproved} \FunctionTok{$}
+    \DataTypeTok{Disproved}\NormalTok{ v      }\OtherTok{->} \DataTypeTok{Disproved} \FunctionTok{$} \CommentTok{-- v is a disproof that an item is in n spot in xs}
 \NormalTok{      \textbackslash{}(y }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->}      \CommentTok{-- suppose we had item y in (S n) spot in (x : xs)}
         \KeywordTok{case}\NormalTok{ s }\KeywordTok{of}
           \DataTypeTok{SelS}\NormalTok{ s' }\OtherTok{->}     \CommentTok{-- this would mean that item y is in n spot in xs}
@@ -1425,7 +1413,7 @@ what the \texttt{Disproved} branches give!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L170-L188}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L169-L187}
 
 \NormalTok{pick}
 \OtherTok{    ::}\NormalTok{ forall i j b}\FunctionTok{.}\NormalTok{ ()}
@@ -1456,7 +1444,7 @@ Now to just tie it all together with a \texttt{Provable} instance, using the
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L190-L192}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L189-L191}
 
 \KeywordTok{instance} \DataTypeTok{Provable}\NormalTok{ (}\DataTypeTok{TyPred} \DataTypeTok{Pick}\NormalTok{) }\KeywordTok{where}
 \OtherTok{    prove ::} \DataTypeTok{Sing}\NormalTok{ ijb }\OtherTok{->} \DataTypeTok{Pick}\NormalTok{ ijb}

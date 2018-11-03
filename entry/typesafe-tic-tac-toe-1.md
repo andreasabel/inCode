@@ -583,7 +583,7 @@ Well, remember that a *succcesful* `Pick` contains a `Sel i b row` and a
 
 ### ParamPred
 
-Another useful type synonym that *decidable* gives is in
+Another useful kind synonym that *decidable* gives is in
 *Data.Type.Predicate.Param*, the "parameterized predicate":
 
 ``` {.haskell}
@@ -601,7 +601,7 @@ Found :: ParamPred k v -> Predicate k
 ```
 
 `Found MyPP` is a predicate that, for any `x :: k`, we can find *some* `y :: v`
-that satisfies `MyPP x y`.
+that satisfies `MyPP x @@ y`.
 
 Again, the library is constructed so that you shouldn't need to define a
 `ParamPred` by hand; you can just use combinators and constructors.
@@ -673,7 +673,7 @@ Now, is `InBounds n` going to be `Provable`? No, not quite. That's because a
 given list `xs` might be actually out of bounds. For example,
 `InBounds 'Z @@ '[1,2,3]` is satisfiable, but `InBounds ('S 'Z) '[]` is not.
 
-To implement our view of `Pic`, we would like a function that can *decide*
+To implement our view of `Pick`, we would like a function that can *decide*
 whether or not `InBounds n` is satisfied by a given list `xs`. What we want is a
 *decision function*:
 
@@ -724,7 +724,7 @@ just ask GHC what this looks like for a given input, using `:kind!`:
 
 ``` {.haskell}
 ghci> :kind! InBounds 'Z @@ '[1,2,3]  -- what is the type of the witness for `InBounds 'Z1 ?
-Σ Nat (TyPP (Sel 'Z '[1,2,3]))
+Σ Nat (TyPP (Sel 'Z) '[1,2,3])
 ```
 
 In general, the witness for `Found (p :: ParamPred k v)` is:
@@ -833,17 +833,6 @@ inBounds_scons
     -> Sing x
     -> Sing xs
     -> Decision (InBounds ('S n) @@ (x ': xs))
-
-inBounds_znil  :: Decision (InBounds 'Z @@ '[])
-
-inBounds_zcons :: Sing x -> Sing xs
-               -> Decision (InBounds 'Z @@ (x ': xs))
-
-inBounds_snil  :: Sing n
-               -> Decision (InBounds ('S n) @@ '[])
-
-inBounds_scons :: Sing n -> Sing x -> Sing xs
-               -> Decision (InBounds ('S n) @@ (x ': xs))
 ```
 
 1.  For the first branch, we have `'Z` and `'[]`. This should be false, because
@@ -913,7 +902,7 @@ inBounds_scons :: Sing n -> Sing x -> Sing xs
         in the `'S n` spot in `x ': xs`.
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L155-L168
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L155-L167
 
     inBounds_scons
         :: Sing n
@@ -923,8 +912,7 @@ inBounds_scons :: Sing n -> Sing x -> Sing xs
     inBounds_scons n _ xs = case inBounds n xs of
         Proved (y :&: s) ->       -- if xs has y in its n spot
           Proved (y :&: SelS s)   -- then (x : xs) has y in its (S n) spot
-        -- v is a disproof that an item is in n spot in xs
-        Disproved v      -> Disproved $
+        Disproved v      -> Disproved $ -- v is a disproof that an item is in n spot in xs
           \(y :&: s) ->      -- suppose we had item y in (S n) spot in (x : xs)
             case s of
               SelS s' ->     -- this would mean that item y is in n spot in xs
@@ -1080,7 +1068,7 @@ That is, a witness of `Not p @@ x` is `p @@ x -> Void`. That means that
 give!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L170-L188
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L169-L187
 
 pick
     :: forall i j b. ()
@@ -1109,7 +1097,7 @@ Now to just tie it all together with a `Provable` instance, using the `STuple3`
 singletons constructor:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L190-L192
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L189-L191
 
 instance Provable (TyPred Pick) where
     prove :: Sing ijb -> Pick ijb
