@@ -683,63 +683,90 @@ out-of-bounds coordinate):
 \end{Highlighting}
 \end{Shaded}
 
+(A value of type \texttt{OutOfBounds\ n\ @@\ xs} is a witness that \texttt{xs}
+satisfies the \texttt{OutOfBounds\ n} --- that is, \texttt{n} is out of bounds
+of \texttt{xs}. More on this later!)
+
 So, if we have an \texttt{(N,\ N,\ Board)}, we should be able to categorize it
 into one of each of these potential views.
+
+\hypertarget{proving-functions}{%
+\subsection{Proving functions}\label{proving-functions}}
 
 This is the job of a ``decision function''; in this case, actually, a ``proving
 function''. We need to be able to write a function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{pick ::}\NormalTok{ forall i j b}\FunctionTok{.}\NormalTok{ ()}
-     \OtherTok{=>} \DataTypeTok{Sing}\NormalTok{ '(i, j, b) }\OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+\OtherTok{pick ::} \DataTypeTok{Sing}\NormalTok{ '(i, j, b)}
+     \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
 \end{Highlighting}
 \end{Shaded}
 
 That is, given any coordinate and board, we should be able to \emph{totally}
-categorize it to one of the four categories, without exception.
+categorize it to one of the four categories (think of them like four
+perspectives/classifications), without exception.
 
 This can be considered the boundary between the unsafe and the safe world. And,
 to me, this is the ``hard part'' about dependently typed programming :)
 
-We can write this by scratch, by hand, but we're going to look at a couple of
-useful tools from the \emph{decidable} library to help us.
+If we want to take any \texttt{i}, \texttt{j}, and \texttt{b}, and turn it into
+a valid \texttt{Pick}, remember that a valid
+\texttt{Pick\ \textquotesingle{}(i,\ j,\ b)} contains a
+\texttt{Coord\ \textquotesingle{}(i,\ j)\ b\ \textquotesingle{}Nothing}, which
+contains a \texttt{Sel\ i\ b\ row} and a
+\texttt{Sel\ j\ row\ \textquotesingle{}Nothing}. So we need to ``convert'' some
+\texttt{i}, \texttt{j} into a \texttt{Sel\ i\ b\ row} and
+\texttt{Sel\ j\ row\ \textquotesingle{}Nothing}.
 
-\hypertarget{the-decidable-library}{%
-\section{The Decidable Library}\label{the-decidable-library}}
+\hypertarget{existential-return-types}{%
+\subsection{Existential return types}\label{existential-return-types}}
 
-The \emph{\href{https://hackage.haskell.org/package/decidable}{decidable}}
-library offers a couple of conceptual tools to work with views and predicates.
-Here's a quick run-down:
-
-The main type that the library works with is \texttt{Predicate}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{Predicate}\NormalTok{ k }\FunctionTok{=}\NormalTok{ k }\FunctionTok{~>} \DataTypeTok{Type}
-\end{Highlighting}
-\end{Shaded}
-
-\texttt{k\ \textasciitilde{}\textgreater{}\ Type} is the kind of a
-\emph{defunctionalization symbol} --- it's a dummy data type that can be passed
-around, and represents a function
-\texttt{k\ \textasciitilde{}\textgreater{}\ Type} that can be ``applied'' using
-\texttt{Apply} or \texttt{@@}. We say that, for predicate \texttt{MyPred}, we
-define:
+Essentially, we want a function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply} \DataTypeTok{MyPred}\NormalTok{ x }\FunctionTok{=} \DataTypeTok{MyWitness}
+\OtherTok{sel ::} \DataTypeTok{Sing}\NormalTok{ i}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{->} \DataTypeTok{Sel}\NormalTok{ i xs }\FunctionTok{??????}
 \end{Highlighting}
 \end{Shaded}
 
-Where \texttt{MyWitness} is the witness for the type-level predicate
-\texttt{MyPred}. We can define a predicate from scratch by declaring the above
-type family instance, but the library is defined so that you rarely ever have to
-define a \texttt{Predicate} by hand. Usually, we can use predicate
-``combinators'', to construct predicates from simpler pieces.
+where \texttt{????} is whatever value is in \texttt{xs} at index \texttt{i}.
+It's something we might not know directly from the input types, necessarily,
+because it might not even exist (the list might be too short).
 
-For example, we have the \texttt{TyPred} combinator:
+This pattern --- where we don't know the type of something until after we
+receive the function inputs --- is something you might recognize as an
+\emph{existential type}, implementable using a \emph{dependent pair} (or
+dependent sum).
+
+We could write our own dependent pair from scratch, but this is a good
+opportunity to practice using \emph{singletons} library's versatile ``anonymous
+dependent pair'' type, \texttt{Σ} (or \texttt{Sigma}), from
+\emph{Data.Singletons.Sigma}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Sigma}\OtherTok{ k ::} \DataTypeTok{Predicate}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+\OtherTok{    (:&:) ::} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{->}\NormalTok{ (p }\FunctionTok{@@}\NormalTok{ x) }\OtherTok{->} \DataTypeTok{Sigma}\NormalTok{ k f}
+
+\KeywordTok{type}\NormalTok{ Σ k }\FunctionTok{=} \DataTypeTok{Sigma}\NormalTok{ k}
+\end{Highlighting}
+\end{Shaded}
+
+A value of type \texttt{Sigma\ k\ p} contains an \texttt{p\ @@\ x} (a witness
+that \texttt{x} satisfies \texttt{x}), existentially \emph{hiding} the
+\texttt{x}, and also \texttt{x} itself (as \texttt{Sing\ x}; remember that
+\texttt{Sing\ x} is essentially a value-level representation of type
+\texttt{x}).
+
+We can use this to return a \texttt{Sel\ n\ xs\ ????}, \emph{hiding} the
+\texttt{???}. We can't directly give \texttt{Sel\ n\ xs} to \texttt{Sigma}
+(because it expects a \texttt{Predicate\ k}, not a
+\texttt{k\ -\textgreater{}\ Type}), but we can turn a type constructor into a
+\texttt{Predicate} using \texttt{TyPred}, a convenient combinator from the
+\emph{decidable} library:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -747,716 +774,84 @@ For example, we have the \texttt{TyPred} combinator:
 \end{Highlighting}
 \end{Shaded}
 
-It turns a normal \texttt{k\ -\textgreater{}\ Type} type constructor into a
-\texttt{Predicate\ k}. So, we can use
-\texttt{Pick\ ::\ (N,\ N,\ Board)\ -\textgreater{}\ Type}
-
 \begin{Shaded}
 \begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{Pick}
+\NormalTok{(}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{, }\DataTypeTok{Board}\NormalTok{) }\OtherTok{->} \DataTypeTok{Type}
+
 \NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{TyPred} \DataTypeTok{Pick}
 \DataTypeTok{Predicate}\NormalTok{ (}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{, }\DataTypeTok{Board}\NormalTok{)}
+
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{Sel}\NormalTok{ '}\DataTypeTok{Z} \DataTypeTok{EmptyBoard}
+\NormalTok{[}\DataTypeTok{Maybe} \DataTypeTok{Piece}\NormalTok{] }\OtherTok{->} \DataTypeTok{Type}
+
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{TyPred}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ '}\DataTypeTok{Z} \DataTypeTok{EmptyBoard}\NormalTok{)}
+\DataTypeTok{Predicate}\NormalTok{ [}\DataTypeTok{Maybe} \DataTypeTok{Piece}\NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
 
-\texttt{TyPred\ Pick} is a predicate that, given a coordinate and a board, we
-can create a valid \texttt{Pick} using one of the \texttt{Pick} constructors.
-
-\hypertarget{provable}{%
-\subsection{Provable}\label{provable}}
-
-\emph{decidable} makes this a little nicer to work with by providing a typeclass
-for predicates with ``canonical'' viewing functions, called \texttt{Provable}:
+So we now have enough tools to write the type of the function we would like:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- | Class providing a canonical proving function or view for predicate `p`.}
-\KeywordTok{class} \DataTypeTok{Provable}\NormalTok{ p }\KeywordTok{where}
-    \CommentTok{-- | Given any `x`, produce the witness `p @@ x`.}
-\OtherTok{    prove ::}\NormalTok{ forall x}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{->}\NormalTok{ (p }\FunctionTok{@@}\NormalTok{ x)}
+\OtherTok{sel ::}\NormalTok{ forall (}\OtherTok{i ::} \DataTypeTok{N}\NormalTok{) (}\OtherTok{xs ::}\NormalTok{ k)}\FunctionTok{.}\NormalTok{ ()}
+    \OtherTok{=>} \DataTypeTok{Sing}\NormalTok{ i}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{->}\NormalTok{ Σ k (}\DataTypeTok{TyPred}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ i xs))}
 \end{Highlighting}
 \end{Shaded}
 
-The benefit of using a typeclass is that we can associate a canonical
-proving/viewing function with a consistent name, and also so that higher-order
-predicate combinators can build proving functions based on proving functions of
-the predicates they are parameterized on.
+Remember, a \texttt{Σ\ a\ (TyPred\ (Sel\ i\ xs))} contains both a
+\texttt{Sel\ i\ xs\ x} \emph{and} a \texttt{Sing\ x}: a selection into the
+\texttt{i}th item in \texttt{xs} (the \texttt{Sel\ i\ xs\ x}), and also the item
+itself (the \texttt{Sing\ x}).
 
-In our case, writing a view function would look like this:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{instance} \DataTypeTok{Provable}\NormalTok{ (}\DataTypeTok{TyPred} \DataTypeTok{Pick}\NormalTok{) }\KeywordTok{where}
-\OtherTok{    prove ::} \DataTypeTok{Sing}\NormalTok{ ijb }\OtherTok{->} \DataTypeTok{Pick}\NormalTok{ ijb}
-\NormalTok{    prove (}\DataTypeTok{STuple3}\NormalTok{ i j b) }\FunctionTok{=}\NormalTok{ undefined}
-        \CommentTok{-- ^ STuple3 is the singleton for three-tuples}
-\end{Highlighting}
-\end{Shaded}
-
-Then, given any \texttt{(i,\ j,\ b)} combination, we can classify it into one of
-the constructors of \texttt{Pick} by just using
-\texttt{prove\ @(TyPred\ Pick)\ sIJB}.
-
-Now that we've restated things in the context of \emph{decidable}\ldots{}how do
-we actually write \texttt{prove\ @(TyPred\ Pick)}?
-
-Well, remember that a \emph{succcesful} \texttt{Pick} contains a
-\texttt{Sel\ i\ b\ row} and a \texttt{Sel\ j\ row\ p}. We need to somehow take
-an \texttt{i\ ::\ N} and turn it into a \texttt{Sel\ i\ b\ row}, and take a
-\texttt{j\ ::\ N} and turn it into a \texttt{Sel\ j\ row\ p}. We need to
-``convert'' a \texttt{N} into some \texttt{Sel}, in a way that could potentially
-fail.
-
-\hypertarget{parampred}{%
-\subsection{ParamPred}\label{parampred}}
-
-Another useful kind synonym that \emph{decidable} gives is in
-\emph{Data.Type.Predicate.Param}, the ``parameterized predicate'':
+We can start writing this, but the type system will soon show you where you run
+into problems. And that's one of the best things about type systems! They help
+you realize when you're trying to do something that doesn't make sense.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{ParamPred}\NormalTok{ k v }\FunctionTok{=}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Predicate}\NormalTok{ v}
-\end{Highlighting}
-\end{Shaded}
-
-If \texttt{MyPP\ ::\ ParamPred\ k\ v} is a parameterized predicate, then
-\texttt{MyPP\ x} is a \texttt{Predicate\ v}.
-
-The main usage of parameterized predicate is for usage with the \texttt{Found}
-predicate combinator:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\DataTypeTok{Found}\OtherTok{ ::} \DataTypeTok{ParamPred}\NormalTok{ k v }\OtherTok{->} \DataTypeTok{Predicate}\NormalTok{ k}
-\end{Highlighting}
-\end{Shaded}
-
-\texttt{Found\ MyPP} is a predicate that, for any \texttt{x\ ::\ k}, we can find
-\emph{some} \texttt{y\ ::\ v} that satisfies \texttt{MyPP\ x\ @@\ y}.
-
-Again, the library is constructed so that you shouldn't need to define a
-\texttt{ParamPred} by hand; you can just use combinators and constructors.
-
-For example, we have \texttt{TyPP}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\DataTypeTok{TyPP}\OtherTok{ ::}\NormalTok{ (k }\OtherTok{->}\NormalTok{ v }\OtherTok{->} \DataTypeTok{Type}\NormalTok{) }\OtherTok{->} \DataTypeTok{ParamPred}\NormalTok{ k v}
-\end{Highlighting}
-\end{Shaded}
-
-Which turns any normal type constructor into a \texttt{ParamPred}. For example,
-let's look at \texttt{Sel\ \textquotesingle{}Z}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{TyPP}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{)}
-\DataTypeTok{ParamPred}\NormalTok{ [k] k}
-\end{Highlighting}
-\end{Shaded}
-
-\texttt{TyPP\ (Sel\ \textquotesingle{}Z)} is the parameterized predicate that,
-given a list \texttt{xs\ ::\ {[}k{]}}, we can produce an \texttt{x\ ::\ k} that
-is at index \texttt{\textquotesingle{}Z}. That's because its witness is
-\texttt{Sel\ \textquotesingle{}Z\ xs\ x} (the witness that \texttt{x} is at
-position \texttt{\textquotesingle{}Z} in \texttt{xs}).
-
-What is \texttt{Found\ (TyPP\ (Sel\ \textquotesingle{}Z))}?
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{Found}\NormalTok{ (}\DataTypeTok{TyPP}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{))}
-\DataTypeTok{Predicate}\NormalTok{ [k]}
-\end{Highlighting}
-\end{Shaded}
-
-Judging from the type, it is some predicate on a type level list. And knowing
-what we know about \texttt{Found}, we can conclude what it is: It is a predicate
-that, given some list \texttt{xs}, there \emph{is some value \texttt{x}} at
-position \texttt{\textquotesingle{}Z}. It's essentially a predicate that the
-list \emph{has} something at position \texttt{\textquotesingle{}Z}.
-
-We can generalize it further;
-\texttt{Found\ (TyPP\ (Sel\ (\textquotesingle{}S\ \textquotesingle{}Z)))} must
-be the predicate that some given list \texttt{xs} has a value \texttt{x} at
-position \texttt{\textquotesingle{}S\ \textquotesingle{}Z}. It says that there
-must be \emph{some} value at \texttt{\textquotesingle{}S\ \textquotesingle{}Z}.
-
-Really, \texttt{Found\ (TyPP\ (Sel\ n))} is a predicate that some list
-\texttt{xs} is \emph{at least} \texttt{n\ +\ 1} items long. That's because we
-know that the list has to have some item at position \texttt{n}.
-
-There's a better name for this --- we'll call it \texttt{InBounds}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L110-L110}
-
-\KeywordTok{type} \DataTypeTok{InBounds}\NormalTok{    n }\FunctionTok{=} \DataTypeTok{Found}\NormalTok{ (}\DataTypeTok{TyPP}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ n))}
-\end{Highlighting}
-\end{Shaded}
-
-\texttt{InBounds\ n\ ::\ Predicate\ {[}k{]}} is the predicate that, given some
-list \texttt{xs}, \texttt{n} is ``in bounds'' of \texttt{xs}.
-
-And \emph{decidable} is nice because it offers a predicate combinator
-\texttt{Not}, which gives the negation of any predicate:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L112-L112}
-
-\KeywordTok{type} \DataTypeTok{OutOfBounds}\NormalTok{ n }\FunctionTok{=} \DataTypeTok{Not}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ n)}
-\end{Highlighting}
-\end{Shaded}
-
-\texttt{OutOfBounds\ n\ ::\ Predicate\ {[}k{]}} is the predicate that, given
-some list \texttt{xs}, \texttt{n} is \emph{not} in bounds of \texttt{xs}, and
-that it is actually \emph{out} of bounds.
-
-\hypertarget{decidable}{%
-\subsection{Decidable}\label{decidable}}
-
-Now, is \texttt{InBounds\ n} going to be \texttt{Provable}? No, not quite.
-That's because a given list \texttt{xs} might be actually out of bounds. For
-example,
-\texttt{InBounds\ \textquotesingle{}Z\ @@\ \textquotesingle{}{[}1,2,3{]}} is
-satisfiable, but
-\texttt{InBounds\ (\textquotesingle{}S\ \textquotesingle{}Z)\ \textquotesingle{}{[}{]}}
-is not.
-
-To implement our view of \texttt{Pick}, we would like a function that can
-\emph{decide} whether or not \texttt{InBounds\ n} is satisfied by a given list
-\texttt{xs}. What we want is a \emph{decision function}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{inBounds ::}\NormalTok{ forall n xs}\FunctionTok{.}\NormalTok{ ()}
-         \OtherTok{=>} \DataTypeTok{Sing}\NormalTok{ xs}
-         \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ n }\FunctionTok{@@}\NormalTok{ xs)}
-\end{Highlighting}
-\end{Shaded}
-
-Remember that \texttt{Decision} is a data type that is kind of like
-\texttt{Maybe}, but with a ``disproof'' if the input is disprovable:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Decision}\NormalTok{ a}
-    \FunctionTok{=} \DataTypeTok{Proved}\NormalTok{     a                }\CommentTok{-- ^ `a` is provably true}
-    \FunctionTok{|} \DataTypeTok{Disproved}\NormalTok{ (a }\OtherTok{->} \DataTypeTok{Void}\NormalTok{)       }\CommentTok{-- ^ `a` is provably false}
-
-\CommentTok{-- | The type with no constructors.  If we have a function `a -> Void`, it must}
-\CommentTok{-- mean that no value of type `a` exists.}
-\KeywordTok{data} \DataTypeTok{Void}
-\end{Highlighting}
-\end{Shaded}
-
-The \emph{decidable} library offers a typeclass for a \emph{canonical} decision
-function for any \texttt{Predicate}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- | Class providing a canonical decision function for predicate `p`.}
-\KeywordTok{class} \DataTypeTok{Decidable}\NormalTok{ p }\KeywordTok{where}
-    \CommentTok{-- | Given any `x`, either prove or disprove the witness `p @@ x`.}
-\OtherTok{    decide ::}\NormalTok{ forall x}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (p }\FunctionTok{@@}\NormalTok{ x)}
-\end{Highlighting}
-\end{Shaded}
-
-Of course, we could always just write our decision function \texttt{inBounds}
-from scratch, but it's convenient to pull everything into a typeclass instead
-for the reasons discussed earlier.
-
-\hypertarget{deciding-inbounds}{%
-\subsection{Deciding InBounds}\label{deciding-inbounds}}
-
-Alright, time to write our first bona-fide decision function for
-\texttt{InBounds}, which we will use to write our view function for
-\texttt{Pick}.
-
-The decision function requires us to produce a witness for
-\texttt{InBounds\ n\ @@\ xs}\ldots{}so we need to know what that witness looks
-like.
-
-To do this, we could either look at the documentation for \texttt{Found}
-(because \texttt{InBounds\ n\ =\ Found\ (TyPP\ (Sel\ n))}) to find its
-\texttt{Apply} instance, or we could just ask GHC what this looks like for a
-given input, using \texttt{:kind!}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{kind}\FunctionTok{!} \DataTypeTok{InBounds}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]  }\CommentTok{-- what is the type of the witness for `InBounds 'Z1 ?}
-\NormalTok{Σ }\DataTypeTok{Nat}\NormalTok{ (}\DataTypeTok{TyPP}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{) '[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{])}
-\end{Highlighting}
-\end{Shaded}
-
-In general, the witness for \texttt{Found\ (p\ ::\ ParamPred\ k\ v)} is:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply}\NormalTok{ (}\DataTypeTok{Found}\NormalTok{ p) x }\FunctionTok{=}\NormalTok{ Σ v (p x)}
-\end{Highlighting}
-\end{Shaded}
-
-\texttt{Σ} might seem a little scary, but remember that it's a type synonym for
-the dependent pair \texttt{Sigma} type, from \emph{Data.Singletons.Sigma}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Sigma}\OtherTok{ k ::}\NormalTok{ (k }\FunctionTok{~>} \DataTypeTok{Type}\NormalTok{) }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
-\OtherTok{    (:&:) ::} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{->}\NormalTok{ (f }\FunctionTok{@@}\NormalTok{ x) }\OtherTok{->} \DataTypeTok{Sigma}\NormalTok{ k f}
-
-\KeywordTok{type}\NormalTok{ Σ k }\FunctionTok{=} \DataTypeTok{Sigma}\NormalTok{ k}
-\end{Highlighting}
-\end{Shaded}
-
-I wrote a small mini-tutorial on \texttt{Sigma}
-\href{https://blog.jle.im/entry/introduction-to-singletons-4.html\#sigma}{here},
-if you need a refresher. Basically, if we had
-\texttt{f\ ::\ k\ \textasciitilde{}\textgreater{}\ Type}, then
-\texttt{Sigma\ k\ f} contains an \texttt{f\ @@\ x}, for some \texttt{x}, along
-with \texttt{Sing\ x} (to help us recover what \texttt{x} was, once we pattern
-match). It's a \emph{dependent pair} or \emph{dependent sum} type. You can think
-of it as \texttt{Sigma\ k\ f} existentially \emph{wrapping} \texttt{x\ ::\ k},
-to show that there is at least some \texttt{x} somewhere out there such that
-\texttt{f\ @@\ x} exists.
-
-This makes a lot of sense as a witness to \texttt{Found\ p}.
-\texttt{Found\ p\ @@\ x} says that there is some \texttt{y} such that
-\texttt{p\ x\ @@\ y} is satisfied. So, what is the witness of that statement?
-The \texttt{y} itself! (wrapped in a \texttt{Σ})
-
-So, the witness for
-\texttt{InBounds\ \textquotesingle{}Z\ @@\ \textquotesingle{}{[}\ \textquotesingle{}True,\ \textquotesingle{}False\ {]}}
-is the item in the list \texttt{\textquotesingle{}{[}1,2,3{]}} at position
-\texttt{\textquotesingle{}Z} --- \texttt{\textquotesingle{}True}. Let's see this
-in action:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{inBoundsTest1 ::} \DataTypeTok{InBounds}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[ '}\DataTypeTok{True}\NormalTok{, '}\DataTypeTok{False}\NormalTok{ ]}
-\NormalTok{inBoundsTest1 }\FunctionTok{=} \DataTypeTok{STrue} \FunctionTok{:&:} \DataTypeTok{SelZ}
-                       \CommentTok{-- ^ Sel 'Z '[ 'True, 'False ] 'True}
-\end{Highlighting}
-\end{Shaded}
-
-Note that we can't put \texttt{SFalse} in \texttt{inBoundsTest1}, because the
-second half \texttt{SelZ} would be
-\texttt{Sel\ ::\ \textquotesingle{}Z\ \textquotesingle{}{[}\ \textquotesingle{}True,\ \textquotesingle{}False\ {]}\ \textquotesingle{}True}
-(because \texttt{\textquotesingle{}True} is the 0th item in the list), so we
-have to have the first half match \texttt{\textquotesingle{}True}.
-
-And we can write a witness for
-\texttt{InBounds\ (\textquotesingle{}S\ \textquotesingle{}Z)\ @@\ \textquotesingle{}{[}\ \textquotesingle{}True,\ \textquotesingle{}False\ {]}},
-as well, by giving the value of the list at index 1,
-\texttt{\textquotesingle{}False}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{inBoundsTest2 ::} \DataTypeTok{InBounds}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{) }\FunctionTok{@@}\NormalTok{ '[ '}\DataTypeTok{True}\NormalTok{, '}\DataTypeTok{False}\NormalTok{ ]}
-\NormalTok{inBoundsTest2 }\FunctionTok{=} \DataTypeTok{SFalse} \FunctionTok{:&:} \DataTypeTok{SelS} \DataTypeTok{SelZ}
-                        \CommentTok{-- ^ Sel ('S 'Z) '[ 'True, 'False ] 'False}
-\end{Highlighting}
-\end{Shaded}
-
-With that in mind, let's write our decision function for \texttt{InBounds\ n}.
-It's going to be our actual first dependently typed function!
-
-For the sake of learning, we're going to write it as a standalone function
-\texttt{inBounds}. It's going to take \texttt{Sing\ n} (the index) and
-\texttt{Sing\ xs} (the list) and produce a decision on
-\texttt{InBounds\ n\ @@\ xs}. Like for any Haskell function on ADTs, we'll start
-out by just writing all of our case statement branches (using
-\emph{-XLambdaCase} for conciseness). An \texttt{N} can either be \texttt{Z} or
-\texttt{S\ n}, so we match on singletons \texttt{SZ} and \texttt{SS}. A
-\texttt{{[}a{]}} can either be \texttt{{[}{]}} or \texttt{x\ :\ xs}, so we match
-on singletons \texttt{SNil} and
-\texttt{x\ \textasciigrave{}SCons\textasciigrave{}\ xs}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{inBounds ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ n }\FunctionTok{@@}\NormalTok{ xs)}
-\NormalTok{inBounds }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+\OtherTok{sel ::}\NormalTok{ forall (}\OtherTok{i ::} \DataTypeTok{N}\NormalTok{) (}\OtherTok{xs ::}\NormalTok{ [k])}\FunctionTok{.}\NormalTok{ ()}
+    \OtherTok{=>} \DataTypeTok{Sing}\NormalTok{ i}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{->}\NormalTok{ Σ k (}\DataTypeTok{TyPred}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ i xs))}
+\NormalTok{sel }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{SZ} \OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-      \DataTypeTok{SNil}         \OtherTok{->}\NormalTok{ _}
-\NormalTok{      x }\OtherTok{`SCons`}\NormalTok{ xs }\OtherTok{->}\NormalTok{ _}
-    \DataTypeTok{SS}\NormalTok{ n }\OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-      \DataTypeTok{SNil}         \OtherTok{->}\NormalTok{ _}
-\NormalTok{      x }\OtherTok{`SCons`}\NormalTok{ xs }\OtherTok{->}\NormalTok{ _}
+      \DataTypeTok{SNil} \OtherTok{->}\NormalTok{ _ }\FunctionTok{:&:}\NormalTok{ _}
 \end{Highlighting}
 \end{Shaded}
 
-Okay, four cases. Initially daunting, but we can just handle this one by one.
-Again, for learning's sake, ket's split these branches into four helper
-functions --- one for each case.
+Things start out pretty standard. We want to match on all potential constructors
+of \texttt{N} and \texttt{{[}a{]}}: \texttt{N} has \texttt{Z} and \texttt{S}, so
+we match on singleton constructors \texttt{SZ} and \texttt{SS}; \texttt{{[}a{]}}
+has \texttt{{[}{]}} and \texttt{(:)}, so we match on singleton constructors
+\texttt{SNil} and \texttt{SCons}.
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L131-L159}
+If you ask ghc what goes in the typed holes, it'll say that we need a
+\texttt{Sing\ x} and a
+\texttt{Sel\ \textquotesingle{}Z\ \textquotesingle{}{[}{]}\ x} (which is because
+matching on \texttt{SZ} tells us we are in \texttt{\textquotesingle{}Z}, and
+matching on \texttt{SNil} tells us we are in \texttt{\textquotesingle{}{[}{]}}).
 
-\OtherTok{inBounds ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ n }\FunctionTok{@@}\NormalTok{ xs)}
-\NormalTok{inBounds }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-    \DataTypeTok{SZ} \OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-      \DataTypeTok{SNil}         \OtherTok{->}\NormalTok{ inBounds_znil}
-\NormalTok{      x }\OtherTok{`SCons`}\NormalTok{ xs }\OtherTok{->}\NormalTok{ inBounds_zcons x xs}
-    \DataTypeTok{SS}\NormalTok{ n }\OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-      \DataTypeTok{SNil}         \OtherTok{->}\NormalTok{ inBounds_snil n}
-\NormalTok{      x }\OtherTok{`SCons`}\NormalTok{ xs }\OtherTok{->}\NormalTok{ inBounds_scons n x xs}
+Remember that the \texttt{x} is supposed to be the \texttt{i}th item in
+\texttt{xs}. Here, in this pattern match branch, we want the zeroth (first) item
+in \texttt{{[}{]}}. This doesn't exist! That's because there is no item in
+\texttt{{[}{]}}, so there is nothing we can put for the
+\texttt{Sing\ x}\ldots{}there's also nothing we could put for the \texttt{Sel},
+since there is no constructor of \texttt{Sel} that returns a
+\texttt{Sel\ n\ \textquotesingle{}{[}{]}} (the constructors of \texttt{Sel} all
+return \texttt{x\ \textquotesingle{}:\ xs}, never \texttt{Nil}).
 
-\NormalTok{inBounds_znil}
-\OtherTok{    ::} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[])}
+So, this branch is impossible to fulfil. We know now that we made a large
+conceptual error (aren't types great?)
 
-\NormalTok{inBounds_zcons}
-\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ x}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
+The problem? Well, indexing into item \texttt{i} in list \texttt{xs} \emph{might
+not always succeed}. We might try to index into an empty list, so we can't ever
+get a result!
 
-\NormalTok{inBounds_snil}
-\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) }\FunctionTok{@@}\NormalTok{ '[])}
-
-\NormalTok{inBounds_scons}
-\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ x}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) }\FunctionTok{@@}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  For the first branch, we have \texttt{\textquotesingle{}Z} and
-  \texttt{\textquotesingle{}{[}{]}}. This should be false, because there is no
-  item in the zeroth position in \texttt{{[}{]}}. But, also, there is no way to
-  construct the \texttt{Sel} necessary for the witness, since there is no
-  constructor for \texttt{Sel} that gives \texttt{\textquotesingle{}{[}{]}}.
-
-  So we can write this as \texttt{Disproved}, which takes a
-  \texttt{InBounds\ \textquotesingle{}Z\ @@\ \textquotesingle{}{[}{]}\ -\textgreater{}\ Void}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L140-L142}
-
-\NormalTok{inBounds_znil}
-\OtherTok{    ::} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[])}
-\NormalTok{inBounds_znil }\FunctionTok{=} \DataTypeTok{Disproved} \FunctionTok{$}\NormalTok{ \textbackslash{}(_ }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->} \KeywordTok{case}\NormalTok{ s }\KeywordTok{of}\NormalTok{ \{\}}
-\end{Highlighting}
-\end{Shaded}
-
-  We can satisfy that
-  \texttt{InBounds\ \textquotesingle{}Z\ @@\ \textquotesingle{}{[}{]}\ -\textgreater{}\ Void}
-  by pattern matching on the \texttt{Sel} it \emph{would} contain. Because there
-  is no \texttt{Sel} for an empty list, the empty pattern match is safe.
-
-  Remember to enable \emph{-Werror=incomplete-patterns} to be sure!
-\item
-  For the second branch, we have \texttt{\textquotesingle{}Z} and
-  \texttt{(x\ \textquotesingle{}:\ xs)}. We want to prove that there exists an
-  item at position \texttt{\textquotesingle{}Z} in the list
-  \texttt{x\ \textquotesingle{}:\ xs}. The answer is \emph{yes}, there does, and
-  that item is \texttt{x}, and the \texttt{Sel} is \texttt{SelZ}!
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L144-L148}
-
-\NormalTok{inBounds_zcons}
-\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ x}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
-\NormalTok{inBounds_zcons x _ }\FunctionTok{=} \DataTypeTok{Proved}\NormalTok{ (x }\FunctionTok{:&:} \DataTypeTok{SelZ}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-\item
-  For the third branch, we have \texttt{\textquotesingle{}S\ n} and
-  \texttt{\textquotesingle{}{[}{]}}. Again, this should be false, because there
-  is no item in the \texttt{\textquotesingle{}S\ n} position in
-  \texttt{\textquotesingle{}{[}{]}}. We should be able to use the same strategy
-  for the first branch:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L150-L153}
-
-\NormalTok{inBounds_snil}
-\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) }\FunctionTok{@@}\NormalTok{ '[])}
-\NormalTok{inBounds_snil _ }\FunctionTok{=} \DataTypeTok{Disproved} \FunctionTok{$}\NormalTok{ \textbackslash{}(_ }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->} \KeywordTok{case}\NormalTok{ s }\KeywordTok{of}\NormalTok{ \{\}}
-\end{Highlighting}
-\end{Shaded}
-\item
-  The fourth branch is the most interesting one. We have
-  \texttt{\textquotesingle{}S\ n} and \texttt{(x\ \textquotesingle{}:\ xs)}. How
-  do we know if the list \texttt{x\ \textquotesingle{}:\ xs} has an item in the
-  \texttt{\textquotesingle{}S\ n} spot?
-
-  Well, we can check if the list \texttt{xs} has an item in its \texttt{n} spot.
-
-  \begin{itemize}
-  \item
-    If it does, then call that item \texttt{y}, and we know that
-    \texttt{x\ \textquotesingle{}:\ xs} has \texttt{y} in its
-    \texttt{\textquotesingle{}S\ n} spot.
-  \item
-    If it doesn't, then we can't have an item at \texttt{\textquotesingle{}S\ n}
-    spot in \texttt{x\ \textquotesingle{}:\ xs} either! To show why, we can do a
-    proof by contradiction.
-
-    Suppose there \emph{was} an item \texttt{y} at the
-    \texttt{\textquotesingle{}S\ n} spot in \texttt{x\ \textquotesingle{}:\ xs}.
-    If so, then that means that there would be an item \texttt{y} in the
-    \texttt{n} spot in \texttt{xs}. However, this was found to be false.
-    Therefore, we cannot have an item in the \texttt{\textquotesingle{}S\ n}
-    spot in \texttt{x\ \textquotesingle{}:\ xs}.
-  \end{itemize}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L155-L167}
-
-\NormalTok{inBounds_scons}
-\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ x}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) }\FunctionTok{@@}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
-\NormalTok{inBounds_scons n _ xs }\FunctionTok{=} \KeywordTok{case}\NormalTok{ inBounds n xs }\KeywordTok{of}
-    \DataTypeTok{Proved}\NormalTok{ (y }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->}       \CommentTok{-- if xs has y in its n spot}
-      \DataTypeTok{Proved}\NormalTok{ (y }\FunctionTok{:&:} \DataTypeTok{SelS}\NormalTok{ s)   }\CommentTok{-- then (x : xs) has y in its (S n) spot}
-    \DataTypeTok{Disproved}\NormalTok{ v      }\OtherTok{->} \DataTypeTok{Disproved} \FunctionTok{$} \CommentTok{-- v is a disproof that an item is in n spot in xs}
-\NormalTok{      \textbackslash{}(y }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->}      \CommentTok{-- suppose we had item y in (S n) spot in (x : xs)}
-        \KeywordTok{case}\NormalTok{ s }\KeywordTok{of}
-          \DataTypeTok{SelS}\NormalTok{ s' }\OtherTok{->}     \CommentTok{-- this would mean that item y is in n spot in xs}
-\NormalTok{            v (y }\FunctionTok{:&:}\NormalTok{ s') }\CommentTok{-- however, v disproves this.}
-\end{Highlighting}
-\end{Shaded}
-
-  If you have problems understanding this, try playing around with typed holes
-  in GHC, or trying to guess what types everything has in the implementation
-  above, until you can figure out what is happening when.
-\end{enumerate}
-
-Finally, we can wrap everything up by providing our first ever
-\texttt{Decidable} instance. We need to give \texttt{inBounds} a
-\texttt{Sing\ n}, so we can do that using \texttt{sing\ ::\ Sing\ n}, provided
-that the instance has a \texttt{SingI\ n} constraint.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L127-L129}
-
-\KeywordTok{instance} \DataTypeTok{SingI}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{Decidable}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ n) }\KeywordTok{where}
-\OtherTok{    decide ::} \DataTypeTok{Sing}\NormalTok{ xs }\OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ n }\FunctionTok{@@}\NormalTok{ xs)}
-\NormalTok{    decide }\FunctionTok{=}\NormalTok{ inBounds sing}
-\end{Highlighting}
-\end{Shaded}
-
-\hypertarget{proving-pick}{%
-\subsection{Proving Pick}\label{proving-pick}}
-
-Now that we can decide \texttt{InBounds}, let's finally prove \texttt{Pick}.
-
-Again, for learning purposes, we'll define \texttt{pick} as its own function and
-then write an instance for \texttt{Provable}.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{pick}
-\OtherTok{    ::}\NormalTok{ forall i j b}\FunctionTok{.}\NormalTok{ ()}
-    \OtherTok{=>} \DataTypeTok{Sing}\NormalTok{ i}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ j}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ b}
-    \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-\NormalTok{pick }\DataTypeTok{Sing} \DataTypeTok{Sing}\NormalTok{ b }\FunctionTok{=}
-\end{Highlighting}
-\end{Shaded}
-
-We'll match with the \texttt{Sing} constructor for \texttt{Sing\ i} and
-\texttt{Sing\ j}; the \texttt{Sing} constructor is a pattern synonym that, if
-matched on, brings \texttt{SingI\ i} and \texttt{SingI\ j} instances into scope.
-
-Remember, the goal is to try to prove we have a valid pick. We want to create
-something with the \texttt{PickValid} constructor if we can:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\DataTypeTok{PickValid}\OtherTok{  ::} \DataTypeTok{Coord}\NormalTok{ '(i, j) b '}\DataTypeTok{Nothing} \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-
-\OtherTok{(:$:) ::} \DataTypeTok{Sel}\NormalTok{ i rows row}
-      \OtherTok{->} \DataTypeTok{Sel}\NormalTok{ j row  p}
-      \OtherTok{->} \DataTypeTok{Coord}\NormalTok{ '(i, j) rows p}
-\end{Highlighting}
-\end{Shaded}
-
-So we need a
-\texttt{Coord\ \textquotesingle{}(i,\ j)\ b\ \textquotesingle{}Nothing}, which
-means we need a \texttt{Sel\ i\ b\ row} and a
-\texttt{Sel\ j\ row\ \textquotesingle{}Nothing}. Let's use our decision
-functions we wrote to get these! In particular, we can use
-\texttt{decide\ @(InBounds\ i)\ b} to get our \texttt{Sel\ i\ b\ row}, and then
-use \texttt{decide\ @(InBounds\ j)\ row} to get our \texttt{Sel\ j\ row\ piece}!
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{pick}
-\OtherTok{    ::}\NormalTok{ forall i j b}\FunctionTok{.}\NormalTok{ ()}
-    \OtherTok{=>} \DataTypeTok{Sing}\NormalTok{ i}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ j}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ b}
-    \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-\NormalTok{pick }\DataTypeTok{Sing} \DataTypeTok{Sing}\NormalTok{ b }\FunctionTok{=} \KeywordTok{case}\NormalTok{ decide }\FunctionTok{@}\NormalTok{(}\DataTypeTok{InBounds}\NormalTok{ i) b }\KeywordTok{of}
-    \DataTypeTok{Proved}\NormalTok{ (row }\FunctionTok{:&:}\NormalTok{ selX) }\OtherTok{->} \KeywordTok{case}\NormalTok{ decide }\FunctionTok{@}\NormalTok{(}\DataTypeTok{InBounds}\NormalTok{ j) row }\KeywordTok{of}
-      \DataTypeTok{Proved}\NormalTok{ (p }\FunctionTok{:&:}\NormalTok{ selY) }\OtherTok{->}
-        \KeywordTok{let}\NormalTok{ c }\FunctionTok{=}\NormalTok{ selX }\FunctionTok{:$:}\NormalTok{ selY}
-        \KeywordTok{in}  \CommentTok{-- success???}
-\end{Highlighting}
-\end{Shaded}
-
-Just to clarify what's going on, let's give types to the names above:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{b    ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{b   ::}\NormalTok{ [[}\DataTypeTok{Maybe} \DataTypeTok{Piece}\NormalTok{]])}
-\OtherTok{row  ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{row ::}\NormalTok{  [}\DataTypeTok{Maybe} \DataTypeTok{Piece}\NormalTok{] )}
-\OtherTok{selX ::} \DataTypeTok{Sel}\NormalTok{ i b row}
-\OtherTok{p    ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{p   ::}   \DataTypeTok{Maybe} \DataTypeTok{Piece}\NormalTok{  )}
-\OtherTok{selY ::} \DataTypeTok{Sel}\NormalTok{ j row p}
-\OtherTok{c    ::} \DataTypeTok{Coord}\NormalTok{ '(i, j) b p}
-\end{Highlighting}
-\end{Shaded}
-
-\texttt{row} above is the \texttt{Sing} that comes attached with all \texttt{Σ}
-constructors, which is why we can give it to \texttt{decide\ @(InBounds\ j)},
-which expects a singleton of the list.
-
-So, now we have \texttt{Coord\ \textquotesingle{}(i,\ j)\ b\ p}. We know that
-\texttt{i} and \texttt{j} are in-bounds. But, we need to know that \texttt{p} is
-\texttt{\textquotesingle{}Nothing} before we can use it with \texttt{PickValid}.
-To do that, we can pattern match on \texttt{p}, because it's the singleton that
-comes with the \texttt{Σ} constructor:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{pick}
-\OtherTok{    ::}\NormalTok{ forall i j b}\FunctionTok{.}\NormalTok{ ()}
-    \OtherTok{=>} \DataTypeTok{Sing}\NormalTok{ i}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ j}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ b}
-    \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-\NormalTok{pick }\DataTypeTok{Sing} \DataTypeTok{Sing}\NormalTok{ b }\FunctionTok{=} \KeywordTok{case}\NormalTok{ decide }\FunctionTok{@}\NormalTok{(}\DataTypeTok{InBounds}\NormalTok{ i) b }\KeywordTok{of}
-    \DataTypeTok{Proved}\NormalTok{ (row }\FunctionTok{:&:}\NormalTok{ selX) }\OtherTok{->} \KeywordTok{case}\NormalTok{ decide }\FunctionTok{@}\NormalTok{(}\DataTypeTok{InBounds}\NormalTok{ j) row }\KeywordTok{of}
-      \DataTypeTok{Proved}\NormalTok{ (p }\FunctionTok{:&:}\NormalTok{ selY) }\OtherTok{->}
-        \KeywordTok{let}\NormalTok{ c }\FunctionTok{=}\NormalTok{ selX }\FunctionTok{:$:}\NormalTok{ selY}
-        \KeywordTok{in}  \KeywordTok{case}\NormalTok{ p }\KeywordTok{of}
-              \DataTypeTok{SNothing} \OtherTok{->} \DataTypeTok{PickValid}\NormalTok{   c     }\CommentTok{-- p is 'Nothing}
-              \DataTypeTok{SJust}\NormalTok{ q  }\OtherTok{->} \DataTypeTok{PickPlayed}\NormalTok{  c q   }\CommentTok{-- p is 'Just q}
-\end{Highlighting}
-\end{Shaded}
-
-Finally, knowing that \texttt{p} is \texttt{\textquotesingle{}Nothing}, we can
-create \texttt{PickValid}!
-
-As a bonus, if we know that \texttt{p} is \texttt{\textquotesingle{}Just\ p}, we
-can create \texttt{PickPlayed}, which is the constructor for an in-bounds pick
-but pointing to a spot that is already occupied by piece
-\texttt{p\textquotesingle{}}.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\DataTypeTok{PickPlayed}\OtherTok{ ::} \DataTypeTok{Coord}\NormalTok{ '(i, j) b ('}\DataTypeTok{Just}\NormalTok{ p)}
-           \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ p}
-           \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-\end{Highlighting}
-\end{Shaded}
-
-We now have to deal with the situations where things are out of bounds.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\DataTypeTok{PickOoBX}\OtherTok{ ::} \DataTypeTok{OutOfBounds}\NormalTok{ i }\FunctionTok{@@}\NormalTok{ b}
-         \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-\DataTypeTok{PickOoBY}\OtherTok{ ::} \DataTypeTok{Sel}\NormalTok{ i b row}
-         \OtherTok{->} \DataTypeTok{OutOfBounds}\NormalTok{ j }\FunctionTok{@@}\NormalTok{ row}
-         \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-\end{Highlighting}
-\end{Shaded}
-
-However, thanks to the
-\emph{\href{https://hackage.haskell.org/package/decidable}{decidable}} library,
-things work out nicely. That's because \texttt{OutOfBounds\ n} we defined as:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L112-L112}
-
-\KeywordTok{type} \DataTypeTok{OutOfBounds}\NormalTok{ n }\FunctionTok{=} \DataTypeTok{Not}\NormalTok{ (}\DataTypeTok{InBounds}\NormalTok{ n)}
-\end{Highlighting}
-\end{Shaded}
-
-and \texttt{Not}, the predicate combinator, is defined as:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Not}\OtherTok{ ::} \DataTypeTok{Predicate}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Predicate}\NormalTok{ k}
-
-\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply}\NormalTok{ (}\DataTypeTok{Not}\NormalTok{ p) x }\FunctionTok{=}\NormalTok{ (p }\FunctionTok{@@}\NormalTok{ x) }\OtherTok{->} \DataTypeTok{Void}
-\end{Highlighting}
-\end{Shaded}
-
-That is, a witness of \texttt{Not\ p\ @@\ x} is a function of type
-\texttt{p\ @@\ x\ -\textgreater{}\ Void}. That means that \texttt{PickOoBX}
-expects an \texttt{InBounds\ i\ @@\ b\ -\textgreater{}\ Void}, and
-\texttt{PickOoBY} expects an
-\texttt{InBounds\ j\ @@\ row\ -\textgreater{}\ Void}. And that's \emph{exactly}
-what the \texttt{Disproved} branches give!
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L169-L187}
-
-\NormalTok{pick}
-\OtherTok{    ::}\NormalTok{ forall i j b}\FunctionTok{.}\NormalTok{ ()}
-    \OtherTok{=>} \DataTypeTok{Sing}\NormalTok{ i}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ j}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ b}
-    \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-\NormalTok{pick }\DataTypeTok{Sing} \DataTypeTok{Sing}\NormalTok{ b }\FunctionTok{=} \KeywordTok{case}\NormalTok{ decide }\FunctionTok{@}\NormalTok{(}\DataTypeTok{InBounds}\NormalTok{ i) b }\KeywordTok{of}
-    \DataTypeTok{Proved}\NormalTok{ (row }\FunctionTok{:&:}\NormalTok{ selX) }\OtherTok{->} \KeywordTok{case}\NormalTok{ decide }\FunctionTok{@}\NormalTok{(}\DataTypeTok{InBounds}\NormalTok{ j) row }\KeywordTok{of}
-      \DataTypeTok{Proved}\NormalTok{ (p }\FunctionTok{:&:}\NormalTok{ selY) }\OtherTok{->}
-        \KeywordTok{let}\NormalTok{ c }\FunctionTok{=}\NormalTok{ selX }\FunctionTok{:$:}\NormalTok{ selY}
-        \KeywordTok{in}  \KeywordTok{case}\NormalTok{ p }\KeywordTok{of}
-              \DataTypeTok{SNothing} \OtherTok{->} \DataTypeTok{PickValid}\NormalTok{   c     }\CommentTok{-- p is 'Nothing}
-              \DataTypeTok{SJust}\NormalTok{ q  }\OtherTok{->} \DataTypeTok{PickPlayed}\NormalTok{  c q   }\CommentTok{-- p is 'Just q}
-      \DataTypeTok{Disproved}\NormalTok{ vY }\OtherTok{->} \DataTypeTok{PickOoBY}\NormalTok{ selX vY    }\CommentTok{-- vY :: InBounds j @@ row -> Void}
-                                          \CommentTok{-- vY :: Not (InBounds j) @@ row}
-                                          \CommentTok{-- vY :: OutOfBounds j @@ row}
-    \DataTypeTok{Disproved}\NormalTok{ vX }\OtherTok{->} \DataTypeTok{PickOoBX}\NormalTok{ vX   }\CommentTok{-- vX :: InBounds i @@ b   -> Void}
-                                  \CommentTok{-- vX :: Not (InBounds i) @@ b}
-                                  \CommentTok{-- vX :: OutOfBounds i @@ b}
-\end{Highlighting}
-\end{Shaded}
-
-And that's it!
-
-Now to just tie it all together with a \texttt{Provable} instance, using the
-\texttt{STuple3} singletons constructor:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L189-L191}
-
-\KeywordTok{instance} \DataTypeTok{Provable}\NormalTok{ (}\DataTypeTok{TyPred} \DataTypeTok{Pick}\NormalTok{) }\KeywordTok{where}
-\OtherTok{    prove ::} \DataTypeTok{Sing}\NormalTok{ ijb }\OtherTok{->} \DataTypeTok{Pick}\NormalTok{ ijb}
-\NormalTok{    prove (}\DataTypeTok{STuple3}\NormalTok{ i j b) }\FunctionTok{=}\NormalTok{ pick i j b}
-\end{Highlighting}
-\end{Shaded}
-
-\hypertarget{play-ball}{%
-\section{Play Ball}\label{play-ball}}
-
-Bringing it all together, we can write a simple function to take user input and
-\emph{play} it.
+\hypertarget{decision-functions}{%
+\subsection{Decision Functions}\label{decision-functions}}
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
