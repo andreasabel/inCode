@@ -664,9 +664,8 @@ out-of-bounds coordinate):
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{-- | Placeholder predicate if a given number `n` is out of bounds for a given}
-\CommentTok{-- list}
+\CommentTok{-- list.  Predicate is from the 'decidable' library}
 \KeywordTok{data} \DataTypeTok{OutOfBounds}\OtherTok{ n ::} \DataTypeTok{Predicate}\NormalTok{ [k]}
-
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L115-L125}
 
 \KeywordTok{data} \DataTypeTok{Pick}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{, }\DataTypeTok{Board}\NormalTok{) }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
@@ -685,7 +684,8 @@ out-of-bounds coordinate):
 
 (A value of type \texttt{OutOfBounds\ n\ @@\ xs} is a witness that \texttt{xs}
 satisfies the \texttt{OutOfBounds\ n} --- that is, \texttt{n} is out of bounds
-of \texttt{xs}. More on this later!)
+of \texttt{xs}. More on this later when we talk about the \emph{decidable}
+library!)
 
 So, if we have an \texttt{(N,\ N,\ Board)}, we should be able to categorize it
 into one of each of these potential views.
@@ -710,17 +710,14 @@ perspectives/classifications), without exception.
 This can be considered the boundary between the unsafe and the safe world. And,
 to me, this is the ``hard part'' about dependently typed programming :)
 
-If we want to take any \texttt{i}, \texttt{j}, and \texttt{b}, and turn it into
-a valid \texttt{Pick}, remember that a valid
+Now, let's write \texttt{pick}. If we want to take any \texttt{i}, \texttt{j},
+and \texttt{b}, and turn it into a valid \texttt{Pick}, remember that a valid
 \texttt{Pick\ \textquotesingle{}(i,\ j,\ b)} contains a
 \texttt{Coord\ \textquotesingle{}(i,\ j)\ b\ \textquotesingle{}Nothing}, which
 contains a \texttt{Sel\ i\ b\ row} and a
 \texttt{Sel\ j\ row\ \textquotesingle{}Nothing}. So we need to ``convert'' some
 \texttt{i}, \texttt{j} into a \texttt{Sel\ i\ b\ row} and
 \texttt{Sel\ j\ row\ \textquotesingle{}Nothing}.
-
-\hypertarget{existential-return-types}{%
-\subsection{Existential return types}\label{existential-return-types}}
 
 Essentially, we want a function:
 
@@ -735,6 +732,10 @@ Essentially, we want a function:
 where \texttt{????} is whatever value is in \texttt{xs} at index \texttt{i}.
 It's something we might not know directly from the input types, necessarily,
 because it might not even exist (the list might be too short).
+
+\hypertarget{existential-return-types-and-dependent-pairs}{%
+\subsection{Existential return types and Dependent
+Pairs}\label{existential-return-types-and-dependent-pairs}}
 
 This pattern --- where we don't know the type of something until after we
 receive the function inputs --- is something you might recognize as an
@@ -756,14 +757,22 @@ dependent pair'' type, \texttt{Σ} (or \texttt{Sigma}), from
 \end{Shaded}
 
 A value of type \texttt{Sigma\ k\ p} contains an \texttt{p\ @@\ x} (a witness
-that \texttt{x} satisfies \texttt{x}), existentially \emph{hiding} the
-\texttt{x}, and also \texttt{x} itself (as \texttt{Sing\ x}; remember that
-\texttt{Sing\ x} is essentially a value-level representation of type
+that \texttt{p} satisfies \texttt{x}), existentially \emph{hiding} the
+\texttt{x\ ::\ k}, and also \texttt{x} itself (as \texttt{Sing\ x}; remember
+that \texttt{Sing\ x} is essentially a value-level representation of type
 \texttt{x}).
 
+You can think of \texttt{Sigma\ k\ p} as a proof that \texttt{p} is satisfied
+for \emph{some} \texttt{x\ ::\ k}, but we can't know which \texttt{x} it is
+until you pattern match. If you pattern match, you'll get both \texttt{Sing\ x}
+(to find out the \texttt{x}), and the \texttt{p\ @@\ x} (the witness that
+\texttt{p} is satisfied by \texttt{x}).
+
 We can use this to return a \texttt{Sel\ n\ xs\ ????}, \emph{hiding} the
-\texttt{???}. We can't directly give \texttt{Sel\ n\ xs} to \texttt{Sigma}
-(because it expects a \texttt{Predicate\ k}, not a
+\texttt{???}.
+
+Now for some plumbing: We can't directly give \texttt{Sel\ n\ xs} to
+\texttt{Sigma} (because it expects a \texttt{Predicate\ k}, not a
 \texttt{k\ -\textgreater{}\ Type}), but we can turn a type constructor into a
 \texttt{Predicate} using \texttt{TyPred}, a convenient combinator from the
 \emph{decidable} library:
@@ -794,7 +803,7 @@ Let's make sure this type works like we expect it to. We want a
 \texttt{Σ\ k\ (TyPred\ (Sel\ n\ xs))} to contain the \texttt{x} at position
 \texttt{n} in \texttt{xs}, \emph{and} the \texttt{Sel} into that position.
 
-First, to make things a little less verbose, let's define a type synonym for
+To make things a little less verbose, let's define a type synonym for
 \texttt{Σ\ k\ (TyPred\ (Sel\ n\ xs))}, \texttt{SelFound\ n\ xs}:
 
 \begin{Shaded}
@@ -840,11 +849,15 @@ as well, by giving the value of the list at index 1,
 \end{Highlighting}
 \end{Shaded}
 
-Before moving on, I recommend trying to write some values of type
+Before moving on, I strongly recommend trying to write some values of type
 \texttt{SelFound\ n\ xs} for different \texttt{n\ ::\ N} and
 \texttt{xs\ ::\ {[}a{]}}, to see what type-checks and what doesn't. It'll help
 you get a feel of the types we are working with, which might be more advanced
-than types you might encounter in everyday Haskell programming.
+than types you might encounter in everyday Haskell programming. Remember that
+you can load up all of the definitions in this post into a ghci session by
+downloading
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs}{the
+source code} and executing it on the command line, \texttt{./Part1.hs}.
 
 Now, we now have enough tools to write the type of the function we would like:
 
@@ -887,6 +900,7 @@ If you ask ghc what goes in the typed holes, it'll say that we need a
 \texttt{Sel\ \textquotesingle{}Z\ \textquotesingle{}{[}{]}\ x} (which is because
 matching on \texttt{SZ} tells us we are in \texttt{\textquotesingle{}Z}, and
 matching on \texttt{SNil} tells us we are in \texttt{\textquotesingle{}{[}{]}}).
+And this\ldots{}is a problem.
 
 Remember that the \texttt{x} is supposed to be the \texttt{n}th item in
 \texttt{xs}. Here, in this pattern match branch, we want the zeroth (first) item
@@ -936,8 +950,10 @@ A decision function means that, for any \texttt{x}, we can say that either
 \texttt{P\ @@\ x} can be proven true or can be proven false. See {[}this
 section{]}{[}singletons-decide{]} for a deeper discussion on why
 \texttt{Decision} has both the \texttt{Proved} and \texttt{Disproved} branch.
-Essentially, we keep track of ``provably false'' because we can use it later to
-build other useful decision functions and proving functions.
+Essentially, it prevents us from just returning ``disproved'' without proving it
+(so we can be sure that our decision function is ``correct'' and not just
+cheating), and, in the long term, we keep track of ``provably false'' because we
+can use it later to build other useful decision functions and proving functions.
 
 We use decision functions when we want to ``conditionally prove'' something ---
 it might be true, or it might not be (but definitely one or the other). It might
@@ -966,13 +982,163 @@ looking at every possible constructor of \texttt{N} and \texttt{{[}a{]}}:
     \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ n xs)}
 \NormalTok{selFound }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{SZ} \OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-      \DataTypeTok{SNil}         \OtherTok{->}\NormalTok{ _}
-\NormalTok{      x }\OtherTok{`SCons`}\NormalTok{ xs }\OtherTok{->}\NormalTok{ _}
+      \DataTypeTok{SNil}         \OtherTok{->}\NormalTok{ _   }\CommentTok{-- n is 'Z, xs is '[]}
+\NormalTok{      x }\OtherTok{`SCons`}\NormalTok{ xs }\OtherTok{->}\NormalTok{ _   }\CommentTok{-- n is 'Z, xs is (x ': xs)}
     \DataTypeTok{SS}\NormalTok{ n }\OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-      \DataTypeTok{SNil}         \OtherTok{->}\NormalTok{ _}
-\NormalTok{      x }\OtherTok{`SCons`}\NormalTok{ xs }\OtherTok{->}\NormalTok{ _}
+      \DataTypeTok{SNil}         \OtherTok{->}\NormalTok{ _   }\CommentTok{-- n is ('S n), xs is '[]}
+\NormalTok{      x }\OtherTok{`SCons`}\NormalTok{ xs }\OtherTok{->}\NormalTok{ _   }\CommentTok{-- n is ('S n), xs is (x ': xs)}
 \end{Highlighting}
 \end{Shaded}
+
+Okay, four cases. Initially daunting, but we can just handle this one by one.
+Normally we can just fill in the blanks with the ``right'' responses, but, for
+learning's sake, let's split these branches into four helper functions --- one
+for each case.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L141-L180}
+
+\OtherTok{selFoundTest1 ::} \DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ '[ '}\DataTypeTok{True}\NormalTok{, '}\DataTypeTok{False}\NormalTok{ ]}
+\NormalTok{selFoundTest1 }\FunctionTok{=} \DataTypeTok{STrue} \FunctionTok{:&:} \DataTypeTok{SelZ}
+                       \CommentTok{-- ^ Sel 'Z '[ 'True, 'False ] 'True}
+
+\NormalTok{selFound_znil}
+\OtherTok{    ::} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ '[])}
+
+\NormalTok{selFound_zcons}
+\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ x}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
+
+\NormalTok{selFound_snil}
+\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
+    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) '[])}
+
+\NormalTok{selFound_scons}
+\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ x}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) (x '}\FunctionTok{:}\NormalTok{ xs))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  For the first branch, we have \texttt{\textquotesingle{}Z} and
+  \texttt{\textquotesingle{}{[}{]}}. This should be false, because there is no
+  item in the zeroth position in \texttt{{[}{]}}. But, also, there is no way to
+  construct the \texttt{Sel} necessary for the witness, since there is no
+  constructor for \texttt{Sel} that gives \texttt{\textquotesingle{}{[}{]}}.
+
+  So we can write this as \texttt{Disproved}, which takes a
+  \texttt{SelFound\ \textquotesingle{}Z\ \textquotesingle{}{[}{]}\ -\textgreater{}\ Void}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L161-L163}
+
+\NormalTok{selFound_znil}
+\OtherTok{    ::} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ '[])}
+\NormalTok{selFound_znil }\FunctionTok{=} \DataTypeTok{Disproved} \FunctionTok{$}\NormalTok{ \textbackslash{}(_ }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->} \KeywordTok{case}\NormalTok{ s }\KeywordTok{of}\NormalTok{ \{\}}
+\end{Highlighting}
+\end{Shaded}
+
+  We can satisfy that
+  \texttt{SelFound\ \textquotesingle{}Z\ \textquotesingle{}{[}{]}\ -\textgreater{}\ Void}
+  by pattern matching on the \texttt{Sel} it \emph{would} contain. Because there
+  is no \texttt{Sel} for an empty list, the empty pattern match is safe.
+
+  Remember to enable \emph{-Werror=incomplete-patterns} to be sure!
+\item
+  For the second branch, we have \texttt{\textquotesingle{}Z} and
+  \texttt{(x\ \textquotesingle{}:\ xs)}. We want to prove that there exists an
+  item at position \texttt{\textquotesingle{}Z} in the list
+  \texttt{x\ \textquotesingle{}:\ xs}. The answer is \emph{yes}, there does, and
+  that item is \texttt{x}, and the \texttt{Sel} is \texttt{SelZ}!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L165-L169}
+
+\NormalTok{selFound_zcons}
+\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ x}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
+\NormalTok{selFound_zcons x _ }\FunctionTok{=} \DataTypeTok{Proved}\NormalTok{ (x }\FunctionTok{:&:} \DataTypeTok{SelZ}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+\item
+  For the third branch, we have \texttt{\textquotesingle{}S\ n} and
+  \texttt{\textquotesingle{}{[}{]}}. Again, this should be false, because there
+  is no item in the \texttt{\textquotesingle{}S\ n} position in
+  \texttt{\textquotesingle{}{[}{]}}. We should be able to use the same strategy
+  for the first branch:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L171-L174}
+
+\NormalTok{selFound_snil}
+\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
+    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) '[])}
+\NormalTok{selFound_snil _ }\FunctionTok{=} \DataTypeTok{Disproved} \FunctionTok{$}\NormalTok{ \textbackslash{}(_ }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->} \KeywordTok{case}\NormalTok{ s }\KeywordTok{of}\NormalTok{ \{\}}
+\end{Highlighting}
+\end{Shaded}
+\item
+  The fourth branch is the most interesting one. We have
+  \texttt{\textquotesingle{}S\ n} and \texttt{(x\ \textquotesingle{}:\ xs)}. How
+  do we know if the list \texttt{x\ \textquotesingle{}:\ xs} has an item in the
+  \texttt{\textquotesingle{}S\ n} spot?
+
+  Well, we can check if the list \texttt{xs} has an item in its \texttt{n} spot.
+
+  \begin{itemize}
+  \item
+    If it does, then call that item \texttt{y}, and we know that
+    \texttt{x\ \textquotesingle{}:\ xs} has \texttt{y} in its
+    \texttt{\textquotesingle{}S\ n} spot.
+  \item
+    If it doesn't, then we can't have an item at \texttt{\textquotesingle{}S\ n}
+    spot in \texttt{x\ \textquotesingle{}:\ xs} either! To show why, we can do a
+    proof by contradiction.
+
+    Suppose there \emph{was} an item \texttt{y} at the
+    \texttt{\textquotesingle{}S\ n} spot in \texttt{x\ \textquotesingle{}:\ xs}.
+    If so, then that means that there would be an item \texttt{y} in the
+    \texttt{n} spot in \texttt{xs}. However, this was found to be false.
+    Therefore, we cannot have an item in the \texttt{\textquotesingle{}S\ n}
+    spot in \texttt{x\ \textquotesingle{}:\ xs}.
+
+    This is a situation where having a disproof in the \texttt{Disproved} branch
+    is useful --- we use them to build more complex disproofs from simple ones.
+  \end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L176-L188}
+
+\NormalTok{selFound_scons}
+\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ x}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) (x '}\FunctionTok{:}\NormalTok{ xs))}
+\NormalTok{selFound_scons n _ xs }\FunctionTok{=} \KeywordTok{case}\NormalTok{ selFound n xs }\KeywordTok{of}
+    \DataTypeTok{Proved}\NormalTok{ (y }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->}       \CommentTok{-- if xs has y in its n spot}
+      \DataTypeTok{Proved}\NormalTok{ (y }\FunctionTok{:&:} \DataTypeTok{SelS}\NormalTok{ s)   }\CommentTok{-- then (x : xs) has y in its (S n) spot}
+    \DataTypeTok{Disproved}\NormalTok{ v      }\OtherTok{->} \DataTypeTok{Disproved} \FunctionTok{$} \CommentTok{-- v is a disproof that an item is in n spot in xs}
+\NormalTok{      \textbackslash{}(y }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->}      \CommentTok{-- suppose we had item y in (S n) spot in (x : xs)}
+        \KeywordTok{case}\NormalTok{ s }\KeywordTok{of}
+          \DataTypeTok{SelS}\NormalTok{ s' }\OtherTok{->}     \CommentTok{-- this would mean that item y is in n spot in xs}
+\NormalTok{            v (y }\FunctionTok{:&:}\NormalTok{ s') }\CommentTok{-- however, v disproves this.}
+\end{Highlighting}
+\end{Shaded}
+
+  If you have problems understanding this, try playing around with typed holes
+  in GHC, or trying to guess what types everything has in the implementation
+  above, until you can figure out what is happening when.
+\end{enumerate}
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
