@@ -694,7 +694,7 @@ into one of each of these potential views.
 \subsection{Proving functions}\label{proving-functions}}
 
 This is the job of a ``decision function''; in this case, actually, a ``proving
-function''. We need to be able to write a function:
+function'', or a ``viewing function''. We need to be able to write a function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -790,21 +790,76 @@ We can use this to return a \texttt{Sel\ n\ xs\ ????}, \emph{hiding} the
 \end{Highlighting}
 \end{Shaded}
 
-So we now have enough tools to write the type of the function we would like:
+Let's make sure this type works like we expect it to. We want a
+\texttt{Σ\ k\ (TyPred\ (Sel\ n\ xs))} to contain the \texttt{x} at position
+\texttt{n} in \texttt{xs}, \emph{and} the \texttt{Sel} into that position.
+
+First, to make things a little less verbose, let's define a type synonym for
+\texttt{Σ\ k\ (TyPred\ (Sel\ n\ xs))}, \texttt{SelFound\ n\ xs}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{sel ::}\NormalTok{ forall (}\OtherTok{i ::} \DataTypeTok{N}\NormalTok{) (}\OtherTok{xs ::}\NormalTok{ k)}\FunctionTok{.}\NormalTok{ ()}
-    \OtherTok{=>} \DataTypeTok{Sing}\NormalTok{ i}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->}\NormalTok{ Σ k (}\DataTypeTok{TyPred}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ i xs))}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L139-L139}
+
+\KeywordTok{type} \DataTypeTok{SelFound}\NormalTok{ n (}\OtherTok{xs ::}\NormalTok{ [k]) }\FunctionTok{=}\NormalTok{ Σ k (}\DataTypeTok{TyPred}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ n xs))}
 \end{Highlighting}
 \end{Shaded}
 
-Remember, a \texttt{Σ\ a\ (TyPred\ (Sel\ i\ xs))} contains both a
-\texttt{Sel\ i\ xs\ x} \emph{and} a \texttt{Sing\ x}: a selection into the
-\texttt{i}th item in \texttt{xs} (the \texttt{Sel\ i\ xs\ x}), and also the item
-itself (the \texttt{Sing\ x}).
+And making some sample witnesses to ensure we are thinking about things
+correctly:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L141-L143}
+
+\OtherTok{selFoundTest1 ::} \DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ '[ '}\DataTypeTok{True}\NormalTok{, '}\DataTypeTok{False}\NormalTok{ ]}
+\NormalTok{selFoundTest1 }\FunctionTok{=} \DataTypeTok{STrue} \FunctionTok{:&:} \DataTypeTok{SelZ}
+                       \CommentTok{-- ^ Sel 'Z '[ 'True, 'False ] 'True}
+\end{Highlighting}
+\end{Shaded}
+
+Note that \texttt{SFalse\ :\&:\ SelZ} would be a type error, because the second
+half \texttt{SelZ} would be
+\texttt{Sel\ ::\ \textquotesingle{}Z\ \textquotesingle{}{[}\ \textquotesingle{}True,\ \textquotesingle{}False\ {]}\ \textquotesingle{}True}
+(because \texttt{\textquotesingle{}True} is the 0th item in the list), so we
+have to have the first half match \texttt{\textquotesingle{}True}, with
+\texttt{STrue}.
+
+We can write a witness for
+\texttt{SelFound\ (\textquotesingle{}S\ \textquotesingle{}Z)\ \textquotesingle{}{[}\ \textquotesingle{}True,\ \textquotesingle{}False\ {]}},
+as well, by giving the value of the list at index 1,
+\texttt{\textquotesingle{}False}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L145-L147}
+
+\OtherTok{selFoundTest2 ::} \DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{) '[ '}\DataTypeTok{True}\NormalTok{, '}\DataTypeTok{False}\NormalTok{ ]}
+\NormalTok{selFoundTest2 }\FunctionTok{=} \DataTypeTok{SFalse} \FunctionTok{:&:} \DataTypeTok{SelS} \DataTypeTok{SelZ}
+                        \CommentTok{-- ^ Sel ('S 'Z) '[ 'True, 'False ] 'False}
+\end{Highlighting}
+\end{Shaded}
+
+Before moving on, I recommend trying to write some values of type
+\texttt{SelFound\ n\ xs} for different \texttt{n\ ::\ N} and
+\texttt{xs\ ::\ {[}a{]}}, to see what type-checks and what doesn't. It'll help
+you get a feel of the types we are working with, which might be more advanced
+than types you might encounter in everyday Haskell programming.
+
+Now, we now have enough tools to write the type of the function we would like:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{sel ::} \DataTypeTok{Sing}\NormalTok{ n}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{->} \DataTypeTok{SelFound}\NormalTok{ n xs}
+\end{Highlighting}
+\end{Shaded}
+
+Remember, a \texttt{SelFound\ n\ xs} contains both a \texttt{Sel\ n\ xs\ x}
+\emph{and} a \texttt{Sing\ x}: a selection into the \texttt{i}th item in
+\texttt{xs} (the \texttt{Sel\ n\ xs\ x}), and also the item itself (the
+\texttt{Sing\ x}).
 
 We can start writing this, but the type system will soon show you where you run
 into problems. And that's one of the best things about type systems! They help
@@ -812,10 +867,9 @@ you realize when you're trying to do something that doesn't make sense.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{sel ::}\NormalTok{ forall (}\OtherTok{i ::} \DataTypeTok{N}\NormalTok{) (}\OtherTok{xs ::}\NormalTok{ [k])}\FunctionTok{.}\NormalTok{ ()}
-    \OtherTok{=>} \DataTypeTok{Sing}\NormalTok{ i}
+\OtherTok{sel ::} \DataTypeTok{Sing}\NormalTok{ n}
     \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->}\NormalTok{ Σ k (}\DataTypeTok{TyPred}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ i xs))}
+    \OtherTok{->} \DataTypeTok{SelFound}\NormalTok{ n xs}
 \NormalTok{sel }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{SZ} \OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
       \DataTypeTok{SNil} \OtherTok{->}\NormalTok{ _ }\FunctionTok{:&:}\NormalTok{ _}
@@ -834,7 +888,7 @@ If you ask ghc what goes in the typed holes, it'll say that we need a
 matching on \texttt{SZ} tells us we are in \texttt{\textquotesingle{}Z}, and
 matching on \texttt{SNil} tells us we are in \texttt{\textquotesingle{}{[}{]}}).
 
-Remember that the \texttt{x} is supposed to be the \texttt{i}th item in
+Remember that the \texttt{x} is supposed to be the \texttt{n}th item in
 \texttt{xs}. Here, in this pattern match branch, we want the zeroth (first) item
 in \texttt{{[}{]}}. This doesn't exist! That's because there is no item in
 \texttt{{[}{]}}, so there is nothing we can put for the
@@ -846,12 +900,79 @@ return \texttt{x\ \textquotesingle{}:\ xs}, never \texttt{Nil}).
 So, this branch is impossible to fulfil. We know now that we made a large
 conceptual error (aren't types great?)
 
-The problem? Well, indexing into item \texttt{i} in list \texttt{xs} \emph{might
+The problem? Well, indexing into item \texttt{n} in list \texttt{xs} \emph{might
 not always succeed}. We might try to index into an empty list, so we can't ever
 get a result!
 
 \hypertarget{decision-functions}{%
 \subsection{Decision Functions}\label{decision-functions}}
+
+What we need is not a \emph{proving function}, but, rather, a \emph{decision}
+function. A decision function for a predicate \texttt{P} is a function:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{decidePred ::} \DataTypeTok{Sing}\NormalTok{ x}
+           \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{P} \FunctionTok{@@}\NormalTok{ x)}
+\end{Highlighting}
+\end{Shaded}
+
+That is, instead of producing a \texttt{P\ @@\ x} directly, we produce a
+\texttt{Decision\ (P\ @@\ x)}. Here, \texttt{Decision} is:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Decision}\NormalTok{ a}
+    \FunctionTok{=} \DataTypeTok{Proved}\NormalTok{     a                }\CommentTok{-- ^ `a` is provably true}
+    \FunctionTok{|} \DataTypeTok{Disproved}\NormalTok{ (a }\OtherTok{->} \DataTypeTok{Void}\NormalTok{)       }\CommentTok{-- ^ `a` is provably false}
+
+\CommentTok{-- | The type with no constructors.  If we have a function `a -> Void`, it must}
+\CommentTok{-- mean that no value of type `a` exists.}
+\KeywordTok{data} \DataTypeTok{Void}
+\end{Highlighting}
+\end{Shaded}
+
+A decision function means that, for any \texttt{x}, we can say that either
+\texttt{P\ @@\ x} can be proven true or can be proven false. See {[}this
+section{]}{[}singletons-decide{]} for a deeper discussion on why
+\texttt{Decision} has both the \texttt{Proved} and \texttt{Disproved} branch.
+Essentially, we keep track of ``provably false'' because we can use it later to
+build other useful decision functions and proving functions.
+
+We use decision functions when we want to ``conditionally prove'' something ---
+it might be true, or it might not be (but definitely one or the other). It might
+exist, or it might not. We can construct the view, or we can't. Whatever the
+perspective, it's always one or the other.
+
+\texttt{sel} fits this category: for a \texttt{Sel\ n\ xs\ ????}, either
+\texttt{n} is ``in bounds'' of \texttt{as} (and we can prove this with the item
+\texttt{x} in \texttt{xs}), or \texttt{n} is ``out of bounds''. Either we get
+the \texttt{x} out of \texttt{xs} at slot \texttt{n}, or we prove that no
+possible \texttt{x} exists in \texttt{xs} at slot \texttt{n}.
+
+\hypertarget{deciding-selfound}{%
+\subsubsection{Deciding SelFound}\label{deciding-selfound}}
+
+Enough talk, let's get to it!
+
+Let's write our first dependently typed function. We start the same way --- by
+looking at every possible constructor of \texttt{N} and \texttt{{[}a{]}}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{selFound}
+\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
+    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ n xs)}
+\NormalTok{selFound }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{SZ} \OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNil}         \OtherTok{->}\NormalTok{ _}
+\NormalTok{      x }\OtherTok{`SCons`}\NormalTok{ xs }\OtherTok{->}\NormalTok{ _}
+    \DataTypeTok{SS}\NormalTok{ n }\OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNil}         \OtherTok{->}\NormalTok{ _}
+\NormalTok{      x }\OtherTok{`SCons`}\NormalTok{ xs }\OtherTok{->}\NormalTok{ _}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
