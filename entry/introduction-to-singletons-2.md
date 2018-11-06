@@ -227,7 +227,8 @@ quantified `SingDS s` is *the same as* having a value of type `DoorState`.
 In fact, the *singletons* library gives us a direct existential wrapper:
 
 ``` {.haskell}
--- from singletons (not the actual definition)
+-- from singletons (not the actual definition, just psuedo-code to demonstrate
+-- what the constructors look like)
 data SomeSing DoorState :: Type where
     SomeSing :: Sing s -> SomeSing DoorState
 ```
