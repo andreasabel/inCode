@@ -20,12 +20,12 @@ Haskeline) and in the browser (using Miso), using some custom built AI. We will:
 This series will also be a mini-tutorial on the
 *[decidable](https://hackage.haskell.org/package/decidable)* package that I just
 recently released :) We will also be heavily using the
-*[singletons](https://hackage.haskell.org/package/singletons)* library. Where
-relevant, I will explain singletons concepts in brief. If you want a more
-in-depth introduction to the *singletons* library, however, check out my
-[Introduction to
+*[singletons](https://hackage.haskell.org/package/singletons)* library. I
+strongly strongly recommend reading my [Introduction to
 Singletons](https://blog.jle.im/entries/series/+introduction-to-singletons.html)
-series!
+series (and doing the exercises), if you are new to the singletons library.
+However, I will do my best to explain singletons concepts in brief as they come
+up.
 
 Type-Safety
 -----------
@@ -692,7 +692,8 @@ data Void
 ```
 
 A decision function means that, for any `x`, we can say that either `P @@ x` can
-be proven true or can be proven false. See \[this section\]\[singletons-decide\]
+be proven true or can be proven false. See [this
+section](https://blog.jle.im/entry/introduction-to-singletons-3.html#decision)
 for a deeper discussion on why `Decision` has both the `Proved` and `Disproved`
 branch. Essentially, it prevents us from just returning "disproved" without
 proving it (so we can be sure that our decision function is "correct" and not
