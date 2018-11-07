@@ -463,7 +463,7 @@ We'll call these potential "views" out of `(N, N)` with respect to some board
 -- | Placeholder predicate if a given number `n` is out of bounds for a given
 -- list.  Predicate is from the 'decidable' library
 data OutOfBounds n :: Predicate [k]
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L115-L125
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L116-L126
 
 data Pick :: (N, N, Board) -> Type where
     -- | We are out of bounds in x
@@ -587,7 +587,7 @@ predicate `SelFound n` will be satisfied if list `xs` has some item `x` at index
 `n`!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L139-L140
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L110-L111
 
 data SelFound :: N -> Predicate [k]
 type instance Apply (SelFound n) (xs :: [k]) = Σ k (TyPred (Sel n xs))
@@ -600,7 +600,7 @@ Now let's make some sample witnesses of predicate `SelFound n` to ensure we are
 thinking about things correctly:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L142-L144
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L140-L142
 
 selFoundTest1 :: SelFound 'Z @@ '[ 'True, 'False ]
 selFoundTest1 = STrue :&: SelZ
@@ -616,7 +616,7 @@ We can write a witness for `SelFound ('S 'Z) @@ '[ 'True, 'False ]`, as well, by
 giving the value of the list at index 1, `'False`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L146-L148
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L144-L146
 
 selFoundTest2 :: SelFound ('S 'Z) @@ '[ 'True, 'False ]
 selFoundTest2 = SFalse :&: SelS SelZ
@@ -750,7 +750,7 @@ learning's sake, let's split these branches into four helper functions --- one
 for each case.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L142-L184
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L140-L183
 
 selFoundTest1 :: SelFound 'Z @@ '[ 'True, 'False ]
 selFoundTest1 = STrue :&: SelZ
@@ -790,10 +790,11 @@ selFound_scons
     *-XLambdaCase* extension):
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L162-L163
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L160-L162
 
     noEmptySel :: Sel n '[] a -> Void
     noEmptySel = \case {}
+                -- ^ we handle all 0 of the valid patterns for Sel n '[] a
     ```
 
     `noEmptySel` succesfuly implements `Sel n '[] as` by succesfully matching on
@@ -809,7 +810,7 @@ selFound_scons
     `SelFound 'Z @@ '[] -> Void`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L165-L167
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L164-L166
 
     selFound_znil
         :: Decision (SelFound 'Z @@ '[])
@@ -826,7 +827,7 @@ selFound_scons
     *yes*, there does, and that item is `x`, and the `Sel` is `SelZ`!
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L169-L173
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L168-L172
 
     selFound_zcons
         :: Sing x
@@ -841,7 +842,7 @@ selFound_scons
     function `noEmptySel`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L175-L178
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L174-L177
 
     selFound_snil
         :: Sing n
@@ -870,7 +871,7 @@ selFound_scons
         useful --- we use them to build more complex disproofs from simple ones.
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L180-L192
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L179-L191
 
     selFound_scons
         :: Sing n
@@ -890,6 +891,231 @@ selFound_scons
     If you have problems understanding this, try playing around with typed holes
     in GHC, or trying to guess what types everything has in the implementation
     above, until you can figure out what is happening when.
+
+### Proving Pick
+
+Now that we can decide `SelFound`, let's finally prove `Pick`.
+
+``` {.haskell}
+pick
+    :: forall i j b. ()
+    => Sing i
+    -> Sing j
+    -> Sing b
+    -> Pick '(i, j, b)
+pick i j b =
+```
+
+Remember, the goal is to try to prove we have a valid pick. We want to create
+something with the `PickValid` constructor if we can:
+
+``` {.haskell}
+PickValid  :: Coord '(i, j) b 'Nothing -> Pick '(i, j, b)
+
+(:$:) :: Sel i rows row
+      -> Sel j row  p
+      -> Coord '(i, j) rows p
+```
+
+So we need a `Coord '(i, j) b 'Nothing`, which means we need a `Sel i b row` and
+a `Sel j row 'Nothing`. Let's use our decision functions we wrote to get these!
+In particular, we can use `selFound i b` to get our `Sel i b row` and `row`, and
+then use `selFound j row` to get our `Sel j row piece` and `piece`!
+
+Note that we also might need to handle the cases where the picks are
+out-of-bounds, which requires an `OuOfBounds n` predicate.
+
+``` {.haskell}
+PickOoBX   :: OutOfBounds i @@ b -> Pick '(i, j, b)
+```
+
+We never defined `OutOfBounds n`, so let's do it now. We know that `SelFound n`
+is the predicate where `SelFound n @@ xs` is satisfied when index `n` is "in
+bounds" of `xs`. So, `OutOfBounds n` is the predicate that we *can't* produce
+`SelFound n`; a witness of `OutOfBounds n @@ xs` is a proof that we can't make
+`SelFound n @@ xs`:
+
+``` {.haskell}
+data OutOfBounds :: N -> Predicate [k]
+type instance Apply (OutOfBounds n) xs = SelFound n @@ xs -> Void
+```
+
+Remember that `a -> Void` is a witness that `a` cannot exist, since if it could
+exist, we could create a value of type `Void`, but no such value exists. So if
+we had a `SelFound n @@ xs -> Void`, it means that no such `SelFound n @@ xs`
+could exist. It means that `n` must *not* be in bounds of `xs`.
+
+Actually, we could take advantage of some of the combinators that the
+*decidable* library provides to define `OutOfBounds` in a cleaner way:
+
+``` {.haskell}
+-- | Provided by decidable; it's the negation of a predicate
+data Not :: Predicate k -> Predicate k
+type instance Apply (Not p) x = p @@ x -> Void
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L113-L113
+
+type OutOfBounds n = Not (SelFound n)
+```
+
+Alright, now that everything is defined, let's start writing our viewing
+function for `Pick`. Recall again the definition of `Pick`:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L116-L126
+
+data Pick :: (N, N, Board) -> Type where
+    -- | We are out of bounds in x
+    PickOoBX   :: OutOfBounds i @@ b                         -> Pick '(i, j, b)
+    -- | We are in-bounds in x, but out of bounds in y
+    PickOoBY   :: Sel i b row        -> OutOfBounds j @@ row -> Pick '(i, j, b)
+    -- | We are in-bounds in x, in-bounds in y, but spot is taken by `p`.
+    -- We include `Sing p` in this constructor to potentially provide
+    -- feedback to the user on what piece is already in the spot.
+    PickPlayed :: Coord '(i, j) b ('Just p) -> Sing p        -> Pick '(i, j, b)
+    -- | We are in-bounds in x, in-bounds in y, and spot is clear
+    PickValid  :: Coord '(i, j) b 'Nothing                   -> Pick '(i, j, b)
+```
+
+And let's start writing. First, we'll use our decision functions `selFound` to
+*try* to produce the `Sel`s necessary for the `PickValid` branch:
+
+``` {.haskell}
+pick
+    :: forall i j b. ()
+    => Sing i
+    -> Sing j
+    -> Sing b
+    -> Pick '(i, j, b)
+pick i j b = case selFound i b of
+    Proved (row :&: selX) -> case selFound j row of
+      Proved (p :&: selY) ->
+        let c = selX :$: selY
+        in  ????
+```
+
+In the case where both `i` and `j` are in-bounds, what do we do? Well, we can
+create the `Coord` from the `selX` and `selY`. Can't we just give this to
+`PickValid`?
+
+``` {.haskell}
+pick
+    :: forall i j b. ()
+    => Sing i
+    -> Sing j
+    -> Sing b
+    -> Pick '(i, j, b)
+pick i j b = case selFound i b of
+    Proved (row :&: selX) -> case selFound j row of
+      Proved (p :&: selY) ->
+        let c = selX :$: selY
+        in  PickValid c
+```
+
+Ah, but this is a compiler error. It's hard to see why without a trusty compiler
+to help us. But that's the best part about using dependent types --- the
+compilers are here to help us write our programs!
+
+The compiler basically tells us that `c` is supposed to point to
+`'Nothing`...but right now it's pointing to some type variable that we don't
+know is `'Nothing` or `'Just`. So `c` doesn't *necessarily* work, because it
+*might* be pointing to `'Just`, and not `'Nothing`. We haven't satisfied
+`PickValid` yet, because we have to be certain that it is `'Nothing` and not
+`'Just`
+
+Just to clarify what's going on, let's give types to the names above:
+
+``` {.haskell}
+b    :: Sing (b   :: [[Maybe Piece]])
+row  :: Sing (row ::  [Maybe Piece] )
+selX :: Sel i b row
+p    :: Sing (p   ::   Maybe Piece  )
+selY :: Sel j row p
+c    :: Coord '(i, j) b p
+```
+
+`row` above is the `Sing` that comes attached with all `Σ` constructors, which
+is why we can give it to `selFound j`, which expects a singleton of the list.
+
+So, now we have `Coord '(i, j) b p`. We know that `i` and `j` are in-bounds.
+But, we need to know that `p` is `'Nothing` before we can use it with
+`PickValid`. To do that, we can pattern match on `p`, because it's the singleton
+that comes with the `Σ` constructor:
+
+``` {.haskell}
+pick
+    :: forall i j b. ()
+    => Sing i
+    -> Sing j
+    -> Sing b
+    -> Pick '(i, j, b)
+pick i j b = case selFound i b of
+    Proved (row :&: selX) -> case selFound j row of
+      Proved (p :&: selY) ->
+        let c = selX :$: selY
+        in  case p of
+              SNothing -> PickValid   c     -- p is 'Nothing
+              SJust q  -> PickPlayed  c q   -- p is 'Just q
+```
+
+Finally, knowing that `p` is `'Nothing`, we can create `PickValid`!
+
+As a bonus, if we know that `p` is `'Just p`, we can create `PickPlayed`, which
+is the constructor for an in-bounds pick but pointing to a spot that is already
+occupied by piece `p'`.
+
+``` {.haskell}
+PickPlayed :: Coord '(i, j) b ('Just p)
+           -> Sing p
+           -> Pick '(i, j, b)
+```
+
+We now have to deal with the situations where things are out of bounds.
+
+``` {.haskell}
+PickOoBX :: OutOfBounds i @@ b
+         -> Pick '(i, j, b)
+PickOoBY :: Sel i b row
+         -> OutOfBounds j @@ row
+         -> Pick '(i, j, b)
+```
+
+`PickOoBX` requires an `OutOfBounds i @@ b`, which we defined as
+`SelFound i @@ b -> Void`. Well, that's *exactly* what the `Disproved`
+constructor contains, that `selFound i b` returns! And `PickOoBY` requires an
+`OutOfBounds j @@ row`, which we defined as `SelFound j @@ row -> Void`. And
+that's *exactly* what the `Disproved` constructor of `selFound j row` returns.
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L193-L211
+
+pick
+    :: forall i j b. ()
+    => Sing i
+    -> Sing j
+    -> Sing b
+    -> Pick '(i, j, b)
+pick i j b = case selFound i b of
+    Proved (row :&: selX) -> case selFound j row of
+      Proved (p :&: selY) ->
+        let c = selX :$: selY
+        in  case p of
+              SNothing -> PickValid   c     -- p is 'Nothing
+              SJust q  -> PickPlayed  c q   -- p is 'Just q
+      Disproved vY -> PickOoBY selX vY    -- vY :: InBounds j @@ row -> Void
+                                          -- vY :: Not (InBounds j) @@ row
+                                          -- vY :: OutOfBounds j @@ row
+    Disproved vX -> PickOoBX vX   -- vX :: InBounds i @@ b   -> Void
+                                  -- vX :: Not (InBounds i) @@ b
+                                  -- vX :: OutOfBounds i @@ b
+```
+
+And that's it!
+
+Play Ball
+---------
+
+Bringing it all together, we can write a simple function to take user input and
+*play* it.
 
 --------------------------------------------------------------------------------
 
