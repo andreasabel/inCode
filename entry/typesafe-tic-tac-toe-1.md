@@ -575,22 +575,34 @@ Let's make sure this type works like we expect it to. We want a
 `Σ k (TyPred (Sel n xs))` to contain the `x` at position `n` in `xs`, *and* the
 `Sel` into that position.
 
-To make things a little less verbose, let's define a type synonym for
+To make things a little less verbose, we can define a type synonym for
 `Σ k (TyPred (Sel n xs))`, `SelFound n xs`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L139-L139
-
 type SelFound n (xs :: [k]) = Σ k (TyPred (Sel n xs))
 ```
 
-And making some sample witnesses to ensure we are thinking about things
-correctly:
+Or, as practice, maybe we can treat `SelFound n` as a predicate on a list? The
+predicate `SelFound n` will be satisfied if list `xs` has some item `x` at index
+`n`!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L141-L143
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L139-L140
 
-selFoundTest1 :: SelFound 'Z '[ 'True, 'False ]
+data SelFound :: N -> Predicate [k]
+type instance Apply (SelFound n) (xs :: [k]) = Σ k (TyPred (Sel n xs))
+```
+
+We can check to make sure this works, by checking the type of witnesses of
+`SelFound 'Z @@ '[ 'True, 'False ]`:
+
+Now let's make some sample witnesses of predicate `SelFound n` to ensure we are
+thinking about things correctly:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L142-L144
+
+selFoundTest1 :: SelFound 'Z @@ '[ 'True, 'False ]
 selFoundTest1 = STrue :&: SelZ
                        -- ^ Sel 'Z '[ 'True, 'False ] 'True
 ```
@@ -600,23 +612,23 @@ Note that `SFalse :&: SelZ` would be a type error, because the second half
 item in the list), so we have to have the first half match `'True`, with
 `STrue`.
 
-We can write a witness for `SelFound ('S 'Z) '[ 'True, 'False ]`, as well, by
+We can write a witness for `SelFound ('S 'Z) @@ '[ 'True, 'False ]`, as well, by
 giving the value of the list at index 1, `'False`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L145-L147
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L146-L148
 
-selFoundTest2 :: SelFound ('S 'Z) '[ 'True, 'False ]
+selFoundTest2 :: SelFound ('S 'Z) @@ '[ 'True, 'False ]
 selFoundTest2 = SFalse :&: SelS SelZ
                         -- ^ Sel ('S 'Z) '[ 'True, 'False ] 'False
 ```
 
 Before moving on, I strongly recommend trying to write some values of type
-`SelFound n xs` for different `n :: N` and `xs :: [a]`, to see what type-checks
-and what doesn't. It'll help you get a feel of the types we are working with,
-which might be more advanced than types you might encounter in everyday Haskell
-programming. Remember that you can load up all of the definitions in this post
-into a ghci session by downloading [the source
+`SelFound n @@ xs` for different `n :: N` and `xs :: [a]`, to see what
+type-checks and what doesn't. It'll help you get a feel of the types we are
+working with, which might be more advanced than types you might encounter in
+everyday Haskell programming. Remember that you can load up all of the
+definitions in this post into a ghci session by downloading [the source
 code](https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs)
 and executing it on the command line, `./Part1.hs`.
 
@@ -625,10 +637,10 @@ Now, we now have enough tools to write the type of the function we would like:
 ``` {.haskell}
 sel :: Sing n
     -> Sing xs
-    -> SelFound n xs
+    -> SelFound n @@ xs
 ```
 
-Remember, a `SelFound n xs` contains both a `Sel n xs x` *and* a `Sing x`: a
+Remember, a `SelFound n @@ xs` contains both a `Sel n xs x` *and* a `Sing x`: a
 selection into the `i`th item in `xs` (the `Sel n xs x`), and also the item
 itself (the `Sing x`).
 
@@ -639,7 +651,7 @@ you realize when you're trying to do something that doesn't make sense.
 ``` {.haskell}
 sel :: Sing n
     -> Sing xs
-    -> SelFound n xs
+    -> SelFound n @@ xs
 sel = \case
     SZ -> \case
       SNil -> _ :&: _
@@ -722,7 +734,7 @@ looking at every possible constructor of `N` and `[a]`:
 selFound
     :: Sing n
     -> Sing xs
-    -> Decision (SelFound n xs)
+    -> Decision (SelFound n @@ xs)
 selFound = \case
     SZ -> \case
       SNil         -> _   -- n is 'Z, xs is '[]
@@ -738,29 +750,29 @@ learning's sake, let's split these branches into four helper functions --- one
 for each case.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L141-L180
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L142-L184
 
-selFoundTest1 :: SelFound 'Z '[ 'True, 'False ]
+selFoundTest1 :: SelFound 'Z @@ '[ 'True, 'False ]
 selFoundTest1 = STrue :&: SelZ
                        -- ^ Sel 'Z '[ 'True, 'False ] 'True
 
 selFound_znil
-    :: Decision (SelFound 'Z '[])
+    :: Decision (SelFound 'Z @@ '[])
 
 selFound_zcons
     :: Sing x
     -> Sing xs
-    -> Decision (SelFound 'Z (x ': xs))
+    -> Decision (SelFound 'Z @@ (x ': xs))
 
 selFound_snil
     :: Sing n
-    -> Decision (SelFound ('S n) '[])
+    -> Decision (SelFound ('S n) @@ '[])
 
 selFound_scons
     :: Sing n
     -> Sing x
     -> Sing xs
-    -> Decision (SelFound ('S n) (x ': xs))
+    -> Decision (SelFound ('S n) @@ (x ': xs))
 ```
 
 1.  For the first branch, we have `'Z` and `'[]`. This should be false, because
@@ -768,48 +780,73 @@ selFound_scons
     to construct the `Sel` necessary for the witness, since there is no
     constructor for `Sel` that gives `'[]`.
 
-    So we can write this as `Disproved`, which takes a
-    `SelFound 'Z '[] -> Void`:
+    We can witness this by using a *total* helper function,
+    `noEmptySel :: Sel n '[] a -> Void`, which is a "disproof" of the fact that
+    an empty `Sel` can exist. It's a disproof because, if we *had* such a `Sel`,
+    we could produce `Void` with it...but `Void` has no constructors. So no such
+    `Sel` must exist!
+
+    We implement it by pattern matching on all potential patterns (using the
+    *-XLambdaCase* extension):
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L161-L163
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L162-L163
 
-    selFound_znil
-        :: Decision (SelFound 'Z '[])
-    selFound_znil = Disproved $ \(_ :&: s) -> case s of {}
+    noEmptySel :: Sel n '[] a -> Void
+    noEmptySel = \case {}
     ```
 
-    We can satisfy that `SelFound 'Z '[] -> Void` by pattern matching on the
-    `Sel` it *would* contain. Because there is no `Sel` for an empty list, the
-    empty pattern match is safe.
+    `noEmptySel` succesfuly implements `Sel n '[] as` by succesfully matching on
+    every legal constructor that could produce `Sel n '[] as`. But, because
+    there are no constructors for `Sel` that produce `Sel n '[] as` (we just
+    have `SelZ` and `SelS`, which both produce non-empty `Sel`s), that means we
+    have to handle all *zero* legal constructors. Once we handle all zero legal
+    constructors, we're done! (Remember to enable *-Werror=incomplete-patterns*
+    to be sure! GHC will then reject the program if there is a pattern we do not
+    handle)
 
-    Remember to enable *-Werror=incomplete-patterns* to be sure!
+    So we can write this as `Disproved`, which takes a
+    `SelFound 'Z @@ '[] -> Void`:
+
+    ``` {.haskell}
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L165-L167
+
+    selFound_znil
+        :: Decision (SelFound 'Z @@ '[])
+    selFound_znil = Disproved $ \(_ :&: s) -> noEmptySel s
+    ```
+
+    Armed with the `Sel 'Z '[] as` that is inside the `SelFound 'Z @@ '[]`, we
+    can use `noEmptySel` to produce the `Void`. We succefully disprove the fact
+    that there is any item that can be found in `'[]`, by providing a function
+    `SelFound 'Z @@ '[] -> Void`.
 
 2.  For the second branch, we have `'Z` and `(x ': xs)`. We want to prove that
     there exists an item at position `'Z` in the list `x ': xs`. The answer is
     *yes*, there does, and that item is `x`, and the `Sel` is `SelZ`!
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L165-L169
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L169-L173
 
     selFound_zcons
         :: Sing x
         -> Sing xs
-        -> Decision (SelFound 'Z (x ': xs))
+        -> Decision (SelFound 'Z @@ (x ': xs))
     selFound_zcons x _ = Proved (x :&: SelZ)
     ```
 
 3.  For the third branch, we have `'S n` and `'[]`. Again, this should be false,
     because there is no item in the `'S n` position in `'[]`. We should be able
-    to use the same strategy for the first branch:
+    to use the same strategy for the first branch, by re-using our helper
+    function `noEmptySel`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L171-L174
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L175-L178
 
     selFound_snil
         :: Sing n
-        -> Decision (SelFound ('S n) '[])
-    selFound_snil _ = Disproved $ \(_ :&: s) -> case s of {}
+        -> Decision (SelFound ('S n) @@ '[])
+    selFound_snil _ = Disproved $ \(_ :&: s) -> noEmptySel s
     ```
 
 4.  The fourth branch is the most interesting one. We have `'S n` and
@@ -833,13 +870,13 @@ selFound_scons
         useful --- we use them to build more complex disproofs from simple ones.
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L176-L188
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L180-L192
 
     selFound_scons
         :: Sing n
         -> Sing x
         -> Sing xs
-        -> Decision (SelFound ('S n) (x ': xs))
+        -> Decision (SelFound ('S n) @@ (x ': xs))
     selFound_scons n _ xs = case selFound n xs of
         Proved (y :&: s) ->       -- if xs has y in its n spot
           Proved (y :&: SelS s)   -- then (x : xs) has y in its (S n) spot

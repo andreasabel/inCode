@@ -803,25 +803,39 @@ Let's make sure this type works like we expect it to. We want a
 \texttt{Σ\ k\ (TyPred\ (Sel\ n\ xs))} to contain the \texttt{x} at position
 \texttt{n} in \texttt{xs}, \emph{and} the \texttt{Sel} into that position.
 
-To make things a little less verbose, let's define a type synonym for
+To make things a little less verbose, we can define a type synonym for
 \texttt{Σ\ k\ (TyPred\ (Sel\ n\ xs))}, \texttt{SelFound\ n\ xs}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L139-L139}
-
 \KeywordTok{type} \DataTypeTok{SelFound}\NormalTok{ n (}\OtherTok{xs ::}\NormalTok{ [k]) }\FunctionTok{=}\NormalTok{ Σ k (}\DataTypeTok{TyPred}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ n xs))}
 \end{Highlighting}
 \end{Shaded}
 
-And making some sample witnesses to ensure we are thinking about things
-correctly:
+Or, as practice, maybe we can treat \texttt{SelFound\ n} as a predicate on a
+list? The predicate \texttt{SelFound\ n} will be satisfied if list \texttt{xs}
+has some item \texttt{x} at index \texttt{n}!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L141-L143}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L139-L140}
 
-\OtherTok{selFoundTest1 ::} \DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ '[ '}\DataTypeTok{True}\NormalTok{, '}\DataTypeTok{False}\NormalTok{ ]}
+\KeywordTok{data} \DataTypeTok{SelFound}\OtherTok{ ::} \DataTypeTok{N} \OtherTok{->} \DataTypeTok{Predicate}\NormalTok{ [k]}
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ n) (}\OtherTok{xs ::}\NormalTok{ [k]) }\FunctionTok{=}\NormalTok{ Σ k (}\DataTypeTok{TyPred}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ n xs))}
+\end{Highlighting}
+\end{Shaded}
+
+We can check to make sure this works, by checking the type of witnesses of
+\texttt{SelFound\ \textquotesingle{}Z\ @@\ \textquotesingle{}{[}\ \textquotesingle{}True,\ \textquotesingle{}False\ {]}}:
+
+Now let's make some sample witnesses of predicate \texttt{SelFound\ n} to ensure
+we are thinking about things correctly:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L142-L144}
+
+\OtherTok{selFoundTest1 ::} \DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[ '}\DataTypeTok{True}\NormalTok{, '}\DataTypeTok{False}\NormalTok{ ]}
 \NormalTok{selFoundTest1 }\FunctionTok{=} \DataTypeTok{STrue} \FunctionTok{:&:} \DataTypeTok{SelZ}
                        \CommentTok{-- ^ Sel 'Z '[ 'True, 'False ] 'True}
 \end{Highlighting}
@@ -835,22 +849,22 @@ have to have the first half match \texttt{\textquotesingle{}True}, with
 \texttt{STrue}.
 
 We can write a witness for
-\texttt{SelFound\ (\textquotesingle{}S\ \textquotesingle{}Z)\ \textquotesingle{}{[}\ \textquotesingle{}True,\ \textquotesingle{}False\ {]}},
+\texttt{SelFound\ (\textquotesingle{}S\ \textquotesingle{}Z)\ @@\ \textquotesingle{}{[}\ \textquotesingle{}True,\ \textquotesingle{}False\ {]}},
 as well, by giving the value of the list at index 1,
 \texttt{\textquotesingle{}False}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L145-L147}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L146-L148}
 
-\OtherTok{selFoundTest2 ::} \DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{) '[ '}\DataTypeTok{True}\NormalTok{, '}\DataTypeTok{False}\NormalTok{ ]}
+\OtherTok{selFoundTest2 ::} \DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{) }\FunctionTok{@@}\NormalTok{ '[ '}\DataTypeTok{True}\NormalTok{, '}\DataTypeTok{False}\NormalTok{ ]}
 \NormalTok{selFoundTest2 }\FunctionTok{=} \DataTypeTok{SFalse} \FunctionTok{:&:} \DataTypeTok{SelS} \DataTypeTok{SelZ}
                         \CommentTok{-- ^ Sel ('S 'Z) '[ 'True, 'False ] 'False}
 \end{Highlighting}
 \end{Shaded}
 
 Before moving on, I strongly recommend trying to write some values of type
-\texttt{SelFound\ n\ xs} for different \texttt{n\ ::\ N} and
+\texttt{SelFound\ n\ @@\ xs} for different \texttt{n\ ::\ N} and
 \texttt{xs\ ::\ {[}a{]}}, to see what type-checks and what doesn't. It'll help
 you get a feel of the types we are working with, which might be more advanced
 than types you might encounter in everyday Haskell programming. Remember that
@@ -865,11 +879,11 @@ Now, we now have enough tools to write the type of the function we would like:
 \begin{Highlighting}[]
 \OtherTok{sel ::} \DataTypeTok{Sing}\NormalTok{ n}
     \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{SelFound}\NormalTok{ n xs}
+    \OtherTok{->} \DataTypeTok{SelFound}\NormalTok{ n }\FunctionTok{@@}\NormalTok{ xs}
 \end{Highlighting}
 \end{Shaded}
 
-Remember, a \texttt{SelFound\ n\ xs} contains both a \texttt{Sel\ n\ xs\ x}
+Remember, a \texttt{SelFound\ n\ @@\ xs} contains both a \texttt{Sel\ n\ xs\ x}
 \emph{and} a \texttt{Sing\ x}: a selection into the \texttt{i}th item in
 \texttt{xs} (the \texttt{Sel\ n\ xs\ x}), and also the item itself (the
 \texttt{Sing\ x}).
@@ -882,7 +896,7 @@ you realize when you're trying to do something that doesn't make sense.
 \begin{Highlighting}[]
 \OtherTok{sel ::} \DataTypeTok{Sing}\NormalTok{ n}
     \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{SelFound}\NormalTok{ n xs}
+    \OtherTok{->} \DataTypeTok{SelFound}\NormalTok{ n }\FunctionTok{@@}\NormalTok{ xs}
 \NormalTok{sel }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{SZ} \OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
       \DataTypeTok{SNil} \OtherTok{->}\NormalTok{ _ }\FunctionTok{:&:}\NormalTok{ _}
@@ -980,7 +994,7 @@ looking at every possible constructor of \texttt{N} and \texttt{{[}a{]}}:
 \NormalTok{selFound}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
     \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ n xs)}
+    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ n }\FunctionTok{@@}\NormalTok{ xs)}
 \NormalTok{selFound }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{SZ} \OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
       \DataTypeTok{SNil}         \OtherTok{->}\NormalTok{ _   }\CommentTok{-- n is 'Z, xs is '[]}
@@ -998,29 +1012,29 @@ for each case.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L141-L180}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L142-L184}
 
-\OtherTok{selFoundTest1 ::} \DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ '[ '}\DataTypeTok{True}\NormalTok{, '}\DataTypeTok{False}\NormalTok{ ]}
+\OtherTok{selFoundTest1 ::} \DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[ '}\DataTypeTok{True}\NormalTok{, '}\DataTypeTok{False}\NormalTok{ ]}
 \NormalTok{selFoundTest1 }\FunctionTok{=} \DataTypeTok{STrue} \FunctionTok{:&:} \DataTypeTok{SelZ}
                        \CommentTok{-- ^ Sel 'Z '[ 'True, 'False ] 'True}
 
 \NormalTok{selFound_znil}
-\OtherTok{    ::} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ '[])}
+\OtherTok{    ::} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[])}
 
 \NormalTok{selFound_zcons}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ x}
     \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
+    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
 
 \NormalTok{selFound_snil}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) '[])}
+    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) }\FunctionTok{@@}\NormalTok{ '[])}
 
 \NormalTok{selFound_scons}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
     \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ x}
     \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) (x '}\FunctionTok{:}\NormalTok{ xs))}
+    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) }\FunctionTok{@@}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1033,25 +1047,57 @@ for each case.
   construct the \texttt{Sel} necessary for the witness, since there is no
   constructor for \texttt{Sel} that gives \texttt{\textquotesingle{}{[}{]}}.
 
-  So we can write this as \texttt{Disproved}, which takes a
-  \texttt{SelFound\ \textquotesingle{}Z\ \textquotesingle{}{[}{]}\ -\textgreater{}\ Void}:
+  We can witness this by using a \emph{total} helper function,
+  \texttt{noEmptySel\ ::\ Sel\ n\ \textquotesingle{}{[}{]}\ a\ -\textgreater{}\ Void},
+  which is a ``disproof'' of the fact that an empty \texttt{Sel} can exist. It's
+  a disproof because, if we \emph{had} such a \texttt{Sel}, we could produce
+  \texttt{Void} with it\ldots{}but \texttt{Void} has no constructors. So no such
+  \texttt{Sel} must exist!
+
+  We implement it by pattern matching on all potential patterns (using the
+  \emph{-XLambdaCase} extension):
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L161-L163}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L162-L163}
 
-\NormalTok{selFound_znil}
-\OtherTok{    ::} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ '[])}
-\NormalTok{selFound_znil }\FunctionTok{=} \DataTypeTok{Disproved} \FunctionTok{$}\NormalTok{ \textbackslash{}(_ }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->} \KeywordTok{case}\NormalTok{ s }\KeywordTok{of}\NormalTok{ \{\}}
+\OtherTok{noEmptySel ::} \DataTypeTok{Sel}\NormalTok{ n '[] a }\OtherTok{->} \DataTypeTok{Void}
+\NormalTok{noEmptySel }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}\NormalTok{ \{\}}
 \end{Highlighting}
 \end{Shaded}
 
-  We can satisfy that
-  \texttt{SelFound\ \textquotesingle{}Z\ \textquotesingle{}{[}{]}\ -\textgreater{}\ Void}
-  by pattern matching on the \texttt{Sel} it \emph{would} contain. Because there
-  is no \texttt{Sel} for an empty list, the empty pattern match is safe.
+  \texttt{noEmptySel} succesfuly implements
+  \texttt{Sel\ n\ \textquotesingle{}{[}{]}\ as} by succesfully matching on every
+  legal constructor that could produce
+  \texttt{Sel\ n\ \textquotesingle{}{[}{]}\ as}. But, because there are no
+  constructors for \texttt{Sel} that produce
+  \texttt{Sel\ n\ \textquotesingle{}{[}{]}\ as} (we just have \texttt{SelZ} and
+  \texttt{SelS}, which both produce non-empty \texttt{Sel}s), that means we have
+  to handle all \emph{zero} legal constructors. Once we handle all zero legal
+  constructors, we're done! (Remember to enable
+  \emph{-Werror=incomplete-patterns} to be sure! GHC will then reject the
+  program if there is a pattern we do not handle)
 
-  Remember to enable \emph{-Werror=incomplete-patterns} to be sure!
+  So we can write this as \texttt{Disproved}, which takes a
+  \texttt{SelFound\ \textquotesingle{}Z\ @@\ \textquotesingle{}{[}{]}\ -\textgreater{}\ Void}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L165-L167}
+
+\NormalTok{selFound_znil}
+\OtherTok{    ::} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[])}
+\NormalTok{selFound_znil }\FunctionTok{=} \DataTypeTok{Disproved} \FunctionTok{$}\NormalTok{ \textbackslash{}(_ }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->}\NormalTok{ noEmptySel s}
+\end{Highlighting}
+\end{Shaded}
+
+  Armed with the \texttt{Sel\ \textquotesingle{}Z\ \textquotesingle{}{[}{]}\ as}
+  that is inside the
+  \texttt{SelFound\ \textquotesingle{}Z\ @@\ \textquotesingle{}{[}{]}}, we can
+  use \texttt{noEmptySel} to produce the \texttt{Void}. We succefully disprove
+  the fact that there is any item that can be found in
+  \texttt{\textquotesingle{}{[}{]}}, by providing a function
+  \texttt{SelFound\ \textquotesingle{}Z\ @@\ \textquotesingle{}{[}{]}\ -\textgreater{}\ Void}.
 \item
   For the second branch, we have \texttt{\textquotesingle{}Z} and
   \texttt{(x\ \textquotesingle{}:\ xs)}. We want to prove that there exists an
@@ -1061,12 +1107,12 @@ for each case.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L165-L169}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L169-L173}
 
 \NormalTok{selFound_zcons}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ x}
     \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
+    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
 \NormalTok{selFound_zcons x _ }\FunctionTok{=} \DataTypeTok{Proved}\NormalTok{ (x }\FunctionTok{:&:} \DataTypeTok{SelZ}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
@@ -1075,16 +1121,16 @@ for each case.
   \texttt{\textquotesingle{}{[}{]}}. Again, this should be false, because there
   is no item in the \texttt{\textquotesingle{}S\ n} position in
   \texttt{\textquotesingle{}{[}{]}}. We should be able to use the same strategy
-  for the first branch:
+  for the first branch, by re-using our helper function \texttt{noEmptySel}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L171-L174}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L175-L178}
 
 \NormalTok{selFound_snil}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) '[])}
-\NormalTok{selFound_snil _ }\FunctionTok{=} \DataTypeTok{Disproved} \FunctionTok{$}\NormalTok{ \textbackslash{}(_ }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->} \KeywordTok{case}\NormalTok{ s }\KeywordTok{of}\NormalTok{ \{\}}
+    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) }\FunctionTok{@@}\NormalTok{ '[])}
+\NormalTok{selFound_snil _ }\FunctionTok{=} \DataTypeTok{Disproved} \FunctionTok{$}\NormalTok{ \textbackslash{}(_ }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->}\NormalTok{ noEmptySel s}
 \end{Highlighting}
 \end{Shaded}
 \item
@@ -1118,13 +1164,13 @@ for each case.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L176-L188}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L180-L192}
 
 \NormalTok{selFound_scons}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
     \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ x}
     \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) (x '}\FunctionTok{:}\NormalTok{ xs))}
+    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) }\FunctionTok{@@}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
 \NormalTok{selFound_scons n _ xs }\FunctionTok{=} \KeywordTok{case}\NormalTok{ selFound n xs }\KeywordTok{of}
     \DataTypeTok{Proved}\NormalTok{ (y }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->}       \CommentTok{-- if xs has y in its n spot}
       \DataTypeTok{Proved}\NormalTok{ (y }\FunctionTok{:&:} \DataTypeTok{SelS}\NormalTok{ s)   }\CommentTok{-- then (x : xs) has y in its (S n) spot}
