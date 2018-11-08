@@ -596,6 +596,11 @@ type instance Apply (SelFound n) (xs :: [k]) = Σ k (TyPred (Sel n xs))
 We can check to make sure this works, by checking the type of witnesses of
 `SelFound 'Z @@ '[ 'True, 'False ]`:
 
+``` {.haskell}
+ghci> :kind! SelFound 'Z @@ '[ 'True, 'False ]
+Σ Bool (TyPred Sel ('Z '[ 'True, 'False ]))
+```
+
 Now let's make some sample witnesses of predicate `SelFound n` to ensure we are
 thinking about things correctly:
 
