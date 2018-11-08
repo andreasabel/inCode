@@ -625,7 +625,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb55-21" data-line-number="21">    showPiece (<span class="dt">Just</span> <span class="dt">PX</span>) <span class="fu">=</span> <span class="st">&quot; X &quot;</span></a>
 <a class="sourceLine" id="cb55-22" data-line-number="22">    showPiece (<span class="dt">Just</span> <span class="dt">PO</span>) <span class="fu">=</span> <span class="st">&quot; O &quot;</span></a></code></pre></div>
 <p>And here is the logic for getting user input, viewing it using <code>pick</code>, and updating the <code>GameState</code>:</p>
-<div class="sourceCode" id="cb56"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb56-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L223-L247</span></a>
+<div class="sourceCode" id="cb56"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb56-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L226-L250</span></a>
 <a class="sourceLine" id="cb56-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb56-3" data-line-number="3">simplePlayIO&#39;</a>
 <a class="sourceLine" id="cb56-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Sing</span> p</a>
@@ -655,33 +655,10 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>We use the <code>FromSing :: Sing (x :: a) -&gt; a</code> pattern synonym here to jump between the value-level and type-level with our values. First we use it as a <code>Sing (b :: Board) -&gt; Board</code> to give us the <code>Board</code> that <code>printBoard</code> demands. Then we use it as a constructor to “get” a <code>Sing (i :: N)</code> from the value-level <code>N</code> that <code>getN</code> returns. If <code>FromSing x :: a</code>, then <code>x</code> is the singleton of <code>FromSing x</code>. That is, <code>True == FromSing STrue</code>, and <code>S Z == FromSing (SS SZ)</code>.</p>
 <p>Note that the type of <code>play</code> enforces that we modify <code>p</code> and <code>b</code> according to nothing other than exactly what the type of a new board game demands.</p>
 <p>And to start it off, we give <code>simplePlayIO'</code> an initial state:</p>
-<div class="sourceCode" id="cb57"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L223-L247</span></a>
+<div class="sourceCode" id="cb57"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L223-L224</span></a>
 <a class="sourceLine" id="cb57-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb57-3" data-line-number="3">simplePlayIO&#39;</a>
-<a class="sourceLine" id="cb57-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Sing</span> p</a>
-<a class="sourceLine" id="cb57-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> b</a>
-<a class="sourceLine" id="cb57-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">GameState</span> p b</a>
-<a class="sourceLine" id="cb57-7" data-line-number="7">    <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb57-8" data-line-number="8">simplePlayIO&#39; p b gs <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb57-9" data-line-number="9">    printBoard <span class="fu">$</span> <span class="dt">FromSing</span> b</a>
-<a class="sourceLine" id="cb57-10" data-line-number="10">    <span class="dt">FromSing</span> i <span class="ot">&lt;-</span> getN <span class="st">&quot;for row&quot;</span></a>
-<a class="sourceLine" id="cb57-11" data-line-number="11">    <span class="dt">FromSing</span> j <span class="ot">&lt;-</span> getN <span class="st">&quot;for column&quot;</span></a>
-<a class="sourceLine" id="cb57-12" data-line-number="12">    <span class="kw">case</span> pick i j b <span class="kw">of</span></a>
-<a class="sourceLine" id="cb57-13" data-line-number="13">      <span class="dt">PickOoBX</span> _ <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb57-14" data-line-number="14">        putStrLn <span class="st">&quot;Out of bounds in rows.  Try again.&quot;</span></a>
-<a class="sourceLine" id="cb57-15" data-line-number="15">        simplePlayIO&#39; p b gs</a>
-<a class="sourceLine" id="cb57-16" data-line-number="16">      <span class="dt">PickOoBY</span> _ _ <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb57-17" data-line-number="17">        putStrLn <span class="st">&quot;Out of bounds in cols.  Try again.&quot;</span></a>
-<a class="sourceLine" id="cb57-18" data-line-number="18">        simplePlayIO&#39; p b gs</a>
-<a class="sourceLine" id="cb57-19" data-line-number="19">      <span class="dt">PickPlayed</span> _ q <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb57-20" data-line-number="20">        putStrLn <span class="fu">$</span> <span class="st">&quot;Already played by &quot;</span> <span class="fu">++</span> show (fromSing q) <span class="fu">++</span> <span class="st">&quot;. Try again.&quot;</span></a>
-<a class="sourceLine" id="cb57-21" data-line-number="21">        simplePlayIO&#39; p b gs</a>
-<a class="sourceLine" id="cb57-22" data-line-number="22">      <span class="dt">PickValid</span> c <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb57-23" data-line-number="23">        putStrLn <span class="st">&quot;Success!&quot;</span></a>
-<a class="sourceLine" id="cb57-24" data-line-number="24">        <span class="kw">let</span> p&#39;  <span class="fu">=</span> sAltP p                 <span class="co">-- update player (enforced by `play`)</span></a>
-<a class="sourceLine" id="cb57-25" data-line-number="25">            b&#39;  <span class="fu">=</span> sPlaceBoard i j p b     <span class="co">-- update board  (enforced by `play`)</span></a>
-<a class="sourceLine" id="cb57-26" data-line-number="26">            gs&#39; <span class="fu">=</span> play undefined c gs     <span class="co">-- update game state</span></a>
-<a class="sourceLine" id="cb57-27" data-line-number="27">        simplePlayIO&#39; p&#39; b&#39; gs&#39;</a></code></pre></div>
+<a class="sourceLine" id="cb57-3" data-line-number="3"><span class="ot">simplePlayIO ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb57-4" data-line-number="4">simplePlayIO <span class="fu">=</span> simplePlayIO&#39; <span class="dt">SPX</span> sEmptyBoard <span class="dt">GSStart</span></a></code></pre></div>
 <p>This isn’t too bad! A type-safe tic-tac-toe that enforces that:</p>
 <ol type="1">
 <li>Players alternate</li>

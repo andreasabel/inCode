@@ -1165,7 +1165,7 @@ And here is the logic for getting user input, viewing it using `pick`, and
 updating the `GameState`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L223-L247
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L226-L250
 
 simplePlayIO'
     :: Sing p
@@ -1207,33 +1207,10 @@ nothing other than exactly what the type of a new board game demands.
 And to start it off, we give `simplePlayIO'` an initial state:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L223-L247
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L223-L224
 
-simplePlayIO'
-    :: Sing p
-    -> Sing b
-    -> GameState p b
-    -> IO ()
-simplePlayIO' p b gs = do
-    printBoard $ FromSing b
-    FromSing i <- getN "for row"
-    FromSing j <- getN "for column"
-    case pick i j b of
-      PickOoBX _ -> do
-        putStrLn "Out of bounds in rows.  Try again."
-        simplePlayIO' p b gs
-      PickOoBY _ _ -> do
-        putStrLn "Out of bounds in cols.  Try again."
-        simplePlayIO' p b gs
-      PickPlayed _ q -> do
-        putStrLn $ "Already played by " ++ show (fromSing q) ++ ". Try again."
-        simplePlayIO' p b gs
-      PickValid c -> do
-        putStrLn "Success!"
-        let p'  = sAltP p                 -- update player (enforced by `play`)
-            b'  = sPlaceBoard i j p b     -- update board  (enforced by `play`)
-            gs' = play undefined c gs     -- update game state
-        simplePlayIO' p' b' gs'
+simplePlayIO :: IO ()
+simplePlayIO = simplePlayIO' SPX sEmptyBoard GSStart
 ```
 
 This isn't too bad! A type-safe tic-tac-toe that enforces that:
