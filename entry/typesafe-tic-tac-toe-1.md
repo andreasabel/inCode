@@ -605,7 +605,7 @@ Now let's make some sample witnesses of predicate `SelFound n` to ensure we are
 thinking about things correctly:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L140-L142
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L185-L187
 
 selFoundTest1 :: SelFound 'Z @@ '[ 'True, 'False ]
 selFoundTest1 = STrue :&: SelZ
@@ -621,7 +621,7 @@ We can write a witness for `SelFound ('S 'Z) @@ '[ 'True, 'False ]`, as well, by
 giving the value of the list at index 1, `'False`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L144-L146
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L189-L191
 
 selFoundTest2 :: SelFound ('S 'Z) @@ '[ 'True, 'False ]
 selFoundTest2 = SFalse :&: SelS SelZ
@@ -759,11 +759,19 @@ learning's sake, let's split these branches into four helper functions --- one
 for each case.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L140-L183
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L140-L175
 
-selFoundTest1 :: SelFound 'Z @@ '[ 'True, 'False ]
-selFoundTest1 = STrue :&: SelZ
-                       -- ^ Sel 'Z '[ 'True, 'False ] 'True
+selFound
+    :: Sing n
+    -> Sing xs
+    -> Decision (SelFound n @@ xs)
+selFound = \case
+    SZ -> \case
+      SNil         -> selFound_znil
+      x `SCons` xs -> selFound_zcons x xs
+    SS n -> \case
+      SNil         -> selFound_snil n
+      x `SCons` xs -> selFound_scons n x xs
 
 selFound_znil
     :: Decision (SelFound 'Z @@ '[])
@@ -799,7 +807,7 @@ selFound_scons
     *-XLambdaCase* extension):
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L160-L162
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L152-L154
 
     noEmptySel :: Sel n '[] a -> Void
     noEmptySel = \case {}
@@ -819,7 +827,7 @@ selFound_scons
     `SelFound 'Z @@ '[] -> Void`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L164-L166
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L156-L158
 
     selFound_znil
         :: Decision (SelFound 'Z @@ '[])
@@ -836,7 +844,7 @@ selFound_scons
     *yes*, there does, and that item is `x`, and the `Sel` is `SelZ`!
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L168-L172
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L160-L164
 
     selFound_zcons
         :: Sing x
@@ -851,7 +859,7 @@ selFound_scons
     function `noEmptySel`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L174-L177
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L166-L169
 
     selFound_snil
         :: Sing n
@@ -880,7 +888,7 @@ selFound_scons
         useful --- we use them to build more complex disproofs from simple ones.
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L179-L191
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L171-L183
 
     selFound_scons
         :: Sing n

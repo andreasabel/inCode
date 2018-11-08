@@ -323,14 +323,14 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>kind<span class="fu">!</span> <span class="dt">SelFound</span> &#39;<span class="dt">Z</span> <span class="fu">@@</span> &#39;[ &#39;<span class="dt">True</span>, &#39;<span class="dt">False</span> ]</a>
 <a class="sourceLine" id="cb28-2" data-line-number="2">Σ <span class="dt">Bool</span> (<span class="dt">TyPred</span> <span class="dt">Sel</span> (&#39;<span class="dt">Z</span> &#39;[ &#39;<span class="dt">True</span>, &#39;<span class="dt">False</span> ]))</a></code></pre></div>
 <p>Now let’s make some sample witnesses of predicate <code>SelFound n</code> to ensure we are thinking about things correctly:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L140-L142</span></a>
+<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L185-L187</span></a>
 <a class="sourceLine" id="cb29-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb29-3" data-line-number="3"><span class="ot">selFoundTest1 ::</span> <span class="dt">SelFound</span> &#39;<span class="dt">Z</span> <span class="fu">@@</span> &#39;[ &#39;<span class="dt">True</span>, &#39;<span class="dt">False</span> ]</a>
 <a class="sourceLine" id="cb29-4" data-line-number="4">selFoundTest1 <span class="fu">=</span> <span class="dt">STrue</span> <span class="fu">:&amp;:</span> <span class="dt">SelZ</span></a>
 <a class="sourceLine" id="cb29-5" data-line-number="5">                       <span class="co">-- ^ Sel &#39;Z &#39;[ &#39;True, &#39;False ] &#39;True</span></a></code></pre></div>
 <p>Note that <code>SFalse :&amp;: SelZ</code> would be a type error, because the second half <code>SelZ</code> would be <code>Sel :: 'Z '[ 'True, 'False ] 'True</code> (because <code>'True</code> is the 0th item in the list), so we have to have the first half match <code>'True</code>, with <code>STrue</code>.</p>
 <p>We can write a witness for <code>SelFound ('S 'Z) @@ '[ 'True, 'False ]</code>, as well, by giving the value of the list at index 1, <code>'False</code>:</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb30-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L144-L146</span></a>
+<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb30-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L189-L191</span></a>
 <a class="sourceLine" id="cb30-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb30-3" data-line-number="3"><span class="ot">selFoundTest2 ::</span> <span class="dt">SelFound</span> (&#39;<span class="dt">S</span> &#39;<span class="dt">Z</span>) <span class="fu">@@</span> &#39;[ &#39;<span class="dt">True</span>, &#39;<span class="dt">False</span> ]</a>
 <a class="sourceLine" id="cb30-4" data-line-number="4">selFoundTest2 <span class="fu">=</span> <span class="dt">SFalse</span> <span class="fu">:&amp;:</span> <span class="dt">SelS</span> <span class="dt">SelZ</span></a>
@@ -386,48 +386,56 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb35-10" data-line-number="10">      <span class="dt">SNil</span>         <span class="ot">-&gt;</span> _   <span class="co">-- n is (&#39;S n), xs is &#39;[]</span></a>
 <a class="sourceLine" id="cb35-11" data-line-number="11">      x <span class="ot">`SCons`</span> xs <span class="ot">-&gt;</span> _   <span class="co">-- n is (&#39;S n), xs is (x &#39;: xs)</span></a></code></pre></div>
 <p>Okay, four cases. Initially daunting, but we can just handle this one by one. Normally we can just fill in the blanks with the “right” responses, but, for learning’s sake, let’s split these branches into four helper functions — one for each case.</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb36-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L140-L183</span></a>
+<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb36-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L140-L175</span></a>
 <a class="sourceLine" id="cb36-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb36-3" data-line-number="3"><span class="ot">selFoundTest1 ::</span> <span class="dt">SelFound</span> &#39;<span class="dt">Z</span> <span class="fu">@@</span> &#39;[ &#39;<span class="dt">True</span>, &#39;<span class="dt">False</span> ]</a>
-<a class="sourceLine" id="cb36-4" data-line-number="4">selFoundTest1 <span class="fu">=</span> <span class="dt">STrue</span> <span class="fu">:&amp;:</span> <span class="dt">SelZ</span></a>
-<a class="sourceLine" id="cb36-5" data-line-number="5">                       <span class="co">-- ^ Sel &#39;Z &#39;[ &#39;True, &#39;False ] &#39;True</span></a>
-<a class="sourceLine" id="cb36-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb36-7" data-line-number="7">selFound_znil</a>
-<a class="sourceLine" id="cb36-8" data-line-number="8"><span class="ot">    ::</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> &#39;<span class="dt">Z</span> <span class="fu">@@</span> &#39;[])</a>
-<a class="sourceLine" id="cb36-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb36-10" data-line-number="10">selFound_zcons</a>
-<a class="sourceLine" id="cb36-11" data-line-number="11"><span class="ot">    ::</span> <span class="dt">Sing</span> x</a>
-<a class="sourceLine" id="cb36-12" data-line-number="12">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
-<a class="sourceLine" id="cb36-13" data-line-number="13">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> &#39;<span class="dt">Z</span> <span class="fu">@@</span> (x &#39;<span class="fu">:</span> xs))</a>
+<a class="sourceLine" id="cb36-3" data-line-number="3">selFound</a>
+<a class="sourceLine" id="cb36-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
+<a class="sourceLine" id="cb36-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
+<a class="sourceLine" id="cb36-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> n <span class="fu">@@</span> xs)</a>
+<a class="sourceLine" id="cb36-7" data-line-number="7">selFound <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb36-8" data-line-number="8">    <span class="dt">SZ</span> <span class="ot">-&gt;</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb36-9" data-line-number="9">      <span class="dt">SNil</span>         <span class="ot">-&gt;</span> selFound_znil</a>
+<a class="sourceLine" id="cb36-10" data-line-number="10">      x <span class="ot">`SCons`</span> xs <span class="ot">-&gt;</span> selFound_zcons x xs</a>
+<a class="sourceLine" id="cb36-11" data-line-number="11">    <span class="dt">SS</span> n <span class="ot">-&gt;</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb36-12" data-line-number="12">      <span class="dt">SNil</span>         <span class="ot">-&gt;</span> selFound_snil n</a>
+<a class="sourceLine" id="cb36-13" data-line-number="13">      x <span class="ot">`SCons`</span> xs <span class="ot">-&gt;</span> selFound_scons n x xs</a>
 <a class="sourceLine" id="cb36-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb36-15" data-line-number="15">selFound_snil</a>
-<a class="sourceLine" id="cb36-16" data-line-number="16"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
-<a class="sourceLine" id="cb36-17" data-line-number="17">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> (&#39;<span class="dt">S</span> n) <span class="fu">@@</span> &#39;[])</a>
-<a class="sourceLine" id="cb36-18" data-line-number="18"></a>
-<a class="sourceLine" id="cb36-19" data-line-number="19">selFound_scons</a>
-<a class="sourceLine" id="cb36-20" data-line-number="20"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
-<a class="sourceLine" id="cb36-21" data-line-number="21">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> x</a>
-<a class="sourceLine" id="cb36-22" data-line-number="22">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
-<a class="sourceLine" id="cb36-23" data-line-number="23">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> (&#39;<span class="dt">S</span> n) <span class="fu">@@</span> (x &#39;<span class="fu">:</span> xs))</a></code></pre></div>
+<a class="sourceLine" id="cb36-15" data-line-number="15">selFound_znil</a>
+<a class="sourceLine" id="cb36-16" data-line-number="16"><span class="ot">    ::</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> &#39;<span class="dt">Z</span> <span class="fu">@@</span> &#39;[])</a>
+<a class="sourceLine" id="cb36-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb36-18" data-line-number="18">selFound_zcons</a>
+<a class="sourceLine" id="cb36-19" data-line-number="19"><span class="ot">    ::</span> <span class="dt">Sing</span> x</a>
+<a class="sourceLine" id="cb36-20" data-line-number="20">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
+<a class="sourceLine" id="cb36-21" data-line-number="21">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> &#39;<span class="dt">Z</span> <span class="fu">@@</span> (x &#39;<span class="fu">:</span> xs))</a>
+<a class="sourceLine" id="cb36-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb36-23" data-line-number="23">selFound_snil</a>
+<a class="sourceLine" id="cb36-24" data-line-number="24"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
+<a class="sourceLine" id="cb36-25" data-line-number="25">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> (&#39;<span class="dt">S</span> n) <span class="fu">@@</span> &#39;[])</a>
+<a class="sourceLine" id="cb36-26" data-line-number="26"></a>
+<a class="sourceLine" id="cb36-27" data-line-number="27">selFound_scons</a>
+<a class="sourceLine" id="cb36-28" data-line-number="28"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
+<a class="sourceLine" id="cb36-29" data-line-number="29">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> x</a>
+<a class="sourceLine" id="cb36-30" data-line-number="30">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
+<a class="sourceLine" id="cb36-31" data-line-number="31">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> (&#39;<span class="dt">S</span> n) <span class="fu">@@</span> (x &#39;<span class="fu">:</span> xs))</a></code></pre></div>
 <ol type="1">
 <li><p>For the first branch, we have <code>'Z</code> and <code>'[]</code>. This should be false, because there is no item in the zeroth position in <code>[]</code>. But, also, there is no way to construct the <code>Sel</code> necessary for the witness, since there is no constructor for <code>Sel</code> that gives <code>'[]</code>.</p>
 <p>We can witness this by using a <em>total</em> helper function, <code>noEmptySel :: Sel n '[] a -&gt; Void</code>, which is a “disproof” of the fact that an empty <code>Sel</code> can exist. It’s a disproof because, if we <em>had</em> such a <code>Sel</code>, we could produce <code>Void</code> with it…but <code>Void</code> has no constructors. So no such <code>Sel</code> must exist!</p>
 <p>We implement it by pattern matching on all potential patterns (using the <em>-XLambdaCase</em> extension):</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L160-L162</span></a>
+<div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L152-L154</span></a>
 <a class="sourceLine" id="cb37-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb37-3" data-line-number="3"><span class="ot">noEmptySel ::</span> <span class="dt">Sel</span> n &#39;[] a <span class="ot">-&gt;</span> <span class="dt">Void</span></a>
 <a class="sourceLine" id="cb37-4" data-line-number="4">noEmptySel <span class="fu">=</span> \<span class="kw">case</span> {}</a>
 <a class="sourceLine" id="cb37-5" data-line-number="5">            <span class="co">-- ^ we handle all 0 of the valid patterns for Sel n &#39;[] a</span></a></code></pre></div>
 <p><code>noEmptySel</code> succesfuly implements <code>Sel n '[] as</code> by succesfully matching on every legal constructor that could produce <code>Sel n '[] as</code>. But, because there are no constructors for <code>Sel</code> that produce <code>Sel n '[] as</code> (we just have <code>SelZ</code> and <code>SelS</code>, which both produce non-empty <code>Sel</code>s), that means we have to handle all <em>zero</em> legal constructors. Once we handle all zero legal constructors, we’re done! (Remember to enable <em>-Werror=incomplete-patterns</em> to be sure! GHC will then reject the program if there is a pattern we do not handle)</p>
 <p>So we can write this as <code>Disproved</code>, which takes a <code>SelFound 'Z @@ '[] -&gt; Void</code>:</p>
-<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L164-L166</span></a>
+<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L156-L158</span></a>
 <a class="sourceLine" id="cb38-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb38-3" data-line-number="3">selFound_znil</a>
 <a class="sourceLine" id="cb38-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> &#39;<span class="dt">Z</span> <span class="fu">@@</span> &#39;[])</a>
 <a class="sourceLine" id="cb38-5" data-line-number="5">selFound_znil <span class="fu">=</span> <span class="dt">Disproved</span> <span class="fu">$</span> \(_ <span class="fu">:&amp;:</span> s) <span class="ot">-&gt;</span> noEmptySel s</a></code></pre></div>
 <p>Armed with the <code>Sel 'Z '[] as</code> that is inside the <code>SelFound 'Z @@ '[]</code>, we can use <code>noEmptySel</code> to produce the <code>Void</code>. We succefully disprove the fact that there is any item that can be found in <code>'[]</code>, by providing a function <code>SelFound 'Z @@ '[] -&gt; Void</code>.</p></li>
 <li><p>For the second branch, we have <code>'Z</code> and <code>(x ': xs)</code>. We want to prove that there exists an item at position <code>'Z</code> in the list <code>x ': xs</code>. The answer is <em>yes</em>, there does, and that item is <code>x</code>, and the <code>Sel</code> is <code>SelZ</code>!</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L168-L172</span></a>
+<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L160-L164</span></a>
 <a class="sourceLine" id="cb39-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb39-3" data-line-number="3">selFound_zcons</a>
 <a class="sourceLine" id="cb39-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Sing</span> x</a>
@@ -435,7 +443,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb39-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> &#39;<span class="dt">Z</span> <span class="fu">@@</span> (x &#39;<span class="fu">:</span> xs))</a>
 <a class="sourceLine" id="cb39-7" data-line-number="7">selFound_zcons x _ <span class="fu">=</span> <span class="dt">Proved</span> (x <span class="fu">:&amp;:</span> <span class="dt">SelZ</span>)</a></code></pre></div></li>
 <li><p>For the third branch, we have <code>'S n</code> and <code>'[]</code>. Again, this should be false, because there is no item in the <code>'S n</code> position in <code>'[]</code>. We should be able to use the same strategy for the first branch, by re-using our helper function <code>noEmptySel</code>:</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L174-L177</span></a>
+<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L166-L169</span></a>
 <a class="sourceLine" id="cb40-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb40-3" data-line-number="3">selFound_snil</a>
 <a class="sourceLine" id="cb40-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
@@ -449,7 +457,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Suppose there <em>was</em> an item <code>y</code> at the <code>'S n</code> spot in <code>x ': xs</code>. If so, then that means that there would be an item <code>y</code> in the <code>n</code> spot in <code>xs</code>. However, this was found to be false. Therefore, we cannot have an item in the <code>'S n</code> spot in <code>x ': xs</code>.</p>
 <p>This is a situation where having a disproof in the <code>Disproved</code> branch is useful — we use them to build more complex disproofs from simple ones.</p></li>
 </ul>
-<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L179-L191</span></a>
+<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L171-L183</span></a>
 <a class="sourceLine" id="cb41-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb41-3" data-line-number="3">selFound_scons</a>
 <a class="sourceLine" id="cb41-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
