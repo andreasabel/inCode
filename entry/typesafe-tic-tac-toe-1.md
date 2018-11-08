@@ -1165,7 +1165,7 @@ And here is the logic for getting user input, viewing it using `pick`, and
 updating the `GameState`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L226-L250
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L228-L252
 
 simplePlayIO'
     :: Sing p
@@ -1207,10 +1207,12 @@ nothing other than exactly what the type of a new board game demands.
 And to start it off, we give `simplePlayIO'` an initial state:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L223-L224
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L223-L226
 
 simplePlayIO :: IO ()
 simplePlayIO = simplePlayIO' SPX sEmptyBoard GSStart
+-- alternatively
+-- simplePlayIO = simplePlayIO' sing sing GSStart
 ```
 
 This isn't too bad! A type-safe tic-tac-toe that enforces that:
