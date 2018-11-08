@@ -419,6 +419,14 @@ ghci> g4 = play undefined (SelS (SelS (SelS SelZ)) :$: SelZ) g3  -- O plays (3,0
 2.  We cannot place a piece in a previously-played spot
 3.  We cannot place a piece out-of-bounds.
 
+Note that the usage of `undefined` in place of a true witness for `InPlay` is a
+nice tool for *incremental* and *interactive* development using dependent types.
+A lot of people have the false impression that dependently typed programs are
+difficult to program incrementally or interactively, but this example shows a
+good way of going about programming in an incremental process. We just know that
+our program is complete when we are finally able to get rid of all the
+`undefined`s!
+
 Decision Functions and Views
 ----------------------------
 
@@ -974,6 +982,13 @@ type instance Apply (Not p) x = p @@ x -> Void
 type OutOfBounds n = Not (SelFound n)
 ```
 
+`Not` is a *predicate combinator*; it takes a predicate and returns new
+predicate. `Not p @@ x` is true whenever `p @@ x` is false, or `p @@ x -> Void`
+is inhabited. Note that combinators like `Not` are one of the reasons why it's
+useful to think of predicates in terms of defunctionalization symbols
+(`k ~> Type`), instead of as type families or type constructor: `Not` expects a
+"partially applied" predicate (`Not` takes `p`, not `p @@ x`).
+
 Alright, now that everything is defined, let's start writing our viewing
 function for `Pick`. Recall again the definition of `Pick`:
 
@@ -1262,8 +1277,13 @@ This isn't too bad! A type-safe tic-tac-toe that enforces that:
     Enter non-negative integer for row:
     ^C
 
-However, this still lets you play on *after* a game has already won. To prevent
-this, we must finally start implementing `InPlay`.
+(Again, note that `undefined` is used here instead of an actual witness for
+`InPlay` as a nice tool to enable incremental and interactive development of
+dependently typed programs.)
+
+Our core engine is pretty much complete, except that we haven't defined `InPlay`
+yet, so the game can still go on *after* it has already been won. So, next,
+let's implement our `InPlay` predicate and finish everything up!
 
 --------------------------------------------------------------------------------
 

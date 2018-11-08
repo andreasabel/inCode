@@ -610,6 +610,14 @@ Let's try out a few rounds in ghci, using \texttt{undefined} instead of a proper
   We cannot place a piece out-of-bounds.
 \end{enumerate}
 
+Note that the usage of \texttt{undefined} in place of a true witness for
+\texttt{InPlay} is a nice tool for \emph{incremental} and \emph{interactive}
+development using dependent types. A lot of people have the false impression
+that dependently typed programs are difficult to program incrementally or
+interactively, but this example shows a good way of going about programming in
+an incremental process. We just know that our program is complete when we are
+finally able to get rid of all the \texttt{undefined}s!
+
 \hypertarget{decision-functions-and-views}{%
 \section{Decision Functions and Views}\label{decision-functions-and-views}}
 
@@ -1290,6 +1298,15 @@ way:
 \end{Highlighting}
 \end{Shaded}
 
+\texttt{Not} is a \emph{predicate combinator}; it takes a predicate and returns
+new predicate. \texttt{Not\ p\ @@\ x} is true whenever \texttt{p\ @@\ x} is
+false, or \texttt{p\ @@\ x\ -\textgreater{}\ Void} is inhabited. Note that
+combinators like \texttt{Not} are one of the reasons why it's useful to think of
+predicates in terms of defunctionalization symbols
+(\texttt{k\ \textasciitilde{}\textgreater{}\ Type}), instead of as type families
+or type constructor: \texttt{Not} expects a ``partially applied'' predicate
+(\texttt{Not} takes \texttt{p}, not \texttt{p\ @@\ x}).
+
 Alright, now that everything is defined, let's start writing our viewing
 function for \texttt{Pick}. Recall again the definition of \texttt{Pick}:
 
@@ -1620,8 +1637,14 @@ Enter non-negative integer for row:
 ^C
 \end{verbatim}
 
-However, this still lets you play on \emph{after} a game has already won. To
-prevent this, we must finally start implementing \texttt{InPlay}.
+(Again, note that \texttt{undefined} is used here instead of an actual witness
+for \texttt{InPlay} as a nice tool to enable incremental and interactive
+development of dependently typed programs.)
+
+Our core engine is pretty much complete, except that we haven't defined
+\texttt{InPlay} yet, so the game can still go on \emph{after} it has already
+been won. So, next, let's implement our \texttt{InPlay} predicate and finish
+everything up!
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
