@@ -1156,7 +1156,7 @@ getN prompt = do
 printBoard :: Board -> IO ()
 printBoard = mapM_ $ putStrLn . intercalate "|" . map showPiece
   where
-    showPiece Nothing   = "   "
+    showPiece Nothing   = " _ "
     showPiece (Just PX) = " X "
     showPiece (Just PO) = " O "
 ```
@@ -1222,41 +1222,41 @@ This isn't too bad! A type-safe tic-tac-toe that enforces that:
 <!-- -->
 
     ghci> simplePlayIO
-       |   |
-       |   |
-       |   |
+     _ | _ | _
+     _ | _ | _
+     _ | _ | _
     Enter non-negative integer for row:
     10
     Enter non-negative integer for column:
     100
     Out of bounds in rows.  Try again.
-       |   |
-       |   |
-       |   |
+     _ | _ | _
+     _ | _ | _
+     _ | _ | _
     Enter non-negative integer for row:
     0
     Enter non-negative integer for column:
     0
     Success!
-     X |   |
-       |   |
-       |   |
+     X | _ | _
+     _ | _ | _
+     _ | _ | _
     Enter non-negative integer for row:
     1
     Enter non-negative integer for column:
     1
     Success!
-     X |   |
-       | O |
-       |   |
+     X | _ | _
+     _ | O | _
+     _ | _ | _
     Enter non-negative integer for row:
     1
     Enter non-negative integer for column:
     1
     Already played by PO. Try again.
-     X |   |
-       | O |
-       |   |
+     X | _ | _
+     _ | O | _
+     _ | _ | _
     Enter non-negative integer for row:
     ^C
 
