@@ -113,7 +113,7 @@ $(singletons [d|
 Let's just throw in a quick proof as a sanity check:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L62-L64
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L63-L65
 
 altP_cyclic :: Sing p -> AltP (AltP p) :~: p
 altP_cyclic SPX = Refl @'PX
@@ -126,7 +126,7 @@ two helper types that we will implement later. First, we'll use the
 the kind of a *type-level predicate*.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L66-L66
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L67-L67
 
 data InPlay :: Predicate Board
 ```
@@ -138,7 +138,7 @@ We also need to define a type for a valid update by a given player onto a given
 board:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L81-L81
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L82-L82
 
 data Update :: Piece -> Board -> Board -> Type where
 ```
@@ -149,7 +149,7 @@ player `p` to create a board `b2`.
 And finally, our valid state constructor:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L68-L79
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L69-L80
 
 data GameState :: Piece -> Board -> Type where
     -- | The empty board is a valid state
@@ -183,7 +183,7 @@ Let's go about what thinking about what defines a valid update. Remember, the
 kind we wanted was:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L81-L81
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L82-L82
 
 data Update :: Piece -> Board -> Board -> Type where
 ```
@@ -226,7 +226,7 @@ For that, we'll introduce a common helper type to say *what* the piece at spot
 *(i, j)* is:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L95-L95
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L96-L96
 
 data Coord :: (N, N) -> [[k]] -> k -> Type where
 ```
@@ -238,7 +238,7 @@ And we require `Update` to only be constructable if the spot at *(i, j)* is
 `Nothing`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L81-L86
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L82-L87
 
 data Update :: Piece -> Board -> Board -> Type where
     MkUpdate
@@ -260,7 +260,7 @@ Now we need to define `Coord`. We're going to do that in terms of a simpler type
 that is essentially the same for normal lists --- a type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L88-L88
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L89-L89
 
 data Sel :: N -> [k] -> k -> Type where
 ```
@@ -276,7 +276,7 @@ data type. We can mention our induction rules:
     list `b ': as`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L88-L93
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L89-L94
 
 data Sel :: N -> [k] -> k -> Type where
     -- | The first item in a list is at index ''Z'
@@ -299,7 +299,7 @@ etc.
 We can then use this to define `Coord`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L95-L100
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L96-L101
 
 data Coord :: (N, N) -> [[k]] -> k -> Type where
     (:$:) :: forall i j rows row p. ()
@@ -361,7 +361,7 @@ At the end of this all, we finally have enough to write a truly type-safe `play`
 function that allows us to play a round of our game!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L102-L108
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L103-L109
 
 play
     :: forall i j p b. ()
@@ -463,7 +463,7 @@ We'll call these potential "views" out of `(N, N)` with respect to some board
 -- | Placeholder predicate if a given number `n` is out of bounds for a given
 -- list.  Predicate is from the 'decidable' library
 data OutOfBounds n :: Predicate [k]
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L116-L126
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L117-L127
 
 data Pick :: (N, N, Board) -> Type where
     -- | We are out of bounds in x
@@ -587,7 +587,7 @@ predicate `SelFound n` will be satisfied if list `xs` has some item `x` at index
 `n`!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L110-L111
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L111-L112
 
 data SelFound :: N -> Predicate [k]
 type instance Apply (SelFound n) (xs :: [k]) = Σ k (TyPred (Sel n xs))
@@ -605,7 +605,7 @@ Now let's make some sample witnesses of predicate `SelFound n` to ensure we are
 thinking about things correctly:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L185-L187
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L174-L176
 
 selFoundTest1 :: SelFound 'Z @@ '[ 'True, 'False ]
 selFoundTest1 = STrue :&: SelZ
@@ -621,7 +621,7 @@ We can write a witness for `SelFound ('S 'Z) @@ '[ 'True, 'False ]`, as well, by
 giving the value of the list at index 1, `'False`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L189-L191
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L178-L180
 
 selFoundTest2 :: SelFound ('S 'Z) @@ '[ 'True, 'False ]
 selFoundTest2 = SFalse :&: SelS SelZ
@@ -759,7 +759,7 @@ learning's sake, let's split these branches into four helper functions --- one
 for each case.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L140-L175
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L129-L164
 
 selFound
     :: Sing n
@@ -807,7 +807,7 @@ selFound_scons
     *-XLambdaCase* extension):
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L152-L154
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L141-L143
 
     noEmptySel :: Sel n '[] a -> Void
     noEmptySel = \case {}
@@ -827,7 +827,7 @@ selFound_scons
     `SelFound 'Z @@ '[] -> Void`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L156-L158
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L145-L147
 
     selFound_znil
         :: Decision (SelFound 'Z @@ '[])
@@ -844,7 +844,7 @@ selFound_scons
     *yes*, there does, and that item is `x`, and the `Sel` is `SelZ`!
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L160-L164
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L149-L153
 
     selFound_zcons
         :: Sing x
@@ -859,7 +859,7 @@ selFound_scons
     function `noEmptySel`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L166-L169
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L155-L158
 
     selFound_snil
         :: Sing n
@@ -888,7 +888,7 @@ selFound_scons
         useful --- we use them to build more complex disproofs from simple ones.
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L171-L183
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L160-L172
 
     selFound_scons
         :: Sing n
@@ -969,7 +969,7 @@ Actually, we could take advantage of some of the combinators that the
 -- | Provided by decidable; it's the negation of a predicate
 data Not :: Predicate k -> Predicate k
 type instance Apply (Not p) x = p @@ x -> Void
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L113-L113
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L114-L114
 
 type OutOfBounds n = Not (SelFound n)
 ```
@@ -978,7 +978,7 @@ Alright, now that everything is defined, let's start writing our viewing
 function for `Pick`. Recall again the definition of `Pick`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L116-L126
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L117-L127
 
 data Pick :: (N, N, Board) -> Type where
     -- | We are out of bounds in x
@@ -1103,7 +1103,7 @@ constructor contains, that `selFound i b` returns! And `PickOoBY` requires an
 that's *exactly* what the `Disproved` constructor of `selFound j row` returns.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L193-L211
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L182-L200
 
 pick
     :: forall i j b. ()
@@ -1118,11 +1118,11 @@ pick i j b = case selFound i b of
         in  case p of
               SNothing -> PickValid   c     -- p is 'Nothing
               SJust q  -> PickPlayed  c q   -- p is 'Just q
-      Disproved vY -> PickOoBY selX vY    -- vY :: InBounds j @@ row -> Void
-                                          -- vY :: Not (InBounds j) @@ row
+      Disproved vY -> PickOoBY selX vY    -- vY :: SelFound j @@ row -> Void
+                                          -- vY :: Not (SelFound j) @@ row
                                           -- vY :: OutOfBounds j @@ row
-    Disproved vX -> PickOoBX vX   -- vX :: InBounds i @@ b   -> Void
-                                  -- vX :: Not (InBounds i) @@ b
+    Disproved vX -> PickOoBX vX   -- vX :: SelFound i @@ b   -> Void
+                                  -- vX :: Not (SelFound i) @@ b
                                   -- vX :: OutOfBounds i @@ b
 ```
 
@@ -1133,6 +1133,158 @@ Play Ball
 
 Bringing it all together, we can write a simple function to take user input and
 *play* it.
+
+First, some utility functions to get user input and print out boards:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L202-L221
+
+intToN :: Int -> Maybe N
+intToN n = case compare n 0 of
+    LT -> Nothing
+    EQ -> Just Z
+    GT -> S <$> intToN (n - 1)
+
+getN :: String -> IO N
+getN prompt = do
+    putStrLn $ "Enter non-negative integer " ++ prompt ++ ":"
+    res <- getLine
+    case intToN =<< readMaybe res of
+      Nothing -> putStrLn "Bad." >> getN prompt
+      Just n  -> pure n
+
+printBoard :: Board -> IO ()
+printBoard = mapM_ $ putStrLn . intercalate "|" . map showPiece
+  where
+    showPiece Nothing   = "   "
+    showPiece (Just PX) = " X "
+    showPiece (Just PO) = " O "
+```
+
+And here is the logic for getting user input, viewing it using `pick`, and
+updating the `GameState`:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L223-L247
+
+simplePlayIO'
+    :: Sing p
+    -> Sing b
+    -> GameState p b
+    -> IO ()
+simplePlayIO' p b gs = do
+    printBoard $ FromSing b
+    FromSing i <- getN "for row"
+    FromSing j <- getN "for column"
+    case pick i j b of
+      PickOoBX _ -> do
+        putStrLn "Out of bounds in rows.  Try again."
+        simplePlayIO' p b gs
+      PickOoBY _ _ -> do
+        putStrLn "Out of bounds in cols.  Try again."
+        simplePlayIO' p b gs
+      PickPlayed _ q -> do
+        putStrLn $ "Already played by " ++ show (fromSing q) ++ ". Try again."
+        simplePlayIO' p b gs
+      PickValid c -> do
+        putStrLn "Success!"
+        let p'  = sAltP p                 -- update player (enforced by `play`)
+            b'  = sPlaceBoard i j p b     -- update board  (enforced by `play`)
+            gs' = play undefined c gs     -- update game state
+        simplePlayIO' p' b' gs'
+```
+
+We use the `FromSing :: Sing (x :: a) -> a` pattern synonym here to jump between
+the value-level and type-level with our values. First we use it as a
+`Sing (b :: Board) -> Board` to give us the `Board` that `printBoard` demands.
+Then we use it as a constructor to "get" a `Sing (i :: N)` from the value-level
+`N` that `getN` returns. If `FromSing x :: a`, then `x` is the singleton of
+`FromSing x`. That is, `True == FromSing STrue`, and `S Z == FromSing (SS SZ)`.
+
+Note that the type of `play` enforces that we modify `p` and `b` according to
+nothing other than exactly what the type of a new board game demands.
+
+And to start it off, we give `simplePlayIO'` an initial state:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L223-L247
+
+simplePlayIO'
+    :: Sing p
+    -> Sing b
+    -> GameState p b
+    -> IO ()
+simplePlayIO' p b gs = do
+    printBoard $ FromSing b
+    FromSing i <- getN "for row"
+    FromSing j <- getN "for column"
+    case pick i j b of
+      PickOoBX _ -> do
+        putStrLn "Out of bounds in rows.  Try again."
+        simplePlayIO' p b gs
+      PickOoBY _ _ -> do
+        putStrLn "Out of bounds in cols.  Try again."
+        simplePlayIO' p b gs
+      PickPlayed _ q -> do
+        putStrLn $ "Already played by " ++ show (fromSing q) ++ ". Try again."
+        simplePlayIO' p b gs
+      PickValid c -> do
+        putStrLn "Success!"
+        let p'  = sAltP p                 -- update player (enforced by `play`)
+            b'  = sPlaceBoard i j p b     -- update board  (enforced by `play`)
+            gs' = play undefined c gs     -- update game state
+        simplePlayIO' p' b' gs'
+```
+
+This isn't too bad! A type-safe tic-tac-toe that enforces that:
+
+1.  Players alternate
+2.  You can't place a piece not on the board
+3.  You can't place a piece over an existing piece
+
+<!-- -->
+
+    ghci> simplePlayIO
+       |   |
+       |   |
+       |   |
+    Enter non-negative integer for row:
+    10
+    Enter non-negative integer for column:
+    100
+    Out of bounds in rows.  Try again.
+       |   |
+       |   |
+       |   |
+    Enter non-negative integer for row:
+    0
+    Enter non-negative integer for column:
+    0
+    Success!
+     X |   |
+       |   |
+       |   |
+    Enter non-negative integer for row:
+    1
+    Enter non-negative integer for column:
+    1
+    Success!
+     X |   |
+       | O |
+       |   |
+    Enter non-negative integer for row:
+    1
+    Enter non-negative integer for column:
+    1
+    Already played by PO. Try again.
+     X |   |
+       | O |
+       |   |
+    Enter non-negative integer for row:
+    ^C
+
+However, this still lets you play on *after* a game has already won. To prevent
+this, we must finally start implementing `InPlay`.
 
 --------------------------------------------------------------------------------
 
