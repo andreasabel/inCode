@@ -104,7 +104,7 @@ different types of values and let you be more descriptive with how your
 functions work together (like in
 [safe-money](https://ren.zone/articles/safe-money)). One "hello world" use case
 of phantom type parameters is to tag data as "sanitized" or "unsanitized"
-(`UserString 'Santitized` type vs. `UserString 'Unsanitized`) or paths as
+(`UserString 'Sanitized` type vs. `UserString 'Unsanitized`) or paths as
 absolute or relative (`Path 'Absolute` vs. `Path 'Relative`). For a simple
 example, let's check out a simple DSL for a type-safe door:
 
