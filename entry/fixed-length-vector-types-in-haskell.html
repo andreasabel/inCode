@@ -461,15 +461,22 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>This is a part of what we mean when we say that we can take advantage of the <em>structure</em> of the length type. Here, the structure of <code>Nat</code> aligns so well with the structure of <code>Vec</code> what we can prove structural properties about <code>Nat</code> and the <code>Vec</code> together by exploiting their shared inductive structure.</p>
 <p>Unfortunately, for examples where the function we write doesn’t exactly match the structure as the type family we write, this won’t work. And sometimes, the structural properties might get in the way of what we are trying to prove/produce. An example here would be a <code>snoc</code> function (cons to the end of a list). If you try writing it, you’ll see that the structure of <code>Nat</code> and <code>Vec</code> fight back against you pretty hard. So, exploiting structure isn’t universally useful, but it definitely helps in many situations! Handling tricky cases like this is a subject for a whole other blog post.</p>
 <h3 id="indexing-1">Indexing</h3>
-<p>To index our previous type, we used some abstract <code>Finite</code> type, where <code>Finite n</code> conveniently represented the type of all possible indices to a <code>Vec n a</code>. We can do something similar, inductively, as well:</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb44-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L63-L67</span></a>
+<p>To index our previous type, we used some abstract <code>Finite</code> type, where <code>Finite n</code> conveniently represented the type of all possible indices to a <code>Vec n a</code>. We can do something similar, inductively, as well.</p>
+<p>Let’s think about this inductively. How would we construct a valid index into a vector of size <code>n</code>? Well, there are two ways:</p>
+<ol type="1">
+<li>We can always make a “zeroth” index for a vector of size <code>'S n</code>, to get the first item.</li>
+<li>If we have an index into the ith item of a vector of size <code>n</code>, then we have an index into the i+1th item of a vector of size <code>'S n</code>.</li>
+</ol>
+<p>We can write this out as a GADT:</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb44-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L63-L68</span></a>
 <a class="sourceLine" id="cb44-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb44-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Fin</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb44-4" data-line-number="4">    <span class="dt">FZ</span><span class="ot"> ::</span> <span class="dt">Fin</span> (&#39;<span class="dt">S</span> n)</a>
-<a class="sourceLine" id="cb44-5" data-line-number="5">    <span class="dt">FS</span><span class="ot"> ::</span> <span class="dt">Fin</span> n <span class="ot">-&gt;</span> <span class="dt">Fin</span> (&#39;<span class="dt">S</span> n)</a>
-<a class="sourceLine" id="cb44-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb44-7" data-line-number="7"><span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Show</span> (<span class="dt">Fin</span> n)</a></code></pre></div>
-<p>I always thought of this inductive definition of <code>Fin</code> as a cute trick, because I don’t think there was any way I could have thought of it on my own. But if you play around it enough, you might be able to convince yourself that there are exactly <code>n</code> inhabitants of <code>Fin n</code>.</p>
+<a class="sourceLine" id="cb44-4" data-line-number="4">    <span class="dt">FZ</span><span class="ot"> ::</span> <span class="dt">Fin</span> (&#39;<span class="dt">S</span> n)  <span class="co">-- ^ we can create a 0th index if Vec n is non-empty</span></a>
+<a class="sourceLine" id="cb44-5" data-line-number="5">    <span class="dt">FS</span><span class="ot"> ::</span> <span class="dt">Fin</span> n       <span class="co">-- ^ if we have an ith index into a vector of size n</span></a>
+<a class="sourceLine" id="cb44-6" data-line-number="6">       <span class="ot">-&gt;</span> <span class="dt">Fin</span> (&#39;<span class="dt">S</span> n)  <span class="co">-- ... then we have an i+1th index into a vector of size (&#39;S n)</span></a>
+<a class="sourceLine" id="cb44-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb44-8" data-line-number="8"><span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Show</span> (<span class="dt">Fin</span> n)</a></code></pre></div>
+<p>If you play around it enough, you might be able to convince yourself that there are exactly <code>n</code> inhabitants of <code>Fin n</code>.</p>
 <p>For example, for <code>Fin ('S 'Z)</code> (indices for a one-item vector), there should be only one inhabitant. And there is! It’s <code>FZ</code>. <code>FS FZ</code> is not a valid inhabitant, because it has type <code>Fin ('S ('S m))</code> for some <code>m</code>, so cannot possibly have the type <code>Fin ('S 'Z)</code>.</p>
 <p>Let’s see the inhabitants of <code>Fin ('S ('S ('S 'Z)))</code> (indices for three-item vectors):</p>
 <div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb45-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="dt">FZ</span><span class="ot">              ::</span> <span class="dt">Fin</span> (&#39;<span class="dt">S</span> (&#39;<span class="dt">S</span> (&#39;<span class="dt">S</span> &#39;<span class="dt">Z</span>)))</a>
@@ -483,7 +490,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>As GHC informs us, <code>FS (FS (FS FZ))</code> is not an inhabitant of <code>Fin ('S ('S ('S 'Z)))</code>, which is exactly the behavior we wanted. This is because <code>FS (FS (FS FZ))</code> has type <code>Fin ('S ('S ('S ('S m))))</code> for some <code>m</code>, and this can’t fit <code>Fin ('S ('S ('S 'Z)))</code>.</p>
 <p>Also, note that there are no inhabitants of <code>Fin 'Z</code>. There is no constructor or combination of constructors that can yield a value of that type.</p>
 <p>Armed with this handy <code>Fin</code> type, we can do structural type-safe indexing:</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb46-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L69-L74</span></a>
+<div class="sourceCode" id="cb46"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb46-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L70-L75</span></a>
 <a class="sourceLine" id="cb46-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb46-3" data-line-number="3">index<span class="ot"> ::</span> <span class="dt">Fin</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> a</a>
 <a class="sourceLine" id="cb46-4" data-line-number="4">index <span class="fu">=</span> \<span class="kw">case</span></a>
@@ -509,7 +516,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <a class="sourceLine" id="cb47-10" data-line-number="10">    <span class="dt">SZ</span><span class="ot"> ::</span> <span class="dt">Sing</span> &#39;<span class="dt">Z</span></a>
 <a class="sourceLine" id="cb47-11" data-line-number="11">    <span class="dt">SS</span><span class="ot"> ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Sing</span> (&#39;<span class="dt">S</span> n)</a></code></pre></div>
 <p><code>Sing n</code> is a singleton for our <code>Nat</code>, in that there is only one <code>Sing n</code> for every <code>n</code>. So, if we receive a value of type <code>Sing n</code>, we can pattern match on it to figure out what <code>n</code> is. Essentially, we can <em>pattern match</em> on <code>n</code>.</p>
-<div class="sourceCode" id="cb48"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb48-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L76-L83</span></a>
+<div class="sourceCode" id="cb48"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb48-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L77-L84</span></a>
 <a class="sourceLine" id="cb48-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb48-3" data-line-number="3"><span class="ot">singSize ::</span> <span class="dt">Sing</span> (<span class="ot">n ::</span> <span class="dt">Nat</span>) <span class="ot">-&gt;</span> <span class="dt">String</span></a>
 <a class="sourceLine" id="cb48-4" data-line-number="4">singSize <span class="fu">=</span> \<span class="kw">case</span></a>
@@ -523,14 +530,14 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>Basically, <em>we can use a singleton</em> if we ever want to “pattern match” or branch our program’s output based on the type. This is a general rule you will observe as we continue on this article.</p>
 <p>Note that because of the inductive nature of our original <code>Nat</code> type, the singletons are also inductive, as well. This is handy, because then our whole ecosystem remains inductive.</p>
 <p>Now, to write <code>replicate</code>:</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L90-L93</span></a>
+<div class="sourceCode" id="cb49"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L91-L94</span></a>
 <a class="sourceLine" id="cb49-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb49-3" data-line-number="3"><span class="ot">replicate_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a</a>
 <a class="sourceLine" id="cb49-4" data-line-number="4">replicate_ <span class="fu">=</span> \<span class="kw">case</span></a>
 <a class="sourceLine" id="cb49-5" data-line-number="5">    <span class="dt">SZ</span>   <span class="ot">-&gt;</span> \_ <span class="ot">-&gt;</span> <span class="dt">VNil</span></a>
 <a class="sourceLine" id="cb49-6" data-line-number="6">    <span class="dt">SS</span> l <span class="ot">-&gt;</span> \x <span class="ot">-&gt;</span> x <span class="fu">:+</span> replicate_ l x</a></code></pre></div>
 <p>And we can recover our original “implicit” style, with type-inference-driven lengths, using <code>SingI</code> and <code>sing :: SingI n =&gt; Sing n</code>:</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb50-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L95-L96</span></a>
+<div class="sourceCode" id="cb50"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb50-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L96-L97</span></a>
 <a class="sourceLine" id="cb50-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb50-3" data-line-number="3">replicate<span class="ot"> ::</span> <span class="dt">SingI</span> n <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a</a>
 <a class="sourceLine" id="cb50-4" data-line-number="4">replicate <span class="fu">=</span> replicate_ sing</a></code></pre></div>
@@ -538,7 +545,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>See how useful the whole singletons ecosystem is? :)</p>
 <h4 id="generating-with-indices-1">Generating with indices</h4>
 <p>Writing <code>generate</code> using the inductive <code>Fin</code> and <code>Nat</code> is an interesting challenge. It’s actually a fairly standard pattern that comes up when working with inductive types like these. I’m going to leave it as an exercise to the reader – click the link at the top corner of the text box to see the solution, and see how it compares to your own :)</p>
-<div class="sourceCode" id="cb51"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb51-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L98-L104</span></a>
+<div class="sourceCode" id="cb51"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb51-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L99-L105</span></a>
 <a class="sourceLine" id="cb51-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb51-3" data-line-number="3"><span class="ot">generate_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> (<span class="dt">Fin</span> n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a</a>
 <a class="sourceLine" id="cb51-4" data-line-number="4"></a>
@@ -547,15 +554,15 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>The one thing I will point out is that it is very useful that GHC verifies our code for us, and that we have typed holes to help us develop our code. If we ever don’t know something, we can just use a typed hole <code>_</code>, and GHC will tell us what type it expects, and what values in scope have that type. It is infinitely useful for situations like this, especially when you are new to this sort of dependently typed inductive programming!</p>
 <p>If you ever get stuck, try throwing in a <code>_</code> and seeing what types GHC expects…these clues will help you get your bearings!</p>
 <h3 id="between-sized-and-unsized">Between Sized and Unsized</h3>
-<p>Converting from sized to unsized vectors (to lists) is something that is pretty straightforward, and can be done by just pattern matching on the vector and recursing on the tail. I’ve <a href="https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L85-L88">left it as an excercise</a> to write <code>Vec n a -&gt; [a]</code>.</p>
+<p>Converting from sized to unsized vectors (to lists) is something that is pretty straightforward, and can be done by just pattern matching on the vector and recursing on the tail. I’ve <a href="https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L86-L89">left it as an excercise</a> to write <code>Vec n a -&gt; [a]</code>.</p>
 <p>More interesting is the other way around; our the API of converting unsized to sized vectors will be the same:</p>
-<div class="sourceCode" id="cb52"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb52-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L106-L106</span></a>
+<div class="sourceCode" id="cb52"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb52-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L107-L107</span></a>
 <a class="sourceLine" id="cb52-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb52-3" data-line-number="3"><span class="ot">withVec ::</span> [a] <span class="ot">-&gt;</span> (forall n<span class="fu">.</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r</a></code></pre></div>
 <p>But implementing it inductively is also an interesting challenge. See my tip above about typed holes (<code>_</code>). I recommend taking a break here to try to solve it yourself.</p>
 <p>Ready?</p>
 <p>Welcome back! Hope you had a fun time :) Here’s the solution!</p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb53-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L106-L110</span></a>
+<div class="sourceCode" id="cb53"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb53-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L107-L111</span></a>
 <a class="sourceLine" id="cb53-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb53-3" data-line-number="3"><span class="ot">withVec ::</span> [a] <span class="ot">-&gt;</span> (forall n<span class="fu">.</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r</a>
 <a class="sourceLine" id="cb53-4" data-line-number="4">withVec <span class="fu">=</span> \<span class="kw">case</span></a>
@@ -567,7 +574,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <h3 id="verifying-properties-1">Verifying properties</h3>
 <p>We can create some corresponding example of <code>exactLength</code> using the exact same process we did before</p>
 <p>First, it’d be nice to get a witness for the length of a given vector just from the vector itself:</p>
-<div class="sourceCode" id="cb54"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb54-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L112-L115</span></a>
+<div class="sourceCode" id="cb54"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb54-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L113-L116</span></a>
 <a class="sourceLine" id="cb54-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb54-3" data-line-number="3"><span class="ot">vecLength ::</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Sing</span> n</a>
 <a class="sourceLine" id="cb54-4" data-line-number="4">vecLength <span class="fu">=</span> \<span class="kw">case</span></a>
@@ -575,7 +582,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <a class="sourceLine" id="cb54-6" data-line-number="6">    _ <span class="fu">:+</span> xs <span class="ot">-&gt;</span> <span class="dt">SS</span> (vecLength xs)</a></code></pre></div>
 <p>The type of <code>vecLength :: Vec n a -&gt; Sing n</code> says that it is possible, from the structure of the vector given alone, to get a witness to its length. And, because the structure of the vector and the structure of the length type are so similar, this is possible! (Note that this is not possible for our non-structural “wrapped” <code>Vec</code>, without some unsafe operations)</p>
 <p>Now, our code will be identical to the code for our wrapped/non-structural vectors, using <code>%~</code> and <code>Decision</code> and <code>Refl</code>:</p>
-<div class="sourceCode" id="cb55"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb55-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L117-L123</span></a>
+<div class="sourceCode" id="cb55"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb55-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L118-L124</span></a>
 <a class="sourceLine" id="cb55-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb55-3" data-line-number="3"><span class="ot">exactLength_ ::</span> <span class="dt">Sing</span> m <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> m a)</a>
 <a class="sourceLine" id="cb55-4" data-line-number="4">exactLength_ sM v <span class="fu">=</span> <span class="kw">case</span> sM <span class="fu">%~</span> vecLength v <span class="kw">of</span></a>
@@ -586,7 +593,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <a class="sourceLine" id="cb55-9" data-line-number="9">exactLength <span class="fu">=</span> exactLength_ sing</a></code></pre></div>
 <p>It’s nice that this is exactly the same as before, and that’s a testament to how useful the singletons library is at unifying all of these distinct type-level stuffs.</p>
 <p>We could also write <code>exactLength</code> in a cute way by inducting on the length we want and the vector, so it might be fun to look at this version instead –</p>
-<div class="sourceCode" id="cb56"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb56-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L125-L135</span></a>
+<div class="sourceCode" id="cb56"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb56-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L126-L136</span></a>
 <a class="sourceLine" id="cb56-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb56-3" data-line-number="3"><span class="ot">exactLengthInductive_ ::</span> <span class="dt">Sing</span> m <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> m a)</a>
 <a class="sourceLine" id="cb56-4" data-line-number="4">exactLengthInductive_ <span class="fu">=</span> \<span class="kw">case</span></a>
@@ -602,7 +609,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>This is another way you can take advantage of the <em>structure</em> of the length type. Here, we explicitly take advantage of the inductive structure of the <code>Nat</code> type and how it matches with the structure of the <code>Vec</code> type, and do bold things with it!<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a></p>
 <p>But I digress. Like in the last section, checking for a given length is literally the least interesting property you can check for. But, again, the same process is usable here: find a way to get your witness, and then pattern match on that witness.</p>
 <p>For example, we can make a witness that <code>n</code> is less than or equal to <code>m</code>, as well as a way to construct such a witness:</p>
-<div class="sourceCode" id="cb57"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L137-L149</span></a>
+<div class="sourceCode" id="cb57"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L138-L150</span></a>
 <a class="sourceLine" id="cb57-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb57-3" data-line-number="3"><span class="kw">data</span> <span class="dt">LTE</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
 <a class="sourceLine" id="cb57-4" data-line-number="4">    <span class="dt">LEZ</span><span class="ot"> ::</span> <span class="dt">LTE</span> &#39;<span class="dt">Z</span> n</a>
@@ -619,7 +626,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <a class="sourceLine" id="cb57-15" data-line-number="15">          <span class="dt">LES</span> l <span class="ot">-&gt;</span> p l</a></code></pre></div>
 <p>So, it is impossible to construct an <code>LTE n m</code> if <code>n</code> is <em>not</em> less than or equal to <code>m</code>. I dare you to try!</p>
 <p>We can write code to check for this property in our vectors:</p>
-<div class="sourceCode" id="cb58"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb58-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L151-L157</span></a>
+<div class="sourceCode" id="cb58"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb58-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L152-L158</span></a>
 <a class="sourceLine" id="cb58-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb58-3" data-line-number="3"><span class="ot">atLeast_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">LTE</span> n m, <span class="dt">Vec</span> m a)</a>
 <a class="sourceLine" id="cb58-4" data-line-number="4">atLeast_ sN v <span class="fu">=</span> <span class="kw">case</span> isLTE sN (vecLength v) <span class="kw">of</span></a>
@@ -630,7 +637,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <a class="sourceLine" id="cb58-9" data-line-number="9">atLeast <span class="fu">=</span> atLeast_ sing</a></code></pre></div>
 <p><code>atLeast_ sN</code> will only return our vector if its length is <em>at least</em> the length of the length indicated by <code>sN</code>. Basically, we check if our vector is “at least” a certain length.</p>
 <p>We can write a function that can “take” an arbitrary amount from a vector, given (via proof) that the vector has at least that many elements:</p>
-<div class="sourceCode" id="cb59"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L159-L163</span></a>
+<div class="sourceCode" id="cb59"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L160-L164</span></a>
 <a class="sourceLine" id="cb59-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb59-3" data-line-number="3"><span class="ot">takeVec ::</span> <span class="dt">LTE</span> n m <span class="ot">-&gt;</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a</a>
 <a class="sourceLine" id="cb59-4" data-line-number="4">takeVec <span class="fu">=</span> \<span class="kw">case</span></a>
@@ -638,7 +645,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <a class="sourceLine" id="cb59-6" data-line-number="6">    <span class="dt">LES</span> l <span class="ot">-&gt;</span> \<span class="kw">case</span></a>
 <a class="sourceLine" id="cb59-7" data-line-number="7">      x <span class="fu">:+</span> xs <span class="ot">-&gt;</span> x <span class="fu">:+</span> takeVec l xs</a></code></pre></div>
 <p>And, we can combine that with our <code>atLeast</code> function, to be able to take (maybe)<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a> from any vector:</p>
-<div class="sourceCode" id="cb60"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb60-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L165-L169</span></a>
+<div class="sourceCode" id="cb60"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb60-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L166-L170</span></a>
 <a class="sourceLine" id="cb60-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb60-3" data-line-number="3"><span class="ot">takeVecMaybe_ ::</span> <span class="dt">Sing</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Vec</span> n a)</a>
 <a class="sourceLine" id="cb60-4" data-line-number="4">takeVecMaybe_ sN v <span class="fu">=</span> uncurry takeVec <span class="fu">&lt;$&gt;</span> atLeast_ sN v</a>

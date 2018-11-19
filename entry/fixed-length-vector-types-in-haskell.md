@@ -988,22 +988,31 @@ this is a subject for a whole other blog post.
 
 To index our previous type, we used some abstract `Finite` type, where
 `Finite n` conveniently represented the type of all possible indices to a
-`Vec n a`. We can do something similar, inductively, as well:
+`Vec n a`. We can do something similar, inductively, as well.
+
+Let's think about this inductively. How would we construct a valid index into a
+vector of size `n`? Well, there are two ways:
+
+1.  We can always make a "zeroth" index for a vector of size `'S n`, to get the
+    first item.
+2.  If we have an index into the ith item of a vector of size `n`, then we have
+    an index into the i+1th item of a vector of size `'S n`.
+
+We can write this out as a GADT:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L63-L67
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L63-L68
 
 data Fin :: Nat -> Type where
-    FZ :: Fin ('S n)
-    FS :: Fin n -> Fin ('S n)
+    FZ :: Fin ('S n)  -- ^ we can create a 0th index if Vec n is non-empty
+    FS :: Fin n       -- ^ if we have an ith index into a vector of size n
+       -> Fin ('S n)  -- ... then we have an i+1th index into a vector of size ('S n)
 
 deriving instance Show (Fin n)
 ```
 
-I always thought of this inductive definition of `Fin` as a cute trick, because
-I don't think there was any way I could have thought of it on my own. But if you
-play around it enough, you might be able to convince yourself that there are
-exactly `n` inhabitants of `Fin n`.
+If you play around it enough, you might be able to convince yourself that there
+are exactly `n` inhabitants of `Fin n`.
 
 For example, for `Fin ('S 'Z)` (indices for a one-item vector), there should be
 only one inhabitant. And there is! It's `FZ`. `FS FZ` is not a valid inhabitant,
@@ -1035,7 +1044,7 @@ combination of constructors that can yield a value of that type.
 Armed with this handy `Fin` type, we can do structural type-safe indexing:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L69-L74
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L70-L75
 
 index :: Fin n -> Vec n a -> a
 index = \case
@@ -1085,7 +1094,7 @@ every `n`. So, if we receive a value of type `Sing n`, we can pattern match on
 it to figure out what `n` is. Essentially, we can *pattern match* on `n`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L76-L83
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L77-L84
 
 singSize :: Sing (n :: Nat) -> String
 singSize = \case
@@ -1110,7 +1119,7 @@ ecosystem remains inductive.
 Now, to write `replicate`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L90-L93
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L91-L94
 
 replicate_ :: Sing n -> a -> Vec n a
 replicate_ = \case
@@ -1122,7 +1131,7 @@ And we can recover our original "implicit" style, with type-inference-driven
 lengths, using `SingI` and `sing :: SingI n => Sing n`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L95-L96
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L96-L97
 
 replicate :: SingI n => a -> Vec n a
 replicate = replicate_ sing
@@ -1145,7 +1154,7 @@ reader -- click the link at the top corner of the text box to see the solution,
 and see how it compares to your own :)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L98-L104
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L99-L105
 
 generate_ :: Sing n -> (Fin n -> a) -> Vec n a
 
@@ -1168,14 +1177,14 @@ expects...these clues will help you get your bearings!
 Converting from sized to unsized vectors (to lists) is something that is pretty
 straightforward, and can be done by just pattern matching on the vector and
 recursing on the tail. I've [left it as an
-excercise](https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L85-L88)
+excercise](https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L86-L89)
 to write `Vec n a -> [a]`.
 
 More interesting is the other way around; our the API of converting unsized to
 sized vectors will be the same:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L106-L106
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L107-L107
 
 withVec :: [a] -> (forall n. Sing n -> Vec n a -> r) -> r
 ```
@@ -1189,7 +1198,7 @@ Ready?
 Welcome back! Hope you had a fun time :) Here's the solution!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L106-L110
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L107-L111
 
 withVec :: [a] -> (forall n. Sing n -> Vec n a -> r) -> r
 withVec = \case
@@ -1217,7 +1226,7 @@ First, it'd be nice to get a witness for the length of a given vector just from
 the vector itself:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L112-L115
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L113-L116
 
 vecLength :: Vec n a -> Sing n
 vecLength = \case
@@ -1235,7 +1244,7 @@ Now, our code will be identical to the code for our wrapped/non-structural
 vectors, using `%~` and `Decision` and `Refl`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L117-L123
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L118-L124
 
 exactLength_ :: Sing m -> Vec n a -> Maybe (Vec m a)
 exactLength_ sM v = case sM %~ vecLength v of
@@ -1254,7 +1263,7 @@ We could also write `exactLength` in a cute way by inducting on the length we
 want and the vector, so it might be fun to look at this version instead --
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L125-L135
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L126-L136
 
 exactLengthInductive_ :: Sing m -> Vec n a -> Maybe (Vec m a)
 exactLengthInductive_ = \case
@@ -1283,7 +1292,7 @@ For example, we can make a witness that `n` is less than or equal to `m`, as
 well as a way to construct such a witness:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L137-L149
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L138-L150
 
 data LTE :: Nat -> Nat -> Type where
     LEZ :: LTE 'Z n
@@ -1306,7 +1315,7 @@ equal to `m`. I dare you to try!
 We can write code to check for this property in our vectors:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L151-L157
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L152-L158
 
 atLeast_ :: Sing n -> Vec m a -> Maybe (LTE n m, Vec m a)
 atLeast_ sN v = case isLTE sN (vecLength v) of
@@ -1325,7 +1334,7 @@ We can write a function that can "take" an arbitrary amount from a vector, given
 (via proof) that the vector has at least that many elements:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L159-L163
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L160-L164
 
 takeVec :: LTE n m -> Vec m a -> Vec n a
 takeVec = \case
@@ -1338,7 +1347,7 @@ And, we can combine that with our `atLeast` function, to be able to take
 (maybe)[^4] from any vector:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L165-L169
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L166-L170
 
 takeVecMaybe_ :: Sing n -> Vec m a -> Maybe (Vec n a)
 takeVecMaybe_ sN v = uncurry takeVec <$> atLeast_ sN v

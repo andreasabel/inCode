@@ -1252,24 +1252,40 @@ Handling tricky cases like this is a subject for a whole other blog post.
 
 To index our previous type, we used some abstract \texttt{Finite} type, where
 \texttt{Finite\ n} conveniently represented the type of all possible indices to
-a \texttt{Vec\ n\ a}. We can do something similar, inductively, as well:
+a \texttt{Vec\ n\ a}. We can do something similar, inductively, as well.
+
+Let's think about this inductively. How would we construct a valid index into a
+vector of size \texttt{n}? Well, there are two ways:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  We can always make a ``zeroth'' index for a vector of size
+  \texttt{\textquotesingle{}S\ n}, to get the first item.
+\item
+  If we have an index into the ith item of a vector of size \texttt{n}, then we
+  have an index into the i+1th item of a vector of size
+  \texttt{\textquotesingle{}S\ n}.
+\end{enumerate}
+
+We can write this out as a GADT:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L63-L67}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L63-L68}
 
 \KeywordTok{data} \DataTypeTok{Fin}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
-    \DataTypeTok{FZ}\OtherTok{ ::} \DataTypeTok{Fin}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n)}
-    \DataTypeTok{FS}\OtherTok{ ::} \DataTypeTok{Fin}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Fin}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n)}
+    \DataTypeTok{FZ}\OtherTok{ ::} \DataTypeTok{Fin}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n)  }\CommentTok{-- ^ we can create a 0th index if Vec n is non-empty}
+    \DataTypeTok{FS}\OtherTok{ ::} \DataTypeTok{Fin}\NormalTok{ n       }\CommentTok{-- ^ if we have an ith index into a vector of size n}
+       \OtherTok{->} \DataTypeTok{Fin}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n)  }\CommentTok{-- ... then we have an i+1th index into a vector of size ('S n)}
 
 \KeywordTok{deriving} \KeywordTok{instance} \DataTypeTok{Show}\NormalTok{ (}\DataTypeTok{Fin}\NormalTok{ n)}
 \end{Highlighting}
 \end{Shaded}
 
-I always thought of this inductive definition of \texttt{Fin} as a cute trick,
-because I don't think there was any way I could have thought of it on my own.
-But if you play around it enough, you might be able to convince yourself that
-there are exactly \texttt{n} inhabitants of \texttt{Fin\ n}.
+If you play around it enough, you might be able to convince yourself that there
+are exactly \texttt{n} inhabitants of \texttt{Fin\ n}.
 
 For example, for \texttt{Fin\ (\textquotesingle{}S\ \textquotesingle{}Z)}
 (indices for a one-item vector), there should be only one inhabitant. And there
@@ -1312,7 +1328,7 @@ indexing:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L69-L74}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L70-L75}
 
 \NormalTok{index}\OtherTok{ ::} \DataTypeTok{Fin}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{index }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -1371,7 +1387,7 @@ Essentially, we can \emph{pattern match} on \texttt{n}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L76-L83}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L77-L84}
 
 \OtherTok{singSize ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{n ::} \DataTypeTok{Nat}\NormalTok{) }\OtherTok{->} \DataTypeTok{String}
 \NormalTok{singSize }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -1398,7 +1414,7 @@ Now, to write \texttt{replicate}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L90-L93}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L91-L94}
 
 \OtherTok{replicate_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{replicate_ }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -1413,7 +1429,7 @@ lengths, using \texttt{SingI} and
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L95-L96}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L96-L97}
 
 \NormalTok{replicate}\OtherTok{ ::} \DataTypeTok{SingI}\NormalTok{ n }\OtherTok{=>}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{replicate }\FunctionTok{=}\NormalTok{ replicate_ sing}
@@ -1440,7 +1456,7 @@ see the solution, and see how it compares to your own :)
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L98-L104}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L99-L105}
 
 \OtherTok{generate_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->}\NormalTok{ (}\DataTypeTok{Fin}\NormalTok{ n }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 
@@ -1465,7 +1481,7 @@ expects\ldots{}these clues will help you get your bearings!
 Converting from sized to unsized vectors (to lists) is something that is pretty
 straightforward, and can be done by just pattern matching on the vector and
 recursing on the tail. I've
-\href{https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs\#L85-L88}{left
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs\#L86-L89}{left
 it as an excercise} to write \texttt{Vec\ n\ a\ -\textgreater{}\ {[}a{]}}.
 
 More interesting is the other way around; our the API of converting unsized to
@@ -1473,7 +1489,7 @@ sized vectors will be the same:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L106-L106}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L107-L107}
 
 \OtherTok{withVec ::}\NormalTok{ [a] }\OtherTok{->}\NormalTok{ (forall n}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
 \end{Highlighting}
@@ -1489,7 +1505,7 @@ Welcome back! Hope you had a fun time :) Here's the solution!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L106-L110}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L107-L111}
 
 \OtherTok{withVec ::}\NormalTok{ [a] }\OtherTok{->}\NormalTok{ (forall n}\FunctionTok{.} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->}\NormalTok{ r) }\OtherTok{->}\NormalTok{ r}
 \NormalTok{withVec }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -1521,7 +1537,7 @@ the vector itself:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L112-L115}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L113-L116}
 
 \OtherTok{vecLength ::} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ n}
 \NormalTok{vecLength }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -1543,7 +1559,7 @@ vectors, using \texttt{\%\textasciitilde{}} and \texttt{Decision} and
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L117-L123}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L118-L124}
 
 \OtherTok{exactLength_ ::} \DataTypeTok{Sing}\NormalTok{ m }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ m a)}
 \NormalTok{exactLength_ sM v }\FunctionTok{=} \KeywordTok{case}\NormalTok{ sM }\FunctionTok{%~}\NormalTok{ vecLength v }\KeywordTok{of}
@@ -1565,7 +1581,7 @@ instead --
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L125-L135}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L126-L136}
 
 \OtherTok{exactLengthInductive_ ::} \DataTypeTok{Sing}\NormalTok{ m }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ m a)}
 \NormalTok{exactLengthInductive_ }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -1598,7 +1614,7 @@ For example, we can make a witness that \texttt{n} is less than or equal to
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L137-L149}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L138-L150}
 
 \KeywordTok{data} \DataTypeTok{LTE}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{LEZ}\OtherTok{ ::} \DataTypeTok{LTE}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ n}
@@ -1623,7 +1639,7 @@ We can write code to check for this property in our vectors:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L151-L157}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L152-L158}
 
 \OtherTok{atLeast_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{LTE}\NormalTok{ n m, }\DataTypeTok{Vec}\NormalTok{ m a)}
 \NormalTok{atLeast_ sN v }\FunctionTok{=} \KeywordTok{case}\NormalTok{ isLTE sN (vecLength v) }\KeywordTok{of}
@@ -1644,7 +1660,7 @@ given (via proof) that the vector has at least that many elements:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L159-L163}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L160-L164}
 
 \OtherTok{takeVec ::} \DataTypeTok{LTE}\NormalTok{ n m }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
 \NormalTok{takeVec }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -1665,7 +1681,7 @@ And, we can combine that with our \texttt{atLeast} function, to be able to take
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L165-L169}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L166-L170}
 
 \OtherTok{takeVecMaybe_ ::} \DataTypeTok{Sing}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a)}
 \NormalTok{takeVecMaybe_ sN v }\FunctionTok{=}\NormalTok{ uncurry takeVec }\FunctionTok{<$>}\NormalTok{ atLeast_ sN v}
