@@ -5,7 +5,7 @@
           Some "iElectric"
       }
   , name =
-      "Domen Ko\u017Ear"
+      "Domen Kožar"
   }
 , { info =
       { level =
