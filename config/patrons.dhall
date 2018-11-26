@@ -1,6 +1,6 @@
 [ { info =
       { level =
-          < Inactive = {=} | Amazing : {} | Support : {} >
+          < Support = {=} | Amazing : {} | Inactive : {} >
       , twitter =
           Some "iElectric"
       }
