@@ -157,9 +157,9 @@ Part 2
 > *What is the length of the shortest polymer you can produce* by removing all
 > units of exactly one type and fully reacting the result?
 
-Even the problem again seems to be written to obscure this fact, we can see that
-Part 2 is basically describing a *group homomorphism*. That is, it talks about
-functions that map
+Even though the problem again seems to be written to obscure this fact, we can
+see that Part 2 is basically describing a *group homomorphism*. That is, it
+talks about functions that map
 ![F(26)](https://latex.codecogs.com/png.latex?F%2826%29 "F(26)") (the free group
 on the 26 letters of the alphabet) to
 ![F(25)](https://latex.codecogs.com/png.latex?F%2825%29 "F(25)") (the free group
