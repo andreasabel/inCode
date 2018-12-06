@@ -85,7 +85,7 @@ library[^2], which offers a free group type `FreeGroupL`, to let us write:
 import qualified Data.Group.Free as FG
 
 interpret :: [Char] -> FG.FreeGroupL Char
-interpret = foldMap inject
+interpret = foldMap inject          -- that's `foldMap` from Data.Foldable
 ```
 
 where `inject :: Char -> FreeGroupL Char` takes a `Char` and turns it into the
