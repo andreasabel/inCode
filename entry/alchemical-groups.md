@@ -1,5 +1,5 @@
-Alchemical Groups: Advent of Code with Free Groups
-==================================================
+Alchemical Groups: Advent of Code with Free Groups and Group Homomorphism
+=========================================================================
 
 > Originally posted by [Justin Le](https://blog.jle.im/) on December 5, 2018.
 > [Read online!](https://blog.jle.im/entry/alchemical-groups.html)
