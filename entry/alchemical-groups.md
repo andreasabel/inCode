@@ -79,7 +79,7 @@ action ("mappend", in Haskell-speak) and `A` stands for "`a` inverse".
 We can use
 *[Data.Group.Free](https://hackage.haskell.org/package/free-algebras/docs/Data-Group-Free.html)*
 from the *[free-algebras](https://hackage.haskell.org/package/free-algebras)*
-library, which offers a free group type `FreeGroupL`, to let us write:
+library\[\^pref\], which offers a free group type `FreeGroupL`, to let us write:
 
 ``` {.haskell}
 import qualified Data.Group.Free as FG
