@@ -79,7 +79,7 @@ action ("mappend", in Haskell-speak) and `A` stands for "`a` inverse".
 We can use
 *[Data.Group.Free](https://hackage.haskell.org/package/free-algebras/docs/Data-Group-Free.html)*
 from the *[free-algebras](https://hackage.haskell.org/package/free-algebras)*
-library\[\^pref\], which offers a free group type `FreeGroupL`, to let us write:
+library[^2], which offers a free group type `FreeGroupL`, to let us write:
 
 ``` {.haskell}
 import qualified Data.Group.Free as FG
@@ -272,3 +272,9 @@ consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 
 [^1]: These short posts won't be counted as "paid" Patreon posts.
+
+[^2]: Note that the current version of *free-algebras* on haddocks actually has
+    a performance bug that makes appends
+    ![O(n\^2)](https://latex.codecogs.com/png.latex?O%28n%5E2%29 "O(n^2)"). I've
+    made a [pull request](https://github.com/coot/free-algebras/pull/4) fixing
+    this, to give us reasonable times for this challenge!
