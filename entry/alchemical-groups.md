@@ -10,7 +10,9 @@ participating and using Haskell, you're welcome to join us at
 [glguy](https://twitter.com/glguy)'s semi-official [Haskell
 Leaderboard](https://adventofcode.com/2017/leaderboard/private) (join code
 `43100-84040706`)! There are also Haskellers on freenode \#\#adventofcode, and
-also \#adventofcode on the Functional Programming slack.
+also \#adventofcode on the Functional Programming slack. I also wrote a [haskell
+library to the API](https://hackage.haskell.org/package/advent-of-code-api), if
+you're looking to streamline your process!
 
 My [daily
 reflections](https://github.com/mstksg/advent-of-code-2018/blob/master/reflections.md)
