@@ -336,9 +336,9 @@ multiplication is the sum of the dot product of the rows. That means we can
 write:
 
 ![
-t\_f = - \\frac{\\Sigma\_i \\hat{r} \\cdot \\hat{v}}{\\Sigma\_i \\hat{v} \\cdot \\hat{v}}
-](https://latex.codecogs.com/png.latex?%0At_f%20%3D%20-%20%5Cfrac%7B%5CSigma_i%20%5Chat%7Br%7D%20%5Ccdot%20%5Chat%7Bv%7D%7D%7B%5CSigma_i%20%5Chat%7Bv%7D%20%5Ccdot%20%5Chat%7Bv%7D%7D%0A "
-t_f = - \frac{\Sigma_i \hat{r} \cdot \hat{v}}{\Sigma_i \hat{v} \cdot \hat{v}}
+t\_f = - \\frac{\\Sigma\_i \\hat{\\mathbf{r}}\_i \\cdot \\hat{\\mathbf{v}}\_i}{\\Sigma\_i \\hat{\\mathbf{v}}\_i \\cdot \\hat{\\mathbf{v}}\_i}
+](https://latex.codecogs.com/png.latex?%0At_f%20%3D%20-%20%5Cfrac%7B%5CSigma_i%20%5Chat%7B%5Cmathbf%7Br%7D%7D_i%20%5Ccdot%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%7D%7B%5CSigma_i%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%20%5Ccdot%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%7D%0A "
+t_f = - \frac{\Sigma_i \hat{\mathbf{r}}_i \cdot \hat{\mathbf{v}}_i}{\Sigma_i \hat{\mathbf{v}}_i \cdot \hat{\mathbf{v}}_i}
 ")
 
 Once we find this, we can plug into our original form, to find that our final
@@ -363,12 +363,12 @@ sumOfDots :: [Point] -> [Point] -> Double
 sumOfDots xs ys = sum $ zipWith L.dot xs ys
 
 findWord
-    :: [V2 Double]                  -- ^ velocities
-    -> [V2 Double]                  -- ^ initial positions
+    :: [V2 Double]              -- ^ velocities
+    -> [V2 Double]              -- ^ initial positions
     -> ([V2 Double], Double)    -- ^ points in word, and final time t
 findWord (centralize->vs) (centralize->xs) = (final, t)
   where
-    t     = negate $ sumOfDots xs vs / sumOfDots vs vs
+    t     = negate (sumOfDots xs vs / sumOfDots vs vs)
     final = zipWith (\v x -> x + t L.*^ v) vs xs
 ```
 
@@ -417,9 +417,9 @@ simulation turns out to have a closed-form solution...but even more fun when the
 closed-form solution turns out to just be simple linear algebra:
 
 ![
-t\_f = - \\frac{\\Sigma\_i \\hat{r} \\cdot \\hat{v}}{\\Sigma\_i \\hat{v} \\cdot \\hat{v}}
-](https://latex.codecogs.com/png.latex?%0At_f%20%3D%20-%20%5Cfrac%7B%5CSigma_i%20%5Chat%7Br%7D%20%5Ccdot%20%5Chat%7Bv%7D%7D%7B%5CSigma_i%20%5Chat%7Bv%7D%20%5Ccdot%20%5Chat%7Bv%7D%7D%0A "
-t_f = - \frac{\Sigma_i \hat{r} \cdot \hat{v}}{\Sigma_i \hat{v} \cdot \hat{v}}
+t\_f = - \\frac{\\Sigma\_i \\hat{\\mathbf{r}}\_i \\cdot \\hat{\\mathbf{v}}\_i}{\\Sigma\_i \\hat{\\mathbf{v}}\_i \\cdot \\hat{\\mathbf{v}}\_i}
+](https://latex.codecogs.com/png.latex?%0At_f%20%3D%20-%20%5Cfrac%7B%5CSigma_i%20%5Chat%7B%5Cmathbf%7Br%7D%7D_i%20%5Ccdot%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%7D%7B%5CSigma_i%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%20%5Ccdot%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%7D%0A "
+t_f = - \frac{\Sigma_i \hat{\mathbf{r}}_i \cdot \hat{\mathbf{v}}_i}{\Sigma_i \hat{\mathbf{v}}_i \cdot \hat{\mathbf{v}}_i}
 ")
 
 "It's just dot products all the way down."
