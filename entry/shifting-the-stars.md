@@ -317,14 +317,14 @@ first derivative with respect to
 \\frac{d}{d t} \\lvert \\Sigma(t) \\rvert & = 2 \\mathrm{Tr} (\\hat{R}\^T \\hat{V})
                                   + 2 \\mathrm{Tr} (\\hat{V}\^T \\hat{V}) t \\\\
 0 & = 2 \\mathrm{Tr} (\\hat{R}\^T \\hat{V}) + 2 \\mathrm{Tr} (\\hat{V}\^T \\hat{V}) t\_f \\\\
-t\_f & = - \\frac{\\mathrm{Tr} (\\hat{R}\^T \\hat{V}\^T)}{\\mathrm{Tr}(\\hat{V}\^T \\hat{V})}
+t\_f & = - \\frac{\\mathrm{Tr} (\\hat{R}\^T \\hat{V})}{\\mathrm{Tr}(\\hat{V}\^T \\hat{V})}
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7Bd%7D%7Bd%20t%7D%20%5Clvert%20%5CSigma%28t%29%20%5Crvert%20%26%20%3D%202%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BR%7D%5ET%20%5Chat%7BV%7D%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%2B%202%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BV%7D%5ET%20%5Chat%7BV%7D%29%20t%20%5C%5C%0A0%20%26%20%3D%202%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BR%7D%5ET%20%5Chat%7BV%7D%29%20%2B%202%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BV%7D%5ET%20%5Chat%7BV%7D%29%20t_f%20%5C%5C%0At_f%20%26%20%3D%20-%20%5Cfrac%7B%5Cmathrm%7BTr%7D%20%28%5Chat%7BR%7D%5ET%20%5Chat%7BV%7D%5ET%29%7D%7B%5Cmathrm%7BTr%7D%28%5Chat%7BV%7D%5ET%20%5Chat%7BV%7D%29%7D%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7Bd%7D%7Bd%20t%7D%20%5Clvert%20%5CSigma%28t%29%20%5Crvert%20%26%20%3D%202%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BR%7D%5ET%20%5Chat%7BV%7D%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%2B%202%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BV%7D%5ET%20%5Chat%7BV%7D%29%20t%20%5C%5C%0A0%20%26%20%3D%202%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BR%7D%5ET%20%5Chat%7BV%7D%29%20%2B%202%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BV%7D%5ET%20%5Chat%7BV%7D%29%20t_f%20%5C%5C%0At_f%20%26%20%3D%20-%20%5Cfrac%7B%5Cmathrm%7BTr%7D%20%28%5Chat%7BR%7D%5ET%20%5Chat%7BV%7D%29%7D%7B%5Cmathrm%7BTr%7D%28%5Chat%7BV%7D%5ET%20%5Chat%7BV%7D%29%7D%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
 \frac{d}{d t} \lvert \Sigma(t) \rvert & = 2 \mathrm{Tr} (\hat{R}^T \hat{V})
                                   + 2 \mathrm{Tr} (\hat{V}^T \hat{V}) t \\
 0 & = 2 \mathrm{Tr} (\hat{R}^T \hat{V}) + 2 \mathrm{Tr} (\hat{V}^T \hat{V}) t_f \\
-t_f & = - \frac{\mathrm{Tr} (\hat{R}^T \hat{V}^T)}{\mathrm{Tr}(\hat{V}^T \hat{V})}
+t_f & = - \frac{\mathrm{Tr} (\hat{R}^T \hat{V})}{\mathrm{Tr}(\hat{V}^T \hat{V})}
 \end{aligned}
 ")
 
