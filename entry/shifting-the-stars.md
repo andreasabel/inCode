@@ -296,7 +296,7 @@ of variance as:
 
 We can do some simplification, remembering that the trace distributes over
 addition, and that
-![\\mathrm{Tr \\left( X\^T Y \\right) = \\mathrm{Tr} \\left (Y\^T \\right)](https://latex.codecogs.com/png.latex?%5Cmathrm%7BTr%20%5Cleft%28%20X%5ET%20Y%20%5Cright%29%20%3D%20%5Cmathrm%7BTr%7D%20%5Cleft%20%28Y%5ET%20%5Cright%29 "\mathrm{Tr \left( X^T Y \right) = \mathrm{Tr} \left (Y^T \right)"):
+![\\mathrm{Tr} \\left( X\^T Y \\right) = \\mathrm{Tr} \\left (Y\^T \\right)](https://latex.codecogs.com/png.latex?%5Cmathrm%7BTr%7D%20%5Cleft%28%20X%5ET%20Y%20%5Cright%29%20%3D%20%5Cmathrm%7BTr%7D%20%5Cleft%20%28Y%5ET%20%5Cright%29 "\mathrm{Tr} \left( X^T Y \right) = \mathrm{Tr} \left (Y^T \right)"):
 
 ![
 \\begin{aligned}
