@@ -378,11 +378,11 @@ We can write this as a Haskell function, assuming we take in a list of
 
 ``` {.haskell}
 -- | Shift so that centroid is at zero
-centralize :: [V2 Double] -> [V2 Double]
+centralize :: [Point] -> [Point]
 centralize ps = map (subtract mean) ps
   where
-    mean = (/ len) <$> tot
     (Sum tot, Sum len) = foldMap (\x -> (Sum x, Sum 1)) ps
+    mean               = tot L.^/ len
 
 -- | Sum of dot products
 sumOfDots :: [Point] -> [Point] -> Double
