@@ -359,9 +359,9 @@ multiplication is the sum of the dot product of the rows. That means we can
 write:
 
 ![
-t\_f = - \\frac{\\Sigma\_i \\hat{\\mathbf{r}}\_i \\cdot \\hat{\\mathbf{v}}\_i}{\\Sigma\_i \\hat{\\mathbf{v}}\_i \\cdot \\hat{\\mathbf{v}}\_i}
-](https://latex.codecogs.com/png.latex?%0At_f%20%3D%20-%20%5Cfrac%7B%5CSigma_i%20%5Chat%7B%5Cmathbf%7Br%7D%7D_i%20%5Ccdot%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%7D%7B%5CSigma_i%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%20%5Ccdot%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%7D%0A "
-t_f = - \frac{\Sigma_i \hat{\mathbf{r}}_i \cdot \hat{\mathbf{v}}_i}{\Sigma_i \hat{\mathbf{v}}_i \cdot \hat{\mathbf{v}}_i}
+t\_f = - \\frac{\\sum\_i \\hat{\\mathbf{r}}\_i \\cdot \\hat{\\mathbf{v}}\_i}{\\sum\_i \\hat{\\mathbf{v}}\_i \\cdot \\hat{\\mathbf{v}}\_i}
+](https://latex.codecogs.com/png.latex?%0At_f%20%3D%20-%20%5Cfrac%7B%5Csum_i%20%5Chat%7B%5Cmathbf%7Br%7D%7D_i%20%5Ccdot%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%7D%7B%5Csum_i%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%20%5Ccdot%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%7D%0A "
+t_f = - \frac{\sum_i \hat{\mathbf{r}}_i \cdot \hat{\mathbf{v}}_i}{\sum_i \hat{\mathbf{v}}_i \cdot \hat{\mathbf{v}}_i}
 ")
 
 Once we find this, we can plug into our original form, to find that our final
@@ -446,9 +446,9 @@ simulation turns out to have a closed-form solution...but even more fun when the
 closed-form solution turns out to just be simple linear algebra:
 
 ![
-t\_f = - \\frac{\\Sigma\_i \\hat{\\mathbf{r}}\_i \\cdot \\hat{\\mathbf{v}}\_i}{\\Sigma\_i \\hat{\\mathbf{v}}\_i \\cdot \\hat{\\mathbf{v}}\_i}
-](https://latex.codecogs.com/png.latex?%0At_f%20%3D%20-%20%5Cfrac%7B%5CSigma_i%20%5Chat%7B%5Cmathbf%7Br%7D%7D_i%20%5Ccdot%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%7D%7B%5CSigma_i%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%20%5Ccdot%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%7D%0A "
-t_f = - \frac{\Sigma_i \hat{\mathbf{r}}_i \cdot \hat{\mathbf{v}}_i}{\Sigma_i \hat{\mathbf{v}}_i \cdot \hat{\mathbf{v}}_i}
+t\_f = - \\frac{\\sum\_i \\hat{\\mathbf{r}}\_i \\cdot \\hat{\\mathbf{v}}\_i}{\\sum\_i \\hat{\\mathbf{v}}\_i \\cdot \\hat{\\mathbf{v}}\_i}
+](https://latex.codecogs.com/png.latex?%0At_f%20%3D%20-%20%5Cfrac%7B%5Csum_i%20%5Chat%7B%5Cmathbf%7Br%7D%7D_i%20%5Ccdot%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%7D%7B%5Csum_i%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%20%5Ccdot%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%7D%0A "
+t_f = - \frac{\sum_i \hat{\mathbf{r}}_i \cdot \hat{\mathbf{v}}_i}{\sum_i \hat{\mathbf{v}}_i \cdot \hat{\mathbf{v}}_i}
 ")
 
 "It's just dot products all the way down."
