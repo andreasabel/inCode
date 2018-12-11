@@ -210,36 +210,36 @@ matrix of initial velocities:
 ![
 R =
 \\begin{bmatrix}
-x\_0 & y\_0 \\\\
 x\_1 & y\_1 \\\\
 x\_2 & y\_2 \\\\
-\\vdots & \\vdots
+\\vdots & \\vdots \\\\
+x\_N & y\_N
 \\end{bmatrix}
-](https://latex.codecogs.com/png.latex?%0AR%20%3D%0A%5Cbegin%7Bbmatrix%7D%0Ax_0%20%26%20y_0%20%5C%5C%0Ax_1%20%26%20y_1%20%5C%5C%0Ax_2%20%26%20y_2%20%5C%5C%0A%5Cvdots%20%26%20%5Cvdots%0A%5Cend%7Bbmatrix%7D%0A "
+](https://latex.codecogs.com/png.latex?%0AR%20%3D%0A%5Cbegin%7Bbmatrix%7D%0Ax_1%20%26%20y_1%20%5C%5C%0Ax_2%20%26%20y_2%20%5C%5C%0A%5Cvdots%20%26%20%5Cvdots%20%5C%5C%0Ax_N%20%26%20y_N%0A%5Cend%7Bbmatrix%7D%0A "
 R =
 \begin{bmatrix}
-x_0 & y_0 \\
 x_1 & y_1 \\
 x_2 & y_2 \\
-\vdots & \vdots
+\vdots & \vdots \\
+x_N & y_N
 \end{bmatrix}
 ")
 
 ![
 V =
 \\begin{bmatrix}
-v\_{x0} & v\_{y0} \\\\
 v\_{x1} & v\_{y1} \\\\
 v\_{x2} & v\_{y2} \\\\
-\\vdots & \\vdots
+\\vdots & \\vdots \\\\
+v\_{xN} & v\_{yN}
 \\end{bmatrix}
-](https://latex.codecogs.com/png.latex?%0AV%20%3D%0A%5Cbegin%7Bbmatrix%7D%0Av_%7Bx0%7D%20%26%20v_%7By0%7D%20%5C%5C%0Av_%7Bx1%7D%20%26%20v_%7By1%7D%20%5C%5C%0Av_%7Bx2%7D%20%26%20v_%7By2%7D%20%5C%5C%0A%5Cvdots%20%26%20%5Cvdots%0A%5Cend%7Bbmatrix%7D%0A "
+](https://latex.codecogs.com/png.latex?%0AV%20%3D%0A%5Cbegin%7Bbmatrix%7D%0Av_%7Bx1%7D%20%26%20v_%7By1%7D%20%5C%5C%0Av_%7Bx2%7D%20%26%20v_%7By2%7D%20%5C%5C%0A%5Cvdots%20%26%20%5Cvdots%20%5C%5C%0Av_%7BxN%7D%20%26%20v_%7ByN%7D%0A%5Cend%7Bbmatrix%7D%0A "
 V =
 \begin{bmatrix}
-v_{x0} & v_{y0} \\
 v_{x1} & v_{y1} \\
 v_{x2} & v_{y2} \\
-\vdots & \vdots
+\vdots & \vdots \\
+v_{xN} & v_{yN}
 \end{bmatrix}
 ")
 
