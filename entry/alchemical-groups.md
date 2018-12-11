@@ -8,7 +8,7 @@ Hi all! If you don't already know, *[Advent of
 Code](https://adventofcode.com/2018)* is in full swing this year! If you're
 participating and using Haskell, you're welcome to join us at
 [glguy](https://twitter.com/glguy)'s semi-official [Haskell
-Leaderboard](https://adventofcode.com/2017/leaderboard/private) (join code
+Leaderboard](https://adventofcode.com/2018/leaderboard/private) (join code
 `43100-84040706`)! There are also Haskellers on freenode \#\#adventofcode, and
 also \#adventofcode on the Functional Programming slack. I also wrote a [haskell
 library to the API](https://hackage.haskell.org/package/advent-of-code-api), if
