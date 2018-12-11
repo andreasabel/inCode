@@ -242,9 +242,11 @@ time, take the first derivative with respect to time, and solve for
 zero.
 
 The typical formula for finding the sum of variances of a matrix
-![M](https://latex.codecogs.com/png.latex?M "M") is to take
-![\\mathrm{Tr} \\left( \\left(M - \\mu\_M \\right)\^T \\left(M - \\mu\_M \\right) \\right)](https://latex.codecogs.com/png.latex?%5Cmathrm%7BTr%7D%20%5Cleft%28%20%5Cleft%28M%20-%20%5Cmu_M%20%5Cright%29%5ET%20%5Cleft%28M%20-%20%5Cmu_M%20%5Cright%29%20%5Cright%29 "\mathrm{Tr} \left( \left(M - \mu_M \right)^T \left(M - \mu_M \right) \right)"),
-but in this form it's not too fun to work with. That's because we have to
+![M](https://latex.codecogs.com/png.latex?M "M") is to take the
+[trace](https://en.wikipedia.org/wiki/Trace_(linear_algebra)) of the [covariance
+matrix](https://en.wikipedia.org/wiki/Covariance_matrix),
+![\\mathrm{Tr} \\left( \\left(M - \\mu\_M \\right)\^T \\left(M - \\mu\_M \\right) \\right)](https://latex.codecogs.com/png.latex?%5Cmathrm%7BTr%7D%20%5Cleft%28%20%5Cleft%28M%20-%20%5Cmu_M%20%5Cright%29%5ET%20%5Cleft%28M%20-%20%5Cmu_M%20%5Cright%29%20%5Cright%29 "\mathrm{Tr} \left( \left(M - \mu_M \right)^T \left(M - \mu_M \right) \right)").
+However, in this form, it's not too fun to work with. That's because we have to
 re-compute the mean of of the positions at every point, and things will get
 messy before they get clean.
 
