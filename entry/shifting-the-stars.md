@@ -207,11 +207,41 @@ matrix of initial positions, and
 ![n \\times 2](https://latex.codecogs.com/png.latex?n%20%5Ctimes%202 "n \times 2")
 matrix of initial velocities:
 
-\$\$ \\begin{aligned} R & =
+![
+R =
+\\begin{bmatrix}
+x\_0 & y\_0 \\\\
+x\_1 & y\_1 \\\\
+x\_2 & y\_2 \\\\
+\\vdots & \\vdots
+\\end{bmatrix}
+](https://latex.codecogs.com/png.latex?%0AR%20%3D%0A%5Cbegin%7Bbmatrix%7D%0Ax_0%20%26%20y_0%20%5C%5C%0Ax_1%20%26%20y_1%20%5C%5C%0Ax_2%20%26%20y_2%20%5C%5C%0A%5Cvdots%20%26%20%5Cvdots%0A%5Cend%7Bbmatrix%7D%0A "
+R =
+\begin{bmatrix}
+x_0 & y_0 \\
+x_1 & y_1 \\
+x_2 & y_2 \\
+\vdots & \vdots
+\end{bmatrix}
+")
 
-\\begin{bmatrix} x\_0 & y\_0 \\ x\_1 & y\_1 \\ x\_2 & y\_2 \\ \vdots & \vdots
-\\end{bmatrix} \\ V & = \\begin{bmatrix} v\_x0 & v\_y0 \\ v\_x1 & v\_y1 \\ v\_x2
-& v\_y2 \\ \vdots & \vdots \\end{bmatrix} \\end{aligned} \$\$
+![
+V =
+\\begin{bmatrix}
+v\_x0 & v\_y0 \\\\
+v\_x1 & v\_y1 \\\\
+v\_x2 & v\_y2 \\\\
+\\vdots & \\vdots
+\\end{bmatrix}
+](https://latex.codecogs.com/png.latex?%0AV%20%3D%0A%5Cbegin%7Bbmatrix%7D%0Av_x0%20%26%20v_y0%20%5C%5C%0Av_x1%20%26%20v_y1%20%5C%5C%0Av_x2%20%26%20v_y2%20%5C%5C%0A%5Cvdots%20%26%20%5Cvdots%0A%5Cend%7Bbmatrix%7D%0A "
+V =
+\begin{bmatrix}
+v_x0 & v_y0 \\
+v_x1 & v_y1 \\
+v_x2 & v_y2 \\
+\vdots & \vdots
+\end{bmatrix}
+")
 
 Then we can say that the state of the total system at time
 ![t](https://latex.codecogs.com/png.latex?t "t") is given by
@@ -399,18 +429,20 @@ system shows all of the signs of being well-behaved: the thing we are minimizing
 is quadratic on our variable, so the first derivative will be linear on our
 variable, making "solving for zero" very simple.
 
-The first step was looking at our system as a matrix formula in the first place.
-This gave us key insights from linear algebra that we could exploit. However,
-even though things are quadratic, they might have been mentally complex because
-we have to re-evaluate the mean of all of the points at all points in time in
-order to compute the sum of variances. To get around this, we borrow from a
-common tool used in classical mechanics that allows us not only to *fix the
-mean* over the entire time span, but also *set it to the origin*, so we don't
-even have to worry about it ever coming up at any point in time. This made our
-symbolic manipulation easy enough to do on a few lines of notebook paper. And
-isn't it cute that we use the *Galilean* transformed, named after someone who is
-famous for having studied the motion of astronomical bodies? Maybe that was a
-subtle hint from the author of the challenges ;)
+To do this in a clean way we:
+
+1.  Represented our system as a matrix formula, giving us key linear algebra
+    insights we could exploit.
+2.  Saw that our problem is feasible, because our thing we are minimizing is
+    quadratic in our variable, meaning the derivative is linear in our variable.
+3.  Made this feasible by using a Galilean transform to shift things into the
+    center-of-mass frame, so that the mean is *fixed* over the entire time span,
+    and *set to zero*. This made the final solution simple enough to work out on
+    a small sheet of notebook paper.
+
+And isn't it cute that we use the *Galilean* transformed, named after someone
+who is famous for having studied the motion of astronomical bodies? Maybe that
+was a subtle hint from the author of the challenges ;)
 
 Anyway, I thought this was a fun twist on the typical Advent of Code challenges.
 It's always fun when something that you might think can only be solved by
