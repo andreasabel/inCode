@@ -207,11 +207,11 @@ matrix of initial positions, and
 ![n \\times 2](https://latex.codecogs.com/png.latex?n%20%5Ctimes%202 "n \times 2")
 matrix of initial velocities:
 
-\$\$ R \sim \\begin{bmatrix} x\_0 & y\_0 \\ x\_1 & y\_1 \\ x\_2 & y\_2 \\
-\vdots & \vdots \\end{bmatrix}
+\$\$ \\begin{aligned} R & =
 
-V \sim \\begin{bmatrix} v\_x0 & v\_y0 \\ v\_x1 & v\_y1 \\ v\_x2 & v\_y2 \\
-\vdots & \vdots \\end{bmatrix} \$\$
+\\begin{bmatrix} x\_0 & y\_0 \\ x\_1 & y\_1 \\ x\_2 & y\_2 \\ \vdots & \vdots
+\\end{bmatrix} \\ V & = \\begin{bmatrix} v\_x0 & v\_y0 \\ v\_x1 & v\_y1 \\ v\_x2
+& v\_y2 \\ \vdots & \vdots \\end{bmatrix} \\end{aligned} \$\$
 
 Then we can say that the state of the total system at time
 ![t](https://latex.codecogs.com/png.latex?t "t") is given by
@@ -408,7 +408,10 @@ order to compute the sum of variances. To get around this, we borrow from a
 common tool used in classical mechanics that allows us not only to *fix the
 mean* over the entire time span, but also *set it to the origin*, so we don't
 even have to worry about it ever coming up at any point in time. This made our
-symbolic manipulation easy enough to do on a few lines of notebook paper.
+symbolic manipulation easy enough to do on a few lines of notebook paper. And
+isn't it cute that we use the *Galilean* transformed, named after someone who is
+famous for having studied the motion of astronomical bodies? Maybe that was a
+subtle hint from the author of the challenges ;)
 
 Anyway, I thought this was a fun twist on the typical Advent of Code challenges.
 It's always fun when something that you might think can only be solved by
