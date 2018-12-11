@@ -372,8 +372,8 @@ findWord (centralize->vs) (centralize->xs) = (final, t)
     final = zipWith (\v x -> x + t L.*^ v) vs xs
 ```
 
-To answer the actual problem, we do need to `round` the time (and the final
-points) to display them on the screen.
+To answer the actual problem, we do need to `round` the final points to display
+them on the screen.
 
 Part 2
 ------
@@ -386,7 +386,8 @@ Part 2
 > appear?*
 
 This one is just ![t](https://latex.codecogs.com/png.latex?t "t"), which we
-solved for in the last part!
+solved for in the last part! Again, we need to remember to `round` it before we
+submit.
 
 Message in the Stars
 --------------------
