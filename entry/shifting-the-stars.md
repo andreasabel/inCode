@@ -285,10 +285,7 @@ changes*. If we can do this, then we only need to compute
 ![\\mathrm{Tr} \\left(M\^T M \\right)](https://latex.codecogs.com/png.latex?%5Cmathrm%7BTr%7D%20%5Cleft%28M%5ET%20M%20%5Cright%29 "\mathrm{Tr} \left(M^T M \right)")
 (since we guarantee that the mean of
 ![M](https://latex.codecogs.com/png.latex?M "M") is 0), which is relatively easy
-peasy. If we find the minimizing time in the CoM frame, then we can also use
-that same time in our original frame, because Galilean transformations leave
-time unchanged (unlike Lorentz transforms and other similar coordinate
-transformations).
+peasy.
 
 Because our system has points of all equal "mass", we can shift
 ![R](https://latex.codecogs.com/png.latex?R "R") into
@@ -369,8 +366,11 @@ t_f = - \frac{\Sigma_i \hat{\mathbf{r}}_i \cdot \hat{\mathbf{v}}_i}{\Sigma_i \ha
 
 Once we find this, we can plug into our original form, to find that our final
 points are, in our un-shifted coordinates,
-![R + V t](https://latex.codecogs.com/png.latex?R%20%2B%20V%20t "R + V t") (we
-can also use the shifted coordinates as well).
+![R + V t](https://latex.codecogs.com/png.latex?R%20%2B%20V%20t "R + V t"). This
+is because Galilean transformations leave time unchanged, unlike other frame
+transformations, like the Lorentz transform. However, we have a simpler option:
+we could just leave our answer in shifted coordinates as well, since we only
+care about the shape of the result, and not the absolute position.
 
 We can write this as a Haskell function, assuming we take in a list of
 `V2 Double` for velocities and `V2 Double` for positions, from the
