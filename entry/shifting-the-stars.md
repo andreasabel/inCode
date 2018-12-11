@@ -299,17 +299,13 @@ addition, and that
 ![\\mathrm{Tr} \\left( X\^T Y \\right) = \\mathrm{Tr} \\left (Y\^T \\right)](https://latex.codecogs.com/png.latex?%5Cmathrm%7BTr%7D%20%5Cleft%28%20X%5ET%20Y%20%5Cright%29%20%3D%20%5Cmathrm%7BTr%7D%20%5Cleft%20%28Y%5ET%20%5Cright%29 "\mathrm{Tr} \left( X^T Y \right) = \mathrm{Tr} \left (Y^T \right)"):
 
 ![
-\\begin{aligned}
-\\lvert \\Sigma(t) \\rvert & = \\mathrm{Tr} (\\hat{R}\^T \\hat{R}) \\\\
-                   & + 2 \\mathrm{Tr} (\\hat{R}\^T \\hat{V}) t \\\\
-                   & + \\mathrm{Tr} (\\hat{V}\^T \\hat{V}) t\^2
-\\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Clvert%20%5CSigma%28t%29%20%5Crvert%20%26%20%3D%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BR%7D%5ET%20%5Chat%7BR%7D%29%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%202%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BR%7D%5ET%20%5Chat%7BV%7D%29%20t%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%26%20%2B%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BV%7D%5ET%20%5Chat%7BV%7D%29%20t%5E2%0A%5Cend%7Baligned%7D%0A "
-\begin{aligned}
-\lvert \Sigma(t) \rvert & = \mathrm{Tr} (\hat{R}^T \hat{R}) \\
-                   & + 2 \mathrm{Tr} (\hat{R}^T \hat{V}) t \\
-                   & + \mathrm{Tr} (\hat{V}^T \hat{V}) t^2
-\end{aligned}
+\\lvert \\Sigma(t) \\rvert = \\mathrm{Tr} (\\hat{R}\^T \\hat{R})
+                   + 2 \\mathrm{Tr} (\\hat{R}\^T \\hat{V}) t
+                   + \\mathrm{Tr} (\\hat{V}\^T \\hat{V}) t\^2
+](https://latex.codecogs.com/png.latex?%0A%5Clvert%20%5CSigma%28t%29%20%5Crvert%20%3D%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BR%7D%5ET%20%5Chat%7BR%7D%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%2B%202%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BR%7D%5ET%20%5Chat%7BV%7D%29%20t%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%2B%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BV%7D%5ET%20%5Chat%7BV%7D%29%20t%5E2%0A "
+\lvert \Sigma(t) \rvert = \mathrm{Tr} (\hat{R}^T \hat{R})
+                   + 2 \mathrm{Tr} (\hat{R}^T \hat{V}) t
+                   + \mathrm{Tr} (\hat{V}^T \hat{V}) t^2
 ")
 
 Now, we want to minimize the sum of variances. So to do that, we can take the
