@@ -4,6 +4,9 @@ Shifting the Stars: Advent of Code with Galilean Optimization
 > Originally posted by [Justin Le](https://blog.jle.im/) on December 10, 2018.
 > [Read online!](https://blog.jle.im/entry/shifting-the-stars.html)
 
+(TL;DR: scroll down to the very bottom for a summary and the closed form
+solution)
+
 Another short Advent of Code post! [Advent of Code
 2018](https://adventofcode.com/2018) is in full swing; we're 40% of the way
 through. Every once in a while, if I find a fun way to solve a problem, I'll
