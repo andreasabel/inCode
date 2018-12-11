@@ -273,7 +273,7 @@ The typical formula for finding the sum of variances of a matrix
 ![M](https://latex.codecogs.com/png.latex?M "M") is to take the
 [trace](https://en.wikipedia.org/wiki/Trace_(linear_algebra)) of the [covariance
 matrix](https://en.wikipedia.org/wiki/Covariance_matrix),
-![\\mathrm{Tr} \\left( \\left(M - \\mu\_M \\right)\^T \\left(M - \\mu\_M \\right) \\right)](https://latex.codecogs.com/png.latex?%5Cmathrm%7BTr%7D%20%5Cleft%28%20%5Cleft%28M%20-%20%5Cmu_M%20%5Cright%29%5ET%20%5Cleft%28M%20-%20%5Cmu_M%20%5Cright%29%20%5Cright%29 "\mathrm{Tr} \left( \left(M - \mu_M \right)^T \left(M - \mu_M \right) \right)").
+![\\mathrm{Tr} \\left\[ \\left(M - \\mu\_M \\right)\^T \\left(M - \\mu\_M \\right) \\right\]](https://latex.codecogs.com/png.latex?%5Cmathrm%7BTr%7D%20%5Cleft%5B%20%5Cleft%28M%20-%20%5Cmu_M%20%5Cright%29%5ET%20%5Cleft%28M%20-%20%5Cmu_M%20%5Cright%29%20%5Cright%5D "\mathrm{Tr} \left[ \left(M - \mu_M \right)^T \left(M - \mu_M \right) \right]").
 However, in this form, it's not too fun to work with. That's because we have to
 re-compute the mean of of the positions at every point, and things will get
 messy before they get clean.
@@ -315,9 +315,9 @@ Because we now know that center of mass *is always zero*, we can compute the sum
 of variance as:
 
 ![
-\\lvert \\Sigma(t) \\rvert = \\mathrm{Tr} \\left( \\left( \\hat{R} + \\hat{V} t \\right)\^T \\left( \\hat{R} + \\hat{V} t \\right) \\right)
-](https://latex.codecogs.com/png.latex?%0A%5Clvert%20%5CSigma%28t%29%20%5Crvert%20%3D%20%5Cmathrm%7BTr%7D%20%5Cleft%28%20%5Cleft%28%20%5Chat%7BR%7D%20%2B%20%5Chat%7BV%7D%20t%20%5Cright%29%5ET%20%5Cleft%28%20%5Chat%7BR%7D%20%2B%20%5Chat%7BV%7D%20t%20%5Cright%29%20%5Cright%29%0A "
-\lvert \Sigma(t) \rvert = \mathrm{Tr} \left( \left( \hat{R} + \hat{V} t \right)^T \left( \hat{R} + \hat{V} t \right) \right)
+\\lvert \\Sigma(t) \\rvert = \\mathrm{Tr} \\left\[ \\left( \\hat{R} + \\hat{V} t \\right)\^T \\left( \\hat{R} + \\hat{V} t \\right) \\right\]
+](https://latex.codecogs.com/png.latex?%0A%5Clvert%20%5CSigma%28t%29%20%5Crvert%20%3D%20%5Cmathrm%7BTr%7D%20%5Cleft%5B%20%5Cleft%28%20%5Chat%7BR%7D%20%2B%20%5Chat%7BV%7D%20t%20%5Cright%29%5ET%20%5Cleft%28%20%5Chat%7BR%7D%20%2B%20%5Chat%7BV%7D%20t%20%5Cright%29%20%5Cright%5D%0A "
+\lvert \Sigma(t) \rvert = \mathrm{Tr} \left[ \left( \hat{R} + \hat{V} t \right)^T \left( \hat{R} + \hat{V} t \right) \right]
 ")
 
 We can do some simplification, remembering that the trace distributes over
