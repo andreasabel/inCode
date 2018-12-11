@@ -1,7 +1,7 @@
 Shifting the Stars: Advent of Code with Galilean Optimization
 =============================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on December 10, 2018.
 > [Read online!](https://blog.jle.im/entry/shifting-the-stars.html)
 
 Another short Advent of Code post! [Advent of Code
@@ -228,17 +228,17 @@ x_2 & y_2 \\
 ![
 V =
 \\begin{bmatrix}
-v\_x0 & v\_y0 \\\\
-v\_x1 & v\_y1 \\\\
-v\_x2 & v\_y2 \\\\
+v\_{x0} & v\_{y0} \\\\
+v\_{x1} & v\_{y1} \\\\
+v\_{x2} & v\_{y2} \\\\
 \\vdots & \\vdots
 \\end{bmatrix}
-](https://latex.codecogs.com/png.latex?%0AV%20%3D%0A%5Cbegin%7Bbmatrix%7D%0Av_x0%20%26%20v_y0%20%5C%5C%0Av_x1%20%26%20v_y1%20%5C%5C%0Av_x2%20%26%20v_y2%20%5C%5C%0A%5Cvdots%20%26%20%5Cvdots%0A%5Cend%7Bbmatrix%7D%0A "
+](https://latex.codecogs.com/png.latex?%0AV%20%3D%0A%5Cbegin%7Bbmatrix%7D%0Av_%7Bx0%7D%20%26%20v_%7By0%7D%20%5C%5C%0Av_%7Bx1%7D%20%26%20v_%7By1%7D%20%5C%5C%0Av_%7Bx2%7D%20%26%20v_%7By2%7D%20%5C%5C%0A%5Cvdots%20%26%20%5Cvdots%0A%5Cend%7Bbmatrix%7D%0A "
 V =
 \begin{bmatrix}
-v_x0 & v_y0 \\
-v_x1 & v_y1 \\
-v_x2 & v_y2 \\
+v_{x0} & v_{y0} \\
+v_{x1} & v_{y1} \\
+v_{x2} & v_{y2} \\
 \vdots & \vdots
 \end{bmatrix}
 ")
