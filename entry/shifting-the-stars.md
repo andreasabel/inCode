@@ -355,11 +355,11 @@ t_f & = - \frac{\mathrm{Tr} (\hat{R}^T \hat{V})}{\mathrm{Tr}(\hat{V}^T \hat{V})}
 ")
 
 And just like that, we have a formula for
-![t](https://latex.codecogs.com/png.latex?t "t")!
+![t\_f](https://latex.codecogs.com/png.latex?t_f "t_f")!
 
 We can simplify this a little more by remembering that the trace of a matrix
-multiplication is the sum of the dot product of the rows. That means we can
-write:
+multiplication is the sum of the dot products of the columns of the first matrix
+by the rows of the second. That means we can write:
 
 ![
 t\_f = - \\frac{\\sum\_i \\hat{\\mathbf{r}}\_i \\cdot \\hat{\\mathbf{v}}\_i}{\\sum\_i \\hat{\\mathbf{v}}\_i \\cdot \\hat{\\mathbf{v}}\_i}
@@ -369,11 +369,11 @@ t_f = - \frac{\sum_i \hat{\mathbf{r}}_i \cdot \hat{\mathbf{v}}_i}{\sum_i \hat{\m
 
 Once we find this, we can plug into our original form, to find that our final
 points are, in our un-shifted coordinates,
-![R + V t](https://latex.codecogs.com/png.latex?R%20%2B%20V%20t "R + V t"). This
-is because Galilean transformations leave time unchanged, unlike other frame
-transformations, like the Lorentz transform. However, we have a simpler option:
-we could just leave our answer in shifted coordinates as well, since we only
-care about the shape of the result, and not the absolute position.
+![R + V t\_f](https://latex.codecogs.com/png.latex?R%20%2B%20V%20t_f "R + V t_f").
+This is because Galilean transformations leave time unchanged, unlike other
+frame transformations, like the Lorentz transform. However, we have a simpler
+option: we could just leave our answer in shifted coordinates as well, since we
+only care about the shape of the result, and not the absolute position.
 
 We can write this as a Haskell function, assuming we take in a list of
 `V2 Double` for velocities and `V2 Double` for positions, from the
