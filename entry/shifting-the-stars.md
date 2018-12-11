@@ -260,16 +260,11 @@ of the directions of motion.
 This gives us a clue: if we can find the
 ![t](https://latex.codecogs.com/png.latex?t "t") that will give us the
 ![R + V t](https://latex.codecogs.com/png.latex?R%20%2B%20V%20t "R + V t") with
-the *least variance*, we are good to go!
-
-All of a sudden, this is now an
+the *least variance*, we are good to go! All of a sudden, this is now an
 [optimization](https://en.wikipedia.org/wiki/Mathematical_optimization) problem.
 Find the ![t](https://latex.codecogs.com/png.latex?t "t") that minimizes the
-variance of x plus the variance of y. This can be done by using some calculus:
-we can compute the function producing the sum of variances as a function of
-time, take the first derivative with respect to time, and solve for
-![t](https://latex.codecogs.com/png.latex?t "t") that makes the first derivative
-zero.
+variance of x plus the variance of y. We can find this by finding the formula
+for the sum of variances, taking the first derivative, and setting it to zero.
 
 The typical formula for finding the sum of variances of a matrix
 ![M](https://latex.codecogs.com/png.latex?M "M") is to take the
@@ -283,9 +278,10 @@ messy before they get clean.
 Conceptually, however, we have a powerful tool: the [Center of Mass
 frame](https://en.wikipedia.org/wiki/Center-of-momentum_frame). Essentially,
 because our system has no external forces (and no net acceleration), we can
-*perform a Galilean transform* into a frame of reference where the center of
-mass is *fixed at the origin*, and *never changes*. If we can do this, then we
-only need to compute
+*perform a [Galilean
+transform](https://en.wikipedia.org/wiki/Galilean_transformation)* into a frame
+of reference where the center of mass is *fixed at the origin*, and *never
+changes*. If we can do this, then we only need to compute
 ![\\mathrm{Tr} \\left(M\^T M \\right)](https://latex.codecogs.com/png.latex?%5Cmathrm%7BTr%7D%20%5Cleft%28M%5ET%20M%20%5Cright%29 "\mathrm{Tr} \left(M^T M \right)")
 (since we guarantee that the mean of
 ![M](https://latex.codecogs.com/png.latex?M "M") is 0), which is relatively easy
