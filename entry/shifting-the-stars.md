@@ -201,10 +201,10 @@ is the *velocity* vector.
 
 More generally, we can express this in terms of matrices. If we talk talk about
 ![R](https://latex.codecogs.com/png.latex?R "R") as the
-![n \\times 2](https://latex.codecogs.com/png.latex?n%20%5Ctimes%202 "n \times 2")
+![N \\times 2](https://latex.codecogs.com/png.latex?N%20%5Ctimes%202 "N \times 2")
 matrix of initial positions, and
 ![V](https://latex.codecogs.com/png.latex?V "V") as the
-![n \\times 2](https://latex.codecogs.com/png.latex?n%20%5Ctimes%202 "n \times 2")
+![N \\times 2](https://latex.codecogs.com/png.latex?N%20%5Ctimes%202 "N \times 2")
 matrix of initial velocities:
 
 ![
