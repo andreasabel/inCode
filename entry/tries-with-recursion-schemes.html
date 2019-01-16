@@ -25,7 +25,169 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>Wikipedia has a nice picture:</p>
 <figure>
 <img src="/img/entries/trie/wiki-trie.png" title="An example Trie" alt="Sample Trie from Wikipedia, indexing lists of Char to Ints" /><figcaption>Sample Trie from Wikipedia, indexing lists of Char to Ints</figcaption>
-</figure></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
+</figure>
+<p>API-wise, it is very similar to an <em>associative map</em>, like the <code>Map</code> type from <em><a href="https://hackage.haskell.org/package/containers/docs/Data-Map-Lazy.html">containers</a></em>. It stores “keys” to “values”, and you can insert a value at a given key, lookup the value stored at a given key, or delete the value at a given key.</p>
+<p>The main difference is in implementation: the keys are <em>strings of tokens</em>, and it is internally represented as a tree: if your keys are words, then the first level is the first letter, the second level is the letter, etc. In the example above, the trie stores the keys <code>to</code>, <code>tea</code>, <code>ted</code>, <code>ten</code>, <code>A</code>, <code>i</code>, <code>in</code>, and <code>inn</code>, to the values 7, 3, 4, 12, 15, 11, 5, and 9, respectively. Note that it is possible for one key to completely overlap another (like <code>in</code> storing 5, and <code>inn</code> storing 9). In the usual case, however, we have partial overlaps (like <code>tea</code>, storing 3, and <code>ted</code> storing 4), whose common prefix (<code>te</code>) has no value stored under it.</p>
+<h2 id="haskell-tries">Haskell Tries</h2>
+<p>We can represent this in Haskell by representing each layer as a <code>Map</code> of a token to the next “level” of the trie:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L32-L33</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Trie</span> k v <span class="fu">=</span> <span class="dt">MkT</span> (<span class="dt">Maybe</span> v) (<span class="dt">Map</span> k (<span class="dt">Trie</span> k v))</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  <span class="kw">deriving</span> <span class="dt">Show</span></a></code></pre></div>
+<p>A <code>Trie k v</code> will have keys of type <code>[k]</code>, where <code>k</code> is the key token type, and values of type <code>v</code>. Each layer might have a value (<code>Maybe v</code>), and branches out to each new layer.</p>
+<p>We could write the trie storing <code>(to, 9)</code>, <code>(ton, 3)</code>, and <code>(tax, 2)</code> as:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L48-L62</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="ot">testTrie ::</span> <span class="dt">Trie</span> <span class="dt">Char</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">testTrie <span class="fu">=</span> <span class="dt">MkT</span> <span class="dt">Nothing</span> <span class="fu">$</span> M.fromList [</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">      (<span class="ch">&#39;t&#39;</span>, <span class="dt">MkT</span> <span class="dt">Nothing</span> <span class="fu">$</span> M.fromList [</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">          (<span class="ch">&#39;o&#39;</span>, <span class="dt">MkT</span> (<span class="dt">Just</span> <span class="dv">9</span>) <span class="fu">$</span> M.fromList [</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">              ( <span class="ch">&#39;n&#39;</span>, <span class="dt">MkT</span> (<span class="dt">Just</span> <span class="dv">3</span>) M.empty )</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">            ]</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">          )</a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">        , (<span class="ch">&#39;a&#39;</span>, <span class="dt">MkT</span> <span class="dt">Nothing</span> <span class="fu">$</span> M.fromList [</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">              ( <span class="ch">&#39;x&#39;</span>, <span class="dt">MkT</span> (<span class="dt">Just</span> <span class="dv">2</span>) M.empty )</a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">            ]</a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">          )</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">        ]</a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">      )</a>
+<a class="sourceLine" id="cb2-17" data-line-number="17">    ]</a></code></pre></div>
+<p>Note that this implementation isn’t particularly structurally sound, since it’s possible to represent invalid keys that have branches that lead to nothing. This mostly becomes troublesome when we implement <code>delete</code>, but we won’t be worrying about that for now. The nice thing about Haskell is that we can be as safe as we want or need, as a judgement call on a case-by-case basis. However, a “correct-by-construction” trie is in the next part of this series :)</p>
+<h3 id="enter-recursion-schemes">Enter Recursion Schemes</h3>
+<p>Now, <code>Trie</code> as we write it up there is an explicitly recursive data type. While this is common practice, it’s not a particularly ideal one. The problem with explicitly recursive data types is that to work with them, you often rely on explicitly recursive functions.</p>
+<p>Explicitly recursive functions are notoriously difficult to write, understand, and maintain. It’s extremely easy to accidentally write an infinite loop, and is often called “the GOTO of functional programming”.</p>
+<p>So, there’s a trick we can use to “factor out” the recursion in our data type. The trick is to replace the recursive occurrence of <code>Trie a</code> (in the <code>Cons</code> constructor) with a “placeholder” variable:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L35-L36</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="kw">data</span> <span class="dt">TrieF</span> k v x <span class="fu">=</span> <span class="dt">MkTF</span> (<span class="dt">Maybe</span> v) (<span class="dt">Map</span> k x)</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<p><code>TrieF</code> now represents, essentially, “one layer” of a <code>Trie</code>.</p>
+<p>There are now two paths we can go down: we can re-implement <code>Trie</code> in terms of <code>TrieF</code> (something that most tutorials and introductions do), or we can think of <code>TrieF</code> as a “non-recursive view” into <code>Trie</code>. It’s a way of <em>working</em> with <code>Trie a</code> <em>as if</em> it were a non-recursive data type.</p>
+<p>That’s because <em>recursion-schemes</em> gives combinators (called “recursion schemes”) to abstract over common explicit recursion patterns. The key to using <em>recursion-schemes</em> is to recognize which combinators abstracts over the type of recursion you’re using. You then give that combinator an algebra or a coalgebra (more on this later), and you’re done!</p>
+<p>Learning how to use <em>recursion-schemes</em> effectively is basically picking the right recursion scheme that abstracts over the type of function you want to write for your data type. It’s all about becoming familiar with the “zoo” of (colorfully named) recursion schemes you can pick from, and identifying which one does the job in your situation.</p>
+<p>That’s the high-level view — let’s dive into writing out the API of our <code>Trie</code>!</p>
+<h3 id="linking-the-base">Linking the base</h3>
+<p>One thing we need to do before we can start: we need to tell <em>recursion-schemes</em> to link <code>TrieF</code> with <code>Trie</code>. In the nomenclature of <em>recursion-schemes</em>, <code>TrieF</code> is known as the “base type”, and <code>Trie</code> is called “the fixed-point”.</p>
+<p>Linking them requires some boilerplate, which is basically converting back and forth from <code>Trie</code> to <code>TrieF</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L38-L46</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Base</span> (<span class="dt">Trie</span> k v) <span class="fu">=</span> <span class="dt">TrieF</span> k v</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"><span class="kw">instance</span> <span class="dt">Recursive</span> (<span class="dt">Trie</span> k v) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"><span class="ot">    project ::</span> <span class="dt">Trie</span> k v <span class="ot">-&gt;</span> <span class="dt">TrieF</span> k v (<span class="dt">Trie</span> k v)</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">    project (<span class="dt">MkT</span> v xs) <span class="fu">=</span> <span class="dt">MkTF</span> v xs</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9"><span class="kw">instance</span> <span class="dt">Corecursive</span> (<span class="dt">Trie</span> k v) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10"><span class="ot">    embed ::</span> <span class="dt">TrieF</span> k v (<span class="dt">Trie</span> k v) <span class="ot">-&gt;</span> <span class="dt">Trie</span> k v</a>
+<a class="sourceLine" id="cb4-11" data-line-number="11">    embed (<span class="dt">MkTF</span> v xs) <span class="fu">=</span> <span class="dt">MkT</span> v xs</a></code></pre></div>
+<p>Basically we just link the constructors and fields of <code>MkT</code> and <code>MkTF</code> together.</p>
+<p>As with all boilerplate, it is sometimes useful to clean it up a bit using Template Haskell. The <em>recursion-schemes</em> library offers such splice:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Trie</span> k v <span class="fu">=</span> <span class="dt">MkT</span> (<span class="dt">Maybe</span> v) (<span class="dt">Map</span>   k (<span class="dt">Trie</span> k v))</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="kw">deriving</span> <span class="dt">Show</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">makeBaseFunctor &#39;&#39;<span class="dt">Trie</span></a></code></pre></div>
+<p>This will define <code>TrieF</code>, the <code>Base</code> type family instance, and the <code>Recursive</code> and <code>Corecursive</code> instances (in possibly a more efficient way than the way we wrote by hand, too).</p>
+<h2 id="exploring-the-zoo">Exploring the Zoo</h2>
+<p>Time to explore the zoo a bit!</p>
+<p>Whenever you get a new recursive type and base functor, a good “first thing” to try out is testing out <code>cata</code> and <code>ana</code> (catamorphisms and anamorphisms), the basic “folder” and “unfolder”.</p>
+<h3 id="hakuna-my-cata">Hakuna My Cata</h3>
+<p>Catamorphisms are functions that “combine” or “fold” every layer of our recursive type into a single value. If we want to write a function of type <code>Trie k v -&gt; A</code>, we can reach first for a catamorphism.</p>
+<p>Catamorphisms work by folding layer-by-layer, from the bottom up. We can write one by defining “what to do with each layer”. This description comes in the form of an “algebra” in terms of the base functor:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">myAlg ::</span> <span class="dt">TrieF</span> k v <span class="dt">A</span> <span class="ot">-&gt;</span> <span class="dt">A</span></a></code></pre></div>
+<p>If we think of <code>TrieF k v a</code> as “one layer” of a <code>Trie k v</code>, then <code>TrieF k v A -&gt; A</code> describes how to fold up one layer of our <code>Trie k v</code> into our final result value (here, of type <code>A</code>). Remember that a <code>TrieF k v A</code> contains a <code>Maybe v</code> and a <code>Map k A</code>. The <code>A</code> (the values of the map) contains the result of folding up all of the original subtries along each key; it’s the “results so far”.</p>
+<p>And then we can use <code>cata</code> to “fold” our type along the algebra:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">cata<span class="ot"> myAlg ::</span> <span class="dt">Trie</span> k v <span class="ot">-&gt;</span> <span class="dt">A</span></a></code></pre></div>
+<p><code>cata</code> starts from the bottom-most layer, runs <code>myAlg</code> on that, then goes up a layer, running <code>myAlg</code> on the results, then goes up another layer, running <code>myAlg</code> on those results, etc., until it reaches the top layer and runs <code>myAlg</code> again to produce the final result.</p>
+<p>For example, we’ll write a catamorphism that counts how many values/leaves we have in our Trie into an <code>Int</code>.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">countAlg ::</span> <span class="dt">TrieF</span> k v <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></a></code></pre></div>
+<p>This is the basic structure of an algebra: our final result becomes the parameter of <code>TrieF k v</code>, and also the result of our algebra.</p>
+<p>Remember that a <code>Trie k v</code> contains a <code>Maybe v</code> and a <code>Map k (Trie k v)</code>, and a <code>TrieF k v Int</code> contains a <code>Maybe v</code> and a <code>Map k Int</code>. The <code>Map</code>, then, represents the number of values inside all of the original subtries along each key.</p>
+<p>Knowing this, we can write <code>countAlg</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L64-L69</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3"><span class="ot">countAlg ::</span> <span class="dt">TrieF</span> k v <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">countAlg (<span class="dt">MkTF</span> v subtrieCounts)</a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">    <span class="fu">|</span> isJust v  <span class="fu">=</span> <span class="dv">1</span> <span class="fu">+</span> subtrieTotal</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">    <span class="fu">|</span> otherwise <span class="fu">=</span> subtrieTotal</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-8" data-line-number="8">    subtrieTotal <span class="fu">=</span> sum subtrieCounts</a></code></pre></div>
+<p>If <code>v</code> is indeed a leaf (it’s <code>Just</code>), then it’s one plus the total counts of all of the subtees (remember, the <code>Map k Int</code> contains the counts of all of the original subtries, under each key). Otherwise, it’s just the total counts of all of the original subtries.</p>
+<p>Our final <code>count</code> is therefore just:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L64-L69</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb10-3" data-line-number="3"><span class="ot">countAlg ::</span> <span class="dt">TrieF</span> k v <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">countAlg (<span class="dt">MkTF</span> v subtrieCounts)</a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">    <span class="fu">|</span> isJust v  <span class="fu">=</span> <span class="dv">1</span> <span class="fu">+</span> subtrieTotal</a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">    <span class="fu">|</span> otherwise <span class="fu">=</span> subtrieTotal</a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb10-8" data-line-number="8">    subtrieTotal <span class="fu">=</span> sum subtrieCounts</a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1">ghci<span class="fu">&gt;</span> count testTrie</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2"><span class="dv">3</span></a></code></pre></div>
+<p>We can do something similar by writing a summer, as well:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L74-L75</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb12-3" data-line-number="3"><span class="ot">trieSumAlg ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">TrieF</span> k a a <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">trieSumAlg (<span class="dt">MkTF</span> v subtrieSums) <span class="fu">=</span> fromMaybe <span class="dv">0</span> v <span class="fu">+</span> sum subtrieSums</a>
+<a class="sourceLine" id="cb12-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb12-6" data-line-number="6"><span class="ot">trieSumAlg ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">TrieF</span> k a a <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb12-7" data-line-number="7">trieSumAlg (<span class="dt">MkTF</span> v subtrieSums) <span class="fu">=</span> fromMaybe <span class="dv">0</span> v <span class="fu">+</span> sum subtrieSums</a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1">ghci<span class="fu">&gt;</span> trieSum testTrie</a>
+<a class="sourceLine" id="cb13-2" data-line-number="2"><span class="dv">14</span></a></code></pre></div>
+<p>In the algebra, the <code>Map k a</code> contains the sum of all of the subtries. The algebra therefore just adds up all of the subtrie sums with the value at that layer.</p>
+<h4 id="outside-in">Outside-In</h4>
+<p>Catamorphisms are naturally “inside-out”, or “bottom-up”. However, some operations are more naturally “outside-in”, or “top-down”. One immediate example is <code>lookup :: [k] -&gt; Trie k v -&gt; Maybe v</code>, which is clearly “top-down”: it first descends down the first item in the <code>[k]</code>, then the second, then the third, etc. until you reach the end, and return the <code>Maybe v</code> at that layer.</p>
+<p>In this case, it helps to invert control: instead of folding into a <code>Maybe v</code> directly, fold into a “looker upper”, a <code>[k] -&gt; Maybe v</code>. We generate a “lookup function” from the bottom-up, and then run that all in the end on the key we want to look up.</p>
+<p>Our algebra will therefore have type:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1">lookupperAlg</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Ord</span> k</a>
+<a class="sourceLine" id="cb14-3" data-line-number="3">    <span class="ot">=&gt;</span> <span class="dt">TrieF</span> k v ([k] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v)</a>
+<a class="sourceLine" id="cb14-4" data-line-number="4">    <span class="ot">-&gt;</span> ([k] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v)</a></code></pre></div>
+<p>A <code>TrieF k v ([k] -&gt; Maybe v)</code> contains a <code>Maybe v</code> and a <code>Map k ([k] -&gt; Maybe v)</code>, or a map of “lookuppers”. Indexed at each key is function of how to look up a given key in the original subtrie.</p>
+<p>So, we are tasked with “how to implement a lookupper, given a map of sub-lookuppers”.</p>
+<p>To do this, we can pattern match on the key we are looking up. If it’s <code>[]</code>, then we just return the current leaf (if it exists). Otherwise, if it’s <code>j:js</code>, we can <em>run the lookupper of the subtrie at key <code>j</code></em>.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L80-L95</span></a>
+<a class="sourceLine" id="cb15-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb15-3" data-line-number="3">lookupperAlg</a>
+<a class="sourceLine" id="cb15-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Ord</span> k</a>
+<a class="sourceLine" id="cb15-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">TrieF</span> k v ([k] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v)</a>
+<a class="sourceLine" id="cb15-6" data-line-number="6">    <span class="ot">-&gt;</span> ([k] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v)</a>
+<a class="sourceLine" id="cb15-7" data-line-number="7">lookupperAlg (<span class="dt">MkTF</span> v lookuppers) ks <span class="fu">=</span> <span class="kw">case</span> ks <span class="kw">of</span></a>
+<a class="sourceLine" id="cb15-8" data-line-number="8">    []   <span class="ot">-&gt;</span> v</a>
+<a class="sourceLine" id="cb15-9" data-line-number="9">    j<span class="fu">:</span>js <span class="ot">-&gt;</span> <span class="kw">case</span> M.lookup j lookuppers <span class="kw">of</span></a>
+<a class="sourceLine" id="cb15-10" data-line-number="10">      <span class="dt">Nothing</span>        <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb15-11" data-line-number="11">      <span class="dt">Just</span> lookupper <span class="ot">-&gt;</span> lookupper js</a>
+<a class="sourceLine" id="cb15-12" data-line-number="12">    </a>
+<a class="sourceLine" id="cb15-13" data-line-number="13">lookup</a>
+<a class="sourceLine" id="cb15-14" data-line-number="14"><span class="ot">    ::</span> <span class="dt">Ord</span> k</a>
+<a class="sourceLine" id="cb15-15" data-line-number="15">    <span class="ot">=&gt;</span> [k]</a>
+<a class="sourceLine" id="cb15-16" data-line-number="16">    <span class="ot">-&gt;</span> <span class="dt">Trie</span> k v</a>
+<a class="sourceLine" id="cb15-17" data-line-number="17">    <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v</a>
+<a class="sourceLine" id="cb15-18" data-line-number="18">lookup ks t <span class="fu">=</span> cata lookupperAlg t ks</a>
+<a class="sourceLine" id="cb15-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb15-20" data-line-number="20">lookupperAlg</a>
+<a class="sourceLine" id="cb15-21" data-line-number="21"><span class="ot">    ::</span> <span class="dt">Ord</span> k</a>
+<a class="sourceLine" id="cb15-22" data-line-number="22">    <span class="ot">=&gt;</span> <span class="dt">TrieF</span> k v ([k] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v)</a>
+<a class="sourceLine" id="cb15-23" data-line-number="23">    <span class="ot">-&gt;</span> ([k] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v)</a>
+<a class="sourceLine" id="cb15-24" data-line-number="24">lookupperAlg (<span class="dt">MkTF</span> v lookuppers) ks <span class="fu">=</span> <span class="kw">case</span> ks <span class="kw">of</span></a>
+<a class="sourceLine" id="cb15-25" data-line-number="25">    []   <span class="ot">-&gt;</span> v</a>
+<a class="sourceLine" id="cb15-26" data-line-number="26">    j<span class="fu">:</span>js <span class="ot">-&gt;</span> <span class="kw">case</span> M.lookup j lookuppers <span class="kw">of</span></a>
+<a class="sourceLine" id="cb15-27" data-line-number="27">      <span class="dt">Nothing</span>        <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb15-28" data-line-number="28">      <span class="dt">Just</span> lookupper <span class="ot">-&gt;</span> lookupper js</a>
+<a class="sourceLine" id="cb15-29" data-line-number="29">    </a>
+<a class="sourceLine" id="cb15-30" data-line-number="30">lookup</a>
+<a class="sourceLine" id="cb15-31" data-line-number="31"><span class="ot">    ::</span> <span class="dt">Ord</span> k</a>
+<a class="sourceLine" id="cb15-32" data-line-number="32">    <span class="ot">=&gt;</span> [k]</a>
+<a class="sourceLine" id="cb15-33" data-line-number="33">    <span class="ot">-&gt;</span> <span class="dt">Trie</span> k v</a>
+<a class="sourceLine" id="cb15-34" data-line-number="34">    <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v</a>
+<a class="sourceLine" id="cb15-35" data-line-number="35">lookup ks t <span class="fu">=</span> cata lookupperAlg t ks</a></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1">ghci<span class="fu">&gt;</span> lookup <span class="st">&quot;to&quot;</span> testTrie</a>
+<a class="sourceLine" id="cb16-2" data-line-number="2"><span class="dt">Just</span> <span class="dv">9</span></a>
+<a class="sourceLine" id="cb16-3" data-line-number="3">ghci<span class="fu">&gt;</span> lookup <span class="st">&quot;ton&quot;</span> testTrie</a>
+<a class="sourceLine" id="cb16-4" data-line-number="4"><span class="dt">Just</span> <span class="dv">3</span></a>
+<a class="sourceLine" id="cb16-5" data-line-number="5">ghci<span class="fu">&gt;</span> lookup <span class="st">&quot;tone&quot;</span> testTrie</a>
+<a class="sourceLine" id="cb16-6" data-line-number="6"><span class="dt">Nothing</span></a></code></pre></div>
+<p>Note that because <code>Map</code>s have lazy keys by default, we only ever generate “lookuppers” for subtries under keys that we eventually descend on; any other subtries will be ignored (and no lookuppers are ever generated for them).</p></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
 <p>If you feel inclined, or this post was particularly helpful for you, why not consider <a href="https://www.patreon.com/justinle/overview">supporting me on Patreon</a>, or a <a href="bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU">BTC donation</a>? :)</p></div><div class="clear"></div><ul class="entry-series"><li><div>This entry is a part of a series called <b>&quot;Beginner/Intermediate Haskell Projects&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+beginner-intermediate-haskell-projects.html" class="tag-a-series" title="+Beginner/Intermediate Haskell Projects"> series history</a>.</div></li></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/category/@tutorials.html" class="tag-a-category">@TUTORIALS</a></li><li><a href="https://blog.jle.im/entries/series/+beginner-intermediate-haskell-projects.html" class="tag-a-series">+Beginner/Intermediate Haskell Projects</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing &quot;in Code&quot;!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/tries-with-recursion-schemes.html';
     this.page.identifier = 'trie';
