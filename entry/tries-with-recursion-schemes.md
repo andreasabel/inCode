@@ -334,7 +334,7 @@ then we just return the current leaf (if it exists). Otherwise, if it's `j:js`,
 we can *run the lookupper of the subtrie at key `j`*.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L86-L94
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L79-L94
 
 lookupperAlg
     :: Ord k
@@ -346,15 +346,12 @@ lookupperAlg (MkTF v lookuppers) ks = case ks of
       Nothing        -> Nothing
       Just lookupper -> lookupper js
 
-lookupperAlg
+lookup
     :: Ord k
-    => TrieF k v ([k] -> Maybe v)
-    -> ([k] -> Maybe v)
-lookupperAlg (MkTF v lookuppers) ks = case ks of
-    []   -> v
-    j:js -> case M.lookup j lookuppers of
-      Nothing        -> Nothing
-      Just lookupper -> lookupper js
+    => [k]
+    -> Trie k v
+    -> Maybe v
+lookup ks t = cata lookupperAlg t ks
 ```
 
 ``` {.haskell}

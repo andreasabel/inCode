@@ -142,7 +142,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>A <code>TrieF k v ([k] -&gt; Maybe v)</code> contains a <code>Maybe v</code> and a <code>Map k ([k] -&gt; Maybe v)</code>, or a map of “lookuppers”. Indexed at each key is function of how to look up a given key in the original subtrie.</p>
 <p>So, we are tasked with “how to implement a lookupper, given a map of sub-lookuppers”.</p>
 <p>To do this, we can pattern match on the key we are looking up. If it’s <code>[]</code>, then we just return the current leaf (if it exists). Otherwise, if it’s <code>j:js</code>, we can <em>run the lookupper of the subtrie at key <code>j</code></em>.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L86-L94</span></a>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L79-L94</span></a>
 <a class="sourceLine" id="cb15-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb15-3" data-line-number="3">lookupperAlg</a>
 <a class="sourceLine" id="cb15-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Ord</span> k</a>
@@ -154,15 +154,12 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <a class="sourceLine" id="cb15-10" data-line-number="10">      <span class="dt">Nothing</span>        <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
 <a class="sourceLine" id="cb15-11" data-line-number="11">      <span class="dt">Just</span> lookupper <span class="ot">-&gt;</span> lookupper js</a>
 <a class="sourceLine" id="cb15-12" data-line-number="12"></a>
-<a class="sourceLine" id="cb15-13" data-line-number="13">lookupperAlg</a>
+<a class="sourceLine" id="cb15-13" data-line-number="13">lookup</a>
 <a class="sourceLine" id="cb15-14" data-line-number="14"><span class="ot">    ::</span> <span class="dt">Ord</span> k</a>
-<a class="sourceLine" id="cb15-15" data-line-number="15">    <span class="ot">=&gt;</span> <span class="dt">TrieF</span> k v ([k] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v)</a>
-<a class="sourceLine" id="cb15-16" data-line-number="16">    <span class="ot">-&gt;</span> ([k] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v)</a>
-<a class="sourceLine" id="cb15-17" data-line-number="17">lookupperAlg (<span class="dt">MkTF</span> v lookuppers) ks <span class="fu">=</span> <span class="kw">case</span> ks <span class="kw">of</span></a>
-<a class="sourceLine" id="cb15-18" data-line-number="18">    []   <span class="ot">-&gt;</span> v</a>
-<a class="sourceLine" id="cb15-19" data-line-number="19">    j<span class="fu">:</span>js <span class="ot">-&gt;</span> <span class="kw">case</span> M.lookup j lookuppers <span class="kw">of</span></a>
-<a class="sourceLine" id="cb15-20" data-line-number="20">      <span class="dt">Nothing</span>        <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb15-21" data-line-number="21">      <span class="dt">Just</span> lookupper <span class="ot">-&gt;</span> lookupper js</a></code></pre></div>
+<a class="sourceLine" id="cb15-15" data-line-number="15">    <span class="ot">=&gt;</span> [k]</a>
+<a class="sourceLine" id="cb15-16" data-line-number="16">    <span class="ot">-&gt;</span> <span class="dt">Trie</span> k v</a>
+<a class="sourceLine" id="cb15-17" data-line-number="17">    <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v</a>
+<a class="sourceLine" id="cb15-18" data-line-number="18">lookup ks t <span class="fu">=</span> cata lookupperAlg t ks</a></code></pre></div>
 <div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1">ghci<span class="fu">&gt;</span> lookup <span class="st">&quot;to&quot;</span> testTrie</a>
 <a class="sourceLine" id="cb16-2" data-line-number="2"><span class="dt">Just</span> <span class="dv">9</span></a>
 <a class="sourceLine" id="cb16-3" data-line-number="3">ghci<span class="fu">&gt;</span> lookup <span class="st">&quot;ton&quot;</span> testTrie</a>
