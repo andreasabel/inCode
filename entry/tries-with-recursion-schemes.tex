@@ -380,7 +380,7 @@ With this in mind, we can write \texttt{countAlg}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L63-L68}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L66-L71}
 
 \OtherTok{countAlg ::} \DataTypeTok{TrieF}\NormalTok{ k v }\DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Int}
 \NormalTok{countAlg (}\DataTypeTok{MkTF}\NormalTok{ v subtrieCounts)}
@@ -400,14 +400,10 @@ Our final \texttt{count} is therefore just:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L63-L68}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L63-L64}
 
-\OtherTok{countAlg ::} \DataTypeTok{TrieF}\NormalTok{ k v }\DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Int}
-\NormalTok{countAlg (}\DataTypeTok{MkTF}\NormalTok{ v subtrieCounts)}
-    \FunctionTok{|}\NormalTok{ isJust v  }\FunctionTok{=} \DecValTok{1} \FunctionTok{+}\NormalTok{ subtrieTotal}
-    \FunctionTok{|}\NormalTok{ otherwise }\FunctionTok{=}\NormalTok{ subtrieTotal}
-  \KeywordTok{where}
-\NormalTok{    subtrieTotal }\FunctionTok{=}\NormalTok{ sum subtrieCounts}
+\OtherTok{count ::} \DataTypeTok{Trie}\NormalTok{ k v }\OtherTok{->} \DataTypeTok{Int}
+\NormalTok{count }\FunctionTok{=}\NormalTok{ cata countAlg}
 \end{Highlighting}
 \end{Shaded}
 
@@ -422,13 +418,13 @@ We can do something similar by writing a summer, as well:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L73-L74}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L73-L77}
 
 \OtherTok{trieSumAlg ::} \DataTypeTok{Num}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{TrieF}\NormalTok{ k a a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{trieSumAlg (}\DataTypeTok{MkTF}\NormalTok{ v subtrieSums) }\FunctionTok{=}\NormalTok{ fromMaybe }\DecValTok{0}\NormalTok{ v }\FunctionTok{+}\NormalTok{ sum subtrieSums}
 
-\OtherTok{trieSumAlg ::} \DataTypeTok{Num}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{TrieF}\NormalTok{ k a a }\OtherTok{->}\NormalTok{ a}
-\NormalTok{trieSumAlg (}\DataTypeTok{MkTF}\NormalTok{ v subtrieSums) }\FunctionTok{=}\NormalTok{ fromMaybe }\DecValTok{0}\NormalTok{ v }\FunctionTok{+}\NormalTok{ sum subtrieSums}
+\OtherTok{trieSum ::} \DataTypeTok{Num}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Trie}\NormalTok{ k a }\OtherTok{->}\NormalTok{ a}
+\NormalTok{trieSum }\FunctionTok{=}\NormalTok{ cata trieSumAlg}
 \end{Highlighting}
 \end{Shaded}
 
@@ -486,7 +482,7 @@ if it's \texttt{j:js}, we can \emph{run the lookupper of the subtrie at key
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L79-L94}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L86-L94}
 
 \NormalTok{lookupperAlg}
 \OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
@@ -497,13 +493,6 @@ if it's \texttt{j:js}, we can \emph{run the lookupper of the subtrie at key
 \NormalTok{    j}\FunctionTok{:}\NormalTok{js }\OtherTok{->} \KeywordTok{case}\NormalTok{ M.lookup j lookuppers }\KeywordTok{of}
       \DataTypeTok{Nothing}        \OtherTok{->} \DataTypeTok{Nothing}
       \DataTypeTok{Just}\NormalTok{ lookupper }\OtherTok{->}\NormalTok{ lookupper js}
-    
-\NormalTok{lookup}
-\OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
-    \OtherTok{=>}\NormalTok{ [k]}
-    \OtherTok{->} \DataTypeTok{Trie}\NormalTok{ k v}
-    \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ v}
-\NormalTok{lookup ks t }\FunctionTok{=}\NormalTok{ cata lookupperAlg t ks}
 
 \NormalTok{lookupperAlg}
 \OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
@@ -514,13 +503,6 @@ if it's \texttt{j:js}, we can \emph{run the lookupper of the subtrie at key
 \NormalTok{    j}\FunctionTok{:}\NormalTok{js }\OtherTok{->} \KeywordTok{case}\NormalTok{ M.lookup j lookuppers }\KeywordTok{of}
       \DataTypeTok{Nothing}        \OtherTok{->} \DataTypeTok{Nothing}
       \DataTypeTok{Just}\NormalTok{ lookupper }\OtherTok{->}\NormalTok{ lookupper js}
-    
-\NormalTok{lookup}
-\OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
-    \OtherTok{=>}\NormalTok{ [k]}
-    \OtherTok{->} \DataTypeTok{Trie}\NormalTok{ k v}
-    \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ v}
-\NormalTok{lookup ks t }\FunctionTok{=}\NormalTok{ cata lookupperAlg t ks}
 \end{Highlighting}
 \end{Shaded}
 
@@ -590,7 +572,7 @@ An example here that fits will with the nature of a trie is to produce a
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L96-L100}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L99-L103}
 
 \OtherTok{mkSingletonCoalg ::}\NormalTok{ v }\OtherTok{->}\NormalTok{ ([k] }\OtherTok{->} \DataTypeTok{TrieF}\NormalTok{ k v [k])}
 \NormalTok{mkSingletonCoalg v }\FunctionTok{=}\NormalTok{ singletonCoalg}
@@ -627,10 +609,10 @@ So, we have \texttt{singleton}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L99-L100}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L96-L97}
 
-\NormalTok{    singletonCoalg []     }\FunctionTok{=} \DataTypeTok{MkTF}\NormalTok{ (}\DataTypeTok{Just}\NormalTok{ v) M.empty}
-\NormalTok{    singletonCoalg (k}\FunctionTok{:}\NormalTok{ks) }\FunctionTok{=} \DataTypeTok{MkTF} \DataTypeTok{Nothing}\NormalTok{  (M.singleton k ks)}
+\OtherTok{singleton ::}\NormalTok{ [k] }\OtherTok{->}\NormalTok{ v }\OtherTok{->} \DataTypeTok{Trie}\NormalTok{ k v}
+\NormalTok{singleton k v }\FunctionTok{=}\NormalTok{ ana (mkSingletonCoalg v) k}
 \end{Highlighting}
 \end{Shaded}
 

@@ -104,7 +104,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>Remember that a <code>Trie k v</code> contains a <code>Maybe v</code> and a <code>Map k (Trie k v)</code>, and a <code>TrieF k v Int</code> contains a <code>Maybe v</code> and a <code>Map k Int</code>. The <code>Map</code>, then, represents the number of values inside all of the original subtries along each key.</p>
 <p>Basically, our task is “How to find a count, given a map of sub-counts”.</p>
 <p>With this in mind, we can write <code>countAlg</code>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L63-L68</span></a>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L66-L71</span></a>
 <a class="sourceLine" id="cb9-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb9-3" data-line-number="3"><span class="ot">countAlg ::</span> <span class="dt">TrieF</span> k v <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">countAlg (<span class="dt">MkTF</span> v subtrieCounts)</a>
@@ -114,24 +114,20 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <a class="sourceLine" id="cb9-8" data-line-number="8">    subtrieTotal <span class="fu">=</span> sum subtrieCounts</a></code></pre></div>
 <p>If <code>v</code> is indeed a leaf (it’s <code>Just</code>), then it’s one plus the total counts of all of the subtees (remember, the <code>Map k Int</code> contains the counts of all of the original subtries, under each key). Otherwise, it’s just the total counts of all of the original subtries.</p>
 <p>Our final <code>count</code> is therefore just:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L63-L68</span></a>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L63-L64</span></a>
 <a class="sourceLine" id="cb10-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb10-3" data-line-number="3"><span class="ot">countAlg ::</span> <span class="dt">TrieF</span> k v <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb10-4" data-line-number="4">countAlg (<span class="dt">MkTF</span> v subtrieCounts)</a>
-<a class="sourceLine" id="cb10-5" data-line-number="5">    <span class="fu">|</span> isJust v  <span class="fu">=</span> <span class="dv">1</span> <span class="fu">+</span> subtrieTotal</a>
-<a class="sourceLine" id="cb10-6" data-line-number="6">    <span class="fu">|</span> otherwise <span class="fu">=</span> subtrieTotal</a>
-<a class="sourceLine" id="cb10-7" data-line-number="7">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb10-8" data-line-number="8">    subtrieTotal <span class="fu">=</span> sum subtrieCounts</a></code></pre></div>
+<a class="sourceLine" id="cb10-3" data-line-number="3"><span class="ot">count ::</span> <span class="dt">Trie</span> k v <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">count <span class="fu">=</span> cata countAlg</a></code></pre></div>
 <div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1">ghci<span class="fu">&gt;</span> count testTrie</a>
 <a class="sourceLine" id="cb11-2" data-line-number="2"><span class="dv">3</span></a></code></pre></div>
 <p>We can do something similar by writing a summer, as well:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L73-L74</span></a>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L73-L77</span></a>
 <a class="sourceLine" id="cb12-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb12-3" data-line-number="3"><span class="ot">trieSumAlg ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">TrieF</span> k a a <span class="ot">-&gt;</span> a</a>
 <a class="sourceLine" id="cb12-4" data-line-number="4">trieSumAlg (<span class="dt">MkTF</span> v subtrieSums) <span class="fu">=</span> fromMaybe <span class="dv">0</span> v <span class="fu">+</span> sum subtrieSums</a>
 <a class="sourceLine" id="cb12-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb12-6" data-line-number="6"><span class="ot">trieSumAlg ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">TrieF</span> k a a <span class="ot">-&gt;</span> a</a>
-<a class="sourceLine" id="cb12-7" data-line-number="7">trieSumAlg (<span class="dt">MkTF</span> v subtrieSums) <span class="fu">=</span> fromMaybe <span class="dv">0</span> v <span class="fu">+</span> sum subtrieSums</a></code></pre></div>
+<a class="sourceLine" id="cb12-6" data-line-number="6"><span class="ot">trieSum ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Trie</span> k a <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb12-7" data-line-number="7">trieSum <span class="fu">=</span> cata trieSumAlg</a></code></pre></div>
 <div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1">ghci<span class="fu">&gt;</span> trieSum testTrie</a>
 <a class="sourceLine" id="cb13-2" data-line-number="2"><span class="dv">14</span></a></code></pre></div>
 <p>In the algebra, the <code>Map k a</code> contains the sum of all of the subtries. The algebra therefore just adds up all of the subtrie sums with the value at that layer. “How to find a sum, given a map of sub-sums”.</p>
@@ -146,7 +142,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>A <code>TrieF k v ([k] -&gt; Maybe v)</code> contains a <code>Maybe v</code> and a <code>Map k ([k] -&gt; Maybe v)</code>, or a map of “lookuppers”. Indexed at each key is function of how to look up a given key in the original subtrie.</p>
 <p>So, we are tasked with “how to implement a lookupper, given a map of sub-lookuppers”.</p>
 <p>To do this, we can pattern match on the key we are looking up. If it’s <code>[]</code>, then we just return the current leaf (if it exists). Otherwise, if it’s <code>j:js</code>, we can <em>run the lookupper of the subtrie at key <code>j</code></em>.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L79-L94</span></a>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L86-L94</span></a>
 <a class="sourceLine" id="cb15-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb15-3" data-line-number="3">lookupperAlg</a>
 <a class="sourceLine" id="cb15-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Ord</span> k</a>
@@ -157,30 +153,16 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <a class="sourceLine" id="cb15-9" data-line-number="9">    j<span class="fu">:</span>js <span class="ot">-&gt;</span> <span class="kw">case</span> M.lookup j lookuppers <span class="kw">of</span></a>
 <a class="sourceLine" id="cb15-10" data-line-number="10">      <span class="dt">Nothing</span>        <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
 <a class="sourceLine" id="cb15-11" data-line-number="11">      <span class="dt">Just</span> lookupper <span class="ot">-&gt;</span> lookupper js</a>
-<a class="sourceLine" id="cb15-12" data-line-number="12">    </a>
-<a class="sourceLine" id="cb15-13" data-line-number="13">lookup</a>
+<a class="sourceLine" id="cb15-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb15-13" data-line-number="13">lookupperAlg</a>
 <a class="sourceLine" id="cb15-14" data-line-number="14"><span class="ot">    ::</span> <span class="dt">Ord</span> k</a>
-<a class="sourceLine" id="cb15-15" data-line-number="15">    <span class="ot">=&gt;</span> [k]</a>
-<a class="sourceLine" id="cb15-16" data-line-number="16">    <span class="ot">-&gt;</span> <span class="dt">Trie</span> k v</a>
-<a class="sourceLine" id="cb15-17" data-line-number="17">    <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v</a>
-<a class="sourceLine" id="cb15-18" data-line-number="18">lookup ks t <span class="fu">=</span> cata lookupperAlg t ks</a>
-<a class="sourceLine" id="cb15-19" data-line-number="19"></a>
-<a class="sourceLine" id="cb15-20" data-line-number="20">lookupperAlg</a>
-<a class="sourceLine" id="cb15-21" data-line-number="21"><span class="ot">    ::</span> <span class="dt">Ord</span> k</a>
-<a class="sourceLine" id="cb15-22" data-line-number="22">    <span class="ot">=&gt;</span> <span class="dt">TrieF</span> k v ([k] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v)</a>
-<a class="sourceLine" id="cb15-23" data-line-number="23">    <span class="ot">-&gt;</span> ([k] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v)</a>
-<a class="sourceLine" id="cb15-24" data-line-number="24">lookupperAlg (<span class="dt">MkTF</span> v lookuppers) ks <span class="fu">=</span> <span class="kw">case</span> ks <span class="kw">of</span></a>
-<a class="sourceLine" id="cb15-25" data-line-number="25">    []   <span class="ot">-&gt;</span> v</a>
-<a class="sourceLine" id="cb15-26" data-line-number="26">    j<span class="fu">:</span>js <span class="ot">-&gt;</span> <span class="kw">case</span> M.lookup j lookuppers <span class="kw">of</span></a>
-<a class="sourceLine" id="cb15-27" data-line-number="27">      <span class="dt">Nothing</span>        <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb15-28" data-line-number="28">      <span class="dt">Just</span> lookupper <span class="ot">-&gt;</span> lookupper js</a>
-<a class="sourceLine" id="cb15-29" data-line-number="29">    </a>
-<a class="sourceLine" id="cb15-30" data-line-number="30">lookup</a>
-<a class="sourceLine" id="cb15-31" data-line-number="31"><span class="ot">    ::</span> <span class="dt">Ord</span> k</a>
-<a class="sourceLine" id="cb15-32" data-line-number="32">    <span class="ot">=&gt;</span> [k]</a>
-<a class="sourceLine" id="cb15-33" data-line-number="33">    <span class="ot">-&gt;</span> <span class="dt">Trie</span> k v</a>
-<a class="sourceLine" id="cb15-34" data-line-number="34">    <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v</a>
-<a class="sourceLine" id="cb15-35" data-line-number="35">lookup ks t <span class="fu">=</span> cata lookupperAlg t ks</a></code></pre></div>
+<a class="sourceLine" id="cb15-15" data-line-number="15">    <span class="ot">=&gt;</span> <span class="dt">TrieF</span> k v ([k] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v)</a>
+<a class="sourceLine" id="cb15-16" data-line-number="16">    <span class="ot">-&gt;</span> ([k] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v)</a>
+<a class="sourceLine" id="cb15-17" data-line-number="17">lookupperAlg (<span class="dt">MkTF</span> v lookuppers) ks <span class="fu">=</span> <span class="kw">case</span> ks <span class="kw">of</span></a>
+<a class="sourceLine" id="cb15-18" data-line-number="18">    []   <span class="ot">-&gt;</span> v</a>
+<a class="sourceLine" id="cb15-19" data-line-number="19">    j<span class="fu">:</span>js <span class="ot">-&gt;</span> <span class="kw">case</span> M.lookup j lookuppers <span class="kw">of</span></a>
+<a class="sourceLine" id="cb15-20" data-line-number="20">      <span class="dt">Nothing</span>        <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb15-21" data-line-number="21">      <span class="dt">Just</span> lookupper <span class="ot">-&gt;</span> lookupper js</a></code></pre></div>
 <div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1">ghci<span class="fu">&gt;</span> lookup <span class="st">&quot;to&quot;</span> testTrie</a>
 <a class="sourceLine" id="cb16-2" data-line-number="2"><span class="dt">Just</span> <span class="dv">9</span></a>
 <a class="sourceLine" id="cb16-3" data-line-number="3">ghci<span class="fu">&gt;</span> lookup <span class="st">&quot;ton&quot;</span> testTrie</a>
@@ -198,7 +180,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p><code>ana</code> starts from the an initial seed <code>A</code>, runs <code>myCoalg</code> on that, and then goes down a layer, running <code>myCoalg</code> on each value in the map to create new layers, etc., forever and ever. In practice, it usually stops when we return a <code>TrieF</code> with an empty map, since there are no more seeds to expand down. However, it’s nice to remember we don’t have to special-case this behavior: it arises naturally from the structure of maps.</p>
 <p>I don’t think there’s really too many canonical or classical anamorphisms that are as generally applicable as summing and counting leaves, but the general idea is that if you want to create a value by repeatedly “expanding leaves”, an anamorphism is a perfect fit.</p>
 <p>An example here that fits will with the nature of a trie is to produce a “singleton trie”: a trie that has only a single value at a single trie.</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L96-L100</span></a>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L99-L103</span></a>
 <a class="sourceLine" id="cb19-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb19-3" data-line-number="3"><span class="ot">mkSingletonCoalg ::</span> v <span class="ot">-&gt;</span> ([k] <span class="ot">-&gt;</span> <span class="dt">TrieF</span> k v [k])</a>
 <a class="sourceLine" id="cb19-4" data-line-number="4">mkSingletonCoalg v <span class="fu">=</span> singletonCoalg</a>
@@ -212,10 +194,10 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 </ol>
 <p>2 If our key-to-insert is <em>not</em> empty, then we’re not here! We return <code>MkTF     Nothing</code>…but we know we leave a singleton map <code>M.singleton k ks :: Map k [k]</code> leaving a single seed. When we run our coalgebra with <code>ana</code>, <code>ana</code> will go down and expand out that single seed (with our coalgebra) into an entire new sub-trie, with <code>ks</code> as its seed.</p>
 <p>So, we have <code>singleton</code>:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L99-L100</span></a>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L96-L97</span></a>
 <a class="sourceLine" id="cb20-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb20-3" data-line-number="3">    singletonCoalg []     <span class="fu">=</span> <span class="dt">MkTF</span> (<span class="dt">Just</span> v) M.empty</a>
-<a class="sourceLine" id="cb20-4" data-line-number="4">    singletonCoalg (k<span class="fu">:</span>ks) <span class="fu">=</span> <span class="dt">MkTF</span> <span class="dt">Nothing</span>  (M.singleton k ks)</a></code></pre></div>
+<a class="sourceLine" id="cb20-3" data-line-number="3"><span class="ot">singleton ::</span> [k] <span class="ot">-&gt;</span> v <span class="ot">-&gt;</span> <span class="dt">Trie</span> k v</a>
+<a class="sourceLine" id="cb20-4" data-line-number="4">singleton k v <span class="fu">=</span> ana (mkSingletonCoalg v) k</a></code></pre></div>
 <p>We run the coalgebra on our initial seed (the key), and ana will run <code>singletonCoalg</code> repeatedly, expanding out all of the seeds we deposit, forever and ever (or at least until there are no more values of the seed type left, which happens if we return an empty map).</p>
 <div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1">ghci<span class="fu">&gt;</span> singleton <span class="st">&quot;hi&quot;</span> <span class="dv">7</span></a>
 <a class="sourceLine" id="cb21-2" data-line-number="2"><span class="dt">MkT</span> <span class="dt">Nothing</span> <span class="fu">$</span> M.fromList [</a>

@@ -250,7 +250,7 @@ Basically, our task is "How to find a count, given a map of sub-counts".
 With this in mind, we can write `countAlg`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L63-L68
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L66-L71
 
 countAlg :: TrieF k v Int -> Int
 countAlg (MkTF v subtrieCounts)
@@ -268,14 +268,10 @@ of the original subtries.
 Our final `count` is therefore just:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L63-L68
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L63-L64
 
-countAlg :: TrieF k v Int -> Int
-countAlg (MkTF v subtrieCounts)
-    | isJust v  = 1 + subtrieTotal
-    | otherwise = subtrieTotal
-  where
-    subtrieTotal = sum subtrieCounts
+count :: Trie k v -> Int
+count = cata countAlg
 ```
 
 ``` {.haskell}
@@ -286,13 +282,13 @@ ghci> count testTrie
 We can do something similar by writing a summer, as well:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L73-L74
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L73-L77
 
 trieSumAlg :: Num a => TrieF k a a -> a
 trieSumAlg (MkTF v subtrieSums) = fromMaybe 0 v + sum subtrieSums
 
-trieSumAlg :: Num a => TrieF k a a -> a
-trieSumAlg (MkTF v subtrieSums) = fromMaybe 0 v + sum subtrieSums
+trieSum :: Num a => Trie k a -> a
+trieSum = cata trieSumAlg
 ```
 
 ``` {.haskell}
@@ -338,7 +334,7 @@ then we just return the current leaf (if it exists). Otherwise, if it's `j:js`,
 we can *run the lookupper of the subtrie at key `j`*.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L79-L94
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L86-L94
 
 lookupperAlg
     :: Ord k
@@ -349,13 +345,6 @@ lookupperAlg (MkTF v lookuppers) ks = case ks of
     j:js -> case M.lookup j lookuppers of
       Nothing        -> Nothing
       Just lookupper -> lookupper js
-    
-lookup
-    :: Ord k
-    => [k]
-    -> Trie k v
-    -> Maybe v
-lookup ks t = cata lookupperAlg t ks
 
 lookupperAlg
     :: Ord k
@@ -366,13 +355,6 @@ lookupperAlg (MkTF v lookuppers) ks = case ks of
     j:js -> case M.lookup j lookuppers of
       Nothing        -> Nothing
       Just lookupper -> lookupper js
-    
-lookup
-    :: Ord k
-    => [k]
-    -> Trie k v
-    -> Maybe v
-lookup ks t = cata lookupperAlg t ks
 ```
 
 ``` {.haskell}
@@ -432,7 +414,7 @@ An example here that fits will with the nature of a trie is to produce a
 "singleton trie": a trie that has only a single value at a single trie.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L96-L100
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L99-L103
 
 mkSingletonCoalg :: v -> ([k] -> TrieF k v [k])
 mkSingletonCoalg v = singletonCoalg
@@ -459,10 +441,10 @@ coalgebra) into an entire new sub-trie, with `ks` as its seed.
 So, we have `singleton`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L99-L100
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L96-L97
 
-    singletonCoalg []     = MkTF (Just v) M.empty
-    singletonCoalg (k:ks) = MkTF Nothing  (M.singleton k ks)
+singleton :: [k] -> v -> Trie k v
+singleton k v = ana (mkSingletonCoalg v) k
 ```
 
 We run the coalgebra on our initial seed (the key), and ana will run
