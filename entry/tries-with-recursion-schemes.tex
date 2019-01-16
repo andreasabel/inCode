@@ -190,14 +190,13 @@ We could write the trie storing \texttt{(to,\ 9)}, \texttt{(ton,\ 3)}, and
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L48-L62}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L48-L61}
 
 \OtherTok{testTrie ::} \DataTypeTok{Trie} \DataTypeTok{Char} \DataTypeTok{Int}
 \NormalTok{testTrie }\FunctionTok{=} \DataTypeTok{MkT} \DataTypeTok{Nothing} \FunctionTok{$}\NormalTok{ M.fromList [}
 \NormalTok{      (}\CharTok{'t'}\NormalTok{, }\DataTypeTok{MkT} \DataTypeTok{Nothing} \FunctionTok{$}\NormalTok{ M.fromList [}
 \NormalTok{          (}\CharTok{'o'}\NormalTok{, }\DataTypeTok{MkT}\NormalTok{ (}\DataTypeTok{Just} \DecValTok{9}\NormalTok{) }\FunctionTok{$}\NormalTok{ M.fromList [}
 \NormalTok{              ( }\CharTok{'n'}\NormalTok{, }\DataTypeTok{MkT}\NormalTok{ (}\DataTypeTok{Just} \DecValTok{3}\NormalTok{) M.empty )}
-
 \NormalTok{            ]}
 \NormalTok{          )}
 \NormalTok{        , (}\CharTok{'a'}\NormalTok{, }\DataTypeTok{MkT} \DataTypeTok{Nothing} \FunctionTok{$}\NormalTok{ M.fromList [}
@@ -345,7 +344,7 @@ how to fold up one layer of our \texttt{Trie\ k\ v} into our final result value
 map) contains the result of folding up all of the original subtries along each
 key; it's the ``results so far''.
 
-And then we can use \texttt{cata} to ``fold'' our type along the algebra:
+And then we can use \texttt{cata} to ``fold'' our value along the algebra:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -375,11 +374,13 @@ Remember that a \texttt{Trie\ k\ v} contains a \texttt{Maybe\ v} and a
 \texttt{Maybe\ v} and a \texttt{Map\ k\ Int}. The \texttt{Map}, then, represents
 the number of values inside all of the original subtries along each key.
 
-Knowing this, we can write \texttt{countAlg}:
+Basically, our task is ``How to find a count, given a map of sub-counts''.
+
+With this in mind, we can write \texttt{countAlg}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L64-L69}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L63-L68}
 
 \OtherTok{countAlg ::} \DataTypeTok{TrieF}\NormalTok{ k v }\DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Int}
 \NormalTok{countAlg (}\DataTypeTok{MkTF}\NormalTok{ v subtrieCounts)}
@@ -399,7 +400,7 @@ Our final \texttt{count} is therefore just:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L64-L69}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L63-L68}
 
 \OtherTok{countAlg ::} \DataTypeTok{TrieF}\NormalTok{ k v }\DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Int}
 \NormalTok{countAlg (}\DataTypeTok{MkTF}\NormalTok{ v subtrieCounts)}
@@ -421,7 +422,7 @@ We can do something similar by writing a summer, as well:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L74-L75}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L73-L74}
 
 \OtherTok{trieSumAlg ::} \DataTypeTok{Num}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{TrieF}\NormalTok{ k a a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{trieSumAlg (}\DataTypeTok{MkTF}\NormalTok{ v subtrieSums) }\FunctionTok{=}\NormalTok{ fromMaybe }\DecValTok{0}\NormalTok{ v }\FunctionTok{+}\NormalTok{ sum subtrieSums}
@@ -440,7 +441,7 @@ We can do something similar by writing a summer, as well:
 
 In the algebra, the \texttt{Map\ k\ a} contains the sum of all of the subtries.
 The algebra therefore just adds up all of the subtrie sums with the value at
-that layer.
+that layer. ``How to find a sum, given a map of sub-sums''.
 
 \hypertarget{outside-in}{%
 \subsubsection{Outside-In}\label{outside-in}}
@@ -485,7 +486,7 @@ if it's \texttt{j:js}, we can \emph{run the lookupper of the subtrie at key
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L80-L95}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L79-L94}
 
 \NormalTok{lookupperAlg}
 \OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
@@ -537,6 +538,118 @@ if it's \texttt{j:js}, we can \emph{run the lookupper of the subtrie at key
 Note that because \texttt{Map}s have lazy keys by default, we only ever generate
 ``lookuppers'' for subtries under keys that we eventually descend on; any other
 subtries will be ignored (and no lookuppers are ever generated for them).
+
+\hypertarget{ana-montana}{%
+\subsection{Ana Montana}\label{ana-montana}}
+
+Anamorphisms are functions that ``generate'' or ``unfold'' a value of a
+recursive type, layer-by-layer. If we want to write a function of type
+\texttt{A\ -\textgreater{}\ Trie\ k\ v}, we can reach first for an anamorphism.
+
+Anamorphisms work by unfolding ``layer-by-layer'', from the top down. We can
+write one by defining ``how to generate the next layer''. This description comes
+in the form of a ``coalgebra'' (pronounced like ``co-algebra'', and not like
+coal energy ``coal-gebra''), in terms of the base functor:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{myCoalg ::} \DataTypeTok{A} \OtherTok{->} \DataTypeTok{TrieF}\NormalTok{ k v }\DataTypeTok{A}
+\end{Highlighting}
+\end{Shaded}
+
+If we think of \texttt{TrieF\ k\ v\ a} as ``one layer'' of a
+\texttt{Trie\ k\ v}, then \texttt{A\ -\textgreater{}\ TrieF\ k\ v\ A} describes
+how to generate a new nested layer of our \texttt{Trie\ k\ v} from our initial
+``seed'' (here, of type \texttt{A}). Remember that a \texttt{TrieF\ k\ v\ A}
+contains a \texttt{Maybe\ v} and a \texttt{Map\ k\ A}. The \texttt{A} (the
+values of the map) are then used to seed the \emph{new} subtries. The \texttt{A}
+is the ``continue expanding with\ldots{}'' value.
+
+And then we can use \texttt{cata} to ``unfold'' our value along the coalgebra:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ana}\OtherTok{ myCoalg ::} \DataTypeTok{A} \OtherTok{->} \DataTypeTok{Trie}\NormalTok{ k v}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{ana} starts from the an initial seed \texttt{A}, runs \texttt{myCoalg}
+on that, and then goes down a layer, running \texttt{myCoalg} on each value in
+the map to create new layers, etc., forever and ever. In practice, it usually
+stops when we return a \texttt{TrieF} with an empty map, since there are no more
+seeds to expand down. However, it's nice to remember we don't have to
+special-case this behavior: it arises naturally from the structure of maps.
+
+I don't think there's really too many canonical or classical anamorphisms that
+are as generally applicable as summing and counting leaves, but the general idea
+is that if you want to create a value by repeatedly ``expanding leaves'', an
+anamorphism is a perfect fit.
+
+An example here that fits will with the nature of a trie is to produce a
+``singleton trie'': a trie that has only a single value at a single trie.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L96-L100}
+
+\OtherTok{mkSingletonCoalg ::}\NormalTok{ v }\OtherTok{->}\NormalTok{ ([k] }\OtherTok{->} \DataTypeTok{TrieF}\NormalTok{ k v [k])}
+\NormalTok{mkSingletonCoalg v }\FunctionTok{=}\NormalTok{ singletonCoalg}
+  \KeywordTok{where}
+\NormalTok{    singletonCoalg []     }\FunctionTok{=} \DataTypeTok{MkTF}\NormalTok{ (}\DataTypeTok{Just}\NormalTok{ v) M.empty}
+\NormalTok{    singletonCoalg (k}\FunctionTok{:}\NormalTok{ks) }\FunctionTok{=} \DataTypeTok{MkTF} \DataTypeTok{Nothing}\NormalTok{  (M.singleton k ks)}
+\end{Highlighting}
+\end{Shaded}
+
+Given a \texttt{v} value, we'll make a coalgebra
+\texttt{{[}k{]}\ -\textgreater{}\ TrieF\ k\ v\ {[}k{]}}. Our ``seed'' will be
+the \texttt{{[}k{]}} key we want to insert, and we'll generate our singleton key
+by making sub-maps with sub-keys.
+
+Our coalgebra (``layer generating function'') goes like this:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  If our key-to-insert is empty \texttt{{[}{]}}, then we're here! We're at
+  \emph{the layer} where we want to insert the value at, so
+  \texttt{MkTF\ (Just\ v)\ M.empty}.
+\end{enumerate}
+
+2 If our key-to-insert is \emph{not} empty, then we're not here! We return
+\texttt{MkTF\ \ \ \ \ Nothing}\ldots{}but we know we leave a singleton map
+\texttt{M.singleton\ k\ ks\ ::\ Map\ k\ {[}k{]}} leaving a single seed. When we
+run our coalgebra with \texttt{ana}, \texttt{ana} will go down and expand out
+that single seed (with our coalgebra) into an entire new sub-trie, with
+\texttt{ks} as its seed.
+
+So, we have \texttt{singleton}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L99-L100}
+
+\NormalTok{    singletonCoalg []     }\FunctionTok{=} \DataTypeTok{MkTF}\NormalTok{ (}\DataTypeTok{Just}\NormalTok{ v) M.empty}
+\NormalTok{    singletonCoalg (k}\FunctionTok{:}\NormalTok{ks) }\FunctionTok{=} \DataTypeTok{MkTF} \DataTypeTok{Nothing}\NormalTok{  (M.singleton k ks)}
+\end{Highlighting}
+\end{Shaded}
+
+We run the coalgebra on our initial seed (the key), and ana will run
+\texttt{singletonCoalg} repeatedly, expanding out all of the seeds we deposit,
+forever and ever (or at least until there are no more values of the seed type
+left, which happens if we return an empty map).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>}\NormalTok{ singleton }\StringTok{"hi"} \DecValTok{7}
+\DataTypeTok{MkT} \DataTypeTok{Nothing} \FunctionTok{$}\NormalTok{ M.fromList [}
+\NormalTok{    (}\CharTok{'h'}\NormalTok{, }\DataTypeTok{MkT} \DataTypeTok{Nothing} \FunctionTok{$}\NormalTok{ M.fromList [}
+\NormalTok{        (}\CharTok{'i'}\NormalTok{, }\DataTypeTok{MkT}\NormalTok{ (}\DataTypeTok{Just} \DecValTok{7}\NormalTok{) M.empty )}
+\NormalTok{      ]}
+\NormalTok{    )}
+\NormalTok{  ]}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
