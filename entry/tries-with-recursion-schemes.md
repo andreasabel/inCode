@@ -334,7 +334,7 @@ then we just return the current leaf (if it exists). Otherwise, if it's `k:ks`,
 we can *run the lookupper of the subtrie at key `k`*.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L79-L94
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L87-L102
 
 lookupperAlg
     :: Ord k
@@ -381,21 +381,59 @@ what was the point, again? What do we gain over writing explicit versions to
 query Trie? Why couldn't we just write:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L96-L105
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L79-L81
 
-lookupExplicit
-    :: Ord k
-    => [k]
-    -> Trie k v
-    -> Maybe v
-lookupExplicit = flip $ \(MkT v subs) -> \case
-    []   -> v
-    k:ks -> case M.lookup k subs of
-      Nothing      -> Nothing
-      Just subtrie -> lookupExplicit ks subtrie
+trieSumExplicit :: Num a => Trie k a -> a
+trieSumExplicit (MkT v subtries) =
+    fromMaybe 0 v + sum (fmap trieSumExplicit subtries)
 ```
 
-(I wrote this in a way to mirror the implementation of `lookuperAlg` above)
+instead of
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L83-L85
+
+trieSumCata :: Num a => Trie k a -> a
+trieSumCata = cata $ \(MkTF v subtrieSums) ->
+    fromMaybe 0 v + sum subtrieSums
+```
+
+One major reason, like I mentioned before, is to avoid using *explicit
+recursion*. It's extremely easy when using explicit recursion to accidentally
+write an infinite loop, or to mess up your control flow somehow. It's basically
+like using `GOTO` instead of `while` or `for` loops in imperative languages.
+`while` and `for` loops are meant to abstract over a common type of looping
+control flow, and provide a disciplined structure for them. They also are often
+much easier to read, because as soon as you see "while" or "for", it gives you a
+hint at programmer intent in ways that an explicit GOTO might not.
+
+Another major reason is to allow you to separate concerns. Writing
+`trieSumExplicit` forces you to think "how to fold this entire trie". Writing
+`trieSumAlg` allows us to just focus on "how to fold *this immediate* layer".
+You only need to ever focus on the immediate layer you are trying to sum --- and
+never the entire trie. `cata` takes your "how to fold this immediate layer"
+function and turns it into a function that folds an entire trie, taking care of
+the recursive descent for you.
+
+::: {.note}
+**Aside**
+
+Before we move on, I just wanted to mention that `cata` is not a magic function.
+From the clues above, you might actually be able to implement it yourself. For
+our `Trie`, it's:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L104-L105
+
+cata' :: (TrieF k v a -> a) -> Trie k v -> a
+cata' alg = alg . fmap (cata' alg) . project
+```
+
+First we `project :: Trie k v -> TrieF k v (Trie k v)`, to "de-recursive" our
+type. Then we fmap our entire `cata alg :: Trie k v -> a`. Then we run the
+`alg :: TrieF k v a -> a` on the result. Basically, it's
+fmap-collapse-then-collapse.
+:::
 
 ### Ana Montana
 

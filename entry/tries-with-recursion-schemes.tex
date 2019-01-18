@@ -482,7 +482,7 @@ if it's \texttt{k:ks}, we can \emph{run the lookupper of the subtrie at key
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L79-L94}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L87-L102}
 
 \NormalTok{lookupperAlg}
 \OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
@@ -535,23 +535,69 @@ explicit versions to query Trie? Why couldn't we just write:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L96-L105}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L79-L81}
 
-\NormalTok{lookupExplicit}
-\OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
-    \OtherTok{=>}\NormalTok{ [k]}
-    \OtherTok{->} \DataTypeTok{Trie}\NormalTok{ k v}
-    \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ v}
-\NormalTok{lookupExplicit }\FunctionTok{=}\NormalTok{ flip }\FunctionTok{$}\NormalTok{ \textbackslash{}(}\DataTypeTok{MkT}\NormalTok{ v subs) }\OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-\NormalTok{    []   }\OtherTok{->}\NormalTok{ v}
-\NormalTok{    k}\FunctionTok{:}\NormalTok{ks }\OtherTok{->} \KeywordTok{case}\NormalTok{ M.lookup k subs }\KeywordTok{of}
-      \DataTypeTok{Nothing}      \OtherTok{->} \DataTypeTok{Nothing}
-      \DataTypeTok{Just}\NormalTok{ subtrie }\OtherTok{->}\NormalTok{ lookupExplicit ks subtrie}
+\OtherTok{trieSumExplicit ::} \DataTypeTok{Num}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Trie}\NormalTok{ k a }\OtherTok{->}\NormalTok{ a}
+\NormalTok{trieSumExplicit (}\DataTypeTok{MkT}\NormalTok{ v subtries) }\FunctionTok{=}
+\NormalTok{    fromMaybe }\DecValTok{0}\NormalTok{ v }\FunctionTok{+}\NormalTok{ sum (fmap trieSumExplicit subtries)}
 \end{Highlighting}
 \end{Shaded}
 
-(I wrote this in a way to mirror the implementation of \texttt{lookuperAlg}
-above)
+instead of
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L83-L85}
+
+\OtherTok{trieSumCata ::} \DataTypeTok{Num}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Trie}\NormalTok{ k a }\OtherTok{->}\NormalTok{ a}
+\NormalTok{trieSumCata }\FunctionTok{=}\NormalTok{ cata }\FunctionTok{$}\NormalTok{ \textbackslash{}(}\DataTypeTok{MkTF}\NormalTok{ v subtrieSums) }\OtherTok{->}
+\NormalTok{    fromMaybe }\DecValTok{0}\NormalTok{ v }\FunctionTok{+}\NormalTok{ sum subtrieSums}
+\end{Highlighting}
+\end{Shaded}
+
+One major reason, like I mentioned before, is to avoid using \emph{explicit
+recursion}. It's extremely easy when using explicit recursion to accidentally
+write an infinite loop, or to mess up your control flow somehow. It's basically
+like using \texttt{GOTO} instead of \texttt{while} or \texttt{for} loops in
+imperative languages. \texttt{while} and \texttt{for} loops are meant to
+abstract over a common type of looping control flow, and provide a disciplined
+structure for them. They also are often much easier to read, because as soon as
+you see ``while'' or ``for'', it gives you a hint at programmer intent in ways
+that an explicit GOTO might not.
+
+Another major reason is to allow you to separate concerns. Writing
+\texttt{trieSumExplicit} forces you to think ``how to fold this entire trie''.
+Writing \texttt{trieSumAlg} allows us to just focus on ``how to fold \emph{this
+immediate} layer''. You only need to ever focus on the immediate layer you are
+trying to sum --- and never the entire trie. \texttt{cata} takes your ``how to
+fold this immediate layer'' function and turns it into a function that folds an
+entire trie, taking care of the recursive descent for you.
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\textbf{Aside}
+
+Before we move on, I just wanted to mention that \texttt{cata} is not a magic
+function. From the clues above, you might actually be able to implement it
+yourself. For our \texttt{Trie}, it's:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L104-L105}
+
+\OtherTok{cata' ::}\NormalTok{ (}\DataTypeTok{TrieF}\NormalTok{ k v a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Trie}\NormalTok{ k v }\OtherTok{->}\NormalTok{ a}
+\NormalTok{cata' alg }\FunctionTok{=}\NormalTok{ alg }\FunctionTok{.}\NormalTok{ fmap (cata' alg) }\FunctionTok{.}\NormalTok{ project}
+\end{Highlighting}
+\end{Shaded}
+
+First we
+\texttt{project\ ::\ Trie\ k\ v\ -\textgreater{}\ TrieF\ k\ v\ (Trie\ k\ v)}, to
+``de-recursive'' our type. Then we fmap our entire
+\texttt{cata\ alg\ ::\ Trie\ k\ v\ -\textgreater{}\ a}. Then we run the
+\texttt{alg\ ::\ TrieF\ k\ v\ a\ -\textgreater{}\ a} on the result. Basically,
+it's fmap-collapse-then-collapse.
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 \hypertarget{ana-montana}{%
 \subsection{Ana Montana}\label{ana-montana}}
