@@ -477,8 +477,8 @@ sub-lookuppers''.
 
 To do this, we can pattern match on the key we are looking up. If it's
 \texttt{{[}{]}}, then we just return the current leaf (if it exists). Otherwise,
-if it's \texttt{j:js}, we can \emph{run the lookupper of the subtrie at key
-\texttt{j}}.
+if it's \texttt{k:ks}, we can \emph{run the lookupper of the subtrie at key
+\texttt{k}}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -488,11 +488,11 @@ if it's \texttt{j:js}, we can \emph{run the lookupper of the subtrie at key
 \OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
     \OtherTok{=>} \DataTypeTok{TrieF}\NormalTok{ k v ([k] }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ v)}
     \OtherTok{->}\NormalTok{ ([k] }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ v)}
-\NormalTok{lookupperAlg (}\DataTypeTok{MkTF}\NormalTok{ v lookuppers) ks }\FunctionTok{=} \KeywordTok{case}\NormalTok{ ks }\KeywordTok{of}
+\NormalTok{lookupperAlg (}\DataTypeTok{MkTF}\NormalTok{ v lookuppers) }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
 \NormalTok{    []   }\OtherTok{->}\NormalTok{ v}
-\NormalTok{    j}\FunctionTok{:}\NormalTok{js }\OtherTok{->} \KeywordTok{case}\NormalTok{ M.lookup j lookuppers }\KeywordTok{of}
+\NormalTok{    k}\FunctionTok{:}\NormalTok{ks }\OtherTok{->} \KeywordTok{case}\NormalTok{ M.lookup k lookuppers }\KeywordTok{of}
       \DataTypeTok{Nothing}        \OtherTok{->} \DataTypeTok{Nothing}
-      \DataTypeTok{Just}\NormalTok{ lookupper }\OtherTok{->}\NormalTok{ lookupper js}
+      \DataTypeTok{Just}\NormalTok{ lookupper }\OtherTok{->}\NormalTok{ lookupper ks}
 
 \NormalTok{lookup}
 \OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
@@ -502,6 +502,9 @@ if it's \texttt{j:js}, we can \emph{run the lookupper of the subtrie at key
 \NormalTok{lookup ks t }\FunctionTok{=}\NormalTok{ cata lookupperAlg t ks}
 \end{Highlighting}
 \end{Shaded}
+
+(Written using the -XLambdaCase extension, allowing for
+\texttt{\textbackslash{}case} syntax)
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -517,6 +520,38 @@ if it's \texttt{j:js}, we can \emph{run the lookupper of the subtrie at key
 Note that because \texttt{Map}s have lazy keys by default, we only ever generate
 ``lookuppers'' for subtries under keys that we eventually descend on; any other
 subtries will be ignored (and no lookuppers are ever generated for them).
+
+In the end, this version has all of the same performance characteristics as the
+explicitly recursive one; we're assembling a ``lookupper'' that stops as soon as
+it sees either a failed lookup (so it doesn't cause any more evaluation later
+on), or stops when it reaches the end of its list.
+
+\hypertarget{i-think-the-system-works}{%
+\subsubsection{I Think the System Works}\label{i-think-the-system-works}}
+
+We've now written a couple of non-recursive functions to ``query''
+\texttt{Trie}. But what was the point, again? What do we gain over writing
+explicit versions to query Trie? Why couldn't we just write:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L96-L105}
+
+\NormalTok{lookupExplicit}
+\OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
+    \OtherTok{=>}\NormalTok{ [k]}
+    \OtherTok{->} \DataTypeTok{Trie}\NormalTok{ k v}
+    \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ v}
+\NormalTok{lookupExplicit }\FunctionTok{=}\NormalTok{ flip }\FunctionTok{$}\NormalTok{ \textbackslash{}(}\DataTypeTok{MkT}\NormalTok{ v subs) }\OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+\NormalTok{    []   }\OtherTok{->}\NormalTok{ v}
+\NormalTok{    k}\FunctionTok{:}\NormalTok{ks }\OtherTok{->} \KeywordTok{case}\NormalTok{ M.lookup k subs }\KeywordTok{of}
+      \DataTypeTok{Nothing}      \OtherTok{->} \DataTypeTok{Nothing}
+      \DataTypeTok{Just}\NormalTok{ subtrie }\OtherTok{->}\NormalTok{ lookupExplicit ks subtrie}
+\end{Highlighting}
+\end{Shaded}
+
+(I wrote this in a way to mirror the implementation of \texttt{lookuperAlg}
+above)
 
 \hypertarget{ana-montana}{%
 \subsection{Ana Montana}\label{ana-montana}}
@@ -569,7 +604,7 @@ An example here that fits will with the nature of a trie is to produce a
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L99-L103}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L110-L114}
 
 \OtherTok{mkSingletonCoalg ::}\NormalTok{ v }\OtherTok{->}\NormalTok{ ([k] }\OtherTok{->} \DataTypeTok{TrieF}\NormalTok{ k v [k])}
 \NormalTok{mkSingletonCoalg v }\FunctionTok{=}\NormalTok{ singletonCoalg}
@@ -606,7 +641,7 @@ So, we have \texttt{singleton}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L96-L97}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L107-L108}
 
 \OtherTok{singleton ::}\NormalTok{ [k] }\OtherTok{->}\NormalTok{ v }\OtherTok{->} \DataTypeTok{Trie}\NormalTok{ k v}
 \NormalTok{singleton k v }\FunctionTok{=}\NormalTok{ ana (mkSingletonCoalg v) k}
@@ -629,6 +664,37 @@ left, which happens if we return an empty map).
 \NormalTok{  ]}
 \end{Highlighting}
 \end{Shaded}
+
+\hypertarget{trie-from-map}{%
+\subsection{Trie from Map}\label{trie-from-map}}
+
+This
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{fromMapCoalg}
+\OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
+    \OtherTok{=>} \DataTypeTok{Map}\NormalTok{ [k] v}
+    \OtherTok{->} \DataTypeTok{TrieF}\NormalTok{ k v (}\DataTypeTok{Map}\NormalTok{ [k] v)}
+\NormalTok{fromMapCoalg }\FunctionTok{=}\NormalTok{ uncurry rebuild }\FunctionTok{.}\NormalTok{ M.foldMapWithKey splitOut}
+  \KeywordTok{where}
+\NormalTok{    rebuild  v      xs }\FunctionTok{=} \DataTypeTok{MkTF}\NormalTok{ (getFirst }\FunctionTok{<$>}\NormalTok{ v) (M.fromListWith M.union xs)}
+\NormalTok{    splitOut []     v  }\FunctionTok{=}\NormalTok{ (}\DataTypeTok{Just}\NormalTok{ (}\DataTypeTok{First}\NormalTok{ v), mempty                 )}
+\NormalTok{    splitOut (k}\FunctionTok{:}\NormalTok{ks) v  }\FunctionTok{=}\NormalTok{ (mempty        , [(k, M.singleton ks v)])}
+
+\NormalTok{fromMap}
+\OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
+    \OtherTok{=>} \DataTypeTok{Map}\NormalTok{ [k] v}
+    \OtherTok{->} \DataTypeTok{Trie}\NormalTok{ k v}
+\NormalTok{fromMap }\FunctionTok{=}\NormalTok{ ana fromMapCoalg}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{down-to-business}{%
+\section{Down to Business}\label{down-to-business}}
+
+So those are some examples to get our feet wet; now it's time to build our
+prequel meme trie!
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}

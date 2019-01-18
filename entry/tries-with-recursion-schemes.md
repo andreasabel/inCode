@@ -330,8 +330,8 @@ So, we are tasked with "how to implement a lookupper, given a map of
 sub-lookuppers".
 
 To do this, we can pattern match on the key we are looking up. If it's `[]`,
-then we just return the current leaf (if it exists). Otherwise, if it's `j:js`,
-we can *run the lookupper of the subtrie at key `j`*.
+then we just return the current leaf (if it exists). Otherwise, if it's `k:ks`,
+we can *run the lookupper of the subtrie at key `k`*.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L79-L94
@@ -340,11 +340,11 @@ lookupperAlg
     :: Ord k
     => TrieF k v ([k] -> Maybe v)
     -> ([k] -> Maybe v)
-lookupperAlg (MkTF v lookuppers) ks = case ks of
+lookupperAlg (MkTF v lookuppers) = \case
     []   -> v
-    j:js -> case M.lookup j lookuppers of
+    k:ks -> case M.lookup k lookuppers of
       Nothing        -> Nothing
-      Just lookupper -> lookupper js
+      Just lookupper -> lookupper ks
 
 lookup
     :: Ord k
@@ -353,6 +353,8 @@ lookup
     -> Maybe v
 lookup ks t = cata lookupperAlg t ks
 ```
+
+(Written using the -XLambdaCase extension, allowing for `\case` syntax)
 
 ``` {.haskell}
 ghci> lookup "to" testTrie
@@ -366,6 +368,34 @@ Nothing
 Note that because `Map`s have lazy keys by default, we only ever generate
 "lookuppers" for subtries under keys that we eventually descend on; any other
 subtries will be ignored (and no lookuppers are ever generated for them).
+
+In the end, this version has all of the same performance characteristics as the
+explicitly recursive one; we're assembling a "lookupper" that stops as soon as
+it sees either a failed lookup (so it doesn't cause any more evaluation later
+on), or stops when it reaches the end of its list.
+
+#### I Think the System Works
+
+We've now written a couple of non-recursive functions to "query" `Trie`. But
+what was the point, again? What do we gain over writing explicit versions to
+query Trie? Why couldn't we just write:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L96-L105
+
+lookupExplicit
+    :: Ord k
+    => [k]
+    -> Trie k v
+    -> Maybe v
+lookupExplicit = flip $ \(MkT v subs) -> \case
+    []   -> v
+    k:ks -> case M.lookup k subs of
+      Nothing      -> Nothing
+      Just subtrie -> lookupExplicit ks subtrie
+```
+
+(I wrote this in a way to mirror the implementation of `lookuperAlg` above)
 
 ### Ana Montana
 
@@ -411,7 +441,7 @@ An example here that fits will with the nature of a trie is to produce a
 "singleton trie": a trie that has only a single value at a single trie.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L99-L103
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L110-L114
 
 mkSingletonCoalg :: v -> ([k] -> TrieF k v [k])
 mkSingletonCoalg v = singletonCoalg
@@ -438,7 +468,7 @@ coalgebra) into an entire new sub-trie, with `ks` as its seed.
 So, we have `singleton`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L96-L97
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L107-L108
 
 singleton :: [k] -> v -> Trie k v
 singleton k v = ana (mkSingletonCoalg v) k
@@ -458,6 +488,34 @@ MkT Nothing $ M.fromList [
     )
   ]
 ```
+
+### Trie from Map
+
+This
+
+``` {.haskell}
+fromMapCoalg
+    :: Ord k
+    => Map [k] v
+    -> TrieF k v (Map [k] v)
+fromMapCoalg = uncurry rebuild . M.foldMapWithKey splitOut
+  where
+    rebuild  v      xs = MkTF (getFirst <$> v) (M.fromListWith M.union xs)
+    splitOut []     v  = (Just (First v), mempty                 )
+    splitOut (k:ks) v  = (mempty        , [(k, M.singleton ks v)])
+
+fromMap
+    :: Ord k
+    => Map [k] v
+    -> Trie k v
+fromMap = ana fromMapCoalg
+```
+
+Down to Business
+----------------
+
+So those are some examples to get our feet wet; now it's time to build our
+prequel meme trie!
 
 --------------------------------------------------------------------------------
 
