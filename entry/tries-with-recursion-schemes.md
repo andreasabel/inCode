@@ -68,7 +68,7 @@ We can represent this in Haskell by representing each layer as a `Map` of a
 token to the next "level" of the trie:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L32-L33
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L31-L32
 
 data Trie k v = MkT (Maybe v) (Map k (Trie k v))
   deriving Show
@@ -81,7 +81,7 @@ to each new layer.
 We could write the trie storing `(to, 9)`, `(ton, 3)`, and `(tax, 2)` as:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L48-L61
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L47-L60
 
 testTrie :: Trie Char Int
 testTrie = MkT Nothing $ M.fromList [
@@ -122,7 +122,7 @@ The trick is to replace the recursive occurrence of `Trie a` (in the `Cons`
 constructor) with a "placeholder" variable:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L35-L36
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L34-L35
 
 data TrieF k v x = MkTF (Maybe v) (Map k x)
   deriving (Functor, Show)
@@ -160,7 +160,7 @@ Linking them requires some boilerplate, which is basically converting back and
 forth from `Trie` to `TrieF`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L38-L46
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L37-L45
 
 type instance Base (Trie k v) = TrieF k v
 
@@ -250,7 +250,7 @@ Basically, our task is "How to find a count, given a map of sub-counts".
 With this in mind, we can write `countAlg`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L66-L71
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L65-L70
 
 countAlg :: TrieF k v Int -> Int
 countAlg (MkTF v subtrieCounts)
@@ -268,7 +268,7 @@ of the original subtries.
 Our final `count` is therefore just:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L63-L64
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L62-L63
 
 count :: Trie k v -> Int
 count = cata countAlg
@@ -282,7 +282,7 @@ ghci> count testTrie
 We can do something similar by writing a summer, as well:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L73-L77
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L72-L76
 
 trieSumAlg :: Num a => TrieF k a a -> a
 trieSumAlg (MkTF v subtrieSums) = fromMaybe 0 v + sum subtrieSums
@@ -334,7 +334,7 @@ then we just return the current leaf (if it exists). Otherwise, if it's `k:ks`,
 we can *run the lookupper of the subtrie at key `k`*.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L87-L102
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L86-L101
 
 lookupperAlg
     :: Ord k
@@ -381,7 +381,7 @@ what was the point, again? What do we gain over writing explicit versions to
 query Trie? Why couldn't we just write:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L79-L81
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L78-L80
 
 trieSumExplicit :: Num a => Trie k a -> a
 trieSumExplicit (MkT v subtries) =
@@ -391,7 +391,7 @@ trieSumExplicit (MkT v subtries) =
 instead of
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L83-L85
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L82-L84
 
 trieSumCata :: Num a => Trie k a -> a
 trieSumCata = cata $ \(MkTF v subtrieSums) ->
@@ -423,7 +423,7 @@ From the clues above, you might actually be able to implement it yourself. For
 our `Trie`, it's:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L104-L105
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L103-L104
 
 cata' :: (TrieF k v a -> a) -> Trie k v -> a
 cata' alg = alg . fmap (cata' alg) . project
@@ -479,7 +479,7 @@ An example here that fits will with the nature of a trie is to produce a
 "singleton trie": a trie that has only a single value at a single trie.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L110-L114
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L109-L113
 
 mkSingletonCoalg :: v -> ([k] -> TrieF k v [k])
 mkSingletonCoalg v = singletonCoalg
@@ -506,7 +506,7 @@ coalgebra) into an entire new sub-trie, with `ks` as its seed.
 So, we have `singleton`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L107-L108
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L106-L107
 
 singleton :: [k] -> v -> Trie k v
 singleton k v = ana (mkSingletonCoalg v) k
@@ -529,18 +529,69 @@ MkT Nothing $ M.fromList [
 
 ### Trie from Map
 
-This
+Now that we've got the basics, let's look at a more interesting anamorphism,
+where we leave multiple "seeds" along many different keys in the map, to
+generate many different subtries from our root.
+
+Let's write a function to generate a `Trie k v` from a `Map [k] v`: Given a map
+of keys (as token strings), generate a prefix trie containing every key-value
+pair in the map.
+
+This might sound complicated, but let's remember the philosophy and approach of
+writing an anamorphism: "How do I generate *one layer*"?
+
+Our `fromMapCoalg` will take a `Map [k] v` and generate `TrieF k v (Map [k] v)`:
+*one single layer* of our new Trie (in particular, the *top layer*). And the
+values in each of the resultant maps will be later then watered and expanded
+into their own fully mature subtries.
+
+So, how do we generate the *top layer* of a prefix trie from a map? Well,
+remember, to make a `TrieF k v (Map [k] v)`, we need a `Maybe v` (the value at
+this layer) and a `Map k (Map [k] v)` (the map of seeds that will each expand
+into full subtries).
+
+-   If the map contains `[]` (the empty string), then there *is a value* at this
+    layer. We will return `Just`.
+-   In the `Map k (Map [k] v)`, the value at key `k` will contain all of the
+    key-value pairs in the original map that *start with k*, not including the
+    `k`.
+
+For a concrete example, if we start with
+`M.fromList [("to", 9), ("ton", 3), ("tax", 2)]`, then we want `fromMapCoalg` to
+produce:
 
 ``` {.haskell}
+fromMap (M.fromList [("to", 9), ("ton", 3), ("tax", 2)])
+    = MkTF Nothing (
+          M.fromList [
+            ('t', M.fromList [
+                ("o" , 9)
+              , ("on", 3)
+              , ("ax", 2)
+              ]
+            )
+          ]
+        )
+```
+
+The value is `Nothing` because we don't have the empty string, and the map at
+`t` contains all of the original key-value pairs that began with `t`.
+
+Now that we have the concept, we can implement it using `Data.Map` combinators
+like `M.lookup`, `M.mapMaybeWithKey`, and `M.unionsWith M.union`:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L115-L129
+
 fromMapCoalg
     :: Ord k
     => Map [k] v
     -> TrieF k v (Map [k] v)
-fromMapCoalg = uncurry rebuild . M.foldMapWithKey splitOut
+fromMapCoalg mp = MkTF (M.lookup [] mp)
+                       (M.unionsWith M.union (M.mapMaybeWithKey descend mp))
   where
-    rebuild  v      xs = MkTF (getFirst <$> v) (M.fromListWith M.union xs)
-    splitOut []     v  = (Just (First v), mempty                 )
-    splitOut (k:ks) v  = (mempty        , [(k, M.singleton ks v)])
+    descend []     _ = Nothing
+    descend (k:ks) v = Just $ M.singleton k (M.singleton ks v)
 
 fromMap
     :: Ord k
