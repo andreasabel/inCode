@@ -974,6 +974,9 @@ Giving us our final result: ([full size here](/img/entries/trie/meme-trie.png))
 ![Our rendered dotfile, using
 graphviz](/img/entries/trie/meme-trie.png "Our final result")
 
+There are definitely some things we can tweak with respect to formatting and
+position and font sizes and label layouts, but I think this is fairly faithful!
+
 --------------------------------------------------------------------------------
 
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
