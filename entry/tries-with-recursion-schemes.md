@@ -903,23 +903,26 @@ We can write a quick parser and aggregator into a `Map [Char] Label`, where
 final image.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L186-L192
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L186-L195
 
 memeMap :: String -> Map String HTML.Label
 memeMap = M.fromList . map (uncurry processLine . span (/= ',')) . lines
   where
-    processLine qt (drop 1->img) = (filter (not . isSpace) qt, HTML.Table (HTML.HTable Nothing [] [r1,r2]))
+    processLine qt (drop 1->img) = (
+          filter (not . isSpace) qt
+        , HTML.Table (HTML.HTable Nothing [] [r1,r2])
+        )
       where
         r1 = HTML.Cells [HTML.LabelCell [] (HTML.Text [HTML.Str (T.pack qt)])]
         r2 = HTML.Cells [HTML.ImgCell   [] (HTML.Img [HTML.Src img])]
 ```
 
-A small utility function to clean up our final graph; it deletes nodes that only
-have one child and compacts them into the node above. It's just to "compress"
-together strings of nodes that don't have any forks.
+We can also write a small utility function to clean up our final graph; it
+deletes nodes that only have one child and compacts them into the node above.
+It's just to "compress" together strings of nodes that don't have any forks.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L212-L223
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L215-L226
 
 compactify
     :: Gr (Maybe v) k
@@ -935,14 +938,14 @@ compactify g0 = foldl' go (G.emap (:[]) g0) (G.labNodes g0)
       _               -> g
 ```
 
-We can directly output a compacted graph from `graphAlg`, but for the sake of
-this post it's a bit cleaner to separate out these concerns.
+We could have directly outputted a compacted graph from `graphAlg`, but for the
+sake of this post it's a bit cleaner to separate out these concerns.
 
 We'll write a function to turn a `Gr (Maybe v) [Char]` into a dot file, using
 *graphviz* to do most of the work:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L194-L205
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L197-L208
 
 graphDot
     :: GV.Labellable v
@@ -961,7 +964,7 @@ graphDot = GV.printIt . GV.graphToDot params
 And finally, to wrap it all together, the entire pipeline:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L207-L210
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L210-L213
 
 memeDot
     :: String

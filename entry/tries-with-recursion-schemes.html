@@ -407,17 +407,20 @@ I HAVE A BAD FEELING ABOUT THIS,img/ihabfat.jpg
 IT&#39;S TREASON THEN,img/itt.jpg
 IT&#39;S OUTRAGEOUS IT&#39;S UNFAIR,img/tioiu.jpg</code></pre>
 <p>We can write a quick parser and aggregator into a <code>Map [Char] Label</code>, where <code>Label</code> is from the <em>graphviz</em> library, a renderable object to display on the final image.</p>
-<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L186-L192</span></a>
+<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L186-L195</span></a>
 <a class="sourceLine" id="cb38-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb38-3" data-line-number="3"><span class="ot">memeMap ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Map</span> <span class="dt">String</span> <span class="dt">HTML.Label</span></a>
 <a class="sourceLine" id="cb38-4" data-line-number="4">memeMap <span class="fu">=</span> M.fromList <span class="fu">.</span> map (uncurry processLine <span class="fu">.</span> span (<span class="fu">/=</span> <span class="ch">&#39;,&#39;</span>)) <span class="fu">.</span> lines</a>
 <a class="sourceLine" id="cb38-5" data-line-number="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb38-6" data-line-number="6">    processLine qt (drop <span class="dv">1</span><span class="ot">-&gt;</span>img) <span class="fu">=</span> (filter (not <span class="fu">.</span> isSpace) qt, <span class="dt">HTML.Table</span> (<span class="dt">HTML.HTable</span> <span class="dt">Nothing</span> [] [r1,r2]))</a>
-<a class="sourceLine" id="cb38-7" data-line-number="7">      <span class="kw">where</span></a>
-<a class="sourceLine" id="cb38-8" data-line-number="8">        r1 <span class="fu">=</span> <span class="dt">HTML.Cells</span> [<span class="dt">HTML.LabelCell</span> [] (<span class="dt">HTML.Text</span> [<span class="dt">HTML.Str</span> (T.pack qt)])]</a>
-<a class="sourceLine" id="cb38-9" data-line-number="9">        r2 <span class="fu">=</span> <span class="dt">HTML.Cells</span> [<span class="dt">HTML.ImgCell</span>   [] (<span class="dt">HTML.Img</span> [<span class="dt">HTML.Src</span> img])]</a></code></pre></div>
-<p>A small utility function to clean up our final graph; it deletes nodes that only have one child and compacts them into the node above. It’s just to “compress” together strings of nodes that don’t have any forks.</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L212-L223</span></a>
+<a class="sourceLine" id="cb38-6" data-line-number="6">    processLine qt (drop <span class="dv">1</span><span class="ot">-&gt;</span>img) <span class="fu">=</span> (</a>
+<a class="sourceLine" id="cb38-7" data-line-number="7">          filter (not <span class="fu">.</span> isSpace) qt</a>
+<a class="sourceLine" id="cb38-8" data-line-number="8">        , <span class="dt">HTML.Table</span> (<span class="dt">HTML.HTable</span> <span class="dt">Nothing</span> [] [r1,r2])</a>
+<a class="sourceLine" id="cb38-9" data-line-number="9">        )</a>
+<a class="sourceLine" id="cb38-10" data-line-number="10">      <span class="kw">where</span></a>
+<a class="sourceLine" id="cb38-11" data-line-number="11">        r1 <span class="fu">=</span> <span class="dt">HTML.Cells</span> [<span class="dt">HTML.LabelCell</span> [] (<span class="dt">HTML.Text</span> [<span class="dt">HTML.Str</span> (T.pack qt)])]</a>
+<a class="sourceLine" id="cb38-12" data-line-number="12">        r2 <span class="fu">=</span> <span class="dt">HTML.Cells</span> [<span class="dt">HTML.ImgCell</span>   [] (<span class="dt">HTML.Img</span> [<span class="dt">HTML.Src</span> img])]</a></code></pre></div>
+<p>We can also write a small utility function to clean up our final graph; it deletes nodes that only have one child and compacts them into the node above. It’s just to “compress” together strings of nodes that don’t have any forks.</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L215-L226</span></a>
 <a class="sourceLine" id="cb39-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb39-3" data-line-number="3">compactify</a>
 <a class="sourceLine" id="cb39-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Gr</span> (<span class="dt">Maybe</span> v) k</a>
@@ -431,9 +434,9 @@ IT&#39;S OUTRAGEOUS IT&#39;S UNFAIR,img/tioiu.jpg</code></pre>
 <a class="sourceLine" id="cb39-12" data-line-number="12">                       <span class="fu">.</span> G.delEdges [(j,i),(i,k)]</a>
 <a class="sourceLine" id="cb39-13" data-line-number="13">                       <span class="fu">$</span> g</a>
 <a class="sourceLine" id="cb39-14" data-line-number="14">      _               <span class="ot">-&gt;</span> g</a></code></pre></div>
-<p>We can directly output a compacted graph from <code>graphAlg</code>, but for the sake of this post it’s a bit cleaner to separate out these concerns.</p>
+<p>We could have directly outputted a compacted graph from <code>graphAlg</code>, but for the sake of this post it’s a bit cleaner to separate out these concerns.</p>
 <p>We’ll write a function to turn a <code>Gr (Maybe v) [Char]</code> into a dot file, using <em>graphviz</em> to do most of the work:</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L194-L205</span></a>
+<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L197-L208</span></a>
 <a class="sourceLine" id="cb40-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb40-3" data-line-number="3">graphDot</a>
 <a class="sourceLine" id="cb40-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">GV.Labellable</span> v</a>
@@ -448,7 +451,7 @@ IT&#39;S OUTRAGEOUS IT&#39;S UNFAIR,img/tioiu.jpg</code></pre>
 <a class="sourceLine" id="cb40-13" data-line-number="13">      , fmtEdge <span class="fu">=</span> \(_,_,l) <span class="ot">-&gt;</span> [GV.toLabel (concat [<span class="st">&quot;[&quot;</span>, l, <span class="st">&quot;]&quot;</span>])]</a>
 <a class="sourceLine" id="cb40-14" data-line-number="14">      }</a></code></pre></div>
 <p>And finally, to wrap it all together, the entire pipeline:</p>
-<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L207-L210</span></a>
+<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L210-L213</span></a>
 <a class="sourceLine" id="cb41-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb41-3" data-line-number="3">memeDot</a>
 <a class="sourceLine" id="cb41-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">String</span></a>

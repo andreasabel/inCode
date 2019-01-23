@@ -1177,25 +1177,28 @@ We can write a quick parser and aggregator into a
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L186-L192}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L186-L195}
 
 \OtherTok{memeMap ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Map} \DataTypeTok{String} \DataTypeTok{HTML.Label}
 \NormalTok{memeMap }\FunctionTok{=}\NormalTok{ M.fromList }\FunctionTok{.}\NormalTok{ map (uncurry processLine }\FunctionTok{.}\NormalTok{ span (}\FunctionTok{/=} \CharTok{','}\NormalTok{)) }\FunctionTok{.}\NormalTok{ lines}
   \KeywordTok{where}
-\NormalTok{    processLine qt (drop }\DecValTok{1}\OtherTok{->}\NormalTok{img) }\FunctionTok{=}\NormalTok{ (filter (not }\FunctionTok{.}\NormalTok{ isSpace) qt, }\DataTypeTok{HTML.Table}\NormalTok{ (}\DataTypeTok{HTML.HTable} \DataTypeTok{Nothing}\NormalTok{ [] [r1,r2]))}
+\NormalTok{    processLine qt (drop }\DecValTok{1}\OtherTok{->}\NormalTok{img) }\FunctionTok{=}\NormalTok{ (}
+\NormalTok{          filter (not }\FunctionTok{.}\NormalTok{ isSpace) qt}
+\NormalTok{        , }\DataTypeTok{HTML.Table}\NormalTok{ (}\DataTypeTok{HTML.HTable} \DataTypeTok{Nothing}\NormalTok{ [] [r1,r2])}
+\NormalTok{        )}
       \KeywordTok{where}
 \NormalTok{        r1 }\FunctionTok{=} \DataTypeTok{HTML.Cells}\NormalTok{ [}\DataTypeTok{HTML.LabelCell}\NormalTok{ [] (}\DataTypeTok{HTML.Text}\NormalTok{ [}\DataTypeTok{HTML.Str}\NormalTok{ (T.pack qt)])]}
 \NormalTok{        r2 }\FunctionTok{=} \DataTypeTok{HTML.Cells}\NormalTok{ [}\DataTypeTok{HTML.ImgCell}\NormalTok{   [] (}\DataTypeTok{HTML.Img}\NormalTok{ [}\DataTypeTok{HTML.Src}\NormalTok{ img])]}
 \end{Highlighting}
 \end{Shaded}
 
-A small utility function to clean up our final graph; it deletes nodes that only
-have one child and compacts them into the node above. It's just to ``compress''
-together strings of nodes that don't have any forks.
+We can also write a small utility function to clean up our final graph; it
+deletes nodes that only have one child and compacts them into the node above.
+It's just to ``compress'' together strings of nodes that don't have any forks.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L212-L223}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L215-L226}
 
 \NormalTok{compactify}
 \OtherTok{    ::} \DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) k}
@@ -1212,15 +1215,15 @@ together strings of nodes that don't have any forks.
 \end{Highlighting}
 \end{Shaded}
 
-We can directly output a compacted graph from \texttt{graphAlg}, but for the
-sake of this post it's a bit cleaner to separate out these concerns.
+We could have directly outputted a compacted graph from \texttt{graphAlg}, but
+for the sake of this post it's a bit cleaner to separate out these concerns.
 
 We'll write a function to turn a \texttt{Gr\ (Maybe\ v)\ {[}Char{]}} into a dot
 file, using \emph{graphviz} to do most of the work:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L194-L205}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L197-L208}
 
 \NormalTok{graphDot}
 \OtherTok{    ::} \DataTypeTok{GV.Labellable}\NormalTok{ v}
@@ -1241,7 +1244,7 @@ And finally, to wrap it all together, the entire pipeline:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L207-L210}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L210-L213}
 
 \NormalTok{memeDot}
 \OtherTok{    ::} \DataTypeTok{String}
