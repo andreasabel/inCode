@@ -639,7 +639,8 @@ Down to Business
 So those are some examples to get our feet wet; now it's time to build our
 prequel meme trie!
 
-We're going to try to re-create this reference trie:
+We're going to try to re-create this reference trie: ([full size
+here](/img/entries/trie/reference-trie.png))
 
 ![Reference trie (credit to
 [u/Uninventive\_Username](https://www.reddit.com/r/PrequelMemes/comments/9w59t4/i_expanded_it/))](/img/entries/trie/reference-trie.png "Reference trie")
@@ -968,7 +969,7 @@ memeDot
 memeDot = graphDot . compactify . mapToGraph . memeMap
 ```
 
-Giving us our final result:
+Giving us our final result: ([full size here](/img/entries/trie/meme-trie.png))
 
 ![Our rendered dotfile, using
 graphviz](/img/entries/trie/meme-trie.png "Our final result")
