@@ -884,6 +884,18 @@ structure), *not* `Trie`. Being able to use `hylo` lets us see that the original
 recursive data type was nothing more than a distraction. Through it, we see the
 light.
 
+Our final map-to-graph function can therefore be expressed as:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L171-L175
+
+mapToGraph
+    :: Ord k
+    => Map [k] v
+    -> Gr (Maybe v) k
+mapToGraph = flip evalState 0 . hylo trieGraphAlg fromMapCoalg
+```
+
 ### The Full Package
 
 Now time to wrap things up. I made a text file storing all of the prequel quotes
@@ -922,7 +934,7 @@ deletes nodes that only have one child and compacts them into the node above.
 It's just to "compress" together strings of nodes that don't have any forks.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L215-L226
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L219-L230
 
 compactify
     :: Gr (Maybe v) k
@@ -964,12 +976,16 @@ graphDot = GV.printIt . GV.graphToDot params
 And finally, to wrap it all together, the entire pipeline:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L210-L213
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L210-L217
 
 memeDot
     :: String
     -> T.Text
-memeDot = graphDot . compactify . mapToGraph . memeMap
+memeDot = graphDot
+        . compactify
+        . flip evalState 0
+        . hylo trieGraphAlg fromMapCoalg
+        . memeMap
 ```
 
 Giving us our final result: ([full size here](/img/entries/trie/meme-trie.png))
@@ -978,7 +994,19 @@ Giving us our final result: ([full size here](/img/entries/trie/meme-trie.png))
 graphviz](/img/entries/trie/meme-trie.png "Our final result")
 
 There are definitely some things we can tweak with respect to formatting and
-position and font sizes and label layouts, but I think this is fairly faithful!
+position and font sizes and label layouts, but I think this is fairly faithful
+to the original structure!
+
+Digging Deeper
+--------------
+
+There's a lot more we can do with tries, and fleshing out a full interface
+allows us to explore a lot of other useful recursion schemes and combinators.
+
+Now that we've familiarized ourselves with a simple tangible example, we're now
+free to dive deep. Achieving hylomorphism helps us see past the recursive data
+type and directly into the underlying structure of what's going on. Let's see
+what other viewpoints *recursion-schemes* has to offer for us!
 
 --------------------------------------------------------------------------------
 

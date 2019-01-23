@@ -1154,6 +1154,20 @@ structure of \texttt{TrieF} (and its structure), \emph{not} \texttt{Trie}. Being
 able to use \texttt{hylo} lets us see that the original recursive data type was
 nothing more than a distraction. Through it, we see the light.
 
+Our final map-to-graph function can therefore be expressed as:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L171-L175}
+
+\NormalTok{mapToGraph}
+\OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
+    \OtherTok{=>} \DataTypeTok{Map}\NormalTok{ [k] v}
+    \OtherTok{->} \DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) k}
+\NormalTok{mapToGraph }\FunctionTok{=}\NormalTok{ flip evalState }\DecValTok{0} \FunctionTok{.}\NormalTok{ hylo trieGraphAlg fromMapCoalg}
+\end{Highlighting}
+\end{Shaded}
+
 \hypertarget{the-full-package}{%
 \subsection{The Full Package}\label{the-full-package}}
 
@@ -1198,7 +1212,7 @@ It's just to ``compress'' together strings of nodes that don't have any forks.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L215-L226}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L219-L230}
 
 \NormalTok{compactify}
 \OtherTok{    ::} \DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) k}
@@ -1244,12 +1258,16 @@ And finally, to wrap it all together, the entire pipeline:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L210-L213}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L210-L217}
 
 \NormalTok{memeDot}
 \OtherTok{    ::} \DataTypeTok{String}
     \OtherTok{->} \DataTypeTok{T.Text}
-\NormalTok{memeDot }\FunctionTok{=}\NormalTok{ graphDot }\FunctionTok{.}\NormalTok{ compactify }\FunctionTok{.}\NormalTok{ mapToGraph }\FunctionTok{.}\NormalTok{ memeMap}
+\NormalTok{memeDot }\FunctionTok{=}\NormalTok{ graphDot}
+        \FunctionTok{.}\NormalTok{ compactify}
+        \FunctionTok{.}\NormalTok{ flip evalState }\DecValTok{0}
+        \FunctionTok{.}\NormalTok{ hylo trieGraphAlg fromMapCoalg}
+        \FunctionTok{.}\NormalTok{ memeMap}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1263,7 +1281,19 @@ here})
 \end{figure}
 
 There are definitely some things we can tweak with respect to formatting and
-position and font sizes and label layouts, but I think this is fairly faithful!
+position and font sizes and label layouts, but I think this is fairly faithful
+to the original structure!
+
+\hypertarget{digging-deeper}{%
+\section{Digging Deeper}\label{digging-deeper}}
+
+There's a lot more we can do with tries, and fleshing out a full interface
+allows us to explore a lot of other useful recursion schemes and combinators.
+
+Now that we've familiarized ourselves with a simple tangible example, we're now
+free to dive deep. Achieving hylomorphism helps us see past the recursive data
+type and directly into the underlying structure of what's going on. Let's see
+what other viewpoints \emph{recursion-schemes} has to offer for us!
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
