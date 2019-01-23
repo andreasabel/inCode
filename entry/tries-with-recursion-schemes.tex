@@ -1147,7 +1147,8 @@ nothing more than a distraction. Through it, we see the light.
 \hypertarget{the-full-package}{%
 \subsection{The Full Package}\label{the-full-package}}
 
-Now time to wrap things up.
+Now time to wrap things up. I made a text file storing all of the prequel quotes
+in the original reference trie, along with images stored on my drive:
 
 \begin{verbatim}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/quotes.txt
@@ -1159,6 +1160,93 @@ I HAVE A BAD FEELING ABOUT THIS,img/ihabfat.jpg
 IT'S TREASON THEN,img/itt.jpg
 IT'S OUTRAGEOUS IT'S UNFAIR,img/tioiu.jpg
 \end{verbatim}
+
+We can write a quick parser and aggregator into a
+\texttt{Map\ {[}Char{]}\ Label}, where \texttt{Label} is from the
+\emph{graphviz} library, a renderable object to display on the final image.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L186-L192}
+
+\OtherTok{memeMap ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Map} \DataTypeTok{String} \DataTypeTok{HTML.Label}
+\NormalTok{memeMap }\FunctionTok{=}\NormalTok{ M.fromList }\FunctionTok{.}\NormalTok{ map (uncurry processLine }\FunctionTok{.}\NormalTok{ span (}\FunctionTok{/=} \CharTok{','}\NormalTok{)) }\FunctionTok{.}\NormalTok{ lines}
+  \KeywordTok{where}
+\NormalTok{    processLine qt (drop }\DecValTok{1}\OtherTok{->}\NormalTok{img) }\FunctionTok{=}\NormalTok{ (filter (not }\FunctionTok{.}\NormalTok{ isSpace) qt, }\DataTypeTok{HTML.Table}\NormalTok{ (}\DataTypeTok{HTML.HTable} \DataTypeTok{Nothing}\NormalTok{ [] [r1,r2]))}
+      \KeywordTok{where}
+\NormalTok{        r1 }\FunctionTok{=} \DataTypeTok{HTML.Cells}\NormalTok{ [}\DataTypeTok{HTML.LabelCell}\NormalTok{ [] (}\DataTypeTok{HTML.Text}\NormalTok{ [}\DataTypeTok{HTML.Str}\NormalTok{ (T.pack qt)])]}
+\NormalTok{        r2 }\FunctionTok{=} \DataTypeTok{HTML.Cells}\NormalTok{ [}\DataTypeTok{HTML.ImgCell}\NormalTok{   [] (}\DataTypeTok{HTML.Img}\NormalTok{ [}\DataTypeTok{HTML.Src}\NormalTok{ img])]}
+\end{Highlighting}
+\end{Shaded}
+
+A small utility function to clean up our final graph; it deletes nodes that only
+have one child and compacts them into the node above. It's just to ``compress''
+together strings of nodes that don't have any forks.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L212-L223}
+
+\NormalTok{compactify}
+\OtherTok{    ::} \DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) k}
+    \OtherTok{->} \DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) [k]}
+\NormalTok{compactify g0 }\FunctionTok{=}\NormalTok{ foldl' go (G.emap (}\FunctionTok{:}\NormalTok{[]) g0) (G.labNodes g0)}
+  \KeywordTok{where}
+\NormalTok{    go g (i, v) }\FunctionTok{=} \KeywordTok{case}\NormalTok{ (G.inn g i, G.out g i) }\KeywordTok{of}
+\NormalTok{      ([(j, _, lj)], [(_, k, lk)])}
+        \FunctionTok{|}\NormalTok{ isNothing v }\OtherTok{->}\NormalTok{ G.insEdge (j, k, lj }\FunctionTok{++}\NormalTok{ lk)}
+                       \FunctionTok{.}\NormalTok{ G.delNode i}
+                       \FunctionTok{.}\NormalTok{ G.delEdges [(j,i),(i,k)]}
+                       \FunctionTok{$}\NormalTok{ g}
+\NormalTok{      _               }\OtherTok{->}\NormalTok{ g}
+\end{Highlighting}
+\end{Shaded}
+
+We can directly output a compacted graph from \texttt{graphAlg}, but for the
+sake of this post it's a bit cleaner to separate out these concerns.
+
+We'll write a function to turn a \texttt{Gr\ (Maybe\ v)\ {[}Char{]}} into a dot
+file, using \emph{graphviz} to do most of the work:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L194-L205}
+
+\NormalTok{graphDot}
+\OtherTok{    ::} \DataTypeTok{GV.Labellable}\NormalTok{ v}
+    \OtherTok{=>} \DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) }\DataTypeTok{String}
+    \OtherTok{->} \DataTypeTok{T.Text}
+\NormalTok{graphDot }\FunctionTok{=}\NormalTok{ GV.printIt }\FunctionTok{.}\NormalTok{ GV.graphToDot params}
+  \KeywordTok{where}
+\NormalTok{    params }\FunctionTok{=}\NormalTok{ GV.nonClusteredParams}
+\NormalTok{      \{ fmtNode }\FunctionTok{=}\NormalTok{ \textbackslash{}(_,  l) }\OtherTok{->} \KeywordTok{case}\NormalTok{ l }\KeywordTok{of}
+          \DataTypeTok{Nothing} \OtherTok{->}\NormalTok{ [GV.shape }\DataTypeTok{GV.PointShape}\NormalTok{]}
+          \DataTypeTok{Just}\NormalTok{ l' }\OtherTok{->}\NormalTok{ [GV.toLabel l', GV.shape }\DataTypeTok{GV.PlainText}\NormalTok{]}
+\NormalTok{      , fmtEdge }\FunctionTok{=}\NormalTok{ \textbackslash{}(_,_,l) }\OtherTok{->}\NormalTok{ [GV.toLabel (concat [}\StringTok{"["}\NormalTok{, l, }\StringTok{"]"}\NormalTok{])]}
+\NormalTok{      \}}
+\end{Highlighting}
+\end{Shaded}
+
+And finally, to wrap it all together, the entire pipeline:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L207-L210}
+
+\NormalTok{memeDot}
+\OtherTok{    ::} \DataTypeTok{String}
+    \OtherTok{->} \DataTypeTok{T.Text}
+\NormalTok{memeDot }\FunctionTok{=}\NormalTok{ graphDot }\FunctionTok{.}\NormalTok{ compactify }\FunctionTok{.}\NormalTok{ mapToGraph }\FunctionTok{.}\NormalTok{ memeMap}
+\end{Highlighting}
+\end{Shaded}
+
+Giving us our final result:
+
+\begin{figure}
+\centering
+\includegraphics{/img/entries/trie/meme-trie.png}
+\caption{Our rendered dotfile, using graphviz}
+\end{figure}
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}

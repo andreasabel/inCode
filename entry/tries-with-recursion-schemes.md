@@ -880,7 +880,8 @@ light.
 
 ### The Full Package
 
-Now time to wrap things up.
+Now time to wrap things up. I made a text file storing all of the prequel quotes
+in the original reference trie, along with images stored on my drive:
 
     -- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/quotes.txt
 
@@ -890,6 +891,82 @@ Now time to wrap things up.
     I HAVE A BAD FEELING ABOUT THIS,img/ihabfat.jpg
     IT'S TREASON THEN,img/itt.jpg
     IT'S OUTRAGEOUS IT'S UNFAIR,img/tioiu.jpg
+
+We can write a quick parser and aggregator into a `Map [Char] Label`, where
+`Label` is from the *graphviz* library, a renderable object to display on the
+final image.
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L186-L192
+
+memeMap :: String -> Map String HTML.Label
+memeMap = M.fromList . map (uncurry processLine . span (/= ',')) . lines
+  where
+    processLine qt (drop 1->img) = (filter (not . isSpace) qt, HTML.Table (HTML.HTable Nothing [] [r1,r2]))
+      where
+        r1 = HTML.Cells [HTML.LabelCell [] (HTML.Text [HTML.Str (T.pack qt)])]
+        r2 = HTML.Cells [HTML.ImgCell   [] (HTML.Img [HTML.Src img])]
+```
+
+A small utility function to clean up our final graph; it deletes nodes that only
+have one child and compacts them into the node above. It's just to "compress"
+together strings of nodes that don't have any forks.
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L212-L223
+
+compactify
+    :: Gr (Maybe v) k
+    -> Gr (Maybe v) [k]
+compactify g0 = foldl' go (G.emap (:[]) g0) (G.labNodes g0)
+  where
+    go g (i, v) = case (G.inn g i, G.out g i) of
+      ([(j, _, lj)], [(_, k, lk)])
+        | isNothing v -> G.insEdge (j, k, lj ++ lk)
+                       . G.delNode i
+                       . G.delEdges [(j,i),(i,k)]
+                       $ g
+      _               -> g
+```
+
+We can directly output a compacted graph from `graphAlg`, but for the sake of
+this post it's a bit cleaner to separate out these concerns.
+
+We'll write a function to turn a `Gr (Maybe v) [Char]` into a dot file, using
+*graphviz* to do most of the work:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L194-L205
+
+graphDot
+    :: GV.Labellable v
+    => Gr (Maybe v) String
+    -> T.Text
+graphDot = GV.printIt . GV.graphToDot params
+  where
+    params = GV.nonClusteredParams
+      { fmtNode = \(_,  l) -> case l of
+          Nothing -> [GV.shape GV.PointShape]
+          Just l' -> [GV.toLabel l', GV.shape GV.PlainText]
+      , fmtEdge = \(_,_,l) -> [GV.toLabel (concat ["[", l, "]"])]
+      }
+```
+
+And finally, to wrap it all together, the entire pipeline:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L207-L210
+
+memeDot
+    :: String
+    -> T.Text
+memeDot = graphDot . compactify . mapToGraph . memeMap
+```
+
+Giving us our final result:
+
+![Our rendered dotfile, using
+graphviz](/img/entries/trie/meme-trie.png "Our final result")
 
 --------------------------------------------------------------------------------
 
