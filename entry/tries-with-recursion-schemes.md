@@ -639,6 +639,11 @@ Down to Business
 So those are some examples to get our feet wet; now it's time to build our
 prequel meme trie!
 
+We're going to try to re-create this reference trie:
+
+![Reference trie (credit to
+[u/Uninventive\_Username](https://www.reddit.com/r/PrequelMemes/comments/9w59t4/i_expanded_it/))](/img/entries/trie/meme-trie.png "Reference trie")
+
 To render our tree, we're going to be using the
 *[graphviz](https://hackage.haskell.org/package/graphviz)* library, which
 generates a *[DOT
