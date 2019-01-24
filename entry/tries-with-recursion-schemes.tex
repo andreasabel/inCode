@@ -114,24 +114,27 @@ those quotes.
 This inspired me to try playing around with some tries myself, and it gave me an
 excuse to play around with
 \emph{\href{https://hackage.haskell.org/package/recursion-schemes}{recursion-schemes}}
-(one of my favorite Haskell libraries). If you haven't heard about it yet,
-\emph{recursion-schemes} (and the similar library
-\emph{\href{https://hackage.haskell.org/package/data-fix}{data-fix}}) abstracts
-over common recursive functions written on recursive data types. It exploits the
-fact that a lot of recursive functions for different recursive data types all
-really follow the same pattern and gives us powerful tools for writing cleaner
-and safer code, and also for seeing our data types in a different light.
+(one of my favorite Haskell libraries). I love the \emph{recursion-schemes}. If
+you haven't heard about it yet, \emph{recursion-schemes} (and the similar
+library \emph{\href{https://hackage.haskell.org/package/data-fix}{data-fix}})
+abstracts over common recursive functions written on recursive data types. It
+exploits the fact that a lot of recursive functions for different recursive data
+types all really follow the same pattern and gives us powerful tools for writing
+cleaner and safer code, and also for seeing our data types in a different light.
+\emph{recursion-schemes} is a pathway to many viewpoints --- some considered to
+be particularly natural.
 
 Recursion schemes is a perfect example of those amazing accidents that happen
 throughout the Haskell ecosystem: an extremely ``theoretically beautiful''
 abstraction that also happens to be extremely useful for writing industrially
 rigorous code.
 
-As a fun intermediate-level Haskell project, let's build a trie data type in
-Haskell based on \emph{recursion-schemes} to see what it has to offer!
+Is it possible to learn this power? Yes! As a fun intermediate-level Haskell
+project, let's build a trie data type in Haskell based on
+\emph{recursion-schemes} to see what it has to offer!
 
-\hypertarget{trie}{%
-\section{Trie}\label{trie}}
+\hypertarget{its-trie-then}{%
+\section{It's Trie, Then}\label{its-trie-then}}
 
 A \href{https://en.wikipedia.org/wiki/Trie}{trie} (prefix tree) is a classic
 example of a simple yet powerful data type most people first encounter in
@@ -175,7 +178,7 @@ a token to the next layer of subtries.
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L30-L31}
 
-\KeywordTok{data} \DataTypeTok{Trie}\NormalTok{ k v }\FunctionTok{=} \DataTypeTok{MkT}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) (}\DataTypeTok{Map}\NormalTok{ k (}\DataTypeTok{Trie}\NormalTok{ k v))}
+\KeywordTok{data} \DataTypeTok{Trie}\NormalTok{  k v   }\FunctionTok{=} \DataTypeTok{MkT}\NormalTok{  (}\DataTypeTok{Maybe}\NormalTok{ v) (}\DataTypeTok{Map}\NormalTok{ k (}\DataTypeTok{Trie}\NormalTok{ k v))}
   \KeywordTok{deriving} \DataTypeTok{Show}
 \end{Highlighting}
 \end{Shaded}
@@ -236,10 +239,10 @@ The trick is to replace the recursive occurrence of \texttt{Trie\ a} (in the
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L30-L34}
 
-\KeywordTok{data} \DataTypeTok{Trie}\NormalTok{ k v }\FunctionTok{=} \DataTypeTok{MkT}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) (}\DataTypeTok{Map}\NormalTok{ k (}\DataTypeTok{Trie}\NormalTok{ k v))}
+\KeywordTok{data} \DataTypeTok{Trie}\NormalTok{  k v   }\FunctionTok{=} \DataTypeTok{MkT}\NormalTok{  (}\DataTypeTok{Maybe}\NormalTok{ v) (}\DataTypeTok{Map}\NormalTok{ k (}\DataTypeTok{Trie}\NormalTok{ k v))}
   \KeywordTok{deriving} \DataTypeTok{Show}
 
-\KeywordTok{data} \DataTypeTok{TrieF}\NormalTok{ k v x }\FunctionTok{=} \DataTypeTok{MkTF}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) (}\DataTypeTok{Map}\NormalTok{ k x)}
+\KeywordTok{data} \DataTypeTok{TrieF}\NormalTok{ k v x }\FunctionTok{=} \DataTypeTok{MkTF}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) (}\DataTypeTok{Map}\NormalTok{ k x         )}
   \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Functor}\NormalTok{, }\DataTypeTok{Show}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
@@ -249,16 +252,15 @@ contains all of the \emph{structure} of a single layer of a \texttt{Trie}: it
 contains all of the ``guts'' of what makes a trie a trie, \emph{except the
 recursion}. It allows us to work with a single layer of a trie, encapsulating
 the essential structure. Later on, we'll see that this means we sometimes don't
-even need the original (recursive) \texttt{Trie} at all, if we just care about
-the structure.
+even need the original (recursive) \texttt{Trie} at all, if all we just care
+about is the structure.
 
-For now, we'll use \texttt{TrieF} as a non-recursive ``view'' into a single
-layer of a \texttt{Trie}. We can do this because \emph{recursion-schemes} gives
-combinators (called ``recursion schemes'') to abstract over common explicit
-recursion patterns. The key to using \emph{recursion-schemes} is to recognize
-which combinators abstracts over the type of recursion you're using. You then
-give that combinator an algebra or a coalgebra (more on this later), and you're
-done!
+We'll use \texttt{TrieF} as a non-recursive ``view'' into a single layer of a
+\texttt{Trie}. We can do this because \emph{recursion-schemes} gives combinators
+(known as ``recursion schemes'') to abstract over common explicit recursion
+patterns. The key to using \emph{recursion-schemes} is to recognize which
+combinators abstracts over the type of recursion you're using. You then give
+that combinator an algebra or a coalgebra (more on this later), and you're done!
 
 Learning how to use \emph{recursion-schemes} effectively is basically picking
 the right recursion scheme that abstracts over the type of function you want to
@@ -269,8 +271,9 @@ one does the job in your situation.
 That's the high-level view --- let's dive into writing out the API of our
 \texttt{Trie}!
 
-\hypertarget{linking-the-base}{%
-\subsection{Linking the base}\label{linking-the-base}}
+\hypertarget{boilerplate-coarse-and-gets-everywhere}{%
+\subsection{Boilerplate: Coarse and Gets
+everywhere}\label{boilerplate-coarse-and-gets-everywhere}}
 
 One thing we need to do before we can start: we need to tell
 \emph{recursion-schemes} to link \texttt{TrieF} with \texttt{Trie}. In the
@@ -299,8 +302,10 @@ forth from \texttt{Trie} to \texttt{TrieF}.
 Basically we just link the constructors and fields of \texttt{MkT} and
 \texttt{MkTF} together.
 
-As with all boilerplate, it is sometimes useful to clean it up a bit using
-Template Haskell. The \emph{recursion-schemes} library offers such splice:
+Like adolescent Anikan Skywalker, we don't like boilerplate. It's coarse and
+rough and irritating, and it gets everywhere. As with all boilerplate, it is
+sometimes useful to clean it up a bit using Template Haskell. The
+\emph{recursion-schemes} library offers such splice:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -311,18 +316,20 @@ Template Haskell. The \emph{recursion-schemes} library offers such splice:
 \end{Highlighting}
 \end{Shaded}
 
-This will define \texttt{TrieF} with the \texttt{MkTF} constructor, the
-\texttt{Base} type family instance, and the \texttt{Recursive} and
-\texttt{Corecursive} instances (in possibly a more efficient way than the way we
-wrote by hand, too).
+This will define \texttt{TrieF} with the \texttt{MkTF} constructor, and not just
+the \texttt{Base} type family, but the \texttt{Recursive} and
+\texttt{Corecursive} instances, too. It might even be more efficient than our
+hand-written way.
 
-\hypertarget{exploring-the-zoo}{%
-\section{Exploring the Zoo}\label{exploring-the-zoo}}
+\hypertarget{humbly-making-our-way-across-the-universe}{%
+\section{Humbly making our way across the
+universe}\label{humbly-making-our-way-across-the-universe}}
 
-Time to explore the zoo a bit! This is where the fun begins.
+Time to explore the ``zoo'' of recursion schemes a bit! This is where the fun
+begins.
 
-Whenever you get a new recursive type and base functor, a good ``first thing''
-to try out is testing out \texttt{cata} and \texttt{ana} (catamorphisms and
+Whenever you get a new recursive type and base functor, a good first thing to
+try out is testing out \texttt{cata} and \texttt{ana} (catamorphisms and
 anamorphisms), the basic ``folder'' and ``unfolder''.
 
 \hypertarget{ill-try-folding-thats-a-good-trick}{%
@@ -349,7 +356,8 @@ how to fold up one layer of our \texttt{Trie\ k\ v} into our final result value
 (here, of type \texttt{A}). Remember that a \texttt{TrieF\ k\ v\ A} contains a
 \texttt{Maybe\ v} and a \texttt{Map\ k\ A}. The \texttt{A} we are given (as the
 values of the given map) are the results of folding up all of the original
-subtries along each key; it's the ``results so far''.
+subtries along each key; it's the ``results so far''. The leaves of the map
+become the very thing we swore to create.
 
 And then we can use \texttt{cata} to ``fold'' our value along the algebra:
 
@@ -365,7 +373,8 @@ another layer, running \texttt{myAlg} on those results, etc., until it reaches
 the top layer and runs \texttt{myAlg} again to produce the final result.
 
 For example, we'll write a catamorphism that counts how many values/leaves we
-have in our Trie into an \texttt{Int}.
+have in our trie as an \texttt{Int}. Since our result is an \texttt{Int}, we
+know we want an algebra returning an \texttt{Int}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -453,8 +462,8 @@ of the subtries. The algebra therefore just adds up all of the subtrie sums with
 the value at that layer. ``Given a map of sub-sums, how do we find a total
 sum?''
 
-\hypertarget{outside-in}{%
-\subsubsection{Outside-In}\label{outside-in}}
+\hypertarget{down-from-the-high-ground}{%
+\subsubsection{Down from the High Ground}\label{down-from-the-high-ground}}
 
 Catamorphisms are naturally ``inside-out'', or ``bottom-up''. However, some
 operations are more naturally ``outside-in'', or ``top-down''. One immediate
@@ -464,7 +473,9 @@ which is quintessentially ``top-down'': it first descends down the first item in
 the \texttt{{[}k{]}}, then the second, then the third, etc. until you reach the
 end, and return the \texttt{Maybe\ v} at that layer.
 
-In this case, it helps to invert control: instead of folding into a
+Is that\ldots{}legal?
+
+We can make it legal, in this case, by invert control: instead of folding into a
 \texttt{Maybe\ v} directly, fold into a ``looker upper'', a
 \texttt{{[}k{]}\ -\textgreater{}\ Maybe\ v}. We generate a ``lookup function''
 from the bottom-up, and then run that all in the end on the key we want to look
@@ -614,16 +625,16 @@ it's fmap-collapse-then-collapse.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
-\hypertarget{expanding-the-universe}{%
-\subsection{Expanding the Universe}\label{expanding-the-universe}}
+\hypertarget{generating-tries}{%
+\subsection{Generating Tries}\label{generating-tries}}
 
-\emph{Anamorphisms}, the dual of catamorphisms, are functions that ``generate''
-or ``unfold'' a value of a recursive type, layer-by-layer. If we want to write a
-function of type \texttt{A\ -\textgreater{}\ Trie\ k\ v}, we can reach first for
-an anamorphism.
+\emph{Anamorphisms}, the dual of catamorphisms, will make another fine addition
+to our collection. They are functions that ``generate'' or ``unfold'' a value of
+a recursive type, layer-by-layer. If we want to write a function of type
+\texttt{A\ -\textgreater{}\ Trie\ k\ v}, we can reach first for an anamorphism.
 
-Anamorphisms work by unfolding ``layer-by-layer'', from the outside-in (or
-top-down). We write one by defining ``how to generate the next layer''. This
+Anamorphisms work by unfolding ``layer-by-layer'', from the outside-in
+(top-down). We write one by defining ``how to generate the next layer''. This
 description comes in the form of a ``coalgebra'' (pronounced like
 ``co-algebra'', and not like coal energy ``coal-gebra''), in terms of the base
 functor:
@@ -651,12 +662,12 @@ And then we can use \texttt{ana} to ``unfold'' our value along the coalgebra:
 \end{Highlighting}
 \end{Shaded}
 
-\texttt{ana} starts from the an initial seed \texttt{A}, runs \texttt{myCoalg}
-on that, and then goes down a layer, running \texttt{myCoalg} on each value in
-the map to create new layers, etc., forever and ever. In practice, it usually
-stops when we return a \texttt{TrieF} with an empty map, since there are no more
-seeds to expand down. However, it's nice to remember we don't have to
-special-case this behavior: it arises naturally from the structure of maps.
+\texttt{ana} starts from an initial seed \texttt{A}, runs \texttt{myCoalg} on
+that, and then goes down a layer, running \texttt{myCoalg} on each value in the
+map to create new layers, etc., forever and ever. In practice, it usually stops
+when we return a \texttt{TrieF} with an empty map, since there are no more seeds
+to expand down. However, it's nice to remember we don't have to special-case
+this behavior: it arises naturally from the structure of maps.
 
 While I don't have a concrete ``universal'' example (like how we had
 \texttt{count} and \texttt{sum} for \texttt{cata}), the general idea is that if
@@ -731,11 +742,12 @@ left, which happens if we return an empty map).
 \end{Shaded}
 
 \hypertarget{a-pathway-to-many-subtries}{%
-\subsection{A Pathway to Many Subtries}\label{a-pathway-to-many-subtries}}
+\subsection{A pathway to many subtries}\label{a-pathway-to-many-subtries}}
 
 Now that we've got the basics, let's look at a more interesting anamorphism,
 where we leave multiple ``seeds'' along many different keys in the map, to
-generate many different subtries from our root.
+generate many different subtries from our root. Twice the seeds, double the
+subtries.
 
 Let's write a function to generate a \texttt{Trie\ k\ v} from a
 \texttt{Map\ {[}k{]}\ v}: Given a map of keys (as token strings), generate a
@@ -853,11 +865,12 @@ back into our recursive type.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
-\hypertarget{down-to-business}{%
-\section{Down to Business}\label{down-to-business}}
+\hypertarget{ive-been-looking-forward-to-this}{%
+\section{I've been looking forward to
+this}\label{ive-been-looking-forward-to-this}}
 
 So those are some examples to get our feet wet; now it's time to build our
-prequel meme trie!
+prequel meme trie! Yipee!
 
 We're going to try to re-create this reference trie:
 (\href{/img/entries/trie/reference-trie.png}{full size here})
@@ -904,8 +917,9 @@ libraries, so 2 and 3 are the interesting steps in our case. We actually already
 wrote 2 (in the previous section --- surprise!), so that just leaves 3 to
 investigate.
 
-\hypertarget{generating-the-graph}{%
-\subsection{Generating the Graph}\label{generating-the-graph}}
+\hypertarget{generating-graphs-is-our-speciality}{%
+\subsection{Generating Graphs is our
+speciality}\label{generating-graphs-is-our-speciality}}
 
 \emph{fgl} provides a two (interchangeable) graph types; for the sake of this
 article, we're going to be using \texttt{Gr} from the
@@ -942,8 +956,8 @@ fresh Node ID. \emph{fgl} has some nice tools for managing this, but we can have
 some fun by taking care of it ourselves using the so-called ``state monad'',
 \texttt{State\ Int}.
 
-Hylomorphisms We can use \texttt{State\ Int} as a way to generate ``fresh'' node
-ID's on-demand, with the action \texttt{fresh}:
+We can use \texttt{State\ Int} as a way to generate ``fresh'' node ID's
+on-demand, with the action \texttt{fresh}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1188,8 +1202,8 @@ Our final map-to-graph function can therefore be expressed as:
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{the-full-package}{%
-\subsection{The Full Package}\label{the-full-package}}
+\hypertarget{pack-your-things}{%
+\subsection{Pack your things}\label{pack-your-things}}
 
 To wrap things up, I made a text file storing all of the prequel quotes in the
 original reference trie along with images stored on my drive: (you can find a
@@ -1292,6 +1306,8 @@ And finally, we can write the entire pipeline:
 \end{Highlighting}
 \end{Shaded}
 
+Shorter than I expected!
+
 This gives us our final result: (\href{/img/entries/trie/meme-trie.png}{full
 size here})
 
@@ -1305,8 +1321,8 @@ There are definitely some things we can tweak with respect to formatting and
 position and font sizes and label layouts, but I think this is fairly faithful
 to the original structure!
 
-\hypertarget{digging-deeper}{%
-\section{Digging Deeper}\label{digging-deeper}}
+\hypertarget{another-happy-landing}{%
+\section{Another Happy Landing}\label{another-happy-landing}}
 
 There's a lot more we can do with tries, and fleshing out a full interface
 allows us to explore a lot of other useful recursion schemes and combinators.
