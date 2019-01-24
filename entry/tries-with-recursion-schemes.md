@@ -21,25 +21,23 @@ excuse to play around with
 common recursive functions written on recursive data types. It exploits the fact
 that a lot of recursive functions for different recursive data types all really
 follow the same pattern and gives us powerful tools for writing cleaner and
-safer code.
+safer code, and also for seeing our data types in a different light.
 
 Recursion schemes is a perfect example of those amazing accidents that happen
 throughout the Haskell ecosystem: an extremely "theoretically beautiful"
 abstraction that also happens to be extremely useful for writing industrially
 rigorous code.
 
-Tries are a common intermediate-level recursive data type, and recursion-schemes
-is a common intermediate-level library. So, as a fun intermediate-level Haskell
-project, let's build a trie data type in Haskell based on recursion-schemes, to
-see what it has to offer! The resulting data type will definitely not be a "toy"
---- it'll be something you can actually use to build meme diagrams of your own!
+As a fun intermediate-level Haskell project, let's build a trie data type in
+Haskell based on *recursion-schemes* to see what it has to offer!
 
 Trie
 ----
 
 A [trie](https://en.wikipedia.org/wiki/Trie) (prefix tree) is a classic example
-of a simple yet powerful data type most people encounter in school (I remember
-being introduced to it through a project implementing a boggle solver).
+of a simple yet powerful data type most people first encounter in college
+courses (I remember being introduced to it through a project implementing a
+boggle solver).
 
 Wikipedia has a nice picture:
 
@@ -49,23 +47,24 @@ Ints](/img/entries/trie/wiki-trie.png "An example Trie")
 API-wise, it is very similar to an *associative map*, like the `Map` type from
 *[containers](https://hackage.haskell.org/package/containers/docs/Data-Map-Lazy.html)*.
 It stores "keys" to "values", and you can insert a value at a given key, lookup
-the value stored at a given key, or delete the value at a given key.
+the value stored at a given key, or delete the value at a given key. However, it
+is designed to be easy to (iteratively) find keys matching a given *prefix*.
 
 The main difference is in implementation: the keys are *strings of tokens*, and
-it is internally represented as a tree: if your keys are words, then the first
-level is the first letter, the second level is the letter, etc. In the example
-above, the trie stores the keys `to`, `tea`, `ted`, `ten`, `A`, `i`, `in`, and
-`inn`, to the values 7, 3, 4, 12, 15, 11, 5, and 9, respectively. Note that it
-is possible for one key to completely overlap another (like `in` storing 5, and
-`inn` storing 9). In the usual case, however, we have partial overlaps (like
-`tea`, storing 3, and `ted` storing 4), whose common prefix (`te`) has no value
-stored under it.
+it is internally represented as a multi-level tree: if your keys are words, then
+the first level is the first letter, the second level is the letter, etc. In the
+example above, the trie stores the keys `to`, `tea`, `ted`, `ten`, `A`, `i`,
+`in`, and `inn`, to the values 7, 3, 4, 12, 15, 11, 5, and 9, respectively. Note
+that it is possible for one key to completely overlap another (like `in` storing
+5, and `inn` storing 9). We can also have partial overlaps (like `tea`, storing
+3, and `ted` storing 4), whose common prefix (`te`) has no value stored under
+it.
 
 Haskell Tries
 -------------
 
 We can represent this in Haskell by representing each layer as a `Map` of a
-token to the next "level" of the trie:
+token to the next layer of subtries.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L30-L31
@@ -99,42 +98,44 @@ testTrie = MkT Nothing $ M.fromList [
     ]
 ```
 
-Note that this implementation isn't particularly structurally sound, since it's
-possible to represent invalid keys that have branches that lead to nothing. This
-mostly becomes troublesome when we implement `delete`, but we won't be worrying
-about that for now. The nice thing about Haskell is that we can be as safe as we
-want or need, as a judgement call on a case-by-case basis. However, a
+Note that this construction isn't particularly sound, since it's possible to
+represent invalid keys that have branches that lead to nothing. This mostly
+becomes troublesome when we implement `delete`, but we won't be worrying about
+that for now. The nice thing about Haskell is that we can be as safe as we want
+or need, as a judgement call on a case-by-case basis. However, a
 "correct-by-construction" trie is in the next part of this series :)
 
 ### Recursion Schemes: An Elegant Weapon
 
-Now, `Trie` as written up there is an explicitly recursive data type. While this
-is common practice, it's not a particularly ideal situation. The problem with
+Now, `Trie` as written up there is an *explicitly recursive* data type. This is
+common practice, but it's not a particularly ideal situation. The problem with
 explicitly recursive data types is that to work with them, you often rely on
 explicitly recursive functions.
 
 Explicitly recursive functions are notoriously difficult to write, understand,
-and maintain. It's extremely easy to accidentally write an infinite loop, and is
-often called "the GOTO of functional programming".
+and maintain. It's extremely easy to accidentally write an infinite loop, and
+explicit recursion is often called "the GOTO of functional programming".
 
 So, there's a trick we can use to "factor out" the recursion in our data type.
 The trick is to replace the recursive occurrence of `Trie a` (in the `Cons`
 constructor) with a "placeholder" variable:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L33-L34
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L30-L34
+
+data Trie k v = MkT (Maybe v) (Map k (Trie k v))
+  deriving Show
 
 data TrieF k v x = MkTF (Maybe v) (Map k x)
   deriving (Functor, Show)
 ```
 
-`TrieF` now represents, essentially, "one layer" of a `Trie`.
-
-`TrieF` contains all of the *structure* of a single layer of a `Trie`: it
-contains all of the "guts" of what makes a trie a trie, *except the recursion*.
-It allows us to work with a single layer of a trie, encapsulating the essential
-structure. Later on, we'll see that this means we sometimes don't even need the
-original (recursive) `Trie` at all, if we just care about the structure.
+`TrieF` represents, essentially, "one layer" of a `Trie`. It contains all of the
+*structure* of a single layer of a `Trie`: it contains all of the "guts" of what
+makes a trie a trie, *except the recursion*. It allows us to work with a single
+layer of a trie, encapsulating the essential structure. Later on, we'll see that
+this means we sometimes don't even need the original (recursive) `Trie` at all,
+if we just care about the structure.
 
 For now, we'll use `TrieF` as a non-recursive "view" into a single layer of a
 `Trie`. We can do this because *recursion-schemes* gives combinators (called
@@ -782,8 +783,8 @@ trieGraphAlg (MkTF v xs) = do
     the actions, we can actually invert the node ordering.
 
 3.  Next, it's useful to collect all of the subroots, `subroots :: [(k, Int)]`.
-    These are all of the node id's of the roots of each of the subtrees, paired
-    with the token leading to that subtree.
+    These are all of the node id's of the roots of each of the subtries, paired
+    with the token leading to that subtrie.
 
 4.  Now to generate our result:
 
