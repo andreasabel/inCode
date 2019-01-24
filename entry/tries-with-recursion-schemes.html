@@ -62,8 +62,8 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <a class="sourceLine" id="cb3-3" data-line-number="3"><span class="kw">data</span> <span class="dt">TrieF</span> k v x <span class="fu">=</span> <span class="dt">MkTF</span> (<span class="dt">Maybe</span> v) (<span class="dt">Map</span> k x)</a>
 <a class="sourceLine" id="cb3-4" data-line-number="4">  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Show</span>)</a></code></pre></div>
 <p><code>TrieF</code> now represents, essentially, “one layer” of a <code>Trie</code>.</p>
-<p>There are now two paths we can go down: we can re-implement <code>Trie</code> in terms of <code>TrieF</code> (something that most tutorials and introductions do, using something like <code>Trie k v = Fix (TrieF k v)</code>), or we can think of <code>TrieF</code> as a “non-recursive view” into <code>Trie</code>. It’s a way of <em>working</em> with <code>Trie a</code> <em>as if</em> it were a non-recursive data type. Specifically, in our case, it’s a non-recursive view of a “single layer” of a <code>Trie</code>.</p>
-<p>We can do this because <em>recursion-schemes</em> gives combinators (called “recursion schemes”) to abstract over common explicit recursion patterns. The key to using <em>recursion-schemes</em> is to recognize which combinators abstracts over the type of recursion you’re using. You then give that combinator an algebra or a coalgebra (more on this later), and you’re done!</p>
+<p><code>TrieF</code> contains all of the <em>structure</em> of a single layer of a <code>Trie</code>: it contains all of the “guts” of what makes a trie a trie, <em>except the recursion</em>. It allows us to work with a single layer of a trie, encapsulating the essential structure. Later on, we’ll see that this means we sometimes don’t even need the original (recursive) <code>Trie</code> at all, if we just care about the structure.</p>
+<p>For now, we’ll use <code>TrieF</code> as a non-recursive “view” into a single layer of a <code>Trie</code>. We can do this because <em>recursion-schemes</em> gives combinators (called “recursion schemes”) to abstract over common explicit recursion patterns. The key to using <em>recursion-schemes</em> is to recognize which combinators abstracts over the type of recursion you’re using. You then give that combinator an algebra or a coalgebra (more on this later), and you’re done!</p>
 <p>Learning how to use <em>recursion-schemes</em> effectively is basically picking the right recursion scheme that abstracts over the type of function you want to write for your data type. It’s all about becoming familiar with the “zoo” of (colorfully named) recursion schemes you can pick from, and identifying which one does the job in your situation.</p>
 <p>That’s the high-level view — let’s dive into writing out the API of our <code>Trie</code>!</p>
 <h3 id="linking-the-base">Linking the base</h3>
@@ -90,7 +90,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <h2 id="exploring-the-zoo">Exploring the Zoo</h2>
 <p>Time to explore the zoo a bit! This is where the fun begins.</p>
 <p>Whenever you get a new recursive type and base functor, a good “first thing” to try out is testing out <code>cata</code> and <code>ana</code> (catamorphisms and anamorphisms), the basic “folder” and “unfolder”.</p>
-<h3 id="hakuna-my-cata">Hakuna My Cata</h3>
+<h3 id="ill-try-folding-thats-a-good-trick">I’ll try folding, that’s a good trick!</h3>
 <p>Catamorphisms are functions that “combine” or “fold” every layer of our recursive type into a single value. If we want to write a function of type <code>Trie k v -&gt; A</code>, we can reach first for a catamorphism.</p>
 <p>Catamorphisms work by folding layer-by-layer, from the bottom up. We can write one by defining “what to do with each layer”. This description comes in the form of an “algebra” in terms of the base functor:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">myAlg ::</span> <span class="dt">TrieF</span> k v <span class="dt">A</span> <span class="ot">-&gt;</span> <span class="dt">A</span></a></code></pre></div>
@@ -193,7 +193,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <a class="sourceLine" id="cb19-4" data-line-number="4">cata&#39; alg <span class="fu">=</span> alg <span class="fu">.</span> fmap (cata&#39; alg) <span class="fu">.</span> project</a></code></pre></div>
 <p>First we <code>project :: Trie k v -&gt; TrieF k v (Trie k v)</code>, to “de-recursive” our type. Then we fmap our entire <code>cata alg :: Trie k v -&gt; a</code>. Then we run the <code>alg :: TrieF k v a -&gt; a</code> on the result. Basically, it’s fmap-collapse-then-collapse.</p>
 </div>
-<h3 id="ana-montana">Ana Montana</h3>
+<h3 id="expanding-the-universe">Expanding the Universe</h3>
 <p><em>Anamorphisms</em>, the dual of catamorphisms, are functions that “generate” or “unfold” a value of a recursive type, layer-by-layer. If we want to write a function of type <code>A -&gt; Trie k v</code>, we can reach first for an anamorphism.</p>
 <p>Anamorphisms work by unfolding “layer-by-layer”, from the outside-in (or top-down). We write one by defining “how to generate the next layer”. This description comes in the form of a “coalgebra” (pronounced like “co-algebra”, and not like coal energy “coal-gebra”), in terms of the base functor:</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="ot">myCoalg ::</span> <span class="dt">A</span> <span class="ot">-&gt;</span> <span class="dt">TrieF</span> k v <span class="dt">A</span></a></code></pre></div>
@@ -229,7 +229,7 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <a class="sourceLine" id="cb24-5" data-line-number="5">      ]</a>
 <a class="sourceLine" id="cb24-6" data-line-number="6">    )</a>
 <a class="sourceLine" id="cb24-7" data-line-number="7">  ]</a></code></pre></div>
-<h3 id="trie-from-map">Trie from Map</h3>
+<h3 id="a-pathway-to-many-subtries">A Pathway to Many Subtries</h3>
 <p>Now that we’ve got the basics, let’s look at a more interesting anamorphism, where we leave multiple “seeds” along many different keys in the map, to generate many different subtries from our root.</p>
 <p>Let’s write a function to generate a <code>Trie k v</code> from a <code>Map [k] v</code>: Given a map of keys (as token strings), generate a prefix trie containing every key-value pair in the map.</p>
 <p>This might sound complicated, but let’s remember the philosophy and approach of writing an anamorphism: “How do I generate <em>one layer</em>”?</p>

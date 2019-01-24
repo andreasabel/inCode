@@ -244,19 +244,20 @@ The trick is to replace the recursive occurrence of \texttt{Trie\ a} (in the
 
 \texttt{TrieF} now represents, essentially, ``one layer'' of a \texttt{Trie}.
 
-There are now two paths we can go down: we can re-implement \texttt{Trie} in
-terms of \texttt{TrieF} (something that most tutorials and introductions do,
-using something like \texttt{Trie\ k\ v\ =\ Fix\ (TrieF\ k\ v)}), or we can
-think of \texttt{TrieF} as a ``non-recursive view'' into \texttt{Trie}. It's a
-way of \emph{working} with \texttt{Trie\ a} \emph{as if} it were a non-recursive
-data type. Specifically, in our case, it's a non-recursive view of a ``single
-layer'' of a \texttt{Trie}.
+\texttt{TrieF} contains all of the \emph{structure} of a single layer of a
+\texttt{Trie}: it contains all of the ``guts'' of what makes a trie a trie,
+\emph{except the recursion}. It allows us to work with a single layer of a trie,
+encapsulating the essential structure. Later on, we'll see that this means we
+sometimes don't even need the original (recursive) \texttt{Trie} at all, if we
+just care about the structure.
 
-We can do this because \emph{recursion-schemes} gives combinators (called
-``recursion schemes'') to abstract over common explicit recursion patterns. The
-key to using \emph{recursion-schemes} is to recognize which combinators
-abstracts over the type of recursion you're using. You then give that combinator
-an algebra or a coalgebra (more on this later), and you're done!
+For now, we'll use \texttt{TrieF} as a non-recursive ``view'' into a single
+layer of a \texttt{Trie}. We can do this because \emph{recursion-schemes} gives
+combinators (called ``recursion schemes'') to abstract over common explicit
+recursion patterns. The key to using \emph{recursion-schemes} is to recognize
+which combinators abstracts over the type of recursion you're using. You then
+give that combinator an algebra or a coalgebra (more on this later), and you're
+done!
 
 Learning how to use \emph{recursion-schemes} effectively is basically picking
 the right recursion scheme that abstracts over the type of function you want to
@@ -323,8 +324,9 @@ Whenever you get a new recursive type and base functor, a good ``first thing''
 to try out is testing out \texttt{cata} and \texttt{ana} (catamorphisms and
 anamorphisms), the basic ``folder'' and ``unfolder''.
 
-\hypertarget{hakuna-my-cata}{%
-\subsection{Hakuna My Cata}\label{hakuna-my-cata}}
+\hypertarget{ill-try-folding-thats-a-good-trick}{%
+\subsection{I'll try folding, that's a good
+trick!}\label{ill-try-folding-thats-a-good-trick}}
 
 Catamorphisms are functions that ``combine'' or ``fold'' every layer of our
 recursive type into a single value. If we want to write a function of type
@@ -605,8 +607,8 @@ it's fmap-collapse-then-collapse.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
-\hypertarget{ana-montana}{%
-\subsection{Ana Montana}\label{ana-montana}}
+\hypertarget{expanding-the-universe}{%
+\subsection{Expanding the Universe}\label{expanding-the-universe}}
 
 \emph{Anamorphisms}, the dual of catamorphisms, are functions that ``generate''
 or ``unfold'' a value of a recursive type, layer-by-layer. If we want to write a
@@ -721,8 +723,8 @@ left, which happens if we return an empty map).
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{trie-from-map}{%
-\subsection{Trie from Map}\label{trie-from-map}}
+\hypertarget{a-pathway-to-many-subtries}{%
+\subsection{A Pathway to Many Subtries}\label{a-pathway-to-many-subtries}}
 
 Now that we've got the basics, let's look at a more interesting anamorphism,
 where we leave multiple ``seeds'' along many different keys in the map, to
