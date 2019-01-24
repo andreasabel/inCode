@@ -346,9 +346,9 @@ If we think of \texttt{TrieF\ k\ v\ a} as ``one layer'' of a
 \texttt{Trie\ k\ v}, then \texttt{TrieF\ k\ v\ A\ -\textgreater{}\ A} describes
 how to fold up one layer of our \texttt{Trie\ k\ v} into our final result value
 (here, of type \texttt{A}). Remember that a \texttt{TrieF\ k\ v\ A} contains a
-\texttt{Maybe\ v} and a \texttt{Map\ k\ A}. The \texttt{A} (the values of the
-map) contains the result of folding up all of the original subtries along each
-key; it's the ``results so far''.
+\texttt{Maybe\ v} and a \texttt{Map\ k\ A}. The \texttt{A} we are given (as the
+values of the given map) are the results of folding up all of the original
+subtries along each key; it's the ``results so far''.
 
 And then we can use \texttt{cata} to ``fold'' our value along the algebra:
 
@@ -372,15 +372,20 @@ have in our Trie into an \texttt{Int}.
 \end{Highlighting}
 \end{Shaded}
 
-This is the basic structure of an algebra: our final result becomes the
-parameter of \texttt{TrieF\ k\ v}, and also the result of our algebra.
+This is the basic structure of an algebra: our final result type (\texttt{Int})
+becomes the parameter of \texttt{TrieF\ k\ v} (as \texttt{TrieF\ k\ v\ Int}),
+and also the result of our algebra.
 
 Remember that a \texttt{Trie\ k\ v} contains a \texttt{Maybe\ v} and a
 \texttt{Map\ k\ (Trie\ k\ v)}, and a \texttt{TrieF\ k\ v\ Int} contains a
-\texttt{Maybe\ v} and a \texttt{Map\ k\ Int}. The \texttt{Map}, here in
-\texttt{countAlg}, represents the count of the original subtries along each key.
+\texttt{Maybe\ v} and a \texttt{Map\ k\ Int}. In a \texttt{Trie\ k\ v}, the
+\texttt{Map} contains all of the subtries under each branch. For
+\texttt{countAlg}, in our \texttt{TrieF\ k\ v\ Int} we are given, the
+\texttt{Map} contains the \emph{ounts} of each of those original subtries under
+each branch.
 
-Basically, our task is ``How to find a count, given a map of sub-counts''.
+Basically, our task is ``Given a map of sub-counts, how do we find the total
+count?''
 
 With this in mind, we can write \texttt{countAlg}:
 
@@ -444,7 +449,8 @@ inside a trie:
 
 In the algebra, the \texttt{subtrieSums\ ::\ Map\ k\ a} contains the sum of all
 of the subtries. The algebra therefore just adds up all of the subtrie sums with
-the value at that layer. ``How to find a sum, given a map of sub-sums''.
+the value at that layer. ``Given a map of sub-sums, how do we find a total
+sum?''
 
 \hypertarget{outside-in}{%
 \subsubsection{Outside-In}\label{outside-in}}
@@ -453,9 +459,9 @@ Catamorphisms are naturally ``inside-out'', or ``bottom-up''. However, some
 operations are more naturally ``outside-in'', or ``top-down''. One immediate
 example is
 \texttt{lookup\ ::\ {[}k{]}\ -\textgreater{}\ Trie\ k\ v\ -\textgreater{}\ Maybe\ v},
-which is clearly ``top-down'': it first descends down the first item in the
-\texttt{{[}k{]}}, then the second, then the third, etc. until you reach the end,
-and return the \texttt{Maybe\ v} at that layer.
+which is quintessentially ``top-down'': it first descends down the first item in
+the \texttt{{[}k{]}}, then the second, then the third, etc. until you reach the
+end, and return the \texttt{Maybe\ v} at that layer.
 
 In this case, it helps to invert control: instead of folding into a
 \texttt{Maybe\ v} directly, fold into a ``looker upper'', a
@@ -652,9 +658,9 @@ seeds to expand down. However, it's nice to remember we don't have to
 special-case this behavior: it arises naturally from the structure of maps.
 
 While I don't have a concrete ``universal'' example (like how we had
-\texttt{count} and \texttt{sum} for `cata1), the general idea is that if you
-want to create a value by repeatedly ``expanding leaves'', an anamorphism is a
-perfect fit.
+\texttt{count} and \texttt{sum} for \texttt{cata}), the general idea is that if
+you want to create a value by repeatedly ``expanding leaves'', an anamorphism is
+a perfect fit.
 
 An example here that fits will with the nature of a trie is to produce a
 ``singleton trie'': a trie that has only a single value at a single trie.
@@ -673,8 +679,8 @@ An example here that fits will with the nature of a trie is to produce a
 
 Given a \texttt{v} value, we'll make a coalgebra
 \texttt{{[}k{]}\ -\textgreater{}\ TrieF\ k\ v\ {[}k{]}}. Our ``seed'' will be
-the \texttt{{[}k{]}} key we want to insert, and we'll generate our singleton key
-by making sub-maps with sub-keys.
+the \texttt{{[}k{]}} key (token string) we want to insert, and we'll generate
+our singleton key by making sub-maps with sub-keys.
 
 Our coalgebra (``layer generating function'') goes like this:
 
@@ -755,9 +761,9 @@ full subtries).
   If the map contains \texttt{{[}{]}} (the empty string), then there \emph{is a
   value} at this layer. We will return \texttt{Just}.
 \item
-  In the \texttt{Map\ k\ (Map\ {[}k{]}\ v)}, the value at key \texttt{k} will
-  contain all of the key-value pairs in the original map that \emph{start with
-  k}, not including the \texttt{k}.
+  In the \texttt{Map\ k\ (Map\ {[}k{]}\ v)}, the value at key \texttt{k} is a
+  \texttt{Map} containing all of the key-value pairs in the original map that
+  \emph{start with k}.
 \end{itemize}
 
 For a concrete example, if we start with
@@ -785,22 +791,23 @@ map at \texttt{t} contains all of the original key-value pairs that began with
 \texttt{t}.
 
 Now that we have the concept, we can implement it using \texttt{Data.Map}
-combinators like \texttt{M.lookup}, \texttt{M.mapMaybeWithKey}, and
-\texttt{M.unionsWith\ M.union}:
+combinators like \texttt{M.lookup}, \texttt{M.toList}, \texttt{M.fromListWith},
+and \texttt{M.union}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L114-L128}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L114-L129}
 
 \NormalTok{fromMapCoalg}
 \OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
     \OtherTok{=>} \DataTypeTok{Map}\NormalTok{ [k] v}
     \OtherTok{->} \DataTypeTok{TrieF}\NormalTok{ k v (}\DataTypeTok{Map}\NormalTok{ [k] v)}
 \NormalTok{fromMapCoalg mp }\FunctionTok{=} \DataTypeTok{MkTF}\NormalTok{ (M.lookup [] mp)}
-\NormalTok{                       (M.fromListWith M.union (M.foldMapWithKey descend mp))}
-  \KeywordTok{where}
-\NormalTok{    descend []     _ }\FunctionTok{=}\NormalTok{ []}
-\NormalTok{    descend (k}\FunctionTok{:}\NormalTok{ks) v }\FunctionTok{=}\NormalTok{ [(k, M.singleton ks v)]}
+\NormalTok{                       (M.fromListWith M.union}
+\NormalTok{                          [ (k   , M.singleton ks v)}
+                          \FunctionTok{|}\NormalTok{ (k}\FunctionTok{:}\NormalTok{ks, v) }\OtherTok{<-}\NormalTok{ M.toList mp}
+\NormalTok{                          ]}
+\NormalTok{                       )}
 
 \NormalTok{fromMap}
 \OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
@@ -815,12 +822,11 @@ And just like that, we have a way to turn a \texttt{Map\ {[}k{]}} into a
 layer}. \texttt{ana} extrapolates the rest!
 
 Again, we can ask what the point of this is: why couldn't we just write it
-directly recursively?
-
-The answers again are the same: first, to avoid potential bugs from explicit
-recursion. Second, to separate concerns: instead of thinking about how to
-generate an entire trie, we only need to be think about how to generate a single
-layer. \texttt{ana} reads our mind here, and extrapolates out the entire trie.
+directly recursively? The answers are the same as before: first, to avoid
+potential bugs from explicit recursion. Second, to separate concerns: instead of
+thinking about how to generate an entire trie, we only need to be think about
+how to generate a single layer. \texttt{ana} reads our mind here, and
+extrapolates out the entire trie.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
@@ -832,7 +838,7 @@ the coalgebra, and then fmaps re-expansion recursively.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L130-L131}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L131-L132}
 
 \OtherTok{ana' ::}\NormalTok{ (a }\OtherTok{->} \DataTypeTok{TrieF}\NormalTok{ k v a) }\OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Trie}\NormalTok{ k v}
 \NormalTok{ana' coalg }\FunctionTok{=}\NormalTok{ embed }\FunctionTok{.}\NormalTok{ fmap (ana' coalg) }\FunctionTok{.}\NormalTok{ coalg}
@@ -878,22 +884,24 @@ So, the roadmap seems straightforward:
 \def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
-  Load our prequel memes into a \texttt{Map\ String\ PrequelMeme}, a map of
-  quotes to their associated macro images
+  Load our prequel memes into a \texttt{Map\ String\ Label}, a map of quotes to
+  their associated macro images (as a \texttt{Label}, which the \emph{graphviz}
+  library can render)
 \item
-  Use \texttt{ana} to turn a \texttt{Map\ String\ PrequelMeme} into a
-  \texttt{Trie\ Char\ PrequelMeme}
+  Use \texttt{ana} to turn a \texttt{Map\ String\ Label} into a
+  \texttt{Trie\ Char\ Label}
 \item
-  Use \texttt{cata} to turn a \texttt{Trie\ Char\ PrequelMeme} into a graph of
-  nodes linked by letters, with prequel meme leaves
+  Use \texttt{cata} to turn a \texttt{Trie\ Char\ Label} into a graph of nodes
+  linked by letters, with prequel meme leaves
 \item
   Use the \emph{graphviz} library to turn that graph into a DOT file, to be
   rendered by the external graphviz application.
 \end{enumerate}
 
-1 and 4 are mainly fumbling around with IO and interfacing with libraries, so 2
-and 3 are the interesting steps in our case. We actually already wrote 2 (in the
-previous section --- surprise!), so that just leaves 3 to investigate.
+1 and 4 are mainly fumbling around with IO, parsing, and interfacing with
+libraries, so 2 and 3 are the interesting steps in our case. We actually already
+wrote 2 (in the previous section --- surprise!), so that just leaves 3 to
+investigate.
 
 \hypertarget{generating-the-graph}{%
 \subsection{Generating the Graph}\label{generating-the-graph}}
@@ -938,7 +946,7 @@ ID's on-demand, with the action \texttt{fresh}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L149-L150}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L134-L135}
 
 \OtherTok{fresh ::} \DataTypeTok{State} \DataTypeTok{Int} \DataTypeTok{Int}
 \NormalTok{fresh }\FunctionTok{=}\NormalTok{ state }\FunctionTok{$}\NormalTok{ \textbackslash{}i }\OtherTok{->}\NormalTok{ (i, i}\FunctionTok{+}\DecValTok{1}\NormalTok{)}
@@ -976,7 +984,7 @@ We can write this using \emph{fgl} combinators:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L157-L169}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L142-L154}
 
 \NormalTok{trieGraphAlg}
 \OtherTok{    ::}\NormalTok{ forall k v}\FunctionTok{.}\NormalTok{ ()}
@@ -1013,8 +1021,14 @@ We can write this using \emph{fgl} combinators:
 \end{Highlighting}
 \end{Shaded}
 
-  To turn a map of subgraph-producing actions into an action producing a map of
+  to turn a map of subgraph-producing actions into an action producing a map of
   subgraphs.
+
+  Note that this is made much simpler because of explicit state sequencing,
+  since it gives us the opportunity to choose what ``order'' we want to perform
+  our actions. Putting this after \texttt{fresh} ensures that the nodes in the
+  subtries all have larger ID's than the root node. If we swap the order of the
+  actions, we can actually invert the node ordering.
 \item
   Next, it's useful to collect all of the subroots,
   \texttt{subroots\ ::\ {[}(k,\ Int){]}}. These are all of the node id's of the
@@ -1042,7 +1056,7 @@ running the resulting \texttt{State\ Int\ (Gr\ (Maybe\ v)\ k)} action:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L152-L155}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L137-L140}
 
 \NormalTok{trieGraph}
 \OtherTok{    ::} \DataTypeTok{Trie}\NormalTok{ k v}
@@ -1074,16 +1088,17 @@ insight: our function takes a \texttt{Map\ {[}k{]}\ v}, and returns a
 the type signature. This means that, to, the external user, \texttt{Trie}'s role
 is completely ``internal''.
 
-In other words, \texttt{Trie} ``doesn't matter'' at all. We really want a
-\texttt{Map\ {[}k{]}\ v\ -\textgreater{}\ Graph\ (Maybe\ v)\ k}. We're using
-\texttt{Trie} as an \emph{intermediate data structure}. We are exploiting its
-structure to do write our full function, and we don't care about it outside of
-that. We build it up with \texttt{ana} and then immediately tear it down with
+In other words, \texttt{Trie} itself ``doesn't matter'' at all. We really want a
+\texttt{Map\ {[}k{]}\ v\ -\textgreater{}\ Graph\ (Maybe\ v)\ k}, and we're just
+using \texttt{Trie} as an \emph{intermediate data structure}. We are exploiting
+its structure to do write our full function, and we don't care about it outside
+of that. We build it up with \texttt{ana} and then immediately tear it down with
 \texttt{cata}, and it is completely invisible to the outside world.
 
 One neat thing about \emph{recursion-schemes} is that it lets us capture this
 ``the actual fixed-point is only intermediate and is not directly consequential
-to the outside world'' pattern. The logic goes like this:
+to the outside world'' pattern. First, we walk ourselves through the following
+reasoning steps:
 
 \begin{itemize}
 \tightlist
@@ -1091,19 +1106,20 @@ to the outside world'' pattern. The logic goes like this:
   We don't care about \texttt{Trie} itself as a result our input. We only care
   about it because we exploit its internal structure.
 \item
-  \texttt{TrieF} already expresses the internal structure of \texttt{Trie}
+  \texttt{TrieF} \emph{already} expresses the internal structure of
+  \texttt{Trie}
 \item
   Therefore, if we only want to take advantage of the structure (and not use
-  \texttt{Trie} as a direct input or output), we can use \texttt{TrieF}
-  \emph{only}, completely bypassing \texttt{Trie}.
+  \texttt{Trie} as a direct input or output), we really only ever need
+  \texttt{TrieF}. We can completely bypass \texttt{Trie}.
 \end{itemize}
 
-This \emph{should} make sense, because the only reason we use \texttt{Trie} is
-for its internal structure. But \texttt{TrieF} already captures the internal
-structure so we really only need to ever worry about \texttt{TrieF}. We don't
-actually care about the recursive data type --- we never did!
+This should make sense in our case, because the only reason we use \texttt{Trie}
+is for its internal structure. But \texttt{TrieF} already captures the internal
+structure --- thus, we really only need to ever worry about \texttt{TrieF}. We
+don't actually care about the recursive data type --- we never did!
 
-So, \emph{recursion-schemes} offers the \emph{hylomorphism}:
+So, \emph{recursion-schemes} offers the \emph{hylomorphism} recursion scheme:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1129,7 +1145,7 @@ immediately consume'' property:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L177-L184}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L162-L169}
 
 \NormalTok{hylo'}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{TrieF}\NormalTok{ k v b }\OtherTok{->}\NormalTok{ b)   }\CommentTok{-- ^ an algebra}
@@ -1142,25 +1158,26 @@ immediately consume'' property:
 \end{Highlighting}
 \end{Shaded}
 
-Note that the implementation of \texttt{hylo} works for any \texttt{Functor}
-instance: we build and consume along any \texttt{Functor}, taking advantage of
-the specific functor's structure.
+Note that the implementation of \texttt{hylo} given above works for any
+\texttt{Functor} instance: we build and consume along any \texttt{Functor},
+taking advantage of the specific functor's structure.
 
-To me, implementing a function in terms of \texttt{hylo} (or its cousin
-\texttt{chrono}, the chronomorphism) represents the ultimate ``victory'' in
-using \emph{recursion-schemes} to refactor out your recursive functions. That's
-because it helps us realize that we never really \emph{cared} about having a
-recursive data type. \texttt{Trie} was never the actual thing we wanted: we just
-wanted the layer-by-layer structure. This whole time, we just cared about the
-structure of \texttt{TrieF} (and its structure), \emph{not} \texttt{Trie}. Being
-able to use \texttt{hylo} lets us see that the original recursive data type was
-nothing more than a distraction. Through it, we see the light.
+To me, being able to implement a function in terms of \texttt{hylo} (or its
+cousin \texttt{chrono}, the chronomorphism) represents the ultimate ``victory''
+in using \emph{recursion-schemes} to refactor out your recursive functions.
+That's because it helps us realize that we never really \emph{cared} about
+having a recursive data type in the first place. \texttt{Trie} was never the
+actual thing we wanted: we just wanted its layer-by-layer structure. This whole
+time, we just cared about the structure of \texttt{TrieF}, \emph{not}
+\texttt{Trie}. Being able to use \texttt{hylo} lets us see that the original
+recursive data type was nothing more than a distraction. Through it, we see the
+light.
 
 Our final map-to-graph function can therefore be expressed as:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L171-L175}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L156-L160}
 
 \NormalTok{mapToGraph}
 \OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
@@ -1173,8 +1190,11 @@ Our final map-to-graph function can therefore be expressed as:
 \hypertarget{the-full-package}{%
 \subsection{The Full Package}\label{the-full-package}}
 
-Now time to wrap things up. I made a text file storing all of the prequel quotes
-in the original reference trie, along with images stored on my drive:
+To wrap things up, I made a text file storing all of the prequel quotes in the
+original reference trie along with images stored on my drive: (you can find a
+copy
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/trie/img}{online
+here})
 
 \begin{verbatim}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/quotes.txt
@@ -1188,12 +1208,12 @@ IT'S OUTRAGEOUS IT'S UNFAIR,img/tioiu.jpg
 \end{verbatim}
 
 We can write a quick parser and aggregator into a
-\texttt{Map\ {[}Char{]}\ Label}, where \texttt{Label} is from the
+\texttt{Map\ {[}Char{]}\ HTML.Label}, where \texttt{HTML.Label} is from the
 \emph{graphviz} library, a renderable object to display on the final image.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L186-L195}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L171-L180}
 
 \OtherTok{memeMap ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Map} \DataTypeTok{String} \DataTypeTok{HTML.Label}
 \NormalTok{memeMap }\FunctionTok{=}\NormalTok{ M.fromList }\FunctionTok{.}\NormalTok{ map (uncurry processLine }\FunctionTok{.}\NormalTok{ span (}\FunctionTok{/=} \CharTok{','}\NormalTok{)) }\FunctionTok{.}\NormalTok{ lines}
@@ -1214,7 +1234,7 @@ It's just to ``compress'' together strings of nodes that don't have any forks.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L219-L230}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L203-L213}
 
 \NormalTok{compactify}
 \OtherTok{    ::} \DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) k}
@@ -1224,8 +1244,7 @@ It's just to ``compress'' together strings of nodes that don't have any forks.
 \NormalTok{    go g (i, v) }\FunctionTok{=} \KeywordTok{case}\NormalTok{ (G.inn g i, G.out g i) }\KeywordTok{of}
 \NormalTok{      ([(j, _, lj)], [(_, k, lk)])}
         \FunctionTok{|}\NormalTok{ isNothing v }\OtherTok{->}\NormalTok{ G.insEdge (j, k, lj }\FunctionTok{++}\NormalTok{ lk)}
-                       \FunctionTok{.}\NormalTok{ G.delNode i}
-                       \FunctionTok{.}\NormalTok{ G.delEdges [(j,i),(i,k)]}
+                       \FunctionTok{.}\NormalTok{ G.delNode i }\FunctionTok{.}\NormalTok{ G.delEdges [(j,i),(i,k)]}
                        \FunctionTok{$}\NormalTok{ g}
 \NormalTok{      _               }\OtherTok{->}\NormalTok{ g}
 \end{Highlighting}
@@ -1234,16 +1253,15 @@ It's just to ``compress'' together strings of nodes that don't have any forks.
 We could have directly outputted a compacted graph from \texttt{graphAlg}, but
 for the sake of this post it's a bit cleaner to separate out these concerns.
 
-We'll write a function to turn a \texttt{Gr\ (Maybe\ v)\ {[}Char{]}} into a dot
-file, using \emph{graphviz} to do most of the work:
+We'll write a function to turn a \texttt{Gr\ (Maybe\ HTML.Label)\ {[}Char{]}}
+into a dot file, using \emph{graphviz} to do most of the work:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L197-L208}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L182-L192}
 
 \NormalTok{graphDot}
-\OtherTok{    ::} \DataTypeTok{GV.Labellable}\NormalTok{ v}
-    \OtherTok{=>} \DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) }\DataTypeTok{String}
+\OtherTok{    ::} \DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe} \DataTypeTok{HTML.Label}\NormalTok{) }\DataTypeTok{String}
     \OtherTok{->} \DataTypeTok{T.Text}
 \NormalTok{graphDot }\FunctionTok{=}\NormalTok{ GV.printIt }\FunctionTok{.}\NormalTok{ GV.graphToDot params}
   \KeywordTok{where}
@@ -1256,11 +1274,11 @@ file, using \emph{graphviz} to do most of the work:
 \end{Highlighting}
 \end{Shaded}
 
-And finally, to wrap it all together, the entire pipeline:
+And finally, we can write the entire pipeline:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L210-L217}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L194-L201}
 
 \NormalTok{memeDot}
 \OtherTok{    ::} \DataTypeTok{String}
@@ -1273,8 +1291,8 @@ And finally, to wrap it all together, the entire pipeline:
 \end{Highlighting}
 \end{Shaded}
 
-Giving us our final result: (\href{/img/entries/trie/meme-trie.png}{full size
-here})
+This gives us our final result: (\href{/img/entries/trie/meme-trie.png}{full
+size here})
 
 \begin{figure}
 \centering
@@ -1294,8 +1312,9 @@ allows us to explore a lot of other useful recursion schemes and combinators.
 
 Now that we've familiarized ourselves with a simple tangible example, we're now
 free to dive deep. Achieving hylomorphism helps us see past the recursive data
-type and directly into the underlying structure of what's going on. Let's see
-what other viewpoints \emph{recursion-schemes} has to offer for us!
+type and directly into the underlying structure of what's going on. In the next
+parts of the series, we'll find out what other viewpoints
+\emph{recursion-schemes} has to offer for us!
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
