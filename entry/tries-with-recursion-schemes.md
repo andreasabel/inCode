@@ -953,6 +953,8 @@ just cared about the structure of `TrieF`, *not* `Trie`. Being able to use
 `hylo` lets us see that the original recursive data type was nothing more than a
 distraction. Through it, we see the light.
 
+I call the experiencing of making this revelation "achieving hylomorphism".
+
 Our final map-to-graph function can therefore be expressed as:
 
 ``` {.haskell}
@@ -971,8 +973,6 @@ To wrap things up, I made a text file storing all of the prequel quotes in the
 original reference trie along with images stored on my drive: (you can find a
 them [online
 here](https://github.com/mstksg/inCode/tree/master/code-samples/trie/img))
-
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/quotes.txt
 
     I DON'T THINK SO,img/idts.jpg
     I DON'T THINK THE SYSTEM WORKS,img/idttsw.jpg
@@ -1077,9 +1077,11 @@ allows us to explore a lot of other useful recursion schemes and combinators.
 
 Now that we've familiarized ourselves with a simple tangible example, we're now
 free to dive deep. Achieving hylomorphism helps us see past the recursive data
-type and directly into the underlying structure of what's going on. In the next
-parts of the series, we'll find out what other viewpoints *recursion-schemes*
-has to offer for us!
+type and directly into the underlying structure of what's going on. And out of
+it, we got a pretty helpful meme trie we can show off to our friends.
+
+In the next parts of the series, we'll find out what other viewpoints
+*recursion-schemes* has to offer for us!
 
 --------------------------------------------------------------------------------
 
