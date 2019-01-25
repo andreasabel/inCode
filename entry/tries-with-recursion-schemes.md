@@ -692,7 +692,8 @@ anaNuTrie = MkNT
 also isomorphic to `Trie` (as seen by [this
 isomorphism](https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L152-L156)),
 so they are the same type. We can also use it to represent recursive data types
-in a non-recursive language (like \[dhall\]\[dada-nu\]).
+in a non-recursive language (like
+[dhall](https://github.com/sellout/dada/blob/master/Nu/Type)).
 :::
 
 I've been looking forward to this
@@ -1096,6 +1097,7 @@ If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 
-[^1]: Funny story, a [patricia tree](https://en.wikipedia.org/wiki/Radix_tree)
-    is actually itself a variation of a trie. In a sense, we are converting a
-    trie into a graph represented internally as a trie.
+[^1]: Funny story, a [patricia
+    tree](http://www.drdobbs.com/architecture-and-design/patricia-tries/208800854)
+    is actually itself a variation of trie. In a sense, we are converting a trie
+    into a graph represented internally as a trie.
