@@ -39,7 +39,7 @@ It's Trie, Then
 A [trie](https://en.wikipedia.org/wiki/Trie) (prefix tree) is a classic example
 of a simple yet powerful data type most people first encounter in college
 courses (I remember being introduced to it through a project implementing a
-boggle solver).
+boggle solver). The name comes from a pun on the word "re-*trie*-val".
 
 Wikipedia has a nice picture:
 
