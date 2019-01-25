@@ -1,5 +1,5 @@
-Prequel Meme Tries with Recursion Schemes
-=========================================
+Prequel Meme Prefix Tries with Recursion Schemes
+================================================
 
 > Originally posted by [Justin Le](https://blog.jle.im/) on January 25, 2019.
 > [Read online!](https://blog.jle.im/entry/tries-with-recursion-schemes.html)
