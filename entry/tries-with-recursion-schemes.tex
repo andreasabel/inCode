@@ -114,15 +114,15 @@ those quotes.
 This inspired me to try playing around with some tries myself, and it gave me an
 excuse to play around with
 \emph{\href{https://hackage.haskell.org/package/recursion-schemes}{recursion-schemes}}
-(one of my favorite Haskell libraries). I love the \emph{recursion-schemes}. If
-you haven't heard about it yet, \emph{recursion-schemes} (and the similar
-library \emph{\href{https://hackage.haskell.org/package/data-fix}{data-fix}})
-abstracts over common recursive functions written on recursive data types. It
-exploits the fact that a lot of recursive functions for different recursive data
-types all really follow the same pattern and gives us powerful tools for writing
-cleaner and safer code, and also for seeing our data types in a different light.
-\emph{recursion-schemes} is a pathway to many viewpoints --- some considered to
-be particularly natural.
+(one of my favorite Haskell libraries). If you haven't heard about it yet,
+\emph{recursion-schemes} (and the similar library
+\emph{\href{https://hackage.haskell.org/package/data-fix}{data-fix}}) abstracts
+over common recursive functions written on recursive data types. It exploits the
+fact that a lot of recursive functions for different recursive data types all
+really follow the same pattern and gives us powerful tools for writing cleaner
+and safer code, and also for seeing our data types in a different light. The
+library is a pathway to many viewpoints --- some considered to be particularly
+natural.
 
 Recursion schemes is a perfect example of those amazing accidents that happen
 throughout the Haskell ecosystem: an extremely ``theoretically beautiful''
@@ -155,17 +155,19 @@ type from
 It stores ``keys'' to ``values'', and you can insert a value at a given key,
 lookup the value stored at a given key, or delete the value at a given key.
 However, it is designed to be easy to (iteratively) find keys matching a given
-\emph{prefix}.
+\emph{prefix}. It's also really fast to check if a given key is \emph{not} in
+the trie, since it can return \texttt{False} as soon as a prefix is not found
+anywhere in the trie.
 
 The main difference is in implementation: the keys are \emph{strings of tokens},
 and it is internally represented as a multi-level tree: if your keys are words,
 then the first level is the first letter, the second level is the letter, etc.
 In the example above, the trie stores the keys \texttt{to}, \texttt{tea},
 \texttt{ted}, \texttt{ten}, \texttt{A}, \texttt{i}, \texttt{in}, and
-\texttt{inn}, to the values 7, 3, 4, 12, 15, 11, 5, and 9, respectively. Note
-that it is possible for one key to completely overlap another (like \texttt{in}
-storing 5, and \texttt{inn} storing 9). We can also have partial overlaps (like
-\texttt{tea}, storing 3, and \texttt{ted} storing 4), whose common prefix
+\texttt{inn} to the values 7, 3, 4, 12, 15, 11, 5, and 9, respectively. As we
+see, it is possible for one key to completely overlap another (like \texttt{in}
+storing 5, and \texttt{inn} storing 9). We can also have \emph{partial} overlaps
+(like \texttt{tea}, storing 3, and \texttt{ted} storing 4), whose common prefix
 (\texttt{te}) has no value stored under it.
 
 \hypertarget{haskell-tries}{%
@@ -176,7 +178,7 @@ a token to the next layer of subtries.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L30-L31}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L32-L33}
 
 \KeywordTok{data} \DataTypeTok{Trie}\NormalTok{  k v   }\FunctionTok{=} \DataTypeTok{MkT}\NormalTok{  (}\DataTypeTok{Maybe}\NormalTok{ v) (}\DataTypeTok{Map}\NormalTok{ k (}\DataTypeTok{Trie}\NormalTok{ k v))}
   \KeywordTok{deriving} \DataTypeTok{Show}
@@ -192,7 +194,7 @@ We could write the trie storing \texttt{(to,\ 9)}, \texttt{(ton,\ 3)}, and
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L46-L59}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L48-L61}
 
 \OtherTok{testTrie ::} \DataTypeTok{Trie} \DataTypeTok{Char} \DataTypeTok{Int}
 \NormalTok{testTrie }\FunctionTok{=} \DataTypeTok{MkT} \DataTypeTok{Nothing} \FunctionTok{$}\NormalTok{ M.fromList [}
@@ -214,9 +216,9 @@ We could write the trie storing \texttt{(to,\ 9)}, \texttt{(ton,\ 3)}, and
 Note that this construction isn't particularly sound, since it's possible to
 represent invalid keys that have branches that lead to nothing. This mostly
 becomes troublesome when we implement \texttt{delete}, but we won't be worrying
-about that for now. The nice thing about Haskell is that we can be as safe as we
-want or need, as a judgement call on a case-by-case basis. However, a
-``correct-by-construction'' trie is in the next part of this series :)
+about that for now. In Haskell, we have the choice to be as safe or unsafe as we
+want for a given situation. However, a ``correct-by-construction'' trie is in
+the next part of this series :)
 
 \hypertarget{recursion-schemes-an-elegant-weapon}{%
 \subsection{Recursion Schemes: An Elegant
@@ -231,13 +233,13 @@ Explicitly recursive functions are notoriously difficult to write, understand,
 and maintain. It's extremely easy to accidentally write an infinite loop, and
 explicit recursion is often called ``the GOTO of functional programming''.
 
-So, there's a trick we can use to ``factor out'' the recursion in our data type.
-The trick is to replace the recursive occurrence of \texttt{Trie\ a} (in the
-\texttt{Cons} constructor) with a ``placeholder'' variable:
+However, There's a trick we can use to ``factor out'' the recursion in our data
+type. The trick is to replace the recursive occurrence of \texttt{Trie\ a} (in
+the \texttt{Cons} constructor) with a ``placeholder'' variable:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L30-L34}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L32-L36}
 
 \KeywordTok{data} \DataTypeTok{Trie}\NormalTok{  k v   }\FunctionTok{=} \DataTypeTok{MkT}\NormalTok{  (}\DataTypeTok{Maybe}\NormalTok{ v) (}\DataTypeTok{Map}\NormalTok{ k (}\DataTypeTok{Trie}\NormalTok{ k v))}
   \KeywordTok{deriving} \DataTypeTok{Show}
@@ -258,22 +260,16 @@ about is the structure.
 We'll use \texttt{TrieF} as a non-recursive ``view'' into a single layer of a
 \texttt{Trie}. We can do this because \emph{recursion-schemes} gives combinators
 (known as ``recursion schemes'') to abstract over common explicit recursion
-patterns. The key to using \emph{recursion-schemes} is to recognize which
-combinators abstracts over the type of recursion you're using. You then give
-that combinator an algebra or a coalgebra (more on this later), and you're done!
-
-Learning how to use \emph{recursion-schemes} effectively is basically picking
-the right recursion scheme that abstracts over the type of function you want to
-write for your data type. It's all about becoming familiar with the ``zoo'' of
-(colorfully named) recursion schemes you can pick from, and identifying which
-one does the job in your situation.
+patterns. The key to using \emph{recursion-schemes} is recognizing which
+combinators abstracts over the type of recursion you're using. It's all about
+becoming familiar with the ``zoo'' of (colorfully named) recursion schemes you
+can pick from, and identifying which one does the job in your situation.
 
 That's the high-level view --- let's dive into writing out the API of our
 \texttt{Trie}!
 
-\hypertarget{boilerplate-coarse-and-gets-everywhere}{%
-\subsection{Boilerplate: coarse and gets
-everywhere}\label{boilerplate-coarse-and-gets-everywhere}}
+\hypertarget{coarse-boilerplate}{%
+\subsection{Coarse boilerplate}\label{coarse-boilerplate}}
 
 One thing we need to do before we can start: we need to tell
 \emph{recursion-schemes} to link \texttt{TrieF} with \texttt{Trie}. In the
@@ -285,7 +281,7 @@ forth from \texttt{Trie} to \texttt{TrieF}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L36-L44}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L38-L46}
 
 \KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Base}\NormalTok{ (}\DataTypeTok{Trie}\NormalTok{ k v) }\FunctionTok{=} \DataTypeTok{TrieF}\NormalTok{ k v}
 
@@ -302,10 +298,10 @@ forth from \texttt{Trie} to \texttt{TrieF}.
 Basically we just link the constructors and fields of \texttt{MkT} and
 \texttt{MkTF} together.
 
-Like adolescent Anikan Skywalker, we don't like boilerplate. It's coarse and
-rough and irritating, and it gets everywhere. As with all boilerplate, it is
-sometimes useful to clean it up a bit using Template Haskell. The
-\emph{recursion-schemes} library offers such splice:
+Like the adolescent Anakin Skywalker, we usually don't like boilerplate. It's
+coarse and rough and irritating, and it gets everywhere. As with all
+boilerplate, it is sometimes useful to clean it up a bit using Template Haskell.
+The \emph{recursion-schemes} library offers such splice:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -359,7 +355,7 @@ values of the given map) are the results of folding up all of the original
 subtries along each key; it's the ``results so far''. The leaves of the map
 become the very thing we swore to create.
 
-And then we can use \texttt{cata} to ``fold'' our value along the algebra:
+Then, we use \texttt{cata} to ``fold'' our value along the algebra:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -391,7 +387,7 @@ Remember that a \texttt{Trie\ k\ v} contains a \texttt{Maybe\ v} and a
 \texttt{Maybe\ v} and a \texttt{Map\ k\ Int}. In a \texttt{Trie\ k\ v}, the
 \texttt{Map} contains all of the subtries under each branch. For
 \texttt{countAlg}, in our \texttt{TrieF\ k\ v\ Int} we are given, the
-\texttt{Map} contains the \emph{ounts} of each of those original subtries under
+\texttt{Map} contains the \emph{counts} of each of those original subtries under
 each branch.
 
 Basically, our task is ``Given a map of sub-counts, how do we find the total
@@ -401,7 +397,7 @@ With this in mind, we can write \texttt{countAlg}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L64-L69}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L66-L71}
 
 \OtherTok{countAlg ::} \DataTypeTok{TrieF}\NormalTok{ k v }\DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Int}
 \NormalTok{countAlg (}\DataTypeTok{MkTF}\NormalTok{ v subtrieCounts)}
@@ -421,7 +417,7 @@ Our final \texttt{count} is, then:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L61-L62}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L63-L64}
 
 \OtherTok{count ::} \DataTypeTok{Trie}\NormalTok{ k v }\OtherTok{->} \DataTypeTok{Int}
 \NormalTok{count }\FunctionTok{=}\NormalTok{ cata countAlg}
@@ -440,7 +436,7 @@ inside a trie:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L71-L75}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L73-L77}
 
 \OtherTok{trieSumAlg ::} \DataTypeTok{Num}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{TrieF}\NormalTok{ k a a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{trieSumAlg (}\DataTypeTok{MkTF}\NormalTok{ v subtrieSums) }\FunctionTok{=}\NormalTok{ fromMaybe }\DecValTok{0}\NormalTok{ v }\FunctionTok{+}\NormalTok{ sum subtrieSums}
@@ -475,8 +471,8 @@ end, and return the \texttt{Maybe\ v} at that layer.
 
 Is that\ldots{}legal?
 
-We can make it legal, in this case, by invert control: instead of folding into a
-\texttt{Maybe\ v} directly, fold into a ``looker upper'', a
+In this case, we can make it legal by inverting control: instead of folding into
+a \texttt{Maybe\ v} directly, fold into a ``looker upper'', a
 \texttt{{[}k{]}\ -\textgreater{}\ Maybe\ v}. We generate a ``lookup function''
 from the bottom-up, and then run that all in the end on the key we want to look
 up.
@@ -507,7 +503,7 @@ if it's \texttt{k:ks}, we can \emph{run the lookupper of the subtrie at key
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L85-L100}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L87-L102}
 
 \NormalTok{lookupperAlg}
 \OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
@@ -561,7 +557,7 @@ explicit versions to query Trie? Why couldn't we just write:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L77-L79}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L79-L81}
 
 \OtherTok{trieSumExplicit ::} \DataTypeTok{Num}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Trie}\NormalTok{ k a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{trieSumExplicit (}\DataTypeTok{MkT}\NormalTok{ v subtries) }\FunctionTok{=}
@@ -573,7 +569,7 @@ instead of
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L81-L83}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L83-L85}
 
 \OtherTok{trieSumCata ::} \DataTypeTok{Num}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Trie}\NormalTok{ k a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{trieSumCata }\FunctionTok{=}\NormalTok{ cata }\FunctionTok{$}\NormalTok{ \textbackslash{}(}\DataTypeTok{MkTF}\NormalTok{ v subtrieSums) }\OtherTok{->}
@@ -609,7 +605,7 @@ yourself. For our \texttt{Trie}, it's:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L102-L103}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L104-L105}
 
 \OtherTok{cata' ::}\NormalTok{ (}\DataTypeTok{TrieF}\NormalTok{ k v a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Trie}\NormalTok{ k v }\OtherTok{->}\NormalTok{ a}
 \NormalTok{cata' alg }\FunctionTok{=}\NormalTok{ alg }\FunctionTok{.}\NormalTok{ fmap (cata' alg) }\FunctionTok{.}\NormalTok{ project}
@@ -622,6 +618,38 @@ First we
 \texttt{cata\ alg\ ::\ Trie\ k\ v\ -\textgreater{}\ a}. Then we run the
 \texttt{alg\ ::\ TrieF\ k\ v\ a\ -\textgreater{}\ a} on the result. Basically,
 it's fmap-collapse-then-collapse.
+
+It might be interesting to note that the implementation of
+\texttt{cata\textquotesingle{}} here requires explicit recursion. One of the
+purposes of using recursion schemes like \texttt{cata} is to avoid directly
+using recursion explicitly, and ``off-loading'' the recursion to one reusable
+function. So in a sense, it's ironic: \texttt{cata} can save other functions
+from explicit recursion, but not itself.
+
+Or, can it? The reason \texttt{cata\textquotesingle{}} is necessarily recursive
+here is that our \texttt{Trie} data type is recursive. However, we can actually
+encode \texttt{Trie} using an alternative representation, and it's possible to
+write \texttt{cata\textquotesingle{}} in a non-recursive way:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L107-L110}
+
+\KeywordTok{newtype} \DataTypeTok{MuTrie}\NormalTok{ k v }\FunctionTok{=} \DataTypeTok{MkMT}\NormalTok{ (forall a}\FunctionTok{.}\NormalTok{ (}\DataTypeTok{TrieF}\NormalTok{ k v a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ a)}
+
+\OtherTok{cataMuTrie ::}\NormalTok{ (}\DataTypeTok{TrieF}\NormalTok{ k v a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{MuTrie}\NormalTok{ k v }\OtherTok{->}\NormalTok{ a}
+\NormalTok{cataMuTrie alg (}\DataTypeTok{MkMT}\NormalTok{ f) }\FunctionTok{=}\NormalTok{ f alg}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{Trie\textquotesingle{}} is actually isomorphic to \texttt{Trie}, so
+they're the same type (it's actually
+\texttt{type\ MuTrie\ k\ v\ =\ Mu\ (TrieF\ k\ v)}, using \texttt{Mu} from
+\emph{recursion-schemes}). If you don't believe me,
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs\#L112-L116}{here's
+the isomorphism}. This is actually one way we can encode recursive types in a
+language that doesn't have any, like
+\href{https://github.com/sellout/dada/blob/master/Mu/Type}{dhall}.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
@@ -651,10 +679,10 @@ how to generate a new nested layer of our \texttt{Trie\ k\ v} from our initial
 ``seed'' (here, of type \texttt{A}). It tells us how to generate the next
 immediate layer. Remember that a \texttt{TrieF\ k\ v\ A} contains a
 \texttt{Maybe\ v} and a \texttt{Map\ k\ A}. The \texttt{A} (the values of the
-map) are then used to seed the \emph{new} subtries. The \texttt{A} is the
-``continue expanding with\ldots{}'' value.
+map) are then used to seed the \emph{new} subtries. The \texttt{A}s in the map
+are the ``continue expanding with\ldots{}'' values.
 
-And then we can use \texttt{ana} to ``unfold'' our value along the coalgebra:
+We can then use \texttt{ana} to ``unfold'' our value along the coalgebra:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -674,12 +702,13 @@ While I don't have a concrete ``universal'' example (like how we had
 you want to create a value by repeatedly ``expanding leaves'', an anamorphism is
 a perfect fit.
 
-An example here that fits will with the nature of a trie is to produce a
-``singleton trie'': a trie that has only a single value at a single trie.
+An example here that fits well with the nature of a trie is to produce a
+``singleton trie'': a trie that has only a single value at a single token string
+key.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L108-L112}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L121-L125}
 
 \OtherTok{mkSingletonCoalg ::}\NormalTok{ v }\OtherTok{->}\NormalTok{ ([k] }\OtherTok{->} \DataTypeTok{TrieF}\NormalTok{ k v [k])}
 \NormalTok{mkSingletonCoalg v }\FunctionTok{=}\NormalTok{ singletonCoalg}
@@ -717,7 +746,7 @@ So, we have \texttt{singleton}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L105-L106}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L118-L119}
 
 \OtherTok{singleton ::}\NormalTok{ [k] }\OtherTok{->}\NormalTok{ v }\OtherTok{->} \DataTypeTok{Trie}\NormalTok{ k v}
 \NormalTok{singleton k v }\FunctionTok{=}\NormalTok{ ana (mkSingletonCoalg v) k}
@@ -758,9 +787,8 @@ writing an anamorphism: ``How do I generate \emph{one layer}''?
 
 Our \texttt{fromMapCoalg} will take a \texttt{Map\ {[}k{]}\ v} and generate
 \texttt{TrieF\ k\ v\ (Map\ {[}k{]}\ v)}: \emph{one single layer} of our new Trie
-(in particular, the \emph{top layer}). And the values in each of the resultant
-maps will be later then watered and expanded into their own fully mature
-subtries.
+(in particular, the \emph{top layer}). The values in each of the resultant maps
+will be later then watered and expanded into their own fully mature subtries.
 
 So, how do we generate the \emph{top layer} of a prefix trie from a map? Well,
 remember, to make a \texttt{TrieF\ k\ v\ (Map\ {[}k{]}\ v)}, we need a
@@ -799,9 +827,9 @@ For a concrete example, if we start with
 \end{Highlighting}
 \end{Shaded}
 
-The value is \texttt{Nothing} because we don't have the empty string, and the
-map at \texttt{t} contains all of the original key-value pairs that began with
-\texttt{t}.
+The value is \texttt{Nothing} because we don't have the empty string (so there
+is no to-level value), and the map at \texttt{t} contains all of the original
+key-value pairs that began with \texttt{t}.
 
 Now that we have the concept, we can implement it using \texttt{Data.Map}
 combinators like \texttt{M.lookup}, \texttt{M.toList}, \texttt{M.fromListWith},
@@ -809,7 +837,7 @@ and \texttt{M.union}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L114-L129}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L127-L142}
 
 \NormalTok{fromMapCoalg}
 \OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
@@ -851,7 +879,7 @@ the coalgebra, and then fmaps re-expansion recursively.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L131-L132}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L144-L145}
 
 \OtherTok{ana' ::}\NormalTok{ (a }\OtherTok{->} \DataTypeTok{TrieF}\NormalTok{ k v a) }\OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Trie}\NormalTok{ k v}
 \NormalTok{ana' coalg }\FunctionTok{=}\NormalTok{ embed }\FunctionTok{.}\NormalTok{ fmap (ana' coalg) }\FunctionTok{.}\NormalTok{ coalg}
@@ -862,6 +890,29 @@ First, we run the \texttt{coalg\ ::\ a\ -\textgreater{}\ TrieF\ k\ v\ a}, then
 we fmap our entire \texttt{ana\ coalg\ ::\ a\ -\textgreater{}\ Trie\ k\ v}, then
 we \texttt{embed\ ::\ TrieF\ k\ v\ (Trie\ k\ v)\ -\textgreater{}\ Trie\ k\ v}
 back into our recursive type.
+
+And again, because \texttt{Trie} is a recursive data type, \texttt{ana} is also
+necessarily one. However, like for \texttt{cata}, we can represent \texttt{Trie}
+in a way that allows us to write \texttt{ana} in a non-recursive way:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L147-L150}
+
+\KeywordTok{data} \DataTypeTok{NuTrie}\NormalTok{ k v }\FunctionTok{=}\NormalTok{ forall a}\FunctionTok{.} \DataTypeTok{MkNT}\NormalTok{ (a }\OtherTok{->} \DataTypeTok{TrieF}\NormalTok{ k v a) a}
+
+\OtherTok{anaNuTrie ::}\NormalTok{ (a }\OtherTok{->} \DataTypeTok{TrieF}\NormalTok{ k v a) }\OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{NuTrie}\NormalTok{ k v }
+\NormalTok{anaNuTrie }\FunctionTok{=} \DataTypeTok{MkNT}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{NuTrie\ k\ v} here is \texttt{Nu\ (TrieF\ k\ v)}, from
+\emph{recursion-schemes}. \texttt{NuTrie} is also isomorphic to \texttt{Trie}
+(as seen by
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs\#L152-L156}{this
+isomorphism}), so they are the same type. We can also use it to represent
+recursive data types in a non-recursive language (like
+{[}dhall{]}{[}dada-nu{]}).
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
@@ -892,7 +943,7 @@ type from \emph{\href{https://hackage.haskell.org/package/fgl}{fgl}}, the
 functional graph library that is the de-facto fleshed-out graph manipulation
 library of the Haskell ecosystem.
 
-So, the roadmap seems straightforward:
+The roadmap seems straightforward:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -961,7 +1012,7 @@ on-demand, with the action \texttt{fresh}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L134-L135}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L158-L159}
 
 \OtherTok{fresh ::} \DataTypeTok{State} \DataTypeTok{Int} \DataTypeTok{Int}
 \NormalTok{fresh }\FunctionTok{=}\NormalTok{ state }\FunctionTok{$}\NormalTok{ \textbackslash{}i }\OtherTok{->}\NormalTok{ (i, i}\FunctionTok{+}\DecValTok{1}\NormalTok{)}
@@ -999,17 +1050,16 @@ We can write this using \emph{fgl} combinators:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L142-L154}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L166-L177}
 
 \NormalTok{trieGraphAlg}
-\OtherTok{    ::}\NormalTok{ forall k v}\FunctionTok{.}\NormalTok{ ()}
-    \OtherTok{=>} \DataTypeTok{TrieF}\NormalTok{ k v (}\DataTypeTok{State} \DataTypeTok{Int}\NormalTok{ (}\DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) k))}
+\OtherTok{    ::} \DataTypeTok{TrieF}\NormalTok{ k v (}\DataTypeTok{State} \DataTypeTok{Int}\NormalTok{ (}\DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) k))}
     \OtherTok{->} \DataTypeTok{State} \DataTypeTok{Int}\NormalTok{ (}\DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) k)}
 \NormalTok{trieGraphAlg (}\DataTypeTok{MkTF}\NormalTok{ v xs) }\FunctionTok{=} \KeywordTok{do}
 \NormalTok{    n         }\OtherTok{<-}\NormalTok{ fresh}
 \NormalTok{    subgraphs }\OtherTok{<-}\NormalTok{ sequence xs}
-    \KeywordTok{let}\OtherTok{ subroots ::}\NormalTok{ [(k, }\DataTypeTok{Int}\NormalTok{)]}
-\NormalTok{        subroots }\FunctionTok{=}\NormalTok{ M.toList }\FunctionTok{.}\NormalTok{ fmap (fst }\FunctionTok{.}\NormalTok{ G.nodeRange) }\FunctionTok{$}\NormalTok{ subgraphs}
+    \CommentTok{--  subbroots :: [(k, Int)]}
+    \KeywordTok{let}\NormalTok{ subroots }\FunctionTok{=}\NormalTok{ M.toList }\FunctionTok{.}\NormalTok{ fmap (fst }\FunctionTok{.}\NormalTok{ G.nodeRange) }\FunctionTok{$}\NormalTok{ subgraphs}
 \NormalTok{    pure }\FunctionTok{$}\NormalTok{ G.insEdges ((\textbackslash{}(k,i) }\OtherTok{->}\NormalTok{ (n,i,k)) }\FunctionTok{<$>}\NormalTok{ subroots)   }\CommentTok{-- insert root-to-subroots}
          \FunctionTok{.}\NormalTok{ G.insNode (n, v)                     }\CommentTok{-- insert new root}
          \FunctionTok{.}\NormalTok{ M.foldr (G.ufold (}\FunctionTok{G.&}\NormalTok{)) G.empty      }\CommentTok{-- merge all subgraphs}
@@ -1071,7 +1121,7 @@ running the resulting \texttt{State\ Int\ (Gr\ (Maybe\ v)\ k)} action:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L137-L140}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L161-L164}
 
 \NormalTok{trieGraph}
 \OtherTok{    ::} \DataTypeTok{Trie}\NormalTok{ k v}
@@ -1103,12 +1153,12 @@ insight: our function takes a \texttt{Map\ {[}k{]}\ v}, and returns a
 the type signature. This means that, to, the external user, \texttt{Trie}'s role
 is completely ``internal''.
 
-In other words, \texttt{Trie} itself ``doesn't matter'' at all. We really want a
-\texttt{Map\ {[}k{]}\ v\ -\textgreater{}\ Graph\ (Maybe\ v)\ k}, and we're just
-using \texttt{Trie} as an \emph{intermediate data structure}. We are exploiting
-its structure to do write our full function, and we don't care about it outside
-of that. We build it up with \texttt{ana} and then immediately tear it down with
-\texttt{cata}, and it is completely invisible to the outside world.
+In other words, \texttt{Trie} itself doesn't seem to matter at all. We really
+want a \texttt{Map\ {[}k{]}\ v\ -\textgreater{}\ Graph\ (Maybe\ v)\ k}, and
+we're just using \texttt{Trie} as an \emph{intermediate data structure}. We are
+exploiting its structure to do write our full function, and we don't care about
+it outside of that. We build it up with \texttt{ana} and then immediately tear
+it down with \texttt{cata}, and it is completely invisible to the outside world.
 
 One neat thing about \emph{recursion-schemes} is that it lets us capture this
 ``the actual fixed-point is only intermediate and is not directly consequential
@@ -1124,17 +1174,18 @@ reasoning steps:
   \texttt{TrieF} \emph{already} expresses the internal structure of
   \texttt{Trie}
 \item
-  Therefore, if we only want to take advantage of the structure (and not use
-  \texttt{Trie} as a direct input or output), we really only ever need
-  \texttt{TrieF}. We can completely bypass \texttt{Trie}.
+  Therefore, if we only want to take advantage of the structure, we really only
+  ever need \texttt{TrieF}. We can completely bypass \texttt{Trie}.
 \end{itemize}
 
 This should make sense in our case, because the only reason we use \texttt{Trie}
-is for its internal structure. But \texttt{TrieF} already captures the internal
-structure --- thus, we really only need to ever worry about \texttt{TrieF}. We
-don't actually care about the recursive data type --- we never did!
+is for its internal structure. But \texttt{TrieF} \emph{already} captures the
+internal structure --- thus, we really only need to ever worry about
+\texttt{TrieF}. We don't actually care about the recursive data type --- we
+never did!
 
-So, \emph{recursion-schemes} offers the \emph{hylomorphism} recursion scheme:
+In this spirit, \emph{recursion-schemes} offers the \emph{hylomorphism}
+recursion scheme:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1160,7 +1211,7 @@ immediately consume'' property:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L162-L169}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L185-L192}
 
 \NormalTok{hylo'}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{TrieF}\NormalTok{ k v b }\OtherTok{->}\NormalTok{ b)   }\CommentTok{-- ^ an algebra}
@@ -1174,16 +1225,16 @@ immediately consume'' property:
 \end{Shaded}
 
 Note that the implementation of \texttt{hylo} given above works for any
-\texttt{Functor} instance: we build and consume along any \texttt{Functor},
-taking advantage of the specific functor's structure.
+\texttt{Functor} instance: we build and consume along \emph{any}
+\texttt{Functor}, taking advantage of the specific functor's structure.
 
-To me, being able to implement a function in terms of \texttt{hylo} (or its
-cousin \texttt{chrono}, the chronomorphism) represents the ultimate ``victory''
-in using \emph{recursion-schemes} to refactor out your recursive functions.
-That's because it helps us realize that we never really \emph{cared} about
-having a recursive data type in the first place. \texttt{Trie} was never the
-actual thing we wanted: we just wanted its layer-by-layer structure. This whole
-time, we just cared about the structure of \texttt{TrieF}, \emph{not}
+To me, being able to implement a function in terms of \texttt{hylo} (or any
+other refolder, like its cousin \texttt{chrono}, the chronomorphism) represents
+the ultimate ``victory'' in using \emph{recursion-schemes} to refactor out your
+functions. That's because it helps us realize that we never really \emph{cared}
+about having a recursive data type in the first place. \texttt{Trie} was never
+the actual thing we wanted: we really just wanted its layer-by-layer structure.
+This whole time, we just cared about the structure of \texttt{TrieF}, \emph{not}
 \texttt{Trie}. Being able to use \texttt{hylo} lets us see that the original
 recursive data type was nothing more than a distraction. Through it, we see the
 light.
@@ -1192,7 +1243,7 @@ Our final map-to-graph function can therefore be expressed as:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L156-L160}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L179-L183}
 
 \NormalTok{mapToGraph}
 \OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
@@ -1207,7 +1258,7 @@ Our final map-to-graph function can therefore be expressed as:
 
 To wrap things up, I made a text file storing all of the prequel quotes in the
 original reference trie along with images stored on my drive: (you can find a
-copy
+them
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/trie/img}{online
 here})
 
@@ -1228,7 +1279,7 @@ We can write a quick parser and aggregator into a
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L171-L180}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L194-L203}
 
 \OtherTok{memeMap ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Map} \DataTypeTok{String} \DataTypeTok{HTML.Label}
 \NormalTok{memeMap }\FunctionTok{=}\NormalTok{ M.fromList }\FunctionTok{.}\NormalTok{ map (uncurry processLine }\FunctionTok{.}\NormalTok{ span (}\FunctionTok{/=} \CharTok{','}\NormalTok{)) }\FunctionTok{.}\NormalTok{ lines}
@@ -1249,7 +1300,7 @@ It's just to ``compress'' together strings of nodes that don't have any forks.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L203-L213}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L226-L236}
 
 \NormalTok{compactify}
 \OtherTok{    ::} \DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) k}
@@ -1273,7 +1324,7 @@ into a dot file, using \emph{graphviz} to do most of the work:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L182-L192}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L205-L215}
 
 \NormalTok{graphDot}
 \OtherTok{    ::} \DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe} \DataTypeTok{HTML.Label}\NormalTok{) }\DataTypeTok{String}
@@ -1293,7 +1344,7 @@ And finally, we can write the entire pipeline:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L194-L201}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L217-L224}
 
 \NormalTok{memeDot}
 \OtherTok{    ::} \DataTypeTok{String}
