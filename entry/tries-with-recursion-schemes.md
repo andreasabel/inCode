@@ -124,8 +124,8 @@ accidentally write an infinite loop, and explicit recursion is often called "the
 GOTO of functional programming".
 
 However, There's a trick we can use to "factor out" the recursion in our data
-type. The trick is to replace the recursive occurrence of `Trie a` (in the
-`Cons` constructor) with a "placeholder" variable:
+type. The trick is to replace the recursive occurrence of `Trie k v` (in the
+`Map` constructor) with a "placeholder" variable:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L32-L36
