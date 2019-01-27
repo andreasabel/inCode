@@ -123,7 +123,7 @@ notoriously difficult to write, understand, and maintain. It's extremely easy to
 accidentally write an infinite loop, and explicit recursion is often called "the
 GOTO of functional programming".
 
-However, There's a trick we can use to "factor out" the recursion in our data
+However, there's a trick we can use to "factor out" the recursion in our data
 type. The trick is to replace the recursive occurrence of `Trie k v` (in the
 `Map` constructor) with a "placeholder" variable:
 
@@ -890,11 +890,11 @@ our function takes a `Map [k] v`, and returns a `Gr (Maybe v) k`. Notice that
 external user, `Trie`'s role is completely internal.
 
 In other words, `Trie` *itself* doesn't seem to matter at all. We really want a
-`Map [k] v -> Graph (Maybe v) k`, and we're just using `Trie` as an
-*intermediate data structure*. We are exploiting its internal structure to write
-our full function, and we don't care about it outside of that. We build it up
-with `ana` and then immediately tear it down with `cata`, and it is completely
-invisible to the outside world.
+`Map [k] v -> Gr (Maybe v) k`, and we're just using `Trie` as an *intermediate
+data structure*. We are exploiting its internal structure to write our full
+function, and we don't care about it outside of that. We build it up with `ana`
+and then immediately tear it down with `cata`, and it is completely invisible to
+the outside world.
 
 One neat thing about *recursion-schemes* is that it lets us capture this "the
 actual fixed-point is only intermediate and is not directly consequential to the
