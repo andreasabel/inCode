@@ -1,5 +1,6 @@
 <!DOCTYPE HTML>
-<html><head><title>A Purely Functional Typed Approach to Trainable Models (Part 2) · in Code</title><meta name="description" content="Weblog of Justin Le, covering various adventures in programming and explorations in the vast worlds of computation physics, and knowledge."><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="flattr:id" content="3p9jqr"><meta property="og:site_name" content="in Code"><meta property="og:description" content="Welcome back! We’re going to be jumping right back into describing a vision of a purely functional typed approach to writing trainable models using differentiable programming. If you’re just joining us, be sure to check out Part 1 first! In the last post, we looked at models as “question and answer” systems. We described them as essentially being functions of type 
+<html><head><title>A Purely Functional Typed Approach to Trainable Models (Part 2) · in Code</title><meta name="description" content="Weblog of Justin Le, covering various adventures in programming and explorations in the worlds of computation physics, and knowledge.
+"><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="flattr:id" content="3p9jqr"><meta property="og:site_name" content="in Code"><meta property="og:description" content="Welcome back! We’re going to be jumping right back into describing a vision of a purely functional typed approach to writing trainable models using differentiable programming. If you’re just joining us, be sure to check out Part 1 first! In the last post, we looked at models as “question and answer” systems. We described them as essentially being functions of type 
 f : P \rightarrow (A \rightarrow B)
  Where, for f_p(x) = y, you have a “question” x : A and are looking for an “answer” y : B. Picking a different p : P will give a different A \rightarrow B function. We claimed that training a model was finding just the right p to use with the model to yield the right A \rightarrow B function that models your situation. We then noted that if you have a set of (a, b) observations, and your function is differentiable, you can find the gradient of p with respect to the error of your model on each observation, which tells you how to nudge a given p in order to reduce how wrong your model is for that observation. By repeatedly making observations and taking those nudges, you can arrive at a suitable p to model any situation. This is great if we consider a model as “question and answer”, but sometimes things don’t fit so cleanly. Today, we’re going to be looking at a whole different type of model (“time series” models) and see how they are different, but also how they are really the same."><meta property="og:type" content="article"><meta property="og:title" content="A Purely Functional Typed Approach to Trainable Models (Part 2)"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/purely-functional-typed-models-2.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/purely-functional-typed-models-2.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
 var disqus_shortname='incode';
@@ -113,90 +114,90 @@ f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
 <h2 id="functional-stateful-models">Functional Stateful Models</h2>
 <p>Alright, so what does this mean, and how does it help us?</p>
 <p>To help us see, let’s try implementing this in Haskell. Remember our previous <code>Model</code> type:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L52-L55</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">type</span> <span class="dt">Model</span> p a b <span class="fu">=</span> forall z<span class="fu">.</span> <span class="dt">Reifies</span> z <span class="dt">W</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">                <span class="ot">=&gt;</span> <span class="dt">BVar</span> z p</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">                <span class="ot">-&gt;</span> <span class="dt">BVar</span> z a</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">                <span class="ot">-&gt;</span> <span class="dt">BVar</span> z b</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L52-L55</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">type</span> <span class="dt">Model</span> p a b <span class="fu">=</span> <span class="kw">forall</span> z<span class="fu">.</span> <span class="dt">Reifies</span> z <span class="dt">W</span></a>
+<a class="sourceLine" id="cb1-4" title="4">                <span class="ot">=&gt;</span> <span class="dt">BVar</span> z p</a>
+<a class="sourceLine" id="cb1-5" title="5">                <span class="ot">-&gt;</span> <span class="dt">BVar</span> z a</a>
+<a class="sourceLine" id="cb1-6" title="6">                <span class="ot">-&gt;</span> <span class="dt">BVar</span> z b</a></code></pre></div>
 <p>which represented a differentiable <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f%20%3A%20%28P%20%5Ctimes%20A%29%20%5Crightarrow%20B" alt="f : (P \times A) \rightarrow B" title="f : (P \times A) \rightarrow B" />. We can directly translate this to a new <code>ModelS</code> type:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L157-L161</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">type</span> <span class="dt">ModelS</span> p s a b <span class="fu">=</span> forall z<span class="fu">.</span> <span class="dt">Reifies</span> z <span class="dt">W</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">                   <span class="ot">=&gt;</span> <span class="dt">BVar</span> z p</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">                   <span class="ot">-&gt;</span> <span class="dt">BVar</span> z a</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">                   <span class="ot">-&gt;</span> <span class="dt">BVar</span> z s</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">                   <span class="ot">-&gt;</span> (<span class="dt">BVar</span> z b, <span class="dt">BVar</span> z s)</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L157-L161</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">type</span> <span class="dt">ModelS</span> p s a b <span class="fu">=</span> <span class="kw">forall</span> z<span class="fu">.</span> <span class="dt">Reifies</span> z <span class="dt">W</span></a>
+<a class="sourceLine" id="cb2-4" title="4">                   <span class="ot">=&gt;</span> <span class="dt">BVar</span> z p</a>
+<a class="sourceLine" id="cb2-5" title="5">                   <span class="ot">-&gt;</span> <span class="dt">BVar</span> z a</a>
+<a class="sourceLine" id="cb2-6" title="6">                   <span class="ot">-&gt;</span> <span class="dt">BVar</span> z s</a>
+<a class="sourceLine" id="cb2-7" title="7">                   <span class="ot">-&gt;</span> (<span class="dt">BVar</span> z b, <span class="dt">BVar</span> z s)</a></code></pre></div>
 <p>which represents a differentiable <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f%20%3A%20%28P%20%5Ctimes%20A%20%5Ctimes%20S%29%20%5Crightarrow%20%28B%20%5Ctimes%20S%29" alt="f : (P \times A \times S) \rightarrow (B \times S)" title="f : (P \times A \times S) \rightarrow (B \times S)" />.</p>
 <p>We can implement AR(2) as mentioned before by translating the math formula directly:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L163-L165</span></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="ot">ar2 ::</span> <span class="dt">ModelS</span> (<span class="dt">Double</span> <span class="fu">:&amp;</span> (<span class="dt">Double</span> <span class="fu">:&amp;</span> <span class="dt">Double</span>)) <span class="dt">Double</span> <span class="dt">Double</span> <span class="dt">Double</span></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">ar2 (c <span class="fu">:&amp;&amp;</span> (φ1 <span class="fu">:&amp;&amp;</span> φ2)) yLast yLastLast <span class="fu">=</span></a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">    ( c <span class="fu">+</span> φ1 <span class="fu">*</span> yLast <span class="fu">+</span> φ2 <span class="fu">*</span> yLastLast, yLast )</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L163-L165</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="ot">ar2 ::</span> <span class="dt">ModelS</span> (<span class="dt">Double</span> <span class="fu">:&amp;</span> (<span class="dt">Double</span> <span class="fu">:&amp;</span> <span class="dt">Double</span>)) <span class="dt">Double</span> <span class="dt">Double</span> <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb3-4" title="4">ar2 (c <span class="fu">:&amp;&amp;</span> (φ1 <span class="fu">:&amp;&amp;</span> φ2)) yLast yLastLast <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    ( c <span class="fu">+</span> φ1 <span class="fu">*</span> yLast <span class="fu">+</span> φ2 <span class="fu">*</span> yLastLast, yLast )</a></code></pre></div>
 <p>Our implementation of a fully-connected recurrent neural network is a similar direct translation:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L167-L172</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">fcrnn</a>
-<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="ot">    ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)</a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> ((<span class="dt">L</span> o i <span class="fu">:&amp;</span> <span class="dt">L</span> o o) <span class="fu">:&amp;</span> <span class="dt">R</span> o) (<span class="dt">R</span> o) (<span class="dt">R</span> i) (<span class="dt">R</span> o)</a>
-<a class="sourceLine" id="cb4-6" data-line-number="6">fcrnn ((wX <span class="fu">:&amp;&amp;</span> wS) <span class="fu">:&amp;&amp;</span> b) x s <span class="fu">=</span> ( y, logistic y )</a>
-<a class="sourceLine" id="cb4-7" data-line-number="7">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb4-8" data-line-number="8">    y  <span class="fu">=</span> (wX <span class="fu">#&gt;</span> x) <span class="fu">+</span> (wS <span class="fu">#&gt;</span> s) <span class="fu">+</span> b</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L167-L172</span></a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3">fcrnn</a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="ot">    ::</span> (<span class="dt">KnownNat</span> i, <span class="dt">KnownNat</span> o)</a>
+<a class="sourceLine" id="cb4-5" title="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> ((<span class="dt">L</span> o i <span class="fu">:&amp;</span> <span class="dt">L</span> o o) <span class="fu">:&amp;</span> <span class="dt">R</span> o) (<span class="dt">R</span> o) (<span class="dt">R</span> i) (<span class="dt">R</span> o)</a>
+<a class="sourceLine" id="cb4-6" title="6">fcrnn ((wX <span class="fu">:&amp;&amp;</span> wS) <span class="fu">:&amp;&amp;</span> b) x s <span class="fu">=</span> ( y, logistic y )</a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-8" title="8">    y  <span class="fu">=</span> (wX <span class="fu">#&gt;</span> x) <span class="fu">+</span> (wS <span class="fu">#&gt;</span> s) <span class="fu">+</span> b</a></code></pre></div>
 <p>Because we again have normal functions, we can write a similar stateful model composition function that combines both their parameters and their states:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L174-L183</span></a>
-<a class="sourceLine" id="cb5-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">(<span class="fu">&lt;*~*</span>)</a>
-<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="ot">  ::</span> (<span class="dt">Backprop</span> p, <span class="dt">Backprop</span> q, <span class="dt">Backprop</span> s, <span class="dt">Backprop</span> t)</a>
-<a class="sourceLine" id="cb5-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span>  p        s       b c</a>
-<a class="sourceLine" id="cb5-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span>       q        t  a b</a>
-<a class="sourceLine" id="cb5-7" data-line-number="7">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> (p <span class="fu">:&amp;</span> q) (s <span class="fu">:&amp;</span> t) a c</a>
-<a class="sourceLine" id="cb5-8" data-line-number="8">(f <span class="fu">&lt;*~*</span> g) (p <span class="fu">:&amp;&amp;</span> q) x (s <span class="fu">:&amp;&amp;</span> t) <span class="fu">=</span> (z, s&#39; <span class="fu">:&amp;&amp;</span> t&#39;)</a>
-<a class="sourceLine" id="cb5-9" data-line-number="9">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb5-10" data-line-number="10">    (y, t&#39;) <span class="fu">=</span> g q x t</a>
-<a class="sourceLine" id="cb5-11" data-line-number="11">    (z, s&#39;) <span class="fu">=</span> f p y s</a>
-<a class="sourceLine" id="cb5-12" data-line-number="12"><span class="kw">infixr</span> <span class="dv">8</span> <span class="fu">&lt;*~*</span></a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L174-L183</span></a>
+<a class="sourceLine" id="cb5-2" title="2"></a>
+<a class="sourceLine" id="cb5-3" title="3">(<span class="fu">&lt;*~*</span>)</a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="ot">  ::</span> (<span class="dt">Backprop</span> p, <span class="dt">Backprop</span> q, <span class="dt">Backprop</span> s, <span class="dt">Backprop</span> t)</a>
+<a class="sourceLine" id="cb5-5" title="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span>  p        s       b c</a>
+<a class="sourceLine" id="cb5-6" title="6">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span>       q        t  a b</a>
+<a class="sourceLine" id="cb5-7" title="7">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> (p <span class="fu">:&amp;</span> q) (s <span class="fu">:&amp;</span> t) a c</a>
+<a class="sourceLine" id="cb5-8" title="8">(f <span class="fu">&lt;*~*</span> g) (p <span class="fu">:&amp;&amp;</span> q) x (s <span class="fu">:&amp;&amp;</span> t) <span class="fu">=</span> (z, s&#39; <span class="fu">:&amp;&amp;</span> t&#39;)</a>
+<a class="sourceLine" id="cb5-9" title="9">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-10" title="10">    (y, t&#39;) <span class="fu">=</span> g q x t</a>
+<a class="sourceLine" id="cb5-11" title="11">    (z, s&#39;) <span class="fu">=</span> f p y s</a>
+<a class="sourceLine" id="cb5-12" title="12"><span class="kw">infixr</span> <span class="dv">8</span> <span class="fu">&lt;*~*</span></a></code></pre></div>
 <p>(Here we use our handy <code>(:&amp;&amp;)</code> pattern to construct a tuple, taking a <code>BVar z a</code> and a <code>BVar z b</code> and returning a <code>BVar z (a :&amp; b)</code>)</p>
 <p>And maybe even a utility function to map a function on the result of a <code>ModelS</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L185-L189</span></a>
-<a class="sourceLine" id="cb6-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb6-3" data-line-number="3">mapS</a>
-<a class="sourceLine" id="cb6-4" data-line-number="4"><span class="ot">    ::</span> (forall z<span class="fu">.</span> <span class="dt">Reifies</span> z <span class="dt">W</span> <span class="ot">=&gt;</span> <span class="dt">BVar</span> z b <span class="ot">-&gt;</span> <span class="dt">BVar</span> z c)</a>
-<a class="sourceLine" id="cb6-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> p s a b</a>
-<a class="sourceLine" id="cb6-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> p s a c</a>
-<a class="sourceLine" id="cb6-7" data-line-number="7">mapS f g p x <span class="fu">=</span> first f <span class="fu">.</span> g p x</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L185-L189</span></a>
+<a class="sourceLine" id="cb6-2" title="2"></a>
+<a class="sourceLine" id="cb6-3" title="3">mapS</a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="ot">    ::</span> (<span class="kw">forall</span> z<span class="fu">.</span> <span class="dt">Reifies</span> z <span class="dt">W</span> <span class="ot">=&gt;</span> <span class="dt">BVar</span> z b <span class="ot">-&gt;</span> <span class="dt">BVar</span> z c)</a>
+<a class="sourceLine" id="cb6-5" title="5">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> p s a b</a>
+<a class="sourceLine" id="cb6-6" title="6">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> p s a c</a>
+<a class="sourceLine" id="cb6-7" title="7">mapS f g p x <span class="fu">=</span> first f <span class="fu">.</span> g p x</a></code></pre></div>
 <p>With this we can do some neat things like define a two-layer fully-connected recurrent neural network.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span><span class="ot"> twoLayerRNN ::</span> <span class="dt">ModelS</span> _ _ (<span class="dt">R</span> <span class="dv">20</span>) (<span class="dt">R</span> <span class="dv">5</span>)</a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">          twoLayerRNN <span class="fu">=</span> fcrnn <span class="fu">@</span><span class="dv">10</span> <span class="fu">&lt;*~*</span> mapS logistic fcrnn</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span><span class="ot"> twoLayerRNN ::</span> <span class="dt">ModelS</span> _ _ (<span class="dt">R</span> <span class="dv">20</span>) (<span class="dt">R</span> <span class="dv">5</span>)</a>
+<a class="sourceLine" id="cb7-2" title="2">          twoLayerRNN <span class="fu">=</span> fcrnn <span class="fu">@</span><span class="dv">10</span> <span class="fu">&lt;*~*</span> mapS logistic fcrnn</a></code></pre></div>
 <p>(Again using type application syntax with <code>@10</code> to specify our hidden layer size, and the type wildcard syntax <code>_</code> to let the compiler fill in the parameter and state type for us)</p>
 <p>Hey, maybe even a three-layer one:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span><span class="ot"> threeLayers ::</span> <span class="dt">ModelS</span> _ _ (<span class="dt">R</span> <span class="dv">40</span>) (<span class="dt">R</span> <span class="dv">5</span>)</a>
-<a class="sourceLine" id="cb8-2" data-line-number="2">          threeLayers <span class="fu">=</span> fcrnn <span class="fu">@</span><span class="dv">10</span></a>
-<a class="sourceLine" id="cb8-3" data-line-number="3">                   <span class="fu">&lt;*~*</span> mapS logistic (fcrnn <span class="fu">@</span><span class="dv">20</span>)</a>
-<a class="sourceLine" id="cb8-4" data-line-number="4">                   <span class="fu">&lt;*~*</span> mapS logistic fcrnn</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span><span class="ot"> threeLayers ::</span> <span class="dt">ModelS</span> _ _ (<span class="dt">R</span> <span class="dv">40</span>) (<span class="dt">R</span> <span class="dv">5</span>)</a>
+<a class="sourceLine" id="cb8-2" title="2">          threeLayers <span class="fu">=</span> fcrnn <span class="fu">@</span><span class="dv">10</span></a>
+<a class="sourceLine" id="cb8-3" title="3">                   <span class="fu">&lt;*~*</span> mapS logistic (fcrnn <span class="fu">@</span><span class="dv">20</span>)</a>
+<a class="sourceLine" id="cb8-4" title="4">                   <span class="fu">&lt;*~*</span> mapS logistic fcrnn</a></code></pre></div>
 <h3 id="let-there-be-state">Let there be State</h3>
 <p>Because these are all just normal functions, we can manipulate them just like any other function using higher order functions.</p>
 <p>For example, we can “upgrade” any non-stateful function to a stateful one, just by returning a new normal function:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L191-L193</span></a>
-<a class="sourceLine" id="cb9-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb9-3" data-line-number="3"><span class="ot">toS ::</span> <span class="dt">Model</span>  p   a b</a>
-<a class="sourceLine" id="cb9-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> p s a b</a>
-<a class="sourceLine" id="cb9-5" data-line-number="5">toS f p x s <span class="fu">=</span> (f p x, s)</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L191-L193</span></a>
+<a class="sourceLine" id="cb9-2" title="2"></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="ot">toS ::</span> <span class="dt">Model</span>  p   a b</a>
+<a class="sourceLine" id="cb9-4" title="4">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> p s a b</a>
+<a class="sourceLine" id="cb9-5" title="5">toS f p x s <span class="fu">=</span> (f p x, s)</a></code></pre></div>
 <p>This means we can make a hybrid “recurrent” and “non-recurrent” neural network, by making <code>feedForwardLog'</code> a model with some dummy state (like <code>()</code> perhaps), and re-using <code>(&lt;*~*)</code>.</p>
 <p>But we can also be creative with our combinators, as well, and write one to compose a stateless model with a stateful one:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L195-L201</span></a>
-<a class="sourceLine" id="cb10-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb10-3" data-line-number="3">(<span class="fu">&lt;*~</span>)</a>
-<a class="sourceLine" id="cb10-4" data-line-number="4"><span class="ot">  ::</span> (<span class="dt">Backprop</span> p, <span class="dt">Backprop</span> q)</a>
-<a class="sourceLine" id="cb10-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">Model</span>   p         b c</a>
-<a class="sourceLine" id="cb10-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span>       q  s a b</a>
-<a class="sourceLine" id="cb10-7" data-line-number="7">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> (p <span class="fu">:&amp;</span> q) s a c</a>
-<a class="sourceLine" id="cb10-8" data-line-number="8">(f <span class="fu">&lt;*~</span> g) (p <span class="fu">:&amp;&amp;</span> q) x <span class="fu">=</span> first (f p) <span class="fu">.</span> g q x</a>
-<a class="sourceLine" id="cb10-9" data-line-number="9"><span class="kw">infixr</span> <span class="dv">8</span> <span class="fu">&lt;*~</span></a></code></pre></div>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span><span class="ot"> hybrid ::</span> <span class="dt">ModelS</span> _ _ (<span class="dt">R</span> <span class="dv">40</span>) (<span class="dt">R</span> <span class="dv">10</span>)</a>
-<a class="sourceLine" id="cb11-2" data-line-number="2">          hybrid <span class="fu">=</span> feedForwardLog&#39; <span class="fu">@</span><span class="dv">20</span></a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">              <span class="fu">&lt;*~</span>  mapS logistic (fcrnn <span class="fu">@</span><span class="dv">20</span>)</a>
-<a class="sourceLine" id="cb11-4" data-line-number="4">              <span class="fu">&lt;*~*</span> mapS logistic fcrnn</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L195-L201</span></a>
+<a class="sourceLine" id="cb10-2" title="2"></a>
+<a class="sourceLine" id="cb10-3" title="3">(<span class="fu">&lt;*~</span>)</a>
+<a class="sourceLine" id="cb10-4" title="4"><span class="ot">  ::</span> (<span class="dt">Backprop</span> p, <span class="dt">Backprop</span> q)</a>
+<a class="sourceLine" id="cb10-5" title="5">    <span class="ot">=&gt;</span> <span class="dt">Model</span>   p         b c</a>
+<a class="sourceLine" id="cb10-6" title="6">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span>       q  s a b</a>
+<a class="sourceLine" id="cb10-7" title="7">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> (p <span class="fu">:&amp;</span> q) s a c</a>
+<a class="sourceLine" id="cb10-8" title="8">(f <span class="fu">&lt;*~</span> g) (p <span class="fu">:&amp;&amp;</span> q) x <span class="fu">=</span> first (f p) <span class="fu">.</span> g q x</a>
+<a class="sourceLine" id="cb10-9" title="9"><span class="kw">infixr</span> <span class="dv">8</span> <span class="fu">&lt;*~</span></a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" title="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span><span class="ot"> hybrid ::</span> <span class="dt">ModelS</span> _ _ (<span class="dt">R</span> <span class="dv">40</span>) (<span class="dt">R</span> <span class="dv">10</span>)</a>
+<a class="sourceLine" id="cb11-2" title="2">          hybrid <span class="fu">=</span> feedForwardLog&#39; <span class="fu">@</span><span class="dv">20</span></a>
+<a class="sourceLine" id="cb11-3" title="3">              <span class="fu">&lt;*~</span>  mapS logistic (fcrnn <span class="fu">@</span><span class="dv">20</span>)</a>
+<a class="sourceLine" id="cb11-4" title="4">              <span class="fu">&lt;*~*</span> mapS logistic fcrnn</a></code></pre></div>
 <p>Everything is just your simple run-of-the-mill function composition and higher order functions that Haskellers use every day, so there are many ways to do these things — just like there are many ways to manipulate normal functions.</p>
 <h2 id="unrolling-in-the-deep-learning">Unrolling in the Deep (Learning)</h2>
 <p>There’s something neat we can do with stateful functions — we can “<a href="https://machinelearningmastery.com/rnn-unrolling/">unroll</a>” them by explicitly propagating their state through several inputs.</p>
@@ -207,179 +208,179 @@ f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
 <p>If we look at each one of those individual boxes, they all have two inputs (normal input, and previous state) and two outputs (normal output, new state).</p>
 <p>“Unrolling” a stateful model means taking a model that takes in an <code>X</code> and producing a <code>Y</code> and turning it into a model that takes an <code>[X]</code> and produces a <code>[Y]</code>, by feeding it each of the <code>X</code>s one after the other, propagating the state, and collecting all of the <code>Y</code> responses.</p>
 <p>The “type” of this sounds like:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">unroll ::</span> <span class="dt">Model</span> p s a b <span class="ot">-&gt;</span> <span class="dt">Model</span> p s [a] [b]</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" title="1"><span class="ot">unroll ::</span> <span class="dt">Model</span> p s a b <span class="ot">-&gt;</span> <span class="dt">Model</span> p s [a] [b]</a></code></pre></div>
 <p>In writing this out as a type, we also note that the <code>p</code> parameter type is the same, and the <code>s</code> state type is the same. (Aren’t types nice? They force you to have to think about subtle things like this) If you’re familiar with category theory, this looks a little bit like a sort of “fmap” under a <code>Model p s</code> category – it takes a (stateful and backpropagatable) <code>a -&gt; b</code> and turns it into an <code>[a] -&gt; [b]</code>.</p>
 <p>Olah’s post suggests that this is some sort of <code>mapAccum</code>, in functional programming parlance. And, surely enough, we can actually write this as a <code>mapAccumL</code>.</p>
 <p><code>mapAccumL</code> is sort of like a combination of a <code>foldl</code> and a <code>map</code>:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1">mapAccumL</a>
-<a class="sourceLine" id="cb13-2" data-line-number="2"><span class="ot">    ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> (a, c))</a>
-<a class="sourceLine" id="cb13-3" data-line-number="3">    <span class="ot">-&gt;</span> a</a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">    <span class="ot">-&gt;</span> [b]</a>
-<a class="sourceLine" id="cb13-5" data-line-number="5">    <span class="ot">-&gt;</span> (a, [c])</a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" title="1">mapAccumL</a>
+<a class="sourceLine" id="cb13-2" title="2"><span class="ot">    ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> (a, c))</a>
+<a class="sourceLine" id="cb13-3" title="3">    <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb13-4" title="4">    <span class="ot">-&gt;</span> [b]</a>
+<a class="sourceLine" id="cb13-5" title="5">    <span class="ot">-&gt;</span> (a, [c])</a></code></pre></div>
 <p>Compare to <code>foldl</code>:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1">foldl</a>
-<a class="sourceLine" id="cb14-2" data-line-number="2"><span class="ot">    ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> a)</a>
-<a class="sourceLine" id="cb14-3" data-line-number="3">    <span class="ot">-&gt;</span> a</a>
-<a class="sourceLine" id="cb14-4" data-line-number="4">    <span class="ot">-&gt;</span> [b]</a>
-<a class="sourceLine" id="cb14-5" data-line-number="5">    <span class="ot">-&gt;</span> a</a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" title="1"><span class="fu">foldl</span></a>
+<a class="sourceLine" id="cb14-2" title="2"><span class="ot">    ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> a)</a>
+<a class="sourceLine" id="cb14-3" title="3">    <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb14-4" title="4">    <span class="ot">-&gt;</span> [b]</a>
+<a class="sourceLine" id="cb14-5" title="5">    <span class="ot">-&gt;</span> a</a></code></pre></div>
 <p>You can see that <code>mapAccumL</code> is just <code>foldl</code>, except the folding function emits an extra <code>c</code> for every item, so <code>mapAccumL</code> can return a new <code>[c]</code> with all of the emitted <code>c</code>s.</p>
 <p>The <em>backprop</em> library has a “lifted” <code>mapAccumL</code> in in the <em><a href="http://hackage.haskell.org/package/backprop/docs/Prelude-Backprop.html">Prelude.Backprop</a></em> module that we can use:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1">Prelude.Backprop.mapAccumL</a>
-<a class="sourceLine" id="cb15-2" data-line-number="2"><span class="ot">    ::</span> (<span class="dt">BVar</span> z a <span class="ot">-&gt;</span> <span class="dt">BVar</span> z b <span class="ot">-&gt;</span> (<span class="dt">BVar</span> z a, <span class="dt">BVar</span> z c))</a>
-<a class="sourceLine" id="cb15-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">BVar</span> z a</a>
-<a class="sourceLine" id="cb15-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">BVar</span> z [b]</a>
-<a class="sourceLine" id="cb15-5" data-line-number="5">    <span class="ot">-&gt;</span> (<span class="dt">BVar</span> z a, <span class="dt">BVar</span> z [c])</a></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" title="1">Prelude.Backprop.mapAccumL</a>
+<a class="sourceLine" id="cb15-2" title="2"><span class="ot">    ::</span> (<span class="dt">BVar</span> z a <span class="ot">-&gt;</span> <span class="dt">BVar</span> z b <span class="ot">-&gt;</span> (<span class="dt">BVar</span> z a, <span class="dt">BVar</span> z c))</a>
+<a class="sourceLine" id="cb15-3" title="3">    <span class="ot">-&gt;</span> <span class="dt">BVar</span> z a</a>
+<a class="sourceLine" id="cb15-4" title="4">    <span class="ot">-&gt;</span> <span class="dt">BVar</span> z [b]</a>
+<a class="sourceLine" id="cb15-5" title="5">    <span class="ot">-&gt;</span> (<span class="dt">BVar</span> z a, <span class="dt">BVar</span> z [c])</a></code></pre></div>
 <p>It is lifted to work with <code>BVar</code>s of the items instead of directly on the items. With that, we can write <code>unroll</code>, which is just a thin wrapper over <code>mapAccumL</code>:<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L203-L211</span></a>
-<a class="sourceLine" id="cb16-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb16-3" data-line-number="3">unroll</a>
-<a class="sourceLine" id="cb16-4" data-line-number="4"><span class="ot">    ::</span> (<span class="dt">Backprop</span> a, <span class="dt">Backprop</span> b)</a>
-<a class="sourceLine" id="cb16-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> p s  a   b</a>
-<a class="sourceLine" id="cb16-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> p s [a] [b]</a>
-<a class="sourceLine" id="cb16-7" data-line-number="7">unroll f p xs s0 <span class="fu">=</span> swap <span class="fu">$</span> B.mapAccumL f&#39; s0 xs</a>
-<a class="sourceLine" id="cb16-8" data-line-number="8">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb16-9" data-line-number="9">    <span class="co">-- we have to re-arrange the order of arguments and tuple a bit to</span></a>
-<a class="sourceLine" id="cb16-10" data-line-number="10">    <span class="co">-- match what `mapAccumL` expects</span></a>
-<a class="sourceLine" id="cb16-11" data-line-number="11">    f&#39; s x <span class="fu">=</span> swap (f p x s)</a></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L203-L211</span></a>
+<a class="sourceLine" id="cb16-2" title="2"></a>
+<a class="sourceLine" id="cb16-3" title="3">unroll</a>
+<a class="sourceLine" id="cb16-4" title="4"><span class="ot">    ::</span> (<span class="dt">Backprop</span> a, <span class="dt">Backprop</span> b)</a>
+<a class="sourceLine" id="cb16-5" title="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> p s  a   b</a>
+<a class="sourceLine" id="cb16-6" title="6">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> p s [a] [b]</a>
+<a class="sourceLine" id="cb16-7" title="7">unroll f p xs s0 <span class="fu">=</span> swap <span class="fu">$</span> B.mapAccumL f&#39; s0 xs</a>
+<a class="sourceLine" id="cb16-8" title="8">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb16-9" title="9">    <span class="co">-- we have to re-arrange the order of arguments and tuple a bit to</span></a>
+<a class="sourceLine" id="cb16-10" title="10">    <span class="co">-- match what `mapAccumL` expects</span></a>
+<a class="sourceLine" id="cb16-11" title="11">    f&#39; s x <span class="fu">=</span> swap (f p x s)</a></code></pre></div>
 <p>This reveals that <code>unroll</code> from the machine learning is really <em>just</em> <code>mapAccumL</code> from functional programming.</p>
 <p>We can also tweak <code>unroll</code>’s result a bit to get a version of <code>unroll</code> that shows only the “final” result. All we do is <code>mapS</code> <code>last . sequenceVar :: BVar s [a] -&gt; BVar a</code>, which gets the last item in a <code>BVar</code> of a sequence.</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L213-L217</span></a>
-<a class="sourceLine" id="cb17-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb17-3" data-line-number="3">unrollLast</a>
-<a class="sourceLine" id="cb17-4" data-line-number="4"><span class="ot">    ::</span> (<span class="dt">Backprop</span> a, <span class="dt">Backprop</span> b)</a>
-<a class="sourceLine" id="cb17-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> p s  a  b</a>
-<a class="sourceLine" id="cb17-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> p s [a] b</a>
-<a class="sourceLine" id="cb17-7" data-line-number="7">unrollLast f <span class="fu">=</span> mapS (last <span class="fu">.</span> sequenceVar) (unroll f)</a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L213-L217</span></a>
+<a class="sourceLine" id="cb17-2" title="2"></a>
+<a class="sourceLine" id="cb17-3" title="3">unrollLast</a>
+<a class="sourceLine" id="cb17-4" title="4"><span class="ot">    ::</span> (<span class="dt">Backprop</span> a, <span class="dt">Backprop</span> b)</a>
+<a class="sourceLine" id="cb17-5" title="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> p s  a  b</a>
+<a class="sourceLine" id="cb17-6" title="6">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> p s [a] b</a>
+<a class="sourceLine" id="cb17-7" title="7">unrollLast f <span class="fu">=</span> mapS (<span class="fu">last</span> <span class="fu">.</span> sequenceVar) (unroll f)</a></code></pre></div>
 <p>Alternatively, we can also recognize that <code>unrollLast</code> is really just an awkward left fold (<code>foldl</code>) in disguise:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L219-L225</span></a>
-<a class="sourceLine" id="cb18-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb18-3" data-line-number="3">unrollLast&#39;</a>
-<a class="sourceLine" id="cb18-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Backprop</span> a</a>
-<a class="sourceLine" id="cb18-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> p s  a  b</a>
-<a class="sourceLine" id="cb18-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> p s [a] b</a>
-<a class="sourceLine" id="cb18-7" data-line-number="7">unrollLast&#39; f p xs s0 <span class="fu">=</span> foldl&#39; go (undefined, s0) (sequenceVar xs)</a>
-<a class="sourceLine" id="cb18-8" data-line-number="8">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb18-9" data-line-number="9">    go (_, s) x <span class="fu">=</span> f p x s</a></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L219-L225</span></a>
+<a class="sourceLine" id="cb18-2" title="2"></a>
+<a class="sourceLine" id="cb18-3" title="3">unrollLast&#39;</a>
+<a class="sourceLine" id="cb18-4" title="4"><span class="ot">    ::</span> <span class="dt">Backprop</span> a</a>
+<a class="sourceLine" id="cb18-5" title="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> p s  a  b</a>
+<a class="sourceLine" id="cb18-6" title="6">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> p s [a] b</a>
+<a class="sourceLine" id="cb18-7" title="7">unrollLast&#39; f p xs s0 <span class="fu">=</span> foldl&#39; go (<span class="fu">undefined</span>, s0) (sequenceVar xs)</a>
+<a class="sourceLine" id="cb18-8" title="8">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb18-9" title="9">    go (_, s) x <span class="fu">=</span> f p x s</a></code></pre></div>
 <p>To see how this applies to our <code>threeLayer</code>:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="ot">threeLayers            ::</span> <span class="dt">ModelS</span> _ _ (<span class="dt">R</span> <span class="dv">40</span>) (<span class="dt">R</span> <span class="dv">5</span>)</a>
-<a class="sourceLine" id="cb19-2" data-line-number="2">unroll<span class="ot">     threeLayers ::</span> <span class="dt">ModelS</span> _ _ [<span class="dt">R</span> <span class="dv">40</span>] [<span class="dt">R</span> <span class="dv">5</span>]</a>
-<a class="sourceLine" id="cb19-3" data-line-number="3">unrollLast<span class="ot"> threeLayers ::</span> <span class="dt">ModelS</span> _ _ [<span class="dt">R</span> <span class="dv">40</span>] (<span class="dt">R</span> <span class="dv">5</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" title="1"><span class="ot">threeLayers            ::</span> <span class="dt">ModelS</span> _ _ (<span class="dt">R</span> <span class="dv">40</span>) (<span class="dt">R</span> <span class="dv">5</span>)</a>
+<a class="sourceLine" id="cb19-2" title="2">unroll<span class="ot">     threeLayers ::</span> <span class="dt">ModelS</span> _ _ [<span class="dt">R</span> <span class="dv">40</span>] [<span class="dt">R</span> <span class="dv">5</span>]</a>
+<a class="sourceLine" id="cb19-3" title="3">unrollLast<span class="ot"> threeLayers ::</span> <span class="dt">ModelS</span> _ _ [<span class="dt">R</span> <span class="dv">40</span>] (<span class="dt">R</span> <span class="dv">5</span>)</a></code></pre></div>
 <p>Nice that we can trace the evolution of the types within our langage!</p>
 <h3 id="state-be-gone">State-be-gone</h3>
 <p>Did you enjoy the detour through stateful time series models?</p>
 <p>Good — because the whole point of it was to talk about how we can <em>get rid of state</em> and bring us back to our original models!</p>
 <p>You knew this day had to come, because all of our methods for “training” these models and learn these parameters involves non-stateful models. Let’s see now how we can turn our functional stateful models into functional non-stateful models!</p>
 <p>One way is to <em>fix the initial state and throw away the resulting one</em>. This is very common in machine learning contexts, where many people simply fix the initial state to be a zero vector.</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L228-L238</span></a>
-<a class="sourceLine" id="cb20-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb20-3" data-line-number="3">fixState</a>
-<a class="sourceLine" id="cb20-4" data-line-number="4"><span class="ot">    ::</span> s</a>
-<a class="sourceLine" id="cb20-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> p s a b</a>
-<a class="sourceLine" id="cb20-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">Model</span>  p   a b</a>
-<a class="sourceLine" id="cb20-7" data-line-number="7">fixState s0 f p x <span class="fu">=</span> fst <span class="fu">$</span> f p x (auto s0)</a>
-<a class="sourceLine" id="cb20-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb20-9" data-line-number="9">zeroState</a>
-<a class="sourceLine" id="cb20-10" data-line-number="10"><span class="ot">    ::</span> <span class="dt">Num</span> s</a>
-<a class="sourceLine" id="cb20-11" data-line-number="11">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> p s a b</a>
-<a class="sourceLine" id="cb20-12" data-line-number="12">    <span class="ot">-&gt;</span> <span class="dt">Model</span>  p   a b</a>
-<a class="sourceLine" id="cb20-13" data-line-number="13">zeroState <span class="fu">=</span> fixState <span class="dv">0</span></a></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L228-L238</span></a>
+<a class="sourceLine" id="cb20-2" title="2"></a>
+<a class="sourceLine" id="cb20-3" title="3">fixState</a>
+<a class="sourceLine" id="cb20-4" title="4"><span class="ot">    ::</span> s</a>
+<a class="sourceLine" id="cb20-5" title="5">    <span class="ot">-&gt;</span> <span class="dt">ModelS</span> p s a b</a>
+<a class="sourceLine" id="cb20-6" title="6">    <span class="ot">-&gt;</span> <span class="dt">Model</span>  p   a b</a>
+<a class="sourceLine" id="cb20-7" title="7">fixState s0 f p x <span class="fu">=</span> <span class="fu">fst</span> <span class="fu">$</span> f p x (auto s0)</a>
+<a class="sourceLine" id="cb20-8" title="8"></a>
+<a class="sourceLine" id="cb20-9" title="9">zeroState</a>
+<a class="sourceLine" id="cb20-10" title="10"><span class="ot">    ::</span> <span class="dt">Num</span> s</a>
+<a class="sourceLine" id="cb20-11" title="11">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> p s a b</a>
+<a class="sourceLine" id="cb20-12" title="12">    <span class="ot">-&gt;</span> <span class="dt">Model</span>  p   a b</a>
+<a class="sourceLine" id="cb20-13" title="13">zeroState <span class="fu">=</span> fixState <span class="dv">0</span></a></code></pre></div>
 <p>We use <code>auto :: a -&gt; BVar z a</code> again to introduce a <code>BVar</code> of our initial state, but to indicate that we don’t expect to track its gradient. <code>zeroState</code> is a nice utility combinator for a common pattern.</p>
 <p>Another way is to <em>treat the initial state as a trainable parameter</em> (and also throw away the final state). This is not done as often, but is still common enough to be mentioned often. And, it’s just as straightforward!</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L240-L244</span></a>
-<a class="sourceLine" id="cb21-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb21-3" data-line-number="3">trainState</a>
-<a class="sourceLine" id="cb21-4" data-line-number="4"><span class="ot">    ::</span> (<span class="dt">Backprop</span> p, <span class="dt">Backprop</span> s)</a>
-<a class="sourceLine" id="cb21-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span>  p    s  a b</a>
-<a class="sourceLine" id="cb21-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">Model</span>  (p <span class="fu">:&amp;</span> s) a b</a>
-<a class="sourceLine" id="cb21-7" data-line-number="7">trainState f (p <span class="fu">:&amp;&amp;</span> s) x <span class="fu">=</span> fst <span class="fu">$</span> f p x s</a></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L240-L244</span></a>
+<a class="sourceLine" id="cb21-2" title="2"></a>
+<a class="sourceLine" id="cb21-3" title="3">trainState</a>
+<a class="sourceLine" id="cb21-4" title="4"><span class="ot">    ::</span> (<span class="dt">Backprop</span> p, <span class="dt">Backprop</span> s)</a>
+<a class="sourceLine" id="cb21-5" title="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span>  p    s  a b</a>
+<a class="sourceLine" id="cb21-6" title="6">    <span class="ot">-&gt;</span> <span class="dt">Model</span>  (p <span class="fu">:&amp;</span> s) a b</a>
+<a class="sourceLine" id="cb21-7" title="7">trainState f (p <span class="fu">:&amp;&amp;</span> s) x <span class="fu">=</span> <span class="fu">fst</span> <span class="fu">$</span> f p x s</a></code></pre></div>
 <p><code>trainState</code> will take a model with trainable parameter <code>p</code> and state <code>s</code>, and turn it into a model with trainable parameter <code>p :&amp; s</code>, where the <code>s</code> is the (trainable) initial state.</p>
 <p>We can now <em>train</em> our recurrent/stateful models, by <strong>unrolling and de-stating</strong>:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="ot">threeLayers                        ::</span> <span class="dt">ModelS</span> _ _ (<span class="dt">R</span> <span class="dv">40</span>) (<span class="dt">R</span> <span class="dv">5</span>)</a>
-<a class="sourceLine" id="cb22-2" data-line-number="2">unrollLast<span class="ot"> threeLayers             ::</span> <span class="dt">ModelS</span> _ _ [<span class="dt">R</span> <span class="dv">40</span>] (<span class="dt">R</span> <span class="dv">5</span>)</a>
-<a class="sourceLine" id="cb22-3" data-line-number="3">zeroState (unrollLast threeLayers)<span class="ot"> ::</span> <span class="dt">Model</span>  _   [<span class="dt">R</span> <span class="dv">40</span>] (<span class="dt">R</span> <span class="dv">5</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" title="1"><span class="ot">threeLayers                        ::</span> <span class="dt">ModelS</span> _ _ (<span class="dt">R</span> <span class="dv">40</span>) (<span class="dt">R</span> <span class="dv">5</span>)</a>
+<a class="sourceLine" id="cb22-2" title="2">unrollLast<span class="ot"> threeLayers             ::</span> <span class="dt">ModelS</span> _ _ [<span class="dt">R</span> <span class="dv">40</span>] (<span class="dt">R</span> <span class="dv">5</span>)</a>
+<a class="sourceLine" id="cb22-3" title="3">zeroState (unrollLast threeLayers)<span class="ot"> ::</span> <span class="dt">Model</span>  _   [<span class="dt">R</span> <span class="dv">40</span>] (<span class="dt">R</span> <span class="dv">5</span>)</a></code></pre></div>
 <p><code>zeroState (unrollLast threeLayers)</code> is now a normal stateless (and trainable) model. It takes a list of inputs <code>R 40</code>s and produces the “final output” <code>R 5</code>. We can now train this by feeding it with <code>([R 40], R 5)</code> pairs: give a history and an expected next output.</p>
 <p>It’s again nice here how we can track the evolution of the types of out model’s inputs and outputs within the language. Unrolling and zeroing is a non-trivial interaction, so the ability to have the language and compiler track the resulting shapes of our models is a huge advantage.</p>
 <h3 id="the-unreasonably-effective">The Unreasonably Effective</h3>
 <p>Let’s see if we can train a two-layer fully connected neural network with 30 hidden units, where the first layer is fully recurrent, to learn how to model a sine wave:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="co">-- sine signal with period 25</span></a>
-<a class="sourceLine" id="cb23-2" data-line-number="2">ghci<span class="fu">&gt;</span> series <span class="fu">=</span> [ sin (<span class="dv">2</span> <span class="fu">*</span> pi <span class="fu">*</span> t <span class="fu">/</span> <span class="dv">25</span>) <span class="fu">|</span> t <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span>]              ]</a>
-<a class="sourceLine" id="cb23-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb23-4" data-line-number="4"><span class="co">-- chunks of runs and &quot;next results&quot;</span></a>
-<a class="sourceLine" id="cb23-5" data-line-number="5">ghci<span class="fu">&gt;</span> samps  <span class="fu">=</span> [ (init c, last c)      <span class="fu">|</span> c <span class="ot">&lt;-</span> chunksOf <span class="dv">19</span> series ]</a>
-<a class="sourceLine" id="cb23-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb23-7" data-line-number="7"><span class="co">-- first layer is RNN, second layer is normal ANN, 30 hidden units</span></a>
-<a class="sourceLine" id="cb23-8" data-line-number="8">ghci<span class="fu">&gt;</span> <span class="kw">let</span><span class="ot"> rnn ::</span> <span class="dt">ModelS</span> _ _ (<span class="dt">R</span> <span class="dv">1</span>) (<span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb23-9" data-line-number="9">          rnn <span class="fu">=</span> feedForward <span class="fu">@</span><span class="dv">30</span> <span class="fu">&lt;*~</span> mapS logistic fcrnn</a>
-<a class="sourceLine" id="cb23-10" data-line-number="10"></a>
-<a class="sourceLine" id="cb23-11" data-line-number="11">ghci<span class="fu">&gt;</span> trained <span class="ot">&lt;-</span> trainModelIO (zeroState (unrollLast rnn)) <span class="fu">$</span> take <span class="dv">10000</span> samps</a></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" title="1"><span class="co">-- sine signal with period 25</span></a>
+<a class="sourceLine" id="cb23-2" title="2">ghci<span class="fu">&gt;</span> series <span class="fu">=</span> [ <span class="fu">sin</span> (<span class="dv">2</span> <span class="fu">*</span> <span class="fu">pi</span> <span class="fu">*</span> t <span class="fu">/</span> <span class="dv">25</span>) <span class="fu">|</span> t <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span>]              ]</a>
+<a class="sourceLine" id="cb23-3" title="3"></a>
+<a class="sourceLine" id="cb23-4" title="4"><span class="co">-- chunks of runs and &quot;next results&quot;</span></a>
+<a class="sourceLine" id="cb23-5" title="5">ghci<span class="fu">&gt;</span> samps  <span class="fu">=</span> [ (<span class="fu">init</span> c, <span class="fu">last</span> c)      <span class="fu">|</span> c <span class="ot">&lt;-</span> chunksOf <span class="dv">19</span> series ]</a>
+<a class="sourceLine" id="cb23-6" title="6"></a>
+<a class="sourceLine" id="cb23-7" title="7"><span class="co">-- first layer is RNN, second layer is normal ANN, 30 hidden units</span></a>
+<a class="sourceLine" id="cb23-8" title="8">ghci<span class="fu">&gt;</span> <span class="kw">let</span><span class="ot"> rnn ::</span> <span class="dt">ModelS</span> _ _ (<span class="dt">R</span> <span class="dv">1</span>) (<span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb23-9" title="9">          rnn <span class="fu">=</span> feedForward <span class="fu">@</span><span class="dv">30</span> <span class="fu">&lt;*~</span> mapS logistic fcrnn</a>
+<a class="sourceLine" id="cb23-10" title="10"></a>
+<a class="sourceLine" id="cb23-11" title="11">ghci<span class="fu">&gt;</span> trained <span class="ot">&lt;-</span> trainModelIO (zeroState (unrollLast rnn)) <span class="fu">$</span> <span class="fu">take</span> <span class="dv">10000</span> samps</a></code></pre></div>
 <p>Trained! <code>trained</code> is now the weight and bias matrices and vectors that will simulate a sine wave of period 25.</p>
 <p>We can run this model iteratively upon itself to test it; if we plot the results, we can visually inspect it to see if it has learned things properly.</p>
 <p>Let’s define some helper functions to test our model. First, a function <code>prime</code> that takes a stateful model and gives a “warmed-up” state by running it over a list of inputs. This serves to essentially initialize the memory of the model.</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L246-L253</span></a>
-<a class="sourceLine" id="cb24-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb24-3" data-line-number="3">prime</a>
-<a class="sourceLine" id="cb24-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Foldable</span> t</a>
-<a class="sourceLine" id="cb24-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> p s a b     <span class="co">-- ^ model</span></a>
-<a class="sourceLine" id="cb24-6" data-line-number="6">    <span class="ot">-&gt;</span> p                  <span class="co">-- ^ parameterization</span></a>
-<a class="sourceLine" id="cb24-7" data-line-number="7">    <span class="ot">-&gt;</span> s                  <span class="co">-- ^ initial state</span></a>
-<a class="sourceLine" id="cb24-8" data-line-number="8">    <span class="ot">-&gt;</span> t a                <span class="co">-- ^ priming input</span></a>
-<a class="sourceLine" id="cb24-9" data-line-number="9">    <span class="ot">-&gt;</span> s                  <span class="co">-- ^ primed state</span></a>
-<a class="sourceLine" id="cb24-10" data-line-number="10">prime f p <span class="fu">=</span> foldl&#39; <span class="fu">$</span> evalBP2 (\s x <span class="ot">-&gt;</span> snd <span class="fu">$</span> f (auto p) x s)</a></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L246-L253</span></a>
+<a class="sourceLine" id="cb24-2" title="2"></a>
+<a class="sourceLine" id="cb24-3" title="3">prime</a>
+<a class="sourceLine" id="cb24-4" title="4"><span class="ot">    ::</span> <span class="dt">Foldable</span> t</a>
+<a class="sourceLine" id="cb24-5" title="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> p s a b     <span class="co">-- ^ model</span></a>
+<a class="sourceLine" id="cb24-6" title="6">    <span class="ot">-&gt;</span> p                  <span class="co">-- ^ parameterization</span></a>
+<a class="sourceLine" id="cb24-7" title="7">    <span class="ot">-&gt;</span> s                  <span class="co">-- ^ initial state</span></a>
+<a class="sourceLine" id="cb24-8" title="8">    <span class="ot">-&gt;</span> t a                <span class="co">-- ^ priming input</span></a>
+<a class="sourceLine" id="cb24-9" title="9">    <span class="ot">-&gt;</span> s                  <span class="co">-- ^ primed state</span></a>
+<a class="sourceLine" id="cb24-10" title="10">prime f p <span class="fu">=</span> foldl&#39; <span class="fu">$</span> evalBP2 (\s x <span class="ot">-&gt;</span> <span class="fu">snd</span> <span class="fu">$</span> f (auto p) x s)</a></code></pre></div>
 <p>Then a function <code>feedback</code> that iterates a stateful model over and over again by feeding its previous output as its next input:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L255-L267</span></a>
-<a class="sourceLine" id="cb25-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb25-3" data-line-number="3">feedback</a>
-<a class="sourceLine" id="cb25-4" data-line-number="4"><span class="ot">    ::</span> (<span class="dt">Backprop</span> a, <span class="dt">Backprop</span> s)</a>
-<a class="sourceLine" id="cb25-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> p s a a     <span class="co">-- ^ model</span></a>
-<a class="sourceLine" id="cb25-6" data-line-number="6">    <span class="ot">-&gt;</span> p                  <span class="co">-- ^ parameterization</span></a>
-<a class="sourceLine" id="cb25-7" data-line-number="7">    <span class="ot">-&gt;</span> s                  <span class="co">-- ^ initial state</span></a>
-<a class="sourceLine" id="cb25-8" data-line-number="8">    <span class="ot">-&gt;</span> a                  <span class="co">-- ^ initial input</span></a>
-<a class="sourceLine" id="cb25-9" data-line-number="9">    <span class="ot">-&gt;</span> [a]                <span class="co">-- ^ inifinite feedback loop</span></a>
-<a class="sourceLine" id="cb25-10" data-line-number="10">feedback f p s0 x0 <span class="fu">=</span> unfoldr go (x0, s0)</a>
-<a class="sourceLine" id="cb25-11" data-line-number="11">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb25-12" data-line-number="12">    go (x, s) <span class="fu">=</span> <span class="dt">Just</span> (x, (y, s&#39;))</a>
-<a class="sourceLine" id="cb25-13" data-line-number="13">      <span class="kw">where</span></a>
-<a class="sourceLine" id="cb25-14" data-line-number="14">        <span class="co">-- &#39;T2&#39; tuples up a pair of &#39;BVar&#39;s into a &#39;BVar&#39; of a tuple</span></a>
-<a class="sourceLine" id="cb25-15" data-line-number="15">        (y, s&#39;) <span class="fu">=</span> evalBP (uncurry <span class="dt">T2</span> <span class="fu">.</span> f (auto p) (auto x)) s</a></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L255-L267</span></a>
+<a class="sourceLine" id="cb25-2" title="2"></a>
+<a class="sourceLine" id="cb25-3" title="3">feedback</a>
+<a class="sourceLine" id="cb25-4" title="4"><span class="ot">    ::</span> (<span class="dt">Backprop</span> a, <span class="dt">Backprop</span> s)</a>
+<a class="sourceLine" id="cb25-5" title="5">    <span class="ot">=&gt;</span> <span class="dt">ModelS</span> p s a a     <span class="co">-- ^ model</span></a>
+<a class="sourceLine" id="cb25-6" title="6">    <span class="ot">-&gt;</span> p                  <span class="co">-- ^ parameterization</span></a>
+<a class="sourceLine" id="cb25-7" title="7">    <span class="ot">-&gt;</span> s                  <span class="co">-- ^ initial state</span></a>
+<a class="sourceLine" id="cb25-8" title="8">    <span class="ot">-&gt;</span> a                  <span class="co">-- ^ initial input</span></a>
+<a class="sourceLine" id="cb25-9" title="9">    <span class="ot">-&gt;</span> [a]                <span class="co">-- ^ inifinite feedback loop</span></a>
+<a class="sourceLine" id="cb25-10" title="10">feedback f p s0 x0 <span class="fu">=</span> unfoldr go (x0, s0)</a>
+<a class="sourceLine" id="cb25-11" title="11">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb25-12" title="12">    go (x, s) <span class="fu">=</span> <span class="dt">Just</span> (x, (y, s&#39;))</a>
+<a class="sourceLine" id="cb25-13" title="13">      <span class="kw">where</span></a>
+<a class="sourceLine" id="cb25-14" title="14">        <span class="co">-- &#39;T2&#39; tuples up a pair of &#39;BVar&#39;s into a &#39;BVar&#39; of a tuple</span></a>
+<a class="sourceLine" id="cb25-15" title="15">        (y, s&#39;) <span class="fu">=</span> evalBP (<span class="fu">uncurry</span> <span class="dt">T2</span> <span class="fu">.</span> f (auto p) (auto x)) s</a></code></pre></div>
 <p>Now let’s prime our trained model over the first 19 items in our sine wave and start it running in feedback mode on the 20th item!</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> primed <span class="fu">=</span> prime    rnn trained <span class="dv">0</span>      (take <span class="dv">19</span> series)</a>
-<a class="sourceLine" id="cb26-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="kw">let</span> output <span class="fu">=</span> feedback rnn trained primed (series <span class="fu">!!</span> <span class="dv">19</span>)</a>
-<a class="sourceLine" id="cb26-3" data-line-number="3">ghci<span class="fu">&gt;</span> mapM_ print <span class="fu">$</span> take <span class="dv">200</span> output</a>
-<a class="sourceLine" id="cb26-4" data-line-number="4">(<span class="fu">-</span><span class="fl">0.9980267284282716</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb26-5" data-line-number="5">(<span class="fu">-</span><span class="fl">0.9530599469923343</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb26-6" data-line-number="6">(<span class="fu">-</span><span class="fl">0.855333250123637</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb26-7" data-line-number="7">(<span class="fu">-</span><span class="fl">0.7138776465246676</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb26-8" data-line-number="8">(<span class="fu">-</span><span class="fl">0.5359655931506458</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb26-9" data-line-number="9"><span class="co">-- ...</span></a></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" title="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> primed <span class="fu">=</span> prime    rnn trained <span class="dv">0</span>      (<span class="fu">take</span> <span class="dv">19</span> series)</a>
+<a class="sourceLine" id="cb26-2" title="2">ghci<span class="fu">&gt;</span> <span class="kw">let</span> output <span class="fu">=</span> feedback rnn trained primed (series <span class="fu">!!</span> <span class="dv">19</span>)</a>
+<a class="sourceLine" id="cb26-3" title="3">ghci<span class="fu">&gt;</span> <span class="fu">mapM_</span> <span class="fu">print</span> <span class="fu">$</span> <span class="fu">take</span> <span class="dv">200</span> output</a>
+<a class="sourceLine" id="cb26-4" title="4">(<span class="fu">-</span><span class="fl">0.9980267284282716</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb26-5" title="5">(<span class="fu">-</span><span class="fl">0.9530599469923343</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb26-6" title="6">(<span class="fu">-</span><span class="fl">0.855333250123637</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb26-7" title="7">(<span class="fu">-</span><span class="fl">0.7138776465246676</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb26-8" title="8">(<span class="fu">-</span><span class="fl">0.5359655931506458</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb26-9" title="9"><span class="co">-- ...</span></a></code></pre></div>
 <p>Plotting the result against the “actual” sine wave of period 25, we see that it approximates the process decently well, with a consistent period (that is slightly slower than the reference period):</p>
 <figure>
 <img src="/img/entries/functional-models/rnnsin.png" title="FCRNN Sine Wave" alt="FCRNN Sine Wave" /><figcaption>FCRNN Sine Wave</figcaption>
 </figure>
 <p>For kicks, let’s see if we can do any better with the simpler AR(2) model from before. Applying all we just used to <code>ar2</code>, we see:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="ot">ar2                        ::</span> <span class="dt">ModelS</span> _ _  <span class="dt">Double</span>  <span class="dt">Double</span></a>
-<a class="sourceLine" id="cb27-2" data-line-number="2">unrollLast<span class="ot"> ar2             ::</span> <span class="dt">ModelS</span> _ _ [<span class="dt">Double</span>] <span class="dt">Double</span></a>
-<a class="sourceLine" id="cb27-3" data-line-number="3">zeroState (unrollLast ar2)<span class="ot"> ::</span> <span class="dt">Model</span>  _   [<span class="dt">Double</span>] <span class="dt">Double</span></a></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" title="1"><span class="ot">ar2                        ::</span> <span class="dt">ModelS</span> _ _  <span class="dt">Double</span>  <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb27-2" title="2">unrollLast<span class="ot"> ar2             ::</span> <span class="dt">ModelS</span> _ _ [<span class="dt">Double</span>] <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb27-3" title="3">zeroState (unrollLast ar2)<span class="ot"> ::</span> <span class="dt">Model</span>  _   [<span class="dt">Double</span>] <span class="dt">Double</span></a></code></pre></div>
 <p><code>zeroState (unrollLast ar2)</code> is now a trainable stateless model. Will it model a sine wave?</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1">ghci<span class="fu">&gt;</span> trained <span class="ot">&lt;-</span> trainModelIO (zeroState (unrollLast ar2)) <span class="fu">$</span> take <span class="dv">10000</span> samps</a>
-<a class="sourceLine" id="cb28-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="kw">let</span> primed <span class="fu">=</span> prime    rnn trained <span class="dv">0</span>      (take <span class="dv">19</span> series)</a>
-<a class="sourceLine" id="cb28-3" data-line-number="3">ghci<span class="fu">&gt;</span> <span class="kw">let</span> output <span class="fu">=</span> feedback rnn trained primed (series <span class="fu">!!</span> <span class="dv">19</span>)</a>
-<a class="sourceLine" id="cb28-4" data-line-number="4">ghci<span class="fu">&gt;</span> mapM_ print <span class="fu">$</span> take <span class="dv">200</span> output</a>
-<a class="sourceLine" id="cb28-5" data-line-number="5">(<span class="fu">-</span><span class="fl">0.9980267284282716</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb28-6" data-line-number="6">(<span class="fu">-</span><span class="fl">0.9530599469923343</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb28-7" data-line-number="7">(<span class="fu">-</span><span class="fl">0.855333250123637</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb28-8" data-line-number="8">(<span class="fu">-</span><span class="fl">0.7138776465246676</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb28-9" data-line-number="9">(<span class="fu">-</span><span class="fl">0.5359655931506458</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb28-10" data-line-number="10"><span class="co">-- ...</span></a></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" title="1">ghci<span class="fu">&gt;</span> trained <span class="ot">&lt;-</span> trainModelIO (zeroState (unrollLast ar2)) <span class="fu">$</span> <span class="fu">take</span> <span class="dv">10000</span> samps</a>
+<a class="sourceLine" id="cb28-2" title="2">ghci<span class="fu">&gt;</span> <span class="kw">let</span> primed <span class="fu">=</span> prime    rnn trained <span class="dv">0</span>      (<span class="fu">take</span> <span class="dv">19</span> series)</a>
+<a class="sourceLine" id="cb28-3" title="3">ghci<span class="fu">&gt;</span> <span class="kw">let</span> output <span class="fu">=</span> feedback rnn trained primed (series <span class="fu">!!</span> <span class="dv">19</span>)</a>
+<a class="sourceLine" id="cb28-4" title="4">ghci<span class="fu">&gt;</span> <span class="fu">mapM_</span> <span class="fu">print</span> <span class="fu">$</span> <span class="fu">take</span> <span class="dv">200</span> output</a>
+<a class="sourceLine" id="cb28-5" title="5">(<span class="fu">-</span><span class="fl">0.9980267284282716</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb28-6" title="6">(<span class="fu">-</span><span class="fl">0.9530599469923343</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb28-7" title="7">(<span class="fu">-</span><span class="fl">0.855333250123637</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb28-8" title="8">(<span class="fu">-</span><span class="fl">0.7138776465246676</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb28-9" title="9">(<span class="fu">-</span><span class="fl">0.5359655931506458</span><span class="ot"> ::</span> <span class="dt">R</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb28-10" title="10"><span class="co">-- ...</span></a></code></pre></div>
 <p>We can plot the result and see that it more or less perfectly models the sine wave of period 25:</p>
 <figure>
 <img src="/img/entries/functional-models/ar2sin.png" title="AR Sine Wave" alt="AR(2) Sine Wave" /><figcaption>AR(2) Sine Wave</figcaption>
 </figure>
 <p>You can’t even visually see the difference!</p>
 <p>We can peek inside the parameterization of our learned AR(2):</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1">ghci<span class="fu">&gt;</span> trained</a>
-<a class="sourceLine" id="cb29-2" data-line-number="2"><span class="fu">-</span><span class="fl">2.4013298985824788e-12</span> <span class="fu">:&amp;</span> (<span class="fl">1.937166322256747</span> <span class="fu">:&amp;</span> <span class="fu">-</span><span class="fl">0.9999999999997953</span>)</a>
-<a class="sourceLine" id="cb29-3" data-line-number="3"><span class="co">-- approximately</span></a>
-<a class="sourceLine" id="cb29-4" data-line-number="4"><span class="fl">0.0000</span> <span class="fu">:&amp;</span> (<span class="fl">1.9372</span> <span class="fu">:&amp;</span> <span class="fu">-</span><span class="fl">1.0000</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" title="1">ghci<span class="fu">&gt;</span> trained</a>
+<a class="sourceLine" id="cb29-2" title="2"><span class="fu">-</span><span class="fl">2.4013298985824788e-12</span> <span class="fu">:&amp;</span> (<span class="fl">1.937166322256747</span> <span class="fu">:&amp;</span> <span class="fu">-</span><span class="fl">0.9999999999997953</span>)</a>
+<a class="sourceLine" id="cb29-3" title="3"><span class="co">-- approximately</span></a>
+<a class="sourceLine" id="cb29-4" title="4"><span class="fl">0.0000</span> <span class="fu">:&amp;</span> (<span class="fl">1.9372</span> <span class="fu">:&amp;</span> <span class="fu">-</span><span class="fl">1.0000</span>)</a></code></pre></div>
 <p>Meaning that the gradient descent has concluded that our AR(2) model is:</p>
 <p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0Ay_t%20%3D%200%20%2B%201.9372%20y_%7Bt%20-%201%7D%20-%20y_%7Bt%20-%202%7D%0A" alt="
 y_t = 0 + 1.9372 y_{t - 1} - y_{t - 2}
@@ -390,7 +391,7 @@ y_t = 0 + 1.9372 y_{t - 1} - y_{t - 2}
 <p>In this toy situation, the AR(2) appears to do much better than our RNN model, but we have to give the RNN a break — all of the information has to be “squished” into essentially 30 bits, which might impact the model’s accuracy.</p>
 <h2 id="functions-all-the-way-down">Functions all the way down</h2>
 <p>Again, it is very easy to look at something like</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb30-1" data-line-number="1">feedForward <span class="fu">@</span><span class="dv">10</span> <span class="fu">&lt;*~</span> mapS logistic fcrnn</a></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb30-1" title="1">feedForward <span class="fu">@</span><span class="dv">10</span> <span class="fu">&lt;*~</span> mapS logistic fcrnn</a></code></pre></div>
 <p>and write it off as some abstract API of opaque data types. Some sort of object keeps track of state, and the object has some nice abstracted interface…right?</p>
 <p>But, nope, again, it is all just normal functions that we wrote using normal function composition. We define our model as a <em>function</em>, and the backprop library turns that function into a trainable model.</p>
 <h3 id="what-makes-it-tick">What Makes It Tick</h3>
@@ -414,7 +415,7 @@ y_t = 0 + 1.9372 y_{t - 1} - y_{t - 2}
 <li id="fn1"><p>If you recognized our original stateless model type as <code>a -&gt; Reader p b</code>, then you might have also recognized that this is the Haskell idiom <code>a -&gt; StateT s (Reader p) b</code> (or <code>Kleisli (StateT s (Reader p)) a b</code>), which represents the notion of a “function from <code>a</code> to <code>b</code> with environment <code>p</code>, that takes and returns a modified version of some ‘state’ <code>s</code>”.<a href="#fnref1" class="footnote-back">↩</a></p></li>
 <li id="fn2"><p>In truth, <code>mapAccumL</code> can work with any <code>Traversable</code> container, so we really can <code>unroll</code> over any <code>Traversable</code> container and not just lists. One of my favorite is the sized vectors from the <a href="http://hackage.haskell.org/package/vector-sized">vector-sized</a> library, since they can enforce that the network always gets unrolled over the same number of items.<a href="#fnref2" class="footnote-back">↩</a></p></li>
 </ol>
-</section></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
+</section></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im" class="email">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
 <p>If you feel inclined, or this post was particularly helpful for you, why not consider <a href="https://www.patreon.com/justinle/overview">supporting me on Patreon</a>, or a <a href="bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU">BTC donation</a>? :)</p></div><div class="clear"></div><ul class="entry-series"><li><div>This entry is a part of a series called <b>&quot;Functional Models&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+functional-models.html" class="tag-a-series" title="+Functional Models"> series history</a>.</div></li></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/backprop.html" class="tag-a-tag">#backprop</a></li><li><a href="https://blog.jle.im/entries/tagged/deep-learning.html" class="tag-a-tag">#deep learning</a></li><li><a href="https://blog.jle.im/entries/tagged/differentiable-programming.html" class="tag-a-tag">#differentiable programming</a></li><li><a href="https://blog.jle.im/entries/tagged/machine-learning.html" class="tag-a-tag">#machine learning</a></li><li><a href="https://blog.jle.im/entries/tagged/modeling.html" class="tag-a-tag">#modeling</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/series/+functional-models.html" class="tag-a-series">+Functional Models</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="prev-entry-link">&larr; <a href="https://blog.jle.im/entry/purely-functional-typed-models-1.html">A Purely Functional Typed Approach to Trainable Models (Part 1)</a> (Previous)</li><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/purely-functional-typed-models-3.html">A Purely Functional Typed Approach to Trainable Models (Part 3)</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/purely-functional-typed-models-2.html';
     this.page.identifier = 'functional-models-2';

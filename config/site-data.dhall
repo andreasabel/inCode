@@ -50,7 +50,9 @@
 , copyright =
     "2018 Justin Le"
 , desc =
-    "Weblog of Justin Le, covering various adventures in programming and explorations in the vast worlds of computation physics, and knowledge."
+    ''
+    Weblog of Justin Le, covering various adventures in programming and explorations in the worlds of computation physics, and knowledge.
+    ''
 , developerAPIs =
     { addThis =
         "ra-5234d67a6b68dcd4"

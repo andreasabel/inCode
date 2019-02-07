@@ -1,5 +1,6 @@
 <!DOCTYPE HTML>
-<html><head><title>Type-safe Tic Tac Toe (Part 1) · in Code</title><meta name="description" content="Weblog of Justin Le, covering various adventures in programming and explorations in the vast worlds of computation physics, and knowledge."><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="flattr:id" content="3p9jqr"><meta property="og:site_name" content="in Code"><meta property="og:description" content="One problem with adoption of dependent types in everyday programming, I think, is that most examples out there are sort of small and self-contained. There aren’t too many larger-scale examples out there showing how dependent types can permeate your whole program to make everything more robust and error-free. So, this series will be implementing a type-safe tic tac toe game (a medium-scale Haskell app) that can be played both on the console (using Haskeline) and in the browser (using Miso), using some custom built AI. We will:  * Build up our core game engine, talking about what it really means to be type safe * Use our type-safe engine to build type-safe controllers (AI, GUI) This series will also be a mini-tutorial on the decidable package that I just recently released :) We will also be heavily using the singletons library. I strongly strongly recommend reading my Introduction to Singletons series (and doing the exercises), if you are new to the singletons library. However, I will do my best to explain singletons concepts in brief as they come up."><meta property="og:type" content="article"><meta property="og:title" content="Type-safe Tic Tac Toe (Part 1)"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/typesafe-tic-tac-toe-1.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/typesafe-tic-tac-toe-1.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
+<html><head><title>Type-safe Tic Tac Toe (Part 1) · in Code</title><meta name="description" content="Weblog of Justin Le, covering various adventures in programming and explorations in the worlds of computation physics, and knowledge.
+"><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="flattr:id" content="3p9jqr"><meta property="og:site_name" content="in Code"><meta property="og:description" content="One problem with adoption of dependent types in everyday programming, I think, is that most examples out there are sort of small and self-contained. There aren’t too many larger-scale examples out there showing how dependent types can permeate your whole program to make everything more robust and error-free. So, this series will be implementing a type-safe tic tac toe game (a medium-scale Haskell app) that can be played both on the console (using Haskeline) and in the browser (using Miso), using some custom built AI. We will:  * Build up our core game engine, talking about what it really means to be type safe * Use our type-safe engine to build type-safe controllers (AI, GUI) This series will also be a mini-tutorial on the decidable package that I just recently released :) We will also be heavily using the singletons library. I strongly strongly recommend reading my Introduction to Singletons series (and doing the exercises), if you are new to the singletons library. However, I will do my best to explain singletons concepts in brief as they come up."><meta property="og:type" content="article"><meta property="og:title" content="Type-safe Tic Tac Toe (Part 1)"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/typesafe-tic-tac-toe-1.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/typesafe-tic-tac-toe-1.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
 var disqus_shortname='incode';
 </script><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
 (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -49,56 +50,56 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Alright, let’s do this!</p>
 <h2 id="valid-state">Valid State</h2>
 <p>First, we’ll define the types we need to specify our state:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="fu">$</span>(singletons [d|</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  data Piece = PX | PO</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    deriving (Eq, Ord)</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">  type Board = [[Maybe Piece]]</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">  |])</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="fu">$</span>(singletons [d|</a>
+<a class="sourceLine" id="cb1-2" title="2">  data Piece = PX | PO</a>
+<a class="sourceLine" id="cb1-3" title="3">    deriving (Eq, Ord)</a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5">  type Board = [[Maybe Piece]]</a>
+<a class="sourceLine" id="cb1-6" title="6">  |])</a></code></pre></div>
 <p>A <code>Piece</code> will also represent our player – either <code>PX</code> or <code>PO</code>. Our <code>Board</code> will be a list of lists of <code>Maybe Piece</code>. If the spot contains <code>Nothing</code>, the spot is unplayed; if the spot is <code>Just p</code>, then it means the spot has been played by <code>p</code>.</p>
 <p>And some values and functions we need to talk about empty boards and state transformations:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="fu">$</span>(singletons [d|</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">  emptyBoard :: Board</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">  emptyBoard = [ [Nothing, Nothing, Nothing]</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">               , [Nothing, Nothing, Nothing]</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">               , [Nothing, Nothing, Nothing]</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">               ]</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">  altP :: Piece -&gt; Piece</a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">  altP PX = PO</a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">  altP PO = PX</a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">  |])</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="fu">$</span>(singletons [d|</a>
+<a class="sourceLine" id="cb2-2" title="2">  emptyBoard :: Board</a>
+<a class="sourceLine" id="cb2-3" title="3">  emptyBoard = [ [Nothing, Nothing, Nothing]</a>
+<a class="sourceLine" id="cb2-4" title="4">               , [Nothing, Nothing, Nothing]</a>
+<a class="sourceLine" id="cb2-5" title="5">               , [Nothing, Nothing, Nothing]</a>
+<a class="sourceLine" id="cb2-6" title="6">               ]</a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8">  altP :: Piece -&gt; Piece</a>
+<a class="sourceLine" id="cb2-9" title="9">  altP PX = PO</a>
+<a class="sourceLine" id="cb2-10" title="10">  altP PO = PX</a>
+<a class="sourceLine" id="cb2-11" title="11">  |])</a></code></pre></div>
 <p>Let’s just throw in a quick proof as a sanity check:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L54-L56</span></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="ot">altP_cyclic ::</span> <span class="dt">Sing</span> p <span class="ot">-&gt;</span> <span class="dt">AltP</span> (<span class="dt">AltP</span> p) <span class="fu">:~:</span> p</a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">altP_cyclic <span class="dt">SPX</span> <span class="fu">=</span> <span class="dt">Refl</span> <span class="fu">@</span>&#39;<span class="dt">PX</span></a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">altP_cyclic <span class="dt">SPO</span> <span class="fu">=</span> <span class="dt">Refl</span> <span class="fu">@</span>&#39;<span class="dt">PO</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L54-L56</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="ot">altP_cyclic ::</span> <span class="dt">Sing</span> p <span class="ot">-&gt;</span> <span class="dt">AltP</span> (<span class="dt">AltP</span> p) <span class="fu">:~:</span> p</a>
+<a class="sourceLine" id="cb3-4" title="4">altP_cyclic <span class="dt">SPX</span> <span class="fu">=</span> <span class="dt">Refl</span> <span class="fu">@</span><span class="dt">&#39;PX</span></a>
+<a class="sourceLine" id="cb3-5" title="5">altP_cyclic <span class="dt">SPO</span> <span class="fu">=</span> <span class="dt">Refl</span> <span class="fu">@</span><span class="dt">&#39;PO</span></a></code></pre></div>
 <p>With that in mind, we can write our valid state constructor. We’ll do that with two helper types that we will implement later. First, we’ll use the <a href="https://hackage.haskell.org/package/decidable">decidable</a> library to talk about the kind of a <em>type-level predicate</em>.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L58-L58</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="kw">data</span> <span class="dt">InPlay</span><span class="ot"> ::</span> <span class="dt">Predicate</span> <span class="dt">Board</span></a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L58-L58</span></a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="kw">data</span> <span class="dt">InPlay</span><span class="ot"> ::</span> <span class="dt">Predicate</span> <span class="dt">Board</span></a></code></pre></div>
 <p><code>InPlay</code> is a predicate that a given board is in-play; a value of type <code>InPlay @@ b</code> is a witness or proof that a board is in play.</p>
 <p>We also need to define a type for a valid update by a given player onto a given board:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L73-L73</span></a>
-<a class="sourceLine" id="cb5-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Update</span><span class="ot"> ::</span> <span class="dt">Piece</span> <span class="ot">-&gt;</span> <span class="dt">Board</span> <span class="ot">-&gt;</span> <span class="dt">Board</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L73-L73</span></a>
+<a class="sourceLine" id="cb5-2" title="2"></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="kw">data</span> <span class="dt">Update</span><span class="ot"> ::</span> <span class="dt">Piece</span> <span class="ot">-&gt;</span> <span class="dt">Board</span> <span class="ot">-&gt;</span> <span class="dt">Board</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a></code></pre></div>
 <p>A value of type <code>Update p b1 b2</code> will represent a valid update to board <code>b1</code> by player <code>p</code> to create a board <code>b2</code>.</p>
 <p>And finally, our valid state constructor:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L60-L71</span></a>
-<a class="sourceLine" id="cb6-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb6-3" data-line-number="3"><span class="kw">data</span> <span class="dt">GameState</span><span class="ot"> ::</span> <span class="dt">Piece</span> <span class="ot">-&gt;</span> <span class="dt">Board</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb6-4" data-line-number="4">    <span class="co">-- | The empty board is a valid state</span></a>
-<a class="sourceLine" id="cb6-5" data-line-number="5">    <span class="dt">GSStart</span></a>
-<a class="sourceLine" id="cb6-6" data-line-number="6"><span class="ot">        ::</span> <span class="dt">GameState</span> &#39;<span class="dt">PX</span> <span class="dt">EmptyBoard</span></a>
-<a class="sourceLine" id="cb6-7" data-line-number="7">    <span class="co">-- | We can also construct a valid game state if we have:</span></a>
-<a class="sourceLine" id="cb6-8" data-line-number="8">    <span class="dt">GSUpdate</span></a>
-<a class="sourceLine" id="cb6-9" data-line-number="9"><span class="ot">        ::</span> forall p b1 b2<span class="fu">.</span> ()</a>
-<a class="sourceLine" id="cb6-10" data-line-number="10">        <span class="ot">=&gt;</span> <span class="dt">InPlay</span>          <span class="fu">@@</span> b1     <span class="co">-- ^ a proof that b1 is in play</span></a>
-<a class="sourceLine" id="cb6-11" data-line-number="11">        <span class="ot">-&gt;</span> <span class="dt">Update</span>    p        b1 b2  <span class="co">-- ^ a valid update</span></a>
-<a class="sourceLine" id="cb6-12" data-line-number="12">        <span class="ot">-&gt;</span> <span class="dt">GameState</span> p        b1     <span class="co">-- ^ a proof that p, b1 are a valid state</span></a>
-<a class="sourceLine" id="cb6-13" data-line-number="13">        <span class="co">-- ---------------------------- then</span></a>
-<a class="sourceLine" id="cb6-14" data-line-number="14">        <span class="ot">-&gt;</span> <span class="dt">GameState</span> (<span class="dt">AltP</span> p)    b2  <span class="co">-- ^ `AltP p`, b2 is a valid satte</span></a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L60-L71</span></a>
+<a class="sourceLine" id="cb6-2" title="2"></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="kw">data</span> <span class="dt">GameState</span><span class="ot"> ::</span> <span class="dt">Piece</span> <span class="ot">-&gt;</span> <span class="dt">Board</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-4" title="4">    <span class="co">-- | The empty board is a valid state</span></a>
+<a class="sourceLine" id="cb6-5" title="5">    <span class="dt">GSStart</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="ot">        ::</span> <span class="dt">GameState</span> <span class="dt">&#39;PX</span> <span class="dt">EmptyBoard</span></a>
+<a class="sourceLine" id="cb6-7" title="7">    <span class="co">-- | We can also construct a valid game state if we have:</span></a>
+<a class="sourceLine" id="cb6-8" title="8">    <span class="dt">GSUpdate</span></a>
+<a class="sourceLine" id="cb6-9" title="9"><span class="ot">        ::</span> <span class="kw">forall</span> p b1 b2<span class="fu">.</span> ()</a>
+<a class="sourceLine" id="cb6-10" title="10">        <span class="ot">=&gt;</span> <span class="dt">InPlay</span>          <span class="fu">@@</span> b1     <span class="co">-- ^ a proof that b1 is in play</span></a>
+<a class="sourceLine" id="cb6-11" title="11">        <span class="ot">-&gt;</span> <span class="dt">Update</span>    p        b1 b2  <span class="co">-- ^ a valid update</span></a>
+<a class="sourceLine" id="cb6-12" title="12">        <span class="ot">-&gt;</span> <span class="dt">GameState</span> p        b1     <span class="co">-- ^ a proof that p, b1 are a valid state</span></a>
+<a class="sourceLine" id="cb6-13" title="13">        <span class="co">-- ---------------------------- then</span></a>
+<a class="sourceLine" id="cb6-14" title="14">        <span class="ot">-&gt;</span> <span class="dt">GameState</span> (<span class="dt">AltP</span> p)    b2  <span class="co">-- ^ `AltP p`, b2 is a valid satte</span></a></code></pre></div>
 <p>And that’s it — a verified-correct representation of a game state, directly transcribed from our plain-language denotative specification.</p>
 <p>Now we just need to talk about <code>InPlay</code> and <code>Update</code>. In particular, we need:</p>
 <ol type="1">
@@ -107,137 +108,137 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 </ol>
 <h3 id="update">Update</h3>
 <p>Let’s go about what thinking about what defines a valid update. Remember, the kind we wanted was:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L73-L73</span></a>
-<a class="sourceLine" id="cb7-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb7-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Update</span><span class="ot"> ::</span> <span class="dt">Piece</span> <span class="ot">-&gt;</span> <span class="dt">Board</span> <span class="ot">-&gt;</span> <span class="dt">Board</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L73-L73</span></a>
+<a class="sourceLine" id="cb7-2" title="2"></a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="kw">data</span> <span class="dt">Update</span><span class="ot"> ::</span> <span class="dt">Piece</span> <span class="ot">-&gt;</span> <span class="dt">Board</span> <span class="ot">-&gt;</span> <span class="dt">Board</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a></code></pre></div>
 <p>An <code>Update p b1 b2</code> will be a valid update of <code>b1</code> by player <code>p</code> to produce <code>b2</code>. So, we need to:</p>
 <ol type="1">
 <li>Produce <code>b2</code> from <code>b1</code></li>
 <li>Be sure that the move is valid — namely, that it is placed in a clean spot so that it doesn’t overwrite any previous moves.</li>
 </ol>
 <p>Producing <code>b2</code> from <code>b1</code> is simple enough as a type family. In fact, we can just use the <em><a href="https://hackage.haskell.org/package/lens-typelevel">lens-typelevel</a></em> library to update our nested list:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="fu">$</span>(singletonsOnly [d|</a>
-<a class="sourceLine" id="cb8-2" data-line-number="2">  placeBoard :: N -&gt; N -&gt; Piece -&gt; Board -&gt; Board</a>
-<a class="sourceLine" id="cb8-3" data-line-number="3">  placeBoard i j p = set (ixList i . ixList j) (Just p)</a>
-<a class="sourceLine" id="cb8-4" data-line-number="4">  |])</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1"><span class="fu">$</span>(singletonsOnly [d|</a>
+<a class="sourceLine" id="cb8-2" title="2">  placeBoard :: N -&gt; N -&gt; Piece -&gt; Board -&gt; Board</a>
+<a class="sourceLine" id="cb8-3" title="3">  placeBoard i j p = set (ixList i . ixList j) (Just p)</a>
+<a class="sourceLine" id="cb8-4" title="4">  |])</a></code></pre></div>
 <p>This is just lenses — <code>set l x</code> is a function that sets the field specified by <code>l</code> to <code>x</code>. Here, we set the jth item of the ith list to be <code>Just p</code>. That means we can now produce <code>b2</code> from <code>b1</code> – it’s just <code>PlaceBoard i j p b1</code>.</p>
 <p>Here, <code>N</code> is the peano nat type (a lot of libraries define it, but it’s also defined as a uility in <em>lens-typelevel</em>). It’s essentially <code>[()]</code> (which makes it useful as an index type), or:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">data</span> <span class="dt">N</span> <span class="fu">=</span> <span class="dt">Z</span> <span class="fu">|</span> <span class="dt">S</span> <span class="dt">N</span></a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">data</span> <span class="dt">N</span> <span class="fu">=</span> <span class="dt">Z</span> <span class="fu">|</span> <span class="dt">S</span> <span class="dt">N</span></a></code></pre></div>
 <p>A natural number is either zero, or the successor of another natural number. <code>S (S Z)</code>, for example, would represent 2.</p>
 <p>The trickier part is making sure that the spot at <em>(i, j)</em> isn’t already taken. For that, we’ll introduce a common helper type to say <em>what</em> the piece at spot <em>(i, j)</em> is:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L87-L87</span></a>
-<a class="sourceLine" id="cb10-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb10-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Coord</span><span class="ot"> ::</span> (<span class="dt">N</span>, <span class="dt">N</span>) <span class="ot">-&gt;</span> [[k]] <span class="ot">-&gt;</span> k <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L87-L87</span></a>
+<a class="sourceLine" id="cb10-2" title="2"></a>
+<a class="sourceLine" id="cb10-3" title="3"><span class="kw">data</span> <span class="dt">Coord</span><span class="ot"> ::</span> (<span class="dt">N</span>, <span class="dt">N</span>) <span class="ot">-&gt;</span> [[k]] <span class="ot">-&gt;</span> k <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a></code></pre></div>
 <p>A <code>Coord '(i, j) xss x</code> is a data type that specifies that the jth item in the ith list in <code>b</code> is <code>p</code>.</p>
 <p>And we require <code>Update</code> to only be constructable if the spot at <em>(i, j)</em> is <code>Nothing</code>:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L73-L78</span></a>
-<a class="sourceLine" id="cb11-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb11-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Update</span><span class="ot"> ::</span> <span class="dt">Piece</span> <span class="ot">-&gt;</span> <span class="dt">Board</span> <span class="ot">-&gt;</span> <span class="dt">Board</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb11-4" data-line-number="4">    <span class="dt">MkUpdate</span></a>
-<a class="sourceLine" id="cb11-5" data-line-number="5"><span class="ot">        ::</span> forall i j p b<span class="fu">.</span> ()</a>
-<a class="sourceLine" id="cb11-6" data-line-number="6">        <span class="ot">=&gt;</span> <span class="dt">Coord</span> &#39;(i, j) b &#39;<span class="dt">Nothing</span>         <span class="co">-- ^ If the item at (i, j) in b is Nothing</span></a>
-<a class="sourceLine" id="cb11-7" data-line-number="7">        <span class="co">-- ------------------------------------- then</span></a>
-<a class="sourceLine" id="cb11-8" data-line-number="8">        <span class="ot">-&gt;</span> <span class="dt">Update</span> p b (<span class="dt">PlaceBoard</span> i j p b)  <span class="co">-- ^ Placing `Just p` at i, j is a valid update</span></a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L73-L78</span></a>
+<a class="sourceLine" id="cb11-2" title="2"></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="kw">data</span> <span class="dt">Update</span><span class="ot"> ::</span> <span class="dt">Piece</span> <span class="ot">-&gt;</span> <span class="dt">Board</span> <span class="ot">-&gt;</span> <span class="dt">Board</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb11-4" title="4">    <span class="dt">MkUpdate</span></a>
+<a class="sourceLine" id="cb11-5" title="5"><span class="ot">        ::</span> <span class="kw">forall</span> i j p b<span class="fu">.</span> ()</a>
+<a class="sourceLine" id="cb11-6" title="6">        <span class="ot">=&gt;</span> <span class="dt">Coord</span> &#39;(i, j) b <span class="dt">&#39;Nothing</span>         <span class="co">-- ^ If the item at (i, j) in b is Nothing</span></a>
+<a class="sourceLine" id="cb11-7" title="7">        <span class="co">-- ------------------------------------- then</span></a>
+<a class="sourceLine" id="cb11-8" title="8">        <span class="ot">-&gt;</span> <span class="dt">Update</span> p b (<span class="dt">PlaceBoard</span> i j p b)  <span class="co">-- ^ Placing `Just p` at i, j is a valid update</span></a></code></pre></div>
 <p><code>Update</code> is now defined so that, for <code>Update p b1 b2</code>, <code>b2</code> is the update via placement of a piece <code>p</code> at some position in <code>b1</code>, where the placement does not overwrite a previous piece. Note that our <code>MkUpdate</code> constructor only has four “free” variables, <code>i</code>, <code>j</code>, <code>p</code>, and <code>b</code>. If we use <code>MkUpdate</code>, it means that the “final board” is fully determined from only <code>i</code>, <code>j</code>, <code>p</code>, and <code>b</code>.</p>
 <h4 id="coord">Coord</h4>
 <p>Now we need to define <code>Coord</code>. We’re going to do that in terms of a simpler type that is essentially the same for normal lists — a type:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L80-L80</span></a>
-<a class="sourceLine" id="cb12-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb12-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Sel</span><span class="ot"> ::</span> <span class="dt">N</span> <span class="ot">-&gt;</span> [k] <span class="ot">-&gt;</span> k <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L80-L80</span></a>
+<a class="sourceLine" id="cb12-2" title="2"></a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="kw">data</span> <span class="dt">Sel</span><span class="ot"> ::</span> <span class="dt">N</span> <span class="ot">-&gt;</span> [k] <span class="ot">-&gt;</span> k <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a></code></pre></div>
 <p>A value of type <code>Sel n xs x</code> says that the nth item in <code>xs</code> is <code>x</code>.</p>
 <p>We can define this type inductively, similar to the common <a href="http://hackage.haskell.org/package/type-combinators-0.2.4.3/docs/Data-Type-Index.html"><code>Index</code></a> data type. We can mention our induction rules:</p>
 <ol type="1">
 <li>The first item in a list as at index 0 (<code>Z</code>)</li>
 <li>If an item is at index <code>n</code> in list <code>as</code>, then it is also at index <code>S n</code> in list <code>b ': as</code>.</li>
 </ol>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L80-L85</span></a>
-<a class="sourceLine" id="cb13-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb13-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Sel</span><span class="ot"> ::</span> <span class="dt">N</span> <span class="ot">-&gt;</span> [k] <span class="ot">-&gt;</span> k <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">    <span class="co">-- | The first item in a list is at index &#39;&#39;Z&#39;</span></a>
-<a class="sourceLine" id="cb13-5" data-line-number="5">    <span class="dt">SelZ</span><span class="ot"> ::</span> <span class="dt">Sel</span> &#39;<span class="dt">Z</span> (a &#39;<span class="fu">:</span> as) a</a>
-<a class="sourceLine" id="cb13-6" data-line-number="6">    <span class="dt">SelS</span><span class="ot"> ::</span> <span class="dt">Sel</span>     n        as  a  <span class="co">-- ^ If item `a` is at index `n` in list `as`</span></a>
-<a class="sourceLine" id="cb13-7" data-line-number="7">         <span class="co">-- ---------------------------- then</span></a>
-<a class="sourceLine" id="cb13-8" data-line-number="8">         <span class="ot">-&gt;</span> <span class="dt">Sel</span> (&#39;<span class="dt">S</span> n) (b &#39;<span class="fu">:</span> as) a  <span class="co">-- ^ Item `a` is at index `S n` in list `b : as`</span></a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L80-L85</span></a>
+<a class="sourceLine" id="cb13-2" title="2"></a>
+<a class="sourceLine" id="cb13-3" title="3"><span class="kw">data</span> <span class="dt">Sel</span><span class="ot"> ::</span> <span class="dt">N</span> <span class="ot">-&gt;</span> [k] <span class="ot">-&gt;</span> k <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb13-4" title="4">    <span class="co">-- | The first item in a list is at index &#39;&#39;Z&#39;</span></a>
+<a class="sourceLine" id="cb13-5" title="5">    <span class="dt">SelZ</span><span class="ot"> ::</span> <span class="dt">Sel</span> <span class="dt">&#39;Z</span> (a &#39;<span class="fu">:</span> as) a</a>
+<a class="sourceLine" id="cb13-6" title="6">    <span class="dt">SelS</span><span class="ot"> ::</span> <span class="dt">Sel</span>     n        as  a  <span class="co">-- ^ If item `a` is at index `n` in list `as`</span></a>
+<a class="sourceLine" id="cb13-7" title="7">         <span class="co">-- ---------------------------- then</span></a>
+<a class="sourceLine" id="cb13-8" title="8">         <span class="ot">-&gt;</span> <span class="dt">Sel</span> (<span class="dt">&#39;S</span> n) (b &#39;<span class="fu">:</span> as) a  <span class="co">-- ^ Item `a` is at index `S n` in list `b : as`</span></a></code></pre></div>
 <p>For example, for the type-level list <code>'[10,5,2,8]</code>, we can make values:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="dt">SelZ</span><span class="ot">             ::</span> <span class="dt">Sel</span>         &#39;<span class="dt">Z</span>   &#39;[<span class="dv">10</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">8</span>] <span class="dv">10</span></a>
-<a class="sourceLine" id="cb14-2" data-line-number="2"><span class="dt">SelS</span> <span class="dt">SelZ</span><span class="ot">        ::</span> <span class="dt">Sel</span>     (&#39;<span class="dt">S</span> &#39;<span class="dt">Z</span>)  &#39;[<span class="dv">10</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">8</span>] <span class="dv">5</span></a>
-<a class="sourceLine" id="cb14-3" data-line-number="3"><span class="dt">SelS</span> (<span class="dt">SelS</span> <span class="dt">SelZ</span>)<span class="ot"> ::</span> <span class="dt">Sel</span> (&#39;<span class="dt">S</span> (&#39;<span class="dt">S</span> &#39;<span class="dt">Z</span>)) &#39;[<span class="dv">10</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">8</span>] <span class="dv">2</span></a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" title="1"><span class="dt">SelZ</span><span class="ot">             ::</span> <span class="dt">Sel</span>         <span class="dt">&#39;Z</span>   &#39;[<span class="dv">10</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">8</span>] <span class="dv">10</span></a>
+<a class="sourceLine" id="cb14-2" title="2"><span class="dt">SelS</span> <span class="dt">SelZ</span><span class="ot">        ::</span> <span class="dt">Sel</span>     (<span class="dt">&#39;S</span> <span class="dt">&#39;Z</span>)  &#39;[<span class="dv">10</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">8</span>] <span class="dv">5</span></a>
+<a class="sourceLine" id="cb14-3" title="3"><span class="dt">SelS</span> (<span class="dt">SelS</span> <span class="dt">SelZ</span>)<span class="ot"> ::</span> <span class="dt">Sel</span> (<span class="dt">&#39;S</span> (<span class="dt">&#39;S</span> <span class="dt">&#39;Z</span>)) &#39;[<span class="dv">10</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">8</span>] <span class="dv">2</span></a></code></pre></div>
 <p>etc.</p>
 <p>We can then use this to define <code>Coord</code>:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L87-L92</span></a>
-<a class="sourceLine" id="cb15-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb15-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Coord</span><span class="ot"> ::</span> (<span class="dt">N</span>, <span class="dt">N</span>) <span class="ot">-&gt;</span> [[k]] <span class="ot">-&gt;</span> k <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb15-4" data-line-number="4"><span class="ot">    (:$:) ::</span> forall i j rows row p<span class="fu">.</span> ()</a>
-<a class="sourceLine" id="cb15-5" data-line-number="5">          <span class="ot">=&gt;</span> <span class="dt">Sel</span> i rows row         <span class="co">-- ^ If the ith list in `rows` is `row`</span></a>
-<a class="sourceLine" id="cb15-6" data-line-number="6">          <span class="ot">-&gt;</span> <span class="dt">Sel</span> j row  p           <span class="co">-- ^ And the jth item in `row` is `p`</span></a>
-<a class="sourceLine" id="cb15-7" data-line-number="7">          <span class="co">-- --------------------------- then</span></a>
-<a class="sourceLine" id="cb15-8" data-line-number="8">          <span class="ot">-&gt;</span> <span class="dt">Coord</span> &#39;(i, j) rows p   <span class="co">-- ^ The item at (i, j) is `p`</span></a></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L87-L92</span></a>
+<a class="sourceLine" id="cb15-2" title="2"></a>
+<a class="sourceLine" id="cb15-3" title="3"><span class="kw">data</span> <span class="dt">Coord</span><span class="ot"> ::</span> (<span class="dt">N</span>, <span class="dt">N</span>) <span class="ot">-&gt;</span> [[k]] <span class="ot">-&gt;</span> k <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb15-4" title="4"><span class="ot">    (:$:) ::</span> <span class="kw">forall</span> i j rows row p<span class="fu">.</span> ()</a>
+<a class="sourceLine" id="cb15-5" title="5">          <span class="ot">=&gt;</span> <span class="dt">Sel</span> i rows row         <span class="co">-- ^ If the ith list in `rows` is `row`</span></a>
+<a class="sourceLine" id="cb15-6" title="6">          <span class="ot">-&gt;</span> <span class="dt">Sel</span> j row  p           <span class="co">-- ^ And the jth item in `row` is `p`</span></a>
+<a class="sourceLine" id="cb15-7" title="7">          <span class="co">-- --------------------------- then</span></a>
+<a class="sourceLine" id="cb15-8" title="8">          <span class="ot">-&gt;</span> <span class="dt">Coord</span> &#39;(i, j) rows p   <span class="co">-- ^ The item at (i, j) is `p`</span></a></code></pre></div>
 <p>A <code>Coord '(i, j) rows piece</code> contains a selection into the ith list in <code>rows</code>, to get <code>row</code>, and a selection into the jth item in <code>row</code>, to get <code>piece</code>.</p>
 <h3 id="trying-it-out">Trying it out</h3>
 <p>That’s it! Let’s see if we can generate some sensible <code>Update</code>s, and maybe even play a sample game.</p>
 <p>We’ll start with the <code>EmptyBoard</code>, and let’s add a piece by <code>PX</code> at the middle spot, index (1,1). This means we want <code>SelS SelZ :$: SelS SelZ</code> (a <code>Coord</code> with two indexes into spots 1 and 1) applied to <code>MkUpdate</code>. We’ll use <em>-XTypeApplications</em> to specify the type variables <code>p</code> and <code>b</code>:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">MkUpdate</span> <span class="fu">@</span>_ <span class="fu">@</span>_ <span class="fu">@</span>&#39;<span class="dt">PX</span> <span class="fu">@</span><span class="dt">EmptyBoard</span> (<span class="dt">SelS</span> <span class="dt">SelZ</span> <span class="fu">:$:</span> <span class="dt">SelS</span> <span class="dt">SelZ</span>)</a>
-<a class="sourceLine" id="cb16-2" data-line-number="2"><span class="dt">Update</span></a>
-<a class="sourceLine" id="cb16-3" data-line-number="3">  &#39;<span class="dt">PX</span></a>
-<a class="sourceLine" id="cb16-4" data-line-number="4">  &#39;[ &#39;[ &#39;<span class="dt">Nothing</span>, &#39;<span class="dt">Nothing</span> , &#39;<span class="dt">Nothing</span>],</a>
-<a class="sourceLine" id="cb16-5" data-line-number="5">     &#39;[ &#39;<span class="dt">Nothing</span>, &#39;<span class="dt">Nothing</span> , &#39;<span class="dt">Nothing</span>],</a>
-<a class="sourceLine" id="cb16-6" data-line-number="6">     &#39;[ &#39;<span class="dt">Nothing</span>, &#39;<span class="dt">Nothing</span> , &#39;<span class="dt">Nothing</span>]</a>
-<a class="sourceLine" id="cb16-7" data-line-number="7">   ]</a>
-<a class="sourceLine" id="cb16-8" data-line-number="8">  &#39;[ &#39;[ &#39;<span class="dt">Nothing</span>, &#39;<span class="dt">Nothing</span> , &#39;<span class="dt">Nothing</span>],</a>
-<a class="sourceLine" id="cb16-9" data-line-number="9">     &#39;[ &#39;<span class="dt">Nothing</span>, &#39;<span class="dt">Just</span> &#39;<span class="dt">PX</span>, &#39;<span class="dt">Nothing</span>],</a>
-<a class="sourceLine" id="cb16-10" data-line-number="10">     &#39;[ &#39;<span class="dt">Nothing</span>, &#39;<span class="dt">Nothing</span> , &#39;<span class="dt">Nothing</span>]</a>
-<a class="sourceLine" id="cb16-11" data-line-number="11">  ]</a></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" title="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t <span class="dt">MkUpdate</span> <span class="fu">@</span>_ <span class="fu">@</span>_ <span class="fu">@</span><span class="dt">&#39;PX</span> <span class="fu">@</span><span class="dt">EmptyBoard</span> (<span class="dt">SelS</span> <span class="dt">SelZ</span> <span class="fu">:$:</span> <span class="dt">SelS</span> <span class="dt">SelZ</span>)</a>
+<a class="sourceLine" id="cb16-2" title="2"><span class="dt">Update</span></a>
+<a class="sourceLine" id="cb16-3" title="3">  <span class="dt">&#39;PX</span></a>
+<a class="sourceLine" id="cb16-4" title="4">  &#39;[ &#39;[ <span class="dt">&#39;Nothing</span>, <span class="dt">&#39;Nothing</span> , <span class="dt">&#39;Nothing</span>],</a>
+<a class="sourceLine" id="cb16-5" title="5">     &#39;[ <span class="dt">&#39;Nothing</span>, <span class="dt">&#39;Nothing</span> , <span class="dt">&#39;Nothing</span>],</a>
+<a class="sourceLine" id="cb16-6" title="6">     &#39;[ <span class="dt">&#39;Nothing</span>, <span class="dt">&#39;Nothing</span> , <span class="dt">&#39;Nothing</span>]</a>
+<a class="sourceLine" id="cb16-7" title="7">   ]</a>
+<a class="sourceLine" id="cb16-8" title="8">  &#39;[ &#39;[ <span class="dt">&#39;Nothing</span>, <span class="dt">&#39;Nothing</span> , <span class="dt">&#39;Nothing</span>],</a>
+<a class="sourceLine" id="cb16-9" title="9">     &#39;[ <span class="dt">&#39;Nothing</span>, <span class="dt">&#39;Just</span> <span class="dt">&#39;PX</span>, <span class="dt">&#39;Nothing</span>],</a>
+<a class="sourceLine" id="cb16-10" title="10">     &#39;[ <span class="dt">&#39;Nothing</span>, <span class="dt">&#39;Nothing</span> , <span class="dt">&#39;Nothing</span>]</a>
+<a class="sourceLine" id="cb16-11" title="11">  ]</a></code></pre></div>
 <p>Nice! This update produces exactly he board expected.</p>
 <p>Let’s see if we can see if this prevents us from creating an illegal board. We’ll take the result board and see if we can place a <code>PO</code> piece there:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> <span class="dt">NewBoard</span> <span class="fu">=</span> &#39;[ &#39;[ &#39;<span class="dt">Nothing</span>, &#39;<span class="dt">Nothing</span> , &#39;<span class="dt">Nothing</span> ]</a>
-<a class="sourceLine" id="cb17-2" data-line-number="2">                      , &#39;[ &#39;<span class="dt">Nothing</span>, &#39;<span class="dt">Just</span> &#39;<span class="dt">PX</span>, &#39;<span class="dt">Nothing</span> ]</a>
-<a class="sourceLine" id="cb17-3" data-line-number="3">                      , &#39;[ &#39;<span class="dt">Nothing</span>, &#39;<span class="dt">Nothing</span> , &#39;<span class="dt">Nothing</span> ]</a>
-<a class="sourceLine" id="cb17-4" data-line-number="4">                      ]</a>
-<a class="sourceLine" id="cb17-5" data-line-number="5">ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="dt">MkUpdate</span> <span class="fu">@</span>_ <span class="fu">@</span>_ <span class="fu">@</span>&#39;<span class="dt">PO</span> <span class="fu">@</span><span class="dt">NewBoard</span> (<span class="dt">SelS</span> <span class="dt">SelZ</span> <span class="fu">:$:</span> <span class="dt">SelS</span> <span class="dt">SelZ</span>)</a>
-<a class="sourceLine" id="cb17-6" data-line-number="6">    • <span class="dt">Couldn&#39;t</span> match <span class="kw">type</span> ‘&#39;<span class="dt">Nothing</span>’ with ‘&#39;<span class="dt">Just</span> &#39;<span class="dt">PX</span>’</a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" title="1">ghci<span class="fu">&gt;</span> <span class="kw">let</span> <span class="dt">NewBoard</span> <span class="fu">=</span> &#39;[ &#39;[ <span class="dt">&#39;Nothing</span>, <span class="dt">&#39;Nothing</span> , <span class="dt">&#39;Nothing</span> ]</a>
+<a class="sourceLine" id="cb17-2" title="2">                      , &#39;[ <span class="dt">&#39;Nothing</span>, <span class="dt">&#39;Just</span> <span class="dt">&#39;PX</span>, <span class="dt">&#39;Nothing</span> ]</a>
+<a class="sourceLine" id="cb17-3" title="3">                      , &#39;[ <span class="dt">&#39;Nothing</span>, <span class="dt">&#39;Nothing</span> , <span class="dt">&#39;Nothing</span> ]</a>
+<a class="sourceLine" id="cb17-4" title="4">                      ]</a>
+<a class="sourceLine" id="cb17-5" title="5">ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="dt">MkUpdate</span> <span class="fu">@</span>_ <span class="fu">@</span>_ <span class="fu">@</span><span class="dt">&#39;PO</span> <span class="fu">@</span><span class="dt">NewBoard</span> (<span class="dt">SelS</span> <span class="dt">SelZ</span> <span class="fu">:$:</span> <span class="dt">SelS</span> <span class="dt">SelZ</span>)</a>
+<a class="sourceLine" id="cb17-6" title="6">    • <span class="dt">Couldn&#39;t</span> match <span class="kw">type</span> ‘<span class="dt">&#39;Nothing</span>’ with ‘<span class="dt">&#39;Just</span> <span class="dt">&#39;PX</span>’</a></code></pre></div>
 <p>Right! That’s because <code>SelS SelZ :&amp;: SelS SellZ</code>, applied to <code>NewBoard</code>, gives <code>Coord '('S 'Z, 'S 'Z) NewBoard ('Just 'PX)</code>. However, in order to be used with <code>MkUpdate</code>, the final field has to be <code>'Nothing</code>, not <code>'Just 'PX</code>. So, type error.</p>
 <h3 id="type-safe-play">Type-safe Play</h3>
 <p>At the end of this all, we finally have enough to write a truly type-safe <code>play</code> function that allows us to play a round of our game!</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L94-L100</span></a>
-<a class="sourceLine" id="cb18-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb18-3" data-line-number="3">play</a>
-<a class="sourceLine" id="cb18-4" data-line-number="4"><span class="ot">    ::</span> forall i j p b<span class="fu">.</span> ()</a>
-<a class="sourceLine" id="cb18-5" data-line-number="5">    <span class="ot">=&gt;</span> <span class="dt">InPlay</span> <span class="fu">@@</span> b</a>
-<a class="sourceLine" id="cb18-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">Coord</span> &#39;(i, j) b &#39;<span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb18-7" data-line-number="7">    <span class="ot">-&gt;</span> <span class="dt">GameState</span> p b</a>
-<a class="sourceLine" id="cb18-8" data-line-number="8">    <span class="ot">-&gt;</span> <span class="dt">GameState</span> (<span class="dt">AltP</span> p) (<span class="dt">PlaceBoard</span> i j p b)</a>
-<a class="sourceLine" id="cb18-9" data-line-number="9">play r c <span class="fu">=</span> <span class="dt">GSUpdate</span> r (<span class="dt">MkUpdate</span> c)</a></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L94-L100</span></a>
+<a class="sourceLine" id="cb18-2" title="2"></a>
+<a class="sourceLine" id="cb18-3" title="3">play</a>
+<a class="sourceLine" id="cb18-4" title="4"><span class="ot">    ::</span> <span class="kw">forall</span> i j p b<span class="fu">.</span> ()</a>
+<a class="sourceLine" id="cb18-5" title="5">    <span class="ot">=&gt;</span> <span class="dt">InPlay</span> <span class="fu">@@</span> b</a>
+<a class="sourceLine" id="cb18-6" title="6">    <span class="ot">-&gt;</span> <span class="dt">Coord</span> &#39;(i, j) b <span class="dt">&#39;Nothing</span></a>
+<a class="sourceLine" id="cb18-7" title="7">    <span class="ot">-&gt;</span> <span class="dt">GameState</span> p b</a>
+<a class="sourceLine" id="cb18-8" title="8">    <span class="ot">-&gt;</span> <span class="dt">GameState</span> (<span class="dt">AltP</span> p) (<span class="dt">PlaceBoard</span> i j p b)</a>
+<a class="sourceLine" id="cb18-9" title="9">play r c <span class="fu">=</span> <span class="dt">GSUpdate</span> r (<span class="dt">MkUpdate</span> c)</a></code></pre></div>
 <p><code>play</code> is basically the entirety of our game engine! (Minus defining <code>InPlay</code>, which we will take care of later). It’ll take our new move and a proof that the game is still in play, and return a updated new game state. Our entire game is done, and type-safe! It’s impossible to play a game in an incorrect way! (once we define <code>InPlay</code>).</p>
 <p>Let’s try out a few rounds in ghci, using <code>undefined</code> instead of a proper <code>InPlay</code> for now:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1">ghci<span class="fu">&gt;</span> g1 <span class="fu">=</span> play undefined (<span class="dt">SelS</span> <span class="dt">SelZ</span> <span class="fu">:$:</span> <span class="dt">SelS</span> <span class="dt">SelZ</span>) <span class="dt">GSStart</span>   <span class="co">-- X plays (1,1)</span></a>
-<a class="sourceLine" id="cb19-2" data-line-number="2">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t g1</a>
-<a class="sourceLine" id="cb19-3" data-line-number="3"><span class="dt">GameState</span> &#39;<span class="dt">PO</span></a>
-<a class="sourceLine" id="cb19-4" data-line-number="4">    &#39;[ &#39;[ &#39;<span class="dt">Nothing</span>, &#39;<span class="dt">Nothing</span> , &#39;<span class="dt">Nothing</span>]</a>
-<a class="sourceLine" id="cb19-5" data-line-number="5">     , &#39;[ &#39;<span class="dt">Nothing</span>, &#39;<span class="dt">Just</span> &#39;<span class="dt">PX</span>, &#39;<span class="dt">Nothing</span>]</a>
-<a class="sourceLine" id="cb19-6" data-line-number="6">     , &#39;[ &#39;<span class="dt">Nothing</span>, &#39;<span class="dt">Nothing</span> , &#39;<span class="dt">Nothing</span>]</a>
-<a class="sourceLine" id="cb19-7" data-line-number="7">     ]</a>
-<a class="sourceLine" id="cb19-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb19-9" data-line-number="9">ghci<span class="fu">&gt;</span> g2 <span class="fu">=</span> play undefined (<span class="dt">SelZ</span> <span class="fu">:$:</span> <span class="dt">SelS</span> <span class="dt">SelZ</span>) g1   <span class="co">-- O plays (0,1)</span></a>
-<a class="sourceLine" id="cb19-10" data-line-number="10">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t g2</a>
-<a class="sourceLine" id="cb19-11" data-line-number="11"><span class="dt">GameState</span> &#39;<span class="dt">PX</span></a>
-<a class="sourceLine" id="cb19-12" data-line-number="12">    &#39;[ &#39;[ &#39;<span class="dt">Nothing</span>, &#39;<span class="dt">Just</span> &#39;<span class="dt">PO</span>, &#39;<span class="dt">Nothing</span>]</a>
-<a class="sourceLine" id="cb19-13" data-line-number="13">     , &#39;[ &#39;<span class="dt">Nothing</span>, &#39;<span class="dt">Just</span> &#39;<span class="dt">PX</span>, &#39;<span class="dt">Nothing</span>]</a>
-<a class="sourceLine" id="cb19-14" data-line-number="14">     , &#39;[ &#39;<span class="dt">Nothing</span>, &#39;<span class="dt">Nothing</span> , &#39;<span class="dt">Nothing</span>]</a>
-<a class="sourceLine" id="cb19-15" data-line-number="15">     ]</a>
-<a class="sourceLine" id="cb19-16" data-line-number="16"></a>
-<a class="sourceLine" id="cb19-17" data-line-number="17">ghci<span class="fu">&gt;</span> g3 <span class="fu">=</span> play undefined (<span class="dt">SelZ</span> <span class="fu">:$:</span> <span class="dt">SelS</span> <span class="dt">SelZ</span>) g2   <span class="co">-- X plays (1,0)</span></a>
-<a class="sourceLine" id="cb19-18" data-line-number="18">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t g3</a>
-<a class="sourceLine" id="cb19-19" data-line-number="19"><span class="dt">GameState</span> &#39;<span class="dt">PO</span></a>
-<a class="sourceLine" id="cb19-20" data-line-number="20">    &#39;[ &#39;[ &#39;<span class="dt">Nothing</span> , &#39;<span class="dt">Just</span> &#39;<span class="dt">PO</span>, &#39;<span class="dt">Nothing</span>]</a>
-<a class="sourceLine" id="cb19-21" data-line-number="21">     , &#39;[ &#39;<span class="dt">Just</span> &#39;<span class="dt">PX</span>, &#39;<span class="dt">Just</span> &#39;<span class="dt">PX</span>, &#39;<span class="dt">Nothing</span>]</a>
-<a class="sourceLine" id="cb19-22" data-line-number="22">     , &#39;[ &#39;<span class="dt">Nothing</span> , &#39;<span class="dt">Nothing</span> , &#39;<span class="dt">Nothing</span>]</a>
-<a class="sourceLine" id="cb19-23" data-line-number="23">     ]</a>
-<a class="sourceLine" id="cb19-24" data-line-number="24"></a>
-<a class="sourceLine" id="cb19-25" data-line-number="25">ghci<span class="fu">&gt;</span> g4 <span class="fu">=</span> play undefined (<span class="dt">SelS</span> <span class="dt">SelZ</span> <span class="fu">:$:</span> <span class="dt">SelS</span> <span class="dt">SelZ</span>) g3   <span class="co">-- O plays (1,1)</span></a>
-<a class="sourceLine" id="cb19-26" data-line-number="26">    • <span class="dt">Couldn&#39;t</span> match <span class="kw">type</span> ‘&#39;<span class="dt">Just</span> &#39;<span class="dt">PX</span>’ with ‘&#39;<span class="dt">Nothing</span>’</a>
-<a class="sourceLine" id="cb19-27" data-line-number="27"></a>
-<a class="sourceLine" id="cb19-28" data-line-number="28">ghci<span class="fu">&gt;</span> g4 <span class="fu">=</span> play undefined (<span class="dt">SelS</span> (<span class="dt">SelS</span> (<span class="dt">SelS</span> <span class="dt">SelZ</span>)) <span class="fu">:$:</span> <span class="dt">SelZ</span>) g3  <span class="co">-- O plays (3,0)</span></a>
-<a class="sourceLine" id="cb19-29" data-line-number="29">    • <span class="dt">Couldn&#39;t</span> match <span class="kw">type</span> ‘&#39;[]’ with ‘&#39;<span class="dt">Nothing</span> &#39;<span class="fu">:</span> as’</a></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" title="1">ghci<span class="fu">&gt;</span> g1 <span class="fu">=</span> play <span class="fu">undefined</span> (<span class="dt">SelS</span> <span class="dt">SelZ</span> <span class="fu">:$:</span> <span class="dt">SelS</span> <span class="dt">SelZ</span>) <span class="dt">GSStart</span>   <span class="co">-- X plays (1,1)</span></a>
+<a class="sourceLine" id="cb19-2" title="2">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t g1</a>
+<a class="sourceLine" id="cb19-3" title="3"><span class="dt">GameState</span> <span class="dt">&#39;PO</span></a>
+<a class="sourceLine" id="cb19-4" title="4">    &#39;[ &#39;[ <span class="dt">&#39;Nothing</span>, <span class="dt">&#39;Nothing</span> , <span class="dt">&#39;Nothing</span>]</a>
+<a class="sourceLine" id="cb19-5" title="5">     , &#39;[ <span class="dt">&#39;Nothing</span>, <span class="dt">&#39;Just</span> <span class="dt">&#39;PX</span>, <span class="dt">&#39;Nothing</span>]</a>
+<a class="sourceLine" id="cb19-6" title="6">     , &#39;[ <span class="dt">&#39;Nothing</span>, <span class="dt">&#39;Nothing</span> , <span class="dt">&#39;Nothing</span>]</a>
+<a class="sourceLine" id="cb19-7" title="7">     ]</a>
+<a class="sourceLine" id="cb19-8" title="8"></a>
+<a class="sourceLine" id="cb19-9" title="9">ghci<span class="fu">&gt;</span> g2 <span class="fu">=</span> play <span class="fu">undefined</span> (<span class="dt">SelZ</span> <span class="fu">:$:</span> <span class="dt">SelS</span> <span class="dt">SelZ</span>) g1   <span class="co">-- O plays (0,1)</span></a>
+<a class="sourceLine" id="cb19-10" title="10">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t g2</a>
+<a class="sourceLine" id="cb19-11" title="11"><span class="dt">GameState</span> <span class="dt">&#39;PX</span></a>
+<a class="sourceLine" id="cb19-12" title="12">    &#39;[ &#39;[ <span class="dt">&#39;Nothing</span>, <span class="dt">&#39;Just</span> <span class="dt">&#39;PO</span>, <span class="dt">&#39;Nothing</span>]</a>
+<a class="sourceLine" id="cb19-13" title="13">     , &#39;[ <span class="dt">&#39;Nothing</span>, <span class="dt">&#39;Just</span> <span class="dt">&#39;PX</span>, <span class="dt">&#39;Nothing</span>]</a>
+<a class="sourceLine" id="cb19-14" title="14">     , &#39;[ <span class="dt">&#39;Nothing</span>, <span class="dt">&#39;Nothing</span> , <span class="dt">&#39;Nothing</span>]</a>
+<a class="sourceLine" id="cb19-15" title="15">     ]</a>
+<a class="sourceLine" id="cb19-16" title="16"></a>
+<a class="sourceLine" id="cb19-17" title="17">ghci<span class="fu">&gt;</span> g3 <span class="fu">=</span> play <span class="fu">undefined</span> (<span class="dt">SelZ</span> <span class="fu">:$:</span> <span class="dt">SelS</span> <span class="dt">SelZ</span>) g2   <span class="co">-- X plays (1,0)</span></a>
+<a class="sourceLine" id="cb19-18" title="18">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t g3</a>
+<a class="sourceLine" id="cb19-19" title="19"><span class="dt">GameState</span> <span class="dt">&#39;PO</span></a>
+<a class="sourceLine" id="cb19-20" title="20">    &#39;[ &#39;[ <span class="dt">&#39;Nothing</span> , <span class="dt">&#39;Just</span> <span class="dt">&#39;PO</span>, <span class="dt">&#39;Nothing</span>]</a>
+<a class="sourceLine" id="cb19-21" title="21">     , &#39;[ <span class="dt">&#39;Just</span> <span class="dt">&#39;PX</span>, <span class="dt">&#39;Just</span> <span class="dt">&#39;PX</span>, <span class="dt">&#39;Nothing</span>]</a>
+<a class="sourceLine" id="cb19-22" title="22">     , &#39;[ <span class="dt">&#39;Nothing</span> , <span class="dt">&#39;Nothing</span> , <span class="dt">&#39;Nothing</span>]</a>
+<a class="sourceLine" id="cb19-23" title="23">     ]</a>
+<a class="sourceLine" id="cb19-24" title="24"></a>
+<a class="sourceLine" id="cb19-25" title="25">ghci<span class="fu">&gt;</span> g4 <span class="fu">=</span> play <span class="fu">undefined</span> (<span class="dt">SelS</span> <span class="dt">SelZ</span> <span class="fu">:$:</span> <span class="dt">SelS</span> <span class="dt">SelZ</span>) g3   <span class="co">-- O plays (1,1)</span></a>
+<a class="sourceLine" id="cb19-26" title="26">    • <span class="dt">Couldn&#39;t</span> match <span class="kw">type</span> ‘<span class="dt">&#39;Just</span> <span class="dt">&#39;PX</span>’ with ‘<span class="dt">&#39;Nothing</span>’</a>
+<a class="sourceLine" id="cb19-27" title="27"></a>
+<a class="sourceLine" id="cb19-28" title="28">ghci<span class="fu">&gt;</span> g4 <span class="fu">=</span> play <span class="fu">undefined</span> (<span class="dt">SelS</span> (<span class="dt">SelS</span> (<span class="dt">SelS</span> <span class="dt">SelZ</span>)) <span class="fu">:$:</span> <span class="dt">SelZ</span>) g3  <span class="co">-- O plays (3,0)</span></a>
+<a class="sourceLine" id="cb19-29" title="29">    • <span class="dt">Couldn&#39;t</span> match <span class="kw">type</span> ‘&#39;[]’ with ‘<span class="dt">&#39;Nothing</span> &#39;<span class="fu">:</span> as’</a></code></pre></div>
 <p><code>play</code> enforces:</p>
 <ol type="1">
 <li>Turns are always alternating X, then O</li>
@@ -259,98 +260,98 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 </ol>
 <p>Note that we could also just have a “success or nor success” situation, but, because we might want to provide feedback to the user, it is helpful to not be “<a href="https://twitter.com/cattheory/status/887760004622757890">decision-blind</a>” (a cousin of <a href="https://existentialtype.wordpress.com/2011/03/15/boolean-blindness/">boolean blindness</a>).</p>
 <p>We’ll call these potential “views” out of <code>(N, N)</code> with respect to some board <code>b</code>. Let’s create a data type representing all of these possibilities (using <code>OutOfBounds</code> as a placeholder predicate for an out-of-bounds coordinate):</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="co">-- | Placeholder predicate if a given number `n` is out of bounds for a given</span></a>
-<a class="sourceLine" id="cb20-2" data-line-number="2"><span class="co">-- list.  Predicate is from the &#39;decidable&#39; library</span></a>
-<a class="sourceLine" id="cb20-3" data-line-number="3"><span class="kw">data</span> <span class="dt">OutOfBounds</span><span class="ot"> n ::</span> <span class="dt">Predicate</span> [k]</a>
-<a class="sourceLine" id="cb20-4" data-line-number="4"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L108-L118</span></a>
-<a class="sourceLine" id="cb20-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb20-6" data-line-number="6"><span class="kw">data</span> <span class="dt">Pick</span><span class="ot"> ::</span> (<span class="dt">N</span>, <span class="dt">N</span>, <span class="dt">Board</span>) <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb20-7" data-line-number="7">    <span class="co">-- | We are out of bounds in x</span></a>
-<a class="sourceLine" id="cb20-8" data-line-number="8">    <span class="dt">PickOoBX</span><span class="ot">   ::</span> <span class="dt">OutOfBounds</span> i <span class="fu">@@</span> b                         <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
-<a class="sourceLine" id="cb20-9" data-line-number="9">    <span class="co">-- | We are in-bounds in x, but out of bounds in y</span></a>
-<a class="sourceLine" id="cb20-10" data-line-number="10">    <span class="dt">PickOoBY</span><span class="ot">   ::</span> <span class="dt">Sel</span> i b row        <span class="ot">-&gt;</span> <span class="dt">OutOfBounds</span> j <span class="fu">@@</span> row <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
-<a class="sourceLine" id="cb20-11" data-line-number="11">    <span class="co">-- | We are in-bounds in x, in-bounds in y, but spot is taken by `p`.</span></a>
-<a class="sourceLine" id="cb20-12" data-line-number="12">    <span class="co">-- We include `Sing p` in this constructor to potentially provide</span></a>
-<a class="sourceLine" id="cb20-13" data-line-number="13">    <span class="co">-- feedback to the user on what piece is already in the spot.</span></a>
-<a class="sourceLine" id="cb20-14" data-line-number="14">    <span class="dt">PickPlayed</span><span class="ot"> ::</span> <span class="dt">Coord</span> &#39;(i, j) b (&#39;<span class="dt">Just</span> p) <span class="ot">-&gt;</span> <span class="dt">Sing</span> p        <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
-<a class="sourceLine" id="cb20-15" data-line-number="15">    <span class="co">-- | We are in-bounds in x, in-bounds in y, and spot is clear</span></a>
-<a class="sourceLine" id="cb20-16" data-line-number="16">    <span class="dt">PickValid</span><span class="ot">  ::</span> <span class="dt">Coord</span> &#39;(i, j) b &#39;<span class="dt">Nothing</span>                   <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" title="1"><span class="co">-- | Placeholder predicate if a given number `n` is out of bounds for a given</span></a>
+<a class="sourceLine" id="cb20-2" title="2"><span class="co">-- list.  Predicate is from the &#39;decidable&#39; library</span></a>
+<a class="sourceLine" id="cb20-3" title="3"><span class="kw">data</span> <span class="dt">OutOfBounds</span><span class="ot"> n ::</span> <span class="dt">Predicate</span> [k]</a>
+<a class="sourceLine" id="cb20-4" title="4"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L108-L118</span></a>
+<a class="sourceLine" id="cb20-5" title="5"></a>
+<a class="sourceLine" id="cb20-6" title="6"><span class="kw">data</span> <span class="dt">Pick</span><span class="ot"> ::</span> (<span class="dt">N</span>, <span class="dt">N</span>, <span class="dt">Board</span>) <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb20-7" title="7">    <span class="co">-- | We are out of bounds in x</span></a>
+<a class="sourceLine" id="cb20-8" title="8">    <span class="dt">PickOoBX</span><span class="ot">   ::</span> <span class="dt">OutOfBounds</span> i <span class="fu">@@</span> b                         <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
+<a class="sourceLine" id="cb20-9" title="9">    <span class="co">-- | We are in-bounds in x, but out of bounds in y</span></a>
+<a class="sourceLine" id="cb20-10" title="10">    <span class="dt">PickOoBY</span><span class="ot">   ::</span> <span class="dt">Sel</span> i b row        <span class="ot">-&gt;</span> <span class="dt">OutOfBounds</span> j <span class="fu">@@</span> row <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
+<a class="sourceLine" id="cb20-11" title="11">    <span class="co">-- | We are in-bounds in x, in-bounds in y, but spot is taken by `p`.</span></a>
+<a class="sourceLine" id="cb20-12" title="12">    <span class="co">-- We include `Sing p` in this constructor to potentially provide</span></a>
+<a class="sourceLine" id="cb20-13" title="13">    <span class="co">-- feedback to the user on what piece is already in the spot.</span></a>
+<a class="sourceLine" id="cb20-14" title="14">    <span class="dt">PickPlayed</span><span class="ot"> ::</span> <span class="dt">Coord</span> &#39;(i, j) b (<span class="dt">&#39;Just</span> p) <span class="ot">-&gt;</span> <span class="dt">Sing</span> p        <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
+<a class="sourceLine" id="cb20-15" title="15">    <span class="co">-- | We are in-bounds in x, in-bounds in y, and spot is clear</span></a>
+<a class="sourceLine" id="cb20-16" title="16">    <span class="dt">PickValid</span><span class="ot">  ::</span> <span class="dt">Coord</span> &#39;(i, j) b <span class="dt">&#39;Nothing</span>                   <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a></code></pre></div>
 <p>(A value of type <code>OutOfBounds n @@ xs</code> is a witness that <code>xs</code> satisfies the <code>OutOfBounds n</code> — that is, <code>n</code> is out of bounds of <code>xs</code>. More on this later when we talk about the <em>decidable</em> library!)</p>
 <p>So, if we have an <code>(N, N, Board)</code>, we should be able to categorize it into one of each of these potential views.</p>
 <h3 id="proving-functions">Proving functions</h3>
 <p>This is the job of a “decision function”; in this case, actually, a “proving function”, or a “viewing function”. We need to be able to write a function:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="ot">pick ::</span> <span class="dt">Sing</span> &#39;(i, j, b)</a>
-<a class="sourceLine" id="cb21-2" data-line-number="2">     <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" title="1"><span class="ot">pick ::</span> <span class="dt">Sing</span> &#39;(i, j, b)</a>
+<a class="sourceLine" id="cb21-2" title="2">     <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a></code></pre></div>
 <p>That is, given any coordinate and board, we should be able to <em>totally</em> categorize it to one of the four categories (think of them like four perspectives/classifications), without exception.</p>
 <p>This can be considered the boundary between the unsafe and the safe world. And, to me, this is the “hard part” about dependently typed programming :)</p>
 <p>Now, let’s write <code>pick</code>. If we want to take any <code>i</code>, <code>j</code>, and <code>b</code>, and turn it into a valid <code>Pick</code>, remember that a valid <code>Pick '(i, j, b)</code> contains a <code>Coord '(i, j) b 'Nothing</code>, which contains a <code>Sel i b row</code> and a <code>Sel j row 'Nothing</code>. So we need to “convert” some <code>i</code>, <code>j</code> into a <code>Sel i b row</code> and <code>Sel j row 'Nothing</code>.</p>
 <p>Essentially, we want a function:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="ot">sel ::</span> <span class="dt">Sing</span> i</a>
-<a class="sourceLine" id="cb22-2" data-line-number="2">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
-<a class="sourceLine" id="cb22-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">Sel</span> i xs <span class="fu">??????</span></a></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" title="1"><span class="ot">sel ::</span> <span class="dt">Sing</span> i</a>
+<a class="sourceLine" id="cb22-2" title="2">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
+<a class="sourceLine" id="cb22-3" title="3">    <span class="ot">-&gt;</span> <span class="dt">Sel</span> i xs <span class="fu">??????</span></a></code></pre></div>
 <p>where <code>????</code> is whatever value is in <code>xs</code> at index <code>i</code>. It’s something we might not know directly from the input types, necessarily, because it might not even exist (the list might be too short).</p>
 <h3 id="existential-return-types-and-dependent-pairs">Existential return types and Dependent Pairs</h3>
 <p>This pattern — where we don’t know the type of something until after we receive the function inputs — is something you might recognize as an <em>existential type</em>, implementable using a <em>dependent pair</em> (or dependent sum).</p>
 <p>We could write our own dependent pair from scratch, but this is a good opportunity to practice using <em>singletons</em> library’s versatile “anonymous dependent pair” type, <code>Σ</code> (or <code>Sigma</code>), from <em>Data.Singletons.Sigma</em>.</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Sigma</span><span class="ot"> k ::</span> <span class="dt">Predicate</span> k <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb23-2" data-line-number="2"><span class="ot">    (:&amp;:) ::</span> <span class="dt">Sing</span> x <span class="ot">-&gt;</span> (p <span class="fu">@@</span> x) <span class="ot">-&gt;</span> <span class="dt">Sigma</span> k f</a>
-<a class="sourceLine" id="cb23-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb23-4" data-line-number="4"><span class="kw">type</span> Σ k <span class="fu">=</span> <span class="dt">Sigma</span> k</a></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" title="1"><span class="kw">data</span> <span class="dt">Sigma</span><span class="ot"> k ::</span> <span class="dt">Predicate</span> k <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb23-2" title="2"><span class="ot">    (:&amp;:) ::</span> <span class="dt">Sing</span> x <span class="ot">-&gt;</span> (p <span class="fu">@@</span> x) <span class="ot">-&gt;</span> <span class="dt">Sigma</span> k f</a>
+<a class="sourceLine" id="cb23-3" title="3"></a>
+<a class="sourceLine" id="cb23-4" title="4"><span class="kw">type</span> Σ k <span class="fu">=</span> <span class="dt">Sigma</span> k</a></code></pre></div>
 <p>A value of type <code>Sigma k p</code> contains an <code>p @@ x</code> (a witness that <code>p</code> satisfies <code>x</code>), existentially <em>hiding</em> the <code>x :: k</code>, and also <code>x</code> itself (as <code>Sing x</code>; remember that <code>Sing x</code> is essentially a value-level representation of type <code>x</code>).</p>
 <p>You can think of <code>Sigma k p</code> as a proof that <code>p</code> is satisfied for <em>some</em> <code>x :: k</code>, but we can’t know which <code>x</code> it is until you pattern match. If you pattern match, you’ll get both <code>Sing x</code> (to find out the <code>x</code>), and the <code>p @@ x</code> (the witness that <code>p</code> is satisfied by <code>x</code>).</p>
 <p>We can use this to return a <code>Sel n xs ????</code>, <em>hiding</em> the <code>???</code>.</p>
 <p>Now for some plumbing: We can’t directly give <code>Sel n xs</code> to <code>Sigma</code> (because it expects a <code>Predicate k</code>, not a <code>k -&gt; Type</code>), but we can turn a type constructor into a <code>Predicate</code> using <code>TyPred</code>, a convenient combinator from the <em>decidable</em> library:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="dt">TyPred</span><span class="ot"> ::</span> (k <span class="ot">-&gt;</span> <span class="dt">Type</span>) <span class="ot">-&gt;</span> <span class="dt">Predicate</span> k</a></code></pre></div>
-<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="dt">Pick</span></a>
-<a class="sourceLine" id="cb25-2" data-line-number="2">(<span class="dt">N</span>, <span class="dt">N</span>, <span class="dt">Board</span>) <span class="ot">-&gt;</span> <span class="dt">Type</span></a>
-<a class="sourceLine" id="cb25-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb25-4" data-line-number="4">ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="dt">TyPred</span> <span class="dt">Pick</span></a>
-<a class="sourceLine" id="cb25-5" data-line-number="5"><span class="dt">Predicate</span> (<span class="dt">N</span>, <span class="dt">N</span>, <span class="dt">Board</span>)</a>
-<a class="sourceLine" id="cb25-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb25-7" data-line-number="7">ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="dt">Sel</span> &#39;<span class="dt">Z</span> <span class="dt">EmptyBoard</span></a>
-<a class="sourceLine" id="cb25-8" data-line-number="8">[<span class="dt">Maybe</span> <span class="dt">Piece</span>] <span class="ot">-&gt;</span> <span class="dt">Type</span></a>
-<a class="sourceLine" id="cb25-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb25-10" data-line-number="10">ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="dt">TyPred</span> (<span class="dt">Sel</span> &#39;<span class="dt">Z</span> <span class="dt">EmptyBoard</span>)</a>
-<a class="sourceLine" id="cb25-11" data-line-number="11"><span class="dt">Predicate</span> [<span class="dt">Maybe</span> <span class="dt">Piece</span>]</a></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" title="1"><span class="dt">TyPred</span><span class="ot"> ::</span> (k <span class="ot">-&gt;</span> <span class="dt">Type</span>) <span class="ot">-&gt;</span> <span class="dt">Predicate</span> k</a></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" title="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="dt">Pick</span></a>
+<a class="sourceLine" id="cb25-2" title="2">(<span class="dt">N</span>, <span class="dt">N</span>, <span class="dt">Board</span>) <span class="ot">-&gt;</span> <span class="dt">Type</span></a>
+<a class="sourceLine" id="cb25-3" title="3"></a>
+<a class="sourceLine" id="cb25-4" title="4">ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="dt">TyPred</span> <span class="dt">Pick</span></a>
+<a class="sourceLine" id="cb25-5" title="5"><span class="dt">Predicate</span> (<span class="dt">N</span>, <span class="dt">N</span>, <span class="dt">Board</span>)</a>
+<a class="sourceLine" id="cb25-6" title="6"></a>
+<a class="sourceLine" id="cb25-7" title="7">ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="dt">Sel</span> <span class="dt">&#39;Z</span> <span class="dt">EmptyBoard</span></a>
+<a class="sourceLine" id="cb25-8" title="8">[<span class="dt">Maybe</span> <span class="dt">Piece</span>] <span class="ot">-&gt;</span> <span class="dt">Type</span></a>
+<a class="sourceLine" id="cb25-9" title="9"></a>
+<a class="sourceLine" id="cb25-10" title="10">ghci<span class="fu">&gt;</span> <span class="fu">:</span>k <span class="dt">TyPred</span> (<span class="dt">Sel</span> <span class="dt">&#39;Z</span> <span class="dt">EmptyBoard</span>)</a>
+<a class="sourceLine" id="cb25-11" title="11"><span class="dt">Predicate</span> [<span class="dt">Maybe</span> <span class="dt">Piece</span>]</a></code></pre></div>
 <p>Let’s make sure this type works like we expect it to. We want a <code>Σ k (TyPred (Sel n xs))</code> to contain the <code>x</code> at position <code>n</code> in <code>xs</code>, <em>and</em> the <code>Sel</code> into that position.</p>
 <p>To make things a little less verbose, we can define a type synonym for <code>Σ k (TyPred (Sel n xs))</code>, <code>SelFound n xs</code>:</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="kw">type</span> <span class="dt">SelFound</span> n (<span class="ot">xs ::</span> [k]) <span class="fu">=</span> Σ k (<span class="dt">TyPred</span> (<span class="dt">Sel</span> n xs))</a></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" title="1"><span class="kw">type</span> <span class="dt">SelFound</span> n (<span class="ot">xs ::</span> [k]) <span class="fu">=</span> Σ k (<span class="dt">TyPred</span> (<span class="dt">Sel</span> n xs))</a></code></pre></div>
 <p>Or, as practice, maybe we can treat <code>SelFound n</code> as a predicate on a list? The predicate <code>SelFound n</code> will be satisfied if list <code>xs</code> has some item <code>x</code> at index <code>n</code>!</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L102-L103</span></a>
-<a class="sourceLine" id="cb27-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb27-3" data-line-number="3"><span class="kw">data</span> <span class="dt">SelFound</span><span class="ot"> ::</span> <span class="dt">N</span> <span class="ot">-&gt;</span> <span class="dt">Predicate</span> [k]</a>
-<a class="sourceLine" id="cb27-4" data-line-number="4"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">SelFound</span> n) (<span class="ot">xs ::</span> [k]) <span class="fu">=</span> Σ k (<span class="dt">TyPred</span> (<span class="dt">Sel</span> n xs))</a></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L102-L103</span></a>
+<a class="sourceLine" id="cb27-2" title="2"></a>
+<a class="sourceLine" id="cb27-3" title="3"><span class="kw">data</span> <span class="dt">SelFound</span><span class="ot"> ::</span> <span class="dt">N</span> <span class="ot">-&gt;</span> <span class="dt">Predicate</span> [k]</a>
+<a class="sourceLine" id="cb27-4" title="4"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">SelFound</span> n) (<span class="ot">xs ::</span> [k]) <span class="fu">=</span> Σ k (<span class="dt">TyPred</span> (<span class="dt">Sel</span> n xs))</a></code></pre></div>
 <p>We can check to make sure this works, by checking the type of witnesses of <code>SelFound 'Z @@ '[ 'True, 'False ]</code>:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>kind<span class="fu">!</span> <span class="dt">SelFound</span> &#39;<span class="dt">Z</span> <span class="fu">@@</span> &#39;[ &#39;<span class="dt">True</span>, &#39;<span class="dt">False</span> ]</a>
-<a class="sourceLine" id="cb28-2" data-line-number="2">Σ <span class="dt">Bool</span> (<span class="dt">TyPred</span> <span class="dt">Sel</span> (&#39;<span class="dt">Z</span> &#39;[ &#39;<span class="dt">True</span>, &#39;<span class="dt">False</span> ]))</a></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" title="1">ghci<span class="fu">&gt;</span> <span class="fu">:</span>kind<span class="fu">!</span> <span class="dt">SelFound</span> <span class="dt">&#39;Z</span> <span class="fu">@@</span> &#39;[ <span class="dt">&#39;True</span>, <span class="dt">&#39;False</span> ]</a>
+<a class="sourceLine" id="cb28-2" title="2">Σ <span class="dt">Bool</span> (<span class="dt">TyPred</span> <span class="dt">Sel</span> (<span class="dt">&#39;Z</span> &#39;[ <span class="dt">&#39;True</span>, <span class="dt">&#39;False</span> ]))</a></code></pre></div>
 <p>Now let’s make some sample witnesses of predicate <code>SelFound n</code> to ensure we are thinking about things correctly:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L165-L167</span></a>
-<a class="sourceLine" id="cb29-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb29-3" data-line-number="3"><span class="ot">selFoundTest1 ::</span> <span class="dt">SelFound</span> &#39;<span class="dt">Z</span> <span class="fu">@@</span> &#39;[ &#39;<span class="dt">True</span>, &#39;<span class="dt">False</span> ]</a>
-<a class="sourceLine" id="cb29-4" data-line-number="4">selFoundTest1 <span class="fu">=</span> <span class="dt">STrue</span> <span class="fu">:&amp;:</span> <span class="dt">SelZ</span></a>
-<a class="sourceLine" id="cb29-5" data-line-number="5">                       <span class="co">-- ^ Sel &#39;Z &#39;[ &#39;True, &#39;False ] &#39;True</span></a></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L165-L167</span></a>
+<a class="sourceLine" id="cb29-2" title="2"></a>
+<a class="sourceLine" id="cb29-3" title="3"><span class="ot">selFoundTest1 ::</span> <span class="dt">SelFound</span> <span class="dt">&#39;Z</span> <span class="fu">@@</span> &#39;[ <span class="dt">&#39;True</span>, <span class="dt">&#39;False</span> ]</a>
+<a class="sourceLine" id="cb29-4" title="4">selFoundTest1 <span class="fu">=</span> <span class="dt">STrue</span> <span class="fu">:&amp;:</span> <span class="dt">SelZ</span></a>
+<a class="sourceLine" id="cb29-5" title="5">                       <span class="co">-- ^ Sel &#39;Z &#39;[ &#39;True, &#39;False ] &#39;True</span></a></code></pre></div>
 <p>Note that <code>SFalse :&amp;: SelZ</code> would be a type error, because the second half <code>SelZ</code> would be <code>Sel :: 'Z '[ 'True, 'False ] 'True</code> (because <code>'True</code> is the 0th item in the list), so we have to have the first half match <code>'True</code>, with <code>STrue</code>.</p>
 <p>We can write a witness for <code>SelFound ('S 'Z) @@ '[ 'True, 'False ]</code>, as well, by giving the value of the list at index 1, <code>'False</code>:</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb30-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L169-L171</span></a>
-<a class="sourceLine" id="cb30-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb30-3" data-line-number="3"><span class="ot">selFoundTest2 ::</span> <span class="dt">SelFound</span> (&#39;<span class="dt">S</span> &#39;<span class="dt">Z</span>) <span class="fu">@@</span> &#39;[ &#39;<span class="dt">True</span>, &#39;<span class="dt">False</span> ]</a>
-<a class="sourceLine" id="cb30-4" data-line-number="4">selFoundTest2 <span class="fu">=</span> <span class="dt">SFalse</span> <span class="fu">:&amp;:</span> <span class="dt">SelS</span> <span class="dt">SelZ</span></a>
-<a class="sourceLine" id="cb30-5" data-line-number="5">                        <span class="co">-- ^ Sel (&#39;S &#39;Z) &#39;[ &#39;True, &#39;False ] &#39;False</span></a></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb30-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L169-L171</span></a>
+<a class="sourceLine" id="cb30-2" title="2"></a>
+<a class="sourceLine" id="cb30-3" title="3"><span class="ot">selFoundTest2 ::</span> <span class="dt">SelFound</span> (<span class="dt">&#39;S</span> <span class="dt">&#39;Z</span>) <span class="fu">@@</span> &#39;[ <span class="dt">&#39;True</span>, <span class="dt">&#39;False</span> ]</a>
+<a class="sourceLine" id="cb30-4" title="4">selFoundTest2 <span class="fu">=</span> <span class="dt">SFalse</span> <span class="fu">:&amp;:</span> <span class="dt">SelS</span> <span class="dt">SelZ</span></a>
+<a class="sourceLine" id="cb30-5" title="5">                        <span class="co">-- ^ Sel (&#39;S &#39;Z) &#39;[ &#39;True, &#39;False ] &#39;False</span></a></code></pre></div>
 <p>Before moving on, I strongly recommend trying to write some values of type <code>SelFound n @@ xs</code> for different <code>n :: N</code> and <code>xs :: [a]</code>, to see what type-checks and what doesn’t. It’ll help you get a feel of the types we are working with, which might be more advanced than types you might encounter in everyday Haskell programming. Remember that you can load up all of the definitions in this post into a ghci session by downloading <a href="https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs">the source code</a> and executing it on the command line, <code>./Part1.hs</code>.</p>
 <p>Now, we now have enough tools to write the type of the function we would like:</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb31-1" data-line-number="1">selFound</a>
-<a class="sourceLine" id="cb31-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
-<a class="sourceLine" id="cb31-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
-<a class="sourceLine" id="cb31-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">SelFound</span> n <span class="fu">@@</span> xs</a></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb31-1" title="1">selFound</a>
+<a class="sourceLine" id="cb31-2" title="2"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
+<a class="sourceLine" id="cb31-3" title="3">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
+<a class="sourceLine" id="cb31-4" title="4">    <span class="ot">-&gt;</span> <span class="dt">SelFound</span> n <span class="fu">@@</span> xs</a></code></pre></div>
 <p>Remember, a <code>SelFound n @@ xs</code> contains both a <code>Sel n xs x</code> <em>and</em> a <code>Sing x</code>: a selection into the <code>i</code>th item in <code>xs</code> (the <code>Sel n xs x</code>), and also the item itself (the <code>Sing x</code>).</p>
 <p>We can start writing this, but the type system will soon show you where you run into problems. And that’s one of the best things about type systems! They help you realize when you’re trying to do something that doesn’t make sense.</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb32-1" data-line-number="1">selFound</a>
-<a class="sourceLine" id="cb32-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
-<a class="sourceLine" id="cb32-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
-<a class="sourceLine" id="cb32-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">SelFound</span> n <span class="fu">@@</span> xs</a>
-<a class="sourceLine" id="cb32-5" data-line-number="5">selFound <span class="fu">=</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb32-6" data-line-number="6">    <span class="dt">SZ</span> <span class="ot">-&gt;</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb32-7" data-line-number="7">      <span class="dt">SNil</span> <span class="ot">-&gt;</span> _ <span class="fu">:&amp;:</span> _</a></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb32-1" title="1">selFound</a>
+<a class="sourceLine" id="cb32-2" title="2"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
+<a class="sourceLine" id="cb32-3" title="3">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
+<a class="sourceLine" id="cb32-4" title="4">    <span class="ot">-&gt;</span> <span class="dt">SelFound</span> n <span class="fu">@@</span> xs</a>
+<a class="sourceLine" id="cb32-5" title="5">selFound <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb32-6" title="6">    <span class="dt">SZ</span> <span class="ot">-&gt;</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb32-7" title="7">      <span class="dt">SNil</span> <span class="ot">-&gt;</span> _ <span class="fu">:&amp;:</span> _</a></code></pre></div>
 <p>Things start out pretty standard. We want to match on all potential constructors of <code>N</code> and <code>[a]</code>: <code>N</code> has <code>Z</code> and <code>S</code>, so we match on singleton constructors <code>SZ</code> and <code>SS</code>; <code>[a]</code> has <code>[]</code> and <code>(:)</code>, so we match on singleton constructors <code>SNil</code> and <code>SCons</code>.</p>
 <p>If you ask ghc what goes in the typed holes, it’ll say that we need a <code>Sing x</code> and a <code>Sel 'Z '[] x</code> (which is because matching on <code>SZ</code> tells us we are in <code>'Z</code>, and matching on <code>SNil</code> tells us we are in <code>'[]</code>). And this…is a problem.</p>
 <p>Remember that the <code>x</code> is supposed to be the <code>n</code>th item in <code>xs</code>. Here, in this pattern match branch, we want the zeroth (first) item in <code>[]</code>. This doesn’t exist! That’s because there is no item in <code>[]</code>, so there is nothing we can put for the <code>Sing x</code>.</p>
@@ -359,98 +360,98 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>The problem? Well, indexing into item <code>n</code> in list <code>xs</code> <em>might not always succeed</em>. We might try to index into an empty list, so we can’t ever get a result!</p>
 <h3 id="decision-functions">Decision Functions</h3>
 <p>What we need is not a <em>proving function</em>, but, rather, a <em>decision</em> function. A decision function for a predicate <code>P</code> is a function:</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="ot">decidePred ::</span> <span class="dt">Sing</span> x</a>
-<a class="sourceLine" id="cb33-2" data-line-number="2">           <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">P</span> <span class="fu">@@</span> x)</a></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb33-1" title="1"><span class="ot">decidePred ::</span> <span class="dt">Sing</span> x</a>
+<a class="sourceLine" id="cb33-2" title="2">           <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">P</span> <span class="fu">@@</span> x)</a></code></pre></div>
 <p>That is, instead of producing a <code>P @@ x</code> directly, we produce a <code>Decision (P @@ x)</code>. Here, <code>Decision</code> is:</p>
-<div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb34-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Decision</span> a</a>
-<a class="sourceLine" id="cb34-2" data-line-number="2">    <span class="fu">=</span> <span class="dt">Proved</span>     a                <span class="co">-- ^ `a` is provably true</span></a>
-<a class="sourceLine" id="cb34-3" data-line-number="3">    <span class="fu">|</span> <span class="dt">Disproved</span> (a <span class="ot">-&gt;</span> <span class="dt">Void</span>)       <span class="co">-- ^ `a` is provably false</span></a>
-<a class="sourceLine" id="cb34-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb34-5" data-line-number="5"><span class="co">-- | The type with no constructors.  If we have a function `a -&gt; Void`, it must</span></a>
-<a class="sourceLine" id="cb34-6" data-line-number="6"><span class="co">-- mean that no value of type `a` exists.</span></a>
-<a class="sourceLine" id="cb34-7" data-line-number="7"><span class="kw">data</span> <span class="dt">Void</span></a></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb34-1" title="1"><span class="kw">data</span> <span class="dt">Decision</span> a</a>
+<a class="sourceLine" id="cb34-2" title="2">    <span class="fu">=</span> <span class="dt">Proved</span>     a                <span class="co">-- ^ `a` is provably true</span></a>
+<a class="sourceLine" id="cb34-3" title="3">    <span class="fu">|</span> <span class="dt">Disproved</span> (a <span class="ot">-&gt;</span> <span class="dt">Void</span>)       <span class="co">-- ^ `a` is provably false</span></a>
+<a class="sourceLine" id="cb34-4" title="4"></a>
+<a class="sourceLine" id="cb34-5" title="5"><span class="co">-- | The type with no constructors.  If we have a function `a -&gt; Void`, it must</span></a>
+<a class="sourceLine" id="cb34-6" title="6"><span class="co">-- mean that no value of type `a` exists.</span></a>
+<a class="sourceLine" id="cb34-7" title="7"><span class="kw">data</span> <span class="dt">Void</span></a></code></pre></div>
 <p>A decision function means that, for any <code>x</code>, we can say that either <code>P @@ x</code> can be proven true or can be proven false. See <a href="https://blog.jle.im/entry/introduction-to-singletons-3.html#decision">this section</a> for a deeper discussion on why <code>Decision</code> has both the <code>Proved</code> and <code>Disproved</code> branch. Essentially, it prevents us from just returning “disproved” without proving it (so we can be sure that our decision function is “correct” and not just cheating), and, in the long term, we keep track of “provably false” because we can use it later to build other useful decision functions and proving functions.</p>
 <p>We use decision functions when we want to “conditionally prove” something — it might be true, or it might not be (but definitely one or the other). It might exist, or it might not. We can construct the view, or we can’t. Whatever the perspective, it’s always one or the other.</p>
 <p><code>selFound</code> fits this category: for a <code>Sel n xs ????</code>, either <code>n</code> is “in bounds” of <code>xs</code> (and we can prove this with the item <code>x</code> in <code>xs</code>), or <code>n</code> is “out of bounds”. Either we get the <code>x</code> out of <code>xs</code> at slot <code>n</code>, or we prove that no possible <code>x</code> exists in <code>xs</code> at slot <code>n</code>.</p>
 <h4 id="deciding-selfound">Deciding SelFound</h4>
 <p>Enough talk, let’s get to it!</p>
 <p>Let’s write our first dependently typed function. We start the same way — by looking at every possible constructor of <code>N</code> and <code>[a]</code>:</p>
-<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb35-1" data-line-number="1">selFound</a>
-<a class="sourceLine" id="cb35-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
-<a class="sourceLine" id="cb35-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
-<a class="sourceLine" id="cb35-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> n <span class="fu">@@</span> xs)</a>
-<a class="sourceLine" id="cb35-5" data-line-number="5">selFound <span class="fu">=</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb35-6" data-line-number="6">    <span class="dt">SZ</span> <span class="ot">-&gt;</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb35-7" data-line-number="7">      <span class="dt">SNil</span>         <span class="ot">-&gt;</span> _   <span class="co">-- n is &#39;Z, xs is &#39;[]</span></a>
-<a class="sourceLine" id="cb35-8" data-line-number="8">      x <span class="ot">`SCons`</span> xs <span class="ot">-&gt;</span> _   <span class="co">-- n is &#39;Z, xs is (x &#39;: xs)</span></a>
-<a class="sourceLine" id="cb35-9" data-line-number="9">    <span class="dt">SS</span> n <span class="ot">-&gt;</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb35-10" data-line-number="10">      <span class="dt">SNil</span>         <span class="ot">-&gt;</span> _   <span class="co">-- n is (&#39;S n), xs is &#39;[]</span></a>
-<a class="sourceLine" id="cb35-11" data-line-number="11">      x <span class="ot">`SCons`</span> xs <span class="ot">-&gt;</span> _   <span class="co">-- n is (&#39;S n), xs is (x &#39;: xs)</span></a></code></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb35-1" title="1">selFound</a>
+<a class="sourceLine" id="cb35-2" title="2"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
+<a class="sourceLine" id="cb35-3" title="3">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
+<a class="sourceLine" id="cb35-4" title="4">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> n <span class="fu">@@</span> xs)</a>
+<a class="sourceLine" id="cb35-5" title="5">selFound <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb35-6" title="6">    <span class="dt">SZ</span> <span class="ot">-&gt;</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb35-7" title="7">      <span class="dt">SNil</span>         <span class="ot">-&gt;</span> _   <span class="co">-- n is &#39;Z, xs is &#39;[]</span></a>
+<a class="sourceLine" id="cb35-8" title="8">      x <span class="ot">`SCons`</span> xs <span class="ot">-&gt;</span> _   <span class="co">-- n is &#39;Z, xs is (x &#39;: xs)</span></a>
+<a class="sourceLine" id="cb35-9" title="9">    <span class="dt">SS</span> n <span class="ot">-&gt;</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb35-10" title="10">      <span class="dt">SNil</span>         <span class="ot">-&gt;</span> _   <span class="co">-- n is (&#39;S n), xs is &#39;[]</span></a>
+<a class="sourceLine" id="cb35-11" title="11">      x <span class="ot">`SCons`</span> xs <span class="ot">-&gt;</span> _   <span class="co">-- n is (&#39;S n), xs is (x &#39;: xs)</span></a></code></pre></div>
 <p>Okay, four cases. Initially daunting, but we can just handle this one by one. Normally we can just fill in the blanks with the “right” responses, but, for learning’s sake, let’s split these branches into four helper functions — one for each case.</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb36-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L120-L155</span></a>
-<a class="sourceLine" id="cb36-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb36-3" data-line-number="3">selFound</a>
-<a class="sourceLine" id="cb36-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
-<a class="sourceLine" id="cb36-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
-<a class="sourceLine" id="cb36-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> n <span class="fu">@@</span> xs)</a>
-<a class="sourceLine" id="cb36-7" data-line-number="7">selFound <span class="fu">=</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb36-8" data-line-number="8">    <span class="dt">SZ</span> <span class="ot">-&gt;</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb36-9" data-line-number="9">      <span class="dt">SNil</span>         <span class="ot">-&gt;</span> selFound_znil</a>
-<a class="sourceLine" id="cb36-10" data-line-number="10">      x <span class="ot">`SCons`</span> xs <span class="ot">-&gt;</span> selFound_zcons x xs</a>
-<a class="sourceLine" id="cb36-11" data-line-number="11">    <span class="dt">SS</span> n <span class="ot">-&gt;</span> \<span class="kw">case</span></a>
-<a class="sourceLine" id="cb36-12" data-line-number="12">      <span class="dt">SNil</span>         <span class="ot">-&gt;</span> selFound_snil n</a>
-<a class="sourceLine" id="cb36-13" data-line-number="13">      x <span class="ot">`SCons`</span> xs <span class="ot">-&gt;</span> selFound_scons n x xs</a>
-<a class="sourceLine" id="cb36-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb36-15" data-line-number="15">selFound_znil</a>
-<a class="sourceLine" id="cb36-16" data-line-number="16"><span class="ot">    ::</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> &#39;<span class="dt">Z</span> <span class="fu">@@</span> &#39;[])</a>
-<a class="sourceLine" id="cb36-17" data-line-number="17"></a>
-<a class="sourceLine" id="cb36-18" data-line-number="18">selFound_zcons</a>
-<a class="sourceLine" id="cb36-19" data-line-number="19"><span class="ot">    ::</span> <span class="dt">Sing</span> x</a>
-<a class="sourceLine" id="cb36-20" data-line-number="20">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
-<a class="sourceLine" id="cb36-21" data-line-number="21">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> &#39;<span class="dt">Z</span> <span class="fu">@@</span> (x &#39;<span class="fu">:</span> xs))</a>
-<a class="sourceLine" id="cb36-22" data-line-number="22"></a>
-<a class="sourceLine" id="cb36-23" data-line-number="23">selFound_snil</a>
-<a class="sourceLine" id="cb36-24" data-line-number="24"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
-<a class="sourceLine" id="cb36-25" data-line-number="25">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> (&#39;<span class="dt">S</span> n) <span class="fu">@@</span> &#39;[])</a>
-<a class="sourceLine" id="cb36-26" data-line-number="26"></a>
-<a class="sourceLine" id="cb36-27" data-line-number="27">selFound_scons</a>
-<a class="sourceLine" id="cb36-28" data-line-number="28"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
-<a class="sourceLine" id="cb36-29" data-line-number="29">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> x</a>
-<a class="sourceLine" id="cb36-30" data-line-number="30">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
-<a class="sourceLine" id="cb36-31" data-line-number="31">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> (&#39;<span class="dt">S</span> n) <span class="fu">@@</span> (x &#39;<span class="fu">:</span> xs))</a></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb36-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L120-L155</span></a>
+<a class="sourceLine" id="cb36-2" title="2"></a>
+<a class="sourceLine" id="cb36-3" title="3">selFound</a>
+<a class="sourceLine" id="cb36-4" title="4"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
+<a class="sourceLine" id="cb36-5" title="5">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
+<a class="sourceLine" id="cb36-6" title="6">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> n <span class="fu">@@</span> xs)</a>
+<a class="sourceLine" id="cb36-7" title="7">selFound <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb36-8" title="8">    <span class="dt">SZ</span> <span class="ot">-&gt;</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb36-9" title="9">      <span class="dt">SNil</span>         <span class="ot">-&gt;</span> selFound_znil</a>
+<a class="sourceLine" id="cb36-10" title="10">      x <span class="ot">`SCons`</span> xs <span class="ot">-&gt;</span> selFound_zcons x xs</a>
+<a class="sourceLine" id="cb36-11" title="11">    <span class="dt">SS</span> n <span class="ot">-&gt;</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb36-12" title="12">      <span class="dt">SNil</span>         <span class="ot">-&gt;</span> selFound_snil n</a>
+<a class="sourceLine" id="cb36-13" title="13">      x <span class="ot">`SCons`</span> xs <span class="ot">-&gt;</span> selFound_scons n x xs</a>
+<a class="sourceLine" id="cb36-14" title="14"></a>
+<a class="sourceLine" id="cb36-15" title="15">selFound_znil</a>
+<a class="sourceLine" id="cb36-16" title="16"><span class="ot">    ::</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> <span class="dt">&#39;Z</span> <span class="fu">@@</span> &#39;[])</a>
+<a class="sourceLine" id="cb36-17" title="17"></a>
+<a class="sourceLine" id="cb36-18" title="18">selFound_zcons</a>
+<a class="sourceLine" id="cb36-19" title="19"><span class="ot">    ::</span> <span class="dt">Sing</span> x</a>
+<a class="sourceLine" id="cb36-20" title="20">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
+<a class="sourceLine" id="cb36-21" title="21">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> <span class="dt">&#39;Z</span> <span class="fu">@@</span> (x &#39;<span class="fu">:</span> xs))</a>
+<a class="sourceLine" id="cb36-22" title="22"></a>
+<a class="sourceLine" id="cb36-23" title="23">selFound_snil</a>
+<a class="sourceLine" id="cb36-24" title="24"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
+<a class="sourceLine" id="cb36-25" title="25">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> (<span class="dt">&#39;S</span> n) <span class="fu">@@</span> &#39;[])</a>
+<a class="sourceLine" id="cb36-26" title="26"></a>
+<a class="sourceLine" id="cb36-27" title="27">selFound_scons</a>
+<a class="sourceLine" id="cb36-28" title="28"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
+<a class="sourceLine" id="cb36-29" title="29">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> x</a>
+<a class="sourceLine" id="cb36-30" title="30">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
+<a class="sourceLine" id="cb36-31" title="31">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> (<span class="dt">&#39;S</span> n) <span class="fu">@@</span> (x &#39;<span class="fu">:</span> xs))</a></code></pre></div>
 <ol type="1">
 <li><p>For the first branch, we have <code>'Z</code> and <code>'[]</code>. This should be false, because there is no item in the zeroth position in <code>[]</code>. But, also, there is no way to construct the <code>Sel</code> necessary for the witness, since there is no constructor for <code>Sel</code> that gives <code>'[]</code>.</p>
 <p>We can witness this by using a <em>total</em> helper function, <code>noEmptySel :: Sel n '[] a -&gt; Void</code>, which is a “disproof” of the fact that an empty <code>Sel</code> can exist. It’s a disproof because, if we <em>had</em> such a <code>Sel</code>, we could produce <code>Void</code> with it…but <code>Void</code> has no constructors. So no such <code>Sel</code> must exist!</p>
 <p>We implement it by pattern matching on all potential patterns (using the <em>-XLambdaCase</em> extension):</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L132-L134</span></a>
-<a class="sourceLine" id="cb37-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb37-3" data-line-number="3"><span class="ot">noEmptySel ::</span> <span class="dt">Sel</span> n &#39;[] a <span class="ot">-&gt;</span> <span class="dt">Void</span></a>
-<a class="sourceLine" id="cb37-4" data-line-number="4">noEmptySel <span class="fu">=</span> \<span class="kw">case</span> {}</a>
-<a class="sourceLine" id="cb37-5" data-line-number="5">            <span class="co">-- ^ we handle all 0 of the valid patterns for Sel n &#39;[] a</span></a></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb37-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L132-L134</span></a>
+<a class="sourceLine" id="cb37-2" title="2"></a>
+<a class="sourceLine" id="cb37-3" title="3"><span class="ot">noEmptySel ::</span> <span class="dt">Sel</span> n &#39;[] a <span class="ot">-&gt;</span> <span class="dt">Void</span></a>
+<a class="sourceLine" id="cb37-4" title="4">noEmptySel <span class="fu">=</span> \<span class="kw">case</span> {}</a>
+<a class="sourceLine" id="cb37-5" title="5">            <span class="co">-- ^ we handle all 0 of the valid patterns for Sel n &#39;[] a</span></a></code></pre></div>
 <p><code>noEmptySel</code> succesfuly implements <code>Sel n '[] as</code> by succesfully matching on every legal constructor that could produce <code>Sel n '[] as</code>. But, because there are no constructors for <code>Sel</code> that produce <code>Sel n '[] as</code> (we just have <code>SelZ</code> and <code>SelS</code>, which both produce non-empty <code>Sel</code>s), that means we have to handle all <em>zero</em> legal constructors. Once we handle all zero legal constructors, we’re done! (Remember to enable <em>-Werror=incomplete-patterns</em> to be sure! GHC will then reject the program if there is a pattern we do not handle)</p>
 <p>So we can write this as <code>Disproved</code>, which takes a <code>SelFound 'Z @@ '[] -&gt; Void</code>:</p>
-<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L136-L138</span></a>
-<a class="sourceLine" id="cb38-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb38-3" data-line-number="3">selFound_znil</a>
-<a class="sourceLine" id="cb38-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> &#39;<span class="dt">Z</span> <span class="fu">@@</span> &#39;[])</a>
-<a class="sourceLine" id="cb38-5" data-line-number="5">selFound_znil <span class="fu">=</span> <span class="dt">Disproved</span> \(_ <span class="fu">:&amp;:</span> s) <span class="ot">-&gt;</span> noEmptySel s</a></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb38-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L136-L138</span></a>
+<a class="sourceLine" id="cb38-2" title="2"></a>
+<a class="sourceLine" id="cb38-3" title="3">selFound_znil</a>
+<a class="sourceLine" id="cb38-4" title="4"><span class="ot">    ::</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> <span class="dt">&#39;Z</span> <span class="fu">@@</span> &#39;[])</a>
+<a class="sourceLine" id="cb38-5" title="5">selFound_znil <span class="fu">=</span> <span class="dt">Disproved</span> \(_ <span class="fu">:&amp;:</span> s) <span class="ot">-&gt;</span> noEmptySel s</a></code></pre></div>
 <p>Armed with the <code>Sel 'Z '[] as</code> that is inside the <code>SelFound 'Z @@ '[]</code>, we can use <code>noEmptySel</code> to produce the <code>Void</code>. We succefully disprove the fact that there is any item that can be found in <code>'[]</code>, by providing a function <code>SelFound 'Z @@ '[] -&gt; Void</code>.</p>
 <p>Note that with the <em>-XBlockArguments</em> extension, we don’t need the <code>$</code> after <code>Disproved</code>.</p></li>
 <li><p>For the second branch, we have <code>'Z</code> and <code>(x ': xs)</code>. We want to prove that there exists an item at position <code>'Z</code> in the list <code>x ': xs</code>. The answer is <em>yes</em>, there does, and that item is <code>x</code>, and the <code>Sel</code> is <code>SelZ</code>!</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L140-L144</span></a>
-<a class="sourceLine" id="cb39-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb39-3" data-line-number="3">selFound_zcons</a>
-<a class="sourceLine" id="cb39-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Sing</span> x</a>
-<a class="sourceLine" id="cb39-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
-<a class="sourceLine" id="cb39-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> &#39;<span class="dt">Z</span> <span class="fu">@@</span> (x &#39;<span class="fu">:</span> xs))</a>
-<a class="sourceLine" id="cb39-7" data-line-number="7">selFound_zcons x _ <span class="fu">=</span> <span class="dt">Proved</span> (x <span class="fu">:&amp;:</span> <span class="dt">SelZ</span>)</a></code></pre></div></li>
+<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb39-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L140-L144</span></a>
+<a class="sourceLine" id="cb39-2" title="2"></a>
+<a class="sourceLine" id="cb39-3" title="3">selFound_zcons</a>
+<a class="sourceLine" id="cb39-4" title="4"><span class="ot">    ::</span> <span class="dt">Sing</span> x</a>
+<a class="sourceLine" id="cb39-5" title="5">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
+<a class="sourceLine" id="cb39-6" title="6">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> <span class="dt">&#39;Z</span> <span class="fu">@@</span> (x &#39;<span class="fu">:</span> xs))</a>
+<a class="sourceLine" id="cb39-7" title="7">selFound_zcons x _ <span class="fu">=</span> <span class="dt">Proved</span> (x <span class="fu">:&amp;:</span> <span class="dt">SelZ</span>)</a></code></pre></div></li>
 <li><p>For the third branch, we have <code>'S n</code> and <code>'[]</code>. Again, this should be false, because there is no item in the <code>'S n</code> position in <code>'[]</code>. We should be able to use the same strategy for the first branch, by re-using our helper function <code>noEmptySel</code>:</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L146-L149</span></a>
-<a class="sourceLine" id="cb40-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb40-3" data-line-number="3">selFound_snil</a>
-<a class="sourceLine" id="cb40-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
-<a class="sourceLine" id="cb40-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> (&#39;<span class="dt">S</span> n) <span class="fu">@@</span> &#39;[])</a>
-<a class="sourceLine" id="cb40-6" data-line-number="6">selFound_snil _ <span class="fu">=</span> <span class="dt">Disproved</span> \(_ <span class="fu">:&amp;:</span> s) <span class="ot">-&gt;</span> noEmptySel s</a></code></pre></div></li>
+<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb40-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L146-L149</span></a>
+<a class="sourceLine" id="cb40-2" title="2"></a>
+<a class="sourceLine" id="cb40-3" title="3">selFound_snil</a>
+<a class="sourceLine" id="cb40-4" title="4"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
+<a class="sourceLine" id="cb40-5" title="5">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> (<span class="dt">&#39;S</span> n) <span class="fu">@@</span> &#39;[])</a>
+<a class="sourceLine" id="cb40-6" title="6">selFound_snil _ <span class="fu">=</span> <span class="dt">Disproved</span> \(_ <span class="fu">:&amp;:</span> s) <span class="ot">-&gt;</span> noEmptySel s</a></code></pre></div></li>
 <li><p>The fourth branch is the most interesting one. We have <code>'S n</code> and <code>(x ': xs)</code>. How do we know if the list <code>x ': xs</code> has an item in the <code>'S n</code> spot?</p>
 <p>Well, we can check if the list <code>xs</code> has an item in its <code>n</code> spot.</p>
 <ul>
@@ -459,207 +460,207 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Suppose there <em>was</em> an item <code>y</code> at the <code>'S n</code> spot in <code>x ': xs</code>. If so, then that means that there would be an item <code>y</code> in the <code>n</code> spot in <code>xs</code>. However, this was found to be false. Therefore, we cannot have an item in the <code>'S n</code> spot in <code>x ': xs</code>.</p>
 <p>This is a situation where having a disproof in the <code>Disproved</code> branch is useful — we use them to build more complex disproofs from simple ones.</p></li>
 </ul>
-<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L151-L163</span></a>
-<a class="sourceLine" id="cb41-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb41-3" data-line-number="3">selFound_scons</a>
-<a class="sourceLine" id="cb41-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
-<a class="sourceLine" id="cb41-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> x</a>
-<a class="sourceLine" id="cb41-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
-<a class="sourceLine" id="cb41-7" data-line-number="7">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> (&#39;<span class="dt">S</span> n) <span class="fu">@@</span> (x &#39;<span class="fu">:</span> xs))</a>
-<a class="sourceLine" id="cb41-8" data-line-number="8">selFound_scons n _ xs <span class="fu">=</span> <span class="kw">case</span> selFound n xs <span class="kw">of</span></a>
-<a class="sourceLine" id="cb41-9" data-line-number="9">    <span class="dt">Proved</span> (y <span class="fu">:&amp;:</span> s) <span class="ot">-&gt;</span>       <span class="co">-- if xs has y in its n spot</span></a>
-<a class="sourceLine" id="cb41-10" data-line-number="10">      <span class="dt">Proved</span> (y <span class="fu">:&amp;:</span> <span class="dt">SelS</span> s)   <span class="co">-- then (x : xs) has y in its (S n) spot</span></a>
-<a class="sourceLine" id="cb41-11" data-line-number="11">    <span class="dt">Disproved</span> v      <span class="ot">-&gt;</span> <span class="dt">Disproved</span> <span class="co">-- v is a disproof that an item is in n spot in xs</span></a>
-<a class="sourceLine" id="cb41-12" data-line-number="12">      \(y <span class="fu">:&amp;:</span> s) <span class="ot">-&gt;</span>      <span class="co">-- suppose we had item y in (S n) spot in (x : xs)</span></a>
-<a class="sourceLine" id="cb41-13" data-line-number="13">        <span class="kw">case</span> s <span class="kw">of</span></a>
-<a class="sourceLine" id="cb41-14" data-line-number="14">          <span class="dt">SelS</span> s&#39; <span class="ot">-&gt;</span>     <span class="co">-- this would mean that item &#39;y&#39; is in &#39;n&#39; spot in xs</span></a>
-<a class="sourceLine" id="cb41-15" data-line-number="15">            v (y <span class="fu">:&amp;:</span> s&#39;) <span class="co">-- however, v disproves this.</span></a></code></pre></div>
+<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb41-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L151-L163</span></a>
+<a class="sourceLine" id="cb41-2" title="2"></a>
+<a class="sourceLine" id="cb41-3" title="3">selFound_scons</a>
+<a class="sourceLine" id="cb41-4" title="4"><span class="ot">    ::</span> <span class="dt">Sing</span> n</a>
+<a class="sourceLine" id="cb41-5" title="5">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> x</a>
+<a class="sourceLine" id="cb41-6" title="6">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> xs</a>
+<a class="sourceLine" id="cb41-7" title="7">    <span class="ot">-&gt;</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> (<span class="dt">&#39;S</span> n) <span class="fu">@@</span> (x &#39;<span class="fu">:</span> xs))</a>
+<a class="sourceLine" id="cb41-8" title="8">selFound_scons n _ xs <span class="fu">=</span> <span class="kw">case</span> selFound n xs <span class="kw">of</span></a>
+<a class="sourceLine" id="cb41-9" title="9">    <span class="dt">Proved</span> (y <span class="fu">:&amp;:</span> s) <span class="ot">-&gt;</span>       <span class="co">-- if xs has y in its n spot</span></a>
+<a class="sourceLine" id="cb41-10" title="10">      <span class="dt">Proved</span> (y <span class="fu">:&amp;:</span> <span class="dt">SelS</span> s)   <span class="co">-- then (x : xs) has y in its (S n) spot</span></a>
+<a class="sourceLine" id="cb41-11" title="11">    <span class="dt">Disproved</span> v      <span class="ot">-&gt;</span> <span class="dt">Disproved</span> <span class="co">-- v is a disproof that an item is in n spot in xs</span></a>
+<a class="sourceLine" id="cb41-12" title="12">      \(y <span class="fu">:&amp;:</span> s) <span class="ot">-&gt;</span>      <span class="co">-- suppose we had item y in (S n) spot in (x : xs)</span></a>
+<a class="sourceLine" id="cb41-13" title="13">        <span class="kw">case</span> s <span class="kw">of</span></a>
+<a class="sourceLine" id="cb41-14" title="14">          <span class="dt">SelS</span> s&#39; <span class="ot">-&gt;</span>     <span class="co">-- this would mean that item &#39;y&#39; is in &#39;n&#39; spot in xs</span></a>
+<a class="sourceLine" id="cb41-15" title="15">            v (y <span class="fu">:&amp;:</span> s&#39;) <span class="co">-- however, v disproves this.</span></a></code></pre></div>
 <p>Note again the usage of <em>-XBlockArguments</em>, allowing us to not need the <code>$</code> after <code>Disproved</code>.</p>
 <p>If you have problems understanding this, try playing around with typed holes in GHC, or trying to guess what types everything has in the implementation above, until you can figure out what is happening when.</p></li>
 </ol>
 <h3 id="proving-pick">Proving Pick</h3>
 <p>Now that we can decide <code>SelFound</code>, let’s finally prove <code>Pick</code>.</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" data-line-number="1">pick</a>
-<a class="sourceLine" id="cb42-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Sing</span> i</a>
-<a class="sourceLine" id="cb42-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> j</a>
-<a class="sourceLine" id="cb42-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> b</a>
-<a class="sourceLine" id="cb42-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
-<a class="sourceLine" id="cb42-6" data-line-number="6">pick i j b <span class="fu">=</span></a></code></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb42-1" title="1">pick</a>
+<a class="sourceLine" id="cb42-2" title="2"><span class="ot">    ::</span> <span class="dt">Sing</span> i</a>
+<a class="sourceLine" id="cb42-3" title="3">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> j</a>
+<a class="sourceLine" id="cb42-4" title="4">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> b</a>
+<a class="sourceLine" id="cb42-5" title="5">    <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
+<a class="sourceLine" id="cb42-6" title="6">pick i j b <span class="fu">=</span></a></code></pre></div>
 <p>Remember, the goal is to try to prove we have a valid pick. We want to create something with the <code>PickValid</code> constructor if we can:</p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="dt">PickValid</span><span class="ot">  ::</span> <span class="dt">Coord</span> &#39;(i, j) b &#39;<span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
-<a class="sourceLine" id="cb43-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb43-3" data-line-number="3"><span class="ot">(:$:) ::</span> <span class="dt">Sel</span> i rows row</a>
-<a class="sourceLine" id="cb43-4" data-line-number="4">      <span class="ot">-&gt;</span> <span class="dt">Sel</span> j row  p</a>
-<a class="sourceLine" id="cb43-5" data-line-number="5">      <span class="ot">-&gt;</span> <span class="dt">Coord</span> &#39;(i, j) rows p</a></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb43-1" title="1"><span class="dt">PickValid</span><span class="ot">  ::</span> <span class="dt">Coord</span> &#39;(i, j) b <span class="dt">&#39;Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
+<a class="sourceLine" id="cb43-2" title="2"></a>
+<a class="sourceLine" id="cb43-3" title="3"><span class="ot">(:$:) ::</span> <span class="dt">Sel</span> i rows row</a>
+<a class="sourceLine" id="cb43-4" title="4">      <span class="ot">-&gt;</span> <span class="dt">Sel</span> j row  p</a>
+<a class="sourceLine" id="cb43-5" title="5">      <span class="ot">-&gt;</span> <span class="dt">Coord</span> &#39;(i, j) rows p</a></code></pre></div>
 <p>So we need a <code>Coord '(i, j) b 'Nothing</code>, which means we need a <code>Sel i b row</code> and a <code>Sel j row 'Nothing</code>. Let’s use our decision functions we wrote to get these! In particular, we can use <code>selFound i b</code> to get our <code>Sel i b row</code> and <code>row</code>, and then use <code>selFound j row</code> to get our <code>Sel j row piece</code> and <code>piece</code>!</p>
 <p>Note that we also might need to handle the cases where the picks are out-of-bounds, which requires an <code>OuOfBounds n</code> predicate.</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb44-1" data-line-number="1"><span class="dt">PickOoBX</span><span class="ot">   ::</span> <span class="dt">OutOfBounds</span> i <span class="fu">@@</span> b <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a></code></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb44-1" title="1"><span class="dt">PickOoBX</span><span class="ot">   ::</span> <span class="dt">OutOfBounds</span> i <span class="fu">@@</span> b <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a></code></pre></div>
 <p>We never defined <code>OutOfBounds n</code>, so let’s do it now. We know that <code>SelFound n</code> is the predicate where <code>SelFound n @@ xs</code> is satisfied when index <code>n</code> is “in bounds” of <code>xs</code>. So, <code>OutOfBounds n</code> is the predicate that we <em>can’t</em> produce <code>SelFound n</code>; a witness of <code>OutOfBounds n @@ xs</code> is a proof that we can’t make <code>SelFound n @@ xs</code>:</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb45-1" data-line-number="1"><span class="kw">data</span> <span class="dt">OutOfBounds</span><span class="ot"> ::</span> <span class="dt">N</span> <span class="ot">-&gt;</span> <span class="dt">Predicate</span> [k]</a>
-<a class="sourceLine" id="cb45-2" data-line-number="2"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">OutOfBounds</span> n) xs <span class="fu">=</span> <span class="dt">SelFound</span> n <span class="fu">@@</span> xs <span class="ot">-&gt;</span> <span class="dt">Void</span></a></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb45-1" title="1"><span class="kw">data</span> <span class="dt">OutOfBounds</span><span class="ot"> ::</span> <span class="dt">N</span> <span class="ot">-&gt;</span> <span class="dt">Predicate</span> [k]</a>
+<a class="sourceLine" id="cb45-2" title="2"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">OutOfBounds</span> n) xs <span class="fu">=</span> <span class="dt">SelFound</span> n <span class="fu">@@</span> xs <span class="ot">-&gt;</span> <span class="dt">Void</span></a></code></pre></div>
 <p>Remember that <code>a -&gt; Void</code> is a witness that <code>a</code> cannot exist, since if it could exist, we could create a value of type <code>Void</code>, but no such value exists. So if we had a <code>SelFound n @@ xs -&gt; Void</code>, it means that no such <code>SelFound n @@ xs</code> could exist. It means that <code>n</code> must <em>not</em> be in bounds of <code>xs</code>.</p>
 <p>Actually, we could take advantage of some of the combinators that the <em>decidable</em> library provides to define <code>OutOfBounds</code> in a cleaner way:</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb46-1" data-line-number="1"><span class="co">-- | Provided by decidable; it&#39;s the negation of a predicate</span></a>
-<a class="sourceLine" id="cb46-2" data-line-number="2"><span class="kw">data</span> <span class="dt">Not</span><span class="ot"> ::</span> <span class="dt">Predicate</span> k <span class="ot">-&gt;</span> <span class="dt">Predicate</span> k</a>
-<a class="sourceLine" id="cb46-3" data-line-number="3"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">Not</span> p) x <span class="fu">=</span> p <span class="fu">@@</span> x <span class="ot">-&gt;</span> <span class="dt">Void</span></a>
-<a class="sourceLine" id="cb46-4" data-line-number="4"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L105-L105</span></a>
-<a class="sourceLine" id="cb46-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb46-6" data-line-number="6"><span class="kw">type</span> <span class="dt">OutOfBounds</span> n <span class="fu">=</span> <span class="dt">Not</span> (<span class="dt">SelFound</span> n)</a></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb46-1" title="1"><span class="co">-- | Provided by decidable; it&#39;s the negation of a predicate</span></a>
+<a class="sourceLine" id="cb46-2" title="2"><span class="kw">data</span> <span class="dt">Not</span><span class="ot"> ::</span> <span class="dt">Predicate</span> k <span class="ot">-&gt;</span> <span class="dt">Predicate</span> k</a>
+<a class="sourceLine" id="cb46-3" title="3"><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Apply</span> (<span class="dt">Not</span> p) x <span class="fu">=</span> p <span class="fu">@@</span> x <span class="ot">-&gt;</span> <span class="dt">Void</span></a>
+<a class="sourceLine" id="cb46-4" title="4"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L105-L105</span></a>
+<a class="sourceLine" id="cb46-5" title="5"></a>
+<a class="sourceLine" id="cb46-6" title="6"><span class="kw">type</span> <span class="dt">OutOfBounds</span> n <span class="fu">=</span> <span class="dt">Not</span> (<span class="dt">SelFound</span> n)</a></code></pre></div>
 <p><code>Not</code> is a <em>predicate combinator</em>; it takes a predicate and returns new predicate. <code>Not p @@ x</code> is true whenever <code>p @@ x</code> is false, or <code>p @@ x -&gt; Void</code> is inhabited. Note that combinators like <code>Not</code> are one of the reasons why it’s useful to think of predicates in terms of defunctionalization symbols (<code>k ~&gt; Type</code>), instead of as type families or type constructor: <code>Not</code> expects a “partially applied” predicate (<code>Not</code> takes <code>p</code>, not <code>p @@ x</code>).</p>
 <p>Alright, now that everything is defined, let’s start writing our viewing function for <code>Pick</code>. Recall again the definition of <code>Pick</code>:</p>
-<div class="sourceCode" id="cb47"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb47-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L108-L118</span></a>
-<a class="sourceLine" id="cb47-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb47-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Pick</span><span class="ot"> ::</span> (<span class="dt">N</span>, <span class="dt">N</span>, <span class="dt">Board</span>) <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb47-4" data-line-number="4">    <span class="co">-- | We are out of bounds in x</span></a>
-<a class="sourceLine" id="cb47-5" data-line-number="5">    <span class="dt">PickOoBX</span><span class="ot">   ::</span> <span class="dt">OutOfBounds</span> i <span class="fu">@@</span> b                         <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
-<a class="sourceLine" id="cb47-6" data-line-number="6">    <span class="co">-- | We are in-bounds in x, but out of bounds in y</span></a>
-<a class="sourceLine" id="cb47-7" data-line-number="7">    <span class="dt">PickOoBY</span><span class="ot">   ::</span> <span class="dt">Sel</span> i b row        <span class="ot">-&gt;</span> <span class="dt">OutOfBounds</span> j <span class="fu">@@</span> row <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
-<a class="sourceLine" id="cb47-8" data-line-number="8">    <span class="co">-- | We are in-bounds in x, in-bounds in y, but spot is taken by `p`.</span></a>
-<a class="sourceLine" id="cb47-9" data-line-number="9">    <span class="co">-- We include `Sing p` in this constructor to potentially provide</span></a>
-<a class="sourceLine" id="cb47-10" data-line-number="10">    <span class="co">-- feedback to the user on what piece is already in the spot.</span></a>
-<a class="sourceLine" id="cb47-11" data-line-number="11">    <span class="dt">PickPlayed</span><span class="ot"> ::</span> <span class="dt">Coord</span> &#39;(i, j) b (&#39;<span class="dt">Just</span> p) <span class="ot">-&gt;</span> <span class="dt">Sing</span> p        <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
-<a class="sourceLine" id="cb47-12" data-line-number="12">    <span class="co">-- | We are in-bounds in x, in-bounds in y, and spot is clear</span></a>
-<a class="sourceLine" id="cb47-13" data-line-number="13">    <span class="dt">PickValid</span><span class="ot">  ::</span> <span class="dt">Coord</span> &#39;(i, j) b &#39;<span class="dt">Nothing</span>                   <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a></code></pre></div>
+<div class="sourceCode" id="cb47"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb47-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L108-L118</span></a>
+<a class="sourceLine" id="cb47-2" title="2"></a>
+<a class="sourceLine" id="cb47-3" title="3"><span class="kw">data</span> <span class="dt">Pick</span><span class="ot"> ::</span> (<span class="dt">N</span>, <span class="dt">N</span>, <span class="dt">Board</span>) <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb47-4" title="4">    <span class="co">-- | We are out of bounds in x</span></a>
+<a class="sourceLine" id="cb47-5" title="5">    <span class="dt">PickOoBX</span><span class="ot">   ::</span> <span class="dt">OutOfBounds</span> i <span class="fu">@@</span> b                         <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
+<a class="sourceLine" id="cb47-6" title="6">    <span class="co">-- | We are in-bounds in x, but out of bounds in y</span></a>
+<a class="sourceLine" id="cb47-7" title="7">    <span class="dt">PickOoBY</span><span class="ot">   ::</span> <span class="dt">Sel</span> i b row        <span class="ot">-&gt;</span> <span class="dt">OutOfBounds</span> j <span class="fu">@@</span> row <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
+<a class="sourceLine" id="cb47-8" title="8">    <span class="co">-- | We are in-bounds in x, in-bounds in y, but spot is taken by `p`.</span></a>
+<a class="sourceLine" id="cb47-9" title="9">    <span class="co">-- We include `Sing p` in this constructor to potentially provide</span></a>
+<a class="sourceLine" id="cb47-10" title="10">    <span class="co">-- feedback to the user on what piece is already in the spot.</span></a>
+<a class="sourceLine" id="cb47-11" title="11">    <span class="dt">PickPlayed</span><span class="ot"> ::</span> <span class="dt">Coord</span> &#39;(i, j) b (<span class="dt">&#39;Just</span> p) <span class="ot">-&gt;</span> <span class="dt">Sing</span> p        <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
+<a class="sourceLine" id="cb47-12" title="12">    <span class="co">-- | We are in-bounds in x, in-bounds in y, and spot is clear</span></a>
+<a class="sourceLine" id="cb47-13" title="13">    <span class="dt">PickValid</span><span class="ot">  ::</span> <span class="dt">Coord</span> &#39;(i, j) b <span class="dt">&#39;Nothing</span>                   <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a></code></pre></div>
 <p>And let’s start writing. First, we’ll use our decision functions <code>selFound</code> to <em>try</em> to produce the <code>Sel</code>s necessary for the <code>PickValid</code> branch:</p>
-<div class="sourceCode" id="cb48"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb48-1" data-line-number="1">pick</a>
-<a class="sourceLine" id="cb48-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Sing</span> i</a>
-<a class="sourceLine" id="cb48-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> j</a>
-<a class="sourceLine" id="cb48-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> b</a>
-<a class="sourceLine" id="cb48-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
-<a class="sourceLine" id="cb48-6" data-line-number="6">pick i j b <span class="fu">=</span> <span class="kw">case</span> selFound i b <span class="kw">of</span></a>
-<a class="sourceLine" id="cb48-7" data-line-number="7">    <span class="dt">Proved</span> (row <span class="fu">:&amp;:</span> selX) <span class="ot">-&gt;</span> <span class="kw">case</span> selFound j row <span class="kw">of</span></a>
-<a class="sourceLine" id="cb48-8" data-line-number="8">      <span class="dt">Proved</span> (p <span class="fu">:&amp;:</span> selY) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb48-9" data-line-number="9">        <span class="kw">let</span> c <span class="fu">=</span> selX <span class="fu">:$:</span> selY</a>
-<a class="sourceLine" id="cb48-10" data-line-number="10">        <span class="kw">in</span>  <span class="fu">????</span></a></code></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb48-1" title="1">pick</a>
+<a class="sourceLine" id="cb48-2" title="2"><span class="ot">    ::</span> <span class="dt">Sing</span> i</a>
+<a class="sourceLine" id="cb48-3" title="3">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> j</a>
+<a class="sourceLine" id="cb48-4" title="4">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> b</a>
+<a class="sourceLine" id="cb48-5" title="5">    <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
+<a class="sourceLine" id="cb48-6" title="6">pick i j b <span class="fu">=</span> <span class="kw">case</span> selFound i b <span class="kw">of</span></a>
+<a class="sourceLine" id="cb48-7" title="7">    <span class="dt">Proved</span> (row <span class="fu">:&amp;:</span> selX) <span class="ot">-&gt;</span> <span class="kw">case</span> selFound j row <span class="kw">of</span></a>
+<a class="sourceLine" id="cb48-8" title="8">      <span class="dt">Proved</span> (p <span class="fu">:&amp;:</span> selY) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb48-9" title="9">        <span class="kw">let</span> c <span class="fu">=</span> selX <span class="fu">:$:</span> selY</a>
+<a class="sourceLine" id="cb48-10" title="10">        <span class="kw">in</span>  <span class="fu">????</span></a></code></pre></div>
 <p>In the case where both <code>i</code> and <code>j</code> are in-bounds, what do we do? Well, we can create the <code>Coord</code> from the <code>selX</code> and <code>selY</code>. Can’t we just give this to <code>PickValid</code>?</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb49-1" data-line-number="1">pick</a>
-<a class="sourceLine" id="cb49-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Sing</span> i</a>
-<a class="sourceLine" id="cb49-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> j</a>
-<a class="sourceLine" id="cb49-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> b</a>
-<a class="sourceLine" id="cb49-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
-<a class="sourceLine" id="cb49-6" data-line-number="6">pick i j b <span class="fu">=</span> <span class="kw">case</span> selFound i b <span class="kw">of</span></a>
-<a class="sourceLine" id="cb49-7" data-line-number="7">    <span class="dt">Proved</span> (row <span class="fu">:&amp;:</span> selX) <span class="ot">-&gt;</span> <span class="kw">case</span> selFound j row <span class="kw">of</span></a>
-<a class="sourceLine" id="cb49-8" data-line-number="8">      <span class="dt">Proved</span> (p <span class="fu">:&amp;:</span> selY) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb49-9" data-line-number="9">        <span class="kw">let</span> c <span class="fu">=</span> selX <span class="fu">:$:</span> selY</a>
-<a class="sourceLine" id="cb49-10" data-line-number="10">        <span class="kw">in</span>  <span class="dt">PickValid</span> c</a></code></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb49-1" title="1">pick</a>
+<a class="sourceLine" id="cb49-2" title="2"><span class="ot">    ::</span> <span class="dt">Sing</span> i</a>
+<a class="sourceLine" id="cb49-3" title="3">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> j</a>
+<a class="sourceLine" id="cb49-4" title="4">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> b</a>
+<a class="sourceLine" id="cb49-5" title="5">    <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
+<a class="sourceLine" id="cb49-6" title="6">pick i j b <span class="fu">=</span> <span class="kw">case</span> selFound i b <span class="kw">of</span></a>
+<a class="sourceLine" id="cb49-7" title="7">    <span class="dt">Proved</span> (row <span class="fu">:&amp;:</span> selX) <span class="ot">-&gt;</span> <span class="kw">case</span> selFound j row <span class="kw">of</span></a>
+<a class="sourceLine" id="cb49-8" title="8">      <span class="dt">Proved</span> (p <span class="fu">:&amp;:</span> selY) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb49-9" title="9">        <span class="kw">let</span> c <span class="fu">=</span> selX <span class="fu">:$:</span> selY</a>
+<a class="sourceLine" id="cb49-10" title="10">        <span class="kw">in</span>  <span class="dt">PickValid</span> c</a></code></pre></div>
 <p>Ah, but this is a compiler error. It’s hard to see why without a trusty compiler to help us. But that’s the best part about using dependent types — the compilers are here to help us write our programs!</p>
 <p>The compiler basically tells us that <code>c</code> is supposed to point to <code>'Nothing</code>…but right now it’s pointing to some type variable that we don’t know is <code>'Nothing</code> or <code>'Just</code>. So <code>c</code> doesn’t <em>necessarily</em> work, because it <em>might</em> be pointing to <code>'Just</code>, and not <code>'Nothing</code>. We haven’t satisfied <code>PickValid</code> yet, because we have to be certain that it is <code>'Nothing</code> and not <code>'Just</code></p>
 <p>Just to clarify what’s going on, let’s give types to the names above:</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb50-1" data-line-number="1"><span class="ot">b    ::</span> <span class="dt">Sing</span> (<span class="ot">b   ::</span> [[<span class="dt">Maybe</span> <span class="dt">Piece</span>]])</a>
-<a class="sourceLine" id="cb50-2" data-line-number="2"><span class="ot">row  ::</span> <span class="dt">Sing</span> (<span class="ot">row ::</span>  [<span class="dt">Maybe</span> <span class="dt">Piece</span>] )</a>
-<a class="sourceLine" id="cb50-3" data-line-number="3"><span class="ot">selX ::</span> <span class="dt">Sel</span> i b row</a>
-<a class="sourceLine" id="cb50-4" data-line-number="4"><span class="ot">p    ::</span> <span class="dt">Sing</span> (<span class="ot">p   ::</span>   <span class="dt">Maybe</span> <span class="dt">Piece</span>  )</a>
-<a class="sourceLine" id="cb50-5" data-line-number="5"><span class="ot">selY ::</span> <span class="dt">Sel</span> j row p</a>
-<a class="sourceLine" id="cb50-6" data-line-number="6"><span class="ot">c    ::</span> <span class="dt">Coord</span> &#39;(i, j) b p</a></code></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb50-1" title="1"><span class="ot">b    ::</span> <span class="dt">Sing</span> (<span class="ot">b   ::</span> [[<span class="dt">Maybe</span> <span class="dt">Piece</span>]])</a>
+<a class="sourceLine" id="cb50-2" title="2"><span class="ot">row  ::</span> <span class="dt">Sing</span> (<span class="ot">row ::</span>  [<span class="dt">Maybe</span> <span class="dt">Piece</span>] )</a>
+<a class="sourceLine" id="cb50-3" title="3"><span class="ot">selX ::</span> <span class="dt">Sel</span> i b row</a>
+<a class="sourceLine" id="cb50-4" title="4"><span class="ot">p    ::</span> <span class="dt">Sing</span> (<span class="ot">p   ::</span>   <span class="dt">Maybe</span> <span class="dt">Piece</span>  )</a>
+<a class="sourceLine" id="cb50-5" title="5"><span class="ot">selY ::</span> <span class="dt">Sel</span> j row p</a>
+<a class="sourceLine" id="cb50-6" title="6"><span class="ot">c    ::</span> <span class="dt">Coord</span> &#39;(i, j) b p</a></code></pre></div>
 <p><code>row</code> above is the <code>Sing</code> that comes attached with all <code>Σ</code> constructors, which is why we can give it to <code>selFound j</code>, which expects a singleton of the list.</p>
 <p>So, now we have <code>Coord '(i, j) b p</code>. We know that <code>i</code> and <code>j</code> are in-bounds. But, we need to know that <code>p</code> is <code>'Nothing</code> before we can use it with <code>PickValid</code>. To do that, we can pattern match on <code>p</code>, because it’s the singleton that comes with the <code>Σ</code> constructor:</p>
-<div class="sourceCode" id="cb51"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb51-1" data-line-number="1">pick</a>
-<a class="sourceLine" id="cb51-2" data-line-number="2"><span class="ot">    ::</span> <span class="dt">Sing</span> i</a>
-<a class="sourceLine" id="cb51-3" data-line-number="3">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> j</a>
-<a class="sourceLine" id="cb51-4" data-line-number="4">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> b</a>
-<a class="sourceLine" id="cb51-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
-<a class="sourceLine" id="cb51-6" data-line-number="6">pick i j b <span class="fu">=</span> <span class="kw">case</span> selFound i b <span class="kw">of</span></a>
-<a class="sourceLine" id="cb51-7" data-line-number="7">    <span class="dt">Proved</span> (row <span class="fu">:&amp;:</span> selX) <span class="ot">-&gt;</span> <span class="kw">case</span> selFound j row <span class="kw">of</span></a>
-<a class="sourceLine" id="cb51-8" data-line-number="8">      <span class="dt">Proved</span> (p <span class="fu">:&amp;:</span> selY) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb51-9" data-line-number="9">        <span class="kw">let</span> c <span class="fu">=</span> selX <span class="fu">:$:</span> selY</a>
-<a class="sourceLine" id="cb51-10" data-line-number="10">        <span class="kw">in</span>  <span class="kw">case</span> p <span class="kw">of</span></a>
-<a class="sourceLine" id="cb51-11" data-line-number="11">              <span class="dt">SNothing</span> <span class="ot">-&gt;</span> <span class="dt">PickValid</span>   c     <span class="co">-- p is &#39;Nothing</span></a>
-<a class="sourceLine" id="cb51-12" data-line-number="12">              <span class="dt">SJust</span> q  <span class="ot">-&gt;</span> <span class="dt">PickPlayed</span>  c q   <span class="co">-- p is &#39;Just q</span></a></code></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb51-1" title="1">pick</a>
+<a class="sourceLine" id="cb51-2" title="2"><span class="ot">    ::</span> <span class="dt">Sing</span> i</a>
+<a class="sourceLine" id="cb51-3" title="3">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> j</a>
+<a class="sourceLine" id="cb51-4" title="4">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> b</a>
+<a class="sourceLine" id="cb51-5" title="5">    <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
+<a class="sourceLine" id="cb51-6" title="6">pick i j b <span class="fu">=</span> <span class="kw">case</span> selFound i b <span class="kw">of</span></a>
+<a class="sourceLine" id="cb51-7" title="7">    <span class="dt">Proved</span> (row <span class="fu">:&amp;:</span> selX) <span class="ot">-&gt;</span> <span class="kw">case</span> selFound j row <span class="kw">of</span></a>
+<a class="sourceLine" id="cb51-8" title="8">      <span class="dt">Proved</span> (p <span class="fu">:&amp;:</span> selY) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb51-9" title="9">        <span class="kw">let</span> c <span class="fu">=</span> selX <span class="fu">:$:</span> selY</a>
+<a class="sourceLine" id="cb51-10" title="10">        <span class="kw">in</span>  <span class="kw">case</span> p <span class="kw">of</span></a>
+<a class="sourceLine" id="cb51-11" title="11">              <span class="dt">SNothing</span> <span class="ot">-&gt;</span> <span class="dt">PickValid</span>   c     <span class="co">-- p is &#39;Nothing</span></a>
+<a class="sourceLine" id="cb51-12" title="12">              <span class="dt">SJust</span> q  <span class="ot">-&gt;</span> <span class="dt">PickPlayed</span>  c q   <span class="co">-- p is &#39;Just q</span></a></code></pre></div>
 <p>Finally, knowing that <code>p</code> is <code>'Nothing</code>, we can create <code>PickValid</code>!</p>
 <p>As a bonus, if we know that <code>p</code> is <code>'Just p</code>, we can create <code>PickPlayed</code>, which is the constructor for an in-bounds pick but pointing to a spot that is already occupied by piece <code>p'</code>.</p>
-<div class="sourceCode" id="cb52"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb52-1" data-line-number="1"><span class="dt">PickPlayed</span><span class="ot"> ::</span> <span class="dt">Coord</span> &#39;(i, j) b (&#39;<span class="dt">Just</span> p)</a>
-<a class="sourceLine" id="cb52-2" data-line-number="2">           <span class="ot">-&gt;</span> <span class="dt">Sing</span> p</a>
-<a class="sourceLine" id="cb52-3" data-line-number="3">           <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a></code></pre></div>
+<div class="sourceCode" id="cb52"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb52-1" title="1"><span class="dt">PickPlayed</span><span class="ot"> ::</span> <span class="dt">Coord</span> &#39;(i, j) b (<span class="dt">&#39;Just</span> p)</a>
+<a class="sourceLine" id="cb52-2" title="2">           <span class="ot">-&gt;</span> <span class="dt">Sing</span> p</a>
+<a class="sourceLine" id="cb52-3" title="3">           <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a></code></pre></div>
 <p>We now have to deal with the situations where things are out of bounds.</p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb53-1" data-line-number="1"><span class="dt">PickOoBX</span><span class="ot"> ::</span> <span class="dt">OutOfBounds</span> i <span class="fu">@@</span> b</a>
-<a class="sourceLine" id="cb53-2" data-line-number="2">         <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
-<a class="sourceLine" id="cb53-3" data-line-number="3"><span class="dt">PickOoBY</span><span class="ot"> ::</span> <span class="dt">Sel</span> i b row</a>
-<a class="sourceLine" id="cb53-4" data-line-number="4">         <span class="ot">-&gt;</span> <span class="dt">OutOfBounds</span> j <span class="fu">@@</span> row</a>
-<a class="sourceLine" id="cb53-5" data-line-number="5">         <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a></code></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb53-1" title="1"><span class="dt">PickOoBX</span><span class="ot"> ::</span> <span class="dt">OutOfBounds</span> i <span class="fu">@@</span> b</a>
+<a class="sourceLine" id="cb53-2" title="2">         <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
+<a class="sourceLine" id="cb53-3" title="3"><span class="dt">PickOoBY</span><span class="ot"> ::</span> <span class="dt">Sel</span> i b row</a>
+<a class="sourceLine" id="cb53-4" title="4">         <span class="ot">-&gt;</span> <span class="dt">OutOfBounds</span> j <span class="fu">@@</span> row</a>
+<a class="sourceLine" id="cb53-5" title="5">         <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a></code></pre></div>
 <p><code>PickOoBX</code> requires an <code>OutOfBounds i @@ b</code>, which we defined as <code>SelFound i @@ b -&gt; Void</code>. Well, that’s <em>exactly</em> what the <code>Disproved</code> constructor contains, that <code>selFound i b</code> returns! And <code>PickOoBY</code> requires an <code>OutOfBounds j @@ row</code>, which we defined as <code>SelFound j @@ row -&gt; Void</code>. And that’s <em>exactly</em> what the <code>Disproved</code> constructor of <code>selFound j row</code> returns.</p>
-<div class="sourceCode" id="cb54"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb54-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L173-L190</span></a>
-<a class="sourceLine" id="cb54-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb54-3" data-line-number="3">pick</a>
-<a class="sourceLine" id="cb54-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Sing</span> i</a>
-<a class="sourceLine" id="cb54-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> j</a>
-<a class="sourceLine" id="cb54-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> b</a>
-<a class="sourceLine" id="cb54-7" data-line-number="7">    <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
-<a class="sourceLine" id="cb54-8" data-line-number="8">pick i j b <span class="fu">=</span> <span class="kw">case</span> selFound i b <span class="kw">of</span></a>
-<a class="sourceLine" id="cb54-9" data-line-number="9">    <span class="dt">Proved</span> (row <span class="fu">:&amp;:</span> selX) <span class="ot">-&gt;</span> <span class="kw">case</span> selFound j row <span class="kw">of</span></a>
-<a class="sourceLine" id="cb54-10" data-line-number="10">      <span class="dt">Proved</span> (p <span class="fu">:&amp;:</span> selY) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb54-11" data-line-number="11">        <span class="kw">let</span> c <span class="fu">=</span> selX <span class="fu">:$:</span> selY</a>
-<a class="sourceLine" id="cb54-12" data-line-number="12">        <span class="kw">in</span>  <span class="kw">case</span> p <span class="kw">of</span></a>
-<a class="sourceLine" id="cb54-13" data-line-number="13">              <span class="dt">SNothing</span> <span class="ot">-&gt;</span> <span class="dt">PickValid</span>   c     <span class="co">-- p is &#39;Nothing</span></a>
-<a class="sourceLine" id="cb54-14" data-line-number="14">              <span class="dt">SJust</span> q  <span class="ot">-&gt;</span> <span class="dt">PickPlayed</span>  c q   <span class="co">-- p is &#39;Just q</span></a>
-<a class="sourceLine" id="cb54-15" data-line-number="15">      <span class="dt">Disproved</span> vY <span class="ot">-&gt;</span> <span class="dt">PickOoBY</span> selX vY    <span class="co">-- vY :: SelFound j @@ row -&gt; Void</span></a>
-<a class="sourceLine" id="cb54-16" data-line-number="16">                                          <span class="co">-- vY :: Not (SelFound j) @@ row</span></a>
-<a class="sourceLine" id="cb54-17" data-line-number="17">                                          <span class="co">-- vY :: OutOfBounds j @@ row</span></a>
-<a class="sourceLine" id="cb54-18" data-line-number="18">    <span class="dt">Disproved</span> vX <span class="ot">-&gt;</span> <span class="dt">PickOoBX</span> vX   <span class="co">-- vX :: SelFound i @@ b   -&gt; Void</span></a>
-<a class="sourceLine" id="cb54-19" data-line-number="19">                                  <span class="co">-- vX :: Not (SelFound i) @@ b</span></a>
-<a class="sourceLine" id="cb54-20" data-line-number="20">                                  <span class="co">-- vX :: OutOfBounds i @@ b</span></a></code></pre></div>
+<div class="sourceCode" id="cb54"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb54-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L173-L190</span></a>
+<a class="sourceLine" id="cb54-2" title="2"></a>
+<a class="sourceLine" id="cb54-3" title="3">pick</a>
+<a class="sourceLine" id="cb54-4" title="4"><span class="ot">    ::</span> <span class="dt">Sing</span> i</a>
+<a class="sourceLine" id="cb54-5" title="5">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> j</a>
+<a class="sourceLine" id="cb54-6" title="6">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> b</a>
+<a class="sourceLine" id="cb54-7" title="7">    <span class="ot">-&gt;</span> <span class="dt">Pick</span> &#39;(i, j, b)</a>
+<a class="sourceLine" id="cb54-8" title="8">pick i j b <span class="fu">=</span> <span class="kw">case</span> selFound i b <span class="kw">of</span></a>
+<a class="sourceLine" id="cb54-9" title="9">    <span class="dt">Proved</span> (row <span class="fu">:&amp;:</span> selX) <span class="ot">-&gt;</span> <span class="kw">case</span> selFound j row <span class="kw">of</span></a>
+<a class="sourceLine" id="cb54-10" title="10">      <span class="dt">Proved</span> (p <span class="fu">:&amp;:</span> selY) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb54-11" title="11">        <span class="kw">let</span> c <span class="fu">=</span> selX <span class="fu">:$:</span> selY</a>
+<a class="sourceLine" id="cb54-12" title="12">        <span class="kw">in</span>  <span class="kw">case</span> p <span class="kw">of</span></a>
+<a class="sourceLine" id="cb54-13" title="13">              <span class="dt">SNothing</span> <span class="ot">-&gt;</span> <span class="dt">PickValid</span>   c     <span class="co">-- p is &#39;Nothing</span></a>
+<a class="sourceLine" id="cb54-14" title="14">              <span class="dt">SJust</span> q  <span class="ot">-&gt;</span> <span class="dt">PickPlayed</span>  c q   <span class="co">-- p is &#39;Just q</span></a>
+<a class="sourceLine" id="cb54-15" title="15">      <span class="dt">Disproved</span> vY <span class="ot">-&gt;</span> <span class="dt">PickOoBY</span> selX vY    <span class="co">-- vY :: SelFound j @@ row -&gt; Void</span></a>
+<a class="sourceLine" id="cb54-16" title="16">                                          <span class="co">-- vY :: Not (SelFound j) @@ row</span></a>
+<a class="sourceLine" id="cb54-17" title="17">                                          <span class="co">-- vY :: OutOfBounds j @@ row</span></a>
+<a class="sourceLine" id="cb54-18" title="18">    <span class="dt">Disproved</span> vX <span class="ot">-&gt;</span> <span class="dt">PickOoBX</span> vX   <span class="co">-- vX :: SelFound i @@ b   -&gt; Void</span></a>
+<a class="sourceLine" id="cb54-19" title="19">                                  <span class="co">-- vX :: Not (SelFound i) @@ b</span></a>
+<a class="sourceLine" id="cb54-20" title="20">                                  <span class="co">-- vX :: OutOfBounds i @@ b</span></a></code></pre></div>
 <p>And that’s it!</p>
 <h2 id="play-ball">Play Ball</h2>
 <p>Bringing it all together, we can write a simple function to take user input and <em>play</em> it.</p>
 <p>First, some utility functions to get user input and print out boards:</p>
-<div class="sourceCode" id="cb55"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb55-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L192-L211</span></a>
-<a class="sourceLine" id="cb55-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb55-3" data-line-number="3"><span class="ot">intToN ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">N</span></a>
-<a class="sourceLine" id="cb55-4" data-line-number="4">intToN n <span class="fu">=</span> <span class="kw">case</span> compare n <span class="dv">0</span> <span class="kw">of</span></a>
-<a class="sourceLine" id="cb55-5" data-line-number="5">    <span class="dt">LT</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb55-6" data-line-number="6">    <span class="dt">EQ</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="dt">Z</span></a>
-<a class="sourceLine" id="cb55-7" data-line-number="7">    <span class="dt">GT</span> <span class="ot">-&gt;</span> <span class="dt">S</span> <span class="fu">&lt;$&gt;</span> intToN (n <span class="fu">-</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb55-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb55-9" data-line-number="9"><span class="ot">getN ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">N</span></a>
-<a class="sourceLine" id="cb55-10" data-line-number="10">getN prompt <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb55-11" data-line-number="11">    putStrLn <span class="fu">$</span> <span class="st">&quot;Enter non-negative integer for &quot;</span> <span class="fu">++</span> prompt <span class="fu">++</span> <span class="st">&quot;:&quot;</span></a>
-<a class="sourceLine" id="cb55-12" data-line-number="12">    res <span class="ot">&lt;-</span> getLine</a>
-<a class="sourceLine" id="cb55-13" data-line-number="13">    <span class="kw">case</span> intToN <span class="fu">=&lt;&lt;</span> readMaybe res <span class="kw">of</span></a>
-<a class="sourceLine" id="cb55-14" data-line-number="14">      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> putStrLn <span class="st">&quot;Bad.&quot;</span> <span class="fu">&gt;&gt;</span> getN prompt</a>
-<a class="sourceLine" id="cb55-15" data-line-number="15">      <span class="dt">Just</span> n  <span class="ot">-&gt;</span> pure n</a>
-<a class="sourceLine" id="cb55-16" data-line-number="16"></a>
-<a class="sourceLine" id="cb55-17" data-line-number="17"><span class="ot">printBoard ::</span> <span class="dt">Board</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb55-18" data-line-number="18">printBoard <span class="fu">=</span> mapM_ <span class="fu">$</span> putStrLn <span class="fu">.</span> intercalate <span class="st">&quot;|&quot;</span> <span class="fu">.</span> map showPiece</a>
-<a class="sourceLine" id="cb55-19" data-line-number="19">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb55-20" data-line-number="20">    showPiece <span class="dt">Nothing</span>   <span class="fu">=</span> <span class="st">&quot; _ &quot;</span></a>
-<a class="sourceLine" id="cb55-21" data-line-number="21">    showPiece (<span class="dt">Just</span> <span class="dt">PX</span>) <span class="fu">=</span> <span class="st">&quot; X &quot;</span></a>
-<a class="sourceLine" id="cb55-22" data-line-number="22">    showPiece (<span class="dt">Just</span> <span class="dt">PO</span>) <span class="fu">=</span> <span class="st">&quot; O &quot;</span></a></code></pre></div>
+<div class="sourceCode" id="cb55"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb55-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L192-L211</span></a>
+<a class="sourceLine" id="cb55-2" title="2"></a>
+<a class="sourceLine" id="cb55-3" title="3"><span class="ot">intToN ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">N</span></a>
+<a class="sourceLine" id="cb55-4" title="4">intToN n <span class="fu">=</span> <span class="kw">case</span> <span class="fu">compare</span> n <span class="dv">0</span> <span class="kw">of</span></a>
+<a class="sourceLine" id="cb55-5" title="5">    <span class="dt">LT</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb55-6" title="6">    <span class="dt">EQ</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="dt">Z</span></a>
+<a class="sourceLine" id="cb55-7" title="7">    <span class="dt">GT</span> <span class="ot">-&gt;</span> <span class="dt">S</span> <span class="fu">&lt;$&gt;</span> intToN (n <span class="fu">-</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb55-8" title="8"></a>
+<a class="sourceLine" id="cb55-9" title="9"><span class="ot">getN ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">N</span></a>
+<a class="sourceLine" id="cb55-10" title="10">getN prompt <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb55-11" title="11">    <span class="fu">putStrLn</span> <span class="fu">$</span> <span class="st">&quot;Enter non-negative integer for &quot;</span> <span class="fu">++</span> prompt <span class="fu">++</span> <span class="st">&quot;:&quot;</span></a>
+<a class="sourceLine" id="cb55-12" title="12">    res <span class="ot">&lt;-</span> <span class="fu">getLine</span></a>
+<a class="sourceLine" id="cb55-13" title="13">    <span class="kw">case</span> intToN <span class="fu">=&lt;&lt;</span> readMaybe res <span class="kw">of</span></a>
+<a class="sourceLine" id="cb55-14" title="14">      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> <span class="st">&quot;Bad.&quot;</span> <span class="fu">&gt;&gt;</span> getN prompt</a>
+<a class="sourceLine" id="cb55-15" title="15">      <span class="dt">Just</span> n  <span class="ot">-&gt;</span> <span class="fu">pure</span> n</a>
+<a class="sourceLine" id="cb55-16" title="16"></a>
+<a class="sourceLine" id="cb55-17" title="17"><span class="ot">printBoard ::</span> <span class="dt">Board</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb55-18" title="18">printBoard <span class="fu">=</span> <span class="fu">mapM_</span> <span class="fu">$</span> <span class="fu">putStrLn</span> <span class="fu">.</span> intercalate <span class="st">&quot;|&quot;</span> <span class="fu">.</span> <span class="fu">map</span> showPiece</a>
+<a class="sourceLine" id="cb55-19" title="19">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb55-20" title="20">    showPiece <span class="dt">Nothing</span>   <span class="fu">=</span> <span class="st">&quot; _ &quot;</span></a>
+<a class="sourceLine" id="cb55-21" title="21">    showPiece (<span class="dt">Just</span> <span class="dt">PX</span>) <span class="fu">=</span> <span class="st">&quot; X &quot;</span></a>
+<a class="sourceLine" id="cb55-22" title="22">    showPiece (<span class="dt">Just</span> <span class="dt">PO</span>) <span class="fu">=</span> <span class="st">&quot; O &quot;</span></a></code></pre></div>
 <p>And here is the logic for getting user input, viewing it using <code>pick</code>, and updating the <code>GameState</code>:</p>
-<div class="sourceCode" id="cb56"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb56-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L218-L242</span></a>
-<a class="sourceLine" id="cb56-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb56-3" data-line-number="3">simplePlayIO&#39;</a>
-<a class="sourceLine" id="cb56-4" data-line-number="4"><span class="ot">    ::</span> <span class="dt">Sing</span> p</a>
-<a class="sourceLine" id="cb56-5" data-line-number="5">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> b</a>
-<a class="sourceLine" id="cb56-6" data-line-number="6">    <span class="ot">-&gt;</span> <span class="dt">GameState</span> p b</a>
-<a class="sourceLine" id="cb56-7" data-line-number="7">    <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb56-8" data-line-number="8">simplePlayIO&#39; p b gs <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb56-9" data-line-number="9">    printBoard <span class="fu">$</span> <span class="dt">FromSing</span> b</a>
-<a class="sourceLine" id="cb56-10" data-line-number="10">    <span class="dt">FromSing</span> i <span class="ot">&lt;-</span> getN <span class="st">&quot;row&quot;</span></a>
-<a class="sourceLine" id="cb56-11" data-line-number="11">    <span class="dt">FromSing</span> j <span class="ot">&lt;-</span> getN <span class="st">&quot;column&quot;</span></a>
-<a class="sourceLine" id="cb56-12" data-line-number="12">    <span class="kw">case</span> pick i j b <span class="kw">of</span></a>
-<a class="sourceLine" id="cb56-13" data-line-number="13">      <span class="dt">PickOoBX</span> _ <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb56-14" data-line-number="14">        putStrLn <span class="st">&quot;Out of bounds in rows.  Try again.&quot;</span></a>
-<a class="sourceLine" id="cb56-15" data-line-number="15">        simplePlayIO&#39; p b gs</a>
-<a class="sourceLine" id="cb56-16" data-line-number="16">      <span class="dt">PickOoBY</span> _ _ <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb56-17" data-line-number="17">        putStrLn <span class="st">&quot;Out of bounds in cols.  Try again.&quot;</span></a>
-<a class="sourceLine" id="cb56-18" data-line-number="18">        simplePlayIO&#39; p b gs</a>
-<a class="sourceLine" id="cb56-19" data-line-number="19">      <span class="dt">PickPlayed</span> _ q <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb56-20" data-line-number="20">        putStrLn <span class="fu">$</span> <span class="st">&quot;Already played by &quot;</span> <span class="fu">++</span> show (fromSing q) <span class="fu">++</span> <span class="st">&quot;. Try again.&quot;</span></a>
-<a class="sourceLine" id="cb56-21" data-line-number="21">        simplePlayIO&#39; p b gs</a>
-<a class="sourceLine" id="cb56-22" data-line-number="22">      <span class="dt">PickValid</span> c <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb56-23" data-line-number="23">        putStrLn <span class="st">&quot;Success!&quot;</span></a>
-<a class="sourceLine" id="cb56-24" data-line-number="24">        <span class="kw">let</span> p&#39;  <span class="fu">=</span> sAltP p                 <span class="co">-- update player (enforced by `play`)</span></a>
-<a class="sourceLine" id="cb56-25" data-line-number="25">            b&#39;  <span class="fu">=</span> sPlaceBoard i j p b     <span class="co">-- update board  (enforced by `play`)</span></a>
-<a class="sourceLine" id="cb56-26" data-line-number="26">            gs&#39; <span class="fu">=</span> play undefined c gs     <span class="co">-- update game state</span></a>
-<a class="sourceLine" id="cb56-27" data-line-number="27">        simplePlayIO&#39; p&#39; b&#39; gs&#39;</a></code></pre></div>
+<div class="sourceCode" id="cb56"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb56-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L218-L242</span></a>
+<a class="sourceLine" id="cb56-2" title="2"></a>
+<a class="sourceLine" id="cb56-3" title="3">simplePlayIO&#39;</a>
+<a class="sourceLine" id="cb56-4" title="4"><span class="ot">    ::</span> <span class="dt">Sing</span> p</a>
+<a class="sourceLine" id="cb56-5" title="5">    <span class="ot">-&gt;</span> <span class="dt">Sing</span> b</a>
+<a class="sourceLine" id="cb56-6" title="6">    <span class="ot">-&gt;</span> <span class="dt">GameState</span> p b</a>
+<a class="sourceLine" id="cb56-7" title="7">    <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb56-8" title="8">simplePlayIO&#39; p b gs <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb56-9" title="9">    printBoard <span class="fu">$</span> <span class="dt">FromSing</span> b</a>
+<a class="sourceLine" id="cb56-10" title="10">    <span class="dt">FromSing</span> i <span class="ot">&lt;-</span> getN <span class="st">&quot;row&quot;</span></a>
+<a class="sourceLine" id="cb56-11" title="11">    <span class="dt">FromSing</span> j <span class="ot">&lt;-</span> getN <span class="st">&quot;column&quot;</span></a>
+<a class="sourceLine" id="cb56-12" title="12">    <span class="kw">case</span> pick i j b <span class="kw">of</span></a>
+<a class="sourceLine" id="cb56-13" title="13">      <span class="dt">PickOoBX</span> _ <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb56-14" title="14">        <span class="fu">putStrLn</span> <span class="st">&quot;Out of bounds in rows.  Try again.&quot;</span></a>
+<a class="sourceLine" id="cb56-15" title="15">        simplePlayIO&#39; p b gs</a>
+<a class="sourceLine" id="cb56-16" title="16">      <span class="dt">PickOoBY</span> _ _ <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb56-17" title="17">        <span class="fu">putStrLn</span> <span class="st">&quot;Out of bounds in cols.  Try again.&quot;</span></a>
+<a class="sourceLine" id="cb56-18" title="18">        simplePlayIO&#39; p b gs</a>
+<a class="sourceLine" id="cb56-19" title="19">      <span class="dt">PickPlayed</span> _ q <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb56-20" title="20">        <span class="fu">putStrLn</span> <span class="fu">$</span> <span class="st">&quot;Already played by &quot;</span> <span class="fu">++</span> <span class="fu">show</span> (fromSing q) <span class="fu">++</span> <span class="st">&quot;. Try again.&quot;</span></a>
+<a class="sourceLine" id="cb56-21" title="21">        simplePlayIO&#39; p b gs</a>
+<a class="sourceLine" id="cb56-22" title="22">      <span class="dt">PickValid</span> c <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb56-23" title="23">        <span class="fu">putStrLn</span> <span class="st">&quot;Success!&quot;</span></a>
+<a class="sourceLine" id="cb56-24" title="24">        <span class="kw">let</span> p&#39;  <span class="fu">=</span> sAltP p                 <span class="co">-- update player (enforced by `play`)</span></a>
+<a class="sourceLine" id="cb56-25" title="25">            b&#39;  <span class="fu">=</span> sPlaceBoard i j p b     <span class="co">-- update board  (enforced by `play`)</span></a>
+<a class="sourceLine" id="cb56-26" title="26">            gs&#39; <span class="fu">=</span> play <span class="fu">undefined</span> c gs     <span class="co">-- update game state</span></a>
+<a class="sourceLine" id="cb56-27" title="27">        simplePlayIO&#39; p&#39; b&#39; gs&#39;</a></code></pre></div>
 <p>We use the <code>FromSing :: Sing (x :: a) -&gt; a</code> pattern synonym here to jump between the value-level and type-level with our values. First we use it as a <code>Sing (b :: Board) -&gt; Board</code> to give us the <code>Board</code> that <code>printBoard</code> demands. Then we use it as a constructor to “get” a <code>Sing (i :: N)</code> from the value-level <code>N</code> that <code>getN</code> returns. If <code>FromSing x :: a</code>, then <code>x</code> is the singleton of <code>FromSing x</code>. That is, <code>True == FromSing STrue</code>, and <code>S Z == FromSing (SS SZ)</code>.</p>
 <p>Note that the type of <code>play</code> enforces that we modify <code>p</code> and <code>b</code> according to nothing other than exactly what the type of a new board game demands.</p>
 <p>And to start it off, we give <code>simplePlayIO'</code> an initial state:</p>
-<div class="sourceCode" id="cb57"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L213-L216</span></a>
-<a class="sourceLine" id="cb57-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb57-3" data-line-number="3"><span class="ot">simplePlayIO ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb57-4" data-line-number="4">simplePlayIO <span class="fu">=</span> simplePlayIO&#39; <span class="dt">SPX</span> sEmptyBoard <span class="dt">GSStart</span></a>
-<a class="sourceLine" id="cb57-5" data-line-number="5"><span class="co">-- alternatively</span></a>
-<a class="sourceLine" id="cb57-6" data-line-number="6"><span class="co">-- simplePlayIO = simplePlayIO&#39; sing sing GSStart</span></a></code></pre></div>
+<div class="sourceCode" id="cb57"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb57-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L213-L216</span></a>
+<a class="sourceLine" id="cb57-2" title="2"></a>
+<a class="sourceLine" id="cb57-3" title="3"><span class="ot">simplePlayIO ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb57-4" title="4">simplePlayIO <span class="fu">=</span> simplePlayIO&#39; <span class="dt">SPX</span> sEmptyBoard <span class="dt">GSStart</span></a>
+<a class="sourceLine" id="cb57-5" title="5"><span class="co">-- alternatively</span></a>
+<a class="sourceLine" id="cb57-6" title="6"><span class="co">-- simplePlayIO = simplePlayIO&#39; sing sing GSStart</span></a></code></pre></div>
 <p>This isn’t too bad! A type-safe tic-tac-toe that enforces that:</p>
 <ol type="1">
 <li>Players alternate</li>
@@ -705,7 +706,7 @@ Already played by PO. Try again.
 Enter non-negative integer for row:
 ^C</code></pre>
 <p>(Again, note that <code>undefined</code> is used here instead of an actual witness for <code>InPlay</code> as a nice tool to enable incremental and interactive development of dependently typed programs.)</p>
-<p>Our core engine is pretty much complete, except that we haven’t defined <code>InPlay</code> yet, so the game can still go on <em>after</em> it has already been won. So, next, let’s implement our <code>InPlay</code> predicate and finish everything up!</p></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
+<p>Our core engine is pretty much complete, except that we haven’t defined <code>InPlay</code> yet, so the game can still go on <em>after</em> it has already been won. So, next, let’s implement our <code>InPlay</code> predicate and finish everything up!</p></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im" class="email">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
 <p>If you feel inclined, or this post was particularly helpful for you, why not consider <a href="https://www.patreon.com/justinle/overview">supporting me on Patreon</a>, or a <a href="bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU">BTC donation</a>? :)</p></div><div class="clear"></div><ul class="entry-series"></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/dependent-types.html" class="tag-a-tag">#dependent types</a></li><li><a href="https://blog.jle.im/entries/tagged/functional-programming.html" class="tag-a-tag">#functional programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/singletons.html" class="tag-a-tag">#singletons</a></li><li><a href="https://blog.jle.im/entries/tagged/types.html" class="tag-a-tag">#types</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing &quot;in Code&quot;!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/typesafe-tic-tac-toe-1.html';
     this.page.identifier = 'ttt-1';

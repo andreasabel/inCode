@@ -314,7 +314,7 @@ The \emph{recursion-schemes} library offers such a splice:
 \KeywordTok{data} \DataTypeTok{Trie}\NormalTok{ k v }\FunctionTok{=} \DataTypeTok{MkT}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) (}\DataTypeTok{Map}\NormalTok{ k (}\DataTypeTok{Trie}\NormalTok{ k v))}
   \KeywordTok{deriving} \DataTypeTok{Show}
 
-\NormalTok{makeBaseFunctor ''}\DataTypeTok{Trie}
+\NormalTok{makeBaseFunctor '}\DataTypeTok{'Trie}
 \end{Highlighting}
 \end{Shaded}
 
@@ -408,9 +408,9 @@ With this in mind, we can write \texttt{countAlg}:
 \OtherTok{countAlg ::} \DataTypeTok{TrieF}\NormalTok{ k v }\DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Int}
 \NormalTok{countAlg (}\DataTypeTok{MkTF}\NormalTok{ v subtrieCounts)}
     \FunctionTok{|}\NormalTok{ isJust v  }\FunctionTok{=} \DecValTok{1} \FunctionTok{+}\NormalTok{ subtrieTotal}
-    \FunctionTok{|}\NormalTok{ otherwise }\FunctionTok{=}\NormalTok{ subtrieTotal}
+    \FunctionTok{|} \FunctionTok{otherwise} \FunctionTok{=}\NormalTok{ subtrieTotal}
   \KeywordTok{where}
-\NormalTok{    subtrieTotal }\FunctionTok{=}\NormalTok{ sum subtrieCounts}
+\NormalTok{    subtrieTotal }\FunctionTok{=} \FunctionTok{sum}\NormalTok{ subtrieCounts}
 \end{Highlighting}
 \end{Shaded}
 
@@ -445,7 +445,7 @@ inside a trie:
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L73-L77}
 
 \OtherTok{trieSumAlg ::} \DataTypeTok{Num}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{TrieF}\NormalTok{ k a a }\OtherTok{->}\NormalTok{ a}
-\NormalTok{trieSumAlg (}\DataTypeTok{MkTF}\NormalTok{ v subtrieSums) }\FunctionTok{=}\NormalTok{ fromMaybe }\DecValTok{0}\NormalTok{ v }\FunctionTok{+}\NormalTok{ sum subtrieSums}
+\NormalTok{trieSumAlg (}\DataTypeTok{MkTF}\NormalTok{ v subtrieSums) }\FunctionTok{=}\NormalTok{ fromMaybe }\DecValTok{0}\NormalTok{ v }\FunctionTok{+} \FunctionTok{sum}\NormalTok{ subtrieSums}
 
 \OtherTok{trieSum ::} \DataTypeTok{Num}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Trie}\NormalTok{ k a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{trieSum }\FunctionTok{=}\NormalTok{ cata trieSumAlg}
@@ -522,12 +522,12 @@ if it's \texttt{k:ks}, we can \emph{run the lookupper of the subtrie at key
       \DataTypeTok{Nothing}        \OtherTok{->} \DataTypeTok{Nothing}
       \DataTypeTok{Just}\NormalTok{ lookupper }\OtherTok{->}\NormalTok{ lookupper ks}
 
-\NormalTok{lookup}
+\FunctionTok{lookup}
 \OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
     \OtherTok{=>}\NormalTok{ [k]}
     \OtherTok{->} \DataTypeTok{Trie}\NormalTok{ k v}
     \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ v}
-\NormalTok{lookup ks t }\FunctionTok{=}\NormalTok{ cata lookupperAlg t ks}
+\FunctionTok{lookup}\NormalTok{ ks t }\FunctionTok{=}\NormalTok{ cata lookupperAlg t ks}
 \end{Highlighting}
 \end{Shaded}
 
@@ -536,11 +536,11 @@ if it's \texttt{k:ks}, we can \emph{run the lookupper of the subtrie at key
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ lookup }\StringTok{"to"}\NormalTok{ testTrie}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{lookup} \StringTok{"to"}\NormalTok{ testTrie}
 \DataTypeTok{Just} \DecValTok{9}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ lookup }\StringTok{"ton"}\NormalTok{ testTrie}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{lookup} \StringTok{"ton"}\NormalTok{ testTrie}
 \DataTypeTok{Just} \DecValTok{3}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ lookup }\StringTok{"tone"}\NormalTok{ testTrie}
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{lookup} \StringTok{"tone"}\NormalTok{ testTrie}
 \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
@@ -568,7 +568,7 @@ explicit versions to query Trie? Why couldn't we just write:
 
 \OtherTok{trieSumExplicit ::} \DataTypeTok{Num}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Trie}\NormalTok{ k a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{trieSumExplicit (}\DataTypeTok{MkT}\NormalTok{ v subtries) }\FunctionTok{=}
-\NormalTok{    fromMaybe }\DecValTok{0}\NormalTok{ v }\FunctionTok{+}\NormalTok{ sum (fmap trieSumExplicit subtries)}
+\NormalTok{    fromMaybe }\DecValTok{0}\NormalTok{ v }\FunctionTok{+} \FunctionTok{sum}\NormalTok{ (}\FunctionTok{fmap}\NormalTok{ trieSumExplicit subtries)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -580,7 +580,7 @@ instead of
 
 \OtherTok{trieSumCata ::} \DataTypeTok{Num}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Trie}\NormalTok{ k a }\OtherTok{->}\NormalTok{ a}
 \NormalTok{trieSumCata }\FunctionTok{=}\NormalTok{ cata }\FunctionTok{$}\NormalTok{ \textbackslash{}(}\DataTypeTok{MkTF}\NormalTok{ v subtrieSums) }\OtherTok{->}
-\NormalTok{    fromMaybe }\DecValTok{0}\NormalTok{ v }\FunctionTok{+}\NormalTok{ sum subtrieSums}
+\NormalTok{    fromMaybe }\DecValTok{0}\NormalTok{ v }\FunctionTok{+} \FunctionTok{sum}\NormalTok{ subtrieSums}
 \end{Highlighting}
 \end{Shaded}
 
@@ -615,7 +615,7 @@ yourself. For our \texttt{Trie}, it's:
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L104-L105}
 
 \OtherTok{cata' ::}\NormalTok{ (}\DataTypeTok{TrieF}\NormalTok{ k v a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{Trie}\NormalTok{ k v }\OtherTok{->}\NormalTok{ a}
-\NormalTok{cata' alg }\FunctionTok{=}\NormalTok{ alg }\FunctionTok{.}\NormalTok{ fmap (cata' alg) }\FunctionTok{.}\NormalTok{ project}
+\NormalTok{cata' alg }\FunctionTok{=}\NormalTok{ alg }\FunctionTok{.} \FunctionTok{fmap}\NormalTok{ (cata' alg) }\FunctionTok{.}\NormalTok{ project}
 \end{Highlighting}
 \end{Shaded}
 
@@ -643,7 +643,7 @@ non-recursive way:
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L107-L110}
 
-\KeywordTok{newtype} \DataTypeTok{MuTrie}\NormalTok{ k v }\FunctionTok{=} \DataTypeTok{MkMT}\NormalTok{ (forall a}\FunctionTok{.}\NormalTok{ (}\DataTypeTok{TrieF}\NormalTok{ k v a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ a)}
+\KeywordTok{newtype} \DataTypeTok{MuTrie}\NormalTok{ k v }\FunctionTok{=} \DataTypeTok{MkMT}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ a}\FunctionTok{.}\NormalTok{ (}\DataTypeTok{TrieF}\NormalTok{ k v a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ a)}
 
 \OtherTok{cataMuTrie ::}\NormalTok{ (}\DataTypeTok{TrieF}\NormalTok{ k v a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->} \DataTypeTok{MuTrie}\NormalTok{ k v }\OtherTok{->}\NormalTok{ a}
 \NormalTok{cataMuTrie alg (}\DataTypeTok{MkMT}\NormalTok{ f) }\FunctionTok{=}\NormalTok{ f alg}
@@ -890,7 +890,7 @@ the coalgebra, and then fmaps re-expansion recursively.
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L144-L145}
 
 \OtherTok{ana' ::}\NormalTok{ (a }\OtherTok{->} \DataTypeTok{TrieF}\NormalTok{ k v a) }\OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Trie}\NormalTok{ k v}
-\NormalTok{ana' coalg }\FunctionTok{=}\NormalTok{ embed }\FunctionTok{.}\NormalTok{ fmap (ana' coalg) }\FunctionTok{.}\NormalTok{ coalg}
+\NormalTok{ana' coalg }\FunctionTok{=}\NormalTok{ embed }\FunctionTok{.} \FunctionTok{fmap}\NormalTok{ (ana' coalg) }\FunctionTok{.}\NormalTok{ coalg}
 \end{Highlighting}
 \end{Shaded}
 
@@ -908,7 +908,7 @@ non-recursive way:
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L147-L150}
 
-\KeywordTok{data} \DataTypeTok{NuTrie}\NormalTok{ k v }\FunctionTok{=}\NormalTok{ forall a}\FunctionTok{.} \DataTypeTok{MkNT}\NormalTok{ (a }\OtherTok{->} \DataTypeTok{TrieF}\NormalTok{ k v a) a}
+\KeywordTok{data} \DataTypeTok{NuTrie}\NormalTok{ k v }\FunctionTok{=} \KeywordTok{forall}\NormalTok{ a}\FunctionTok{.} \DataTypeTok{MkNT}\NormalTok{ (a }\OtherTok{->} \DataTypeTok{TrieF}\NormalTok{ k v a) a}
 
 \OtherTok{anaNuTrie ::}\NormalTok{ (a }\OtherTok{->} \DataTypeTok{TrieF}\NormalTok{ k v a) }\OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{NuTrie}\NormalTok{ k v }
 \NormalTok{anaNuTrie }\FunctionTok{=} \DataTypeTok{MkNT}
@@ -1070,10 +1070,10 @@ We can write this using \emph{fgl} combinators:
     \OtherTok{->} \DataTypeTok{State} \DataTypeTok{Int}\NormalTok{ (}\DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) k)}
 \NormalTok{trieGraphAlg (}\DataTypeTok{MkTF}\NormalTok{ v xs) }\FunctionTok{=} \KeywordTok{do}
 \NormalTok{    n         }\OtherTok{<-}\NormalTok{ fresh}
-\NormalTok{    subgraphs }\OtherTok{<-}\NormalTok{ sequence xs}
+\NormalTok{    subgraphs }\OtherTok{<-} \FunctionTok{sequence}\NormalTok{ xs}
     \CommentTok{--  subbroots :: [(k, Int)]}
-    \KeywordTok{let}\NormalTok{ subroots }\FunctionTok{=}\NormalTok{ M.toList }\FunctionTok{.}\NormalTok{ fmap (fst }\FunctionTok{.}\NormalTok{ G.nodeRange) }\FunctionTok{$}\NormalTok{ subgraphs}
-\NormalTok{    pure }\FunctionTok{$}\NormalTok{ G.insEdges ((\textbackslash{}(k,i) }\OtherTok{->}\NormalTok{ (n,i,k)) }\FunctionTok{<$>}\NormalTok{ subroots)   }\CommentTok{-- insert root-to-subroots}
+    \KeywordTok{let}\NormalTok{ subroots }\FunctionTok{=}\NormalTok{ M.toList }\FunctionTok{.} \FunctionTok{fmap}\NormalTok{ (}\FunctionTok{fst} \FunctionTok{.}\NormalTok{ G.nodeRange) }\FunctionTok{$}\NormalTok{ subgraphs}
+    \FunctionTok{pure} \FunctionTok{$}\NormalTok{ G.insEdges ((\textbackslash{}(k,i) }\OtherTok{->}\NormalTok{ (n,i,k)) }\FunctionTok{<$>}\NormalTok{ subroots)   }\CommentTok{-- insert root-to-subroots}
          \FunctionTok{.}\NormalTok{ G.insNode (n, v)                     }\CommentTok{-- insert new root}
          \FunctionTok{.}\NormalTok{ M.foldr (G.ufold (}\FunctionTok{G.&}\NormalTok{)) G.empty      }\CommentTok{-- merge all subgraphs}
          \FunctionTok{$}\NormalTok{ subgraphs}
@@ -1093,7 +1093,7 @@ We can write this using \emph{fgl} combinators:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{sequence}
+\FunctionTok{sequence}
 \OtherTok{    ::} \DataTypeTok{Map}\NormalTok{ k (}\DataTypeTok{State} \DataTypeTok{Int}\NormalTok{ (}\DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) k))}
     \OtherTok{->} \DataTypeTok{State} \DataTypeTok{Int}\NormalTok{ (}\DataTypeTok{Map}\NormalTok{ k (}\DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) k))}
 \end{Highlighting}
@@ -1139,7 +1139,7 @@ running the resulting \texttt{State\ Int\ (Gr\ (Maybe\ v)\ k)} action:
 \NormalTok{trieGraph}
 \OtherTok{    ::} \DataTypeTok{Trie}\NormalTok{ k v}
     \OtherTok{->} \DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) k}
-\NormalTok{trieGraph }\FunctionTok{=}\NormalTok{ flip evalState }\DecValTok{0} \FunctionTok{.}\NormalTok{ cata trieGraphAlg}
+\NormalTok{trieGraph }\FunctionTok{=} \FunctionTok{flip}\NormalTok{ evalState }\DecValTok{0} \FunctionTok{.}\NormalTok{ cata trieGraphAlg}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1151,7 +1151,7 @@ Finally, we can write our \texttt{mapToGraph}:
 \OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
     \OtherTok{=>} \DataTypeTok{Map}\NormalTok{ [k] v}
     \OtherTok{->} \DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) k}
-\NormalTok{mapToGraph }\FunctionTok{=}\NormalTok{ flip evalState }\DecValTok{0}
+\NormalTok{mapToGraph }\FunctionTok{=} \FunctionTok{flip}\NormalTok{ evalState }\DecValTok{0}
            \FunctionTok{.}\NormalTok{ cata trieGraphAlg}
            \FunctionTok{.}\NormalTok{ ana fromGraphCoalg}
 \end{Highlighting}
@@ -1233,7 +1233,7 @@ immediately consume'' property:
     \OtherTok{->}\NormalTok{ a}
     \OtherTok{->}\NormalTok{ b}
 \NormalTok{hylo' consume build }\FunctionTok{=}\NormalTok{ consume}
-                    \FunctionTok{.}\NormalTok{ fmap (hylo' consume build)}
+                    \FunctionTok{.} \FunctionTok{fmap}\NormalTok{ (hylo' consume build)}
                     \FunctionTok{.}\NormalTok{ build}
 \end{Highlighting}
 \end{Shaded}
@@ -1266,7 +1266,7 @@ Our final map-to-graph function can therefore be expressed as:
 \OtherTok{    ::} \DataTypeTok{Ord}\NormalTok{ k}
     \OtherTok{=>} \DataTypeTok{Map}\NormalTok{ [k] v}
     \OtherTok{->} \DataTypeTok{Gr}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ v) k}
-\NormalTok{mapToGraph }\FunctionTok{=}\NormalTok{ flip evalState }\DecValTok{0} \FunctionTok{.}\NormalTok{ hylo trieGraphAlg fromMapCoalg}
+\NormalTok{mapToGraph }\FunctionTok{=} \FunctionTok{flip}\NormalTok{ evalState }\DecValTok{0} \FunctionTok{.}\NormalTok{ hylo trieGraphAlg fromMapCoalg}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1297,10 +1297,10 @@ We can write a quick parser and aggregator into a
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/trie/trie.hs#L194-L203}
 
 \OtherTok{memeMap ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Map} \DataTypeTok{String} \DataTypeTok{HTML.Label}
-\NormalTok{memeMap }\FunctionTok{=}\NormalTok{ M.fromList }\FunctionTok{.}\NormalTok{ map (uncurry processLine }\FunctionTok{.}\NormalTok{ span (}\FunctionTok{/=} \CharTok{','}\NormalTok{)) }\FunctionTok{.}\NormalTok{ lines}
+\NormalTok{memeMap }\FunctionTok{=}\NormalTok{ M.fromList }\FunctionTok{.} \FunctionTok{map}\NormalTok{ (}\FunctionTok{uncurry}\NormalTok{ processLine }\FunctionTok{.} \FunctionTok{span}\NormalTok{ (}\FunctionTok{/=} \CharTok{','}\NormalTok{)) }\FunctionTok{.} \FunctionTok{lines}
   \KeywordTok{where}
-\NormalTok{    processLine qt (drop }\DecValTok{1}\OtherTok{->}\NormalTok{img) }\FunctionTok{=}\NormalTok{ (}
-\NormalTok{          filter (not }\FunctionTok{.}\NormalTok{ isSpace) qt}
+\NormalTok{    processLine qt (}\FunctionTok{drop} \DecValTok{1}\OtherTok{->}\NormalTok{img) }\FunctionTok{=}\NormalTok{ (}
+          \FunctionTok{filter}\NormalTok{ (}\FunctionTok{not} \FunctionTok{.} \FunctionTok{isSpace}\NormalTok{) qt}
 \NormalTok{        , }\DataTypeTok{HTML.Table}\NormalTok{ (}\DataTypeTok{HTML.HTable} \DataTypeTok{Nothing}\NormalTok{ [] [r1,r2])}
 \NormalTok{        )}
       \KeywordTok{where}
@@ -1350,7 +1350,7 @@ into a dot file, using \emph{graphviz} to do most of the work:
 \NormalTok{      \{ fmtNode }\FunctionTok{=}\NormalTok{ \textbackslash{}(_,  l) }\OtherTok{->} \KeywordTok{case}\NormalTok{ l }\KeywordTok{of}
           \DataTypeTok{Nothing} \OtherTok{->}\NormalTok{ [GV.shape }\DataTypeTok{GV.PointShape}\NormalTok{]}
           \DataTypeTok{Just}\NormalTok{ l' }\OtherTok{->}\NormalTok{ [GV.toLabel l', GV.shape }\DataTypeTok{GV.PlainText}\NormalTok{]}
-\NormalTok{      , fmtEdge }\FunctionTok{=}\NormalTok{ \textbackslash{}(_,_,l) }\OtherTok{->}\NormalTok{ [GV.toLabel (concat [}\StringTok{"["}\NormalTok{, l, }\StringTok{"]"}\NormalTok{])]}
+\NormalTok{      , fmtEdge }\FunctionTok{=}\NormalTok{ \textbackslash{}(_,_,l) }\OtherTok{->}\NormalTok{ [GV.toLabel (}\FunctionTok{concat}\NormalTok{ [}\StringTok{"["}\NormalTok{, l, }\StringTok{"]"}\NormalTok{])]}
 \NormalTok{      \}}
 \end{Highlighting}
 \end{Shaded}
@@ -1366,7 +1366,7 @@ And finally, we can write the entire pipeline:
     \OtherTok{->} \DataTypeTok{T.Text}
 \NormalTok{memeDot }\FunctionTok{=}\NormalTok{ graphDot}
         \FunctionTok{.}\NormalTok{ compactify}
-        \FunctionTok{.}\NormalTok{ flip evalState }\DecValTok{0}
+        \FunctionTok{.} \FunctionTok{flip}\NormalTok{ evalState }\DecValTok{0}
         \FunctionTok{.}\NormalTok{ hylo trieGraphAlg fromMapCoalg}
         \FunctionTok{.}\NormalTok{ memeMap}
 \end{Highlighting}

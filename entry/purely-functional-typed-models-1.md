@@ -510,7 +510,8 @@ of the model parameter for us instead of explicitly writing it out ourselves.
 We can train it on sample points:
 
 ``` {.haskell}
-ghci> samps = [(H.vec2 0 0, 0), (H.vec2 1 0, 1), (H.vec2 0 1, 1), (H.vec2 1 1, 1)]
+ghci> let samps :: [(R 2, R 1)]
+          samps = [(H.vec2 0 0, 0), (H.vec2 1 0, 1), (H.vec2 0 1, 1), (H.vec2 1 1, 0)]
 ghci> trained <- trainModelIO twoLayer $ take 10000 (cycle samps)
 ```
 
