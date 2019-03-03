@@ -285,6 +285,246 @@ other constructs:
   as essentially paired with function abstraction.
 \end{itemize}
 
+\hypertarget{type-levels}{%
+\subsubsection{Type levels}\label{type-levels}}
+
+If a level is a ``type'' of another (type, kind, sort), they also have a
+\emph{function type} construct, which is the \emph{type} of lambda abstractions
+on the level below.
+
+For example, a term-level lambda abstraction of type
+\texttt{\textbackslash{}(x\ :\ Natural)\ -\textgreater{}\ x\ +\ 2} has the type
+\texttt{Natural\ -\textgreater{}\ Natural}, which lives on the type level.
+Again, this is specifically for functions on the ``same level''.
+
+This construct might also classify primitives on the level above. For example,
+the \texttt{Natural/isEven} primitive in Dhall has type
+\texttt{Natural\ -\textgreater{}\ Bool}.
+
+\hypertarget{type-of-type-levels}{%
+\subsubsection{Type-of-type levels}\label{type-of-type-levels}}
+
+If a level is the ``type'' of a level that is a ``type'' of another type, it
+must also have a ``constant'' to tie the levels below together. That is, there
+is a kind \texttt{Type}, that is the kind of all types that categorize terms. We
+also have the sort \texttt{Kind}, that is the sort of all kinds that categorize
+types.
+
+\hypertarget{recap}{%
+\subsubsection{Recap}\label{recap}}
+
+That's a lot of constructs, and a lot of conditions. So just to recap, here's a
+list of all constructors on each of the levels that we have gone over so far:
+
+\begin{description}
+\tightlist
+\item[Term]
+Primitives
+
+Function abstraction
+
+Function application
+\item[Type]
+Primitives
+
+Function abstraction
+
+Function application
+
+Function type
+\item[Kind]
+Primitives
+
+Function abstraction
+
+Function application
+
+Function type
+
+Constant (\texttt{Type})
+\item[Sort]
+Primitives
+
+Function type
+
+Constant (\texttt{Kind})
+\end{description}
+
+All of these constructs are things that are ``within the same level''.
+
+\hypertarget{inter-level}{%
+\subsection{Inter-Level}\label{inter-level}}
+
+Finally, we have three inter-level constructs: \emph{type abstraction},
+\emph{type application}, and \emph{type abstraction type}. I like to call them
+\emph{polymorphism}, \emph{instantiation}, and \emph{forall}, as they are
+realized in Haskell.
+
+\textbf{Type abstraction} (polymorphism) lets us parameterize a value based on
+something of a type above. A common example is the identity function in Haskell,
+which has type \texttt{forall\ a.\ a\ -\textgreater{}\ a}. In Haskell, type
+abstractions are always implicit; we don't ever explicitly write them out, and
+instead the Haskell compiler implicitly creates it for us with no syntactic
+overhead. In Dhall, type abstractions are always explicit: the polymorphic
+identity function is written as
+\texttt{\textbackslash{}(a\ :\ Type)\ -\textgreater{}\ \textbackslash{}(x\ :\ a)\ -\textgreater{}\ x}.
+
+In Dhall, there are three type abstractions allowed:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Terms parameterized on types (polymorphic terms)
+\item
+  Terms parameterized on kinds (kind-polymorphic terms)
+\item
+  Types parameterized on kinds (kind-polymorphic types)
+\end{enumerate}
+
+I believe this is a fundamental limit of disallowing sort variables. If we
+allowed sort-variables, then we'd also have terms parameterized on sorts, types
+parameterized on sorts, and kinds parameterized on sorts, adding three new type
+abstractions.
+
+\textbf{Type application} (instantiation) lets us \emph{apply} a type
+abstraction to some input of the appropriate level, or to ``instantiate a type
+variable'', in Haskell-speak.
+
+Finally, the \textbf{type abstraction type} is the meta-level ``type* of a type
+abstraction, just like how a function type is the''type" of a function
+abstraction. Again, there are three in Dhall:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  The type of terms parameterized on types
+\item
+  The type of terms parameterized on kinds
+\item
+  The kind of types parameterized on kinds
+\end{enumerate}
+
+Note that although these are the types of type abstractions, \emph{primitives}
+can also have these types. For example, the \texttt{None} term primitive in
+Dhall has type \texttt{forall\ (a\ :\ Type).\ Optional\ a}. Its type is \#1 on
+the list above: \texttt{None} is a term parameterized on a type, and its type is
+the type of terms parameterized on types.
+
+\hypertarget{final-summary}{%
+\subsection{Final Summary}\label{final-summary}}
+
+To summarize, here's all of the constructs in Dhall:
+
+\begin{description}
+\tightlist
+\item[Term]
+Primitives
+
+Function abstraction
+
+Function application
+
+Type abstraction (parameterized on types)
+
+Type application (parameterized on types)
+
+Type abstraction (parameterized on kinds)
+
+Type application (parameterized on kinds)
+\item[Type]
+Primitives
+
+Function abstraction
+
+Function application
+
+Type abstraction (parameterized on kinds)
+
+Type application (parameterized on kinds)
+
+Function type
+
+Type abstraction type (terms parameterized on types)
+
+Type abstraction type (terms parameterized on kinds)
+\item[Kind]
+Primitives
+
+Function abstraction
+
+Function application
+
+Function type
+
+Type abstraction type (types parameterized on kinds)
+
+Constant (\texttt{Type})
+\item[Sort]
+Primitives
+
+Function type
+
+Constant (\texttt{Kind})
+\end{description}
+
+Note that Dhall also has \texttt{let\ ..\ in\ ..} constructs, for mostly quality
+of life purposes. They don't really affect the semantics, but we can essentially
+treat them like function abstractions or type applications that are immediately
+applied. So, \texttt{let\ x\ =\ Natural\ in\ blah} is
+\texttt{(\textbackslash{}(x\ :\ Type)\ -\textgreater{}\ blah)\ Natural}.
+However, this does restrict us to only have \texttt{let\ ..\ in\ ..}s that
+correspond to an appropriate function or type abstraction --- so we can't, say,
+do \texttt{let\ x\ =\ 1\ in\ Kind}, since there is no abstraction that takes a
+term and returns a sort.
+
+\hypertarget{normalization-and-typing-rules}{%
+\subsection{Normalization and Typing
+Rules}\label{normalization-and-typing-rules}}
+
+Of course, listing these constructs is one story. Getting the type of them (and
+the type of their components) is a different one. For example, we know that
+applying a function of type \texttt{Natural\ -\textgreater{}\ Bool} to a term of
+type \texttt{Natural} gives us a term of type \texttt{Bool}. However, we'll
+gloss over this for now as we continue on this high-level overview.
+
+\hypertarget{how-does-dhall-do-it}{%
+\subsection{How does Dhall do it?}\label{how-does-dhall-do-it}}
+
+In the typical Haskell way, the system is implemented as an ADT, where each
+construct is (surprise) a constructor.
+
+However, the untyped Dhall AST squishes all of the distinction between all of
+the levels. Half of my journey was actually in re-separating each of these
+levels!
+
+The untyped Dhall AST has the following constructors:
+
+\begin{itemize}
+\tightlist
+\item
+  A constructor for each primitive (on all levels)
+\item
+  A constructor for each constant
+\item
+  A single constructor for all function abstractions \emph{and} type
+  abstractions (that is, a single constructor for all levels).
+\item
+  A single constructor for all function applications \emph{and} type
+  applications (again, one constructor for all levels).
+\item
+  A single constructor for all function types \emph{and} type application (of
+  all levels).
+\end{itemize}
+
+(And also the \texttt{let\ ..\ in\ ..} constructor)
+
+So at this point, the plan seems clear: simply distinguish each of the
+``squished'' abstractions into the four different levels (``unsquish'' them),
+and make them a GADT parameterized on on the types with the right inductive
+rules.
+
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
 
