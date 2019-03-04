@@ -1,6 +1,6 @@
 <!DOCTYPE HTML>
 <html><head><title>dhall-typed: Exploring an implementation of a typed lambda calculus · in Code</title><meta name="description" content="Weblog of Justin Le, covering various adventures in programming and explorations in the worlds of computation physics, and knowledge.
-"><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="flattr:id" content="3p9jqr"><meta property="og:site_name" content="in Code"><meta property="og:description" content="I’ve been wrapped up on a side-project for a while that has been an interesting deep dive into the limits of type-level Haskell. I’ve been stuck many times, but I’ve often come back later with new ideas to go around certain problems. Now at another stuck point, I just wanted to take some time to put my thoughts out into a blog post for those interested to see what it feels like to be down in these miry pits, and also for those more skilled than me to be able to maybe help :) Keep in mind that the struggles contained in this post are:  * Not representative of most day-to-day practical type-level Haskell, a la servant and other type-level user-friendly libraries. * More likely than not to be very trivial in a language with actual dependent types, like Idris."><meta property="og:type" content="article"><meta property="og:title" content="dhall-typed: Exploring an implementation of a typed lambda calculus"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/exploring-typed-lambda-calculus.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/exploring-typed-lambda-calculus.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
+"><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="flattr:id" content="3p9jqr"><meta property="og:site_name" content="in Code"><meta property="og:description" content="I’ve been wrapped up on a side-project for a while that has been an interesting deep dive into the limits of type-level Haskell. I’ve been stuck many times, but I’ve often come back later with new ideas to go around certain problems. Now at another stuck point, I just wanted to take some time to put my thoughts out into a blog post for those interested to see what it feels like to be down in these miry pits, and also for those more skilled than me to be able to maybe help :) Keep in mind that the struggles contained in this post are:  * Not representative of most day-to-day practical type-level Haskell, a la servant and other type-level user-friendly libraries. * More likely than not to be very trivial in a language with actual dependent types, like Idris. Furthermore, this post isn’t exactly “beginner friendly” :) It contains mention of a lot of type-level tools, including GADTs, type-level lists, singletons, etc. I’ll try to explain the more out-there things, but just be aware that this isn’t as hands-holding as most of my posts! That’s because this is less of a tutorial and more of a journal of my current struggles."><meta property="og:type" content="article"><meta property="og:title" content="dhall-typed: Exploring an implementation of a typed lambda calculus"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/exploring-typed-lambda-calculus.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/exploring-typed-lambda-calculus.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
 var disqus_shortname='incode';
 </script><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
 (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -22,6 +22,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <li>Not representative of most day-to-day practical type-level Haskell, a la <em>servant</em> and other type-level user-friendly libraries.</li>
 <li>More likely than not to be very trivial in a language with actual dependent types, like Idris.</li>
 </ul>
+<p>Furthermore, this post isn’t exactly “beginner friendly” :) It contains mention of a lot of type-level tools, including GADTs, type-level lists, singletons, etc. I’ll try to explain the more out-there things, but just be aware that this isn’t as hands-holding as most of my posts! That’s because this is less of a tutorial and more of a journal of my current struggles.</p>
 <h2 id="the-motivation">The motivation</h2>
 <p>Here I summarize the motivation behind this project. Feel free to skip!</p>
 <p>One of my favorite Haskell projects in the past year or so has been <a href="https://dhall-lang.org/">dhall</a>, a typed and functional turing-incomplete strongly normalizing configuration language. I honestly believe that dhall is the solution to many of the problems of configuration languages (w.r.t json, yaml, xml) in modern software development, and I hope to see it gain widespread adoption some day as a “killer app” of functional turing-incomplete programming.</p>
@@ -104,12 +105,16 @@ x ⩓ y                      -- merging record types in Dhall
 </dd>
 <dd>Function abstraction
 </dd>
+<dd>Term variables
+</dd>
 <dd>Function application
 </dd>
 <dt>Type</dt>
 <dd>Primitives
 </dd>
 <dd>Function abstraction
+</dd>
+<dd>Type variables
 </dd>
 <dd>Function application
 </dd>
@@ -119,6 +124,8 @@ x ⩓ y                      -- merging record types in Dhall
 <dd>Primitives
 </dd>
 <dd>Function abstraction
+</dd>
+<dd>Kind variables
 </dd>
 <dd>Function application
 </dd>
@@ -161,6 +168,8 @@ x ⩓ y                      -- merging record types in Dhall
 </dd>
 <dd>Function abstraction
 </dd>
+<dd>Term variables
+</dd>
 <dd>Function application
 </dd>
 <dd>Type abstraction (parameterized on types)
@@ -175,6 +184,8 @@ x ⩓ y                      -- merging record types in Dhall
 <dd>Primitives
 </dd>
 <dd>Function abstraction
+</dd>
+<dd>Type variables
 </dd>
 <dd>Function application
 </dd>
@@ -192,6 +203,8 @@ x ⩓ y                      -- merging record types in Dhall
 <dd>Primitives
 </dd>
 <dd>Function abstraction
+</dd>
+<dd>Kind variables
 </dd>
 <dd>Function application
 </dd>
@@ -224,7 +237,66 @@ x ⩓ y                      -- merging record types in Dhall
 <li>A single constructor for all function types <em>and</em> type application (of all levels).</li>
 </ul>
 <p>(And also the <code>let .. in ..</code> constructor)</p>
-<p>So at this point, the plan seems clear: simply distinguish each of the “squished” abstractions into the four different levels (“unsquish” them), and make them a GADT parameterized on on the types with the right inductive rules.</p></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im" class="email">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
+<p>So at this point, the plan seems clear: simply distinguish each of the “squished” abstractions into the four different levels (“unsquish” them), and make them a GADT parameterized on on the types with the right inductive rules.</p>
+<h2 id="lets-do-it">Let’s Do It</h2>
+<p>Alright, let’s do it! Note that the way we described it, each level only ever refers to levels above it — so we get no circular dependencies.</p>
+<h3 id="sorts">Sorts</h3>
+<p>First, sorts. Remember, sorts contain primitives, function types, and <code>Kind</code>. For the sake of simplicity, we’re going to ignore Dhall’s sort-level primitives: record and union sorts (the sort of kind-level records).</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">data</span> <span class="dt">DSort</span> <span class="fu">=</span> <span class="dt">Kind</span></a>
+<a class="sourceLine" id="cb8-2" title="2">           <span class="fu">|</span> <span class="dt">DSort</span> <span class="fu">:*&gt;</span> <span class="dt">DSort</span></a></code></pre></div>
+<p>That’s it!</p>
+<h3 id="kinds">Kinds</h3>
+<p>Second, kinds. Kinds have sorts, so we’re going to make them a GADT parameterized by the sort of the constructor. However, we also need a constructor for a kind variable. However, kind variables can all have different sorts. We’re going to implement this using <code>Index</code>, a GADT that lets us specify a specific item from a type-level list:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">data</span> <span class="dt">Index</span><span class="ot"> ::</span> [k] <span class="ot">-&gt;</span> k <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-2" title="2">    <span class="dt">IZ</span><span class="ot"> ::</span> <span class="dt">Index</span> (a &#39;<span class="fu">:</span> as) a</a>
+<a class="sourceLine" id="cb9-3" title="3">    <span class="dt">IS</span><span class="ot"> ::</span> <span class="dt">Index</span> as b <span class="ot">-&gt;</span> <span class="dt">Index</span> (a &#39;<span class="fu">:</span> as) b</a></code></pre></div>
+<p>This type comes up pretty often in type-level programming. I won’t go too deep into it, but you can think of a value of type <code>Index as a</code> as a witness that <code>a</code> exists in the type-level list <code>as</code> — and that the witness tells you what the index of that item is:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" title="1"><span class="dt">IZ</span><span class="ot">         ::</span> <span class="dt">Index</span> &#39;[<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>] <span class="dv">1</span></a>
+<a class="sourceLine" id="cb10-2" title="2"><span class="dt">IS</span> <span class="dt">IZ</span><span class="ot">      ::</span> <span class="dt">Index</span> &#39;[<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>] <span class="dv">2</span></a>
+<a class="sourceLine" id="cb10-3" title="3"><span class="dt">IS</span> (<span class="dt">IS</span> <span class="dt">IZ</span>)<span class="ot"> ::</span> <span class="dt">Index</span> &#39;[<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>] <span class="dv">3</span></a></code></pre></div>
+<p>This essentially gives us a way to specify the kind of free variables. An <code>Index</code> will tell us “which free variable”. Here we go!</p>
+<p>We’ll have a type <code>DKind ts a</code>, where <code>ts</code> is the sort of each free variable, and <code>a</code> is the <em>sort</em> of the kind. For example:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" title="1"><span class="dt">DKind</span> &#39;[ <span class="dt">&#39;Kind</span>, <span class="dt">&#39;Kind</span> &#39;<span class="fu">:*&gt;</span> <span class="dt">&#39;Kind</span> ] <span class="dt">&#39;Kind</span></a></code></pre></div>
+<p>will be a kind of sort <code>Kind</code>, with free variables of sort <code>Kind</code> and <code>Kind -&gt; Kind</code>. A <code>DKind '[] a</code> is a kind of sort <code>a</code> with no free variables.</p>
+<p>Let’s make the data type, then! As we mentioned earlier, kinds have:</p>
+<ul>
+<li>Primitives</li>
+<li>Function abstraction</li>
+<li>Kind variables</li>
+<li>Function application</li>
+<li>Function type</li>
+<li>Type abstraction type (types parameterized on kinds)</li>
+<li>Constant (<code>Type</code>)</li>
+</ul>
+<p>Again, we’re going to ignore the kind-level primitives for simplicity. This means no record and union kinds (the kind of type-level records and unions) or kind records or kind unions.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" title="1"><span class="kw">data</span> <span class="dt">DKind</span><span class="ot"> ::</span> [<span class="dt">DSort</span>] <span class="ot">-&gt;</span> <span class="dt">DSort</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb12-2" title="2">    <span class="co">-- | Function abstraction</span></a>
+<a class="sourceLine" id="cb12-3" title="3">    <span class="dt">KLam</span><span class="ot">  ::</span> <span class="dt">DKind</span> (t &#39;<span class="fu">:</span> ts) a <span class="ot">-&gt;</span> <span class="dt">DKind</span> ts (t &#39;<span class="fu">:*&gt;</span> a)</a>
+<a class="sourceLine" id="cb12-4" title="4">    <span class="co">-- | Kind variables</span></a>
+<a class="sourceLine" id="cb12-5" title="5">    <span class="dt">KVar</span><span class="ot">  ::</span> <span class="dt">Index</span> ts a <span class="ot">-&gt;</span> <span class="dt">DKind</span> ts a</a>
+<a class="sourceLine" id="cb12-6" title="6">    <span class="co">-- | Function application</span></a>
+<a class="sourceLine" id="cb12-7" title="7">    <span class="dt">KApp</span><span class="ot">  ::</span> <span class="dt">DKind</span> ts (a &#39;<span class="fu">:*&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">DKind</span> ts a <span class="ot">-&gt;</span> <span class="dt">DKind</span> ts b</a>
+<a class="sourceLine" id="cb12-8" title="8">    <span class="co">-- | Funcion type</span></a>
+<a class="sourceLine" id="cb12-9" title="9"><span class="ot">    (:~&gt;) ::</span> <span class="dt">DKind</span> ts <span class="dt">&#39;Kind</span> <span class="ot">-&gt;</span> <span class="dt">DKind</span> ts <span class="dt">&#39;Kind</span> <span class="ot">-&gt;</span> <span class="dt">DKind</span> ts <span class="dt">&#39;Kind</span></a>
+<a class="sourceLine" id="cb12-10" title="10">    <span class="co">-- | Type abstraction type</span></a>
+<a class="sourceLine" id="cb12-11" title="11">    <span class="dt">KPi</span><span class="ot">   ::</span> <span class="dt">Sing</span> t <span class="ot">-&gt;</span> <span class="dt">DKind</span> (t &#39;<span class="fu">:</span> ts) a <span class="ot">-&gt;</span> <span class="dt">DKind</span> ts a</a>
+<a class="sourceLine" id="cb12-12" title="12">    <span class="co">-- | Constant</span></a>
+<a class="sourceLine" id="cb12-13" title="13">    <span class="dt">Type</span><span class="ot">  ::</span> <span class="dt">DKind</span> ts <span class="dt">&#39;Kind</span></a></code></pre></div>
+<p>Note the nice property of GADTs that allow us to encode the typing rules directly into our constructors. For example, it lets us specify that applying a kind of sort <code>a :*&gt; b</code> to a kind of sort <code>a</code> will give us a kind of sort <code>b</code>. It lets us say that <code>KLam</code> (function abstraction) “removes” a free variable, turning it into a bound variable, producing something of kind <code>t :*&gt; a</code>.</p>
+<p>One final thing of note: <code>KPi</code> includes a <em>singleton</em> of the sort <code>t</code>, since <code>t</code> is a hidden existential type that isn’t visible from the outside.</p>
+<h3 id="types">Types</h3>
+<p>Okay, this is where things get interesting. The type level contains the most constructs:</p>
+<ul>
+<li>Primitives</li>
+<li>Function abstraction</li>
+<li>Type variables</li>
+<li>Function application</li>
+<li>Type abstraction (parameterized on kinds)</li>
+<li>Type application (parameterized on kinds)</li>
+<li>Function type</li>
+<li>Type abstraction type (terms parameterized on types)</li>
+<li>Type abstraction type (terms parameterized on kinds)</li>
+</ul></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im" class="email">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
 <p>If you feel inclined, or this post was particularly helpful for you, why not consider <a href="https://www.patreon.com/justinle/overview">supporting me on Patreon</a>, or a <a href="bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU">BTC donation</a>? :)</p></div><div class="clear"></div><ul class="entry-series"></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/dependent-types.html" class="tag-a-tag">#dependent types</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing &quot;in Code&quot;!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/exploring-typed-lambda-calculus.html';
     this.page.identifier = 'typed-lc-1';

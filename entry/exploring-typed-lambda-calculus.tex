@@ -21,6 +21,44 @@
 % use microtype if available
 \IfFileExists{microtype.sty}{\usepackage{microtype}}{}
 \usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\newenvironment{Shaded}{}{}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
 \ifxetex
   \usepackage[setpagesize=false, % page size defined by xetex
               unicode=false, % unicode breaks when used with xetex
@@ -73,6 +111,12 @@ Keep in mind that the struggles contained in this post are:
   More likely than not to be very trivial in a language with actual dependent
   types, like Idris.
 \end{itemize}
+
+Furthermore, this post isn't exactly ``beginner friendly'' :) It contains
+mention of a lot of type-level tools, including GADTs, type-level lists,
+singletons, etc. I'll try to explain the more out-there things, but just be
+aware that this isn't as hands-holding as most of my posts! That's because this
+is less of a tutorial and more of a journal of my current struggles.
 
 \hypertarget{the-motivation}{%
 \section{The motivation}\label{the-motivation}}
@@ -323,11 +367,15 @@ Primitives
 
 Function abstraction
 
+Term variables
+
 Function application
 \item[Type]
 Primitives
 
 Function abstraction
+
+Type variables
 
 Function application
 
@@ -336,6 +384,8 @@ Function type
 Primitives
 
 Function abstraction
+
+Kind variables
 
 Function application
 
@@ -424,6 +474,8 @@ Primitives
 
 Function abstraction
 
+Term variables
+
 Function application
 
 Type abstraction (parameterized on types)
@@ -437,6 +489,8 @@ Type application (parameterized on kinds)
 Primitives
 
 Function abstraction
+
+Type variables
 
 Function application
 
@@ -453,6 +507,8 @@ Type abstraction type (terms parameterized on kinds)
 Primitives
 
 Function abstraction
+
+Kind variables
 
 Function application
 
@@ -524,6 +580,156 @@ So at this point, the plan seems clear: simply distinguish each of the
 ``squished'' abstractions into the four different levels (``unsquish'' them),
 and make them a GADT parameterized on on the types with the right inductive
 rules.
+
+\hypertarget{lets-do-it}{%
+\section{Let's Do It}\label{lets-do-it}}
+
+Alright, let's do it! Note that the way we described it, each level only ever
+refers to levels above it --- so we get no circular dependencies.
+
+\hypertarget{sorts}{%
+\subsection{Sorts}\label{sorts}}
+
+First, sorts. Remember, sorts contain primitives, function types, and
+\texttt{Kind}. For the sake of simplicity, we're going to ignore Dhall's
+sort-level primitives: record and union sorts (the sort of kind-level records).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{DSort} \FunctionTok{=} \DataTypeTok{Kind}
+           \FunctionTok{|} \DataTypeTok{DSort} \FunctionTok{:*>} \DataTypeTok{DSort}
+\end{Highlighting}
+\end{Shaded}
+
+That's it!
+
+\hypertarget{kinds}{%
+\subsection{Kinds}\label{kinds}}
+
+Second, kinds. Kinds have sorts, so we're going to make them a GADT
+parameterized by the sort of the constructor. However, we also need a
+constructor for a kind variable. However, kind variables can all have different
+sorts. We're going to implement this using \texttt{Index}, a GADT that lets us
+specify a specific item from a type-level list:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Index}\OtherTok{ ::}\NormalTok{ [k] }\OtherTok{->}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{IZ}\OtherTok{ ::} \DataTypeTok{Index}\NormalTok{ (a '}\FunctionTok{:}\NormalTok{ as) a}
+    \DataTypeTok{IS}\OtherTok{ ::} \DataTypeTok{Index}\NormalTok{ as b }\OtherTok{->} \DataTypeTok{Index}\NormalTok{ (a '}\FunctionTok{:}\NormalTok{ as) b}
+\end{Highlighting}
+\end{Shaded}
+
+This type comes up pretty often in type-level programming. I won't go too deep
+into it, but you can think of a value of type \texttt{Index\ as\ a} as a witness
+that \texttt{a} exists in the type-level list \texttt{as} --- and that the
+witness tells you what the index of that item is:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{IZ}\OtherTok{         ::} \DataTypeTok{Index}\NormalTok{ '[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{] }\DecValTok{1}
+\DataTypeTok{IS} \DataTypeTok{IZ}\OtherTok{      ::} \DataTypeTok{Index}\NormalTok{ '[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{] }\DecValTok{2}
+\DataTypeTok{IS}\NormalTok{ (}\DataTypeTok{IS} \DataTypeTok{IZ}\NormalTok{)}\OtherTok{ ::} \DataTypeTok{Index}\NormalTok{ '[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{] }\DecValTok{3}
+\end{Highlighting}
+\end{Shaded}
+
+This essentially gives us a way to specify the kind of free variables. An
+\texttt{Index} will tell us ``which free variable''. Here we go!
+
+We'll have a type \texttt{DKind\ ts\ a}, where \texttt{ts} is the sort of each
+free variable, and \texttt{a} is the \emph{sort} of the kind. For example:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{DKind}\NormalTok{ '[ }\DataTypeTok{'Kind}\NormalTok{, }\DataTypeTok{'Kind}\NormalTok{ '}\FunctionTok{:*>} \DataTypeTok{'Kind}\NormalTok{ ] }\DataTypeTok{'Kind}
+\end{Highlighting}
+\end{Shaded}
+
+will be a kind of sort \texttt{Kind}, with free variables of sort \texttt{Kind}
+and \texttt{Kind\ -\textgreater{}\ Kind}. A
+\texttt{DKind\ \textquotesingle{}{[}{]}\ a} is a kind of sort \texttt{a} with no
+free variables.
+
+Let's make the data type, then! As we mentioned earlier, kinds have:
+
+\begin{itemize}
+\tightlist
+\item
+  Primitives
+\item
+  Function abstraction
+\item
+  Kind variables
+\item
+  Function application
+\item
+  Function type
+\item
+  Type abstraction type (types parameterized on kinds)
+\item
+  Constant (\texttt{Type})
+\end{itemize}
+
+Again, we're going to ignore the kind-level primitives for simplicity. This
+means no record and union kinds (the kind of type-level records and unions) or
+kind records or kind unions.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{DKind}\OtherTok{ ::}\NormalTok{ [}\DataTypeTok{DSort}\NormalTok{] }\OtherTok{->} \DataTypeTok{DSort} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \CommentTok{-- | Function abstraction}
+    \DataTypeTok{KLam}\OtherTok{  ::} \DataTypeTok{DKind}\NormalTok{ (t '}\FunctionTok{:}\NormalTok{ ts) a }\OtherTok{->} \DataTypeTok{DKind}\NormalTok{ ts (t '}\FunctionTok{:*>}\NormalTok{ a)}
+    \CommentTok{-- | Kind variables}
+    \DataTypeTok{KVar}\OtherTok{  ::} \DataTypeTok{Index}\NormalTok{ ts a }\OtherTok{->} \DataTypeTok{DKind}\NormalTok{ ts a}
+    \CommentTok{-- | Function application}
+    \DataTypeTok{KApp}\OtherTok{  ::} \DataTypeTok{DKind}\NormalTok{ ts (a '}\FunctionTok{:*>}\NormalTok{ b) }\OtherTok{->} \DataTypeTok{DKind}\NormalTok{ ts a }\OtherTok{->} \DataTypeTok{DKind}\NormalTok{ ts b}
+    \CommentTok{-- | Funcion type}
+\OtherTok{    (:~>) ::} \DataTypeTok{DKind}\NormalTok{ ts }\DataTypeTok{'Kind} \OtherTok{->} \DataTypeTok{DKind}\NormalTok{ ts }\DataTypeTok{'Kind} \OtherTok{->} \DataTypeTok{DKind}\NormalTok{ ts }\DataTypeTok{'Kind}
+    \CommentTok{-- | Type abstraction type}
+    \DataTypeTok{KPi}\OtherTok{   ::} \DataTypeTok{Sing}\NormalTok{ t }\OtherTok{->} \DataTypeTok{DKind}\NormalTok{ (t '}\FunctionTok{:}\NormalTok{ ts) a }\OtherTok{->} \DataTypeTok{DKind}\NormalTok{ ts a}
+    \CommentTok{-- | Constant}
+    \DataTypeTok{Type}\OtherTok{  ::} \DataTypeTok{DKind}\NormalTok{ ts }\DataTypeTok{'Kind}
+\end{Highlighting}
+\end{Shaded}
+
+Note the nice property of GADTs that allow us to encode the typing rules
+directly into our constructors. For example, it lets us specify that applying a
+kind of sort \texttt{a\ :*\textgreater{}\ b} to a kind of sort \texttt{a} will
+give us a kind of sort \texttt{b}. It lets us say that \texttt{KLam} (function
+abstraction) ``removes'' a free variable, turning it into a bound variable,
+producing something of kind \texttt{t\ :*\textgreater{}\ a}.
+
+One final thing of note: \texttt{KPi} includes a \emph{singleton} of the sort
+\texttt{t}, since \texttt{t} is a hidden existential type that isn't visible
+from the outside.
+
+\hypertarget{types}{%
+\subsection{Types}\label{types}}
+
+Okay, this is where things get interesting. The type level contains the most
+constructs:
+
+\begin{itemize}
+\tightlist
+\item
+  Primitives
+\item
+  Function abstraction
+\item
+  Type variables
+\item
+  Function application
+\item
+  Type abstraction (parameterized on kinds)
+\item
+  Type application (parameterized on kinds)
+\item
+  Function type
+\item
+  Type abstraction type (terms parameterized on types)
+\item
+  Type abstraction type (terms parameterized on kinds)
+\end{itemize}
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
