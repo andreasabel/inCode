@@ -114,9 +114,9 @@ Keep in mind that the struggles contained in this post are:
 
 Furthermore, this post isn't exactly ``beginner friendly'' :) It contains
 mention of a lot of type-level tools, including GADTs, type-level lists,
-singletons, etc. I'll try to explain the more out-there things, but just be
-aware that this isn't as hands-holding as most of my posts! That's because this
-is less of a tutorial and more of a journal of my current struggles.
+singletons, etc. I'll try to explain the more out-there things when I can, but I
+won't go into \emph{too} much detail on any single thing. That's because this is
+less of a tutorial and more of a journal of my current struggles.
 
 \hypertarget{the-motivation}{%
 \section{The motivation}\label{the-motivation}}
@@ -443,7 +443,7 @@ variable'', in Haskell-speak.
 
 Finally, the \textbf{type abstraction type} is the meta-level ``type* of a type
 abstraction, just like how a function type is the''type" of a function
-abstraction. Again, there are three in Dhall:
+abstraction. We have three corresponding to the above:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -453,14 +453,21 @@ abstraction. Again, there are three in Dhall:
 \item
   The type of terms parameterized on kinds
 \item
-  The kind of types parameterized on kinds
+  The kind of types parameterized on kinds\footnote{Actually, it should be noted
+    that in Dhall, kind-polymorphic types are actually \emph{kinds}, for some
+    reason. This means that the ``type'' of types parameterized on kinds is
+    actually a sort, not a kind. I actually don't fully understand why this is
+    the case, as it seems a little internally inconsistent. If anyone does have
+    a reason, please let me know! For the rest of this post, the types
+    parameterized on kinds will be thought of as kinds, and they will have a
+    kind, not a sort.}
 \end{enumerate}
 
 Note that although these are the types of type abstractions, \emph{primitives}
 can also have these types. For example, the \texttt{None} term primitive in
-Dhall has type \texttt{forall\ (a\ :\ Type).\ Optional\ a}. Its type is \#1 on
-the list above: \texttt{None} is a term parameterized on a type, and its type is
-the type of terms parameterized on types.
+Dhall has type \texttt{forall\ (a\ :\ Type).\ Optional\ a}. Its \#1 on first the
+list above: \texttt{None} is a term parameterized on a type, and its type is the
+type of terms parameterized on types.
 
 \hypertarget{final-summary}{%
 \subsection{Final Summary}\label{final-summary}}
@@ -678,7 +685,7 @@ kind records or kind unions.
 \begin{Highlighting}[]
 \KeywordTok{data} \DataTypeTok{DKind}\OtherTok{ ::}\NormalTok{ [}\DataTypeTok{DSort}\NormalTok{] }\OtherTok{->} \DataTypeTok{DSort} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
     \CommentTok{-- | Function abstraction}
-    \DataTypeTok{KLam}\OtherTok{  ::} \DataTypeTok{DKind}\NormalTok{ (t '}\FunctionTok{:}\NormalTok{ ts) a }\OtherTok{->} \DataTypeTok{DKind}\NormalTok{ ts (t '}\FunctionTok{:*>}\NormalTok{ a)}
+    \DataTypeTok{KLam}\OtherTok{  ::} \DataTypeTok{Sing}\NormalTok{ t }\OtherTok{->} \DataTypeTok{DKind}\NormalTok{ (t '}\FunctionTok{:}\NormalTok{ ts) a }\OtherTok{->} \DataTypeTok{DKind}\NormalTok{ ts (t '}\FunctionTok{:*>}\NormalTok{ a)}
     \CommentTok{-- | Kind variables}
     \DataTypeTok{KVar}\OtherTok{  ::} \DataTypeTok{Index}\NormalTok{ ts a }\OtherTok{->} \DataTypeTok{DKind}\NormalTok{ ts a}
     \CommentTok{-- | Function application}
@@ -686,7 +693,7 @@ kind records or kind unions.
     \CommentTok{-- | Funcion type}
 \OtherTok{    (:~>) ::} \DataTypeTok{DKind}\NormalTok{ ts }\DataTypeTok{'Kind} \OtherTok{->} \DataTypeTok{DKind}\NormalTok{ ts }\DataTypeTok{'Kind} \OtherTok{->} \DataTypeTok{DKind}\NormalTok{ ts }\DataTypeTok{'Kind}
     \CommentTok{-- | Type abstraction type}
-    \DataTypeTok{KPi}\OtherTok{   ::} \DataTypeTok{Sing}\NormalTok{ t }\OtherTok{->} \DataTypeTok{DKind}\NormalTok{ (t '}\FunctionTok{:}\NormalTok{ ts) a }\OtherTok{->} \DataTypeTok{DKind}\NormalTok{ ts a}
+    \DataTypeTok{KPi}\OtherTok{   ::} \DataTypeTok{Sing}\NormalTok{ t }\OtherTok{->} \DataTypeTok{DKind}\NormalTok{ (t '}\FunctionTok{:}\NormalTok{ ts) }\DataTypeTok{'Kind} \OtherTok{->} \DataTypeTok{DKind}\NormalTok{ ts }\DataTypeTok{'Kind}
     \CommentTok{-- | Constant}
     \DataTypeTok{Type}\OtherTok{  ::} \DataTypeTok{DKind}\NormalTok{ ts }\DataTypeTok{'Kind}
 \end{Highlighting}
@@ -699,15 +706,40 @@ give us a kind of sort \texttt{b}. It lets us say that \texttt{KLam} (function
 abstraction) ``removes'' a free variable, turning it into a bound variable,
 producing something of kind \texttt{t\ :*\textgreater{}\ a}.
 
-One final thing of note: \texttt{KPi} includes a \emph{singleton} of the sort
-\texttt{t}, since \texttt{t} is a hidden existential type that isn't visible
-from the outside.
+Note that \texttt{KLam} and \texttt{KPi} require a singleton of sort \texttt{t}.
+This is basically indicating the ``type'' of the argument, mirroring
+\texttt{\textbackslash{}(x\ :\ Kind)\ -\textgreater{}\ ...}.
+
+Some examples of values and their translations:
+
+\begin{verbatim}
+Type -> Type
+    ==> Type :~> Type
+          :: DKind ts 'Kind
+
+\(x : Kind) -> x
+    ==> KLam SKind (KVar IZ)
+          :: DKind ts ('Kind ':*> 'Kind)
+
+\(f : Kind -> Kind) -> f (Type -> Type)
+    ==> KLam (SKind :%*> SKind) $
+            KVar IZ `KApp` (Type :~> Type)
+          :: DKind ts (('Kind ':*> 'Kind) ':*> 'Kind)
+
+forall (k : Kind) -> Type
+    ==> KPi SKind Type
+          :: DKind ts 'Kind
+\end{verbatim}
+
+Note that according to the footnote above, we are considering kind-polymorphic
+types as types (not kinds), and so they have pi-kinds. This differs from
+dhall-proper, but is more internally consistent.
 
 \hypertarget{types}{%
 \subsection{Types}\label{types}}
 
 Okay, this is where things get interesting. The type level contains the most
-constructs:
+constructs of any level:
 
 \begin{itemize}
 \tightlist
@@ -730,6 +762,93 @@ constructs:
 \item
   Type abstraction type (terms parameterized on kinds)
 \end{itemize}
+
+We basically add two things: \emph{type abstraction} and \emph{type
+application}.
+
+At this point, the decisions become a little less straightforward. I'm going to
+describe the path I am currently on, after a lot of dead-ends and backtracking.
+
+The final GADT I came up with was:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{DType}\OtherTok{ ts ::}\NormalTok{ [}\DataTypeTok{DKind}\NormalTok{ ts }\DataTypeTok{'Type}\NormalTok{] }\OtherTok{->} \DataTypeTok{DKind}\NormalTok{ ts }\DataTypeTok{'Type} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \CommentTok{-- | Type variables}
+    \DataTypeTok{TVar}\OtherTok{  ::} \DataTypeTok{Index}\NormalTok{ us a }\OtherTok{->} \DataTypeTok{DType}\NormalTok{ ts us a}
+    \CommentTok{-- | Function application}
+    \DataTypeTok{TApp}\OtherTok{  ::} \DataTypeTok{DType}\NormalTok{ ts us (a '}\FunctionTok{:*>}\NormalTok{ b) }\OtherTok{->} \DataTypeTok{DType}\NormalTok{ ts us a }\OtherTok{->} \DataTypeTok{DType}\NormalTok{ ts us b}
+    \CommentTok{-- | Funcion type}
+\OtherTok{    (:->) ::} \DataTypeTok{DType}\NormalTok{ ts us }\DataTypeTok{'Type} \OtherTok{->} \DataTypeTok{DType}\NormalTok{ ts us }\DataTypeTok{'Type} \OtherTok{->} \DataTypeTok{DType}\NormalTok{ ts us }\DataTypeTok{'Type}
+    \CommentTok{-- | Primitives}
+    \DataTypeTok{Bool}\OtherTok{  ::} \DataTypeTok{DType}\NormalTok{ ts us }\DataTypeTok{'Type}
+    \DataTypeTok{List}\OtherTok{  ::} \DataTypeTok{DType}\NormalTok{ ts us (}\DataTypeTok{'Type}\NormalTok{ '}\FunctionTok{~>} \DataTypeTok{'Type}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+That's the first half, containing the uncontroversial constructors once we pick
+a basic overall schema.
+
+The choice here was to make \texttt{DType\ ts\ us\ a} parameterized on both kind
+variables \emph{and} type variables, and that all of the type variables must
+have the same number of kind variables. So a value of type
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{DType}\NormalTok{ '[ }\DataTypeTok{'Kind}\NormalTok{, }\DataTypeTok{'Kind} \FunctionTok{~>} \DataTypeTok{'Kind}\NormalTok{    ]}
+\NormalTok{      '[ }\DataTypeTok{'Type}\NormalTok{, }\DataTypeTok{'KPi} \DataTypeTok{'SKind} \DataTypeTok{'Type}\NormalTok{ ]}
+\NormalTok{      (}\DataTypeTok{'Type}\NormalTok{ '}\FunctionTok{:~>} \DataTypeTok{'Type}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+is a type of kind \texttt{Type\ -\textgreater{}\ Type} with unbound kind
+variables of sorts \texttt{Kind} and \texttt{Kind\ -\textgreater{}\ Kind} and
+unbound type variables of kinds \texttt{Type} and
+\texttt{forall\ (k\ :\ Kind)\ -\textgreater{}\ Type}.
+
+So far, so good. It's pretty easy to bring in some simple type primitives, like
+\texttt{Bool\ :\ Type} and \texttt{List\ :\ Type\ -\textgreater{}\ Type}.
+
+Now, note that I excluded function abstraction and type abstraction type. These
+need some care. Naively, we'd want to write:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{TLam}\OtherTok{ ::} \DataTypeTok{Sing}\NormalTok{ u }\OtherTok{->} \DataTypeTok{DType}\NormalTok{ ts (u '}\FunctionTok{:}\NormalTok{ us) a }\OtherTok{->} \DataTypeTok{DType}\NormalTok{ t us (u '}\FunctionTok{:~>}\NormalTok{ a)}
+\DataTypeTok{TPi}\OtherTok{  ::} \DataTypeTok{Sing}\NormalTok{ u }\OtherTok{->} \DataTypeTok{DType}\NormalTok{ ts (u '}\FunctionTok{:}\NormalTok{ us) a }\OtherTok{->} \DataTypeTok{DType}\NormalTok{ t us a}
+\end{Highlighting}
+\end{Shaded}
+
+Which mirrors \texttt{KLam}. However, there is a major problem with this, that
+we'll also run into when we implement the term-level lambda: consider these two
+identical dhall expression ---
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{\textbackslash{}(a }\FunctionTok{:} \DataTypeTok{Type}\NormalTok{) }\OtherTok{->} \DataTypeTok{Natural}
+
+\NormalTok{\textbackslash{}(a }\FunctionTok{:}\NormalTok{ ((\textbackslash{}(x }\FunctionTok{:} \DataTypeTok{Kind}\NormalTok{) }\OtherTok{->}\NormalTok{ x) }\DataTypeTok{Type}\NormalTok{)) }\OtherTok{->} \DataTypeTok{Natural}
+\end{Highlighting}
+\end{Shaded}
+
+The \emph{kind} of \texttt{a} in both cases is \texttt{Type}, but it's not as
+clear in the second case. But if we normalize
+\texttt{(\textbackslash{}(x\ :\ Kind)\ -\textgreater{}\ x)\ Type}, we get
+\texttt{Type} (it's just the identity function applied to \texttt{Type}).
+
+-- TODO: talk about equality rules
+
+The issue here arises when we ask about the \emph{type} of both expressions. In
+the first case, it's \texttt{Type\ -\textgreater{}\ Type} (the input is a
+\texttt{Type}, and so is the output). In the second case, we can either say it's
+\texttt{((\textbackslash{}(x:\ Kind)\ -\textgreater{}\ x)\ Type)\ -\textgreater{}\ Type},
+or also \texttt{Type\ -\textgreater{}\ Type}.
+
+If we pick the latter, then we need to normalize the kind before putting it into
+the type of our GADT. If we pick the former, then we need to make sure we can
+later \emph{apply} the function to something like \texttt{Bool\ :\ Type}. So
+either we normalize at the function abstraction stage, or normalize at the
+function application stage.
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
