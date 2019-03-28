@@ -1,5 +1,5 @@
-Fictions about Fictitious Forces
-================================
+The Centrifugal Force isn't what you think it is
+================================================
 
 > Originally posted by [Justin Le](https://blog.jle.im/).
 > [Read online!](https://blog.jle.im/entry/fictitious-forces.html)
@@ -12,9 +12,9 @@ The camera follows the plane's rotation, so it looks like the water is being
 poured normally the entire time, even though the ground is seen rotating around
 the plane in the background.
 
-In the ensuing discussion, someone commented that this was a good example
-demonstrating centrifugal force. Someone then replied "Actually, it's the
-centripetal force."
+In the ensuing discussion, someone commented this was a good example
+demonstrating *centrifugal force*. Someone then replied "*Actually, it's the
+centripetal force.*"
 
 I replied, and in the process of explaining why centripetal force *doesn't*
 explain what is happening here, I came to realize a few key misconceptions that
@@ -33,7 +33,7 @@ Do you subscribe to this view?
 This sort of view trains you into thinking that, if you see a "centrifugal
 force", you should find the "real force" that is responsible for it. And that
 "real force" is "the centripetal force". That's what's *really* happening...
-right?
+right? Newton's third law!
 
 This fallacy is exactly what struck Commenter B. Commenter B saw something that
 could be interpreted as a centrifugal force. Their logic then proceeded thusly:
@@ -59,11 +59,47 @@ it's not the spinning motion of the plane (that's going "sideways", the opposite
 direction of a centripetal force). So, what is it? What force is acting on the
 water?
 
+How can we have a centrifugal force without a centripetal force?
+
 And that's where you start to see that, no matter what your views on the
 metaphysical reality of fictitious forces are, "centripetal force" is certainly
 *not* the explanation.
 
 So...what is?
+
+Down to the root of it
+----------------------
+
+### The Centripetal Fallacy
+
+You might have noticed why I have been writing "the centripetal force" in
+quotes. The reason? There is no such thing as "the centripetal force". It's a
+lie.
+
+One only needs to check the first words of the Wikipedia articles and compare
+the difference to see:
+
+-   **[Centrifugal Force](https://en.wikipedia.org/wiki/Centrifugal_force)**:
+    *The centrifugal force is...*
+-   [Centripetal Force](https://en.wikipedia.org/wiki/Centripetal_force): *A
+    centripetal force is...*
+
+Huh. One says "the". The other says "a". What's the difference?
+
+The difference is that "centripetal" is a *role* that a force plays. It is an
+adjective, like dampening, supporting, big, small, little, weak, strong,
+upwards-pointing. There is no such thing as "*the* centripetal force", in the
+sense that we have "the gravitational force". There are only forces that are
+acting in a centripetal way, or play a centripetal role in our current context.
+
+We call a force "centripetal" when it is directed towards a center of rotation,
+and causes the object's trajectory to follow a circular path.
+
+There is no such thing as "the centripetal force". There are only forces that
+are playing a centripetal role in our system. There might be many, there might
+be none, or there might be just one.
+
+### Centrifugal Roots
 
 --------------------------------------------------------------------------------
 
