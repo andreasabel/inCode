@@ -166,8 +166,18 @@ Looking at this, does this look a little familiar? It reminds me a lot of the
   \texttt{many}, the ``one or more'' operation.
 \end{enumerate}
 
-This\ldots{}looks a lot like the construction of a regular language. The only
-thing missing is the literal character primitive.
+This\ldots{}looks a lot like the construction of a regular language, doesn't it?
+It's almost as if \texttt{Alternative} has almost \emph{exactly} what we need.
+The only thing missing is the literal character primitive.
+
+If you're unfamiliar with \texttt{Alternative}, the
+\href{https://wiki.haskell.org/Typeclassopedia}{typeclassopedia} has a good
+step-by-step introduction. But for the purposes of this article, it's basically
+just a ``double monoid'', with two ``combining'' actions
+\texttt{\textless{}*\textgreater{}} and
+\texttt{\textless{}\textbar{}\textgreater{}}, which roughly correspond to
+\texttt{*} and \texttt{+} in the integers. It's basically pretty much nothing
+more than 1-5 in the list above, and some distributivity laws.
 
 So, one way we can look at regular expressions is ``The entire
 \texttt{Alternative} interface, plus a character primitive''. \emph{But!}
@@ -175,7 +185,8 @@ There's another way of looking at this, that leads us directly to free
 structures.
 
 Instead of seeing things as ``\texttt{Alternative} with a character primitive'',
-we can look at it as \emph{a character primitive with a Alternative instance}.
+we can look at it as \emph{a character primitive enriched with an blank-slate
+Alternative instance}.
 
 \hypertarget{free}{%
 \section{Free}\label{free}}
@@ -184,6 +195,8 @@ Let's write this out. Our character primitive will be:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L14-L15}
+
 \KeywordTok{data} \DataTypeTok{Prim}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{Prim} \DataTypeTok{Char}\NormalTok{ a}
   \KeywordTok{deriving} \DataTypeTok{Functor}
 \end{Highlighting}
@@ -195,13 +208,15 @@ all of our regular expressions must have an associated ``result''. The value
 represent a primitive character that, when parsed, will give a result of
 \texttt{1}.
 
-And now\ldots{}we give it an \texttt{Alternative} instance using the \emph{Free
+And now\ldots{}we give it \texttt{Alternative} structure using the \emph{Free
 Alternative}, from the
 \emph{\href{https://hackage.haskell.org/package/free}{free}} package:
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{import} \DataTypeTok{Control.Alternative.Free}
+
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L17-L17}
 
 \KeywordTok{type} \DataTypeTok{RegExp} \FunctionTok{=} \DataTypeTok{Alt} \DataTypeTok{Prim}
 \end{Highlighting}
@@ -235,21 +250,31 @@ have \texttt{instance\ Applicative\ (Alt\ f)} and
 
 All of these (except for the primitive) come ``for free''!
 
+Essentially, what a free structure gives us is the structure of the abstraction
+(\texttt{Alternative}, here) automatically for our base type, and \emph{nothing
+else}. There's no structure or properties at \emph{all} about
+\texttt{RegExp}\ldots{}other that it contains \texttt{Prim} and the minimal
+structure/scaffolding to be an \texttt{Alternative} instance.
+
 After adding some convenient wrappers\ldots{}we're done here!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- | Parse a given character as a given constant result.}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L19-L30}
+
+\CommentTok{-- | charAs: Parse a given character as a given constant result.}
 \OtherTok{charAs ::} \DataTypeTok{Char} \OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{RegExp}\NormalTok{ a}
-\NormalTok{charAs c x }\FunctionTok{=}\NormalTok{ liftAlt (}\DataTypeTok{Prim}\NormalTok{ c x)    }\CommentTok{-- liftAlt lets us use the underlying functor Prim in RegExp}
+\NormalTok{charAs c x }\FunctionTok{=}\NormalTok{ liftAlt (}\DataTypeTok{Prim}\NormalTok{ c x)     }\CommentTok{-- liftAlt lets us use the underlying}
+                                    \CommentTok{-- functor Prim in RegExp}
 
-\CommentTok{-- | Parse a given character as itself.}
-\OtherTok{char ::} \DataTypeTok{Char} \OtherTok{->} \DataTypeTok{RegExp} \DataTypeTok{Char}
-\NormalTok{char c }\FunctionTok{=}\NormalTok{ charAs c c}
+\CommentTok{-- | charAs: Parse a given character as a given constant result.}
+\OtherTok{charAs ::} \DataTypeTok{Char} \OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{RegExp}\NormalTok{ a}
+\NormalTok{charAs c x }\FunctionTok{=}\NormalTok{ liftAlt (}\DataTypeTok{Prim}\NormalTok{ c x)     }\CommentTok{-- liftAlt lets us use the underlying}
+                                    \CommentTok{-- functor Prim in RegExp}
 
-\CommentTok{-- | Parse a given string as itself.}
+\CommentTok{-- | string: Parse a given string as itself.}
 \OtherTok{string ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{RegExp} \DataTypeTok{String}
-\NormalTok{string }\FunctionTok{=} \FunctionTok{traverse}\NormalTok{ char        }\CommentTok{-- neat, huh}
+\NormalTok{string }\FunctionTok{=} \FunctionTok{traverse}\NormalTok{ char              }\CommentTok{-- neat, huh}
 \end{Highlighting}
 \end{Shaded}
 
@@ -261,6 +286,8 @@ Let's try it out! Let's match on \texttt{(a\textbar{}b)(cd)*e} and return
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L32-L35}
+
 \OtherTok{testRegExp_ ::} \DataTypeTok{RegExp}\NormalTok{ ()}
 \NormalTok{testRegExp_ }\FunctionTok{=}\NormalTok{ void }\FunctionTok{$}\NormalTok{ (char }\CharTok{'a'} \FunctionTok{<|>}\NormalTok{ char }\CharTok{'b'}\NormalTok{)}
                   \FunctionTok{*>}\NormalTok{ many (string }\StringTok{"cd"}\NormalTok{)}
@@ -279,6 +306,8 @@ same one and return how many \texttt{cd}s are repeated
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L37-L40}
+
 \OtherTok{testRegExp ::} \DataTypeTok{RegExp} \DataTypeTok{Int}
 \NormalTok{testRegExp }\FunctionTok{=}\NormalTok{ (char }\CharTok{'a'} \FunctionTok{<|>}\NormalTok{ char }\CharTok{'b'}\NormalTok{)}
           \FunctionTok{*>}\NormalTok{ (}\FunctionTok{length} \FunctionTok{<$>}\NormalTok{ many (string }\StringTok{"cd"}\NormalTok{))}
@@ -291,6 +320,138 @@ This one does require a little more finesse with \texttt{*\textgreater{}} and
 since \texttt{many\ (string\ "cd")\ ::\ RegExp\ {[}String{]}} (it returns a
 list, with an item for each repetition), we can \texttt{fmap\ length} to get the
 \texttt{Int} result of ``how many repetitions''.
+
+\hypertarget{parsing}{%
+\section{Parsing}\label{parsing}}
+
+Okay, so all we did was define a data structure that supports character
+matching, concatenation, alternation, and starring. Big whoop. What we really
+want to do is use it to parse things, right? How does the Free Alternative help
+us with \emph{that}?
+
+Well, a lot, actually. Let's look at the definition of the free alternative:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{newtype} \DataTypeTok{Alt}\NormalTok{ f a }\FunctionTok{=} \DataTypeTok{Alt}\NormalTok{ \{}\OtherTok{ alternatives ::}\NormalTok{ [}\DataTypeTok{AltF}\NormalTok{ f a] \}}
+
+\KeywordTok{data} \DataTypeTok{AltF}\NormalTok{ f a }\FunctionTok{=} \KeywordTok{forall}\NormalTok{ r}\FunctionTok{.} \DataTypeTok{Ap}\NormalTok{ (f r) (}\DataTypeTok{Alt}\NormalTok{ f (r }\OtherTok{->}\NormalTok{ a))}
+              \FunctionTok{|}           \DataTypeTok{Pure}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+It's a mutually recursive type, so it might be a little confusing. One way to
+understand \texttt{Alt} is that \texttt{Alt\ xs} contains a \emph{list of
+alternatives}, or a list of \texttt{\textless{}\textbar{}\textgreater{}}s. And
+each of those alternatives is an \texttt{AltF}, which is a \emph{sequence of
+\texttt{f\ a}s} (as a chain of function applications).
+
+You can essentially think of \texttt{AltF\ f\ a} as a linked list
+\texttt{{[}f\ r{]}}, except with a different \texttt{r} for each item.
+\texttt{Ap} is cons (\texttt{:}), containing the \texttt{f\ r}, and
+\texttt{Pure} is nil (\texttt{{[}{]}}).
+
+It's like a list (\texttt{Alt} list) of lists (\texttt{AltF} chains), which take
+turn alternating between alternative lists and application sequences.
+
+Ultimately we want to write a
+\texttt{RegExp\ a\ -\textgreater{}\ String\ -\textgreater{}\ Maybe\ a}, which
+parses a string based on a \texttt{RegExp}. TO do this, we can simply pattern
+match and handle the cases.
+
+First, the top-level \texttt{Alt} case. When faced with a list of chains, we can
+try to parse each one. The result is the first success.
+\texttt{asum\ ::\ {[}Maybe\ a{]}\ -\textgreater{}\ Maybe\ a} finds the first
+\texttt{Just} (success) in a list of attempts.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L55-L56}
+
+\OtherTok{matchAlts ::} \DataTypeTok{RegExp}\NormalTok{ a }\OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a}
+\NormalTok{matchAlts (}\DataTypeTok{Alt}\NormalTok{ ls) xs }\FunctionTok{=}\NormalTok{ asum [ matchChain l xs }\FunctionTok{|}\NormalTok{ l }\OtherTok{<-}\NormalTok{ ls  ]}
+\end{Highlighting}
+\end{Shaded}
+
+Now, we need to handle the chain case. To do this, we can pattern match on each
+constructor, and handle each case.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{matchChain ::} \DataTypeTok{AltF} \DataTypeTok{Prim}\NormalTok{ a }\OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a}
+\NormalTok{matchChain (}\DataTypeTok{Ap}\NormalTok{ (}\DataTypeTok{Prim}\NormalTok{ c x) next) []     }\FunctionTok{=}\NormalTok{ _}
+\NormalTok{matchChain (}\DataTypeTok{Ap}\NormalTok{ (}\DataTypeTok{Prim}\NormalTok{ c x) next) (d}\FunctionTok{:}\NormalTok{ds)}
+    \FunctionTok{|}\NormalTok{ c }\FunctionTok{==}\NormalTok{ d    }\FunctionTok{=}\NormalTok{ _             }\CommentTok{-- succesful match}
+    \FunctionTok{|} \FunctionTok{otherwise} \FunctionTok{=}\NormalTok{ _             }\CommentTok{-- bad match}
+\NormalTok{matchChain (}\DataTypeTok{Pure}\NormalTok{ x)             []     }\FunctionTok{=}\NormalTok{ _}
+\NormalTok{matchChain (}\DataTypeTok{Pure}\NormalTok{ x)             (d}\FunctionTok{:}\NormalTok{ds) }\FunctionTok{=}\NormalTok{ _}
+\end{Highlighting}
+\end{Shaded}
+
+From here, it's mostly ``type tetris''! We just continually ask GHC what goes in
+what holes (and what types need to change) until we get something that
+typechecks.
+
+In the end of the very mechanical process, we get:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L58-L63}
+
+\OtherTok{matchChain ::} \DataTypeTok{AltF} \DataTypeTok{Prim}\NormalTok{ a }\OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a}
+\NormalTok{matchChain (}\DataTypeTok{Ap}\NormalTok{ _          _   ) []     }\FunctionTok{=} \DataTypeTok{Nothing}
+\NormalTok{matchChain (}\DataTypeTok{Ap}\NormalTok{ (}\DataTypeTok{Prim}\NormalTok{ c x) next) (d}\FunctionTok{:}\NormalTok{ds)}
+    \FunctionTok{|}\NormalTok{ c }\FunctionTok{==}\NormalTok{ d    }\FunctionTok{=}\NormalTok{ matchAlts ((}\FunctionTok{$}\NormalTok{ x) }\FunctionTok{<$>}\NormalTok{ next) ds}
+    \FunctionTok{|} \FunctionTok{otherwise} \FunctionTok{=} \DataTypeTok{Nothing}
+\NormalTok{matchChain (}\DataTypeTok{Pure}\NormalTok{ x)             _      }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ x}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  If it's \texttt{Ap} (like cons, \texttt{:}), it means we're in the middle of
+  the chain.
+
+  \begin{itemize}
+  \tightlist
+  \item
+    If the input string is empty, then we fail to match.
+  \item
+    Otherwise, here's the interesting thing. We have the \texttt{Prim} with the
+    character we want to match, and the first letter in the string.
+
+    \begin{itemize}
+    \tightlist
+    \item
+      If the match is a success, we continue down the chain, to
+      \texttt{next\ ::\ RegExp\ (r\ -\textgreater{}\ a)}. We just need to
+      massage the types a bit to make it all work out.
+    \item
+      Otherwise, it's a failure. We're done here.
+    \end{itemize}
+  \end{itemize}
+\item
+  If it's \texttt{Pure\ x} (like nil, \texttt{{[}{]}}), it means we're at the
+  end of the chain. We return the result in \texttt{Just}.
+\end{enumerate}
+
+In the end though, you don't really need to understand any of this in order to
+write this. Sure, it's nice to understand what \texttt{Ap}, \texttt{Pure},
+\texttt{AltF}, etc. really ``mean''. But, we don't have to --- the types take
+care of all of it for you :)
+
+\texttt{matchAlts} will match the \emph{prefix} of the string, so we need to try
+all successive prefixes on an input string until we get a match.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L65-L66}
+
+\OtherTok{match2 ::} \DataTypeTok{RegExp}\NormalTok{ a }\OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a}
+\NormalTok{match2 l xs }\FunctionTok{=}\NormalTok{ asum [ matchAlts l ys }\FunctionTok{|}\NormalTok{ ys }\OtherTok{<-}\NormalTok{ tails xs ]}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
