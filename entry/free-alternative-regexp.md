@@ -88,9 +88,9 @@ data Prim a = Prim Char a
 ```
 
 Note that because we're working with functors, applicatives, alternatives, etc.,
-all of our regular expressions must have an associated "result". The value
-`Prim 'a' 1 :: Prim Int` will represent a primitive matches on the character
-`a`, interpreting it with a result of `1`.
+all of our regular expressions can have an associated "result". The value
+`Prim 'a' 1 :: Prim Int` will represent a primitive that matches on the
+character `a`, interpreting it with a result of `1`.
 
 And now...we give it `Alternative` structure using the *Free Alternative*, from
 the *[free](https://hackage.haskell.org/package/free)* package:
@@ -135,10 +135,9 @@ charAs :: Char -> a -> RegExp a
 charAs c x = liftAlt (Prim c x)     -- liftAlt lets us use the underlying
                                     -- functor Prim in RegExp
 
--- | charAs: Parse a given character as a given constant result.
-charAs :: Char -> a -> RegExp a
-charAs c x = liftAlt (Prim c x)     -- liftAlt lets us use the underlying
-                                    -- functor Prim in RegExp
+-- | char: Parse a given character as itself.
+char :: Char -> RegExp Char
+char c = charAs c c
 
 -- | string: Parse a given string as itself.
 string :: String -> RegExp String

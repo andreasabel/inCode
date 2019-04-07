@@ -52,7 +52,7 @@ compiled...really just the king of great languages.">Haskell</a>, <a href="https
 <a class="sourceLine" id="cb1-2" title="2"></a>
 <a class="sourceLine" id="cb1-3" title="3"><span class="kw">data</span> <span class="dt">Prim</span> a <span class="fu">=</span> <span class="dt">Prim</span> <span class="dt">Char</span> a</a>
 <a class="sourceLine" id="cb1-4" title="4">  <span class="kw">deriving</span> <span class="dt">Functor</span></a></code></pre></div>
-<p>Note that because we’re working with functors, applicatives, alternatives, etc., all of our regular expressions must have an associated “result”. The value <code>Prim 'a' 1 :: Prim Int</code> will represent a primitive matches on the character <code>a</code>, interpreting it with a result of <code>1</code>.</p>
+<p>Note that because we’re working with functors, applicatives, alternatives, etc., all of our regular expressions can have an associated “result”. The value <code>Prim 'a' 1 :: Prim Int</code> will represent a primitive that matches on the character <code>a</code>, interpreting it with a result of <code>1</code>.</p>
 <p>And now…we give it <code>Alternative</code> structure using the <em>Free Alternative</em>, from the <em><a href="https://hackage.haskell.org/package/free">free</a></em> package:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">import</span> <span class="dt">Control.Alternative.Free</span></a>
 <a class="sourceLine" id="cb2-2" title="2"></a>
@@ -79,14 +79,13 @@ compiled...really just the king of great languages.">Haskell</a>, <a href="https
 <a class="sourceLine" id="cb3-5" title="5">charAs c x <span class="fu">=</span> liftAlt (<span class="dt">Prim</span> c x)     <span class="co">-- liftAlt lets us use the underlying</span></a>
 <a class="sourceLine" id="cb3-6" title="6">                                    <span class="co">-- functor Prim in RegExp</span></a>
 <a class="sourceLine" id="cb3-7" title="7"></a>
-<a class="sourceLine" id="cb3-8" title="8"><span class="co">-- | charAs: Parse a given character as a given constant result.</span></a>
-<a class="sourceLine" id="cb3-9" title="9"><span class="ot">charAs ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">RegExp</span> a</a>
-<a class="sourceLine" id="cb3-10" title="10">charAs c x <span class="fu">=</span> liftAlt (<span class="dt">Prim</span> c x)     <span class="co">-- liftAlt lets us use the underlying</span></a>
-<a class="sourceLine" id="cb3-11" title="11">                                    <span class="co">-- functor Prim in RegExp</span></a>
-<a class="sourceLine" id="cb3-12" title="12"></a>
-<a class="sourceLine" id="cb3-13" title="13"><span class="co">-- | string: Parse a given string as itself.</span></a>
-<a class="sourceLine" id="cb3-14" title="14"><span class="ot">string ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">RegExp</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb3-15" title="15">string <span class="fu">=</span> <span class="fu">traverse</span> char              <span class="co">-- neat, huh</span></a></code></pre></div>
+<a class="sourceLine" id="cb3-8" title="8"><span class="co">-- | char: Parse a given character as itself.</span></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="ot">char ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">RegExp</span> <span class="dt">Char</span></a>
+<a class="sourceLine" id="cb3-10" title="10">char c <span class="fu">=</span> charAs c c</a>
+<a class="sourceLine" id="cb3-11" title="11"></a>
+<a class="sourceLine" id="cb3-12" title="12"><span class="co">-- | string: Parse a given string as itself.</span></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="ot">string ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">RegExp</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb3-14" title="14">string <span class="fu">=</span> <span class="fu">traverse</span> char              <span class="co">-- neat, huh</span></a></code></pre></div>
 <h3 id="examples">Examples</h3>
 <p>Let’s try it out! Let’s match on <code>(a|b)(cd)*e</code> and return <code>()</code>:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L32-L35</span></a>
