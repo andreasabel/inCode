@@ -206,6 +206,7 @@ compiled...really just the king of great languages.">Haskell</a>, <a href="https
 <p>It’s a mutually recursive type, so it might be a little confusing. One way to understand <code>Alt</code> is that <code>Alt xs</code> contains a <em>list of alternatives</em>, or a list of <code>&lt;|&gt;</code>s. And each of those alternatives is an <code>AltF</code>, which is a <em>sequence of <code>f a</code>s</em> (as a chain of function applications).</p>
 <p>You can essentially think of <code>AltF f a</code> as a linked list <code>[f r]</code>, except with a different <code>r</code> for each item. <code>Ap</code> is cons (<code>:</code>), containing the <code>f r</code>, and <code>Pure</code> is nil (<code>[]</code>).</p>
 <p>It’s like a list (<code>Alt</code> list) of lists (<code>AltF</code> chains), which take turn alternating between alternative lists and application sequences.</p>
+<p>You can think of <code>Alt f</code> as a “normalized” form of successive or nested <code>&lt;*&gt;</code> and <code>&lt;|&gt;</code>s, similar to how <code>[a]</code> is a “normalized” form of successive <code>&lt;&gt;</code>s.</p>
 <p>Ultimately we want to write a <code>RegExp a -&gt; String -&gt; Maybe a</code>, which parses a string based on a <code>RegExp</code>. TO do this, we can simply pattern match and handle the cases.</p>
 <p>First, the top-level <code>Alt</code> case. When faced with a list of chains, we can try to parse each one. The result is the first success.</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L55-L56</span></a>
@@ -244,7 +245,6 @@ compiled...really just the king of great languages.">Haskell</a>, <a href="https
 <li><p>If it’s <code>Pure x</code> (like nil, <code>[]</code>), it means we’re at the end of the chain. We return the result in <code>Just</code>.</p></li>
 </ol>
 <p>In the end though, you don’t really need to understand any of this in order to write this. Sure, it’s nice to understand what <code>Ap</code>, <code>Pure</code>, <code>AltF</code>, etc. really “mean”. But, we don’t have to — the types take care of all of it for you :)</p>
-<p><code>matchAlts</code> will match the <em>prefix</em> of the string, so we need to try all successive prefixes on an input string until we get a match.</p>
 <section class="footnotes">
 <hr />
 <ol>
