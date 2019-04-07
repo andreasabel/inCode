@@ -81,7 +81,7 @@ Free
 Let's write this out. Our character primitive will be:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L14-L15
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L15-L16
 
 data Prim a = Prim Char a
   deriving Functor
@@ -98,7 +98,7 @@ the *[free](https://hackage.haskell.org/package/free)* package:
 ``` {.haskell}
 import Control.Alternative.Free
 
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L17-L17
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L18-L18
 
 type RegExp = Alt Prim
 ```
@@ -128,7 +128,7 @@ operations and the primitive. No more, no less.
 After adding some convenient wrappers...we're done here!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L19-L30
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L20-L31
 
 -- | charAs: Parse a given character as a given constant result.
 charAs :: Char -> a -> RegExp a
@@ -149,7 +149,7 @@ string = traverse char              -- neat, huh
 Let's try it out! Let's match on `(a|b)(cd)*e` and return `()`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L32-L35
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L33-L36
 
 testRegExp_ :: RegExp ()
 testRegExp_ = void $ (char 'a' <|> char 'b')
@@ -165,7 +165,7 @@ Or maybe more interesting (but slightly more complicated), let's match on the
 same one and return how many `cd`s are repeated
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L37-L40
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L38-L41
 
 testRegExp :: RegExp Int
 testRegExp = (char 'a' <|> char 'b')
@@ -178,6 +178,20 @@ towards which result to "keep". And since
 `many (string "cd") :: RegExp [String]` (it returns a list, with an item for
 each repetition), we can `fmap length` to get the `Int` result of "how many
 repetitions".
+
+However, we can also turn on *-XApplicativeDo* and write it using do notation,
+which requires a little less thought:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L43-L48
+
+testRegExpDo :: RegExp Int
+testRegExpDo = do
+    char 'a' <|> char 'b'
+    cds <- many (string "cd")
+    char 'e'
+    pure (length cds)
+```
 
 Parsing
 -------
@@ -276,7 +290,7 @@ So, like `foldMap`, we need to say "how to handle our base type". How do we
 handle `Prim`?
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L42-L47
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L50-L55
 
 processPrim :: Prim a -> StateT String Maybe a
 processPrim (Prim c x) = do
@@ -302,7 +316,7 @@ need to run the state action (using `evalStateT`) on the string we want to
 parse:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L49-L50
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L57-L58
 
 matchPrefix :: RegExp a -> String -> Maybe a
 matchPrefix re = evalStateT (runAlt processPrim re)
@@ -421,7 +435,7 @@ First, the top-level `Alt` case. When faced with a list of chains, we can try to
 parse each one. The result is the first success.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L55-L56
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L63-L64
 
 matchAlts :: RegExp a -> String -> Maybe a
 matchAlts (Alt ls) xs = asum [ matchChain l xs | l <- ls  ]
@@ -450,7 +464,7 @@ typechecks.
 In the end of the very mechanical process, we get:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L58-L63
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L66-L71
 
 matchChain :: AltF Prim a -> String -> Maybe a
 matchChain (Ap _          _   ) []     = Nothing

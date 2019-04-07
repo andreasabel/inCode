@@ -201,7 +201,7 @@ Let's write this out. Our character primitive will be:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L14-L15}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L15-L16}
 
 \KeywordTok{data} \DataTypeTok{Prim}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{Prim} \DataTypeTok{Char}\NormalTok{ a}
   \KeywordTok{deriving} \DataTypeTok{Functor}
@@ -222,7 +222,7 @@ Alternative}, from the
 \begin{Highlighting}[]
 \KeywordTok{import} \DataTypeTok{Control.Alternative.Free}
 
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L17-L17}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L18-L18}
 
 \KeywordTok{type} \DataTypeTok{RegExp} \FunctionTok{=} \DataTypeTok{Alt} \DataTypeTok{Prim}
 \end{Highlighting}
@@ -268,7 +268,7 @@ After adding some convenient wrappers\ldots{}we're done here!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L19-L30}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L20-L31}
 
 \CommentTok{-- | charAs: Parse a given character as a given constant result.}
 \OtherTok{charAs ::} \DataTypeTok{Char} \OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{RegExp}\NormalTok{ a}
@@ -293,7 +293,7 @@ Let's try it out! Let's match on \texttt{(a\textbar{}b)(cd)*e} and return
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L32-L35}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L33-L36}
 
 \OtherTok{testRegExp_ ::} \DataTypeTok{RegExp}\NormalTok{ ()}
 \NormalTok{testRegExp_ }\FunctionTok{=}\NormalTok{ void }\FunctionTok{$}\NormalTok{ (char }\CharTok{'a'} \FunctionTok{<|>}\NormalTok{ char }\CharTok{'b'}\NormalTok{)}
@@ -313,7 +313,7 @@ same one and return how many \texttt{cd}s are repeated
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L37-L40}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L38-L41}
 
 \OtherTok{testRegExp ::} \DataTypeTok{RegExp} \DataTypeTok{Int}
 \NormalTok{testRegExp }\FunctionTok{=}\NormalTok{ (char }\CharTok{'a'} \FunctionTok{<|>}\NormalTok{ char }\CharTok{'b'}\NormalTok{)}
@@ -327,6 +327,22 @@ This one does require a little more finesse with \texttt{*\textgreater{}} and
 since \texttt{many\ (string\ "cd")\ ::\ RegExp\ {[}String{]}} (it returns a
 list, with an item for each repetition), we can \texttt{fmap\ length} to get the
 \texttt{Int} result of ``how many repetitions''.
+
+However, we can also turn on \emph{-XApplicativeDo} and write it using do
+notation, which requires a little less thought:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L43-L48}
+
+\OtherTok{testRegExpDo ::} \DataTypeTok{RegExp} \DataTypeTok{Int}
+\NormalTok{testRegExpDo }\FunctionTok{=} \KeywordTok{do}
+\NormalTok{    char }\CharTok{'a'} \FunctionTok{<|>}\NormalTok{ char }\CharTok{'b'}
+\NormalTok{    cds }\OtherTok{<-}\NormalTok{ many (string }\StringTok{"cd"}\NormalTok{)}
+\NormalTok{    char }\CharTok{'e'}
+    \FunctionTok{pure}\NormalTok{ (}\FunctionTok{length}\NormalTok{ cds)}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{parsing}{%
 \section{Parsing}\label{parsing}}
@@ -453,7 +469,7 @@ do we handle \texttt{Prim}?
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L42-L47}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L50-L55}
 
 \OtherTok{processPrim ::} \DataTypeTok{Prim}\NormalTok{ a }\OtherTok{->} \DataTypeTok{StateT} \DataTypeTok{String} \DataTypeTok{Maybe}\NormalTok{ a}
 \NormalTok{processPrim (}\DataTypeTok{Prim}\NormalTok{ c x) }\FunctionTok{=} \KeywordTok{do}
@@ -489,7 +505,7 @@ string we want to parse:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L49-L50}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L57-L58}
 
 \OtherTok{matchPrefix ::} \DataTypeTok{RegExp}\NormalTok{ a }\OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a}
 \NormalTok{matchPrefix re }\FunctionTok{=}\NormalTok{ evalStateT (runAlt processPrim re)}
@@ -637,7 +653,7 @@ try to parse each one. The result is the first success.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L55-L56}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L63-L64}
 
 \OtherTok{matchAlts ::} \DataTypeTok{RegExp}\NormalTok{ a }\OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a}
 \NormalTok{matchAlts (}\DataTypeTok{Alt}\NormalTok{ ls) xs }\FunctionTok{=}\NormalTok{ asum [ matchChain l xs }\FunctionTok{|}\NormalTok{ l }\OtherTok{<-}\NormalTok{ ls  ]}
@@ -670,7 +686,7 @@ In the end of the very mechanical process, we get:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L58-L63}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L66-L71}
 
 \OtherTok{matchChain ::} \DataTypeTok{AltF} \DataTypeTok{Prim}\NormalTok{ a }\OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a}
 \NormalTok{matchChain (}\DataTypeTok{Ap}\NormalTok{ _          _   ) []     }\FunctionTok{=} \DataTypeTok{Nothing}
