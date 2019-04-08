@@ -711,7 +711,7 @@ try to parse each one. The result is the first success.
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L61-L62}
 
 \OtherTok{matchAlts ::} \DataTypeTok{RegExp}\NormalTok{ a }\OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a}
-\NormalTok{matchAlts (}\DataTypeTok{Alt}\NormalTok{ ls) xs }\FunctionTok{=}\NormalTok{ asum [ matchChain l xs }\FunctionTok{|}\NormalTok{ l }\OtherTok{<-}\NormalTok{ ls  ]}
+\NormalTok{matchAlts (}\DataTypeTok{Alt}\NormalTok{ res) xs }\FunctionTok{=}\NormalTok{ asum [ matchChain re xs }\FunctionTok{|}\NormalTok{ re }\OtherTok{<-}\NormalTok{ res  ]}
 \end{Highlighting}
 \end{Shaded}
 
@@ -885,9 +885,8 @@ always follow this rule of thumb: \emph{A lot of safety is better than no
 safety}. This method can't eliminate \emph{all} bugs arising from this angle,
 but it can eliminate a whoooole lot.
 
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
-
-\textbf{Aside}
+\hypertarget{some-subtle-caveats}{%
+\section{Some subtle caveats}\label{some-subtle-caveats}}
 
 Before we wrap things up, let's take some time to clarify a subtle point. Feel
 free to skip this whole section if you don't care about the fact that these
@@ -906,7 +905,7 @@ The reason is that because of laziness and unbounded recursion, we can create an
 ``infinite'' regular language:
 \texttt{a\textbar{}aa\textbar{}aaa\textbar{}aaaa\textbar{}aaaaa\textbar{}aaaaaa\textbar{}...},
 forever and ever. However, infinite regular expressions aren't allowed in the
-mathematical version. Unfortunately, in Haskell, there is no way to ``turn off''
+mathematical version. In Haskell, unfortunately, there is no way to ``turn off''
 recursion: we're stuck with it.
 
 Even more unfortunately, this is actually how the \texttt{Alt} encoding of the
@@ -919,11 +918,11 @@ For the purposes we talked about in this post, this doesn't matter. However,
 this does create serious issues if we want to write a
 \href{https://en.wikipedia.org/wiki/Nondeterministic_finite_automaton}{non-deterministic
 finite automata based parser} (NFA), which is the de facto standard for
-implementing fast regexp parsers. We can only really compile to an NFA if we
-have a \emph{finite} value, which means anything using \texttt{many} is out of
-the question.
+implementing fast regexp parsers. We can only really generate an NFA if we have
+a \emph{finite} value, which means anything using \texttt{many} is out of the
+question.
 
-However, not all hope is lost. We can actually use the \emph{final encoding} of
+Not all hope is lost, however. We can actually use the ``final encoding'' of
 \texttt{Alt}, from \emph{Control.Alternative.Free.Final}, to gain a
 \texttt{many} that is non-recursive.\footnote{As of now, this actually doesn't
   work. But it will when my \href{https://github.com/ekmett/free/pull/188}{pull
@@ -935,24 +934,44 @@ only use the \texttt{runAlt} method. However, we can off-load to
 \texttt{RE} type from \emph{regex-applicative}) that allows us to generate an
 NFA parser.
 
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+There's another interesting point to be made, however, regarding compatibility
+with NFAs. Even though this recursive encoding doesn't allow us to create an
+\emph{explicit} NFA (a full graph with nodes and transitions), it does allow us
+to make an \emph{implicit} one. We can't ever make an implicit NFA because the
+naive \texttt{many} in the normal \texttt{Alt} gives us an infinite data
+structure, so we get an infinite graph.
+
+However, our implementation of \texttt{matchPrefix} is actually an
+\emph{implicit} NFA in the GHC runtime, where the `states' can be considered
+function pointers on the heap. These pointers refer to other pointers, and the
+overall behavior works like an unoptimized NFA under the hood that's assembled
+as we go. This circumvents the infinite data structure problem because GHC
+Haskell internally implements recursion by cycles in pointer structures.
 
 \hypertarget{wrapping-up}{%
 \section{Wrapping Up}\label{wrapping-up}}
 
-As a cherry on top, we can write our final function to find matches anywhere
-inside a string by using \texttt{tails} (which gives us all prefixes in a
-string) and \texttt{mapMaybe} (which maps \texttt{matchPrefix} on every prefix
-and keeps the successes)
+Let's wrap things up! As a cherry on top, we can write our final function to
+find matches anywhere inside a string by using \texttt{tails} (which gives us
+all prefixes in a string) and \texttt{mapMaybe} (which maps \texttt{matchPrefix}
+on every prefix and keeps the successes). It's also useful to write a function
+to get the \emph{first} successful match, using \texttt{listToMaybe}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L71-L72}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L71-L75}
 
 \OtherTok{matches ::} \DataTypeTok{RegExp}\NormalTok{ a }\OtherTok{->} \DataTypeTok{String} \OtherTok{->}\NormalTok{ [a]}
-\NormalTok{matches l }\FunctionTok{=}\NormalTok{ mapMaybe (matchPrefix l) }\FunctionTok{.}\NormalTok{ tails}
+\NormalTok{matches re }\FunctionTok{=}\NormalTok{ mapMaybe (matchPrefix re) }\FunctionTok{.}\NormalTok{ tails}
+
+\OtherTok{firstMatch ::} \DataTypeTok{RegExp}\NormalTok{ a }\OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a}
+\NormalTok{firstMatch re }\FunctionTok{=}\NormalTok{ listToMaybe }\FunctionTok{.}\NormalTok{ matches re}
 \end{Highlighting}
 \end{Shaded}
+
+This is pretty efficient, due to how \texttt{matchPrefix} short-circuits with
+\texttt{Nothing} as soon as it fails, and how \texttt{listToMaybe}
+short-circuits as soon as it finds a \texttt{Just}.
 
 Hopefully from this, you can see the value of free structures :)
 

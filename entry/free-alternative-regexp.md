@@ -482,7 +482,7 @@ parse each one. The result is the first success.
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L61-L62
 
 matchAlts :: RegExp a -> String -> Maybe a
-matchAlts (Alt ls) xs = asum [ matchChain l xs | l <- ls  ]
+matchAlts (Alt res) xs = asum [ matchChain re xs | re <- res  ]
 ```
 
 Here, `asum :: [Maybe a] -> Maybe a` finds the first `Just` (success) in a list
@@ -621,8 +621,8 @@ I always follow this rule of thumb: *A lot of safety is better than no safety*.
 This method can't eliminate *all* bugs arising from this angle, but it can
 eliminate a whoooole lot.
 
-::: {.note}
-**Aside**
+Some subtle caveats
+-------------------
 
 Before we wrap things up, let's take some time to clarify a subtle point. Feel
 free to skip this whole section if you don't care about the fact that these
@@ -639,7 +639,7 @@ laziness is the reason that lists aren't "true" mathematical free monoids.
 The reason is that because of laziness and unbounded recursion, we can create an
 "infinite" regular language: `a|aa|aaa|aaaa|aaaaa|aaaaaa|...`, forever and ever.
 However, infinite regular expressions aren't allowed in the mathematical
-version. Unfortunately, in Haskell, there is no way to "turn off" recursion:
+version. In Haskell, unfortunately, there is no way to "turn off" recursion:
 we're stuck with it.
 
 Even more unfortunately, this is actually how the `Alt` encoding of the free
@@ -652,10 +652,10 @@ this does create serious issues if we want to write a [non-deterministic finite
 automata based
 parser](https://en.wikipedia.org/wiki/Nondeterministic_finite_automaton) (NFA),
 which is the de facto standard for implementing fast regexp parsers. We can only
-really compile to an NFA if we have a *finite* value, which means anything using
+really generate an NFA if we have a *finite* value, which means anything using
 `many` is out of the question.
 
-However, not all hope is lost. We can actually use the *final encoding* of
+Not all hope is lost, however. We can actually use the "final encoding" of
 `Alt`, from *Control.Alternative.Free.Final*, to gain a `many` that is
 non-recursive.[^3]
 
@@ -663,21 +663,43 @@ Using the final encoding means we loose the "pattern match" method, and can only
 use the `runAlt` method. However, we can off-load to `Alternative` instances
 that have non-recursive `many` (like the `RE` type from *regex-applicative*)
 that allows us to generate an NFA parser.
-:::
+
+There's another interesting point to be made, however, regarding compatibility
+with NFAs. Even though this recursive encoding doesn't allow us to create an
+*explicit* NFA (a full graph with nodes and transitions), it does allow us to
+make an *implicit* one. We can't ever make an implicit NFA because the naive
+`many` in the normal `Alt` gives us an infinite data structure, so we get an
+infinite graph.
+
+However, our implementation of `matchPrefix` is actually an *implicit* NFA in
+the GHC runtime, where the 'states' can be considered function pointers on the
+heap. These pointers refer to other pointers, and the overall behavior works
+like an unoptimized NFA under the hood that's assembled as we go. This
+circumvents the infinite data structure problem because GHC Haskell internally
+implements recursion by cycles in pointer structures.
 
 Wrapping Up
 -----------
 
-As a cherry on top, we can write our final function to find matches anywhere
-inside a string by using `tails` (which gives us all prefixes in a string) and
-`mapMaybe` (which maps `matchPrefix` on every prefix and keeps the successes)
+Let's wrap things up! As a cherry on top, we can write our final function to
+find matches anywhere inside a string by using `tails` (which gives us all
+prefixes in a string) and `mapMaybe` (which maps `matchPrefix` on every prefix
+and keeps the successes). It's also useful to write a function to get the
+*first* successful match, using `listToMaybe`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L71-L72
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L71-L75
 
 matches :: RegExp a -> String -> [a]
-matches l = mapMaybe (matchPrefix l) . tails
+matches re = mapMaybe (matchPrefix re) . tails
+
+firstMatch :: RegExp a -> String -> Maybe a
+firstMatch re = listToMaybe . matches re
 ```
+
+This is pretty efficient, due to how `matchPrefix` short-circuits with `Nothing`
+as soon as it fails, and how `listToMaybe` short-circuits as soon as it finds a
+`Just`.
 
 Hopefully from this, you can see the value of free structures :)
 
