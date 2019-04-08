@@ -1102,6 +1102,15 @@ tutorials?
 -   [This github repo](https://github.com/passy/awesome-recursion-schemes)
     accumulates a lot of amazing articles, tutorials, and other resources.
 
+Special Thanks
+--------------
+
+I am very humbled to be supported by an amazing community, who make it possible
+for me to devote time to researching and writing these posts. Very special
+thanks to my supporters at the "Amazing" level on
+[patreon](https://www.patreon.com/justinle/overview), Sam Stites and Josh Vera!
+:)
+
 --------------------------------------------------------------------------------
 
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at

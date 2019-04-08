@@ -522,7 +522,7 @@ parse each one. The result is the first success.
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L68-L69
 
 matchAlts :: RegExp a -> String -> Maybe a
-matchAlts (Alt res) xs = asum [ matchChain re xs | re <- res  ]
+matchAlts (Alt res) xs = asum [ matchChain re xs | re <- res ]
 ```
 
 Here, `asum :: [Maybe a] -> Maybe a` finds the first `Just` (success) in a list
@@ -785,6 +785,15 @@ as an exercise!
 I hope that after working through this example, you will begin to start
 recognizing opportunities for using free structures everywhere you look! Once
 you start, it's hard to stop :)
+
+Special Thanks
+--------------
+
+I am very humbled to be supported by an amazing community, who make it possible
+for me to devote time to researching and writing these posts. Very special
+thanks to my supporters at the "Amazing" level on
+[patreon](https://www.patreon.com/justinle/overview), Sam Stites and Josh Vera!
+:)
 
 --------------------------------------------------------------------------------
 
