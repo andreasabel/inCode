@@ -800,8 +800,10 @@ a language that has only concatenation and empty strings and primitives, and no
 alternations. It's like regular expressions with no `|`, or basically only
 straight up matches. If we use the free *Monad*, we get a context-sensitive
 language with no backtracking. If we use the free *MonadPlus*, we get a
-context-sensitive language with backtracking. It's nice that we get this sort of
-"a la carte" scaling system by our choice of free structure.
+context-sensitive language with backtracking. And if we use the (redundant) free
+*Functor*...we get a language that can parse a string of one and only one
+character. It's nice that we get this sort of "a la carte" scaling system by our
+choice of free structure.
 
 I hope that after working through this example, you will begin to start
 recognizing opportunities for using free structures everywhere you look! Once
