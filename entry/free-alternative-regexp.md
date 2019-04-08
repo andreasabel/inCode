@@ -46,7 +46,7 @@ And the following operations:
 
 1.  Concatenation: `RS`, sequence one after the other. A set product.
 2.  Alternation: `R|S`, one or the other. A set union.
-3.  Kleene Star: `R*`, the repetition of `R` one or more times.
+3.  Kleene Star: `R*`, the repetition of `R` zero or more times.
 
 And that's *all* that's in a regular expression. Nothing more, nothing less.
 From these basic tools, you can derive the rest of the regexp operations --- for
@@ -714,7 +714,7 @@ Not all hope is lost, however. We can actually use the "final encoding" of
 `Alt`, from *Control.Alternative.Free.Final*, to gain a `many` that is
 non-recursive.[^3]
 
-Using the final encoding means we loose the "pattern match" method, and can only
+Using the final encoding means we lose the "pattern match" method, and can only
 use the `runAlt` method. However, we can off-load to `Alternative` instances
 that have non-recursive `many` (like the `RE` type from *regex-applicative*)
 that allows us to generate an NFA parser. While this still has issues because
