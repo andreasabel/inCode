@@ -4,8 +4,8 @@ Applicative Regular Expressions using the Free Alternative
 > Originally posted by [Justin Le](https://blog.jle.im/).
 > [Read online!](https://blog.jle.im/entry/free-alternative-regexp.html)
 
-We're going to implement applicative regular expressions and parsers (in the
-style of the
+Today, we're going to implement applicative regular expressions and parsers (in
+the style of the
 [regex-applicative](https://hackage.haskell.org/package/regex-applicative)
 library) using free structures!
 
@@ -20,6 +20,12 @@ Regular expressions (and parsers) are ubiquitous in computer science and
 programming, and I hope that demonstrating that they are pretty straightforward
 to implement using free structures will help you see the value in free
 structures without getting too bogged down in the details!
+
+All of the code in this post is [available
+online](https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs)
+as a "stack executable". When you run it (`./regexp.hs`), you'll load up a
+*ghci* session with all of the definitions in scope, so you can play around with
+the functions and types :)
 
 Regular Languages
 -----------------
@@ -79,7 +85,7 @@ Free
 Let's write this out. Our character primitive will be:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L15-L16
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L16-L17
 
 data Prim a = Prim Char a
   deriving Functor
@@ -102,7 +108,7 @@ the *[free](https://hackage.haskell.org/package/free)* package:
 ``` {.haskell}
 import Control.Alternative.Free
 
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L18-L18
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L19-L19
 
 type RegExp = Alt Prim
 ```
@@ -132,7 +138,7 @@ operations and the primitive. No more, no less.
 After adding some convenient wrappers...we're done here!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L20-L31
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L21-L32
 
 -- | charAs: Parse a given character as a given constant result.
 charAs :: Char -> a -> RegExp a
@@ -153,7 +159,7 @@ string = traverse char              -- neat, huh
 Let's try it out! Let's match on `(a|b)(cd)*e` and return `()`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L33-L36
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L34-L37
 
 testRegExp_ :: RegExp ()
 testRegExp_ = void $ (char 'a' <|> char 'b')
@@ -169,7 +175,7 @@ Or maybe more interesting (but slightly more complicated), let's match on the
 same pattern and return how many `cd`s are repeated
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L38-L41
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L39-L42
 
 testRegExp :: RegExp Int
 testRegExp = (char 'a' <|> char 'b')
@@ -187,7 +193,7 @@ However, we can also turn on *-XApplicativeDo* and write it using do notation,
 which requires a little less thought:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L43-L48
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L44-L49
 
 testRegExpDo :: RegExp Int
 testRegExpDo = do
@@ -218,7 +224,7 @@ us with *that*?
 
 Well, it does a lot, actually. Let's look at two ways of doing this!
 
-### Offloading to another Alternative
+### Offloading Alternative
 
 #### What is Freeness?
 
@@ -313,7 +319,7 @@ So, like `foldMap`, we need to say "how to handle our base type". Here, we have
 to answer "How do we handle `Prim`?"
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L50-L55
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L51-L56
 
 processPrim :: Prim a -> StateT String Maybe a
 processPrim (Prim c x) = do
@@ -341,7 +347,7 @@ need to run the state action (using `evalStateT`) on the string we want to
 parse:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L57-L58
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L58-L59
 
 matchPrefix :: RegExp a -> String -> Maybe a
 matchPrefix re = evalStateT (runAlt processPrim re)
@@ -360,7 +366,7 @@ ghci> matchPrefix testRegexp "bcdcdcdcdcdcdcde"
 Just 7
 ```
 
-#### What just happened?
+#### Wait, what just happened?
 
 Okay, so that might have happened a little quicker than you expected. One minute
 we were writing our primitive, and the next we had already finished. Here's the
@@ -473,7 +479,7 @@ First, the top-level `Alt` case. When faced with a list of chains, we can try to
 parse each one. The result is the first success.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L63-L64
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L61-L62
 
 matchAlts :: RegExp a -> String -> Maybe a
 matchAlts (Alt ls) xs = asum [ matchChain l xs | l <- ls  ]
@@ -498,7 +504,7 @@ typechecks.
 In the end of the very mechanical process, we get:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L66-L71
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L64-L69
 
 matchChain :: AltF Prim a -> String -> Maybe a
 matchChain (Ap (Prim c x) next) cs = case cs of
@@ -508,18 +514,20 @@ matchChain (Ap (Prim c x) next) cs = case cs of
 matchChain (Pure x)             _      = Just x
 ```
 
-1.  If it's `Ap` (like cons, `:`), it means we're in the middle of the chain.
+1.  If it's `Ap` (analogous to cons, `:`), it means we're in the middle of the
+    chain.
 
     -   If the input string is empty, then we fail to match.
-    -   Otherwise, here's the interesting thing. We have the `Prim` with the
-        character we want to match, and the first letter in the string.
-        -   If the match is a success, we continue down the chain, to
-            `next :: RegExp (r -> a)`. We just need to massage the types a bit
-            to make it all work out.
+    -   Otherwise, here's the interesting thing. We have the `Prim r` with the
+        character we want to match, the first letter in the string, and
+        `next :: RegExp (r -> a)`, the next `RegExp` in our sequential parsing
+        chain.
+        -   If the match is a success, we continue down the chain, to `next`. We
+            just need to massage the types a bit to make it all work out.
         -   Otherwise, it's a failure. We're done here.
 
-2.  If it's `Pure x` (like nil, `[]`), it means we're at the end of the chain.
-    We return the result in `Just`.
+2.  If it's `Pure x` (analogous to nil, `[]`), it means we're at the end of the
+    chain. We return the result in `Just`.
 
 In the end though, you don't really need to understand any of this *too* deeply
 in order to write this. Sure, it's nice to understand what `Ap`, `Pure`, `AltF`,
@@ -539,6 +547,172 @@ ghci> matchAlts testRegexp "bcdcdcdcdcdcdcde"
 Just 7
 ```
 
+### What did we do?
+
+The two attempts here can be compared to using lists via `foldMap` vs. using
+lists via pattern matching.
+
+Because lists act as a free monoid, *any list function* can be written using
+`foldMap` and not directly pattern matching. If this seems unbelievable to you,
+try finding a function that can't --- you might be surprised!
+
+However, because lists are an algebraic data type, *any list function* can be
+written using straight up pattern matching on `:` and `[]`.
+
+One nice thing about list is that, no matter how you assemble it, it always ends
+up as a series of conses and nil. We say that the free monoid is *normalizing*.
+That is, `[1,2,3] <> [4]` has the same representation as `[1] <> [2,3] <> [4].`
+When we pattern match on `:` and `[]`, we can't distinguish between those two
+original methods of creation.
+
+`Alt` is normalizing as well. An example of a possible variant that is *not*
+normalizing is:
+
+``` {.haskell}
+data RegExp a = Empty
+              | Pure a
+              | Prim Char a
+              | forall r. Seq (RegExp r) (RegExp (r -> a))
+              | Union (RegExp a) (RegExp a)
+              | Many (RegExp a)
+```
+
+This is how we *might* have written `RegExp`, if we didn't know about the free
+alternative. However, this representation is not normalizing, because we have
+two `RegExp a` values that represent the same regexp:
+
+``` {.haskell}
+-- | a|(b|c)
+abc1 :: RegExp Int
+abc1 = Prim 'a' 1 `Union` (Prim 'b' 2 `Union` Prim 'c' 3)
+
+-- | (a|b)|c
+abc2 :: RegExp Int
+abc2 = (Prim 'a' 1 `Union` Prim 'b' 2) `Union` Prim 'c' 3
+```
+
+These two match the same thing. But they have different representations. This
+representation *not* normalizing, since the same regexp can be expressed in two
+different ways.
+
+`Alt Prim` is better because if two regexps are the same...they will correspond
+to the same `Alt Prim`. It forces each value to exist in a "canonical"
+normalized form.
+
+This means that when we eventually write our parsing function `matchAlts`, *we
+aren't allowed to care* about "how" the regexps are made. We aren't *allowed* to
+distinguish between `(a|b)|c` and `a|(b|c)`. The normalizing property of `Alt`
+means that we are forced to treat both of those the *exact* same way. It
+*forces* us to obey the laws about the structures of regular languages.
+
+It's easy to imagine a bug that might occur if we accidentally treated `(a|b)|c`
+differently than `a|(b|c)` --- and indeed it sounds like an easy bug to
+accidentally make if we are using the non-normalizing representation.
+
+Using `Alt` instead of rolling our own regexp expression not only enforces our
+integrity, but it also eliminates a huge class of potential bugs.
+
+However, it should be noted that, while `Alt f` is strongly normalizing with
+respect to Alternative structure, `Alt Prim` isn't strongly normalizing with
+respect to *regular expressions* structure in every single case. For example,
+`Alt Prim` will still treat `a|a` as different from `a`. This is mostly because
+`Alt` has to be "agnostic" to `f`. But, like with all structural "type safety",
+I always follow this rule of thumb: *A lot of safety is better than no safety*.
+This method can't eliminate *all* bugs arising from this angle, but it can
+eliminate a whoooole lot.
+
+::: {.note}
+**Aside**
+
+Before we wrap things up, let's take some time to clarify a subtle point. Feel
+free to skip this whole section if you don't care about the fact that these
+aren't identical to the mathematical formalism of regular languages.
+
+While we can *use* `RegExp` just like a regular expression, the formal concept
+of regular expressions is actually slightly different, due to one pesky thing:
+**laziness**.
+
+We really *shouldn't* be too surprised, since laziness actually throws a wrench
+into a *lot* of Haskell abstractions that are based on math. For example,
+laziness is the reason that lists aren't "true" mathematical free monoids.
+
+The reason is that because of laziness and unbounded recursion, we can create an
+"infinite" regular language: `a|aa|aaa|aaaa|aaaaa|aaaaaa|...`, forever and ever.
+However, infinite regular expressions aren't allowed in the mathematical
+version. Unfortunately, in Haskell, there is no way to "turn off" recursion:
+we're stuck with it.
+
+Even more unfortunately, this is actually how the `Alt` encoding of the free
+alternative above implements `many`. `a*` is implemented as
+`|a|aa|aaa|aaaa|aaaaa|...`, infinitely. So the representation actually *relies*
+on laziness and infinite recursion to do its job.
+
+For the purposes we talked about in this post, this doesn't matter. However,
+this does create serious issues if we want to write a [non-deterministic finite
+automata based
+parser](https://en.wikipedia.org/wiki/Nondeterministic_finite_automaton) (NFA),
+which is the de facto standard for implementing fast regexp parsers. We can only
+really compile to an NFA if we have a *finite* value, which means anything using
+`many` is out of the question.
+
+However, not all hope is lost. We can actually use the *final encoding* of
+`Alt`, from *Control.Alternative.Free.Final*, to gain a `many` that is
+non-recursive.[^3]
+
+Using the final encoding means we loose the "pattern match" method, and can only
+use the `runAlt` method. However, we can off-load to `Alternative` instances
+that have non-recursive `many` (like the `RE` type from *regex-applicative*)
+that allows us to generate an NFA parser.
+:::
+
+Wrapping Up
+-----------
+
+As a cherry on top, we can write our final function to find matches anywhere
+inside a string by using `tails` (which gives us all prefixes in a string) and
+`mapMaybe` (which maps `matchPrefix` on every prefix and keeps the successes)
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L71-L72
+
+matches :: RegExp a -> String -> [a]
+matches l = mapMaybe (matchPrefix l) . tails
+```
+
+Hopefully from this, you can see the value of free structures :)
+
+-   Given some base primitive, they give you exactly the structure you need ---
+    no more, no less.
+-   They let you work with your type safely, and then unsafely "run" it inside
+    different useful contexts.
+-   They are normalizing, so you are not allowed to make "illegal" distinctions.
+    This eliminates a class of bugs where you accidentally treat two cases
+    differently when they are meant to be treated the same way.
+
+Our journey from going to regular languages to `Alt Prim` was to recognize that
+the structures involved in regular expressions matched an `Alternative`
+interface "plus" some extra primitives --- and then shifting our perspective to
+enriching a primitive with `Alternative` energy.
+
+Where can we go from here? First, try playing around with the [sample
+code](https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs).
+One easy addition would be to add other types of primitives:
+
+``` {.haskell}
+data Prim a = Prim Char a
+            | Letter a
+            | Wildcard a
+```
+
+so we can support a lot of the basic character classes that many implementations
+of regular expressions support. Try this out in the [sample
+code](https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs)
+as an exercise!
+
+I hope that after working through this example, you will begin to start
+recognizing opportunities for using free structures everywhere you look! Once
+you start, it's hard to stop :)
+
 --------------------------------------------------------------------------------
 
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
@@ -556,3 +730,6 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 
 [^2]: Note that there are some caveats that should be noted here, due to
     laziness in Haskell. We will go deeper into this later.
+
+[^3]: As of now, this actually doesn't work. But it will when my [pull
+    request](https://github.com/ekmett/free/pull/188) goes through :)
