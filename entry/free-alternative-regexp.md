@@ -85,7 +85,7 @@ Free
 Let's write this out. Our character primitive will be:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L16-L17
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L17-L18
 
 data Prim a = Prim Char a
   deriving Functor
@@ -108,7 +108,7 @@ the *[free](https://hackage.haskell.org/package/free)* package:
 ``` {.haskell}
 import Control.Alternative.Free
 
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L19-L19
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L20-L20
 
 type RegExp = Alt Prim
 ```
@@ -138,7 +138,7 @@ operations and the primitive. No more, no less.
 After adding some convenient wrappers...we're done here!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L21-L32
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L22-L33
 
 -- | charAs: Parse a given character as a given constant result.
 charAs :: Char -> a -> RegExp a
@@ -159,7 +159,7 @@ string = traverse char              -- neat, huh
 Let's try it out! Let's match on `(a|b)(cd)*e` and return `()`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L34-L37
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L35-L38
 
 testRegExp_ :: RegExp ()
 testRegExp_ = void $ (char 'a' <|> char 'b')
@@ -175,7 +175,7 @@ Or maybe more interesting (but slightly more complicated), let's match on the
 same pattern and return how many `cd`s are repeated
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L39-L42
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L40-L43
 
 testRegExp :: RegExp Int
 testRegExp = (char 'a' <|> char 'b')
@@ -193,7 +193,7 @@ However, we can also turn on *-XApplicativeDo* and write it using do notation,
 which requires a little less thought:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L44-L49
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L45-L50
 
 testRegExpDo :: RegExp Int
 testRegExpDo = do
@@ -213,6 +213,26 @@ irb> /(a|b)((cd)*)e/.match("acdcdcdcde")[2]
 
 except we also include a "post-processing" to get the length of the number of
 repetitions.
+
+Here's another handy regexp that matches on a digit between 0 to 9, and the
+result is the digit `Int` itself:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L52-L53
+
+digit :: RegExp Int
+digit = asum [ i <$ char (intToDigit i) | i <- [0..9] ]
+```
+
+We can again do some fancy things with it, like make a regexp `\[\d\]` that
+matches on a digit inside `[` / `]` brackets:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L55-L56
+
+bracketDigit :: RegExp Int
+bracketDigit = char '[' *> digit <* char ']'
+```
 
 Parsing
 -------
@@ -319,7 +339,7 @@ So, like `foldMap`, we need to say "how to handle our base type". Here, we have
 to answer "How do we handle `Prim`?"
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L51-L56
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L58-L63
 
 processPrim :: Prim a -> StateT String Maybe a
 processPrim (Prim c x) = do
@@ -347,7 +367,7 @@ need to run the state action (using `evalStateT`) on the string we want to
 parse:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L58-L59
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L65-L66
 
 matchPrefix :: RegExp a -> String -> Maybe a
 matchPrefix re = evalStateT (runAlt processPrim re)
@@ -364,6 +384,12 @@ ghci> matchPrefix testRegexp "acdcdcde"
 Just 3
 ghci> matchPrefix testRegexp "bcdcdcdcdcdcdcde"
 Just 7
+ghci> matchPrefix digit "9"
+Just 9
+ghci> matchPrefix bracketDigit "[2]"
+Just 2
+ghci> matchPrefix (many bracketDigit) "[2][3][4][5]"
+Just [2,3,4,5]
 ```
 
 #### Wait, what just happened?
@@ -479,7 +505,7 @@ First, the top-level `Alt` case. When faced with a list of chains, we can try to
 parse each one. The result is the first success.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L61-L62
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L68-L69
 
 matchAlts :: RegExp a -> String -> Maybe a
 matchAlts (Alt res) xs = asum [ matchChain re xs | re <- res  ]
@@ -504,7 +530,7 @@ typechecks.
 In the end of the very mechanical process, we get:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L64-L69
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L71-L76
 
 matchChain :: AltF Prim a -> String -> Maybe a
 matchChain (Ap (Prim c x) next) cs = case cs of
@@ -545,6 +571,12 @@ ghci> matchAlts testRegexp "acdcdcde"
 Just 3
 ghci> matchAlts testRegexp "bcdcdcdcdcdcdcde"
 Just 7
+ghci> matchAlts digit "9"
+Just 9
+ghci> matchAlts bracketDigit "[2]"
+Just 2
+ghci> matchAlts (many bracketDigit) "[2][3][4][5]"
+Just [2,3,4,5]
 ```
 
 ### What did we do?
@@ -690,7 +722,7 @@ and keeps the successes). It's also useful to write a function to get the
 *first* successful match, using `listToMaybe`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L71-L75
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L78-L82
 
 matches :: RegExp a -> String -> [a]
 matches re = mapMaybe (matchPrefix re) . tails
