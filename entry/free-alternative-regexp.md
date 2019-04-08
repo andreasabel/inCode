@@ -221,8 +221,11 @@ result is the digit `Int` itself:
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/regexp.hs#L52-L53
 
 digit :: RegExp Int
-digit = asum [ i <$ char (intToDigit i) | i <- [0..9] ]
+digit = asum [ charAs (intToDigit i) i | i <- [0..9] ]
 ```
+
+Here, `asum [x,y,z] = x <|> y <|> z`: it represents a choice between the items
+in a list.
 
 We can again do some fancy things with it, like make a regexp `\[\d\]` that
 matches on a digit inside `[` / `]` brackets:
