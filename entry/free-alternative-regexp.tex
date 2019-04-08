@@ -85,6 +85,7 @@
 
 \title{Applicative Regular Expressions using the Free Alternative}
 \author{Justin Le}
+\date{April 8, 2019}
 
 \begin{document}
 \maketitle
@@ -117,12 +118,17 @@ online} as a ``stack executable''. When you run it (\texttt{./regexp.hs}),
 you'll load up a \emph{ghci} session with all of the definitions in scope, so
 you can play around with the functions and types :)
 
+This post should be accessible to late beginner or early intermediate Haskell
+users, and requires some basic familiarity with pattern matching, algebraic data
+types, and abstractions like \texttt{Monoid} and \texttt{Functor}, and do
+notation.
+
 \hypertarget{regular-languages}{%
 \section{Regular Languages}\label{regular-languages}}
 
 A \emph{regular expression} is something that defines a \emph{regular language}.
 \href{https://en.wikipedia.org/wiki/Regular_expression\#Formal_language_theory}{Formally},
-it consists of the following primitives:
+it consists of the following base elements:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -218,8 +224,8 @@ Note that because we're working with functors, applicatives, alternatives, etc.,
 all of our regular expressions can have an associated ``result''. This is
 because our regexp values will have a type parameter (which is required for
 \texttt{Functor}, \texttt{Applicative}, and \texttt{Alternative}). We can choose
-to ignore this type parameter, of course, but we can also have some fun by using
-it to represent a ``result'' that a regexp match will be interpreted as. This is
+to ignore this type parameter, but we can also have some fun by using it to
+represent a ``result'' that a regexp match will be interpreted as. This is
 similar to the idea of ``capturing'' in industrial regexp applications.
 
 Here, the value
@@ -367,8 +373,8 @@ to access a \emph{specific part} of a match. Here's an example in ruby:
 \end{Highlighting}
 \end{Shaded}
 
-except we also include a ``post-processing'' to get the length of the number of
-repetitions.
+except we also include a ``post-processing'' process to get the length of the
+number of repetitions.
 
 Here's another handy regexp that matches on a digit between 0 to 9, and the
 result is the digit \texttt{Int} itself:
@@ -462,6 +468,15 @@ Or should it be \texttt{*}?
 \begin{Highlighting}[]
 \NormalTok{ghci}\FunctionTok{>} \FunctionTok{foldMap} \DataTypeTok{Product}\NormalTok{ myMon}
 \DataTypeTok{Product} \DecValTok{24}          \CommentTok{-- 1 * 2 * 3 * 4}
+\end{Highlighting}
+\end{Shaded}
+
+Or maybe even \texttt{max}?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\FunctionTok{>} \FunctionTok{foldMap} \DataTypeTok{Max}\NormalTok{ myMon}
+\DataTypeTok{Max} \DecValTok{4}          \CommentTok{-- 1 `max` 2 `max` 3 `max` 4}
 \end{Highlighting}
 \end{Shaded}
 
@@ -929,9 +944,9 @@ but it can eliminate a whoooole lot.
 \hypertarget{some-subtle-caveats}{%
 \section{Some subtle caveats}\label{some-subtle-caveats}}
 
-Before we wrap things up, let's take some time to clarify a subtle point. Feel
-free to skip this whole section if you don't care about the fact that these
-aren't identical to the mathematical formalism of regular languages.
+Before we conclude, let's take some time to clarify a subtle point. Feel free to
+skip this whole section if you don't care about the fact that these aren't
+identical to the mathematical formalism of regular languages.
 
 While we can \emph{use} \texttt{RegExp} just like a regular expression, the
 formal concept of regular expressions is actually slightly different, due to one
@@ -953,7 +968,9 @@ Even more unfortunately, this is actually how the \texttt{Alt} encoding of the
 free alternative above implements \texttt{many}. \texttt{a*} is implemented as
 \texttt{\textbar{}a\textbar{}aa\textbar{}aaa\textbar{}aaaa\textbar{}aaaaa\textbar{}...},
 infinitely. So the representation actually \emph{relies} on laziness and
-infinite recursion to do its job.
+infinite recursion to do its job. If you look at the contents of
+\texttt{many\ (char\ \textquotesingle{}a\textquotesingle{})}, you will see an
+infinite list.
 
 For the purposes we talked about in this post, this doesn't matter. However,
 this does create serious issues if we want to write a
@@ -980,9 +997,9 @@ structures.
 There's another interesting point to be made, however, regarding compatibility
 with NFAs. Even though this recursive encoding doesn't allow us to create an
 \emph{explicit} NFA (a full graph with nodes and transitions), it does allow us
-to make an \emph{implicit} one. We can't ever make an implicit NFA because the
-naive \texttt{many} in the normal \texttt{Alt} gives us an infinite data
-structure, so we get an infinite graph.
+to make an \emph{implicit} one. We can't ever make an \emph{explicit} NFA
+involving \texttt{many} because the naive \texttt{many} in the normal
+\texttt{Alt} gives us an infinite data structure, so we get an infinite graph.
 
 However, our implementation of \texttt{matchPrefix} is actually an
 \emph{implicit} NFA in the GHC runtime, where the `states' can be considered

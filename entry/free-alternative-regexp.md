@@ -1,7 +1,7 @@
 Applicative Regular Expressions using the Free Alternative
 ==========================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on April 8, 2019.
 > [Read online!](https://blog.jle.im/entry/free-alternative-regexp.html)
 
 Today, we're going to implement applicative regular expressions and parsers (in
@@ -27,12 +27,16 @@ as a "stack executable". When you run it (`./regexp.hs`), you'll load up a
 *ghci* session with all of the definitions in scope, so you can play around with
 the functions and types :)
 
+This post should be accessible to late beginner or early intermediate Haskell
+users, and requires some basic familiarity with pattern matching, algebraic data
+types, and abstractions like `Monoid` and `Functor`, and do notation.
+
 Regular Languages
 -----------------
 
 A *regular expression* is something that defines a *regular language*.
 [Formally](https://en.wikipedia.org/wiki/Regular_expression#Formal_language_theory),
-it consists of the following primitives:
+it consists of the following base elements:
 
 1.  The empty set, which always fails to match.
 2.  The empty string, which always succeeds matching the empty string.
@@ -95,9 +99,9 @@ Note that because we're working with functors, applicatives, alternatives, etc.,
 all of our regular expressions can have an associated "result". This is because
 our regexp values will have a type parameter (which is required for `Functor`,
 `Applicative`, and `Alternative`). We can choose to ignore this type parameter,
-of course, but we can also have some fun by using it to represent a "result"
-that a regexp match will be interpreted as. This is similar to the idea of
-"capturing" in industrial regexp applications.
+but we can also have some fun by using it to represent a "result" that a regexp
+match will be interpreted as. This is similar to the idea of "capturing" in
+industrial regexp applications.
 
 Here, the value `Prim 'a' 1 :: Prim Int` will represent a primitive that matches
 on the character `a`, interpreting it with a result of `1`.
@@ -211,8 +215,8 @@ irb> /(a|b)((cd)*)e/.match("acdcdcdcde")[2]
 => "cdcdcdcd"
 ```
 
-except we also include a "post-processing" to get the length of the number of
-repetitions.
+except we also include a "post-processing" process to get the length of the
+number of repetitions.
 
 Here's another handy regexp that matches on a digit between 0 to 9, and the
 result is the digit `Int` itself:
@@ -288,6 +292,13 @@ Or should it be `*`?
 ``` {.haskell}
 ghci> foldMap Product myMon
 Product 24          -- 1 * 2 * 3 * 4
+```
+
+Or maybe even `max`?
+
+``` {.haskell}
+ghci> foldMap Max myMon
+Max 4          -- 1 `max` 2 `max` 3 `max` 4
 ```
 
 The idea is that we can "defer" the choice of concrete `Monoid` that `<>` is
@@ -659,9 +670,9 @@ eliminate a whoooole lot.
 Some subtle caveats
 -------------------
 
-Before we wrap things up, let's take some time to clarify a subtle point. Feel
-free to skip this whole section if you don't care about the fact that these
-aren't identical to the mathematical formalism of regular languages.
+Before we conclude, let's take some time to clarify a subtle point. Feel free to
+skip this whole section if you don't care about the fact that these aren't
+identical to the mathematical formalism of regular languages.
 
 While we can *use* `RegExp` just like a regular expression, the formal concept
 of regular expressions is actually slightly different, due to one pesky thing:
@@ -680,7 +691,8 @@ we're stuck with it.
 Even more unfortunately, this is actually how the `Alt` encoding of the free
 alternative above implements `many`. `a*` is implemented as
 `|a|aa|aaa|aaaa|aaaaa|...`, infinitely. So the representation actually *relies*
-on laziness and infinite recursion to do its job.
+on laziness and infinite recursion to do its job. If you look at the contents of
+`many (char 'a')`, you will see an infinite list.
 
 For the purposes we talked about in this post, this doesn't matter. However,
 this does create serious issues if we want to write a [non-deterministic finite
@@ -704,9 +716,9 @@ dependent on infinite structures.
 There's another interesting point to be made, however, regarding compatibility
 with NFAs. Even though this recursive encoding doesn't allow us to create an
 *explicit* NFA (a full graph with nodes and transitions), it does allow us to
-make an *implicit* one. We can't ever make an implicit NFA because the naive
-`many` in the normal `Alt` gives us an infinite data structure, so we get an
-infinite graph.
+make an *implicit* one. We can't ever make an *explicit* NFA involving `many`
+because the naive `many` in the normal `Alt` gives us an infinite data
+structure, so we get an infinite graph.
 
 However, our implementation of `matchPrefix` is actually an *implicit* NFA in
 the GHC runtime, where the 'states' can be considered function pointers on the
