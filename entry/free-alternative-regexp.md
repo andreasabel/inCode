@@ -662,7 +662,9 @@ non-recursive.[^3]
 Using the final encoding means we loose the "pattern match" method, and can only
 use the `runAlt` method. However, we can off-load to `Alternative` instances
 that have non-recursive `many` (like the `RE` type from *regex-applicative*)
-that allows us to generate an NFA parser.
+that allows us to generate an NFA parser. While this still has issues because
+Haskell allows general recursion, at least `many` in specific is no longer
+dependent on infinite structures.
 
 There's another interesting point to be made, however, regarding compatibility
 with NFAs. Even though this recursive encoding doesn't allow us to create an
