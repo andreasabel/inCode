@@ -494,10 +494,12 @@ data AltF f a = forall r. Ap (f r) (Alt f (r -> a))
               |           Pure a
 ```
 
-It's a mutually recursive type, so it might be a little confusing. One way to
-understand `Alt` is that `Alt xs` contains a *list of alternatives*, or a list
-of `<|>`s. And each of those alternatives is an `AltF`, which is a *sequence of
-`f a`s* chained by `<*>` (as a chain of function applications).
+It's a mutually recursive (and
+[non-regular](https://twanvl.nl/blog/haskell/non-regular1)) type, so it might be
+a little confusing. One way to understand `Alt` is that `Alt xs` contains a
+*list of alternatives*, or a list of `<|>`s. And each of those alternatives is
+an `AltF`, which is a *sequence of `f a`s* chained by `<*>` (as a chain of
+function applications).
 
 You can essentially think of `AltF f a` as a linked list `[f r]`, except with a
 different `r` for each item. `Ap` is cons (`:`), containing the `f r`, and
