@@ -279,19 +279,19 @@ Now, parsing a single \texttt{Op} is just a matter of pattern matching on
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L39-L52}
 
 \OtherTok{parseOp ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Op}
-\NormalTok{parseOp inp }\FunctionTok{=} \KeywordTok{case}\NormalTok{ words inp }\KeywordTok{of}
+\NormalTok{parseOp inp }\FunctionTok{=} \KeywordTok{case} \FunctionTok{words}\NormalTok{ inp }\KeywordTok{of}
     \StringTok{"snd"}\FunctionTok{:}\NormalTok{c    }\FunctionTok{:}\NormalTok{_   }\OtherTok{->} \DataTypeTok{OSnd}\NormalTok{ (addr c)}
-    \StringTok{"set"}\FunctionTok{:}\NormalTok{(x}\FunctionTok{:}\NormalTok{_)}\FunctionTok{:}\NormalTok{y}\FunctionTok{:}\NormalTok{_ }\OtherTok{->} \DataTypeTok{OBin}\NormalTok{ (const id) x (addr y)}
+    \StringTok{"set"}\FunctionTok{:}\NormalTok{(x}\FunctionTok{:}\NormalTok{_)}\FunctionTok{:}\NormalTok{y}\FunctionTok{:}\NormalTok{_ }\OtherTok{->} \DataTypeTok{OBin}\NormalTok{ (}\FunctionTok{const} \FunctionTok{id}\NormalTok{) x (addr y)}
     \StringTok{"add"}\FunctionTok{:}\NormalTok{(x}\FunctionTok{:}\NormalTok{_)}\FunctionTok{:}\NormalTok{y}\FunctionTok{:}\NormalTok{_ }\OtherTok{->} \DataTypeTok{OBin}\NormalTok{ (}\FunctionTok{+}\NormalTok{)        x (addr y)}
     \StringTok{"mul"}\FunctionTok{:}\NormalTok{(x}\FunctionTok{:}\NormalTok{_)}\FunctionTok{:}\NormalTok{y}\FunctionTok{:}\NormalTok{_ }\OtherTok{->} \DataTypeTok{OBin}\NormalTok{ (}\FunctionTok{*}\NormalTok{)        x (addr y)}
-    \StringTok{"mod"}\FunctionTok{:}\NormalTok{(x}\FunctionTok{:}\NormalTok{_)}\FunctionTok{:}\NormalTok{y}\FunctionTok{:}\NormalTok{_ }\OtherTok{->} \DataTypeTok{OBin}\NormalTok{ mod        x (addr y)}
+    \StringTok{"mod"}\FunctionTok{:}\NormalTok{(x}\FunctionTok{:}\NormalTok{_)}\FunctionTok{:}\NormalTok{y}\FunctionTok{:}\NormalTok{_ }\OtherTok{->} \DataTypeTok{OBin} \FunctionTok{mod}\NormalTok{        x (addr y)}
     \StringTok{"rcv"}\FunctionTok{:}\NormalTok{(x}\FunctionTok{:}\NormalTok{_)}\FunctionTok{:}\NormalTok{_   }\OtherTok{->} \DataTypeTok{ORcv}\NormalTok{ x}
     \StringTok{"jgz"}\FunctionTok{:}\NormalTok{x    }\FunctionTok{:}\NormalTok{y}\FunctionTok{:}\NormalTok{_ }\OtherTok{->} \DataTypeTok{OJgz}\NormalTok{ (addr x) (addr y)}
-\NormalTok{    _               }\OtherTok{->}\NormalTok{ error }\StringTok{"Bad parse"}
+\NormalTok{    _               }\OtherTok{->} \FunctionTok{error} \StringTok{"Bad parse"}
   \KeywordTok{where}
 \OtherTok{    addr ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Addr}
-\NormalTok{    addr [c] }\FunctionTok{|}\NormalTok{ isAlpha c }\FunctionTok{=} \DataTypeTok{Left}\NormalTok{ c}
-\NormalTok{    addr str }\FunctionTok{=} \DataTypeTok{Right}\NormalTok{ (read str)}
+\NormalTok{    addr [c] }\FunctionTok{|} \FunctionTok{isAlpha}\NormalTok{ c }\FunctionTok{=} \DataTypeTok{Left}\NormalTok{ c}
+\NormalTok{    addr str }\FunctionTok{=} \DataTypeTok{Right}\NormalTok{ (}\FunctionTok{read}\NormalTok{ str)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -307,7 +307,7 @@ them into a \texttt{PointedList}. We're ready to go!
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L54-L55}
 
 \OtherTok{parseProgram ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{P.PointedList} \DataTypeTok{Op}
-\NormalTok{parseProgram }\FunctionTok{=}\NormalTok{ fromJust }\FunctionTok{.}\NormalTok{ P.fromList }\FunctionTok{.}\NormalTok{ map parseOp }\FunctionTok{.}\NormalTok{ lines}
+\NormalTok{parseProgram }\FunctionTok{=}\NormalTok{ fromJust }\FunctionTok{.}\NormalTok{ P.fromList }\FunctionTok{.} \FunctionTok{map}\NormalTok{ parseOp }\FunctionTok{.} \FunctionTok{lines}
 \end{Highlighting}
 \end{Shaded}
 
@@ -334,15 +334,15 @@ library\footnote{You could also use the more-or-less identical
   greatest Haskell regrets.} to build our representation of our interpreted
 language. Another common choice is to use
 \emph{\href{https://hackage.haskell.org/package/free}{free}}, and a lot of other
-tutorials go down this route. However, \emph{free} is a bit more power than you
-really need for the interpreter pattern, and I always felt like the
-implementation of interpreter pattern programs in \emph{free} was a bit awkward,
-since it relies on manually (and carefully) constructing continuations.
+tutorials go down this route. I always felt like the implementation of
+interpreter pattern programs in \emph{free} was a bit awkward, since it relies
+on manually (and carefully) constructing continuations.
 
 \emph{operational} lets us construct a language (and a monad) using GADTs to
-represent command primitives. For example, to implement something like
-\texttt{State\ Int} (which we'll call \texttt{IntState}), you might use this
-GADT:
+represent command primitives; it essentially is \texttt{Free}, but abstracting
+over the continuations we would otherwise need to write using the coyoneda
+lemma. For example, to implement something like \texttt{State\ Int} (which we'll
+call \texttt{IntState}), you might use this GADT:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -402,7 +402,7 @@ appropriately named \texttt{interpretWithMonad}:
 \begin{Highlighting}[]
 \NormalTok{interpretWithMonad}
 \OtherTok{    ::} \DataTypeTok{Monad}\NormalTok{ m                              }\CommentTok{-- m is the monad to interpret in}
-    \OtherTok{=>}\NormalTok{ (forall x}\FunctionTok{.} \DataTypeTok{StateCommand}\NormalTok{ x }\OtherTok{->}\NormalTok{ m x)    }\CommentTok{-- a way to interpret each primitive in 'm'}
+    \OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\FunctionTok{.} \DataTypeTok{StateCommand}\NormalTok{ x }\OtherTok{->}\NormalTok{ m x)    }\CommentTok{-- a way to interpret each primitive in 'm'}
     \OtherTok{->} \DataTypeTok{IntState}\NormalTok{ a                           }\CommentTok{-- IntState to interpret}
     \OtherTok{->}\NormalTok{ m a                                  }\CommentTok{-- resulting action in 'm'}
 \end{Highlighting}
@@ -609,12 +609,12 @@ action to represent \emph{one step} of our duet programs:
 \NormalTok{      xVal }\OtherTok{<-}\NormalTok{ addrVal x}
 \NormalTok{      dJump }\FunctionTok{=<<} \KeywordTok{if}\NormalTok{ xVal }\FunctionTok{>} \DecValTok{0}
         \KeywordTok{then}\NormalTok{ addrVal y}
-        \KeywordTok{else}\NormalTok{ return }\DecValTok{1}
+        \KeywordTok{else} \FunctionTok{return} \DecValTok{1}
   \KeywordTok{where}
     \CommentTok{-- | Addr is `Either Char Int` -- `Left` means a register (so we use}
     \CommentTok{-- `dGet`) and `Right` means a direct integer value.}
 \NormalTok{    addrVal (}\DataTypeTok{Left}\NormalTok{ r ) }\FunctionTok{=}\NormalTok{ dGet r}
-\NormalTok{    addrVal (}\DataTypeTok{Right}\NormalTok{ x) }\FunctionTok{=}\NormalTok{ return x}
+\NormalTok{    addrVal (}\DataTypeTok{Right}\NormalTok{ x) }\FunctionTok{=} \FunctionTok{return}\NormalTok{ x}
 \end{Highlighting}
 \end{Shaded}
 
@@ -647,7 +647,7 @@ polymorphically:
 \NormalTok{    \{}\OtherTok{ _psOps  ::} \DataTypeTok{P.PointedList} \DataTypeTok{Op}
 \NormalTok{    ,}\OtherTok{ _psRegs ::} \DataTypeTok{M.Map} \DataTypeTok{Char} \DataTypeTok{Int}
 \NormalTok{    \}}
-\NormalTok{makeClassy ''}\DataTypeTok{ProgState}
+\NormalTok{makeClassy '}\DataTypeTok{'ProgState}
 \end{Highlighting}
 \end{Shaded}
 
@@ -870,7 +870,7 @@ there are two \emph{snd}'s, we only care about the last \emph{snd}'d thing.
 \NormalTok{      unless (x }\FunctionTok{==} \DecValTok{0}\NormalTok{) }\FunctionTok{$} \KeywordTok{do}      \CommentTok{-- don't rcv if the register parameter is 0}
         \DataTypeTok{Last}\NormalTok{ lastSent }\OtherTok{<-}\NormalTok{ look}
 \NormalTok{        tell (}\DataTypeTok{First}\NormalTok{ lastSent)}
-\NormalTok{      return x}
+      \FunctionTok{return}\NormalTok{ x}
 \end{Highlighting}
 \end{Shaded}
 
@@ -929,7 +929,7 @@ working in the same interpretation context.
 \NormalTok{    \{}\OtherTok{ _tState   ::} \DataTypeTok{ProgState}
 \NormalTok{    ,}\OtherTok{ _tBuffer  ::}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
 \NormalTok{    \}}
-\NormalTok{makeClassy ''}\DataTypeTok{Thread}
+\NormalTok{makeClassy '}\DataTypeTok{'Thread}
 
 \KeywordTok{instance} \DataTypeTok{HasProgState} \DataTypeTok{Thread} \KeywordTok{where}
 \NormalTok{    progState }\FunctionTok{=}\NormalTok{ tState}
@@ -957,7 +957,7 @@ And now, to interpret:
     \DataTypeTok{CRcv}\NormalTok{ _ }\OtherTok{->} \KeywordTok{do}
 \NormalTok{      x}\FunctionTok{:}\NormalTok{xs }\OtherTok{<-}\NormalTok{ use tBuffer}
 \NormalTok{      tBuffer }\FunctionTok{.=}\NormalTok{ xs}
-\NormalTok{      return x}
+      \FunctionTok{return}\NormalTok{ x}
 \end{Highlighting}
 \end{Shaded}
 
@@ -997,7 +997,7 @@ interpreters.
 \begin{Highlighting}[]
 \NormalTok{interpretWithMonad}
 \OtherTok{    ::} \DataTypeTok{Monad}\NormalTok{ m}
-    \OtherTok{=>}\NormalTok{ (forall x}\FunctionTok{.}\NormalTok{ (}\DataTypeTok{Mem}\NormalTok{ x }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{ x) }\OtherTok{->}\NormalTok{ m x)}
+    \OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\FunctionTok{.}\NormalTok{ (}\DataTypeTok{Mem}\NormalTok{ x }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{ x) }\OtherTok{->}\NormalTok{ m x)}
     \OtherTok{->} \DataTypeTok{Duet}\NormalTok{ a}
     \OtherTok{->}\NormalTok{ m a}
 \end{Highlighting}
@@ -1089,9 +1089,9 @@ unwrapping \emph{transformers} newtype wrappers.
 
 \OtherTok{partA ::} \DataTypeTok{P.PointedList} \DataTypeTok{Op} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Int}
 \NormalTok{partA ops }\FunctionTok{=}\NormalTok{ getFirst}
-          \FunctionTok{.}\NormalTok{ flip A.evalAccum mempty}
+          \FunctionTok{.} \FunctionTok{flip}\NormalTok{ A.evalAccum }\FunctionTok{mempty}
           \FunctionTok{.}\NormalTok{ execWriterT}
-          \FunctionTok{.}\NormalTok{ flip runStateT (}\DataTypeTok{PS}\NormalTok{ ops M.empty)}
+          \FunctionTok{.} \FunctionTok{flip}\NormalTok{ runStateT (}\DataTypeTok{PS}\NormalTok{ ops M.empty)}
           \FunctionTok{.}\NormalTok{ runMaybeT}
           \FunctionTok{$}\NormalTok{ many stepA}
 \end{Highlighting}
@@ -1152,8 +1152,8 @@ We have, in the end:
 \NormalTok{      many }\FunctionTok{$}\NormalTok{ interpretWithMonad (interpMem }\FunctionTok{>|<}\NormalTok{ interpComB) stepProg}
 \NormalTok{    _1 }\FunctionTok{.}\NormalTok{ tBuffer }\FunctionTok{.=}\NormalTok{ outB}
 \NormalTok{    _2 }\FunctionTok{.}\NormalTok{ tBuffer }\FunctionTok{.=}\NormalTok{ outA}
-\NormalTok{    guard }\FunctionTok{.}\NormalTok{ not }\FunctionTok{$}\NormalTok{ null outA }\FunctionTok{&&}\NormalTok{ null outB}
-\NormalTok{    return }\FunctionTok{$}\NormalTok{ length outB}
+\NormalTok{    guard }\FunctionTok{.} \FunctionTok{not} \FunctionTok{$} \FunctionTok{null}\NormalTok{ outA }\FunctionTok{&&} \FunctionTok{null}\NormalTok{ outB}
+    \FunctionTok{return} \FunctionTok{$} \FunctionTok{length}\NormalTok{ outB}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1182,8 +1182,8 @@ block.
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/duet/Duet.hs#L189-L197}
 
 \OtherTok{partB ::} \DataTypeTok{P.PointedList} \DataTypeTok{Op} \OtherTok{->} \DataTypeTok{Int}
-\NormalTok{partB ops }\FunctionTok{=}\NormalTok{ maybe (error }\StringTok{"`many` cannot fail"}\NormalTok{) sum}
-          \FunctionTok{.}\NormalTok{ flip evalState s0}
+\NormalTok{partB ops }\FunctionTok{=} \FunctionTok{maybe}\NormalTok{ (}\FunctionTok{error} \StringTok{"`many` cannot fail"}\NormalTok{) }\FunctionTok{sum}
+          \FunctionTok{.} \FunctionTok{flip}\NormalTok{ evalState s0}
           \FunctionTok{.}\NormalTok{ runMaybeT}
           \FunctionTok{$}\NormalTok{ many stepB}
   \KeywordTok{where}
@@ -1216,8 +1216,8 @@ actual answers given some sample puzzle input:
 
 \OtherTok{main ::} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{main }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    print }\FunctionTok{$}\NormalTok{ partA (parseProgram testProg)}
-\NormalTok{    print }\FunctionTok{$}\NormalTok{ partB (parseProgram testProg)}
+    \FunctionTok{print} \FunctionTok{$}\NormalTok{ partA (parseProgram testProg)}
+    \FunctionTok{print} \FunctionTok{$}\NormalTok{ partB (parseProgram testProg)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1322,7 +1322,7 @@ we can use the analogy of \texttt{\textgreater{}\textbar{}\textless{}},
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{uncurryFan}
-\OtherTok{    ::}\NormalTok{ (forall x}\FunctionTok{.}\NormalTok{ f x }\OtherTok{->}\NormalTok{ g x }\OtherTok{->}\NormalTok{ r)}
+\OtherTok{    ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\FunctionTok{.}\NormalTok{ f x }\OtherTok{->}\NormalTok{ g x }\OtherTok{->}\NormalTok{ r)}
     \OtherTok{->}\NormalTok{ (f }\FunctionTok{:&:}\NormalTok{ g) a}
     \OtherTok{->}\NormalTok{ r}
 
@@ -1372,14 +1372,14 @@ structure of conjunctions and disjunctions using the \texttt{Bifunctor1} from
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{bimap1}
-\OtherTok{    ::}\NormalTok{ (forall x}\FunctionTok{.}\NormalTok{ f x }\OtherTok{->}\NormalTok{ h x)}
-    \OtherTok{->}\NormalTok{ (forall x}\FunctionTok{.}\NormalTok{ g x }\OtherTok{->}\NormalTok{ j x)}
+\OtherTok{    ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\FunctionTok{.}\NormalTok{ f x }\OtherTok{->}\NormalTok{ h x)}
+    \OtherTok{->}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\FunctionTok{.}\NormalTok{ g x }\OtherTok{->}\NormalTok{ j x)}
     \OtherTok{->}\NormalTok{ (f }\FunctionTok{:|:}\NormalTok{ g) a}
     \OtherTok{->}\NormalTok{ (h }\FunctionTok{:|:}\NormalTok{ j) a}
 
 \NormalTok{bimap1}
-\OtherTok{    ::}\NormalTok{ (forall x}\FunctionTok{.}\NormalTok{ f x }\OtherTok{->}\NormalTok{ h x)}
-    \OtherTok{->}\NormalTok{ (forall x}\FunctionTok{.}\NormalTok{ g x }\OtherTok{->}\NormalTok{ j x)}
+\OtherTok{    ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\FunctionTok{.}\NormalTok{ f x }\OtherTok{->}\NormalTok{ h x)}
+    \OtherTok{->}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\FunctionTok{.}\NormalTok{ g x }\OtherTok{->}\NormalTok{ j x)}
     \OtherTok{->}\NormalTok{ (f }\FunctionTok{:&:}\NormalTok{ g) a}
     \OtherTok{->}\NormalTok{ (h }\FunctionTok{:&:}\NormalTok{ j) a}
 \end{Highlighting}
@@ -1389,7 +1389,7 @@ So we can ``tag'' the \texttt{Mem} in \texttt{Mem\ :\textbar{}:\ Cmd} using:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{bimap1 (}\DataTypeTok{C} \DecValTok{0} \FunctionTok{:&:}\NormalTok{) id}
+\NormalTok{bimap1 (}\DataTypeTok{C} \DecValTok{0} \FunctionTok{:&:}\NormalTok{) }\FunctionTok{id}
 \OtherTok{    ::}\NormalTok{ (      }\DataTypeTok{Mem}       \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
     \OtherTok{->}\NormalTok{ ((}\DataTypeTok{C} \DataTypeTok{Int} \FunctionTok{:&:} \DataTypeTok{Mem}\NormalTok{) }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
 \end{Highlighting}
@@ -1401,11 +1401,11 @@ the help of \texttt{interpretWithMonad}:
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{\textbackslash{}f }\OtherTok{->}\NormalTok{ interpretWithMonad (singleotn }\FunctionTok{.}\NormalTok{ f)}
-\OtherTok{    ::}\NormalTok{ (forall x}\FunctionTok{.}\NormalTok{ f x }\OtherTok{->}\NormalTok{ g x)}
+\OtherTok{    ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\FunctionTok{.}\NormalTok{ f x }\OtherTok{->}\NormalTok{ g x)}
     \OtherTok{->} \DataTypeTok{Program}\NormalTok{ f a}
     \OtherTok{->} \DataTypeTok{Program}\NormalTok{ g a}
 
-\NormalTok{interpretWithMonad (singleton }\FunctionTok{.}\NormalTok{ bimap1 (}\DataTypeTok{C} \DecValTok{0} \FunctionTok{:&:}\NormalTok{) id)}
+\NormalTok{interpretWithMonad (singleton }\FunctionTok{.}\NormalTok{ bimap1 (}\DataTypeTok{C} \DecValTok{0} \FunctionTok{:&:}\NormalTok{) }\FunctionTok{id}\NormalTok{)}
 \OtherTok{    ::} \DataTypeTok{Program}\NormalTok{ (      }\DataTypeTok{Mem}       \FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
     \OtherTok{->} \DataTypeTok{Program}\NormalTok{ ((}\DataTypeTok{C} \DataTypeTok{Int} \FunctionTok{:&:} \DataTypeTok{Mem}\NormalTok{) }\FunctionTok{:|:} \DataTypeTok{Com}\NormalTok{) a}
 \end{Highlighting}
@@ -1450,7 +1450,7 @@ a utility function with \texttt{Prod} (from \emph{type-combinators}) and
 \KeywordTok{newtype} \DataTypeTok{Handle}\NormalTok{ a r f }\FunctionTok{=} \DataTypeTok{Handle}\NormalTok{ \{}\OtherTok{ runHandle ::}\NormalTok{ f a }\OtherTok{->}\NormalTok{ r \}}
 
 \OtherTok{handleFSum ::} \DataTypeTok{Prod}\NormalTok{ (}\DataTypeTok{Handle}\NormalTok{ a r) fs }\OtherTok{->} \DataTypeTok{FSum}\NormalTok{ fs a }\OtherTok{->}\NormalTok{ r}
-\NormalTok{handleFSum hs }\FunctionTok{=}\NormalTok{ ifoldMapFSum }\FunctionTok{$}\NormalTok{ \textbackslash{}i }\OtherTok{->}\NormalTok{ runHandle (index i hs)}
+\NormalTok{handleFSum hs }\FunctionTok{=}\NormalTok{ ifoldMapFSum }\FunctionTok{$}\NormalTok{ \textbackslash{}i }\OtherTok{->}\NormalTok{ runHandle (}\FunctionTok{index}\NormalTok{ i hs)}
 \end{Highlighting}
 \end{Shaded}
 

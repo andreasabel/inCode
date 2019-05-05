@@ -204,14 +204,15 @@ We're going to be using the great
 *[operational](https://hackage.haskell.org/package/operational)* library[^1] to
 build our representation of our interpreted language. Another common choice is
 to use *[free](https://hackage.haskell.org/package/free)*, and a lot of other
-tutorials go down this route. However, *free* is a bit more power than you
-really need for the interpreter pattern, and I always felt like the
-implementation of interpreter pattern programs in *free* was a bit awkward,
-since it relies on manually (and carefully) constructing continuations.
+tutorials go down this route. I always felt like the implementation of
+interpreter pattern programs in *free* was a bit awkward, since it relies on
+manually (and carefully) constructing continuations.
 
 *operational* lets us construct a language (and a monad) using GADTs to
-represent command primitives. For example, to implement something like
-`State Int` (which we'll call `IntState`), you might use this GADT:
+represent command primitives; it essentially is `Free`, but abstracting over the
+continuations we would otherwise need to write using the coyoneda lemma. For
+example, to implement something like `State Int` (which we'll call `IntState`),
+you might use this GADT:
 
 ``` {.haskell}
 data StateCommand :: Type -> Type where
