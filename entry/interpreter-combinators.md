@@ -48,7 +48,7 @@ them in a systematic way. We'll be looking at how they act on a couple of base
 primitives, and seeing the effect that each one has on our primitives.
 
 Setting the Playing Field
-=========================
+-------------------------
 
 First, let's set up our base primitive functors that we will be playing around
 with and seeing how all of these primitives are affected by our combinators.
@@ -150,16 +150,16 @@ ghci> testParser (argParser (map toUpper <$> nameArg)) "carol"
 ```
 
 Sums
-====
+----
 
 Products
-========
+--------
 
 Convolutions
-============
+------------
 
 Compositions
-============
+------------
 
 --------------------------------------------------------------------------------
 
