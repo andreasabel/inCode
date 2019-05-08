@@ -316,7 +316,8 @@ ghci> (fmap square) (halveMaybe 7)
 Nothing
 ```
 
-::::: {.note} **Aside**
+::: {.note}
+**Aside**
 
 Any "legitimate" instance of `Functor` must satisfy a couple of properties ---
 "laws", so to speak. These laws basically ensure that whatever instance you
@@ -327,8 +328,7 @@ supposed to convey.
     functions be the same as composing lifted functions. (`(.)` is the function
     composition operator)
 2.  `fmap id thing` should leave `thing` unchanged.
-
-::::: {.note}
+:::
 
 Some notes before we move on!
 
