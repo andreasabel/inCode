@@ -35,8 +35,10 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <li><em>Options</em> (think <code>ls --all</code>)</li>
 </ul>
 <p>These two will be the building blocks of our parser!</p>
+<p>These blocks will represent <em>schemas</em> for building a command line argument parser (or otherwise). They will have kind <code>Type -&gt; Type</code> (that is, they will take one type parameter, or at least be able to be partially applied to that point), and the type parameter represents “what” the schema parses. They will <em>usually</em> be <code>Functor</code> instances, for convenience…but not necessarily always.</p>
+<h3 id="arg">Arg</h3>
 <p>First, a Functor to represent a schema for a positional argument:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L26-L31</span></a>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L27-L32</span></a>
 <a class="sourceLine" id="cb1-2" title="2"></a>
 <a class="sourceLine" id="cb1-3" title="3"><span class="kw">data</span> <span class="dt">Arg</span> a <span class="fu">=</span> <span class="dt">Arg</span></a>
 <a class="sourceLine" id="cb1-4" title="4">    {<span class="ot"> argName  ::</span> <span class="dt">String</span></a>
@@ -45,16 +47,19 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb1-7" title="7">    }</a>
 <a class="sourceLine" id="cb1-8" title="8">  <span class="kw">deriving</span> <span class="dt">Functor</span></a></code></pre></div>
 <p>A schema describing an argument that parses a value of type <code>a</code> contains a name, a help message, and a <code>ReadM a</code>, which is <em>optparse-applicative</em>’s string parser data type (it contains information on how to parse a <code>String</code> into an <code>a</code>). For the most part, we only need to care about two <code>ReadM a</code>s, <code>auto :: Read a =&gt; ReadM a</code>, a <code>ReadM</code> that works for all <code>Read</code> instances, and <code>str :: IsString s =&gt; ReadM a</code>, a <code>ReadM</code> that works for all string-like types (like <code>String</code> and <code>Text</code>).</p>
-<p>Let’s define a simple interpreter for this primitive, creating an <em>optparse-applicative</em> parser:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L47-L50</span></a>
+<p>Let’s define two simple <em>interpreters</em> for this schema primitive.</p>
+<p>An <em>interpreter</em> is a <em>natural transformation</em> from our <em>schema</em> to some other functor that we will “execute” our primitive in. A <em>natural transformation</em> between functors <code>F</code> and <code>G</code> is a function <code>forall a. F a -&gt; G a</code>, that works for <em>all</em> <code>a</code>s. An interpreter will basically <em>interpret a schema</em>.</p>
+<p>Here’s a simple interpreter that executes our argument into a “summary aggregator”, which aggregates information into a list of summary lines:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L25-L54</span></a>
 <a class="sourceLine" id="cb2-2" title="2"></a>
-<a class="sourceLine" id="cb2-3" title="3"><span class="ot">argParser ::</span> <span class="dt">Arg</span> a <span class="ot">-&gt;</span> <span class="dt">Parser</span> a</a>
-<a class="sourceLine" id="cb2-4" title="4">argParser <span class="dt">Arg</span>{<span class="fu">..</span>} <span class="fu">=</span> argument argRead <span class="fu">$</span></a>
-<a class="sourceLine" id="cb2-5" title="5">        help    argHelp</a>
-<a class="sourceLine" id="cb2-6" title="6">     <span class="fu">&lt;&gt;</span> metavar argName</a></code></pre></div>
-<p>Here we using the <code>-XRecordWildcards</code> extension to bind all of the fields in <code>Arg</code> for us to use, for convenience. This is just <em>optparse-applicative</em>’s method of describing parser with a single argument, and when we “run” it, it will parse it as a single positional argument using the <code>ReadM</code>.</p>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">type</span> <span class="dt">Summary</span> <span class="fu">=</span> <span class="dt">Const</span> [<span class="dt">String</span>]</a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="ot">argSummary ::</span> <span class="dt">Arg</span> a <span class="ot">-&gt;</span> <span class="dt">Summary</span> a</a>
+<a class="sourceLine" id="cb2-6" title="6">argSummary <span class="dt">Arg</span>{<span class="fu">..</span>} <span class="fu">=</span> <span class="dt">Const</span> [ argName <span class="fu">++</span> <span class="st">&quot;: &quot;</span> <span class="fu">++</span> argHelp ]</a></code></pre></div>
+<p>Here we using the <code>-XRecordWildcards</code> extension to bind all of the fields in <code>Arg</code> for us to use, for convenience.</p>
+<p>We build an “action” in the <code>Summary</code> type, where we just log a single help line. The <code>Summary</code> Applicative is a data type containing a list of strings, where the sequencing of <code>Summary</code> actions is the appending of those strings together. More on this later!</p>
 <p>For example, we’ll make a test <code>Arg</code> that parses a name:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L71-L76</span></a>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L94-L99</span></a>
 <a class="sourceLine" id="cb3-2" title="2"></a>
 <a class="sourceLine" id="cb3-3" title="3"><span class="ot">nameArg ::</span> <span class="dt">Arg</span> <span class="dt">String</span></a>
 <a class="sourceLine" id="cb3-4" title="4">nameArg <span class="fu">=</span> <span class="dt">Arg</span></a>
@@ -62,28 +67,151 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <a class="sourceLine" id="cb3-6" title="6">    , argHelp <span class="fu">=</span> <span class="st">&quot;A person&#39;s name&quot;</span></a>
 <a class="sourceLine" id="cb3-7" title="7">    , argRead <span class="fu">=</span> str</a>
 <a class="sourceLine" id="cb3-8" title="8">    }</a></code></pre></div>
-<p>And we’ll create handy tester:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L78-L81</span></a>
-<a class="sourceLine" id="cb4-2" title="2"></a>
-<a class="sourceLine" id="cb4-3" title="3"><span class="ot">testParser ::</span> <span class="dt">Parser</span> a <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a>
-<a class="sourceLine" id="cb4-4" title="4">testParser p <span class="fu">=</span> handleParseResult</a>
-<a class="sourceLine" id="cb4-5" title="5">             <span class="fu">.</span> execParserPure defaultPrefs (info (p <span class="fu">&lt;**&gt;</span> helper) <span class="fu">mempty</span>)</a>
-<a class="sourceLine" id="cb4-6" title="6">             <span class="fu">.</span> <span class="fu">words</span></a></code></pre></div>
-<p>We can now test it out:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1">ghci<span class="fu">&gt;</span> testParser (argParser nameArg) <span class="st">&quot;--help&quot;</span></a>
-<a class="sourceLine" id="cb5-2" title="2"><span class="co">-- Usage: &lt;interactive&gt; &lt;name&gt;</span></a>
-<a class="sourceLine" id="cb5-3" title="3"><span class="co">--</span></a>
-<a class="sourceLine" id="cb5-4" title="4"><span class="co">-- Available options:</span></a>
-<a class="sourceLine" id="cb5-5" title="5"><span class="co">--   &lt;name&gt;                   A person&#39;s name</span></a>
-<a class="sourceLine" id="cb5-6" title="6"><span class="co">--   -h,--help                Show this help text</span></a>
-<a class="sourceLine" id="cb5-7" title="7">ghci<span class="fu">&gt;</span> testParser (argParser nameArg) <span class="st">&quot;alice&quot;</span></a>
-<a class="sourceLine" id="cb5-8" title="8"><span class="co">-- &quot;alice&quot;</span></a>
-<a class="sourceLine" id="cb5-9" title="9">ghci<span class="fu">&gt;</span> testParser (argParser nameArg) <span class="st">&quot;bob&quot;</span></a>
-<a class="sourceLine" id="cb5-10" title="10"><span class="co">-- &quot;bob&quot;</span></a></code></pre></div>
+<p>Let’s run it:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1">ghci<span class="fu">&gt;</span> argSummary nameArg</a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="co">-- Const [&quot;&lt;name&gt;: A person&#39;s name&quot;]</span></a></code></pre></div>
+<p>Okay, that’s a simple one. How about a slightly more complicated one? We can define an interpreter into an <em>optparse-applicative</em> command line argument parser:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L48-L51</span></a>
+<a class="sourceLine" id="cb5-2" title="2"></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="ot">argParser ::</span> <span class="dt">Arg</span> a <span class="ot">-&gt;</span> <span class="dt">Parser</span> a</a>
+<a class="sourceLine" id="cb5-4" title="4">argParser <span class="dt">Arg</span>{<span class="fu">..</span>} <span class="fu">=</span> argument argRead <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-5" title="5">        help    argHelp</a>
+<a class="sourceLine" id="cb5-6" title="6">     <span class="fu">&lt;&gt;</span> metavar argName</a></code></pre></div>
+<p>This how you use <em>optparse-applicative</em> to describe a parser with a single argument. When we “run” it, it will parse it as a single positional argument using the <code>ReadM</code>.</p>
+<p>To see this in action, let’s create a handy tester:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L108-L111</span></a>
+<a class="sourceLine" id="cb6-2" title="2"></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="ot">testParser ::</span> <span class="dt">Parser</span> a <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a>
+<a class="sourceLine" id="cb6-4" title="4">testParser p <span class="fu">=</span> handleParseResult</a>
+<a class="sourceLine" id="cb6-5" title="5">             <span class="fu">.</span> execParserPure defaultPrefs (info (p <span class="fu">&lt;**&gt;</span> helper) <span class="fu">mempty</span>)</a>
+<a class="sourceLine" id="cb6-6" title="6">             <span class="fu">.</span> <span class="fu">words</span></a></code></pre></div>
+<p>We can now test out <code>nameArg</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1">ghci<span class="fu">&gt;</span> testParser (argParser nameArg) <span class="st">&quot;--help&quot;</span></a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="co">-- Usage: &lt;interactive&gt; &lt;name&gt;</span></a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="co">--</span></a>
+<a class="sourceLine" id="cb7-4" title="4"><span class="co">-- Available options:</span></a>
+<a class="sourceLine" id="cb7-5" title="5"><span class="co">--   &lt;name&gt;                   A person&#39;s name</span></a>
+<a class="sourceLine" id="cb7-6" title="6"><span class="co">--   -h,--help                Show this help text</span></a>
+<a class="sourceLine" id="cb7-7" title="7">ghci<span class="fu">&gt;</span> testParser (argParser nameArg) <span class="st">&quot;alice&quot;</span></a>
+<a class="sourceLine" id="cb7-8" title="8"><span class="co">-- &quot;alice&quot;</span></a>
+<a class="sourceLine" id="cb7-9" title="9">ghci<span class="fu">&gt;</span> testParser (argParser nameArg) <span class="st">&quot;bob&quot;</span></a>
+<a class="sourceLine" id="cb7-10" title="10"><span class="co">-- &quot;bob&quot;</span></a></code></pre></div>
 <p>So if we enter a single positional argument, it gets parsed as itself.</p>
 <p>Note that <code>Arg</code> is a <code>Functor</code>, so we can fmap a transformation on the result:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1">ghci<span class="fu">&gt;</span> testParser (argParser (<span class="fu">map</span> <span class="fu">toUpper</span> <span class="fu">&lt;$&gt;</span> nameArg)) <span class="st">&quot;carol&quot;</span></a>
-<a class="sourceLine" id="cb6-2" title="2"><span class="st">&quot;CAROL&quot;</span></a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1">ghci<span class="fu">&gt;</span> testParser (argParser (<span class="fu">map</span> <span class="fu">toUpper</span> <span class="fu">&lt;$&gt;</span> nameArg)) <span class="st">&quot;carol&quot;</span></a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="st">&quot;CAROL&quot;</span></a></code></pre></div>
+<h3 id="opt">Opt</h3>
+<p>Now, let’s define <code>Opt</code>, schema for non-positional <code>--option &lt;blah&gt;</code>s in a command line interface.</p>
+<p>We <em>could</em> define <code>Opt</code> in the same way as <code>Arg</code>, but just for fun, and to look at more subtle aspects of schema functor design, let’s make it a little more complicated.</p>
+<p>Namely, let’s add the ability to define three <em>types</em> of options: required options, optional options, and boolean switches. Each of these have different “result types”. A <em>required</em> option produces an <code>a</code> (depending on the <code>ReadM</code>), an <em>optional</em> option produces a <code>Maybe a</code> (depending on the <code>ReadM</code>), and a <em>switch</em> produces a <code>Bool</code>. Here, we use a GADT to associate the result types with the type of option, where an <code>OptType a</code> is an option type that generates a value of type <code>a</code>.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L34-L39</span></a>
+<a class="sourceLine" id="cb9-2" title="2"></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="kw">data</span> <span class="dt">OptType</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-4" title="4">    <span class="co">-- ^ Contains a &quot;name&quot; for the argument, and a reader</span></a>
+<a class="sourceLine" id="cb9-5" title="5">    <span class="dt">OTRequired</span><span class="ot"> ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">ReadM</span> a <span class="ot">-&gt;</span> <span class="dt">OptType</span> a</a>
+<a class="sourceLine" id="cb9-6" title="6">    <span class="co">-- ^ Contains a &quot;name&quot; for the argument, and a reader</span></a>
+<a class="sourceLine" id="cb9-7" title="7">    <span class="dt">OTOptional</span><span class="ot"> ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">ReadM</span> a <span class="ot">-&gt;</span> <span class="dt">OptType</span> (<span class="dt">Maybe</span> a)</a>
+<a class="sourceLine" id="cb9-8" title="8">    <span class="dt">OTSwitch</span><span class="ot">   ::</span> <span class="dt">OptType</span> <span class="dt">Bool</span></a></code></pre></div>
+<p>If you’re unfamiliar with <code>GADT</code> syntax, it’s an alternative syntax to declaring a new data type, but instead of specifying what’s “in” a constructor (like <code>data Maybe a = Nothing | Just a</code>), we specify the <em>types</em> of our constructors as functions (like <code>data Maybe a where Nothing :: Maybe a; Just :: a -&gt; Maybe a</code>).</p>
+<p>Now notice that <code>OptType</code> has kind <code>Type -&gt; Type</code>, so it is, itself, an interpreter schema. However, it’s not a <code>Functor</code> — do you see why? You can’t really <code>fmap show</code> an <code>OTSwitch</code>, since it would need to change its type.</p>
+<p>So close, yet so far, right? <em>But</em>, we can actually use it as if it was a <code>Functor</code> by giving it to <code>Coyoneda</code>, the “free functor”.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">data</span> <span class="dt">Coyoneda</span></a>
+<a class="sourceLine" id="cb10-2" title="2"><span class="ot">    ::</span> (<span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span>)       <span class="co">-- ^ given a correctly kinded type</span></a>
+<a class="sourceLine" id="cb10-3" title="3">    <span class="ot">-&gt;</span> (<span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span>)       <span class="co">-- ^ produce a Functor</span></a>
+<a class="sourceLine" id="cb10-4" title="4"></a>
+<a class="sourceLine" id="cb10-5" title="5"><span class="kw">instance</span> <span class="dt">Functor</span> (<span class="dt">Coyoneda</span> f)</a></code></pre></div>
+<p>We can embed an <code>f</code> into a <code>Coyoneda f</code> by using <code>liftCoyoneda</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L56-L63</span></a>
+<a class="sourceLine" id="cb11-2" title="2"></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="ot">otRequired ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">ReadM</span> a <span class="ot">-&gt;</span> <span class="dt">Coyoneda</span> <span class="dt">OptType</span> a</a>
+<a class="sourceLine" id="cb11-4" title="4">otRequired n <span class="fu">=</span> liftCoyoneda <span class="fu">.</span> <span class="dt">OTRequired</span> n</a>
+<a class="sourceLine" id="cb11-5" title="5"></a>
+<a class="sourceLine" id="cb11-6" title="6"><span class="ot">otOptional ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">ReadM</span> a <span class="ot">-&gt;</span> <span class="dt">Coyoneda</span> <span class="dt">OptType</span> (<span class="dt">Maybe</span> a)</a>
+<a class="sourceLine" id="cb11-7" title="7">otOptional n <span class="fu">=</span> liftCoyoneda <span class="fu">.</span> <span class="dt">OTOptional</span> n</a>
+<a class="sourceLine" id="cb11-8" title="8"></a>
+<a class="sourceLine" id="cb11-9" title="9"><span class="ot">otSwitch ::</span> <span class="dt">Coyoneda</span> <span class="dt">OptType</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb11-10" title="10">otSwitch <span class="fu">=</span> liftCoyoneda <span class="dt">OTSwitch</span></a></code></pre></div>
+<p>Now we can write our <code>Opt</code> schema, using <code>Coyoneda OptType</code> to let our type be a <code>Functor</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L34-L39</span></a>
+<a class="sourceLine" id="cb12-2" title="2"></a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="kw">data</span> <span class="dt">OptType</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb12-4" title="4">    <span class="co">-- ^ Contains a &quot;name&quot; for the argument, and a reader</span></a>
+<a class="sourceLine" id="cb12-5" title="5">    <span class="dt">OTRequired</span><span class="ot"> ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">ReadM</span> a <span class="ot">-&gt;</span> <span class="dt">OptType</span> a</a>
+<a class="sourceLine" id="cb12-6" title="6">    <span class="co">-- ^ Contains a &quot;name&quot; for the argument, and a reader</span></a>
+<a class="sourceLine" id="cb12-7" title="7">    <span class="dt">OTOptional</span><span class="ot"> ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">ReadM</span> a <span class="ot">-&gt;</span> <span class="dt">OptType</span> (<span class="dt">Maybe</span> a)</a>
+<a class="sourceLine" id="cb12-8" title="8">    <span class="dt">OTSwitch</span><span class="ot">   ::</span> <span class="dt">OptType</span> <span class="dt">Bool</span></a></code></pre></div>
+<p>Here’s a sample <code>Opt</code> getting a person’s age, to demonstrate how things fit together.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L101-L106</span></a>
+<a class="sourceLine" id="cb13-2" title="2"></a>
+<a class="sourceLine" id="cb13-3" title="3"><span class="ot">ageOpt ::</span> <span class="dt">Opt</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb13-4" title="4">ageOpt <span class="fu">=</span> <span class="dt">Opt</span></a>
+<a class="sourceLine" id="cb13-5" title="5">    { optFlag <span class="fu">=</span> <span class="st">&quot;age&quot;</span></a>
+<a class="sourceLine" id="cb13-6" title="6">    , optHelp <span class="fu">=</span> <span class="st">&quot;A person&#39;s age&quot;</span></a>
+<a class="sourceLine" id="cb13-7" title="7">    , optType <span class="fu">=</span> otRequired <span class="st">&quot;&lt;int&gt;&quot;</span> auto</a>
+<a class="sourceLine" id="cb13-8" title="8">    }</a></code></pre></div>
+<p>Interpreting <code>Coyoneda</code> is a two-step process:</p>
+<ol type="1">
+<li>First, use <code>hoistCoyoneda</code> to <em>interpret</em> the schema inside, to our target action type</li>
+<li>Then, use <code>lowerCoyoneda :: Functor f =&gt; Coyoneda f a -&gt; f a</code> to <em>extract</em> our target action.</li>
+</ol>
+<p>This pattern (“interpret within the combinator, then extract from the combinator”) is a common one we will be using to interface with <em>all</em> of our combinators.</p>
+<p>Interpreting into <code>Summary</code>:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L65-L75</span></a>
+<a class="sourceLine" id="cb14-2" title="2"></a>
+<a class="sourceLine" id="cb14-3" title="3"><span class="ot">optSummary ::</span> <span class="kw">forall</span> a<span class="fu">.</span> <span class="dt">Opt</span> a <span class="ot">-&gt;</span> <span class="dt">Summary</span> a</a>
+<a class="sourceLine" id="cb14-4" title="4">optSummary <span class="dt">Opt</span>{<span class="fu">..</span>} <span class="fu">=</span> lowerCoyoneda <span class="fu">$</span> hoistCoyoneda go optType</a>
+<a class="sourceLine" id="cb14-5" title="5">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb14-6" title="6"><span class="ot">    go ::</span> <span class="dt">OptType</span> x <span class="ot">-&gt;</span> <span class="dt">Summary</span> x</a>
+<a class="sourceLine" id="cb14-7" title="7">    go <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb14-8" title="8">      <span class="dt">OTRequired</span> n _ <span class="ot">-&gt;</span> <span class="dt">Const</span></a>
+<a class="sourceLine" id="cb14-9" title="9">        [ <span class="st">&quot;--&quot;</span> <span class="fu">++</span> optFlag <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> n <span class="fu">++</span> <span class="st">&quot;: &quot;</span> <span class="fu">++</span> optHelp ]</a>
+<a class="sourceLine" id="cb14-10" title="10">      <span class="dt">OTOptional</span> n _ <span class="ot">-&gt;</span> <span class="dt">Const</span></a>
+<a class="sourceLine" id="cb14-11" title="11">        [ <span class="st">&quot;[--&quot;</span> <span class="fu">++</span> optFlag <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> n <span class="fu">++</span> <span class="st">&quot;]: &quot;</span> <span class="fu">++</span> optHelp ]</a>
+<a class="sourceLine" id="cb14-12" title="12">      <span class="dt">OTSwitch</span> <span class="ot">-&gt;</span> <span class="dt">Const</span></a>
+<a class="sourceLine" id="cb14-13" title="13">        [ <span class="st">&quot;[--&quot;</span> <span class="fu">++</span> optFlag <span class="fu">++</span> <span class="st">&quot;]: &quot;</span> <span class="fu">++</span> optHelp ]</a></code></pre></div>
+<p>Here we <em>interpret</em> our <code>Coyoneda OptType a</code> into a <code>Summary a</code> using <code>go</code>. <code>hoistCoyoneda go optType :: Coyoneda Summary a</code>, and <code>lowerCoyoneda :: Coyoneda Summary a -&gt; Summary a</code> <em>extracts</em> it.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" title="1">ghci<span class="fu">&gt;</span> optSummary ageOpt</a>
+<a class="sourceLine" id="cb15-2" title="2"><span class="co">-- Const [&quot;--age &lt;int&gt;: A person&#39;s age&quot;]</span></a></code></pre></div>
+<p>Next, into <code>Parser</code>, using <em>optparse-applicative</em>. Again, interpret then extract:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L77-L92</span></a>
+<a class="sourceLine" id="cb16-2" title="2"></a>
+<a class="sourceLine" id="cb16-3" title="3"><span class="ot">optParser ::</span> <span class="dt">Opt</span> a <span class="ot">-&gt;</span> <span class="dt">Parser</span> a</a>
+<a class="sourceLine" id="cb16-4" title="4">optParser <span class="dt">Opt</span>{<span class="fu">..</span>} <span class="fu">=</span> lowerCoyoneda <span class="fu">$</span> hoistCoyoneda go optType</a>
+<a class="sourceLine" id="cb16-5" title="5">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb16-6" title="6"><span class="ot">    go ::</span> <span class="dt">OptType</span> x <span class="ot">-&gt;</span> <span class="dt">Parser</span> x</a>
+<a class="sourceLine" id="cb16-7" title="7">    go <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb16-8" title="8">      <span class="dt">OTRequired</span> n r <span class="ot">-&gt;</span> option r <span class="fu">$</span></a>
+<a class="sourceLine" id="cb16-9" title="9">           long optFlag</a>
+<a class="sourceLine" id="cb16-10" title="10">        <span class="fu">&lt;&gt;</span> help optHelp</a>
+<a class="sourceLine" id="cb16-11" title="11">        <span class="fu">&lt;&gt;</span> metavar n</a>
+<a class="sourceLine" id="cb16-12" title="12">      <span class="dt">OTOptional</span> n r <span class="ot">-&gt;</span> optional <span class="fu">$</span> option r <span class="fu">$</span></a>
+<a class="sourceLine" id="cb16-13" title="13">           long optFlag</a>
+<a class="sourceLine" id="cb16-14" title="14">        <span class="fu">&lt;&gt;</span> help optHelp</a>
+<a class="sourceLine" id="cb16-15" title="15">        <span class="fu">&lt;&gt;</span> metavar n</a>
+<a class="sourceLine" id="cb16-16" title="16">      <span class="dt">OTSwitch</span>       <span class="ot">-&gt;</span> switch <span class="fu">$</span></a>
+<a class="sourceLine" id="cb16-17" title="17">           long optFlag</a>
+<a class="sourceLine" id="cb16-18" title="18">        <span class="fu">&lt;&gt;</span> help optHelp</a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" title="1">ghci<span class="fu">&gt;</span> testParser (optParser ageOpt) <span class="st">&quot;--help&quot;</span></a>
+<a class="sourceLine" id="cb17-2" title="2"><span class="co">-- Usage: &lt;interactive&gt; --age &lt;int&gt;</span></a>
+<a class="sourceLine" id="cb17-3" title="3"><span class="co">--</span></a>
+<a class="sourceLine" id="cb17-4" title="4"><span class="co">-- Available options:</span></a>
+<a class="sourceLine" id="cb17-5" title="5"><span class="co">--   --age &lt;int&gt;              A person&#39;s age</span></a>
+<a class="sourceLine" id="cb17-6" title="6"><span class="co">--   -h,--help                Show this help text</span></a>
+<a class="sourceLine" id="cb17-7" title="7">ghci<span class="fu">&gt;</span> testParser (optParser ageOpt) <span class="st">&quot;--age 25&quot;</span></a>
+<a class="sourceLine" id="cb17-8" title="8"><span class="co">-- 25</span></a>
+<a class="sourceLine" id="cb17-9" title="9">ghci<span class="fu">&gt;</span> testParser (optParser ((<span class="fu">*</span><span class="dv">2</span>) <span class="fu">&lt;$&gt;</span> ageOpt)) <span class="st">&quot;--age 25&quot;</span></a>
+<a class="sourceLine" id="cb17-10" title="10"><span class="co">-- 25</span></a></code></pre></div>
+<p>Now that we laid out our basic schemas, let’s now think about how we might want to <em>combine</em> them into richer schemas. How about:</p>
+<ul>
+<li>A schema that can have multiple <code>Arg</code>s</li>
+<li>A schema that can have multiple <code>Opt</code>s</li>
+<li>A schema that can have a single <code>Arg</code>, and multiple <code>Opt</code>s (or vice versa)</li>
+<li>A schema that has different <code>Opt</code>s and <code>Arg</code>s according to different subcommands</li>
+<li>A schema that specifies an <code>Arg</code> or an <code>Opt</code>, but not both.</li>
+<li>A schema that specifies both an <code>Arg</code> and an <code>Opt</code>, but where the interpreting function has the option to pick which one</li>
+<li>A schema that specifies both an <code>Arg</code> and an <code>Opt</code>, but where the interpreting function <em>must</em> present both to the user.</li>
+</ul>
+<p>Think about all of the interesting schemas you could build using a combination of <code>Arg</code> and <code>Opt</code>. Now, let’s see what tools we have at our disposal!</p>
 <h2 id="sums">Sums</h2>
 <h2 id="products">Products</h2>
 <h2 id="convolutions">Convolutions</h2>
