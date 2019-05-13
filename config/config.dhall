@@ -3,14 +3,23 @@
           { level =
               < Support = {=} | Amazing : {} | Inactive : {} >
           , twitter =
-              Some "iElectric"
+              None Text
           }
       , name =
-          "Domen Kožar"
+          "Amir Saeid"
       }
     , { info =
           { level =
-              < Amazing = {=} | Inactive : {} | Support : {} >
+              < Support = {=} | Amazing : {} | Inactive : {} >
+          , twitter =
+              Some "argumatronic"
+          }
+      , name =
+          "Julie Moronuki"
+      }
+    , { info =
+          { level =
+              < Support = {=} | Amazing : {} | Inactive : {} >
           , twitter =
               None Text
           }
@@ -33,6 +42,15 @@
               None Text
           }
       , name =
+          "Heneli Kailahi"
+      }
+    , { info =
+          { level =
+              < Support = {=} | Amazing : {} | Inactive : {} >
+          , twitter =
+              None Text
+          }
+      , name =
           "Josh Miller"
       }
     , { info =
@@ -43,24 +61,6 @@
           }
       , name =
           "Josh Vera"
-      }
-    , { info =
-          { level =
-              < Support = {=} | Amazing : {} | Inactive : {} >
-          , twitter =
-              None Text
-          }
-      , name =
-          "Shae Erisson"
-      }
-    , { info =
-          { level =
-              < Support = {=} | Amazing : {} | Inactive : {} >
-          , twitter =
-              None Text
-          }
-      , name =
-          "Heneli Kailahi"
       }
     ]
 , site-data =
