@@ -103,7 +103,7 @@ Here's a simple interpreter that executes our argument into a "summary
 aggregator", which aggregates information into a list of summary lines:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L25-L54
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L25-L50
 
 type Summary = Const [String]
 
@@ -122,7 +122,7 @@ together. More on this later!
 For example, we'll make a test `Arg` that parses a name:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L94-L99
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L76-L81
 
 nameArg :: Arg String
 nameArg = Arg
@@ -144,12 +144,12 @@ define an interpreter into an *optparse-applicative* command line argument
 parser:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L48-L51
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L52-L55
 
 argParser :: Arg a -> Parser a
 argParser Arg{..} = argument argRead $
-        help    argHelp
-     <> metavar argName
+       help    argHelp
+    <> metavar argName
 ```
 
 This how you use *optparse-applicative* to describe a parser with a single
@@ -159,7 +159,7 @@ using the `ReadM`.
 To see this in action, let's create a handy tester:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L108-L111
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L97-L100
 
 testParser :: Parser a -> String -> IO a
 testParser p = handleParseResult
@@ -194,155 +194,48 @@ ghci> testParser (argParser (map toUpper <$> nameArg)) "carol"
 ### Opt
 
 Now, let's define `Opt`, schema for non-positional `--option <blah>`s in a
-command line interface.
-
-We *could* define `Opt` in the same way as `Arg`, but just for fun, and to look
-at more subtle aspects of schema functor design, let's make it a little more
-complicated.
-
-Namely, let's add the ability to define three *types* of options: required
-options, optional options, and boolean switches. Each of these have different
-"result types". A *required* option produces an `a` (depending on the `ReadM`),
-an *optional* option produces a `Maybe a` (depending on the `ReadM`), and a
-*switch* produces a `Bool`. Here, we use a GADT to associate the result types
-with the type of option, where an `OptType a` is an option type that generates a
-value of type `a`.
+command line interface. We can do this pretty much the same way:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L34-L39
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L34-L40
 
-data OptType :: Type -> Type where
-    -- ^ Contains a "name" for the argument, and a reader
-    OTRequired :: String -> ReadM a -> OptType a
-    -- ^ Contains a "name" for the argument, and a reader
-    OTOptional :: String -> ReadM a -> OptType (Maybe a)
-    OTSwitch   :: OptType Bool
+data Opt a = Opt
+    { optFlag  :: String
+    , optHelp  :: String
+    , optMeta  :: String
+    , optRead  :: ReadM a
+    }
+  deriving Functor
 ```
 
-If you're unfamiliar with `GADT` syntax, it's an alternative syntax to declaring
-a new data type, but instead of specifying what's "in" a constructor (like
-`data Maybe a = Nothing | Just a`), we specify the *types* of our constructors
-as functions (like
-`data Maybe a where Nothing :: Maybe a; Just :: a -> Maybe a`).
-
-Now notice that `OptType` has kind `Type -> Type`, so it is, itself, an
-interpreter schema. However, it's not a `Functor` --- do you see why? You can't
-really `fmap show` an `OTSwitch`, since it would need to change its type.
-
-So close, yet so far, right? *But*, we can actually use it as if it was a
-`Functor` by giving it to `Coyoneda`, the "free functor".
+Again, we'll lay out our interpreters:
 
 ``` {.haskell}
-data Coyoneda
-    :: (Type -> Type)       -- ^ given a correctly kinded type
-    -> (Type -> Type)       -- ^ produce a Functor
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L57-L65
 
-instance Functor (Coyoneda f)
+optSummary :: Opt a -> Summary a
+optSummary Opt{..} = Const
+    [ "--" ++ optFlag ++ " " ++ optMeta ++ ": " ++ optHelp ]
+
+optParser :: Opt a -> Parser a
+optParser Opt{..} = option optRead $
+       long optFlag
+    <> help optHelp
+    <> metavar optMeta
 ```
 
-We can embed an `f` into a `Coyoneda f` by using `liftCoyoneda`:
+Here's a sample `Opt` getting a person's age:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L56-L63
-
-otRequired :: String -> ReadM a -> Coyoneda OptType a
-otRequired n = liftCoyoneda . OTRequired n
-
-otOptional :: String -> ReadM a -> Coyoneda OptType (Maybe a)
-otOptional n = liftCoyoneda . OTOptional n
-
-otSwitch :: Coyoneda OptType Bool
-otSwitch = liftCoyoneda OTSwitch
-```
-
-Now we can write our `Opt` schema, using `Coyoneda OptType` to let our type be a
-`Functor`:
-
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L34-L39
-
-data OptType :: Type -> Type where
-    -- ^ Contains a "name" for the argument, and a reader
-    OTRequired :: String -> ReadM a -> OptType a
-    -- ^ Contains a "name" for the argument, and a reader
-    OTOptional :: String -> ReadM a -> OptType (Maybe a)
-    OTSwitch   :: OptType Bool
-```
-
-Here's a sample `Opt` getting a person's age, to demonstrate how things fit
-together.
-
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L101-L106
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L83-L89
 
 ageOpt :: Opt Int
 ageOpt = Opt
     { optFlag = "age"
     , optHelp = "A person's age"
-    , optType = otRequired "<int>" auto
+    , optMeta = "<int>"
+    , optRead = auto
     }
-```
-
-Interpreting `Coyoneda` is a two-step process:
-
-1.  First, use `hoistCoyoneda` to *interpret* the schema inside, to our target
-    action type
-2.  Then, use `lowerCoyoneda :: Functor f => Coyoneda f a -> f a` to *extract*
-    our target action.
-
-This pattern ("interpret within the combinator, then extract from the
-combinator") is a common one we will be using to interface with *all* of our
-combinators.
-
-Interpreting into `Summary`:
-
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L65-L75
-
-optSummary :: forall a. Opt a -> Summary a
-optSummary Opt{..} = lowerCoyoneda $ hoistCoyoneda go optType
-  where
-    go :: OptType x -> Summary x
-    go = \case
-      OTRequired n _ -> Const
-        [ "--" ++ optFlag ++ " " ++ n ++ ": " ++ optHelp ]
-      OTOptional n _ -> Const
-        [ "[--" ++ optFlag ++ " " ++ n ++ "]: " ++ optHelp ]
-      OTSwitch -> Const
-        [ "[--" ++ optFlag ++ "]: " ++ optHelp ]
-```
-
-Here we *interpret* our `Coyoneda OptType a` into a `Summary a` using `go`.
-`hoistCoyoneda go optType :: Coyoneda Summary a`, and
-`lowerCoyoneda :: Coyoneda Summary a -> Summary a` *extracts* it.
-
-``` {.haskell}
-ghci> optSummary ageOpt
--- Const ["--age <int>: A person's age"]
-```
-
-Next, into `Parser`, using *optparse-applicative*. Again, interpret then
-extract:
-
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L77-L92
-
-optParser :: Opt a -> Parser a
-optParser Opt{..} = lowerCoyoneda $ hoistCoyoneda go optType
-  where
-    go :: OptType x -> Parser x
-    go = \case
-      OTRequired n r -> option r $
-           long optFlag
-        <> help optHelp
-        <> metavar n
-      OTOptional n r -> optional $ option r $
-           long optFlag
-        <> help optHelp
-        <> metavar n
-      OTSwitch       -> switch $
-           long optFlag
-        <> help optHelp
 ```
 
 ``` {.haskell}

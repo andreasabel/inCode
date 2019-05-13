@@ -216,7 +216,7 @@ aggregator'', which aggregates information into a list of summary lines:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L25-L54}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L25-L50}
 
 \KeywordTok{type} \DataTypeTok{Summary} \FunctionTok{=} \DataTypeTok{Const}\NormalTok{ [}\DataTypeTok{String}\NormalTok{]}
 
@@ -237,7 +237,7 @@ For example, we'll make a test \texttt{Arg} that parses a name:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L94-L99}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L76-L81}
 
 \OtherTok{nameArg ::} \DataTypeTok{Arg} \DataTypeTok{String}
 \NormalTok{nameArg }\FunctionTok{=} \DataTypeTok{Arg}
@@ -263,12 +263,12 @@ parser:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L48-L51}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L52-L55}
 
 \OtherTok{argParser ::} \DataTypeTok{Arg}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Parser}\NormalTok{ a}
 \NormalTok{argParser }\DataTypeTok{Arg}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=}\NormalTok{ argument argRead }\FunctionTok{$}
-\NormalTok{        help    argHelp}
-     \FunctionTok{<>}\NormalTok{ metavar argName}
+\NormalTok{       help    argHelp}
+    \FunctionTok{<>}\NormalTok{ metavar argName}
 \end{Highlighting}
 \end{Shaded}
 
@@ -280,7 +280,7 @@ To see this in action, let's create a handy tester:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L108-L111}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L97-L100}
 
 \OtherTok{testParser ::} \DataTypeTok{Parser}\NormalTok{ a }\OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{IO}\NormalTok{ a}
 \NormalTok{testParser p }\FunctionTok{=}\NormalTok{ handleParseResult}
@@ -323,181 +323,53 @@ the result:
 
 Now, let's define \texttt{Opt}, schema for non-positional
 \texttt{-\/-option\ \textless{}blah\textgreater{}}s in a command line interface.
-
-We \emph{could} define \texttt{Opt} in the same way as \texttt{Arg}, but just
-for fun, and to look at more subtle aspects of schema functor design, let's make
-it a little more complicated.
-
-Namely, let's add the ability to define three \emph{types} of options: required
-options, optional options, and boolean switches. Each of these have different
-``result types''. A \emph{required} option produces an \texttt{a} (depending on
-the \texttt{ReadM}), an \emph{optional} option produces a \texttt{Maybe\ a}
-(depending on the \texttt{ReadM}), and a \emph{switch} produces a \texttt{Bool}.
-Here, we use a GADT to associate the result types with the type of option, where
-an \texttt{OptType\ a} is an option type that generates a value of type
-\texttt{a}.
+We can do this pretty much the same way:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L34-L39}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L34-L40}
 
-\KeywordTok{data} \DataTypeTok{OptType}\OtherTok{ ::} \DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
-    \CommentTok{-- ^ Contains a "name" for the argument, and a reader}
-    \DataTypeTok{OTRequired}\OtherTok{ ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{ReadM}\NormalTok{ a }\OtherTok{->} \DataTypeTok{OptType}\NormalTok{ a}
-    \CommentTok{-- ^ Contains a "name" for the argument, and a reader}
-    \DataTypeTok{OTOptional}\OtherTok{ ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{ReadM}\NormalTok{ a }\OtherTok{->} \DataTypeTok{OptType}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ a)}
-    \DataTypeTok{OTSwitch}\OtherTok{   ::} \DataTypeTok{OptType} \DataTypeTok{Bool}
+\KeywordTok{data} \DataTypeTok{Opt}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{Opt}
+\NormalTok{    \{}\OtherTok{ optFlag  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ optHelp  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ optMeta  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ optRead  ::} \DataTypeTok{ReadM}\NormalTok{ a}
+\NormalTok{    \}}
+  \KeywordTok{deriving} \DataTypeTok{Functor}
 \end{Highlighting}
 \end{Shaded}
 
-If you're unfamiliar with \texttt{GADT} syntax, it's an alternative syntax to
-declaring a new data type, but instead of specifying what's ``in'' a constructor
-(like \texttt{data\ Maybe\ a\ =\ Nothing\ \textbar{}\ Just\ a}), we specify the
-\emph{types} of our constructors as functions (like
-\texttt{data\ Maybe\ a\ where\ Nothing\ ::\ Maybe\ a;\ Just\ ::\ a\ -\textgreater{}\ Maybe\ a}).
-
-Now notice that \texttt{OptType} has kind \texttt{Type\ -\textgreater{}\ Type},
-so it is, itself, an interpreter schema. However, it's not a \texttt{Functor}
---- do you see why? You can't really \texttt{fmap\ show} an \texttt{OTSwitch},
-since it would need to change its type.
-
-So close, yet so far, right? \emph{But}, we can actually use it as if it was a
-\texttt{Functor} by giving it to \texttt{Coyoneda}, the ``free functor''.
+Again, we'll lay out our interpreters:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Coyoneda}
-\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type}\NormalTok{)       }\CommentTok{-- ^ given a correctly kinded type}
-    \OtherTok{->}\NormalTok{ (}\DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type}\NormalTok{)       }\CommentTok{-- ^ produce a Functor}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L57-L65}
 
-\KeywordTok{instance} \DataTypeTok{Functor}\NormalTok{ (}\DataTypeTok{Coyoneda}\NormalTok{ f)}
+\OtherTok{optSummary ::} \DataTypeTok{Opt}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Summary}\NormalTok{ a}
+\NormalTok{optSummary }\DataTypeTok{Opt}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=} \DataTypeTok{Const}
+\NormalTok{    [ }\StringTok{"--"} \FunctionTok{++}\NormalTok{ optFlag }\FunctionTok{++} \StringTok{" "} \FunctionTok{++}\NormalTok{ optMeta }\FunctionTok{++} \StringTok{": "} \FunctionTok{++}\NormalTok{ optHelp ]}
+
+\OtherTok{optParser ::} \DataTypeTok{Opt}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Parser}\NormalTok{ a}
+\NormalTok{optParser }\DataTypeTok{Opt}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=}\NormalTok{ option optRead }\FunctionTok{$}
+\NormalTok{       long optFlag}
+    \FunctionTok{<>}\NormalTok{ help optHelp}
+    \FunctionTok{<>}\NormalTok{ metavar optMeta}
 \end{Highlighting}
 \end{Shaded}
 
-We can embed an \texttt{f} into a \texttt{Coyoneda\ f} by using
-\texttt{liftCoyoneda}:
+Here's a sample \texttt{Opt} getting a person's age:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L56-L63}
-
-\OtherTok{otRequired ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{ReadM}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Coyoneda} \DataTypeTok{OptType}\NormalTok{ a}
-\NormalTok{otRequired n }\FunctionTok{=}\NormalTok{ liftCoyoneda }\FunctionTok{.} \DataTypeTok{OTRequired}\NormalTok{ n}
-
-\OtherTok{otOptional ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{ReadM}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Coyoneda} \DataTypeTok{OptType}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ a)}
-\NormalTok{otOptional n }\FunctionTok{=}\NormalTok{ liftCoyoneda }\FunctionTok{.} \DataTypeTok{OTOptional}\NormalTok{ n}
-
-\OtherTok{otSwitch ::} \DataTypeTok{Coyoneda} \DataTypeTok{OptType} \DataTypeTok{Bool}
-\NormalTok{otSwitch }\FunctionTok{=}\NormalTok{ liftCoyoneda }\DataTypeTok{OTSwitch}
-\end{Highlighting}
-\end{Shaded}
-
-Now we can write our \texttt{Opt} schema, using \texttt{Coyoneda\ OptType} to
-let our type be a \texttt{Functor}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L34-L39}
-
-\KeywordTok{data} \DataTypeTok{OptType}\OtherTok{ ::} \DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
-    \CommentTok{-- ^ Contains a "name" for the argument, and a reader}
-    \DataTypeTok{OTRequired}\OtherTok{ ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{ReadM}\NormalTok{ a }\OtherTok{->} \DataTypeTok{OptType}\NormalTok{ a}
-    \CommentTok{-- ^ Contains a "name" for the argument, and a reader}
-    \DataTypeTok{OTOptional}\OtherTok{ ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{ReadM}\NormalTok{ a }\OtherTok{->} \DataTypeTok{OptType}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ a)}
-    \DataTypeTok{OTSwitch}\OtherTok{   ::} \DataTypeTok{OptType} \DataTypeTok{Bool}
-\end{Highlighting}
-\end{Shaded}
-
-Here's a sample \texttt{Opt} getting a person's age, to demonstrate how things
-fit together.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L101-L106}
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L83-L89}
 
 \OtherTok{ageOpt ::} \DataTypeTok{Opt} \DataTypeTok{Int}
 \NormalTok{ageOpt }\FunctionTok{=} \DataTypeTok{Opt}
 \NormalTok{    \{ optFlag }\FunctionTok{=} \StringTok{"age"}
 \NormalTok{    , optHelp }\FunctionTok{=} \StringTok{"A person's age"}
-\NormalTok{    , optType }\FunctionTok{=}\NormalTok{ otRequired }\StringTok{"<int>"}\NormalTok{ auto}
+\NormalTok{    , optMeta }\FunctionTok{=} \StringTok{"<int>"}
+\NormalTok{    , optRead }\FunctionTok{=}\NormalTok{ auto}
 \NormalTok{    \}}
-\end{Highlighting}
-\end{Shaded}
-
-Interpreting \texttt{Coyoneda} is a two-step process:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  First, use \texttt{hoistCoyoneda} to \emph{interpret} the schema inside, to
-  our target action type
-\item
-  Then, use
-  \texttt{lowerCoyoneda\ ::\ Functor\ f\ =\textgreater{}\ Coyoneda\ f\ a\ -\textgreater{}\ f\ a}
-  to \emph{extract} our target action.
-\end{enumerate}
-
-This pattern (``interpret within the combinator, then extract from the
-combinator'') is a common one we will be using to interface with \emph{all} of
-our combinators.
-
-Interpreting into \texttt{Summary}:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L65-L75}
-
-\OtherTok{optSummary ::} \KeywordTok{forall}\NormalTok{ a}\FunctionTok{.} \DataTypeTok{Opt}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Summary}\NormalTok{ a}
-\NormalTok{optSummary }\DataTypeTok{Opt}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=}\NormalTok{ lowerCoyoneda }\FunctionTok{$}\NormalTok{ hoistCoyoneda go optType}
-  \KeywordTok{where}
-\OtherTok{    go ::} \DataTypeTok{OptType}\NormalTok{ x }\OtherTok{->} \DataTypeTok{Summary}\NormalTok{ x}
-\NormalTok{    go }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-      \DataTypeTok{OTRequired}\NormalTok{ n _ }\OtherTok{->} \DataTypeTok{Const}
-\NormalTok{        [ }\StringTok{"--"} \FunctionTok{++}\NormalTok{ optFlag }\FunctionTok{++} \StringTok{" "} \FunctionTok{++}\NormalTok{ n }\FunctionTok{++} \StringTok{": "} \FunctionTok{++}\NormalTok{ optHelp ]}
-      \DataTypeTok{OTOptional}\NormalTok{ n _ }\OtherTok{->} \DataTypeTok{Const}
-\NormalTok{        [ }\StringTok{"[--"} \FunctionTok{++}\NormalTok{ optFlag }\FunctionTok{++} \StringTok{" "} \FunctionTok{++}\NormalTok{ n }\FunctionTok{++} \StringTok{"]: "} \FunctionTok{++}\NormalTok{ optHelp ]}
-      \DataTypeTok{OTSwitch} \OtherTok{->} \DataTypeTok{Const}
-\NormalTok{        [ }\StringTok{"[--"} \FunctionTok{++}\NormalTok{ optFlag }\FunctionTok{++} \StringTok{"]: "} \FunctionTok{++}\NormalTok{ optHelp ]}
-\end{Highlighting}
-\end{Shaded}
-
-Here we \emph{interpret} our \texttt{Coyoneda\ OptType\ a} into a
-\texttt{Summary\ a} using \texttt{go}.
-\texttt{hoistCoyoneda\ go\ optType\ ::\ Coyoneda\ Summary\ a}, and
-\texttt{lowerCoyoneda\ ::\ Coyoneda\ Summary\ a\ -\textgreater{}\ Summary\ a}
-\emph{extracts} it.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ optSummary ageOpt}
-\CommentTok{-- Const ["--age <int>: A person's age"]}
-\end{Highlighting}
-\end{Shaded}
-
-Next, into \texttt{Parser}, using \emph{optparse-applicative}. Again, interpret
-then extract:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L77-L92}
-
-\OtherTok{optParser ::} \DataTypeTok{Opt}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Parser}\NormalTok{ a}
-\NormalTok{optParser }\DataTypeTok{Opt}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=}\NormalTok{ lowerCoyoneda }\FunctionTok{$}\NormalTok{ hoistCoyoneda go optType}
-  \KeywordTok{where}
-\OtherTok{    go ::} \DataTypeTok{OptType}\NormalTok{ x }\OtherTok{->} \DataTypeTok{Parser}\NormalTok{ x}
-\NormalTok{    go }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-      \DataTypeTok{OTRequired}\NormalTok{ n r }\OtherTok{->}\NormalTok{ option r }\FunctionTok{$}
-\NormalTok{           long optFlag}
-        \FunctionTok{<>}\NormalTok{ help optHelp}
-        \FunctionTok{<>}\NormalTok{ metavar n}
-      \DataTypeTok{OTOptional}\NormalTok{ n r }\OtherTok{->}\NormalTok{ optional }\FunctionTok{$}\NormalTok{ option r }\FunctionTok{$}
-\NormalTok{           long optFlag}
-        \FunctionTok{<>}\NormalTok{ help optHelp}
-        \FunctionTok{<>}\NormalTok{ metavar n}
-      \DataTypeTok{OTSwitch}       \OtherTok{->}\NormalTok{ switch }\FunctionTok{$}
-\NormalTok{           long optFlag}
-        \FunctionTok{<>}\NormalTok{ help optHelp}
 \end{Highlighting}
 \end{Shaded}
 
