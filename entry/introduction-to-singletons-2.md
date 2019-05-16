@@ -263,7 +263,7 @@ level.
 
 The constructor `forall s. MkSomeDoor (Sing s) (Door s)` essentially contains
 `s` *with* `Door s`. When you see this, you *should read this as*
-`forall s. SomeDoor s (Door s)` (and, indeed, this is similar to how it is
+`forall s. MkSomeDoor s (Door s)` (and, indeed, this is similar to how it is
 written in dependently typed languages.)
 
 It's kind of like how, when you're used to reading Applicative style, you start
