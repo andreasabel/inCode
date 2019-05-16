@@ -68,7 +68,7 @@
         "3p9jqr"
     }
 , envType =
-    < Production = {=} | Development : {} >
+    < Development | Production >.Production
 , feed =
     "http://feeds.feedburner.com/incodeblog"
 , hostInfo =

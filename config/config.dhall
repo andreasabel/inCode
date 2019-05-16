@@ -1,7 +1,7 @@
 { patrons =
     [ { info =
           { level =
-              < Support = {=} | Amazing : {} | Inactive : {} >
+              < Amazing : {} | Inactive : {} | Support : {} >.Support {=}
           , twitter =
               None Text
           }
@@ -10,7 +10,7 @@
       }
     , { info =
           { level =
-              < Support = {=} | Amazing : {} | Inactive : {} >
+              < Amazing : {} | Inactive : {} | Support : {} >.Support {=}
           , twitter =
               Some "argumatronic"
           }
@@ -19,7 +19,7 @@
       }
     , { info =
           { level =
-              < Support = {=} | Amazing : {} | Inactive : {} >
+              < Amazing : {} | Inactive : {} | Support : {} >.Support {=}
           , twitter =
               None Text
           }
@@ -28,7 +28,7 @@
       }
     , { info =
           { level =
-              < Support = {=} | Amazing : {} | Inactive : {} >
+              < Amazing : {} | Inactive : {} | Support : {} >.Support {=}
           , twitter =
               None Text
           }
@@ -37,7 +37,7 @@
       }
     , { info =
           { level =
-              < Support = {=} | Amazing : {} | Inactive : {} >
+              < Amazing : {} | Inactive : {} | Support : {} >.Support {=}
           , twitter =
               None Text
           }
@@ -46,7 +46,7 @@
       }
     , { info =
           { level =
-              < Support = {=} | Amazing : {} | Inactive : {} >
+              < Amazing : {} | Inactive : {} | Support : {} >.Support {=}
           , twitter =
               None Text
           }
@@ -55,7 +55,7 @@
       }
     , { info =
           { level =
-              < Amazing = {=} | Inactive : {} | Support : {} >
+              < Amazing : {} | Inactive : {} | Support : {} >.Amazing {=}
           , twitter =
               None Text
           }
@@ -134,7 +134,7 @@
             "3p9jqr"
         }
     , envType =
-        < Production = {=} | Development : {} >
+        < Development | Production >.Production
     , feed =
         "http://feeds.feedburner.com/incodeblog"
     , hostInfo =
