@@ -24,14 +24,14 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p><code>MonadError</code> is a generic interface over things where you can throw “errors” of a specific type <code>e</code>, and “catch” them. It offers two methods: <code>throwError :: e -&gt; m a</code>, and <code>catchError :: m a -&gt; (e -&gt; m a) -&gt; m a</code>, which does what you’d expect from an error monad.</p>
 <p>Now, we have a generic interface to work on <em>all specfic type error-throwing Monads</em>. The <code>Either</code> type comes to mind as an obvious candidate:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">instance</span> <span class="dt">MonadError</span> e (<span class="dt">Either</span> e) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-2" title="2">    throwError <span class="fu">=</span> <span class="dt">Left</span></a>
-<a class="sourceLine" id="cb1-3" title="3">    catchError s f <span class="fu">=</span> <span class="kw">case</span> s <span class="kw">of</span></a>
+<a class="sourceLine" id="cb1-2" title="2">    throwError <span class="ot">=</span> <span class="dt">Left</span></a>
+<a class="sourceLine" id="cb1-3" title="3">    catchError s f <span class="ot">=</span> <span class="kw">case</span> s <span class="kw">of</span></a>
 <a class="sourceLine" id="cb1-4" title="4">                       <span class="dt">Right</span> _ <span class="ot">-&gt;</span> s</a>
 <a class="sourceLine" id="cb1-5" title="5">                       <span class="dt">Left</span> e  <span class="ot">-&gt;</span> f e</a></code></pre></div>
 <p>But there are definitely other instances possible. How about for <code>IO</code> and <code>IOException</code>s, in specific?</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">instance</span> <span class="dt">MonadError</span> <span class="dt">IOException</span> <span class="dt">IO</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-2" title="2">    throwError  <span class="fu">=</span> <span class="fu">ioError</span></a>
-<a class="sourceLine" id="cb2-3" title="3">    catchErrror <span class="fu">=</span> <span class="fu">catch</span>     <span class="co">-- will not catch non-IOExceptions</span></a></code></pre></div>
+<a class="sourceLine" id="cb2-2" title="2">    throwError  <span class="ot">=</span> <span class="fu">ioError</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    catchErrror <span class="ot">=</span> <span class="fu">catch</span>     <span class="co">-- will not catch non-IOExceptions</span></a></code></pre></div>
 <p>This is great, because we can now write code <em>generic</em> over <em>all</em> specific-type error things!</p>
 <h4 id="error-behaviorfor-free">Error behavior…for free!</h4>
 <p>If we’re clever enough, we can actually imbue any arbitrary Monad <code>m</code> with rudimentary, basic, “dumb” error handling by using the <code>ExceptT</code> type. An <code>ExceptT e m</code> behaves <em>just</em> like our original Monad <code>m</code> in every way…except now, we have access to rudmentary implementations of side-channels of <code>throwError</code> and <code>catchError</code>.</p>

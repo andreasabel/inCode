@@ -261,8 +261,8 @@ only contains whether it is Opened/Closed/Locked (like a `DoorState` would), but
 also it contains it in a way that GHC can use to *bring it all back* to the type
 level.
 
-A `forall s. SomeDoor (Sing s) (Door s)` essentially contains `s` *with*
-`Door s`. When you see this, you *should read this as*
+The constructor `forall s. MkSomeDoor (Sing s) (Door s)` essentially contains
+`s` *with* `Door s`. When you see this, you *should read this as*
 `forall s. SomeDoor s (Door s)` (and, indeed, this is similar to how it is
 written in dependently typed languages.)
 
