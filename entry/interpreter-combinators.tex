@@ -257,7 +257,7 @@ Let's run it:
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{ghci}\OperatorTok{>}\NormalTok{ argSummary nameArg}
-\CommentTok{-- Const ["<name>: A person's name"]}
+\DataTypeTok{Const}\NormalTok{ [}\StringTok{"<name>: A person's name"}\NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
 
@@ -383,7 +383,7 @@ Here's a sample \texttt{Opt} getting a person's age:
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{ghci}\OperatorTok{>}\NormalTok{ optSummary ageOpt}
-\CommentTok{-- Const ["--age <int>: A pesron's age"]}
+\DataTypeTok{Const}\NormalTok{ [}\StringTok{"--age <int>: A pesron's age"}\NormalTok{]}
 \NormalTok{ghci}\OperatorTok{>}\NormalTok{ testParser (optParser ageOpt) }\StringTok{"--help"}
 \CommentTok{-- Usage: <interactive> --age <int>}
 \CommentTok{--}
@@ -468,19 +468,30 @@ Here is an example of a flag indicating whether or not a person has pets:
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{ghci}\OperatorTok{>}\NormalTok{ flagSummary petsFlag}
-\CommentTok{-- Const ["--pets: Has pets"]}
-\NormalTok{ghci}\OperatorTok{>}\NormalTok{ testParser (optParser ageOpt) }\StringTok{"--help"}
-\CommentTok{-- Usage: <interactive> --age <int>}
-\CommentTok{--}
+\DataTypeTok{Const}\NormalTok{ [}\StringTok{"--pets: Has pets"}\NormalTok{]}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ testParser (flagParser petsFlag) }\StringTok{"--help"}
+\CommentTok{-- Usage: <interactive> [--pets]}
+\CommentTok{-- }
 \CommentTok{-- Available options:}
-\CommentTok{--   --age <int>              A person's age}
+\CommentTok{--   --pets                   Has pets}
 \CommentTok{--   -h,--help                Show this help text}
-\NormalTok{ghci}\OperatorTok{>}\NormalTok{ testParser (optParser ageOpt) }\StringTok{"--age 25"}
-\CommentTok{-- 25}
-\NormalTok{ghci}\OperatorTok{>}\NormalTok{ testParser (optParser ((}\OperatorTok{*}\DecValTok{2}\NormalTok{) }\OperatorTok{<$>}\NormalTok{ ageOpt)) }\StringTok{"--age 25"}
-\CommentTok{-- 50}
+\CommentTok{-- *** Exception: ExitSuccess}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ testParser (flagParser petsFlag) }\StringTok{"--pets"}
+\DataTypeTok{True}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ testParser (flagParser petsFlag) }\StringTok{""}
+\DataTypeTok{False}
 \end{Highlighting}
 \end{Shaded}
+
+Note that unlike \texttt{Arg} and \texttt{Opt}, \texttt{Flag} cannot be a
+\texttt{Functor}. That's because fundamentally, a \texttt{Functor} must be able
+to support any type argument\ldots but you can only ever produce a
+\texttt{Flag\ Bool}, and never a \texttt{Flag\ Int} or \texttt{Flag\ String}.
+There are no possible constructors! But we'll soon see a way to deal with this
+and make \texttt{Flag} effectively a \texttt{Functor}.
+
+\hypertarget{imagining-the-combinations}{%
+\subsection{Imagining the Combinations}\label{imagining-the-combinations}}
 
 Now that we laid out our basic schemas, let's now think about how we might want
 to \emph{combine} them into richer schemas. How about:
