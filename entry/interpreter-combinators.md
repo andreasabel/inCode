@@ -84,6 +84,10 @@ data Arg a = Arg
   deriving Functor
 ```
 
+An `Arg a` will be a schema describing an argument that parses a value of type
+`a`. So, an `Arg Int` would be an `Int` argument retrieved from the command
+line.
+
 A schema describing an argument that parses a value of type `a` contains a name,
 a help message, and a `ReadM a`, which is *optparse-applicative*'s string parser
 data type (it contains information on how to parse a `String` into an `a`). For
@@ -200,13 +204,16 @@ command line interface. We can do this pretty much the same way:
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L34-L40
 
 data Opt a = Opt
-    { optFlag  :: String
-    , optHelp  :: String
-    , optMeta  :: String
-    , optRead  :: ReadM a
+    { optString :: String
+    , optHelp   :: String
+    , optMeta   :: String
+    , optRead   :: ReadM a
     }
   deriving Functor
 ```
+
+An `Opt a` is a schema describing an option "flag" that expects a value of type
+`a`.
 
 Again, we'll lay out our interpreters:
 
@@ -215,11 +222,11 @@ Again, we'll lay out our interpreters:
 
 optSummary :: Opt a -> Summary a
 optSummary Opt{..} = Const
-    [ "--" ++ optFlag ++ " " ++ optMeta ++ ": " ++ optHelp ]
+    [ "--" ++ optString ++ " " ++ optMeta ++ ": " ++ optHelp ]
 
 optParser :: Opt a -> Parser a
 optParser Opt{..} = option optRead $
-       long optFlag
+       long optString
     <> help optHelp
     <> metavar optMeta
 ```
@@ -231,14 +238,89 @@ Here's a sample `Opt` getting a person's age:
 
 ageOpt :: Opt Int
 ageOpt = Opt
-    { optFlag = "age"
-    , optHelp = "A person's age"
-    , optMeta = "<int>"
-    , optRead = auto
+    { optString = "age"
+    , optHelp   = "A person's age"
+    , optMeta   = "<int>"
+    , optRead   = auto
     }
 ```
 
 ``` {.haskell}
+ghci> optSummary ageOpt
+-- Const ["--age <int>: A pesron's age"]
+ghci> testParser (optParser ageOpt) "--help"
+-- Usage: <interactive> --age <int>
+--
+-- Available options:
+--   --age <int>              A person's age
+--   -h,--help                Show this help text
+ghci> testParser (optParser ageOpt) "--age 25"
+-- 25
+ghci> testParser (optParser ((*2) <$> ageOpt)) "--age 25"
+-- 50
+```
+
+### Flag
+
+One final special interpreter, representing flags that can either be "on"
+(`True`) or "off" (`False`). We're going to be implementing this using a GADT,
+which means it can't directly be a `Functor`, for demonstrative purposes:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L42-L47
+
+data Flag :: Type -> Type where
+    Flag
+      :: { flagString :: String
+         , flagHelp   :: String
+         }
+      -> Flag Bool
+```
+
+A `Flag a` is a schema describing a command line "flag" (an option that is
+either "on" or "off").
+
+If you aren't familiar with GADT syntax, here it's being used to say that if you
+use the `Flag` constructor, it'll return a `Flag Bool` --- specifically `Bool`,
+and not any other type. Here we use a GADT to fix a type with a constructor. If
+you use the `Flag` constructor, you will get a `Flag Bool`: a schema describing
+a command line flag producing a `Bool`.
+
+Our interpreters look straightforward again:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L67-L74
+
+flagSummary :: Flag a -> Summary a
+flagSummary Flag{..} = Const
+    [ "--" ++ flagString ++ ": " ++ flagHelp ]
+
+flagParser :: Flag a -> Parser a
+flagParser Flag{..} = switch $
+       long flagString
+    <> help flagHelp
+```
+
+Note that the type `Flag a -> Parser a` means that whatever the `a` is, you
+haver to parse a value of that type. So, if we pattern match on the `Flag`
+constructor, we know that `a` must be `Bool`, so we can return a `Parser Bool`
+(which is what `switch`, from *optparse-applicative*, returns).
+
+Here is an example of a flag indicating whether or not a person has pets:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L91-L95
+
+petsFlag :: Flag Bool
+petsFlag = Flag
+    { flagString = "pets"
+    , flagHelp   = "Has pets"
+    }
+```
+
+``` {.haskell}
+ghci> flagSummary petsFlag
+-- Const ["--pets: Has pets"]
 ghci> testParser (optParser ageOpt) "--help"
 -- Usage: <interactive> --age <int>
 --
@@ -256,6 +338,8 @@ to *combine* them into richer schemas. How about:
 
 -   A schema that can have multiple `Arg`s
 -   A schema that can have multiple `Opt`s
+-   A schema that can take a single *optional* `Opt`.
+-   A schema that can have multiple `Flag`s
 -   A schema that can have a single `Arg`, and multiple `Opt`s (or vice versa)
 -   A schema that has different `Opt`s and `Arg`s according to different
     subcommands
@@ -266,7 +350,8 @@ to *combine* them into richer schemas. How about:
     interpreting function *must* present both to the user.
 
 Think about all of the interesting schemas you could build using a combination
-of `Arg` and `Opt`. Now, let's see what tools we have at our disposal!
+of `Arg` and `Opt` and `Flag`. Now, let's see what tools we have at our
+disposal!
 
 Sums
 ----

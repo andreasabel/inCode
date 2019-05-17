@@ -173,7 +173,7 @@ parser (or otherwise). They will have kind \texttt{Type\ -\textgreater{}\ Type}
 (that is, they will take one type parameter, or at least be able to be partially
 applied to that point), and the type parameter represents ``what'' the schema
 parses. They will \emph{usually} be \texttt{Functor} instances, for
-convenience\ldots{}but not necessarily always.
+convenience\ldots but not necessarily always.
 
 \hypertarget{arg}{%
 \subsection{Arg}\label{arg}}
@@ -184,7 +184,7 @@ First, a Functor to represent a schema for a positional argument:
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L27-L32}
 
-\KeywordTok{data} \DataTypeTok{Arg}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{Arg}
+\KeywordTok{data} \DataTypeTok{Arg}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Arg}
 \NormalTok{    \{}\OtherTok{ argName  ::} \DataTypeTok{String}
 \NormalTok{    ,}\OtherTok{ argHelp  ::} \DataTypeTok{String}
 \NormalTok{    ,}\OtherTok{ argRead  ::} \DataTypeTok{ReadM}\NormalTok{ a}
@@ -192,6 +192,10 @@ First, a Functor to represent a schema for a positional argument:
   \KeywordTok{deriving} \DataTypeTok{Functor}
 \end{Highlighting}
 \end{Shaded}
+
+An \texttt{Arg\ a} will be a schema describing an argument that parses a value
+of type \texttt{a}. So, an \texttt{Arg\ Int} would be an \texttt{Int} argument
+retrieved from the command line.
 
 A schema describing an argument that parses a value of type \texttt{a} contains
 a name, a help message, and a \texttt{ReadM\ a}, which is
@@ -218,10 +222,10 @@ aggregator'', which aggregates information into a list of summary lines:
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L25-L50}
 
-\KeywordTok{type} \DataTypeTok{Summary} \FunctionTok{=} \DataTypeTok{Const}\NormalTok{ [}\DataTypeTok{String}\NormalTok{]}
+\KeywordTok{type} \DataTypeTok{Summary} \OtherTok{=} \DataTypeTok{Const}\NormalTok{ [}\DataTypeTok{String}\NormalTok{]}
 
 \OtherTok{argSummary ::} \DataTypeTok{Arg}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Summary}\NormalTok{ a}
-\NormalTok{argSummary }\DataTypeTok{Arg}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=} \DataTypeTok{Const}\NormalTok{ [ argName }\FunctionTok{++} \StringTok{": "} \FunctionTok{++}\NormalTok{ argHelp ]}
+\NormalTok{argSummary }\DataTypeTok{Arg}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \DataTypeTok{Const}\NormalTok{ [ argName }\OperatorTok{++} \StringTok{": "} \OperatorTok{++}\NormalTok{ argHelp ]}
 \end{Highlighting}
 \end{Shaded}
 
@@ -240,10 +244,10 @@ For example, we'll make a test \texttt{Arg} that parses a name:
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L76-L81}
 
 \OtherTok{nameArg ::} \DataTypeTok{Arg} \DataTypeTok{String}
-\NormalTok{nameArg }\FunctionTok{=} \DataTypeTok{Arg}
-\NormalTok{    \{ argName }\FunctionTok{=} \StringTok{"<name>"}
-\NormalTok{    , argHelp }\FunctionTok{=} \StringTok{"A person's name"}
-\NormalTok{    , argRead }\FunctionTok{=}\NormalTok{ str}
+\NormalTok{nameArg }\OtherTok{=} \DataTypeTok{Arg}
+\NormalTok{    \{ argName }\OtherTok{=} \StringTok{"<name>"}
+\NormalTok{    , argHelp }\OtherTok{=} \StringTok{"A person's name"}
+\NormalTok{    , argRead }\OtherTok{=}\NormalTok{ str}
 \NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
@@ -252,7 +256,7 @@ Let's run it:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ argSummary nameArg}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ argSummary nameArg}
 \CommentTok{-- Const ["<name>: A person's name"]}
 \end{Highlighting}
 \end{Shaded}
@@ -266,9 +270,9 @@ parser:
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L52-L55}
 
 \OtherTok{argParser ::} \DataTypeTok{Arg}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Parser}\NormalTok{ a}
-\NormalTok{argParser }\DataTypeTok{Arg}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=}\NormalTok{ argument argRead }\FunctionTok{$}
+\NormalTok{argParser }\DataTypeTok{Arg}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ argument argRead }\OperatorTok{$}
 \NormalTok{       help    argHelp}
-    \FunctionTok{<>}\NormalTok{ metavar argName}
+    \OperatorTok{<>}\NormalTok{ metavar argName}
 \end{Highlighting}
 \end{Shaded}
 
@@ -283,9 +287,9 @@ To see this in action, let's create a handy tester:
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L97-L100}
 
 \OtherTok{testParser ::} \DataTypeTok{Parser}\NormalTok{ a }\OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{IO}\NormalTok{ a}
-\NormalTok{testParser p }\FunctionTok{=}\NormalTok{ handleParseResult}
-             \FunctionTok{.}\NormalTok{ execParserPure defaultPrefs (info (p }\FunctionTok{<**>}\NormalTok{ helper) }\FunctionTok{mempty}\NormalTok{)}
-             \FunctionTok{.} \FunctionTok{words}
+\NormalTok{testParser p }\OtherTok{=}\NormalTok{ handleParseResult}
+             \OperatorTok{.}\NormalTok{ execParserPure defaultPrefs (info (p }\OperatorTok{<**>}\NormalTok{ helper) }\FunctionTok{mempty}\NormalTok{)}
+             \OperatorTok{.} \FunctionTok{words}
 \end{Highlighting}
 \end{Shaded}
 
@@ -293,15 +297,15 @@ We can now test out \texttt{nameArg}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ testParser (argParser nameArg) }\StringTok{"--help"}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ testParser (argParser nameArg) }\StringTok{"--help"}
 \CommentTok{-- Usage: <interactive> <name>}
 \CommentTok{--}
 \CommentTok{-- Available options:}
 \CommentTok{--   <name>                   A person's name}
 \CommentTok{--   -h,--help                Show this help text}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ testParser (argParser nameArg) }\StringTok{"alice"}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ testParser (argParser nameArg) }\StringTok{"alice"}
 \CommentTok{-- "alice"}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ testParser (argParser nameArg) }\StringTok{"bob"}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ testParser (argParser nameArg) }\StringTok{"bob"}
 \CommentTok{-- "bob"}
 \end{Highlighting}
 \end{Shaded}
@@ -313,7 +317,7 @@ the result:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ testParser (argParser (}\FunctionTok{map} \FunctionTok{toUpper} \FunctionTok{<$>}\NormalTok{ nameArg)) }\StringTok{"carol"}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ testParser (argParser (}\FunctionTok{map} \FunctionTok{toUpper} \OperatorTok{<$>}\NormalTok{ nameArg)) }\StringTok{"carol"}
 \StringTok{"CAROL"}
 \end{Highlighting}
 \end{Shaded}
@@ -329,15 +333,18 @@ We can do this pretty much the same way:
 \begin{Highlighting}[]
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L34-L40}
 
-\KeywordTok{data} \DataTypeTok{Opt}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{Opt}
-\NormalTok{    \{}\OtherTok{ optFlag  ::} \DataTypeTok{String}
-\NormalTok{    ,}\OtherTok{ optHelp  ::} \DataTypeTok{String}
-\NormalTok{    ,}\OtherTok{ optMeta  ::} \DataTypeTok{String}
-\NormalTok{    ,}\OtherTok{ optRead  ::} \DataTypeTok{ReadM}\NormalTok{ a}
+\KeywordTok{data} \DataTypeTok{Opt}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Opt}
+\NormalTok{    \{}\OtherTok{ optString ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ optHelp   ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ optMeta   ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ optRead   ::} \DataTypeTok{ReadM}\NormalTok{ a}
 \NormalTok{    \}}
   \KeywordTok{deriving} \DataTypeTok{Functor}
 \end{Highlighting}
 \end{Shaded}
+
+An \texttt{Opt\ a} is a schema describing an option ``flag'' that expects a
+value of type \texttt{a}.
 
 Again, we'll lay out our interpreters:
 
@@ -346,14 +353,14 @@ Again, we'll lay out our interpreters:
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L57-L65}
 
 \OtherTok{optSummary ::} \DataTypeTok{Opt}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Summary}\NormalTok{ a}
-\NormalTok{optSummary }\DataTypeTok{Opt}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=} \DataTypeTok{Const}
-\NormalTok{    [ }\StringTok{"--"} \FunctionTok{++}\NormalTok{ optFlag }\FunctionTok{++} \StringTok{" "} \FunctionTok{++}\NormalTok{ optMeta }\FunctionTok{++} \StringTok{": "} \FunctionTok{++}\NormalTok{ optHelp ]}
+\NormalTok{optSummary }\DataTypeTok{Opt}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \DataTypeTok{Const}
+\NormalTok{    [ }\StringTok{"--"} \OperatorTok{++}\NormalTok{ optString }\OperatorTok{++} \StringTok{" "} \OperatorTok{++}\NormalTok{ optMeta }\OperatorTok{++} \StringTok{": "} \OperatorTok{++}\NormalTok{ optHelp ]}
 
 \OtherTok{optParser ::} \DataTypeTok{Opt}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Parser}\NormalTok{ a}
-\NormalTok{optParser }\DataTypeTok{Opt}\NormalTok{\{}\FunctionTok{..}\NormalTok{\} }\FunctionTok{=}\NormalTok{ option optRead }\FunctionTok{$}
-\NormalTok{       long optFlag}
-    \FunctionTok{<>}\NormalTok{ help optHelp}
-    \FunctionTok{<>}\NormalTok{ metavar optMeta}
+\NormalTok{optParser }\DataTypeTok{Opt}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ option optRead }\OperatorTok{$}
+\NormalTok{       long optString}
+    \OperatorTok{<>}\NormalTok{ help optHelp}
+    \OperatorTok{<>}\NormalTok{ metavar optMeta}
 \end{Highlighting}
 \end{Shaded}
 
@@ -364,26 +371,113 @@ Here's a sample \texttt{Opt} getting a person's age:
 \CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L83-L89}
 
 \OtherTok{ageOpt ::} \DataTypeTok{Opt} \DataTypeTok{Int}
-\NormalTok{ageOpt }\FunctionTok{=} \DataTypeTok{Opt}
-\NormalTok{    \{ optFlag }\FunctionTok{=} \StringTok{"age"}
-\NormalTok{    , optHelp }\FunctionTok{=} \StringTok{"A person's age"}
-\NormalTok{    , optMeta }\FunctionTok{=} \StringTok{"<int>"}
-\NormalTok{    , optRead }\FunctionTok{=}\NormalTok{ auto}
+\NormalTok{ageOpt }\OtherTok{=} \DataTypeTok{Opt}
+\NormalTok{    \{ optString }\OtherTok{=} \StringTok{"age"}
+\NormalTok{    , optHelp   }\OtherTok{=} \StringTok{"A person's age"}
+\NormalTok{    , optMeta   }\OtherTok{=} \StringTok{"<int>"}
+\NormalTok{    , optRead   }\OtherTok{=}\NormalTok{ auto}
 \NormalTok{    \}}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ testParser (optParser ageOpt) }\StringTok{"--help"}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ optSummary ageOpt}
+\CommentTok{-- Const ["--age <int>: A pesron's age"]}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ testParser (optParser ageOpt) }\StringTok{"--help"}
 \CommentTok{-- Usage: <interactive> --age <int>}
 \CommentTok{--}
 \CommentTok{-- Available options:}
 \CommentTok{--   --age <int>              A person's age}
 \CommentTok{--   -h,--help                Show this help text}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ testParser (optParser ageOpt) }\StringTok{"--age 25"}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ testParser (optParser ageOpt) }\StringTok{"--age 25"}
 \CommentTok{-- 25}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ testParser (optParser ((}\FunctionTok{*}\DecValTok{2}\NormalTok{) }\FunctionTok{<$>}\NormalTok{ ageOpt)) }\StringTok{"--age 25"}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ testParser (optParser ((}\OperatorTok{*}\DecValTok{2}\NormalTok{) }\OperatorTok{<$>}\NormalTok{ ageOpt)) }\StringTok{"--age 25"}
+\CommentTok{-- 50}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{flag}{%
+\subsection{Flag}\label{flag}}
+
+One final special interpreter, representing flags that can either be ``on''
+(\texttt{True}) or ``off'' (\texttt{False}). We're going to be implementing this
+using a GADT, which means it can't directly be a \texttt{Functor}, for
+demonstrative purposes:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L42-L47}
+
+\KeywordTok{data} \DataTypeTok{Flag}\OtherTok{ ::} \DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{Flag}
+\OtherTok{      ::}\NormalTok{ \{}\OtherTok{ flagString ::} \DataTypeTok{String}
+\NormalTok{         ,}\OtherTok{ flagHelp   ::} \DataTypeTok{String}
+\NormalTok{         \}}
+      \OtherTok{->} \DataTypeTok{Flag} \DataTypeTok{Bool}
+\end{Highlighting}
+\end{Shaded}
+
+A \texttt{Flag\ a} is a schema describing a command line ``flag'' (an option
+that is either ``on'' or ``off'').
+
+If you aren't familiar with GADT syntax, here it's being used to say that if you
+use the \texttt{Flag} constructor, it'll return a \texttt{Flag\ Bool} ---
+specifically \texttt{Bool}, and not any other type. Here we use a GADT to fix a
+type with a constructor. If you use the \texttt{Flag} constructor, you will get
+a \texttt{Flag\ Bool}: a schema describing a command line flag producing a
+\texttt{Bool}.
+
+Our interpreters look straightforward again:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L67-L74}
+
+\OtherTok{flagSummary ::} \DataTypeTok{Flag}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Summary}\NormalTok{ a}
+\NormalTok{flagSummary }\DataTypeTok{Flag}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \DataTypeTok{Const}
+\NormalTok{    [ }\StringTok{"--"} \OperatorTok{++}\NormalTok{ flagString }\OperatorTok{++} \StringTok{": "} \OperatorTok{++}\NormalTok{ flagHelp ]}
+
+\OtherTok{flagParser ::} \DataTypeTok{Flag}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Parser}\NormalTok{ a}
+\NormalTok{flagParser }\DataTypeTok{Flag}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ switch }\OperatorTok{$}
+\NormalTok{       long flagString}
+    \OperatorTok{<>}\NormalTok{ help flagHelp}
+\end{Highlighting}
+\end{Shaded}
+
+Note that the type \texttt{Flag\ a\ -\textgreater{}\ Parser\ a} means that
+whatever the \texttt{a} is, you haver to parse a value of that type. So, if we
+pattern match on the \texttt{Flag} constructor, we know that \texttt{a} must be
+\texttt{Bool}, so we can return a \texttt{Parser\ Bool} (which is what
+\texttt{switch}, from \emph{optparse-applicative}, returns).
+
+Here is an example of a flag indicating whether or not a person has pets:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L91-L95}
+
+\OtherTok{petsFlag ::} \DataTypeTok{Flag} \DataTypeTok{Bool}
+\NormalTok{petsFlag }\OtherTok{=} \DataTypeTok{Flag}
+\NormalTok{    \{ flagString }\OtherTok{=} \StringTok{"pets"}
+\NormalTok{    , flagHelp   }\OtherTok{=} \StringTok{"Has pets"}
+\NormalTok{    \}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ flagSummary petsFlag}
+\CommentTok{-- Const ["--pets: Has pets"]}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ testParser (optParser ageOpt) }\StringTok{"--help"}
+\CommentTok{-- Usage: <interactive> --age <int>}
+\CommentTok{--}
+\CommentTok{-- Available options:}
+\CommentTok{--   --age <int>              A person's age}
+\CommentTok{--   -h,--help                Show this help text}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ testParser (optParser ageOpt) }\StringTok{"--age 25"}
+\CommentTok{-- 25}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ testParser (optParser ((}\OperatorTok{*}\DecValTok{2}\NormalTok{) }\OperatorTok{<$>}\NormalTok{ ageOpt)) }\StringTok{"--age 25"}
 \CommentTok{-- 50}
 \end{Highlighting}
 \end{Shaded}
@@ -397,6 +491,10 @@ to \emph{combine} them into richer schemas. How about:
   A schema that can have multiple \texttt{Arg}s
 \item
   A schema that can have multiple \texttt{Opt}s
+\item
+  A schema that can take a single \emph{optional} \texttt{Opt}.
+\item
+  A schema that can have multiple \texttt{Flag}s
 \item
   A schema that can have a single \texttt{Arg}, and multiple \texttt{Opt}s (or
   vice versa)
@@ -414,8 +512,8 @@ to \emph{combine} them into richer schemas. How about:
 \end{itemize}
 
 Think about all of the interesting schemas you could build using a combination
-of \texttt{Arg} and \texttt{Opt}. Now, let's see what tools we have at our
-disposal!
+of \texttt{Arg} and \texttt{Opt} and \texttt{Flag}. Now, let's see what tools we
+have at our disposal!
 
 \hypertarget{sums}{%
 \section{Sums}\label{sums}}
