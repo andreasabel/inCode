@@ -52,6 +52,10 @@ For concrete examples on *using* these, see my previous
 this post also serves as a run-down of all the popular free structures in
 Haskell :)
 
+Please refer to the [table of
+contents](https://blog.jle.im/entry/functor-combinatorpedia.html#title) if you
+are using this as a reference!
+
 Prologue: What is a functor combinator?
 ---------------------------------------
 
