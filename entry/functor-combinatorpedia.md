@@ -32,46 +32,42 @@ Like "data types a la carte" and free monad/applicative/alternative designs,
 these techniques allow you to separate the assembly and inspection of your
 programs from the "running" of them. However, the main difference is that here
 we focus not just on products and sums, but many different varied and
-multi-purpose combinators --- a bona fide "zoo" of combinators. So, this focuses
-less on "fixed-points" like `Free`, `Ap`, `Alt`, and more on non-recursive
-simple building blocks...where recursive combinators like `Free` might be used
-along the way. The *functor itself* is the goal, *not* its fixed point.
+multi-purpose combinators --- a bona fide "zoo" of combinators. The fixed point
+is not "the end goal".
 
-This post, then, will be a run-down on the wide variety of such "functor
-combinators" across the Haskell ecosystem --- a functor combinator "zoo" of
-sorts. To speak about them all with the same language and vocabulary, this post
-also serves as an overview of the
+This post is a run-down on the wide variety of such "functor combinators" across
+the Haskell ecosystem --- a functor combinator "zoo" of sorts. To speak about
+them all with the same language and vocabulary, this post also serves as an
+overview of the
 *[functor-combinators](https://hackage.haskell.org/package/functor-combinators)*
 library, which mostly pulls them all together and provides a unified interface
-for working with them.
+for working with them. Most of these types and typeclasses are exported by
+*[Data.Functor.Combinator](https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Combinator.html)*.
 
-I've been meaning to make a post talking about different free structures for a
-while (ever since my previous
+For concrete examples on *using* these, see my previous
 [articles](https://blog.jle.im/entry/alchemical-groups.html)
 [on](https://blog.jle.im/entry/interpreters-a-la-carte-duet.html)
 [free](https://blog.jle.im/entry/const-applicative-and-monoids.html)
-[structures](https://blog.jle.im/entry/free-alternative-regexp.html)), and this
-post can serve as fulfilling that role, with much more.
+[structures](https://blog.jle.im/entry/free-alternative-regexp.html)). In a way,
+this post also serves as a run-down of all the popular free structures in
+Haskell :)
 
 Prologue: What is a functor combinator?
 ---------------------------------------
 
 A functor combinator takes "functors" (or other indexed types) and returns a new
-functor, enhances or mixes them together in some way.
-
-That is, they take things of kind `k -> Type` and themselves return a
-`k -> Type`. This lets us build complex functors out of simpler "primitive"
-ones.
+functor, enhances or mixes them together in some way. That is, they take things
+of kind `k -> Type` and themselves return a `k -> Type`. This lets us build
+complex functors out of simpler "primitive" ones.
 
 For example, `ReaderT r` is a famous one that takes a functor `f` and enhances
 it with "access to an `r` environment" functionality. Another famous one is
 `Free`, which takes a functor `f` and enhances it with "sequential binding"
-capabilities: it turns `f` into a `Monad`. Yet another is `EnvT e`, which takes
-a functor `f` and enhances it by "tagging an `e` value" along our `f a`s.
+capabilities: it turns `f` into a `Monad`.
 
 The main thing that distinguishes these functor combinators from things like
-monad and comonad transformers is that they are "natural on `f`": they work on
-*all* `f`s, not just monads or comonads, and assume no structure.
+monad transformers is that they are "natural on `f`": they work on *all* `f`s,
+not just monads, and assume no structure.
 
 Sometimes, we have binary functor combinators, like `:+:`, which takes two
 functors `f` and `g` and returns a functor that is "either" `f` or `g`. Binary
@@ -193,10 +189,10 @@ class Interpret t where
         => f ~> g             -- ^ interpreting function
         -> t f ~> g
 
-instance Semigroupoidal t where
+class Semigroupoidal t where
     -- | Interpret binary functor combinator
     binterpret
-        :: (Semigroupoidal t, CS t h)
+        :: CS t h
         => f ~> h             -- ^ interpreting function on f
         => g ~> h             -- ^ interpreting function on g
         -> t f g ~> h
@@ -209,14 +205,6 @@ and `CS` and `CM` for binary functor combinators) that allows you to "exit", or
 For some concrete examples:
 
 ``` {.haskell}
-type C (ReaderT r) = MonadReader r
-
-interpret @(MonadReader r)
-    :: MonadReader r g
-    => (f ~> g)
-    -> ReaderT r f a
-    -> g a
-
 type C Free = Monad
 
 interpret @Free
@@ -234,11 +222,11 @@ binterpret @(:+:)
     -> h a
 ```
 
-We see that `interpret` lets you "run" a `ReaderT r f` into any
-`MonadReader r g` and "run" a `Free` in any monad `g`, and `binterpret` lets you
-"run" a function over both branches of an `f :+: g` to produce an `h`.
+We see that `interpret` lets you "run" a `Free` in any monad `g`, and
+`binterpret` lets you "run" a function over both *branches* of an `f :+: g` to
+produce an `h`.
 
-From these, we can build a lot of useful utility functions (like `retract`,
+From these, we can also build a lot of useful utility functions (like `retract`,
 `biretract`, `getI`, `biget`, etc.) for convenience in actually working on them.
 These are provided in
 *[functor-combinators](https://hackage.haskell.org/package/functor-combinators)*.
@@ -254,8 +242,15 @@ different ways.
 We can finally *interpret* (or "run") these into some target context (like
 `Parser`, or `IO`), provided the target satisfies some constraints.
 
-This constraint depends on the functor combinator in question; in particular,
-there are two, which we will call `CS` and `CM`:
+We can separate the functionality associated with each binary functor combinator
+into two typeclasses: `Semigroupoidal` and `Monoidal`. `Semigroupoidal` deals
+with the "interpreting" and "collapsing" of the mixed functors, and `Monoidal`
+deals with the "introduction" and "creation" of them. A more detailed run-down
+is available in the docs for
+*[Data.Functor.Combinator](https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Combinator.html)*.
+
+From each we have two associated constraints, `CS t` (for `Semigroupoidal`) and
+`CM t` (for `Monoidal`):
 
 -   `CS t` is what we will call the constraint on where you can *interpret* or
     *run* values of the enhanced type:
@@ -292,9 +287,10 @@ As it turns out, `CS` and `CM` generalize the "has an identity" property of many
 typeclasses --- for example, for `Comp` (functor composition), `CS` is `Bind`
 ("`Monad` without `pure`"), and `CM` is `Monad`.
 
-Most of these also have an identity, `I t`, where applying `t f (I t)` leaves
-`f` unchanged (`t f (I t)` is isomorphic to `f`) and `t (I t) f` is also just
-`f`. This is represented by the associated type `I t`.
+Most of these also have an identity functor, `I t`, where applying `t f (I t)`
+leaves `f` unchanged (`t f (I t)` is isomorphic to `f`) and `t (I t) f` is also
+just `f`. This is represented by the associated type `I t` (examples will be
+provided below).
 
 One interesting property of these is that for a lot of these, if we have a
 binary functor combinator `*`, we can represent a type
@@ -302,20 +298,15 @@ binary functor combinator `*`, we can represent a type
 multiple times"), which essentially forms a linked list along that functor
 combinator. We call this the "induced monoidal functor combinator", given by
 `MF t`. We can also make a "non-empty variant", `SF t`, the "induced
-semigroupoidal functor combinator", which contains "at least one `f`".
+semigroupoidal functor combinator", which contains "at least one `f`" (examples
+provided below).
 
-You can "convert" back and forth by using:
+They all support functions for "converting" back and forth, like
+`toMF :: t f f ~> MF f` (provided by *functor-combinators* in the `Monoidal`
+typeclass).
 
-``` {.haskell}
-toMF   :: t f f ~> MF t
-nilMF  :: I t ~> MF t
-consMF :: t f (MF t) ~> MF t
-```
-
-and other helper functions.
-
-If this is unclear, hopefully the following concrete examples will help
-illustrate.
+This is all a bit abstract, but let's dive into some actual examples, which will
+make these all clearer.
 
 ### :+: / Sum
 
@@ -855,9 +846,9 @@ illustrate.
     For `LeftF`, the induced semigroup is `Flagged`, which is the `f a` tupled
     with a `Bool`. See the information on `Flagged` for more details. This can
     be useful as a type that marks if an `f` is made with `inject`/`pure` and is
-    "pure" (`False`), or "tainted" (`True`). The *provider* of an `EnvT Any f`
-    can specify "pure or tainted", and the *interpreter* can make a decision
-    based on that tag.
+    "pure" (`False`), or "tainted" (`True`). The *provider* of a `Flagged` can
+    specify "pure or tainted", and the *interpreter* can make a decision based
+    on that tag.
 
     ``` {.haskell}
     type SF RightF = Step
@@ -1296,7 +1287,7 @@ intact: functor combinators only ever *add* structure.
 
     This can be thought of as `Const e :*: f`.
 
-    This type appears specialized a few times here, as well:
+    This type exists specialized a few times here, as well:
 
     -   `Step` is `EnvT (Sum Natural)`
     -   `Flagged` is `EnvT Any`
@@ -1312,6 +1303,135 @@ intact: functor combinators only ever *add* structure.
     ```
 
     Interpreting out of `EnvT e` requires no constraints.
+
+### MapF / NEMapF
+
+-   **Origin**:
+    *[Control.Applicative.ListF](https://hackage.haskell.org/package/functor-combinators/docs/Control-Applicative-ListF.html)*
+
+-   **Enhancement**: Contain multiple `f a`s, each indexed at a specific *key*.
+
+    ``` {.haskell}
+    newtype MapF   k f a = MapF   { runMapF :: Map   k (f a) }
+    newtype NEMapF k f a = NEMapF { runMapF :: NEMap k (f a) }
+    ```
+
+    This is very similar in functionality to `ListF` and `NonEmptyF`, except
+    instead of "positional" location, each `f a` exists at a given index.
+    `NEMapF k` is the "non-empty" variant. You can think of this as a `ListF`
+    plus `EnvT`: it's a "container" of multiple `f a`s, but each one exists with
+    a given "tag" index `k`.
+
+    In usage, like for `ListF`, the *definer* provides multiple "labeled"
+    `f a`s, and the *interpreter* can choose to interpret some or all of them,
+    with accews to each labeled.
+
+    `inject` creates a singleton `Map` at key `mempty`.
+
+    This is very useful in schemas that have sub-schemas indexed at specific
+    keys. For example, in a command line argument parser, if we have a functor
+    that represents a single command:
+
+    ``` {.haskell}
+    data Command a
+    ```
+
+    We can immediately promote it to be a functor representing *multiple
+    possible* commands, each at a given string:
+
+    ``` {.haskell}
+    type Commands = MapF String Command
+    ```
+
+    So we can implement "git push" and "git pull" using:
+
+    ``` {.haskell}
+    push :: Command Action
+    pull :: Command Action
+
+    gitCommands :: Commands Action
+    gitCOmmands = MapF . M.fromList $
+        [ ("push", push)
+        , ("pull", pull)
+        ]
+    ```
+
+    This is also useful for specifying things like routes in a server.
+
+    This type exists specialized as `Steps`, which is `NEMapF (Sum Natural)`.
+
+-   **Constraint**
+
+    ``` {.haskell}
+    type C (MapF k  ) = Plus
+    type C (NEMapF k) = Alt
+
+    interpret @(MapF k)
+        :: Plus g
+        => f ~> g
+        -> MapF f ~> g
+
+    interpret @(NEMapF k)
+        :: Alt g
+        => f ~> g
+        -> NEMapF f ~> g
+    ```
+
+    Interpreting out of a `MapF f` requires the target context to be `Plus`, and
+    interpreting out of a `NEMapF f` requires `Alt` (because you will never have
+    the empty case). However, you can directly *look up* into the `Map` and pick
+    an item you want directly, which requires no constraint.
+
+### ReaderT
+
+-   **Origin**:
+    *[Control.Monad.Trans.Reader](https://hackage.haskell.org/package/transformers/docs/Control-Monad-Trans-Reader.html)*
+
+-   **Enhancement**: Provide each `f a` with access to some "environment" `r`.
+
+    ``` {.haskell}
+    newtype ReaderT r f a = ReaderT { runReaderT :: r -> f a }
+    ```
+
+    `ReaderT r` is often used to model some form of [dependency
+    injection](https://en.wikipedia.org/wiki/Dependency_injection): it allows
+    you to work "assuming" you had an `r`; later, when you *run* it, you provide
+    the `r`. It delays the evaluation of your final result until you provide the
+    missing `r`.
+
+    Another way of looking at it is that it makes your entire functor have
+    values that are *parameterized* with an `r`.
+
+    For example, if you have a form data type:
+
+    ``` {.haskell}
+    data FormElem a
+    ```
+
+    you can now make a form data type that is parameterized by the current
+    server hostname:
+
+    ``` {.haskell}
+    type FormElemWithHost = ReaderT HostName FormElem
+    ```
+
+    The actual structure of your `FormElem` is deferred until you provide the
+    `HostName`.
+
+-   **Constraint**
+
+    ``` {.haskell}
+    type C (ReaderT r) = MonadReader r
+
+    interpret @(ReaderT r)
+        :: MonadReader r g
+        => f ~> g
+        -> ReaderT r f ~> g
+    ```
+
+    Interpreting out of a `ReaderT r` requires requires the target context to be
+    `MonadReader r`, which means it must have access to
+    `ask :: MonadReader r f => f r`.
 
 ### Step
 
@@ -1563,9 +1683,10 @@ intact: functor combinators only ever *add* structure.
     sometimes feel very different, but with `Chain1` you get a uniform interface
     to pattern match on (and construct) all of them in the same way.
 
-    The construction of `Chain` is inspired by \[Oleg Grenrus's blog
-    post\]\[ufmc\], and the construction of `Chain1` is inspired by
-    implementations of finite automata and iteratees.
+    The construction of `Chain` is inspired by [Oleg Grenrus's blog
+    post](http://oleg.fi/gists/posts/2018-02-21-single-free.html), and the
+    construction of `Chain1` is inspired by implementations of finite automata
+    and iteratees.
 
 -   **Constraint**
 
@@ -1609,28 +1730,8 @@ intact: functor combinators only ever *add* structure.
     type C (Chain  Day Identity) = Applicative
     type C (Chain1 Day         ) = Apply
 
-    interpret @(Chain Day Identity)
-        :: Applicative g
-        => f ~> g
-        -> Chain Day Identity f ~> g
-
-    interpret @(Chain1 Day)
-        :: Apply g
-        => f ~> g
-        -> Chain1 Day f ~> g
-
     type C (Chain  Comp Identity) = Monad
     type C (Chain1 Comp         ) = Bind
-
-    interpret @(Chain Comp Identity)
-        :: Monad g
-        => f ~> g
-        -> Chain Comp Identity f ~> g
-
-    interpret @(Chain1 Comp)
-        :: Bind g
-        => f ~> g
-        -> Chain1 Comp f ~> g
     ```
 
 ### IdentityT
@@ -1658,6 +1759,10 @@ intact: functor combinators only ever *add* structure.
 
     ``` {.haskell}
     type C IdentityT = Unconstrained
+
+    interpret @IdentityT
+        :: f ~> g
+        -> IdentityT f ~> g
     ```
 
     Interpreting out of `IdentityT` requires no constraints --- it basically
@@ -1679,7 +1784,7 @@ intact: functor combinators only ever *add* structure.
     `ProxyF` is essentially `ConstF ()`.
 
     These are both valid functor combinators in that you can inject into them,
-    and `interpret id . inject == id` is technically true (the best kind of
+    and `interpret id . inject == id` is *technically* true (the best kind of
     true).
 
     You can use them if you want your schema to be impossible to interpret, as a
@@ -1696,6 +1801,16 @@ intact: functor combinators only ever *add* structure.
     ``` {.haskell}
     type C ProxyF     = Impossible
     type C (ConstF e) = Impossible
+
+    interpret @ProxyF
+        :: Impossible g
+        => f ~> g
+        -> ProxyF f ~> g
+
+    interpret @(ConstF e)
+        :: Impossible g
+        => f ~> g
+        -> ConstF e f ~> g
     ```
 
     Interpreting out of these requires an impossible constraint.

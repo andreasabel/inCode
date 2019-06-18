@@ -129,51 +129,45 @@ Like ``data types a la carte'' and free monad/applicative/alternative designs,
 these techniques allow you to separate the assembly and inspection of your
 programs from the ``running'' of them. However, the main difference is that here
 we focus not just on products and sums, but many different varied and
-multi-purpose combinators --- a bona fide ``zoo'' of combinators. So, this
-focuses less on ``fixed-points'' like \texttt{Free}, \texttt{Ap}, \texttt{Alt},
-and more on non-recursive simple building blocks\ldots where recursive
-combinators like \texttt{Free} might be used along the way. The \emph{functor
-itself} is the goal, \emph{not} its fixed point.
+multi-purpose combinators --- a bona fide ``zoo'' of combinators. The fixed
+point is not ``the end goal''.
 
-This post, then, will be a run-down on the wide variety of such ``functor
-combinators'' across the Haskell ecosystem --- a functor combinator ``zoo'' of
-sorts. To speak about them all with the same language and vocabulary, this post
-also serves as an overview of the
+This post is a run-down on the wide variety of such ``functor combinators''
+across the Haskell ecosystem --- a functor combinator ``zoo'' of sorts. To speak
+about them all with the same language and vocabulary, this post also serves as
+an overview of the
 \emph{\href{https://hackage.haskell.org/package/functor-combinators}{functor-combinators}}
 library, which mostly pulls them all together and provides a unified interface
-for working with them.
+for working with them. Most of these types and typeclasses are exported by
+\emph{\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Combinator.html}{Data.Functor.Combinator}}.
 
-I've been meaning to make a post talking about different free structures for a
-while (ever since my previous
+For concrete examples on \emph{using} these, see my previous
 \href{https://blog.jle.im/entry/alchemical-groups.html}{articles}
 \href{https://blog.jle.im/entry/interpreters-a-la-carte-duet.html}{on}
 \href{https://blog.jle.im/entry/const-applicative-and-monoids.html}{free}
-\href{https://blog.jle.im/entry/free-alternative-regexp.html}{structures}), and
-this post can serve as fulfilling that role, with much more.
+\href{https://blog.jle.im/entry/free-alternative-regexp.html}{structures}). In a
+way, this post also serves as a run-down of all the popular free structures in
+Haskell :)
 
 \hypertarget{prologue-what-is-a-functor-combinator}{%
 \section{Prologue: What is a functor
 combinator?}\label{prologue-what-is-a-functor-combinator}}
 
 A functor combinator takes ``functors'' (or other indexed types) and returns a
-new functor, enhances or mixes them together in some way.
-
-That is, they take things of kind \texttt{k\ -\textgreater{}\ Type} and
-themselves return a \texttt{k\ -\textgreater{}\ Type}. This lets us build
-complex functors out of simpler ``primitive'' ones.
+new functor, enhances or mixes them together in some way. That is, they take
+things of kind \texttt{k\ -\textgreater{}\ Type} and themselves return a
+\texttt{k\ -\textgreater{}\ Type}. This lets us build complex functors out of
+simpler ``primitive'' ones.
 
 For example, \texttt{ReaderT\ r} is a famous one that takes a functor \texttt{f}
 and enhances it with ``access to an \texttt{r} environment'' functionality.
 Another famous one is \texttt{Free}, which takes a functor \texttt{f} and
 enhances it with ``sequential binding'' capabilities: it turns \texttt{f} into a
-\texttt{Monad}. Yet another is \texttt{EnvT\ e}, which takes a functor
-\texttt{f} and enhances it by ``tagging an \texttt{e} value'' along our
-\texttt{f\ a}s.
+\texttt{Monad}.
 
 The main thing that distinguishes these functor combinators from things like
-monad and comonad transformers is that they are ``natural on \texttt{f}'': they
-work on \emph{all} \texttt{f}s, not just monads or comonads, and assume no
-structure.
+monad transformers is that they are ``natural on \texttt{f}'': they work on
+\emph{all} \texttt{f}s, not just monads, and assume no structure.
 
 Sometimes, we have binary functor combinators, like \texttt{:+:}, which takes
 two functors \texttt{f} and \texttt{g} and returns a functor that is ``either''
@@ -316,10 +310,10 @@ some constraints on the target context. We abstract over this using
         \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g             }\CommentTok{{-}{-} \^{} interpreting function}
         \OtherTok{{-}>}\NormalTok{ t f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
 
-\KeywordTok{instance} \DataTypeTok{Semigroupoidal}\NormalTok{ t }\KeywordTok{where}
+\KeywordTok{class} \DataTypeTok{Semigroupoidal}\NormalTok{ t }\KeywordTok{where}
     \CommentTok{{-}{-} | Interpret binary functor combinator}
 \NormalTok{    binterpret}
-\OtherTok{        ::}\NormalTok{ (}\DataTypeTok{Semigroupoidal}\NormalTok{ t, }\DataTypeTok{CS}\NormalTok{ t h)}
+\OtherTok{        ::} \DataTypeTok{CS}\NormalTok{ t h}
         \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ h             }\CommentTok{{-}{-} \^{} interpreting function on f}
         \OtherTok{=>}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ h             }\CommentTok{{-}{-} \^{} interpreting function on g}
         \OtherTok{{-}>}\NormalTok{ t f g }\OperatorTok{\textasciitilde{}>}\NormalTok{ h}
@@ -334,14 +328,6 @@ For some concrete examples:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{ReaderT}\NormalTok{ r) }\OtherTok{=} \DataTypeTok{MonadReader}\NormalTok{ r}
-
-\NormalTok{interpret }\OperatorTok{@}\NormalTok{(}\DataTypeTok{MonadReader}\NormalTok{ r)}
-\OtherTok{    ::} \DataTypeTok{MonadReader}\NormalTok{ r g}
-    \OtherTok{=>}\NormalTok{ (f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g)}
-    \OtherTok{{-}>} \DataTypeTok{ReaderT}\NormalTok{ r f a}
-    \OtherTok{{-}>}\NormalTok{ g a}
-
 \KeywordTok{type} \DataTypeTok{C} \DataTypeTok{Free} \OtherTok{=} \DataTypeTok{Monad}
 
 \NormalTok{interpret }\OperatorTok{@}\DataTypeTok{Free}
@@ -360,12 +346,11 @@ For some concrete examples:
 \end{Highlighting}
 \end{Shaded}
 
-We see that \texttt{interpret} lets you ``run'' a \texttt{ReaderT\ r\ f} into
-any \texttt{MonadReader\ r\ g} and ``run'' a \texttt{Free} in any monad
+We see that \texttt{interpret} lets you ``run'' a \texttt{Free} in any monad
 \texttt{g}, and \texttt{binterpret} lets you ``run'' a function over both
-branches of an \texttt{f\ :+:\ g} to produce an \texttt{h}.
+\emph{branches} of an \texttt{f\ :+:\ g} to produce an \texttt{h}.
 
-From these, we can build a lot of useful utility functions (like
+From these, we can also build a lot of useful utility functions (like
 \texttt{retract}, \texttt{biretract}, \texttt{getI}, \texttt{biget}, etc.) for
 convenience in actually working on them. These are provided in
 \emph{\href{https://hackage.haskell.org/package/functor-combinators}{functor-combinators}}.
@@ -382,8 +367,15 @@ We can finally \emph{interpret} (or ``run'') these into some target context
 (like \texttt{Parser}, or \texttt{IO}), provided the target satisfies some
 constraints.
 
-This constraint depends on the functor combinator in question; in particular,
-there are two, which we will call \texttt{CS} and \texttt{CM}:
+We can separate the functionality associated with each binary functor combinator
+into two typeclasses: \texttt{Semigroupoidal} and \texttt{Monoidal}.
+\texttt{Semigroupoidal} deals with the ``interpreting'' and ``collapsing'' of
+the mixed functors, and \texttt{Monoidal} deals with the ``introduction'' and
+``creation'' of them. A more detailed run-down is available in the docs for
+\emph{\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Combinator.html}{Data.Functor.Combinator}}.
+
+From each we have two associated constraints, \texttt{CS\ t} (for
+\texttt{Semigroupoidal}) and \texttt{CM\ t} (for \texttt{Monoidal}):
 
 \begin{itemize}
 \item
@@ -428,10 +420,11 @@ property of many typeclasses --- for example, for \texttt{Comp} (functor
 composition), \texttt{CS} is \texttt{Bind} (``\texttt{Monad} without
 \texttt{pure}''), and \texttt{CM} is \texttt{Monad}.
 
-Most of these also have an identity, \texttt{I\ t}, where applying
+Most of these also have an identity functor, \texttt{I\ t}, where applying
 \texttt{t\ f\ (I\ t)} leaves \texttt{f} unchanged (\texttt{t\ f\ (I\ t)} is
 isomorphic to \texttt{f}) and \texttt{t\ (I\ t)\ f} is also just \texttt{f}.
-This is represented by the associated type \texttt{I\ t}.
+This is represented by the associated type \texttt{I\ t} (examples will be
+provided below).
 
 One interesting property of these is that for a lot of these, if we have a
 binary functor combinator \texttt{*}, we can represent a type
@@ -440,22 +433,14 @@ binary functor combinator \texttt{*}, we can represent a type
 linked list along that functor combinator. We call this the ``induced monoidal
 functor combinator'', given by \texttt{MF\ t}. We can also make a ``non-empty
 variant'', \texttt{SF\ t}, the ``induced semigroupoidal functor combinator'',
-which contains ``at least one \texttt{f}''.
+which contains ``at least one \texttt{f}'' (examples provided below).
 
-You can ``convert'' back and forth by using:
+They all support functions for ``converting'' back and forth, like
+\texttt{toMF\ ::\ t\ f\ f\ \textasciitilde{}\textgreater{}\ MF\ f} (provided by
+\emph{functor-combinators} in the \texttt{Monoidal} typeclass).
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{toMF   ::}\NormalTok{ t f f }\OperatorTok{\textasciitilde{}>} \DataTypeTok{MF}\NormalTok{ t}
-\OtherTok{nilMF  ::} \DataTypeTok{I}\NormalTok{ t }\OperatorTok{\textasciitilde{}>} \DataTypeTok{MF}\NormalTok{ t}
-\OtherTok{consMF ::}\NormalTok{ t f (}\DataTypeTok{MF}\NormalTok{ t) }\OperatorTok{\textasciitilde{}>} \DataTypeTok{MF}\NormalTok{ t}
-\end{Highlighting}
-\end{Shaded}
-
-and other helper functions.
-
-If this is unclear, hopefully the following concrete examples will help
-illustrate.
+This is all a bit abstract, but let's dive into some actual examples, which will
+make these all clearer.
 
 \hypertarget{sum}{%
 \subsection{:+: / Sum}\label{sum}}
@@ -1117,9 +1102,9 @@ illustrate.
   \texttt{f\ a} tupled with a \texttt{Bool}. See the information on
   \texttt{Flagged} for more details. This can be useful as a type that marks if
   an \texttt{f} is made with \texttt{inject}/\texttt{pure} and is ``pure''
-  (\texttt{False}), or ``tainted'' (\texttt{True}). The \emph{provider} of an
-  \texttt{EnvT\ Any\ f} can specify ``pure or tainted'', and the
-  \emph{interpreter} can make a decision based on that tag.
+  (\texttt{False}), or ``tainted'' (\texttt{True}). The \emph{provider} of a
+  \texttt{Flagged} can specify ``pure or tainted'', and the \emph{interpreter}
+  can make a decision based on that tag.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1647,7 +1632,7 @@ This means that if we inject and immediately interpret out of, we should never
 
   This can be thought of as \texttt{Const\ e\ :*:\ f}.
 
-  This type appears specialized a few times here, as well:
+  This type exists specialized a few times here, as well:
 
   \begin{itemize}
   \tightlist
@@ -1670,6 +1655,166 @@ This means that if we inject and immediately interpret out of, we should never
 \end{Shaded}
 
   Interpreting out of \texttt{EnvT\ e} requires no constraints.
+\end{itemize}
+
+\hypertarget{mapf-nemapf}{%
+\subsection{MapF / NEMapF}\label{mapf-nemapf}}
+
+\begin{itemize}
+\item
+  \textbf{Origin}:
+  \emph{\href{https://hackage.haskell.org/package/functor-combinators/docs/Control-Applicative-ListF.html}{Control.Applicative.ListF}}
+\item
+  \textbf{Enhancement}: Contain multiple \texttt{f\ a}s, each indexed at a
+  specific \emph{key}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{newtype} \DataTypeTok{MapF}\NormalTok{   k f a }\OtherTok{=} \DataTypeTok{MapF}\NormalTok{   \{}\OtherTok{ runMapF ::} \DataTypeTok{Map}\NormalTok{   k (f a) \}}
+\KeywordTok{newtype} \DataTypeTok{NEMapF}\NormalTok{ k f a }\OtherTok{=} \DataTypeTok{NEMapF}\NormalTok{ \{}\OtherTok{ runMapF ::} \DataTypeTok{NEMap}\NormalTok{ k (f a) \}}
+\end{Highlighting}
+\end{Shaded}
+
+  This is very similar in functionality to \texttt{ListF} and
+  \texttt{NonEmptyF}, except instead of ``positional'' location, each
+  \texttt{f\ a} exists at a given index. \texttt{NEMapF\ k} is the ``non-empty''
+  variant. You can think of this as a \texttt{ListF} plus \texttt{EnvT}: it's a
+  ``container'' of multiple \texttt{f\ a}s, but each one exists with a given
+  ``tag'' index \texttt{k}.
+
+  In usage, like for \texttt{ListF}, the \emph{definer} provides multiple
+  ``labeled'' \texttt{f\ a}s, and the \emph{interpreter} can choose to interpret
+  some or all of them, with accews to each labeled.
+
+  \texttt{inject} creates a singleton \texttt{Map} at key \texttt{mempty}.
+
+  This is very useful in schemas that have sub-schemas indexed at specific keys.
+  For example, in a command line argument parser, if we have a functor that
+  represents a single command:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Command}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+  We can immediately promote it to be a functor representing \emph{multiple
+  possible} commands, each at a given string:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{Commands} \OtherTok{=} \DataTypeTok{MapF} \DataTypeTok{String} \DataTypeTok{Command}
+\end{Highlighting}
+\end{Shaded}
+
+  So we can implement ``git push'' and ``git pull'' using:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{push ::} \DataTypeTok{Command} \DataTypeTok{Action}
+\OtherTok{pull ::} \DataTypeTok{Command} \DataTypeTok{Action}
+
+\OtherTok{gitCommands ::} \DataTypeTok{Commands} \DataTypeTok{Action}
+\NormalTok{gitCOmmands }\OtherTok{=} \DataTypeTok{MapF} \OperatorTok{.}\NormalTok{ M.fromList }\OperatorTok{$}
+\NormalTok{    [ (}\StringTok{"push"}\NormalTok{, push)}
+\NormalTok{    , (}\StringTok{"pull"}\NormalTok{, pull)}
+\NormalTok{    ]}
+\end{Highlighting}
+\end{Shaded}
+
+  This is also useful for specifying things like routes in a server.
+
+  This type exists specialized as \texttt{Steps}, which is
+  \texttt{NEMapF\ (Sum\ Natural)}.
+\item
+  \textbf{Constraint}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{MapF}\NormalTok{ k  ) }\OtherTok{=} \DataTypeTok{Plus}
+\KeywordTok{type} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{NEMapF}\NormalTok{ k) }\OtherTok{=} \DataTypeTok{Alt}
+
+\NormalTok{interpret }\OperatorTok{@}\NormalTok{(}\DataTypeTok{MapF}\NormalTok{ k)}
+\OtherTok{    ::} \DataTypeTok{Plus}\NormalTok{ g}
+    \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+    \OtherTok{{-}>} \DataTypeTok{MapF}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+
+\NormalTok{interpret }\OperatorTok{@}\NormalTok{(}\DataTypeTok{NEMapF}\NormalTok{ k)}
+\OtherTok{    ::} \DataTypeTok{Alt}\NormalTok{ g}
+    \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+    \OtherTok{{-}>} \DataTypeTok{NEMapF}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+\end{Highlighting}
+\end{Shaded}
+
+  Interpreting out of a \texttt{MapF\ f} requires the target context to be
+  \texttt{Plus}, and interpreting out of a \texttt{NEMapF\ f} requires
+  \texttt{Alt} (because you will never have the empty case). However, you can
+  directly \emph{look up} into the \texttt{Map} and pick an item you want
+  directly, which requires no constraint.
+\end{itemize}
+
+\hypertarget{readert}{%
+\subsection{ReaderT}\label{readert}}
+
+\begin{itemize}
+\item
+  \textbf{Origin}:
+  \emph{\href{https://hackage.haskell.org/package/transformers/docs/Control-Monad-Trans-Reader.html}{Control.Monad.Trans.Reader}}
+\item
+  \textbf{Enhancement}: Provide each \texttt{f\ a} with access to some
+  ``environment'' \texttt{r}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{newtype} \DataTypeTok{ReaderT}\NormalTok{ r f a }\OtherTok{=} \DataTypeTok{ReaderT}\NormalTok{ \{}\OtherTok{ runReaderT ::}\NormalTok{ r }\OtherTok{{-}>}\NormalTok{ f a \}}
+\end{Highlighting}
+\end{Shaded}
+
+  \texttt{ReaderT\ r} is often used to model some form of
+  \href{https://en.wikipedia.org/wiki/Dependency_injection}{dependency
+  injection}: it allows you to work ``assuming'' you had an \texttt{r}; later,
+  when you \emph{run} it, you provide the \texttt{r}. It delays the evaluation
+  of your final result until you provide the missing \texttt{r}.
+
+  Another way of looking at it is that it makes your entire functor have values
+  that are \emph{parameterized} with an \texttt{r}.
+
+  For example, if you have a form data type:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{FormElem}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+  you can now make a form data type that is parameterized by the current server
+  hostname:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{FormElemWithHost} \OtherTok{=} \DataTypeTok{ReaderT} \DataTypeTok{HostName} \DataTypeTok{FormElem}
+\end{Highlighting}
+\end{Shaded}
+
+  The actual structure of your \texttt{FormElem} is deferred until you provide
+  the \texttt{HostName}.
+\item
+  \textbf{Constraint}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{ReaderT}\NormalTok{ r) }\OtherTok{=} \DataTypeTok{MonadReader}\NormalTok{ r}
+
+\NormalTok{interpret }\OperatorTok{@}\NormalTok{(}\DataTypeTok{ReaderT}\NormalTok{ r)}
+\OtherTok{    ::} \DataTypeTok{MonadReader}\NormalTok{ r g}
+    \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+    \OtherTok{{-}>} \DataTypeTok{ReaderT}\NormalTok{ r f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+\end{Highlighting}
+\end{Shaded}
+
+  Interpreting out of a \texttt{ReaderT\ r} requires requires the target context
+  to be \texttt{MonadReader\ r}, which means it must have access to
+  \texttt{ask\ ::\ MonadReader\ r\ f\ =\textgreater{}\ f\ r}.
 \end{itemize}
 
 \hypertarget{step}{%
@@ -1988,8 +2133,9 @@ This means that if we inject and immediately interpret out of, we should never
   with \texttt{Chain1} you get a uniform interface to pattern match on (and
   construct) all of them in the same way.
 
-  The construction of \texttt{Chain} is inspired by {[}Oleg Grenrus's blog
-  post{]}{[}ufmc{]}, and the construction of \texttt{Chain1} is inspired by
+  The construction of \texttt{Chain} is inspired by
+  \href{http://oleg.fi/gists/posts/2018-02-21-single-free.html}{Oleg Grenrus's
+  blog post}, and the construction of \texttt{Chain1} is inspired by
   implementations of finite automata and iteratees.
 \item
   \textbf{Constraint}
@@ -2038,28 +2184,8 @@ This means that if we inject and immediately interpret out of, we should never
 \KeywordTok{type} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{Chain}  \DataTypeTok{Day} \DataTypeTok{Identity}\NormalTok{) }\OtherTok{=} \DataTypeTok{Applicative}
 \KeywordTok{type} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{Chain1} \DataTypeTok{Day}\NormalTok{         ) }\OtherTok{=} \DataTypeTok{Apply}
 
-\NormalTok{interpret }\OperatorTok{@}\NormalTok{(}\DataTypeTok{Chain} \DataTypeTok{Day} \DataTypeTok{Identity}\NormalTok{)}
-\OtherTok{    ::} \DataTypeTok{Applicative}\NormalTok{ g}
-    \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
-    \OtherTok{{-}>} \DataTypeTok{Chain} \DataTypeTok{Day} \DataTypeTok{Identity}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
-
-\NormalTok{interpret }\OperatorTok{@}\NormalTok{(}\DataTypeTok{Chain1} \DataTypeTok{Day}\NormalTok{)}
-\OtherTok{    ::} \DataTypeTok{Apply}\NormalTok{ g}
-    \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
-    \OtherTok{{-}>} \DataTypeTok{Chain1} \DataTypeTok{Day}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
-
 \KeywordTok{type} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{Chain}  \DataTypeTok{Comp} \DataTypeTok{Identity}\NormalTok{) }\OtherTok{=} \DataTypeTok{Monad}
 \KeywordTok{type} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{Chain1} \DataTypeTok{Comp}\NormalTok{         ) }\OtherTok{=} \DataTypeTok{Bind}
-
-\NormalTok{interpret }\OperatorTok{@}\NormalTok{(}\DataTypeTok{Chain} \DataTypeTok{Comp} \DataTypeTok{Identity}\NormalTok{)}
-\OtherTok{    ::} \DataTypeTok{Monad}\NormalTok{ g}
-    \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
-    \OtherTok{{-}>} \DataTypeTok{Chain} \DataTypeTok{Comp} \DataTypeTok{Identity}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
-
-\NormalTok{interpret }\OperatorTok{@}\NormalTok{(}\DataTypeTok{Chain1} \DataTypeTok{Comp}\NormalTok{)}
-\OtherTok{    ::} \DataTypeTok{Bind}\NormalTok{ g}
-    \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
-    \OtherTok{{-}>} \DataTypeTok{Chain1} \DataTypeTok{Comp}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
 \end{Highlighting}
 \end{Shaded}
 \end{itemize}
@@ -2097,6 +2223,10 @@ This means that if we inject and immediately interpret out of, we should never
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{type} \DataTypeTok{C} \DataTypeTok{IdentityT} \OtherTok{=} \DataTypeTok{Unconstrained}
+
+\NormalTok{interpret }\OperatorTok{@}\DataTypeTok{IdentityT}
+\OtherTok{    ::}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+    \OtherTok{{-}>} \DataTypeTok{IdentityT}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
 \end{Highlighting}
 \end{Shaded}
 
@@ -2126,8 +2256,8 @@ This means that if we inject and immediately interpret out of, we should never
   \texttt{ProxyF} is essentially \texttt{ConstF\ ()}.
 
   These are both valid functor combinators in that you can inject into them, and
-  \texttt{interpret\ id\ .\ inject\ ==\ id} is technically true (the best kind
-  of true).
+  \texttt{interpret\ id\ .\ inject\ ==\ id} is \emph{technically} true (the best
+  kind of true).
 
   You can use them if you want your schema to be impossible to interpret, as a
   placeholder or to signify that one branch is uninterpretable. In this sense,
@@ -2144,6 +2274,16 @@ This means that if we inject and immediately interpret out of, we should never
 \begin{Highlighting}[]
 \KeywordTok{type} \DataTypeTok{C} \DataTypeTok{ProxyF}     \OtherTok{=} \DataTypeTok{Impossible}
 \KeywordTok{type} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{ConstF}\NormalTok{ e) }\OtherTok{=} \DataTypeTok{Impossible}
+
+\NormalTok{interpret }\OperatorTok{@}\DataTypeTok{ProxyF}
+\OtherTok{    ::} \DataTypeTok{Impossible}\NormalTok{ g}
+    \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+    \OtherTok{{-}>} \DataTypeTok{ProxyF}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+
+\NormalTok{interpret }\OperatorTok{@}\NormalTok{(}\DataTypeTok{ConstF}\NormalTok{ e)}
+\OtherTok{    ::} \DataTypeTok{Impossible}\NormalTok{ g}
+    \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+    \OtherTok{{-}>} \DataTypeTok{ConstF}\NormalTok{ e f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
 \end{Highlighting}
 \end{Shaded}
 
