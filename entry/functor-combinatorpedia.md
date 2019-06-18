@@ -1418,6 +1418,11 @@ intact: functor combinators only ever *add* structure.
     The actual structure of your `FormElem` is deferred until you provide the
     `HostName`.
 
+    Note that, unlike `ReaderT`, most monad transformers from *transformers* are
+    actually valid functor combinators under our perspective here, because most
+    of them are not *natural* on `f`: they require `Functor f`, at least, to
+    implement `inject` or `hmap`.
+
 -   **Constraint**
 
     ``` {.haskell}
