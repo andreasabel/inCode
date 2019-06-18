@@ -32,34 +32,34 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <li>Our <code>Auto</code> launched with <code>runOnChan</code>, which waits on the <code>Chan</code> queue, runs the inputs through the <code>Auto</code>, and renders the result. This handles all of the logic.</li>
 </ol>
 <p>We like types in Haskell, so let’s begin by laying out our types!</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L19-L46</span></a>
-<a class="sourceLine" id="cb1-2" title="2"></a>
-<a class="sourceLine" id="cb1-3" title="3"><span class="kw">import</span> <span class="dt">Control.Auto</span></a>
-<a class="sourceLine" id="cb1-4" title="4"><span class="kw">import</span> <span class="dt">Control.Auto.Collection</span></a>
-<a class="sourceLine" id="cb1-5" title="5"><span class="kw">import</span> <span class="dt">Control.Monad.Fix</span></a>
-<a class="sourceLine" id="cb1-6" title="6"><span class="kw">import</span> <span class="dt">Data.IntMap</span>             (<span class="dt">IntMap</span>)</a>
-<a class="sourceLine" id="cb1-7" title="7"><span class="kw">import</span> <span class="dt">Data.Serialize</span></a>
-<a class="sourceLine" id="cb1-8" title="8"><span class="kw">import</span> <span class="dt">GHC.Generics</span></a>
-<a class="sourceLine" id="cb1-9" title="9"><span class="kw">import</span> <span class="dt">Prelude</span> <span class="kw">hiding</span>          ((.), id)</a>
-<a class="sourceLine" id="cb1-10" title="10"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.IntMap</span>   <span class="kw">as</span> <span class="dt">IM</span></a>
-<a class="sourceLine" id="cb1-11" title="11"></a>
-<a class="sourceLine" id="cb1-12" title="12"><span class="kw">data</span> <span class="dt">TodoInp</span> <span class="ot">=</span> <span class="dt">IAdd</span>  <span class="dt">String</span>           <span class="co">-- new task with description</span></a>
-<a class="sourceLine" id="cb1-13" title="13">             <span class="op">|</span> <span class="dt">ITask</span> <span class="dt">TaskID</span> <span class="dt">TaskCmd</span>   <span class="co">-- send command to task by ID</span></a>
-<a class="sourceLine" id="cb1-14" title="14">             <span class="op">|</span> <span class="dt">IAll</span> <span class="dt">TaskCmd</span>           <span class="co">-- send command to all tasks</span></a>
-<a class="sourceLine" id="cb1-15" title="15">             <span class="kw">deriving</span> <span class="dt">Show</span></a>
-<a class="sourceLine" id="cb1-16" title="16"></a>
-<a class="sourceLine" id="cb1-17" title="17"><span class="kw">data</span> <span class="dt">TaskCmd</span> <span class="ot">=</span> <span class="dt">CDelete</span>          <span class="co">-- delete</span></a>
-<a class="sourceLine" id="cb1-18" title="18">             <span class="op">|</span> <span class="dt">CPrune</span>           <span class="co">-- delete if completed</span></a>
-<a class="sourceLine" id="cb1-19" title="19">             <span class="op">|</span> <span class="dt">CComplete</span> <span class="dt">Bool</span>   <span class="co">-- set completed status</span></a>
-<a class="sourceLine" id="cb1-20" title="20">             <span class="op">|</span> <span class="dt">CModify</span> <span class="dt">String</span>   <span class="co">-- modify description</span></a>
-<a class="sourceLine" id="cb1-21" title="21">             <span class="op">|</span> <span class="dt">CNop</span>             <span class="co">-- do nothing</span></a>
-<a class="sourceLine" id="cb1-22" title="22">             <span class="kw">deriving</span> <span class="dt">Show</span></a>
-<a class="sourceLine" id="cb1-23" title="23"></a>
-<a class="sourceLine" id="cb1-24" title="24"><span class="kw">data</span> <span class="dt">Task</span> <span class="ot">=</span> <span class="dt">Task</span> {<span class="ot"> taskDescr     ::</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb1-25" title="25">                 ,<span class="ot"> taskCompleted ::</span> <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb1-26" title="26">                 } <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Generic</span>)</a>
-<a class="sourceLine" id="cb1-27" title="27"></a>
-<a class="sourceLine" id="cb1-28" title="28"><span class="kw">instance</span> <span class="dt">Serialize</span> <span class="dt">Task</span> <span class="co">-- from Data.Serialize, from the cereal library</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L19-L46</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">import</span> <span class="dt">Control.Auto</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">import</span> <span class="dt">Control.Auto.Collection</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="kw">import</span> <span class="dt">Control.Monad.Fix</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="kw">import</span> <span class="dt">Data.IntMap</span>             (<span class="dt">IntMap</span>)</span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="kw">import</span> <span class="dt">Data.Serialize</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a><span class="kw">import</span> <span class="dt">GHC.Generics</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="kw">import</span> <span class="dt">Prelude</span> <span class="kw">hiding</span>          ((.), id)</span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.IntMap</span>   <span class="kw">as</span> <span class="dt">IM</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a></span>
+<span id="cb1-12"><a href="#cb1-12"></a><span class="kw">data</span> <span class="dt">TodoInp</span> <span class="ot">=</span> <span class="dt">IAdd</span>  <span class="dt">String</span>           <span class="co">-- new task with description</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a>             <span class="op">|</span> <span class="dt">ITask</span> <span class="dt">TaskID</span> <span class="dt">TaskCmd</span>   <span class="co">-- send command to task by ID</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a>             <span class="op">|</span> <span class="dt">IAll</span> <span class="dt">TaskCmd</span>           <span class="co">-- send command to all tasks</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a>             <span class="kw">deriving</span> <span class="dt">Show</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a></span>
+<span id="cb1-17"><a href="#cb1-17"></a><span class="kw">data</span> <span class="dt">TaskCmd</span> <span class="ot">=</span> <span class="dt">CDelete</span>          <span class="co">-- delete</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a>             <span class="op">|</span> <span class="dt">CPrune</span>           <span class="co">-- delete if completed</span></span>
+<span id="cb1-19"><a href="#cb1-19"></a>             <span class="op">|</span> <span class="dt">CComplete</span> <span class="dt">Bool</span>   <span class="co">-- set completed status</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a>             <span class="op">|</span> <span class="dt">CModify</span> <span class="dt">String</span>   <span class="co">-- modify description</span></span>
+<span id="cb1-21"><a href="#cb1-21"></a>             <span class="op">|</span> <span class="dt">CNop</span>             <span class="co">-- do nothing</span></span>
+<span id="cb1-22"><a href="#cb1-22"></a>             <span class="kw">deriving</span> <span class="dt">Show</span></span>
+<span id="cb1-23"><a href="#cb1-23"></a></span>
+<span id="cb1-24"><a href="#cb1-24"></a><span class="kw">data</span> <span class="dt">Task</span> <span class="ot">=</span> <span class="dt">Task</span> {<span class="ot"> taskDescr     ::</span> <span class="dt">String</span></span>
+<span id="cb1-25"><a href="#cb1-25"></a>                 ,<span class="ot"> taskCompleted ::</span> <span class="dt">Bool</span></span>
+<span id="cb1-26"><a href="#cb1-26"></a>                 } <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Generic</span>)</span>
+<span id="cb1-27"><a href="#cb1-27"></a></span>
+<span id="cb1-28"><a href="#cb1-28"></a><span class="kw">instance</span> <span class="dt">Serialize</span> <span class="dt">Task</span> <span class="co">-- from Data.Serialize, from the cereal library</span></span></code></pre></div>
 <p>We have a type to represent our inputs, <code>TodoInp</code>, which can be an “add” command with a <code>String</code>, a “task” command with a <code>TaskId</code> (<code>Int</code>) and a <code>TaskCmd</code>, and an “all” command with a <code>TaskCmd</code> that is supposed to represent sending that command to all tasks.</p>
 <p>Our <code>TaskCmd</code> represents commands we can send to individual tasks – we can delete, prune (delete if completed), set the “completed” flag, or modify the description.</p>
 <p>We’re going to represent our task list, <code>TaskMap</code>, as not a <code>[]</code> list, but as an <code>IntMap</code> from <em>containers</em>, which associates an <code>Int</code> to a <code>Task</code> that we can look up with the <code>IntMap</code> API. What would a <code>TaskMap</code> store other than a bunch of <code>Task</code>s, which we are defining as jus a tupling of a <code>String</code> description and a <code>Bool</code> completed/uncompleted status.</p>
@@ -68,100 +68,100 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <h3 id="tasks">Tasks</h3>
 <p>It’s clear that the core of our entire thing is going to be the “task list” construct itself…something that can dynamically add or remove tasks.</p>
 <p>In <em>auto</em>, there is a construct created just for this kind of situation: dynamic collections indexed by a key (a “task id”), where you can add or subtract <code>Auto</code>s from dynamically — they are <code>dynMap</code> and <code>dynMapF</code> from <em><a href="http://hackage.haskell.org/package/auto/docs/Control-Auto-Collection.html">Control.Auto.Collection</a></em>. We’ll be using <code>dynMapF</code> because it’s serializable, and we don’t need the extra power that <code>dynMap</code> offers.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="ot">dynMapF ::</span> (k <span class="ot">-&gt;</span> <span class="dt">Interval</span> m a b)    <span class="co">-- ^ function to initialize new `Auto`s</span></a>
-<a class="sourceLine" id="cb2-2" title="2">        <span class="ot">-&gt;</span> a                        <span class="co">-- ^ default inputs</span></a>
-<a class="sourceLine" id="cb2-3" title="3">        <span class="ot">-&gt;</span> <span class="dt">Auto</span> m ( <span class="dt">IntMap</span> a        <span class="co">-- ^ input for each internal `Auto`, indexed by key</span></a>
-<a class="sourceLine" id="cb2-4" title="4">                  , <span class="dt">Blip</span> [k]        <span class="co">-- ^ blip stream to initialize new `Auto`s</span></a>
-<a class="sourceLine" id="cb2-5" title="5">                  )</a>
-<a class="sourceLine" id="cb2-6" title="6">                  (<span class="dt">IntMap</span> b)        <span class="co">-- ^ `Auto` outputs, by key</span></a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">dynMapF ::</span> (k <span class="ot">-&gt;</span> <span class="dt">Interval</span> m a b)    <span class="co">-- ^ function to initialize new `Auto`s</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>        <span class="ot">-&gt;</span> a                        <span class="co">-- ^ default inputs</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>        <span class="ot">-&gt;</span> <span class="dt">Auto</span> m ( <span class="dt">IntMap</span> a        <span class="co">-- ^ input for each internal `Auto`, indexed by key</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>                  , <span class="dt">Blip</span> [k]        <span class="co">-- ^ blip stream to initialize new `Auto`s</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>                  )</span>
+<span id="cb2-6"><a href="#cb2-6"></a>                  (<span class="dt">IntMap</span> b)        <span class="co">-- ^ `Auto` outputs, by key</span></span></code></pre></div>
 <p><code>dynMapF</code> keeps a “dynamic collection” of <code>Interval m a b</code>s, indexed by an <code>Int</code> key, or an “ID”. It takes as input a stream of <code>IntMap a</code>…basically a bunch of <code>(Int, a)</code> pairs. <code>dynMapF</code> routes each input to the <code>Interval</code> at that ID/address (with a suitable “default” <code>a</code> if none was sent in), and then outputs all of the results as an <code>IntMap b</code> — a bunch of <code>(Int, b)</code> pairs, each output with the address of the <code>Auto</code> that made it.</p>
 <p>For example, <code>IM.singleton 5 True</code> would send <code>True</code> to the <code>Auto</code> stored at <code>5</code>. It’ll then output something that includes <code>(5, "received True!")</code> — the output of the <code>Auto</code> at slot 5.</p>
 <p>Whenever an <code>Interval</code> turns “off” (is <code>Nothing</code>), it is removed from the collection. In this way we can have <code>Auto</code>s “remove themselves”.</p>
 <p>It also takes as input a blip stream of <code>[k]</code>s. We use each emitted <code>k</code> to “initialize a new <code>Interval</code>” and throw it into the collection, creating a new unique key for it. Every time a new <code>Auto</code> is initialized, <code>dynMapF</code> creates a new key for it.</p>
 <p>Read over the <a href="https://github.com/mstksg/auto/blob/master/tutorial/tutorial.md#semantic-tools">tutorial section on blip streams and <code>Interval</code>s</a> if you are still unfamiliar with them.</p>
 <p>This pretty much fits exactly what we want for our task collection. If we imagined that we had our <code>Task</code> as an <code>Auto</code>:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="ot">initTask ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Interval</span> m <span class="dt">TaskCmd</span> <span class="dt">Task</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">initTask ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Interval</span> m <span class="dt">TaskCmd</span> <span class="dt">Task</span></span></code></pre></div>
 <p><code>initTask</code> takes a string (a starting description) and initializes an <code>Interval</code> that takes in a stream of task commands, and has a stream of new, updated <code>Task</code>s as its output stream. At every step, it processes the command and outputs the new appropriate <code>Task</code>.</p>
 <p>We can then use this as our “initializer” for <code>dynMapF</code>…and now we have a dynamic collection of tasks!</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L48-L50</span></a>
-<a class="sourceLine" id="cb4-2" title="2"></a>
-<a class="sourceLine" id="cb4-3" title="3"><span class="ot">taskCollection ::</span> <span class="dt">Monad</span> m</a>
-<a class="sourceLine" id="cb4-4" title="4">               <span class="ot">=&gt;</span> <span class="dt">Auto</span> m (<span class="dt">IntMap</span> <span class="dt">TaskCmd</span>, <span class="dt">Blip</span> [<span class="dt">String</span>]) (<span class="dt">IntMap</span> <span class="dt">Task</span>)</a>
-<a class="sourceLine" id="cb4-5" title="5">taskCollection <span class="ot">=</span> dynMapF initTask <span class="dt">CNop</span></a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L48-L50</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="ot">taskCollection ::</span> <span class="dt">Monad</span> m</span>
+<span id="cb4-4"><a href="#cb4-4"></a>               <span class="ot">=&gt;</span> <span class="dt">Auto</span> m (<span class="dt">IntMap</span> <span class="dt">TaskCmd</span>, <span class="dt">Blip</span> [<span class="dt">String</span>]) (<span class="dt">IntMap</span> <span class="dt">Task</span>)</span>
+<span id="cb4-5"><a href="#cb4-5"></a>taskCollection <span class="ot">=</span> dynMapF initTask <span class="dt">CNop</span></span></code></pre></div>
 <p>If we wanted to send in the command <code>CModify "hey!"</code> to the task whose id/key/address is <code>12</code>, I’d feed in <code>IM.singleton 12 (CModify "hey!")</code>. The output would then contain the output of feeding that <code>CModify</code> to the <code>Auto</code> at that slot 12, associated with slot 12 on the output <code>IntMap</code>.</p>
 <p>Writing <code>initTask</code> and the task <code>Auto</code> is straightforward with <code>accum</code>, which is basically like <code>foldl</code> on the inputs and a “current state”. (The current state is of course the <code>Task</code>).</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L52-L62</span></a>
-<a class="sourceLine" id="cb5-2" title="2"></a>
-<a class="sourceLine" id="cb5-3" title="3"><span class="ot">initTask ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Interval</span> m <span class="dt">TaskCmd</span> <span class="dt">Task</span></a>
-<a class="sourceLine" id="cb5-4" title="4">initTask descr <span class="ot">=</span> accum f (<span class="dt">Just</span> (<span class="dt">Task</span> descr <span class="dt">False</span>))</a>
-<a class="sourceLine" id="cb5-5" title="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb5-6" title="6">    f (<span class="dt">Just</span> t) tc <span class="ot">=</span> <span class="kw">case</span> tc <span class="kw">of</span></a>
-<a class="sourceLine" id="cb5-7" title="7">                      <span class="dt">CDelete</span>                  <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb5-8" title="8">                      <span class="dt">CPrune</span> <span class="op">|</span> taskCompleted t <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb5-9" title="9">                             <span class="op">|</span> <span class="fu">otherwise</span>       <span class="ot">-&gt;</span> <span class="dt">Just</span> t</a>
-<a class="sourceLine" id="cb5-10" title="10">                      <span class="dt">CComplete</span> s              <span class="ot">-&gt;</span> <span class="dt">Just</span> t { taskCompleted <span class="ot">=</span> s }</a>
-<a class="sourceLine" id="cb5-11" title="11">                      <span class="dt">CModify</span> descr            <span class="ot">-&gt;</span> <span class="dt">Just</span> t { taskDescr <span class="ot">=</span> descr }</a>
-<a class="sourceLine" id="cb5-12" title="12">                      <span class="dt">CNop</span>                     <span class="ot">-&gt;</span> <span class="dt">Just</span> t</a>
-<a class="sourceLine" id="cb5-13" title="13">    f <span class="dt">Nothing</span> _   <span class="ot">=</span> <span class="dt">Nothing</span></a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L52-L62</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="ot">initTask ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Interval</span> m <span class="dt">TaskCmd</span> <span class="dt">Task</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a>initTask descr <span class="ot">=</span> accum f (<span class="dt">Just</span> (<span class="dt">Task</span> descr <span class="dt">False</span>))</span>
+<span id="cb5-5"><a href="#cb5-5"></a>  <span class="kw">where</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a>    f (<span class="dt">Just</span> t) tc <span class="ot">=</span> <span class="kw">case</span> tc <span class="kw">of</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a>                      <span class="dt">CDelete</span>                  <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a>                      <span class="dt">CPrune</span> <span class="op">|</span> taskCompleted t <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb5-9"><a href="#cb5-9"></a>                             <span class="op">|</span> <span class="fu">otherwise</span>       <span class="ot">-&gt;</span> <span class="dt">Just</span> t</span>
+<span id="cb5-10"><a href="#cb5-10"></a>                      <span class="dt">CComplete</span> s              <span class="ot">-&gt;</span> <span class="dt">Just</span> t { taskCompleted <span class="ot">=</span> s }</span>
+<span id="cb5-11"><a href="#cb5-11"></a>                      <span class="dt">CModify</span> descr            <span class="ot">-&gt;</span> <span class="dt">Just</span> t { taskDescr <span class="ot">=</span> descr }</span>
+<span id="cb5-12"><a href="#cb5-12"></a>                      <span class="dt">CNop</span>                     <span class="ot">-&gt;</span> <span class="dt">Just</span> t</span>
+<span id="cb5-13"><a href="#cb5-13"></a>    f <span class="dt">Nothing</span> _   <span class="ot">=</span> <span class="dt">Nothing</span></span></code></pre></div>
 <p>See that our <code>Auto</code> “turns off” by outputting <code>Nothing</code>. That’s interval semantics, and it’s what <code>dynMapF</code> relies on for its internal <code>Auto</code>s!</p>
 <h3 id="routing-the-inputs">Routing the inputs</h3>
 <p>The only thing left, then, is just to route our input stream to send everything to the correct <code>Auto</code> in <code>taskCollection</code>.</p>
 <p>Our input stream is going to be a stream of <code>TodoInp</code>, which can be “add”, “send command to a single task”, or “send command to all tasks”. Really, though, you can think of it three separate streams all “jammed” into one stream.</p>
 <p>This is a common pattern that we can use <em>blip streams</em> for. Instead of working with one big fatty stream, we can work with several blip streams that only emit when the input that we care about comes in.</p>
 <p>Typically, we’d do this with <code>emitJusts</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1"><span class="ot">emitJusts ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b) <span class="ot">-&gt;</span> <span class="dt">Auto</span> m a (<span class="dt">Blip</span> b)</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="ot">emitJusts ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b) <span class="ot">-&gt;</span> <span class="dt">Auto</span> m a (<span class="dt">Blip</span> b)</span></code></pre></div>
 <p>You can imagine <code>emitJusts</code> is a “siphon” off of the input stream of <code>a</code>s…and pulling out only the values that we care about, as a blip stream of <code>b</code>’s.</p>
 <p>We can build our “siphoners”:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L95-L105</span></a>
-<a class="sourceLine" id="cb7-2" title="2"></a>
-<a class="sourceLine" id="cb7-3" title="3"><span class="ot">getAddEvts ::</span> <span class="dt">TodoInp</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">String</span>]</a>
-<a class="sourceLine" id="cb7-4" title="4">getAddEvts (<span class="dt">IAdd</span> descr) <span class="ot">=</span> <span class="dt">Just</span> [descr]</a>
-<a class="sourceLine" id="cb7-5" title="5">getAddEvts _            <span class="ot">=</span> <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb7-6" title="6"></a>
-<a class="sourceLine" id="cb7-7" title="7"><span class="ot">getModEvts ::</span> <span class="dt">TodoInp</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">IntMap</span> <span class="dt">TaskCmd</span>)</a>
-<a class="sourceLine" id="cb7-8" title="8">getModEvts (<span class="dt">ITask</span> n te) <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> IM.singleton n te</a>
-<a class="sourceLine" id="cb7-9" title="9">getModEvts _            <span class="ot">=</span> <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb7-10" title="10"></a>
-<a class="sourceLine" id="cb7-11" title="11"><span class="ot">getMassEvts ::</span> ([<span class="dt">TaskID</span>], <span class="dt">TodoInp</span>) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">IntMap</span> <span class="dt">TaskCmd</span>)</a>
-<a class="sourceLine" id="cb7-12" title="12">getMassEvts (allIds, <span class="dt">IAll</span> te) <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> IM.fromList (<span class="fu">map</span> (,te) allIds)</a>
-<a class="sourceLine" id="cb7-13" title="13">getMassEvts _                 <span class="ot">=</span> <span class="dt">Nothing</span></a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L95-L105</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a></span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="ot">getAddEvts ::</span> <span class="dt">TodoInp</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">String</span>]</span>
+<span id="cb7-4"><a href="#cb7-4"></a>getAddEvts (<span class="dt">IAdd</span> descr) <span class="ot">=</span> <span class="dt">Just</span> [descr]</span>
+<span id="cb7-5"><a href="#cb7-5"></a>getAddEvts _            <span class="ot">=</span> <span class="dt">Nothing</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a></span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="ot">getModEvts ::</span> <span class="dt">TodoInp</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">IntMap</span> <span class="dt">TaskCmd</span>)</span>
+<span id="cb7-8"><a href="#cb7-8"></a>getModEvts (<span class="dt">ITask</span> n te) <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> IM.singleton n te</span>
+<span id="cb7-9"><a href="#cb7-9"></a>getModEvts _            <span class="ot">=</span> <span class="dt">Nothing</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a></span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="ot">getMassEvts ::</span> ([<span class="dt">TaskID</span>], <span class="dt">TodoInp</span>) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">IntMap</span> <span class="dt">TaskCmd</span>)</span>
+<span id="cb7-12"><a href="#cb7-12"></a>getMassEvts (allIds, <span class="dt">IAll</span> te) <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> IM.fromList (<span class="fu">map</span> (,te) allIds)</span>
+<span id="cb7-13"><a href="#cb7-13"></a>getMassEvts _                 <span class="ot">=</span> <span class="dt">Nothing</span></span></code></pre></div>
 <p><code>getAddEvts</code>, when used with <code>emitJusts</code>, will siphon off all <code>IAdd</code> commands as a blip stream of <code>[String]</code>s, emitting descriptions of new tasks to add.</p>
 <p><code>getModEvts</code>, when used with <code>emitJusts</code>, will siphon off all <code>ITask</code> commands as a blip stream of <code>IntMap TaskCmd</code>, which will be fed into <code>taskCollection</code> and <code>dynMapF</code>.</p>
 <p><code>getMassEvts</code> is pretty much the same thing…siphoning off all <code>IAll</code> commands as a blip stream of <code>IntMap TaskCmd</code>. It needs a list of all <code>TaskID</code>s though, to do its job…because it needs to make an <code>IntMap</code> targeting all of the current tasks.</p>
 <p>Remember, we interace with tasks through an <code>IntMap TaskCmd</code>…which is a map of task id-task command pairs. The <code>TaskCmd</code> stored at key <code>1</code> will be the command we want to send to task id 1.</p>
 <p>Let’s see it all work together!</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L64-L93</span></a>
-<a class="sourceLine" id="cb8-2" title="2"></a>
-<a class="sourceLine" id="cb8-3" title="3"><span class="ot">todoApp ::</span> <span class="dt">MonadFix</span> m <span class="ot">=&gt;</span> <span class="dt">Auto</span> m <span class="dt">TodoInp</span> (<span class="dt">IntMap</span> <span class="dt">Task</span>)</a>
-<a class="sourceLine" id="cb8-4" title="4">todoApp <span class="ot">=</span> proc inpEvt <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb8-5" title="5"></a>
-<a class="sourceLine" id="cb8-6" title="6">    rec <span class="co">-- all id&#39;s currently alive</span></a>
-<a class="sourceLine" id="cb8-7" title="7">        allIds <span class="ot">&lt;-</span> arrD IM.keys [] <span class="op">-&lt;</span> taskMap</a>
-<a class="sourceLine" id="cb8-8" title="8"></a>
-<a class="sourceLine" id="cb8-9" title="9">        <span class="co">-- &quot;forking&quot; `inpEvt` into three blip streams:</span></a>
-<a class="sourceLine" id="cb8-10" title="10">        <span class="co">-- newTaskB :: Blip [String]</span></a>
-<a class="sourceLine" id="cb8-11" title="11">        newTaskB  <span class="ot">&lt;-</span> emitJusts getAddEvts  <span class="op">-&lt;</span> inpEvt</a>
-<a class="sourceLine" id="cb8-12" title="12">        <span class="co">-- modTaskB :: Blip (IntMap TaskCmd)</span></a>
-<a class="sourceLine" id="cb8-13" title="13">        modTaskB  <span class="ot">&lt;-</span> emitJusts getModEvts  <span class="op">-&lt;</span> inpEvt</a>
-<a class="sourceLine" id="cb8-14" title="14">        <span class="co">-- massTaskB :: Blip (IntMap TaskCmd)</span></a>
-<a class="sourceLine" id="cb8-15" title="15">        massTaskB <span class="ot">&lt;-</span> emitJusts getMassEvts <span class="op">-&lt;</span> (allIds, inpEvt)</a>
-<a class="sourceLine" id="cb8-16" title="16"></a>
-<a class="sourceLine" id="cb8-17" title="17">        <span class="co">-- merge the two streams together to get &quot;all&quot; inputs, single and</span></a>
-<a class="sourceLine" id="cb8-18" title="18">        <span class="co">-- mass.</span></a>
-<a class="sourceLine" id="cb8-19" title="19">        <span class="kw">let</span><span class="ot"> allInpB ::</span> <span class="dt">Blip</span> (<span class="dt">IntMap</span> <span class="dt">TaskCmd</span>)</a>
-<a class="sourceLine" id="cb8-20" title="20">            allInpB <span class="ot">=</span> modTaskB <span class="op">&lt;&gt;</span> massTaskB</a>
-<a class="sourceLine" id="cb8-21" title="21"></a>
-<a class="sourceLine" id="cb8-22" title="22">        <span class="co">-- from a blip stream to an `IntMap` stream that is empty when the</span></a>
-<a class="sourceLine" id="cb8-23" title="23">        <span class="co">-- stream doesn&#39;t emit</span></a>
-<a class="sourceLine" id="cb8-24" title="24">        <span class="co">-- taskCommands :: IntMap TaskCmd</span></a>
-<a class="sourceLine" id="cb8-25" title="25">        taskCommands <span class="ot">&lt;-</span> fromBlips IM.empty <span class="op">-&lt;</span> allInpB</a>
-<a class="sourceLine" id="cb8-26" title="26"></a>
-<a class="sourceLine" id="cb8-27" title="27">        <span class="co">-- feed the commands and the new tasks to `taskMap`...the result is</span></a>
-<a class="sourceLine" id="cb8-28" title="28">        <span class="co">-- the `IntMap` of tasks.</span></a>
-<a class="sourceLine" id="cb8-29" title="29">        <span class="co">-- taskMap :: IntMap Task</span></a>
-<a class="sourceLine" id="cb8-30" title="30">        taskMap <span class="ot">&lt;-</span> taskCollection <span class="op">-&lt;</span> (taskCommands, newTaskB)</a>
-<a class="sourceLine" id="cb8-31" title="31"></a>
-<a class="sourceLine" id="cb8-32" title="32">    <span class="fu">id</span> <span class="op">-&lt;</span> taskMap</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/Todo.hs#L64-L93</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="ot">todoApp ::</span> <span class="dt">MonadFix</span> m <span class="ot">=&gt;</span> <span class="dt">Auto</span> m <span class="dt">TodoInp</span> (<span class="dt">IntMap</span> <span class="dt">Task</span>)</span>
+<span id="cb8-4"><a href="#cb8-4"></a>todoApp <span class="ot">=</span> proc inpEvt <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a></span>
+<span id="cb8-6"><a href="#cb8-6"></a>    rec <span class="co">-- all id&#39;s currently alive</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a>        allIds <span class="ot">&lt;-</span> arrD IM.keys [] <span class="op">-&lt;</span> taskMap</span>
+<span id="cb8-8"><a href="#cb8-8"></a></span>
+<span id="cb8-9"><a href="#cb8-9"></a>        <span class="co">-- &quot;forking&quot; `inpEvt` into three blip streams:</span></span>
+<span id="cb8-10"><a href="#cb8-10"></a>        <span class="co">-- newTaskB :: Blip [String]</span></span>
+<span id="cb8-11"><a href="#cb8-11"></a>        newTaskB  <span class="ot">&lt;-</span> emitJusts getAddEvts  <span class="op">-&lt;</span> inpEvt</span>
+<span id="cb8-12"><a href="#cb8-12"></a>        <span class="co">-- modTaskB :: Blip (IntMap TaskCmd)</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a>        modTaskB  <span class="ot">&lt;-</span> emitJusts getModEvts  <span class="op">-&lt;</span> inpEvt</span>
+<span id="cb8-14"><a href="#cb8-14"></a>        <span class="co">-- massTaskB :: Blip (IntMap TaskCmd)</span></span>
+<span id="cb8-15"><a href="#cb8-15"></a>        massTaskB <span class="ot">&lt;-</span> emitJusts getMassEvts <span class="op">-&lt;</span> (allIds, inpEvt)</span>
+<span id="cb8-16"><a href="#cb8-16"></a></span>
+<span id="cb8-17"><a href="#cb8-17"></a>        <span class="co">-- merge the two streams together to get &quot;all&quot; inputs, single and</span></span>
+<span id="cb8-18"><a href="#cb8-18"></a>        <span class="co">-- mass.</span></span>
+<span id="cb8-19"><a href="#cb8-19"></a>        <span class="kw">let</span><span class="ot"> allInpB ::</span> <span class="dt">Blip</span> (<span class="dt">IntMap</span> <span class="dt">TaskCmd</span>)</span>
+<span id="cb8-20"><a href="#cb8-20"></a>            allInpB <span class="ot">=</span> modTaskB <span class="op">&lt;&gt;</span> massTaskB</span>
+<span id="cb8-21"><a href="#cb8-21"></a></span>
+<span id="cb8-22"><a href="#cb8-22"></a>        <span class="co">-- from a blip stream to an `IntMap` stream that is empty when the</span></span>
+<span id="cb8-23"><a href="#cb8-23"></a>        <span class="co">-- stream doesn&#39;t emit</span></span>
+<span id="cb8-24"><a href="#cb8-24"></a>        <span class="co">-- taskCommands :: IntMap TaskCmd</span></span>
+<span id="cb8-25"><a href="#cb8-25"></a>        taskCommands <span class="ot">&lt;-</span> fromBlips IM.empty <span class="op">-&lt;</span> allInpB</span>
+<span id="cb8-26"><a href="#cb8-26"></a></span>
+<span id="cb8-27"><a href="#cb8-27"></a>        <span class="co">-- feed the commands and the new tasks to `taskMap`...the result is</span></span>
+<span id="cb8-28"><a href="#cb8-28"></a>        <span class="co">-- the `IntMap` of tasks.</span></span>
+<span id="cb8-29"><a href="#cb8-29"></a>        <span class="co">-- taskMap :: IntMap Task</span></span>
+<span id="cb8-30"><a href="#cb8-30"></a>        taskMap <span class="ot">&lt;-</span> taskCollection <span class="op">-&lt;</span> (taskCommands, newTaskB)</span>
+<span id="cb8-31"><a href="#cb8-31"></a></span>
+<span id="cb8-32"><a href="#cb8-32"></a>    <span class="fu">id</span> <span class="op">-&lt;</span> taskMap</span></code></pre></div>
 <p>To read the proc block, it does help to sort of see all of the lines as english statements of what things “are”.</p>
 <ol type="1">
 <li><p><code>allIds</code> is a list of keys (id’s) currently in the task map <code>taskMap</code>. All of the id’s of the tasks currently alive.</p></li>
@@ -178,56 +178,56 @@ that I&#39;ve struggled through in the past.">Tutorials</a><span class="info-sep
 <p>We state things as an interplay of streams. And in the end, the result is what we want — an indexed list of tasks.</p>
 <p>Note that we needed the <code>rec</code> block because we referred to <code>taskMap</code> at the beginning (to get <code>allIds</code>), but we don’t define <code>taskMap</code> until the end.</p>
 <p>Note that we use <code>arrD</code> for <code>allIds</code>. What we really “meant” was something like:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1">allIds <span class="ot">&lt;-</span> arr IM.keys <span class="op">-&lt;</span> taskMap</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a>allIds <span class="ot">&lt;-</span> arr IM.keys <span class="op">-&lt;</span> taskMap</span></code></pre></div>
 <p>But…this doesn’t really work out, because when the whole thing “starts”, we don’t know what <code>taskMap</code> is. We need to know <code>massTaskB</code> to know <code>taskMap</code>, and we need to know <code>allIds</code> to know <code>massTaskB</code>, and…recursive dependency!</p>
 <p>We can use <code>arrD</code> to specify an “initial output” to “close the loop” (in technical terms). We want <code>allIds</code> to initially be <code>[]</code> (we can assume we start with no task id’s), so instead of</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" title="1">allIds <span class="ot">&lt;-</span> arr IM.keys <span class="op">-&lt;</span> taskMap</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a>allIds <span class="ot">&lt;-</span> arr IM.keys <span class="op">-&lt;</span> taskMap</span></code></pre></div>
 <p>we have</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" title="1">allIds <span class="ot">&lt;-</span> arrD IM.keys [] <span class="op">-&lt;</span> taskMap</a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a>allIds <span class="ot">&lt;-</span> arrD IM.keys [] <span class="op">-&lt;</span> taskMap</span></code></pre></div>
 <p>Where <code>[]</code> is the “initial output”, so when we first try to do anything, we don’t need <code>taskMap</code> — we just pop out <code>[]</code>!</p>
 <p>This is just a small thing to worry about whenever you have recursive bindings. There is a small cognitive price to pay, but in return, you have something that really just looks like laying out relationships between different quantities :)</p>
 <h2 id="interfacing-with-the-world">Interfacing with the world</h2>
 <p>Our application logic is done; let’s explore ways to interface with it!</p>
 <h3 id="testingcommand-line">Testing/command line</h3>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/todo-cmd.hs#L25-L62</span></a>
-<a class="sourceLine" id="cb12-2" title="2"></a>
-<a class="sourceLine" id="cb12-3" title="3"><span class="ot">parseInp ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">TodoInp</span></a>
-<a class="sourceLine" id="cb12-4" title="4">parseInp <span class="ot">=</span> p <span class="op">.</span> <span class="fu">words</span></a>
-<a class="sourceLine" id="cb12-5" title="5">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb12-6" title="6">    p (<span class="st">&quot;A&quot;</span><span class="op">:</span>xs)   <span class="ot">=</span> <span class="dt">Just</span> (<span class="dt">IAdd</span> (<span class="fu">unwords</span> xs))</a>
-<a class="sourceLine" id="cb12-7" title="7">    p (<span class="st">&quot;D&quot;</span><span class="op">:</span>n<span class="op">:</span>_)  <span class="ot">=</span> onId n <span class="dt">CDelete</span></a>
-<a class="sourceLine" id="cb12-8" title="8">    p (<span class="st">&quot;C&quot;</span><span class="op">:</span>n<span class="op">:</span>_)  <span class="ot">=</span> onId n (<span class="dt">CComplete</span> <span class="dt">True</span>)</a>
-<a class="sourceLine" id="cb12-9" title="9">    p (<span class="st">&quot;U&quot;</span><span class="op">:</span>n<span class="op">:</span>_)  <span class="ot">=</span> onId n (<span class="dt">CComplete</span> <span class="dt">False</span>)</a>
-<a class="sourceLine" id="cb12-10" title="10">    p (<span class="st">&quot;P&quot;</span><span class="op">:</span>n<span class="op">:</span>_)  <span class="ot">=</span> onId n <span class="dt">CPrune</span></a>
-<a class="sourceLine" id="cb12-11" title="11">    p (<span class="st">&quot;M&quot;</span><span class="op">:</span>n<span class="op">:</span>xs) <span class="ot">=</span> onId n (<span class="dt">CModify</span> (<span class="fu">unwords</span> xs))</a>
-<a class="sourceLine" id="cb12-12" title="12">    p _          <span class="ot">=</span> <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb12-13" title="13"></a>
-<a class="sourceLine" id="cb12-14" title="14"><span class="ot">    onId ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">TaskCmd</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">TodoInp</span></a>
-<a class="sourceLine" id="cb12-15" title="15">    onId <span class="st">&quot;*&quot;</span> te <span class="ot">=</span> <span class="dt">Just</span> (<span class="dt">IAll</span> te)</a>
-<a class="sourceLine" id="cb12-16" title="16">    onId n   te <span class="ot">=</span> (<span class="ot">`ITask`</span> te) <span class="op">&lt;$&gt;</span> readMaybe n</a>
-<a class="sourceLine" id="cb12-17" title="17"></a>
-<a class="sourceLine" id="cb12-18" title="18"><span class="ot">formatTodo ::</span> <span class="dt">IntMap</span> <span class="dt">Task</span> <span class="ot">-&gt;</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb12-19" title="19">formatTodo <span class="ot">=</span> <span class="fu">unlines</span> <span class="op">.</span> <span class="fu">map</span> format <span class="op">.</span> IM.toList</a>
-<a class="sourceLine" id="cb12-20" title="20">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb12-21" title="21">    format (n, <span class="dt">Task</span> desc compl) <span class="ot">=</span> <span class="fu">concat</span> [ <span class="fu">show</span> n</a>
-<a class="sourceLine" id="cb12-22" title="22">                                         , <span class="st">&quot;. [&quot;</span></a>
-<a class="sourceLine" id="cb12-23" title="23">                                         , <span class="kw">if</span> compl <span class="kw">then</span> <span class="st">&quot;X&quot;</span> <span class="kw">else</span> <span class="st">&quot; &quot;</span></a>
-<a class="sourceLine" id="cb12-24" title="24">                                         , <span class="st">&quot;] &quot;</span></a>
-<a class="sourceLine" id="cb12-25" title="25">                                         , desc</a>
-<a class="sourceLine" id="cb12-26" title="26">                                         ]</a>
-<a class="sourceLine" id="cb12-27" title="27"></a>
-<a class="sourceLine" id="cb12-28" title="28"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb12-29" title="29">main <span class="ot">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb12-30" title="30">    <span class="fu">putStrLn</span> <span class="st">&quot;Enter command! &#39;A descr&#39; or &#39;[D/C/U/P/M] [id/*]&#39;&quot;</span></a>
-<a class="sourceLine" id="cb12-31" title="31">    void <span class="op">.</span> interactAuto <span class="op">$</span> <span class="co">-- interactAuto takes an Interval; `toOn` gives</span></a>
-<a class="sourceLine" id="cb12-32" title="32">                          <span class="co">--   one that runs forever</span></a>
-<a class="sourceLine" id="cb12-33" title="33">                          toOn</a>
-<a class="sourceLine" id="cb12-34" title="34">                          <span class="co">-- default output value on bad command</span></a>
-<a class="sourceLine" id="cb12-35" title="35">                        <span class="op">.</span> fromBlips <span class="st">&quot;Bad command!&quot;</span></a>
-<a class="sourceLine" id="cb12-36" title="36">                          <span class="co">-- run `formatTodo &lt;$&gt; todoApp` on emitted commands</span></a>
-<a class="sourceLine" id="cb12-37" title="37">                        <span class="op">.</span> perBlip (formatTodo <span class="op">&lt;$&gt;</span> todoApp)</a>
-<a class="sourceLine" id="cb12-38" title="38">                          <span class="co">-- emit when input is parseable</span></a>
-<a class="sourceLine" id="cb12-39" title="39">                        <span class="op">.</span> emitJusts parseInp</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/auto/todo-cmd.hs#L25-L62</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a></span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="ot">parseInp ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">TodoInp</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a>parseInp <span class="ot">=</span> p <span class="op">.</span> <span class="fu">words</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a>  <span class="kw">where</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a>    p (<span class="st">&quot;A&quot;</span><span class="op">:</span>xs)   <span class="ot">=</span> <span class="dt">Just</span> (<span class="dt">IAdd</span> (<span class="fu">unwords</span> xs))</span>
+<span id="cb12-7"><a href="#cb12-7"></a>    p (<span class="st">&quot;D&quot;</span><span class="op">:</span>n<span class="op">:</span>_)  <span class="ot">=</span> onId n <span class="dt">CDelete</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a>    p (<span class="st">&quot;C&quot;</span><span class="op">:</span>n<span class="op">:</span>_)  <span class="ot">=</span> onId n (<span class="dt">CComplete</span> <span class="dt">True</span>)</span>
+<span id="cb12-9"><a href="#cb12-9"></a>    p (<span class="st">&quot;U&quot;</span><span class="op">:</span>n<span class="op">:</span>_)  <span class="ot">=</span> onId n (<span class="dt">CComplete</span> <span class="dt">False</span>)</span>
+<span id="cb12-10"><a href="#cb12-10"></a>    p (<span class="st">&quot;P&quot;</span><span class="op">:</span>n<span class="op">:</span>_)  <span class="ot">=</span> onId n <span class="dt">CPrune</span></span>
+<span id="cb12-11"><a href="#cb12-11"></a>    p (<span class="st">&quot;M&quot;</span><span class="op">:</span>n<span class="op">:</span>xs) <span class="ot">=</span> onId n (<span class="dt">CModify</span> (<span class="fu">unwords</span> xs))</span>
+<span id="cb12-12"><a href="#cb12-12"></a>    p _          <span class="ot">=</span> <span class="dt">Nothing</span></span>
+<span id="cb12-13"><a href="#cb12-13"></a></span>
+<span id="cb12-14"><a href="#cb12-14"></a><span class="ot">    onId ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">TaskCmd</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">TodoInp</span></span>
+<span id="cb12-15"><a href="#cb12-15"></a>    onId <span class="st">&quot;*&quot;</span> te <span class="ot">=</span> <span class="dt">Just</span> (<span class="dt">IAll</span> te)</span>
+<span id="cb12-16"><a href="#cb12-16"></a>    onId n   te <span class="ot">=</span> (<span class="ot">`ITask`</span> te) <span class="op">&lt;$&gt;</span> readMaybe n</span>
+<span id="cb12-17"><a href="#cb12-17"></a></span>
+<span id="cb12-18"><a href="#cb12-18"></a><span class="ot">formatTodo ::</span> <span class="dt">IntMap</span> <span class="dt">Task</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb12-19"><a href="#cb12-19"></a>formatTodo <span class="ot">=</span> <span class="fu">unlines</span> <span class="op">.</span> <span class="fu">map</span> format <span class="op">.</span> IM.toList</span>
+<span id="cb12-20"><a href="#cb12-20"></a>  <span class="kw">where</span></span>
+<span id="cb12-21"><a href="#cb12-21"></a>    format (n, <span class="dt">Task</span> desc compl) <span class="ot">=</span> <span class="fu">concat</span> [ <span class="fu">show</span> n</span>
+<span id="cb12-22"><a href="#cb12-22"></a>                                         , <span class="st">&quot;. [&quot;</span></span>
+<span id="cb12-23"><a href="#cb12-23"></a>                                         , <span class="kw">if</span> compl <span class="kw">then</span> <span class="st">&quot;X&quot;</span> <span class="kw">else</span> <span class="st">&quot; &quot;</span></span>
+<span id="cb12-24"><a href="#cb12-24"></a>                                         , <span class="st">&quot;] &quot;</span></span>
+<span id="cb12-25"><a href="#cb12-25"></a>                                         , desc</span>
+<span id="cb12-26"><a href="#cb12-26"></a>                                         ]</span>
+<span id="cb12-27"><a href="#cb12-27"></a></span>
+<span id="cb12-28"><a href="#cb12-28"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb12-29"><a href="#cb12-29"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb12-30"><a href="#cb12-30"></a>    <span class="fu">putStrLn</span> <span class="st">&quot;Enter command! &#39;A descr&#39; or &#39;[D/C/U/P/M] [id/*]&#39;&quot;</span></span>
+<span id="cb12-31"><a href="#cb12-31"></a>    void <span class="op">.</span> interactAuto <span class="op">$</span> <span class="co">-- interactAuto takes an Interval; `toOn` gives</span></span>
+<span id="cb12-32"><a href="#cb12-32"></a>                          <span class="co">--   one that runs forever</span></span>
+<span id="cb12-33"><a href="#cb12-33"></a>                          toOn</span>
+<span id="cb12-34"><a href="#cb12-34"></a>                          <span class="co">-- default output value on bad command</span></span>
+<span id="cb12-35"><a href="#cb12-35"></a>                        <span class="op">.</span> fromBlips <span class="st">&quot;Bad command!&quot;</span></span>
+<span id="cb12-36"><a href="#cb12-36"></a>                          <span class="co">-- run `formatTodo &lt;$&gt; todoApp` on emitted commands</span></span>
+<span id="cb12-37"><a href="#cb12-37"></a>                        <span class="op">.</span> perBlip (formatTodo <span class="op">&lt;$&gt;</span> todoApp)</span>
+<span id="cb12-38"><a href="#cb12-38"></a>                          <span class="co">-- emit when input is parseable</span></span>
+<span id="cb12-39"><a href="#cb12-39"></a>                        <span class="op">.</span> emitJusts parseInp</span></code></pre></div>
 <p><code>interactAuto</code> runs an <code>Interval</code> by feeding it in strings from stdin printing the output to stdout, until the output is “off”/<code>Nothing</code> — then stops. Here we use <code>parseInp</code> to emit input events whenever there is a parse, run <code>todoApp</code> (formatted) on the emitted events, and then condense it all with <code>fromBlips</code> and wrap it in an “always on” <code>toOn</code>.</p>
 <pre><code>$ cabal sandbox init
 $ cabal install auto
@@ -259,51 +259,51 @@ Enter command! &#39;A descr&#39; or &#39;[D/C/U/P/M] [id/*]&#39;
 <h3 id="as-a-gui">As a GUI</h3>
 <p>To build a GUI, we must build an <code>Auto</code> that takes in inputs from events and output everything the front-end renderer needs to render the interface.</p>
 <p>For a typical todomvc gui, we need to be able to filter and select things. So that means we need to be extend our input type with filtering and selecting events. And our output has to also indicate the current filter selected, and the current task selected, as well.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">data</span> <span class="dt">GUIOpts</span> <span class="ot">=</span> <span class="dt">GUI</span> {<span class="ot"> _currFilter   ::</span> <span class="dt">Filter</span>        <span class="co">-- currently applied filter</span></a>
-<a class="sourceLine" id="cb14-2" title="2">                   ,<span class="ot"> _currSelected ::</span> <span class="dt">Maybe</span> <span class="dt">TaskID</span>  <span class="co">-- currently selected task</span></a>
-<a class="sourceLine" id="cb14-3" title="3">                   }</a>
-<a class="sourceLine" id="cb14-4" title="4"></a>
-<a class="sourceLine" id="cb14-5" title="5"><span class="kw">data</span> <span class="dt">GUIInp</span> <span class="ot">=</span> <span class="dt">GIFilter</span> <span class="dt">Filter</span></a>
-<a class="sourceLine" id="cb14-6" title="6">            <span class="op">|</span> <span class="dt">GISelect</span> (<span class="dt">Maybe</span> <span class="dt">TaskID</span>)</a>
-<a class="sourceLine" id="cb14-7" title="7"></a>
-<a class="sourceLine" id="cb14-8" title="8"><span class="kw">data</span> <span class="dt">Filter</span> <span class="ot">=</span> <span class="dt">All</span> <span class="op">|</span> <span class="dt">Active</span> <span class="op">|</span> <span class="dt">Completed</span></a>
-<a class="sourceLine" id="cb14-9" title="9">            <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Generic</span>, <span class="dt">Enum</span>, <span class="dt">Eq</span>)</a>
-<a class="sourceLine" id="cb14-10" title="10"></a>
-<a class="sourceLine" id="cb14-11" title="11"><span class="kw">instance</span> <span class="dt">Serialize</span> <span class="dt">Filter</span></a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">data</span> <span class="dt">GUIOpts</span> <span class="ot">=</span> <span class="dt">GUI</span> {<span class="ot"> _currFilter   ::</span> <span class="dt">Filter</span>        <span class="co">-- currently applied filter</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a>                   ,<span class="ot"> _currSelected ::</span> <span class="dt">Maybe</span> <span class="dt">TaskID</span>  <span class="co">-- currently selected task</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a>                   }</span>
+<span id="cb14-4"><a href="#cb14-4"></a></span>
+<span id="cb14-5"><a href="#cb14-5"></a><span class="kw">data</span> <span class="dt">GUIInp</span> <span class="ot">=</span> <span class="dt">GIFilter</span> <span class="dt">Filter</span></span>
+<span id="cb14-6"><a href="#cb14-6"></a>            <span class="op">|</span> <span class="dt">GISelect</span> (<span class="dt">Maybe</span> <span class="dt">TaskID</span>)</span>
+<span id="cb14-7"><a href="#cb14-7"></a></span>
+<span id="cb14-8"><a href="#cb14-8"></a><span class="kw">data</span> <span class="dt">Filter</span> <span class="ot">=</span> <span class="dt">All</span> <span class="op">|</span> <span class="dt">Active</span> <span class="op">|</span> <span class="dt">Completed</span></span>
+<span id="cb14-9"><a href="#cb14-9"></a>            <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Generic</span>, <span class="dt">Enum</span>, <span class="dt">Eq</span>)</span>
+<span id="cb14-10"><a href="#cb14-10"></a></span>
+<span id="cb14-11"><a href="#cb14-11"></a><span class="kw">instance</span> <span class="dt">Serialize</span> <span class="dt">Filter</span></span></code></pre></div>
 <p>Instead of defining a new input mega-type with all input events and the todo map with the options, we can use good ol’ fashioned <code>Either</code> and <code>(,)</code>. So now, instead of:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" title="1"><span class="ot">todoApp ::</span> <span class="dt">Auto</span> m <span class="dt">TodoInp</span> (<span class="dt">IntMap</span> <span class="dt">Task</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1"></a><span class="ot">todoApp ::</span> <span class="dt">Auto</span> m <span class="dt">TodoInp</span> (<span class="dt">IntMap</span> <span class="dt">Task</span>)</span></code></pre></div>
 <p>We have:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" title="1"><span class="ot">todoAppGUI ::</span> <span class="dt">Auto</span> m (<span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span>) (<span class="dt">IntMap</span> <span class="dt">Task</span>, <span class="dt">GUIOpts</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1"></a><span class="ot">todoAppGUI ::</span> <span class="dt">Auto</span> m (<span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span>) (<span class="dt">IntMap</span> <span class="dt">Task</span>, <span class="dt">GUIOpts</span>)</span></code></pre></div>
 <p>Now we take <em>either</em> <code>TodoInp</code> or <code>GUIInp</code> and then return <em>both</em> <code>IntMap Task</code> <em>and</em> <code>GUIOpts</code>.</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" title="1"><span class="ot">todoAppGUI ::</span> <span class="dt">Auto&#39;</span> (<span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span>) (<span class="dt">IntMap</span> <span class="dt">Task</span>, <span class="dt">GUIOpts</span>)</a>
-<a class="sourceLine" id="cb17-2" title="2">todoAppGUI <span class="ot">=</span> proc inp <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb17-3" title="3">    filt  <span class="ot">&lt;-</span> holdWith <span class="dt">All</span>                      <span class="op">.</span> emitJusts filtInps <span class="op">-&lt;</span> inp</a>
-<a class="sourceLine" id="cb17-4" title="4">    selc  <span class="ot">&lt;-</span> holdWith <span class="dt">Nothing</span>                  <span class="op">.</span> emitJusts selcInps <span class="op">-&lt;</span> inp</a>
-<a class="sourceLine" id="cb17-5" title="5">    tasks <span class="ot">&lt;-</span> holdWith <span class="fu">mempty</span> <span class="op">.</span> perBlip todoApp <span class="op">.</span> emitJusts todoInps <span class="op">-&lt;</span> inp</a>
-<a class="sourceLine" id="cb17-6" title="6"></a>
-<a class="sourceLine" id="cb17-7" title="7">    <span class="fu">id</span> <span class="op">-&lt;</span> (tasks, <span class="dt">GUI</span> filt selc)</a>
-<a class="sourceLine" id="cb17-8" title="8">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb17-9" title="9"><span class="ot">    todoInps ::</span> <span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">TodoInp</span></a>
-<a class="sourceLine" id="cb17-10" title="10">    todoInps (<span class="dt">Left</span> ti) <span class="ot">=</span> <span class="dt">Just</span> ti</a>
-<a class="sourceLine" id="cb17-11" title="11">    todoInps _         <span class="ot">=</span> <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb17-12" title="12"><span class="ot">    filtInps ::</span> <span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Filter</span></a>
-<a class="sourceLine" id="cb17-13" title="13">    filtInps (<span class="dt">Right</span> (<span class="dt">GIFilter</span> filt)) <span class="ot">=</span> <span class="dt">Just</span> filt</a>
-<a class="sourceLine" id="cb17-14" title="14">    filtInps _                       <span class="ot">=</span> <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb17-15" title="15"><span class="ot">    selcInps ::</span> <span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Maybe</span> <span class="dt">TaskID</span>)</a>
-<a class="sourceLine" id="cb17-16" title="16">    selcInps (<span class="dt">Right</span> (<span class="dt">GISelect</span> sec))  <span class="ot">=</span> <span class="dt">Just</span> selc</a>
-<a class="sourceLine" id="cb17-17" title="17">    selcInps _                       <span class="ot">=</span> <span class="dt">Nothing</span></a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1"></a><span class="ot">todoAppGUI ::</span> <span class="dt">Auto&#39;</span> (<span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span>) (<span class="dt">IntMap</span> <span class="dt">Task</span>, <span class="dt">GUIOpts</span>)</span>
+<span id="cb17-2"><a href="#cb17-2"></a>todoAppGUI <span class="ot">=</span> proc inp <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb17-3"><a href="#cb17-3"></a>    filt  <span class="ot">&lt;-</span> holdWith <span class="dt">All</span>                      <span class="op">.</span> emitJusts filtInps <span class="op">-&lt;</span> inp</span>
+<span id="cb17-4"><a href="#cb17-4"></a>    selc  <span class="ot">&lt;-</span> holdWith <span class="dt">Nothing</span>                  <span class="op">.</span> emitJusts selcInps <span class="op">-&lt;</span> inp</span>
+<span id="cb17-5"><a href="#cb17-5"></a>    tasks <span class="ot">&lt;-</span> holdWith <span class="fu">mempty</span> <span class="op">.</span> perBlip todoApp <span class="op">.</span> emitJusts todoInps <span class="op">-&lt;</span> inp</span>
+<span id="cb17-6"><a href="#cb17-6"></a></span>
+<span id="cb17-7"><a href="#cb17-7"></a>    <span class="fu">id</span> <span class="op">-&lt;</span> (tasks, <span class="dt">GUI</span> filt selc)</span>
+<span id="cb17-8"><a href="#cb17-8"></a>  <span class="kw">where</span></span>
+<span id="cb17-9"><a href="#cb17-9"></a><span class="ot">    todoInps ::</span> <span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">TodoInp</span></span>
+<span id="cb17-10"><a href="#cb17-10"></a>    todoInps (<span class="dt">Left</span> ti) <span class="ot">=</span> <span class="dt">Just</span> ti</span>
+<span id="cb17-11"><a href="#cb17-11"></a>    todoInps _         <span class="ot">=</span> <span class="dt">Nothing</span></span>
+<span id="cb17-12"><a href="#cb17-12"></a><span class="ot">    filtInps ::</span> <span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Filter</span></span>
+<span id="cb17-13"><a href="#cb17-13"></a>    filtInps (<span class="dt">Right</span> (<span class="dt">GIFilter</span> filt)) <span class="ot">=</span> <span class="dt">Just</span> filt</span>
+<span id="cb17-14"><a href="#cb17-14"></a>    filtInps _                       <span class="ot">=</span> <span class="dt">Nothing</span></span>
+<span id="cb17-15"><a href="#cb17-15"></a><span class="ot">    selcInps ::</span> <span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Maybe</span> <span class="dt">TaskID</span>)</span>
+<span id="cb17-16"><a href="#cb17-16"></a>    selcInps (<span class="dt">Right</span> (<span class="dt">GISelect</span> sec))  <span class="ot">=</span> <span class="dt">Just</span> selc</span>
+<span id="cb17-17"><a href="#cb17-17"></a>    selcInps _                       <span class="ot">=</span> <span class="dt">Nothing</span></span></code></pre></div>
 <p>Here we have the same idea as before. One input stream of <code>Either TodoInp GUIInp</code> comes through, and we fork it into three blip streams that each do what we want. <code>holdWith x :: Auto m (Blip b) b</code> is always the value of the last emitted item…but starts off as <code>x</code> first.</p>
 <p>By the way, the above code is much more succinct if you are willing to use <em><a href="http://lens.github.com">lens</a></em>…</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" title="1"><span class="ot">todoAppGUI ::</span> <span class="dt">Auto&#39;</span> (<span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span>) (<span class="dt">IntMap</span> <span class="dt">Task</span>, <span class="dt">GUIOpts</span>)</a>
-<a class="sourceLine" id="cb18-2" title="2">todoAppGUI <span class="ot">=</span> proc inp <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb18-3" title="3">    filt  <span class="ot">&lt;-</span> holdWith <span class="dt">All</span></a>
-<a class="sourceLine" id="cb18-4" title="4">           <span class="op">.</span> emitJusts (preview (_Right <span class="op">.</span> _GIFilter)) <span class="op">-&lt;</span> inp</a>
-<a class="sourceLine" id="cb18-5" title="5">    selc  <span class="ot">&lt;-</span> holdWith <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb18-6" title="6">           <span class="op">.</span> emitJusts (preview (_Right <span class="op">.</span> _GISelect)) <span class="op">-&lt;</span> inp</a>
-<a class="sourceLine" id="cb18-7" title="7">    tasks <span class="ot">&lt;-</span> holdWith <span class="fu">mempty</span> <span class="op">.</span> perBlip todoApp</a>
-<a class="sourceLine" id="cb18-8" title="8">           <span class="op">.</span> emitJusts (preview _Left)                <span class="op">-&lt;</span> inp</a>
-<a class="sourceLine" id="cb18-9" title="9"></a>
-<a class="sourceLine" id="cb18-10" title="10">    <span class="fu">id</span> <span class="op">-&lt;</span> (tasks, <span class="dt">GUI</span> filt selc)</a></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1"></a><span class="ot">todoAppGUI ::</span> <span class="dt">Auto&#39;</span> (<span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span>) (<span class="dt">IntMap</span> <span class="dt">Task</span>, <span class="dt">GUIOpts</span>)</span>
+<span id="cb18-2"><a href="#cb18-2"></a>todoAppGUI <span class="ot">=</span> proc inp <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb18-3"><a href="#cb18-3"></a>    filt  <span class="ot">&lt;-</span> holdWith <span class="dt">All</span></span>
+<span id="cb18-4"><a href="#cb18-4"></a>           <span class="op">.</span> emitJusts (preview (_Right <span class="op">.</span> _GIFilter)) <span class="op">-&lt;</span> inp</span>
+<span id="cb18-5"><a href="#cb18-5"></a>    selc  <span class="ot">&lt;-</span> holdWith <span class="dt">Nothing</span></span>
+<span id="cb18-6"><a href="#cb18-6"></a>           <span class="op">.</span> emitJusts (preview (_Right <span class="op">.</span> _GISelect)) <span class="op">-&lt;</span> inp</span>
+<span id="cb18-7"><a href="#cb18-7"></a>    tasks <span class="ot">&lt;-</span> holdWith <span class="fu">mempty</span> <span class="op">.</span> perBlip todoApp</span>
+<span id="cb18-8"><a href="#cb18-8"></a>           <span class="op">.</span> emitJusts (preview _Left)                <span class="op">-&lt;</span> inp</span>
+<span id="cb18-9"><a href="#cb18-9"></a></span>
+<span id="cb18-10"><a href="#cb18-10"></a>    <span class="fu">id</span> <span class="op">-&lt;</span> (tasks, <span class="dt">GUI</span> filt selc)</span></code></pre></div>
 <p>(assuming we defined the prisms for <code>GUIInp</code> or used <code>''mkPrisms</code>)</p>
 <p>Neat, right? In a way, you can say that <code>emitJusts</code> and <code>Prisms</code>/lens was a match made in heaven :)</p>
 <h3 id="giving-it-life">Giving it life</h3>
@@ -314,13 +314,13 @@ Enter command! &#39;A descr&#39; or &#39;[D/C/U/P/M] [id/*]&#39;
 <li>Rendering the output into the GUI framework of your choice</li>
 </ol>
 <p>The second step in particular can be handled with good ol’ <code>[runOnChan][]</code>:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" title="1"><span class="ot">runOnChan ::</span> (b <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">Chan</span> a <span class="ot">-&gt;</span> <span class="dt">Auto&#39;</span> a b <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Auto&#39;</span> a b)</a></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1"></a><span class="ot">runOnChan ::</span> (b <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">Chan</span> a <span class="ot">-&gt;</span> <span class="dt">Auto&#39;</span> a b <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Auto&#39;</span> a b)</span></code></pre></div>
 <p>We know and love <code>runOnChan</code> from when we used it to make our <a href="http://blog.jle.im/entry/auto-building-a-declarative-chatbot-with-implicit-serialization#irc-backend-the-ugly-part">chatbot</a>. It runs an <code>Auto' a b</code> “on a <code>Chan</code>” (concurrent queue). The first argument is an “output hander” — it handles the <code>b</code>s that the <code>Auto'</code> pops out. It decides whether to stop the whole thing or keep on listening based on the <code>Bool</code> result of the handler. The second argument is the <code>Chan a</code> to listen for inputs on. Whenever something is dropped into that <code>Chan</code>, it runs the <code>Auto'</code> with the <code>a</code> and processes the output <code>b</code> with the handler.</p>
 <p>Our final runner is then just:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" title="1">runOnChan renderGUI inputChan todoAppGUI</a></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1"></a>runOnChan renderGUI inputChan todoAppGUI</span></code></pre></div>
 <p>where</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" title="1"><span class="ot">renderGUI ::</span> (<span class="dt">IntMap</span> <span class="dt">Task</span>, <span class="dt">GUIOpts</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb21-2" title="2"><span class="ot">inputChan ::</span> <span class="dt">Chan</span> (<span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1"></a><span class="ot">renderGUI ::</span> (<span class="dt">IntMap</span> <span class="dt">Task</span>, <span class="dt">GUIOpts</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Bool</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a><span class="ot">inputChan ::</span> <span class="dt">Chan</span> (<span class="dt">Either</span> <span class="dt">TodoInp</span> <span class="dt">GUIInp</span>)</span></code></pre></div>
 <p>The rendering is done with <code>renderGUI</code>…and it really depends on your framework here. That’s #3 from the list above.</p>
 <p>All you need after that is just to have your GUI hook up event handlers to drop the appropriate <code>Either TodoInp GUIInp</code> into <code>inputChan</code>…and you’re golden!</p>
 <h2 id="seeing-it-in-action">Seeing it in action</h2>

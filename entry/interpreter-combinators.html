@@ -38,115 +38,115 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>These blocks will represent <em>schemas</em> for building a command line argument parser (or otherwise). They will have kind <code>Type -&gt; Type</code> (that is, they will take one type parameter, or at least be able to be partially applied to that point), and the type parameter represents “what” the schema parses. They will <em>usually</em> be <code>Functor</code> instances, for convenience…but not necessarily always.</p>
 <h3 id="arg">Arg</h3>
 <p>First, a Functor to represent a schema for a positional argument:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L27-L32</span></a>
-<a class="sourceLine" id="cb1-2" title="2"></a>
-<a class="sourceLine" id="cb1-3" title="3"><span class="kw">data</span> <span class="dt">Arg</span> a <span class="ot">=</span> <span class="dt">Arg</span></a>
-<a class="sourceLine" id="cb1-4" title="4">    {<span class="ot"> argName  ::</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb1-5" title="5">    ,<span class="ot"> argHelp  ::</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb1-6" title="6">    ,<span class="ot"> argRead  ::</span> <span class="dt">ReadM</span> a</a>
-<a class="sourceLine" id="cb1-7" title="7">    }</a>
-<a class="sourceLine" id="cb1-8" title="8">  <span class="kw">deriving</span> <span class="dt">Functor</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L27-L32</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">data</span> <span class="dt">Arg</span> a <span class="ot">=</span> <span class="dt">Arg</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>    {<span class="ot"> argName  ::</span> <span class="dt">String</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>    ,<span class="ot"> argHelp  ::</span> <span class="dt">String</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>    ,<span class="ot"> argRead  ::</span> <span class="dt">ReadM</span> a</span>
+<span id="cb1-7"><a href="#cb1-7"></a>    }</span>
+<span id="cb1-8"><a href="#cb1-8"></a>  <span class="kw">deriving</span> <span class="dt">Functor</span></span></code></pre></div>
 <p>An <code>Arg a</code> will be a schema describing an argument that parses a value of type <code>a</code>. So, an <code>Arg Int</code> would be an <code>Int</code> argument retrieved from the command line.</p>
 <p>A schema describing an argument that parses a value of type <code>a</code> contains a name, a help message, and a <code>ReadM a</code>, which is <em>optparse-applicative</em>’s string parser data type (it contains information on how to parse a <code>String</code> into an <code>a</code>). For the most part, we only need to care about two <code>ReadM a</code>s, <code>auto :: Read a =&gt; ReadM a</code>, a <code>ReadM</code> that works for all <code>Read</code> instances, and <code>str :: IsString s =&gt; ReadM a</code>, a <code>ReadM</code> that works for all string-like types (like <code>String</code> and <code>Text</code>).</p>
 <p>Let’s define two simple <em>interpreters</em> for this schema primitive.</p>
 <p>An <em>interpreter</em> is a <em>natural transformation</em> from our <em>schema</em> to some other functor that we will “execute” our primitive in. A <em>natural transformation</em> between functors <code>F</code> and <code>G</code> is a function <code>forall a. F a -&gt; G a</code>, that works for <em>all</em> <code>a</code>s. An interpreter will basically <em>interpret a schema</em>.</p>
 <p>Here’s a simple interpreter that executes our argument into a “summary aggregator”, which aggregates information into a list of summary lines:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L25-L50</span></a>
-<a class="sourceLine" id="cb2-2" title="2"></a>
-<a class="sourceLine" id="cb2-3" title="3"><span class="kw">type</span> <span class="dt">Summary</span> <span class="ot">=</span> <span class="dt">Const</span> [<span class="dt">String</span>]</a>
-<a class="sourceLine" id="cb2-4" title="4"></a>
-<a class="sourceLine" id="cb2-5" title="5"><span class="ot">argSummary ::</span> <span class="dt">Arg</span> a <span class="ot">-&gt;</span> <span class="dt">Summary</span> a</a>
-<a class="sourceLine" id="cb2-6" title="6">argSummary <span class="dt">Arg</span>{<span class="op">..</span>} <span class="ot">=</span> <span class="dt">Const</span> [ argName <span class="op">++</span> <span class="st">&quot;: &quot;</span> <span class="op">++</span> argHelp ]</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L25-L50</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">type</span> <span class="dt">Summary</span> <span class="ot">=</span> <span class="dt">Const</span> [<span class="dt">String</span>]</span>
+<span id="cb2-4"><a href="#cb2-4"></a></span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="ot">argSummary ::</span> <span class="dt">Arg</span> a <span class="ot">-&gt;</span> <span class="dt">Summary</span> a</span>
+<span id="cb2-6"><a href="#cb2-6"></a>argSummary <span class="dt">Arg</span>{<span class="op">..</span>} <span class="ot">=</span> <span class="dt">Const</span> [ argName <span class="op">++</span> <span class="st">&quot;: &quot;</span> <span class="op">++</span> argHelp ]</span></code></pre></div>
 <p>Here we using the <code>-XRecordWildcards</code> extension to bind all of the fields in <code>Arg</code> for us to use, for convenience.</p>
 <p>We build an “action” in the <code>Summary</code> type, where we just log a single help line. The <code>Summary</code> Applicative is a data type containing a list of strings, where the sequencing of <code>Summary</code> actions is the appending of those strings together. More on this later!</p>
 <p>For example, we’ll make a test <code>Arg</code> that parses a name:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L76-L81</span></a>
-<a class="sourceLine" id="cb3-2" title="2"></a>
-<a class="sourceLine" id="cb3-3" title="3"><span class="ot">nameArg ::</span> <span class="dt">Arg</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb3-4" title="4">nameArg <span class="ot">=</span> <span class="dt">Arg</span></a>
-<a class="sourceLine" id="cb3-5" title="5">    { argName <span class="ot">=</span> <span class="st">&quot;&lt;name&gt;&quot;</span></a>
-<a class="sourceLine" id="cb3-6" title="6">    , argHelp <span class="ot">=</span> <span class="st">&quot;A person&#39;s name&quot;</span></a>
-<a class="sourceLine" id="cb3-7" title="7">    , argRead <span class="ot">=</span> str</a>
-<a class="sourceLine" id="cb3-8" title="8">    }</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L76-L81</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="ot">nameArg ::</span> <span class="dt">Arg</span> <span class="dt">String</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>nameArg <span class="ot">=</span> <span class="dt">Arg</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a>    { argName <span class="ot">=</span> <span class="st">&quot;&lt;name&gt;&quot;</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a>    , argHelp <span class="ot">=</span> <span class="st">&quot;A person&#39;s name&quot;</span></span>
+<span id="cb3-7"><a href="#cb3-7"></a>    , argRead <span class="ot">=</span> str</span>
+<span id="cb3-8"><a href="#cb3-8"></a>    }</span></code></pre></div>
 <p>Let’s run it:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1">ghci<span class="op">&gt;</span> argSummary nameArg</a>
-<a class="sourceLine" id="cb4-2" title="2"><span class="dt">Const</span> [<span class="st">&quot;&lt;name&gt;: A person&#39;s name&quot;</span>]</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>ghci<span class="op">&gt;</span> argSummary nameArg</span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="dt">Const</span> [<span class="st">&quot;&lt;name&gt;: A person&#39;s name&quot;</span>]</span></code></pre></div>
 <p>Okay, that’s a simple one. How about a slightly more complicated one? We can define an interpreter into an <em>optparse-applicative</em> command line argument parser:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L52-L55</span></a>
-<a class="sourceLine" id="cb5-2" title="2"></a>
-<a class="sourceLine" id="cb5-3" title="3"><span class="ot">argParser ::</span> <span class="dt">Arg</span> a <span class="ot">-&gt;</span> <span class="dt">Parser</span> a</a>
-<a class="sourceLine" id="cb5-4" title="4">argParser <span class="dt">Arg</span>{<span class="op">..</span>} <span class="ot">=</span> argument argRead <span class="op">$</span></a>
-<a class="sourceLine" id="cb5-5" title="5">       help    argHelp</a>
-<a class="sourceLine" id="cb5-6" title="6">    <span class="op">&lt;&gt;</span> metavar argName</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L52-L55</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="ot">argParser ::</span> <span class="dt">Arg</span> a <span class="ot">-&gt;</span> <span class="dt">Parser</span> a</span>
+<span id="cb5-4"><a href="#cb5-4"></a>argParser <span class="dt">Arg</span>{<span class="op">..</span>} <span class="ot">=</span> argument argRead <span class="op">$</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a>       help    argHelp</span>
+<span id="cb5-6"><a href="#cb5-6"></a>    <span class="op">&lt;&gt;</span> metavar argName</span></code></pre></div>
 <p>This how you use <em>optparse-applicative</em> to describe a parser with a single argument. When we “run” it, it will parse it as a single positional argument using the <code>ReadM</code>.</p>
 <p>To see this in action, let’s create a handy tester:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L97-L100</span></a>
-<a class="sourceLine" id="cb6-2" title="2"></a>
-<a class="sourceLine" id="cb6-3" title="3"><span class="ot">testParser ::</span> <span class="dt">Parser</span> a <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a>
-<a class="sourceLine" id="cb6-4" title="4">testParser p <span class="ot">=</span> handleParseResult</a>
-<a class="sourceLine" id="cb6-5" title="5">             <span class="op">.</span> execParserPure defaultPrefs (info (p <span class="op">&lt;**&gt;</span> helper) <span class="fu">mempty</span>)</a>
-<a class="sourceLine" id="cb6-6" title="6">             <span class="op">.</span> <span class="fu">words</span></a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L97-L100</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="ot">testParser ::</span> <span class="dt">Parser</span> a <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb6-4"><a href="#cb6-4"></a>testParser p <span class="ot">=</span> handleParseResult</span>
+<span id="cb6-5"><a href="#cb6-5"></a>             <span class="op">.</span> execParserPure defaultPrefs (info (p <span class="op">&lt;**&gt;</span> helper) <span class="fu">mempty</span>)</span>
+<span id="cb6-6"><a href="#cb6-6"></a>             <span class="op">.</span> <span class="fu">words</span></span></code></pre></div>
 <p>We can now test out <code>nameArg</code>:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1">ghci<span class="op">&gt;</span> testParser (argParser nameArg) <span class="st">&quot;--help&quot;</span></a>
-<a class="sourceLine" id="cb7-2" title="2"><span class="co">-- Usage: &lt;interactive&gt; &lt;name&gt;</span></a>
-<a class="sourceLine" id="cb7-3" title="3"><span class="co">--</span></a>
-<a class="sourceLine" id="cb7-4" title="4"><span class="co">-- Available options:</span></a>
-<a class="sourceLine" id="cb7-5" title="5"><span class="co">--   &lt;name&gt;                   A person&#39;s name</span></a>
-<a class="sourceLine" id="cb7-6" title="6"><span class="co">--   -h,--help                Show this help text</span></a>
-<a class="sourceLine" id="cb7-7" title="7">ghci<span class="op">&gt;</span> testParser (argParser nameArg) <span class="st">&quot;alice&quot;</span></a>
-<a class="sourceLine" id="cb7-8" title="8"><span class="co">-- &quot;alice&quot;</span></a>
-<a class="sourceLine" id="cb7-9" title="9">ghci<span class="op">&gt;</span> testParser (argParser nameArg) <span class="st">&quot;bob&quot;</span></a>
-<a class="sourceLine" id="cb7-10" title="10"><span class="co">-- &quot;bob&quot;</span></a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a>ghci<span class="op">&gt;</span> testParser (argParser nameArg) <span class="st">&quot;--help&quot;</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="co">-- Usage: &lt;interactive&gt; &lt;name&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="co">--</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="co">-- Available options:</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="co">--   &lt;name&gt;                   A person&#39;s name</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="co">--   -h,--help                Show this help text</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a>ghci<span class="op">&gt;</span> testParser (argParser nameArg) <span class="st">&quot;alice&quot;</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="co">-- &quot;alice&quot;</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a>ghci<span class="op">&gt;</span> testParser (argParser nameArg) <span class="st">&quot;bob&quot;</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a><span class="co">-- &quot;bob&quot;</span></span></code></pre></div>
 <p>So if we enter a single positional argument, it gets parsed as itself.</p>
 <p>Note that <code>Arg</code> is a <code>Functor</code>, so we can fmap a transformation on the result:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1">ghci<span class="op">&gt;</span> testParser (argParser (<span class="fu">map</span> <span class="fu">toUpper</span> <span class="op">&lt;$&gt;</span> nameArg)) <span class="st">&quot;carol&quot;</span></a>
-<a class="sourceLine" id="cb8-2" title="2"><span class="st">&quot;CAROL&quot;</span></a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a>ghci<span class="op">&gt;</span> testParser (argParser (<span class="fu">map</span> <span class="fu">toUpper</span> <span class="op">&lt;$&gt;</span> nameArg)) <span class="st">&quot;carol&quot;</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="st">&quot;CAROL&quot;</span></span></code></pre></div>
 <h3 id="opt">Opt</h3>
 <p>Now, let’s define <code>Opt</code>, schema for non-positional <code>--option &lt;blah&gt;</code>s in a command line interface. We can do this pretty much the same way:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L34-L40</span></a>
-<a class="sourceLine" id="cb9-2" title="2"></a>
-<a class="sourceLine" id="cb9-3" title="3"><span class="kw">data</span> <span class="dt">Opt</span> a <span class="ot">=</span> <span class="dt">Opt</span></a>
-<a class="sourceLine" id="cb9-4" title="4">    {<span class="ot"> optString ::</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb9-5" title="5">    ,<span class="ot"> optHelp   ::</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb9-6" title="6">    ,<span class="ot"> optMeta   ::</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb9-7" title="7">    ,<span class="ot"> optRead   ::</span> <span class="dt">ReadM</span> a</a>
-<a class="sourceLine" id="cb9-8" title="8">    }</a>
-<a class="sourceLine" id="cb9-9" title="9">  <span class="kw">deriving</span> <span class="dt">Functor</span></a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L34-L40</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a></span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="kw">data</span> <span class="dt">Opt</span> a <span class="ot">=</span> <span class="dt">Opt</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a>    {<span class="ot"> optString ::</span> <span class="dt">String</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a>    ,<span class="ot"> optHelp   ::</span> <span class="dt">String</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a>    ,<span class="ot"> optMeta   ::</span> <span class="dt">String</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a>    ,<span class="ot"> optRead   ::</span> <span class="dt">ReadM</span> a</span>
+<span id="cb9-8"><a href="#cb9-8"></a>    }</span>
+<span id="cb9-9"><a href="#cb9-9"></a>  <span class="kw">deriving</span> <span class="dt">Functor</span></span></code></pre></div>
 <p>An <code>Opt a</code> is a schema describing an option “flag” that expects a value of type <code>a</code>.</p>
 <p>Again, we’ll lay out our interpreters:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L57-L65</span></a>
-<a class="sourceLine" id="cb10-2" title="2"></a>
-<a class="sourceLine" id="cb10-3" title="3"><span class="ot">optSummary ::</span> <span class="dt">Opt</span> a <span class="ot">-&gt;</span> <span class="dt">Summary</span> a</a>
-<a class="sourceLine" id="cb10-4" title="4">optSummary <span class="dt">Opt</span>{<span class="op">..</span>} <span class="ot">=</span> <span class="dt">Const</span></a>
-<a class="sourceLine" id="cb10-5" title="5">    [ <span class="st">&quot;--&quot;</span> <span class="op">++</span> optString <span class="op">++</span> <span class="st">&quot; &quot;</span> <span class="op">++</span> optMeta <span class="op">++</span> <span class="st">&quot;: &quot;</span> <span class="op">++</span> optHelp ]</a>
-<a class="sourceLine" id="cb10-6" title="6"></a>
-<a class="sourceLine" id="cb10-7" title="7"><span class="ot">optParser ::</span> <span class="dt">Opt</span> a <span class="ot">-&gt;</span> <span class="dt">Parser</span> a</a>
-<a class="sourceLine" id="cb10-8" title="8">optParser <span class="dt">Opt</span>{<span class="op">..</span>} <span class="ot">=</span> option optRead <span class="op">$</span></a>
-<a class="sourceLine" id="cb10-9" title="9">       long optString</a>
-<a class="sourceLine" id="cb10-10" title="10">    <span class="op">&lt;&gt;</span> help optHelp</a>
-<a class="sourceLine" id="cb10-11" title="11">    <span class="op">&lt;&gt;</span> metavar optMeta</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L57-L65</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a></span>
+<span id="cb10-3"><a href="#cb10-3"></a><span class="ot">optSummary ::</span> <span class="dt">Opt</span> a <span class="ot">-&gt;</span> <span class="dt">Summary</span> a</span>
+<span id="cb10-4"><a href="#cb10-4"></a>optSummary <span class="dt">Opt</span>{<span class="op">..</span>} <span class="ot">=</span> <span class="dt">Const</span></span>
+<span id="cb10-5"><a href="#cb10-5"></a>    [ <span class="st">&quot;--&quot;</span> <span class="op">++</span> optString <span class="op">++</span> <span class="st">&quot; &quot;</span> <span class="op">++</span> optMeta <span class="op">++</span> <span class="st">&quot;: &quot;</span> <span class="op">++</span> optHelp ]</span>
+<span id="cb10-6"><a href="#cb10-6"></a></span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="ot">optParser ::</span> <span class="dt">Opt</span> a <span class="ot">-&gt;</span> <span class="dt">Parser</span> a</span>
+<span id="cb10-8"><a href="#cb10-8"></a>optParser <span class="dt">Opt</span>{<span class="op">..</span>} <span class="ot">=</span> option optRead <span class="op">$</span></span>
+<span id="cb10-9"><a href="#cb10-9"></a>       long optString</span>
+<span id="cb10-10"><a href="#cb10-10"></a>    <span class="op">&lt;&gt;</span> help optHelp</span>
+<span id="cb10-11"><a href="#cb10-11"></a>    <span class="op">&lt;&gt;</span> metavar optMeta</span></code></pre></div>
 <p>Here’s a sample <code>Opt</code> getting a person’s age:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L83-L89</span></a>
-<a class="sourceLine" id="cb11-2" title="2"></a>
-<a class="sourceLine" id="cb11-3" title="3"><span class="ot">ageOpt ::</span> <span class="dt">Opt</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb11-4" title="4">ageOpt <span class="ot">=</span> <span class="dt">Opt</span></a>
-<a class="sourceLine" id="cb11-5" title="5">    { optString <span class="ot">=</span> <span class="st">&quot;age&quot;</span></a>
-<a class="sourceLine" id="cb11-6" title="6">    , optHelp   <span class="ot">=</span> <span class="st">&quot;A person&#39;s age&quot;</span></a>
-<a class="sourceLine" id="cb11-7" title="7">    , optMeta   <span class="ot">=</span> <span class="st">&quot;&lt;int&gt;&quot;</span></a>
-<a class="sourceLine" id="cb11-8" title="8">    , optRead   <span class="ot">=</span> auto</a>
-<a class="sourceLine" id="cb11-9" title="9">    }</a></code></pre></div>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" title="1">ghci<span class="op">&gt;</span> optSummary ageOpt</a>
-<a class="sourceLine" id="cb12-2" title="2"><span class="dt">Const</span> [<span class="st">&quot;--age &lt;int&gt;: A person&#39;s age&quot;</span>]</a>
-<a class="sourceLine" id="cb12-3" title="3">ghci<span class="op">&gt;</span> testParser (optParser ageOpt) <span class="st">&quot;--help&quot;</span></a>
-<a class="sourceLine" id="cb12-4" title="4"><span class="co">-- Usage: &lt;interactive&gt; --age &lt;int&gt;</span></a>
-<a class="sourceLine" id="cb12-5" title="5"><span class="co">--</span></a>
-<a class="sourceLine" id="cb12-6" title="6"><span class="co">-- Available options:</span></a>
-<a class="sourceLine" id="cb12-7" title="7"><span class="co">--   --age &lt;int&gt;              A person&#39;s age</span></a>
-<a class="sourceLine" id="cb12-8" title="8"><span class="co">--   -h,--help                Show this help text</span></a>
-<a class="sourceLine" id="cb12-9" title="9">ghci<span class="op">&gt;</span> testParser (optParser ageOpt) <span class="st">&quot;--age 25&quot;</span></a>
-<a class="sourceLine" id="cb12-10" title="10"><span class="co">-- 25</span></a>
-<a class="sourceLine" id="cb12-11" title="11">ghci<span class="op">&gt;</span> testParser (optParser ((<span class="op">*</span><span class="dv">2</span>) <span class="op">&lt;$&gt;</span> ageOpt)) <span class="st">&quot;--age 25&quot;</span></a>
-<a class="sourceLine" id="cb12-12" title="12"><span class="co">-- 50</span></a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L83-L89</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a></span>
+<span id="cb11-3"><a href="#cb11-3"></a><span class="ot">ageOpt ::</span> <span class="dt">Opt</span> <span class="dt">Int</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a>ageOpt <span class="ot">=</span> <span class="dt">Opt</span></span>
+<span id="cb11-5"><a href="#cb11-5"></a>    { optString <span class="ot">=</span> <span class="st">&quot;age&quot;</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a>    , optHelp   <span class="ot">=</span> <span class="st">&quot;A person&#39;s age&quot;</span></span>
+<span id="cb11-7"><a href="#cb11-7"></a>    , optMeta   <span class="ot">=</span> <span class="st">&quot;&lt;int&gt;&quot;</span></span>
+<span id="cb11-8"><a href="#cb11-8"></a>    , optRead   <span class="ot">=</span> auto</span>
+<span id="cb11-9"><a href="#cb11-9"></a>    }</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1"></a>ghci<span class="op">&gt;</span> optSummary ageOpt</span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="dt">Const</span> [<span class="st">&quot;--age &lt;int&gt;: A person&#39;s age&quot;</span>]</span>
+<span id="cb12-3"><a href="#cb12-3"></a>ghci<span class="op">&gt;</span> testParser (optParser ageOpt) <span class="st">&quot;--help&quot;</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a><span class="co">-- Usage: &lt;interactive&gt; --age &lt;int&gt;</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a><span class="co">--</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a><span class="co">-- Available options:</span></span>
+<span id="cb12-7"><a href="#cb12-7"></a><span class="co">--   --age &lt;int&gt;              A person&#39;s age</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a><span class="co">--   -h,--help                Show this help text</span></span>
+<span id="cb12-9"><a href="#cb12-9"></a>ghci<span class="op">&gt;</span> testParser (optParser ageOpt) <span class="st">&quot;--age 25&quot;</span></span>
+<span id="cb12-10"><a href="#cb12-10"></a><span class="co">-- 25</span></span>
+<span id="cb12-11"><a href="#cb12-11"></a>ghci<span class="op">&gt;</span> testParser (optParser ((<span class="op">*</span><span class="dv">2</span>) <span class="op">&lt;$&gt;</span> ageOpt)) <span class="st">&quot;--age 25&quot;</span></span>
+<span id="cb12-12"><a href="#cb12-12"></a><span class="co">-- 50</span></span></code></pre></div>
 <h3 id="imagining-the-combinations">Imagining the Combinations</h3>
 <p>Now that we laid out our basic schemas, let’s now think about how we might want to <em>combine</em> them into richer schemas. How about:</p>
 <ul>
@@ -163,7 +163,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h2 id="combining-schemas">Combining Schemas</h2>
 <p>One simple thing we can imagine is <em>combining</em> different schema types in different ways to produce new schemas, compositionally. There are a few ways we can imagine combining two different schemas together, and we have different <em>combinators</em> to describe each different way.</p>
 <p>A “schema-combining combinator” will have kind:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" title="1">(<span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span>) <span class="ot">-&gt;</span> (<span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span>) <span class="ot">-&gt;</span> (<span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1"></a>(<span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span>) <span class="ot">-&gt;</span> (<span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span>) <span class="ot">-&gt;</span> (<span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span>)</span></code></pre></div>
 <p>That is, given two different <code>Type -&gt; Type</code>s, provide a new <code>Type -&gt; Type</code>.</p>
 <p>All of these combinators should ideally be associative, and there should be an <em>identity</em> schema where combining a schema with the identity should return the original schema.</p>
 <h3 id="either-or">Either-Or</h3>

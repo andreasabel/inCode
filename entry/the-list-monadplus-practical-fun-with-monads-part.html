@@ -37,64 +37,64 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>And what’s one way we can do this? You could probably take a wild guess. Yup, we can model lists as a MonadPlus — we can model chaining in a way that revolves around successes and failures.</p>
 <p>So, how can a list model success/failure? Does that even make sense?</p>
 <p>Let’s take a look at last article’s <code>halve</code> function:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="co">-- the built in function `guard`, to refresh your memory</span></a>
-<a class="sourceLine" id="cb1-2" title="2"><span class="ot">guard ::</span> <span class="dt">MonadPlus</span> m <span class="ot">=&gt;</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> m ()</a>
-<a class="sourceLine" id="cb1-3" title="3">guard <span class="dt">True</span>  <span class="ot">=</span> <span class="fu">return</span> ()</a>
-<a class="sourceLine" id="cb1-4" title="4">guard <span class="dt">False</span> <span class="ot">=</span> mzero</a>
-<a class="sourceLine" id="cb1-5" title="5"></a>
-<a class="sourceLine" id="cb1-6" title="6"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L30-L33</span></a>
-<a class="sourceLine" id="cb1-7" title="7"></a>
-<a class="sourceLine" id="cb1-8" title="8"><span class="ot">halve ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb1-9" title="9">halve n <span class="ot">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb1-10" title="10">    guard <span class="op">$</span> <span class="fu">even</span> n</a>
-<a class="sourceLine" id="cb1-11" title="11">    <span class="fu">return</span> <span class="op">$</span> n <span class="ot">`div`</span> <span class="dv">2</span></a></code></pre></div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1">ghci<span class="op">&gt;</span> halve <span class="dv">6</span></a>
-<a class="sourceLine" id="cb2-2" title="2"><span class="dt">Just</span> <span class="dv">3</span></a>
-<a class="sourceLine" id="cb2-3" title="3">ghci<span class="op">&gt;</span> halve <span class="dv">7</span></a>
-<a class="sourceLine" id="cb2-4" title="4"><span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb2-5" title="5">ghci<span class="op">&gt;</span> halve <span class="dv">8</span> <span class="op">&gt;&gt;=</span> halve</a>
-<a class="sourceLine" id="cb2-6" title="6"><span class="dt">Just</span> <span class="dv">2</span></a>
-<a class="sourceLine" id="cb2-7" title="7">ghci<span class="op">&gt;</span> halve <span class="dv">7</span> <span class="op">&gt;&gt;=</span> halve</a>
-<a class="sourceLine" id="cb2-8" title="8"><span class="dt">Nothing</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">-- the built in function `guard`, to refresh your memory</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="ot">guard ::</span> <span class="dt">MonadPlus</span> m <span class="ot">=&gt;</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> m ()</span>
+<span id="cb1-3"><a href="#cb1-3"></a>guard <span class="dt">True</span>  <span class="ot">=</span> <span class="fu">return</span> ()</span>
+<span id="cb1-4"><a href="#cb1-4"></a>guard <span class="dt">False</span> <span class="ot">=</span> mzero</span>
+<span id="cb1-5"><a href="#cb1-5"></a></span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L30-L33</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a></span>
+<span id="cb1-8"><a href="#cb1-8"></a><span class="ot">halve ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a>halve n <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>    guard <span class="op">$</span> <span class="fu">even</span> n</span>
+<span id="cb1-11"><a href="#cb1-11"></a>    <span class="fu">return</span> <span class="op">$</span> n <span class="ot">`div`</span> <span class="dv">2</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>ghci<span class="op">&gt;</span> halve <span class="dv">6</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="dt">Just</span> <span class="dv">3</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>ghci<span class="op">&gt;</span> halve <span class="dv">7</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="dt">Nothing</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>ghci<span class="op">&gt;</span> halve <span class="dv">8</span> <span class="op">&gt;&gt;=</span> halve</span>
+<span id="cb2-6"><a href="#cb2-6"></a><span class="dt">Just</span> <span class="dv">2</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a>ghci<span class="op">&gt;</span> halve <span class="dv">7</span> <span class="op">&gt;&gt;=</span> halve</span>
+<span id="cb2-8"><a href="#cb2-8"></a><span class="dt">Nothing</span></span></code></pre></div>
 <p>Here, our success/fail mechanism was built into the Maybe container. Remember, first, it fails automatically if <code>n</code> is not even; then, it auto-succeeds with <code>n `div` 2</code> (which only works if it has not already failed). But note that we didn’t actually really “need” Maybe here…we could have used anything that had an <code>mzero</code> (insta-fail, which is used in <code>guard</code>) and a <code>return</code> (auto-succeed).</p>
 <p>Let’s see what happens when we replace our Maybe container with a list:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L35-L38</span></a>
-<a class="sourceLine" id="cb3-2" title="2"></a>
-<a class="sourceLine" id="cb3-3" title="3"><span class="ot">halve&#39; ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]</a>
-<a class="sourceLine" id="cb3-4" title="4">halve&#39; n <span class="ot">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb3-5" title="5">    guard <span class="op">$</span> <span class="fu">even</span> n</a>
-<a class="sourceLine" id="cb3-6" title="6">    <span class="fu">return</span> <span class="op">$</span> n <span class="ot">`div`</span> <span class="dv">2</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L35-L38</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="ot">halve&#39; ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]</span>
+<span id="cb3-4"><a href="#cb3-4"></a>halve&#39; n <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a>    guard <span class="op">$</span> <span class="fu">even</span> n</span>
+<span id="cb3-6"><a href="#cb3-6"></a>    <span class="fu">return</span> <span class="op">$</span> n <span class="ot">`div`</span> <span class="dv">2</span></span></code></pre></div>
 <p>This is…the exact same function body. We didn’t do anything but change the type signature. But because you believe me when I say that List is a MonadPlus…this should work, right? <code>guard</code> should work for <em>any</em> MonadPlus, because every MonadPlus has an <code>mzero</code> (fail). <code>return</code> should work for any MonadPlus, too — it wouldn’t be a MonadPlus without <code>return</code> implemented! (Remember, typeclasses are similar to interfaces in OOP) We don’t know exactly what failing and succeeding actually <em>looks</em> like in a list yet…but if you know it’s a MonadPlus (which List is, in the standard library), you know that it <em>has</em> these concepts defined somewhere.</p>
 <p>So, how is list a meaningful MonadPlus? Simple: a “failure” is an empty list. A “success” is a non-empty list.</p>
 <p>Watch:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1">ghci<span class="op">&gt;</span> halve&#39; <span class="dv">6</span></a>
-<a class="sourceLine" id="cb4-2" title="2">[<span class="dv">3</span>]</a>
-<a class="sourceLine" id="cb4-3" title="3">ghci<span class="op">&gt;</span> halve&#39; <span class="dv">7</span></a>
-<a class="sourceLine" id="cb4-4" title="4">[]</a>
-<a class="sourceLine" id="cb4-5" title="5">ghci<span class="op">&gt;</span> halve&#39; <span class="dv">8</span> <span class="op">&gt;&gt;=</span> halve&#39;</a>
-<a class="sourceLine" id="cb4-6" title="6">[<span class="dv">2</span>]</a>
-<a class="sourceLine" id="cb4-7" title="7">ghci<span class="op">&gt;</span> halve&#39; <span class="dv">7</span> <span class="op">&gt;&gt;=</span> halve&#39;</a>
-<a class="sourceLine" id="cb4-8" title="8">[]</a>
-<a class="sourceLine" id="cb4-9" title="9">ghci<span class="op">&gt;</span> halve&#39; <span class="dv">32</span> <span class="op">&gt;&gt;=</span> halve&#39; <span class="op">&gt;&gt;=</span> halve&#39; <span class="op">&gt;&gt;=</span> halve&#39;</a>
-<a class="sourceLine" id="cb4-10" title="10">[<span class="dv">2</span>]</a>
-<a class="sourceLine" id="cb4-11" title="11">ghci<span class="op">&gt;</span> halve&#39; <span class="dv">32</span> <span class="op">&gt;&gt;</span> mzero <span class="op">&gt;&gt;=</span> halve&#39; <span class="op">&gt;&gt;=</span> halve&#39; <span class="op">&gt;&gt;=</span> halve&#39;</a>
-<a class="sourceLine" id="cb4-12" title="12">[]</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>ghci<span class="op">&gt;</span> halve&#39; <span class="dv">6</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>[<span class="dv">3</span>]</span>
+<span id="cb4-3"><a href="#cb4-3"></a>ghci<span class="op">&gt;</span> halve&#39; <span class="dv">7</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>[]</span>
+<span id="cb4-5"><a href="#cb4-5"></a>ghci<span class="op">&gt;</span> halve&#39; <span class="dv">8</span> <span class="op">&gt;&gt;=</span> halve&#39;</span>
+<span id="cb4-6"><a href="#cb4-6"></a>[<span class="dv">2</span>]</span>
+<span id="cb4-7"><a href="#cb4-7"></a>ghci<span class="op">&gt;</span> halve&#39; <span class="dv">7</span> <span class="op">&gt;&gt;=</span> halve&#39;</span>
+<span id="cb4-8"><a href="#cb4-8"></a>[]</span>
+<span id="cb4-9"><a href="#cb4-9"></a>ghci<span class="op">&gt;</span> halve&#39; <span class="dv">32</span> <span class="op">&gt;&gt;=</span> halve&#39; <span class="op">&gt;&gt;=</span> halve&#39; <span class="op">&gt;&gt;=</span> halve&#39;</span>
+<span id="cb4-10"><a href="#cb4-10"></a>[<span class="dv">2</span>]</span>
+<span id="cb4-11"><a href="#cb4-11"></a>ghci<span class="op">&gt;</span> halve&#39; <span class="dv">32</span> <span class="op">&gt;&gt;</span> mzero <span class="op">&gt;&gt;=</span> halve&#39; <span class="op">&gt;&gt;=</span> halve&#39; <span class="op">&gt;&gt;=</span> halve&#39;</span>
+<span id="cb4-12"><a href="#cb4-12"></a>[]</span></code></pre></div>
 <p>So there we have it! <code>Nothing</code> is just like <code>[]</code>, <code>Just x</code> is just like <code>[x]</code>. This whole time! It’s all so clear now! Why does <code>Maybe</code> even exist, anyway, when we can just use <code>[]</code> and <code>[x]</code> for <code>Nothing</code> and <code>Just x</code> and be none the wiser? (Take some time to think about it if you want!)</p>
 <p>In fact, if we generalize our type signature for <code>halve</code>, we can do some crazy things…</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-L43</span></a>
-<a class="sourceLine" id="cb5-2" title="2"></a>
-<a class="sourceLine" id="cb5-3" title="3"><span class="ot">genericHalve ::</span> <span class="dt">MonadPlus</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb5-4" title="4">genericHalve n <span class="ot">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb5-5" title="5">    guard <span class="op">$</span> <span class="fu">even</span> n</a>
-<a class="sourceLine" id="cb5-6" title="6">    <span class="fu">return</span> <span class="op">$</span> n <span class="ot">`div`</span> <span class="dv">2</span></a></code></pre></div>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1">ghci<span class="op">&gt;</span> genericHalve <span class="dv">8</span><span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb6-2" title="2"><span class="dt">Just</span> <span class="dv">4</span></a>
-<a class="sourceLine" id="cb6-3" title="3">ghci<span class="op">&gt;</span> genericHalve <span class="dv">8</span><span class="ot"> ::</span> [<span class="dt">Int</span>]</a>
-<a class="sourceLine" id="cb6-4" title="4">[<span class="dv">4</span>]</a>
-<a class="sourceLine" id="cb6-5" title="5">ghci<span class="op">&gt;</span> genericHalve <span class="dv">7</span><span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb6-6" title="6"><span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb6-7" title="7">ghci<span class="op">&gt;</span> genericHalve <span class="dv">7</span><span class="ot"> ::</span> [<span class="dt">Int</span>]</a>
-<a class="sourceLine" id="cb6-8" title="8">[]</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-L43</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="ot">genericHalve ::</span> <span class="dt">MonadPlus</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m <span class="dt">Int</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a>genericHalve n <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a>    guard <span class="op">$</span> <span class="fu">even</span> n</span>
+<span id="cb5-6"><a href="#cb5-6"></a>    <span class="fu">return</span> <span class="op">$</span> n <span class="ot">`div`</span> <span class="dv">2</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a>ghci<span class="op">&gt;</span> genericHalve <span class="dv">8</span><span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="dt">Just</span> <span class="dv">4</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>ghci<span class="op">&gt;</span> genericHalve <span class="dv">8</span><span class="ot"> ::</span> [<span class="dt">Int</span>]</span>
+<span id="cb6-4"><a href="#cb6-4"></a>[<span class="dv">4</span>]</span>
+<span id="cb6-5"><a href="#cb6-5"></a>ghci<span class="op">&gt;</span> genericHalve <span class="dv">7</span><span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a><span class="dt">Nothing</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a>ghci<span class="op">&gt;</span> genericHalve <span class="dv">7</span><span class="ot"> ::</span> [<span class="dt">Int</span>]</span>
+<span id="cb6-8"><a href="#cb6-8"></a>[]</span></code></pre></div>
 <div class="note">
 <p><strong>Welcome to Haskell!</strong></p>
 <p>Now, when we say something like <code>genericHalve 8 :: Maybe Int</code>, it means “I want <code>genericHalve 8</code>…and I want the type to be <code>Maybe Int</code>.” This is necessary here because in our <code>genericHalve</code> can be <em>any</em> MonadPlus, so we have to tell ghci which MonadPlus we want.</p>
@@ -110,15 +110,15 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>Think of it this way: A value goes through a long and arduous journey with many choices and possible paths and forks. At the end of it, you have the result of every path that could have lead to a success. Contrast this to the Maybe monad, where a value goes through this arduous journey, but never has any choice. There is only one path — successful, or otherwise. A Maybe is deterministic…a list provides a choice in paths.</p>
 <h2 id="halveordouble">halveOrDouble</h2>
 <p>Let’s take a simple example: <code>halveOrDouble</code>. It provides two successful paths if you are even: halving and doubling. It only provides one choice or possible path to success if you are odd: doubling. In this way it is slightly racist.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L19-L21</span></a>
-<a class="sourceLine" id="cb7-2" title="2"></a>
-<a class="sourceLine" id="cb7-3" title="3"><span class="ot">halveOrDouble ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]</a>
-<a class="sourceLine" id="cb7-4" title="4">halveOrDouble n <span class="op">|</span> <span class="fu">even</span> n    <span class="ot">=</span> [n <span class="ot">`div`</span> <span class="dv">2</span>, n <span class="op">*</span> <span class="dv">2</span>]</a>
-<a class="sourceLine" id="cb7-5" title="5">                <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> [n <span class="op">*</span> <span class="dv">2</span>]</a></code></pre></div>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1">ghci<span class="op">&gt;</span> halveOrDouble <span class="dv">6</span></a>
-<a class="sourceLine" id="cb8-2" title="2">[ <span class="dv">3</span>,<span class="dv">12</span>]</a>
-<a class="sourceLine" id="cb8-3" title="3">ghci<span class="op">&gt;</span> halveOrDouble <span class="dv">7</span></a>
-<a class="sourceLine" id="cb8-4" title="4">[   <span class="dv">14</span>]</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L19-L21</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a></span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="ot">halveOrDouble ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]</span>
+<span id="cb7-4"><a href="#cb7-4"></a>halveOrDouble n <span class="op">|</span> <span class="fu">even</span> n    <span class="ot">=</span> [n <span class="ot">`div`</span> <span class="dv">2</span>, n <span class="op">*</span> <span class="dv">2</span>]</span>
+<span id="cb7-5"><a href="#cb7-5"></a>                <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> [n <span class="op">*</span> <span class="dv">2</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a>ghci<span class="op">&gt;</span> halveOrDouble <span class="dv">6</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>[ <span class="dv">3</span>,<span class="dv">12</span>]</span>
+<span id="cb8-3"><a href="#cb8-3"></a>ghci<span class="op">&gt;</span> halveOrDouble <span class="dv">7</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a>[   <span class="dv">14</span>]</span></code></pre></div>
 <p>(<a href="https://github.com/mstksg/inCode/blob/master/code-samples/monad-plus/HalveOrDouble.hs">Play with this and other functions this section on your own</a>)</p>
 <p>As you can see in the first case, with the 6, there are two paths to success: the halve, and the double. In the second case, with the 7, there is only one — the double.</p>
 <p>How about we subject a number to this halving-or-doubling journey twice? What do we expect?</p>
@@ -130,41 +130,41 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 </ol>
 <p>So…halving-or-doubling twice has two possible successful paths for an odd number, three successful paths for a number divisible by two but not four, and four successful paths for a number divisible by four.</p>
 <p>Let’s try it out:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1">ghci<span class="op">&gt;</span> halveOrDouble <span class="dv">5</span> <span class="op">&gt;&gt;=</span> halveOrDouble</a>
-<a class="sourceLine" id="cb9-2" title="2">[       <span class="dv">5</span>, <span class="dv">20</span>]</a>
-<a class="sourceLine" id="cb9-3" title="3">ghci<span class="op">&gt;</span> halveOrDouble <span class="dv">6</span> <span class="op">&gt;&gt;=</span> halveOrDouble</a>
-<a class="sourceLine" id="cb9-4" title="4">[    <span class="dv">6</span>, <span class="dv">6</span>, <span class="dv">24</span>]</a>
-<a class="sourceLine" id="cb9-5" title="5">ghci<span class="op">&gt;</span> halveOrDouble <span class="dv">8</span> <span class="op">&gt;&gt;=</span> halveOrDouble</a>
-<a class="sourceLine" id="cb9-6" title="6">[ <span class="dv">2</span>, <span class="dv">8</span>, <span class="dv">8</span>, <span class="dv">32</span>]</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a>ghci<span class="op">&gt;</span> halveOrDouble <span class="dv">5</span> <span class="op">&gt;&gt;=</span> halveOrDouble</span>
+<span id="cb9-2"><a href="#cb9-2"></a>[       <span class="dv">5</span>, <span class="dv">20</span>]</span>
+<span id="cb9-3"><a href="#cb9-3"></a>ghci<span class="op">&gt;</span> halveOrDouble <span class="dv">6</span> <span class="op">&gt;&gt;=</span> halveOrDouble</span>
+<span id="cb9-4"><a href="#cb9-4"></a>[    <span class="dv">6</span>, <span class="dv">6</span>, <span class="dv">24</span>]</span>
+<span id="cb9-5"><a href="#cb9-5"></a>ghci<span class="op">&gt;</span> halveOrDouble <span class="dv">8</span> <span class="op">&gt;&gt;=</span> halveOrDouble</span>
+<span id="cb9-6"><a href="#cb9-6"></a>[ <span class="dv">2</span>, <span class="dv">8</span>, <span class="dv">8</span>, <span class="dv">32</span>]</span></code></pre></div>
 <p>The first list represents the results of all of the possible successful paths 5 could have taken to “traverse” the dreaded <code>halveOrDouble</code> landscape twice — double-halve, or double-double. The second, 6 could have emerged successful with halve-double, double-halve, or double-double. For 8, all paths are successful, incidentally. He better check his privilege.</p>
 <h3 id="do-notation">Do notation</h3>
 <p>Let’s look at the same thing in do notation form to offer some possible insight:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L24-L27</span></a>
-<a class="sourceLine" id="cb10-2" title="2"></a>
-<a class="sourceLine" id="cb10-3" title="3"><span class="ot">halveOrDoubleTwice ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]</a>
-<a class="sourceLine" id="cb10-4" title="4">halveOrDoubleTwice n <span class="ot">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb10-5" title="5">    x <span class="ot">&lt;-</span> halveOrDouble n</a>
-<a class="sourceLine" id="cb10-6" title="6">    halveOrDouble x</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L24-L27</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a></span>
+<span id="cb10-3"><a href="#cb10-3"></a><span class="ot">halveOrDoubleTwice ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]</span>
+<span id="cb10-4"><a href="#cb10-4"></a>halveOrDoubleTwice n <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb10-5"><a href="#cb10-5"></a>    x <span class="ot">&lt;-</span> halveOrDouble n</span>
+<span id="cb10-6"><a href="#cb10-6"></a>    halveOrDouble x</span></code></pre></div>
 <p>Do notation describes <strong>a single path of a value</strong>. This is slightly confusing at first. But look at it — it has the <em>exact same form</em> as a Maybe monad do block.</p>
 <p>This thing describes, in general terms, the path of a <strong>single value</strong>. <code>x</code> is <strong>not</strong> a list — it represents a single value, in the middle of its treacherous journey.</p>
 <p>Here is an illustration, tracing out “individual paths”:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" title="1"><span class="ot">halveOrDoubleTwice ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]</a>
-<a class="sourceLine" id="cb11-2" title="2">halveOrDoubleTwice n <span class="ot">=</span> <span class="kw">do</span>       <span class="co">-- halveOrDoubleTwice 6</span></a>
-<a class="sourceLine" id="cb11-3" title="3">    x <span class="ot">&lt;-</span> halveOrDouble n        <span class="co">-- x &lt;-     Just 3          Just 12</span></a>
-<a class="sourceLine" id="cb11-4" title="4">    halveOrDouble x             <span class="co">--      Nothing  Just 6  Just 6  Just 24</span></a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a><span class="ot">halveOrDoubleTwice ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]</span>
+<span id="cb11-2"><a href="#cb11-2"></a>halveOrDoubleTwice n <span class="ot">=</span> <span class="kw">do</span>       <span class="co">-- halveOrDoubleTwice 6</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a>    x <span class="ot">&lt;-</span> halveOrDouble n        <span class="co">-- x &lt;-     Just 3          Just 12</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a>    halveOrDouble x             <span class="co">--      Nothing  Just 6  Just 6  Just 24</span></span></code></pre></div>
 <p>where you take the left path if you want to halve, and the right path if you want to double.</p>
 <p>Remember, just like in the Maybe monad, the <code>x</code> represents the value “inside” the object — <code>x</code> represents a 3 <strong>or</strong> a 12 (but not “both”), depending on what path you are taking/are “in”. That’s why we can call <code>halveOrDouble x</code>: <code>halveOrDouble</code> only takes <code>Int</code>s and <code>x</code> is <em>one</em> <code>Int</code> along the path.</p>
 <h3 id="a-winding-journey">A winding journey</h3>
 <p>Note that once you bind a value to a variable (like <code>x</code>), then that is the value for <code>x</code> for the entire rest of the journey. In fact, let’s see it in action:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L29-L29</span></a>
-<a class="sourceLine" id="cb12-2" title="2"></a>
-<a class="sourceLine" id="cb12-3" title="3"><span class="ot">hod2PlusOne ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]</a>
-<a class="sourceLine" id="cb12-4" title="4">hod2PlusOne n <span class="ot">=</span> <span class="kw">do</span>              <span class="co">-- hod2PlusOne 6</span></a>
-<a class="sourceLine" id="cb12-5" title="5">    x <span class="ot">&lt;-</span> halveOrDouble n        <span class="co">-- x &lt;-     Just 3          Just 12</span></a>
-<a class="sourceLine" id="cb12-6" title="6">    halveOrDouble x             <span class="co">--      Nothing  Just 6  Just 6  Just 24</span></a>
-<a class="sourceLine" id="cb12-7" title="7">    <span class="fu">return</span> <span class="op">$</span> x <span class="op">+</span> <span class="dv">1</span>              <span class="co">--      (skip)   Just 4  Just 13 Just 13</span></a></code></pre></div>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" title="1">ghci<span class="op">&gt;</span> hod2PlusOne <span class="dv">6</span></a>
-<a class="sourceLine" id="cb13-2" title="2">[   <span class="dv">4</span>,<span class="dv">13</span>,<span class="dv">13</span>]</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L29-L29</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a></span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="ot">hod2PlusOne ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]</span>
+<span id="cb12-4"><a href="#cb12-4"></a>hod2PlusOne n <span class="ot">=</span> <span class="kw">do</span>              <span class="co">-- hod2PlusOne 6</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a>    x <span class="ot">&lt;-</span> halveOrDouble n        <span class="co">-- x &lt;-     Just 3          Just 12</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a>    halveOrDouble x             <span class="co">--      Nothing  Just 6  Just 6  Just 24</span></span>
+<span id="cb12-7"><a href="#cb12-7"></a>    <span class="fu">return</span> <span class="op">$</span> x <span class="op">+</span> <span class="dv">1</span>              <span class="co">--      (skip)   Just 4  Just 13 Just 13</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1"></a>ghci<span class="op">&gt;</span> hod2PlusOne <span class="dv">6</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a>[   <span class="dv">4</span>,<span class="dv">13</span>,<span class="dv">13</span>]</span></code></pre></div>
 <p>Okay! This is getting interesting now. What’s going on? Well, there are four possible “paths”.</p>
 <ol type="1">
 <li>In the half-half path, <code>x</code> (the result of the first halving) is 3. However, the half-half path is a failure — 6 cannot be halved twice. Therefore, even though <code>x</code> is three, the path has already failed before we get to the <code>return (x + 1)</code>. Just like in the case with Maybe, once something fails during the process of the journey, the entire journey is a failure.</li>
@@ -174,36 +174,36 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 </ol>
 <h4 id="trying-out-every-path">Trying out every path</h4>
 <p>If this doesn’t satisfy you, here is an example of four Maybe do blocks where we “flesh out” each possible path, with the value of the block at each line in comments:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" title="1"><span class="ot">double ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb14-2" title="2">double n <span class="ot">=</span> <span class="dt">Just</span> n</a>
-<a class="sourceLine" id="cb14-3" title="3"></a>
-<a class="sourceLine" id="cb14-4" title="4"><span class="ot">halveHalvePlusOne ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb14-5" title="5">halveHalvePlusOne n <span class="ot">=</span> <span class="kw">do</span>                <span class="co">-- n = 6</span></a>
-<a class="sourceLine" id="cb14-6" title="6">    x <span class="ot">&lt;-</span> halve n                        <span class="co">-- Just 3 (x = 3)</span></a>
-<a class="sourceLine" id="cb14-7" title="7">    halve x                             <span class="co">-- Nothing</span></a>
-<a class="sourceLine" id="cb14-8" title="8">    <span class="fu">return</span> <span class="op">$</span> x <span class="op">+</span> <span class="dv">1</span>                      <span class="co">-- (skip)</span></a>
-<a class="sourceLine" id="cb14-9" title="9"></a>
-<a class="sourceLine" id="cb14-10" title="10"><span class="ot">halveDoublePlusOne ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb14-11" title="11">halveDoublePlusOne <span class="ot">=</span> <span class="kw">do</span>                 <span class="co">-- n = 6</span></a>
-<a class="sourceLine" id="cb14-12" title="12">    x <span class="ot">&lt;-</span> halve n                        <span class="co">-- Just 3 (x = 3)</span></a>
-<a class="sourceLine" id="cb14-13" title="13">    double x                            <span class="co">-- Just 6</span></a>
-<a class="sourceLine" id="cb14-14" title="14">    <span class="fu">return</span> <span class="op">$</span> x <span class="op">+</span> <span class="dv">1</span>                      <span class="co">-- Just 4</span></a>
-<a class="sourceLine" id="cb14-15" title="15"></a>
-<a class="sourceLine" id="cb14-16" title="16"><span class="ot">doubleHalvePlusOne ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb14-17" title="17">doubleHalvePlusOne <span class="ot">=</span> <span class="kw">do</span>                 <span class="co">-- n = 6</span></a>
-<a class="sourceLine" id="cb14-18" title="18">    x <span class="ot">&lt;-</span> double n                       <span class="co">-- Just 12 (x = 12)</span></a>
-<a class="sourceLine" id="cb14-19" title="19">    halve x                             <span class="co">-- Just 6</span></a>
-<a class="sourceLine" id="cb14-20" title="20">    <span class="fu">return</span> <span class="op">$</span> x <span class="op">+</span> <span class="dv">1</span>                      <span class="co">-- Just 13</span></a>
-<a class="sourceLine" id="cb14-21" title="21"></a>
-<a class="sourceLine" id="cb14-22" title="22"><span class="ot">doubleDoublePlusOne ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb14-23" title="23">doubleDoublePlusOne <span class="ot">=</span> <span class="kw">do</span>                <span class="co">-- n = 6</span></a>
-<a class="sourceLine" id="cb14-24" title="24">    x <span class="ot">&lt;-</span> double n                       <span class="co">-- Just 12 (x = 12)</span></a>
-<a class="sourceLine" id="cb14-25" title="25">    double x                            <span class="co">-- Just 6</span></a>
-<a class="sourceLine" id="cb14-26" title="26">    <span class="fu">return</span> <span class="op">$</span> x <span class="op">+</span> <span class="dv">1</span>                      <span class="co">-- Just 13</span></a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1"></a><span class="ot">double ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a>double n <span class="ot">=</span> <span class="dt">Just</span> n</span>
+<span id="cb14-3"><a href="#cb14-3"></a></span>
+<span id="cb14-4"><a href="#cb14-4"></a><span class="ot">halveHalvePlusOne ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
+<span id="cb14-5"><a href="#cb14-5"></a>halveHalvePlusOne n <span class="ot">=</span> <span class="kw">do</span>                <span class="co">-- n = 6</span></span>
+<span id="cb14-6"><a href="#cb14-6"></a>    x <span class="ot">&lt;-</span> halve n                        <span class="co">-- Just 3 (x = 3)</span></span>
+<span id="cb14-7"><a href="#cb14-7"></a>    halve x                             <span class="co">-- Nothing</span></span>
+<span id="cb14-8"><a href="#cb14-8"></a>    <span class="fu">return</span> <span class="op">$</span> x <span class="op">+</span> <span class="dv">1</span>                      <span class="co">-- (skip)</span></span>
+<span id="cb14-9"><a href="#cb14-9"></a></span>
+<span id="cb14-10"><a href="#cb14-10"></a><span class="ot">halveDoublePlusOne ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
+<span id="cb14-11"><a href="#cb14-11"></a>halveDoublePlusOne <span class="ot">=</span> <span class="kw">do</span>                 <span class="co">-- n = 6</span></span>
+<span id="cb14-12"><a href="#cb14-12"></a>    x <span class="ot">&lt;-</span> halve n                        <span class="co">-- Just 3 (x = 3)</span></span>
+<span id="cb14-13"><a href="#cb14-13"></a>    double x                            <span class="co">-- Just 6</span></span>
+<span id="cb14-14"><a href="#cb14-14"></a>    <span class="fu">return</span> <span class="op">$</span> x <span class="op">+</span> <span class="dv">1</span>                      <span class="co">-- Just 4</span></span>
+<span id="cb14-15"><a href="#cb14-15"></a></span>
+<span id="cb14-16"><a href="#cb14-16"></a><span class="ot">doubleHalvePlusOne ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
+<span id="cb14-17"><a href="#cb14-17"></a>doubleHalvePlusOne <span class="ot">=</span> <span class="kw">do</span>                 <span class="co">-- n = 6</span></span>
+<span id="cb14-18"><a href="#cb14-18"></a>    x <span class="ot">&lt;-</span> double n                       <span class="co">-- Just 12 (x = 12)</span></span>
+<span id="cb14-19"><a href="#cb14-19"></a>    halve x                             <span class="co">-- Just 6</span></span>
+<span id="cb14-20"><a href="#cb14-20"></a>    <span class="fu">return</span> <span class="op">$</span> x <span class="op">+</span> <span class="dv">1</span>                      <span class="co">-- Just 13</span></span>
+<span id="cb14-21"><a href="#cb14-21"></a></span>
+<span id="cb14-22"><a href="#cb14-22"></a><span class="ot">doubleDoublePlusOne ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
+<span id="cb14-23"><a href="#cb14-23"></a>doubleDoublePlusOne <span class="ot">=</span> <span class="kw">do</span>                <span class="co">-- n = 6</span></span>
+<span id="cb14-24"><a href="#cb14-24"></a>    x <span class="ot">&lt;-</span> double n                       <span class="co">-- Just 12 (x = 12)</span></span>
+<span id="cb14-25"><a href="#cb14-25"></a>    double x                            <span class="co">-- Just 6</span></span>
+<span id="cb14-26"><a href="#cb14-26"></a>    <span class="fu">return</span> <span class="op">$</span> x <span class="op">+</span> <span class="dv">1</span>                      <span class="co">-- Just 13</span></span></code></pre></div>
 <h4 id="a-graphical-look">A graphical look</h4>
 <p>This tree might also be a nice illustration, showing what happens at each stage of the journey.</p>
 <figure>
-<img src="/img/entries/monad-plus/halvedouble.png" title="hod2PlusOne 6" alt="hod2PlusOne 6, all journeys illustrated" /><figcaption><em>hod2PlusOne 6</em>, all journeys illustrated</figcaption>
+<img src="/img/entries/monad-plus/halvedouble.png" title="hod2PlusOne 6" alt="" /><figcaption><em>hod2PlusOne 6</em>, all journeys illustrated</figcaption>
 </figure>
 <p>Every complete “journey” is a complete path from top to bottom. You can see that the left-left journey (the half-halve journey) fails. The left-right journey (the halve-double journey) passes, and at the end is given the value of <code>x + 1</code> for the <code>x</code> in that particular journey. The other journeys work the same way!</p>
 <h2 id="solving-real-ish-problems">Solving real-ish problems</h2>
@@ -211,15 +211,15 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>Before we end this post let’s build some more familiarity with the List monad and try out a very common practical example.</p>
 <h3 id="finding-the-right-combinations">Finding the right combinations</h3>
 <p>Here is probably the most common of all examples involving the list monad: finding Pythagorean triples.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-L18</span></a>
-<a class="sourceLine" id="cb15-2" title="2"></a>
-<a class="sourceLine" id="cb15-3" title="3"><span class="ot">triplesUnder ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]</a>
-<a class="sourceLine" id="cb15-4" title="4">triplesUnder n <span class="ot">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb15-5" title="5">    a <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="op">..</span>n]</a>
-<a class="sourceLine" id="cb15-6" title="6">    b <span class="ot">&lt;-</span> [a<span class="op">..</span>n]</a>
-<a class="sourceLine" id="cb15-7" title="7">    c <span class="ot">&lt;-</span> [b<span class="op">..</span>n]</a>
-<a class="sourceLine" id="cb15-8" title="8">    guard <span class="op">$</span> a<span class="op">^</span><span class="dv">2</span> <span class="op">+</span> b<span class="op">^</span><span class="dv">2</span> <span class="op">==</span> c<span class="op">^</span><span class="dv">2</span></a>
-<a class="sourceLine" id="cb15-9" title="9">    <span class="fu">return</span> (a,b,c)</a></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-L18</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a></span>
+<span id="cb15-3"><a href="#cb15-3"></a><span class="ot">triplesUnder ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]</span>
+<span id="cb15-4"><a href="#cb15-4"></a>triplesUnder n <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb15-5"><a href="#cb15-5"></a>    a <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="op">..</span>n]</span>
+<span id="cb15-6"><a href="#cb15-6"></a>    b <span class="ot">&lt;-</span> [a<span class="op">..</span>n]</span>
+<span id="cb15-7"><a href="#cb15-7"></a>    c <span class="ot">&lt;-</span> [b<span class="op">..</span>n]</span>
+<span id="cb15-8"><a href="#cb15-8"></a>    guard <span class="op">$</span> a<span class="op">^</span><span class="dv">2</span> <span class="op">+</span> b<span class="op">^</span><span class="dv">2</span> <span class="op">==</span> c<span class="op">^</span><span class="dv">2</span></span>
+<span id="cb15-9"><a href="#cb15-9"></a>    <span class="fu">return</span> (a,b,c)</span></code></pre></div>
 <p>(<a href="https://github.com/mstksg/inCode/blob/master/code-samples/monad-plus/TriplesUnder.hs">Download it and try it out yourself!</a>)</p>
 <ol type="1">
 <li>Our journey begins with picking a number between 1 and <code>n</code> and setting it to <code>a</code>.</li>
@@ -236,15 +236,15 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>Paths like <code>a = 5</code> and <code>b = 3</code> do not even happen. This is because if we pick <code>a = 5</code>, then in that particular journey, <code>b</code> can only be chosen between <code>5</code> and <code>n</code> inclusive.</p>
 <p>Remember, the final result is the accumulation of <strong>all such successful journeys</strong>. A little bit of combinatorics will show that there are <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B6%7D%20%5Ctimes%20%5Cfrac%7B%28n%2B2%29%21%7D%7B%28n-1%29%21%7D" alt="\frac{1}{6} \times \frac{(n+2)!}{(n-1)!}" title="\frac{1}{6} \times \frac{(n+2)!}{(n-1)!}" /> possible journeys to attempt. Only the ones that do not fail (at the guard) will make it to the end. Remember how MonadPlus works — one failure along the journey means that the <em>entire journey</em> is a failure.</p>
 <p>Let’s see what we get when we try it at the prompt:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" title="1">ghci<span class="op">&gt;</span> triplesUnder <span class="dv">10</span></a>
-<a class="sourceLine" id="cb16-2" title="2">[ ( <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>),( <span class="dv">6</span>, <span class="dv">8</span>,<span class="dv">10</span>) ]</a>
-<a class="sourceLine" id="cb16-3" title="3">ghci<span class="op">&gt;</span> triplesUnder <span class="dv">25</span></a>
-<a class="sourceLine" id="cb16-4" title="4">[ ( <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>),( <span class="dv">5</span>,<span class="dv">12</span>,<span class="dv">13</span>),( <span class="dv">6</span>, <span class="dv">8</span>,<span class="dv">10</span>),( <span class="dv">7</span>,<span class="dv">24</span>,<span class="dv">25</span>)</a>
-<a class="sourceLine" id="cb16-5" title="5"> ,( <span class="dv">8</span>,<span class="dv">15</span>,<span class="dv">17</span>),( <span class="dv">9</span>,<span class="dv">12</span>,<span class="dv">15</span>),(<span class="dv">12</span>,<span class="dv">16</span>,<span class="dv">20</span>),(<span class="dv">15</span>,<span class="dv">20</span>,<span class="dv">25</span>) ]</a></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1"></a>ghci<span class="op">&gt;</span> triplesUnder <span class="dv">10</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a>[ ( <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>),( <span class="dv">6</span>, <span class="dv">8</span>,<span class="dv">10</span>) ]</span>
+<span id="cb16-3"><a href="#cb16-3"></a>ghci<span class="op">&gt;</span> triplesUnder <span class="dv">25</span></span>
+<span id="cb16-4"><a href="#cb16-4"></a>[ ( <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>),( <span class="dv">5</span>,<span class="dv">12</span>,<span class="dv">13</span>),( <span class="dv">6</span>, <span class="dv">8</span>,<span class="dv">10</span>),( <span class="dv">7</span>,<span class="dv">24</span>,<span class="dv">25</span>)</span>
+<span id="cb16-5"><a href="#cb16-5"></a> ,( <span class="dv">8</span>,<span class="dv">15</span>,<span class="dv">17</span>),( <span class="dv">9</span>,<span class="dv">12</span>,<span class="dv">15</span>),(<span class="dv">12</span>,<span class="dv">16</span>,<span class="dv">20</span>),(<span class="dv">15</span>,<span class="dv">20</span>,<span class="dv">25</span>) ]</span></code></pre></div>
 <p>Perfect! You can probably quickly verify that all of these solutions are indeed Pythagorean triples. Out of the 220 journeys undertaken by <code>triplesUnder 10</code>, only two of them survived to the end to be successful. Out of the 2925 journeys in <code>triplesUnder 25</code>, only eight of them made it to the end. The rest “died”/failed, and as a result we do not even observe their remains. It is a cruel and unforgiving world.</p>
 <p>While the full diagram of <code>triplesUnder 5</code> has 35 branches, here is a diagram for those branches with <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?a%20%3E%202" alt="a &gt; 2" title="a &gt; 2" />, which has 10:</p>
 <figure>
-<img src="/img/entries/monad-plus/triplesunder.png" title="triplesUnder 5" alt="triplesUnder 5, all journeys (where a &gt; 2) illustrated" /><figcaption><em>triplesUnder 5</em>, all journeys (where a &gt; 2) illustrated</figcaption>
+<img src="/img/entries/monad-plus/triplesunder.png" title="triplesUnder 5" alt="" /><figcaption><em>triplesUnder 5</em>, all journeys (where a &gt; 2) illustrated</figcaption>
 </figure>
 <h2 id="almost-there">Almost There!</h2>
 <p>Let’s do a quick review:</p>
@@ -256,31 +256,31 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 </ul>
 <p>The last point is particularly important and is pretty pivotal in understanding what is coming up next. Remember that all Maybe blocks and List blocks really essentially look <em>exactly the same</em>. This keeping-track-of-separate-paths thing is all handled behind-the scenes.</p>
 <p>In fact you should be able to look at code like:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-L18</span></a>
-<a class="sourceLine" id="cb17-2" title="2"></a>
-<a class="sourceLine" id="cb17-3" title="3"><span class="ot">triplesUnder ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]</a>
-<a class="sourceLine" id="cb17-4" title="4">triplesUnder n <span class="ot">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb17-5" title="5">    a <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="op">..</span>n]</a>
-<a class="sourceLine" id="cb17-6" title="6">    b <span class="ot">&lt;-</span> [a<span class="op">..</span>n]</a>
-<a class="sourceLine" id="cb17-7" title="7">    c <span class="ot">&lt;-</span> [b<span class="op">..</span>n]</a>
-<a class="sourceLine" id="cb17-8" title="8">    guard <span class="op">$</span> a<span class="op">^</span><span class="dv">2</span> <span class="op">+</span> b<span class="op">^</span><span class="dv">2</span> <span class="op">==</span> c<span class="op">^</span><span class="dv">2</span></a>
-<a class="sourceLine" id="cb17-9" title="9">    <span class="fu">return</span> (a,b,c)</a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-L18</span></span>
+<span id="cb17-2"><a href="#cb17-2"></a></span>
+<span id="cb17-3"><a href="#cb17-3"></a><span class="ot">triplesUnder ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]</span>
+<span id="cb17-4"><a href="#cb17-4"></a>triplesUnder n <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb17-5"><a href="#cb17-5"></a>    a <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="op">..</span>n]</span>
+<span id="cb17-6"><a href="#cb17-6"></a>    b <span class="ot">&lt;-</span> [a<span class="op">..</span>n]</span>
+<span id="cb17-7"><a href="#cb17-7"></a>    c <span class="ot">&lt;-</span> [b<span class="op">..</span>n]</span>
+<span id="cb17-8"><a href="#cb17-8"></a>    guard <span class="op">$</span> a<span class="op">^</span><span class="dv">2</span> <span class="op">+</span> b<span class="op">^</span><span class="dv">2</span> <span class="op">==</span> c<span class="op">^</span><span class="dv">2</span></span>
+<span id="cb17-9"><a href="#cb17-9"></a>    <span class="fu">return</span> (a,b,c)</span></code></pre></div>
 <p>and see that it is structurally identical to</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" title="1"><span class="ot">triplesUnder&#39; ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb18-2" title="2">triplesUnder&#39; n <span class="ot">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb18-3" title="3">    a <span class="ot">&lt;-</span> <span class="dt">Just</span> <span class="dv">3</span></a>
-<a class="sourceLine" id="cb18-4" title="4">    b <span class="ot">&lt;-</span> <span class="dt">Just</span> <span class="dv">5</span></a>
-<a class="sourceLine" id="cb18-5" title="5">    c <span class="ot">&lt;-</span> <span class="dt">Just</span> <span class="dv">8</span></a>
-<a class="sourceLine" id="cb18-6" title="6">    guard <span class="op">$</span> a<span class="op">^</span><span class="dv">2</span> <span class="op">+</span> b<span class="op">^</span><span class="dv">2</span> <span class="op">==</span> c<span class="op">^</span><span class="dv">2</span></a>
-<a class="sourceLine" id="cb18-7" title="7">    <span class="fu">return</span> (a,b,c)</a></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1"></a><span class="ot">triplesUnder&#39; ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
+<span id="cb18-2"><a href="#cb18-2"></a>triplesUnder&#39; n <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb18-3"><a href="#cb18-3"></a>    a <span class="ot">&lt;-</span> <span class="dt">Just</span> <span class="dv">3</span></span>
+<span id="cb18-4"><a href="#cb18-4"></a>    b <span class="ot">&lt;-</span> <span class="dt">Just</span> <span class="dv">5</span></span>
+<span id="cb18-5"><a href="#cb18-5"></a>    c <span class="ot">&lt;-</span> <span class="dt">Just</span> <span class="dv">8</span></span>
+<span id="cb18-6"><a href="#cb18-6"></a>    guard <span class="op">$</span> a<span class="op">^</span><span class="dv">2</span> <span class="op">+</span> b<span class="op">^</span><span class="dv">2</span> <span class="op">==</span> c<span class="op">^</span><span class="dv">2</span></span>
+<span id="cb18-7"><a href="#cb18-7"></a>    <span class="fu">return</span> (a,b,c)</span></code></pre></div>
 <p>for any arbitrary choice of <code>a</code>, <code>b</code>, and <code>c</code>, except instead of <code>Just 3</code> (or <code>[3]</code>), you have <code>[2,3,4]</code>, etc.</p>
 <p>In fact recall that this block:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" title="1"><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-L43</span></a>
-<a class="sourceLine" id="cb19-2" title="2"></a>
-<a class="sourceLine" id="cb19-3" title="3"><span class="ot">genericHalve ::</span> <span class="dt">MonadPlus</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb19-4" title="4">genericHalve n <span class="ot">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb19-5" title="5">    guard <span class="op">$</span> <span class="fu">even</span> n</a>
-<a class="sourceLine" id="cb19-6" title="6">    <span class="fu">return</span> <span class="op">$</span> n <span class="ot">`div`</span> <span class="dv">2</span></a></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-L43</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a></span>
+<span id="cb19-3"><a href="#cb19-3"></a><span class="ot">genericHalve ::</span> <span class="dt">MonadPlus</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m <span class="dt">Int</span></span>
+<span id="cb19-4"><a href="#cb19-4"></a>genericHalve n <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb19-5"><a href="#cb19-5"></a>    guard <span class="op">$</span> <span class="fu">even</span> n</span>
+<span id="cb19-6"><a href="#cb19-6"></a>    <span class="fu">return</span> <span class="op">$</span> n <span class="ot">`div`</span> <span class="dv">2</span></span></code></pre></div>
 <p>is general enough that it works for both.</p>
 <p>Hopefully this all serves to show that <strong>in do blocks, Lists and Maybes are structurally identical</strong>. You reason with them the exact same way you do with Maybe’s. In something like <code>x &lt;- Just 5</code>, <code>x</code> represents a <strong>single value</strong>, the 5. In something like <code>x &lt;- [1,2,3]</code>, <code>x</code> <em>also</em> represents a single value — the 1, the 2, or the 3, depending on which path you are currently on. Then later in the block, you can refer to <code>x</code>, and <code>x</code> refers to <em>that</em> one specific <code>x</code> for that path.</p>
 <h3 id="until-next-time">Until next time</h3>
