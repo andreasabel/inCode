@@ -94,6 +94,13 @@ type CommandArgs = MapF String (Ap Arg :*: Lift Option)
 You can mix or match combinators to decide exactly what sort of structures you
 allow in your DSL.
 
+Now, instead of writing one "giant"
+`runParser :: MapF String (Ap Arg :*: Lift Option) a -> IO a` function, you can
+instead just write parsers for your simple primitives `Arg a -> IO a` and
+`Option a -> IO a`, and then use functor combinator tools to "promote" them to
+being runnable on a full `MapF String (Ap Arg :*: Lift Option)` without any
+extra work.
+
 ### Common Functionality
 
 Most of these functor combinators allow us to "swap out" the underlying functor,
@@ -234,10 +241,14 @@ The Zoo
 Binary functor combinators "mix together" two functors/indexed types in
 different ways.
 
-Each one has two associated constraints:
+We can finally *interpret* (or "run") these into some target context (like
+`Parser`, or `IO`), provided the target satisfies some constraints.
 
--   `CS t` is the constraint on where you can *interpret* or *run* values of the
-    enhanced type:
+This constraint depends on the functor combinator in question; in particular,
+there are two, which we will call `CS` and `CM`:
+
+-   `CS t` is what we will call the constraint on where you can *interpret* or
+    *run* values of the enhanced type:
 
     ``` {.haskell}
     binterpret
@@ -245,10 +256,6 @@ Each one has two associated constraints:
         => (f ~> h)
         => (g ~> h)
         -> (t f g ~> h)
-
-    biretract
-        :: (Semigroupoidal t, CS t f)
-        => t f f ~> f
     ```
 
 -   `CM t` is the constraint on where you can *create* values of the enhanced
@@ -266,14 +273,23 @@ Each one has two associated constraints:
         => g ~> t f g
     ```
 
-Most of these also have an identity, `I t`, where applying `t f (I t)` leaves
-`f` unchanged (`t f (I t) ~ f`). This is represented by the associated type
-`I t`.
+    It should always be a subclass of `CS`.
 
-All of these also have a "apply to self many times", for situations where you
-want to represent the act of applying `t` to the same `f` multiple times, called
-the "induced monoidal functor combinator", given by `MF t` (or `SF t` for the
-"nonempty" variant).
+As it turns out, `CS` and `CM` generalize the "has an identity" property of many
+typeclasses --- for example, for `Comp` (functor composition), `CS` is `Bind`
+("`Monad` without `pure`"), and `CM` is `Monad`.
+
+Most of these also have an identity, `I t`, where applying `t f (I t)` leaves
+`f` unchanged (`t f (I t)` is isomorphic to `f`) and `t (I t) f` is also just
+`f`. This is represented by the associated type `I t`.
+
+One interesting property of these is that for a lot of these, if we have a
+binary functor combinator `*`, we can represent a type
+`f | f * f | f * f * f | f * f * f * f | ...` ("repeatedly apply to something
+multiple times"), which essentially forms a linked list along that functor
+combinator. We call this the "induced monoidal functor combinator", given by
+`MF t`. We can also make a "non-empty variant", `SF t`, the "induced
+semigroupoidal functor combinator", which contains "at least one `f`".
 
 You can "convert" back and forth by using:
 
@@ -285,8 +301,8 @@ consMF :: t f (MF t) ~> MF t
 
 and other helper functions.
 
-Here we simply list the induced monoid with some small notes; for more details,
-see the actual section for that induced monoid later on.
+If this is unclear, hopefully the following concrete examples will help
+illustrate.
 
 #### :+: / Sum
 
@@ -327,27 +343,42 @@ see the actual section for that induced monoid later on.
         -> h a
     ```
 
--   **Constraints**
-
-    ``` {.haskell}
-    type CS (:+:) = Unconstrained
-    type CM (:+:) = Unconstrained
-    ```
-
-    You don't need any constraint in order to use `binterpret`, `inL`, `inR`,
-    etc.
-
-    However, note that `pureT @(:+:) :: Void1 ~> h` is effectively impossible to
-    call, because no values of type `Void1 a` exist.
+    `binterpret` becomes analogous to `either` from
+    *[Data.Either](https://hackage.haskell.org/package/base/docs/Data-Either.html)*
 
 -   **Identity**
 
     ``` {.haskell}
     type I (:+:) = Void1
+
+    -- | Data type with no inhabitants
+    data Void1 a
     ```
 
     `f :+: Void1` is equivalent to just `f`, because you can never have a value
     of the right branch.
+
+-   **Constraints**
+
+    ``` {.haskell}
+    type CS (:+:) = Unconstrained
+    type CM (:+:) = Unconstrained
+
+    binterpret @(:+:)
+        :: f ~> h
+        -> g ~> h
+        -> (f :+: g) ~> h
+
+    inL   @(:+:) :: f     ~> f :+: g
+    inR   @(:+:) :: g     ~> f :+: g
+    pureT @(:+:) :: Void1 ~> h
+    ```
+
+    You don't need any constraint in order to use `binterpret`, `inL`, `inR`,
+    etc.
+
+    However, note that `pureT` is effectively impossible to call, because no
+    values of type `Void1 a` exist.
 
 -   **Induced Monoid**
 
@@ -360,6 +391,15 @@ see the actual section for that induced monoid later on.
 
     ``` {.haskell}
     type Step f = f :+: f :+: f :+: f :+: f :+: f :+: ... etc.
+    ```
+
+    The correspondence is:
+
+    ``` {.haskell}
+    L1 x           <=> Step 0 x
+    R1 (L1 y)      <=> Step 1 y
+    R1 (R1 (L1 z)) <=> Step 2 z
+    -- etc.
     ```
 
     It's not a particularly useful type, but it can be useful if you want to
@@ -391,29 +431,62 @@ see the actual section for that induced monoid later on.
 
     ``` {.haskell}
     prodOutL :: (f :*: g) ~> f
+    prodOutL (x :*: _) = x
+
     prodOutR :: (f :*: g) ~> g
+    prodOutR (_ :*: y) = y
     ```
+
+-   **Identity**
+
+    ``` {.haskell}
+    type I (:*:) = Proxy
+
+    -- | Data type with only a single constructor and no information
+    data Proxy a = Proxy
+    ```
+
+    `f :+: Proxy` is equivalent to just `f`, because the left hand side doesn't
+    add anything extra to the pair.
 
 -   **Constraints**
 
     ``` {.haskell}
     type CS (:*:) = Alt
     type CM (:*:) = Plus
+
+    binterpret @(:*:)
+        :: Alt h
+        => f ~> h
+        -> g ~> h
+        -> (f :*: g) ~> h
+
+    inL   @(:*:) :: Plus g => f     ~> f :*: g
+    inR   @(:*:) :: Plus f => g     ~> f :*: g
+    pureT @(:*:) :: Plus h => Proxy ~> h
     ```
 
-    Fully interpreting out of `:*:` requires
-    [`Alt`](https://hackage.haskell.org/package/semigroupoids/docs/Data-Functor-Alt.html)
-    (to combine both branches), but if we use only one branch or ther other, we
-    can use `prodOutL` or `prodOutR` and require no constraint.
-
--   **Identity**
+    `Alt`, from
+    *[Data.Functor.Alt](https://hackage.haskell.org/package/semigroupoids/docs/Data-Functor-Alt.html)*
+    in *semigroupoids*, can be thought of a "higher-kinded semigroup": it's like
+    `Alternative`, but with no `Applicative` constraint and no identity:
 
     ``` {.haskell}
-    type I (:*:) = Proxy
+    class Alt f where
+        (<!>) :: f a -> f a -> f a
     ```
 
-    `f :+: Proxy` is equivalent to just `f`, because the left hand side doesn't
-    add anything extra to the pair.
+    It is used to combine the results in both branches of the `:*:`.
+
+    To introduce an "empty" branch, we need `Plus` (in
+    *[Data.Functor.Plus](https://hackage.haskell.org/package/semigroupoids/docs/Data-Functor-Plus.html)*),
+    which is like a higher-kinded `Monoid`, or `Alternative` with no
+    `Applicative`:
+
+    ``` {.haskell}
+    class Alt f => Plus f where
+        zero :: f a
+    ```
 
 -   **Induced Monoid**
 
@@ -428,11 +501,23 @@ see the actual section for that induced monoid later on.
 
     It's basically an ordered collection of `f a`s `:*:`d with each other.
 
+    ``` {.haskell}
+    Proxy         <=> ListF []
+    x             <=> ListF [x]
+    x :*: y       <=> ListF [x,y]
+    x :*: y :*: z <=> ListF [x,y,z]
+    -- etc.
+    ```
+
     It is useful if you want to define a schema where you can offer *multiple*
     options for the `f a`, and the interpreter/consumer can freely pick any one
     that they want to use.
 
     `NonEmptyF` is the version of `ListF` that has "at least one `f a`".
+
+    Incidentally, `NonEmptyF` is the "free `Alt`" (it gives a functor
+    `Alt`-ness, and nothing more), and `ListF` is the "free `Plus`" (it gives a
+    functor `Plus`-ness, and nothing more).
 
 #### Day
 
@@ -456,35 +541,6 @@ see the actual section for that induced monoid later on.
     Unlike for `:*:`, you always have to interpret *both* functor values in
     order to interpret a `Day`. It's a "full mixing".
 
--   **Constraints**
-
-    ``` {.haskell}
-    type CS Day = Apply
-    type CM Day = Applicative
-    ```
-
-    We need `Applicative` to interpret out of a `Day`. Note that all
-    `Applicative` instances should have an `Apply` instance, but due to how
-    *base* is structured, `Apply` is not a true superclass officially. You can
-    use `upgradeC @Day` to bring an `Apply` instance into scope for any
-    `Applicative` instance.
-
-    For example, let's say we had a type `Parser` from an external library that
-    is `Applicative` but not `Apply`. In that case,
-
-    ``` {.haskell}
-    biretract :: Day Parser Parser a -> Parser a
-    ```
-
-    is a type error (because `Parser` has no `Apply` instance), but
-
-    ``` {.haskell}
-    upgradeC @Day (Proxy @Parser) biretract
-        :: Day Parser Parser a -> Parser a
-    ```
-
-    will typecheck.
-
 -   **Identity**
 
     ``` {.haskell}
@@ -493,6 +549,30 @@ see the actual section for that induced monoid later on.
 
     `Day f Identity` is equivalent to just `f`, because `Identity` adds no extra
     effects or structure.
+
+-   **Constraints**
+
+    ``` {.haskell}
+    type CS Day = Apply
+    type CM Day = Applicative
+
+    binterpret @Day
+        :: Apply h
+        => f ~> h
+        -> g ~> h
+        -> Day f g ~> h
+
+    inL   @Day :: Applicative g => f        ~> Day f g
+    inR   @Day :: Applicative f => g        ~> Day f g
+    pureT @Day :: Applicative h => Identity ~> h
+    ```
+
+    `Apply`, from
+    *[Data.Functor.Apply](https://hackage.haskell.org/package/semigroupoids/docs/Data-Functor-Apply.html)*
+    in *semigroupoids*, is "`Applicative` without `pure`"; it only has `<*>`
+    (called `<.>`).
+
+    `pureT` is essentially `pure :: Applicative h => a -> h a`.
 
 -   **Induced Monoid**
 
@@ -518,6 +598,10 @@ see the actual section for that induced monoid later on.
 
     `Ap1` is a version with "at least one" `f a`.
 
+    Incidentally, `Ap1` is the "free `Apply`" (it gives a functor `Apply`-ness,
+    and nothing more), and `Ap` is the "free `Applicative`" (it gives a functor
+    `Applicative`-ness, and nothing more).
+
 #### Comp
 
 -   **Origin**:
@@ -526,9 +610,10 @@ see the actual section for that induced monoid later on.
     *[GHC.Generics](https://hackage.haskell.org/package/base/docs/GHC-Generics.html)*
     and
     *[Data.Functor.Compose](https://hackage.haskell.org/package/base/docs/Data-Functor-Compose.html)*,
-    but they are incompatible with the `HBifunctor` typeclass.
+    but they are incompatible with the `HBifunctor` typeclass because they
+    require the second input to have a `Functor` instance.
 
--   **Mixing Strategy**: "Both, together, sequentially": provide values from
+-   **Mixing Strategy**: "Both, together, sequentially" : provide values from
     *both* functors; the user must *use* both, and *in order*.
 
     ``` {.haskell}
@@ -551,18 +636,6 @@ see the actual section for that induced monoid later on.
     Unlike for `:*:`, you always have to interpret *both* functor values. And,
     unlike for `Day`, you must interpret both functor values *in that order*.
 
--   **Constraints**
-
-    ``` {.haskell}
-    type CS Comp = Bind
-    type CM Comp = Monad
-    ```
-
-    We need `Monad` to interpret out of a `Comp`. Note that all `Monad`
-    instances should have a `Bind` instance, but due to how *base* is
-    structured, `Bind` is not a true superclass officially. See the note on
-    `Day` for more information on getting around this with `upgradeC`.
-
 -   **Identity**
 
     ``` {.haskell}
@@ -571,6 +644,31 @@ see the actual section for that induced monoid later on.
 
     `Comp f Identity` is equivalent to just `f`, because `Identity` adds no
     extra effects or structure.
+
+-   **Constraints**
+
+    ``` {.haskell}
+    type CS Comp = Bind
+    type CM Comp = Monad
+
+    binterpret @Comp
+        :: Bind h
+        => f ~> h
+        -> g ~> h
+        -> Comp f g ~> h
+
+    inL   @Comp :: Monad g => f        ~> Comp f g
+    inR   @Comp :: Monad f => g        ~> Comp f g
+    pureT @Comp :: Monad h => Identity ~> h
+    ```
+
+    `Bind`, from *semigroupoids*, is "`Monad` without `return`"; it only has
+    `>>=` (called `>>-`).
+
+    Somewhat serendipitously, the `CM` constraint associated with `Comp` is the
+    infamous `Monad`. Hopefully this insight also gives you some insight on the
+    nature of `Monad` as an abstraction: it's a way to "interpret" in and out of
+    `Comp` :)
 
 -   **Induced Monoid**
 
@@ -597,6 +695,10 @@ see the actual section for that induced monoid later on.
     depend on result of the previous box.
 
     `Free1` is a version with "at least one" `f a`.
+
+    Incidentally, `Free1` is the "free `Bind`" (it gives a functor `Bind`-ness,
+    and nothing more), and `Free` is the "free `Monad`" (it gives a functor
+    `Monad`-ness, and nothing more).
 
 #### These1
 
@@ -631,18 +733,7 @@ see the actual section for that induced monoid later on.
     ```
 
     You can also pattern match on the `These1` directly to be more explicit with
-    how you handle each case.
-
--   **Constraints**
-
-    ``` {.haskell}
-    type CS These1 = Alt
-    type CM These1 = Alt
-    ```
-
-    You need at least `Alt` to be able to interpret out of a `These1`, because
-    you need to be able to handle the case where you have *both* `f` and `g`,
-    and need to combine the result.
+    how you handle each of the tree cases.
 
 -   **Identity**
 
@@ -654,15 +745,36 @@ see the actual section for that induced monoid later on.
     `These1` branches will be impossible to construct, and you are left with
     only the `This1` branch.
 
+-   **Constraints**
+
+    ``` {.haskell}
+    type CS These1 = Alt
+    type CM These1 = Alt
+
+    binterpret @These1
+        :: Alt h
+        => f ~> h
+        -> g ~> h
+        -> These1 f g ~> h
+
+    inL   @These1 :: Alt g => f     ~> Comp f g
+    inR   @These1 :: Alt f => g     ~> Comp f g
+    pureT @These1 :: Alt h => Void1 ~> h
+    ```
+
+    You need at least `Alt` to be able to interpret out of a `These1`, because
+    you need to be able to handle the case where you have *both* `f` and `g`,
+    and need to combine the result. However, you never need a full `Plus`
+    because we always have at least one value to use.
+
 -   **Induced Monoid**
 
     ``` {.haskell}
-    type SF These1 = ComposeT Flagged Steps
     type MF These1 = Steps
     ```
 
-    `Steps` is the result of an infinite application of \`These1 to the same
-    value:
+    `Steps`, the induced monoidal functor combinator, is the result of an
+    infinite application of \`These1 to the same value:
 
     ``` {.haskell}
     type Steps f = f `These1` f `These1` f `These1` f `These1` ... etc.
@@ -676,10 +788,10 @@ see the actual section for that induced monoid later on.
     where you want a giant infinite sparse array of `f a`s, each at a given
     position, with many gaps between them.
 
-    The induced semigroupoidal functor requires an extra "flag" because of some
-    of the quirks of the definition of semigroupoidal functor: It's a `Steps`,
-    but also with a boolean flag telling you if it was made using `inject` or
-    some other method.
+    I've skipped over the the induced semigroupoidal functor, which is
+    `ComposeT Flagged Steps`; it requires an extra boolean "flag" because of
+    some of the quirks of nonemptiness. I feel it is even less useful than
+    `Steps`.
 
 #### LeftF / RightF
 
@@ -696,8 +808,9 @@ see the actual section for that induced monoid later on.
     ```
 
     You can think of `LeftF` as "`:+:` without the Right case, `R1`", or
-    `RightF` as "`:+:` without the Left case, `L1`". `RightF f` is also
-    equivalent to `IdentityT` for any `f`.
+    `RightF` as "`:+:` without the Left case, `L1`". `RightF` can be considered
+    a higher-order version of *Tagged*, which "tags" a value with some
+    type-level information.
 
     This can be useful if you want the second (or first) argument to be ignored,
     and only be used maybe at the type level.
@@ -705,6 +818,13 @@ see the actual section for that induced monoid later on.
     For example, `RightF IgnoreMe MyFunctor` is equivalent to just `MyFunctor`,
     but you might want to use `IgnoreMe` as a phantom type to help limit what
     values can be used for what functions.
+
+-   **Identity**
+
+    Unlike the previous functor combinators, these three are only
+    `Semigroupoidal`, not `Monoidal`: this is because there is no functor `i`
+    such that `LeftF i g` is equal to `g`, for all `g`, and no functor `i` such
+    that `RightF f i` is equal to `f`, for all `f`.
 
 -   **Constraints**
 
@@ -715,13 +835,6 @@ see the actual section for that induced monoid later on.
 
     Interpreting out of either of these is unconstrained, and can be done in any
     context.
-
--   **Identity**
-
-    Unlike the previous functor combinators, these three are only
-    `Semigroupoidal`, not `Monoidal`: this is because there is no functor `i`
-    such that `LeftF i g` is equal to `g`, for all `g`, and no functor `i` such
-    that `RightF f i` is equal to `f`, for all `f`.
 
 -   **Induced Semigroup**
 

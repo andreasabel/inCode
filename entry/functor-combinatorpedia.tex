@@ -201,6 +201,14 @@ And a structure that supports \emph{multiple commands} on top of that would be:
 You can mix or match combinators to decide exactly what sort of structures you
 allow in your DSL.
 
+Now, instead of writing one ``giant''
+\texttt{runParser\ ::\ MapF\ String\ (Ap\ Arg\ :*:\ Lift\ Option)\ a\ -\textgreater{}\ IO\ a}
+function, you can instead just write parsers for your simple primitives
+\texttt{Arg\ a\ -\textgreater{}\ IO\ a} and
+\texttt{Option\ a\ -\textgreater{}\ IO\ a}, and then use functor combinator
+tools to ``promote'' them to being runnable on a full
+\texttt{MapF\ String\ (Ap\ Arg\ :*:\ Lift\ Option)} without any extra work.
+
 \hypertarget{common-functionality}{%
 \subsection{Common Functionality}\label{common-functionality}}
 
@@ -360,12 +368,17 @@ Without further ado, let's dive into the zoo of functor combinators!
 Binary functor combinators ``mix together'' two functors/indexed types in
 different ways.
 
-Each one has two associated constraints:
+We can finally \emph{interpret} (or ``run'') these into some target context
+(like \texttt{Parser}, or \texttt{IO}), provided the target satisfies some
+constraints.
+
+This constraint depends on the functor combinator in question; in particular,
+there are two, which we will call \texttt{CS} and \texttt{CM}:
 
 \begin{itemize}
 \item
-  \texttt{CS\ t} is the constraint on where you can \emph{interpret} or
-  \emph{run} values of the enhanced type:
+  \texttt{CS\ t} is what we will call the constraint on where you can
+  \emph{interpret} or \emph{run} values of the enhanced type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -374,10 +387,6 @@ Each one has two associated constraints:
     \OtherTok{=>}\NormalTok{ (f }\OperatorTok{\textasciitilde{}>}\NormalTok{ h)}
     \OtherTok{=>}\NormalTok{ (g }\OperatorTok{\textasciitilde{}>}\NormalTok{ h)}
     \OtherTok{{-}>}\NormalTok{ (t f g }\OperatorTok{\textasciitilde{}>}\NormalTok{ h)}
-
-\NormalTok{biretract}
-\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Semigroupoidal}\NormalTok{ t, }\DataTypeTok{CS}\NormalTok{ t f)}
-    \OtherTok{=>}\NormalTok{ t f f }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
 \end{Highlighting}
 \end{Shaded}
 \item
@@ -397,17 +406,28 @@ Each one has two associated constraints:
     \OtherTok{=>}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ t f g}
 \end{Highlighting}
 \end{Shaded}
+
+  It should always be a subclass of \texttt{CS}.
 \end{itemize}
 
-Most of these also have an identity, \texttt{I\ t}, where applying
-\texttt{t\ f\ (I\ t)} leaves \texttt{f} unchanged
-(\texttt{t\ f\ (I\ t)\ \textasciitilde{}\ f}). This is represented by the
-associated type \texttt{I\ t}.
+As it turns out, \texttt{CS} and \texttt{CM} generalize the ``has an identity''
+property of many typeclasses --- for example, for \texttt{Comp} (functor
+composition), \texttt{CS} is \texttt{Bind} (``\texttt{Monad} without
+\texttt{pure}''), and \texttt{CM} is \texttt{Monad}.
 
-All of these also have a ``apply to self many times'', for situations where you
-want to represent the act of applying \texttt{t} to the same \texttt{f} multiple
-times, called the ``induced monoidal functor combinator'', given by
-\texttt{MF\ t} (or \texttt{SF\ t} for the ``nonempty'' variant).
+Most of these also have an identity, \texttt{I\ t}, where applying
+\texttt{t\ f\ (I\ t)} leaves \texttt{f} unchanged (\texttt{t\ f\ (I\ t)} is
+isomorphic to \texttt{f}) and \texttt{t\ (I\ t)\ f} is also just \texttt{f}.
+This is represented by the associated type \texttt{I\ t}.
+
+One interesting property of these is that for a lot of these, if we have a
+binary functor combinator \texttt{*}, we can represent a type
+\texttt{f\ \textbar{}\ f\ *\ f\ \textbar{}\ f\ *\ f\ *\ f\ \textbar{}\ f\ *\ f\ *\ f\ *\ f\ \textbar{}\ ...}
+(``repeatedly apply to something multiple times''), which essentially forms a
+linked list along that functor combinator. We call this the ``induced monoidal
+functor combinator'', given by \texttt{MF\ t}. We can also make a ``non-empty
+variant'', \texttt{SF\ t}, the ``induced semigroupoidal functor combinator'',
+which contains ``at least one \texttt{f}''.
 
 You can ``convert'' back and forth by using:
 
@@ -421,8 +441,8 @@ You can ``convert'' back and forth by using:
 
 and other helper functions.
 
-Here we simply list the induced monoid with some small notes; for more details,
-see the actual section for that induced monoid later on.
+If this is unclear, hopefully the following concrete examples will help
+illustrate.
 
 \hypertarget{sum}{%
 \subsubsection{:+: / Sum}\label{sum}}
@@ -469,6 +489,23 @@ see the actual section for that induced monoid later on.
     \OtherTok{{-}>}\NormalTok{ h a}
 \end{Highlighting}
 \end{Shaded}
+
+  \texttt{binterpret} becomes analogous to \texttt{either} from
+  \emph{\href{https://hackage.haskell.org/package/base/docs/Data-Either.html}{Data.Either}}
+\item
+  \textbf{Identity}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{I}\NormalTok{ (}\OperatorTok{:+:}\NormalTok{) }\OtherTok{=} \DataTypeTok{Void1}
+
+\CommentTok{{-}{-} | Data type with no inhabitants}
+\KeywordTok{data} \DataTypeTok{Void1}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+  \texttt{f\ :+:\ Void1} is equivalent to just \texttt{f}, because you can never
+  have a value of the right branch.
 \item
   \textbf{Constraints}
 
@@ -476,27 +513,23 @@ see the actual section for that induced monoid later on.
 \begin{Highlighting}[]
 \KeywordTok{type} \DataTypeTok{CS}\NormalTok{ (}\OperatorTok{:+:}\NormalTok{) }\OtherTok{=} \DataTypeTok{Unconstrained}
 \KeywordTok{type} \DataTypeTok{CM}\NormalTok{ (}\OperatorTok{:+:}\NormalTok{) }\OtherTok{=} \DataTypeTok{Unconstrained}
+
+\NormalTok{binterpret }\OperatorTok{@}\NormalTok{(}\OperatorTok{:+:}\NormalTok{)}
+\OtherTok{    ::}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+    \OtherTok{{-}>}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+    \OtherTok{{-}>}\NormalTok{ (f }\OperatorTok{:+:}\NormalTok{ g) }\OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+
+\NormalTok{inL   }\OperatorTok{@}\OtherTok{(:+:) ::}\NormalTok{ f     }\OperatorTok{\textasciitilde{}>}\NormalTok{ f }\OperatorTok{:+:}\NormalTok{ g}
+\NormalTok{inR   }\OperatorTok{@}\OtherTok{(:+:) ::}\NormalTok{ g     }\OperatorTok{\textasciitilde{}>}\NormalTok{ f }\OperatorTok{:+:}\NormalTok{ g}
+\NormalTok{pureT }\OperatorTok{@}\OtherTok{(:+:) ::} \DataTypeTok{Void1} \OperatorTok{\textasciitilde{}>}\NormalTok{ h}
 \end{Highlighting}
 \end{Shaded}
 
   You don't need any constraint in order to use \texttt{binterpret},
   \texttt{inL}, \texttt{inR}, etc.
 
-  However, note that
-  \texttt{pureT\ @(:+:)\ ::\ Void1\ \textasciitilde{}\textgreater{}\ h} is
-  effectively impossible to call, because no values of type \texttt{Void1\ a}
-  exist.
-\item
-  \textbf{Identity}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{I}\NormalTok{ (}\OperatorTok{:+:}\NormalTok{) }\OtherTok{=} \DataTypeTok{Void1}
-\end{Highlighting}
-\end{Shaded}
-
-  \texttt{f\ :+:\ Void1} is equivalent to just \texttt{f}, because you can never
-  have a value of the right branch.
+  However, note that \texttt{pureT} is effectively impossible to call, because
+  no values of type \texttt{Void1\ a} exist.
 \item
   \textbf{Induced Monoid}
 
@@ -513,6 +546,17 @@ see the actual section for that induced monoid later on.
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{type} \DataTypeTok{Step}\NormalTok{ f }\OtherTok{=}\NormalTok{ f }\OperatorTok{:+:}\NormalTok{ f }\OperatorTok{:+:}\NormalTok{ f }\OperatorTok{:+:}\NormalTok{ f }\OperatorTok{:+:}\NormalTok{ f }\OperatorTok{:+:}\NormalTok{ f }\OperatorTok{:+:} \OperatorTok{...}\NormalTok{ etc}\OperatorTok{.}
+\end{Highlighting}
+\end{Shaded}
+
+  The correspondence is:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{L1}\NormalTok{ x           }\OperatorTok{<=>} \DataTypeTok{Step} \DecValTok{0}\NormalTok{ x}
+\DataTypeTok{R1}\NormalTok{ (}\DataTypeTok{L1}\NormalTok{ y)      }\OperatorTok{<=>} \DataTypeTok{Step} \DecValTok{1}\NormalTok{ y}
+\DataTypeTok{R1}\NormalTok{ (}\DataTypeTok{R1}\NormalTok{ (}\DataTypeTok{L1}\NormalTok{ z)) }\OperatorTok{<=>} \DataTypeTok{Step} \DecValTok{2}\NormalTok{ z}
+\CommentTok{{-}{-} etc.}
 \end{Highlighting}
 \end{Shaded}
 
@@ -552,9 +596,26 @@ see the actual section for that induced monoid later on.
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{prodOutL ::}\NormalTok{ (f }\OperatorTok{:*:}\NormalTok{ g) }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+\NormalTok{prodOutL (x }\OperatorTok{:*:}\NormalTok{ \_) }\OtherTok{=}\NormalTok{ x}
+
 \OtherTok{prodOutR ::}\NormalTok{ (f }\OperatorTok{:*:}\NormalTok{ g) }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+\NormalTok{prodOutR (\_ }\OperatorTok{:*:}\NormalTok{ y) }\OtherTok{=}\NormalTok{ y}
 \end{Highlighting}
 \end{Shaded}
+\item
+  \textbf{Identity}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{I}\NormalTok{ (}\OperatorTok{:*:}\NormalTok{) }\OtherTok{=} \DataTypeTok{Proxy}
+
+\CommentTok{{-}{-} | Data type with only a single constructor and no information}
+\KeywordTok{data} \DataTypeTok{Proxy}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Proxy}
+\end{Highlighting}
+\end{Shaded}
+
+  \texttt{f\ :+:\ Proxy} is equivalent to just \texttt{f}, because the left hand
+  side doesn't add anything extra to the pair.
 \item
   \textbf{Constraints}
 
@@ -562,24 +623,45 @@ see the actual section for that induced monoid later on.
 \begin{Highlighting}[]
 \KeywordTok{type} \DataTypeTok{CS}\NormalTok{ (}\OperatorTok{:*:}\NormalTok{) }\OtherTok{=} \DataTypeTok{Alt}
 \KeywordTok{type} \DataTypeTok{CM}\NormalTok{ (}\OperatorTok{:*:}\NormalTok{) }\OtherTok{=} \DataTypeTok{Plus}
+
+\NormalTok{binterpret }\OperatorTok{@}\NormalTok{(}\OperatorTok{:*:}\NormalTok{)}
+\OtherTok{    ::} \DataTypeTok{Alt}\NormalTok{ h}
+    \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+    \OtherTok{{-}>}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+    \OtherTok{{-}>}\NormalTok{ (f }\OperatorTok{:*:}\NormalTok{ g) }\OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+
+\NormalTok{inL   }\OperatorTok{@}\OtherTok{(:*:) ::} \DataTypeTok{Plus}\NormalTok{ g }\OtherTok{=>}\NormalTok{ f     }\OperatorTok{\textasciitilde{}>}\NormalTok{ f }\OperatorTok{:*:}\NormalTok{ g}
+\NormalTok{inR   }\OperatorTok{@}\OtherTok{(:*:) ::} \DataTypeTok{Plus}\NormalTok{ f }\OtherTok{=>}\NormalTok{ g     }\OperatorTok{\textasciitilde{}>}\NormalTok{ f }\OperatorTok{:*:}\NormalTok{ g}
+\NormalTok{pureT }\OperatorTok{@}\OtherTok{(:*:) ::} \DataTypeTok{Plus}\NormalTok{ h }\OtherTok{=>} \DataTypeTok{Proxy} \OperatorTok{\textasciitilde{}>}\NormalTok{ h}
 \end{Highlighting}
 \end{Shaded}
 
-  Fully interpreting out of \texttt{:*:} requires
-  \href{https://hackage.haskell.org/package/semigroupoids/docs/Data-Functor-Alt.html}{\texttt{Alt}}
-  (to combine both branches), but if we use only one branch or ther other, we
-  can use \texttt{prodOutL} or \texttt{prodOutR} and require no constraint.
-\item
-  \textbf{Identity}
+  \texttt{Alt}, from
+  \emph{\href{https://hackage.haskell.org/package/semigroupoids/docs/Data-Functor-Alt.html}{Data.Functor.Alt}}
+  in \emph{semigroupoids}, can be thought of a ``higher-kinded semigroup'': it's
+  like \texttt{Alternative}, but with no \texttt{Applicative} constraint and no
+  identity:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{I}\NormalTok{ (}\OperatorTok{:*:}\NormalTok{) }\OtherTok{=} \DataTypeTok{Proxy}
+\KeywordTok{class} \DataTypeTok{Alt}\NormalTok{ f }\KeywordTok{where}
+\OtherTok{    (<!>) ::}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ f a}
 \end{Highlighting}
 \end{Shaded}
 
-  \texttt{f\ :+:\ Proxy} is equivalent to just \texttt{f}, because the left hand
-  side doesn't add anything extra to the pair.
+  It is used to combine the results in both branches of the \texttt{:*:}.
+
+  To introduce an ``empty'' branch, we need \texttt{Plus} (in
+  \emph{\href{https://hackage.haskell.org/package/semigroupoids/docs/Data-Functor-Plus.html}{Data.Functor.Plus}}),
+  which is like a higher-kinded \texttt{Monoid}, or \texttt{Alternative} with no
+  \texttt{Applicative}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{Alt}\NormalTok{ f }\OtherTok{=>} \DataTypeTok{Plus}\NormalTok{ f }\KeywordTok{where}
+\OtherTok{    zero ::}\NormalTok{ f a}
+\end{Highlighting}
+\end{Shaded}
 \item
   \textbf{Induced Monoid}
 
@@ -598,12 +680,26 @@ see the actual section for that induced monoid later on.
   It's basically an ordered collection of \texttt{f\ a}s \texttt{:*:}d with each
   other.
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{Proxy}         \OperatorTok{<=>} \DataTypeTok{ListF}\NormalTok{ []}
+\NormalTok{x             }\OperatorTok{<=>} \DataTypeTok{ListF}\NormalTok{ [x]}
+\NormalTok{x }\OperatorTok{:*:}\NormalTok{ y       }\OperatorTok{<=>} \DataTypeTok{ListF}\NormalTok{ [x,y]}
+\NormalTok{x }\OperatorTok{:*:}\NormalTok{ y }\OperatorTok{:*:}\NormalTok{ z }\OperatorTok{<=>} \DataTypeTok{ListF}\NormalTok{ [x,y,z]}
+\CommentTok{{-}{-} etc.}
+\end{Highlighting}
+\end{Shaded}
+
   It is useful if you want to define a schema where you can offer
   \emph{multiple} options for the \texttt{f\ a}, and the interpreter/consumer
   can freely pick any one that they want to use.
 
   \texttt{NonEmptyF} is the version of \texttt{ListF} that has ``at least one
   \texttt{f\ a}''.
+
+  Incidentally, \texttt{NonEmptyF} is the ``free \texttt{Alt}'' (it gives a
+  functor \texttt{Alt}-ness, and nothing more), and \texttt{ListF} is the ``free
+  \texttt{Plus}'' (it gives a functor \texttt{Plus}-ness, and nothing more).
 \end{itemize}
 
 \hypertarget{day}{%
@@ -634,41 +730,6 @@ see the actual section for that induced monoid later on.
   Unlike for \texttt{:*:}, you always have to interpret \emph{both} functor
   values in order to interpret a \texttt{Day}. It's a ``full mixing''.
 \item
-  \textbf{Constraints}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{CS} \DataTypeTok{Day} \OtherTok{=} \DataTypeTok{Apply}
-\KeywordTok{type} \DataTypeTok{CM} \DataTypeTok{Day} \OtherTok{=} \DataTypeTok{Applicative}
-\end{Highlighting}
-\end{Shaded}
-
-  We need \texttt{Applicative} to interpret out of a \texttt{Day}. Note that all
-  \texttt{Applicative} instances should have an \texttt{Apply} instance, but due
-  to how \emph{base} is structured, \texttt{Apply} is not a true superclass
-  officially. You can use \texttt{upgradeC\ @Day} to bring an \texttt{Apply}
-  instance into scope for any \texttt{Applicative} instance.
-
-  For example, let's say we had a type \texttt{Parser} from an external library
-  that is \texttt{Applicative} but not \texttt{Apply}. In that case,
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{biretract ::} \DataTypeTok{Day} \DataTypeTok{Parser} \DataTypeTok{Parser}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Parser}\NormalTok{ a}
-\end{Highlighting}
-\end{Shaded}
-
-  is a type error (because \texttt{Parser} has no \texttt{Apply} instance), but
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{upgradeC }\OperatorTok{@}\DataTypeTok{Day}\NormalTok{ (}\DataTypeTok{Proxy} \OperatorTok{@}\DataTypeTok{Parser}\NormalTok{) biretract}
-\OtherTok{    ::} \DataTypeTok{Day} \DataTypeTok{Parser} \DataTypeTok{Parser}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Parser}\NormalTok{ a}
-\end{Highlighting}
-\end{Shaded}
-
-  will typecheck.
-\item
   \textbf{Identity}
 
 \begin{Shaded}
@@ -679,6 +740,34 @@ see the actual section for that induced monoid later on.
 
   \texttt{Day\ f\ Identity} is equivalent to just \texttt{f}, because
   \texttt{Identity} adds no extra effects or structure.
+\item
+  \textbf{Constraints}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{CS} \DataTypeTok{Day} \OtherTok{=} \DataTypeTok{Apply}
+\KeywordTok{type} \DataTypeTok{CM} \DataTypeTok{Day} \OtherTok{=} \DataTypeTok{Applicative}
+
+\NormalTok{binterpret }\OperatorTok{@}\DataTypeTok{Day}
+\OtherTok{    ::} \DataTypeTok{Apply}\NormalTok{ h}
+    \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+    \OtherTok{{-}>}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+    \OtherTok{{-}>} \DataTypeTok{Day}\NormalTok{ f g }\OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+
+\NormalTok{inL   }\OperatorTok{@}\DataTypeTok{Day}\OtherTok{ ::} \DataTypeTok{Applicative}\NormalTok{ g }\OtherTok{=>}\NormalTok{ f        }\OperatorTok{\textasciitilde{}>} \DataTypeTok{Day}\NormalTok{ f g}
+\NormalTok{inR   }\OperatorTok{@}\DataTypeTok{Day}\OtherTok{ ::} \DataTypeTok{Applicative}\NormalTok{ f }\OtherTok{=>}\NormalTok{ g        }\OperatorTok{\textasciitilde{}>} \DataTypeTok{Day}\NormalTok{ f g}
+\NormalTok{pureT }\OperatorTok{@}\DataTypeTok{Day}\OtherTok{ ::} \DataTypeTok{Applicative}\NormalTok{ h }\OtherTok{=>} \DataTypeTok{Identity} \OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+\end{Highlighting}
+\end{Shaded}
+
+  \texttt{Apply}, from
+  \emph{\href{https://hackage.haskell.org/package/semigroupoids/docs/Data-Functor-Apply.html}{Data.Functor.Apply}}
+  in \emph{semigroupoids}, is ``\texttt{Applicative} without \texttt{pure}''; it
+  only has \texttt{\textless{}*\textgreater{}} (called
+  \texttt{\textless{}.\textgreater{}}).
+
+  \texttt{pureT} is essentially
+  \texttt{pure\ ::\ Applicative\ h\ =\textgreater{}\ a\ -\textgreater{}\ h\ a}.
 \item
   \textbf{Induced Monoid}
 
@@ -714,6 +803,11 @@ see the actual section for that induced monoid later on.
   at \emph{all} command line options.
 
   \texttt{Ap1} is a version with ``at least one'' \texttt{f\ a}.
+
+  Incidentally, \texttt{Ap1} is the ``free \texttt{Apply}'' (it gives a functor
+  \texttt{Apply}-ness, and nothing more), and \texttt{Ap} is the ``free
+  \texttt{Applicative}'' (it gives a functor \texttt{Applicative}-ness, and
+  nothing more).
 \end{itemize}
 
 \hypertarget{comp}{%
@@ -727,9 +821,10 @@ see the actual section for that induced monoid later on.
   \emph{\href{https://hackage.haskell.org/package/base/docs/GHC-Generics.html}{GHC.Generics}}
   and
   \emph{\href{https://hackage.haskell.org/package/base/docs/Data-Functor-Compose.html}{Data.Functor.Compose}},
-  but they are incompatible with the \texttt{HBifunctor} typeclass.
+  but they are incompatible with the \texttt{HBifunctor} typeclass because they
+  require the second input to have a \texttt{Functor} instance.
 \item
-  \textbf{Mixing Strategy}: ``Both, together, sequentially'': provide values
+  \textbf{Mixing Strategy}: ``Both, together, sequentially'' : provide values
   from \emph{both} functors; the user must \emph{use} both, and \emph{in order}.
 
 \begin{Shaded}
@@ -758,21 +853,6 @@ see the actual section for that induced monoid later on.
   values. And, unlike for \texttt{Day}, you must interpret both functor values
   \emph{in that order}.
 \item
-  \textbf{Constraints}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{CS} \DataTypeTok{Comp} \OtherTok{=} \DataTypeTok{Bind}
-\KeywordTok{type} \DataTypeTok{CM} \DataTypeTok{Comp} \OtherTok{=} \DataTypeTok{Monad}
-\end{Highlighting}
-\end{Shaded}
-
-  We need \texttt{Monad} to interpret out of a \texttt{Comp}. Note that all
-  \texttt{Monad} instances should have a \texttt{Bind} instance, but due to how
-  \emph{base} is structured, \texttt{Bind} is not a true superclass officially.
-  See the note on \texttt{Day} for more information on getting around this with
-  \texttt{upgradeC}.
-\item
   \textbf{Identity}
 
 \begin{Shaded}
@@ -783,6 +863,34 @@ see the actual section for that induced monoid later on.
 
   \texttt{Comp\ f\ Identity} is equivalent to just \texttt{f}, because
   \texttt{Identity} adds no extra effects or structure.
+\item
+  \textbf{Constraints}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{CS} \DataTypeTok{Comp} \OtherTok{=} \DataTypeTok{Bind}
+\KeywordTok{type} \DataTypeTok{CM} \DataTypeTok{Comp} \OtherTok{=} \DataTypeTok{Monad}
+
+\NormalTok{binterpret }\OperatorTok{@}\DataTypeTok{Comp}
+\OtherTok{    ::} \DataTypeTok{Bind}\NormalTok{ h}
+    \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+    \OtherTok{{-}>}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+    \OtherTok{{-}>} \DataTypeTok{Comp}\NormalTok{ f g }\OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+
+\NormalTok{inL   }\OperatorTok{@}\DataTypeTok{Comp}\OtherTok{ ::} \DataTypeTok{Monad}\NormalTok{ g }\OtherTok{=>}\NormalTok{ f        }\OperatorTok{\textasciitilde{}>} \DataTypeTok{Comp}\NormalTok{ f g}
+\NormalTok{inR   }\OperatorTok{@}\DataTypeTok{Comp}\OtherTok{ ::} \DataTypeTok{Monad}\NormalTok{ f }\OtherTok{=>}\NormalTok{ g        }\OperatorTok{\textasciitilde{}>} \DataTypeTok{Comp}\NormalTok{ f g}
+\NormalTok{pureT }\OperatorTok{@}\DataTypeTok{Comp}\OtherTok{ ::} \DataTypeTok{Monad}\NormalTok{ h }\OtherTok{=>} \DataTypeTok{Identity} \OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+\end{Highlighting}
+\end{Shaded}
+
+  \texttt{Bind}, from \emph{semigroupoids}, is ``\texttt{Monad} without
+  \texttt{return}''; it only has \texttt{\textgreater{}\textgreater{}=} (called
+  \texttt{\textgreater{}\textgreater{}-}).
+
+  Somewhat serendipitously, the \texttt{CM} constraint associated with
+  \texttt{Comp} is the infamous \texttt{Monad}. Hopefully this insight also
+  gives you some insight on the nature of \texttt{Monad} as an abstraction: it's
+  a way to ``interpret'' in and out of \texttt{Comp} :)
 \item
   \textbf{Induced Monoid}
 
@@ -821,6 +929,10 @@ see the actual section for that induced monoid later on.
   of the next box can depend on result of the previous box.
 
   \texttt{Free1} is a version with ``at least one'' \texttt{f\ a}.
+
+  Incidentally, \texttt{Free1} is the ``free \texttt{Bind}'' (it gives a functor
+  \texttt{Bind}-ness, and nothing more), and \texttt{Free} is the ``free
+  \texttt{Monad}'' (it gives a functor \texttt{Monad}-ness, and nothing more).
 \end{itemize}
 
 \hypertarget{these1}{%
@@ -863,20 +975,7 @@ see the actual section for that induced monoid later on.
 \end{Shaded}
 
   You can also pattern match on the \texttt{These1} directly to be more explicit
-  with how you handle each case.
-\item
-  \textbf{Constraints}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{CS} \DataTypeTok{These1} \OtherTok{=} \DataTypeTok{Alt}
-\KeywordTok{type} \DataTypeTok{CM} \DataTypeTok{These1} \OtherTok{=} \DataTypeTok{Alt}
-\end{Highlighting}
-\end{Shaded}
-
-  You need at least \texttt{Alt} to be able to interpret out of a
-  \texttt{These1}, because you need to be able to handle the case where you have
-  \emph{both} \texttt{f} and \texttt{g}, and need to combine the result.
+  with how you handle each of the tree cases.
 \item
   \textbf{Identity}
 
@@ -890,17 +989,41 @@ see the actual section for that induced monoid later on.
   the \texttt{That1} and \texttt{These1} branches will be impossible to
   construct, and you are left with only the \texttt{This1} branch.
 \item
+  \textbf{Constraints}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{CS} \DataTypeTok{These1} \OtherTok{=} \DataTypeTok{Alt}
+\KeywordTok{type} \DataTypeTok{CM} \DataTypeTok{These1} \OtherTok{=} \DataTypeTok{Alt}
+
+\NormalTok{binterpret }\OperatorTok{@}\DataTypeTok{These1}
+\OtherTok{    ::} \DataTypeTok{Alt}\NormalTok{ h}
+    \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+    \OtherTok{{-}>}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+    \OtherTok{{-}>} \DataTypeTok{These1}\NormalTok{ f g }\OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+
+\NormalTok{inL   }\OperatorTok{@}\DataTypeTok{These1}\OtherTok{ ::} \DataTypeTok{Alt}\NormalTok{ g }\OtherTok{=>}\NormalTok{ f     }\OperatorTok{\textasciitilde{}>} \DataTypeTok{Comp}\NormalTok{ f g}
+\NormalTok{inR   }\OperatorTok{@}\DataTypeTok{These1}\OtherTok{ ::} \DataTypeTok{Alt}\NormalTok{ f }\OtherTok{=>}\NormalTok{ g     }\OperatorTok{\textasciitilde{}>} \DataTypeTok{Comp}\NormalTok{ f g}
+\NormalTok{pureT }\OperatorTok{@}\DataTypeTok{These1}\OtherTok{ ::} \DataTypeTok{Alt}\NormalTok{ h }\OtherTok{=>} \DataTypeTok{Void1} \OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+\end{Highlighting}
+\end{Shaded}
+
+  You need at least \texttt{Alt} to be able to interpret out of a
+  \texttt{These1}, because you need to be able to handle the case where you have
+  \emph{both} \texttt{f} and \texttt{g}, and need to combine the result.
+  However, you never need a full \texttt{Plus} because we always have at least
+  one value to use.
+\item
   \textbf{Induced Monoid}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{SF} \DataTypeTok{These1} \OtherTok{=} \DataTypeTok{ComposeT} \DataTypeTok{Flagged} \DataTypeTok{Steps}
 \KeywordTok{type} \DataTypeTok{MF} \DataTypeTok{These1} \OtherTok{=} \DataTypeTok{Steps}
 \end{Highlighting}
 \end{Shaded}
 
-  \texttt{Steps} is the result of an infinite application of `These1 to the same
-  value:
+  \texttt{Steps}, the induced monoidal functor combinator, is the result of an
+  infinite application of `These1 to the same value:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -916,10 +1039,10 @@ see the actual section for that induced monoid later on.
   situations where you want a giant infinite sparse array of \texttt{f\ a}s,
   each at a given position, with many gaps between them.
 
-  The induced semigroupoidal functor requires an extra ``flag'' because of some
-  of the quirks of the definition of semigroupoidal functor: It's a
-  \texttt{Steps}, but also with a boolean flag telling you if it was made using
-  \texttt{inject} or some other method.
+  I've skipped over the the induced semigroupoidal functor, which is
+  \texttt{ComposeT\ Flagged\ Steps}; it requires an extra boolean ``flag''
+  because of some of the quirks of nonemptiness. I feel it is even less useful
+  than \texttt{Steps}.
 \end{itemize}
 
 \hypertarget{leftf-rightf}{%
@@ -943,8 +1066,8 @@ see the actual section for that induced monoid later on.
 
   You can think of \texttt{LeftF} as ``\texttt{:+:} without the Right case,
   \texttt{R1}'', or \texttt{RightF} as ``\texttt{:+:} without the Left case,
-  \texttt{L1}''. \texttt{RightF\ f} is also equivalent to \texttt{IdentityT} for
-  any \texttt{f}.
+  \texttt{L1}''. \texttt{RightF} can be considered a higher-order version of
+  \emph{Tagged}, which ``tags'' a value with some type-level information.
 
   This can be useful if you want the second (or first) argument to be ignored,
   and only be used maybe at the type level.
@@ -952,6 +1075,14 @@ see the actual section for that induced monoid later on.
   For example, \texttt{RightF\ IgnoreMe\ MyFunctor} is equivalent to just
   \texttt{MyFunctor}, but you might want to use \texttt{IgnoreMe} as a phantom
   type to help limit what values can be used for what functions.
+\item
+  \textbf{Identity}
+
+  Unlike the previous functor combinators, these three are only
+  \texttt{Semigroupoidal}, not \texttt{Monoidal}: this is because there is no
+  functor \texttt{i} such that \texttt{LeftF\ i\ g} is equal to \texttt{g}, for
+  all \texttt{g}, and no functor \texttt{i} such that \texttt{RightF\ f\ i} is
+  equal to \texttt{f}, for all \texttt{f}.
 \item
   \textbf{Constraints}
 
@@ -964,14 +1095,6 @@ see the actual section for that induced monoid later on.
 
   Interpreting out of either of these is unconstrained, and can be done in any
   context.
-\item
-  \textbf{Identity}
-
-  Unlike the previous functor combinators, these three are only
-  \texttt{Semigroupoidal}, not \texttt{Monoidal}: this is because there is no
-  functor \texttt{i} such that \texttt{LeftF\ i\ g} is equal to \texttt{g}, for
-  all \texttt{g}, and no functor \texttt{i} such that \texttt{RightF\ f\ i} is
-  equal to \texttt{f}, for all \texttt{f}.
 \item
   \textbf{Induced Semigroup}
 
