@@ -247,7 +247,7 @@ ageOpt = Opt
 
 ``` {.haskell}
 ghci> optSummary ageOpt
-Const ["--age <int>: A pesron's age"]
+Const ["--age <int>: A person's age"]
 ghci> testParser (optParser ageOpt) "--help"
 -- Usage: <interactive> --age <int>
 --
@@ -260,119 +260,61 @@ ghci> testParser (optParser ((*2) <$> ageOpt)) "--age 25"
 -- 50
 ```
 
-### Flag
-
-One final special interpreter, representing flags that can either be "on"
-(`True`) or "off" (`False`). We're going to be implementing this using a GADT,
-which means it can't directly be a `Functor`, for demonstrative purposes:
-
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L42-L47
-
-data Flag :: Type -> Type where
-    Flag
-      :: { flagString :: String
-         , flagHelp   :: String
-         }
-      -> Flag Bool
-```
-
-A `Flag a` is a schema describing a command line "flag" (an option that is
-either "on" or "off").
-
-If you aren't familiar with GADT syntax, here it's being used to say that if you
-use the `Flag` constructor, it'll return a `Flag Bool` --- specifically `Bool`,
-and not any other type. Here we use a GADT to fix a type with a constructor. If
-you use the `Flag` constructor, you will get a `Flag Bool`: a schema describing
-a command line flag producing a `Bool`.
-
-Our interpreters look straightforward again:
-
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L67-L74
-
-flagSummary :: Flag a -> Summary a
-flagSummary Flag{..} = Const
-    [ "--" ++ flagString ++ ": " ++ flagHelp ]
-
-flagParser :: Flag a -> Parser a
-flagParser Flag{..} = switch $
-       long flagString
-    <> help flagHelp
-```
-
-Note that the type `Flag a -> Parser a` means that whatever the `a` is, you
-haver to parse a value of that type. So, if we pattern match on the `Flag`
-constructor, we know that `a` must be `Bool`, so we can return a `Parser Bool`
-(which is what `switch`, from *optparse-applicative*, returns).
-
-Here is an example of a flag indicating whether or not a person has pets:
-
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L91-L95
-
-petsFlag :: Flag Bool
-petsFlag = Flag
-    { flagString = "pets"
-    , flagHelp   = "Has pets"
-    }
-```
-
-``` {.haskell}
-ghci> flagSummary petsFlag
-Const ["--pets: Has pets"]
-λ: testParser (flagParser petsFlag) "--help"
--- Usage: <interactive> [--pets]
--- 
--- Available options:
---   --pets                   Has pets
---   -h,--help                Show this help text
--- *** Exception: ExitSuccess
-λ: testParser (flagParser petsFlag) "--pets"
-True
-λ: testParser (flagParser petsFlag) ""
-False
-```
-
-Note that unlike `Arg` and `Opt`, `Flag` cannot be a `Functor`. That's because
-fundamentally, a `Functor` must be able to support any type argument...but you
-can only ever produce a `Flag Bool`, and never a `Flag Int` or `Flag String`.
-There are no possible constructors! But we'll soon see a way to deal with this
-and make `Flag` effectively a `Functor`.
-
 ### Imagining the Combinations
 
 Now that we laid out our basic schemas, let's now think about how we might want
 to *combine* them into richer schemas. How about:
 
 -   A schema that can have multiple `Arg`s
+
 -   A schema that can have multiple `Opt`s
+
 -   A schema that can take a single *optional* `Opt`.
--   A schema that can have multiple `Flag`s
+
 -   A schema that can have a single `Arg`, and multiple `Opt`s (or vice versa)
+
 -   A schema that has different `Opt`s and `Arg`s according to different
     subcommands
+
 -   A schema that specifies an `Arg` or an `Opt`, but not both.
+
 -   A schema that specifies both an `Arg` and an `Opt`, but where the
     interpreting function has the option to pick which one
+
 -   A schema that specifies both an `Arg` and an `Opt`, but where the
     interpreting function *must* present both to the user.
 
 Think about all of the interesting schemas you could build using a combination
-of `Arg` and `Opt` and `Flag`. Now, let's see what tools we have at our
-disposal!
+of `Arg` and `Opt`. Now, let's see what tools we have at our disposal!
 
-Sums
-----
+Combining Schemas
+-----------------
 
-Products
---------
+One simple thing we can imagine is *combining* different schema types in
+different ways to produce new schemas, compositionally. There are a few ways we
+can imagine combining two different schemas together, and we have different
+*combinators* to describe each different way.
 
-Convolutions
-------------
+A "schema-combining combinator" will have kind:
 
-Compositions
-------------
+``` {.haskell}
+(Type -> Type) -> (Type -> Type) -> (Type -> Type)
+```
+
+That is, given two different `Type -> Type`s, provide a new `Type -> Type`.
+
+All of these combinators should ideally be associative, and there should be an
+*identity* schema where combining a schema with the identity should return the
+original schema.
+
+### Either-Or
+
+The first one we have is `Sum` from
+*[Data.Functor.Sum](https://hackage.haskell.org/package/base/docs/Data-Functor-Sum.html)*;
+however, I like to use the equivalent type `:+:` from
+*[GHC.Generics](https://hackage.haskell.org/package/base-4.12.0.0/docs/GHC-Generics.html)*.
+
+`Arg :+: Opt` is a schema that can either ask for an `Arg` *or* an `Opt`.
 
 --------------------------------------------------------------------------------
 

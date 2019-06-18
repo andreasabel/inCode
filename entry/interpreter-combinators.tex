@@ -383,7 +383,7 @@ Here's a sample \texttt{Opt} getting a person's age:
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{ghci}\OperatorTok{>}\NormalTok{ optSummary ageOpt}
-\DataTypeTok{Const}\NormalTok{ [}\StringTok{"--age <int>: A pesron's age"}\NormalTok{]}
+\DataTypeTok{Const}\NormalTok{ [}\StringTok{"--age <int>: A person's age"}\NormalTok{]}
 \NormalTok{ghci}\OperatorTok{>}\NormalTok{ testParser (optParser ageOpt) }\StringTok{"--help"}
 \CommentTok{-- Usage: <interactive> --age <int>}
 \CommentTok{--}
@@ -397,99 +397,6 @@ Here's a sample \texttt{Opt} getting a person's age:
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{flag}{%
-\subsection{Flag}\label{flag}}
-
-One final special interpreter, representing flags that can either be ``on''
-(\texttt{True}) or ``off'' (\texttt{False}). We're going to be implementing this
-using a GADT, which means it can't directly be a \texttt{Functor}, for
-demonstrative purposes:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L42-L47}
-
-\KeywordTok{data} \DataTypeTok{Flag}\OtherTok{ ::} \DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
-    \DataTypeTok{Flag}
-\OtherTok{      ::}\NormalTok{ \{}\OtherTok{ flagString ::} \DataTypeTok{String}
-\NormalTok{         ,}\OtherTok{ flagHelp   ::} \DataTypeTok{String}
-\NormalTok{         \}}
-      \OtherTok{->} \DataTypeTok{Flag} \DataTypeTok{Bool}
-\end{Highlighting}
-\end{Shaded}
-
-A \texttt{Flag\ a} is a schema describing a command line ``flag'' (an option
-that is either ``on'' or ``off'').
-
-If you aren't familiar with GADT syntax, here it's being used to say that if you
-use the \texttt{Flag} constructor, it'll return a \texttt{Flag\ Bool} ---
-specifically \texttt{Bool}, and not any other type. Here we use a GADT to fix a
-type with a constructor. If you use the \texttt{Flag} constructor, you will get
-a \texttt{Flag\ Bool}: a schema describing a command line flag producing a
-\texttt{Bool}.
-
-Our interpreters look straightforward again:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L67-L74}
-
-\OtherTok{flagSummary ::} \DataTypeTok{Flag}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Summary}\NormalTok{ a}
-\NormalTok{flagSummary }\DataTypeTok{Flag}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \DataTypeTok{Const}
-\NormalTok{    [ }\StringTok{"--"} \OperatorTok{++}\NormalTok{ flagString }\OperatorTok{++} \StringTok{": "} \OperatorTok{++}\NormalTok{ flagHelp ]}
-
-\OtherTok{flagParser ::} \DataTypeTok{Flag}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Parser}\NormalTok{ a}
-\NormalTok{flagParser }\DataTypeTok{Flag}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ switch }\OperatorTok{$}
-\NormalTok{       long flagString}
-    \OperatorTok{<>}\NormalTok{ help flagHelp}
-\end{Highlighting}
-\end{Shaded}
-
-Note that the type \texttt{Flag\ a\ -\textgreater{}\ Parser\ a} means that
-whatever the \texttt{a} is, you haver to parse a value of that type. So, if we
-pattern match on the \texttt{Flag} constructor, we know that \texttt{a} must be
-\texttt{Bool}, so we can return a \texttt{Parser\ Bool} (which is what
-\texttt{switch}, from \emph{optparse-applicative}, returns).
-
-Here is an example of a flag indicating whether or not a person has pets:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/applicative-interp.hs#L91-L95}
-
-\OtherTok{petsFlag ::} \DataTypeTok{Flag} \DataTypeTok{Bool}
-\NormalTok{petsFlag }\OtherTok{=} \DataTypeTok{Flag}
-\NormalTok{    \{ flagString }\OtherTok{=} \StringTok{"pets"}
-\NormalTok{    , flagHelp   }\OtherTok{=} \StringTok{"Has pets"}
-\NormalTok{    \}}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{ghci}\OperatorTok{>}\NormalTok{ flagSummary petsFlag}
-\DataTypeTok{Const}\NormalTok{ [}\StringTok{"--pets: Has pets"}\NormalTok{]}
-\NormalTok{λ}\OperatorTok{:}\NormalTok{ testParser (flagParser petsFlag) }\StringTok{"--help"}
-\CommentTok{-- Usage: <interactive> [--pets]}
-\CommentTok{-- }
-\CommentTok{-- Available options:}
-\CommentTok{--   --pets                   Has pets}
-\CommentTok{--   -h,--help                Show this help text}
-\CommentTok{-- *** Exception: ExitSuccess}
-\NormalTok{λ}\OperatorTok{:}\NormalTok{ testParser (flagParser petsFlag) }\StringTok{"--pets"}
-\DataTypeTok{True}
-\NormalTok{λ}\OperatorTok{:}\NormalTok{ testParser (flagParser petsFlag) }\StringTok{""}
-\DataTypeTok{False}
-\end{Highlighting}
-\end{Shaded}
-
-Note that unlike \texttt{Arg} and \texttt{Opt}, \texttt{Flag} cannot be a
-\texttt{Functor}. That's because fundamentally, a \texttt{Functor} must be able
-to support any type argument\ldots but you can only ever produce a
-\texttt{Flag\ Bool}, and never a \texttt{Flag\ Int} or \texttt{Flag\ String}.
-There are no possible constructors! But we'll soon see a way to deal with this
-and make \texttt{Flag} effectively a \texttt{Functor}.
-
 \hypertarget{imagining-the-combinations}{%
 \subsection{Imagining the Combinations}\label{imagining-the-combinations}}
 
@@ -497,15 +404,12 @@ Now that we laid out our basic schemas, let's now think about how we might want
 to \emph{combine} them into richer schemas. How about:
 
 \begin{itemize}
-\tightlist
 \item
   A schema that can have multiple \texttt{Arg}s
 \item
   A schema that can have multiple \texttt{Opt}s
 \item
   A schema that can take a single \emph{optional} \texttt{Opt}.
-\item
-  A schema that can have multiple \texttt{Flag}s
 \item
   A schema that can have a single \texttt{Arg}, and multiple \texttt{Opt}s (or
   vice versa)
@@ -523,20 +427,42 @@ to \emph{combine} them into richer schemas. How about:
 \end{itemize}
 
 Think about all of the interesting schemas you could build using a combination
-of \texttt{Arg} and \texttt{Opt} and \texttt{Flag}. Now, let's see what tools we
-have at our disposal!
+of \texttt{Arg} and \texttt{Opt}. Now, let's see what tools we have at our
+disposal!
 
-\hypertarget{sums}{%
-\section{Sums}\label{sums}}
+\hypertarget{combining-schemas}{%
+\section{Combining Schemas}\label{combining-schemas}}
 
-\hypertarget{products}{%
-\section{Products}\label{products}}
+One simple thing we can imagine is \emph{combining} different schema types in
+different ways to produce new schemas, compositionally. There are a few ways we
+can imagine combining two different schemas together, and we have different
+\emph{combinators} to describe each different way.
 
-\hypertarget{convolutions}{%
-\section{Convolutions}\label{convolutions}}
+A ``schema-combining combinator'' will have kind:
 
-\hypertarget{compositions}{%
-\section{Compositions}\label{compositions}}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{(}\DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type}\NormalTok{) }\OtherTok{->}\NormalTok{ (}\DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type}\NormalTok{) }\OtherTok{->}\NormalTok{ (}\DataTypeTok{Type} \OtherTok{->} \DataTypeTok{Type}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+That is, given two different \texttt{Type\ -\textgreater{}\ Type}s, provide a
+new \texttt{Type\ -\textgreater{}\ Type}.
+
+All of these combinators should ideally be associative, and there should be an
+\emph{identity} schema where combining a schema with the identity should return
+the original schema.
+
+\hypertarget{either-or}{%
+\subsection{Either-Or}\label{either-or}}
+
+The first one we have is \texttt{Sum} from
+\emph{\href{https://hackage.haskell.org/package/base/docs/Data-Functor-Sum.html}{Data.Functor.Sum}};
+however, I like to use the equivalent type \texttt{:+:} from
+\emph{\href{https://hackage.haskell.org/package/base-4.12.0.0/docs/GHC-Generics.html}{GHC.Generics}}.
+
+\texttt{Arg\ :+:\ Opt} is a schema that can either ask for an \texttt{Arg}
+\emph{or} an \texttt{Opt}.
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
