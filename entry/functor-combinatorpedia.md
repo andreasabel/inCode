@@ -34,8 +34,8 @@ successive transformations and combiners. The process of doing so:
 
 Like "data types a la carte" and free monad/applicative/alternative designs,
 these techniques allow you to separate the assembly and inspection of your
-programs from the "running" of them. However, the main difference is that here
-we focus not just on products and sums, but many different varied and
+programs from the "running" of them.[^1] However, the main difference is that
+here we focus not just on products and sums, but many different varied and
 multi-purpose combinators --- a bona fide "zoo" of combinators. The fixed point
 is not "the end goal".
 
@@ -2044,3 +2044,19 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: On the surface, this functor combinator design pattern might look like it
+    fills a similar space to effects systems and libraries like
+    *[mtl](https://hackage.haskell.org/package/mtl)*,
+    *[polysemy](https://hackage.haskell.org/package/polysemy)*,
+    *[freer-simple](https://hackage.haskell.org/package/freer-simple)*, or
+    *[fused-effects](https://hackage.haskell.org/package/fused-effects)*.
+    However, this design pattern actually exists on a different level.
+
+    Functor combinator design patterns can be used to help build the *structure*
+    of the *data types* and schemas that define your program/DSL. Once you build
+    these nice structures, you then *interpret* them into some target context.
+    This "target context" is the realm that libraries like *mtl* and *polysemy*
+    can fill; functor combinators serve to help you define a structure for your
+    program *before* you interpret it into whatever Applicative or Monad or
+    effects system you end up using.
