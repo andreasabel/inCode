@@ -994,10 +994,18 @@ monoidal functor combinator \texttt{MF\ t\ f\ a} (for example, between
   \emph{choice} of ``the next \texttt{f}'' is allowed to depend on the
   \emph{result} of ``the previous \texttt{f}''.
 
-  For example, in an interactive ``wizard'' sort of schema, where \texttt{f}
-  represents a wizard dialog box, we can represent our wizard using
-  \texttt{Free\ f\ a} --- an ordered sequence of dialog boxes, where the choice
-  of the next box can depend on result of the previous box.
+  For example, in an interactive ``wizard'' sort of schema, we can have a
+  functor representing a dialog box with its result type:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Dialog}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+  We can then represent our wizard using \texttt{Free\ Dialog\ a} --- an ordered
+  sequence of dialog boxes, where the choice of the next box can depend on
+  result of the previous box.
 
   \texttt{Free1} is a version with ``at least one'' \texttt{f\ a}.
 
@@ -1546,12 +1554,27 @@ This means that if we inject and immediately interpret out of, we should never
   \emph{choice of the next \texttt{f}} is allowed to depend on the \emph{result
   of the previous \texttt{f}}.
 
-  For example, in an interactive ``wizard'' sort of schema, where \texttt{f}
-  represents a wizard dialog box, we can represent our wizard using
-  \texttt{Free\ f\ a} --- an ordered sequence of dialog boxes, where the choice
+  For example, in an interactive ``wizard'' sort of schema, we can create a
+  functor to represent a dialog box with its result type:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Dialog}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+  We can then construct a type for a wizard:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{Wizard} \OtherTok{=} \DataTypeTok{Free} \DataTypeTok{Diloag}
+\end{Highlighting}
+\end{Shaded}
+
+  \texttt{Wizard} is now an ordered sequence of dialog boxes, where the choice
   of the next box can depend on result of the previous box. Contrast to
-  \texttt{Ap}, where the choice of all dialog boxes must be made in advanced,
-  up-front, before reading any input from the user.
+  \texttt{Ap\ Dialog}, where the choice of all dialog boxes must be made in
+  advanced, up-front, before reading any input from the user.
 
   In having this, however, we loose the ability to be able to inspect each
   \texttt{f\ a} before interpreting anything.
@@ -1567,6 +1590,12 @@ This means that if we inject and immediately interpret out of, we should never
   \texttt{Free1} is a variety of \texttt{Free1} where you always have to have
   ``at least one \texttt{f}''. Can be useful if you want to ensure, for example,
   that your wizard has at least one dialog box.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{NonEmptyWizard} \OtherTok{=} \DataTypeTok{Free1} \DataTypeTok{Dialog}
+\end{Highlighting}
+\end{Shaded}
 
   Note that this is essentially \texttt{f} \texttt{Comp}d with itself multiple
   times; \texttt{Free} is the monoidal functor combinator induced by

@@ -721,10 +721,16 @@ monoidal functor combinator `MF t f a` (for example, between `Comp f f a` and
     have many `f`s, sequenced one after the other, in which the *choice* of "the
     next `f`" is allowed to depend on the *result* of "the previous `f`".
 
-    For example, in an interactive "wizard" sort of schema, where `f` represents
-    a wizard dialog box, we can represent our wizard using `Free f a` --- an
-    ordered sequence of dialog boxes, where the choice of the next box can
-    depend on result of the previous box.
+    For example, in an interactive "wizard" sort of schema, we can have a
+    functor representing a dialog box with its result type:
+
+    ``` {.haskell}
+    data Dialog a
+    ```
+
+    We can then represent our wizard using `Free Dialog a` --- an ordered
+    sequence of dialog boxes, where the choice of the next box can depend on
+    result of the previous box.
 
     `Free1` is a version with "at least one" `f a`.
 
@@ -1176,12 +1182,23 @@ intact: functor combinators only ever *add* structure.
     Perhaps more importantly, you can sequence `f`s in a way where the *choice
     of the next `f`* is allowed to depend on the *result of the previous `f`*.
 
-    For example, in an interactive "wizard" sort of schema, where `f` represents
-    a wizard dialog box, we can represent our wizard using `Free f a` --- an
-    ordered sequence of dialog boxes, where the choice of the next box can
-    depend on result of the previous box. Contrast to `Ap`, where the choice of
-    all dialog boxes must be made in advanced, up-front, before reading any
-    input from the user.
+    For example, in an interactive "wizard" sort of schema, we can create a
+    functor to represent a dialog box with its result type:
+
+    ``` {.haskell}
+    data Dialog a
+    ```
+
+    We can then construct a type for a wizard:
+
+    ``` {.haskell}
+    type Wizard = Free Diloag
+    ```
+
+    `Wizard` is now an ordered sequence of dialog boxes, where the choice of the
+    next box can depend on result of the previous box. Contrast to `Ap Dialog`,
+    where the choice of all dialog boxes must be made in advanced, up-front,
+    before reading any input from the user.
 
     In having this, however, we loose the ability to be able to inspect each
     `f a` before interpreting anything.
@@ -1195,6 +1212,10 @@ intact: functor combinators only ever *add* structure.
     `Free1` is a variety of `Free1` where you always have to have "at least one
     `f`". Can be useful if you want to ensure, for example, that your wizard has
     at least one dialog box.
+
+    ``` {.haskell}
+    type NonEmptyWizard = Free1 Dialog
+    ```
 
     Note that this is essentially `f` `Comp`d with itself multiple times; `Free`
     is the monoidal functor combinator induced by `Comp` and `Free1` is the
