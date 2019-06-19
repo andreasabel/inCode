@@ -1116,6 +1116,26 @@ intact: functor combinators only ever *add* structure.
     constructors directly and look at each individual sequenced `f a`, for
     static analysis, before anything is ever run or interpreted.
 
+    *Structurally*, `Ap` is built like a linked list of `f x`s, which each link
+    being existentailly bound together:
+
+    ``` {.haskell}
+    data Ap :: (Type -> Type) -> Type -> Type where
+        Pure :: a   -> Ap f a
+        Ap   :: f a -> Ap f (a -> b) -> Ap f b
+    ```
+
+    `Pure` is like "nil", and `Ap` is like "cons":
+
+    ``` {.haskell}
+    data List :: Type -> Type where
+        Nil  :: List a
+        Cons :: a -> List a -> List a
+    ```
+
+    The existential type in the `Ap` branch plays the same role that it does in
+    the definition of `Day` (see the description of `Day` for more information).
+
     `Ap1` is a variety of `Ap` where you always have to have "at least one `f`".
     Can be useful if you want to ensure, for example, that your form has at
     least one element.
