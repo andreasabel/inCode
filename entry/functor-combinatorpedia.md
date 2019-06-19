@@ -995,8 +995,8 @@ intact: functor combinators only ever *add* structure.
     `Functor`. Usually, the context is an `Applicative` or `Monad`, so this is
     typically always satisfied.
 
-    For example, if we want to "run" a `Coyoneda FormElem` into `IO`, this would
-    be
+    For example, if we want to "run" a `Coyoneda FormElem` in `IO` (maybe as an
+    interactive CLI form), this would be
     `interpret :: (forall x. FormElem x -> IO x) -> Coyoneda FormElem a -> IO a`.
 
 ### ListF / NonEmptyF
