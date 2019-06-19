@@ -788,10 +788,10 @@ from them.
 -   **Identity**
 
     ``` {.haskell}
-    type I These1 = Void
+    type I These1 = Void1
     ```
 
-    `These1 f Void` is equivalent to just `f`, because it means the `That1` and
+    `These1 f Void1` is equivalent to just `f`, because it means the `That1` and
     `These1` branches will be impossible to construct, and you are left with
     only the `This1` branch.
 
