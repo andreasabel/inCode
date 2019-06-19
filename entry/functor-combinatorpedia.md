@@ -1059,8 +1059,9 @@ intact: functor combinators only ever *add* structure.
 
     Interpreting out of a `ListF f` requires the target context to be `Plus`,
     and interpreting out of a `NonEmptyF f` requires `Alt` (because you will
-    never have the empty case). However, you can directly pattern match on the
-    list and pick an item you want directly, which requires no constraint.
+    never have the empty case). However, you always have the option to directly
+    pattern match on the list and pick an item you want directly, which requires
+    no constraint.
 
 ### Ap / Ap1
 
