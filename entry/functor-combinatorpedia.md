@@ -700,7 +700,7 @@ monoidal functor combinator `MF t f a` (for example, between `Comp f f a` and
     Somewhat serendipitously, the `CM` constraint associated with `Comp` is the
     infamous `Monad`. Hopefully this insight also gives you some insight on the
     nature of `Monad` as an abstraction: it's a way to "interpret" in and out of
-    `Comp` :)
+    `Comp`, which enforces an ordering in interpretation :)
 
 -   **Induced Monoid**
 
@@ -741,7 +741,7 @@ from them.
 1.  `:+:`: Provide either, be ready for both.
 2.  `:*:`: Provide both, be ready for either.
 3.  `Day`: Provide both, be ready for both.
-4.  `Comp`: Provide both (in order), be ready for both (in order).
+4.  `Comp`: Provide both, be ready for both (in order).
 :::
 
 ### These1
