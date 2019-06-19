@@ -1773,6 +1773,10 @@ intact: functor combinators only ever *add* structure.
     `rerollMF` (convert back from the `Chain`) in
     *[Data.HFunctor.Chain](https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor-Chain.html)*.
 
+    We can "fold down" a `Chain t (I t) f a` into an `f a`, if `t` is
+    `Monoidal`, using `interpret id`. In fact, this ability could be used as a
+    fundamental property of monoidal nature.
+
     We also have a "non-empty" version, `Chain1`, for induced semigroupoids:
 
     ``` {.haskell}
@@ -1790,6 +1794,10 @@ intact: functor combinators only ever *add* structure.
     Step      ~ Chain1 RightF
     ```
 
+    We can "fold down" a `Chain1 t f a` into an `f a`, if `t` is
+    `Semigroupoidal`, using `interpret id`. In fact, this ability could be used
+    as a fundamental property of semigroupoidal nature.
+
     Using `ListF`, `Ap`, `Free`, `Step`, `Steps`, etc. can sometimes feel very
     different, but with `Chain` you get a uniform interface to pattern match on
     (and construct) all of them in the same way.
@@ -1797,6 +1805,21 @@ intact: functor combinators only ever *add* structure.
     Using `NonEmptyF`, `Ap1`, `Free1`, `Step`, `Flagged`, etc. can sometimes
     feel very different, but with `Chain1` you get a uniform interface to
     pattern match on (and construct) all of them in the same way.
+
+    Universally, we can concatenate linked chains, with:
+
+    ``` {.haskell}
+    appendChain
+        :: Monoidal t
+        => t (Chain t (I t) f) (Chain t (I t) f) ~> Chain t (I t) f
+
+    appendChain1
+        :: Semigroupoidal t
+        => t (Chain1 t f) (Chain1 t f) ~> Chain1 t f
+    ```
+
+    These operations are associative, and this property is gained from the
+    semigroupoidal/monoidal nature of `t`.
 
     The construction of `Chain` is inspired by [Oleg Grenrus's blog
     post](http://oleg.fi/gists/posts/2018-02-21-single-free.html), and the

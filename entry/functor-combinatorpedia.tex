@@ -2292,6 +2292,10 @@ This means that if we inject and immediately interpret out of, we should never
   in
   \emph{\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor-Chain.html}{Data.HFunctor.Chain}}.
 
+  We can ``fold down'' a \texttt{Chain\ t\ (I\ t)\ f\ a} into an \texttt{f\ a},
+  if \texttt{t} is \texttt{Monoidal}, using \texttt{interpret\ id}. In fact,
+  this ability could be used as a fundamental property of monoidal nature.
+
   We also have a ``non-empty'' version, \texttt{Chain1}, for induced
   semigroupoids:
 
@@ -2314,6 +2318,10 @@ This means that if we inject and immediately interpret out of, we should never
 \end{Highlighting}
 \end{Shaded}
 
+  We can ``fold down'' a \texttt{Chain1\ t\ f\ a} into an \texttt{f\ a}, if
+  \texttt{t} is \texttt{Semigroupoidal}, using \texttt{interpret\ id}. In fact,
+  this ability could be used as a fundamental property of semigroupoidal nature.
+
   Using \texttt{ListF}, \texttt{Ap}, \texttt{Free}, \texttt{Step},
   \texttt{Steps}, etc. can sometimes feel very different, but with
   \texttt{Chain} you get a uniform interface to pattern match on (and construct)
@@ -2323,6 +2331,23 @@ This means that if we inject and immediately interpret out of, we should never
   \texttt{Flagged}, etc. can sometimes feel very different, but with
   \texttt{Chain1} you get a uniform interface to pattern match on (and
   construct) all of them in the same way.
+
+  Universally, we can concatenate linked chains, with:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{appendChain}
+\OtherTok{    ::} \DataTypeTok{Monoidal}\NormalTok{ t}
+    \OtherTok{=>}\NormalTok{ t (}\DataTypeTok{Chain}\NormalTok{ t (}\DataTypeTok{I}\NormalTok{ t) f) (}\DataTypeTok{Chain}\NormalTok{ t (}\DataTypeTok{I}\NormalTok{ t) f) }\OperatorTok{\textasciitilde{}>} \DataTypeTok{Chain}\NormalTok{ t (}\DataTypeTok{I}\NormalTok{ t) f}
+
+\NormalTok{appendChain1}
+\OtherTok{    ::} \DataTypeTok{Semigroupoidal}\NormalTok{ t}
+    \OtherTok{=>}\NormalTok{ t (}\DataTypeTok{Chain1}\NormalTok{ t f) (}\DataTypeTok{Chain1}\NormalTok{ t f) }\OperatorTok{\textasciitilde{}>} \DataTypeTok{Chain1}\NormalTok{ t f}
+\end{Highlighting}
+\end{Shaded}
+
+  These operations are associative, and this property is gained from the
+  semigroupoidal/monoidal nature of \texttt{t}.
 
   The construction of \texttt{Chain} is inspired by
   \href{http://oleg.fi/gists/posts/2018-02-21-single-free.html}{Oleg Grenrus's
