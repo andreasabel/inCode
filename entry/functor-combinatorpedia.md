@@ -37,7 +37,7 @@ these techniques allow you to separate the assembly and inspection of your
 programs from the "running" of them.[^1] However, the main difference is that
 here we focus not just on products and sums, but many different varied and
 multi-purpose combinators --- a "zoo" of combinators. The fixed point is *not*
-the end goal.
+the end goal. The actual ADT data types *themselves* are the goal.
 
 This post is a run-down on the wide variety of such "functor combinators" across
 the Haskell ecosystem --- a functor combinatorpedia. To speak about them all
@@ -48,6 +48,9 @@ library, which doesn't really define these functor combinators, but rather pulls
 them all together and provides a unified interface for working with them. Most
 of these types and typeclasses are exported by
 *[Data.Functor.Combinator](https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Combinator.html)*.
+Of course, the end-goal is to work with these data types *themselves* directly,
+so not *everything* is meant to be doable with these typeclasses; they only
+serve to unite some common aspects.
 
 Right now I already have some posts about this general design pattern,
 ["Interpreters a la Carte" in Advent of Code 2017
@@ -573,6 +576,22 @@ monoidal functor combinator `MF t f a` (for example, between `Comp f f a` and
 
     Unlike for `:*:`, you always have to interpret *both* functor values in
     order to interpret a `Day`. It's a "full mixing".
+
+    The mechanism for this is interesting in and of itself. Looking at the
+    definition of the data type:
+
+    \`\`haskell data Day f g a = forall x y. Day (f x) (g y) (x -\> y -\> a)
+    \`\`\`
+
+    We see that because `x` and `y` are "hidden" from the external world, we
+    can't directly use them without applying the "joining" function
+    `x -> y -> a`. Due to how existential types work, we can't get anything out
+    of it that "contains" `x` or `y`. Because of this, *using* the joining
+    function requires *both* `f x` and `g y`. If we only use `f x`, we can only
+    get, at best,`f (y -> a)`; if we only use `g y`, we can only get, at best,
+    `g (x -> a)`. In order to fully eliminate *both* existential variables, we
+    need to get the `x` and `y` from *both* `f x` and `g y`, as if the two
+    values held separate halves of the key.
 
 -   **Identity**
 
@@ -2071,6 +2090,9 @@ for me to devote time to researching and writing these posts. Very special
 thanks to my supporter at the "Amazing" level on
 [patreon](https://www.patreon.com/justinle/overview), Josh Vera! :)
 
+Also a special thanks to [Koz Ross](https://twitter.com/KozRoss), who helped
+proofread this post as a draft.
+
 --------------------------------------------------------------------------------
 
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
@@ -2114,3 +2136,6 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     type CS t = C (SF t)
     type CM t = C (MF t)
     ```
+
+    In fact, in the library, `binterpret` and `pureT` are actually defined *in
+    terms of* `SF` and `MF`, respectively.
