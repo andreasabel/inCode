@@ -331,8 +331,8 @@ combinator. We call this the "induced monoidal functor combinator", given by
 one `f`".
 
 For example, the type that is either `a`, `f a`, `f (f a)`, `f (f (f a))`, etc.
-is `Free f`, so that `type MF Comp = Free`. The type that is either `f a`,
-`f (f a)`, `f (f (f a))`, etc. (at least one layer of `f`) is `Free1`, so
+is `Free f a`, so that `type MF Comp = Free`. The type that is either `f a`,
+`f (f a)`, `f (f (f a))`, etc. (at least one layer of `f`) is `Free1 f a`, so
 `type SF Comp = Free1`.
 
 *functor-combinators* provides functions like `toMF :: t f f ~> MF f` to
