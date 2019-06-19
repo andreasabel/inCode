@@ -1529,9 +1529,9 @@ intact: functor combinators only ever *add* structure.
     `HostName`.
 
     Note that, unlike `ReaderT`, most monad transformers from *transformers* are
-    actually valid functor combinators under our perspective here, because most
-    of them are not *natural* on `f`: they require `Functor f`, at least, to
-    implement `inject` or `hmap`.
+    actually *not* valid functor combinators under our perspective here, because
+    most of them are not *natural* on `f`: they require `Functor f`, at least,
+    to implement `inject` or `hmap`.
 
 -   **Constraint**
 
