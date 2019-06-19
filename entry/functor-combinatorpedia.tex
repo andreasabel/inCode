@@ -93,6 +93,10 @@
 \textbf{\href{https://blog.jle.im/entry/functor-combinatorpedia.html}{in
 Code}}.}
 
+\textbf{functor-combinators}:
+\href{https://hackage.haskell.org/package/functor-combinators}{hackage} /
+\href{https://github.com/mstksg/functor-combinators}{github}
+
 Recently I've been very productive what I have been calling the ``Functor
 Combinator'' design pattern. It is heavily influenced by ideas like
 \href{http://www.cs.ru.nl/~W.Swierstra/Publications/DataTypesALaCarte.pdf}{Data
@@ -146,16 +150,16 @@ For concrete examples on \emph{using} these, see my previous
 \href{https://blog.jle.im/entry/interpreters-a-la-carte-duet.html}{on}
 \href{https://blog.jle.im/entry/const-applicative-and-monoids.html}{free}
 \href{https://blog.jle.im/entry/free-alternative-regexp.html}{structures}). In a
-way, this post also serves as a run-down of all the popular free structures in
-Haskell :)
+way, this post also serves as a reference for all the popular free structures in
+Haskell, and more :)
 
 Please refer to the
 \href{https://blog.jle.im/entry/functor-combinatorpedia.html\#title}{table of
 contents} if you are using this as a reference!
 
-\hypertarget{prologue-what-is-a-functor-combinator}{%
-\section{Prologue: What is a functor
-combinator?}\label{prologue-what-is-a-functor-combinator}}
+\hypertarget{preface-what-is-a-functor-combinator}{%
+\section{Preface: What is a functor
+combinator?}\label{preface-what-is-a-functor-combinator}}
 
 A functor combinator takes ``functors'' (or other indexed types) and returns a
 new functor, enhances or mixes them together in some way. That is, they take
@@ -186,8 +190,8 @@ you to construct your final functor by combining simpler ``primitive'' functors,
 and take advantage of common functionality.
 
 For example, if you were making a data type/EDSL to describe a command line
-parser, you might have two primitives: \texttt{data\ Arg\ a}, for positional
-arguments parsing \texttt{a}, and \texttt{data\ Option\ a}, for
+argument parser, you might have two primitives: \texttt{data\ Arg\ a}, for
+positional arguments parsing \texttt{a}, and \texttt{data\ Option\ a}, for
 \texttt{-\/-flag} non-positional options parsing \texttt{a}. From there, you can
 \emph{choose} what structure of command line arguments you want to be able to
 express.
@@ -201,7 +205,8 @@ single \texttt{Option} would be:
 \end{Highlighting}
 \end{Shaded}
 
-And a structure that supports \emph{multiple commands} on top of that would be:
+And a structure that supports \emph{multiple named commands} on top of that
+would be:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -273,12 +278,13 @@ Then the type signatures of \texttt{hmap} and \texttt{hbimap} become:
 \end{Shaded}
 
 What does it mean exactly when we say that \texttt{hmap} and \texttt{hbimap}
-``preserve the enhanced structure''? Well, for example, \texttt{ListF\ f\ a} is
-essentially a list of \texttt{f\ a}s. \texttt{hmap} will swap out and replace
-each \texttt{f\ a}, but it must \emph{preserve the relative order} between each
-of the original \texttt{f\ a}s. And it must preserve the length of the list.
-It's a complete ``in-place swap''. This is formalizing by requiring
-\texttt{hmap\ id\ ==\ id} and \texttt{hbimap\ id\ id\ ==\ id}.
+``preserve the enhanced structure''? Well, for example, the type
+\texttt{newtype\ ListF\ f\ a\ =\ ListF\ {[}f\ a{]}} is essentially a list of
+\texttt{f\ a}s. \texttt{hmap} will swap out and replace each \texttt{f\ a}, but
+it must \emph{preserve the relative order} between each of the original
+\texttt{f\ a}s. And it must preserve the length of the list. It's a complete
+``in-place swap''. This is formalizing by requiring \texttt{hmap\ id\ ==\ id}
+and \texttt{hbimap\ id\ id\ ==\ id}.
 
 You can also always ``lift'' a functor value into its transformed type. We
 abstract over this by using \texttt{inject} (for single-argument functors) and
@@ -315,6 +321,8 @@ some constraints on the target context. We abstract over this using
         \OtherTok{{-}>}\NormalTok{ t f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
 
 \KeywordTok{class} \DataTypeTok{Semigroupoidal}\NormalTok{ t }\KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{CS}\OtherTok{ t ::}\NormalTok{ (}\DataTypeTok{Type} \OtherTok{{-}>} \DataTypeTok{Type}\NormalTok{) }\OtherTok{{-}>} \DataTypeTok{Constraint}
+
     \CommentTok{{-}{-} | Interpret binary functor combinator}
 \NormalTok{    binterpret}
 \OtherTok{        ::} \DataTypeTok{CS}\NormalTok{ t h}
@@ -328,7 +336,14 @@ Each functor combinator defines a constraint (\texttt{C} for unary functor
 combinators, and \texttt{CS} and \texttt{CM} for binary functor combinators)
 that allows you to ``exit'', or ``run'' the functor combinator.
 
-For some concrete examples:
+One nice consequence of this approach is that for many such schemas/functors you
+build, there might be many \emph{useful} target functors. For example, if you
+build a command line argument parser schema, you might want to run it in
+\texttt{Const\ String} to build up a ``help message'', or you might want to run
+it in \texttt{Parser} to parse the actual arguments or run pure tests, or you
+might want to run it in \texttt{IO} to do interactive parsing.
+
+For some concrete examples of these functor combinators and their constraints:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -421,14 +436,16 @@ combinator imbues.
 
 As it turns out, \texttt{CS} and \texttt{CM} generalize the ``has an identity''
 property of many typeclasses --- for example, for \texttt{Comp} (functor
-composition), \texttt{CS} is \texttt{Bind} (``\texttt{Monad} without
-\texttt{pure}''), and \texttt{CM} is \texttt{Monad}.
+composition), \texttt{type\ CS\ Comp\ =\ Bind} (``\texttt{Monad} without
+\texttt{pure}''), and \texttt{type\ CM\ Comp\ =\ Monad}.
 
 Most of these also have an identity functor, \texttt{I\ t}, where applying
 \texttt{t\ f\ (I\ t)} leaves \texttt{f} unchanged (\texttt{t\ f\ (I\ t)} is
 isomorphic to \texttt{f}) and \texttt{t\ (I\ t)\ f} is also just \texttt{f}.
-This is represented by the associated type \texttt{I\ t} (examples will be
-provided below).
+This is represented by the associated type \texttt{I\ t}. For example,
+\texttt{type\ I\ Comp\ =\ Identity}, because \texttt{Comp\ f\ Identity}
+(composing any functor with \texttt{Identity}, \texttt{f\ (Identity\ a)}) is
+just the same as \texttt{f} (the original functor).
 
 One interesting property of these is that for a lot of these, if we have a
 binary functor combinator \texttt{*}, we can represent a type
@@ -436,12 +453,19 @@ binary functor combinator \texttt{*}, we can represent a type
 (``repeatedly apply to something multiple times''), which essentially forms a
 linked list along that functor combinator. We call this the ``induced monoidal
 functor combinator'', given by \texttt{MF\ t}. We can also make a ``non-empty
-variant'', \texttt{SF\ t}, the ``induced semigroupoidal functor combinator'',
-which contains ``at least one \texttt{f}'' (examples provided below).
+variant'', \texttt{SF\ t}, which contains ``at least one \texttt{f}''.
 
-They all support functions for ``converting'' back and forth, like
-\texttt{toMF\ ::\ t\ f\ f\ \textasciitilde{}\textgreater{}\ MF\ f} (provided by
-\emph{functor-combinators} in the \texttt{Monoidal} typeclass).
+For example, the type that is either \texttt{a}, \texttt{f\ a},
+\texttt{f\ (f\ a)}, \texttt{f\ (f\ (f\ a))}, etc. is \texttt{Free\ f}, so that
+\texttt{type\ MF\ Comp\ =\ Free}. The type that is either \texttt{f\ a},
+\texttt{f\ (f\ a)}, \texttt{f\ (f\ (f\ a))}, etc. (at least one layer of
+\texttt{f}) is \texttt{Free1}, so \texttt{type\ SF\ Comp\ =\ Free1}.
+
+\emph{functor-combinators} provides functions like
+\texttt{toMF\ ::\ t\ f\ f\ \textasciitilde{}\textgreater{}\ MF\ f} to abstract
+over ``converting'' back and forth between \texttt{t\ f\ f\ a} and the induced
+monoidal functor combinator \texttt{MF\ t\ f\ a} (for example, between
+\texttt{Comp\ f\ f\ a} and \texttt{Free\ f\ a}).
 
 This is all a bit abstract, but let's dive into some actual examples, which will
 make these all clearer.
@@ -932,6 +956,23 @@ make these all clearer.
   See the information later on \texttt{Free} alone (in the single-argument
   functor combinator section) for more information on usage and utility.
 \end{itemize}
+
+Let us pause for a brief aside to compare and contrast the hierarchy of the
+above functor combinators, as there is an interesting progression we can draw
+from them.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \texttt{:+:}: Provide either, be ready for both.
+\item
+  \texttt{:*:}: Provide both, be ready for either.
+\item
+  \texttt{Day}: Provide both, be ready for both.
+\item
+  \texttt{Comp}: Provide both (in order), be ready for both (in order).
+\end{enumerate}
 
 \hypertarget{these1}{%
 \subsection{These1}\label{these1}}
@@ -1703,7 +1744,7 @@ This means that if we inject and immediately interpret out of, we should never
 \end{Shaded}
 
   We can immediately promote it to be a functor representing \emph{multiple
-  possible} commands, each at a given string:
+  possible} named commands, each at a given string:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2299,6 +2340,221 @@ This means that if we inject and immediately interpret out of, we should never
 
   Interpreting out of these requires an impossible constraint.
 \end{itemize}
+
+\hypertarget{combinator-combinators}{%
+\section{Combinator Combinators}\label{combinator-combinators}}
+
+There exist higher-order functor combinator combinators that take functor
+combinators and return new ones, too. We can talk about a uniform interface for
+them, but they aren't very common, so it is probably not worth the extra
+abstraction.
+
+\hypertarget{composet}{%
+\subsection{ComposeT}\label{composet}}
+
+\begin{itemize}
+\item
+  \textbf{Origin}:
+  \emph{\href{https://hackage.haskell.org/package/mmorph/docs/Control-Monad-Trans-Compose.html}{Control.Monad.Trans.Compose}}
+\item
+  \textbf{Enhancement}: Compose enhancements from two different functor
+  combinators
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{newtype} \DataTypeTok{ComposeT}\NormalTok{ s t f a }\OtherTok{=} \DataTypeTok{ComposeT}\NormalTok{ \{}\OtherTok{ getComposeT ::}\NormalTok{ s (t f) a \}}
+\end{Highlighting}
+\end{Shaded}
+
+  Can be useful if you want to layer or nest functor combinators to get both
+  enhancements as a \emph{single} functor combinator*.
+
+  Usually really only useful in the context of other abstractions that expect
+  functor combinators, since this is the best way to turn two functor
+  combinators into a third one.
+\item
+  \textbf{Constraint}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{ComposeT}\NormalTok{ s t) }\OtherTok{=} \DataTypeTok{AndC}\NormalTok{ (}\DataTypeTok{C}\NormalTok{ s) (}\DataTypeTok{C}\NormalTok{ t)}
+
+\NormalTok{interpret }\OperatorTok{@}\NormalTok{(}\DataTypeTok{ComposeT}\NormalTok{ s t)}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{C}\NormalTok{ s g, }\DataTypeTok{C}\NormalTok{ t g)}
+    \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+    \OtherTok{{-}>} \DataTypeTok{ComposeT}\NormalTok{ s t f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+\end{Highlighting}
+\end{Shaded}
+
+  Interpreting out of these requires the constraints on \emph{both} layers.
+\end{itemize}
+
+\hypertarget{hlift}{%
+\subsection{HLift}\label{hlift}}
+
+\begin{itemize}
+\item
+  \textbf{Origin}:
+  \emph{\href{https://hackage.haskell.org/package/base/docs/Data-HFunctor.html}{Data.HFunctor}}
+\item
+  \textbf{Enhancement}: \texttt{HLift\ t\ f} lets \texttt{f} exist either
+  unchanged, or with the structure of \texttt{t}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{HLift}\NormalTok{ t f a}
+    \OtherTok{=} \DataTypeTok{HPure}\NormalTok{  (f a)}
+    \OperatorTok{|} \DataTypeTok{HOther}\NormalTok{ (t f a)}
+\end{Highlighting}
+\end{Shaded}
+
+  Can be useful if you want to ``conditionally enhance'' \texttt{f}. Either
+  \texttt{f} can be enhanced by \texttt{t}, or it can exist in its pure
+  ``newly-injected'' form.
+
+  If \texttt{t} is \texttt{Identity}, we get \texttt{EnvT\ Any}, or
+  \texttt{f\ :+:\ f}: the ``pure or impure'' combinator.
+\item
+  \textbf{Constraint}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{HLift}\NormalTok{ t) }\OtherTok{=} \DataTypeTok{C}\NormalTok{ t}
+
+\NormalTok{interpret }\OperatorTok{@}\NormalTok{(}\DataTypeTok{HLift}\NormalTok{ t)}
+\OtherTok{    ::} \DataTypeTok{C}\NormalTok{ t g}
+    \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+    \OtherTok{{-}>} \DataTypeTok{HLift}\NormalTok{ t f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+\end{Highlighting}
+\end{Shaded}
+
+  Interpreting out of these requires the constraint on \texttt{t}, to handle the
+  \texttt{HOther} case.
+\end{itemize}
+
+\hypertarget{hfree}{%
+\subsection{HFree}\label{hfree}}
+
+\begin{itemize}
+\item
+  \textbf{Origin}:
+  \emph{\href{https://hackage.haskell.org/package/base/docs/Data-HFunctor.html}{Data.HFunctor}}
+\item
+  \textbf{Enhancement}: \texttt{HFree\ t\ f} lets \texttt{f} exist either
+  unchanged, or with multiple nested enhancements by \texttt{t}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{HFree}\NormalTok{ t f a}
+    \OtherTok{=} \DataTypeTok{HReturn}\NormalTok{ (f a)}
+    \OperatorTok{|} \DataTypeTok{HJoin}\NormalTok{   (t (}\DataTypeTok{HFree}\NormalTok{ t f) a)}
+\end{Highlighting}
+\end{Shaded}
+
+  It is related to \texttt{HLift}, but lets you lift over arbitrary many
+  compositions of \texttt{t}, enhancing \texttt{f} multiple times. This
+  essentially creates a ``tree'' of \texttt{t} branches.
+
+  One particularly useful functor combinator to use is \texttt{MapF}. In our
+  earlier examples, if we have
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Command}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+  to represent the structure of a single command line argument parser, we can
+  use
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{Commands} \OtherTok{=} \DataTypeTok{MapF} \DataTypeTok{String} \DataTypeTok{Command}
+\end{Highlighting}
+\end{Shaded}
+
+  to represent \emph{multiple} potential named commands, each under a different
+  \texttt{String} argument. With \texttt{HFree}, we can also use:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{CommandTree} \OtherTok{=} \DataTypeTok{HFree}\NormalTok{ (}\DataTypeTok{MapF} \DataTypeTok{String}\NormalTok{) }\DataTypeTok{Command}
+\end{Highlighting}
+\end{Shaded}
+
+  to represent \emph{nested} named commands, where each nested sub-command is
+  descended on by a \texttt{String} key.
+
+  For another example, \texttt{HFree\ IdentityT} is essentially \texttt{Step}.
+\item
+  \textbf{Constraint}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{HFree}\NormalTok{ t) }\OtherTok{=} \DataTypeTok{C}\NormalTok{ t}
+
+\NormalTok{interpret }\OperatorTok{@}\NormalTok{(}\DataTypeTok{HFree}\NormalTok{ t)}
+\OtherTok{    ::} \DataTypeTok{C}\NormalTok{ t g}
+    \OtherTok{=>}\NormalTok{ f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+    \OtherTok{{-}>} \DataTypeTok{HFree}\NormalTok{ t f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+\end{Highlighting}
+\end{Shaded}
+
+  Interpreting out of these requires the constraint on \texttt{t}, to handle the
+  \texttt{HJoin} case.
+
+  However, it is probably usually more useful to directly pattern match on
+  \texttt{HReturn} and \texttt{HJoin} and handle the recursion explicitly.
+
+  Alternatively, we can also define a recursive folding function (provided in
+  \emph{\href{https://hackage.haskell.org/package/base/docs/Data-HFunctor.html}{Data.HFunctor}})
+  to recursively fold down each branch:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{foldHFree}
+\OtherTok{    ::} \DataTypeTok{HFunctor}\NormalTok{ t}
+    \OtherTok{=>}\NormalTok{ (f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g)}
+    \OtherTok{{-}>}\NormalTok{ (t g }\OperatorTok{\textasciitilde{}>}\NormalTok{ g)}
+    \OtherTok{{-}>} \DataTypeTok{HFree}\NormalTok{ t f }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+\end{Highlighting}
+\end{Shaded}
+
+  This can be useful because it allows you to distinguish between the different
+  branches, and also requires no constraint on \texttt{g}.
+
+  Applied to the \texttt{CommandTree} example, this becomes:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{foldHFree }\OperatorTok{@}\NormalTok{(}\DataTypeTok{MapF} \DataTypeTok{String}\NormalTok{) }\OperatorTok{@}\DataTypeTok{Command}
+\OtherTok{    ::} \DataTypeTok{Command} \OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+    \OtherTok{{-}>} \DataTypeTok{MapF} \DataTypeTok{String} \OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+    \OtherTok{{-}>} \DataTypeTok{CommandTree} \OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+\end{Highlighting}
+\end{Shaded}
+\end{itemize}
+
+\hypertarget{closing-comments}{%
+\section{Closing Comments}\label{closing-comments}}
+
+As I discover more interesting or useful functor combinators (or as the
+abstractions in \emph{functor-combinators} change), I will continue to update
+this post. And, in the upcoming weeks and months I plan to present specific
+programs I have written (and simple examples of usage) that will help show this
+design pattern in use within a real program.
+
+For now, I hope you can appreciate this as a reference to help guide your
+exploration of unique ``a la carte'' (yet not fixed-point-centric) approach to
+building your programs! You can jump right into using these tools to build your
+program \emph{today} by importing
+\emph{\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Combinator.html}{Data.Functor.Combinator}}
+or wherever they can be found.
+
+I'd be excited to hear about what programs you are able to write, so please do
+let me know! You can leave a comment, find me on {[}twitter at @mstk{]}{[}{]},
+or find me on freenode irc idling on \emph{\#haskell} as \emph{jle`} if you want
+to share, or have any questions.
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
