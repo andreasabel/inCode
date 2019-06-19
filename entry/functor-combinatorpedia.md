@@ -1,7 +1,7 @@
 The Functor Combinatorpedia
 ===========================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on June 19, 2019.
 > [Read online!](https://blog.jle.im/entry/functor-combinatorpedia.html)
 
 **functor-combinators**:
@@ -13,12 +13,11 @@ Combinator" design pattern. It is heavily influenced by ideas like [Data types a
 la Carte](http://www.cs.ru.nl/~W.Swierstra/Publications/DataTypesALaCarte.pdf)
 and [unified free monoidal
 functors](http://oleg.fi/gists/posts/2018-02-21-single-free.html), but the end
-goal is slightly different in spirit.
-
-The goal is to represent schemas, DSL's, and computations (things like parsers,
-things to execute, things to consume or produce data) by assembling
-"self-evident" basic primitives and subjecting them to many *different*
-successive transformations and combiners. The process of doing so:
+goal is slightly different in spirit. The goal is to represent schemas, DSL's,
+and computations (things like parsers, things to execute, things to consume or
+produce data) by assembling "self-evident" basic primitives and subjecting them
+to many *different* successive transformations and combiners. The process of
+doing so:
 
 1.  Forces you to make explicit decisions about the structure of your
     computation type as an ADT.
@@ -36,25 +35,25 @@ Like "data types a la carte" and free monad/applicative/alternative designs,
 these techniques allow you to separate the assembly and inspection of your
 programs from the "running" of them.[^1] However, the main difference is that
 here we focus not just on products and sums, but many different varied and
-multi-purpose combinators --- a bona fide "zoo" of combinators. The fixed point
-is not "the end goal".
+multi-purpose combinators --- a "zoo" of combinators. The fixed point is *not*
+the end goal.
 
 This post is a run-down on the wide variety of such "functor combinators" across
-the Haskell ecosystem --- a functor combinator "zoo" of sorts. To speak about
-them all with the same language and vocabulary, this post also serves as an
-overview of the
+the Haskell ecosystem --- a functor combinatorpedia. To speak about them all
+with the same language and vocabulary, this post also serves as an overview of
+the
 *[functor-combinators](https://hackage.haskell.org/package/functor-combinators)*
-library, which mostly pulls them all together and provides a unified interface
-for working with them. Most of these types and typeclasses are exported by
+library, which doesn't really define these functor combinators, but rather pulls
+them all together and provides a unified interface for working with them. Most
+of these types and typeclasses are exported by
 *[Data.Functor.Combinator](https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Combinator.html)*.
 
-For concrete examples on *using* these, see my previous
-[articles](https://blog.jle.im/entry/alchemical-groups.html)
-[on](https://blog.jle.im/entry/interpreters-a-la-carte-duet.html)
-[free](https://blog.jle.im/entry/const-applicative-and-monoids.html)
-[structures](https://blog.jle.im/entry/free-alternative-regexp.html)). In a way,
-this post also serves as a reference for all the popular free structures in
-Haskell, and more :)
+Right now I already have some posts about this general design pattern,
+\["Interpreters a la Carte" in Advent of Code 2017 Duet\]\[ialc\] and
+\[Applicative Regular Expressions using the Free Alternatuve\]\[are\], but I do
+have some posts planned in the future going through projects using this unified
+interface. In a way, this post also serves as the "introduction to free
+structures" that I always wanted to write :)
 
 Please refer to the [table of
 contents](https://blog.jle.im/entry/functor-combinatorpedia.html#title) if you
@@ -63,10 +62,10 @@ are using this as a reference!
 Preface: What is a functor combinator?
 --------------------------------------
 
-A functor combinator takes "functors" (or other indexed types) and returns a new
-functor, enhances or mixes them together in some way. That is, they take things
-of kind `k -> Type` and themselves return a `k -> Type`. This lets us build
-complex functors out of simpler "primitive" ones.
+A functor combinator takes "functors" (or any other indexed type, `k -> Type`)
+and returns a new functor, enhances or mixes them together in some way. That is,
+they take things of kind `k -> Type` and themselves return a `j -> Type`. This
+lets us build complex functors/indexed types out of simpler "primitive" ones.
 
 For example, `ReaderT r` is a famous one that takes a functor `f` and enhances
 it with "access to an `r` environment" functionality. Another famous one is
@@ -75,7 +74,7 @@ capabilities: it turns `f` into a `Monad`.
 
 The main thing that distinguishes these functor combinators from things like
 monad transformers is that they are "natural on `f`": they work on *all* `f`s,
-not just monads, and assume no structure.
+not just monads, and assume no structure (not even `Functor`).
 
 Sometimes, we have binary functor combinators, like `:+:`, which takes two
 functors `f` and `g` and returns a functor that is "either" `f` or `g`. Binary
@@ -260,15 +259,15 @@ different ways.
 We can finally *interpret* (or "run") these into some target context (like
 `Parser`, or `IO`), provided the target satisfies some constraints.
 
-We can separate the functionality associated with each binary functor combinator
-into two typeclasses: `Semigroupoidal` and `Monoidal`. `Semigroupoidal` deals
-with the "interpreting" and "collapsing" of the mixed functors, and `Monoidal`
-deals with the "introduction" and "creation" of them. A more detailed run-down
-is available in the docs for
+It can be useful to separate the functionality associated with each binary
+functor combinator into two typeclasses: `Semigroupoidal` and `Monoidal`.
+`Semigroupoidal` deals with the "interpreting" and "collapsing" of the mixed
+functors, and `Monoidal` deals with the "introduction" and "creation" of them. A
+more detailed run-down is available in the docs for
 *[Data.Functor.Combinator](https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Combinator.html)*.
 
-From each we have two associated constraints, `CS t` (for `Semigroupoidal`) and
-`CM t` (for `Monoidal`):
+From each, we can identify two associated constraints, `CS t` (for
+`Semigroupoidal`) and `CM t` (for `Monoidal`):[^2]
 
 -   `CS t` is what we will call the constraint on where you can *interpret* or
     *run* values of the enhanced type:
@@ -280,6 +279,14 @@ From each we have two associated constraints, `CS t` (for `Semigroupoidal`) and
         => (g ~> h)
         -> (t f g ~> h)
     ```
+
+    For example, for `Comp` (functor composition):
+
+    ``` {.haskell}
+    data Comp f g a = Comp (f (g a))
+    ```
+
+    we have `type CS Comp = Bind` ("`Monad` without pure").
 
 -   `CM t` is the constraint on where you can *create* values of the enhanced
     type (`pureT`, `inL`, `inR`)
@@ -296,23 +303,23 @@ From each we have two associated constraints, `CS t` (for `Semigroupoidal`) and
         => g ~> t f g
     ```
 
+    For example, for `Comp`, `type CS Free = Monad`.
+
     It should always be a subclass of `CS`.
 
 These constraints all depend on the extra structure that the specific functor
 combinator imbues.
 
-As it turns out, `CS` and `CM` generalize the "has an identity" property of many
-typeclasses --- for example, for `Comp` (functor composition),
-`type CS Comp = Bind` ("`Monad` without `pure`"), and `type CM Comp = Monad`.
+Most of these (the ones that are "tensors") also have an identity functor,
+`I t`, where applying `t f (I t)` leaves `f` unchanged (`t f (I t)` is
+isomorphic to `f`) and `t (I t) f` is also just `f`. This is represented by the
+associated type `I t`. For example, `type I Comp = Identity`, because
+`Comp f Identity` (composing any functor with `Identity`, `f (Identity a)`) is
+just the same as `f a` (the original functor); also, `Comp Identity f` (or
+`Identity (f a)`) is the same as `f a`.
 
-Most of these also have an identity functor, `I t`, where applying `t f (I t)`
-leaves `f` unchanged (`t f (I t)` is isomorphic to `f`) and `t (I t) f` is also
-just `f`. This is represented by the associated type `I t`. For example,
-`type I Comp = Identity`, because `Comp f Identity` (composing any functor with
-`Identity`, `f (Identity a)`) is just the same as `f` (the original functor).
-
-One interesting property of these is that for a lot of these, if we have a
-binary functor combinator `*`, we can represent a type
+One interesting property of these is that for tensors, if we have a binary
+functor combinator `*`, we can represent a type
 `f | f * f | f * f * f | f * f * f * f | ...` ("repeatedly apply to something
 multiple times"), which essentially forms a linked list along that functor
 combinator. We call this the "induced monoidal functor combinator", given by
@@ -327,10 +334,7 @@ is `Free f`, so that `type MF Comp = Free`. The type that is either `f a`,
 *functor-combinators* provides functions like `toMF :: t f f ~> MF f` to
 abstract over "converting" back and forth between `t f f a` and the induced
 monoidal functor combinator `MF t f a` (for example, between `Comp f f a` and
-`Free f a`).
-
-This is all a bit abstract, but let's dive into some actual examples, which will
-make these all clearer.
+`Free f a`).[^3]
 
 ### :+: / Sum
 
@@ -432,8 +436,6 @@ make these all clearer.
 
     It's not a particularly useful type, but it can be useful if you want to
     provide an `f a` alongside "which position" it is on the infinite list.
-    Repeatedly using `consMF` will push the `f` further and further along the
-    list.
 
 ### :\*: / Product
 
@@ -725,6 +727,9 @@ make these all clearer.
     See the information later on `Free` alone (in the single-argument functor
     combinator section) for more information on usage and utility.
 
+::: {.note}
+**Aside**
+
 Let us pause for a brief aside to compare and contrast the hierarchy of the
 above functor combinators, as there is an interesting progression we can draw
 from them.
@@ -733,6 +738,7 @@ from them.
 2.  `:*:`: Provide both, be ready for either.
 3.  `Day`: Provide both, be ready for both.
 4.  `Comp`: Provide both (in order), be ready for both (in order).
+:::
 
 ### These1
 
@@ -831,7 +837,6 @@ from them.
 
 -   **Origin**:
     *[Data.HBifunctor](https://hackage.haskell.org/package/functor-combinators/docs/Data-HBifunctor.html)*
-    (for `LeftF` and `RightF`)
 
 -   **Mixing Strategy**: "Ignore the left" / "ignore the right".
 
@@ -1130,10 +1135,9 @@ intact: functor combinators only ever *add* structure.
     It can be useful for implementing parser schemas, which often involve both
     sequential and choice-like combinations. If `f` is a primitive parsing unit,
     then `Alt f` represents a non-deterministic parser of a bunch of `f`s one
-    after the other, with multiple possible results. I wrote [an entire
-    article](https://blog.jle.im/entry/free-alternative-regexp.html) on the
-    usage of this combinator alone to implement a version of regular
-    expressions.
+    after the other, with multiple possible results. I wrote \[an entire
+    article\]\[are\] on the usage of this combinator alone to implement a
+    version of regular expressions.
 
 -   **Constraint**
 
@@ -2028,9 +2032,17 @@ program *today* by importing
 or wherever they can be found.
 
 I'd be excited to hear about what programs you are able to write, so please do
-let me know! You can leave a comment, find me on [twitter at @mstk]\[\], or find
-me on freenode irc idling on *\#haskell* as *jle\`* if you want to share, or
-have any questions.
+let me know! You can leave a comment, find me on [twitter at
+@mstk][twitter](https://twitter.com/mstk "Twitter"), or find me on freenode irc
+idling on *\#haskell* as *jle\`* if you want to share, or have any questions.
+
+Special Thanks
+--------------
+
+I am very humbled to be supported by an amazing community, who make it possible
+for me to devote time to researching and writing these posts. Very special
+thanks to my supporter at the "Amazing" level on
+[patreon](https://www.patreon.com/justinle/overview), Josh Vera! :)
 
 --------------------------------------------------------------------------------
 
@@ -2060,3 +2072,18 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     can fill; functor combinators serve to help you define a structure for your
     program *before* you interpret it into whatever Applicative or Monad or
     effects system you end up using.
+
+[^2]: As it turns out, `CS` and `CM` seem to generalize the "has an identity"
+    property of many typeclasses --- the example used illustrates that `Comp`
+    gives us `type CS Comp = Bind` and `type CM Comp = Monad`, which is "monad
+    without pure" and "monad". We will see other examples later.
+
+[^3]: In fact, the link between the binary functor combinator and its induced
+    monoidal/semigroupoidal functor combinators is very deep. In
+    *functor-combinators*, it's actually used in the definition of `CS` and
+    `CM`:
+
+    ``` {.haskell}
+    type CS t = C (SF t)
+    type CM t = C (MF t)
+    ```

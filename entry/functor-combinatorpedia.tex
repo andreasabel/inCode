@@ -59,6 +59,7 @@
 \newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
 \newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
 \newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\usepackage{fancyvrb}
 \ifxetex
   \usepackage[setpagesize=false, % page size defined by xetex
               unicode=false, % unicode breaks when used with xetex
@@ -82,9 +83,11 @@
 \setlength{\parskip}{6pt plus 2pt minus 1pt}
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
+\VerbatimFootnotes % allows verbatim text in footnotes
 
 \title{The Functor Combinatorpedia}
 \author{Justin Le}
+\date{June 19, 2019}
 
 \begin{document}
 \maketitle
@@ -102,12 +105,11 @@ Combinator'' design pattern. It is heavily influenced by ideas like
 \href{http://www.cs.ru.nl/~W.Swierstra/Publications/DataTypesALaCarte.pdf}{Data
 types a la Carte} and
 \href{http://oleg.fi/gists/posts/2018-02-21-single-free.html}{unified free
-monoidal functors}, but the end goal is slightly different in spirit.
-
-The goal is to represent schemas, DSL's, and computations (things like parsers,
-things to execute, things to consume or produce data) by assembling
-``self-evident'' basic primitives and subjecting them to many \emph{different}
-successive transformations and combiners. The process of doing so:
+monoidal functors}, but the end goal is slightly different in spirit. The goal
+is to represent schemas, DSL's, and computations (things like parsers, things to
+execute, things to consume or produce data) by assembling ``self-evident'' basic
+primitives and subjecting them to many \emph{different} successive
+transformations and combiners. The process of doing so:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -150,24 +152,24 @@ programs from the ``running'' of them.\footnote{On the surface, this functor
   interpret it into whatever Applicative or Monad or effects system you end up
   using.} However, the main difference is that here we focus not just on
 products and sums, but many different varied and multi-purpose combinators --- a
-bona fide ``zoo'' of combinators. The fixed point is not ``the end goal''.
+``zoo'' of combinators. The fixed point is \emph{not} the end goal.
 
 This post is a run-down on the wide variety of such ``functor combinators''
-across the Haskell ecosystem --- a functor combinator ``zoo'' of sorts. To speak
-about them all with the same language and vocabulary, this post also serves as
-an overview of the
+across the Haskell ecosystem --- a functor combinatorpedia. To speak about them
+all with the same language and vocabulary, this post also serves as an overview
+of the
 \emph{\href{https://hackage.haskell.org/package/functor-combinators}{functor-combinators}}
-library, which mostly pulls them all together and provides a unified interface
-for working with them. Most of these types and typeclasses are exported by
+library, which doesn't really define these functor combinators, but rather pulls
+them all together and provides a unified interface for working with them. Most
+of these types and typeclasses are exported by
 \emph{\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Combinator.html}{Data.Functor.Combinator}}.
 
-For concrete examples on \emph{using} these, see my previous
-\href{https://blog.jle.im/entry/alchemical-groups.html}{articles}
-\href{https://blog.jle.im/entry/interpreters-a-la-carte-duet.html}{on}
-\href{https://blog.jle.im/entry/const-applicative-and-monoids.html}{free}
-\href{https://blog.jle.im/entry/free-alternative-regexp.html}{structures}). In a
-way, this post also serves as a reference for all the popular free structures in
-Haskell, and more :)
+Right now I already have some posts about this general design pattern,
+{[}``Interpreters a la Carte'' in Advent of Code 2017 Duet{]}{[}ialc{]} and
+{[}Applicative Regular Expressions using the Free Alternatuve{]}{[}are{]}, but I
+do have some posts planned in the future going through projects using this
+unified interface. In a way, this post also serves as the ``introduction to free
+structures'' that I always wanted to write :)
 
 Please refer to the
 \href{https://blog.jle.im/entry/functor-combinatorpedia.html\#title}{table of
@@ -177,11 +179,12 @@ contents} if you are using this as a reference!
 \section{Preface: What is a functor
 combinator?}\label{preface-what-is-a-functor-combinator}}
 
-A functor combinator takes ``functors'' (or other indexed types) and returns a
-new functor, enhances or mixes them together in some way. That is, they take
-things of kind \texttt{k\ -\textgreater{}\ Type} and themselves return a
-\texttt{k\ -\textgreater{}\ Type}. This lets us build complex functors out of
-simpler ``primitive'' ones.
+A functor combinator takes ``functors'' (or any other indexed type,
+\texttt{k\ -\textgreater{}\ Type}) and returns a new functor, enhances or mixes
+them together in some way. That is, they take things of kind
+\texttt{k\ -\textgreater{}\ Type} and themselves return a
+\texttt{j\ -\textgreater{}\ Type}. This lets us build complex functors/indexed
+types out of simpler ``primitive'' ones.
 
 For example, \texttt{ReaderT\ r} is a famous one that takes a functor \texttt{f}
 and enhances it with ``access to an \texttt{r} environment'' functionality.
@@ -191,7 +194,8 @@ enhances it with ``sequential binding'' capabilities: it turns \texttt{f} into a
 
 The main thing that distinguishes these functor combinators from things like
 monad transformers is that they are ``natural on \texttt{f}'': they work on
-\emph{all} \texttt{f}s, not just monads, and assume no structure.
+\emph{all} \texttt{f}s, not just monads, and assume no structure (not even
+\texttt{Functor}).
 
 Sometimes, we have binary functor combinators, like \texttt{:+:}, which takes
 two functors \texttt{f} and \texttt{g} and returns a functor that is ``either''
@@ -402,15 +406,21 @@ We can finally \emph{interpret} (or ``run'') these into some target context
 (like \texttt{Parser}, or \texttt{IO}), provided the target satisfies some
 constraints.
 
-We can separate the functionality associated with each binary functor combinator
-into two typeclasses: \texttt{Semigroupoidal} and \texttt{Monoidal}.
-\texttt{Semigroupoidal} deals with the ``interpreting'' and ``collapsing'' of
-the mixed functors, and \texttt{Monoidal} deals with the ``introduction'' and
-``creation'' of them. A more detailed run-down is available in the docs for
+It can be useful to separate the functionality associated with each binary
+functor combinator into two typeclasses: \texttt{Semigroupoidal} and
+\texttt{Monoidal}. \texttt{Semigroupoidal} deals with the ``interpreting'' and
+``collapsing'' of the mixed functors, and \texttt{Monoidal} deals with the
+``introduction'' and ``creation'' of them. A more detailed run-down is available
+in the docs for
 \emph{\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Combinator.html}{Data.Functor.Combinator}}.
 
-From each we have two associated constraints, \texttt{CS\ t} (for
-\texttt{Semigroupoidal}) and \texttt{CM\ t} (for \texttt{Monoidal}):
+From each, we can identify two associated constraints, \texttt{CS\ t} (for
+\texttt{Semigroupoidal}) and \texttt{CM\ t} (for \texttt{Monoidal}):\footnote{As
+  it turns out, \texttt{CS} and \texttt{CM} seem to generalize the ``has an
+  identity'' property of many typeclasses --- the example used illustrates that
+  \texttt{Comp} gives us \texttt{type\ CS\ Comp\ =\ Bind} and
+  \texttt{type\ CM\ Comp\ =\ Monad}, which is ``monad without pure'' and
+  ``monad''. We will see other examples later.}
 
 \begin{itemize}
 \item
@@ -426,6 +436,16 @@ From each we have two associated constraints, \texttt{CS\ t} (for
     \OtherTok{{-}>}\NormalTok{ (t f g }\OperatorTok{\textasciitilde{}>}\NormalTok{ h)}
 \end{Highlighting}
 \end{Shaded}
+
+  For example, for \texttt{Comp} (functor composition):
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Comp}\NormalTok{ f g a }\OtherTok{=} \DataTypeTok{Comp}\NormalTok{ (f (g a))}
+\end{Highlighting}
+\end{Shaded}
+
+  we have \texttt{type\ CS\ Comp\ =\ Bind} (``\texttt{Monad} without pure'').
 \item
   \texttt{CM\ t} is the constraint on where you can \emph{create} values of the
   enhanced type (\texttt{pureT}, \texttt{inL}, \texttt{inR})
@@ -444,27 +464,26 @@ From each we have two associated constraints, \texttt{CS\ t} (for
 \end{Highlighting}
 \end{Shaded}
 
+  For example, for \texttt{Comp}, \texttt{type\ CS\ Free\ =\ Monad}.
+
   It should always be a subclass of \texttt{CS}.
 \end{itemize}
 
 These constraints all depend on the extra structure that the specific functor
 combinator imbues.
 
-As it turns out, \texttt{CS} and \texttt{CM} generalize the ``has an identity''
-property of many typeclasses --- for example, for \texttt{Comp} (functor
-composition), \texttt{type\ CS\ Comp\ =\ Bind} (``\texttt{Monad} without
-\texttt{pure}''), and \texttt{type\ CM\ Comp\ =\ Monad}.
+Most of these (the ones that are ``tensors'') also have an identity functor,
+\texttt{I\ t}, where applying \texttt{t\ f\ (I\ t)} leaves \texttt{f} unchanged
+(\texttt{t\ f\ (I\ t)} is isomorphic to \texttt{f}) and \texttt{t\ (I\ t)\ f} is
+also just \texttt{f}. This is represented by the associated type \texttt{I\ t}.
+For example, \texttt{type\ I\ Comp\ =\ Identity}, because
+\texttt{Comp\ f\ Identity} (composing any functor with \texttt{Identity},
+\texttt{f\ (Identity\ a)}) is just the same as \texttt{f\ a} (the original
+functor); also, \texttt{Comp\ Identity\ f} (or \texttt{Identity\ (f\ a)}) is the
+same as \texttt{f\ a}.
 
-Most of these also have an identity functor, \texttt{I\ t}, where applying
-\texttt{t\ f\ (I\ t)} leaves \texttt{f} unchanged (\texttt{t\ f\ (I\ t)} is
-isomorphic to \texttt{f}) and \texttt{t\ (I\ t)\ f} is also just \texttt{f}.
-This is represented by the associated type \texttt{I\ t}. For example,
-\texttt{type\ I\ Comp\ =\ Identity}, because \texttt{Comp\ f\ Identity}
-(composing any functor with \texttt{Identity}, \texttt{f\ (Identity\ a)}) is
-just the same as \texttt{f} (the original functor).
-
-One interesting property of these is that for a lot of these, if we have a
-binary functor combinator \texttt{*}, we can represent a type
+One interesting property of these is that for tensors, if we have a binary
+functor combinator \texttt{*}, we can represent a type
 \texttt{f\ \textbar{}\ f\ *\ f\ \textbar{}\ f\ *\ f\ *\ f\ \textbar{}\ f\ *\ f\ *\ f\ *\ f\ \textbar{}\ ...}
 (``repeatedly apply to something multiple times''), which essentially forms a
 linked list along that functor combinator. We call this the ``induced monoidal
@@ -481,10 +500,18 @@ For example, the type that is either \texttt{a}, \texttt{f\ a},
 \texttt{toMF\ ::\ t\ f\ f\ \textasciitilde{}\textgreater{}\ MF\ f} to abstract
 over ``converting'' back and forth between \texttt{t\ f\ f\ a} and the induced
 monoidal functor combinator \texttt{MF\ t\ f\ a} (for example, between
-\texttt{Comp\ f\ f\ a} and \texttt{Free\ f\ a}).
+\texttt{Comp\ f\ f\ a} and \texttt{Free\ f\ a}).\footnote{In fact, the link
+  between the binary functor combinator and its induced monoidal/semigroupoidal
+  functor combinators is very deep. In \emph{functor-combinators}, it's actually
+  used in the definition of \texttt{CS} and \texttt{CM}:
 
-This is all a bit abstract, but let's dive into some actual examples, which will
-make these all clearer.
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{CS}\NormalTok{ t }\OtherTok{=} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{SF}\NormalTok{ t)}
+\KeywordTok{type} \DataTypeTok{CM}\NormalTok{ t }\OtherTok{=} \DataTypeTok{C}\NormalTok{ (}\DataTypeTok{MF}\NormalTok{ t)}
+\end{Highlighting}
+\end{Shaded}
+}
 
 \hypertarget{sum}{%
 \subsection{:+: / Sum}\label{sum}}
@@ -604,8 +631,7 @@ make these all clearer.
 
   It's not a particularly useful type, but it can be useful if you want to
   provide an \texttt{f\ a} alongside ``which position'' it is on the infinite
-  list. Repeatedly using \texttt{consMF} will push the \texttt{f} further and
-  further along the list.
+  list.
 \end{itemize}
 
 \hypertarget{product}{%
@@ -973,6 +999,10 @@ make these all clearer.
   functor combinator section) for more information on usage and utility.
 \end{itemize}
 
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\textbf{Aside}
+
 Let us pause for a brief aside to compare and contrast the hierarchy of the
 above functor combinators, as there is an interesting progression we can draw
 from them.
@@ -989,6 +1019,8 @@ from them.
 \item
   \texttt{Comp}: Provide both (in order), be ready for both (in order).
 \end{enumerate}
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 \hypertarget{these1}{%
 \subsection{These1}\label{these1}}
@@ -1107,7 +1139,6 @@ from them.
 \item
   \textbf{Origin}:
   \emph{\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-HBifunctor.html}{Data.HBifunctor}}
-  (for \texttt{LeftF} and \texttt{RightF})
 \item
   \textbf{Mixing Strategy}: ``Ignore the left'' / ``ignore the right''.
 
@@ -1463,10 +1494,9 @@ This means that if we inject and immediately interpret out of, we should never
   It can be useful for implementing parser schemas, which often involve both
   sequential and choice-like combinations. If \texttt{f} is a primitive parsing
   unit, then \texttt{Alt\ f} represents a non-deterministic parser of a bunch of
-  \texttt{f}s one after the other, with multiple possible results. I wrote
-  \href{https://blog.jle.im/entry/free-alternative-regexp.html}{an entire
-  article} on the usage of this combinator alone to implement a version of
-  regular expressions.
+  \texttt{f}s one after the other, with multiple possible results. I wrote {[}an
+  entire article{]}{[}are{]} on the usage of this combinator alone to implement
+  a version of regular expressions.
 \item
   \textbf{Constraint}
 
@@ -2568,9 +2598,18 @@ program \emph{today} by importing
 or wherever they can be found.
 
 I'd be excited to hear about what programs you are able to write, so please do
-let me know! You can leave a comment, find me on {[}twitter at @mstk{]}{[}{]},
-or find me on freenode irc idling on \emph{\#haskell} as \emph{jle`} if you want
-to share, or have any questions.
+let me know! You can leave a comment, find me on {[}twitter at
+@mstk{]}\href{https://twitter.com/mstk}{twitter}, or find me on freenode irc
+idling on \emph{\#haskell} as \emph{jle`} if you want to share, or have any
+questions.
+
+\hypertarget{special-thanks}{%
+\section{Special Thanks}\label{special-thanks}}
+
+I am very humbled to be supported by an amazing community, who make it possible
+for me to devote time to researching and writing these posts. Very special
+thanks to my supporter at the ``Amazing'' level on
+\href{https://www.patreon.com/justinle/overview}{patreon}, Josh Vera! :)
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
