@@ -698,7 +698,7 @@ monoidal functor combinator `MF t f a` (for example, between `Comp f f a` and
     without `return`"; it only has `>>=` (called `>>-`).
 
     Somewhat serendipitously, the `CM` constraint associated with `Comp` is the
-    infamous `Monad`. Hopefully this insight also gives you some insight on the
+    famous `Monad`. Hopefully this insight also gives you some insight on the
     nature of `Monad` as an abstraction: it's a way to "interpret" in and out of
     `Comp`, which enforces an ordering in interpretation :)
 
