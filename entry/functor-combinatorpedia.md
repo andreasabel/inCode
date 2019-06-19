@@ -1794,9 +1794,9 @@ intact: functor combinators only ever *add* structure.
     different, but with `Chain` you get a uniform interface to pattern match on
     (and construct) all of them in the same way.
 
-    Using `NonEmptyF`, `Ap1`, `Free1`, `Step`, `Steps`, `EnvT`, etc. can
-    sometimes feel very different, but with `Chain1` you get a uniform interface
-    to pattern match on (and construct) all of them in the same way.
+    Using `NonEmptyF`, `Ap1`, `Free1`, `Step`, `Flagged`, etc. can sometimes
+    feel very different, but with `Chain1` you get a uniform interface to
+    pattern match on (and construct) all of them in the same way.
 
     The construction of `Chain` is inspired by [Oleg Grenrus's blog
     post](http://oleg.fi/gists/posts/2018-02-21-single-free.html), and the
