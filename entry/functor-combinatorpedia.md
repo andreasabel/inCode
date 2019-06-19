@@ -824,7 +824,7 @@ from them.
     ```
 
     `Steps`, the induced monoidal functor combinator, is the result of an
-    infinite application of \`These1 to the same value:
+    infinite application of `These1` to the same value:
 
     ``` {.haskell}
     type Steps f = f `These1` f `These1` f `These1` f `These1` ... etc.
