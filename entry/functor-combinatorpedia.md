@@ -694,8 +694,8 @@ monoidal functor combinator `MF t f a` (for example, between `Comp f f a` and
     pureT @Comp :: Monad h => Identity ~> h
     ```
 
-    `Bind`, from *semigroupoids*, is "`Monad` without `return`"; it only has
-    `>>=` (called `>>-`).
+    `Bind`, from *\[Data.Functor.Bind\]\[\]* in *semigroupoids*, is "`Monad`
+    without `return`"; it only has `>>=` (called `>>-`).
 
     Somewhat serendipitously, the `CM` constraint associated with `Comp` is the
     infamous `Monad`. Hopefully this insight also gives you some insight on the
