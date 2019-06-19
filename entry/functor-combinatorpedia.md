@@ -49,8 +49,10 @@ of these types and typeclasses are exported by
 *[Data.Functor.Combinator](https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Combinator.html)*.
 
 Right now I already have some posts about this general design pattern,
-\["Interpreters a la Carte" in Advent of Code 2017 Duet\]\[ialc\] and
-\[Applicative Regular Expressions using the Free Alternatuve\]\[are\], but I do
+["Interpreters a la Carte" in Advent of Code 2017
+Duet](https://blog.jle.im/entry/interpreters-a-la-carte-duet.html) and
+[Applicative Regular Expressions using the Free
+Alternatuve](https://blog.jle.im/entry/free-alternative-regexp.html), but I do
 have some posts planned in the future going through projects using this unified
 interface. In a way, this post also serves as the "introduction to free
 structures" that I always wanted to write :)
@@ -1135,9 +1137,10 @@ intact: functor combinators only ever *add* structure.
     It can be useful for implementing parser schemas, which often involve both
     sequential and choice-like combinations. If `f` is a primitive parsing unit,
     then `Alt f` represents a non-deterministic parser of a bunch of `f`s one
-    after the other, with multiple possible results. I wrote \[an entire
-    article\]\[are\] on the usage of this combinator alone to implement a
-    version of regular expressions.
+    after the other, with multiple possible results. I wrote [an entire
+    article](https://blog.jle.im/entry/free-alternative-regexp.html) on the
+    usage of this combinator alone to implement a version of regular
+    expressions.
 
 -   **Constraint**
 
