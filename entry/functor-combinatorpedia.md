@@ -134,7 +134,9 @@ two-argument functor combinators ("mixers").
 class HFunctor t where
     -- | Swap out underlying functor for a single-argument functor combinator
     hmap
-        :: t f a -> t g a
+        :: (forall x. f x -> g x)
+        -> t f a
+        -> t g a
 
 class HBifunctor t where
     -- | Swap out underlying functors for a two-argument functor combinator
