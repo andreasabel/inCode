@@ -63,13 +63,14 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Then the type signatures of <code>hmap</code> and <code>hbimap</code> become:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">class</span> <span class="dt">HFunctor</span> t <span class="kw">where</span></span>
 <span id="cb5-2"><a href="#cb5-2"></a>    hmap</span>
-<span id="cb5-3"><a href="#cb5-3"></a><span class="ot">        ::</span> t f <span class="op">~&gt;</span> t g</span>
-<span id="cb5-4"><a href="#cb5-4"></a></span>
-<span id="cb5-5"><a href="#cb5-5"></a><span class="kw">class</span> <span class="dt">HBifunctor</span> t <span class="kw">where</span></span>
-<span id="cb5-6"><a href="#cb5-6"></a>    hbimap</span>
-<span id="cb5-7"><a href="#cb5-7"></a><span class="ot">        ::</span> f <span class="op">~&gt;</span> h</span>
-<span id="cb5-8"><a href="#cb5-8"></a>        <span class="ot">-&gt;</span> g <span class="op">~&gt;</span> j</span>
-<span id="cb5-9"><a href="#cb5-9"></a>        <span class="ot">-&gt;</span> t f g <span class="op">~&gt;</span> t h j</span></code></pre></div>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="ot">        ::</span> f <span class="op">~&gt;</span> g</span>
+<span id="cb5-4"><a href="#cb5-4"></a>        <span class="ot">-&gt;</span> t f <span class="op">~&gt;</span> t g</span>
+<span id="cb5-5"><a href="#cb5-5"></a></span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="kw">class</span> <span class="dt">HBifunctor</span> t <span class="kw">where</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a>    hbimap</span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="ot">        ::</span> f <span class="op">~&gt;</span> h</span>
+<span id="cb5-9"><a href="#cb5-9"></a>        <span class="ot">-&gt;</span> g <span class="op">~&gt;</span> j</span>
+<span id="cb5-10"><a href="#cb5-10"></a>        <span class="ot">-&gt;</span> t f g <span class="op">~&gt;</span> t h j</span></code></pre></div>
 <p>What does it mean exactly when we say that <code>hmap</code> and <code>hbimap</code> “preserve the enhanced structure”? Well, for example, the type <code>newtype ListF f a = ListF [f a]</code> is essentially a list of <code>f a</code>s. <code>hmap</code> will swap out and replace each <code>f a</code>, but it must <em>preserve the relative order</em> between each of the original <code>f a</code>s. It must also preserve the <em>length</em> of the list. It’s a complete “in-place swap”. This is formalizing by requiring <code>hmap id == id</code> and <code>hbimap id id == id</code>.</p>
 <p>You can also always “lift” a functor value into its transformed type. We abstract over this by using <code>inject</code> (for single-argument functors) and <code>inL</code> and <code>inR</code> (for two-argument functors):</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="co">-- single argument functor combinators</span></span>
