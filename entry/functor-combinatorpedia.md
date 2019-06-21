@@ -582,8 +582,9 @@ monoidal functor combinator `MF t f a` (for example, between `Comp f f a` and
     The mechanism for this is interesting in and of itself. Looking at the
     definition of the data type:
 
-    \`\`haskell data Day f g a = forall x y. Day (f x) (g y) (x -\> y -\> a)
-    \`\`\`
+    ``` {.haskell}
+    data Day f g a = forall x y. Day (f x) (g y) (x -> y -> a)
+    ```
 
     We see that because `x` and `y` are "hidden" from the external world, we
     can't directly use them without applying the "joining" function
