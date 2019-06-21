@@ -558,7 +558,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>For example, in an interactive “wizard” sort of schema, we can create a functor to represent a dialog box with its result type:</p>
 <div class="sourceCode" id="cb62"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb62-1"><a href="#cb62-1"></a><span class="kw">data</span> <span class="dt">Dialog</span> a</span></code></pre></div>
 <p>We can then construct a type for a wizard:</p>
-<div class="sourceCode" id="cb63"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb63-1"><a href="#cb63-1"></a><span class="kw">type</span> <span class="dt">Wizard</span> <span class="ot">=</span> <span class="dt">Free</span> <span class="dt">Diloag</span></span></code></pre></div>
+<div class="sourceCode" id="cb63"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb63-1"><a href="#cb63-1"></a><span class="kw">type</span> <span class="dt">Wizard</span> <span class="ot">=</span> <span class="dt">Free</span> <span class="dt">Dialog</span></span></code></pre></div>
 <p><code>Wizard</code> is now an ordered sequence of dialog boxes, where the choice of the next box can depend on result of the previous box. Contrast to <code>Ap Dialog</code>, where the choice of all dialog boxes must be made in advanced, up-front, before reading any input from the user.</p>
 <p>In having this, however, we loose the ability to be able to inspect each <code>f a</code> before interpreting anything.</p>
 <p>Because this has a <code>Monad</code> instance, you can use <code>(&lt;*&gt;) :: Free f (a -&gt; b) -&gt; Free f a -&gt; Free f b</code> and <code>(&gt;&gt;=) :: Free f a -&gt; (a -&gt; Free f b) -&gt; Free f b)</code> to sequence multiple <code>Free f</code>s together, and <code>pure :: a -&gt; Free f a</code> to produce a “no-op” <code>Free</code> without any <code>f</code>s.</p>
@@ -648,7 +648,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <div class="sourceCode" id="cb72"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb72-1"><a href="#cb72-1"></a><span class="kw">newtype</span> <span class="dt">MapF</span>   k f a <span class="ot">=</span> <span class="dt">MapF</span>   {<span class="ot"> runMapF ::</span> <span class="dt">Map</span>   k (f a) }</span>
 <span id="cb72-2"><a href="#cb72-2"></a><span class="kw">newtype</span> <span class="dt">NEMapF</span> k f a <span class="ot">=</span> <span class="dt">NEMapF</span> {<span class="ot"> runMapF ::</span> <span class="dt">NEMap</span> k (f a) }</span></code></pre></div>
 <p>This is very similar in functionality to <code>ListF</code> and <code>NonEmptyF</code>, except instead of “positional” location, each <code>f a</code> exists at a given index. <code>NEMapF k</code> is the “non-empty” variant. You can think of this as a <code>ListF</code> plus <code>EnvT</code>: it’s a “container” of multiple <code>f a</code>s, but each one exists with a given “tag” index <code>k</code>.</p>
-<p>In usage, like for <code>ListF</code>, the <em>definer</em> provides multiple “labeled” <code>f a</code>s, and the <em>interpreter</em> can choose to interpret some or all of them, with accews to each labeled.</p>
+<p>In usage, like for <code>ListF</code>, the <em>definer</em> provides multiple “labeled” <code>f a</code>s, and the <em>interpreter</em> can choose to interpret some or all of them, with access to each labeled.</p>
 <p><code>inject</code> creates a singleton <code>Map</code> at key <code>mempty</code>.</p>
 <p>This is very useful in schemas that have sub-schemas indexed at specific keys. For example, in a command line argument parser, if we have a functor that represents a single command:</p>
 <div class="sourceCode" id="cb73"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb73-1"><a href="#cb73-1"></a><span class="kw">data</span> <span class="dt">Command</span> a</span></code></pre></div>
@@ -879,7 +879,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 </ul>
 <h3 id="proxyf-constf">ProxyF / ConstF</h3>
 <ul>
-<li><p><strong>Origin</strong>: <em><a href="https://hackage.haskell.org/package/base/docs/Data-HFunctor.html">Data.HFunctor</a></em></p></li>
+<li><p><strong>Origin</strong>: <em><a href="https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor.html">Data.HFunctor</a></em></p></li>
 <li><p><strong>Enhancement</strong>: “Black holes” — they completely forget all the structure of <code>f</code>, and are impossible to <code>interpret</code> out of. <code>Impossible</code>".</p>
 <div class="sourceCode" id="cb101"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb101-1"><a href="#cb101-1"></a><span class="kw">data</span> <span class="dt">ProxyF</span> f a <span class="ot">=</span> <span class="dt">ProxyF</span></span>
 <span id="cb101-2"><a href="#cb101-2"></a><span class="kw">data</span> <span class="dt">ConstF</span> e f a <span class="ot">=</span> <span class="dt">ConstF</span> e</span></code></pre></div>
@@ -922,7 +922,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 </ul>
 <h3 id="hlift">HLift</h3>
 <ul>
-<li><p><strong>Origin</strong>: <em><a href="https://hackage.haskell.org/package/base/docs/Data-HFunctor.html">Data.HFunctor</a></em></p></li>
+<li><p><strong>Origin</strong>: <em><a href="https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor.html">Data.HFunctor</a></em></p></li>
 <li><p><strong>Enhancement</strong>: <code>HLift t f</code> lets <code>f</code> exist either unchanged, or with the structure of <code>t</code>.</p>
 <div class="sourceCode" id="cb105"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb105-1"><a href="#cb105-1"></a><span class="kw">data</span> <span class="dt">HLift</span> t f a</span>
 <span id="cb105-2"><a href="#cb105-2"></a>    <span class="ot">=</span> <span class="dt">HPure</span>  (f a)</span>
@@ -940,7 +940,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 </ul>
 <h3 id="hfree">HFree</h3>
 <ul>
-<li><p><strong>Origin</strong>: <em><a href="https://hackage.haskell.org/package/base/docs/Data-HFunctor.html">Data.HFunctor</a></em></p></li>
+<li><p><strong>Origin</strong>: <em><a href="https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor.html">Data.HFunctor</a></em></p></li>
 <li><p><strong>Enhancement</strong>: <code>HFree t f</code> lets <code>f</code> exist either unchanged, or with multiple nested enhancements by <code>t</code>.</p>
 <div class="sourceCode" id="cb107"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb107-1"><a href="#cb107-1"></a><span class="kw">data</span> <span class="dt">HFree</span> t f a</span>
 <span id="cb107-2"><a href="#cb107-2"></a>    <span class="ot">=</span> <span class="dt">HReturn</span> (f a)</span>
@@ -963,7 +963,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb111-6"><a href="#cb111-6"></a>    <span class="ot">-&gt;</span> <span class="dt">HFree</span> t f <span class="op">~&gt;</span> g</span></code></pre></div>
 <p>Interpreting out of these requires the constraint on <code>t</code>, to handle the <code>HJoin</code> case.</p>
 <p>However, it is probably usually more useful to directly pattern match on <code>HReturn</code> and <code>HJoin</code> and handle the recursion explicitly.</p>
-<p>Alternatively, we can also define a recursive folding function (provided in <em><a href="https://hackage.haskell.org/package/base/docs/Data-HFunctor.html">Data.HFunctor</a></em>) to recursively fold down each branch:</p>
+<p>Alternatively, we can also define a recursive folding function (provided in <em><a href="https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor.html">Data.HFunctor</a></em>) to recursively fold down each branch:</p>
 <div class="sourceCode" id="cb112"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb112-1"><a href="#cb112-1"></a>foldHFree</span>
 <span id="cb112-2"><a href="#cb112-2"></a><span class="ot">    ::</span> <span class="dt">HFunctor</span> t</span>
 <span id="cb112-3"><a href="#cb112-3"></a>    <span class="ot">=&gt;</span> (f <span class="op">~&gt;</span> g)</span>
