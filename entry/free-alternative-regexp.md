@@ -714,7 +714,7 @@ really generate an NFA if we have a *finite* value, which means anything using
 
 Not all hope is lost, however. We can actually use the "final encoding" of
 `Alt`, from *Control.Alternative.Free.Final*, to gain a `many` that is
-non-recursive.[^3]
+non-recursive.
 
 Using the final encoding means we lose the "pattern match" method, and can only
 use the `runAlt` method. However, we can off-load to `Alternative` instances
@@ -841,6 +841,3 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 
 [^2]: Note that there are some caveats that should be noted here, due to
     laziness in Haskell. We will go deeper into this later.
-
-[^3]: As of now, this actually doesn't work. But it will when my [pull
-    request](https://github.com/ekmett/free/pull/188) goes through :)
