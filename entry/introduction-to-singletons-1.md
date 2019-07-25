@@ -104,8 +104,8 @@ different types of values and let you be more descriptive with how your
 functions work together (like in
 [safe-money](https://ren.zone/articles/safe-money)). One "hello world" use case
 of phantom type parameters is to tag data as "sanitized" or "unsanitized"
-(`UserString 'Sanitized` type vs. `UserString 'Unsanitized`) or paths as
-absolute or relative (`Path 'Absolute` vs. `Path 'Relative`). For a simple
+(`UserString 'Sanitized` type vs. `UserString 'Unsanitized`) or paths as
+absolute or relative (`Path 'Absolute` vs. `Path 'Relative`). For a simple
 example, let's check out a simple DSL for a type-safe door:
 
 ``` {.haskell}
@@ -709,7 +709,7 @@ We also have `withSingI`, which is equivalent to our `withSingDSI` function
 earlier.[^6]
 
 ``` {.haskell}
-withSingI :: Sing s -> (forall r. SingI s => r) -> r
+withSingI :: Sing s -> (SingI s => r) -> r
 ```
 
 Note that if you have singletons for a kind `k`, you also have instances for
@@ -741,8 +741,10 @@ Recall that `DoorState` has four different things associated with it now:
 
 1.  The *type* `DoorState`, whose value constructors are `Opened`, `Closed`, and
     `Locked`.
+
 2.  The *kind* `DoorState`, whose type constructors are `'Opened`, `'Closed`,
     and `'Locked`
+
 3.  The singletons for `'Opened`, `'Closed`, and `'Locked`:
 
     ``` {.haskell}
