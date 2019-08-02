@@ -69,7 +69,7 @@
 \hypersetup{breaklinks=true,
             bookmarks=true,
             pdfauthor={Justin Le},
-            pdftitle={Setting up a dead-simple TCP/IP service using servant},
+            pdftitle={Dead-simple TCP/IP services using servant},
             colorlinks=true,
             citecolor=blue,
             urlcolor=blue,
@@ -83,7 +83,7 @@
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
 
-\title{Setting up a dead-simple TCP/IP service using servant}
+\title{Dead-simple TCP/IP services using servant}
 \author{Justin Le}
 
 \begin{document}
@@ -149,7 +149,7 @@ To formally specify our API:
 \def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
-  \texttt{view}: View all tasks by their ID, status, and description. Optionally
+  \texttt{list}: View all tasks by their ID, status, and description. Optionally
   be able to filter for only incomplete tasks.
 \item
   \texttt{add}: Given a new task description, insert a new uncompleted task.
@@ -193,17 +193,176 @@ IDs.
 \KeywordTok{instance} \DataTypeTok{ToJSON}   \DataTypeTok{Task}
 \KeywordTok{instance} \DataTypeTok{FromJSON} \DataTypeTok{Task}
 
-\KeywordTok{type} \DataTypeTok{TodoApi} \OtherTok{=}
-      \StringTok{"list"}   \OperatorTok{:>} \DataTypeTok{QueryFlag} \StringTok{"filtered"}                      \OperatorTok{:>} \DataTypeTok{Get}\NormalTok{  \textquotesingle{}[}\DataTypeTok{JSON}\NormalTok{] (}\DataTypeTok{IntMap} \DataTypeTok{Task}\NormalTok{)}
- \OperatorTok{:<|>} \StringTok{"add"}    \OperatorTok{:>} \DataTypeTok{QueryParam\textquotesingle{}}\NormalTok{ \textquotesingle{}[}\DataTypeTok{Required}\NormalTok{] }\StringTok{"desc"} \DataTypeTok{Text}       \OperatorTok{:>} \DataTypeTok{Post}\NormalTok{ \textquotesingle{}[}\DataTypeTok{JSON}\NormalTok{] }\DataTypeTok{Int}
- \OperatorTok{:<|>} \StringTok{"set"}    \OperatorTok{:>} \DataTypeTok{Capture} \StringTok{"id"} \DataTypeTok{Int} \OperatorTok{:>} \DataTypeTok{Capture} \StringTok{"status"} \DataTypeTok{Bool} \OperatorTok{:>} \DataTypeTok{Post}\NormalTok{ \textquotesingle{}[}\DataTypeTok{JSON}\NormalTok{] ()}
- \OperatorTok{:<|>} \StringTok{"delete"} \OperatorTok{:>} \DataTypeTok{Capture} \StringTok{"id"} \DataTypeTok{Int}                          \OperatorTok{:>} \DataTypeTok{Post}\NormalTok{ \textquotesingle{}[}\DataTypeTok{JSON}\NormalTok{] ()}
- \OperatorTok{:<|>} \StringTok{"prune"}                                               \OperatorTok{:>} \DataTypeTok{Post}\NormalTok{ \textquotesingle{}[}\DataTypeTok{JSON}\NormalTok{] }\DataTypeTok{IntSet}
+\KeywordTok{type} \DataTypeTok{TodoApi} \OtherTok{=} \StringTok{"list"}   \OperatorTok{:>} \DataTypeTok{QueryFlag} \StringTok{"filtered"}
+                        \OperatorTok{:>} \DataTypeTok{Get}\NormalTok{  \textquotesingle{}[}\DataTypeTok{JSON}\NormalTok{] (}\DataTypeTok{IntMap} \DataTypeTok{Task}\NormalTok{)}
+          \OperatorTok{:<|>} \StringTok{"add"}    \OperatorTok{:>} \DataTypeTok{QueryParam\textquotesingle{}}\NormalTok{ \textquotesingle{}[}\DataTypeTok{Required}\NormalTok{] }\StringTok{"desc"} \DataTypeTok{Text}
+                        \OperatorTok{:>} \DataTypeTok{Post}\NormalTok{ \textquotesingle{}[}\DataTypeTok{JSON}\NormalTok{] }\DataTypeTok{Int}
+          \OperatorTok{:<|>} \StringTok{"set"}    \OperatorTok{:>} \DataTypeTok{Capture} \StringTok{"id"} \DataTypeTok{Int}
+                        \OperatorTok{:>} \DataTypeTok{QueryParam} \StringTok{"completed"} \DataTypeTok{Bool}
+                        \OperatorTok{:>} \DataTypeTok{Post}\NormalTok{ \textquotesingle{}[}\DataTypeTok{JSON}\NormalTok{] ()}
+          \OperatorTok{:<|>} \StringTok{"delete"} \OperatorTok{:>} \DataTypeTok{Capture} \StringTok{"id"} \DataTypeTok{Int}
+                        \OperatorTok{:>} \DataTypeTok{Post}\NormalTok{ \textquotesingle{}[}\DataTypeTok{JSON}\NormalTok{] ()}
+          \OperatorTok{:<|>} \StringTok{"prune"}  \OperatorTok{:>} \DataTypeTok{Post}\NormalTok{ \textquotesingle{}[}\DataTypeTok{JSON}\NormalTok{] }\DataTypeTok{IntSet}
 
 \OtherTok{todoApi ::} \DataTypeTok{Proxy} \DataTypeTok{TodoApi}
 \NormalTok{todoApi }\OtherTok{=} \DataTypeTok{Proxy}
 \end{Highlighting}
 \end{Shaded}
+
+We have five routes, which more or less mirror exactly the five bullet points
+listed above, with some minor implementation choices:
+
+\begin{itemize}
+\tightlist
+\item
+  For \texttt{list}, we take ``filtered or not filtered'' as a query flag, and
+  return an \texttt{IntMap} of a \texttt{Task} data type (status, description)
+  under their integer ID key.
+\item
+  For \texttt{add}, we take the task description as a query parameter, and
+  return the new ID.
+\item
+  For \texttt{set}, we take the task ID as a capture (path component) and an
+  optional boolean query parameter. If the parameter is not given, it will be
+  taken as a toggle; otherwise, it will be taken as a setting of the completion
+  status.
+\item
+  For \texttt{delete}, we also take the task ID as a capture.
+\end{itemize}
+
+``Query flag'', ``query parameter'', ``capture'' are all a part of the language
+of HTTP and W3C. In our case, since we aren't ever directly programming against
+the actual protocol-HTTP (it's only used under the hood) or pretending to write
+an actual web-interfacing server, we don't really need to care too much to
+distinguish them. However, it can be useful to pick meaningful choices if we
+ever do want to expose this API as a web service.
+
+\hypertarget{todo-service-server}{%
+\section{Todo Service Server}\label{todo-service-server}}
+
+The logic to implement a todo server is pretty straightforward, which is why we
+chose it as an example project. It only really needs one state: the
+\texttt{IntMap} of current tasks.
+
+To write a servant server with
+\emph{\href{https://hackage.haskell.org/package/servant-server}{servant-server}},
+I usually like to just set up a skeleton with each route:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{serveTodoApi ::} \DataTypeTok{IORef}\NormalTok{ (}\DataTypeTok{IntMap} \DataTypeTok{Task}\NormalTok{) }\OtherTok{{-}>} \DataTypeTok{Server} \DataTypeTok{TodoApi}
+\NormalTok{serveTodoApi taskRef }\OtherTok{=}\NormalTok{ serveList}
+                  \OperatorTok{:<|>}\NormalTok{ serveAdd}
+                  \OperatorTok{:<|>}\NormalTok{ serveSet}
+                  \OperatorTok{:<|>}\NormalTok{ serveDelete}
+                  \OperatorTok{:<|>}\NormalTok{ servePrune}
+\end{Highlighting}
+\end{Shaded}
+
+The corresponding ghc error tells us everything we need:
+
+\begin{verbatim}
+server.hs:15:24: error:
+    Variable not in scope: serveList :: Bool -> Handler (IntMap Task)
+   |
+15 | serveTodoApi taskRef = serveList
+   |                        ^^^^^^^^^
+
+server.hs:16:24: error:
+    Variable not in scope: serveAdd :: Text -> Handler Int
+   |
+16 |                   :<|> serveAdd
+   |                        ^^^^^^^^
+
+server.hs:17:24: error:
+    Variable not in scope: serveSet :: Int -> Maybe Bool -> Handler ()
+   |
+17 |                   :<|> serveSet
+   |                        ^^^^^^^^
+
+server.hs:18:24: error:
+    Variable not in scope: serveDelete :: Int -> Handler ()
+   |
+18 |                   :<|> serveDelete
+   |                        ^^^^^^^^^^^
+
+server.hs:19:24: error:
+    Variable not in scope: servePrune :: Handler IntSet
+   |
+19 |                   :<|> servePrune
+   |                        ^^^^^^^^^^
+\end{verbatim}
+
+It tells us exactly the types of each handler we need.
+
+Knowing that \texttt{Handler} is a \texttt{MonadIO}, we can now directly just
+write every handler in terms of how it manipulates the \texttt{IntMap} in the
+\texttt{IORef}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/servant{-}services/server.hs\#L14{-}L44}
+
+\OtherTok{serveTodoApi ::} \DataTypeTok{IORef}\NormalTok{ (}\DataTypeTok{IntMap} \DataTypeTok{Task}\NormalTok{) }\OtherTok{{-}>} \DataTypeTok{Server} \DataTypeTok{TodoApi}
+\NormalTok{serveTodoApi taskRef }\OtherTok{=}\NormalTok{ serveList}
+                  \OperatorTok{:<|>}\NormalTok{ serveAdd}
+                  \OperatorTok{:<|>}\NormalTok{ serveSet}
+                  \OperatorTok{:<|>}\NormalTok{ serveDelete}
+                  \OperatorTok{:<|>}\NormalTok{ servePrune}
+  \KeywordTok{where}
+\OtherTok{    serveList ::} \DataTypeTok{Bool} \OtherTok{{-}>} \DataTypeTok{Handler}\NormalTok{ (}\DataTypeTok{IntMap} \DataTypeTok{Task}\NormalTok{)}
+\NormalTok{    serveList filt }\OtherTok{=}\NormalTok{ filtFunction }\OperatorTok{<$>}\NormalTok{ liftIO (readIORef taskRef)}
+      \KeywordTok{where}
+\NormalTok{        filtFunction}
+          \OperatorTok{|}\NormalTok{ filt      }\OtherTok{=}\NormalTok{ IM.filter (}\FunctionTok{not} \OperatorTok{.}\NormalTok{ taskStatus)}
+          \OperatorTok{|} \FunctionTok{otherwise} \OtherTok{=} \FunctionTok{id}
+\OtherTok{    serveAdd ::} \DataTypeTok{Text} \OtherTok{{-}>} \DataTypeTok{Handler} \DataTypeTok{Int}
+\NormalTok{    serveAdd t }\OtherTok{=}\NormalTok{ liftIO }\OperatorTok{$}\NormalTok{ atomicModifyIORef\textquotesingle{} taskRef }\OperatorTok{$}\NormalTok{ \textbackslash{}ts }\OtherTok{{-}>}
+      \KeywordTok{let}\NormalTok{ newKey }\OtherTok{=} \FunctionTok{maybe} \DecValTok{0}\NormalTok{ ((}\OperatorTok{+} \DecValTok{1}\NormalTok{) }\OperatorTok{.} \FunctionTok{fst}\NormalTok{) (IM.lookupMax ts)}
+      \KeywordTok{in}\NormalTok{  ( IM.insert newKey (}\DataTypeTok{Task} \DataTypeTok{False}\NormalTok{ t) ts, newKey )}
+\OtherTok{    serveSet ::} \DataTypeTok{Int} \OtherTok{{-}>} \DataTypeTok{Maybe} \DataTypeTok{Bool} \OtherTok{{-}>} \DataTypeTok{Handler}\NormalTok{ ()}
+\NormalTok{    serveSet tid s }\OtherTok{=}\NormalTok{ liftIO }\OperatorTok{$}\NormalTok{ atomicModifyIORef\textquotesingle{} taskRef }\OperatorTok{$}\NormalTok{ \textbackslash{}ts }\OtherTok{{-}>}
+\NormalTok{        ( IM.adjust adjuster tid ts, () )}
+      \KeywordTok{where}
+\NormalTok{        adjuster (}\DataTypeTok{Task}\NormalTok{ c d) }\OtherTok{=} \KeywordTok{case}\NormalTok{ s }\KeywordTok{of}
+          \DataTypeTok{Nothing} \OtherTok{{-}>} \DataTypeTok{Task}\NormalTok{ (}\FunctionTok{not}\NormalTok{ c) d}
+          \DataTypeTok{Just}\NormalTok{ c\textquotesingle{} }\OtherTok{{-}>} \DataTypeTok{Task}\NormalTok{ c\textquotesingle{}      d}
+\OtherTok{    serveDelete ::} \DataTypeTok{Int} \OtherTok{{-}>} \DataTypeTok{Handler}\NormalTok{ ()}
+\NormalTok{    serveDelete tid }\OtherTok{=}\NormalTok{ liftIO }\OperatorTok{$}\NormalTok{ atomicModifyIORef\textquotesingle{} taskRef }\OperatorTok{$}\NormalTok{ \textbackslash{}ts }\OtherTok{{-}>}
+\NormalTok{      ( IM.delete tid ts, () )}
+\OtherTok{    servePrune ::} \DataTypeTok{Handler} \DataTypeTok{IntSet}
+\NormalTok{    servePrune }\OtherTok{=}\NormalTok{ liftIO }\OperatorTok{$}\NormalTok{ atomicModifyIORef\textquotesingle{} taskRef }\OperatorTok{$}\NormalTok{ \textbackslash{}ts }\OtherTok{{-}>}
+      \KeywordTok{let}\NormalTok{ (compl,incompl) }\OtherTok{=}\NormalTok{ IM.partition taskStatus ts}
+      \KeywordTok{in}\NormalTok{  (incompl, IM.keysSet compl)}
+\end{Highlighting}
+\end{Shaded}
+
+And that's it!
+
+To run our server, we can use
+\emph{\href{https://hackage.haskell.org/package/warp}{warp}}'s \texttt{run} with
+\emph{servant-server}'s \texttt{serve}, after initializing the \texttt{IORef}
+that our server will use with an empty map:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/servant{-}services/server.hs\#L46{-}L51}
+
+\OtherTok{main ::} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{main }\OtherTok{=} \KeywordTok{do}
+\NormalTok{    taskRef }\OtherTok{<{-}}\NormalTok{ newIORef IM.empty}
+    \FunctionTok{putStrLn} \StringTok{"Launching server..."}
+\NormalTok{    run }\DecValTok{3434} \OperatorTok{$}
+\NormalTok{      serve todoApi (serveTodoApi taskRef)}
+\end{Highlighting}
+\end{Shaded}
+
+We now have a todo TCP/IP service running on port 3434!
+
+\hypertarget{todo-service-client}{%
+\section{Todo Service Client}\label{todo-service-client}}
+
+Too easy
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
