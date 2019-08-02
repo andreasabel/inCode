@@ -118,6 +118,20 @@ and \emph{\href{https://hackage.haskell.org/package/servant-cli}{servant-cli}}).
 Let's dive in and write a simple TCP/IP service (a todo list manager) to see how
 straightforward the process is!
 
+To goal of this article is to take service/program that you already have planned
+out, and \emph{easily provide} it with a networked API that can be used over any
+TCP/IP connection (even locally, if you are into that sort of thing). We aren't
+going to teach you \emph{how} to write a todo app, but rather how to hook up a
+todo app over a TCP/IP connection quickly. This post can also serve as a
+stepping-stone to a ``microservices architecture'', if you intend to build
+towards one (this is explored deeper by {[}k-bx{]}{[}owlcloud{]})\ldots but
+really it's more focused for standalone user-facing applications. How you apply
+these techniques is up to you :)
+
+This article is written for the late beginner to intermediate haskeller, who
+knows how to ``do'' what they want the server to do, but only just needs a
+simple way to hook it up over a TCP/IP connection.
+
 \hypertarget{todo-api}{%
 \section{Todo API}\label{todo-api}}
 
@@ -163,9 +177,9 @@ To formally specify our API:
   where deleted.
 \end{enumerate}
 
-We can state this using servant's type level DSL, using an \texttt{IntMap} to
-represent the current tasks and an \texttt{IntSet} to represent a set of task
-IDs.
+We can state this using servant's type level DSL, using an \texttt{IntMap} (from
+\emph{containers}) to represent the current tasks and an \texttt{IntSet} to
+represent a set of task IDs.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -174,6 +188,7 @@ IDs.
 \OtherTok{\{{-}\# LANGUAGE DeriveGeneric \#{-}\}}
 \OtherTok{\{{-}\# LANGUAGE TypeInType    \#{-}\}}
 \OtherTok{\{{-}\# LANGUAGE TypeOperators \#{-}\}}
+\OtherTok{\{{-}\# OPTIONS\_GHC {-}Wall      \#{-}\}}
 
 \KeywordTok{module} \DataTypeTok{Api} \KeywordTok{where}
 
@@ -228,6 +243,9 @@ listed above, with some minor implementation choices:
   status.
 \item
   For \texttt{delete}, we also take the task ID as a capture.
+\item
+  For \texttt{prune}, we return the deleted IDs as an \texttt{IntSet} (also from
+  \emph{containers}).
 \end{itemize}
 
 ``Query flag'', ``query parameter'', ``capture'' are all a part of the language
@@ -259,7 +277,7 @@ I usually like to just set up a skeleton with each route:
 \end{Highlighting}
 \end{Shaded}
 
-The corresponding ghc error tells us everything we need:
+The corresponding GHC error tells us everything we need:
 
 \begin{verbatim}
 server.hs:15:24: error:
@@ -301,7 +319,7 @@ write every handler in terms of how it manipulates the \texttt{IntMap} in the
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/servant{-}services/server.hs\#L14{-}L44}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/servant{-}services/server.hs\#L16{-}L46}
 
 \OtherTok{serveTodoApi ::} \DataTypeTok{IORef}\NormalTok{ (}\DataTypeTok{IntMap} \DataTypeTok{Task}\NormalTok{) }\OtherTok{{-}>} \DataTypeTok{Server} \DataTypeTok{TodoApi}
 \NormalTok{serveTodoApi taskRef }\OtherTok{=}\NormalTok{ serveList}
@@ -346,7 +364,7 @@ that our server will use with an empty map:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/servant{-}services/server.hs\#L46{-}L51}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/servant{-}services/server.hs\#L48{-}L53}
 
 \OtherTok{main ::} \DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{main }\OtherTok{=} \KeywordTok{do}
@@ -362,7 +380,260 @@ We now have a todo TCP/IP service running on port 3434!
 \hypertarget{todo-service-client}{%
 \section{Todo Service Client}\label{todo-service-client}}
 
-Too easy
+To write a client, we have a couple of options.
+
+You \emph{could} hand-write a command-line client using either
+\emph{\href{https://hackage.haskell.org/package/optparse-applicative}{optparse-applicative}}
+(or your favorite command line args parser) for an options-and-arguments style
+interface or a readline library like
+\emph{\href{https://hackage.haskell.org/package/haskeline}{haskeline}} for an
+interactive interface.
+
+Hand-writing one is made pretty simple with
+\emph{\href{https://hackage.haskell.org/package/servant-client}{servant-client}},
+which allows you to generate all of the HTTP calls using the \texttt{client}
+function:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{list }\OperatorTok{:<|>}\NormalTok{ add }\OperatorTok{:<|>}\NormalTok{ set }\OperatorTok{:<|>}\NormalTok{ delete }\OperatorTok{:<|>}\NormalTok{ prune }\OtherTok{=}\NormalTok{ client todoApi}
+\end{Highlighting}
+\end{Shaded}
+
+This will give you the functions
+\texttt{list\ ::\ Bool\ -\textgreater{}\ ClientM\ (IntMap\ Task)},
+\texttt{add\ ::\ Text\ -\textgreater{}\ ClientM\ Int},
+\texttt{set\ ::\ Int\ -\textgreater{}\ Maybe\ Bool\ -\textgreater{}\ ClientM\ ()},
+etc., that you can now run whenever you want to dispatch a command or make a
+fetch according to your hand-rolled needs.
+
+However, this blog post is about ``dead-simple'' setups that you can roll out
+within minutes. For \emph{that}, you can use the library
+\emph{{[}client-cli{]}{[}{]}} to automatically generate an
+\emph{optparse-applicative}-based command line interface that allows you to
+directly specify your commands based on command line arguments
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/servant{-}services/client.hs\#L34{-}L60}
+
+\OtherTok{main ::} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{main }\OtherTok{=} \KeywordTok{do}
+\NormalTok{    c }\OtherTok{<{-}}\NormalTok{ parseHandleClient todoApi (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy} \DataTypeTok{ClientM}\NormalTok{)}
+\NormalTok{        ( header }\StringTok{"todo"} \OperatorTok{<>}\NormalTok{ progDesc }\StringTok{"Todo TCP/IP service client"}\NormalTok{ )}
+\NormalTok{        ( displayList}
+     \OperatorTok{:<|>}\NormalTok{ (\textbackslash{}i }\OtherTok{{-}>} \StringTok{"Added with ID "} \OperatorTok{++} \FunctionTok{show}\NormalTok{ i)}
+     \OperatorTok{:<|>} \FunctionTok{const} \StringTok{"Set!"}
+     \OperatorTok{:<|>} \FunctionTok{const} \StringTok{"Deleted!"}
+     \OperatorTok{:<|>}\NormalTok{ (\textbackslash{}ts }\OtherTok{{-}>} \StringTok{"Cleared items: "} \OperatorTok{++}\NormalTok{ intercalate }\StringTok{", "}\NormalTok{ (}\FunctionTok{map} \FunctionTok{show}\NormalTok{ (IS.toList ts)))}
+\NormalTok{        )}
+
+\NormalTok{    manager\textquotesingle{} }\OtherTok{<{-}}\NormalTok{ newManager defaultManagerSettings}
+\NormalTok{    res      }\OtherTok{<{-}}\NormalTok{ runClientM c }\OperatorTok{$}
+\NormalTok{      mkClientEnv manager\textquotesingle{} (}\DataTypeTok{BaseUrl} \DataTypeTok{Http} \StringTok{"localhost"} \DecValTok{3434} \StringTok{""}\NormalTok{)}
+
+    \KeywordTok{case}\NormalTok{ res }\KeywordTok{of}
+      \DataTypeTok{Left}\NormalTok{  e }\OtherTok{{-}>}\NormalTok{ throwIO e}
+      \DataTypeTok{Right}\NormalTok{ r }\OtherTok{{-}>} \FunctionTok{putStrLn}\NormalTok{ r}
+
+\OtherTok{displayList ::} \DataTypeTok{IntMap} \DataTypeTok{Task} \OtherTok{{-}>} \DataTypeTok{String}
+\NormalTok{displayList }\OtherTok{=} \FunctionTok{unlines}
+            \OperatorTok{.} \FunctionTok{map}\NormalTok{ (\textbackslash{}(k, t) }\OtherTok{{-}>}\NormalTok{ printf }\StringTok{"\%d) \%s"}\NormalTok{ k (displayTask t))}
+            \OperatorTok{.}\NormalTok{ IM.toList}
+  \KeywordTok{where}
+\NormalTok{    displayTask (}\DataTypeTok{Task}\NormalTok{ c t)}
+      \OperatorTok{|}\NormalTok{ c         }\OtherTok{=} \StringTok{"[x] "} \OperatorTok{++}\NormalTok{ T.unpack t}
+      \OperatorTok{|} \FunctionTok{otherwise} \OtherTok{=} \StringTok{"[ ] "} \OperatorTok{++}\NormalTok{ T.unpack t}
+\end{Highlighting}
+\end{Shaded}
+
+The main thing that does the work is \texttt{parseHandleClient}, which takes
+(after some proxies specifying the API and client type):
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  Extra arguments modifying the command line help messages
+\item
+  A way to ``handle'' a response for every command.
+
+  \begin{itemize}
+  \tightlist
+  \item
+    For \texttt{list}, we display it using a nice pretty-printer
+  \item
+    For \texttt{add}, we show the new ID number.
+  \item
+    For \texttt{set} and \texttt{delete}, we just display the fact that it was
+    successful (remember, these routes returned \texttt{()})
+  \item
+    For \texttt{prune}, we pretty-print the deleted items.
+  \end{itemize}
+
+  We choose to handle each command as a \texttt{String}, but we can choose to
+  handle them each into any type we want (even \texttt{IO}) as long as each
+  handler returns something of the same type.
+
+  The handler is run and is returned as the value in \texttt{Right} when used
+  with \texttt{runClientM}.
+\end{enumerate}
+
+Again, a nice way to ``write'' our \texttt{parseHandleCleint} function with its
+handlers is by writing a skeleton definition and letting GHC tell us what goes
+in each hole:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{main ::} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{main }\OtherTok{=} \KeywordTok{do}
+\NormalTok{    c }\OtherTok{<{-}}\NormalTok{ parseHandleClient todoApi (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy} \DataTypeTok{ClientM}\NormalTok{)}
+\NormalTok{        ( header }\StringTok{"todo"} \OperatorTok{<>}\NormalTok{ progDesc }\StringTok{"Todo TCP/IP service client"}\NormalTok{ )}
+\NormalTok{        ( handleList}
+     \OperatorTok{:<|>}\NormalTok{ handleAdd}
+     \OperatorTok{:<|>}\NormalTok{ handleSet}
+     \OperatorTok{:<|>}\NormalTok{ handleDelete}
+     \OperatorTok{:<|>}\NormalTok{ handlePrune}
+\NormalTok{        )}
+    \FunctionTok{pure}\NormalTok{ ()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+client.hs:36:11: error:
+    • Variable not in scope: handleList :: IntMap Task -> [Char]
+   |
+36 |         ( handleList
+   |           ^^^^^^^^^^
+
+client.hs:37:11: error:
+    Variable not in scope: handleAdd :: Int -> [Char]
+   |
+37 |      :<|> handleAdd
+   |           ^^^^^^^^^
+
+client.hs:38:11: error:
+    Variable not in scope: handleSet :: () -> [Char]
+   |
+38 |      :<|> handleSet
+   |           ^^^^^^^^^
+
+client.hs:39:11: error:
+    Variable not in scope: handleDelete :: () -> [Char]
+   |
+39 |      :<|> handleDelete
+   |           ^^^^^^^^^^^^
+
+client.hs:40:11: error:
+    Variable not in scope: handlePrune :: IS.IntSet -> [Char]
+   |
+40 |      :<|> handlePrune
+   |           ^^^^^^^^^^^
+\end{verbatim}
+
+One last thing --- \emph{servant-cli} requires some instances to provide
+``help'' documentation for the command line interfaces:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/servant{-}services/client.hs\#L25{-}L32}
+
+\KeywordTok{instance} \DataTypeTok{ToParam}\NormalTok{ (}\DataTypeTok{QueryFlag} \StringTok{"filtered"}\NormalTok{) }\KeywordTok{where}
+\NormalTok{    toParam \_ }\OtherTok{=} \DataTypeTok{DocQueryParam} \StringTok{"filtered"}\NormalTok{ [] }\StringTok{"Whether or not to filter completed items"} \DataTypeTok{Flag}
+\KeywordTok{instance} \DataTypeTok{ToParam}\NormalTok{ (}\DataTypeTok{QueryParam\textquotesingle{}}\NormalTok{ \textquotesingle{}[}\DataTypeTok{Required}\NormalTok{] }\StringTok{"desc"} \DataTypeTok{Text}\NormalTok{) }\KeywordTok{where}
+\NormalTok{    toParam \_ }\OtherTok{=} \DataTypeTok{DocQueryParam} \StringTok{"desc"}\NormalTok{ [] }\StringTok{"Task description"} \DataTypeTok{Normal}
+\KeywordTok{instance} \DataTypeTok{ToParam}\NormalTok{ (}\DataTypeTok{QueryParam} \StringTok{"completed"} \DataTypeTok{Bool}\NormalTok{) }\KeywordTok{where}
+\NormalTok{    toParam \_ }\OtherTok{=} \DataTypeTok{DocQueryParam} \StringTok{"completed"}\NormalTok{ [}\StringTok{"True"}\NormalTok{,}\StringTok{"False"}\NormalTok{] }\StringTok{"Set status to (leave out for toggle)"} \DataTypeTok{Normal}
+\KeywordTok{instance} \DataTypeTok{ToCapture}\NormalTok{ (}\DataTypeTok{Capture} \StringTok{"id"} \DataTypeTok{Int}\NormalTok{) }\KeywordTok{where}
+\NormalTok{    toCapture \_ }\OtherTok{=} \DataTypeTok{DocCapture} \StringTok{"id"} \StringTok{"ID number of task"}
+\end{Highlighting}
+\end{Shaded}
+
+And we now get a fully-featured client for our service!
+
+\begin{verbatim}
+$ ./client.hs --help
+todo
+
+Usage: client.hs COMPONENT
+  Todo TCP/IP service client
+
+Available options:
+  -h,--help                Show this help text
+
+Path components:
+  add
+  delete
+  list
+  prune
+  set
+
+$ ./client.hs add --help
+add
+
+Usage: client.hs add --desc TEXT
+
+
+Available options:
+  --desc TEXT              Task description (Text)
+  -h,--help                Show this help text
+
+$ ./client.hs list --help
+list
+
+Usage: client.hs list [--filtered]
+
+
+Available options:
+  --filtered               Whether or not to filter completed items
+  -h,--help                Show this help text
+
+$ ./client.hs set --help
+set
+
+Usage: client.hs set <id> [--completed BOOL]
+
+
+Available options:
+  <id>                     ID number of task (Int)
+  --completed BOOL         Set status to (leave out for toggle) (options: True,
+                           False)
+  -h,--help                Show this help text
+\end{verbatim}
+
+\hypertarget{conclusion}{%
+\section{Conclusion}\label{conclusion}}
+
+One major thing I like about this method is that it's very type-safe and allows
+for types to \emph{drive} your development. Note how all of the messiness of a
+binary protocol like TCP/IP are abstracted away, and you only ever deal with
+\texttt{IntMap}s, \texttt{Text}, \texttt{Bool}, \texttt{Int}s. And also note how
+in every step of the way, we use types to guide us: in writing our server, we
+first used ``blanks'' to ask GHC what the type of each of the handlers needs to
+be, which helps us plan our server implementation and ensures that it handles
+everything properly. In writing our client, we also used ``blanks'' to ask GHC
+the type of each of our response handlers needs to be, which allows us to
+quickly and effectively drill down every option.
+
+Hopefully this post serves as a good introduction to the \emph{servant},
+\emph{servant-server}, and \emph{servant-cli} libraries, and additionally shows
+how easy it is to give any application you want a TCP/IP interface to be usable
+as a TCP/IP service. In the real world, your applications might be a little more
+complex (and you might even require authentication), but hopefully after reading
+this article, the ``network-facing'' part of your service or application becomes
+a lot less intimidating :)
+
+I know for me, the main benefit has been to tear down the ``barrier of
+entry''/mental startup cost, and I've started writing little services and
+clients like this as a first-step in a lot of cases, instead of as something I
+dread and only end up adding to a few programs.
+
+\hypertarget{special-thanks}{%
+\section{Special Thanks}\label{special-thanks}}
+
+I am very humbled to be supported by an amazing community, who make it possible
+for me to devote time to researching and writing these posts. Very special
+thanks to my supporter at the ``Amazing'' level on
+\href{https://www.patreon.com/justinle/overview}{patreon}, Josh Vera! :)
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
