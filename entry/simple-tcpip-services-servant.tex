@@ -85,6 +85,7 @@
 
 \title{Dead-simple TCP/IP services using servant}
 \author{Justin Le}
+\date{August 5, 2019}
 
 \begin{document}
 \maketitle
@@ -112,18 +113,15 @@ thought.
 
 \emph{servant} is usually advertised as a tool for writing web servers, web
 applications, and REST APIs, but it's easily adapted to write non-web things as
-well (especially with the help of
-\emph{\href{https://hackage.haskell.org/package/servant-client}{servant-client}}
-and \emph{\href{https://hackage.haskell.org/package/servant-cli}{servant-cli}}).
-Let's dive in and write a simple TCP/IP service (a todo list manager) to see how
-straightforward the process is!
+well. Let's dive in and write a simple TCP/IP service (a todo list manager) to
+see how straightforward the process is!
 
 To goal of this article is to take service/program that you already have planned
 out, and \emph{easily provide} it with a networked API that can be used over any
-TCP/IP connection (even locally, if you are into that sort of thing). We aren't
-going to teach you \emph{how} to write a todo app, but rather how to \emph{hook
-up} a todo app over a TCP/IP connection quickly --- and in such a simple way
-that you wouldn't give a second thought based on complexity issues.
+TCP/IP connection (and even locally). This won't teach you \emph{how} to write a
+todo app, but rather how to \emph{hook up} a todo app over a TCP/IP connection
+quickly --- and in such a simple way that you wouldn't give a second thought
+based on complexity issues.
 
 This post can also serve as a stepping-stone to a ``microservices
 architecture'', if you intend to build towards one (this is explored deeper by
@@ -131,9 +129,20 @@ architecture'', if you intend to build towards one (this is explored deeper by
 focused for standalone user-facing applications. How you apply these techniques
 is up to you :)
 
-This article is written for the late beginner to intermediate haskeller, who
-knows how to ``do'' what they want the server to do, but only just needs a
-simple way to hook it up over a TCP/IP connection.
+All of the code in this article is available online, and the server and client
+are available as ``stack executables'': if you download them all, and set the
+permissions properly (\texttt{chmod\ u+x}), you can directly run them to launch
+the server and client (if they are all download to the same directory).
+
+\begin{itemize}
+\tightlist
+\item
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/servant-services/Api.hs}{API}
+\item
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/servant-services/server.hs}{Server}
+\item
+  \href{https://github.com/mstksg/inCode/tree/master/code-samples/servant-services/client.hs}{Client}
+\end{itemize}
 
 \hypertarget{todo-api}{%
 \section{Todo API}\label{todo-api}}
@@ -316,9 +325,9 @@ server.hs:19:24: error:
 
 It tells us exactly the types of each handler we need.
 
-Knowing that \texttt{Handler} is a \texttt{MonadIO}, we can now directly just
-write every handler in terms of how it manipulates the \texttt{IntMap} in the
-\texttt{IORef}:
+Because \texttt{Handler} has a \texttt{MonadIO} instance, we can now directly
+just write every handler in terms of how it manipulates the \texttt{IntMap} in
+the \texttt{IORef}, and use \texttt{liftIO}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -412,9 +421,10 @@ fetch according to your hand-rolled needs.
 
 However, this blog post is about ``dead-simple'' setups that you can roll out
 within minutes. For \emph{that}, you can use the library
-\emph{{[}client-cli{]}{[}{]}} to automatically generate an
-\emph{optparse-applicative}-based command line interface that allows you to
-directly specify your commands based on command line arguments
+\emph{\href{https://hackage.haskell.org/package/servant-cli}{servant-cli}} to
+automatically generate an \emph{optparse-applicative}-based command line
+interface that allows you to directly specify your commands based on command
+line arguments
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -474,8 +484,8 @@ The main thing that does the work is \texttt{parseHandleClient}, which takes
   \end{itemize}
 
   We choose to handle each command as a \texttt{String}, but we can choose to
-  handle them each into any type we want (even \texttt{IO}) as long as each
-  handler returns something of the same type.
+  handle them each into any type we want (even something involving\texttt{IO})
+  as long as each handler returns something of the same type.
 
   The handler is run and is returned as the value in \texttt{Right} when used
   with \texttt{runClientM}.
@@ -554,6 +564,7 @@ One last thing --- \emph{servant-cli} requires some instances to provide
 And we now get a fully-featured client for our service!
 
 \begin{verbatim}
+# make sure you run ./server.hs in a separate window
 $ ./client.hs --help
 todo
 
@@ -615,7 +626,8 @@ first used ``blanks'' to ask GHC what the type of each of the handlers needs to
 be, which helps us plan our server implementation and ensures that it handles
 everything properly. In writing our client, we also used ``blanks'' to ask GHC
 the type of each of our response handlers needs to be, which allows us to
-quickly and effectively drill down every option.
+quickly and effectively drill down every option. These are things that
+\emph{all} servant-based projects get to benefit from.
 
 Hopefully this post serves as a good introduction to the \emph{servant},
 \emph{servant-server}, and \emph{servant-cli} libraries, and additionally shows

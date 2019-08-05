@@ -1,7 +1,7 @@
 Dead-simple TCP/IP services using servant
 =========================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on August 5, 2019.
 > [Read online!](https://blog.jle.im/entry/simple-tcpip-services-servant.html)
 
 In my time I've written a lot of throwaway binary TCP/IP services (servers and
@@ -22,18 +22,15 @@ tool that I reach for immediately in a lot of cases without second thought.
 
 *servant* is usually advertised as a tool for writing web servers, web
 applications, and REST APIs, but it's easily adapted to write non-web things as
-well (especially with the help of
-*[servant-client](https://hackage.haskell.org/package/servant-client)* and
-*[servant-cli](https://hackage.haskell.org/package/servant-cli)*). Let's dive in
-and write a simple TCP/IP service (a todo list manager) to see how
-straightforward the process is!
+well. Let's dive in and write a simple TCP/IP service (a todo list manager) to
+see how straightforward the process is!
 
 To goal of this article is to take service/program that you already have planned
 out, and *easily provide* it with a networked API that can be used over any
-TCP/IP connection (even locally, if you are into that sort of thing). We aren't
-going to teach you *how* to write a todo app, but rather how to *hook up* a todo
-app over a TCP/IP connection quickly --- and in such a simple way that you
-wouldn't give a second thought based on complexity issues.
+TCP/IP connection (and even locally). This won't teach you *how* to write a todo
+app, but rather how to *hook up* a todo app over a TCP/IP connection quickly ---
+and in such a simple way that you wouldn't give a second thought based on
+complexity issues.
 
 This post can also serve as a stepping-stone to a "microservices architecture",
 if you intend to build towards one (this is explored deeper by
@@ -41,9 +38,14 @@ if you intend to build towards one (this is explored deeper by
 standalone user-facing applications. How you apply these techniques is up to you
 :)
 
-This article is written for the late beginner to intermediate haskeller, who
-knows how to "do" what they want the server to do, but only just needs a simple
-way to hook it up over a TCP/IP connection.
+All of the code in this article is available online, and the server and client
+are available as "stack executables": if you download them all, and set the
+permissions properly (`chmod u+x`), you can directly run them to launch the
+server and client (if they are all download to the same directory).
+
+-   [API](https://github.com/mstksg/inCode/tree/master/code-samples/servant-services/Api.hs)
+-   [Server](https://github.com/mstksg/inCode/tree/master/code-samples/servant-services/server.hs)
+-   [Client](https://github.com/mstksg/inCode/tree/master/code-samples/servant-services/client.hs)
 
 Todo API
 --------
@@ -193,8 +195,9 @@ The corresponding GHC error tells us everything we need:
 
 It tells us exactly the types of each handler we need.
 
-Knowing that `Handler` is a `MonadIO`, we can now directly just write every
-handler in terms of how it manipulates the `IntMap` in the `IORef`:
+Because `Handler` has a `MonadIO` instance, we can now directly just write every
+handler in terms of how it manipulates the `IntMap` in the `IORef`, and use
+`liftIO`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/servant-services/server.hs#L16-L46
@@ -278,7 +281,8 @@ that you can now run whenever you want to dispatch a command or make a fetch
 according to your hand-rolled needs.
 
 However, this blog post is about "dead-simple" setups that you can roll out
-within minutes. For *that*, you can use the library *\[client-cli\]\[\]* to
+within minutes. For *that*, you can use the library
+*[servant-cli](https://hackage.haskell.org/package/servant-cli)* to
 automatically generate an *optparse-applicative*-based command line interface
 that allows you to directly specify your commands based on command line
 arguments
@@ -329,8 +333,8 @@ some proxies specifying the API and client type):
     -   For `prune`, we pretty-print the deleted items.
 
     We choose to handle each command as a `String`, but we can choose to handle
-    them each into any type we want (even `IO`) as long as each handler returns
-    something of the same type.
+    them each into any type we want (even something involving`IO`) as long as
+    each handler returns something of the same type.
 
     The handler is run and is returned as the value in `Right` when used with
     `runClientM`.
@@ -401,6 +405,7 @@ instance ToCapture (Capture "id" Int) where
 
 And we now get a fully-featured client for our service!
 
+    # make sure you run ./server.hs in a separate window
     $ ./client.hs --help
     todo
 
@@ -461,7 +466,8 @@ type of each of the handlers needs to be, which helps us plan our server
 implementation and ensures that it handles everything properly. In writing our
 client, we also used "blanks" to ask GHC the type of each of our response
 handlers needs to be, which allows us to quickly and effectively drill down
-every option.
+every option. These are things that *all* servant-based projects get to benefit
+from.
 
 Hopefully this post serves as a good introduction to the *servant*,
 *servant-server*, and *servant-cli* libraries, and additionally shows how easy
