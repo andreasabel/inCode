@@ -17,10 +17,10 @@ spinning it up from scratch again every time discouraged me from doing it very
 often. However, thankfully, with the
 *[servant](https://hackage.haskell.org/package/servant)* haskell library (and
 *[servant-cli](https://hackage.haskell.org/package/servant-cli)*, for command
-line clients), writing a TCP server/client pair for a TCP service becomes
-dead-simple --- the barrier for creating one fades away that designing/writing a
-service becomes a tool that I reach for immediately in a lot of cases without
-second thought.
+line clients), writing a TCP server/client pair for a TCP service (using HTTP
+under the hood) becomes dead-simple --- the barrier for creating one fades away
+that designing/writing a service becomes a tool that I reach for immediately in
+a lot of cases without second thought.
 
 *servant* is usually advertised as a tool for writing web servers, web
 applications, and REST APIs, but it's easily adapted to write non-web things as
