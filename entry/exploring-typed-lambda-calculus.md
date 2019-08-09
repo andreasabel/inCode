@@ -204,6 +204,7 @@ other constructs:
 -   **Variables**: At all levels with function abstractions, we can talk about
     *variables* at that level. A variable is *bound* if it's inside the body of
     a lambda that introduces it, and is *free* otherwise.
+
 -   **Function Application**: At all levels with function abstractions, we also
     have *function applications*, which is the application of a function
     abstraction to a value:
@@ -216,7 +217,7 @@ other constructs:
     ```
 
     *Technically*, we can actually have function application on levels without
-    function applications, of that level has the apropriate primitives (like
+    function applications, of that level has the appropriate primitives (like
     `List` on the type level, `Natural/show` at the value level). However, in
     Dhall, this doesn't happen, so we're going to address this as essentially
     paired with function abstraction.

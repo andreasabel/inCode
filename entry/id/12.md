@@ -315,7 +315,7 @@ Note that I've also included a line-by-line 'trace' of the do block with what
 the monad "is" at that point. It is what is calculated on that line, and it
 would be the value returned if you just exited at that step.
 
-1.  Business as usual. Halve `n` if possible and place the reuslt in `x`. If `n`
+1.  Business as usual. Halve `n` if possible and place the result in `x`. If `n`
     is 32, then `x` will be 16.
 2.  The failure. Remember, `mzero` means "fail here automatically", which, in a
     Maybe object, means `Nothing`.
@@ -335,7 +335,7 @@ This is a little nicety, but there is the common library monad function
 containing a list.
 
 In the context of MonadPlus, it would be turning a list of Success/Failures into
-a succesful or failed list. It builds a succesful/failed list.
+a successful or failed list. It builds a successful/failed list.
 
 From what we have learned, if any part of that building process is a failure,
 the entire thing is necessarily a failure. This is reflected in `sequence`:
@@ -570,7 +570,7 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     cases) mostly redundant, due to another typeclass called
     [Alternative](http://hackage.haskell.org/package/base-4.6.0.1/docs/Control-Applicative.html#t:Alternative)
     that now handles it in all nearly all modern usage. The redundancy actually
-    stems from one of the more famous embarassing misakes in the design of the
+    stems from one of the more famous embarrassing mistakes in the design of the
     Haskell standard library --- the infamous [monad-applicative-functor
     hierarchy
     issue](http://www.haskell.org/haskellwiki/Functor-Applicative-Monad_Proposal).

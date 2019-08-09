@@ -1177,7 +1177,7 @@ expects...these clues will help you get your bearings!
 Converting from sized to unsized vectors (to lists) is something that is pretty
 straightforward, and can be done by just pattern matching on the vector and
 recursing on the tail. I've [left it as an
-excercise](https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L86-L89)
+exercise](https://github.com/mstksg/inCode/tree/master/code-samples/fixvec-2/VecInductive.hs#L86-L89)
 to write `Vec n a -> [a]`.
 
 More interesting is the other way around; our the API of converting unsized to

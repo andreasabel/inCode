@@ -22,7 +22,7 @@ We're going to assume a somewhat basic familiarity with functional programming
 concepts and a basic understanding of monads (if you don't know that much, check
 out
 [adit's](http://adit.io/posts/2013-04-17-functors,_applicatives,_and_monads_in_pictures.html)
-great concice guide). If you aren't familiar with MonadPlus/Alternative (and how
+great concise guide). If you aren't familiar with MonadPlus/Alternative (and how
 they work as monads) check out [Part
 1](http://blog.jle.im/entry/practical-fun-with-monads-introducing-monadplus) and
 [Part

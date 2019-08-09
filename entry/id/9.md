@@ -6,7 +6,7 @@ A Brief Primer on Classical and Quantum Mechanics for Numerical Techniques
 
 Okay! In this series we will be going over many subjects in both physics and
 computational techniques, including the Lagrangian formulation of classical
-mechanics, basic principles of quantum mechanics, the Path Integral formatulion
+mechanics, basic principles of quantum mechanics, the Path Integral formulation
 of quantum mechanics, the Metropolis-Hastings Monte Carlo method, dealing with
 entropy and randomness in a pure language, and general principles in numerical
 computation! Fun stuff, right?
@@ -142,7 +142,7 @@ Relativity in all frames of reference with almost no tweaks. And yes, if you
 actually do find the path of lowest action, the path will somehow magically
 always follow the state-updating equations
 ![F = m a](https://latex.codecogs.com/png.latex?F%20%3D%20m%20a "F = m a"). It's
-just now we have a much more insighftul and meaningful way to look at the
+just now we have a much more insightful and meaningful way to look at the
 universe:
 
 Paths **always attempt to minimize their action**.
@@ -277,6 +277,6 @@ consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 
 [^1]: Why is it called the "Path Integral" formulation? When we add up something
-    at every single point on a path, we are mathematically perfoming a "Path
+    at every single point on a path, we are mathematically performing a "Path
     Integral". So Path Integral Formulation means "physics based on the adding
     up stuff for every point on a path".

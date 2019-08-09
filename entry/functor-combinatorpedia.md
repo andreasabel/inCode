@@ -56,7 +56,7 @@ Right now I already have some posts about this general design pattern,
 ["Interpreters a la Carte" in Advent of Code 2017
 Duet](https://blog.jle.im/entry/interpreters-a-la-carte-duet.html) and
 [Applicative Regular Expressions using the Free
-Alternatuve](https://blog.jle.im/entry/free-alternative-regexp.html), but I do
+Alternative](https://blog.jle.im/entry/free-alternative-regexp.html), but I do
 have some posts planned in the future going through projects using this unified
 interface. In a way, this post also serves as the "introduction to free
 structures" that I always wanted to write :)
@@ -535,7 +535,7 @@ monoidal functor combinator `MF t f a` (for example, between `Comp f f a` and
     type MF (:*:) = ListF
     ```
 
-    `ListF f a` is a "list of `f a`s". It represents the posibility of having
+    `ListF f a` is a "list of `f a`s". It represents the possibility of having
     `Proxy` (zero items), `x :: f a` (one item), `x :*: y` (two items),
     `x :*: y :*: z` (three items), etc.
 
@@ -1121,7 +1121,7 @@ intact: functor combinators only ever *add* structure.
     static analysis, before anything is ever run or interpreted.
 
     *Structurally*, `Ap` is built like a linked list of `f x`s, which each link
-    being existentailly bound together:
+    being existentially bound together:
 
     ``` {.haskell}
     data Ap :: (Type -> Type) -> Type -> Type where
@@ -1311,7 +1311,7 @@ intact: functor combinators only ever *add* structure.
     `f`.
 
     It can be used, for example, to turn an required parameter `Param a` into an
-    optional paramter `Lift Param a`.
+    optional parameter `Lift Param a`.
 
     Contrast this to `MaybeF`: this allows the interpreter to still "continue
     on" as normal even if the `f` is not there. However, `MaybeF` forces the

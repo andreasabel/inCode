@@ -193,7 +193,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb17-6"><a href="#cb17-6"></a><span class="dt">False</span></span>
 <span id="cb17-7"><a href="#cb17-7"></a>ghci<span class="op">&gt;</span> isRight (<span class="dt">Right</span> <span class="ch">&#39;a&#39;</span>)</span>
 <span id="cb17-8"><a href="#cb17-8"></a><span class="dt">True</span></span></code></pre></div>
-<p>If we think about lenses as embodying “record fields” (things that give you the ability to “get” a field, and “modify” a field — corresponding with <code>view</code> and <code>set</code>), we can think of <code>mysteryLens1</code> as an <em>abstract record field</em> into the Leftness/Rightness of a value. Thinking of lenses as defining abstract record fields is a <a href="http://blog.ezyang.com/2016/12/a-tale-of-backwards-compatibility-in-asts/">common tool for backwards compatiblity</a>.</p>
+<p>If we think about lenses as embodying “record fields” (things that give you the ability to “get” a field, and “modify” a field — corresponding with <code>view</code> and <code>set</code>), we can think of <code>mysteryLens1</code> as an <em>abstract record field</em> into the Leftness/Rightness of a value. Thinking of lenses as defining abstract record fields is a <a href="http://blog.ezyang.com/2016/12/a-tale-of-backwards-compatibility-in-asts/">common tool for backwards compatibility</a>.</p>
 <p>Looking at <code>mysteryLens2 :: Lens' (Either a a) a</code>, we are saying that every <code>Either a a</code> has some <code>a</code> “inside” it. From what we know about the underlying product, the <code>a</code> is just the “contained value”, <em>ignoring</em> leftness or rightness. Getting the <code>a</code> is getting the contained value and losing leftness/rightness, and re-setting the <code>a</code> inside is modifying the contained value but preserving leftness/rightness.</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/lenses-and-prisms.hs#L200-L204</span></span>
 <span id="cb18-2"><a href="#cb18-2"></a></span>
@@ -297,7 +297,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb26-10"><a href="#cb26-10"></a><span class="ot">match ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> () <span class="dt">Not4</span></span>
 <span id="cb26-11"><a href="#cb26-11"></a>match n <span class="ot">=</span> <span class="kw">case</span> refineFail n <span class="kw">of</span></span>
 <span id="cb26-12"><a href="#cb26-12"></a>    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Left</span> ()          <span class="co">-- the value was 4, so we return `Left`</span></span>
-<span id="cb26-13"><a href="#cb26-13"></a>    <span class="dt">Just</span> x  <span class="ot">-&gt;</span> <span class="dt">Right</span> x          <span class="co">-- value was succesfully refined</span></span>
+<span id="cb26-13"><a href="#cb26-13"></a>    <span class="dt">Just</span> x  <span class="ot">-&gt;</span> <span class="dt">Right</span> x          <span class="co">-- value was successfully refined</span></span>
 <span id="cb26-14"><a href="#cb26-14"></a></span>
 <span id="cb26-15"><a href="#cb26-15"></a><span class="co">-- | The &quot;safe extractor&quot;</span></span>
 <span id="cb26-16"><a href="#cb26-16"></a><span class="ot">inject ::</span> <span class="dt">Either</span> () <span class="dt">Not4</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
@@ -523,7 +523,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb44-7"><a href="#cb44-7"></a>inject (<span class="dt">Right</span> v) <span class="ot">=</span> []</span></code></pre></div>
 <p>From this attempt, we see that no matter what <code>q</code> we pick, we will “lose <code>xs</code>”. There’s no way to “store” the tail of the list in <code>match</code> in order to recover it later in <code>inject</code>.</p>
 <h2 id="the-path-to-profunctors">The Path to Profunctors</h2>
-<p>As a finale, I’d like to show how these dual perspectives (lenses are witneses to products and prisms are witnesses to sum) make their implementation in terms of “profunctor optics” very natural.</p>
+<p>As a finale, I’d like to show how these dual perspectives (lenses are witnesses to products and prisms are witnesses to sum) make their implementation in terms of “profunctor optics” very natural.</p>
 <p>First, some background – a “profunctor optic” is a way of expressing things like lenses and prisms in terms of “profunctor value transformers”. Lenses, prisms, etc. would not be record types, but rather functions that takes a profunctor value and return a new profunctor value.</p>
 <p>A profunctor <code>p</code> has values of type <code>p a b</code>, and you can roughly think of <code>p a b</code> (a profunctor value) as “a relationship between <code>a</code> and <code>b</code>”.</p>
 <p>The <code>Profunctor</code> typeclass <code>p</code> gives us a few functions. We can use them to create a function that transforms a profunctor value in terms of an isomorphism.</p>

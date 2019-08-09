@@ -193,7 +193,7 @@ First, we'll define the types we need to specify our state:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{$}\NormalTok{(singletons [d|}
+\OperatorTok{$}\NormalTok{(singletons [d|}
 \NormalTok{  data Piece = PX | PO}
 \NormalTok{    deriving (Eq, Ord)}
 
@@ -213,14 +213,14 @@ transformations:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{$}\NormalTok{(singletons [d|}
+\OperatorTok{$}\NormalTok{(singletons [d|}
 \NormalTok{  emptyBoard :: Board}
 \NormalTok{  emptyBoard = [ [Nothing, Nothing, Nothing]}
 \NormalTok{               , [Nothing, Nothing, Nothing]}
 \NormalTok{               , [Nothing, Nothing, Nothing]}
 \NormalTok{               ]}
 
-\NormalTok{  altP :: Piece -> Piece}
+\NormalTok{  altP :: Piece {-}> Piece}
 \NormalTok{  altP PX = PO}
 \NormalTok{  altP PO = PX}
 \NormalTok{  |])}
@@ -231,11 +231,11 @@ Let's just throw in a quick proof as a sanity check:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L54-L56}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L54{-}L56}
 
-\OtherTok{altP_cyclic ::} \DataTypeTok{Sing}\NormalTok{ p }\OtherTok{->} \DataTypeTok{AltP}\NormalTok{ (}\DataTypeTok{AltP}\NormalTok{ p) }\FunctionTok{:~:}\NormalTok{ p}
-\NormalTok{altP_cyclic }\DataTypeTok{SPX} \FunctionTok{=} \DataTypeTok{Refl} \FunctionTok{@}\NormalTok{'}\DataTypeTok{PX}
-\NormalTok{altP_cyclic }\DataTypeTok{SPO} \FunctionTok{=} \DataTypeTok{Refl} \FunctionTok{@}\NormalTok{'}\DataTypeTok{PO}
+\OtherTok{altP\_cyclic ::} \DataTypeTok{Sing}\NormalTok{ p }\OtherTok{{-}>} \DataTypeTok{AltP}\NormalTok{ (}\DataTypeTok{AltP}\NormalTok{ p) }\OperatorTok{:\textasciitilde{}:}\NormalTok{ p}
+\NormalTok{altP\_cyclic }\DataTypeTok{SPX} \OtherTok{=} \DataTypeTok{Refl} \OperatorTok{@}\DataTypeTok{\textquotesingle{}PX}
+\NormalTok{altP\_cyclic }\DataTypeTok{SPO} \OtherTok{=} \DataTypeTok{Refl} \OperatorTok{@}\DataTypeTok{\textquotesingle{}PO}
 \end{Highlighting}
 \end{Shaded}
 
@@ -246,7 +246,7 @@ about the kind of a \emph{type-level predicate}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L58-L58}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L58{-}L58}
 
 \KeywordTok{data} \DataTypeTok{InPlay}\OtherTok{ ::} \DataTypeTok{Predicate} \DataTypeTok{Board}
 \end{Highlighting}
@@ -260,9 +260,9 @@ board:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L73-L73}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L73{-}L73}
 
-\KeywordTok{data} \DataTypeTok{Update}\OtherTok{ ::} \DataTypeTok{Piece} \OtherTok{->} \DataTypeTok{Board} \OtherTok{->} \DataTypeTok{Board} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+\KeywordTok{data} \DataTypeTok{Update}\OtherTok{ ::} \DataTypeTok{Piece} \OtherTok{{-}>} \DataTypeTok{Board} \OtherTok{{-}>} \DataTypeTok{Board} \OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
 \end{Highlighting}
 \end{Shaded}
 
@@ -273,20 +273,20 @@ And finally, our valid state constructor:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L60-L71}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L60{-}L71}
 
-\KeywordTok{data} \DataTypeTok{GameState}\OtherTok{ ::} \DataTypeTok{Piece} \OtherTok{->} \DataTypeTok{Board} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
-    \CommentTok{-- | The empty board is a valid state}
+\KeywordTok{data} \DataTypeTok{GameState}\OtherTok{ ::} \DataTypeTok{Piece} \OtherTok{{-}>} \DataTypeTok{Board} \OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
+    \CommentTok{{-}{-} | The empty board is a valid state}
     \DataTypeTok{GSStart}
-\OtherTok{        ::} \DataTypeTok{GameState}\NormalTok{ '}\DataTypeTok{PX} \DataTypeTok{EmptyBoard}
-    \CommentTok{-- | We can also construct a valid game state if we have:}
+\OtherTok{        ::} \DataTypeTok{GameState} \DataTypeTok{\textquotesingle{}PX} \DataTypeTok{EmptyBoard}
+    \CommentTok{{-}{-} | We can also construct a valid game state if we have:}
     \DataTypeTok{GSUpdate}
-\OtherTok{        ::}\NormalTok{ forall p b1 b2}\FunctionTok{.}\NormalTok{ ()}
-        \OtherTok{=>} \DataTypeTok{InPlay}          \FunctionTok{@@}\NormalTok{ b1     }\CommentTok{-- ^ a proof that b1 is in play}
-        \OtherTok{->} \DataTypeTok{Update}\NormalTok{    p        b1 b2  }\CommentTok{-- ^ a valid update}
-        \OtherTok{->} \DataTypeTok{GameState}\NormalTok{ p        b1     }\CommentTok{-- ^ a proof that p, b1 are a valid state}
-        \CommentTok{-- ---------------------------- then}
-        \OtherTok{->} \DataTypeTok{GameState}\NormalTok{ (}\DataTypeTok{AltP}\NormalTok{ p)    b2  }\CommentTok{-- ^ `AltP p`, b2 is a valid satte}
+\OtherTok{        ::} \KeywordTok{forall}\NormalTok{ p b1 b2}\OperatorTok{.}\NormalTok{ ()}
+        \OtherTok{=>} \DataTypeTok{InPlay}          \OperatorTok{@@}\NormalTok{ b1     }\CommentTok{{-}{-} \^{} a proof that b1 is in play}
+        \OtherTok{{-}>} \DataTypeTok{Update}\NormalTok{    p        b1 b2  }\CommentTok{{-}{-} \^{} a valid update}
+        \OtherTok{{-}>} \DataTypeTok{GameState}\NormalTok{ p        b1     }\CommentTok{{-}{-} \^{} a proof that p, b1 are a valid state}
+        \CommentTok{{-}{-} {-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-} then}
+        \OtherTok{{-}>} \DataTypeTok{GameState}\NormalTok{ (}\DataTypeTok{AltP}\NormalTok{ p)    b2  }\CommentTok{{-}{-} \^{} \textasciigrave{}AltP p\textasciigrave{}, b2 is a valid satte}
 \end{Highlighting}
 \end{Shaded}
 
@@ -317,9 +317,9 @@ kind we wanted was:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L73-L73}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L73{-}L73}
 
-\KeywordTok{data} \DataTypeTok{Update}\OtherTok{ ::} \DataTypeTok{Piece} \OtherTok{->} \DataTypeTok{Board} \OtherTok{->} \DataTypeTok{Board} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+\KeywordTok{data} \DataTypeTok{Update}\OtherTok{ ::} \DataTypeTok{Piece} \OtherTok{{-}>} \DataTypeTok{Board} \OtherTok{{-}>} \DataTypeTok{Board} \OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
 \end{Highlighting}
 \end{Shaded}
 
@@ -343,8 +343,8 @@ library to update our nested list:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{$}\NormalTok{(singletonsOnly [d|}
-\NormalTok{  placeBoard :: N -> N -> Piece -> Board -> Board}
+\OperatorTok{$}\NormalTok{(singletonsOnly [d|}
+\NormalTok{  placeBoard :: N {-}> N {-}> Piece {-}> Board {-}> Board}
 \NormalTok{  placeBoard i j p = set (ixList i . ixList j) (Just p)}
 \NormalTok{  |])}
 \end{Highlighting}
@@ -361,7 +361,7 @@ also defined as a uility in \emph{lens-typelevel}). It's essentially
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{N} \FunctionTok{=} \DataTypeTok{Z} \FunctionTok{|} \DataTypeTok{S} \DataTypeTok{N}
+\KeywordTok{data} \DataTypeTok{N} \OtherTok{=} \DataTypeTok{Z} \OperatorTok{|} \DataTypeTok{S} \DataTypeTok{N}
 \end{Highlighting}
 \end{Shaded}
 
@@ -374,9 +374,9 @@ piece at spot \emph{(i, j)} is:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L87-L87}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L87{-}L87}
 
-\KeywordTok{data} \DataTypeTok{Coord}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{) }\OtherTok{->}\NormalTok{ [[k]] }\OtherTok{->}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+\KeywordTok{data} \DataTypeTok{Coord}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{) }\OtherTok{{-}>}\NormalTok{ [[k]] }\OtherTok{{-}>}\NormalTok{ k }\OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
 \end{Highlighting}
 \end{Shaded}
 
@@ -388,14 +388,14 @@ j)} is \texttt{Nothing}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L73-L78}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L73{-}L78}
 
-\KeywordTok{data} \DataTypeTok{Update}\OtherTok{ ::} \DataTypeTok{Piece} \OtherTok{->} \DataTypeTok{Board} \OtherTok{->} \DataTypeTok{Board} \OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+\KeywordTok{data} \DataTypeTok{Update}\OtherTok{ ::} \DataTypeTok{Piece} \OtherTok{{-}>} \DataTypeTok{Board} \OtherTok{{-}>} \DataTypeTok{Board} \OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{MkUpdate}
-\OtherTok{        ::}\NormalTok{ forall i j p b}\FunctionTok{.}\NormalTok{ ()}
-        \OtherTok{=>} \DataTypeTok{Coord}\NormalTok{ '(i, j) b '}\DataTypeTok{Nothing}         \CommentTok{-- ^ If the item at (i, j) in b is Nothing}
-        \CommentTok{-- ------------------------------------- then}
-        \OtherTok{->} \DataTypeTok{Update}\NormalTok{ p b (}\DataTypeTok{PlaceBoard}\NormalTok{ i j p b)  }\CommentTok{-- ^ Placing `Just p` at i, j is a valid update}
+\OtherTok{        ::} \KeywordTok{forall}\NormalTok{ i j p b}\OperatorTok{.}\NormalTok{ ()}
+        \OtherTok{=>} \DataTypeTok{Coord}\NormalTok{ \textquotesingle{}(i, j) b }\DataTypeTok{\textquotesingle{}Nothing}         \CommentTok{{-}{-} \^{} If the item at (i, j) in b is Nothing}
+        \CommentTok{{-}{-} {-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-} then}
+        \OtherTok{{-}>} \DataTypeTok{Update}\NormalTok{ p b (}\DataTypeTok{PlaceBoard}\NormalTok{ i j p b)  }\CommentTok{{-}{-} \^{} Placing \textasciigrave{}Just p\textasciigrave{} at i, j is a valid update}
 \end{Highlighting}
 \end{Shaded}
 
@@ -415,9 +415,9 @@ simpler type that is essentially the same for normal lists --- a type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L80-L80}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L80{-}L80}
 
-\KeywordTok{data} \DataTypeTok{Sel}\OtherTok{ ::} \DataTypeTok{N} \OtherTok{->}\NormalTok{ [k] }\OtherTok{->}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
+\KeywordTok{data} \DataTypeTok{Sel}\OtherTok{ ::} \DataTypeTok{N} \OtherTok{{-}>}\NormalTok{ [k] }\OtherTok{{-}>}\NormalTok{ k }\OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
 \end{Highlighting}
 \end{Shaded}
 
@@ -440,14 +440,14 @@ data type. We can mention our induction rules:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L80-L85}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L80{-}L85}
 
-\KeywordTok{data} \DataTypeTok{Sel}\OtherTok{ ::} \DataTypeTok{N} \OtherTok{->}\NormalTok{ [k] }\OtherTok{->}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
-    \CommentTok{-- | The first item in a list is at index ''Z'}
-    \DataTypeTok{SelZ}\OtherTok{ ::} \DataTypeTok{Sel}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{ (a '}\FunctionTok{:}\NormalTok{ as) a}
-    \DataTypeTok{SelS}\OtherTok{ ::} \DataTypeTok{Sel}\NormalTok{     n        as  a  }\CommentTok{-- ^ If item `a` is at index `n` in list `as`}
-         \CommentTok{-- ---------------------------- then}
-         \OtherTok{->} \DataTypeTok{Sel}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) (b '}\FunctionTok{:}\NormalTok{ as) a  }\CommentTok{-- ^ Item `a` is at index `S n` in list `b : as`}
+\KeywordTok{data} \DataTypeTok{Sel}\OtherTok{ ::} \DataTypeTok{N} \OtherTok{{-}>}\NormalTok{ [k] }\OtherTok{{-}>}\NormalTok{ k }\OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
+    \CommentTok{{-}{-} | The first item in a list is at index \textquotesingle{}\textquotesingle{}Z\textquotesingle{}}
+    \DataTypeTok{SelZ}\OtherTok{ ::} \DataTypeTok{Sel} \DataTypeTok{\textquotesingle{}Z}\NormalTok{ (a \textquotesingle{}}\OperatorTok{:}\NormalTok{ as) a}
+    \DataTypeTok{SelS}\OtherTok{ ::} \DataTypeTok{Sel}\NormalTok{     n        as  a  }\CommentTok{{-}{-} \^{} If item \textasciigrave{}a\textasciigrave{} is at index \textasciigrave{}n\textasciigrave{} in list \textasciigrave{}as\textasciigrave{}}
+         \CommentTok{{-}{-} {-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-} then}
+         \OtherTok{{-}>} \DataTypeTok{Sel}\NormalTok{ (}\DataTypeTok{\textquotesingle{}S}\NormalTok{ n) (b \textquotesingle{}}\OperatorTok{:}\NormalTok{ as) a  }\CommentTok{{-}{-} \^{} Item \textasciigrave{}a\textasciigrave{} is at index \textasciigrave{}S n\textasciigrave{} in list \textasciigrave{}b : as\textasciigrave{}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -456,9 +456,9 @@ we can make values:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\DataTypeTok{SelZ}\OtherTok{             ::} \DataTypeTok{Sel}\NormalTok{         '}\DataTypeTok{Z}\NormalTok{   '[}\DecValTok{10}\NormalTok{,}\DecValTok{5}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{8}\NormalTok{] }\DecValTok{10}
-\DataTypeTok{SelS} \DataTypeTok{SelZ}\OtherTok{        ::} \DataTypeTok{Sel}\NormalTok{     ('}\DataTypeTok{S}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{)  '[}\DecValTok{10}\NormalTok{,}\DecValTok{5}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{8}\NormalTok{] }\DecValTok{5}
-\DataTypeTok{SelS}\NormalTok{ (}\DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{)}\OtherTok{ ::} \DataTypeTok{Sel}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{)) '[}\DecValTok{10}\NormalTok{,}\DecValTok{5}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{8}\NormalTok{] }\DecValTok{2}
+\DataTypeTok{SelZ}\OtherTok{             ::} \DataTypeTok{Sel}         \DataTypeTok{\textquotesingle{}Z}\NormalTok{   \textquotesingle{}[}\DecValTok{10}\NormalTok{,}\DecValTok{5}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{8}\NormalTok{] }\DecValTok{10}
+\DataTypeTok{SelS} \DataTypeTok{SelZ}\OtherTok{        ::} \DataTypeTok{Sel}\NormalTok{     (}\DataTypeTok{\textquotesingle{}S} \DataTypeTok{\textquotesingle{}Z}\NormalTok{)  \textquotesingle{}[}\DecValTok{10}\NormalTok{,}\DecValTok{5}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{8}\NormalTok{] }\DecValTok{5}
+\DataTypeTok{SelS}\NormalTok{ (}\DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{)}\OtherTok{ ::} \DataTypeTok{Sel}\NormalTok{ (}\DataTypeTok{\textquotesingle{}S}\NormalTok{ (}\DataTypeTok{\textquotesingle{}S} \DataTypeTok{\textquotesingle{}Z}\NormalTok{)) \textquotesingle{}[}\DecValTok{10}\NormalTok{,}\DecValTok{5}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{8}\NormalTok{] }\DecValTok{2}
 \end{Highlighting}
 \end{Shaded}
 
@@ -468,14 +468,14 @@ We can then use this to define \texttt{Coord}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L87-L92}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L87{-}L92}
 
-\KeywordTok{data} \DataTypeTok{Coord}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{) }\OtherTok{->}\NormalTok{ [[k]] }\OtherTok{->}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
-\OtherTok{    (:$:) ::}\NormalTok{ forall i j rows row p}\FunctionTok{.}\NormalTok{ ()}
-          \OtherTok{=>} \DataTypeTok{Sel}\NormalTok{ i rows row         }\CommentTok{-- ^ If the ith list in `rows` is `row`}
-          \OtherTok{->} \DataTypeTok{Sel}\NormalTok{ j row  p           }\CommentTok{-- ^ And the jth item in `row` is `p`}
-          \CommentTok{-- --------------------------- then}
-          \OtherTok{->} \DataTypeTok{Coord}\NormalTok{ '(i, j) rows p   }\CommentTok{-- ^ The item at (i, j) is `p`}
+\KeywordTok{data} \DataTypeTok{Coord}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{) }\OtherTok{{-}>}\NormalTok{ [[k]] }\OtherTok{{-}>}\NormalTok{ k }\OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
+\OtherTok{    (:$:) ::} \KeywordTok{forall}\NormalTok{ i j rows row p}\OperatorTok{.}\NormalTok{ ()}
+          \OtherTok{=>} \DataTypeTok{Sel}\NormalTok{ i rows row         }\CommentTok{{-}{-} \^{} If the ith list in \textasciigrave{}rows\textasciigrave{} is \textasciigrave{}row\textasciigrave{}}
+          \OtherTok{{-}>} \DataTypeTok{Sel}\NormalTok{ j row  p           }\CommentTok{{-}{-} \^{} And the jth item in \textasciigrave{}row\textasciigrave{} is \textasciigrave{}p\textasciigrave{}}
+          \CommentTok{{-}{-} {-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-} then}
+          \OtherTok{{-}>} \DataTypeTok{Coord}\NormalTok{ \textquotesingle{}(i, j) rows p   }\CommentTok{{-}{-} \^{} The item at (i, j) is \textasciigrave{}p\textasciigrave{}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -497,16 +497,16 @@ to specify the type variables \texttt{p} and \texttt{b}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t }\DataTypeTok{MkUpdate} \FunctionTok{@}\NormalTok{_ }\FunctionTok{@}\NormalTok{_ }\FunctionTok{@}\NormalTok{'}\DataTypeTok{PX} \FunctionTok{@}\DataTypeTok{EmptyBoard}\NormalTok{ (}\DataTypeTok{SelS} \DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{)}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{t }\DataTypeTok{MkUpdate} \OperatorTok{@}\NormalTok{\_ }\OperatorTok{@}\NormalTok{\_ }\OperatorTok{@}\DataTypeTok{\textquotesingle{}PX} \OperatorTok{@}\DataTypeTok{EmptyBoard}\NormalTok{ (}\DataTypeTok{SelS} \DataTypeTok{SelZ} \OperatorTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{)}
 \DataTypeTok{Update}
-\NormalTok{  '}\DataTypeTok{PX}
-\NormalTok{  '[ '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{],}
-\NormalTok{     '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{],}
-\NormalTok{     '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
+  \DataTypeTok{\textquotesingle{}PX}
+\NormalTok{  \textquotesingle{}[ \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ , }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{],}
+\NormalTok{     \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ , }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{],}
+\NormalTok{     \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ , }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{]}
 \NormalTok{   ]}
-\NormalTok{  '[ '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{],}
-\NormalTok{     '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{],}
-\NormalTok{     '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{  \textquotesingle{}[ \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ , }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{],}
+\NormalTok{     \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{, }\DataTypeTok{\textquotesingle{}Just} \DataTypeTok{\textquotesingle{}PX}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{],}
+\NormalTok{     \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ , }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{]}
 \NormalTok{  ]}
 \end{Highlighting}
 \end{Shaded}
@@ -518,12 +518,12 @@ We'll take the result board and see if we can place a \texttt{PO} piece there:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let} \DataTypeTok{NewBoard} \FunctionTok{=}\NormalTok{ '[ '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{ ]}
-\NormalTok{                      , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ ]}
-\NormalTok{                      , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{ ]}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{let} \DataTypeTok{NewBoard} \OtherTok{=}\NormalTok{ \textquotesingle{}[ \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ , }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ ]}
+\NormalTok{                      , \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{, }\DataTypeTok{\textquotesingle{}Just} \DataTypeTok{\textquotesingle{}PX}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ ]}
+\NormalTok{                      , \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ , }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ ]}
 \NormalTok{                      ]}
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{MkUpdate} \FunctionTok{@}\NormalTok{_ }\FunctionTok{@}\NormalTok{_ }\FunctionTok{@}\NormalTok{'}\DataTypeTok{PO} \FunctionTok{@}\DataTypeTok{NewBoard}\NormalTok{ (}\DataTypeTok{SelS} \DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{)}
-\NormalTok{    • }\DataTypeTok{Couldn't}\NormalTok{ match }\KeywordTok{type}\NormalTok{ ‘'}\DataTypeTok{Nothing}\NormalTok{’ with ‘'}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{’}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{k }\DataTypeTok{MkUpdate} \OperatorTok{@}\NormalTok{\_ }\OperatorTok{@}\NormalTok{\_ }\OperatorTok{@}\DataTypeTok{\textquotesingle{}PO} \OperatorTok{@}\DataTypeTok{NewBoard}\NormalTok{ (}\DataTypeTok{SelS} \DataTypeTok{SelZ} \OperatorTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{)}
+\NormalTok{    • }\DataTypeTok{Couldn\textquotesingle{}t}\NormalTok{ match }\KeywordTok{type}\NormalTok{ ‘}\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{’ with ‘}\DataTypeTok{\textquotesingle{}Just} \DataTypeTok{\textquotesingle{}PX}\NormalTok{’}
 \end{Highlighting}
 \end{Shaded}
 
@@ -542,15 +542,15 @@ At the end of this all, we finally have enough to write a truly type-safe
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L94-L100}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L94{-}L100}
 
 \NormalTok{play}
-\OtherTok{    ::}\NormalTok{ forall i j p b}\FunctionTok{.}\NormalTok{ ()}
-    \OtherTok{=>} \DataTypeTok{InPlay} \FunctionTok{@@}\NormalTok{ b}
-    \OtherTok{->} \DataTypeTok{Coord}\NormalTok{ '(i, j) b '}\DataTypeTok{Nothing}
-    \OtherTok{->} \DataTypeTok{GameState}\NormalTok{ p b}
-    \OtherTok{->} \DataTypeTok{GameState}\NormalTok{ (}\DataTypeTok{AltP}\NormalTok{ p) (}\DataTypeTok{PlaceBoard}\NormalTok{ i j p b)}
-\NormalTok{play r c }\FunctionTok{=} \DataTypeTok{GSUpdate}\NormalTok{ r (}\DataTypeTok{MkUpdate}\NormalTok{ c)}
+\OtherTok{    ::} \KeywordTok{forall}\NormalTok{ i j p b}\OperatorTok{.}\NormalTok{ ()}
+    \OtherTok{=>} \DataTypeTok{InPlay} \OperatorTok{@@}\NormalTok{ b}
+    \OtherTok{{-}>} \DataTypeTok{Coord}\NormalTok{ \textquotesingle{}(i, j) b }\DataTypeTok{\textquotesingle{}Nothing}
+    \OtherTok{{-}>} \DataTypeTok{GameState}\NormalTok{ p b}
+    \OtherTok{{-}>} \DataTypeTok{GameState}\NormalTok{ (}\DataTypeTok{AltP}\NormalTok{ p) (}\DataTypeTok{PlaceBoard}\NormalTok{ i j p b)}
+\NormalTok{play r c }\OtherTok{=} \DataTypeTok{GSUpdate}\NormalTok{ r (}\DataTypeTok{MkUpdate}\NormalTok{ c)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -565,35 +565,35 @@ Let's try out a few rounds in ghci, using \texttt{undefined} instead of a proper
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ g1 }\FunctionTok{=}\NormalTok{ play undefined (}\DataTypeTok{SelS} \DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{) }\DataTypeTok{GSStart}   \CommentTok{-- X plays (1,1)}
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t g1}
-\DataTypeTok{GameState}\NormalTok{ '}\DataTypeTok{PO}
-\NormalTok{    '[ '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
-\NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
-\NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ g1 }\OtherTok{=}\NormalTok{ play }\FunctionTok{undefined}\NormalTok{ (}\DataTypeTok{SelS} \DataTypeTok{SelZ} \OperatorTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{) }\DataTypeTok{GSStart}   \CommentTok{{-}{-} X plays (1,1)}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{t g1}
+\DataTypeTok{GameState} \DataTypeTok{\textquotesingle{}PO}
+\NormalTok{    \textquotesingle{}[ \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ , }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{]}
+\NormalTok{     , \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{, }\DataTypeTok{\textquotesingle{}Just} \DataTypeTok{\textquotesingle{}PX}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{]}
+\NormalTok{     , \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ , }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{]}
 \NormalTok{     ]}
 
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ g2 }\FunctionTok{=}\NormalTok{ play undefined (}\DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{) g1   }\CommentTok{-- O plays (0,1)}
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t g2}
-\DataTypeTok{GameState}\NormalTok{ '}\DataTypeTok{PX}
-\NormalTok{    '[ '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PO}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
-\NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
-\NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ g2 }\OtherTok{=}\NormalTok{ play }\FunctionTok{undefined}\NormalTok{ (}\DataTypeTok{SelZ} \OperatorTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{) g1   }\CommentTok{{-}{-} O plays (0,1)}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{t g2}
+\DataTypeTok{GameState} \DataTypeTok{\textquotesingle{}PX}
+\NormalTok{    \textquotesingle{}[ \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{, }\DataTypeTok{\textquotesingle{}Just} \DataTypeTok{\textquotesingle{}PO}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{]}
+\NormalTok{     , \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{, }\DataTypeTok{\textquotesingle{}Just} \DataTypeTok{\textquotesingle{}PX}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{]}
+\NormalTok{     , \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ , }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{]}
 \NormalTok{     ]}
 
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ g3 }\FunctionTok{=}\NormalTok{ play undefined (}\DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{) g2   }\CommentTok{-- X plays (1,0)}
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t g3}
-\DataTypeTok{GameState}\NormalTok{ '}\DataTypeTok{PO}
-\NormalTok{    '[ '[ '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PO}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
-\NormalTok{     , '[ '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{, '}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{, '}\DataTypeTok{Nothing}\NormalTok{]}
-\NormalTok{     , '[ '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{ , '}\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ g3 }\OtherTok{=}\NormalTok{ play }\FunctionTok{undefined}\NormalTok{ (}\DataTypeTok{SelZ} \OperatorTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{) g2   }\CommentTok{{-}{-} X plays (1,0)}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{t g3}
+\DataTypeTok{GameState} \DataTypeTok{\textquotesingle{}PO}
+\NormalTok{    \textquotesingle{}[ \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ , }\DataTypeTok{\textquotesingle{}Just} \DataTypeTok{\textquotesingle{}PO}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{]}
+\NormalTok{     , \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Just} \DataTypeTok{\textquotesingle{}PX}\NormalTok{, }\DataTypeTok{\textquotesingle{}Just} \DataTypeTok{\textquotesingle{}PX}\NormalTok{, }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{]}
+\NormalTok{     , \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ , }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ , }\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{]}
 \NormalTok{     ]}
 
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ g4 }\FunctionTok{=}\NormalTok{ play undefined (}\DataTypeTok{SelS} \DataTypeTok{SelZ} \FunctionTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{) g3   }\CommentTok{-- O plays (1,1)}
-\NormalTok{    • }\DataTypeTok{Couldn't}\NormalTok{ match }\KeywordTok{type}\NormalTok{ ‘'}\DataTypeTok{Just}\NormalTok{ '}\DataTypeTok{PX}\NormalTok{’ with ‘'}\DataTypeTok{Nothing}\NormalTok{’}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ g4 }\OtherTok{=}\NormalTok{ play }\FunctionTok{undefined}\NormalTok{ (}\DataTypeTok{SelS} \DataTypeTok{SelZ} \OperatorTok{:$:} \DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{) g3   }\CommentTok{{-}{-} O plays (1,1)}
+\NormalTok{    • }\DataTypeTok{Couldn\textquotesingle{}t}\NormalTok{ match }\KeywordTok{type}\NormalTok{ ‘}\DataTypeTok{\textquotesingle{}Just} \DataTypeTok{\textquotesingle{}PX}\NormalTok{’ with ‘}\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{’}
 
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ g4 }\FunctionTok{=}\NormalTok{ play undefined (}\DataTypeTok{SelS}\NormalTok{ (}\DataTypeTok{SelS}\NormalTok{ (}\DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{)) }\FunctionTok{:$:} \DataTypeTok{SelZ}\NormalTok{) g3  }\CommentTok{-- O plays (3,0)}
-\NormalTok{    • }\DataTypeTok{Couldn't}\NormalTok{ match }\KeywordTok{type}\NormalTok{ ‘'[]’ with ‘'}\DataTypeTok{Nothing}\NormalTok{ '}\FunctionTok{:}\NormalTok{ as’}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ g4 }\OtherTok{=}\NormalTok{ play }\FunctionTok{undefined}\NormalTok{ (}\DataTypeTok{SelS}\NormalTok{ (}\DataTypeTok{SelS}\NormalTok{ (}\DataTypeTok{SelS} \DataTypeTok{SelZ}\NormalTok{)) }\OperatorTok{:$:} \DataTypeTok{SelZ}\NormalTok{) g3  }\CommentTok{{-}{-} O plays (3,0)}
+\NormalTok{    • }\DataTypeTok{Couldn\textquotesingle{}t}\NormalTok{ match }\KeywordTok{type}\NormalTok{ ‘\textquotesingle{}[]’ with ‘}\DataTypeTok{\textquotesingle{}Nothing}\NormalTok{ \textquotesingle{}}\OperatorTok{:}\NormalTok{ as’}
 \end{Highlighting}
 \end{Shaded}
 
@@ -671,22 +671,22 @@ out-of-bounds coordinate):
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- | Placeholder predicate if a given number `n` is out of bounds for a given}
-\CommentTok{-- list.  Predicate is from the 'decidable' library}
+\CommentTok{{-}{-} | Placeholder predicate if a given number \textasciigrave{}n\textasciigrave{} is out of bounds for a given}
+\CommentTok{{-}{-} list.  Predicate is from the \textquotesingle{}decidable\textquotesingle{} library}
 \KeywordTok{data} \DataTypeTok{OutOfBounds}\OtherTok{ n ::} \DataTypeTok{Predicate}\NormalTok{ [k]}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L108-L118}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L108{-}L118}
 
-\KeywordTok{data} \DataTypeTok{Pick}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{, }\DataTypeTok{Board}\NormalTok{) }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
-    \CommentTok{-- | We are out of bounds in x}
-    \DataTypeTok{PickOoBX}\OtherTok{   ::} \DataTypeTok{OutOfBounds}\NormalTok{ i }\FunctionTok{@@}\NormalTok{ b                         }\OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-    \CommentTok{-- | We are in-bounds in x, but out of bounds in y}
-    \DataTypeTok{PickOoBY}\OtherTok{   ::} \DataTypeTok{Sel}\NormalTok{ i b row        }\OtherTok{->} \DataTypeTok{OutOfBounds}\NormalTok{ j }\FunctionTok{@@}\NormalTok{ row }\OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-    \CommentTok{-- | We are in-bounds in x, in-bounds in y, but spot is taken by `p`.}
-    \CommentTok{-- We include `Sing p` in this constructor to potentially provide}
-    \CommentTok{-- feedback to the user on what piece is already in the spot.}
-    \DataTypeTok{PickPlayed}\OtherTok{ ::} \DataTypeTok{Coord}\NormalTok{ '(i, j) b ('}\DataTypeTok{Just}\NormalTok{ p) }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ p        }\OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-    \CommentTok{-- | We are in-bounds in x, in-bounds in y, and spot is clear}
-    \DataTypeTok{PickValid}\OtherTok{  ::} \DataTypeTok{Coord}\NormalTok{ '(i, j) b '}\DataTypeTok{Nothing}                   \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+\KeywordTok{data} \DataTypeTok{Pick}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{, }\DataTypeTok{Board}\NormalTok{) }\OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
+    \CommentTok{{-}{-} | We are out of bounds in x}
+    \DataTypeTok{PickOoBX}\OtherTok{   ::} \DataTypeTok{OutOfBounds}\NormalTok{ i }\OperatorTok{@@}\NormalTok{ b                         }\OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
+    \CommentTok{{-}{-} | We are in{-}bounds in x, but out of bounds in y}
+    \DataTypeTok{PickOoBY}\OtherTok{   ::} \DataTypeTok{Sel}\NormalTok{ i b row        }\OtherTok{{-}>} \DataTypeTok{OutOfBounds}\NormalTok{ j }\OperatorTok{@@}\NormalTok{ row }\OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
+    \CommentTok{{-}{-} | We are in{-}bounds in x, in{-}bounds in y, but spot is taken by \textasciigrave{}p\textasciigrave{}.}
+    \CommentTok{{-}{-} We include \textasciigrave{}Sing p\textasciigrave{} in this constructor to potentially provide}
+    \CommentTok{{-}{-} feedback to the user on what piece is already in the spot.}
+    \DataTypeTok{PickPlayed}\OtherTok{ ::} \DataTypeTok{Coord}\NormalTok{ \textquotesingle{}(i, j) b (}\DataTypeTok{\textquotesingle{}Just}\NormalTok{ p) }\OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ p        }\OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
+    \CommentTok{{-}{-} | We are in{-}bounds in x, in{-}bounds in y, and spot is clear}
+    \DataTypeTok{PickValid}\OtherTok{  ::} \DataTypeTok{Coord}\NormalTok{ \textquotesingle{}(i, j) b }\DataTypeTok{\textquotesingle{}Nothing}                   \OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -706,8 +706,8 @@ function'', or a ``viewing function''. We need to be able to write a function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{pick ::} \DataTypeTok{Sing}\NormalTok{ '(i, j, b)}
-     \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+\OtherTok{pick ::} \DataTypeTok{Sing}\NormalTok{ \textquotesingle{}(i, j, b)}
+     \OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -732,8 +732,8 @@ Essentially, we want a function:
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{sel ::} \DataTypeTok{Sing}\NormalTok{ i}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{Sel}\NormalTok{ i xs }\FunctionTok{??????}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{{-}>} \DataTypeTok{Sel}\NormalTok{ i xs }\OperatorTok{??????}
 \end{Highlighting}
 \end{Shaded}
 
@@ -757,10 +757,10 @@ dependent pair'' type, \texttt{Σ} (or \texttt{Sigma}), from
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Sigma}\OtherTok{ k ::} \DataTypeTok{Predicate}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
-\OtherTok{    (:&:) ::} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{->}\NormalTok{ (p }\FunctionTok{@@}\NormalTok{ x) }\OtherTok{->} \DataTypeTok{Sigma}\NormalTok{ k f}
+\KeywordTok{data} \DataTypeTok{Sigma}\OtherTok{ k ::} \DataTypeTok{Predicate}\NormalTok{ k }\OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
+\OtherTok{    (:\&:) ::} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{{-}>}\NormalTok{ (p }\OperatorTok{@@}\NormalTok{ x) }\OtherTok{{-}>} \DataTypeTok{Sigma}\NormalTok{ k f}
 
-\KeywordTok{type}\NormalTok{ Σ k }\FunctionTok{=} \DataTypeTok{Sigma}\NormalTok{ k}
+\KeywordTok{type}\NormalTok{ Σ k }\OtherTok{=} \DataTypeTok{Sigma}\NormalTok{ k}
 \end{Highlighting}
 \end{Shaded}
 
@@ -787,22 +787,22 @@ Now for some plumbing: We can't directly give \texttt{Sel\ n\ xs} to
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\DataTypeTok{TyPred}\OtherTok{ ::}\NormalTok{ (k }\OtherTok{->} \DataTypeTok{Type}\NormalTok{) }\OtherTok{->} \DataTypeTok{Predicate}\NormalTok{ k}
+\DataTypeTok{TyPred}\OtherTok{ ::}\NormalTok{ (k }\OtherTok{{-}>} \DataTypeTok{Type}\NormalTok{) }\OtherTok{{-}>} \DataTypeTok{Predicate}\NormalTok{ k}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{Pick}
-\NormalTok{(}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{, }\DataTypeTok{Board}\NormalTok{) }\OtherTok{->} \DataTypeTok{Type}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{k }\DataTypeTok{Pick}
+\NormalTok{(}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{, }\DataTypeTok{Board}\NormalTok{) }\OtherTok{{-}>} \DataTypeTok{Type}
 
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{TyPred} \DataTypeTok{Pick}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{k }\DataTypeTok{TyPred} \DataTypeTok{Pick}
 \DataTypeTok{Predicate}\NormalTok{ (}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{, }\DataTypeTok{Board}\NormalTok{)}
 
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{Sel}\NormalTok{ '}\DataTypeTok{Z} \DataTypeTok{EmptyBoard}
-\NormalTok{[}\DataTypeTok{Maybe} \DataTypeTok{Piece}\NormalTok{] }\OtherTok{->} \DataTypeTok{Type}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{k }\DataTypeTok{Sel} \DataTypeTok{\textquotesingle{}Z} \DataTypeTok{EmptyBoard}
+\NormalTok{[}\DataTypeTok{Maybe} \DataTypeTok{Piece}\NormalTok{] }\OtherTok{{-}>} \DataTypeTok{Type}
 
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{TyPred}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ '}\DataTypeTok{Z} \DataTypeTok{EmptyBoard}\NormalTok{)}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{k }\DataTypeTok{TyPred}\NormalTok{ (}\DataTypeTok{Sel} \DataTypeTok{\textquotesingle{}Z} \DataTypeTok{EmptyBoard}\NormalTok{)}
 \DataTypeTok{Predicate}\NormalTok{ [}\DataTypeTok{Maybe} \DataTypeTok{Piece}\NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
@@ -816,7 +816,7 @@ To make things a little less verbose, we can define a type synonym for
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{SelFound}\NormalTok{ n (}\OtherTok{xs ::}\NormalTok{ [k]) }\FunctionTok{=}\NormalTok{ Σ k (}\DataTypeTok{TyPred}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ n xs))}
+\KeywordTok{type} \DataTypeTok{SelFound}\NormalTok{ n (}\OtherTok{xs ::}\NormalTok{ [k]) }\OtherTok{=}\NormalTok{ Σ k (}\DataTypeTok{TyPred}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ n xs))}
 \end{Highlighting}
 \end{Shaded}
 
@@ -826,10 +826,10 @@ has some item \texttt{x} at index \texttt{n}!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L102-L103}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L102{-}L103}
 
-\KeywordTok{data} \DataTypeTok{SelFound}\OtherTok{ ::} \DataTypeTok{N} \OtherTok{->} \DataTypeTok{Predicate}\NormalTok{ [k]}
-\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ n) (}\OtherTok{xs ::}\NormalTok{ [k]) }\FunctionTok{=}\NormalTok{ Σ k (}\DataTypeTok{TyPred}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ n xs))}
+\KeywordTok{data} \DataTypeTok{SelFound}\OtherTok{ ::} \DataTypeTok{N} \OtherTok{{-}>} \DataTypeTok{Predicate}\NormalTok{ [k]}
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ n) (}\OtherTok{xs ::}\NormalTok{ [k]) }\OtherTok{=}\NormalTok{ Σ k (}\DataTypeTok{TyPred}\NormalTok{ (}\DataTypeTok{Sel}\NormalTok{ n xs))}
 \end{Highlighting}
 \end{Shaded}
 
@@ -838,8 +838,8 @@ We can check to make sure this works, by checking the type of witnesses of
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{kind}\FunctionTok{!} \DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[ '}\DataTypeTok{True}\NormalTok{, '}\DataTypeTok{False}\NormalTok{ ]}
-\NormalTok{Σ }\DataTypeTok{Bool}\NormalTok{ (}\DataTypeTok{TyPred} \DataTypeTok{Sel}\NormalTok{ ('}\DataTypeTok{Z}\NormalTok{ '[ '}\DataTypeTok{True}\NormalTok{, '}\DataTypeTok{False}\NormalTok{ ]))}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{kind}\OperatorTok{!} \DataTypeTok{SelFound} \DataTypeTok{\textquotesingle{}Z} \OperatorTok{@@}\NormalTok{ \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}True}\NormalTok{, }\DataTypeTok{\textquotesingle{}False}\NormalTok{ ]}
+\NormalTok{Σ }\DataTypeTok{Bool}\NormalTok{ (}\DataTypeTok{TyPred} \DataTypeTok{Sel}\NormalTok{ (}\DataTypeTok{\textquotesingle{}Z}\NormalTok{ \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}True}\NormalTok{, }\DataTypeTok{\textquotesingle{}False}\NormalTok{ ]))}
 \end{Highlighting}
 \end{Shaded}
 
@@ -848,11 +848,11 @@ we are thinking about things correctly:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L165-L167}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L165{-}L167}
 
-\OtherTok{selFoundTest1 ::} \DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[ '}\DataTypeTok{True}\NormalTok{, '}\DataTypeTok{False}\NormalTok{ ]}
-\NormalTok{selFoundTest1 }\FunctionTok{=} \DataTypeTok{STrue} \FunctionTok{:&:} \DataTypeTok{SelZ}
-                       \CommentTok{-- ^ Sel 'Z '[ 'True, 'False ] 'True}
+\OtherTok{selFoundTest1 ::} \DataTypeTok{SelFound} \DataTypeTok{\textquotesingle{}Z} \OperatorTok{@@}\NormalTok{ \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}True}\NormalTok{, }\DataTypeTok{\textquotesingle{}False}\NormalTok{ ]}
+\NormalTok{selFoundTest1 }\OtherTok{=} \DataTypeTok{STrue} \OperatorTok{:\&:} \DataTypeTok{SelZ}
+                       \CommentTok{{-}{-} \^{} Sel \textquotesingle{}Z \textquotesingle{}[ \textquotesingle{}True, \textquotesingle{}False ] \textquotesingle{}True}
 \end{Highlighting}
 \end{Shaded}
 
@@ -870,11 +870,11 @@ as well, by giving the value of the list at index 1,
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L169-L171}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L169{-}L171}
 
-\OtherTok{selFoundTest2 ::} \DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ '}\DataTypeTok{Z}\NormalTok{) }\FunctionTok{@@}\NormalTok{ '[ '}\DataTypeTok{True}\NormalTok{, '}\DataTypeTok{False}\NormalTok{ ]}
-\NormalTok{selFoundTest2 }\FunctionTok{=} \DataTypeTok{SFalse} \FunctionTok{:&:} \DataTypeTok{SelS} \DataTypeTok{SelZ}
-                        \CommentTok{-- ^ Sel ('S 'Z) '[ 'True, 'False ] 'False}
+\OtherTok{selFoundTest2 ::} \DataTypeTok{SelFound}\NormalTok{ (}\DataTypeTok{\textquotesingle{}S} \DataTypeTok{\textquotesingle{}Z}\NormalTok{) }\OperatorTok{@@}\NormalTok{ \textquotesingle{}[ }\DataTypeTok{\textquotesingle{}True}\NormalTok{, }\DataTypeTok{\textquotesingle{}False}\NormalTok{ ]}
+\NormalTok{selFoundTest2 }\OtherTok{=} \DataTypeTok{SFalse} \OperatorTok{:\&:} \DataTypeTok{SelS} \DataTypeTok{SelZ}
+                        \CommentTok{{-}{-} \^{} Sel (\textquotesingle{}S \textquotesingle{}Z) \textquotesingle{}[ \textquotesingle{}True, \textquotesingle{}False ] \textquotesingle{}False}
 \end{Highlighting}
 \end{Shaded}
 
@@ -894,8 +894,8 @@ Now, we now have enough tools to write the type of the function we would like:
 \begin{Highlighting}[]
 \NormalTok{selFound}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{SelFound}\NormalTok{ n }\FunctionTok{@@}\NormalTok{ xs}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{{-}>} \DataTypeTok{SelFound}\NormalTok{ n }\OperatorTok{@@}\NormalTok{ xs}
 \end{Highlighting}
 \end{Shaded}
 
@@ -912,11 +912,11 @@ you realize when you're trying to do something that doesn't make sense.
 \begin{Highlighting}[]
 \NormalTok{selFound}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{SelFound}\NormalTok{ n }\FunctionTok{@@}\NormalTok{ xs}
-\NormalTok{selFound }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-    \DataTypeTok{SZ} \OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-      \DataTypeTok{SNil} \OtherTok{->}\NormalTok{ _ }\FunctionTok{:&:}\NormalTok{ _}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{{-}>} \DataTypeTok{SelFound}\NormalTok{ n }\OperatorTok{@@}\NormalTok{ xs}
+\NormalTok{selFound }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{SZ} \OtherTok{{-}>}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNil} \OtherTok{{-}>}\NormalTok{ \_ }\OperatorTok{:\&:}\NormalTok{ \_}
 \end{Highlighting}
 \end{Shaded}
 
@@ -931,7 +931,7 @@ If you ask ghc what goes in the typed holes, it'll say that we need a
 \texttt{Sel\ \textquotesingle{}Z\ \textquotesingle{}{[}{]}\ x} (which is because
 matching on \texttt{SZ} tells us we are in \texttt{\textquotesingle{}Z}, and
 matching on \texttt{SNil} tells us we are in \texttt{\textquotesingle{}{[}{]}}).
-And this\ldots{}is a problem.
+And this\ldots is a problem.
 
 Remember that the \texttt{x} is supposed to be the \texttt{n}th item in
 \texttt{xs}. Here, in this pattern match branch, we want the zeroth (first) item
@@ -959,7 +959,7 @@ function. A decision function for a predicate \texttt{P} is a function:
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{decidePred ::} \DataTypeTok{Sing}\NormalTok{ x}
-           \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{P} \FunctionTok{@@}\NormalTok{ x)}
+           \OtherTok{{-}>} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{P} \OperatorTok{@@}\NormalTok{ x)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -969,11 +969,11 @@ That is, instead of producing a \texttt{P\ @@\ x} directly, we produce a
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{data} \DataTypeTok{Decision}\NormalTok{ a}
-    \FunctionTok{=} \DataTypeTok{Proved}\NormalTok{     a                }\CommentTok{-- ^ `a` is provably true}
-    \FunctionTok{|} \DataTypeTok{Disproved}\NormalTok{ (a }\OtherTok{->} \DataTypeTok{Void}\NormalTok{)       }\CommentTok{-- ^ `a` is provably false}
+    \OtherTok{=} \DataTypeTok{Proved}\NormalTok{     a                }\CommentTok{{-}{-} \^{} \textasciigrave{}a\textasciigrave{} is provably true}
+    \OperatorTok{|} \DataTypeTok{Disproved}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Void}\NormalTok{)       }\CommentTok{{-}{-} \^{} \textasciigrave{}a\textasciigrave{} is provably false}
 
-\CommentTok{-- | The type with no constructors.  If we have a function `a -> Void`, it must}
-\CommentTok{-- mean that no value of type `a` exists.}
+\CommentTok{{-}{-} | The type with no constructors.  If we have a function \textasciigrave{}a {-}> Void\textasciigrave{}, it must}
+\CommentTok{{-}{-} mean that no value of type \textasciigrave{}a\textasciigrave{} exists.}
 \KeywordTok{data} \DataTypeTok{Void}
 \end{Highlighting}
 \end{Shaded}
@@ -1011,15 +1011,15 @@ looking at every possible constructor of \texttt{N} and \texttt{{[}a{]}}:
 \begin{Highlighting}[]
 \NormalTok{selFound}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ n }\FunctionTok{@@}\NormalTok{ xs)}
-\NormalTok{selFound }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-    \DataTypeTok{SZ} \OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-      \DataTypeTok{SNil}         \OtherTok{->}\NormalTok{ _   }\CommentTok{-- n is 'Z, xs is '[]}
-\NormalTok{      x }\OtherTok{`SCons`}\NormalTok{ xs }\OtherTok{->}\NormalTok{ _   }\CommentTok{-- n is 'Z, xs is (x ': xs)}
-    \DataTypeTok{SS}\NormalTok{ n }\OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-      \DataTypeTok{SNil}         \OtherTok{->}\NormalTok{ _   }\CommentTok{-- n is ('S n), xs is '[]}
-\NormalTok{      x }\OtherTok{`SCons`}\NormalTok{ xs }\OtherTok{->}\NormalTok{ _   }\CommentTok{-- n is ('S n), xs is (x ': xs)}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{{-}>} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ n }\OperatorTok{@@}\NormalTok{ xs)}
+\NormalTok{selFound }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{SZ} \OtherTok{{-}>}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNil}         \OtherTok{{-}>}\NormalTok{ \_   }\CommentTok{{-}{-} n is \textquotesingle{}Z, xs is \textquotesingle{}[]}
+\NormalTok{      x }\OtherTok{\textasciigrave{}SCons\textasciigrave{}}\NormalTok{ xs }\OtherTok{{-}>}\NormalTok{ \_   }\CommentTok{{-}{-} n is \textquotesingle{}Z, xs is (x \textquotesingle{}: xs)}
+    \DataTypeTok{SS}\NormalTok{ n }\OtherTok{{-}>}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNil}         \OtherTok{{-}>}\NormalTok{ \_   }\CommentTok{{-}{-} n is (\textquotesingle{}S n), xs is \textquotesingle{}[]}
+\NormalTok{      x }\OtherTok{\textasciigrave{}SCons\textasciigrave{}}\NormalTok{ xs }\OtherTok{{-}>}\NormalTok{ \_   }\CommentTok{{-}{-} n is (\textquotesingle{}S n), xs is (x \textquotesingle{}: xs)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1030,37 +1030,37 @@ for each case.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L120-L155}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L120{-}L155}
 
 \NormalTok{selFound}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ n }\FunctionTok{@@}\NormalTok{ xs)}
-\NormalTok{selFound }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-    \DataTypeTok{SZ} \OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-      \DataTypeTok{SNil}         \OtherTok{->}\NormalTok{ selFound_znil}
-\NormalTok{      x }\OtherTok{`SCons`}\NormalTok{ xs }\OtherTok{->}\NormalTok{ selFound_zcons x xs}
-    \DataTypeTok{SS}\NormalTok{ n }\OtherTok{->}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-      \DataTypeTok{SNil}         \OtherTok{->}\NormalTok{ selFound_snil n}
-\NormalTok{      x }\OtherTok{`SCons`}\NormalTok{ xs }\OtherTok{->}\NormalTok{ selFound_scons n x xs}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{{-}>} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ n }\OperatorTok{@@}\NormalTok{ xs)}
+\NormalTok{selFound }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{SZ} \OtherTok{{-}>}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNil}         \OtherTok{{-}>}\NormalTok{ selFound\_znil}
+\NormalTok{      x }\OtherTok{\textasciigrave{}SCons\textasciigrave{}}\NormalTok{ xs }\OtherTok{{-}>}\NormalTok{ selFound\_zcons x xs}
+    \DataTypeTok{SS}\NormalTok{ n }\OtherTok{{-}>}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{SNil}         \OtherTok{{-}>}\NormalTok{ selFound\_snil n}
+\NormalTok{      x }\OtherTok{\textasciigrave{}SCons\textasciigrave{}}\NormalTok{ xs }\OtherTok{{-}>}\NormalTok{ selFound\_scons n x xs}
 
-\NormalTok{selFound_znil}
-\OtherTok{    ::} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[])}
+\NormalTok{selFound\_znil}
+\OtherTok{    ::} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound} \DataTypeTok{\textquotesingle{}Z} \OperatorTok{@@}\NormalTok{ \textquotesingle{}[])}
 
-\NormalTok{selFound_zcons}
+\NormalTok{selFound\_zcons}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ x}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{{-}>} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound} \DataTypeTok{\textquotesingle{}Z} \OperatorTok{@@}\NormalTok{ (x \textquotesingle{}}\OperatorTok{:}\NormalTok{ xs))}
 
-\NormalTok{selFound_snil}
+\NormalTok{selFound\_snil}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) }\FunctionTok{@@}\NormalTok{ '[])}
+    \OtherTok{{-}>} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ (}\DataTypeTok{\textquotesingle{}S}\NormalTok{ n) }\OperatorTok{@@}\NormalTok{ \textquotesingle{}[])}
 
-\NormalTok{selFound_scons}
+\NormalTok{selFound\_scons}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ x}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) }\FunctionTok{@@}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ x}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{{-}>} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ (}\DataTypeTok{\textquotesingle{}S}\NormalTok{ n) }\OperatorTok{@@}\NormalTok{ (x \textquotesingle{}}\OperatorTok{:}\NormalTok{ xs))}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1077,7 +1077,7 @@ for each case.
   \texttt{noEmptySel\ ::\ Sel\ n\ \textquotesingle{}{[}{]}\ a\ -\textgreater{}\ Void},
   which is a ``disproof'' of the fact that an empty \texttt{Sel} can exist. It's
   a disproof because, if we \emph{had} such a \texttt{Sel}, we could produce
-  \texttt{Void} with it\ldots{}but \texttt{Void} has no constructors. So no such
+  \texttt{Void} with it\ldots but \texttt{Void} has no constructors. So no such
   \texttt{Sel} must exist!
 
   We implement it by pattern matching on all potential patterns (using the
@@ -1085,17 +1085,17 @@ for each case.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L132-L134}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L132{-}L134}
 
-\OtherTok{noEmptySel ::} \DataTypeTok{Sel}\NormalTok{ n '[] a }\OtherTok{->} \DataTypeTok{Void}
-\NormalTok{noEmptySel }\FunctionTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}\NormalTok{ \{\}}
-            \CommentTok{-- ^ we handle all 0 of the valid patterns for Sel n '[] a}
+\OtherTok{noEmptySel ::} \DataTypeTok{Sel}\NormalTok{ n \textquotesingle{}[] a }\OtherTok{{-}>} \DataTypeTok{Void}
+\NormalTok{noEmptySel }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}\NormalTok{ \{\}}
+            \CommentTok{{-}{-} \^{} we handle all 0 of the valid patterns for Sel n \textquotesingle{}[] a}
 \end{Highlighting}
 \end{Shaded}
 
-  \texttt{noEmptySel} succesfuly implements
-  \texttt{Sel\ n\ \textquotesingle{}{[}{]}\ as} by succesfully matching on every
-  legal constructor that could produce
+  \texttt{noEmptySel} successfully implements
+  \texttt{Sel\ n\ \textquotesingle{}{[}{]}\ as} by successfully matching on
+  every legal constructor that could produce
   \texttt{Sel\ n\ \textquotesingle{}{[}{]}\ as}. But, because there are no
   constructors for \texttt{Sel} that produce
   \texttt{Sel\ n\ \textquotesingle{}{[}{]}\ as} (we just have \texttt{SelZ} and
@@ -1110,18 +1110,18 @@ for each case.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L136-L138}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L136{-}L138}
 
-\NormalTok{selFound_znil}
-\OtherTok{    ::} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ '[])}
-\NormalTok{selFound_znil }\FunctionTok{=} \DataTypeTok{Disproved}\NormalTok{ \textbackslash{}(_ }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->}\NormalTok{ noEmptySel s}
+\NormalTok{selFound\_znil}
+\OtherTok{    ::} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound} \DataTypeTok{\textquotesingle{}Z} \OperatorTok{@@}\NormalTok{ \textquotesingle{}[])}
+\NormalTok{selFound\_znil }\OtherTok{=} \DataTypeTok{Disproved}\NormalTok{ \textbackslash{}(\_ }\OperatorTok{:\&:}\NormalTok{ s) }\OtherTok{{-}>}\NormalTok{ noEmptySel s}
 \end{Highlighting}
 \end{Shaded}
 
   Armed with the \texttt{Sel\ \textquotesingle{}Z\ \textquotesingle{}{[}{]}\ as}
   that is inside the
   \texttt{SelFound\ \textquotesingle{}Z\ @@\ \textquotesingle{}{[}{]}}, we can
-  use \texttt{noEmptySel} to produce the \texttt{Void}. We succefully disprove
+  use \texttt{noEmptySel} to produce the \texttt{Void}. We successfully disprove
   the fact that there is any item that can be found in
   \texttt{\textquotesingle{}{[}{]}}, by providing a function
   \texttt{SelFound\ \textquotesingle{}Z\ @@\ \textquotesingle{}{[}{]}\ -\textgreater{}\ Void}.
@@ -1137,13 +1137,13 @@ for each case.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L140-L144}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L140{-}L144}
 
-\NormalTok{selFound_zcons}
+\NormalTok{selFound\_zcons}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ x}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ '}\DataTypeTok{Z} \FunctionTok{@@}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
-\NormalTok{selFound_zcons x _ }\FunctionTok{=} \DataTypeTok{Proved}\NormalTok{ (x }\FunctionTok{:&:} \DataTypeTok{SelZ}\NormalTok{)}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{{-}>} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound} \DataTypeTok{\textquotesingle{}Z} \OperatorTok{@@}\NormalTok{ (x \textquotesingle{}}\OperatorTok{:}\NormalTok{ xs))}
+\NormalTok{selFound\_zcons x \_ }\OtherTok{=} \DataTypeTok{Proved}\NormalTok{ (x }\OperatorTok{:\&:} \DataTypeTok{SelZ}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 \item
@@ -1155,12 +1155,12 @@ for each case.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L146-L149}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L146{-}L149}
 
-\NormalTok{selFound_snil}
+\NormalTok{selFound\_snil}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) }\FunctionTok{@@}\NormalTok{ '[])}
-\NormalTok{selFound_snil _ }\FunctionTok{=} \DataTypeTok{Disproved}\NormalTok{ \textbackslash{}(_ }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->}\NormalTok{ noEmptySel s}
+    \OtherTok{{-}>} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ (}\DataTypeTok{\textquotesingle{}S}\NormalTok{ n) }\OperatorTok{@@}\NormalTok{ \textquotesingle{}[])}
+\NormalTok{selFound\_snil \_ }\OtherTok{=} \DataTypeTok{Disproved}\NormalTok{ \textbackslash{}(\_ }\OperatorTok{:\&:}\NormalTok{ s) }\OtherTok{{-}>}\NormalTok{ noEmptySel s}
 \end{Highlighting}
 \end{Shaded}
 \item
@@ -1194,21 +1194,21 @@ for each case.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L151-L163}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L151{-}L163}
 
-\NormalTok{selFound_scons}
+\NormalTok{selFound\_scons}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ n}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ x}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ xs}
-    \OtherTok{->} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ ('}\DataTypeTok{S}\NormalTok{ n) }\FunctionTok{@@}\NormalTok{ (x '}\FunctionTok{:}\NormalTok{ xs))}
-\NormalTok{selFound_scons n _ xs }\FunctionTok{=} \KeywordTok{case}\NormalTok{ selFound n xs }\KeywordTok{of}
-    \DataTypeTok{Proved}\NormalTok{ (y }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->}       \CommentTok{-- if xs has y in its n spot}
-      \DataTypeTok{Proved}\NormalTok{ (y }\FunctionTok{:&:} \DataTypeTok{SelS}\NormalTok{ s)   }\CommentTok{-- then (x : xs) has y in its (S n) spot}
-    \DataTypeTok{Disproved}\NormalTok{ v      }\OtherTok{->} \DataTypeTok{Disproved} \CommentTok{-- v is a disproof that an item is in n spot in xs}
-\NormalTok{      \textbackslash{}(y }\FunctionTok{:&:}\NormalTok{ s) }\OtherTok{->}      \CommentTok{-- suppose we had item y in (S n) spot in (x : xs)}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ x}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ xs}
+    \OtherTok{{-}>} \DataTypeTok{Decision}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ (}\DataTypeTok{\textquotesingle{}S}\NormalTok{ n) }\OperatorTok{@@}\NormalTok{ (x \textquotesingle{}}\OperatorTok{:}\NormalTok{ xs))}
+\NormalTok{selFound\_scons n \_ xs }\OtherTok{=} \KeywordTok{case}\NormalTok{ selFound n xs }\KeywordTok{of}
+    \DataTypeTok{Proved}\NormalTok{ (y }\OperatorTok{:\&:}\NormalTok{ s) }\OtherTok{{-}>}       \CommentTok{{-}{-} if xs has y in its n spot}
+      \DataTypeTok{Proved}\NormalTok{ (y }\OperatorTok{:\&:} \DataTypeTok{SelS}\NormalTok{ s)   }\CommentTok{{-}{-} then (x : xs) has y in its (S n) spot}
+    \DataTypeTok{Disproved}\NormalTok{ v      }\OtherTok{{-}>} \DataTypeTok{Disproved} \CommentTok{{-}{-} v is a disproof that an item is in n spot in xs}
+\NormalTok{      \textbackslash{}(y }\OperatorTok{:\&:}\NormalTok{ s) }\OtherTok{{-}>}      \CommentTok{{-}{-} suppose we had item y in (S n) spot in (x : xs)}
         \KeywordTok{case}\NormalTok{ s }\KeywordTok{of}
-          \DataTypeTok{SelS}\NormalTok{ s' }\OtherTok{->}     \CommentTok{-- this would mean that item 'y' is in 'n' spot in xs}
-\NormalTok{            v (y }\FunctionTok{:&:}\NormalTok{ s') }\CommentTok{-- however, v disproves this.}
+          \DataTypeTok{SelS}\NormalTok{ s\textquotesingle{} }\OtherTok{{-}>}     \CommentTok{{-}{-} this would mean that item \textquotesingle{}y\textquotesingle{} is in \textquotesingle{}n\textquotesingle{} spot in xs}
+\NormalTok{            v (y }\OperatorTok{:\&:}\NormalTok{ s\textquotesingle{}) }\CommentTok{{-}{-} however, v disproves this.}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1229,10 +1229,10 @@ Now that we can decide \texttt{SelFound}, let's finally prove \texttt{Pick}.
 \begin{Highlighting}[]
 \NormalTok{pick}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ i}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ j}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ b}
-    \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-\NormalTok{pick i j b }\FunctionTok{=}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ j}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ b}
+    \OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
+\NormalTok{pick i j b }\OtherTok{=}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1241,11 +1241,11 @@ something with the \texttt{PickValid} constructor if we can:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\DataTypeTok{PickValid}\OtherTok{  ::} \DataTypeTok{Coord}\NormalTok{ '(i, j) b '}\DataTypeTok{Nothing} \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+\DataTypeTok{PickValid}\OtherTok{  ::} \DataTypeTok{Coord}\NormalTok{ \textquotesingle{}(i, j) b }\DataTypeTok{\textquotesingle{}Nothing} \OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
 
 \OtherTok{(:$:) ::} \DataTypeTok{Sel}\NormalTok{ i rows row}
-      \OtherTok{->} \DataTypeTok{Sel}\NormalTok{ j row  p}
-      \OtherTok{->} \DataTypeTok{Coord}\NormalTok{ '(i, j) rows p}
+      \OtherTok{{-}>} \DataTypeTok{Sel}\NormalTok{ j row  p}
+      \OtherTok{{-}>} \DataTypeTok{Coord}\NormalTok{ \textquotesingle{}(i, j) rows p}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1263,7 +1263,7 @@ out-of-bounds, which requires an \texttt{OuOfBounds\ n} predicate.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\DataTypeTok{PickOoBX}\OtherTok{   ::} \DataTypeTok{OutOfBounds}\NormalTok{ i }\FunctionTok{@@}\NormalTok{ b }\OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+\DataTypeTok{PickOoBX}\OtherTok{   ::} \DataTypeTok{OutOfBounds}\NormalTok{ i }\OperatorTok{@@}\NormalTok{ b }\OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1276,8 +1276,8 @@ that we can't make \texttt{SelFound\ n\ @@\ xs}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{OutOfBounds}\OtherTok{ ::} \DataTypeTok{N} \OtherTok{->} \DataTypeTok{Predicate}\NormalTok{ [k]}
-\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply}\NormalTok{ (}\DataTypeTok{OutOfBounds}\NormalTok{ n) xs }\FunctionTok{=} \DataTypeTok{SelFound}\NormalTok{ n }\FunctionTok{@@}\NormalTok{ xs }\OtherTok{->} \DataTypeTok{Void}
+\KeywordTok{data} \DataTypeTok{OutOfBounds}\OtherTok{ ::} \DataTypeTok{N} \OtherTok{{-}>} \DataTypeTok{Predicate}\NormalTok{ [k]}
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply}\NormalTok{ (}\DataTypeTok{OutOfBounds}\NormalTok{ n) xs }\OtherTok{=} \DataTypeTok{SelFound}\NormalTok{ n }\OperatorTok{@@}\NormalTok{ xs }\OtherTok{{-}>} \DataTypeTok{Void}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1294,12 +1294,12 @@ way:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- | Provided by decidable; it's the negation of a predicate}
-\KeywordTok{data} \DataTypeTok{Not}\OtherTok{ ::} \DataTypeTok{Predicate}\NormalTok{ k }\OtherTok{->} \DataTypeTok{Predicate}\NormalTok{ k}
-\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply}\NormalTok{ (}\DataTypeTok{Not}\NormalTok{ p) x }\FunctionTok{=}\NormalTok{ p }\FunctionTok{@@}\NormalTok{ x }\OtherTok{->} \DataTypeTok{Void}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L105-L105}
+\CommentTok{{-}{-} | Provided by decidable; it\textquotesingle{}s the negation of a predicate}
+\KeywordTok{data} \DataTypeTok{Not}\OtherTok{ ::} \DataTypeTok{Predicate}\NormalTok{ k }\OtherTok{{-}>} \DataTypeTok{Predicate}\NormalTok{ k}
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Apply}\NormalTok{ (}\DataTypeTok{Not}\NormalTok{ p) x }\OtherTok{=}\NormalTok{ p }\OperatorTok{@@}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{Void}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L105{-}L105}
 
-\KeywordTok{type} \DataTypeTok{OutOfBounds}\NormalTok{ n }\FunctionTok{=} \DataTypeTok{Not}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ n)}
+\KeywordTok{type} \DataTypeTok{OutOfBounds}\NormalTok{ n }\OtherTok{=} \DataTypeTok{Not}\NormalTok{ (}\DataTypeTok{SelFound}\NormalTok{ n)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1317,19 +1317,19 @@ function for \texttt{Pick}. Recall again the definition of \texttt{Pick}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L108-L118}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L108{-}L118}
 
-\KeywordTok{data} \DataTypeTok{Pick}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{, }\DataTypeTok{Board}\NormalTok{) }\OtherTok{->} \DataTypeTok{Type} \KeywordTok{where}
-    \CommentTok{-- | We are out of bounds in x}
-    \DataTypeTok{PickOoBX}\OtherTok{   ::} \DataTypeTok{OutOfBounds}\NormalTok{ i }\FunctionTok{@@}\NormalTok{ b                         }\OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-    \CommentTok{-- | We are in-bounds in x, but out of bounds in y}
-    \DataTypeTok{PickOoBY}\OtherTok{   ::} \DataTypeTok{Sel}\NormalTok{ i b row        }\OtherTok{->} \DataTypeTok{OutOfBounds}\NormalTok{ j }\FunctionTok{@@}\NormalTok{ row }\OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-    \CommentTok{-- | We are in-bounds in x, in-bounds in y, but spot is taken by `p`.}
-    \CommentTok{-- We include `Sing p` in this constructor to potentially provide}
-    \CommentTok{-- feedback to the user on what piece is already in the spot.}
-    \DataTypeTok{PickPlayed}\OtherTok{ ::} \DataTypeTok{Coord}\NormalTok{ '(i, j) b ('}\DataTypeTok{Just}\NormalTok{ p) }\OtherTok{->} \DataTypeTok{Sing}\NormalTok{ p        }\OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-    \CommentTok{-- | We are in-bounds in x, in-bounds in y, and spot is clear}
-    \DataTypeTok{PickValid}\OtherTok{  ::} \DataTypeTok{Coord}\NormalTok{ '(i, j) b '}\DataTypeTok{Nothing}                   \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+\KeywordTok{data} \DataTypeTok{Pick}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{N}\NormalTok{, }\DataTypeTok{N}\NormalTok{, }\DataTypeTok{Board}\NormalTok{) }\OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
+    \CommentTok{{-}{-} | We are out of bounds in x}
+    \DataTypeTok{PickOoBX}\OtherTok{   ::} \DataTypeTok{OutOfBounds}\NormalTok{ i }\OperatorTok{@@}\NormalTok{ b                         }\OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
+    \CommentTok{{-}{-} | We are in{-}bounds in x, but out of bounds in y}
+    \DataTypeTok{PickOoBY}\OtherTok{   ::} \DataTypeTok{Sel}\NormalTok{ i b row        }\OtherTok{{-}>} \DataTypeTok{OutOfBounds}\NormalTok{ j }\OperatorTok{@@}\NormalTok{ row }\OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
+    \CommentTok{{-}{-} | We are in{-}bounds in x, in{-}bounds in y, but spot is taken by \textasciigrave{}p\textasciigrave{}.}
+    \CommentTok{{-}{-} We include \textasciigrave{}Sing p\textasciigrave{} in this constructor to potentially provide}
+    \CommentTok{{-}{-} feedback to the user on what piece is already in the spot.}
+    \DataTypeTok{PickPlayed}\OtherTok{ ::} \DataTypeTok{Coord}\NormalTok{ \textquotesingle{}(i, j) b (}\DataTypeTok{\textquotesingle{}Just}\NormalTok{ p) }\OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ p        }\OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
+    \CommentTok{{-}{-} | We are in{-}bounds in x, in{-}bounds in y, and spot is clear}
+    \DataTypeTok{PickValid}\OtherTok{  ::} \DataTypeTok{Coord}\NormalTok{ \textquotesingle{}(i, j) b }\DataTypeTok{\textquotesingle{}Nothing}                   \OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1341,14 +1341,14 @@ And let's start writing. First, we'll use our decision functions
 \begin{Highlighting}[]
 \NormalTok{pick}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ i}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ j}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ b}
-    \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-\NormalTok{pick i j b }\FunctionTok{=} \KeywordTok{case}\NormalTok{ selFound i b }\KeywordTok{of}
-    \DataTypeTok{Proved}\NormalTok{ (row }\FunctionTok{:&:}\NormalTok{ selX) }\OtherTok{->} \KeywordTok{case}\NormalTok{ selFound j row }\KeywordTok{of}
-      \DataTypeTok{Proved}\NormalTok{ (p }\FunctionTok{:&:}\NormalTok{ selY) }\OtherTok{->}
-        \KeywordTok{let}\NormalTok{ c }\FunctionTok{=}\NormalTok{ selX }\FunctionTok{:$:}\NormalTok{ selY}
-        \KeywordTok{in}  \FunctionTok{????}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ j}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ b}
+    \OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
+\NormalTok{pick i j b }\OtherTok{=} \KeywordTok{case}\NormalTok{ selFound i b }\KeywordTok{of}
+    \DataTypeTok{Proved}\NormalTok{ (row }\OperatorTok{:\&:}\NormalTok{ selX) }\OtherTok{{-}>} \KeywordTok{case}\NormalTok{ selFound j row }\KeywordTok{of}
+      \DataTypeTok{Proved}\NormalTok{ (p }\OperatorTok{:\&:}\NormalTok{ selY) }\OtherTok{{-}>}
+        \KeywordTok{let}\NormalTok{ c }\OtherTok{=}\NormalTok{ selX }\OperatorTok{:$:}\NormalTok{ selY}
+        \KeywordTok{in}  \OperatorTok{????}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1360,13 +1360,13 @@ Can't we just give this to \texttt{PickValid}?
 \begin{Highlighting}[]
 \NormalTok{pick}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ i}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ j}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ b}
-    \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-\NormalTok{pick i j b }\FunctionTok{=} \KeywordTok{case}\NormalTok{ selFound i b }\KeywordTok{of}
-    \DataTypeTok{Proved}\NormalTok{ (row }\FunctionTok{:&:}\NormalTok{ selX) }\OtherTok{->} \KeywordTok{case}\NormalTok{ selFound j row }\KeywordTok{of}
-      \DataTypeTok{Proved}\NormalTok{ (p }\FunctionTok{:&:}\NormalTok{ selY) }\OtherTok{->}
-        \KeywordTok{let}\NormalTok{ c }\FunctionTok{=}\NormalTok{ selX }\FunctionTok{:$:}\NormalTok{ selY}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ j}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ b}
+    \OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
+\NormalTok{pick i j b }\OtherTok{=} \KeywordTok{case}\NormalTok{ selFound i b }\KeywordTok{of}
+    \DataTypeTok{Proved}\NormalTok{ (row }\OperatorTok{:\&:}\NormalTok{ selX) }\OtherTok{{-}>} \KeywordTok{case}\NormalTok{ selFound j row }\KeywordTok{of}
+      \DataTypeTok{Proved}\NormalTok{ (p }\OperatorTok{:\&:}\NormalTok{ selY) }\OtherTok{{-}>}
+        \KeywordTok{let}\NormalTok{ c }\OtherTok{=}\NormalTok{ selX }\OperatorTok{:$:}\NormalTok{ selY}
         \KeywordTok{in}  \DataTypeTok{PickValid}\NormalTok{ c}
 \end{Highlighting}
 \end{Shaded}
@@ -1376,7 +1376,7 @@ to help us. But that's the best part about using dependent types --- the
 compilers are here to help us write our programs!
 
 The compiler basically tells us that \texttt{c} is supposed to point to
-\texttt{\textquotesingle{}Nothing}\ldots{}but right now it's pointing to some
+\texttt{\textquotesingle{}Nothing}\ldots but right now it's pointing to some
 type variable that we don't know is \texttt{\textquotesingle{}Nothing} or
 \texttt{\textquotesingle{}Just}. So \texttt{c} doesn't \emph{necessarily} work,
 because it \emph{might} be pointing to \texttt{\textquotesingle{}Just}, and not
@@ -1393,7 +1393,7 @@ Just to clarify what's going on, let's give types to the names above:
 \OtherTok{selX ::} \DataTypeTok{Sel}\NormalTok{ i b row}
 \OtherTok{p    ::} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{p   ::}   \DataTypeTok{Maybe} \DataTypeTok{Piece}\NormalTok{  )}
 \OtherTok{selY ::} \DataTypeTok{Sel}\NormalTok{ j row p}
-\OtherTok{c    ::} \DataTypeTok{Coord}\NormalTok{ '(i, j) b p}
+\OtherTok{c    ::} \DataTypeTok{Coord}\NormalTok{ \textquotesingle{}(i, j) b p}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1411,16 +1411,16 @@ comes with the \texttt{Σ} constructor:
 \begin{Highlighting}[]
 \NormalTok{pick}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ i}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ j}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ b}
-    \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-\NormalTok{pick i j b }\FunctionTok{=} \KeywordTok{case}\NormalTok{ selFound i b }\KeywordTok{of}
-    \DataTypeTok{Proved}\NormalTok{ (row }\FunctionTok{:&:}\NormalTok{ selX) }\OtherTok{->} \KeywordTok{case}\NormalTok{ selFound j row }\KeywordTok{of}
-      \DataTypeTok{Proved}\NormalTok{ (p }\FunctionTok{:&:}\NormalTok{ selY) }\OtherTok{->}
-        \KeywordTok{let}\NormalTok{ c }\FunctionTok{=}\NormalTok{ selX }\FunctionTok{:$:}\NormalTok{ selY}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ j}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ b}
+    \OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
+\NormalTok{pick i j b }\OtherTok{=} \KeywordTok{case}\NormalTok{ selFound i b }\KeywordTok{of}
+    \DataTypeTok{Proved}\NormalTok{ (row }\OperatorTok{:\&:}\NormalTok{ selX) }\OtherTok{{-}>} \KeywordTok{case}\NormalTok{ selFound j row }\KeywordTok{of}
+      \DataTypeTok{Proved}\NormalTok{ (p }\OperatorTok{:\&:}\NormalTok{ selY) }\OtherTok{{-}>}
+        \KeywordTok{let}\NormalTok{ c }\OtherTok{=}\NormalTok{ selX }\OperatorTok{:$:}\NormalTok{ selY}
         \KeywordTok{in}  \KeywordTok{case}\NormalTok{ p }\KeywordTok{of}
-              \DataTypeTok{SNothing} \OtherTok{->} \DataTypeTok{PickValid}\NormalTok{   c     }\CommentTok{-- p is 'Nothing}
-              \DataTypeTok{SJust}\NormalTok{ q  }\OtherTok{->} \DataTypeTok{PickPlayed}\NormalTok{  c q   }\CommentTok{-- p is 'Just q}
+              \DataTypeTok{SNothing} \OtherTok{{-}>} \DataTypeTok{PickValid}\NormalTok{   c     }\CommentTok{{-}{-} p is \textquotesingle{}Nothing}
+              \DataTypeTok{SJust}\NormalTok{ q  }\OtherTok{{-}>} \DataTypeTok{PickPlayed}\NormalTok{  c q   }\CommentTok{{-}{-} p is \textquotesingle{}Just q}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1434,9 +1434,9 @@ but pointing to a spot that is already occupied by piece
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\DataTypeTok{PickPlayed}\OtherTok{ ::} \DataTypeTok{Coord}\NormalTok{ '(i, j) b ('}\DataTypeTok{Just}\NormalTok{ p)}
-           \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ p}
-           \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+\DataTypeTok{PickPlayed}\OtherTok{ ::} \DataTypeTok{Coord}\NormalTok{ \textquotesingle{}(i, j) b (}\DataTypeTok{\textquotesingle{}Just}\NormalTok{ p)}
+           \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ p}
+           \OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1444,11 +1444,11 @@ We now have to deal with the situations where things are out of bounds.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\DataTypeTok{PickOoBX}\OtherTok{ ::} \DataTypeTok{OutOfBounds}\NormalTok{ i }\FunctionTok{@@}\NormalTok{ b}
-         \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+\DataTypeTok{PickOoBX}\OtherTok{ ::} \DataTypeTok{OutOfBounds}\NormalTok{ i }\OperatorTok{@@}\NormalTok{ b}
+         \OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
 \DataTypeTok{PickOoBY}\OtherTok{ ::} \DataTypeTok{Sel}\NormalTok{ i b row}
-         \OtherTok{->} \DataTypeTok{OutOfBounds}\NormalTok{ j }\FunctionTok{@@}\NormalTok{ row}
-         \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
+         \OtherTok{{-}>} \DataTypeTok{OutOfBounds}\NormalTok{ j }\OperatorTok{@@}\NormalTok{ row}
+         \OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1462,26 +1462,26 @@ what the \texttt{Disproved} constructor of \texttt{selFound\ j\ row} returns.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L173-L190}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L173{-}L190}
 
 \NormalTok{pick}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ i}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ j}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ b}
-    \OtherTok{->} \DataTypeTok{Pick}\NormalTok{ '(i, j, b)}
-\NormalTok{pick i j b }\FunctionTok{=} \KeywordTok{case}\NormalTok{ selFound i b }\KeywordTok{of}
-    \DataTypeTok{Proved}\NormalTok{ (row }\FunctionTok{:&:}\NormalTok{ selX) }\OtherTok{->} \KeywordTok{case}\NormalTok{ selFound j row }\KeywordTok{of}
-      \DataTypeTok{Proved}\NormalTok{ (p }\FunctionTok{:&:}\NormalTok{ selY) }\OtherTok{->}
-        \KeywordTok{let}\NormalTok{ c }\FunctionTok{=}\NormalTok{ selX }\FunctionTok{:$:}\NormalTok{ selY}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ j}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ b}
+    \OtherTok{{-}>} \DataTypeTok{Pick}\NormalTok{ \textquotesingle{}(i, j, b)}
+\NormalTok{pick i j b }\OtherTok{=} \KeywordTok{case}\NormalTok{ selFound i b }\KeywordTok{of}
+    \DataTypeTok{Proved}\NormalTok{ (row }\OperatorTok{:\&:}\NormalTok{ selX) }\OtherTok{{-}>} \KeywordTok{case}\NormalTok{ selFound j row }\KeywordTok{of}
+      \DataTypeTok{Proved}\NormalTok{ (p }\OperatorTok{:\&:}\NormalTok{ selY) }\OtherTok{{-}>}
+        \KeywordTok{let}\NormalTok{ c }\OtherTok{=}\NormalTok{ selX }\OperatorTok{:$:}\NormalTok{ selY}
         \KeywordTok{in}  \KeywordTok{case}\NormalTok{ p }\KeywordTok{of}
-              \DataTypeTok{SNothing} \OtherTok{->} \DataTypeTok{PickValid}\NormalTok{   c     }\CommentTok{-- p is 'Nothing}
-              \DataTypeTok{SJust}\NormalTok{ q  }\OtherTok{->} \DataTypeTok{PickPlayed}\NormalTok{  c q   }\CommentTok{-- p is 'Just q}
-      \DataTypeTok{Disproved}\NormalTok{ vY }\OtherTok{->} \DataTypeTok{PickOoBY}\NormalTok{ selX vY    }\CommentTok{-- vY :: SelFound j @@ row -> Void}
-                                          \CommentTok{-- vY :: Not (SelFound j) @@ row}
-                                          \CommentTok{-- vY :: OutOfBounds j @@ row}
-    \DataTypeTok{Disproved}\NormalTok{ vX }\OtherTok{->} \DataTypeTok{PickOoBX}\NormalTok{ vX   }\CommentTok{-- vX :: SelFound i @@ b   -> Void}
-                                  \CommentTok{-- vX :: Not (SelFound i) @@ b}
-                                  \CommentTok{-- vX :: OutOfBounds i @@ b}
+              \DataTypeTok{SNothing} \OtherTok{{-}>} \DataTypeTok{PickValid}\NormalTok{   c     }\CommentTok{{-}{-} p is \textquotesingle{}Nothing}
+              \DataTypeTok{SJust}\NormalTok{ q  }\OtherTok{{-}>} \DataTypeTok{PickPlayed}\NormalTok{  c q   }\CommentTok{{-}{-} p is \textquotesingle{}Just q}
+      \DataTypeTok{Disproved}\NormalTok{ vY }\OtherTok{{-}>} \DataTypeTok{PickOoBY}\NormalTok{ selX vY    }\CommentTok{{-}{-} vY :: SelFound j @@ row {-}> Void}
+                                          \CommentTok{{-}{-} vY :: Not (SelFound j) @@ row}
+                                          \CommentTok{{-}{-} vY :: OutOfBounds j @@ row}
+    \DataTypeTok{Disproved}\NormalTok{ vX }\OtherTok{{-}>} \DataTypeTok{PickOoBX}\NormalTok{ vX   }\CommentTok{{-}{-} vX :: SelFound i @@ b   {-}> Void}
+                                  \CommentTok{{-}{-} vX :: Not (SelFound i) @@ b}
+                                  \CommentTok{{-}{-} vX :: OutOfBounds i @@ b}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1497,28 +1497,28 @@ First, some utility functions to get user input and print out boards:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L192-L211}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L192{-}L211}
 
-\OtherTok{intToN ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{N}
-\NormalTok{intToN n }\FunctionTok{=} \KeywordTok{case}\NormalTok{ compare n }\DecValTok{0} \KeywordTok{of}
-    \DataTypeTok{LT} \OtherTok{->} \DataTypeTok{Nothing}
-    \DataTypeTok{EQ} \OtherTok{->} \DataTypeTok{Just} \DataTypeTok{Z}
-    \DataTypeTok{GT} \OtherTok{->} \DataTypeTok{S} \FunctionTok{<$>}\NormalTok{ intToN (n }\FunctionTok{-} \DecValTok{1}\NormalTok{)}
+\OtherTok{intToN ::} \DataTypeTok{Int} \OtherTok{{-}>} \DataTypeTok{Maybe} \DataTypeTok{N}
+\NormalTok{intToN n }\OtherTok{=} \KeywordTok{case} \FunctionTok{compare}\NormalTok{ n }\DecValTok{0} \KeywordTok{of}
+    \DataTypeTok{LT} \OtherTok{{-}>} \DataTypeTok{Nothing}
+    \DataTypeTok{EQ} \OtherTok{{-}>} \DataTypeTok{Just} \DataTypeTok{Z}
+    \DataTypeTok{GT} \OtherTok{{-}>} \DataTypeTok{S} \OperatorTok{<$>}\NormalTok{ intToN (n }\OperatorTok{{-}} \DecValTok{1}\NormalTok{)}
 
-\OtherTok{getN ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{IO} \DataTypeTok{N}
-\NormalTok{getN prompt }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    putStrLn }\FunctionTok{$} \StringTok{"Enter non-negative integer for "} \FunctionTok{++}\NormalTok{ prompt }\FunctionTok{++} \StringTok{":"}
-\NormalTok{    res }\OtherTok{<-}\NormalTok{ getLine}
-    \KeywordTok{case}\NormalTok{ intToN }\FunctionTok{=<<}\NormalTok{ readMaybe res }\KeywordTok{of}
-      \DataTypeTok{Nothing} \OtherTok{->}\NormalTok{ putStrLn }\StringTok{"Bad."} \FunctionTok{>>}\NormalTok{ getN prompt}
-      \DataTypeTok{Just}\NormalTok{ n  }\OtherTok{->}\NormalTok{ pure n}
+\OtherTok{getN ::} \DataTypeTok{String} \OtherTok{{-}>} \DataTypeTok{IO} \DataTypeTok{N}
+\NormalTok{getN prompt }\OtherTok{=} \KeywordTok{do}
+    \FunctionTok{putStrLn} \OperatorTok{$} \StringTok{"Enter non{-}negative integer for "} \OperatorTok{++}\NormalTok{ prompt }\OperatorTok{++} \StringTok{":"}
+\NormalTok{    res }\OtherTok{<{-}} \FunctionTok{getLine}
+    \KeywordTok{case}\NormalTok{ intToN }\OperatorTok{=<<}\NormalTok{ readMaybe res }\KeywordTok{of}
+      \DataTypeTok{Nothing} \OtherTok{{-}>} \FunctionTok{putStrLn} \StringTok{"Bad."} \OperatorTok{>>}\NormalTok{ getN prompt}
+      \DataTypeTok{Just}\NormalTok{ n  }\OtherTok{{-}>} \FunctionTok{pure}\NormalTok{ n}
 
-\OtherTok{printBoard ::} \DataTypeTok{Board} \OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
-\NormalTok{printBoard }\FunctionTok{=}\NormalTok{ mapM_ }\FunctionTok{$}\NormalTok{ putStrLn }\FunctionTok{.}\NormalTok{ intercalate }\StringTok{"|"} \FunctionTok{.}\NormalTok{ map showPiece}
+\OtherTok{printBoard ::} \DataTypeTok{Board} \OtherTok{{-}>} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{printBoard }\OtherTok{=} \FunctionTok{mapM\_} \OperatorTok{$} \FunctionTok{putStrLn} \OperatorTok{.}\NormalTok{ intercalate }\StringTok{"|"} \OperatorTok{.} \FunctionTok{map}\NormalTok{ showPiece}
   \KeywordTok{where}
-\NormalTok{    showPiece }\DataTypeTok{Nothing}   \FunctionTok{=} \StringTok{" _ "}
-\NormalTok{    showPiece (}\DataTypeTok{Just} \DataTypeTok{PX}\NormalTok{) }\FunctionTok{=} \StringTok{" X "}
-\NormalTok{    showPiece (}\DataTypeTok{Just} \DataTypeTok{PO}\NormalTok{) }\FunctionTok{=} \StringTok{" O "}
+\NormalTok{    showPiece }\DataTypeTok{Nothing}   \OtherTok{=} \StringTok{" \_ "}
+\NormalTok{    showPiece (}\DataTypeTok{Just} \DataTypeTok{PX}\NormalTok{) }\OtherTok{=} \StringTok{" X "}
+\NormalTok{    showPiece (}\DataTypeTok{Just} \DataTypeTok{PO}\NormalTok{) }\OtherTok{=} \StringTok{" O "}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1527,33 +1527,33 @@ and updating the \texttt{GameState}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L218-L242}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L218{-}L242}
 
-\NormalTok{simplePlayIO'}
+\NormalTok{simplePlayIO\textquotesingle{}}
 \OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ p}
-    \OtherTok{->} \DataTypeTok{Sing}\NormalTok{ b}
-    \OtherTok{->} \DataTypeTok{GameState}\NormalTok{ p b}
-    \OtherTok{->} \DataTypeTok{IO}\NormalTok{ ()}
-\NormalTok{simplePlayIO' p b gs }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    printBoard }\FunctionTok{$} \DataTypeTok{FromSing}\NormalTok{ b}
-    \DataTypeTok{FromSing}\NormalTok{ i }\OtherTok{<-}\NormalTok{ getN }\StringTok{"row"}
-    \DataTypeTok{FromSing}\NormalTok{ j }\OtherTok{<-}\NormalTok{ getN }\StringTok{"column"}
+    \OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ b}
+    \OtherTok{{-}>} \DataTypeTok{GameState}\NormalTok{ p b}
+    \OtherTok{{-}>} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{simplePlayIO\textquotesingle{} p b gs }\OtherTok{=} \KeywordTok{do}
+\NormalTok{    printBoard }\OperatorTok{$} \DataTypeTok{FromSing}\NormalTok{ b}
+    \DataTypeTok{FromSing}\NormalTok{ i }\OtherTok{<{-}}\NormalTok{ getN }\StringTok{"row"}
+    \DataTypeTok{FromSing}\NormalTok{ j }\OtherTok{<{-}}\NormalTok{ getN }\StringTok{"column"}
     \KeywordTok{case}\NormalTok{ pick i j b }\KeywordTok{of}
-      \DataTypeTok{PickOoBX}\NormalTok{ _ }\OtherTok{->} \KeywordTok{do}
-\NormalTok{        putStrLn }\StringTok{"Out of bounds in rows.  Try again."}
-\NormalTok{        simplePlayIO' p b gs}
-      \DataTypeTok{PickOoBY}\NormalTok{ _ _ }\OtherTok{->} \KeywordTok{do}
-\NormalTok{        putStrLn }\StringTok{"Out of bounds in cols.  Try again."}
-\NormalTok{        simplePlayIO' p b gs}
-      \DataTypeTok{PickPlayed}\NormalTok{ _ q }\OtherTok{->} \KeywordTok{do}
-\NormalTok{        putStrLn }\FunctionTok{$} \StringTok{"Already played by "} \FunctionTok{++}\NormalTok{ show (fromSing q) }\FunctionTok{++} \StringTok{". Try again."}
-\NormalTok{        simplePlayIO' p b gs}
-      \DataTypeTok{PickValid}\NormalTok{ c }\OtherTok{->} \KeywordTok{do}
-\NormalTok{        putStrLn }\StringTok{"Success!"}
-        \KeywordTok{let}\NormalTok{ p'  }\FunctionTok{=}\NormalTok{ sAltP p                 }\CommentTok{-- update player (enforced by `play`)}
-\NormalTok{            b'  }\FunctionTok{=}\NormalTok{ sPlaceBoard i j p b     }\CommentTok{-- update board  (enforced by `play`)}
-\NormalTok{            gs' }\FunctionTok{=}\NormalTok{ play undefined c gs     }\CommentTok{-- update game state}
-\NormalTok{        simplePlayIO' p' b' gs'}
+      \DataTypeTok{PickOoBX}\NormalTok{ \_ }\OtherTok{{-}>} \KeywordTok{do}
+        \FunctionTok{putStrLn} \StringTok{"Out of bounds in rows.  Try again."}
+\NormalTok{        simplePlayIO\textquotesingle{} p b gs}
+      \DataTypeTok{PickOoBY}\NormalTok{ \_ \_ }\OtherTok{{-}>} \KeywordTok{do}
+        \FunctionTok{putStrLn} \StringTok{"Out of bounds in cols.  Try again."}
+\NormalTok{        simplePlayIO\textquotesingle{} p b gs}
+      \DataTypeTok{PickPlayed}\NormalTok{ \_ q }\OtherTok{{-}>} \KeywordTok{do}
+        \FunctionTok{putStrLn} \OperatorTok{$} \StringTok{"Already played by "} \OperatorTok{++} \FunctionTok{show}\NormalTok{ (fromSing q) }\OperatorTok{++} \StringTok{". Try again."}
+\NormalTok{        simplePlayIO\textquotesingle{} p b gs}
+      \DataTypeTok{PickValid}\NormalTok{ c }\OtherTok{{-}>} \KeywordTok{do}
+        \FunctionTok{putStrLn} \StringTok{"Success!"}
+        \KeywordTok{let}\NormalTok{ p\textquotesingle{}  }\OtherTok{=}\NormalTok{ sAltP p                 }\CommentTok{{-}{-} update player (enforced by \textasciigrave{}play\textasciigrave{})}
+\NormalTok{            b\textquotesingle{}  }\OtherTok{=}\NormalTok{ sPlaceBoard i j p b     }\CommentTok{{-}{-} update board  (enforced by \textasciigrave{}play\textasciigrave{})}
+\NormalTok{            gs\textquotesingle{} }\OtherTok{=}\NormalTok{ play }\FunctionTok{undefined}\NormalTok{ c gs     }\CommentTok{{-}{-} update game state}
+\NormalTok{        simplePlayIO\textquotesingle{} p\textquotesingle{} b\textquotesingle{} gs\textquotesingle{}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1575,12 +1575,12 @@ state:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L213-L216}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/ttt/Part1.hs\#L213{-}L216}
 
 \OtherTok{simplePlayIO ::} \DataTypeTok{IO}\NormalTok{ ()}
-\NormalTok{simplePlayIO }\FunctionTok{=}\NormalTok{ simplePlayIO' }\DataTypeTok{SPX}\NormalTok{ sEmptyBoard }\DataTypeTok{GSStart}
-\CommentTok{-- alternatively}
-\CommentTok{-- simplePlayIO = simplePlayIO' sing sing GSStart}
+\NormalTok{simplePlayIO }\OtherTok{=}\NormalTok{ simplePlayIO\textquotesingle{} }\DataTypeTok{SPX}\NormalTok{ sEmptyBoard }\DataTypeTok{GSStart}
+\CommentTok{{-}{-} alternatively}
+\CommentTok{{-}{-} simplePlayIO = simplePlayIO\textquotesingle{} sing sing GSStart}
 \end{Highlighting}
 \end{Shaded}
 

@@ -275,7 +275,7 @@ countAlg (MkTF v subtrieCounts)
 ```
 
 If `v` is indeed a leaf (it's `Just`), then it's one plus the total counts of
-all of the subtees (remember, the `Map k Int` contains the counts of all of the
+all of the subtries (remember, the `Map k Int` contains the counts of all of the
 original subtries, under each key). Otherwise, it's just the total counts of all
 of the original subtries.
 

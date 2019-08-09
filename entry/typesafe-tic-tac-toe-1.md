@@ -53,6 +53,7 @@ We'll say that there are two parts of a game state:
 and that there are two ways of "constructing" a valid state:
 
 1.  The empty board with player X is a valid state.
+
 2.  If we have:
 
     -   A valid state with board *b* and current player *p*
@@ -822,8 +823,8 @@ selFound_scons
                 -- ^ we handle all 0 of the valid patterns for Sel n '[] a
     ```
 
-    `noEmptySel` succesfuly implements `Sel n '[] as` by succesfully matching on
-    every legal constructor that could produce `Sel n '[] as`. But, because
+    `noEmptySel` successfully implements `Sel n '[] as` by successfully matching
+    on every legal constructor that could produce `Sel n '[] as`. But, because
     there are no constructors for `Sel` that produce `Sel n '[] as` (we just
     have `SelZ` and `SelS`, which both produce non-empty `Sel`s), that means we
     have to handle all *zero* legal constructors. Once we handle all zero legal
@@ -843,9 +844,9 @@ selFound_scons
     ```
 
     Armed with the `Sel 'Z '[] as` that is inside the `SelFound 'Z @@ '[]`, we
-    can use `noEmptySel` to produce the `Void`. We succefully disprove the fact
-    that there is any item that can be found in `'[]`, by providing a function
-    `SelFound 'Z @@ '[] -> Void`.
+    can use `noEmptySel` to produce the `Void`. We successfully disprove the
+    fact that there is any item that can be found in `'[]`, by providing a
+    function `SelFound 'Z @@ '[] -> Void`.
 
     Note that with the *-XBlockArguments* extension, we don't need the `$` after
     `Disproved`.

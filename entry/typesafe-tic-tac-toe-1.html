@@ -36,7 +36,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 </ol>
 <p>and that there are two ways of “constructing” a valid state:</p>
 <ol type="1">
-<li>The empty board with player X is a valid state.</li>
+<li><p>The empty board with player X is a valid state.</p></li>
 <li><p>If we have:</p>
 <ul>
 <li>A valid state with board <em>b</em> and current player <em>p</em></li>
@@ -428,14 +428,14 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb37-3"><a href="#cb37-3"></a><span class="ot">noEmptySel ::</span> <span class="dt">Sel</span> n &#39;[] a <span class="ot">-&gt;</span> <span class="dt">Void</span></span>
 <span id="cb37-4"><a href="#cb37-4"></a>noEmptySel <span class="ot">=</span> \<span class="kw">case</span> {}</span>
 <span id="cb37-5"><a href="#cb37-5"></a>            <span class="co">-- ^ we handle all 0 of the valid patterns for Sel n &#39;[] a</span></span></code></pre></div>
-<p><code>noEmptySel</code> succesfuly implements <code>Sel n '[] as</code> by succesfully matching on every legal constructor that could produce <code>Sel n '[] as</code>. But, because there are no constructors for <code>Sel</code> that produce <code>Sel n '[] as</code> (we just have <code>SelZ</code> and <code>SelS</code>, which both produce non-empty <code>Sel</code>s), that means we have to handle all <em>zero</em> legal constructors. Once we handle all zero legal constructors, we’re done! (Remember to enable <em>-Werror=incomplete-patterns</em> to be sure! GHC will then reject the program if there is a pattern we do not handle)</p>
+<p><code>noEmptySel</code> successfully implements <code>Sel n '[] as</code> by successfully matching on every legal constructor that could produce <code>Sel n '[] as</code>. But, because there are no constructors for <code>Sel</code> that produce <code>Sel n '[] as</code> (we just have <code>SelZ</code> and <code>SelS</code>, which both produce non-empty <code>Sel</code>s), that means we have to handle all <em>zero</em> legal constructors. Once we handle all zero legal constructors, we’re done! (Remember to enable <em>-Werror=incomplete-patterns</em> to be sure! GHC will then reject the program if there is a pattern we do not handle)</p>
 <p>So we can write this as <code>Disproved</code>, which takes a <code>SelFound 'Z @@ '[] -&gt; Void</code>:</p>
 <div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb38-1"><a href="#cb38-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L136-L138</span></span>
 <span id="cb38-2"><a href="#cb38-2"></a></span>
 <span id="cb38-3"><a href="#cb38-3"></a>selFound_znil</span>
 <span id="cb38-4"><a href="#cb38-4"></a><span class="ot">    ::</span> <span class="dt">Decision</span> (<span class="dt">SelFound</span> <span class="dt">&#39;Z</span> <span class="op">@@</span> &#39;[])</span>
 <span id="cb38-5"><a href="#cb38-5"></a>selFound_znil <span class="ot">=</span> <span class="dt">Disproved</span> \(_ <span class="op">:&amp;:</span> s) <span class="ot">-&gt;</span> noEmptySel s</span></code></pre></div>
-<p>Armed with the <code>Sel 'Z '[] as</code> that is inside the <code>SelFound 'Z @@ '[]</code>, we can use <code>noEmptySel</code> to produce the <code>Void</code>. We succefully disprove the fact that there is any item that can be found in <code>'[]</code>, by providing a function <code>SelFound 'Z @@ '[] -&gt; Void</code>.</p>
+<p>Armed with the <code>Sel 'Z '[] as</code> that is inside the <code>SelFound 'Z @@ '[]</code>, we can use <code>noEmptySel</code> to produce the <code>Void</code>. We successfully disprove the fact that there is any item that can be found in <code>'[]</code>, by providing a function <code>SelFound 'Z @@ '[] -&gt; Void</code>.</p>
 <p>Note that with the <em>-XBlockArguments</em> extension, we don’t need the <code>$</code> after <code>Disproved</code>.</p></li>
 <li><p>For the second branch, we have <code>'Z</code> and <code>(x ': xs)</code>. We want to prove that there exists an item at position <code>'Z</code> in the list <code>x ': xs</code>. The answer is <em>yes</em>, there does, and that item is <code>x</code>, and the <code>Sel</code> is <code>SelZ</code>!</p>
 <div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb39-1"><a href="#cb39-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/ttt/Part1.hs#L140-L144</span></span>

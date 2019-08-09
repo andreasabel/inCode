@@ -1180,7 +1180,7 @@ about it, and post some in the comments!
 One immediate example is `Either e`, which is used for great effect in many FRP
 libraries! It's "inhibit, with a *value*". As an exercise, see if you can write
 its `FunctorA` instance, or re-write the `AutoOn` in this section to work with
-`Either e` (you might need to impose a typeclass constraint on the `e`) instaed
+`Either e` (you might need to impose a typeclass constraint on the `e`) instead
 of `Maybe`!
 :::
 

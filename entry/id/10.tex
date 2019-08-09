@@ -96,7 +96,7 @@ Code}}.}
 If you've spent your entire life programming imperatively, you could not even
 begin to imagine the vast worlds of thinking that are inaccessible because of
 restrictions in your thinking. Not ``better'', or ``harder'' ways of thinking
---- possibly just as easy, but\ldots{}different.
+--- possibly just as easy, but\ldots different.
 
 Don't believe me? Here is an example of an amazingly awesome and amazing and
 incomprehensibly mind-opeining design pattern that shines in functional
@@ -104,32 +104,32 @@ programming: applicative combinators. In specific, we are going to write a small
 parser library! Yay!
 
 Now, if you are a sane person, you should know that \emph{nobody} enjoys writing
-parsers\ldots{}imperatively. The whole deal is a mess; you have to keep track of
+parsers\ldots imperatively. The whole deal is a mess; you have to keep track of
 multiple layers of state, work out back tracking and edge cases, and to top it
 off, parsers tend to be very uncomposable, and parsing two different things
 usually requires either source code surgery in the best case or a complete
 rewrite in the worst.
 
 But what if I told you that combinator-based parsers are so easy to work with
-and composable and intuitive that they are\ldots{}well, fun? I'll tease you:
+and composable and intuitive that they are\ldots well, fun? I'll tease you:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- a parser for a special variable name, which can optionally start with an}
-\CommentTok{-- `@` symbol, and then an alphabet character, followed by many alphanumeric}
-\CommentTok{-- characters}
+\CommentTok{{-}{-} a parser for a special variable name, which can optionally start with an}
+\CommentTok{{-}{-} \textasciigrave{}@\textasciigrave{} symbol, and then an alphabet character, followed by many alphanumeric}
+\CommentTok{{-}{-} characters}
 \OtherTok{variableName ::} \DataTypeTok{Parser} \DataTypeTok{String}
-\NormalTok{variableName }\FunctionTok{=}\NormalTok{ (optional }\CharTok{'@'}\NormalTok{) }\FunctionTok{<:>}\NormalTok{ alpha }\FunctionTok{<:>}\NormalTok{ (many alphaNum)}
+\NormalTok{variableName }\OtherTok{=}\NormalTok{ (optional }\CharTok{\textquotesingle{}@\textquotesingle{}}\NormalTok{) }\OperatorTok{<:>}\NormalTok{ alpha }\OperatorTok{<:>}\NormalTok{ (many alphaNum)}
 
-\CommentTok{-- usage:}
-\CommentTok{-- λ: parse variableName "9one"}
-\CommentTok{-- Nothing}
-\CommentTok{-- λ: parse variableName "var01"}
-\CommentTok{-- Just ("var01", "")}
-\CommentTok{-- λ: parse variableName "@var2"}
-\CommentTok{-- Just ("@var2", "")}
-\CommentTok{-- λ: parse variableName "@9one"}
-\CommentTok{-- Nothing}
+\CommentTok{{-}{-} usage:}
+\CommentTok{{-}{-} λ: parse variableName "9one"}
+\CommentTok{{-}{-} Nothing}
+\CommentTok{{-}{-} λ: parse variableName "var01"}
+\CommentTok{{-}{-} Just ("var01", "")}
+\CommentTok{{-}{-} λ: parse variableName "@var2"}
+\CommentTok{{-}{-} Just ("@var2", "")}
+\CommentTok{{-}{-} λ: parse variableName "@9one"}
+\CommentTok{{-}{-} Nothing}
 \end{Highlighting}
 \end{Shaded}
 
@@ -162,7 +162,7 @@ In Haskell, we represent this object as:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Parser}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{P}\NormalTok{ (}\DataTypeTok{String} \OtherTok{->}\NormalTok{ (a, }\DataTypeTok{String}\NormalTok{))}
+\KeywordTok{data} \DataTypeTok{Parser}\NormalTok{ a }\OtherTok{=} \DataTypeTok{P}\NormalTok{ (}\DataTypeTok{String} \OtherTok{{-}>}\NormalTok{ (a, }\DataTypeTok{String}\NormalTok{))}
 \end{Highlighting}
 \end{Shaded}
 
@@ -190,8 +190,8 @@ object and any string, and return the parsed string:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{parse ::} \DataTypeTok{Parser}\NormalTok{ a }\OtherTok{->} \DataTypeTok{String} \OtherTok{->}\NormalTok{ (a, }\DataTypeTok{String}\NormalTok{)              }\CommentTok{-- 1}
-\NormalTok{parse (}\DataTypeTok{P}\NormalTok{ f) str }\FunctionTok{=}\NormalTok{ f str                                 }\CommentTok{-- 2}
+\OtherTok{parse ::} \DataTypeTok{Parser}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{String} \OtherTok{{-}>}\NormalTok{ (a, }\DataTypeTok{String}\NormalTok{)              }\CommentTok{{-}{-} 1}
+\NormalTok{parse (}\DataTypeTok{P}\NormalTok{ f) str }\OtherTok{=}\NormalTok{ f str                                 }\CommentTok{{-}{-} 2}
 \end{Highlighting}
 \end{Shaded}
 
@@ -223,14 +223,14 @@ into an integer. Here is how we would use it in the interactive
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{λ}\FunctionTok{:} \FunctionTok{:}\KeywordTok{type}\NormalTok{ integerParser}
+\NormalTok{λ}\OperatorTok{:} \OperatorTok{:}\KeywordTok{type}\NormalTok{ integerParser}
 \OtherTok{integerParser ::} \DataTypeTok{Parser} \DataTypeTok{Int}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse integerParser }\StringTok{"12"}
-\NormalTok{(}\DecValTok{12}\NormalTok{, }\StringTok{""}\NormalTok{)                    }\CommentTok{-- returns the integer 12, with nothing leftover}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse integerParser }\StringTok{"-82 zero"}
-\NormalTok{(}\DecValTok{82}\NormalTok{, }\StringTok{" zero"}\NormalTok{)               }\CommentTok{-- returns the integer -82, with some leftovers}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse integerParser }\StringTok{"hello"}
-\FunctionTok{??????}                      \CommentTok{-- ??????}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse integerParser }\StringTok{"12"}
+\NormalTok{(}\DecValTok{12}\NormalTok{, }\StringTok{""}\NormalTok{)                    }\CommentTok{{-}{-} returns the integer 12, with nothing leftover}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse integerParser }\StringTok{"{-}82 zero"}
+\NormalTok{(}\DecValTok{82}\NormalTok{, }\StringTok{" zero"}\NormalTok{)               }\CommentTok{{-}{-} returns the integer {-}82, with some leftovers}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse integerParser }\StringTok{"hello"}
+\OperatorTok{??????}                      \CommentTok{{-}{-} ??????}
 \end{Highlighting}
 \end{Shaded}
 
@@ -267,28 +267,28 @@ Again keeping with the analogies to Object-Oriented Programming, you can think
 of \texttt{Maybe\ a} as a superclass, \texttt{Maybe\textless{}a\textgreater{}},
 with two subclasses: \texttt{Just\ a} and \texttt{Nothing}. \texttt{Just\ a}
 contains one instance variable of type \texttt{a}, and \texttt{Nothing}
-contains\ldots{}nothing.
+contains\ldots nothing.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Parser}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{P}\NormalTok{ (}\DataTypeTok{String} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (a, }\DataTypeTok{String}\NormalTok{))}
+\KeywordTok{data} \DataTypeTok{Parser}\NormalTok{ a }\OtherTok{=} \DataTypeTok{P}\NormalTok{ (}\DataTypeTok{String} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ (a, }\DataTypeTok{String}\NormalTok{))}
 
-\OtherTok{parse ::} \DataTypeTok{Parser}\NormalTok{ a }\OtherTok{->} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (a, }\DataTypeTok{String}\NormalTok{)}
-\NormalTok{parse (}\DataTypeTok{P}\NormalTok{ f) str }\FunctionTok{=}\NormalTok{ f str}
+\OtherTok{parse ::} \DataTypeTok{Parser}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{String} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ (a, }\DataTypeTok{String}\NormalTok{)}
+\NormalTok{parse (}\DataTypeTok{P}\NormalTok{ f) str }\OtherTok{=}\NormalTok{ f str}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse integerParser }\StringTok{"12"}
-\DataTypeTok{Just}\NormalTok{ (}\DecValTok{12}\NormalTok{, }\StringTok{""}\NormalTok{)               }\CommentTok{-- succesfully returns the integer 12, inside a}
-                            \CommentTok{-- Maybe object}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse integerParser }\StringTok{"-82 zero"}
-\DataTypeTok{Just}\NormalTok{ (}\FunctionTok{-}\DecValTok{82}\NormalTok{, }\StringTok{" zero"}\NormalTok{)         }\CommentTok{-- succesfully returns the integer -82}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse integerParser }\StringTok{"hello"}
-\DataTypeTok{Nothing}                     \CommentTok{-- fails}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse integerParser }\StringTok{"12"}
+\DataTypeTok{Just}\NormalTok{ (}\DecValTok{12}\NormalTok{, }\StringTok{""}\NormalTok{)               }\CommentTok{{-}{-} successfully returns the integer 12, inside a}
+                            \CommentTok{{-}{-} Maybe object}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse integerParser }\StringTok{"{-}82 zero"}
+\DataTypeTok{Just}\NormalTok{ (}\OperatorTok{{-}}\DecValTok{82}\NormalTok{, }\StringTok{" zero"}\NormalTok{)         }\CommentTok{{-}{-} successfully returns the integer {-}82}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse integerParser }\StringTok{"hello"}
+\DataTypeTok{Nothing}                     \CommentTok{{-}{-} fails}
 \end{Highlighting}
 \end{Shaded}
 
@@ -304,17 +304,17 @@ that always fails.
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{failure ::} \DataTypeTok{Parser}\NormalTok{ a}
-\NormalTok{failure }\FunctionTok{=} \DataTypeTok{P}\NormalTok{ returnNothing                   }\CommentTok{-- 1}
+\NormalTok{failure }\OtherTok{=} \DataTypeTok{P}\NormalTok{ returnNothing                   }\CommentTok{{-}{-} 1}
     \KeywordTok{where}
-\NormalTok{        returnNothing _ }\FunctionTok{=} \DataTypeTok{Nothing}           \CommentTok{-- 2}
+\NormalTok{        returnNothing \_ }\OtherTok{=} \DataTypeTok{Nothing}           \CommentTok{{-}{-} 2}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse failure }\StringTok{"12"}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse failure }\StringTok{"12"}
 \DataTypeTok{Nothing}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse failure }\StringTok{"anything"}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse failure }\StringTok{"anything"}
 \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
@@ -342,22 +342,22 @@ answer, and does not consume any of the string?
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{successfulTrue ::} \DataTypeTok{Parser} \DataTypeTok{Bool}
-\NormalTok{successfulTrue }\FunctionTok{=} \DataTypeTok{P}\NormalTok{ returnTrue}
+\NormalTok{successfulTrue }\OtherTok{=} \DataTypeTok{P}\NormalTok{ returnTrue}
     \KeywordTok{where}
-\NormalTok{        returnTrue str }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (}\DataTypeTok{True}\NormalTok{, str)}
+\NormalTok{        returnTrue str }\OtherTok{=} \DataTypeTok{Just}\NormalTok{ (}\DataTypeTok{True}\NormalTok{, str)}
 
-\OtherTok{succesfulZero ::} \DataTypeTok{Parser} \DataTypeTok{Int}
-\NormalTok{succesfulZero }\FunctionTok{=} \DataTypeTok{P}\NormalTok{ returnZero}
+\OtherTok{successfulZero ::} \DataTypeTok{Parser} \DataTypeTok{Int}
+\NormalTok{successfulZero }\OtherTok{=} \DataTypeTok{P}\NormalTok{ returnZero}
     \KeywordTok{where}
-\NormalTok{        returnZero str }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (}\DecValTok{0}\NormalTok{, str)}
+\NormalTok{        returnZero str }\OtherTok{=} \DataTypeTok{Just}\NormalTok{ (}\DecValTok{0}\NormalTok{, str)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse succesfulTrue }\StringTok{"12"}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse successfulTrue }\StringTok{"12"}
 \DataTypeTok{Just}\NormalTok{ (}\DataTypeTok{True}\NormalTok{, }\StringTok{"12"}\NormalTok{)}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse succesfulZero }\StringTok{"anything"}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse successfulZero }\StringTok{"anything"}
 \DataTypeTok{Just}\NormalTok{ (}\DecValTok{0}\NormalTok{, }\StringTok{"anything"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
@@ -369,16 +369,16 @@ parse function that covers both of them:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{successful ::}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Parser}\NormalTok{ a}
-\NormalTok{successful val }\FunctionTok{=} \DataTypeTok{P}\NormalTok{ returnVal}
+\OtherTok{successful ::}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Parser}\NormalTok{ a}
+\NormalTok{successful val }\OtherTok{=} \DataTypeTok{P}\NormalTok{ returnVal}
     \KeywordTok{where}
-\NormalTok{        returnVal str }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (val, str)}
+\NormalTok{        returnVal str }\OtherTok{=} \DataTypeTok{Just}\NormalTok{ (val, str)}
 
-\OtherTok{succesfulTrue ::} \DataTypeTok{Parser} \DataTypeTok{Bool}
-\NormalTok{succesfulTrue }\FunctionTok{=}\NormalTok{ succesful }\DataTypeTok{True}
+\OtherTok{successfulTrue ::} \DataTypeTok{Parser} \DataTypeTok{Bool}
+\NormalTok{successfulTrue }\OtherTok{=}\NormalTok{ successful }\DataTypeTok{True}
 
-\OtherTok{succesfulZero ::} \DataTypeTok{Parser} \DataTypeTok{Int}
-\NormalTok{succesfulZero }\FunctionTok{=}\NormalTok{ succesful }\DecValTok{0}
+\OtherTok{successfulZero ::} \DataTypeTok{Parser} \DataTypeTok{Int}
+\NormalTok{successfulZero }\OtherTok{=}\NormalTok{ successful }\DecValTok{0}
 \end{Highlighting}
 \end{Shaded}
 
@@ -389,18 +389,18 @@ So \texttt{successful\ val} is a function that takes any value and gives us a
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse (successful }\DecValTok{5}\NormalTok{) }\StringTok{"hello"}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse (successful }\DecValTok{5}\NormalTok{) }\StringTok{"hello"}
 \DataTypeTok{Just}\NormalTok{ (}\DecValTok{5}\NormalTok{, }\StringTok{"hello"}\NormalTok{)}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse (successful }\FloatTok{8.26}\NormalTok{) }\StringTok{"hello"}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse (successful }\FloatTok{8.26}\NormalTok{) }\StringTok{"hello"}
 \DataTypeTok{Just}\NormalTok{ (}\FloatTok{8.26}\NormalTok{, }\StringTok{"hello"}\NormalTok{)}
-\NormalTok{λ}\FunctionTok{:} \FunctionTok{:}\KeywordTok{type}\NormalTok{ (successful }\DataTypeTok{True}\NormalTok{)}
-\NormalTok{succesful }\DataTypeTok{True}\OtherTok{ ::} \DataTypeTok{Parser} \DataTypeTok{Bool}
+\NormalTok{λ}\OperatorTok{:} \OperatorTok{:}\KeywordTok{type}\NormalTok{ (successful }\DataTypeTok{True}\NormalTok{)}
+\NormalTok{successful }\DataTypeTok{True}\OtherTok{ ::} \DataTypeTok{Parser} \DataTypeTok{Bool}
 \end{Highlighting}
 \end{Shaded}
 
-Note that the type of \texttt{succesful\ True} is exactly the same type as our
-\texttt{succesfulTrue} function. Which is what we would expect. Our
-\texttt{succesful\ val} function takes a value and returns a parser that parses
+Note that the type of \texttt{successful\ True} is exactly the same type as our
+\texttt{successfulTrue} function. Which is what we would expect. Our
+\texttt{successful\ val} function takes a value and returns a parser that parses
 anything into that given value. So if we pass in \texttt{True}, it will return a
 parser/function that parses anything into \texttt{True}.
 
@@ -411,10 +411,10 @@ somewhat-useful-kinda-maybe parser: \texttt{anyChar}
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{anyChar ::} \DataTypeTok{Parser} \DataTypeTok{Char}
-\NormalTok{anyChar }\FunctionTok{=} \DataTypeTok{P}\NormalTok{ getFirst}
+\NormalTok{anyChar }\OtherTok{=} \DataTypeTok{P}\NormalTok{ getFirst}
     \KeywordTok{where}
-\NormalTok{        getFirst (x}\FunctionTok{:}\NormalTok{xs) }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (x, xs)          }\CommentTok{-- 1}
-\NormalTok{        getFirst []     }\FunctionTok{=} \DataTypeTok{Nothing}               \CommentTok{-- 2}
+\NormalTok{        getFirst (x}\OperatorTok{:}\NormalTok{xs) }\OtherTok{=} \DataTypeTok{Just}\NormalTok{ (x, xs)          }\CommentTok{{-}{-} 1}
+\NormalTok{        getFirst []     }\OtherTok{=} \DataTypeTok{Nothing}               \CommentTok{{-}{-} 2}
 \end{Highlighting}
 \end{Shaded}
 
@@ -441,18 +441,18 @@ Let's see it at work.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse anyChar }\StringTok{"h"}
-\DataTypeTok{Just}\NormalTok{ (}\CharTok{'h'}\NormalTok{, }\StringTok{""}\NormalTok{)}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse anyChar }\StringTok{"hello"}
-\DataTypeTok{Just}\NormalTok{ (}\CharTok{'h'}\NormalTok{, }\StringTok{"ello"}\NormalTok{)}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse anyChar }\StringTok{""}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse anyChar }\StringTok{"h"}
+\DataTypeTok{Just}\NormalTok{ (}\CharTok{\textquotesingle{}h\textquotesingle{}}\NormalTok{, }\StringTok{""}\NormalTok{)}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse anyChar }\StringTok{"hello"}
+\DataTypeTok{Just}\NormalTok{ (}\CharTok{\textquotesingle{}h\textquotesingle{}}\NormalTok{, }\StringTok{"ello"}\NormalTok{)}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse anyChar }\StringTok{""}
 \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
 
-So \texttt{anyChar} parses a string into a\ldots{}character. That's\ldots{}kind
-of boring, admittedly. I'm sure you could have written something that parses a
-one-letter string into a character in any language without a problem\ldots{}one
+So \texttt{anyChar} parses a string into a\ldots character. That's\ldots kind of
+boring, admittedly. I'm sure you could have written something that parses a
+one-letter string into a character in any language without a problem\ldots one
 that would parse \texttt{"h"}, the string, into
 \texttt{\textquotesingle{}h\textquotesingle{}}, the character.
 
@@ -462,20 +462,20 @@ the taken character satisfies a certain condition:
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{z ::} \DataTypeTok{Parser} \DataTypeTok{Char}
-\NormalTok{z }\FunctionTok{=} \DataTypeTok{P}\NormalTok{ isA_z}
+\NormalTok{z }\OtherTok{=} \DataTypeTok{P}\NormalTok{ isA\_z}
     \KeywordTok{where}
-\NormalTok{        isA_z (x}\FunctionTok{:}\NormalTok{xs) }\FunctionTok{=}  \KeywordTok{if}\NormalTok{ x }\FunctionTok{==} \CharTok{'z'}
+\NormalTok{        isA\_z (x}\OperatorTok{:}\NormalTok{xs) }\OtherTok{=}  \KeywordTok{if}\NormalTok{ x }\OperatorTok{==} \CharTok{\textquotesingle{}z\textquotesingle{}}
                             \KeywordTok{then} \DataTypeTok{Just}\NormalTok{ (x, xs)}
                             \KeywordTok{else} \DataTypeTok{Nothing}
-\NormalTok{        isA_z []     }\FunctionTok{=}  \DataTypeTok{Nothing}
+\NormalTok{        isA\_z []     }\OtherTok{=}  \DataTypeTok{Nothing}
 
 \OtherTok{lowercase ::} \DataTypeTok{Parser} \DataTypeTok{Char}
-\NormalTok{lowercase }\FunctionTok{=} \DataTypeTok{P}\NormalTok{ isLowercase}
+\NormalTok{lowercase }\OtherTok{=} \DataTypeTok{P}\NormalTok{ isLowercase}
     \KeywordTok{where}
-\NormalTok{        isLowercase (x}\FunctionTok{:}\NormalTok{xs)  }\FunctionTok{=}   \KeywordTok{if}\NormalTok{ isLower x}
+\NormalTok{        isLowercase (x}\OperatorTok{:}\NormalTok{xs)  }\OtherTok{=}   \KeywordTok{if} \FunctionTok{isLower}\NormalTok{ x}
                                     \KeywordTok{then} \DataTypeTok{Just}\NormalTok{ (x, xs)}
                                     \KeywordTok{else} \DataTypeTok{Nothing}
-\NormalTok{        isLowercase []      }\FunctionTok{=}   \DataTypeTok{Nothing}
+\NormalTok{        isLowercase []      }\OtherTok{=}   \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
 
@@ -485,34 +485,34 @@ character is a lowercase letter and false otherwise.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse z }\StringTok{"not z"}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse z }\StringTok{"not z"}
 \DataTypeTok{Nothing}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse lowercase }\StringTok{"A"}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse lowercase }\StringTok{"A"}
 \DataTypeTok{Nothing}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse lowercase }\StringTok{"a"}
-\DataTypeTok{Just}\NormalTok{ (}\CharTok{'a'}\NormalTok{, }\StringTok{""}\NormalTok{)}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse lowercase }\StringTok{"a"}
+\DataTypeTok{Just}\NormalTok{ (}\CharTok{\textquotesingle{}a\textquotesingle{}}\NormalTok{, }\StringTok{""}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
-But wait! Like in the case for \texttt{succesful}, we notice a definite
-pattern\ldots{}and we can abstract this out.
+But wait! Like in the case for \texttt{successful}, we notice a definite
+pattern\ldots and we can abstract this out.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{satisfies ::}\NormalTok{ (}\DataTypeTok{Char} \OtherTok{->} \DataTypeTok{Bool}\NormalTok{) }\OtherTok{->} \DataTypeTok{Parser} \DataTypeTok{Char}
-\NormalTok{satisfies p }\FunctionTok{=} \DataTypeTok{P}\NormalTok{ passesPredicate}
+\OtherTok{satisfies ::}\NormalTok{ (}\DataTypeTok{Char} \OtherTok{{-}>} \DataTypeTok{Bool}\NormalTok{) }\OtherTok{{-}>} \DataTypeTok{Parser} \DataTypeTok{Char}
+\NormalTok{satisfies p }\OtherTok{=} \DataTypeTok{P}\NormalTok{ passesPredicate}
     \KeywordTok{where}
-\NormalTok{        passesPredicate (x}\FunctionTok{:}\NormalTok{xs) }\FunctionTok{=}  \KeywordTok{if}\NormalTok{ p z}
+\NormalTok{        passesPredicate (x}\OperatorTok{:}\NormalTok{xs) }\OtherTok{=}  \KeywordTok{if}\NormalTok{ p z}
                                       \KeywordTok{then} \DataTypeTok{Just}\NormalTok{ (x, xs)}
                                       \KeywordTok{else} \DataTypeTok{Nothing}
-\NormalTok{        passesPredicate []     }\FunctionTok{=}  \DataTypeTok{Nothing}
+\NormalTok{        passesPredicate []     }\OtherTok{=}  \DataTypeTok{Nothing}
 
 
 \OtherTok{z ::} \DataTypeTok{Parser} \DataTypeTok{Char}
-\NormalTok{z }\FunctionTok{=}\NormalTok{ satisfies (}\FunctionTok{==} \CharTok{'z'}\NormalTok{)}
+\NormalTok{z }\OtherTok{=}\NormalTok{ satisfies (}\OperatorTok{==} \CharTok{\textquotesingle{}z\textquotesingle{}}\NormalTok{)}
 
 \OtherTok{lowercase ::} \DataTypeTok{Parser} \DataTypeTok{Char}
-\NormalTok{lowercase }\FunctionTok{=}\NormalTok{ satisfies isLower}
+\NormalTok{lowercase }\OtherTok{=}\NormalTok{ satisfies }\FunctionTok{isLower}
 \end{Highlighting}
 \end{Shaded}
 
@@ -531,7 +531,7 @@ is true.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
-Remember, just like in the case with \texttt{succesful}: \texttt{satisfies\ p}
+Remember, just like in the case with \texttt{successful}: \texttt{satisfies\ p}
 returns a \texttt{Parser\ Char} that fails unless the first character satisfies
 the given predicate \texttt{p}; \texttt{p} has to be a function from
 \texttt{Char} to \texttt{Bool} --- a predicate on \texttt{Char}s. So then
@@ -542,12 +542,12 @@ Let's try this out with some more built-in predicates from \texttt{Data.Char}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse (satisfies isAlpha) }\StringTok{"hello"}
-\DataTypeTok{Just}\NormalTok{ (}\CharTok{'h'}\NormalTok{, }\StringTok{"ello"}\NormalTok{)}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse (satisfies isDigit) }\StringTok{"123abc"}
-\DataTypeTok{Just}\NormalTok{ (}\CharTok{'1'}\NormalTok{, }\StringTok{"23abc"}\NormalTok{)}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse (}\FunctionTok{==} \CharTok{'a'}\NormalTok{) }\StringTok{"abc"}
-\DataTypeTok{Just}\NormalTok{ (}\CharTok{'a'}\NormalTok{, }\StringTok{"bc"}\NormalTok{)}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse (satisfies }\FunctionTok{isAlpha}\NormalTok{) }\StringTok{"hello"}
+\DataTypeTok{Just}\NormalTok{ (}\CharTok{\textquotesingle{}h\textquotesingle{}}\NormalTok{, }\StringTok{"ello"}\NormalTok{)}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse (satisfies }\FunctionTok{isDigit}\NormalTok{) }\StringTok{"123abc"}
+\DataTypeTok{Just}\NormalTok{ (}\CharTok{\textquotesingle{}1\textquotesingle{}}\NormalTok{, }\StringTok{"23abc"}\NormalTok{)}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse (}\OperatorTok{==} \CharTok{\textquotesingle{}a\textquotesingle{}}\NormalTok{) }\StringTok{"abc"}
+\DataTypeTok{Just}\NormalTok{ (}\CharTok{\textquotesingle{}a\textquotesingle{}}\NormalTok{, }\StringTok{"bc"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -556,16 +556,16 @@ In fact, some of these parsers are so useful, let's name some:
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{digit ::} \DataTypeTok{Parser} \DataTypeTok{Char}
-\NormalTok{digit }\FunctionTok{=}\NormalTok{ satisfies isDigit}
+\NormalTok{digit }\OtherTok{=}\NormalTok{ satisfies }\FunctionTok{isDigit}
 
 \OtherTok{alphaNum ::} \DataTypeTok{Parser} \DataTypeTok{Char}
-\NormalTok{alphaNum }\FunctionTok{=}\NormalTok{ satisfies isAlphaNum}
+\NormalTok{alphaNum }\OtherTok{=}\NormalTok{ satisfies }\FunctionTok{isAlphaNum}
 
 \OtherTok{alpha ::} \DataTypeTok{Parser} \DataTypeTok{Char}
-\NormalTok{alphaNum }\FunctionTok{=}\NormalTok{ satisfies isAlpha}
+\NormalTok{alphaNum }\OtherTok{=}\NormalTok{ satisfies }\FunctionTok{isAlpha}
 
-\OtherTok{char ::} \DataTypeTok{Char} \OtherTok{->} \DataTypeTok{Parser} \DataTypeTok{Char}
-\NormalTok{char c }\FunctionTok{=}\NormalTok{ satisfies (}\FunctionTok{==}\NormalTok{ c)}
+\OtherTok{char ::} \DataTypeTok{Char} \OtherTok{{-}>} \DataTypeTok{Parser} \DataTypeTok{Char}
+\NormalTok{char c }\OtherTok{=}\NormalTok{ satisfies (}\OperatorTok{==}\NormalTok{ c)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -578,7 +578,7 @@ Note that we even can rewrite \texttt{anyChar} in terms of \texttt{satisfies}:
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{anyChar ::} \DataTypeTok{Parser} \DataTypeTok{Char}
-\NormalTok{anyChar }\FunctionTok{=}\NormalTok{ satisfies (const }\DataTypeTok{True}\NormalTok{)}
+\NormalTok{anyChar }\OtherTok{=}\NormalTok{ satisfies (}\FunctionTok{const} \DataTypeTok{True}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -591,10 +591,10 @@ is a parser that will take any character, no matter what.
 
 Okay, so we are making baby steps. Here are our ``base'' parsers. They can't
 really do much on their own; you can either always fail, always succeed, and
-parse any one-character string into a character. But the last one\ldots{}the
-ability to \emph{selectively} parse a string into a character\ldots{}that might
+parse any one-character string into a character. But the last one\ldots the
+ability to \emph{selectively} parse a string into a character\ldots that might
 be interesting. It's not totally obvious yet how we can make it useful,
-but\ldots{}I think we have enough base parsers to start building our
+but\ldots I think we have enough base parsers to start building our
 \emph{combinators} --- functions that combine and modify parsers.
 
 \hypertarget{functors}{%
@@ -608,9 +608,9 @@ any language is the list, \texttt{{[}{]}}; another neat one is \texttt{Maybe}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ (}\FunctionTok{*}\DecValTok{2}\NormalTok{) }\FunctionTok{<$>}\NormalTok{ [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ (}\OperatorTok{*}\DecValTok{2}\NormalTok{) }\OperatorTok{<$>}\NormalTok{ [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}
 \NormalTok{[}\DecValTok{2}\NormalTok{,}\DecValTok{4}\NormalTok{,}\DecValTok{6}\NormalTok{]}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ (}\FunctionTok{*}\DecValTok{2}\NormalTok{) }\FunctionTok{<$>} \DataTypeTok{Just} \DecValTok{3}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ (}\OperatorTok{*}\DecValTok{2}\NormalTok{) }\OperatorTok{<$>} \DataTypeTok{Just} \DecValTok{3}
 \DataTypeTok{Just} \DecValTok{6}
 \end{Highlighting}
 \end{Shaded}
@@ -628,20 +628,20 @@ more-often-used \texttt{\$} operator:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ (}\FunctionTok{*}\DecValTok{2}\NormalTok{) }\FunctionTok{$} \DecValTok{3}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ (}\OperatorTok{*}\DecValTok{2}\NormalTok{) }\OperatorTok{$} \DecValTok{3}
 \DecValTok{6}
 \end{Highlighting}
 \end{Shaded}
 
-Which says ``apply this (\texttt{(*2)})\ldots{}to this (\texttt{3})''.
+Which says ``apply this (\texttt{(*2)})\ldots to this (\texttt{3})''.
 
 Compare that to:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ (}\FunctionTok{*}\DecValTok{2}\NormalTok{) }\FunctionTok{<$>}\NormalTok{ [}\DecValTok{3}\NormalTok{]}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ (}\OperatorTok{*}\DecValTok{2}\NormalTok{) }\OperatorTok{<$>}\NormalTok{ [}\DecValTok{3}\NormalTok{]}
 \NormalTok{[}\DecValTok{6}\NormalTok{]}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ (}\FunctionTok{*}\DecValTok{2}\NormalTok{) }\FunctionTok{<$>} \DataTypeTok{Just} \DecValTok{3}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ (}\OperatorTok{*}\DecValTok{2}\NormalTok{) }\OperatorTok{<$>} \DataTypeTok{Just} \DecValTok{3}
 \DecValTok{6}
 \end{Highlighting}
 \end{Shaded}
@@ -666,9 +666,9 @@ Functor}\label{turning-our-parser-into-a-functor}}
 
 Hopefully you saw this coming. Functors seem to be very cool. But does it even
 make sense that our Parser object is a functor? The \texttt{Parser\ Int} object
-doesn't ``contain'' any \texttt{Int}s\ldots{}does it?
+doesn't ``contain'' any \texttt{Int}s\ldots does it?
 
-Well\ldots{}it kind of ``does''\ldots{}in two ways, sorta kinda maybe.
+Well\ldots it kind of ``does''\ldots in two ways, sorta kinda maybe.
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -678,11 +678,11 @@ Well\ldots{}it kind of ``does''\ldots{}in two ways, sorta kinda maybe.
   integer.
 \item
   You could say that a \texttt{Parser\ Int} ``contains'' the \textbf{idea} of an
-  integer\ldots{}abstractly. Like, whoa, man.
+  integer\ldots abstractly. Like, whoa, man.
 \end{enumerate}
 
-So\ldots{}does it make sense to apply a function ``inside'' a
-\texttt{Parser\ a}? The answer is yes!
+So\ldots does it make sense to apply a function ``inside'' a \texttt{Parser\ a}?
+The answer is yes!
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -698,25 +698,25 @@ So\ldots{}does it make sense to apply a function ``inside'' a
 \end{enumerate}
 
 Huh. This is kinda cool, isn't it? So let's say that when we apply a function
-``inside'' our Parser\ldots{}it means that we apply a function to the finished
-result of a succesful parse.
+``inside'' our Parser\ldots it means that we apply a function to the finished
+result of a successful parse.
 
 Basically, we want something like this:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{λ}\FunctionTok{:} \KeywordTok{let}\NormalTok{ succesfulSix }\FunctionTok{=}\NormalTok{ (}\FunctionTok{*}\DecValTok{2}\NormalTok{) }\FunctionTok{<$>}\NormalTok{ (succesful }\DecValTok{3}\NormalTok{)}
-\NormalTok{λ}\FunctionTok{:} \FunctionTok{:}\KeywordTok{type}\NormalTok{ succesfulSix}
-\OtherTok{succesfulSix ::} \DataTypeTok{Parser} \DataTypeTok{Int}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse succesfulSix }\StringTok{"something"}
+\NormalTok{λ}\OperatorTok{:} \KeywordTok{let}\NormalTok{ successfulSix }\OtherTok{=}\NormalTok{ (}\OperatorTok{*}\DecValTok{2}\NormalTok{) }\OperatorTok{<$>}\NormalTok{ (successful }\DecValTok{3}\NormalTok{)}
+\NormalTok{λ}\OperatorTok{:} \OperatorTok{:}\KeywordTok{type}\NormalTok{ successfulSix}
+\OtherTok{successfulSix ::} \DataTypeTok{Parser} \DataTypeTok{Int}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse successfulSix }\StringTok{"something"}
 \DataTypeTok{Just} \DecValTok{6}
 \end{Highlighting}
 \end{Shaded}
 
-Okay, cool. So instead of \texttt{succesful\ 3} always succeeding with a 3, it
+Okay, cool. So instead of \texttt{successful\ 3} always succeeding with a 3, it
 succeeds with \texttt{(*2)\ 3}, which is 6. Still kinda boring but w/e.
 
-Let's try something else\ldots{}we're going to take advantage of the
+Let's try something else\ldots we're going to take advantage of the
 \texttt{Data.Char} method \texttt{digitToInt\ ::\ Char\ -\textgreater{}\ Int},
 which takes a \texttt{Char} and returns the digit that it represents (for
 example, \texttt{digitToInt\ \textquotesingle{}5\textquotesingle{}} is 5, the
@@ -724,12 +724,12 @@ integer):
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{λ}\FunctionTok{:} \KeywordTok{let}\NormalTok{ digitInt }\FunctionTok{=}\NormalTok{ digitToInt }\FunctionTok{<$>}\NormalTok{ digit      }\CommentTok{-- 1}
-\NormalTok{λ}\FunctionTok{:} \FunctionTok{:}\KeywordTok{type}\NormalTok{ digitInt}
+\NormalTok{λ}\OperatorTok{:} \KeywordTok{let}\NormalTok{ digitInt }\OtherTok{=} \FunctionTok{digitToInt} \OperatorTok{<$>}\NormalTok{ digit      }\CommentTok{{-}{-} 1}
+\NormalTok{λ}\OperatorTok{:} \OperatorTok{:}\KeywordTok{type}\NormalTok{ digitInt}
 \OtherTok{digitInt ::} \DataTypeTok{Parser} \DataTypeTok{Int}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse digitInt }\StringTok{"2"}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse digitInt }\StringTok{"2"}
 \DataTypeTok{Just}\NormalTok{ (}\DecValTok{2}\NormalTok{, }\StringTok{""}\NormalTok{)}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse digitInt }\StringTok{"a"}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse digitInt }\StringTok{"a"}
 \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
@@ -750,12 +750,12 @@ Let's try chaining \texttt{\textless{}\$\textgreater{}}'s:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{λ}\FunctionTok{:} \KeywordTok{let}\NormalTok{ digitIntDoubled }\FunctionTok{=}\NormalTok{ (}\FunctionTok{*}\DecValTok{2}\NormalTok{) }\FunctionTok{<$>}\NormalTok{ (digitToInt }\FunctionTok{<$>}\NormalTok{ digit)}
-\NormalTok{λ}\FunctionTok{:} \FunctionTok{:}\KeywordTok{type}\NormalTok{ digitIntDoubled}
+\NormalTok{λ}\OperatorTok{:} \KeywordTok{let}\NormalTok{ digitIntDoubled }\OtherTok{=}\NormalTok{ (}\OperatorTok{*}\DecValTok{2}\NormalTok{) }\OperatorTok{<$>}\NormalTok{ (}\FunctionTok{digitToInt} \OperatorTok{<$>}\NormalTok{ digit)}
+\NormalTok{λ}\OperatorTok{:} \OperatorTok{:}\KeywordTok{type}\NormalTok{ digitIntDoubled}
 \OtherTok{digitIntDoubled ::} \DataTypeTok{Parser} \DataTypeTok{Int}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse digitIntDoubled }\StringTok{"2"}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse digitIntDoubled }\StringTok{"2"}
 \DataTypeTok{Just}\NormalTok{ (}\DecValTok{4}\NormalTok{, }\StringTok{""}\NormalTok{)}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse digitIntDoubled }\StringTok{"a"}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse digitIntDoubled }\StringTok{"a"}
 \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
@@ -769,7 +769,7 @@ What just happened here?
   \texttt{digit} is a parser that succeeds only on digit characters.
 \item
   \texttt{digitToInt\ \textless{}\$\textgreater{}\ digit} is the result of
-  applying \texttt{digitToInt} on the value of a succesful parse. Basically,
+  applying \texttt{digitToInt} on the value of a successful parse. Basically,
   \texttt{digitToInt\ \textless{}\$\textgreater{}\ digit} is a \emph{new parser}
   that succeeds on digit characters, returning an integer.
 \item
@@ -801,7 +801,7 @@ maybe's --- now we can use them all on \texttt{Parser\ a}, too.
 
 To do this, we ``instance'' the Functor \emph{typeclass}. A typeclass in Haskell
 is like an interface in Object-Oriented Programming. Basically, we say
-``\texttt{Parser\ a} is a functor\ldots{}treat it like one!'' But in order to
+``\texttt{Parser\ a} is a functor\ldots treat it like one!'' But in order to
 make it a valid functor, we must tell it how to \texttt{fmap}. \texttt{fmap} is
 basically \texttt{\textless{}\$\textgreater{}} --- it takes a function, a
 functor object, and returns a new functor object with that function applied
@@ -814,18 +814,18 @@ Here's how we do it. Hold on tight!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{instance} \DataTypeTok{Functor} \DataTypeTok{Parser} \KeywordTok{where}                                       \CommentTok{-- 1}
-\NormalTok{    fmap f parser }\FunctionTok{=} \DataTypeTok{P}\NormalTok{ mapped_parser_function                        }\CommentTok{-- 2}
+\KeywordTok{instance} \DataTypeTok{Functor} \DataTypeTok{Parser} \KeywordTok{where}                                       \CommentTok{{-}{-} 1}
+    \FunctionTok{fmap}\NormalTok{ f parser }\OtherTok{=} \DataTypeTok{P}\NormalTok{ mapped\_parser\_function                        }\CommentTok{{-}{-} 2}
         \KeywordTok{where}
 
-\OtherTok{            unmapped_result ::} \DataTypeTok{Maybe}\NormalTok{ (a, }\DataTypeTok{String}\NormalTok{)}
-\NormalTok{            unmapped_result }\FunctionTok{=}\NormalTok{ parse parser str                      }\CommentTok{-- 3}
+\OtherTok{            unmapped\_result ::} \DataTypeTok{Maybe}\NormalTok{ (a, }\DataTypeTok{String}\NormalTok{)}
+\NormalTok{            unmapped\_result }\OtherTok{=}\NormalTok{ parse parser str                      }\CommentTok{{-}{-} 3}
 
-\OtherTok{            mapped_parser_function ::} \DataTypeTok{String} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (b, }\DataTypeTok{String}\NormalTok{)}
-\NormalTok{            mapped_parser_function str }\FunctionTok{=}
-                \KeywordTok{case}\NormalTok{ unmapped_result }\KeywordTok{of}                             \CommentTok{-- 4}
-                    \DataTypeTok{Just}\NormalTok{ (result, rest) }\OtherTok{->} \DataTypeTok{Just}\NormalTok{ (f result, rest)    }\CommentTok{-- 5}
-                    \DataTypeTok{Nothing}             \OtherTok{->} \DataTypeTok{Nothing}                  \CommentTok{-- 6}
+\OtherTok{            mapped\_parser\_function ::} \DataTypeTok{String} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ (b, }\DataTypeTok{String}\NormalTok{)}
+\NormalTok{            mapped\_parser\_function str }\OtherTok{=}
+                \KeywordTok{case}\NormalTok{ unmapped\_result }\KeywordTok{of}                             \CommentTok{{-}{-} 4}
+                    \DataTypeTok{Just}\NormalTok{ (result, rest) }\OtherTok{{-}>} \DataTypeTok{Just}\NormalTok{ (f result, rest)    }\CommentTok{{-}{-} 5}
+                    \DataTypeTok{Nothing}             \OtherTok{{-}>} \DataTypeTok{Nothing}                  \CommentTok{{-}{-} 6}
 \end{Highlighting}
 \end{Shaded}
 
@@ -856,7 +856,7 @@ Here's how we do it. Hold on tight!
   If \texttt{unmapped\_result} is a \texttt{Just}, then return the success, but
   apply \texttt{f} to the result first.
 \item
-  If \texttt{unmapped\_result} is \texttt{Nothing}\ldots{}well, you can't apply
+  If \texttt{unmapped\_result} is \texttt{Nothing}\ldots well, you can't apply
   anything to the result if the result is a failure (a \texttt{Nothing}). Pass
   on the failure.
 \end{enumerate}
@@ -872,7 +872,7 @@ above will now work.
 Let's take a brief moment to see what kind of things we can do with only
 functors, and nothing else. It's probably not going to be too much more useful
 than what you can write imperatively, but it is interesting what you can do by
-only `modifying' simpler parsers\ldots{}which is what the whole point of
+only `modifying' simpler parsers\ldots which is what the whole point of
 combinators are.
 
 With that in mind, let's try out some neat use cases.
@@ -883,16 +883,16 @@ return that keyword?
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{keywords ::}\NormalTok{ [}\DataTypeTok{String}\NormalTok{]}
-\NormalTok{keywords }\FunctionTok{=}\NormalTok{ [}\StringTok{"debug"}\NormalTok{,}\StringTok{"normal"}\NormalTok{,}\StringTok{"warning"}\NormalTok{,}\StringTok{"error"}\NormalTok{]}
+\NormalTok{keywords }\OtherTok{=}\NormalTok{ [}\StringTok{"debug"}\NormalTok{,}\StringTok{"normal"}\NormalTok{,}\StringTok{"warning"}\NormalTok{,}\StringTok{"error"}\NormalTok{]}
 
 \OtherTok{digit ::} \DataTypeTok{Parser} \DataTypeTok{Char}
-\NormalTok{digit }\FunctionTok{=}\NormalTok{ satisfies isDigit}
+\NormalTok{digit }\OtherTok{=}\NormalTok{ satisfies }\FunctionTok{isDigit}
 
 \OtherTok{digitInt ::} \DataTypeTok{Parser} \DataTypeTok{Int}
-\NormalTok{digitInt }\FunctionTok{=}\NormalTok{ digitToInt }\FunctionTok{<$>}\NormalTok{ digit}
+\NormalTok{digitInt }\OtherTok{=} \FunctionTok{digitToInt} \OperatorTok{<$>}\NormalTok{ digit}
 
 \OtherTok{keyword ::} \DataTypeTok{Parser} \DataTypeTok{String}
-\NormalTok{keyword }\FunctionTok{=}\NormalTok{ (}\FunctionTok{!!}\NormalTok{ keywords) }\FunctionTok{<$>}\NormalTok{ digitInt}
+\NormalTok{keyword }\OtherTok{=}\NormalTok{ (}\OperatorTok{!!}\NormalTok{ keywords) }\OperatorTok{<$>}\NormalTok{ digitInt}
 \end{Highlighting}
 \end{Shaded}
 
@@ -908,9 +908,9 @@ languages is \texttt{keywords{[}2{]}}, which is the string ``warning''.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse keyword }\StringTok{"1"}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse keyword }\StringTok{"1"}
 \DataTypeTok{Just}\NormalTok{ (}\StringTok{"normal"}\NormalTok{, }\StringTok{""}\NormalTok{)}
-\NormalTok{λ}\FunctionTok{:}\NormalTok{ parse keyword }\StringTok{"hello"}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parse keyword }\StringTok{"hello"}
 \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}

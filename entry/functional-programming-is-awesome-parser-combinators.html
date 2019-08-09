@@ -87,10 +87,10 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <span id="cb5-3"><a href="#cb5-3"></a><span class="ot">parse ::</span> <span class="dt">Parser</span> a <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (a, <span class="dt">String</span>)</span>
 <span id="cb5-4"><a href="#cb5-4"></a>parse (<span class="dt">P</span> f) str <span class="ot">=</span> f str</span></code></pre></div>
 <div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a>λ<span class="op">:</span> parse integerParser <span class="st">&quot;12&quot;</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="dt">Just</span> (<span class="dv">12</span>, <span class="st">&quot;&quot;</span>)               <span class="co">-- succesfully returns the integer 12, inside a</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="dt">Just</span> (<span class="dv">12</span>, <span class="st">&quot;&quot;</span>)               <span class="co">-- successfully returns the integer 12, inside a</span></span>
 <span id="cb6-3"><a href="#cb6-3"></a>                            <span class="co">-- Maybe object</span></span>
 <span id="cb6-4"><a href="#cb6-4"></a>λ<span class="op">:</span> parse integerParser <span class="st">&quot;-82 zero&quot;</span></span>
-<span id="cb6-5"><a href="#cb6-5"></a><span class="dt">Just</span> (<span class="op">-</span><span class="dv">82</span>, <span class="st">&quot; zero&quot;</span>)         <span class="co">-- succesfully returns the integer -82</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="dt">Just</span> (<span class="op">-</span><span class="dv">82</span>, <span class="st">&quot; zero&quot;</span>)         <span class="co">-- successfully returns the integer -82</span></span>
 <span id="cb6-6"><a href="#cb6-6"></a>λ<span class="op">:</span> parse integerParser <span class="st">&quot;hello&quot;</span></span>
 <span id="cb6-7"><a href="#cb6-7"></a><span class="dt">Nothing</span>                     <span class="co">-- fails</span></span></code></pre></div>
 <p>Okay, cool. Let’s get started.</p>
@@ -117,13 +117,13 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <span id="cb9-3"><a href="#cb9-3"></a>    <span class="kw">where</span></span>
 <span id="cb9-4"><a href="#cb9-4"></a>        returnTrue str <span class="ot">=</span> <span class="dt">Just</span> (<span class="dt">True</span>, str)</span>
 <span id="cb9-5"><a href="#cb9-5"></a></span>
-<span id="cb9-6"><a href="#cb9-6"></a><span class="ot">succesfulZero ::</span> <span class="dt">Parser</span> <span class="dt">Int</span></span>
-<span id="cb9-7"><a href="#cb9-7"></a>succesfulZero <span class="ot">=</span> <span class="dt">P</span> returnZero</span>
+<span id="cb9-6"><a href="#cb9-6"></a><span class="ot">successfulZero ::</span> <span class="dt">Parser</span> <span class="dt">Int</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a>successfulZero <span class="ot">=</span> <span class="dt">P</span> returnZero</span>
 <span id="cb9-8"><a href="#cb9-8"></a>    <span class="kw">where</span></span>
 <span id="cb9-9"><a href="#cb9-9"></a>        returnZero str <span class="ot">=</span> <span class="dt">Just</span> (<span class="dv">0</span>, str)</span></code></pre></div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a>λ<span class="op">:</span> parse succesfulTrue <span class="st">&quot;12&quot;</span></span>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a>λ<span class="op">:</span> parse successfulTrue <span class="st">&quot;12&quot;</span></span>
 <span id="cb10-2"><a href="#cb10-2"></a><span class="dt">Just</span> (<span class="dt">True</span>, <span class="st">&quot;12&quot;</span>)</span>
-<span id="cb10-3"><a href="#cb10-3"></a>λ<span class="op">:</span> parse succesfulZero <span class="st">&quot;anything&quot;</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a>λ<span class="op">:</span> parse successfulZero <span class="st">&quot;anything&quot;</span></span>
 <span id="cb10-4"><a href="#cb10-4"></a><span class="dt">Just</span> (<span class="dv">0</span>, <span class="st">&quot;anything&quot;</span>)</span></code></pre></div>
 <p>We have two parsers here, with two different parse functions. If you notice, they pretty much do the same thing, and have very similar structure. This is a key flag that we can probably abstract out some part of it. Let’s write a new parse function that covers both of them:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a><span class="ot">successful ::</span> a <span class="ot">-&gt;</span> <span class="dt">Parser</span> a</span>
@@ -131,19 +131,19 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <span id="cb11-3"><a href="#cb11-3"></a>    <span class="kw">where</span></span>
 <span id="cb11-4"><a href="#cb11-4"></a>        returnVal str <span class="ot">=</span> <span class="dt">Just</span> (val, str)</span>
 <span id="cb11-5"><a href="#cb11-5"></a></span>
-<span id="cb11-6"><a href="#cb11-6"></a><span class="ot">succesfulTrue ::</span> <span class="dt">Parser</span> <span class="dt">Bool</span></span>
-<span id="cb11-7"><a href="#cb11-7"></a>succesfulTrue <span class="ot">=</span> succesful <span class="dt">True</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a><span class="ot">successfulTrue ::</span> <span class="dt">Parser</span> <span class="dt">Bool</span></span>
+<span id="cb11-7"><a href="#cb11-7"></a>successfulTrue <span class="ot">=</span> successful <span class="dt">True</span></span>
 <span id="cb11-8"><a href="#cb11-8"></a></span>
-<span id="cb11-9"><a href="#cb11-9"></a><span class="ot">succesfulZero ::</span> <span class="dt">Parser</span> <span class="dt">Int</span></span>
-<span id="cb11-10"><a href="#cb11-10"></a>succesfulZero <span class="ot">=</span> succesful <span class="dv">0</span></span></code></pre></div>
+<span id="cb11-9"><a href="#cb11-9"></a><span class="ot">successfulZero ::</span> <span class="dt">Parser</span> <span class="dt">Int</span></span>
+<span id="cb11-10"><a href="#cb11-10"></a>successfulZero <span class="ot">=</span> successful <span class="dv">0</span></span></code></pre></div>
 <p>So <code>successful val</code> is a function that takes any value and gives us a <code>Parser a</code> with the function <code>returnVal</code> — <code>returnVal str</code> yields a <code>Just</code> with the <code>val</code> we gave to <code>successful</code>, with the string untouched. Let’s try it out.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1"></a>λ<span class="op">:</span> parse (successful <span class="dv">5</span>) <span class="st">&quot;hello&quot;</span></span>
 <span id="cb12-2"><a href="#cb12-2"></a><span class="dt">Just</span> (<span class="dv">5</span>, <span class="st">&quot;hello&quot;</span>)</span>
 <span id="cb12-3"><a href="#cb12-3"></a>λ<span class="op">:</span> parse (successful <span class="fl">8.26</span>) <span class="st">&quot;hello&quot;</span></span>
 <span id="cb12-4"><a href="#cb12-4"></a><span class="dt">Just</span> (<span class="fl">8.26</span>, <span class="st">&quot;hello&quot;</span>)</span>
 <span id="cb12-5"><a href="#cb12-5"></a>λ<span class="op">:</span> <span class="op">:</span><span class="kw">type</span> (successful <span class="dt">True</span>)</span>
-<span id="cb12-6"><a href="#cb12-6"></a>succesful <span class="dt">True</span><span class="ot"> ::</span> <span class="dt">Parser</span> <span class="dt">Bool</span></span></code></pre></div>
-<p>Note that the type of <code>succesful True</code> is exactly the same type as our <code>succesfulTrue</code> function. Which is what we would expect. Our <code>succesful val</code> function takes a value and returns a parser that parses anything into that given value. So if we pass in <code>True</code>, it will return a parser/function that parses anything into <code>True</code>.</p>
+<span id="cb12-6"><a href="#cb12-6"></a>successful <span class="dt">True</span><span class="ot"> ::</span> <span class="dt">Parser</span> <span class="dt">Bool</span></span></code></pre></div>
+<p>Note that the type of <code>successful True</code> is exactly the same type as our <code>successfulTrue</code> function. Which is what we would expect. Our <code>successful val</code> function takes a value and returns a parser that parses anything into that given value. So if we pass in <code>True</code>, it will return a parser/function that parses anything into <code>True</code>.</p>
 <p>Okay, so our two base parses are nice, but it doesn’t sound like they are useful at all for any real parsing work. Let’s write our first somewhat-useful-kinda-maybe parser: <code>anyChar</code></p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1"></a><span class="ot">anyChar ::</span> <span class="dt">Parser</span> <span class="dt">Char</span></span>
 <span id="cb13-2"><a href="#cb13-2"></a>anyChar <span class="ot">=</span> <span class="dt">P</span> getFirst</span>
@@ -188,7 +188,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <span id="cb16-4"><a href="#cb16-4"></a><span class="dt">Nothing</span></span>
 <span id="cb16-5"><a href="#cb16-5"></a>λ<span class="op">:</span> parse lowercase <span class="st">&quot;a&quot;</span></span>
 <span id="cb16-6"><a href="#cb16-6"></a><span class="dt">Just</span> (<span class="ch">&#39;a&#39;</span>, <span class="st">&quot;&quot;</span>)</span></code></pre></div>
-<p>But wait! Like in the case for <code>succesful</code>, we notice a definite pattern…and we can abstract this out.</p>
+<p>But wait! Like in the case for <code>successful</code>, we notice a definite pattern…and we can abstract this out.</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1"></a><span class="ot">satisfies ::</span> (<span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">Parser</span> <span class="dt">Char</span></span>
 <span id="cb17-2"><a href="#cb17-2"></a>satisfies p <span class="ot">=</span> <span class="dt">P</span> passesPredicate</span>
 <span id="cb17-3"><a href="#cb17-3"></a>    <span class="kw">where</span></span>
@@ -207,7 +207,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p><strong>Aside</strong></p>
 <p>Similar in structure to <code>(*2)</code>, <code>(== 'z')</code> is a function that returns true if the input is equal to <code>'z'</code> and false otherwise. That is, <code>(== 'z') 'a'</code> is false, while <code>(== 'z') 'z'</code> is true.</p>
 </div>
-<p>Remember, just like in the case with <code>succesful</code>: <code>satisfies p</code> returns a <code>Parser Char</code> that fails unless the first character satisfies the given predicate <code>p</code>; <code>p</code> has to be a function from <code>Char</code> to <code>Bool</code> — a predicate on <code>Char</code>s. So then <code>satisfies isLower</code> returns a new parser with the predicate <code>isLower</code> as the “checker”.</p>
+<p>Remember, just like in the case with <code>successful</code>: <code>satisfies p</code> returns a <code>Parser Char</code> that fails unless the first character satisfies the given predicate <code>p</code>; <code>p</code> has to be a function from <code>Char</code> to <code>Bool</code> — a predicate on <code>Char</code>s. So then <code>satisfies isLower</code> returns a new parser with the predicate <code>isLower</code> as the “checker”.</p>
 <p>Let’s try this out with some more built-in predicates from <code>Data.Char</code>:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1"></a>λ<span class="op">:</span> parse (satisfies <span class="fu">isAlpha</span>) <span class="st">&quot;hello&quot;</span></span>
 <span id="cb18-2"><a href="#cb18-2"></a><span class="dt">Just</span> (<span class="ch">&#39;h&#39;</span>, <span class="st">&quot;ello&quot;</span>)</span>
@@ -269,14 +269,14 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <li>If a <code>Parser Int</code> contains a to-be-parsed integer, then applying a function inside a <code>Parser Int</code> would be like applying the function to the to-be-parsed integer!</li>
 <li>If a <code>Parser Int</code> contains the <em>idea</em> of an integer, then applying a function inside a <code>Parser Int</code> would be applying the function to the idea of the integer.</li>
 </ol>
-<p>Huh. This is kinda cool, isn’t it? So let’s say that when we apply a function “inside” our Parser…it means that we apply a function to the finished result of a succesful parse.</p>
+<p>Huh. This is kinda cool, isn’t it? So let’s say that when we apply a function “inside” our Parser…it means that we apply a function to the finished result of a successful parse.</p>
 <p>Basically, we want something like this:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1"></a>λ<span class="op">:</span> <span class="kw">let</span> succesfulSix <span class="ot">=</span> (<span class="op">*</span><span class="dv">2</span>) <span class="op">&lt;$&gt;</span> (succesful <span class="dv">3</span>)</span>
-<span id="cb24-2"><a href="#cb24-2"></a>λ<span class="op">:</span> <span class="op">:</span><span class="kw">type</span> succesfulSix</span>
-<span id="cb24-3"><a href="#cb24-3"></a><span class="ot">succesfulSix ::</span> <span class="dt">Parser</span> <span class="dt">Int</span></span>
-<span id="cb24-4"><a href="#cb24-4"></a>λ<span class="op">:</span> parse succesfulSix <span class="st">&quot;something&quot;</span></span>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1"></a>λ<span class="op">:</span> <span class="kw">let</span> successfulSix <span class="ot">=</span> (<span class="op">*</span><span class="dv">2</span>) <span class="op">&lt;$&gt;</span> (successful <span class="dv">3</span>)</span>
+<span id="cb24-2"><a href="#cb24-2"></a>λ<span class="op">:</span> <span class="op">:</span><span class="kw">type</span> successfulSix</span>
+<span id="cb24-3"><a href="#cb24-3"></a><span class="ot">successfulSix ::</span> <span class="dt">Parser</span> <span class="dt">Int</span></span>
+<span id="cb24-4"><a href="#cb24-4"></a>λ<span class="op">:</span> parse successfulSix <span class="st">&quot;something&quot;</span></span>
 <span id="cb24-5"><a href="#cb24-5"></a><span class="dt">Just</span> <span class="dv">6</span></span></code></pre></div>
-<p>Okay, cool. So instead of <code>succesful 3</code> always succeeding with a 3, it succeeds with <code>(*2) 3</code>, which is 6. Still kinda boring but w/e.</p>
+<p>Okay, cool. So instead of <code>successful 3</code> always succeeding with a 3, it succeeds with <code>(*2) 3</code>, which is 6. Still kinda boring but w/e.</p>
 <p>Let’s try something else…we’re going to take advantage of the <code>Data.Char</code> method <code>digitToInt :: Char -&gt; Int</code>, which takes a <code>Char</code> and returns the digit that it represents (for example, <code>digitToInt '5'</code> is 5, the integer):</p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb25-1"><a href="#cb25-1"></a>λ<span class="op">:</span> <span class="kw">let</span> digitInt <span class="ot">=</span> <span class="fu">digitToInt</span> <span class="op">&lt;$&gt;</span> digit      <span class="co">-- 1</span></span>
 <span id="cb25-2"><a href="#cb25-2"></a>λ<span class="op">:</span> <span class="op">:</span><span class="kw">type</span> digitInt</span>
@@ -300,7 +300,7 @@ Lots of surveys and introducts to new subjects.">Ramblings</a><span class="info-
 <p>What just happened here?</p>
 <ol type="1">
 <li><code>digit</code> is a parser that succeeds only on digit characters.</li>
-<li><code>digitToInt &lt;$&gt; digit</code> is the result of applying <code>digitToInt</code> on the value of a succesful parse. Basically, <code>digitToInt &lt;$&gt; digit</code> is a <em>new parser</em> that succeeds on digit characters, returning an integer.</li>
+<li><code>digitToInt &lt;$&gt; digit</code> is the result of applying <code>digitToInt</code> on the value of a successful parse. Basically, <code>digitToInt &lt;$&gt; digit</code> is a <em>new parser</em> that succeeds on digit characters, returning an integer.</li>
 <li><code>(*2) &lt;$&gt; (digitToInt &lt;$&gt; digit)</code> is the result of applying <code>(*2)</code> (the doubling function) to <code>digitToInt &lt;$&gt; digit</code>, the return-digit-as-int parser. The <code>(*2) &lt;$&gt;</code> doubles the result of the return-digit-as-int parser. Essentially, the entire expression is a <em>new parser</em> that succeeds on digit character, returning the doubled integer as the parse result.</li>
 </ol>
 <p>*Phew*. That was a conceptual doozy. But this seems like a good path. Do you see what we did? We turned old, boring parsers into new, interesting parsers by “transforming” them. This is the kind of thing we were looking for in the first place, right?</p>

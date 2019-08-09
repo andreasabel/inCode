@@ -131,7 +131,7 @@ use \texttt{deriving\ (Generic)} when we define our \texttt{PreTree}, and then:
 \end{Highlighting}
 \end{Shaded}
 
-And\ldots{}that's it! We just auto-generated functions to serialize and
+And\ldots that's it! We just auto-generated functions to serialize and
 deserialize our \texttt{PreTree}s (if what they contain is itself serializable).
 
 In real life, we would do this. However, for the sake of learning, let's dig a
@@ -146,7 +146,7 @@ So the big crux of \emph{binary} is the \texttt{Binary} typeclass:
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{class} \DataTypeTok{Binary}\NormalTok{ t }\KeywordTok{where}
-\OtherTok{    put ::}\NormalTok{ t }\OtherTok{->} \DataTypeTok{Put}
+\OtherTok{    put ::}\NormalTok{ t }\OtherTok{{-}>} \DataTypeTok{Put}
 \OtherTok{    get ::} \DataTypeTok{Get}\NormalTok{ t}
 \end{Highlighting}
 \end{Shaded}
@@ -157,7 +157,7 @@ putting/getting binary''. \texttt{Get} is a monad, and \texttt{Put} is a wrapped
 \texttt{PutM\ ()}, because the final action has no result and only ``writes'')
 
 So \texttt{Binary} things are things that you can serialize (with the
-intructions in \texttt{put}) and deserialize (with the instructions in
+instructions in \texttt{put}) and deserialize (with the instructions in
 \texttt{get}).
 
 Luckily, because of Haskell's great composition tools, assembling these
@@ -170,15 +170,15 @@ Let's define our own custom \texttt{Put} for our \texttt{PreTree}s:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L69-L76}
-\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/huffman/PreTree.hs\#L69{-}L76}
+\CommentTok{{-}{-} interactive: https://www.fpcomplete.com/user/jle/huffman{-}encoding}
 
-\OtherTok{putPT ::} \DataTypeTok{Binary}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Put}
-\NormalTok{putPT (}\DataTypeTok{PTLeaf}\NormalTok{ x) }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    put }\DataTypeTok{True}                    \CommentTok{-- signify we have a leaf}
+\OtherTok{putPT ::} \DataTypeTok{Binary}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Put}
+\NormalTok{putPT (}\DataTypeTok{PTLeaf}\NormalTok{ x) }\OtherTok{=} \KeywordTok{do}
+\NormalTok{    put }\DataTypeTok{True}                    \CommentTok{{-}{-} signify we have a leaf}
 \NormalTok{    put x}
-\NormalTok{putPT (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    put }\DataTypeTok{False}                   \CommentTok{-- signify we have a node}
+\NormalTok{putPT (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) }\OtherTok{=} \KeywordTok{do}
+\NormalTok{    put }\DataTypeTok{False}                   \CommentTok{{-}{-} signify we have a node}
 \NormalTok{    put pt1}
 \NormalTok{    put pt2}
 \end{Highlighting}
@@ -203,7 +203,7 @@ The only slightly annoying thing is that we subject ourselves to
 blindness} by using \texttt{True} or \texttt{False}; we have to keep track of
 what means what. Alternatively, we can create our own binary data types,
 \texttt{data\ PTType\ =\ IsNode\ \textbar{}\ IsLeaf}, and \texttt{put}
-\emph{that}, instead\ldots{}but in this case it might not be so bad to live with
+\emph{that}, instead\ldots but in this case it might not be so bad to live with
 boolean blindness for now.
 
 \hypertarget{get}{%
@@ -213,15 +213,15 @@ Now let's define our own custom \texttt{Get}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L79-L84}
-\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/huffman/PreTree.hs\#L79{-}L84}
+\CommentTok{{-}{-} interactive: https://www.fpcomplete.com/user/jle/huffman{-}encoding}
 
 \OtherTok{getPT ::} \DataTypeTok{Binary}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Get}\NormalTok{ (}\DataTypeTok{PreTree}\NormalTok{ a)}
-\NormalTok{getPT }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    isLeaf }\OtherTok{<-}\NormalTok{ get}
+\NormalTok{getPT }\OtherTok{=} \KeywordTok{do}
+\NormalTok{    isLeaf }\OtherTok{<{-}}\NormalTok{ get}
     \KeywordTok{if}\NormalTok{ isLeaf}
-      \KeywordTok{then} \DataTypeTok{PTLeaf} \FunctionTok{<$>}\NormalTok{ get}
-      \KeywordTok{else} \DataTypeTok{PTNode} \FunctionTok{<$>}\NormalTok{ get }\FunctionTok{<*>}\NormalTok{ get}
+      \KeywordTok{then} \DataTypeTok{PTLeaf} \OperatorTok{<$>}\NormalTok{ get}
+      \KeywordTok{else} \DataTypeTok{PTNode} \OperatorTok{<$>}\NormalTok{ get }\OperatorTok{<*>}\NormalTok{ get}
 \end{Highlighting}
 \end{Shaded}
 
@@ -254,9 +254,9 @@ you can consider it to be the same thing as \texttt{f\ x\ y}, except that
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ (}\FunctionTok{+}\NormalTok{) }\DecValTok{1} \DecValTok{4}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ (}\OperatorTok{+}\NormalTok{) }\DecValTok{1} \DecValTok{4}
 \DecValTok{5}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ (}\FunctionTok{+}\NormalTok{) }\FunctionTok{<$>} \DataTypeTok{Just} \DecValTok{1} \FunctionTok{<*>} \DataTypeTok{Just} \DecValTok{4}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ (}\OperatorTok{+}\NormalTok{) }\OperatorTok{<$>} \DataTypeTok{Just} \DecValTok{1} \OperatorTok{<*>} \DataTypeTok{Just} \DecValTok{4}
 \DataTypeTok{Just} \DecValTok{5}
 \end{Highlighting}
 \end{Shaded}
@@ -272,12 +272,12 @@ And finally, to tie it all together:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L36-L38}
-\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/huffman/PreTree.hs\#L36{-}L38}
+\CommentTok{{-}{-} interactive: https://www.fpcomplete.com/user/jle/huffman{-}encoding}
 
 \KeywordTok{instance} \DataTypeTok{Binary}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Binary}\NormalTok{ (}\DataTypeTok{PreTree}\NormalTok{ a) }\KeywordTok{where}
-\NormalTok{    put }\FunctionTok{=}\NormalTok{ putPT}
-\NormalTok{    get }\FunctionTok{=}\NormalTok{ getPT}
+\NormalTok{    put }\OtherTok{=}\NormalTok{ putPT}
+\NormalTok{    get }\OtherTok{=}\NormalTok{ getPT}
 \end{Highlighting}
 \end{Shaded}
 
@@ -289,27 +289,27 @@ out.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ (}\DataTypeTok{Just}\NormalTok{ pt) }\FunctionTok{=}\NormalTok{ runBuildTree }\StringTok{"hello world"}
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ encoded }\FunctionTok{=}\NormalTok{ encode pt}
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t encoded}
-\OtherTok{encoded ::} \DataTypeTok{ByteString}       \CommentTok{-- a string of bytes}
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ decoded }\FunctionTok{=}\NormalTok{ decode}\OtherTok{ encoded ::} \DataTypeTok{PreTree} \DataTypeTok{Char}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ decoded}
-\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{'h'}\NormalTok{)}
-\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{'e'}\NormalTok{)}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{let}\NormalTok{ (}\DataTypeTok{Just}\NormalTok{ pt) }\OtherTok{=}\NormalTok{ runBuildTree }\StringTok{"hello world"}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{let}\NormalTok{ encoded }\OtherTok{=}\NormalTok{ encode pt}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{t encoded}
+\OtherTok{encoded ::} \DataTypeTok{ByteString}       \CommentTok{{-}{-} a string of bytes}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{let}\NormalTok{ decoded }\OtherTok{=}\NormalTok{ decode}\OtherTok{ encoded ::} \DataTypeTok{PreTree} \DataTypeTok{Char}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ decoded}
+\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{}h\textquotesingle{}}\NormalTok{)}
+\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{}e\textquotesingle{}}\NormalTok{)}
 \NormalTok{               )}
-\NormalTok{               (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{'w'}\NormalTok{)}
-\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{'r'}\NormalTok{)}
+\NormalTok{               (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{}w\textquotesingle{}}\NormalTok{)}
+\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{}r\textquotesingle{}}\NormalTok{)}
 \NormalTok{               )}
 \NormalTok{       )}
-\NormalTok{       (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{'l'}\NormalTok{)}
-\NormalTok{               (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{'d'}\NormalTok{)}
-\NormalTok{                               (}\DataTypeTok{PTLeaf} \CharTok{' '}\NormalTok{)}
+\NormalTok{       (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{}l\textquotesingle{}}\NormalTok{)}
+\NormalTok{               (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{}d\textquotesingle{}}\NormalTok{)}
+\NormalTok{                               (}\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{} \textquotesingle{}}\NormalTok{)}
 \NormalTok{                       )}
-\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{'o'}\NormalTok{)}
+\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{}o\textquotesingle{}}\NormalTok{)}
 \NormalTok{               )}
 \NormalTok{       )}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ decoded }\FunctionTok{==}\NormalTok{ t}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ decoded }\OperatorTok{==}\NormalTok{ t}
 \DataTypeTok{True}
 \end{Highlighting}
 \end{Shaded}
@@ -318,24 +318,24 @@ Neat! We can also write it to a file and re-read:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ encodeFile }\StringTok{"test.dat"}\NormalTok{ t}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ t' }\OtherTok{<-}\NormalTok{ decodeFile }\StringTok{"test.dat"}\OtherTok{ ::} \DataTypeTok{IO}\NormalTok{ (}\DataTypeTok{PreTree} \DataTypeTok{Char}\NormalTok{)}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ t'}
-\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{'h'}\NormalTok{)}
-\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{'e'}\NormalTok{)}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ encodeFile }\StringTok{"test.dat"}\NormalTok{ t}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ t\textquotesingle{} }\OtherTok{<{-}}\NormalTok{ decodeFile }\StringTok{"test.dat"}\OtherTok{ ::} \DataTypeTok{IO}\NormalTok{ (}\DataTypeTok{PreTree} \DataTypeTok{Char}\NormalTok{)}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ t\textquotesingle{}}
+\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{}h\textquotesingle{}}\NormalTok{)}
+\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{}e\textquotesingle{}}\NormalTok{)}
 \NormalTok{               )}
-\NormalTok{               (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{'w'}\NormalTok{)}
-\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{'r'}\NormalTok{)}
+\NormalTok{               (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{}w\textquotesingle{}}\NormalTok{)}
+\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{}r\textquotesingle{}}\NormalTok{)}
 \NormalTok{               )}
 \NormalTok{       )}
-\NormalTok{       (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{'l'}\NormalTok{)}
-\NormalTok{               (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{'d'}\NormalTok{)}
-\NormalTok{                               (}\DataTypeTok{PTLeaf} \CharTok{' '}\NormalTok{)}
+\NormalTok{       (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{}l\textquotesingle{}}\NormalTok{)}
+\NormalTok{               (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTNode}\NormalTok{ (}\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{}d\textquotesingle{}}\NormalTok{)}
+\NormalTok{                               (}\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{} \textquotesingle{}}\NormalTok{)}
 \NormalTok{                       )}
-\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{'o'}\NormalTok{)}
+\NormalTok{                       (}\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{}o\textquotesingle{}}\NormalTok{)}
 \NormalTok{               )}
 \NormalTok{       )}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ t' }\FunctionTok{==}\NormalTok{ t}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ t\textquotesingle{} }\OperatorTok{==}\NormalTok{ t}
 \DataTypeTok{True}
 \end{Highlighting}
 \end{Shaded}
@@ -355,14 +355,14 @@ Let's represent this path as a list of \texttt{Direction}s:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L25-L30}
-\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/huffman/PreTree.hs\#L25{-}L30}
+\CommentTok{{-}{-} interactive: https://www.fpcomplete.com/user/jle/huffman{-}encoding}
 
-\KeywordTok{data} \DataTypeTok{Direction} \FunctionTok{=} \DataTypeTok{DLeft}
-               \FunctionTok{|} \DataTypeTok{DRight}
+\KeywordTok{data} \DataTypeTok{Direction} \OtherTok{=} \DataTypeTok{DLeft}
+               \OperatorTok{|} \DataTypeTok{DRight}
                \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Eq}\NormalTok{, }\DataTypeTok{Generic}\NormalTok{)}
 
-\KeywordTok{type} \DataTypeTok{Encoding} \FunctionTok{=}\NormalTok{ [}\DataTypeTok{Direction}\NormalTok{]}
+\KeywordTok{type} \DataTypeTok{Encoding} \OtherTok{=}\NormalTok{ [}\DataTypeTok{Direction}\NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
 
@@ -372,7 +372,7 @@ bit. But we keep them as their own data types now because everyone hates
 \href{http://existentialtype.wordpress.com/2011/03/15/boolean-blindness/}{boolean
 blindness}. Instead of keeping a \texttt{True} or \texttt{False}, we keep data
 types that actually carry semantic meaning :) And we can't do silly things like
-use a boolean as a direction\ldots{}what the heck? Why would you even want to do
+use a boolean as a direction\ldots what the heck? Why would you even want to do
 that? How is ``true'' a direction?
 
 \hypertarget{direct-search}{%
@@ -382,16 +382,16 @@ Here's a naive recursive direct (depth-first) search.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L90-L96}
-\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/huffman/PreTree.hs\#L90{-}L96}
+\CommentTok{{-}{-} interactive: https://www.fpcomplete.com/user/jle/huffman{-}encoding}
 
-\OtherTok{findPT ::} \DataTypeTok{Eq}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Encoding}
-\NormalTok{findPT pt0 x }\FunctionTok{=}\NormalTok{ go pt0 []}
+\OtherTok{findPT ::} \DataTypeTok{Eq}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Maybe} \DataTypeTok{Encoding}
+\NormalTok{findPT pt0 x }\OtherTok{=}\NormalTok{ go pt0 []}
   \KeywordTok{where}
-\NormalTok{    go (}\DataTypeTok{PTLeaf}\NormalTok{ y      ) enc }\FunctionTok{|}\NormalTok{ x }\FunctionTok{==}\NormalTok{ y    }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (reverse enc)}
-                            \FunctionTok{|}\NormalTok{ otherwise }\FunctionTok{=} \DataTypeTok{Nothing}
-\NormalTok{    go (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) enc }\FunctionTok{=}\NormalTok{ go pt1 (}\DataTypeTok{DLeft}  \FunctionTok{:}\NormalTok{ enc) }\FunctionTok{<|>}
-\NormalTok{                              go pt2 (}\DataTypeTok{DRight} \FunctionTok{:}\NormalTok{ enc)}
+\NormalTok{    go (}\DataTypeTok{PTLeaf}\NormalTok{ y      ) enc }\OperatorTok{|}\NormalTok{ x }\OperatorTok{==}\NormalTok{ y    }\OtherTok{=} \DataTypeTok{Just}\NormalTok{ (}\FunctionTok{reverse}\NormalTok{ enc)}
+                            \OperatorTok{|} \FunctionTok{otherwise} \OtherTok{=} \DataTypeTok{Nothing}
+\NormalTok{    go (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) enc }\OtherTok{=}\NormalTok{ go pt1 (}\DataTypeTok{DLeft}  \OperatorTok{:}\NormalTok{ enc) }\OperatorTok{<|>}
+\NormalTok{                              go pt2 (}\DataTypeTok{DRight} \OperatorTok{:}\NormalTok{ enc)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -412,10 +412,10 @@ The algorithm goes:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ pt }\FunctionTok{=}\NormalTok{ runBuildTree }\StringTok{"hello world"}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ findPT pt }\CharTok{'e'}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{let}\NormalTok{ pt }\OtherTok{=}\NormalTok{ runBuildTree }\StringTok{"hello world"}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ findPT pt }\CharTok{\textquotesingle{}e\textquotesingle{}}
 \DataTypeTok{Just}\NormalTok{ [}\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ findPT pt }\CharTok{'q'}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ findPT pt }\CharTok{\textquotesingle{}q\textquotesingle{}}
 \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
@@ -428,14 +428,14 @@ Its inefficiency lies in many things --- chiefly of those being the fact that
 Huffman trees don't give you any real help as a search tree, and nothing short
 of a full depth-first traversal would work. Also, you probably don't want to do
 this every time you want to encode something; you'd want to have some sort of
-memoing and cacheing, ideally.
+memoizing and caching, ideally.
 
 \hypertarget{pre-searching}{%
 \subsection{Pre-searching}\label{pre-searching}}
 
 We can sort of ``solve'' both of these problems this by traversing through our
 \texttt{PreTree} and adding an entry to a \texttt{Map} at every leaf. This fixes
-our repetition problem by memoizing all of our results into a map\ldots{}and it
+our repetition problem by memoizing all of our results into a map\ldots and it
 fixes our search problem because \texttt{Map}s are an ordered binary search tree
 with efficient O(log n) lookups.\footnote{Note --- this section was largely
   rewritten; it used to contain a rather involved yet misled tutorial about the
@@ -453,15 +453,15 @@ Basically, we turn each of our leaves into little \texttt{Map}s, and then
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L101-L106}
-\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/huffman/PreTree.hs\#L101{-}L106}
+\CommentTok{{-}{-} interactive: https://www.fpcomplete.com/user/jle/huffman{-}encoding}
 
-\OtherTok{ptTable ::} \DataTypeTok{Ord}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Map}\NormalTok{ a }\DataTypeTok{Encoding}
-\NormalTok{ptTable pt }\FunctionTok{=}\NormalTok{ go pt []}
+\OtherTok{ptTable ::} \DataTypeTok{Ord}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Map}\NormalTok{ a }\DataTypeTok{Encoding}
+\NormalTok{ptTable pt }\OtherTok{=}\NormalTok{ go pt []}
   \KeywordTok{where}
-\NormalTok{    go (}\DataTypeTok{PTLeaf}\NormalTok{ x) enc       }\FunctionTok{=}\NormalTok{ x }\OtherTok{`M.singleton`}\NormalTok{ reverse enc}
-\NormalTok{    go (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) enc }\FunctionTok{=}\NormalTok{ go pt1 (}\DataTypeTok{DLeft}  \FunctionTok{:}\NormalTok{ enc) }\FunctionTok{<>}
-\NormalTok{                              go pt2 (}\DataTypeTok{DRight} \FunctionTok{:}\NormalTok{ enc)}
+\NormalTok{    go (}\DataTypeTok{PTLeaf}\NormalTok{ x) enc       }\OtherTok{=}\NormalTok{ x }\OtherTok{\textasciigrave{}M.singleton\textasciigrave{}} \FunctionTok{reverse}\NormalTok{ enc}
+\NormalTok{    go (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) enc }\OtherTok{=}\NormalTok{ go pt1 (}\DataTypeTok{DLeft}  \OperatorTok{:}\NormalTok{ enc) }\OperatorTok{<>}
+\NormalTok{                              go pt2 (}\DataTypeTok{DRight} \OperatorTok{:}\NormalTok{ enc)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -473,16 +473,16 @@ Note how it is almost identical in structure to \texttt{findPT}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L90-L96}
-\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/huffman/PreTree.hs\#L90{-}L96}
+\CommentTok{{-}{-} interactive: https://www.fpcomplete.com/user/jle/huffman{-}encoding}
 
-\OtherTok{findPT ::} \DataTypeTok{Eq}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Encoding}
-\NormalTok{findPT pt0 x }\FunctionTok{=}\NormalTok{ go pt0 []}
+\OtherTok{findPT ::} \DataTypeTok{Eq}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Maybe} \DataTypeTok{Encoding}
+\NormalTok{findPT pt0 x }\OtherTok{=}\NormalTok{ go pt0 []}
   \KeywordTok{where}
-\NormalTok{    go (}\DataTypeTok{PTLeaf}\NormalTok{ y      ) enc }\FunctionTok{|}\NormalTok{ x }\FunctionTok{==}\NormalTok{ y    }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (reverse enc)}
-                            \FunctionTok{|}\NormalTok{ otherwise }\FunctionTok{=} \DataTypeTok{Nothing}
-\NormalTok{    go (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) enc }\FunctionTok{=}\NormalTok{ go pt1 (}\DataTypeTok{DLeft}  \FunctionTok{:}\NormalTok{ enc) }\FunctionTok{<|>}
-\NormalTok{                              go pt2 (}\DataTypeTok{DRight} \FunctionTok{:}\NormalTok{ enc)}
+\NormalTok{    go (}\DataTypeTok{PTLeaf}\NormalTok{ y      ) enc }\OperatorTok{|}\NormalTok{ x }\OperatorTok{==}\NormalTok{ y    }\OtherTok{=} \DataTypeTok{Just}\NormalTok{ (}\FunctionTok{reverse}\NormalTok{ enc)}
+                            \OperatorTok{|} \FunctionTok{otherwise} \OtherTok{=} \DataTypeTok{Nothing}
+\NormalTok{    go (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) enc }\OtherTok{=}\NormalTok{ go pt1 (}\DataTypeTok{DLeft}  \OperatorTok{:}\NormalTok{ enc) }\OperatorTok{<|>}
+\NormalTok{                              go pt2 (}\DataTypeTok{DRight} \OperatorTok{:}\NormalTok{ enc)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -498,11 +498,11 @@ simple and performant:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L110-L111}
-\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/huffman/PreTree.hs\#L110{-}L111}
+\CommentTok{{-}{-} interactive: https://www.fpcomplete.com/user/jle/huffman{-}encoding}
 
-\OtherTok{lookupPTTable ::} \DataTypeTok{Ord}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Map}\NormalTok{ a }\DataTypeTok{Encoding} \OtherTok{->}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Encoding}
-\NormalTok{lookupPTTable }\FunctionTok{=}\NormalTok{ flip M.lookup}
+\OtherTok{lookupPTTable ::} \DataTypeTok{Ord}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Map}\NormalTok{ a }\DataTypeTok{Encoding} \OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Maybe} \DataTypeTok{Encoding}
+\NormalTok{lookupPTTable }\OtherTok{=} \FunctionTok{flip}\NormalTok{ M.lookup}
 \end{Highlighting}
 \end{Shaded}
 
@@ -510,11 +510,11 @@ given, of course, that we generate our table first.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ pt }\FunctionTok{=}\NormalTok{ runBuildTree }\StringTok{"hello world"}
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ tb }\FunctionTok{=}\NormalTok{ fmap ptTable pt}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ tb }\FunctionTok{>>=}\NormalTok{ \textbackslash{}tb' }\OtherTok{->}\NormalTok{ lookupPTTable tb' }\CharTok{'e'}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{let}\NormalTok{ pt }\OtherTok{=}\NormalTok{ runBuildTree }\StringTok{"hello world"}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{let}\NormalTok{ tb }\OtherTok{=} \FunctionTok{fmap}\NormalTok{ ptTable pt}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ tb }\OperatorTok{>>=}\NormalTok{ \textbackslash{}tb\textquotesingle{} }\OtherTok{{-}>}\NormalTok{ lookupPTTable tb\textquotesingle{} }\CharTok{\textquotesingle{}e\textquotesingle{}}
 \DataTypeTok{Just}\NormalTok{ [}\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ tb }\FunctionTok{>>=}\NormalTok{ \textbackslash{}tb' }\OtherTok{->}\NormalTok{ lookupPTTable tb' }\CharTok{'q'}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ tb }\OperatorTok{>>=}\NormalTok{ \textbackslash{}tb\textquotesingle{} }\OtherTok{{-}>}\NormalTok{ lookupPTTable tb\textquotesingle{} }\CharTok{\textquotesingle{}q\textquotesingle{}}
 \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
@@ -533,13 +533,13 @@ a list of the encodings.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L114-L117}
-\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/huffman/PreTree.hs\#L114{-}L117}
+\CommentTok{{-}{-} interactive: https://www.fpcomplete.com/user/jle/huffman{-}encoding}
 
-\OtherTok{encodeAll ::} \DataTypeTok{Ord}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Encoding}
-\NormalTok{encodeAll pt xs }\FunctionTok{=}\NormalTok{ concat }\FunctionTok{<$>}\NormalTok{ sequence (map (lookupPTTable tb) xs)}
+\OtherTok{encodeAll ::} \DataTypeTok{Ord}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ [a] }\OtherTok{{-}>} \DataTypeTok{Maybe} \DataTypeTok{Encoding}
+\NormalTok{encodeAll pt xs }\OtherTok{=} \FunctionTok{concat} \OperatorTok{<$>} \FunctionTok{sequence}\NormalTok{ (}\FunctionTok{map}\NormalTok{ (lookupPTTable tb) xs)}
   \KeywordTok{where}
-\NormalTok{    tb }\FunctionTok{=}\NormalTok{ ptTable pt}
+\NormalTok{    tb }\OtherTok{=}\NormalTok{ ptTable pt}
 \end{Highlighting}
 \end{Shaded}
 
@@ -562,33 +562,33 @@ This is a bit dense! But I'm sure that you are up for it.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ sequence [}\DataTypeTok{Just} \DecValTok{5}\NormalTok{, }\DataTypeTok{Just} \DecValTok{4}\NormalTok{]}
+\NormalTok{ghci}\OperatorTok{>} \FunctionTok{sequence}\NormalTok{ [}\DataTypeTok{Just} \DecValTok{5}\NormalTok{, }\DataTypeTok{Just} \DecValTok{4}\NormalTok{]}
 \DataTypeTok{Just}\NormalTok{ [}\DecValTok{5}\NormalTok{,}\DecValTok{4}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ sequence [}\DataTypeTok{Just} \DecValTok{6}\NormalTok{, }\DataTypeTok{Nothing}\NormalTok{]}
+\NormalTok{ghci}\OperatorTok{>} \FunctionTok{sequence}\NormalTok{ [}\DataTypeTok{Just} \DecValTok{6}\NormalTok{, }\DataTypeTok{Nothing}\NormalTok{]}
 \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
 
   Note that the standard libraries provide a synonym for
   \texttt{sequence\ .\ map} --- \texttt{mapM}. So we could have written it as
-  \texttt{mapM\ (lookupPTTable\ t)\ xs}\ldots{}but that is significantly less
+  \texttt{mapM\ (lookupPTTable\ t)\ xs}\ldots but that is significantly less
   clear/immediately understandable.
 \item
   Recall that our \texttt{sequence} left us with a
-  \texttt{Maybe\ {[}Encoding{]}}\ldots{}but we only want
+  \texttt{Maybe\ {[}Encoding{]}}\ldots but we only want
   \texttt{Maybe\ Encoding}. So we can use \texttt{(\textless{}\$\textgreater{})}
   to \texttt{concat} all of the \texttt{Encoding}s inside the Maybe.
 \end{enumerate}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ pt }\FunctionTok{=}\NormalTok{ runBuildTree }\StringTok{"hello world"}          \CommentTok{-- :: Maybe (PreTree Char)}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ pt }\FunctionTok{>>=}\NormalTok{ \textbackslash{}pt' }\OtherTok{->}\NormalTok{ encodeAll pt' }\StringTok{"hello world"}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{let}\NormalTok{ pt }\OtherTok{=}\NormalTok{ runBuildTree }\StringTok{"hello world"}          \CommentTok{{-}{-} :: Maybe (PreTree Char)}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ pt }\OperatorTok{>>=}\NormalTok{ \textbackslash{}pt\textquotesingle{} }\OtherTok{{-}>}\NormalTok{ encodeAll pt\textquotesingle{} }\StringTok{"hello world"}
 \DataTypeTok{Just}\NormalTok{ [}\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{,}
 \DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{,}
 \DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{, }\DataTypeTok{DRight}\NormalTok{,}
 \DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ pt }\FunctionTok{>>=}\NormalTok{ \textbackslash{}pt' }\OtherTok{->}\NormalTok{ encodeAll pt' }\StringTok{"hello worldq"}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ pt }\OperatorTok{>>=}\NormalTok{ \textbackslash{}pt\textquotesingle{} }\OtherTok{{-}>}\NormalTok{ encodeAll pt\textquotesingle{} }\StringTok{"hello worldq"}
 \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
@@ -603,29 +603,29 @@ the tree using the given encoding and return a value whenever you reach a leaf.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L123-L128}
-\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/huffman/PreTree.hs\#L123{-}L128}
+\CommentTok{{-}{-} interactive: https://www.fpcomplete.com/user/jle/huffman{-}encoding}
 
-\OtherTok{decodePT ::} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Encoding} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (a, }\DataTypeTok{Encoding}\NormalTok{)}
-\NormalTok{decodePT (}\DataTypeTok{PTLeaf}\NormalTok{ x)       ds     }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ (x, ds)}
-\NormalTok{decodePT (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) (d}\FunctionTok{:}\NormalTok{ds) }\FunctionTok{=} \KeywordTok{case}\NormalTok{ d }\KeywordTok{of}
-                                     \DataTypeTok{DLeft}  \OtherTok{->}\NormalTok{ decodePT pt1 ds}
-                                     \DataTypeTok{DRight} \OtherTok{->}\NormalTok{ decodePT pt2 ds}
-\NormalTok{decodePT (}\DataTypeTok{PTNode}\NormalTok{ _ _)     []     }\FunctionTok{=} \DataTypeTok{Nothing}
+\OtherTok{decodePT ::} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Encoding} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ (a, }\DataTypeTok{Encoding}\NormalTok{)}
+\NormalTok{decodePT (}\DataTypeTok{PTLeaf}\NormalTok{ x)       ds     }\OtherTok{=} \DataTypeTok{Just}\NormalTok{ (x, ds)}
+\NormalTok{decodePT (}\DataTypeTok{PTNode}\NormalTok{ pt1 pt2) (d}\OperatorTok{:}\NormalTok{ds) }\OtherTok{=} \KeywordTok{case}\NormalTok{ d }\KeywordTok{of}
+                                     \DataTypeTok{DLeft}  \OtherTok{{-}>}\NormalTok{ decodePT pt1 ds}
+                                     \DataTypeTok{DRight} \OtherTok{{-}>}\NormalTok{ decodePT pt2 ds}
+\NormalTok{decodePT (}\DataTypeTok{PTNode}\NormalTok{ \_ \_)     []     }\OtherTok{=} \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
 
 The logic should seem pretty familiar. The main algorithm involves going down
 the tree, ``following'' the direction list. If you reach a leaf, then you have
 found something (and return the directions you haven't followed yet). If you run
-out of directions while on a node\ldots{}something has gone wrong.
+out of directions while on a node\ldots something has gone wrong.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{do}\NormalTok{  pt  }\OtherTok{<-}\NormalTok{ runBuildTree }\StringTok{"hello world"}
-    \FunctionTok{|}\NormalTok{     enc }\OtherTok{<-}\NormalTok{ encodeAll pt }\StringTok{"hello world"}
-    \FunctionTok{|}\NormalTok{     decodePT pt enc}
-\DataTypeTok{Just}\NormalTok{ (}\CharTok{'h'}\NormalTok{, [}\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft} \FunctionTok{...}\NormalTok{])}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{do}\NormalTok{  pt  }\OtherTok{<{-}}\NormalTok{ runBuildTree }\StringTok{"hello world"}
+    \OperatorTok{|}\NormalTok{     enc }\OtherTok{<{-}}\NormalTok{ encodeAll pt }\StringTok{"hello world"}
+    \OperatorTok{|}\NormalTok{     decodePT pt enc}
+\DataTypeTok{Just}\NormalTok{ (}\CharTok{\textquotesingle{}h\textquotesingle{}}\NormalTok{, [}\DataTypeTok{DLeft}\NormalTok{, }\DataTypeTok{DLeft} \OperatorTok{...}\NormalTok{])}
 \end{Highlighting}
 \end{Shaded}
 
@@ -649,7 +649,7 @@ This sounds a lot like the \texttt{Data.List} function \texttt{unfoldr}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{unfoldr ::}\NormalTok{ (b }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (a, b)) }\OtherTok{->}\NormalTok{ b }\OtherTok{->}\NormalTok{ [a]}
+\OtherTok{unfoldr ::}\NormalTok{ (b }\OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ (a, b)) }\OtherTok{{-}>}\NormalTok{ b }\OtherTok{{-}>}\NormalTok{ [a]}
 \end{Highlighting}
 \end{Shaded}
 
@@ -662,19 +662,19 @@ Using \texttt{unfoldr}, we can write a \texttt{decodeAll}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L132-L133}
-\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/huffman/PreTree.hs\#L132{-}L133}
+\CommentTok{{-}{-} interactive: https://www.fpcomplete.com/user/jle/huffman{-}encoding}
 
-\OtherTok{decodeAll ::} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Encoding} \OtherTok{->}\NormalTok{ [a]}
-\NormalTok{decodeAll pt }\FunctionTok{=}\NormalTok{ unfoldr (decodePT pt)}
+\OtherTok{decodeAll ::} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Encoding} \OtherTok{{-}>}\NormalTok{ [a]}
+\NormalTok{decodeAll pt }\OtherTok{=}\NormalTok{ unfoldr (decodePT pt)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{do}\NormalTok{ pt  }\OtherTok{<-}\NormalTok{ runBuildTree }\StringTok{"hello world"}
- \FunctionTok{|}\NormalTok{    enc }\OtherTok{<-}\NormalTok{ encodeAll pt }\StringTok{"hello world"}
- \FunctionTok{|}\NormalTok{    return (decodeAll pt enc)}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{do}\NormalTok{ pt  }\OtherTok{<{-}}\NormalTok{ runBuildTree }\StringTok{"hello world"}
+ \OperatorTok{|}\NormalTok{    enc }\OtherTok{<{-}}\NormalTok{ encodeAll pt }\StringTok{"hello world"}
+ \OperatorTok{|}    \FunctionTok{return}\NormalTok{ (decodeAll pt enc)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -687,17 +687,17 @@ We can write a utility to test our encoding/decoding functions:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L106-L113}
-\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/huffman/Huffman.hs\#L106{-}L113}
+\CommentTok{{-}{-} interactive: https://www.fpcomplete.com/user/jle/huffman{-}encoding}
 
-\OtherTok{testTree ::} \DataTypeTok{Ord}\NormalTok{ a }\OtherTok{=>}\NormalTok{ [a] }\OtherTok{->}\NormalTok{ [a]}
-\NormalTok{testTree [] }\FunctionTok{=}\NormalTok{ []                    }\CommentTok{-- handle the empty list}
-\NormalTok{testTree xs }\FunctionTok{=}\NormalTok{ decoded}
+\OtherTok{testTree ::} \DataTypeTok{Ord}\NormalTok{ a }\OtherTok{=>}\NormalTok{ [a] }\OtherTok{{-}>}\NormalTok{ [a]}
+\NormalTok{testTree [] }\OtherTok{=}\NormalTok{ []                    }\CommentTok{{-}{-} handle the empty list}
+\NormalTok{testTree xs }\OtherTok{=}\NormalTok{ decoded}
   \KeywordTok{where}
-    \DataTypeTok{Just}\NormalTok{ decoded }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{      pt  }\OtherTok{<-}\NormalTok{ runBuildTree xs}
-\NormalTok{      enc }\OtherTok{<-}\NormalTok{ encodeAll pt xs}
-\NormalTok{      return (decodeAll pt enc)}
+    \DataTypeTok{Just}\NormalTok{ decoded }\OtherTok{=} \KeywordTok{do}
+\NormalTok{      pt  }\OtherTok{<{-}}\NormalTok{ runBuildTree xs}
+\NormalTok{      enc }\OtherTok{<{-}}\NormalTok{ encodeAll pt xs}
+      \FunctionTok{return}\NormalTok{ (decodeAll pt enc)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -710,9 +710,9 @@ article from earlier, if you are unfamiliar with working with the Maybe monad)
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ testTree }\StringTok{"hello world"}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ testTree }\StringTok{"hello world"}
 \StringTok{"hello world"}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ testTree }\StringTok{"the quick brown fox jumps over the lazy dog"}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ testTree }\StringTok{"the quick brown fox jumps over the lazy dog"}
 \StringTok{"the quick brown fox jumps over the lazy dog"}
 \end{Highlighting}
 \end{Shaded}
@@ -730,10 +730,10 @@ library. \texttt{quickcheck} will basically test our proposition
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{import} \DataTypeTok{Test.QuickCheck}
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{set }\FunctionTok{-}\DataTypeTok{XScopedTypeVariables}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ quickCheck (\textbackslash{}(}\OtherTok{xs ::} \DataTypeTok{String}\NormalTok{) }\OtherTok{->}\NormalTok{ testTree xs }\FunctionTok{==}\NormalTok{ xs)}
-\FunctionTok{***} \DataTypeTok{Failed}\FunctionTok{!} \DataTypeTok{Falsifiable}\NormalTok{ (after }\DecValTok{3}\NormalTok{ tests and }\DecValTok{2}\NormalTok{ shrinks)}\FunctionTok{:}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{import} \DataTypeTok{Test.QuickCheck}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{set }\OperatorTok{{-}}\DataTypeTok{XScopedTypeVariables}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ quickCheck (\textbackslash{}(}\OtherTok{xs ::} \DataTypeTok{String}\NormalTok{) }\OtherTok{{-}>}\NormalTok{ testTree xs }\OperatorTok{==}\NormalTok{ xs)}
+\OperatorTok{***} \DataTypeTok{Failed}\OperatorTok{!} \DataTypeTok{Falsifiable}\NormalTok{ (after }\DecValTok{3}\NormalTok{ tests }\FunctionTok{and} \DecValTok{2}\NormalTok{ shrinks)}\OperatorTok{:}
 \StringTok{"a"}
 \end{Highlighting}
 \end{Shaded}
@@ -747,12 +747,12 @@ If we look at how \texttt{"a"} is encoded, it'll become apparent:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ (}\DataTypeTok{Just}\NormalTok{ pt) }\FunctionTok{=}\NormalTok{ runBuildTree }\StringTok{"aaa"}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ pt}
-\DataTypeTok{PTLeaf} \CharTok{'a'}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ findPT pt }\CharTok{'a'}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{let}\NormalTok{ (}\DataTypeTok{Just}\NormalTok{ pt) }\OtherTok{=}\NormalTok{ runBuildTree }\StringTok{"aaa"}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ pt}
+\DataTypeTok{PTLeaf} \CharTok{\textquotesingle{}a\textquotesingle{}}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ findPT pt }\CharTok{\textquotesingle{}a\textquotesingle{}}
 \DataTypeTok{Just}\NormalTok{ []}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ encodeAll pt }\StringTok{"aaaaaaaaaaa"}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ encodeAll pt }\StringTok{"aaaaaaaaaaa"}
 \DataTypeTok{Just}\NormalTok{ []}
 \end{Highlighting}
 \end{Shaded}
@@ -772,36 +772,36 @@ tree is a singleton tree. We can write a ``safe'' \texttt{decodeAll}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/PreTree.hs#L137-L139}
-\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/huffman/PreTree.hs\#L137{-}L139}
+\CommentTok{{-}{-} interactive: https://www.fpcomplete.com/user/jle/huffman{-}encoding}
 
-\OtherTok{decodeAll' ::} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Encoding} \OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ [a]}
-\NormalTok{decodeAll' (}\DataTypeTok{PTLeaf}\NormalTok{ _) _   }\FunctionTok{=} \DataTypeTok{Nothing}
-\NormalTok{decodeAll' pt         enc }\FunctionTok{=} \DataTypeTok{Just} \FunctionTok{$}\NormalTok{ unfoldr (decodePT pt) enc}
+\OtherTok{decodeAll\textquotesingle{} ::} \DataTypeTok{PreTree}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Encoding} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ [a]}
+\NormalTok{decodeAll\textquotesingle{} (}\DataTypeTok{PTLeaf}\NormalTok{ \_) \_   }\OtherTok{=} \DataTypeTok{Nothing}
+\NormalTok{decodeAll\textquotesingle{} pt         enc }\OtherTok{=} \DataTypeTok{Just} \OperatorTok{$}\NormalTok{ unfoldr (decodePT pt) enc}
 \end{Highlighting}
 \end{Shaded}
 
-In doing this, we don't exactly ``fix'' the problem\ldots{}we only defer
+In doing this, we don't exactly ``fix'' the problem\ldots we only defer
 responsibility. Now, whoever uses \texttt{decodeAll\textquotesingle{}} (like our
 eventual encoding interface) is \emph{forced to handle the error} (by handing
 the \texttt{Nothing} case). In this way, \emph{the type system enforces safety}.
 Had we always used the unsafe \texttt{decodeAll}, then whoever uses it
 eventually has to ``manually remember'' to handle the unterminating case, by
-carefuly reading documentation or something. In this case, the type system is a
+carefully reading documentation or something. In this case, the type system is a
 big, explicit reminder saying ``hey, deal with the unterminating case.''
 
 We'll also a ``safe'' \texttt{testTree}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/huffman/Huffman.hs#L117-L121}
-\CommentTok{-- interactive: https://www.fpcomplete.com/user/jle/huffman-encoding}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/huffman/Huffman.hs\#L117{-}L121}
+\CommentTok{{-}{-} interactive: https://www.fpcomplete.com/user/jle/huffman{-}encoding}
 
-\OtherTok{testTree' ::} \DataTypeTok{Ord}\NormalTok{ a }\OtherTok{=>}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ [a]}
-\NormalTok{testTree' xs }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    pt  }\OtherTok{<-}\NormalTok{ runBuildTree xs}
-\NormalTok{    enc }\OtherTok{<-}\NormalTok{ encodeAll pt xs}
-\NormalTok{    decodeAll' pt enc}
+\OtherTok{testTree\textquotesingle{} ::} \DataTypeTok{Ord}\NormalTok{ a }\OtherTok{=>}\NormalTok{ [a] }\OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ [a]}
+\NormalTok{testTree\textquotesingle{} xs }\OtherTok{=} \KeywordTok{do}
+\NormalTok{    pt  }\OtherTok{<{-}}\NormalTok{ runBuildTree xs}
+\NormalTok{    enc }\OtherTok{<{-}}\NormalTok{ encodeAll pt xs}
+\NormalTok{    decodeAll\textquotesingle{} pt enc}
 \end{Highlighting}
 \end{Shaded}
 
@@ -809,8 +809,8 @@ So we can now quickcheck:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ quickCheck (\textbackslash{}(}\OtherTok{xs ::} \DataTypeTok{String}\NormalTok{) }\OtherTok{->}\NormalTok{ testTree' xs }\OtherTok{`elem`}\NormalTok{ [}\DataTypeTok{Nothing}\NormalTok{, }\DataTypeTok{Just}\NormalTok{ xs])}
-\FunctionTok{+++} \DataTypeTok{OK}\NormalTok{, passed }\DecValTok{100}\NormalTok{ tests}\FunctionTok{.}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ quickCheck (\textbackslash{}(}\OtherTok{xs ::} \DataTypeTok{String}\NormalTok{) }\OtherTok{{-}>}\NormalTok{ testTree\textquotesingle{} xs }\OtherTok{\textasciigrave{}elem\textasciigrave{}}\NormalTok{ [}\DataTypeTok{Nothing}\NormalTok{, }\DataTypeTok{Just}\NormalTok{ xs])}
+\OperatorTok{+++} \DataTypeTok{OK}\NormalTok{, passed }\DecValTok{100}\NormalTok{ tests}\OperatorTok{.}
 \end{Highlighting}
 \end{Shaded}
 

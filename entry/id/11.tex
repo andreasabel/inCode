@@ -162,7 +162,7 @@ Without further ado, let us start on the list monad.
 Now, when I say ``list monad'', I mean ``one way that you can implement chaining
 operations on a list''. To be more precise, I should say ``haskell's default
 choice of chaining method on lists''. Technically, \textbf{there is no ``the
-list monad''}\ldots{}there is ``a way we can make the List data structure a
+list monad''}\ldots there is ``a way we can make the List data structure a
 monad''.
 
 And what's one way we can do this? You could probably take a wild guess. Yup, we
@@ -175,29 +175,29 @@ Let's take a look at last article's \texttt{halve} function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- the built in function `guard`, to refresh your memory}
-\OtherTok{guard ::} \DataTypeTok{MonadPlus}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Bool} \OtherTok{->}\NormalTok{ m ()}
-\NormalTok{guard }\DataTypeTok{True}  \FunctionTok{=}\NormalTok{ return ()}
-\NormalTok{guard }\DataTypeTok{False} \FunctionTok{=}\NormalTok{ mzero}
+\CommentTok{{-}{-} the built in function \textasciigrave{}guard\textasciigrave{}, to refresh your memory}
+\OtherTok{guard ::} \DataTypeTok{MonadPlus}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Bool} \OtherTok{{-}>}\NormalTok{ m ()}
+\NormalTok{guard }\DataTypeTok{True}  \OtherTok{=} \FunctionTok{return}\NormalTok{ ()}
+\NormalTok{guard }\DataTypeTok{False} \OtherTok{=}\NormalTok{ mzero}
 
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L30-L33}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/monad{-}plus/Halves.hs\#L30{-}L33}
 
-\OtherTok{halve ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Int}
-\NormalTok{halve n }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    guard }\FunctionTok{$}\NormalTok{ even n}
-\NormalTok{    return }\FunctionTok{$}\NormalTok{ n }\OtherTok{`div`} \DecValTok{2}
+\OtherTok{halve ::} \DataTypeTok{Int} \OtherTok{{-}>} \DataTypeTok{Maybe} \DataTypeTok{Int}
+\NormalTok{halve n }\OtherTok{=} \KeywordTok{do}
+\NormalTok{    guard }\OperatorTok{$} \FunctionTok{even}\NormalTok{ n}
+    \FunctionTok{return} \OperatorTok{$}\NormalTok{ n }\OtherTok{\textasciigrave{}div\textasciigrave{}} \DecValTok{2}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ halve }\DecValTok{6}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ halve }\DecValTok{6}
 \DataTypeTok{Just} \DecValTok{3}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ halve }\DecValTok{7}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ halve }\DecValTok{7}
 \DataTypeTok{Nothing}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ halve }\DecValTok{8} \FunctionTok{>>=}\NormalTok{ halve}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ halve }\DecValTok{8} \OperatorTok{>>=}\NormalTok{ halve}
 \DataTypeTok{Just} \DecValTok{2}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ halve }\DecValTok{7} \FunctionTok{>>=}\NormalTok{ halve}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ halve }\DecValTok{7} \OperatorTok{>>=}\NormalTok{ halve}
 \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
@@ -206,7 +206,7 @@ Here, our success/fail mechanism was built into the Maybe container. Remember,
 first, it fails automatically if \texttt{n} is not even; then, it auto-succeeds
 with \texttt{n\ \textasciigrave{}div\textasciigrave{}\ 2} (which only works if
 it has not already failed). But note that we didn't actually really ``need''
-Maybe here\ldots{}we could have used anything that had an \texttt{mzero}
+Maybe here\ldots we could have used anything that had an \texttt{mzero}
 (insta-fail, which is used in \texttt{guard}) and a \texttt{return}
 (auto-succeed).
 
@@ -214,23 +214,23 @@ Let's see what happens when we replace our Maybe container with a list:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L35-L38}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/monad{-}plus/Halves.hs\#L35{-}L38}
 
-\OtherTok{halve' ::} \DataTypeTok{Int} \OtherTok{->}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
-\NormalTok{halve' n }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    guard }\FunctionTok{$}\NormalTok{ even n}
-\NormalTok{    return }\FunctionTok{$}\NormalTok{ n }\OtherTok{`div`} \DecValTok{2}
+\OtherTok{halve\textquotesingle{} ::} \DataTypeTok{Int} \OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
+\NormalTok{halve\textquotesingle{} n }\OtherTok{=} \KeywordTok{do}
+\NormalTok{    guard }\OperatorTok{$} \FunctionTok{even}\NormalTok{ n}
+    \FunctionTok{return} \OperatorTok{$}\NormalTok{ n }\OtherTok{\textasciigrave{}div\textasciigrave{}} \DecValTok{2}
 \end{Highlighting}
 \end{Shaded}
 
-This is\ldots{}the exact same function body. We didn't do anything but change
-the type signature. But because you believe me when I say that List is a
-MonadPlus\ldots{}this should work, right? \texttt{guard} should work for
+This is\ldots the exact same function body. We didn't do anything but change the
+type signature. But because you believe me when I say that List is a
+MonadPlus\ldots this should work, right? \texttt{guard} should work for
 \emph{any} MonadPlus, because every MonadPlus has an \texttt{mzero} (fail).
 \texttt{return} should work for any MonadPlus, too --- it wouldn't be a
 MonadPlus without \texttt{return} implemented! (Remember, typeclasses are
 similar to interfaces in OOP) We don't know exactly what failing and succeeding
-actually \emph{looks} like in a list yet\ldots{}but if you know it's a MonadPlus
+actually \emph{looks} like in a list yet\ldots but if you know it's a MonadPlus
 (which List is, in the standard library), you know that it \emph{has} these
 concepts defined somewhere.
 
@@ -241,17 +241,17 @@ Watch:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ halve' }\DecValTok{6}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ halve\textquotesingle{} }\DecValTok{6}
 \NormalTok{[}\DecValTok{3}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ halve' }\DecValTok{7}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ halve\textquotesingle{} }\DecValTok{7}
 \NormalTok{[]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ halve' }\DecValTok{8} \FunctionTok{>>=}\NormalTok{ halve'}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ halve\textquotesingle{} }\DecValTok{8} \OperatorTok{>>=}\NormalTok{ halve\textquotesingle{}}
 \NormalTok{[}\DecValTok{2}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ halve' }\DecValTok{7} \FunctionTok{>>=}\NormalTok{ halve'}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ halve\textquotesingle{} }\DecValTok{7} \OperatorTok{>>=}\NormalTok{ halve\textquotesingle{}}
 \NormalTok{[]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ halve' }\DecValTok{32} \FunctionTok{>>=}\NormalTok{ halve' }\FunctionTok{>>=}\NormalTok{ halve' }\FunctionTok{>>=}\NormalTok{ halve'}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ halve\textquotesingle{} }\DecValTok{32} \OperatorTok{>>=}\NormalTok{ halve\textquotesingle{} }\OperatorTok{>>=}\NormalTok{ halve\textquotesingle{} }\OperatorTok{>>=}\NormalTok{ halve\textquotesingle{}}
 \NormalTok{[}\DecValTok{2}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ halve' }\DecValTok{32} \FunctionTok{>>}\NormalTok{ mzero }\FunctionTok{>>=}\NormalTok{ halve' }\FunctionTok{>>=}\NormalTok{ halve' }\FunctionTok{>>=}\NormalTok{ halve'}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ halve\textquotesingle{} }\DecValTok{32} \OperatorTok{>>}\NormalTok{ mzero }\OperatorTok{>>=}\NormalTok{ halve\textquotesingle{} }\OperatorTok{>>=}\NormalTok{ halve\textquotesingle{} }\OperatorTok{>>=}\NormalTok{ halve\textquotesingle{}}
 \NormalTok{[]}
 \end{Highlighting}
 \end{Shaded}
@@ -267,24 +267,24 @@ crazy things\ldots{}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-L43}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/monad{-}plus/Halves.hs\#L40{-}L43}
 
-\OtherTok{genericHalve ::} \DataTypeTok{MonadPlus}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Int} \OtherTok{->}\NormalTok{ m }\DataTypeTok{Int}
-\NormalTok{genericHalve n }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    guard }\FunctionTok{$}\NormalTok{ even n}
-\NormalTok{    return }\FunctionTok{$}\NormalTok{ n }\OtherTok{`div`} \DecValTok{2}
+\OtherTok{genericHalve ::} \DataTypeTok{MonadPlus}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Int} \OtherTok{{-}>}\NormalTok{ m }\DataTypeTok{Int}
+\NormalTok{genericHalve n }\OtherTok{=} \KeywordTok{do}
+\NormalTok{    guard }\OperatorTok{$} \FunctionTok{even}\NormalTok{ n}
+    \FunctionTok{return} \OperatorTok{$}\NormalTok{ n }\OtherTok{\textasciigrave{}div\textasciigrave{}} \DecValTok{2}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ genericHalve }\DecValTok{8}\OtherTok{ ::} \DataTypeTok{Maybe} \DataTypeTok{Int}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ genericHalve }\DecValTok{8}\OtherTok{ ::} \DataTypeTok{Maybe} \DataTypeTok{Int}
 \DataTypeTok{Just} \DecValTok{4}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ genericHalve }\DecValTok{8}\OtherTok{ ::}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ genericHalve }\DecValTok{8}\OtherTok{ ::}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
 \NormalTok{[}\DecValTok{4}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ genericHalve }\DecValTok{7}\OtherTok{ ::} \DataTypeTok{Maybe} \DataTypeTok{Int}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ genericHalve }\DecValTok{7}\OtherTok{ ::} \DataTypeTok{Maybe} \DataTypeTok{Int}
 \DataTypeTok{Nothing}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ genericHalve }\DecValTok{7}\OtherTok{ ::}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ genericHalve }\DecValTok{7}\OtherTok{ ::}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
 \NormalTok{[]}
 \end{Highlighting}
 \end{Shaded}
@@ -294,7 +294,7 @@ crazy things\ldots{}
 \textbf{Welcome to Haskell!}
 
 Now, when we say something like \texttt{genericHalve\ 8\ ::\ Maybe\ Int}, it
-means ``I want \texttt{genericHalve\ 8}\ldots{}and I want the type to be
+means ``I want \texttt{genericHalve\ 8}\ldots and I want the type to be
 \texttt{Maybe\ Int}.'' This is necessary here because in our
 \texttt{genericHalve} can be \emph{any} MonadPlus, so we have to tell ghci which
 MonadPlus we want.
@@ -305,7 +305,7 @@ MonadPlus we want.
 three versions of \texttt{halve} available for playing around with})
 
 So there you have it. Maybe and lists are one and the same. Lists \emph{do} too
-represent the concept of failure and success. So\ldots{}what's the difference?
+represent the concept of failure and success. So\ldots what's the difference?
 
 \hypertarget{a-list-apart}{%
 \section{A List Apart}\label{a-list-apart}}
@@ -320,7 +320,7 @@ Consider \texttt{{[}3,\ 5{]}}. Clearly this is to represent some sort of
 How about we look at it this way: \texttt{{[}3,\ 5{]}} represents two separate
 \emph{paths} to success. When we look at a \texttt{Just\ 5}, we see a
 computation that succeeded with a 5. When we see a \texttt{{[}3,\ 5{]}}, we may
-interpret it as a computation that had two possible succesful paths: one
+interpret it as a computation that had two possible successful paths: one
 succeeding with a 3 and another with a 5.
 
 You can also say that it represents a computation that \emph{could have chosen}
@@ -328,7 +328,7 @@ to succeed in a 3, or a 5. In this way, the list monad is often referred to as
 ``the choice monad''.
 
 This view of a list as a collection of possible successes or choices of
-successes is not the only way to think of a list as a monad\ldots{}but it is the
+successes is not the only way to think of a list as a monad\ldots but it is the
 way that the Haskell community has adopted as arguably the most useful. (The
 other main way is to approach it completely differently, making list not even a
 MonadPlus and therefore not representing failure or success at all)
@@ -337,7 +337,7 @@ Think of it this way: A value goes through a long and arduous journey with many
 choices and possible paths and forks. At the end of it, you have the result of
 every path that could have lead to a success. Contrast this to the Maybe monad,
 where a value goes through this arduous journey, but never has any choice. There
-is only one path --- successful, or otherwise. A Maybe is deterministic\ldots{}a
+is only one path --- successful, or otherwise. A Maybe is deterministic\ldots a
 list provides a choice in paths.
 
 \hypertarget{halveordouble}{%
@@ -350,19 +350,19 @@ racist.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L19-L21}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/monad{-}plus/HalveOrDouble.hs\#L19{-}L21}
 
-\OtherTok{halveOrDouble ::} \DataTypeTok{Int} \OtherTok{->}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
-\NormalTok{halveOrDouble n }\FunctionTok{|}\NormalTok{ even n    }\FunctionTok{=}\NormalTok{ [n }\OtherTok{`div`} \DecValTok{2}\NormalTok{, n }\FunctionTok{*} \DecValTok{2}\NormalTok{]}
-                \FunctionTok{|}\NormalTok{ otherwise }\FunctionTok{=}\NormalTok{ [n }\FunctionTok{*} \DecValTok{2}\NormalTok{]}
+\OtherTok{halveOrDouble ::} \DataTypeTok{Int} \OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
+\NormalTok{halveOrDouble n }\OperatorTok{|} \FunctionTok{even}\NormalTok{ n    }\OtherTok{=}\NormalTok{ [n }\OtherTok{\textasciigrave{}div\textasciigrave{}} \DecValTok{2}\NormalTok{, n }\OperatorTok{*} \DecValTok{2}\NormalTok{]}
+                \OperatorTok{|} \FunctionTok{otherwise} \OtherTok{=}\NormalTok{ [n }\OperatorTok{*} \DecValTok{2}\NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ halveOrDouble }\DecValTok{6}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ halveOrDouble }\DecValTok{6}
 \NormalTok{[ }\DecValTok{3}\NormalTok{,}\DecValTok{12}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ halveOrDouble }\DecValTok{7}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ halveOrDouble }\DecValTok{7}
 \NormalTok{[   }\DecValTok{14}\NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
@@ -389,11 +389,11 @@ we expect?
 \item
   The path of double-halve will work in all cases! It is a success always.
 \item
-  The path of double-double will also work in all cases\ldots{}it'll never fail
+  The path of double-double will also work in all cases\ldots it'll never fail
   for our sojourning number!
 \end{enumerate}
 
-So\ldots{}halving-or-doubling twice has two possible successful paths for an odd
+So\ldots halving-or-doubling twice has two possible successful paths for an odd
 number, three successful paths for a number divisible by two but not four, and
 four successful paths for a number divisible by four.
 
@@ -401,11 +401,11 @@ Let's try it out:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ halveOrDouble }\DecValTok{5} \FunctionTok{>>=}\NormalTok{ halveOrDouble}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ halveOrDouble }\DecValTok{5} \OperatorTok{>>=}\NormalTok{ halveOrDouble}
 \NormalTok{[       }\DecValTok{5}\NormalTok{, }\DecValTok{20}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ halveOrDouble }\DecValTok{6} \FunctionTok{>>=}\NormalTok{ halveOrDouble}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ halveOrDouble }\DecValTok{6} \OperatorTok{>>=}\NormalTok{ halveOrDouble}
 \NormalTok{[    }\DecValTok{6}\NormalTok{, }\DecValTok{6}\NormalTok{, }\DecValTok{24}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ halveOrDouble }\DecValTok{8} \FunctionTok{>>=}\NormalTok{ halveOrDouble}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ halveOrDouble }\DecValTok{8} \OperatorTok{>>=}\NormalTok{ halveOrDouble}
 \NormalTok{[ }\DecValTok{2}\NormalTok{, }\DecValTok{8}\NormalTok{, }\DecValTok{8}\NormalTok{, }\DecValTok{32}\NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
@@ -423,11 +423,11 @@ Let's look at the same thing in do notation form to offer some possible insight:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L24-L27}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/monad{-}plus/HalveOrDouble.hs\#L24{-}L27}
 
-\OtherTok{halveOrDoubleTwice ::} \DataTypeTok{Int} \OtherTok{->}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
-\NormalTok{halveOrDoubleTwice n }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    x }\OtherTok{<-}\NormalTok{ halveOrDouble n}
+\OtherTok{halveOrDoubleTwice ::} \DataTypeTok{Int} \OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
+\NormalTok{halveOrDoubleTwice n }\OtherTok{=} \KeywordTok{do}
+\NormalTok{    x }\OtherTok{<{-}}\NormalTok{ halveOrDouble n}
 \NormalTok{    halveOrDouble x}
 \end{Highlighting}
 \end{Shaded}
@@ -444,10 +444,10 @@ Here is an illustration, tracing out ``individual paths'':
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{halveOrDoubleTwice ::} \DataTypeTok{Int} \OtherTok{->}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
-\NormalTok{halveOrDoubleTwice n }\FunctionTok{=} \KeywordTok{do}       \CommentTok{-- halveOrDoubleTwice 6}
-\NormalTok{    x }\OtherTok{<-}\NormalTok{ halveOrDouble n        }\CommentTok{-- x <-     Just 3          Just 12}
-\NormalTok{    halveOrDouble x             }\CommentTok{--      Nothing  Just 6  Just 6  Just 24}
+\OtherTok{halveOrDoubleTwice ::} \DataTypeTok{Int} \OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
+\NormalTok{halveOrDoubleTwice n }\OtherTok{=} \KeywordTok{do}       \CommentTok{{-}{-} halveOrDoubleTwice 6}
+\NormalTok{    x }\OtherTok{<{-}}\NormalTok{ halveOrDouble n        }\CommentTok{{-}{-} x <{-}     Just 3          Just 12}
+\NormalTok{    halveOrDouble x             }\CommentTok{{-}{-}      Nothing  Just 6  Just 6  Just 24}
 \end{Highlighting}
 \end{Shaded}
 
@@ -469,19 +469,19 @@ it in action:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/HalveOrDouble.hs#L29-L29}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/monad{-}plus/HalveOrDouble.hs\#L29{-}L29}
 
-\OtherTok{hod2PlusOne ::} \DataTypeTok{Int} \OtherTok{->}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
-\NormalTok{hod2PlusOne n }\FunctionTok{=} \KeywordTok{do}              \CommentTok{-- hod2PlusOne 6}
-\NormalTok{    x }\OtherTok{<-}\NormalTok{ halveOrDouble n        }\CommentTok{-- x <-     Just 3          Just 12}
-\NormalTok{    halveOrDouble x             }\CommentTok{--      Nothing  Just 6  Just 6  Just 24}
-\NormalTok{    return }\FunctionTok{$}\NormalTok{ x }\FunctionTok{+} \DecValTok{1}              \CommentTok{--      (skip)   Just 4  Just 13 Just 13}
+\OtherTok{hod2PlusOne ::} \DataTypeTok{Int} \OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
+\NormalTok{hod2PlusOne n }\OtherTok{=} \KeywordTok{do}              \CommentTok{{-}{-} hod2PlusOne 6}
+\NormalTok{    x }\OtherTok{<{-}}\NormalTok{ halveOrDouble n        }\CommentTok{{-}{-} x <{-}     Just 3          Just 12}
+\NormalTok{    halveOrDouble x             }\CommentTok{{-}{-}      Nothing  Just 6  Just 6  Just 24}
+    \FunctionTok{return} \OperatorTok{$}\NormalTok{ x }\OperatorTok{+} \DecValTok{1}              \CommentTok{{-}{-}      (skip)   Just 4  Just 13 Just 13}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ hod2PlusOne }\DecValTok{6}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ hod2PlusOne }\DecValTok{6}
 \NormalTok{[   }\DecValTok{4}\NormalTok{,}\DecValTok{13}\NormalTok{,}\DecValTok{13}\NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
@@ -524,32 +524,32 @@ comments:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{double ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Int}
-\NormalTok{double n }\FunctionTok{=} \DataTypeTok{Just}\NormalTok{ n}
+\OtherTok{double ::} \DataTypeTok{Int} \OtherTok{{-}>} \DataTypeTok{Maybe} \DataTypeTok{Int}
+\NormalTok{double n }\OtherTok{=} \DataTypeTok{Just}\NormalTok{ n}
 
-\OtherTok{halveHalvePlusOne ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Int}
-\NormalTok{halveHalvePlusOne n }\FunctionTok{=} \KeywordTok{do}                \CommentTok{-- n = 6}
-\NormalTok{    x }\OtherTok{<-}\NormalTok{ halve n                        }\CommentTok{-- Just 3 (x = 3)}
-\NormalTok{    halve x                             }\CommentTok{-- Nothing}
-\NormalTok{    return }\FunctionTok{$}\NormalTok{ x }\FunctionTok{+} \DecValTok{1}                      \CommentTok{-- (skip)}
+\OtherTok{halveHalvePlusOne ::} \DataTypeTok{Int} \OtherTok{{-}>} \DataTypeTok{Maybe} \DataTypeTok{Int}
+\NormalTok{halveHalvePlusOne n }\OtherTok{=} \KeywordTok{do}                \CommentTok{{-}{-} n = 6}
+\NormalTok{    x }\OtherTok{<{-}}\NormalTok{ halve n                        }\CommentTok{{-}{-} Just 3 (x = 3)}
+\NormalTok{    halve x                             }\CommentTok{{-}{-} Nothing}
+    \FunctionTok{return} \OperatorTok{$}\NormalTok{ x }\OperatorTok{+} \DecValTok{1}                      \CommentTok{{-}{-} (skip)}
 
-\OtherTok{halveDoublePlusOne ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Int}
-\NormalTok{halveDoublePlusOne }\FunctionTok{=} \KeywordTok{do}                 \CommentTok{-- n = 6}
-\NormalTok{    x }\OtherTok{<-}\NormalTok{ halve n                        }\CommentTok{-- Just 3 (x = 3)}
-\NormalTok{    double x                            }\CommentTok{-- Just 6}
-\NormalTok{    return }\FunctionTok{$}\NormalTok{ x }\FunctionTok{+} \DecValTok{1}                      \CommentTok{-- Just 4}
+\OtherTok{halveDoublePlusOne ::} \DataTypeTok{Int} \OtherTok{{-}>} \DataTypeTok{Maybe} \DataTypeTok{Int}
+\NormalTok{halveDoublePlusOne }\OtherTok{=} \KeywordTok{do}                 \CommentTok{{-}{-} n = 6}
+\NormalTok{    x }\OtherTok{<{-}}\NormalTok{ halve n                        }\CommentTok{{-}{-} Just 3 (x = 3)}
+\NormalTok{    double x                            }\CommentTok{{-}{-} Just 6}
+    \FunctionTok{return} \OperatorTok{$}\NormalTok{ x }\OperatorTok{+} \DecValTok{1}                      \CommentTok{{-}{-} Just 4}
 
-\OtherTok{doubleHalvePlusOne ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Int}
-\NormalTok{doubleHalvePlusOne }\FunctionTok{=} \KeywordTok{do}                 \CommentTok{-- n = 6}
-\NormalTok{    x }\OtherTok{<-}\NormalTok{ double n                       }\CommentTok{-- Just 12 (x = 12)}
-\NormalTok{    halve x                             }\CommentTok{-- Just 6}
-\NormalTok{    return }\FunctionTok{$}\NormalTok{ x }\FunctionTok{+} \DecValTok{1}                      \CommentTok{-- Just 13}
+\OtherTok{doubleHalvePlusOne ::} \DataTypeTok{Int} \OtherTok{{-}>} \DataTypeTok{Maybe} \DataTypeTok{Int}
+\NormalTok{doubleHalvePlusOne }\OtherTok{=} \KeywordTok{do}                 \CommentTok{{-}{-} n = 6}
+\NormalTok{    x }\OtherTok{<{-}}\NormalTok{ double n                       }\CommentTok{{-}{-} Just 12 (x = 12)}
+\NormalTok{    halve x                             }\CommentTok{{-}{-} Just 6}
+    \FunctionTok{return} \OperatorTok{$}\NormalTok{ x }\OperatorTok{+} \DecValTok{1}                      \CommentTok{{-}{-} Just 13}
 
-\OtherTok{doubleDoublePlusOne ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Int}
-\NormalTok{doubleDoublePlusOne }\FunctionTok{=} \KeywordTok{do}                \CommentTok{-- n = 6}
-\NormalTok{    x }\OtherTok{<-}\NormalTok{ double n                       }\CommentTok{-- Just 12 (x = 12)}
-\NormalTok{    double x                            }\CommentTok{-- Just 6}
-\NormalTok{    return }\FunctionTok{$}\NormalTok{ x }\FunctionTok{+} \DecValTok{1}                      \CommentTok{-- Just 13}
+\OtherTok{doubleDoublePlusOne ::} \DataTypeTok{Int} \OtherTok{{-}>} \DataTypeTok{Maybe} \DataTypeTok{Int}
+\NormalTok{doubleDoublePlusOne }\OtherTok{=} \KeywordTok{do}                \CommentTok{{-}{-} n = 6}
+\NormalTok{    x }\OtherTok{<{-}}\NormalTok{ double n                       }\CommentTok{{-}{-} Just 12 (x = 12)}
+\NormalTok{    double x                            }\CommentTok{{-}{-} Just 6}
+    \FunctionTok{return} \OperatorTok{$}\NormalTok{ x }\OperatorTok{+} \DecValTok{1}                      \CommentTok{{-}{-} Just 13}
 \end{Highlighting}
 \end{Shaded}
 
@@ -589,15 +589,15 @@ finding Pythagorean triples.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-L18}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/monad{-}plus/TriplesUnder.hs\#L12{-}L18}
 
-\OtherTok{triplesUnder ::} \DataTypeTok{Int} \OtherTok{->}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
-\NormalTok{triplesUnder n }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    a }\OtherTok{<-}\NormalTok{ [}\DecValTok{1}\FunctionTok{..}\NormalTok{n]}
-\NormalTok{    b }\OtherTok{<-}\NormalTok{ [a}\FunctionTok{..}\NormalTok{n]}
-\NormalTok{    c }\OtherTok{<-}\NormalTok{ [b}\FunctionTok{..}\NormalTok{n]}
-\NormalTok{    guard }\FunctionTok{$}\NormalTok{ a}\FunctionTok{^}\DecValTok{2} \FunctionTok{+}\NormalTok{ b}\FunctionTok{^}\DecValTok{2} \FunctionTok{==}\NormalTok{ c}\FunctionTok{^}\DecValTok{2}
-\NormalTok{    return (a,b,c)}
+\OtherTok{triplesUnder ::} \DataTypeTok{Int} \OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
+\NormalTok{triplesUnder n }\OtherTok{=} \KeywordTok{do}
+\NormalTok{    a }\OtherTok{<{-}}\NormalTok{ [}\DecValTok{1}\OperatorTok{..}\NormalTok{n]}
+\NormalTok{    b }\OtherTok{<{-}}\NormalTok{ [a}\OperatorTok{..}\NormalTok{n]}
+\NormalTok{    c }\OtherTok{<{-}}\NormalTok{ [b}\OperatorTok{..}\NormalTok{n]}
+\NormalTok{    guard }\OperatorTok{$}\NormalTok{ a}\OperatorTok{\^{}}\DecValTok{2} \OperatorTok{+}\NormalTok{ b}\OperatorTok{\^{}}\DecValTok{2} \OperatorTok{==}\NormalTok{ c}\OperatorTok{\^{}}\DecValTok{2}
+    \FunctionTok{return}\NormalTok{ (a,b,c)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -658,9 +658,9 @@ Let's see what we get when we try it at the prompt:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ triplesUnder }\DecValTok{10}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ triplesUnder }\DecValTok{10}
 \NormalTok{[ ( }\DecValTok{3}\NormalTok{, }\DecValTok{4}\NormalTok{, }\DecValTok{5}\NormalTok{),( }\DecValTok{6}\NormalTok{, }\DecValTok{8}\NormalTok{,}\DecValTok{10}\NormalTok{) ]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ triplesUnder }\DecValTok{25}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ triplesUnder }\DecValTok{25}
 \NormalTok{[ ( }\DecValTok{3}\NormalTok{, }\DecValTok{4}\NormalTok{, }\DecValTok{5}\NormalTok{),( }\DecValTok{5}\NormalTok{,}\DecValTok{12}\NormalTok{,}\DecValTok{13}\NormalTok{),( }\DecValTok{6}\NormalTok{, }\DecValTok{8}\NormalTok{,}\DecValTok{10}\NormalTok{),( }\DecValTok{7}\NormalTok{,}\DecValTok{24}\NormalTok{,}\DecValTok{25}\NormalTok{)}
 \NormalTok{ ,( }\DecValTok{8}\NormalTok{,}\DecValTok{15}\NormalTok{,}\DecValTok{17}\NormalTok{),( }\DecValTok{9}\NormalTok{,}\DecValTok{12}\NormalTok{,}\DecValTok{15}\NormalTok{),(}\DecValTok{12}\NormalTok{,}\DecValTok{16}\NormalTok{,}\DecValTok{20}\NormalTok{),(}\DecValTok{15}\NormalTok{,}\DecValTok{20}\NormalTok{,}\DecValTok{25}\NormalTok{) ]}
 \end{Highlighting}
@@ -722,15 +722,15 @@ In fact you should be able to look at code like:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/TriplesUnder.hs#L12-L18}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/monad{-}plus/TriplesUnder.hs\#L12{-}L18}
 
-\OtherTok{triplesUnder ::} \DataTypeTok{Int} \OtherTok{->}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
-\NormalTok{triplesUnder n }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    a }\OtherTok{<-}\NormalTok{ [}\DecValTok{1}\FunctionTok{..}\NormalTok{n]}
-\NormalTok{    b }\OtherTok{<-}\NormalTok{ [a}\FunctionTok{..}\NormalTok{n]}
-\NormalTok{    c }\OtherTok{<-}\NormalTok{ [b}\FunctionTok{..}\NormalTok{n]}
-\NormalTok{    guard }\FunctionTok{$}\NormalTok{ a}\FunctionTok{^}\DecValTok{2} \FunctionTok{+}\NormalTok{ b}\FunctionTok{^}\DecValTok{2} \FunctionTok{==}\NormalTok{ c}\FunctionTok{^}\DecValTok{2}
-\NormalTok{    return (a,b,c)}
+\OtherTok{triplesUnder ::} \DataTypeTok{Int} \OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Int}\NormalTok{]}
+\NormalTok{triplesUnder n }\OtherTok{=} \KeywordTok{do}
+\NormalTok{    a }\OtherTok{<{-}}\NormalTok{ [}\DecValTok{1}\OperatorTok{..}\NormalTok{n]}
+\NormalTok{    b }\OtherTok{<{-}}\NormalTok{ [a}\OperatorTok{..}\NormalTok{n]}
+\NormalTok{    c }\OtherTok{<{-}}\NormalTok{ [b}\OperatorTok{..}\NormalTok{n]}
+\NormalTok{    guard }\OperatorTok{$}\NormalTok{ a}\OperatorTok{\^{}}\DecValTok{2} \OperatorTok{+}\NormalTok{ b}\OperatorTok{\^{}}\DecValTok{2} \OperatorTok{==}\NormalTok{ c}\OperatorTok{\^{}}\DecValTok{2}
+    \FunctionTok{return}\NormalTok{ (a,b,c)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -738,13 +738,13 @@ and see that it is structurally identical to
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{triplesUnder' ::} \DataTypeTok{Int} \OtherTok{->} \DataTypeTok{Maybe} \DataTypeTok{Int}
-\NormalTok{triplesUnder' n }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    a }\OtherTok{<-} \DataTypeTok{Just} \DecValTok{3}
-\NormalTok{    b }\OtherTok{<-} \DataTypeTok{Just} \DecValTok{5}
-\NormalTok{    c }\OtherTok{<-} \DataTypeTok{Just} \DecValTok{8}
-\NormalTok{    guard }\FunctionTok{$}\NormalTok{ a}\FunctionTok{^}\DecValTok{2} \FunctionTok{+}\NormalTok{ b}\FunctionTok{^}\DecValTok{2} \FunctionTok{==}\NormalTok{ c}\FunctionTok{^}\DecValTok{2}
-\NormalTok{    return (a,b,c)}
+\OtherTok{triplesUnder\textquotesingle{} ::} \DataTypeTok{Int} \OtherTok{{-}>} \DataTypeTok{Maybe} \DataTypeTok{Int}
+\NormalTok{triplesUnder\textquotesingle{} n }\OtherTok{=} \KeywordTok{do}
+\NormalTok{    a }\OtherTok{<{-}} \DataTypeTok{Just} \DecValTok{3}
+\NormalTok{    b }\OtherTok{<{-}} \DataTypeTok{Just} \DecValTok{5}
+\NormalTok{    c }\OtherTok{<{-}} \DataTypeTok{Just} \DecValTok{8}
+\NormalTok{    guard }\OperatorTok{$}\NormalTok{ a}\OperatorTok{\^{}}\DecValTok{2} \OperatorTok{+}\NormalTok{ b}\OperatorTok{\^{}}\DecValTok{2} \OperatorTok{==}\NormalTok{ c}\OperatorTok{\^{}}\DecValTok{2}
+    \FunctionTok{return}\NormalTok{ (a,b,c)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -756,12 +756,12 @@ In fact recall that this block:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/monad-plus/Halves.hs#L40-L43}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/monad{-}plus/Halves.hs\#L40{-}L43}
 
-\OtherTok{genericHalve ::} \DataTypeTok{MonadPlus}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Int} \OtherTok{->}\NormalTok{ m }\DataTypeTok{Int}
-\NormalTok{genericHalve n }\FunctionTok{=} \KeywordTok{do}
-\NormalTok{    guard }\FunctionTok{$}\NormalTok{ even n}
-\NormalTok{    return }\FunctionTok{$}\NormalTok{ n }\OtherTok{`div`} \DecValTok{2}
+\OtherTok{genericHalve ::} \DataTypeTok{MonadPlus}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Int} \OtherTok{{-}>}\NormalTok{ m }\DataTypeTok{Int}
+\NormalTok{genericHalve n }\OtherTok{=} \KeywordTok{do}
+\NormalTok{    guard }\OperatorTok{$} \FunctionTok{even}\NormalTok{ n}
+    \FunctionTok{return} \OperatorTok{$}\NormalTok{ n }\OtherTok{\textasciigrave{}div\textasciigrave{}} \DecValTok{2}
 \end{Highlighting}
 \end{Shaded}
 

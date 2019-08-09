@@ -78,7 +78,7 @@ models](https://en.wikipedia.org/wiki/Autoregressive_model) found in statistics:
   + \ldots
 ")
 
-However, this is a bad way of *implenting* models on time serieses, because
+However, this is a bad way of *implementing* models on time series, because
 nothing is stopping the result of a model from depending on a future value (the
 value at time
 ![t = 3](https://latex.codecogs.com/png.latex?t%20%3D%203 "t = 3"), for

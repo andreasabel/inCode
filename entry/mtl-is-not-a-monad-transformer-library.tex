@@ -119,17 +119,17 @@ methods: \texttt{throwError\ ::\ e\ -\textgreater{}\ m\ a}, and
 \texttt{catchError\ ::\ m\ a\ -\textgreater{}\ (e\ -\textgreater{}\ m\ a)\ -\textgreater{}\ m\ a},
 which does what you'd expect from an error monad.
 
-Now, we have a generic interface to work on \emph{all specfic type
+Now, we have a generic interface to work on \emph{all specific type
 error-throwing Monads}. The \texttt{Either} type comes to mind as an obvious
 candidate:
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{instance} \DataTypeTok{MonadError}\NormalTok{ e (}\DataTypeTok{Either}\NormalTok{ e) }\KeywordTok{where}
-\NormalTok{    throwError }\FunctionTok{=} \DataTypeTok{Left}
-\NormalTok{    catchError s f }\FunctionTok{=} \KeywordTok{case}\NormalTok{ s }\KeywordTok{of}
-                       \DataTypeTok{Right}\NormalTok{ _ }\OtherTok{->}\NormalTok{ s}
-                       \DataTypeTok{Left}\NormalTok{ e  }\OtherTok{->}\NormalTok{ f e}
+\NormalTok{    throwError }\OtherTok{=} \DataTypeTok{Left}
+\NormalTok{    catchError s f }\OtherTok{=} \KeywordTok{case}\NormalTok{ s }\KeywordTok{of}
+                       \DataTypeTok{Right}\NormalTok{ \_ }\OtherTok{{-}>}\NormalTok{ s}
+                       \DataTypeTok{Left}\NormalTok{ e  }\OtherTok{{-}>}\NormalTok{ f e}
 \end{Highlighting}
 \end{Shaded}
 
@@ -139,8 +139,8 @@ But there are definitely other instances possible. How about for \texttt{IO} and
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{instance} \DataTypeTok{MonadError} \DataTypeTok{IOException} \DataTypeTok{IO} \KeywordTok{where}
-\NormalTok{    throwError  }\FunctionTok{=}\NormalTok{ ioError}
-\NormalTok{    catchErrror }\FunctionTok{=}\NormalTok{ catch     }\CommentTok{-- will not catch non-IOExceptions}
+\NormalTok{    throwError  }\OtherTok{=} \FunctionTok{ioError}
+\NormalTok{    catchErrror }\OtherTok{=} \FunctionTok{catch}     \CommentTok{{-}{-} will not catch non{-}IOExceptions}
 \end{Highlighting}
 \end{Shaded}
 
@@ -148,16 +148,16 @@ This is great, because we can now write code \emph{generic} over \emph{all}
 specific-type error things!
 
 \hypertarget{error-behaviorfor-free}{%
-\subsubsection{Error behavior\ldots{}for free!}\label{error-behaviorfor-free}}
+\subsubsection{Error behavior\ldots for free!}\label{error-behaviorfor-free}}
 
 If we're clever enough, we can actually imbue any arbitrary Monad \texttt{m}
 with rudimentary, basic, ``dumb'' error handling by using the \texttt{ExceptT}
 type. An \texttt{ExceptT\ e\ m} behaves \emph{just} like our original Monad
-\texttt{m} in every way\ldots{}except now, we have access to rudmentary
+\texttt{m} in every way\ldots except now, we have access to rudimentary
 implementations of side-channels of \texttt{throwError} and \texttt{catchError}.
 
-This is pretty useful\ldots{}to be able to add short-circuiting error behavior
-to any Monad we wanted. But remember, \texttt{ExceptT} is not the ``point'' of
+This is pretty useful\ldots to be able to add short-circuiting error behavior to
+any Monad we wanted. But remember, \texttt{ExceptT} is not the ``point'' of
 \texttt{MonadError}. It's just one way to generate instances for free given a
 Monad. The real power of \texttt{MonadError} is in the ability to write
 generically over many Monads with some sort of ``error'' behavior, like
@@ -177,13 +177,13 @@ replace it with \texttt{put\ ::\ s\ -\textgreater{}\ m\ ()}.
 There are a lot of types that can offer this type of interface. You might have,
 for example, a type where ``getting'' the state comes from reading an
 \texttt{IORef}, and ``putting'' it comes from writing to the \texttt{IORef}. Or
-maybe the state can come from a a query to a database\ldots{}where \texttt{get}
+maybe the state can come from a a query to a database\ldots where \texttt{get}
 queries a database in IO, and \texttt{put} writes to the database.
 
 \texttt{MonadState}, as a typeclass, gives you the ability to \emph{write
 generically over all Monads with state}. You can now write generically over
-those database state things\ldots{}or those IORef state things\ldots{}or those
-web query things\ldots{}or anything that cares to implement the interface!
+those database state things\ldots or those IORef state things\ldots or those web
+query things\ldots or anything that cares to implement the interface!
 
 \texttt{MonadState} says, ``the functions and actions I write can work for
 \emph{all} Monads offering state I can modify!'' An action of type
@@ -192,15 +192,15 @@ web query things\ldots{}or anything that cares to implement the interface!
 state.
 
 \hypertarget{statefor-free}{%
-\subsubsection{State\ldots{}for free!}\label{statefor-free}}
+\subsubsection{State\ldots for free!}\label{statefor-free}}
 
 Again, we can actually imbue any Monad \texttt{m} with some very rudimentary,
 ``dumb'' stateful interface, using a type called \texttt{StateT}. A
 \texttt{StateT\ s\ m} behaves just like our monad \texttt{m} (be it \texttt{IO},
-\texttt{Reader}, \texttt{ST}, \texttt{STM}\ldots{}), except now we have access
-to a rudimentary state getting-and-putting mechanism on a state of type
-\texttt{s}, using a form of function composition. The implementation of the
-\texttt{StateT} handles it under the hood.
+\texttt{Reader}, \texttt{ST}, \texttt{STM}\ldots), except now we have access to
+a rudimentary state getting-and-putting mechanism on a state of type \texttt{s},
+using a form of function composition. The implementation of the \texttt{StateT}
+handles it under the hood.
 
 Obviously, being able to add a rudimentary stateful interface on top of any
 Monad is pretty useful. Very useful, in fact!
@@ -209,7 +209,7 @@ But remember, this isn't the \emph{point} of \texttt{MonadState}.
 \texttt{MonadState} doesn't exist for \texttt{StateT}. \texttt{StateT} is just a
 way to generate a free instance of \texttt{MonadState} if you just want to add
 rudimentary statefulness to an existing Monad. But there are many instances of
-\texttt{MonadState}\ldots{}really, \texttt{MonadState} has nothing to do with
+\texttt{MonadState}\ldots really, \texttt{MonadState} has nothing to do with
 \texttt{StateT} fundamentally, any more than \texttt{Monad} has to do with
 \texttt{Maybe} fundamentally. And \texttt{MonadState} and \texttt{StateT} don't
 even come from the same library!
@@ -220,7 +220,7 @@ statey API.
 \hypertarget{monadreader}{%
 \subsection{MonadReader}\label{monadreader}}
 
-\texttt{MonadReader} is more or less the same thing\ldots{}it offers a generic
+\texttt{MonadReader} is more or less the same thing\ldots it offers a generic
 interface to work on monads that have access to some sort of global, unchanging
 ``environment''. An example might be a Monad where you could work with command
 line arguments, or environment variables, assuming they are read once and fixed
@@ -230,7 +230,7 @@ when things start up. You could access the command line arguments with
 \hypertarget{monadio}{%
 \subsection{MonadIO}\label{monadio}}
 
-This one is actaully from \emph{transformers}, but it gives a nice picture. Any
+This one is actually from \emph{transformers}, but it gives a nice picture. Any
 \texttt{MonadIO\ m} is a \texttt{Monad} that allows you to embed and sequence in
 any arbitrary IO action. This is pretty useful! In the
 \emph{\href{http://hackage.haskell.org/package/persistent}{persistent}} database
@@ -241,15 +241,15 @@ all the other actions.
 
 That's what \texttt{MonadIO} is for --- it allows you to write functions and
 say, ``hey, my function is generic over \emph{all} things that can embed
-IO\ldots{}anything that can embed IO can sequence my function/type''. The
-generic ``embedding'' action is
+IO\ldots anything that can embed IO can sequence my function/type''. The generic
+``embedding'' action is
 \texttt{liftIO\ ::\ MonadIO\ m\ =\textgreater{}\ IO\ a\ -\textgreater{}\ m\ a}.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 \textbf{Aside}
 
-You know\ldots{}ideally, all of these typeclasses would have laws, so we could
+You know\ldots ideally, all of these typeclasses would have laws, so we could
 make conclusions and apply equational reasoning to generically written
 functions.
 
@@ -265,7 +265,7 @@ interact in the \emph{lens} laws. But as of now, most of we have in terms of our
 capability of analyzing generic programs is rough heuristins/feelings about what
 ``should'' be right.
 
-A bit un-ideal, but\ldots{}in practice, this ends up working not-so-badly :)
+A bit un-ideal, but\ldots in practice, this ends up working not-so-badly :)
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
@@ -275,7 +275,7 @@ Library}\label{not-a-monad-transformer-library}}
 
 So, let's work together to dispel the myth that \emph{mtl} is a monad
 transformer library. It really has nothing to do with monad transformers at
-all\ldots{}any more than \texttt{Control.Monad} is an ``IO module'', or
+all\ldots any more than \texttt{Control.Monad} is an ``IO module'', or
 \texttt{Control.Monoid} is a ``list module''. Transformers don't even come from
 the \emph{mtl} library!
 
@@ -287,7 +287,7 @@ different \emph{mtl} typeclasses at once! (\texttt{MonadState} +
 
 We don't \emph{have to} reach for Monad transformers to work with combined
 effects. We can write our own combined effects monads and just write the
-instances\ldots{}or we can write generically and not even care about what Monad
+instances\ldots or we can write generically and not even care about what Monad
 we actually use in the end. We don't have to teach people to be afraid of monad
 transformers as if they were the only way to get things done, and \emph{mtl} is
 tied to them like a ball and chain.
