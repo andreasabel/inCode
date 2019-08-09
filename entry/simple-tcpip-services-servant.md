@@ -121,6 +121,11 @@ todoApi :: Proxy TodoApi
 todoApi = Proxy
 ```
 
+(This is how you specify an API (via a type) using *servant*, with their
+provided `:<|>` and `:>` operators --- `:<|>` combines routes, `:>` combines
+path components, and `QueryParam`, `Capture`, etc. all add parts to components
+and routes.)
+
 We have five routes, which more or less mirror exactly the five bullet points
 listed above, with some minor implementation choices:
 
