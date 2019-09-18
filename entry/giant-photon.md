@@ -22,7 +22,7 @@ photons and its *amplitude*/brightness as corresponding roughly to the "number
 of photons" emitted. If we do the math, then the average commercial hand-held
 laser, operating at a power of around 1 mW and emitting 700nm red light, would
 appear to have a cross-sectional flux of roughly
-![3.5 \\times 10\^15](https://latex.codecogs.com/png.latex?3.5%20%5Ctimes%2010%5E15 "3.5 \times 10^15")
+![3.5 \\times 10\^{15}](https://latex.codecogs.com/png.latex?3.5%20%5Ctimes%2010%5E%7B15%7D "3.5 \times 10^{15}")
 (three and a half quadrillion) photons per second. So, in this picture, a
 handheld laser would be like a hose spraying a quadrillion little balls out of
 its end per second at the speed of light.
@@ -86,8 +86,8 @@ This "minimal increment" of energy --- this abstract concept of a minimal
 is known as a *photon*.
 
 *That* is a photon. Not a little point-particle ball you shoot out of a canon,
-but rather an abstract *name* we give you the minimal amount a wave energy in
-the electromagnetic field is allowed to change. The *concept* of that minimal
+but rather an abstract *name* we give to the minimal amount a wave energy in the
+electromagnetic field is allowed to change. The *concept* of that minimal
 ![\\Delta E](https://latex.codecogs.com/png.latex?%5CDelta%20E "\Delta E") is
 what we call a photon.
 
