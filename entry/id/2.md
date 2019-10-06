@@ -104,6 +104,7 @@ Some notes:
 1.  Store shake's metadata files to the folder `.shake/`. This differs from the
     default behavior, where all files would be saved to the root directory with
     `.shake` as a filename prefix.
+
 2.  I've aliased the operator `~>` for `phony` to allow for a more expressive
     infix notation --- more on this later. I've submitted a patch to the project
     and it should be included in the next cabal release.
@@ -317,17 +318,14 @@ main = shakeArgs opts $ do
     "clean" ~> removeFilesAfter ".shake" ["//*"]
 ```
 
-If you are comfortable with applicative style, you can make it all happen on one
+If you are comfortable with monadic operators, you can make it all happen on one
 line:
 
 ``` {.haskell}
 "out/report.doc" *> \f -> do
-    need <$> srcFiles
+    need =<< srcFiles
+    cmd "pandoc" [ "src/report.md", "-o", f ]
 ```
-
-(You'll need to import `<$>` from `Control.Applicative`, and GHC will complain
-about the discarded value unless you use `void` or enable
-`-fno-warn-wrong-do-bind`)
 
 Phony Rules
 -----------
