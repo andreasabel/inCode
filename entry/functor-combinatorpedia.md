@@ -1781,8 +1781,8 @@ intact: functor combinators only ever *add* structure.
     Steps ~ Chain These1 Void
     ```
 
-    This isomorphism is witnessed by `unrollMF` (turn into the `Chain`) and
-    `rerollMF` (convert back from the `Chain`) in
+    This isomorphism is witnessed by `unroll` (turn into the `Chain`) and
+    `reroll` (convert back from the `Chain`) in
     *[Data.HFunctor.Chain](https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor-Chain.html)*.
 
     We can "fold down" a `Chain t (I t) f a` into an `f a`, if `t` is
