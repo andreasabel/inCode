@@ -247,15 +247,15 @@ t_f = - \frac{\sum_i \hat{\mathbf{r}}_i \cdot \hat{\mathbf{v}}_i}{\sum_i \hat{\m
 <p>Once we find this, we can plug into our original form, to find that our final points are, in our un-shifted coordinates, <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?R%20%2B%20V%20t_f" alt="R + V t_f" title="R + V t_f" />. This is because Galilean transformations leave time unchanged, unlike other frame transformations, like the Lorentz transform. However, we have a simpler option: we could just leave our answer in shifted coordinates as well, since we only care about the shape of the result, and not the absolute position.</p>
 <p>We can write this as a Haskell function, assuming we take in a list of <code>V2 Double</code> for velocities and <code>V2 Double</code> for positions, from the <em><a href="https://en.wikipedia.org/wiki/Center-of-momentum_frame">linear</a></em> library:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="co">-- | Shift so that centroid is at zero</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a><span class="ot">centralize ::</span> [<span class="dt">Point</span>] <span class="ot">-&gt;</span> [<span class="dt">Point</span>]</span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="ot">centralize ::</span> [<span class="dt">V2</span> <span class="dt">Double</span>] <span class="ot">-&gt;</span> [<span class="dt">V2</span> <span class="dt">Double</span>]</span>
 <span id="cb3-3"><a href="#cb3-3"></a>centralize ps <span class="ot">=</span> <span class="fu">map</span> (<span class="fu">subtract</span> mean) ps</span>
 <span id="cb3-4"><a href="#cb3-4"></a>  <span class="kw">where</span></span>
-<span id="cb3-5"><a href="#cb3-5"></a>    (<span class="dt">Sum</span> tot, <span class="dt">Sum</span> len) <span class="ot">=</span> <span class="fu">foldMap</span> (\x <span class="ot">-&gt;</span> (<span class="dt">Sum</span> x, <span class="dt">Sum</span> <span class="dv">1</span>)) ps</span>
-<span id="cb3-6"><a href="#cb3-6"></a>    mean               <span class="ot">=</span> tot <span class="op">L.^/</span> len</span>
+<span id="cb3-5"><a href="#cb3-5"></a>    mean <span class="ot">=</span> <span class="fu">sum</span> ps <span class="op">L.^/</span> <span class="fu">fromIntegral</span> (<span class="fu">length</span> ps)</span>
+<span id="cb3-6"><a href="#cb3-6"></a>                <span class="co">-- ^ component-wise division</span></span>
 <span id="cb3-7"><a href="#cb3-7"></a></span>
 <span id="cb3-8"><a href="#cb3-8"></a><span class="co">-- | Sum of dot products</span></span>
-<span id="cb3-9"><a href="#cb3-9"></a><span class="ot">sumOfDots ::</span> [<span class="dt">Point</span>] <span class="ot">-&gt;</span> [<span class="dt">Point</span>] <span class="ot">-&gt;</span> <span class="dt">Double</span></span>
-<span id="cb3-10"><a href="#cb3-10"></a>sumOfDots xs ys <span class="ot">=</span> <span class="fu">sum</span> <span class="op">$</span> <span class="fu">zipWith</span> L.dot xs ys</span>
+<span id="cb3-9"><a href="#cb3-9"></a><span class="ot">sumOfDots ::</span> [<span class="dt">V2</span> <span class="dt">Double</span>] <span class="ot">-&gt;</span> [<span class="dt">V2</span> <span class="dt">Double</span>] <span class="ot">-&gt;</span> <span class="dt">Double</span></span>
+<span id="cb3-10"><a href="#cb3-10"></a>sumOfDots xs ys <span class="ot">=</span> <span class="fu">sum</span> (<span class="fu">zipWith</span> L.dot xs ys)</span>
 <span id="cb3-11"><a href="#cb3-11"></a></span>
 <span id="cb3-12"><a href="#cb3-12"></a>findWord</span>
 <span id="cb3-13"><a href="#cb3-13"></a><span class="ot">    ::</span> [<span class="dt">V2</span> <span class="dt">Double</span>]              <span class="co">-- ^ velocities</span></span>
