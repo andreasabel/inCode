@@ -984,14 +984,17 @@ Links are to the solutions.
         Return the `OpaqueNet` with existentially quantified `i` and `o` in
         continuation-style. (You can write a data type to return it in
         constructor-style, too, for funsies.)
+
     -   [`randomSNet`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L236-L245),
         returning `m SomeNet`.
+
     -   While you're at it, write it to return [a random continuation-style
         `SomeNet`,
         too](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L247-L258)!
         (See the type of
         [`withRandomONet'`](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L178-L186)
         for reference on how to write the type)
+
     -   The [binary
         instance](https://github.com/mstksg/inCode/tree/master/code-samples/dependent-haskell/NetworkTyped2.hs#L260-L274)
         for `SomeNet`.

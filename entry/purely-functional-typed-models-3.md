@@ -497,6 +497,7 @@ types isn't just possible, it's immensely beneficial:
 -   There is no need for an imperative API, even as a wrapper. Even imperative
     API's require an explicit assumption or promise of purity, anyway, that
     cannot be enforced --- so what's the point?
+
 -   *Layers as objects* (or as data) is not necessary. *Layers as functions* is
     the more faithful and extensible way. Almost all frameworks (like
     *[tensorflow](https://www.tensorflow.org/)*,

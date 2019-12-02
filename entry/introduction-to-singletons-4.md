@@ -1300,8 +1300,8 @@ are total.
     [Solutions
     here!](https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4Final.hs#L192-L192)
     I gave four different ways of doing it, for a full range of manual
-    vs. auto-promoted defunctionalization symbols and `Knockable` vs.
-    `Pass`-based methods.
+    vs. auto-promoted defunctionalization symbols and `Knockable`
+    vs. `Pass`-based methods.
 
     *Hint:* Look at the definition of `SomeDoor` in terms of `Sigma`:
 

@@ -110,7 +110,7 @@ denotative and locally stateful programming DSL and platform, now
 \href{http://hackage.haskell.org/package/auto}{on hackage}. \emph{auto} is
 suitable when your program involves an input or output that is a discrete stream
 of things --- events, views, etc., like turn based games, GUI's, numerical
-computations\ldots{}; it allows you to state (possibly cyclic) complex
+computations\ldots; it allows you to state (possibly cyclic) complex
 relationships between streams of values by composing simple, primitive ones. You
 can read the \href{https://github.com/mstksg/auto/blob/master/README.md}{README}
 too for a detailed buzz-word laden exposition with nice well-commented short
@@ -144,7 +144,7 @@ start to finish,
   A numerical computation DSL
 \end{enumerate}
 
-But enough of that\ldots{}what is \emph{auto}, why does it exist, and what are
+But enough of that\ldots what is \emph{auto}, why does it exist, and what are
 its design principles?
 
 \hypertarget{auto}{%
@@ -173,15 +173,15 @@ Typical programs involve building a (possibly cyclic) graph of
 \emph{relationships} between quantities over a stream.
 
 Composing two transformers side-by-side or end-to-end creates a new
-transformer\ldots{}and the state of each trasnformer is ``closed off'' from the
+transformer\ldots and the state of each trasnformer is ``closed off'' from the
 other and the rest of the world.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{sumAndProduct }\FunctionTok{=}\NormalTok{ proc x }\OtherTok{->} \KeywordTok{do}
-\NormalTok{    sums  }\OtherTok{<-}\NormalTok{ sumFrom }\DecValTok{0}     \FunctionTok{-<}\NormalTok{ x}
-\NormalTok{    prods }\OtherTok{<-}\NormalTok{ productFrom }\DecValTok{1} \FunctionTok{-<}\NormalTok{ x}
-\NormalTok{    id }\FunctionTok{-<}\NormalTok{ sums }\FunctionTok{+}\NormalTok{ prods}
+\NormalTok{sumAndProduct }\OtherTok{=}\NormalTok{ proc x }\OtherTok{{-}>} \KeywordTok{do}
+\NormalTok{    sums  }\OtherTok{<{-}}\NormalTok{ sumFrom }\DecValTok{0}     \OperatorTok{{-}<}\NormalTok{ x}
+\NormalTok{    prods }\OtherTok{<{-}}\NormalTok{ productFrom }\DecValTok{1} \OperatorTok{{-}<}\NormalTok{ x}
+    \FunctionTok{id} \OperatorTok{{-}<}\NormalTok{ sums }\OperatorTok{+}\NormalTok{ prods}
 \end{Highlighting}
 \end{Shaded}
 
@@ -195,24 +195,24 @@ output is the sum of the cumulative sum and the cumulative product of the inputs
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- running our Autos over the stream [1..10] to get a new stream}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ streamAuto' (sumFrom }\DecValTok{0}\NormalTok{) [}\DecValTok{1}\FunctionTok{..}\DecValTok{10}\NormalTok{]}
+\CommentTok{{-}{-} running our Autos over the stream [1..10] to get a new stream}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ streamAuto\textquotesingle{} (sumFrom }\DecValTok{0}\NormalTok{) [}\DecValTok{1}\OperatorTok{..}\DecValTok{10}\NormalTok{]}
 \NormalTok{[}\DecValTok{1}\NormalTok{,}\DecValTok{3}\NormalTok{, }\DecValTok{6}\NormalTok{,}\DecValTok{10}\NormalTok{, }\DecValTok{15}\NormalTok{, }\DecValTok{21}\NormalTok{,  }\DecValTok{28}\NormalTok{,   }\DecValTok{36}\NormalTok{,    }\DecValTok{45}\NormalTok{,     }\DecValTok{55}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ streamAuto' (productFrom }\DecValTok{1}\NormalTok{) [}\DecValTok{1}\FunctionTok{..}\DecValTok{10}\NormalTok{]}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ streamAuto\textquotesingle{} (productFrom }\DecValTok{1}\NormalTok{) [}\DecValTok{1}\OperatorTok{..}\DecValTok{10}\NormalTok{]}
 \NormalTok{[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{, }\DecValTok{6}\NormalTok{,}\DecValTok{24}\NormalTok{,}\DecValTok{120}\NormalTok{,}\DecValTok{720}\NormalTok{,}\DecValTok{5040}\NormalTok{,}\DecValTok{40320}\NormalTok{,}\DecValTok{362880}\NormalTok{,}\DecValTok{3628800}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ streamAuto' sumAndProduct [}\DecValTok{1}\FunctionTok{..}\DecValTok{10}\NormalTok{]}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ streamAuto\textquotesingle{} sumAndProduct [}\DecValTok{1}\OperatorTok{..}\DecValTok{10}\NormalTok{]}
 \NormalTok{[}\DecValTok{2}\NormalTok{,}\DecValTok{5}\NormalTok{,}\DecValTok{12}\NormalTok{,}\DecValTok{34}\NormalTok{,}\DecValTok{135}\NormalTok{,}\DecValTok{741}\NormalTok{,}\DecValTok{5068}\NormalTok{,}\DecValTok{40356}\NormalTok{,}\DecValTok{362925}\NormalTok{,}\DecValTok{3628855}\NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
 
-Each of them maintain their own ``state''\ldots{}and even \texttt{sumAndProduct}
+Each of them maintain their own ``state''\ldots and even \texttt{sumAndProduct}
 will maintain its own internal state as you compose it with other things.
 
 You build complex programs. For games, you might have an enemy monster, or a
-player character\ldots{}why should a player character's update be able to access
+player character\ldots why should a player character's update be able to access
 the state of the enemy monster? Why should the enemy monster be able to access
 the state of the player? Now, the enemy monster's state is only accessible to
-the enemy monster itself\ldots{}nobody else can touch it.
+the enemy monster itself\ldots nobody else can touch it.
 
 In my opinion, this really is the only sane way to have stateful loops. Separate
 out your update into the composition of primitives, and describe it using
@@ -238,11 +238,11 @@ That's it!
 
 How do we build that \texttt{Auto}? By composing smaller, simpler ones. Each
 denoting their own relationship, each keeping track of their state locally. The
-``full GUI state'' never \emph{exists} anywhere\ldots{}it is aggregated during
+``full GUI state'' never \emph{exists} anywhere\ldots it is aggregated during
 composition.
 
 By the way, \emph{auto} does allow you to take ``snap shots'' of the actual
-states of \texttt{Auto}s as they are run, as a binary\ldots{}so you can
+states of \texttt{Auto}s as they are run, as a binary\ldots so you can
 serialize, freeze, and resume \texttt{Auto}s from any previous state at-will.
 Free undos, \emph{free save states}. And this serialization \textbf{composes},
 so the combination of two serialized \texttt{Auto}s with internal state will
@@ -273,7 +273,7 @@ exceptions, and it's definitely not the norm. \emph{auto} works as \emph{value
 stream transformers}, working with ``pure'' one-by-one transformations on
 streams of \emph{values}; pipes and conduit provide \emph{effect stream
 manipulators}, managing streams of \emph{effects} in constant space, with
-resource management, etc\ldots{}and often involving output effects as a result
+resource management, etc\ldots and often involving output effects as a result
 (``consumers'').\footnote{One could still use a subset of pipes that does not
   stream effects, but merely values, and \emph{that} does somewhat fill a
   similar role; this is used in the

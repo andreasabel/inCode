@@ -132,6 +132,7 @@ With this, we can say something about the behavior of `<*>` or `fmap2` or
 
 1.  The effects of `f <*> x` must have the effects of `f` once *and* the effects
     of `x` once -- no more, and no less.
+
 2.  `pure`'s results must have no "effects", and so if used with `<*>`,
     introduces no extra effects:
 
@@ -141,6 +142,7 @@ With this, we can say something about the behavior of `<*>` or `fmap2` or
     ```
 
     (Remember that `fmap` is not allowed to affect "effects" in any way)
+
 3.  Combining effects must be associative.
 
 With this guarantee, we can write `sequenceA_` in a polymorphic way:

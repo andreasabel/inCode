@@ -179,12 +179,12 @@ encodes a length. We can represent this by giving it a ``kind signature'':
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \OtherTok{->} \FunctionTok{*}
+\KeywordTok{data} \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{{-}>} \OperatorTok{*} \OtherTok{{-}>} \OperatorTok{*}
 \end{Highlighting}
 \end{Shaded}
 
 Which says that our \texttt{Vec} type constructor takes two arguments: something
-of kind \texttt{Nat} (so it can't be any type\ldots{}it has to be a type of kind
+of kind \texttt{Nat} (so it can't be any type\ldots it has to be a type of kind
 \texttt{Nat}), something of kind \texttt{*} (the ``normal'' kind, of things that
 have values, like \texttt{Int}, \texttt{Maybe\ Bool}, etc.), and returns
 something of kind \texttt{*} (our vector itself).
@@ -202,14 +202,14 @@ kind, and one way is to use the simple inductive \texttt{Nat}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L26-L27}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeNats.hs\#L26{-}L27}
 
-\KeywordTok{data} \DataTypeTok{Nat} \FunctionTok{=} \DataTypeTok{Z} \FunctionTok{|} \DataTypeTok{S} \DataTypeTok{Nat}
+\KeywordTok{data} \DataTypeTok{Nat} \OtherTok{=} \DataTypeTok{Z} \OperatorTok{|} \DataTypeTok{S} \DataTypeTok{Nat}
          \KeywordTok{deriving} \DataTypeTok{Show}
 \end{Highlighting}
 \end{Shaded}
 
-You might have seen this type before\ldots{}it gives us value-level natural
+You might have seen this type before\ldots it gives us value-level natural
 numbers, where \texttt{Z} is zero, \texttt{S\ Z} is one, \texttt{S\ (S\ Z)} is
 two, \texttt{S\ (S\ (S\ Z))} is three, etc. So if we had something of type
 \texttt{Nat}, it could represent any natural number. This declaration gives you:
@@ -243,29 +243,29 @@ specifically, you get:
 (Note that, to be principled, GHC would prefer us to use
 \texttt{\textquotesingle{}Z} and \texttt{\textquotesingle{}S} when we are
 referring to the \emph{types}, and this is how it'll print them out in error
-messages. But we're going to run with this for now\ldots{}mostly for aesthetic
+messages. But we're going to run with this for now\ldots mostly for aesthetic
 reasons)
 
 We can check this out in GHCi:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{set }\FunctionTok{-}\DataTypeTok{XDataKinds}
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{data} \DataTypeTok{Nat} \FunctionTok{=} \DataTypeTok{Z} \FunctionTok{|} \DataTypeTok{S} \DataTypeTok{Nat}
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{Z}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{set }\OperatorTok{{-}}\DataTypeTok{XDataKinds}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{data} \DataTypeTok{Nat} \OtherTok{=} \DataTypeTok{Z} \OperatorTok{|} \DataTypeTok{S} \DataTypeTok{Nat}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{k }\DataTypeTok{Z}
 \DataTypeTok{Nat}
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{S} \DataTypeTok{Z}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{k }\DataTypeTok{S} \DataTypeTok{Z}
 \DataTypeTok{Nat}
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{k }\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{k }\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)}
 \DataTypeTok{Nat}
 \end{Highlighting}
 \end{Shaded}
 
 So now we have a \emph{type} that can encode numbers. Something of type
-\texttt{Z} represents zero\ldots{}something of type \texttt{S\ Z} represents
-1\ldots{}something of type \texttt{S\ (S\ Z)} represents two.
+\texttt{Z} represents zero\ldots something of type \texttt{S\ Z} represents
+1\ldots something of type \texttt{S\ (S\ Z)} represents two.
 
-Note that you can't ever have anything like \texttt{S\ Bool}\ldots{}that doesn't
+Note that you can't ever have anything like \texttt{S\ Bool}\ldots that doesn't
 work, because \texttt{Bool} is of kind \texttt{*}, but \texttt{S} expects only
 \texttt{Nat}s.
 
@@ -274,13 +274,13 @@ Now we can make our \texttt{Vec} data type, with the \emph{GADTs} extension, or
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L37-L44}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeNats.hs\#L37{-}L44}
 
-\KeywordTok{data} \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
+\KeywordTok{data} \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{{-}>} \OperatorTok{*} \OtherTok{{-}>} \OperatorTok{*} \KeywordTok{where}
     \DataTypeTok{Nil}\OtherTok{  ::} \DataTypeTok{Vec} \DataTypeTok{Z}\NormalTok{ a}
-\OtherTok{    (:#) ::}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ n) a}
+\OtherTok{    (:\#) ::}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{{-}>} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ n) a}
 
-\KeywordTok{infixr} \DecValTok{5} \FunctionTok{:#}
+\KeywordTok{infixr} \DecValTok{5} \OperatorTok{:\#}
 
 \KeywordTok{deriving} \KeywordTok{instance} \DataTypeTok{Show}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Show}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a)}
 \KeywordTok{deriving} \KeywordTok{instance} \DataTypeTok{Eq}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Eq}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a)}
@@ -289,13 +289,13 @@ Now we can make our \texttt{Vec} data type, with the \emph{GADTs} extension, or
 
 If you've never seen GADTs before, think of it as a way of declaring a type by
 giving the type of your constructors instead of just the normal boring form.
-It's nothing too crazy\ldots{}it's basically like defining \texttt{Maybe} as:
+It's nothing too crazy\ldots it's basically like defining \texttt{Maybe} as:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Maybe}\OtherTok{ ::} \FunctionTok{*} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
+\KeywordTok{data} \DataTypeTok{Maybe}\OtherTok{ ::} \OperatorTok{*} \OtherTok{{-}>} \OperatorTok{*} \KeywordTok{where}
     \DataTypeTok{Nothing}\OtherTok{ ::} \DataTypeTok{Maybe}\NormalTok{ a}
-    \DataTypeTok{Just}\OtherTok{    ::}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ a}
+    \DataTypeTok{Just}\OtherTok{    ::}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a}
 \end{Highlighting}
 \end{Shaded}
 
@@ -303,16 +303,16 @@ instead of
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Maybe}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{Nothing} \FunctionTok{|} \DataTypeTok{Just}\NormalTok{ a}
+\KeywordTok{data} \DataTypeTok{Maybe}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Nothing} \OperatorTok{|} \DataTypeTok{Just}\NormalTok{ a}
 \end{Highlighting}
 \end{Shaded}
 
 In both cases, they create constructors of type \texttt{Nothing\ ::\ Maybe\ a}
-and \texttt{Just\ ::\ a\ -\textgreater{}\ Maybe\ a} anyway\ldots{}so the GADT
+and \texttt{Just\ ::\ a\ -\textgreater{}\ Maybe\ a} anyway\ldots so the GADT
 form just gives us a way to state it explicitly.
 
 Oh, we also used the \emph{KindSignatures} extension to be able to give a kind
-signature to \texttt{Vec}\ldots{}this is important because we want to make sure
+signature to \texttt{Vec}\ldots this is important because we want to make sure
 the first argument has to be a \texttt{Nat}. That is, we can't have anything
 silly like \texttt{Vec\ Bool\ Int}. We also have to put a separate
 \emph{StandaloneDeriving}-extension standalone deriving clause instead of just
@@ -323,9 +323,9 @@ Note that our type is basically like a list:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data}\NormalTok{ []}\OtherTok{ ::} \FunctionTok{*} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
+\KeywordTok{data}\NormalTok{ []}\OtherTok{ ::} \OperatorTok{*} \OtherTok{{-}>} \OperatorTok{*} \KeywordTok{where}
 \NormalTok{    []}\OtherTok{  ::}\NormalTok{ [a]}
-\OtherTok{    (:) ::}\NormalTok{ a }\OtherTok{->}\NormalTok{ [a] }\OtherTok{->}\NormalTok{ [a]}
+\OtherTok{    (:) ::}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ [a] }\OtherTok{{-}>}\NormalTok{ [a]}
 \end{Highlighting}
 \end{Shaded}
 
@@ -340,13 +340,13 @@ Okay, let's define some useful methods:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L93-L97}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeNats.hs\#L93{-}L97}
 
-\OtherTok{headV ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ n) a }\OtherTok{->}\NormalTok{ a}
-\NormalTok{headV (x }\FunctionTok{:#}\NormalTok{ _)  }\FunctionTok{=}\NormalTok{ x}
+\OtherTok{headV ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ n) a }\OtherTok{{-}>}\NormalTok{ a}
+\NormalTok{headV (x }\OperatorTok{:\#}\NormalTok{ \_)  }\OtherTok{=}\NormalTok{ x}
 
-\OtherTok{tailV ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ n) a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
-\NormalTok{tailV (_ }\FunctionTok{:#}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ xs}
+\OtherTok{tailV ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ n) a }\OtherTok{{-}>} \DataTypeTok{Vec}\NormalTok{ n a}
+\NormalTok{tailV (\_ }\OperatorTok{:\#}\NormalTok{ xs) }\OtherTok{=}\NormalTok{ xs}
 \end{Highlighting}
 \end{Shaded}
 
@@ -355,11 +355,11 @@ Haskell. \texttt{head} and \texttt{tail} are somewhat of a sore spot or wart in
 Haskell's list API\footnote{Can we get them out of Prelude? Please? :)}, because
 they're \emph{partial functions}. You tell people all about how Haskell is great
 because it can prevent run-time errors by ensuring completeness and having the
-type system enforce null-pointer checks\ldots{}but then you go ahead and put
+type system enforce null-pointer checks\ldots but then you go ahead and put
 unsafe functions that throw errors for empty lists anyways in Prelude.
 
-But here\ldots{}this will never happen! We can only use \texttt{headV} and
-\texttt{tailV} on non-empty lists\ldots{}it won't typecheck for empty lists. Do
+But here\ldots this will never happen! We can only use \texttt{headV} and
+\texttt{tailV} on non-empty lists\ldots it won't typecheck for empty lists. Do
 you see why?
 
 It's because all empty lists are of type \texttt{Vec\ Z\ a}. But \texttt{headV}
@@ -371,7 +371,7 @@ won't even compile! No more pesky runtime bugs. \texttt{headV} and
 Note that the return type of \texttt{tailV} is a vector of a length one less
 than the given vector.
 \texttt{tailV\ ::\ Vec\ (S\ Z)\ a\ -\textgreater{}\ Vec\ Z\ a}, for
-instance\ldots{}or
+instance\ldots or
 \texttt{tailV\ ::\ Vec\ (S\ (S\ Z))\ a\ -\textgreater{}\ Vec\ (S\ Z)\ a}. Just
 like we want!
 
@@ -390,11 +390,11 @@ extension (with \texttt{TypeOperators}):
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L29-L31}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeNats.hs\#L29{-}L31}
 
-\KeywordTok{type}\NormalTok{ family (}\OtherTok{x ::} \DataTypeTok{Nat}\NormalTok{) }\FunctionTok{+}\NormalTok{ (}\OtherTok{y ::} \DataTypeTok{Nat}\NormalTok{) }\KeywordTok{where}
-\NormalTok{    '}\DataTypeTok{Z}   \FunctionTok{+}\NormalTok{ y }\FunctionTok{=}\NormalTok{ y}
-\NormalTok{    '}\DataTypeTok{S}\NormalTok{ x }\FunctionTok{+}\NormalTok{ y }\FunctionTok{=}\NormalTok{ '}\DataTypeTok{S}\NormalTok{ (x }\FunctionTok{+}\NormalTok{ y)}
+\KeywordTok{type} \KeywordTok{family}\NormalTok{ (}\OtherTok{x ::} \DataTypeTok{Nat}\NormalTok{) }\OperatorTok{+}\NormalTok{ (}\OtherTok{y ::} \DataTypeTok{Nat}\NormalTok{) }\KeywordTok{where}
+    \DataTypeTok{\textquotesingle{}Z}   \OperatorTok{+}\NormalTok{ y }\OtherTok{=}\NormalTok{ y}
+    \DataTypeTok{\textquotesingle{}S}\NormalTok{ x }\OperatorTok{+}\NormalTok{ y }\OtherTok{=} \DataTypeTok{\textquotesingle{}S}\NormalTok{ (x }\OperatorTok{+}\NormalTok{ y)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -403,37 +403,37 @@ A ``type family'' is like a type level function. Compare this to defining
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L33-L35}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeNats.hs\#L33{-}L35}
 
-\OtherTok{(+#) ::} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Nat} \OtherTok{->} \DataTypeTok{Nat}       \CommentTok{-- types!}
-\DataTypeTok{Z}   \FunctionTok{+#}\NormalTok{ y }\FunctionTok{=}\NormalTok{ y}
-\DataTypeTok{S}\NormalTok{ x }\FunctionTok{+#}\NormalTok{ y }\FunctionTok{=} \DataTypeTok{S}\NormalTok{ (x }\FunctionTok{+#}\NormalTok{ y)}
+\OtherTok{(+\#) ::} \DataTypeTok{Nat} \OtherTok{{-}>} \DataTypeTok{Nat} \OtherTok{{-}>} \DataTypeTok{Nat}       \CommentTok{{-}{-} types!}
+\DataTypeTok{Z}   \OperatorTok{+\#}\NormalTok{ y }\OtherTok{=}\NormalTok{ y}
+\DataTypeTok{S}\NormalTok{ x }\OperatorTok{+\#}\NormalTok{ y }\OtherTok{=} \DataTypeTok{S}\NormalTok{ (x }\OperatorTok{+\#}\NormalTok{ y)}
 \end{Highlighting}
 \end{Shaded}
 
 Basically, we're defining a new type-level function \texttt{(+)} on two types
-\texttt{x} and \texttt{y}, both of kind \texttt{Nat}\ldots{}and the result is
+\texttt{x} and \texttt{y}, both of kind \texttt{Nat}\ldots and the result is
 their ``sum''. Convince yourself that this ``addition'' is actually addition.
 Now, let's use it for \texttt{appendV}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L99-L101}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeNats.hs\#L99{-}L101}
 
-\OtherTok{appendV ::} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ (n }\FunctionTok{+}\NormalTok{ m) a}
-\NormalTok{appendV }\DataTypeTok{Nil}\NormalTok{       ys }\FunctionTok{=}\NormalTok{ ys}
-\NormalTok{appendV (x }\FunctionTok{:#}\NormalTok{ xs) ys }\FunctionTok{=}\NormalTok{ x }\FunctionTok{:#}\NormalTok{ appendV xs ys}
+\OtherTok{appendV ::} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{{-}>} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{{-}>} \DataTypeTok{Vec}\NormalTok{ (n }\OperatorTok{+}\NormalTok{ m) a}
+\NormalTok{appendV }\DataTypeTok{Nil}\NormalTok{       ys }\OtherTok{=}\NormalTok{ ys}
+\NormalTok{appendV (x }\OperatorTok{:\#}\NormalTok{ xs) ys }\OtherTok{=}\NormalTok{ x }\OperatorTok{:\#}\NormalTok{ appendV xs ys}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ v1 }\FunctionTok{=} \DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DataTypeTok{Nil}
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ v2 }\FunctionTok{=} \DecValTok{0} \FunctionTok{:#} \DecValTok{1} \FunctionTok{:#} \DataTypeTok{Nil}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ v1 }\OtherTok{`appendV`}\NormalTok{ v2}
-\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DecValTok{0} \FunctionTok{:#} \DecValTok{1} \FunctionTok{:#} \DataTypeTok{Nil}
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t v1 }\OtherTok{`appendV`}\NormalTok{ v2}
-\NormalTok{v1 }\OtherTok{`appendV` v2 ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))) }\DataTypeTok{Int}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{let}\NormalTok{ v1 }\OtherTok{=} \DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{let}\NormalTok{ v2 }\OtherTok{=} \DecValTok{0} \OperatorTok{:\#} \DecValTok{1} \OperatorTok{:\#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ v1 }\OtherTok{\textasciigrave{}appendV\textasciigrave{}}\NormalTok{ v2}
+\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DecValTok{0} \OperatorTok{:\#} \DecValTok{1} \OperatorTok{:\#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{t v1 }\OtherTok{\textasciigrave{}appendV\textasciigrave{}}\NormalTok{ v2}
+\NormalTok{v1 }\OtherTok{\textasciigrave{}appendV\textasciigrave{} v2 ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))) }\DataTypeTok{Int}
 \end{Highlighting}
 \end{Shaded}
 
@@ -441,17 +441,17 @@ Now, let's use it for \texttt{appendV}:
 \subsection{Generating}\label{generating}}
 
 It'd be nice to have type-safe methods of \emph{generating} these things,
-too\ldots{}functions like \texttt{iterate}, or \texttt{enumFrom}. One of the
-ways to do this is by using a typeclass. (Available in a
+too\ldots functions like \texttt{iterate}, or \texttt{enumFrom}. One of the ways
+to do this is by using a typeclass. (Available in a
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs}{separate
 file} to try out).
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L7-L8}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/Unfoldable.hs\#L7{-}L8}
 
 \KeywordTok{class} \DataTypeTok{Unfoldable}\NormalTok{ v }\KeywordTok{where}
-\OtherTok{    unfold ::}\NormalTok{ (b }\OtherTok{->}\NormalTok{ (a, b)) }\OtherTok{->}\NormalTok{ b }\OtherTok{->}\NormalTok{ v a}
+\OtherTok{    unfold ::}\NormalTok{ (b }\OtherTok{{-}>}\NormalTok{ (a, b)) }\OtherTok{{-}>}\NormalTok{ b }\OtherTok{{-}>}\NormalTok{ v a}
 \end{Highlighting}
 \end{Shaded}
 
@@ -464,34 +464,34 @@ The list instance should make it more clear:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L11-L13}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/Unfoldable.hs\#L11{-}L13}
 
 \KeywordTok{instance} \DataTypeTok{Unfoldable}\NormalTok{ [] }\KeywordTok{where}
-\NormalTok{    unfold f x0 }\FunctionTok{=} \KeywordTok{let}\NormalTok{ (y, x1) }\FunctionTok{=}\NormalTok{ f x0}
-                  \KeywordTok{in}\NormalTok{  y }\FunctionTok{:}\NormalTok{ unfold f x1}
+\NormalTok{    unfold f x0 }\OtherTok{=} \KeywordTok{let}\NormalTok{ (y, x1) }\OtherTok{=}\NormalTok{ f x0}
+                  \KeywordTok{in}\NormalTok{  y }\OperatorTok{:}\NormalTok{ unfold f x1}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ take }\DecValTok{5} \FunctionTok{$}\NormalTok{ unfold (\textbackslash{}x }\OtherTok{->}\NormalTok{ (x }\OtherTok{`mod`} \DecValTok{3} \FunctionTok{==} \DecValTok{2}\NormalTok{, x}\FunctionTok{^}\DecValTok{2} \FunctionTok{-} \DecValTok{1}\NormalTok{)) }\DecValTok{2}
+\NormalTok{ghci}\OperatorTok{>} \FunctionTok{take} \DecValTok{5} \OperatorTok{$}\NormalTok{ unfold (\textbackslash{}x }\OtherTok{{-}>}\NormalTok{ (x }\OtherTok{\textasciigrave{}mod\textasciigrave{}} \DecValTok{3} \OperatorTok{==} \DecValTok{2}\NormalTok{, x}\OperatorTok{\^{}}\DecValTok{2} \OperatorTok{{-}} \DecValTok{1}\NormalTok{)) }\DecValTok{2}
 \NormalTok{[}\DataTypeTok{True}\NormalTok{, }\DataTypeTok{False}\NormalTok{, }\DataTypeTok{True}\NormalTok{, }\DataTypeTok{False}\NormalTok{, }\DataTypeTok{True}\NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
 
-Note that we can have an instance for any fixed-length vector type\ldots{}where
+Note that we can have an instance for any fixed-length vector type\ldots where
 the thing ``cuts off'' after it's filled the entire vector:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L46-L51}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeNats.hs\#L46{-}L51}
 
 \KeywordTok{instance} \DataTypeTok{Unfoldable}\NormalTok{ (}\DataTypeTok{Vec} \DataTypeTok{Z}\NormalTok{) }\KeywordTok{where}
-\NormalTok{    unfold _ _ }\FunctionTok{=} \DataTypeTok{Nil}
+\NormalTok{    unfold \_ \_ }\OtherTok{=} \DataTypeTok{Nil}
 
 \KeywordTok{instance} \DataTypeTok{Unfoldable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n) }\OtherTok{=>} \DataTypeTok{Unfoldable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ n)) }\KeywordTok{where}
-\NormalTok{    unfold f x0 }\FunctionTok{=} \KeywordTok{let}\NormalTok{ (y, x1) }\FunctionTok{=}\NormalTok{ f x0}
-                  \KeywordTok{in}\NormalTok{  y }\FunctionTok{:#}\NormalTok{ unfold f x1}
+\NormalTok{    unfold f x0 }\OtherTok{=} \KeywordTok{let}\NormalTok{ (y, x1) }\OtherTok{=}\NormalTok{ f x0}
+                  \KeywordTok{in}\NormalTok{  y }\OperatorTok{:\#}\NormalTok{ unfold f x1}
 \end{Highlighting}
 \end{Shaded}
 
@@ -503,7 +503,7 @@ ignore the function/initial state and return \texttt{Nil}.
 
 The instance for \texttt{Vec\ (S\ n)} is slightly more involved. To make a
 \texttt{Vec\ (S\ n)\ a}, you need an \texttt{a} and a \texttt{Vec\ n\ a}. You
-can get the \texttt{a} from the unfolding function\ldots{}but where will you get
+can get the \texttt{a} from the unfolding function\ldots but where will you get
 the \texttt{Vec\ n\ a} from? Well, you can use \texttt{unfold} to make a
 \texttt{Vec\ n\ a}! But that only makes sense if \texttt{Vec\ n} is an
 \texttt{Unfoldable}.
@@ -514,39 +514,39 @@ our function to create an \texttt{a} and \texttt{unfold} to create a
 \texttt{Vec\ n\ a} (provided \texttt{Vec\ n} is an \texttt{Unfoldable}).
 
 Note that this style of declaration looks a lot like induction. We define our
-instance for zero\ldots{}and then we say, ``if \texttt{n} is an instance, then
-so is \texttt{S\ n}''. Induction!
+instance for zero\ldots and then we say, ``if \texttt{n} is an instance, then so
+is \texttt{S\ n}''. Induction!
 
 Let's see this in action.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L15-L24}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/Unfoldable.hs\#L15{-}L24}
 
-\OtherTok{replicateU ::} \DataTypeTok{Unfoldable}\NormalTok{ v }\OtherTok{=>}\NormalTok{ a }\OtherTok{->}\NormalTok{ v a}
-\NormalTok{replicateU }\FunctionTok{=}\NormalTok{ unfold (\textbackslash{}x }\OtherTok{->}\NormalTok{ (x, x))}
+\OtherTok{replicateU ::} \DataTypeTok{Unfoldable}\NormalTok{ v }\OtherTok{=>}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ v a}
+\NormalTok{replicateU }\OtherTok{=}\NormalTok{ unfold (\textbackslash{}x }\OtherTok{{-}>}\NormalTok{ (x, x))}
 
-\OtherTok{iterateU ::} \DataTypeTok{Unfoldable}\NormalTok{ v }\OtherTok{=>}\NormalTok{ (a }\OtherTok{->}\NormalTok{ a) }\OtherTok{->}\NormalTok{ a }\OtherTok{->}\NormalTok{ v a}
-\NormalTok{iterateU f }\FunctionTok{=}\NormalTok{ unfold (\textbackslash{}x }\OtherTok{->}\NormalTok{ (x, f x))}
+\OtherTok{iterateU ::} \DataTypeTok{Unfoldable}\NormalTok{ v }\OtherTok{=>}\NormalTok{ (a }\OtherTok{{-}>}\NormalTok{ a) }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ v a}
+\NormalTok{iterateU f }\OtherTok{=}\NormalTok{ unfold (\textbackslash{}x }\OtherTok{{-}>}\NormalTok{ (x, f x))}
 
-\OtherTok{fromListMaybes ::} \DataTypeTok{Unfoldable}\NormalTok{ v }\OtherTok{=>}\NormalTok{ [a] }\OtherTok{->}\NormalTok{ v (}\DataTypeTok{Maybe}\NormalTok{ a)}
-\NormalTok{fromListMaybes }\FunctionTok{=}\NormalTok{ unfold }\FunctionTok{$}\NormalTok{ \textbackslash{}l }\OtherTok{->} \KeywordTok{case}\NormalTok{ l }\KeywordTok{of}
-\NormalTok{                                  []   }\OtherTok{->}\NormalTok{ (}\DataTypeTok{Nothing}\NormalTok{, [])}
-\NormalTok{                                  x}\FunctionTok{:}\NormalTok{xs }\OtherTok{->}\NormalTok{ (}\DataTypeTok{Just}\NormalTok{ x , xs)}
+\OtherTok{fromListMaybes ::} \DataTypeTok{Unfoldable}\NormalTok{ v }\OtherTok{=>}\NormalTok{ [a] }\OtherTok{{-}>}\NormalTok{ v (}\DataTypeTok{Maybe}\NormalTok{ a)}
+\NormalTok{fromListMaybes }\OtherTok{=}\NormalTok{ unfold }\OperatorTok{$}\NormalTok{ \textbackslash{}l }\OtherTok{{-}>} \KeywordTok{case}\NormalTok{ l }\KeywordTok{of}
+\NormalTok{                                  []   }\OtherTok{{-}>}\NormalTok{ (}\DataTypeTok{Nothing}\NormalTok{, [])}
+\NormalTok{                                  x}\OperatorTok{:}\NormalTok{xs }\OtherTok{{-}>}\NormalTok{ (}\DataTypeTok{Just}\NormalTok{ x , xs)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ replicateU }\CharTok{'a'}\OtherTok{       ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))) }\DataTypeTok{Char}
-\CharTok{'a'} \FunctionTok{:#} \CharTok{'a'} \FunctionTok{:#} \CharTok{'a'} \FunctionTok{:#} \DataTypeTok{Nil}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ replicateU }\CharTok{'a'}\OtherTok{       ::} \DataTypeTok{Vec} \DataTypeTok{Z} \DataTypeTok{Char}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ replicateU }\CharTok{\textquotesingle{}a\textquotesingle{}}\OtherTok{       ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))) }\DataTypeTok{Char}
+\CharTok{\textquotesingle{}a\textquotesingle{}} \OperatorTok{:\#} \CharTok{\textquotesingle{}a\textquotesingle{}} \OperatorTok{:\#} \CharTok{\textquotesingle{}a\textquotesingle{}} \OperatorTok{:\#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ replicateU }\CharTok{\textquotesingle{}a\textquotesingle{}}\OtherTok{       ::} \DataTypeTok{Vec} \DataTypeTok{Z} \DataTypeTok{Char}
 \DataTypeTok{Nil}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ iterateU succ }\DecValTok{1}\OtherTok{      ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)))) }\DataTypeTok{Int}
-\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DecValTok{4} \FunctionTok{:#} \DataTypeTok{Nil}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ fromListMaybes [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))) (}\DataTypeTok{Maybe} \DataTypeTok{Int}\NormalTok{)}
-\DataTypeTok{Just} \DecValTok{1} \FunctionTok{:#} \DataTypeTok{Just} \DecValTok{2} \FunctionTok{:#} \DataTypeTok{Nothing} \FunctionTok{:#} \DataTypeTok{Nil}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ tailV (iterateU succ }\DecValTok{1}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{) }\DataTypeTok{Int}\NormalTok{)}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ iterateU }\FunctionTok{succ} \DecValTok{1}\OtherTok{      ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)))) }\DataTypeTok{Int}
+\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DecValTok{4} \OperatorTok{:\#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ fromListMaybes [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))) (}\DataTypeTok{Maybe} \DataTypeTok{Int}\NormalTok{)}
+\DataTypeTok{Just} \DecValTok{1} \OperatorTok{:\#} \DataTypeTok{Just} \DecValTok{2} \OperatorTok{:\#} \DataTypeTok{Nothing} \OperatorTok{:\#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ tailV (iterateU }\FunctionTok{succ} \DecValTok{1}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{) }\DataTypeTok{Int}\NormalTok{)}
 \DataTypeTok{Nil}
 \end{Highlighting}
 \end{Shaded}
@@ -566,35 +566,35 @@ purposes:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L53-L55}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeNats.hs\#L53{-}L55}
 
 \KeywordTok{instance} \DataTypeTok{Functor}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n) }\KeywordTok{where}
-\NormalTok{    fmap _ }\DataTypeTok{Nil}       \FunctionTok{=} \DataTypeTok{Nil}
-\NormalTok{    fmap f (x }\FunctionTok{:#}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ f x }\FunctionTok{:#}\NormalTok{ fmap f xs}
+    \FunctionTok{fmap}\NormalTok{ \_ }\DataTypeTok{Nil}       \OtherTok{=} \DataTypeTok{Nil}
+    \FunctionTok{fmap}\NormalTok{ f (x }\OperatorTok{:\#}\NormalTok{ xs) }\OtherTok{=}\NormalTok{ f x }\OperatorTok{:\#} \FunctionTok{fmap}\NormalTok{ f xs}
 \end{Highlighting}
 \end{Shaded}
 
 For \texttt{Applicative}, it isn't so simple. The Applicative instance is going
-to be the ``ZipList'' instance\ldots{}so we have to be able to make a
+to be the ``ZipList'' instance\ldots so we have to be able to make a
 \texttt{pure} that depends on the type, and a
 \texttt{(\textless{}*\textgreater{})} that depends on the type, too.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L57-L63}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeNats.hs\#L57{-}L63}
 
 \KeywordTok{instance} \DataTypeTok{Applicative}\NormalTok{ (}\DataTypeTok{Vec} \DataTypeTok{Z}\NormalTok{) }\KeywordTok{where}
-\NormalTok{    pure _    }\FunctionTok{=} \DataTypeTok{Nil}
-    \DataTypeTok{Nil} \FunctionTok{<*>}\NormalTok{ _ }\FunctionTok{=} \DataTypeTok{Nil}
+    \FunctionTok{pure}\NormalTok{ \_    }\OtherTok{=} \DataTypeTok{Nil}
+    \DataTypeTok{Nil} \OperatorTok{<*>}\NormalTok{ \_ }\OtherTok{=} \DataTypeTok{Nil}
 
 \KeywordTok{instance} \DataTypeTok{Applicative}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n) }\OtherTok{=>} \DataTypeTok{Applicative}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ n)) }\KeywordTok{where}
-\NormalTok{    pure x }\FunctionTok{=}\NormalTok{ x }\FunctionTok{:#}\NormalTok{ pure x}
-\NormalTok{    (f }\FunctionTok{:#}\NormalTok{ fs) }\FunctionTok{<*>}\NormalTok{ (x }\FunctionTok{:#}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ f x }\FunctionTok{:#}\NormalTok{ (fs }\FunctionTok{<*>}\NormalTok{ xs)}
+    \FunctionTok{pure}\NormalTok{ x }\OtherTok{=}\NormalTok{ x }\OperatorTok{:\#} \FunctionTok{pure}\NormalTok{ x}
+\NormalTok{    (f }\OperatorTok{:\#}\NormalTok{ fs) }\OperatorTok{<*>}\NormalTok{ (x }\OperatorTok{:\#}\NormalTok{ xs) }\OtherTok{=}\NormalTok{ f x }\OperatorTok{:\#}\NormalTok{ (fs }\OperatorTok{<*>}\NormalTok{ xs)}
 \end{Highlighting}
 \end{Shaded}
 
-For \texttt{Vec\ Z}, it's just \texttt{Nil}. For \texttt{Vec\ (S\ n)}\ldots{}for
-pure, you need \texttt{x\ :\#} something\ldots{}and that something has to be a
+For \texttt{Vec\ Z}, it's just \texttt{Nil}. For \texttt{Vec\ (S\ n)}\ldots for
+pure, you need \texttt{x\ :\#} something\ldots and that something has to be a
 \texttt{Vec\ n\ a}. That's just \texttt{pure} for \texttt{Vec\ n}! Remember, we
 can't assume that \texttt{Vec\ n} is an \texttt{Applicative} just because
 \texttt{Vec\ (S\ n)} is. So we need to add a constraint, that \texttt{Vec\ n} an
@@ -602,7 +602,7 @@ Applicative. Induction, again!
 
 For \texttt{(\textless{}*\textgreater{})}, we can get the first item easily,
 it's just \texttt{f\ x}. But for the next item, we need a \texttt{Vec\ n\ a}.
-Luckily\ldots{}we have exactly that with the
+Luckily\ldots we have exactly that with the
 \texttt{(\textless{}*\textgreater{})} for \texttt{Vec\ n}!
 
 Remember, at the end, we're saying ``We have an \texttt{Applicative} instance
@@ -613,12 +613,12 @@ for \emph{any} type \texttt{Vec\ n}''. The instance for \texttt{Vec\ Z} has
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ fmap (}\FunctionTok{*}\DecValTok{2}\NormalTok{) (}\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DataTypeTok{Nil}\NormalTok{)}
-\DecValTok{2} \FunctionTok{:#} \DecValTok{4} \FunctionTok{:#} \DecValTok{6} \FunctionTok{:#} \DataTypeTok{Nil}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ pure }\DecValTok{10}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)) }\DataTypeTok{Int}
-\DecValTok{10} \FunctionTok{:#} \DecValTok{10} \FunctionTok{:#} \DataTypeTok{Nil}         \CommentTok{-- like replicateV!}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ liftA2 (}\FunctionTok{+}\NormalTok{) (}\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DataTypeTok{Nil}\NormalTok{) (}\DecValTok{100} \FunctionTok{:#} \DecValTok{201} \FunctionTok{:#} \DecValTok{302} \FunctionTok{:#} \DataTypeTok{Nil}\NormalTok{)}
-\DecValTok{101} \FunctionTok{:#} \DecValTok{203} \FunctionTok{:#} \DecValTok{305} \FunctionTok{:#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>} \FunctionTok{fmap}\NormalTok{ (}\OperatorTok{*}\DecValTok{2}\NormalTok{) (}\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DataTypeTok{Nil}\NormalTok{)}
+\DecValTok{2} \OperatorTok{:\#} \DecValTok{4} \OperatorTok{:\#} \DecValTok{6} \OperatorTok{:\#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>} \FunctionTok{pure} \DecValTok{10}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)) }\DataTypeTok{Int}
+\DecValTok{10} \OperatorTok{:\#} \DecValTok{10} \OperatorTok{:\#} \DataTypeTok{Nil}         \CommentTok{{-}{-} like replicateV!}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ liftA2 (}\OperatorTok{+}\NormalTok{) (}\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DataTypeTok{Nil}\NormalTok{) (}\DecValTok{100} \OperatorTok{:\#} \DecValTok{201} \OperatorTok{:\#} \DecValTok{302} \OperatorTok{:\#} \DataTypeTok{Nil}\NormalTok{)}
+\DecValTok{101} \OperatorTok{:\#} \DecValTok{203} \OperatorTok{:\#} \DecValTok{305} \OperatorTok{:\#} \DataTypeTok{Nil}
 \end{Highlighting}
 \end{Shaded}
 
@@ -629,23 +629,23 @@ the third item of the third vector, etc.
 
 We can define \texttt{Foldable} and \texttt{Traversable} the same way. Like for
 \texttt{Functor}, GHC can derive these with \emph{DeriveFoldable} and
-\emph{DeriveTraversable}\ldots{}but we'll do it again here just to demonstrate.
+\emph{DeriveTraversable}\ldots but we'll do it again here just to demonstrate.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L65-L75}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeNats.hs\#L65{-}L75}
 
 \KeywordTok{instance} \DataTypeTok{Foldable}\NormalTok{ (}\DataTypeTok{Vec} \DataTypeTok{Z}\NormalTok{) }\KeywordTok{where}
-\NormalTok{    foldMap _ }\DataTypeTok{Nil} \FunctionTok{=}\NormalTok{ mempty}
+    \FunctionTok{foldMap}\NormalTok{ \_ }\DataTypeTok{Nil} \OtherTok{=} \FunctionTok{mempty}
 
 \KeywordTok{instance} \DataTypeTok{Foldable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n) }\OtherTok{=>} \DataTypeTok{Foldable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ n)) }\KeywordTok{where}
-\NormalTok{    foldMap f (x }\FunctionTok{:#}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ f x }\FunctionTok{<>}\NormalTok{ foldMap f xs}
+    \FunctionTok{foldMap}\NormalTok{ f (x }\OperatorTok{:\#}\NormalTok{ xs) }\OtherTok{=}\NormalTok{ f x }\OperatorTok{<>} \FunctionTok{foldMap}\NormalTok{ f xs}
 
 \KeywordTok{instance} \DataTypeTok{Traversable}\NormalTok{ (}\DataTypeTok{Vec} \DataTypeTok{Z}\NormalTok{) }\KeywordTok{where}
-\NormalTok{    traverse _ }\DataTypeTok{Nil} \FunctionTok{=}\NormalTok{ pure }\DataTypeTok{Nil}
+    \FunctionTok{traverse}\NormalTok{ \_ }\DataTypeTok{Nil} \OtherTok{=} \FunctionTok{pure} \DataTypeTok{Nil}
 
 \KeywordTok{instance} \DataTypeTok{Traversable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n) }\OtherTok{=>} \DataTypeTok{Traversable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ n)) }\KeywordTok{where}
-\NormalTok{    traverse f (x }\FunctionTok{:#}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ liftA2 (}\FunctionTok{:#}\NormalTok{) (f x) (traverse f xs)}
+    \FunctionTok{traverse}\NormalTok{ f (x }\OperatorTok{:\#}\NormalTok{ xs) }\OtherTok{=}\NormalTok{ liftA2 (}\OperatorTok{:\#}\NormalTok{) (f x) (}\FunctionTok{traverse}\NormalTok{ f xs)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -653,22 +653,22 @@ Note that we can only use \texttt{foldMap\ f\ xs} on \texttt{xs\ ::\ Vec\ n\ a},
 if \texttt{Vec\ n} is a \texttt{Foldable}. So that's why we add that constraint.
 
 Again,
-\texttt{liftA2\ (:\#)\ ::\ Applicative\ f\ =\textgreater{}\ f\ a\ -\textgreater{}\ f\ (Vec\ n\ a)\ -\textgreater{}\ f\ (Vec\ (S\ n)\ a)}\ldots{}so
+\texttt{liftA2\ (:\#)\ ::\ Applicative\ f\ =\textgreater{}\ f\ a\ -\textgreater{}\ f\ (Vec\ n\ a)\ -\textgreater{}\ f\ (Vec\ (S\ n)\ a)}\ldots so
 this only makes sense if \texttt{traverse\ f\ s} gives us a \texttt{Vec\ n\ a}.
 So we have to add that as a constraint.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ toList }\FunctionTok{$} \DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ toList }\OperatorTok{$} \DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DataTypeTok{Nil}
 \NormalTok{[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ traverse }\DataTypeTok{Identity} \FunctionTok{$} \DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DataTypeTok{Nil}
-\DataTypeTok{Identity}\NormalTok{ (}\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DataTypeTok{Nil}\NormalTok{)}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ sequence_ }\FunctionTok{$}\NormalTok{ putStrLn }\StringTok{"hello"} \FunctionTok{:#}\NormalTok{ putStrLn }\StringTok{"world"} \FunctionTok{:#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>} \FunctionTok{traverse} \DataTypeTok{Identity} \OperatorTok{$} \DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DataTypeTok{Nil}
+\DataTypeTok{Identity}\NormalTok{ (}\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DataTypeTok{Nil}\NormalTok{)}
+\NormalTok{ghci}\OperatorTok{>} \FunctionTok{sequence\_} \OperatorTok{$} \FunctionTok{putStrLn} \StringTok{"hello"} \OperatorTok{:\#} \FunctionTok{putStrLn} \StringTok{"world"} \OperatorTok{:\#} \DataTypeTok{Nil}
 \StringTok{"hello"}
 \StringTok{"world"}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ sequence }\FunctionTok{$} \DataTypeTok{Just} \DecValTok{1} \FunctionTok{:#} \DataTypeTok{Just} \DecValTok{2} \FunctionTok{:#} \DataTypeTok{Nil}
-\DataTypeTok{Just}\NormalTok{ (}\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DataTypeTok{Nil}\NormalTok{)}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ sequence }\FunctionTok{$} \DataTypeTok{Just} \DecValTok{1} \FunctionTok{:#} \DataTypeTok{Nothing} \FunctionTok{:#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>} \FunctionTok{sequence} \OperatorTok{$} \DataTypeTok{Just} \DecValTok{1} \OperatorTok{:\#} \DataTypeTok{Just} \DecValTok{2} \OperatorTok{:\#} \DataTypeTok{Nil}
+\DataTypeTok{Just}\NormalTok{ (}\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DataTypeTok{Nil}\NormalTok{)}
+\NormalTok{ghci}\OperatorTok{>} \FunctionTok{sequence} \OperatorTok{$} \DataTypeTok{Just} \DecValTok{1} \OperatorTok{:\#} \DataTypeTok{Nothing} \OperatorTok{:\#} \DataTypeTok{Nil}
 \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
@@ -678,20 +678,20 @@ write a ``safe \texttt{fromList}'':
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/Unfoldable.hs#L26-L27}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/Unfoldable.hs\#L26{-}L27}
 
-\OtherTok{fromListU ::}\NormalTok{ (}\DataTypeTok{Unfoldable}\NormalTok{ v, }\DataTypeTok{Traversable}\NormalTok{ v) }\OtherTok{=>}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{Maybe}\NormalTok{ (v a)}
-\NormalTok{fromListU }\FunctionTok{=}\NormalTok{ sequence }\FunctionTok{.}\NormalTok{ fromListMaybes}
+\OtherTok{fromListU ::}\NormalTok{ (}\DataTypeTok{Unfoldable}\NormalTok{ v, }\DataTypeTok{Traversable}\NormalTok{ v) }\OtherTok{=>}\NormalTok{ [a] }\OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ (v a)}
+\NormalTok{fromListU }\OtherTok{=} \FunctionTok{sequence} \OperatorTok{.}\NormalTok{ fromListMaybes}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ fromListU [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{) }\DataTypeTok{Int}\NormalTok{)}
-\DataTypeTok{Just}\NormalTok{ (}\DecValTok{1} \FunctionTok{:#} \DataTypeTok{Nil}\NormalTok{)}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ fromListU [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))) }\DataTypeTok{Int}\NormalTok{)}
-\DataTypeTok{Just}\NormalTok{ (}\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DataTypeTok{Nil}\NormalTok{)}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ fromListU [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)))) }\DataTypeTok{Int}\NormalTok{)}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ fromListU [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{) }\DataTypeTok{Int}\NormalTok{)}
+\DataTypeTok{Just}\NormalTok{ (}\DecValTok{1} \OperatorTok{:\#} \DataTypeTok{Nil}\NormalTok{)}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ fromListU [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))) }\DataTypeTok{Int}\NormalTok{)}
+\DataTypeTok{Just}\NormalTok{ (}\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DataTypeTok{Nil}\NormalTok{)}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ fromListU [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)))) }\DataTypeTok{Int}\NormalTok{)}
 \DataTypeTok{Nothing}
 \end{Highlighting}
 \end{Shaded}
@@ -707,26 +707,26 @@ the element in the container} from the container type.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L86-L91}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeNats.hs\#L86{-}L91}
 
 \KeywordTok{instance}\NormalTok{ (}\DataTypeTok{Unfoldable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n), }\DataTypeTok{Traversable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n)) }\OtherTok{=>} \DataTypeTok{L.IsList}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a) }\KeywordTok{where}
-    \KeywordTok{type} \DataTypeTok{Item}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a) }\FunctionTok{=}\NormalTok{ a}
-\NormalTok{    fromList xs }\FunctionTok{=} \KeywordTok{case}\NormalTok{ fromListU xs }\KeywordTok{of}
-                    \DataTypeTok{Nothing} \OtherTok{->}\NormalTok{ error }\StringTok{"Demanded vector from a list that was too short."}
-                    \DataTypeTok{Just}\NormalTok{ ys }\OtherTok{->}\NormalTok{ ys}
-\NormalTok{    toList      }\FunctionTok{=}\NormalTok{ Data.Foldable.toList}
+    \KeywordTok{type} \DataTypeTok{Item}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a) }\OtherTok{=}\NormalTok{ a}
+\NormalTok{    fromList xs }\OtherTok{=} \KeywordTok{case}\NormalTok{ fromListU xs }\KeywordTok{of}
+                    \DataTypeTok{Nothing} \OtherTok{{-}>} \FunctionTok{error} \StringTok{"Demanded vector from a list that was too short."}
+                    \DataTypeTok{Just}\NormalTok{ ys }\OtherTok{{-}>}\NormalTok{ ys}
+\NormalTok{    toList      }\OtherTok{=}\NormalTok{ Data.Foldable.toList}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{set }\FunctionTok{-}\DataTypeTok{XOverloadedLists}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)) }\DataTypeTok{Int}
-\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DataTypeTok{Nil}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)))) }\DataTypeTok{Int}
-\FunctionTok{***} \DataTypeTok{Exception}\FunctionTok{:} \DataTypeTok{Demanded}\NormalTok{ vector from a list that was too short}\FunctionTok{.}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ [}\DecValTok{1}\NormalTok{,}\DecValTok{3}\FunctionTok{..}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)))) }\DataTypeTok{Int}
-\DecValTok{1} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DecValTok{5} \FunctionTok{:#} \DecValTok{7} \FunctionTok{:#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{set }\OperatorTok{{-}}\DataTypeTok{XOverloadedLists}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)) }\DataTypeTok{Int}
+\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)))) }\DataTypeTok{Int}
+\OperatorTok{***} \DataTypeTok{Exception}\OperatorTok{:} \DataTypeTok{Demanded}\NormalTok{ vector from a list that was too short}\OperatorTok{.}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ [}\DecValTok{1}\NormalTok{,}\DecValTok{3}\OperatorTok{..}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{)))) }\DataTypeTok{Int}
+\DecValTok{1} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DecValTok{5} \OperatorTok{:\#} \DecValTok{7} \OperatorTok{:\#} \DataTypeTok{Nil}
 \end{Highlighting}
 \end{Shaded}
 
@@ -735,7 +735,7 @@ now available to us.\footnote{By the way, the GHC wiki seems to claim that
   \href{https://ghc.haskell.org/trac/ghc/wiki/OverloadedLists\#Length-indexedobservedVectors}{using
   \emph{OverloadedLists} this way is impossible}. Anyone know what's going on
   here? Did we move fast and break everything?} Unfortunately, you now open
-yourself up to runtime errors, so\ldots{}it's actually a really bad idea for
+yourself up to runtime errors, so\ldots it's actually a really bad idea for
 safety purposes unless you stick to only using it with infinite lists or are
 very disciplined. (Unless you really want to use list syntax, \texttt{fromListU}
 is probably a safer choice for finite lists!)
@@ -754,14 +754,14 @@ If you wanted to get the \texttt{typeRep} for an \texttt{IO\ Double} using
 \texttt{typeOf}, you have to pass in an \texttt{IO\ Double}. But if you don't
 have one at hand, you can just use \texttt{undefined} with a type annotation.
 It's a bit of a dirty hack, but it works because \texttt{typeOf} doesn't care
-about the first argument's value\ldots{}just its type.
+about the first argument's value\ldots just its type.
 
 These days, we like to be a bit less embarrassing and use something called
 \texttt{Proxy}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Proxy}\NormalTok{ a }\FunctionTok{=} \DataTypeTok{Proxy}
+\KeywordTok{data} \DataTypeTok{Proxy}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Proxy}
 \end{Highlighting}
 \end{Shaded}
 
@@ -784,10 +784,10 @@ write \texttt{index} in terms of it)
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L77-L78}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeNats.hs\#L77{-}L78}
 
 \KeywordTok{class} \DataTypeTok{Index}\NormalTok{ (}\OtherTok{n ::} \DataTypeTok{Nat}\NormalTok{) v }\KeywordTok{where}
-\OtherTok{    index ::} \DataTypeTok{Proxy}\NormalTok{ n }\OtherTok{->}\NormalTok{ v a }\OtherTok{->}\NormalTok{ a}
+\OtherTok{    index ::} \DataTypeTok{Proxy}\NormalTok{ n }\OtherTok{{-}>}\NormalTok{ v a }\OtherTok{{-}>}\NormalTok{ a}
 \end{Highlighting}
 \end{Shaded}
 
@@ -818,13 +818,13 @@ Let's write our instances --- but only the instances that \emph{make sense}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeNats.hs#L80-L84}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeNats.hs\#L80{-}L84}
 
 \KeywordTok{instance} \DataTypeTok{Index} \DataTypeTok{Z}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ n)) }\KeywordTok{where}
-\NormalTok{    index _ (x }\FunctionTok{:#}\NormalTok{ _) }\FunctionTok{=}\NormalTok{ x}
+    \FunctionTok{index}\NormalTok{ \_ (x }\OperatorTok{:\#}\NormalTok{ \_) }\OtherTok{=}\NormalTok{ x}
 
-\KeywordTok{instance}\NormalTok{ forall n m}\FunctionTok{.} \DataTypeTok{Index}\NormalTok{ n (}\DataTypeTok{Vec}\NormalTok{ m) }\OtherTok{=>} \DataTypeTok{Index}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ n) (}\DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ m)) }\KeywordTok{where}
-\NormalTok{    index _ (_ }\FunctionTok{:#}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ index (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy}\NormalTok{ n) xs}
+\KeywordTok{instance} \KeywordTok{forall}\NormalTok{ n m}\OperatorTok{.} \DataTypeTok{Index}\NormalTok{ n (}\DataTypeTok{Vec}\NormalTok{ m) }\OtherTok{=>} \DataTypeTok{Index}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ n) (}\DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ m)) }\KeywordTok{where}
+    \FunctionTok{index}\NormalTok{ \_ (\_ }\OperatorTok{:\#}\NormalTok{ xs) }\OtherTok{=} \FunctionTok{index}\NormalTok{ (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy}\NormalTok{ n) xs}
 \end{Highlighting}
 \end{Shaded}
 
@@ -852,8 +852,8 @@ function on lists:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\DecValTok{0} \FunctionTok{!!}\NormalTok{ (x}\FunctionTok{:}\NormalTok{_ ) }\FunctionTok{=}\NormalTok{ x}
-\NormalTok{n }\FunctionTok{!!}\NormalTok{ (_}\FunctionTok{:}\NormalTok{xs) }\FunctionTok{=}\NormalTok{ (n }\FunctionTok{-} \DecValTok{1}\NormalTok{) }\FunctionTok{!!}\NormalTok{ xs}
+\DecValTok{0} \OperatorTok{!!}\NormalTok{ (x}\OperatorTok{:}\NormalTok{\_ ) }\OtherTok{=}\NormalTok{ x}
+\NormalTok{n }\OperatorTok{!!}\NormalTok{ (\_}\OperatorTok{:}\NormalTok{xs) }\OtherTok{=}\NormalTok{ (n }\OperatorTok{{-}} \DecValTok{1}\NormalTok{) }\OperatorTok{!!}\NormalTok{ xs}
 \end{Highlighting}
 \end{Shaded}
 
@@ -861,10 +861,10 @@ trying it out\ldots{}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ index (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))) (}\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DataTypeTok{Nil}\NormalTok{)}
+\NormalTok{ghci}\OperatorTok{>} \FunctionTok{index}\NormalTok{ (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))) (}\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DataTypeTok{Nil}\NormalTok{)}
 \DecValTok{3}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ index (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))) (}\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DataTypeTok{Nil}\NormalTok{)}
-\FunctionTok{***} \DataTypeTok{Compile}\NormalTok{ error}\FunctionTok{!}
+\NormalTok{ghci}\OperatorTok{>} \FunctionTok{index}\NormalTok{ (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ (}\DataTypeTok{S} \DataTypeTok{Z}\NormalTok{))) (}\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DataTypeTok{Nil}\NormalTok{)}
+\OperatorTok{***} \DataTypeTok{Compile} \FunctionTok{error}\OperatorTok{!}
 \end{Highlighting}
 \end{Shaded}
 
@@ -883,11 +883,11 @@ instance of \texttt{Index}:
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{instance} \DataTypeTok{Index}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ n) (}\DataTypeTok{Vec}\NormalTok{ (}\DataTypeTok{S}\NormalTok{ m)) }\KeywordTok{where}
-\NormalTok{    index _ (x }\FunctionTok{:#}\NormalTok{ _) }\FunctionTok{=}\NormalTok{ x}
+    \FunctionTok{index}\NormalTok{ \_ (x }\OperatorTok{:\#}\NormalTok{ \_) }\OtherTok{=}\NormalTok{ x}
 \end{Highlighting}
 \end{Shaded}
 
-And this compiles fine\ldots{}but gives the wrong behavior, or at least the
+And this compiles fine\ldots but gives the wrong behavior, or at least the
 behavior we don't want!
 
 Does anybody know a way to state the type of \texttt{Index} or \texttt{index} in
@@ -896,8 +896,8 @@ a way that implementations like this are impossible?
 There's a ``fundamental'' problem here, it seems, because we can't really demand
 or specify anything by the return type, like we could in the other examples. In
 the other examples, we sort of restricted the implementation by choosing our
-return type carefully\ldots{}but for here, it's just \texttt{a}. I'd love to
-hear if anyone has any thoughts on this.
+return type carefully\ldots but for here, it's just \texttt{a}. I'd love to hear
+if anyone has any thoughts on this.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
@@ -934,7 +934,7 @@ statements about variables, like
 same as'' \texttt{1\ +\ n}). Fortunately for us, since GHC 7.10, we have a way
 to ``extend'' the type checker with custom plugins that \emph{can} prove things
 like this for us. (Note that this \texttt{+} is the one from
-\texttt{GHC.TypeLits}\ldots{}not the one we defined earlier.)
+\texttt{GHC.TypeLits}\ldots not the one we defined earlier.)
 
 The
 \emph{\href{https://hackage.haskell.org/package/ghc-typelits-natnormalise}{ghc-typelits-natnormalise}}
@@ -944,9 +944,9 @@ we execute our code, or by adding a pragma:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L14-L14}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeLits.hs\#L14{-}L14}
 
-\OtherTok{\{-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-\}}
+\OtherTok{\{{-}\# OPTIONS\_GHC {-}fplugin GHC.TypeLits.Normalise \#{-}\}}
 \end{Highlighting}
 \end{Shaded}
 
@@ -955,13 +955,13 @@ course, a GHC 7.10+)
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{set }\FunctionTok{-}\DataTypeTok{XDataKinds} \FunctionTok{-}\DataTypeTok{XTypeOperators} \FunctionTok{-}\DataTypeTok{XTypeFamilies}
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{import} \DataTypeTok{GHC.TypeLits}
-\NormalTok{ghci}\FunctionTok{>} \DataTypeTok{Proxy}\OtherTok{ ::}\NormalTok{ ((n }\FunctionTok{+} \DecValTok{1}\NormalTok{) }\FunctionTok{~}\NormalTok{ (}\DecValTok{1} \FunctionTok{+}\NormalTok{ n)) }\OtherTok{=>} \DataTypeTok{Proxy}\NormalTok{ n}
-\FunctionTok{***} \DataTypeTok{Compile}\NormalTok{ error}\FunctionTok{:} \DataTypeTok{Cannot}\NormalTok{ match }\OtherTok{`1 + n`}\NormalTok{ with }\OtherTok{`n + 1`}
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{set }\FunctionTok{-}\NormalTok{fplugin }\DataTypeTok{GHC.TypeLits.Normalise}
-\NormalTok{ghci}\FunctionTok{>} \DataTypeTok{Proxy}\OtherTok{ ::}\NormalTok{ ((n }\FunctionTok{+} \DecValTok{1}\NormalTok{) }\FunctionTok{~}\NormalTok{ (}\DecValTok{1} \FunctionTok{+}\NormalTok{ n)) }\OtherTok{=>} \DataTypeTok{Proxy}\NormalTok{ n}
-\DataTypeTok{Proxy}   \CommentTok{-- success!}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{set }\OperatorTok{{-}}\DataTypeTok{XDataKinds} \OperatorTok{{-}}\DataTypeTok{XTypeOperators} \OperatorTok{{-}}\DataTypeTok{XTypeFamilies}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{import} \DataTypeTok{GHC.TypeLits}
+\NormalTok{ghci}\OperatorTok{>} \DataTypeTok{Proxy}\OtherTok{ ::}\NormalTok{ ((n }\OperatorTok{+} \DecValTok{1}\NormalTok{) }\OperatorTok{\textasciitilde{}}\NormalTok{ (}\DecValTok{1} \OperatorTok{+}\NormalTok{ n)) }\OtherTok{=>} \DataTypeTok{Proxy}\NormalTok{ n}
+\OperatorTok{***} \DataTypeTok{Compile} \FunctionTok{error}\OperatorTok{:} \DataTypeTok{Cannot}\NormalTok{ match }\OtherTok{\textasciigrave{}1 + n\textasciigrave{}}\NormalTok{ with }\OtherTok{\textasciigrave{}n + 1\textasciigrave{}}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{set }\OperatorTok{{-}}\NormalTok{fplugin }\DataTypeTok{GHC.TypeLits.Normalise}
+\NormalTok{ghci}\OperatorTok{>} \DataTypeTok{Proxy}\OtherTok{ ::}\NormalTok{ ((n }\OperatorTok{+} \DecValTok{1}\NormalTok{) }\OperatorTok{\textasciitilde{}}\NormalTok{ (}\DecValTok{1} \OperatorTok{+}\NormalTok{ n)) }\OtherTok{=>} \DataTypeTok{Proxy}\NormalTok{ n}
+\DataTypeTok{Proxy}   \CommentTok{{-}{-} success!}
 \end{Highlighting}
 \end{Shaded}
 
@@ -972,11 +972,11 @@ sandbox:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# in directory of your choice}
+\CommentTok{\# in directory of your choice}
 \NormalTok{$ }\ExtensionTok{cabal}\NormalTok{ sandbox init}
-\NormalTok{$ }\ExtensionTok{cabal}\NormalTok{ install ghc-typelits-natnormalise}
+\NormalTok{$ }\ExtensionTok{cabal}\NormalTok{ install ghc{-}typelits{-}natnormalise}
 \NormalTok{$ }\ExtensionTok{cabal}\NormalTok{ exec bash}
-\CommentTok{# now the package is in scope, when you use ghci or runghc}
+\CommentTok{\# now the package is in scope, when you use ghci or runghc}
 \end{Highlighting}
 \end{Shaded}
 
@@ -985,13 +985,13 @@ and see what it gains us.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L33-L40}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeLits.hs\#L33{-}L40}
 
-\KeywordTok{data} \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
+\KeywordTok{data} \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{{-}>} \OperatorTok{*} \OtherTok{{-}>} \OperatorTok{*} \KeywordTok{where}
     \DataTypeTok{Nil}\OtherTok{  ::} \DataTypeTok{Vec} \DecValTok{0}\NormalTok{ a}
-\OtherTok{    (:#) ::}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ (n }\FunctionTok{-} \DecValTok{1}\NormalTok{) a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
+\OtherTok{    (:\#) ::}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Vec}\NormalTok{ (n }\OperatorTok{{-}} \DecValTok{1}\NormalTok{) a }\OtherTok{{-}>} \DataTypeTok{Vec}\NormalTok{ n a}
 
-\KeywordTok{infixr} \DecValTok{5} \FunctionTok{:#}
+\KeywordTok{infixr} \DecValTok{5} \OperatorTok{:\#}
 
 \KeywordTok{deriving} \KeywordTok{instance} \DataTypeTok{Show}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Show}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a)}
 \KeywordTok{deriving} \KeywordTok{instance} \DataTypeTok{Eq}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Eq}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a)}
@@ -1002,7 +1002,7 @@ A little nicer, right? \texttt{Nil} is a \texttt{Vec\ 0\ a}, and
 \texttt{x\ :\#\ xs} is an element with a \texttt{Vec\ (n\ -\ 1)\ a}, which
 overall is a \texttt{Vec\ n\ a}. Let's go over everything again to see how it'd
 look in the new regime. (Note that the kind of the type number literals is also
-called \texttt{Nat}\ldots{}unrelated to our \texttt{Nat} we used before.)
+called \texttt{Nat}\ldots unrelated to our \texttt{Nat} we used before.)
 
 \hypertarget{a-new-look}{%
 \section{A new look}\label{a-new-look}}
@@ -1012,7 +1012,7 @@ as they aren't built in in a useful way.
 
 We have the type family (remember those?) \texttt{CmpNat\ x\ y}, which returns
 an \texttt{Ordering} (\texttt{LT}, \texttt{EQ}, or \texttt{GT}) type (of kind
-\texttt{Ordering}, using \emph{DataKinds}\ldots{}lifting a type and its value
+\texttt{Ordering}, using \emph{DataKinds}\ldots lifting a type and its value
 constructors to a kind and its types), which is provided and defined for us by
 GHC in \texttt{GHC.TypeLits}.
 
@@ -1021,9 +1021,9 @@ straightforward:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L31-L31}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeLits.hs\#L31{-}L31}
 
-\KeywordTok{type}\NormalTok{ x }\FunctionTok{>}\NormalTok{ y }\FunctionTok{=} \DataTypeTok{CmpNat}\NormalTok{ x y }\FunctionTok{~}\NormalTok{ '}\DataTypeTok{GT}
+\KeywordTok{type}\NormalTok{ x }\OperatorTok{>}\NormalTok{ y }\OtherTok{=} \DataTypeTok{CmpNat}\NormalTok{ x y }\OperatorTok{\textasciitilde{}} \DataTypeTok{\textquotesingle{}GT}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1036,13 +1036,13 @@ Given this, let's do our favorite list functions, \texttt{headV} and
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L89-L93}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeLits.hs\#L89{-}L93}
 
-\OtherTok{headV ::}\NormalTok{ (n }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->}\NormalTok{ a}
-\NormalTok{headV (x }\FunctionTok{:#}\NormalTok{ _)  }\FunctionTok{=}\NormalTok{ x}
+\OtherTok{headV ::}\NormalTok{ (n }\OperatorTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{{-}>}\NormalTok{ a}
+\NormalTok{headV (x }\OperatorTok{:\#}\NormalTok{ \_)  }\OtherTok{=}\NormalTok{ x}
 
-\OtherTok{tailV ::}\NormalTok{ (n }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ (n }\FunctionTok{-} \DecValTok{1}\NormalTok{) a}
-\NormalTok{tailV (_ }\FunctionTok{:#}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ xs}
+\OtherTok{tailV ::}\NormalTok{ (n }\OperatorTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{{-}>} \DataTypeTok{Vec}\NormalTok{ (n }\OperatorTok{{-}} \DecValTok{1}\NormalTok{) a}
+\NormalTok{tailV (\_ }\OperatorTok{:\#}\NormalTok{ xs) }\OtherTok{=}\NormalTok{ xs}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1050,8 +1050,8 @@ Magnificent!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ headV (}\DataTypeTok{Nil}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{0}\NormalTok{ ())}
-\CommentTok{-- Error!  Cannot unite 'EQ with 'GT}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ headV (}\DataTypeTok{Nil}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{0}\NormalTok{ ())}
+\CommentTok{{-}{-} Error!  Cannot unite \textquotesingle{}EQ with \textquotesingle{}GT}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1066,33 +1066,33 @@ There is one problem here, though --- GHC gives us a warning for not pattern
 matching on \texttt{Nil}. But, if we do try to pattern match on \texttt{Nil}, we
 get a type error, like the same one we got when using our custom type nats. I
 think this is probably something that a plugin or sufficiently smart
-\texttt{CmpNat} might be able to handle\ldots{}but I'm not totally sure. Right
+\texttt{CmpNat} might be able to handle\ldots but I'm not totally sure. Right
 now, the best thing I can think of is just to do a wildcard match,
 \texttt{headV\ \_\ =\ error\ "What?"}, knowing that that case will never be
 reached if your program compiles successfully.
 
 Moving on, we see that we don't even have to do any extra work to define our own
-type family \texttt{x\ +\ y}\ldots{}because \texttt{GHC.TypeLits} already
-defines it for us! So, we can instantly write\ldots{}.
+type family \texttt{x\ +\ y}\ldots because \texttt{GHC.TypeLits} already defines
+it for us! So, we can instantly write\ldots.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L95-L97}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeLits.hs\#L95{-}L97}
 
-\OtherTok{appendV ::} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ (n }\FunctionTok{+}\NormalTok{ m) a}
-\NormalTok{appendV }\DataTypeTok{Nil}\NormalTok{       ys }\FunctionTok{=}\NormalTok{ ys}
-\NormalTok{appendV (x }\FunctionTok{:#}\NormalTok{ xs) ys }\FunctionTok{=}\NormalTok{ x }\FunctionTok{:#}\NormalTok{ appendV xs ys}
+\OtherTok{appendV ::} \DataTypeTok{Vec}\NormalTok{ n a }\OtherTok{{-}>} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{{-}>} \DataTypeTok{Vec}\NormalTok{ (n }\OperatorTok{+}\NormalTok{ m) a}
+\NormalTok{appendV }\DataTypeTok{Nil}\NormalTok{       ys }\OtherTok{=}\NormalTok{ ys}
+\NormalTok{appendV (x }\OperatorTok{:\#}\NormalTok{ xs) ys }\OtherTok{=}\NormalTok{ x }\OperatorTok{:\#}\NormalTok{ appendV xs ys}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ v1 }\FunctionTok{=} \DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DataTypeTok{Nil}
-\NormalTok{ghci}\FunctionTok{>} \KeywordTok{let}\NormalTok{ v2 }\FunctionTok{=}\NormalTok{ iterateU succ }\DecValTok{0}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{2} \DataTypeTok{Int}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ v1 }\OtherTok{`appendV`}\NormalTok{ v2}
-\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DecValTok{0} \FunctionTok{:#} \DecValTok{1} \FunctionTok{:#} \DataTypeTok{Nil}
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{t v1 }\OtherTok{`appendV` v2 ::} \DataTypeTok{Vec} \DecValTok{5} \DataTypeTok{Int}
-\NormalTok{v1 }\OtherTok{`appendV` v2 ::} \DataTypeTok{Vec} \DecValTok{5} \DataTypeTok{Int}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{let}\NormalTok{ v1 }\OtherTok{=} \DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{let}\NormalTok{ v2 }\OtherTok{=}\NormalTok{ iterateU }\FunctionTok{succ} \DecValTok{0}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{2} \DataTypeTok{Int}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ v1 }\OtherTok{\textasciigrave{}appendV\textasciigrave{}}\NormalTok{ v2}
+\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DecValTok{0} \OperatorTok{:\#} \DecValTok{1} \OperatorTok{:\#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{t v1 }\OtherTok{\textasciigrave{}appendV\textasciigrave{} v2 ::} \DataTypeTok{Vec} \DecValTok{5} \DataTypeTok{Int}
+\NormalTok{v1 }\OtherTok{\textasciigrave{}appendV\textasciigrave{} v2 ::} \DataTypeTok{Vec} \DecValTok{5} \DataTypeTok{Int}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1100,19 +1100,19 @@ And our list generating typeclasses ---
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L42-L47}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeLits.hs\#L42{-}L47}
 
 \KeywordTok{instance} \DataTypeTok{Unfoldable}\NormalTok{ (}\DataTypeTok{Vec} \DecValTok{0}\NormalTok{) }\KeywordTok{where}
-\NormalTok{    unfold _ _ }\FunctionTok{=} \DataTypeTok{Nil}
+\NormalTok{    unfold \_ \_ }\OtherTok{=} \DataTypeTok{Nil}
 
-\KeywordTok{instance}\NormalTok{ (}\DataTypeTok{Unfoldable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (n }\FunctionTok{-} \DecValTok{1}\NormalTok{)), n }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Unfoldable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n) }\KeywordTok{where}
-\NormalTok{    unfold f x0 }\FunctionTok{=} \KeywordTok{let}\NormalTok{ (y, x1) }\FunctionTok{=}\NormalTok{ f x0}
-                  \KeywordTok{in}\NormalTok{  y }\FunctionTok{:#}\NormalTok{ unfold f x1}
+\KeywordTok{instance}\NormalTok{ (}\DataTypeTok{Unfoldable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (n }\OperatorTok{{-}} \DecValTok{1}\NormalTok{)), n }\OperatorTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Unfoldable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n) }\KeywordTok{where}
+\NormalTok{    unfold f x0 }\OtherTok{=} \KeywordTok{let}\NormalTok{ (y, x1) }\OtherTok{=}\NormalTok{ f x0}
+                  \KeywordTok{in}\NormalTok{  y }\OperatorTok{:\#}\NormalTok{ unfold f x1}
 \end{Highlighting}
 \end{Shaded}
 
 The translation is pretty mechanical, but I think that this new formulation
-looks\ldots{}really nice, and really powerful. "If you can build a list from
+looks\ldots really nice, and really powerful. "If you can build a list from
 \includegraphics{https://latex.codecogs.com/png.latex?n\%20-\%201} and
 \includegraphics{https://latex.codecogs.com/png.latex?n\%20\%3E\%200}, then you
 can build a list for \includegraphics{https://latex.codecogs.com/png.latex?n}!
@@ -1123,12 +1123,12 @@ actually re-use them from before:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ iterateU succ }\DecValTok{1}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{3}\NormalTok{ int}
-\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DataTypeTok{Nil}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ iterateU succ }\DecValTok{1}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{10} \DataTypeTok{Int}
-\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DecValTok{4} \FunctionTok{:#} \DecValTok{5} \FunctionTok{:#} \DecValTok{6} \FunctionTok{:#} \DecValTok{7} \FunctionTok{:#} \DecValTok{8} \FunctionTok{:#} \DecValTok{9} \FunctionTok{:#} \DecValTok{10} \FunctionTok{:#} \DataTypeTok{Nil}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ replicateU }\CharTok{'a'}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{4} \DataTypeTok{Char}
-\CharTok{'a'} \FunctionTok{:#} \CharTok{'a'} \FunctionTok{:#} \CharTok{'a'} \FunctionTok{:#} \CharTok{'a'} \FunctionTok{:#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ iterateU }\FunctionTok{succ} \DecValTok{1}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{3}\NormalTok{ int}
+\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ iterateU }\FunctionTok{succ} \DecValTok{1}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{10} \DataTypeTok{Int}
+\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DecValTok{4} \OperatorTok{:\#} \DecValTok{5} \OperatorTok{:\#} \DecValTok{6} \OperatorTok{:\#} \DecValTok{7} \OperatorTok{:\#} \DecValTok{8} \OperatorTok{:\#} \DecValTok{9} \OperatorTok{:\#} \DecValTok{10} \OperatorTok{:\#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ replicateU }\CharTok{\textquotesingle{}a\textquotesingle{}}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{4} \DataTypeTok{Char}
+\CharTok{\textquotesingle{}a\textquotesingle{}} \OperatorTok{:\#} \CharTok{\textquotesingle{}a\textquotesingle{}} \OperatorTok{:\#} \CharTok{\textquotesingle{}a\textquotesingle{}} \OperatorTok{:\#} \CharTok{\textquotesingle{}a\textquotesingle{}} \OperatorTok{:\#} \DataTypeTok{Nil}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1143,47 +1143,47 @@ adjustments\ldots{} (remembering that we can also derive \texttt{Functor},
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/fixvec/FVTypeLits.hs#L49-L87}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/fixvec/FVTypeLits.hs\#L49{-}L87}
 
 \KeywordTok{instance} \DataTypeTok{Functor}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n) }\KeywordTok{where}
-\NormalTok{    fmap _ }\DataTypeTok{Nil}       \FunctionTok{=} \DataTypeTok{Nil}
-\NormalTok{    fmap f (x }\FunctionTok{:#}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ f x }\FunctionTok{:#}\NormalTok{ fmap f xs}
+    \FunctionTok{fmap}\NormalTok{ \_ }\DataTypeTok{Nil}       \OtherTok{=} \DataTypeTok{Nil}
+    \FunctionTok{fmap}\NormalTok{ f (x }\OperatorTok{:\#}\NormalTok{ xs) }\OtherTok{=}\NormalTok{ f x }\OperatorTok{:\#} \FunctionTok{fmap}\NormalTok{ f xs}
 
 \KeywordTok{instance} \DataTypeTok{Applicative}\NormalTok{ (}\DataTypeTok{Vec} \DecValTok{0}\NormalTok{) }\KeywordTok{where}
-\NormalTok{    pure _    }\FunctionTok{=} \DataTypeTok{Nil}
-    \DataTypeTok{Nil} \FunctionTok{<*>}\NormalTok{ _ }\FunctionTok{=} \DataTypeTok{Nil}
+    \FunctionTok{pure}\NormalTok{ \_    }\OtherTok{=} \DataTypeTok{Nil}
+    \DataTypeTok{Nil} \OperatorTok{<*>}\NormalTok{ \_ }\OtherTok{=} \DataTypeTok{Nil}
 
-\KeywordTok{instance}\NormalTok{ (}\DataTypeTok{Applicative}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (n }\FunctionTok{-} \DecValTok{1}\NormalTok{)), n }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Applicative}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n) }\KeywordTok{where}
-\NormalTok{    pure x }\FunctionTok{=}\NormalTok{ x }\FunctionTok{:#}\NormalTok{ pure x}
-\NormalTok{    (f }\FunctionTok{:#}\NormalTok{ fs) }\FunctionTok{<*>}\NormalTok{ (x }\FunctionTok{:#}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ f x }\FunctionTok{:#}\NormalTok{ (fs }\FunctionTok{<*>}\NormalTok{ xs)}
+\KeywordTok{instance}\NormalTok{ (}\DataTypeTok{Applicative}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (n }\OperatorTok{{-}} \DecValTok{1}\NormalTok{)), n }\OperatorTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Applicative}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n) }\KeywordTok{where}
+    \FunctionTok{pure}\NormalTok{ x }\OtherTok{=}\NormalTok{ x }\OperatorTok{:\#} \FunctionTok{pure}\NormalTok{ x}
+\NormalTok{    (f }\OperatorTok{:\#}\NormalTok{ fs) }\OperatorTok{<*>}\NormalTok{ (x }\OperatorTok{:\#}\NormalTok{ xs) }\OtherTok{=}\NormalTok{ f x }\OperatorTok{:\#}\NormalTok{ (fs }\OperatorTok{<*>}\NormalTok{ xs)}
 
 \KeywordTok{instance} \DataTypeTok{Foldable}\NormalTok{ (}\DataTypeTok{Vec} \DecValTok{0}\NormalTok{) }\KeywordTok{where}
-\NormalTok{    foldMap _ }\DataTypeTok{Nil} \FunctionTok{=}\NormalTok{ mempty}
+    \FunctionTok{foldMap}\NormalTok{ \_ }\DataTypeTok{Nil} \OtherTok{=} \FunctionTok{mempty}
 
-\KeywordTok{instance}\NormalTok{ (}\DataTypeTok{Foldable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (n }\FunctionTok{-} \DecValTok{1}\NormalTok{)), n }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Foldable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n) }\KeywordTok{where}
-\NormalTok{    foldMap f (x }\FunctionTok{:#}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ f x }\FunctionTok{<>}\NormalTok{ foldMap f xs}
+\KeywordTok{instance}\NormalTok{ (}\DataTypeTok{Foldable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (n }\OperatorTok{{-}} \DecValTok{1}\NormalTok{)), n }\OperatorTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Foldable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n) }\KeywordTok{where}
+    \FunctionTok{foldMap}\NormalTok{ f (x }\OperatorTok{:\#}\NormalTok{ xs) }\OtherTok{=}\NormalTok{ f x }\OperatorTok{<>} \FunctionTok{foldMap}\NormalTok{ f xs}
 
 \KeywordTok{instance} \DataTypeTok{Traversable}\NormalTok{ (}\DataTypeTok{Vec} \DecValTok{0}\NormalTok{) }\KeywordTok{where}
-\NormalTok{    traverse _ }\DataTypeTok{Nil} \FunctionTok{=}\NormalTok{ pure }\DataTypeTok{Nil}
+    \FunctionTok{traverse}\NormalTok{ \_ }\DataTypeTok{Nil} \OtherTok{=} \FunctionTok{pure} \DataTypeTok{Nil}
 
-\KeywordTok{instance}\NormalTok{ (}\DataTypeTok{Traversable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (n }\FunctionTok{-} \DecValTok{1}\NormalTok{)), n }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Traversable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n) }\KeywordTok{where}
-\NormalTok{    traverse f (x }\FunctionTok{:#}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ liftA2 (}\FunctionTok{:#}\NormalTok{) (f x) (traverse f xs)}
+\KeywordTok{instance}\NormalTok{ (}\DataTypeTok{Traversable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ (n }\OperatorTok{{-}} \DecValTok{1}\NormalTok{)), n }\OperatorTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Traversable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n) }\KeywordTok{where}
+    \FunctionTok{traverse}\NormalTok{ f (x }\OperatorTok{:\#}\NormalTok{ xs) }\OtherTok{=}\NormalTok{ liftA2 (}\OperatorTok{:\#}\NormalTok{) (f x) (}\FunctionTok{traverse}\NormalTok{ f xs)}
 
 \KeywordTok{class} \DataTypeTok{Index}\NormalTok{ (}\OtherTok{n ::} \DataTypeTok{Nat}\NormalTok{) v }\KeywordTok{where}
-\OtherTok{    index ::} \DataTypeTok{Proxy}\NormalTok{ n }\OtherTok{->}\NormalTok{ v a }\OtherTok{->}\NormalTok{ a}
+\OtherTok{    index ::} \DataTypeTok{Proxy}\NormalTok{ n }\OtherTok{{-}>}\NormalTok{ v a }\OtherTok{{-}>}\NormalTok{ a}
 
-\KeywordTok{instance}\NormalTok{ (m }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Index} \DecValTok{0}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ m) }\KeywordTok{where}
-\NormalTok{    index _ (x }\FunctionTok{:#}\NormalTok{ _) }\FunctionTok{=}\NormalTok{ x}
+\KeywordTok{instance}\NormalTok{ (m }\OperatorTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Index} \DecValTok{0}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ m) }\KeywordTok{where}
+    \FunctionTok{index}\NormalTok{ \_ (x }\OperatorTok{:\#}\NormalTok{ \_) }\OtherTok{=}\NormalTok{ x}
 
-\KeywordTok{instance}\NormalTok{ forall n m}\FunctionTok{.}\NormalTok{ (}\DataTypeTok{Index}\NormalTok{ (n }\FunctionTok{-} \DecValTok{1}\NormalTok{) (}\DataTypeTok{Vec}\NormalTok{ (m }\FunctionTok{-} \DecValTok{1}\NormalTok{)), n }\FunctionTok{>} \DecValTok{0}\NormalTok{, m }\FunctionTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Index}\NormalTok{ n (}\DataTypeTok{Vec}\NormalTok{ m) }\KeywordTok{where}
-\NormalTok{    index _ (_ }\FunctionTok{:#}\NormalTok{ xs) }\FunctionTok{=}\NormalTok{ index (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy}\NormalTok{ (n }\FunctionTok{-} \DecValTok{1}\NormalTok{)) xs}
+\KeywordTok{instance} \KeywordTok{forall}\NormalTok{ n m}\OperatorTok{.}\NormalTok{ (}\DataTypeTok{Index}\NormalTok{ (n }\OperatorTok{{-}} \DecValTok{1}\NormalTok{) (}\DataTypeTok{Vec}\NormalTok{ (m }\OperatorTok{{-}} \DecValTok{1}\NormalTok{)), n }\OperatorTok{>} \DecValTok{0}\NormalTok{, m }\OperatorTok{>} \DecValTok{0}\NormalTok{) }\OtherTok{=>} \DataTypeTok{Index}\NormalTok{ n (}\DataTypeTok{Vec}\NormalTok{ m) }\KeywordTok{where}
+    \FunctionTok{index}\NormalTok{ \_ (\_ }\OperatorTok{:\#}\NormalTok{ xs) }\OtherTok{=} \FunctionTok{index}\NormalTok{ (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy}\NormalTok{ (n }\OperatorTok{{-}} \DecValTok{1}\NormalTok{)) xs}
 
 \KeywordTok{instance}\NormalTok{ (}\DataTypeTok{Unfoldable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n), }\DataTypeTok{Traversable}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n)) }\OtherTok{=>} \DataTypeTok{L.IsList}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a) }\KeywordTok{where}
-    \KeywordTok{type} \DataTypeTok{Item}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a) }\FunctionTok{=}\NormalTok{ a}
-\NormalTok{    fromList xs }\FunctionTok{=} \KeywordTok{case}\NormalTok{ fromListU xs }\KeywordTok{of}
-                    \DataTypeTok{Nothing} \OtherTok{->}\NormalTok{ error }\StringTok{"Demanded vector from a list that was too short."}
-                    \DataTypeTok{Just}\NormalTok{ ys }\OtherTok{->}\NormalTok{ ys}
-\NormalTok{    toList      }\FunctionTok{=}\NormalTok{ Data.Foldable.toList}
+    \KeywordTok{type} \DataTypeTok{Item}\NormalTok{ (}\DataTypeTok{Vec}\NormalTok{ n a) }\OtherTok{=}\NormalTok{ a}
+\NormalTok{    fromList xs }\OtherTok{=} \KeywordTok{case}\NormalTok{ fromListU xs }\KeywordTok{of}
+                    \DataTypeTok{Nothing} \OtherTok{{-}>} \FunctionTok{error} \StringTok{"Demanded vector from a list that was too short."}
+                    \DataTypeTok{Just}\NormalTok{ ys }\OtherTok{{-}>}\NormalTok{ ys}
+\NormalTok{    toList      }\OtherTok{=}\NormalTok{ Data.Foldable.toList}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1193,21 +1193,21 @@ that is in the type of \texttt{Proxy})
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ fromListU [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{10} \DataTypeTok{Int}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ fromListU [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{10} \DataTypeTok{Int}
 \DataTypeTok{Nothing}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ fromListU [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{3} \DataTypeTok{Int}
-\DataTypeTok{Just}\NormalTok{ (}\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DataTypeTok{Nil}\NormalTok{)}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ index (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy} \DecValTok{2}\NormalTok{) (}\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DataTypeTok{Nil}\NormalTok{)}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ fromListU [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{3} \DataTypeTok{Int}
+\DataTypeTok{Just}\NormalTok{ (}\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DataTypeTok{Nil}\NormalTok{)}
+\NormalTok{ghci}\OperatorTok{>} \FunctionTok{index}\NormalTok{ (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy} \DecValTok{2}\NormalTok{) (}\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DataTypeTok{Nil}\NormalTok{)}
 \DecValTok{3}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ index (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy} \DecValTok{2}\NormalTok{) (}\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DataTypeTok{Nil}\NormalTok{)}
-\FunctionTok{***} \DataTypeTok{Type} \DataTypeTok{Error}\FunctionTok{:} \DataTypeTok{Couldn't}\NormalTok{ match '}\DataTypeTok{EQ}\NormalTok{ with '}\DataTypeTok{GT}
-\NormalTok{ghci}\FunctionTok{>} \FunctionTok{:}\NormalTok{set }\FunctionTok{-}\DataTypeTok{XOverloadedLists}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{2} \DataTypeTok{Int}
-\DecValTok{1} \FunctionTok{:#} \DecValTok{2} \FunctionTok{:#} \DataTypeTok{Nil}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{4} \DataTypeTok{Int}
-\FunctionTok{***} \DataTypeTok{Exception}\FunctionTok{:} \DataTypeTok{Demanded}\NormalTok{ vector from a list that was too short}\FunctionTok{.}
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ [}\DecValTok{1}\NormalTok{,}\DecValTok{3}\FunctionTok{..}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{5} \DataTypeTok{Int}
-\DecValTok{1} \FunctionTok{:#} \DecValTok{3} \FunctionTok{:#} \DecValTok{5} \FunctionTok{:#} \DecValTok{7} \FunctionTok{:#} \DecValTok{9} \FunctionTok{:#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>} \FunctionTok{index}\NormalTok{ (}\DataTypeTok{Proxy}\OtherTok{ ::} \DataTypeTok{Proxy} \DecValTok{2}\NormalTok{) (}\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DataTypeTok{Nil}\NormalTok{)}
+\OperatorTok{***} \DataTypeTok{Type} \DataTypeTok{Error}\OperatorTok{:} \DataTypeTok{Couldn\textquotesingle{}t}\NormalTok{ match }\DataTypeTok{\textquotesingle{}EQ}\NormalTok{ with }\DataTypeTok{\textquotesingle{}GT}
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{set }\OperatorTok{{-}}\DataTypeTok{XOverloadedLists}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{2} \DataTypeTok{Int}
+\DecValTok{1} \OperatorTok{:\#} \DecValTok{2} \OperatorTok{:\#} \DataTypeTok{Nil}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{4} \DataTypeTok{Int}
+\OperatorTok{***} \DataTypeTok{Exception}\OperatorTok{:} \DataTypeTok{Demanded}\NormalTok{ vector from a list that was too short}\OperatorTok{.}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ [}\DecValTok{1}\NormalTok{,}\DecValTok{3}\OperatorTok{..}\NormalTok{]}\OtherTok{ ::} \DataTypeTok{Vec} \DecValTok{5} \DataTypeTok{Int}
+\DecValTok{1} \OperatorTok{:\#} \DecValTok{3} \OperatorTok{:\#} \DecValTok{5} \OperatorTok{:\#} \DecValTok{7} \OperatorTok{:\#} \DecValTok{9} \OperatorTok{:\#} \DataTypeTok{Nil}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1220,8 +1220,8 @@ errors, of course)
 
 However, you do again get the problem that GHC is not able to do real
 completeness checking and asks for the \texttt{Nil} cases still of
-everything\ldots{}but adding a \texttt{Nil} case will cause a type error. The
-only solution is to add a \texttt{\_} wildcard chase, but\ldots{}again, this
+everything\ldots but adding a \texttt{Nil} case will cause a type error. The
+only solution is to add a \texttt{\_} wildcard chase, but\ldots again, this
 isn't quite satisfactory.\footnote{Interestingly enough, I think this is
   something where you could have the best of both situations with the Template
   Haskell method. But I'd hope for something that works on the beautiful
@@ -1240,8 +1240,8 @@ Our type is essentially equal to
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{newtype} \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
-    \DataTypeTok{VecList}\OtherTok{ ::}\NormalTok{ [a] }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
+\KeywordTok{newtype} \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{{-}>} \OperatorTok{*} \OtherTok{{-}>} \OperatorTok{*} \KeywordTok{where}
+    \DataTypeTok{VecList}\OtherTok{ ::}\NormalTok{ [a] }\OtherTok{{-}>} \DataTypeTok{Vec}\NormalTok{ n a}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1254,8 +1254,8 @@ package:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{newtype} \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
-    \DataTypeTok{VecVector}\OtherTok{ ::} \DataTypeTok{Vector}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
+\KeywordTok{newtype} \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{{-}>} \OperatorTok{*} \OtherTok{{-}>} \OperatorTok{*} \KeywordTok{where}
+    \DataTypeTok{VecVector}\OtherTok{ ::} \DataTypeTok{Vector}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Vec}\NormalTok{ n a}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1292,16 +1292,16 @@ If we use our ``wrapped \texttt{Vector} approach'', we can just do:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{newtype} \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{->} \FunctionTok{*} \OtherTok{->} \FunctionTok{*} \KeywordTok{where}
-    \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Vector}\NormalTok{ a }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ n a}
+\KeywordTok{newtype} \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Nat} \OtherTok{{-}>} \OperatorTok{*} \OtherTok{{-}>} \OperatorTok{*} \KeywordTok{where}
+    \DataTypeTok{Vec}\OtherTok{ ::} \DataTypeTok{Vector}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Vec}\NormalTok{ n a}
 
-\NormalTok{index}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, m }\FunctionTok{>}\NormalTok{ n) }\OtherTok{=>} \DataTypeTok{Proxy}\NormalTok{ n }\OtherTok{->} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{->}\NormalTok{ a}
-\NormalTok{index p (}\DataTypeTok{Vec}\NormalTok{ v) }\FunctionTok{=}\NormalTok{ v }\FunctionTok{!}\NormalTok{ fromInteger (natVal p)}
+\FunctionTok{index}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, m }\OperatorTok{>}\NormalTok{ n) }\OtherTok{=>} \DataTypeTok{Proxy}\NormalTok{ n }\OtherTok{{-}>} \DataTypeTok{Vec}\NormalTok{ m a }\OtherTok{{-}>}\NormalTok{ a}
+\FunctionTok{index}\NormalTok{ p (}\DataTypeTok{Vec}\NormalTok{ v) }\OtherTok{=}\NormalTok{ v }\OperatorTok{!} \FunctionTok{fromInteger}\NormalTok{ (natVal p)}
 \end{Highlighting}
 \end{Shaded}
 
 That is, \texttt{index} internally uses \texttt{(!)}, an unsafe
-operator\ldots{}but only after we assure properly that it's safe to use by
+operator\ldots but only after we assure properly that it's safe to use by
 stating \texttt{m\ \textgreater{}\ n} in the constraint. We can be sure that GHC
 will catch any instance where someone tries to index into a \texttt{Vec\ m\ a}
 whose \texttt{m} is \emph{not} greater than the index desired.
@@ -1315,7 +1315,7 @@ constructors are okay and that \texttt{(!)} behaves like we think it does.
 
 Another answer to these sort of ad-hoc typeclasses is to use techniques
 involving singletons. Going all into how to use singletons to work with these is
-an article on its own\ldots{}luckily, this article has already been written as
+an article on its own\ldots luckily, this article has already been written as
 \href{https://www.fpcomplete.com/user/konn/prove-your-haskell-for-great-safety/dependent-types-in-haskell}{Part
 1: Dependent Types in Haskell} by Hiromi ISHII. A major advantage is that you
 replace typeclasses with type families and more parameterized types. You'll have

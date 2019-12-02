@@ -138,8 +138,8 @@ To say in types:
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{recurrently}
-\OtherTok{    ::} \DataTypeTok{Model}\NormalTok{  p   (a }\FunctionTok{:&}\NormalTok{ b) b}
-    \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p b  a       b}
+\OtherTok{    ::} \DataTypeTok{Model}\NormalTok{  p   (a }\OperatorTok{:\&}\NormalTok{ b) b}
+    \OtherTok{{-}>} \DataTypeTok{ModelS}\NormalTok{ p b  a       b}
 \end{Highlighting}
 \end{Shaded}
 
@@ -153,15 +153,15 @@ writes it for you, because the types guide the entire implementation:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L303-L309}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functional{-}models/model.hs\#L303{-}L309}
 
 \NormalTok{recurrently}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b)}
-    \OtherTok{=>} \DataTypeTok{Model}\NormalTok{  p   (a }\FunctionTok{:&}\NormalTok{ b) b}
-    \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p b  a       b}
-\NormalTok{recurrently f p x yLast }\FunctionTok{=}\NormalTok{ (y, y)}
+    \OtherTok{=>} \DataTypeTok{Model}\NormalTok{  p   (a }\OperatorTok{:\&}\NormalTok{ b) b}
+    \OtherTok{{-}>} \DataTypeTok{ModelS}\NormalTok{ p b  a       b}
+\NormalTok{recurrently f p x yLast }\OtherTok{=}\NormalTok{ (y, y)}
   \KeywordTok{where}
-\NormalTok{    y }\FunctionTok{=}\NormalTok{ f p (x }\FunctionTok{:&&}\NormalTok{ yLast)}
+\NormalTok{    y }\OtherTok{=}\NormalTok{ f p (x }\OperatorTok{:\&\&}\NormalTok{ yLast)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -171,20 +171,20 @@ function that transforms the previous output into the stored state:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L311-L318}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functional{-}models/model.hs\#L311{-}L318}
 
 \NormalTok{recurrentlyWith}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Backprop}\NormalTok{ a, }\DataTypeTok{Backprop}\NormalTok{ b)}
-    \OtherTok{=>}\NormalTok{ (forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W} \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z c }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z b)}
-    \OtherTok{->} \DataTypeTok{Model}\NormalTok{  p   (a }\FunctionTok{:&}\NormalTok{ b) c}
-    \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p b  a       c}
-\NormalTok{recurrentlyWith store f p x yLast }\FunctionTok{=}\NormalTok{ (y, store y)}
+    \OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ z}\OperatorTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W} \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z c }\OtherTok{{-}>} \DataTypeTok{BVar}\NormalTok{ z b)}
+    \OtherTok{{-}>} \DataTypeTok{Model}\NormalTok{  p   (a }\OperatorTok{:\&}\NormalTok{ b) c}
+    \OtherTok{{-}>} \DataTypeTok{ModelS}\NormalTok{ p b  a       c}
+\NormalTok{recurrentlyWith store f p x yLast }\OtherTok{=}\NormalTok{ (y, store y)}
   \KeywordTok{where}
-\NormalTok{    y }\FunctionTok{=}\NormalTok{ f p (x }\FunctionTok{:&&}\NormalTok{ yLast)}
+\NormalTok{    y }\OtherTok{=}\NormalTok{ f p (x }\OperatorTok{:\&\&}\NormalTok{ yLast)}
 \end{Highlighting}
 \end{Shaded}
 
-Again, once we figure out the \emph{type} our combinator has\ldots{}the function
+Again, once we figure out the \emph{type} our combinator has\ldots the function
 \emph{writes itself}. The joys of Haskell! I wouldn't dare try to write this in
 a language without static types and type inference. But it's a real treat to
 write this out in a language like Haskell.
@@ -207,14 +207,14 @@ of two vectors and concatenates them before doing anything:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- | Concatenate two vectors}
-\OtherTok{(#) ::} \DataTypeTok{BVar}\NormalTok{ z (}\DataTypeTok{R}\NormalTok{ i) }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z (}\DataTypeTok{R}\NormalTok{ o) }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z (}\DataTypeTok{R}\NormalTok{ (i }\FunctionTok{+}\NormalTok{ o))}
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L320-L323}
+\CommentTok{{-}{-} | Concatenate two vectors}
+\OtherTok{(\#) ::} \DataTypeTok{BVar}\NormalTok{ z (}\DataTypeTok{R}\NormalTok{ i) }\OtherTok{{-}>} \DataTypeTok{BVar}\NormalTok{ z (}\DataTypeTok{R}\NormalTok{ o) }\OtherTok{{-}>} \DataTypeTok{BVar}\NormalTok{ z (}\DataTypeTok{R}\NormalTok{ (i }\OperatorTok{+}\NormalTok{ o))}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functional{-}models/model.hs\#L320{-}L323}
 
 \NormalTok{ffOnSplit}
-\OtherTok{    ::}\NormalTok{ forall i o}\FunctionTok{.}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
-    \OtherTok{=>} \DataTypeTok{Model}\NormalTok{ _ (}\DataTypeTok{R}\NormalTok{ i }\FunctionTok{:&} \DataTypeTok{R}\NormalTok{ o) (}\DataTypeTok{R}\NormalTok{ o)}
-\NormalTok{ffOnSplit p (rI }\FunctionTok{:&&}\NormalTok{ rO) }\FunctionTok{=}\NormalTok{ feedForward p (rI }\FunctionTok{#}\NormalTok{ rO)}
+\OtherTok{    ::} \KeywordTok{forall}\NormalTok{ i o}\OperatorTok{.}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
+    \OtherTok{=>} \DataTypeTok{Model}\NormalTok{ \_ (}\DataTypeTok{R}\NormalTok{ i }\OperatorTok{:\&} \DataTypeTok{R}\NormalTok{ o) (}\DataTypeTok{R}\NormalTok{ o)}
+\NormalTok{ffOnSplit p (rI }\OperatorTok{:\&\&}\NormalTok{ rO) }\OtherTok{=}\NormalTok{ feedForward p (rI }\OperatorTok{\#}\NormalTok{ rO)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -227,10 +227,10 @@ Now our fully connected recurrent layer is just
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{fcrnn'}
+\NormalTok{fcrnn\textquotesingle{}}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
-    \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ _ (}\DataTypeTok{R}\NormalTok{ o) (}\DataTypeTok{R}\NormalTok{ i) (}\DataTypeTok{R}\NormalTok{ o)}
-\NormalTok{fcrnn' }\FunctionTok{=}\NormalTok{ recurrentlyWith logistic ffOnSplit}
+    \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ \_ (}\DataTypeTok{R}\NormalTok{ o) (}\DataTypeTok{R}\NormalTok{ i) (}\DataTypeTok{R}\NormalTok{ o)}
+\NormalTok{fcrnn\textquotesingle{} }\OtherTok{=}\NormalTok{ recurrentlyWith logistic ffOnSplit}
 \end{Highlighting}
 \end{Shaded}
 
@@ -240,12 +240,12 @@ definition:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L325-L328}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functional{-}models/model.hs\#L325{-}L328}
 
-\NormalTok{fcrnn'}
+\NormalTok{fcrnn\textquotesingle{}}
 \OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ i, }\DataTypeTok{KnownNat}\NormalTok{ o)}
-    \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ _ (}\DataTypeTok{R}\NormalTok{ o) (}\DataTypeTok{R}\NormalTok{ i) (}\DataTypeTok{R}\NormalTok{ o)}
-\NormalTok{fcrnn' }\FunctionTok{=}\NormalTok{ recurrentlyWith logistic (\textbackslash{}p }\OtherTok{->}\NormalTok{ feedForward p }\FunctionTok{.}\NormalTok{ uncurryT (}\FunctionTok{#}\NormalTok{))}
+    \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ \_ (}\DataTypeTok{R}\NormalTok{ o) (}\DataTypeTok{R}\NormalTok{ i) (}\DataTypeTok{R}\NormalTok{ o)}
+\NormalTok{fcrnn\textquotesingle{} }\OtherTok{=}\NormalTok{ recurrentlyWith logistic (\textbackslash{}p }\OtherTok{{-}>}\NormalTok{ feedForward p }\OperatorTok{.}\NormalTok{ uncurryT (}\OperatorTok{\#}\NormalTok{))}
 \end{Highlighting}
 \end{Shaded}
 
@@ -261,8 +261,8 @@ If that sounds confusing, let's just try to state it out using types:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{lagged ::} \DataTypeTok{Model}\NormalTok{  p       (}\DataTypeTok{R}\NormalTok{ (n }\FunctionTok{+} \DecValTok{1}\NormalTok{)) b}
-       \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p (}\DataTypeTok{R}\NormalTok{ n) }\DataTypeTok{Double}\NormalTok{      b}
+\OtherTok{lagged ::} \DataTypeTok{Model}\NormalTok{  p       (}\DataTypeTok{R}\NormalTok{ (n }\OperatorTok{+} \DecValTok{1}\NormalTok{)) b}
+       \OtherTok{{-}>} \DataTypeTok{ModelS}\NormalTok{ p (}\DataTypeTok{R}\NormalTok{ n) }\DataTypeTok{Double}\NormalTok{      b}
 \end{Highlighting}
 \end{Shaded}
 
@@ -273,17 +273,17 @@ vector and adds an item to the end, respectively.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L330-L338}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functional{-}models/model.hs\#L330{-}L338}
 
 \NormalTok{lagged}
-\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DecValTok{1} \FunctionTok{<=}\NormalTok{ n)}
-    \OtherTok{=>} \DataTypeTok{Model}\NormalTok{  p       (}\DataTypeTok{R}\NormalTok{ (n }\FunctionTok{+} \DecValTok{1}\NormalTok{)) b}
-    \OtherTok{->} \DataTypeTok{ModelS}\NormalTok{ p (}\DataTypeTok{R}\NormalTok{ n) }\DataTypeTok{Double}\NormalTok{      b}
-\NormalTok{lagged f p x xLasts }\FunctionTok{=}\NormalTok{ (y, xLasts')}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DecValTok{1} \OperatorTok{<=}\NormalTok{ n)}
+    \OtherTok{=>} \DataTypeTok{Model}\NormalTok{  p       (}\DataTypeTok{R}\NormalTok{ (n }\OperatorTok{+} \DecValTok{1}\NormalTok{)) b}
+    \OtherTok{{-}>} \DataTypeTok{ModelS}\NormalTok{ p (}\DataTypeTok{R}\NormalTok{ n) }\DataTypeTok{Double}\NormalTok{      b}
+\NormalTok{lagged f p x xLasts }\OtherTok{=}\NormalTok{ (y, xLasts\textquotesingle{})}
   \KeywordTok{where}
-\NormalTok{    fullLasts    }\FunctionTok{=}\NormalTok{ xLasts }\FunctionTok{&}\NormalTok{ x}
-\NormalTok{    y            }\FunctionTok{=}\NormalTok{ f p fullLasts}
-\NormalTok{    (_, xLasts') }\FunctionTok{=}\NormalTok{ headTail fullLasts}
+\NormalTok{    fullLasts    }\OtherTok{=}\NormalTok{ xLasts }\OperatorTok{\&}\NormalTok{ x}
+\NormalTok{    y            }\OtherTok{=}\NormalTok{ f p fullLasts}
+\NormalTok{    (\_, xLasts\textquotesingle{}) }\OtherTok{=}\NormalTok{ headTail fullLasts}
 \end{Highlighting}
 \end{Shaded}
 
@@ -292,11 +292,11 @@ model AR(p) of \emph{any} degree, simply by lagging a fully connected ANN layer:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L340-L342}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functional{-}models/model.hs\#L340{-}L342}
 
-\OtherTok{ar ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DecValTok{1} \FunctionTok{<=}\NormalTok{ n)}
-   \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ _ (}\DataTypeTok{R}\NormalTok{ n) }\DataTypeTok{Double} \DataTypeTok{Double}
-\NormalTok{ar }\FunctionTok{=}\NormalTok{ lagged (\textbackslash{}p }\OtherTok{->}\NormalTok{ fst }\FunctionTok{.}\NormalTok{ headTail }\FunctionTok{.}\NormalTok{ feedForward }\FunctionTok{@}\NormalTok{_ }\FunctionTok{@}\DecValTok{1}\NormalTok{ p)}
+\OtherTok{ar ::}\NormalTok{ (}\DataTypeTok{KnownNat}\NormalTok{ n, }\DecValTok{1} \OperatorTok{<=}\NormalTok{ n)}
+   \OtherTok{=>} \DataTypeTok{ModelS}\NormalTok{ \_ (}\DataTypeTok{R}\NormalTok{ n) }\DataTypeTok{Double} \DataTypeTok{Double}
+\NormalTok{ar }\OtherTok{=}\NormalTok{ lagged (\textbackslash{}p }\OtherTok{{-}>} \FunctionTok{fst} \OperatorTok{.}\NormalTok{ headTail }\OperatorTok{.}\NormalTok{ feedForward }\OperatorTok{@}\NormalTok{\_ }\OperatorTok{@}\DecValTok{1}\NormalTok{ p)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -309,10 +309,10 @@ AR(20) model with \texttt{ar\ @20}, etc.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L344-L345}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functional{-}models/model.hs\#L344{-}L345}
 
-\OtherTok{ar2' ::} \DataTypeTok{ModelS}\NormalTok{ _ (}\DataTypeTok{R} \DecValTok{2}\NormalTok{) }\DataTypeTok{Double} \DataTypeTok{Double}
-\NormalTok{ar2' }\FunctionTok{=}\NormalTok{ ar }\FunctionTok{@}\DecValTok{2}
+\OtherTok{ar2\textquotesingle{} ::} \DataTypeTok{ModelS}\NormalTok{ \_ (}\DataTypeTok{R} \DecValTok{2}\NormalTok{) }\DataTypeTok{Double} \DataTypeTok{Double}
+\NormalTok{ar2\textquotesingle{} }\OtherTok{=}\NormalTok{ ar }\OperatorTok{@}\DecValTok{2}
 \end{Highlighting}
 \end{Shaded}
 
@@ -350,8 +350,8 @@ We can represent a simple autoencoder:
 \OtherTok{encoder ::} \DataTypeTok{Model}\NormalTok{ q (}\DataTypeTok{R} \DecValTok{100}\NormalTok{) (}\DataTypeTok{R} \DecValTok{5}\NormalTok{)}
 \OtherTok{decoder ::} \DataTypeTok{Model}\NormalTok{ p (}\DataTypeTok{R} \DecValTok{5}\NormalTok{)   (}\DataTypeTok{R} \DecValTok{100}\NormalTok{)}
 
-\OtherTok{autoencoder ::} \DataTypeTok{Model}\NormalTok{ (p }\FunctionTok{:&}\NormalTok{ q) (}\DataTypeTok{R} \DecValTok{100}\NormalTok{) (}\DataTypeTok{R} \DecValTok{100}\NormalTok{)}
-\NormalTok{autoencoder }\FunctionTok{=}\NormalTok{ decoder }\FunctionTok{<~}\NormalTok{ encoder}
+\OtherTok{autoencoder ::} \DataTypeTok{Model}\NormalTok{ (p }\OperatorTok{:\&}\NormalTok{ q) (}\DataTypeTok{R} \DecValTok{100}\NormalTok{) (}\DataTypeTok{R} \DecValTok{100}\NormalTok{)}
+\NormalTok{autoencoder }\OtherTok{=}\NormalTok{ decoder }\OperatorTok{<\textasciitilde{}}\NormalTok{ encoder}
 \end{Highlighting}
 \end{Shaded}
 
@@ -363,7 +363,7 @@ parameters'' separate:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ghci}\FunctionTok{>}\NormalTok{ decParam }\FunctionTok{:&}\NormalTok{ encParam }\OtherTok{<-}\NormalTok{ trainModelIO autoencoder }\FunctionTok{$}\NormalTok{ map (\textbackslash{}x }\OtherTok{->}\NormalTok{ (x,x)) samps}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ decParam }\OperatorTok{:\&}\NormalTok{ encParam }\OtherTok{<{-}}\NormalTok{ trainModelIO autoencoder }\OperatorTok{$} \FunctionTok{map}\NormalTok{ (\textbackslash{}x }\OtherTok{{-}>}\NormalTok{ (x,x)) samps}
 \end{Highlighting}
 \end{Shaded}
 
@@ -374,8 +374,8 @@ to \emph{encode} data, and \texttt{decParam} with \texttt{decoder} to
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{evalBP2 encoder}\OtherTok{ encParam ::} \DataTypeTok{R} \DecValTok{100} \OtherTok{->} \DataTypeTok{R} \DecValTok{5}        \CommentTok{-- trained encoder}
-\NormalTok{evalBP2 decoder}\OtherTok{ decParam ::} \DataTypeTok{R} \DecValTok{5}   \OtherTok{->} \DataTypeTok{R} \DecValTok{100}      \CommentTok{-- trained decoder}
+\NormalTok{evalBP2 encoder}\OtherTok{ encParam ::} \DataTypeTok{R} \DecValTok{100} \OtherTok{{-}>} \DataTypeTok{R} \DecValTok{5}        \CommentTok{{-}{-} trained encoder}
+\NormalTok{evalBP2 decoder}\OtherTok{ decParam ::} \DataTypeTok{R} \DecValTok{5}   \OtherTok{{-}>} \DataTypeTok{R} \DecValTok{100}      \CommentTok{{-}{-} trained decoder}
 \end{Highlighting}
 \end{Shaded}
 
@@ -405,18 +405,18 @@ we can unify these both under a common type. If we had:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{Model}\NormalTok{ (}\OtherTok{p ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{a ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{b ::} \DataTypeTok{Type}\NormalTok{) }\FunctionTok{=}
-\NormalTok{       forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
+\KeywordTok{type} \DataTypeTok{Model}\NormalTok{ (}\OtherTok{p ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{a ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{b ::} \DataTypeTok{Type}\NormalTok{) }\OtherTok{=}
+       \KeywordTok{forall}\NormalTok{ z}\OperatorTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
     \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z p}
-    \OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z a}
-    \OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z b}
+    \OtherTok{{-}>} \DataTypeTok{BVar}\NormalTok{ z a}
+    \OtherTok{{-}>} \DataTypeTok{BVar}\NormalTok{ z b}
 
-\KeywordTok{type} \DataTypeTok{ModelS}\NormalTok{ (}\OtherTok{p ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{s ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{a ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{b ::} \DataTypeTok{Type}\NormalTok{) }\FunctionTok{=}
-\NormalTok{       forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
+\KeywordTok{type} \DataTypeTok{ModelS}\NormalTok{ (}\OtherTok{p ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{s ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{a ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{b ::} \DataTypeTok{Type}\NormalTok{) }\OtherTok{=}
+       \KeywordTok{forall}\NormalTok{ z}\OperatorTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
     \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z p}
-    \OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z a}
-    \OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z s}
-    \OtherTok{->}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z b, }\DataTypeTok{BVar}\NormalTok{ z s)}
+    \OtherTok{{-}>} \DataTypeTok{BVar}\NormalTok{ z a}
+    \OtherTok{{-}>} \DataTypeTok{BVar}\NormalTok{ z s}
+    \OtherTok{{-}>}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z b, }\DataTypeTok{BVar}\NormalTok{ z s)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -429,12 +429,12 @@ package:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{Model'}\NormalTok{ (}\OtherTok{p ::} \DataTypeTok{Maybe} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{s ::} \DataTypeTok{Maybe} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{a ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{b ::} \DataTypeTok{Type}\NormalTok{) }\FunctionTok{=}
-\NormalTok{       forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
+\KeywordTok{type} \DataTypeTok{Model\textquotesingle{}}\NormalTok{ (}\OtherTok{p ::} \DataTypeTok{Maybe} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{s ::} \DataTypeTok{Maybe} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{a ::} \DataTypeTok{Type}\NormalTok{) (}\OtherTok{b ::} \DataTypeTok{Type}\NormalTok{) }\OtherTok{=}
+       \KeywordTok{forall}\NormalTok{ z}\OperatorTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W}
     \OtherTok{=>} \DataTypeTok{Option}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z) p}
-    \OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z a}
-    \OtherTok{->} \DataTypeTok{Option}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z) s}
-    \OtherTok{->}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z b, }\DataTypeTok{Option}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z) s)}
+    \OtherTok{{-}>} \DataTypeTok{BVar}\NormalTok{ z a}
+    \OtherTok{{-}>} \DataTypeTok{Option}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z) s}
+    \OtherTok{{-}>}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z b, }\DataTypeTok{Option}\NormalTok{ (}\DataTypeTok{BVar}\NormalTok{ z) s)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -450,8 +450,8 @@ We can then re-define our previous types:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{Model}\NormalTok{  p   }\FunctionTok{=} \DataTypeTok{Model'}\NormalTok{ ('}\DataTypeTok{Just}\NormalTok{ p) '}\DataTypeTok{Nothing}
-\KeywordTok{type} \DataTypeTok{ModelS}\NormalTok{ p s }\FunctionTok{=} \DataTypeTok{Model'}\NormalTok{ ('}\DataTypeTok{Just}\NormalTok{ p) ('}\DataTypeTok{Just}\NormalTok{ s)}
+\KeywordTok{type} \DataTypeTok{Model}\NormalTok{  p   }\OtherTok{=} \DataTypeTok{Model\textquotesingle{}}\NormalTok{ (}\DataTypeTok{\textquotesingle{}Just}\NormalTok{ p) }\DataTypeTok{\textquotesingle{}Nothing}
+\KeywordTok{type} \DataTypeTok{ModelS}\NormalTok{ p s }\OtherTok{=} \DataTypeTok{Model\textquotesingle{}}\NormalTok{ (}\DataTypeTok{\textquotesingle{}Just}\NormalTok{ p) (}\DataTypeTok{\textquotesingle{}Just}\NormalTok{ s)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -467,9 +467,9 @@ often useful for composition:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{type} \DataTypeTok{Func}\NormalTok{ a b }\FunctionTok{=}\NormalTok{ forall z}\FunctionTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W} \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z a }\OtherTok{->} \DataTypeTok{BVar}\NormalTok{ z b}
-\CommentTok{-- or}
-\KeywordTok{type} \DataTypeTok{Func}     \FunctionTok{=} \DataTypeTok{Model'}\NormalTok{ '}\DataTypeTok{Nothing}\NormalTok{ '}\DataTypeTok{Nothing}
+\KeywordTok{type} \DataTypeTok{Func}\NormalTok{ a b }\OtherTok{=} \KeywordTok{forall}\NormalTok{ z}\OperatorTok{.} \DataTypeTok{Reifies}\NormalTok{ z }\DataTypeTok{W} \OtherTok{=>} \DataTypeTok{BVar}\NormalTok{ z a }\OtherTok{{-}>} \DataTypeTok{BVar}\NormalTok{ z b}
+\CommentTok{{-}{-} or}
+\KeywordTok{type} \DataTypeTok{Func}     \OtherTok{=} \DataTypeTok{Model\textquotesingle{}} \DataTypeTok{\textquotesingle{}Nothing} \DataTypeTok{\textquotesingle{}Nothing}
 \end{Highlighting}
 \end{Shaded}
 
@@ -692,14 +692,14 @@ types isn't just possible, it's immensely beneficial:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{overList ::} \DataTypeTok{Model}\NormalTok{ p a b }\OtherTok{->} \DataTypeTok{Model}\NormalTok{ p [a] [b]}
-\NormalTok{overList f p }\FunctionTok{=}\NormalTok{ fmap (f p)}
+\OtherTok{overList ::} \DataTypeTok{Model}\NormalTok{ p a b }\OtherTok{{-}>} \DataTypeTok{Model}\NormalTok{ p [a] [b]}
+\NormalTok{overList f p }\OtherTok{=} \FunctionTok{fmap}\NormalTok{ (f p)}
 \end{Highlighting}
 \end{Shaded}
 
   There is some minor boilerplate to make the types line up, but that's
   essentially what it is. No special data structure, no abstract API to work
-  with\ldots{}just normal functions.
+  with\ldots just normal functions.
 \item
   A functional and statically typed interface helps you, as a developer,
   \emph{explore options} in ways that an imperative or untyped approach cannot.
