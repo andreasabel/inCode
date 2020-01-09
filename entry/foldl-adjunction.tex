@@ -168,6 +168,9 @@ of'' \texttt{F\ a} to \texttt{b} are the same as all the ways of going ``into''
 \texttt{G\ b} from \texttt{a}. Ways of going out can be encoded as ways of going
 in, and vice versa. They represent opposite ideas.
 
+\hypertarget{examples}{%
+\subsection{Examples}\label{examples}}
+
 For example, one of the more famous adjunctions in Haskell is the adjunction
 between \texttt{(,)\ r} and \texttt{(-\textgreater{})\ r}. ``Tupling''
 represents some sort of ``opposite'' idea to ``parameterizing''.
@@ -199,12 +202,16 @@ We can formalize this idea of opposites using adjunctions: Going ``out of''
 \texttt{(b,\ b)} from \texttt{a},m and vice versa:
 \texttt{Either\ a\ a\ -\textgreater{}\ b} can be encoded as
 \texttt{a\ -\textgreater{}\ (b,\ b)} (and vice versa) --- the two types are
-isomorphic
-
-Conceptually this makes sense: to go out of \texttt{Either\ a\ a}, you have to
+isomorphic. This is because to go out of \texttt{Either\ a\ a}, you have to
 handle the situation of getting a \texttt{Left} and the situation of getting a
 \texttt{Right}. To go into \texttt{(b,\ b)}, you have to able to ask what goes
-in the first field, and what goes in the right field.
+in the first field, and what goes in the right field. Both
+\texttt{Either\ a\ a\ -\textgreater{}\ b} and
+\texttt{a\ -\textgreater{}\ (b,\ b)} have to answer the same questions. (A fun
+exercise would be to write the functions to convert between the two)
+
+\hypertarget{big-picture}{%
+\subsection{Big Picture}\label{big-picture}}
 
 Aside from being an interesting curiosity (formalizing the idea of ``opposite
 idea'' is pretty neat), hunting for adjunctions can be useful in figuring out
@@ -228,6 +235,9 @@ adjoint to a given functor of interest. There are no hard and fast rules, and
 the adjoint might not always exist --- it usually doesn't. But when it does, it
 can be a pleasant surprise.
 
+\hypertarget{patterns-to-look-for}{%
+\subsection{Patterns to look for}\label{patterns-to-look-for}}
+
 Now, on to the hunting. Let's say we have functor \texttt{Q} and we want to
 identify any adjoints. We want to spot functions that use both \texttt{Q\ a} and
 \texttt{a} with some other value, in
@@ -235,7 +245,7 @@ identify any adjoints. We want to spot functions that use both \texttt{Q\ a} and
 
 (Of course, this is only the case if we are using a functor that comes from a
 library. If we are writing our own functor from scratch, and want to hunt for
-adjunctions there, we have to instead \emph{think} of ways to use \texttt{F\ a}
+adjunctions there, we have to instead \emph{think} of ways to use \texttt{Q\ a}
 and \texttt{a})
 
 One common pattern is functions for ``converting between'' the going-in and
@@ -275,13 +285,17 @@ These also come in pairs! And it's possible to write the other pair
 
 \texttt{indexAdjunction} means: if it's possible to ``extract'' from
 \texttt{u\ b} to \texttt{b} using only an \texttt{f\ ()} as extra information,
-then \texttt{u} is right-adjoint to \texttt{f}.
+then \texttt{u} might be right-adjoint to \texttt{f}.
 
 \texttt{tabulateAdjunction} means: if it's possible to ``generate'' a
 \texttt{u\ b} based on a function that ``builds'' a \texttt{b} from
-\texttt{f\ ()}, then \texttt{u} is right-adjoint to \texttt{f}.
+\texttt{f\ ()}, then \texttt{u} might right-adjoint to \texttt{f}.
 
-In the case of \texttt{Fold}, there is actually only one takes a
+\hypertarget{adjoints-to-fold}{%
+\subsection{\texorpdfstring{Adjoints to
+\texttt{Fold}}{Adjoints to Fold}}\label{adjoints-to-fold}}
+
+In the case of \texttt{Fold}, there is actually only one function that takes a
 \texttt{Fold\ r\ a} and returns an \texttt{a}:
 
 \begin{Shaded}
@@ -328,8 +342,8 @@ also our suspect for a potential left-adjoint to \texttt{Fold\ r}: a
 \end{Highlighting}
 \end{Shaded}
 
-So to ``seal the deal'', let's find its pair, \texttt{tabulateAdjunction}. That
-means we are looking for:
+To seal the deal, let's find its pair, \texttt{tabulateAdjunction}. That means
+we are looking for:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -354,6 +368,14 @@ actually looks a lot like \texttt{foldMap} from the library:
 \begin{Highlighting}[]
 \KeywordTok{import} \KeywordTok{qualified} \DataTypeTok{Control.Foldl} \KeywordTok{as} \DataTypeTok{F}
 
+\NormalTok{F.foldMap}
+\OtherTok{    ::} \DataTypeTok{Monoid}\NormalTok{ w}
+    \OtherTok{=>}\NormalTok{ (r }\OtherTok{{-}>}\NormalTok{ w)}
+    \OtherTok{{-}>}\NormalTok{ (w }\OtherTok{{-}>}\NormalTok{ b)}
+    \OtherTok{{-}>} \DataTypeTok{Fold}\NormalTok{ r b}
+
+\CommentTok{{-}{-} or}
+
 \NormalTok{F.foldMap (\textbackslash{}r }\OtherTok{{-}>}\NormalTok{ [r])}
 \OtherTok{    ::}\NormalTok{ ([r] }\OtherTok{{-}>}\NormalTok{ b)}
     \OtherTok{{-}>} \DataTypeTok{Fold}\NormalTok{ r b}
@@ -373,7 +395,8 @@ And\ldots that gives us a pretty strong footing to claim that
 \texttt{EnvList\ r} is the left-adjoint of \texttt{Fold\ r}.
 
 Note that if we had missed \texttt{fold} during our adjunction hunt, we might
-have also lucked out by noticing \texttt{F.foldMap\ (:{[}{]})} fitting the
+have also lucked out by noticing
+\texttt{F.foldMap\ (\textbackslash{}r\ -\textgreater{}\ {[}r{]})} fitting the
 criteria for a candidate for \texttt{tabulateAdjunction}, instead.
 
 \hypertarget{opposite-concepts}{%
@@ -519,8 +542,9 @@ to write them first as \texttt{EnvList\ r\ a}, and then also as
 \end{Highlighting}
 \end{Shaded}
 
-  which is just \texttt{tabulateAdjunction}, or \texttt{F.foldMap\ (:{[}{]})}!
-  It encodes our list processor \texttt{{[}r{]}\ -\textgreater{}\ b} into a
+  which is just \texttt{tabulateAdjunction}, or
+  \texttt{F.foldMap\ (\textbackslash{}r\ -\textgreater{}\ {[}r{]})}! It encodes
+  our list processor \texttt{{[}r{]}\ -\textgreater{}\ b} into a
   \texttt{Fold\ r\ b.}
 \item
   \texttt{rightAdjunct\ ::\ (a\ -\textgreater{}\ Fold\ r\ b)\ -\textgreater{}\ ({[}r{]}\ -\textgreater{}\ a\ -\textgreater{}\ b)}
@@ -541,7 +565,9 @@ to write them first as \texttt{EnvList\ r\ a}, and then also as
   case it's just because of how \texttt{EnvList\ r\ a} is shaped.
 \item
   \texttt{tabulateAdjunction} and \texttt{indexAdjunction} we went over earlier,
-  seeing them as \texttt{F.foldMap\ (:{[}{]})} and \texttt{fold}
+  seeing them as
+  \texttt{F.foldMap\ (\textbackslash{}r\ -\textgreater{}\ {[}r{]})} and
+  \texttt{fold}
 \item
   \texttt{zipR\ ::\ Fold\ r\ a\ -\textgreater{}\ Fold\ r\ b\ -\textgreater{}\ Fold\ r\ (a,\ b)}
   takes two \texttt{Fold\ r}s and combines them into a single fold. This is
