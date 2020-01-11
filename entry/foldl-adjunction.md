@@ -13,7 +13,9 @@ This post mainly goes through my thought process in finding this out --- it's
 very much a "how I think through this" sort of thing --- in the end, the goal is
 to show how much this example made me further appreciate the conceptual idea of
 adjunctions and how they can pop up in interesting places in practical
-libraries.
+libraries. Unlike most of my other posts, it's not about necessarily about how
+practically useful an abstraction is, but rather what insight it gives us to
+understanding its instances.
 
 The audience of this post is Haskellers with an understanding/appreciation of
 abstractions like `Applicative`, but be aware that the final section is
@@ -345,9 +347,9 @@ The Helper Functions
 --------------------
 
 Let's take a look at some of the useful helper functions that an instance of
-`Adjunction` gives us for `Fold r`. For all of these, I'm going to write them
-first as `EnvList r a`, and then also as `([r], a)`, to help make things
-clearer.
+`Adjunction` gives us for `Fold r`, to see how their existence can better help
+us understand `Fold`. For all of these, I'm going to write them first as
+`EnvList r a`, and then also as `([r], a)`, to help make things clearer.
 
 ``` {.haskell}
 unit :: a -> Fold r (EnvList r a)
@@ -600,7 +602,7 @@ And...this looks pretty neat, I think. In the end we discover that these two
 types are adjoints to each other:[^5]
 
 ``` {.haskell}
-data Fold r a = forall x. Fold            (x -> a)    (x -> r -> x)    x 
+data Fold r a = forall x. Fold            (x -> a)    (x -> r -> x)    x
 data EL   r a =           EL   (forall x. (a -> x) -> (x -> r -> x) -> x)
 ```
 
