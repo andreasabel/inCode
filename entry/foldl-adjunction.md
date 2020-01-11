@@ -596,7 +596,13 @@ The new `EL` is actually isomorphic to the `EnvList` one we wrote earlier (as
 long as the list is finite), meaning that one can encode the other, and they
 have identical structure. Writing functions to convert between the two can be
 fun; [here is one
-solution](https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl-algebraic.hs#L31-L39).
+solution](https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl-algebraic.hs#L31-L39),
+and there's a [bonus
+solution](https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl-algebraic.hs#L73-L79)
+if you can write it using only the [*new*
+instance](https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl-algebraic.hs#L58-L71)
+for `Adjunction (EL r) (Fold r)` and `F.foldMap`, since it can be shown that all
+adjuncts are unique up to isomorphism.
 
 And...this looks pretty neat, I think. In the end we discover that these two
 types are adjoints to each other:[^5]
