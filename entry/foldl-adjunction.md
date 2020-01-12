@@ -130,7 +130,7 @@ have to handle the situation of getting a `Left` and the situation of getting a
 field, and what goes in the right field. Both `Either a a -> b` and
 `a -> (b, b)` have to answer the same questions. (A fun exercise would be to
 write the functions to convert between the two --- [one solution is
-here](https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L52-L56))
+here](https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L52-L53))
 
 ### Big Picture
 
@@ -232,7 +232,7 @@ This means that `Fold r b` is right-adjoint to some functor `f` where
 `f a = ([r], a)`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L58-L59
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L65-L66
 
 data EnvList r a = EnvList [r] a
   deriving (Functor, Show, Eq, Ord)
@@ -242,7 +242,7 @@ data EnvList r a = EnvList [r] a
 a potential left-adjoint to `Fold r`: a "conceptual opposite".
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L61-L62
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L68-L69
 
 indexFold :: Fold r b -> EnvList r () -> b
 indexFold fld (EnvList rs _) = F.fold fld rs
@@ -284,7 +284,7 @@ F.foldMap (\r -> [r])
 So:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L64-L65
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L71-L72
 
 tabulateFold :: (EnvList r () -> b) -> Fold r b
 tabulateFold f = F.foldMap (:[]) (\rs -> f (EnvList rs ()))
@@ -432,7 +432,7 @@ Seeing how these functions all fit together, we can write a full instance of
 conceptualize, for me, but the other pair isn't much tricker to write.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L77-L82
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L84-L89
 
 instance Adjunction (EnvList r) (Fold r) where
     unit x = F.foldMap (:[]) (`EnvList` x)
