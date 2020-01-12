@@ -81,11 +81,11 @@ The second concept is the idea of *[adjoint
 functors](https://en.wikipedia.org/wiki/Adjoint_functors)* (see also [Bartosz
 Milewski's introduction](https://bartoszmilewski.com/2016/04/18/adjunctions/)
 and [nlab](https://ncatlab.org/nlab/show/adjoint+functor)'s description),
-represented in Haskell by the
-*[adjunctions](https://hackage.haskell.org/package/adjunctions/docs/Data-Functor-Adjunction.html)*
-library and typeclass ([Chris
-Penner](https://chrispenner.ca/posts/adjunction-battleship) has a nice article
-with an example of using the typeclass).
+represented in Haskell by the *[adjunctions library and
+typeclass](https://hackage.haskell.org/package/adjunctions/docs/Data-Functor-Adjunction.html)*
+([Chris Penner](https://chrispenner.ca/posts/adjunction-battleship) has a nice
+article with an example of using the typeclass's utility functions to simplify
+programs).
 
 The idea is that, for some functors, we can think of a "conceptual inverse". We
 can ask "I have a nice functor `F`. Conceptually, what functor represents the
@@ -110,7 +110,10 @@ the "same" (isomorphic) --- any `(a, b) -> c` can be re-written as
 Another common pair is with same-typed either and tuple:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L28-L31
+
 newtype SameEither a = SE (Either a a)
+
 newtype SameTuple  a = ST (a, a)
 ```
 
@@ -126,7 +129,8 @@ have to handle the situation of getting a `Left` and the situation of getting a
 `Right`. To go into `(b, b)`, you have to able to ask what goes in the first
 field, and what goes in the right field. Both `Either a a -> b` and
 `a -> (b, b)` have to answer the same questions. (A fun exercise would be to
-write the functions to convert between the two)
+write the functions to convert between the two --- [one solution is
+here](https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L52-L56))
 
 ### Big Picture
 
