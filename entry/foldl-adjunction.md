@@ -772,5 +772,8 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 [^5]: The instance is [written out
     here](https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl-algebraic.hs#L58-L71).
 
-[^6]: Implementing a `tabulate` equivalent is left as an exercise --- [solution
-    here](https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl-algebraic.hs#L54-L56)
+[^6]: Implementing a `tabulate` equivalent ([solution
+    here](https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl-algebraic.hs#L54-L56))
+    reveals that this refactoring is only really useful for `index` (to
+    "consume" a `Fold`) ... using `tabulate` or `leftAdjunct` to "produce" a
+    `Fold` reveals how inefficient this is.
