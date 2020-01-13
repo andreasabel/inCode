@@ -1,7 +1,7 @@
 Adjunctions in the wild: foldl
 ==============================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on January 13, 2020.
 > [Read online!](https://blog.jle.im/entry/foldl-adjunction.html)
 
 I recently made a few connections that linked some different concepts in Haskell
@@ -386,7 +386,7 @@ As it turns out, in Haskell, a functor being representable is *equivalent* to it
 having a left adjoint. So thinking of `Fold r` as a representable functor and
 thinking of it as a right adjoint are equivalent ideas. This article chooses to
 analyze it from the adjunctions perspective because we get to imagine the
-adjoint `Functor`, which can sometimes shed a little more light than just
+adjoint `Functor`, which can sometimes reveal some extra insight over just
 looking at some index *value*.
 :::
 
