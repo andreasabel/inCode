@@ -366,6 +366,8 @@ the fact that they are conceptually "opposite" concepts, and also that they are
 bound together by destiny in a close and fundamental way.
 
 ::: {.note}
+**A Note on Representable**
+
 Note that in this case, a lot of what we are concluding simply stems from the
 fact that we can "index" a `Fold r a` using an `[r]`. This actually is more
 fundamentally associated with the concept of a [Representable
@@ -584,6 +586,8 @@ functor's "opposite concept" (if it exists) will only help is better understand
 the functor we're thinking about, in terms of how it works and how it is used.
 
 ::: {.note}
+**The Algebraic Way**
+
 This article is done! Our first guess for an adjunction seems to be morally
 correct. But as an aside ... let's see if we can take this idea further.
 
