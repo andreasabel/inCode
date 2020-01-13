@@ -585,8 +585,8 @@ formalize what we mean by "opposite concepts". The process of identifying a
 functor's "opposite concept" (if it exists) will only help is better understand
 the functor we're thinking about, in terms of how it works and how it is used.
 
-::: {.note}
-**The Algebraic Way**
+The Algebraic Way
+-----------------
 
 This article is done! Our first guess for an adjunction seems to be morally
 correct. But as an aside ... let's see if we can take this idea further.
@@ -753,7 +753,14 @@ foldEL (Fold step init extr) el = extr (runEL el (const init) step)
 ```
 
 And this is, maybe, the real treasure all along.
-:::
+
+Special Thanks
+--------------
+
+I am very humbled to be supported by an amazing community, who make it possible
+for me to devote time to researching and writing these posts. Very special
+thanks to my supporter at the "Amazing" level on
+[patreon](https://www.patreon.com/justinle/overview), Josh Vera! :)
 
 --------------------------------------------------------------------------------
 
