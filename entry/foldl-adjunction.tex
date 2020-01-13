@@ -108,7 +108,8 @@ understanding its instances.
 The audience of this post is Haskellers with an understanding/appreciation of
 abstractions like \texttt{Applicative}, but be aware that the final section is
 separately considered as a fun aside for those familiar with some of Haskell's
-more esoteric types. The source code is
+more esoteric types. The code samples used here (along with exercise solutions)
+are
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs}{available
 on github}.
 
@@ -130,13 +131,13 @@ produces an \texttt{a}:
 \NormalTok{F.mean}\OtherTok{ ::} \DataTypeTok{Fractional}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Fold}\NormalTok{ a a}
 \NormalTok{F.elem}\OtherTok{ ::} \DataTypeTok{Eq}\NormalTok{ a         }\OtherTok{=>}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Fold}\NormalTok{ a }\DataTypeTok{Bool}
 
-\NormalTok{fold }\FunctionTok{sum}\NormalTok{  [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
+\NormalTok{F.fold F.sum  [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
 \PreprocessorTok{\#   => 10}
-\NormalTok{fold mean [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
+\NormalTok{F.fold F.mean [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
 \PreprocessorTok{\#   => 2.5}
-\NormalTok{fold (}\FunctionTok{elem} \DecValTok{3}\NormalTok{) [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
+\NormalTok{F.fold (F.elem }\DecValTok{3}\NormalTok{) [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
 \PreprocessorTok{\#   => True}
-\NormalTok{fold (}\FunctionTok{elem} \DecValTok{5}\NormalTok{) [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
+\NormalTok{F.fold (F.elem }\DecValTok{5}\NormalTok{) [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
 \PreprocessorTok{\#   => False}
 \end{Highlighting}
 \end{Shaded}
@@ -151,9 +152,9 @@ folds (for example, with \texttt{-XApplicativeDo})
 
 \OtherTok{variance ::} \DataTypeTok{Fractional}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Fold}\NormalTok{ a a}
 \NormalTok{variance }\OtherTok{=} \KeywordTok{do}
-\NormalTok{    m  }\OtherTok{<{-}}\NormalTok{ F.mean}
-\NormalTok{    m2 }\OtherTok{<{-}}\NormalTok{ lmap (}\OperatorTok{\^{}}\DecValTok{2}\NormalTok{) F.mean     }\CommentTok{{-}{-} the mean of squared items}
-    \FunctionTok{pure}\NormalTok{ (m2 }\OperatorTok{{-}}\NormalTok{ m}\OperatorTok{*}\NormalTok{m)}
+\NormalTok{    x  }\OtherTok{<{-}}\NormalTok{ F.mean}
+\NormalTok{    x2 }\OtherTok{<{-}}\NormalTok{ lmap (}\OperatorTok{\^{}}\DecValTok{2}\NormalTok{) F.mean     }\CommentTok{{-}{-} the mean of squared items}
+    \FunctionTok{pure}\NormalTok{ (x2 }\OperatorTok{{-}}\NormalTok{ x}\OperatorTok{*}\NormalTok{x)}
 
 \OtherTok{varianceTooBig ::}\NormalTok{ (}\DataTypeTok{Fractional}\NormalTok{ a, }\DataTypeTok{Ord}\NormalTok{ a) }\OtherTok{=>} \DataTypeTok{Fold}\NormalTok{ a }\DataTypeTok{Bool}
 \NormalTok{varianceTooBig }\OtherTok{=}\NormalTok{ (}\OperatorTok{>} \DecValTok{3}\NormalTok{) }\OperatorTok{<$>}\NormalTok{ variance}
@@ -179,7 +180,7 @@ The second concept is the idea of
 Milewski's introduction} and
 \href{https://ncatlab.org/nlab/show/adjoint+functor}{nlab}'s description, as
 well as
-\href{https://www.math3ma.com/blog/what-is-an-adjunction-part-1}{Tai-Dinae
+\href{https://www.math3ma.com/blog/what-is-an-adjunction-part-1}{Tai-Danae
 Bradley's motivation}), represented in Haskell by the
 \emph{\href{https://hackage.haskell.org/package/adjunctions/docs/Data-Functor-Adjunction.html}{adjunctions
 library and typeclass}}
@@ -187,18 +188,21 @@ library and typeclass}}
 nice article with an example of using the typeclass's utility functions to
 simplify programs).
 
-The idea is that, for some functors, we can think of a ``conceptual inverse''.
-We can ask ``I have a nice functor \texttt{F}. Conceptually, what functor
-represents the opposite idea/spirit of \texttt{F}?'' The concept of an
-adjunction is one way to formalize what this means.
+For some functors, we can think of a ``conceptual inverse''. We can ask ``I have
+a nice functor \texttt{F}. Conceptually, what functor represents the opposite
+idea/spirit of \texttt{F}?'' The concept of an adjunction is one way to
+formalize what this means.
 
-In Haskell, with the \texttt{Adjunctions} typeclass (specifically,
-\texttt{Functor} functors), this manifests as this: if
-\texttt{F\ -\textbar{}\ U} (\texttt{F} is left adjoint to \texttt{U}, and
-\texttt{U} is right adjoint to \texttt{F}), then all the ways of going ``out
-of'' \texttt{F\ a} to \texttt{b} are the same as all the ways of going ``into''
-\texttt{U\ b} from \texttt{a}. Ways of going out can be encoded as ways of going
-in, and vice versa. They represent opposite ideas.
+In Haskell\footnote{Note that the intuition we are going to be going into is
+  specifically for adjunctions between \texttt{Functor} functors --- functors
+  that the \texttt{Functor} typeclass models (aka, endofunctors in Hask). For a
+  more general view of adjunctions in general, see the links above.}, with the
+\texttt{Adjunctions} typeclass (specifically, \texttt{Functor} functors), this
+manifests as this: if \texttt{F\ -\textbar{}\ U} (\texttt{F} is left adjoint to
+\texttt{U}, and \texttt{U} is right adjoint to \texttt{F}), then all the ways of
+going ``out of'' \texttt{F\ a} to \texttt{b} are the same as all the ways of
+going ``into'' \texttt{U\ b} from \texttt{a}. Ways of going out can be encoded
+as ways of going in, and vice versa. They represent opposite ideas.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -216,14 +220,6 @@ in, and vice versa. They represent opposite ideas.
         \OtherTok{{-}>}\NormalTok{ (f a }\OtherTok{{-}>}\NormalTok{ b)       }\CommentTok{{-}{-} \^{} the ways of going "out of" f}
 \end{Highlighting}
 \end{Shaded}
-
-Incidentally, adjunctions are also often described as one of the most
-``beautiful'' concepts that Category Theory has introduced to the world.
-
-Note that the intuition we are going to be going into is specifically for
-adjunctions between \texttt{Functor} functors --- functors that the
-\texttt{Functor} typeclass models (aka, endofunctors in Hask). For a more
-general view of adjunctions in general, see the links above.
 
 \hypertarget{examples}{%
 \subsection{Examples}\label{examples}}
@@ -288,14 +284,13 @@ between adjoint functors.
 \section{Hunting for Adjunctions}\label{hunting-for-adjunctions}}
 
 So, from the build-up, you've probably guessed what we're going to do next: find
-a functor that is adjoint to \texttt{Fold\ r}. If you guessed that \ldots{}
-you're right! What's the ``conceptual opposite'' of \texttt{Fold\ r}? Let's go
-adjunction hunting!
+a functor that is adjoint to \texttt{Fold\ r}. What's the ``conceptual
+opposite'' of \texttt{Fold\ r}? Let's go adjunction hunting!
 
 Important note --- the rest of this section is not a set of hard rules, but
 rather an intuitive process of heuristics to search for candidates that would be
 adjoint to a given functor of interest. There are no hard and fast rules, and
-the adjoint might not always exist --- it usually doesn't. But when it does, it
+the adjoint might not always exist (it usually doesn't). But when it does, it
 can be a pleasant surprise.
 
 \hypertarget{patterns-to-look-for}{%
@@ -323,14 +318,10 @@ these are called \texttt{leftAdjunct} and \texttt{rightAdjunct}:
 \end{Highlighting}
 \end{Shaded}
 
-These will often come in pairs, and they are significant because they are
-essentially the adjunctions ``in practice'': Sure, an
+This pair is significant because it is the adjunctions ``in practice'': Sure, an
 \texttt{(r,\ a)\ -\textgreater{}\ b} is useful, but ``using'' the adjunction
-means that you can convert between \texttt{(r,\ a)\ -\textgreater{}\ b}
-(\texttt{uncurry}) and backwards.
-
-Basically, any time \texttt{Q\ a} is spotted with \texttt{a} with opposite
-polarity, it's something to investigate.
+means that you can convert \emph{between} \texttt{(r,\ a)\ -\textgreater{}\ b}
+and \texttt{a\ -\textgreater{}\ r\ -\textgreater{}\ b}
 
 Another common pattern that you can spot are ``indexing'' and ``tabulating''
 functions, in the case that you have a right-adjoint:
@@ -381,8 +372,9 @@ Of our common patterns, this one looks a looooot like
 \texttt{indexAdjunction}.\footnote{As it so happens, \texttt{fold} is actually
   exactly \texttt{index} for \texttt{Representable\ (Fold\ r)}, from
   \emph{\href{https://hackage.haskell.org/package/adjunctions/docs/Data-Functor-Rep.html}{Data.Functor.Rep}}.
-  Here we are utilizing the fact that a representable functor gives rise to a
-  left-adjoint for free.}
+  Here we are utilizing the fact that a representable Functor gives rise to a
+  left-adjoint for free --- the two ideas are equivalent in Haskell. We go into
+  this in more detail in an upcoming aside.}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -404,9 +396,9 @@ just have \texttt{f\ a\ =\ ({[}r{]},\ a)}:
 \end{Highlighting}
 \end{Shaded}
 
-\texttt{EnvList\ r} is essentially just a \emph{list} of \texttt{r}s. It is now
-also our suspect for a potential left-adjoint to \texttt{Fold\ r}: a
-``conceptual opposite''.
+\texttt{EnvList\ r} adds a \emph{list} of \texttt{r}s to a type. It is now also
+our suspect for a potential left-adjoint to \texttt{Fold\ r}: a ``conceptual
+opposite''.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -468,13 +460,12 @@ So:
 \end{Highlighting}
 \end{Shaded}
 
-And\ldots that gives us a pretty strong footing to claim that
-\texttt{EnvList\ r} is the left-adjoint of \texttt{Fold\ r}. A proof by hunch,
-for now!
+The fact the have \emph{both} of these gives us a pretty strong footing to claim
+that \texttt{EnvList\ r} is the left-adjoint of \texttt{Fold\ r}. Proof by
+hunch, for now.
 
 Note that if we had missed \texttt{fold} during our adjunction hunt, we might
-have also lucked out by noticing
-\texttt{F.foldMap\ (\textbackslash{}r\ -\textgreater{}\ {[}r{]})} fitting the
+have also lucked out by noticing \texttt{F.foldMap\ (:{[}{]})} fitting the
 criteria for a candidate for \texttt{tabulateAdjunction}, instead.
 
 \hypertarget{opposite-concepts}{%
@@ -495,7 +486,7 @@ folded''!
 \item
   \texttt{EnvList\ r}: Tuples a list of \texttt{r}
 \item
-  \texttt{Fold\ r}: Parameterizes on a list of \texttt{r}
+  \texttt{Fold\ r}: Consumes a list of \texttt{r}
 \end{itemize}
 
 Or, in terms of the result of the functor application:
@@ -508,9 +499,9 @@ Or, in terms of the result of the functor application:
   \begin{itemize}
   \tightlist
   \item
-    A list of \texttt{r}
+    An \texttt{a}
   \item
-    \ldots{} tuplied with an \texttt{a}
+    \ldots{} tupled with a list of \texttt{r}
   \end{itemize}
 \item
   \texttt{Fold\ r\ a}
@@ -518,9 +509,9 @@ Or, in terms of the result of the functor application:
   \begin{itemize}
   \tightlist
   \item
-    Consumes a list of \texttt{r}
+    An \texttt{a}
   \item
-    \ldots{} to give a parameterized \texttt{a}
+    \ldots{} parameterized by consumption of a list of \texttt{r}
   \end{itemize}
 \end{itemize}
 
@@ -532,12 +523,12 @@ In addition, lists seem to be at the heart of how to create and consume a
 \texttt{Fold\ r}.
 
 \texttt{fold} can be thought of as the fundamental way to \emph{consuming} a
-\texttt{Fold\ r}. This makes the adjunction against \texttt{EnvList\ r} make
-sense: what good is the \emph{ability} to fold \ldots{} if there is nothing
-\emph{to fold}? \texttt{EnvList\ r} (a list of \texttt{{[}r{]}}) is intimately
-related to \texttt{Fold\ r}: they are the yin and yang, peanut butter and jelly,
-night and day. Their fates are intertwined from their very inception. You cannot
-have one without the other.
+\texttt{Fold\ r}. This makes the adjunction with \texttt{EnvList\ r} make sense:
+what good is the \emph{ability} to fold \ldots{} if there is nothing \emph{to
+fold}? \texttt{EnvList\ r} (a list of \texttt{{[}r{]}}) is intimately related to
+\texttt{Fold\ r}: they are the yin and yang, peanut butter and jelly, night and
+day. Their fates are intertwined from their very inception. You cannot have one
+without the other.
 
 In addition, \texttt{F.foldMap} is arguably a fundamental (although maybe
 inefficient) way to \emph{specify} a \texttt{Fold\ r}. A \texttt{Fold\ r} is,
@@ -545,13 +536,40 @@ fundamentally, a list processor --- which is what
 \texttt{EnvList\ r\ a\ -\textgreater{}\ b} literally is (an
 \texttt{{[}r{]}\ -\textgreater{}\ b}). \texttt{Fold\ r} and \texttt{EnvList\ r}
 --- \href{https://starwars.fandom.com/wiki/Dyad_in_the_Force}{dyads in the
-force}. Or, well\ldots I guess literally monads, since
-\href{http://www.stephendiehl.com/posts/adjunctions.html}{all adjunctions give
-rise to monads}\ldots and comonads too.
+force}. Or, well\ldots literally \emph{monads}, since all adjunctions give rise
+to monads, as we will see later.
 
 The fact that \texttt{EnvList\ r} and \texttt{Fold\ r} form an adjunction
 together formalizes the fact that they are conceptually ``opposite'' concepts,
 and also that they are bound together by destiny in a close and fundamental way.
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+Note that in this case, a lot of what we are concluding simply stems from the
+fact that we can ``index'' a \texttt{Fold\ r\ a} using an \texttt{{[}r{]}}. This
+actually is more fundamentally associated with the concept of a
+\href{https://hackage.haskell.org/package/adjunctions/docs/Data-Functor-Rep.html}{Representable
+Functor}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/adjunctions/foldl.hs\#L82{-}L85}
+
+\KeywordTok{instance} \DataTypeTok{Representable}\NormalTok{ (}\DataTypeTok{Fold}\NormalTok{ r) }\KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Rep}\NormalTok{ (}\DataTypeTok{Fold}\NormalTok{ r) }\OtherTok{=}\NormalTok{ [r]}
+\NormalTok{    tabulate }\OtherTok{=}\NormalTok{ F.foldMap (}\OperatorTok{:}\NormalTok{[])}
+    \FunctionTok{index}    \OtherTok{=}\NormalTok{ F.fold}
+\end{Highlighting}
+\end{Shaded}
+
+As it turns out, in Haskell, a functor being representable is \emph{equivalent}
+to it having a left adjoint. So thinking of \texttt{Fold\ r} as a representable
+functor and thinking of it as a right adjoint are equivalent ideas. This article
+chooses to analyze it from the adjunctions perspective because we get to imagine
+the adjoint \texttt{Functor}, which can sometimes shed a little more light than
+just looking at some index \emph{value}.
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 \hypertarget{the-helper-functions}{%
 \section{The Helper Functions}\label{the-helper-functions}}
@@ -599,17 +617,17 @@ write them first as \texttt{EnvList\ r\ a}, and then also as
 \end{Shaded}
 
   This means that \texttt{unit} for \texttt{Fold\ r} folds a list
-  \texttt{{[}r{]}} into ``itself'':
+  \texttt{{[}r{]}} into ``itself'', while also tagging on a value
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{fold unit [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}
-\PreprocessorTok{\#   => [1,2,3]}
+\NormalTok{F.fold (unit }\DataTypeTok{True}\NormalTok{) [}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}
+\PreprocessorTok{\#   => EnvList [1,2,3] True}
 \end{Highlighting}
 \end{Shaded}
 \item
   \texttt{counit\ ::\ {[}r{]}\ -\textgreater{}\ Fold\ r\ a\ -\textgreater{}\ a}
-  is essentially just \texttt{fold}. Neat!
+  is essentially just \texttt{F.fold} when we expand it. Neat!
 \item
   \texttt{leftAdjunct\ ::\ ({[}r{]}\ -\textgreater{}\ a\ -\textgreater{}\ b)\ -\textgreater{}\ (a\ -\textgreater{}\ Fold\ r\ b)}
   \ldots{} if we write it as
@@ -622,9 +640,8 @@ write them first as \texttt{EnvList\ r\ a}, and then also as
 \end{Highlighting}
 \end{Shaded}
 
-  which is just \texttt{tabulateAdjunction}, or
-  \texttt{F.foldMap\ (\textbackslash{}r\ -\textgreater{}\ {[}r{]})}! It encodes
-  our list processor \texttt{{[}r{]}\ -\textgreater{}\ b} into a
+  which is just \texttt{tabulateAdjunction}, or \texttt{F.foldMap\ (:{[}{]})}!
+  It encodes our list processor \texttt{{[}r{]}\ -\textgreater{}\ b} into a
   \texttt{Fold\ r\ b.}
 \item
   \texttt{rightAdjunct\ ::\ (a\ -\textgreater{}\ Fold\ r\ b)\ -\textgreater{}\ ({[}r{]}\ -\textgreater{}\ a\ -\textgreater{}\ b)}
@@ -638,16 +655,10 @@ write them first as \texttt{EnvList\ r\ a}, and then also as
 \end{Highlighting}
 \end{Shaded}
 
-  Which is just \texttt{fold}, or \texttt{counit}!
-
-  Note that \texttt{leftAdjunct} and \texttt{rightAdjunct} aren't always this
-  cleanly rearranged into \texttt{tabulate} or \texttt{counit} etc. -- in this
-  case it's just because of how \texttt{EnvList\ r\ a} is shaped.
+  which happens to just be \texttt{fold}, or \texttt{counit}!
 \item
   \texttt{tabulateAdjunction} and \texttt{indexAdjunction} we went over earlier,
-  seeing them as
-  \texttt{F.foldMap\ (\textbackslash{}r\ -\textgreater{}\ {[}r{]})} and
-  \texttt{fold}
+  seeing them as \texttt{F.foldMap\ (:{[}{]})} and \texttt{fold}
 \item
   \texttt{zipR\ ::\ Fold\ r\ a\ -\textgreater{}\ Fold\ r\ b\ -\textgreater{}\ Fold\ r\ (a,\ b)}
   takes two \texttt{Fold\ r}s and combines them into a single fold. This is
@@ -662,9 +673,9 @@ Seeing how these functions all fit together, we can write a full instance of
 \texttt{Adjunction}. We can choose to provide \texttt{unit} and \texttt{counit},
 or \texttt{leftAdjunct} and \texttt{rightAdjunct}\footnote{We should also be
   able to define it using \texttt{tabulateAdjunction} and
-  \texttt{indexAdjunction}, I believe \ldots{} but this isn't allowed for some
-  reason?}; the \texttt{unit}/\texttt{counit} definitions are the easiest to
-conceptualize, for me, but the other pair isn't much tricker to write.
+  \texttt{indexAdjunction} \ldots{} but this isn't allowed for some reason?};
+the \texttt{unit}/\texttt{counit} definitions are the easiest to conceptualize,
+for me, but the other pair isn't much tricker to write.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -685,8 +696,9 @@ conceptualize, for me, but the other pair isn't much tricker to write.
 Another interesting thing we might want to look at is the monad and comonad that
 our adjunction defines.
 \href{https://bartoszmilewski.com/2016/12/27/monads-categorically/}{All
-adjunctions define a monad}, so what does our new knowledge of the
-\texttt{Fold\ r} adjunction give us?
+adjunctions} \href{http://www.stephendiehl.com/posts/adjunctions.html}{define a
+monad}, so what does our new knowledge of the \texttt{Fold\ r} adjunction give
+us?
 
 \hypertarget{induced-monad}{%
 \subsubsection{Induced Monad}\label{induced-monad}}
@@ -706,7 +718,7 @@ case, we have \texttt{FoldEnv}:
 \end{Highlighting}
 \end{Shaded}
 
-As it turns out, this is essentially the famous
+As it turns out, this is essentially equivalent to the famous
 \href{https://hackage.haskell.org/package/transformers/docs/Control-Monad-Trans-State-Lazy.html}{State
 Monad}! More specifically, it's the
 \href{https://hackage.haskell.org/package/adjunctions/docs/Control-Monad-Representable-State.html}{\emph{Representable}
@@ -716,7 +728,7 @@ State Monad}.
 \begin{Highlighting}[]
 \KeywordTok{type} \DataTypeTok{FoldEnv}\NormalTok{ r }\OtherTok{=} \DataTypeTok{State}\NormalTok{ [r] a}
 
-\CommentTok{{-}{-} or, from Control.Monad.Representable.State}
+\CommentTok{{-}{-} or, more literally, from Control.Monad.Representable.State}
 \KeywordTok{type} \DataTypeTok{FoldEnv}\NormalTok{ r }\OtherTok{=} \DataTypeTok{State}\NormalTok{ (}\DataTypeTok{Fold}\NormalTok{ r)}
 \end{Highlighting}
 \end{Shaded}
@@ -724,6 +736,10 @@ State Monad}.
 So the induced monad from the adjunction we just found is essentially the same
 as the \texttt{State} monad over a list --- except with some potentially
 different performance characteristics.
+
+In the end, finding this adjunction gives us a neat way to represent stateful
+computations on lists, which is arguably an extension of what \texttt{Fold} was
+really meant for in the first place.
 
 \hypertarget{induced-comonad}{%
 \subsubsection{Induced Comonad}\label{induced-comonad}}
@@ -743,9 +759,9 @@ this case, we have \texttt{EnvFold}:
 \end{Highlighting}
 \end{Shaded}
 
-As it turns out, this is equivalent to the
+This one is exactly the
 \href{https://hackage.haskell.org/package/adjunctions/docs/Control-Comonad-Representable-Store.html}{Representable
-Store Comonad}. It's essentially the normal
+Store comonad}. It's essentially the normal
 \href{https://hackage.haskell.org/package/comonad/docs/Control-Comonad-Store.html}{\texttt{Store}
 comonad}:
 
@@ -753,7 +769,7 @@ comonad}:
 \begin{Highlighting}[]
 \KeywordTok{type} \DataTypeTok{EnvFold}\NormalTok{ r a }\OtherTok{=} \DataTypeTok{Store}\NormalTok{ [r] a}
 
-\CommentTok{{-}{-} or, from Control.Comonad.Representable.Store}
+\CommentTok{{-}{-} or, more literally, from Control.Comonad.Representable.Store}
 \KeywordTok{type} \DataTypeTok{EnvFold}\NormalTok{ r }\OtherTok{=} \DataTypeTok{Store}\NormalTok{ (}\DataTypeTok{Fold}\NormalTok{ r)}
 \end{Highlighting}
 \end{Shaded}
@@ -763,27 +779,31 @@ This comonad ``stores'' an \texttt{{[}r{]}} as well as a way to produce an
 basically is the same as the utility of \texttt{Store}, except with potentially
 different performance profiles.
 
+In the end, finding this adjunction gives us a neat way to define a comonadic
+contextual projection on lists, which I would say is also an extension of the
+original purpose of \texttt{Fold}.
+
 \hypertarget{conclusion}{%
 \section{Conclusion}\label{conclusion}}
 
 In the end, in a ``practical'' sense, we got some nice helper functions, as well
-as a new way to compose computations dealing with \texttt{Fold} (via the
-representable state monad and the representable store comonad).
+as a new way to extend the conceptual idea of \texttt{Fold} using the induced
+monad and comonad.
 
 Admittedly, the selection of helper functions that \texttt{Adjunction} gives us
 pales in comparison to abstractions like \texttt{Monoid}, \texttt{Applicative},
 \texttt{Traversable}, \texttt{Monad}, etc., which makes \texttt{Adjunction} (in
 my opinion) nowhere as practical when compared to them. A lot of these helper
 functions (like the induced state monad and store comonad) actually also just
-exist if we only talk about \texttt{Representable}
+exist if we only talk about \texttt{Representable}.
 
-However, to me (and, according to how I've seen other people use it),
-\texttt{Adjunction} is most useful as a conceptual tool in Haskell. The idea of
-``opposites'' or ``duals'' show up a lot in Haskell, starting from the most
-basic level -- sums and products, products and functions. From day 1, Haskellers
-are introduced to natural pairs and opposites in concepts. The idea of opposites
-and how they interact with each other is always on the mind of a Haskeller, and
-close to their heart.
+However, to me (and, as how I've seen other people use it), \texttt{Adjunction}
+is most useful as a conceptual tool in Haskell. The idea of ``opposites'' or
+``duals'' show up a lot in Haskell, starting from the most basic level -- sums
+and products, products and functions. From day 1, Haskellers are introduced to
+natural pairs and opposites in concepts. The idea of opposites and how they
+interact with each other is always on the mind of a Haskeller, and close to
+their heart.
 
 So, what makes \texttt{Adjunction} so useful to me is that it actually is able
 to formalize what we mean by ``opposite concepts''. The process of identifying a
@@ -791,22 +811,18 @@ functor's ``opposite concept'' (if it exists) will only help is better
 understand the functor we're thinking about, in terms of how it works and how it
 is used.
 
-\hypertarget{the-algebraic-way}{%
-\section{The Algebraic Way}\label{the-algebraic-way}}
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 This article is done! Our first guess for an adjunction seems to be morally
 correct. But as an aside \ldots{} let's see if we can take this idea further.
-The rest of this post is not really important to the point I was trying to make!
-
-You never \emph{need} all this fancy math to be able to write Haskell \ldots{}
-but many feel like it can make things a lot more fun! :)
 
 In this section we're going to get a bit mathy and look at the definition of
 \texttt{Fold}, to see if we can \emph{algebraically} find an adjunction of
 \texttt{Fold}, instead of just trying to hunt for API functions like before. In
 practice you don't often have to make algebraic deductions like this, but it's
 at least nice to know that something like this possible from a purely algebraic
-and logical sense.
+and logical sense. You never \emph{need} all this fancy math to be able to write
+Haskell \ldots{} but many feel like it can make things a lot more fun! :)
 
 Be warned that this method \emph{does} require some familiarity (or at least
 awareness) of certain types that appear often in the more \ldots{} esoteric
@@ -1008,6 +1024,8 @@ clean:\footnote{Implementing a \texttt{tabulate} equivalent
 \end{Shaded}
 
 And this is, maybe, the real treasure all along.
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}

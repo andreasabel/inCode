@@ -20,7 +20,8 @@ understanding its instances.
 The audience of this post is Haskellers with an understanding/appreciation of
 abstractions like `Applicative`, but be aware that the final section is
 separately considered as a fun aside for those familiar with some of Haskell's
-more esoteric types. The source code is [available on
+more esoteric types. The code samples used here (along with exercise solutions)
+are [available on
 github](https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs).
 
 foldl
@@ -39,13 +40,13 @@ F.sum  :: Num a        => Fold a a
 F.mean :: Fractional a => Fold a a
 F.elem :: Eq a         => a -> Fold a Bool
 
-fold sum  [1,2,3,4]
+F.fold F.sum  [1,2,3,4]
 #   => 10
-fold mean [1,2,3,4]
+F.fold F.mean [1,2,3,4]
 #   => 2.5
-fold (elem 3) [1,2,3,4]
+F.fold (F.elem 3) [1,2,3,4]
 #   => True
-fold (elem 5) [1,2,3,4]
+F.fold (F.elem 5) [1,2,3,4]
 #   => False
 ```
 
@@ -58,9 +59,9 @@ folds (for example, with `-XApplicativeDo`)
 
 variance :: Fractional a => Fold a a
 variance = do
-    m  <- F.mean
-    m2 <- lmap (^2) F.mean     -- the mean of squared items
-    pure (m2 - m*m)
+    x  <- F.mean
+    x2 <- lmap (^2) F.mean     -- the mean of squared items
+    pure (x2 - x*x)
 
 varianceTooBig :: (Fractional a, Ord a) => Fold a Bool
 varianceTooBig = (> 3) <$> variance
@@ -82,7 +83,7 @@ The second concept is the idea of *[adjoint
 functors](https://en.wikipedia.org/wiki/Adjoint_functors)* (see also [Bartosz
 Milewski's introduction](https://bartoszmilewski.com/2016/04/18/adjunctions/)
 and [nlab](https://ncatlab.org/nlab/show/adjoint+functor)'s description, as well
-as [Tai-Dinae Bradley's
+as [Tai-Danae Bradley's
 motivation](https://www.math3ma.com/blog/what-is-an-adjunction-part-1)),
 represented in Haskell by the *[adjunctions library and
 typeclass](https://hackage.haskell.org/package/adjunctions/docs/Data-Functor-Adjunction.html)*
@@ -90,16 +91,16 @@ typeclass](https://hackage.haskell.org/package/adjunctions/docs/Data-Functor-Adj
 article with an example of using the typeclass's utility functions to simplify
 programs).
 
-The idea is that, for some functors, we can think of a "conceptual inverse". We
-can ask "I have a nice functor `F`. Conceptually, what functor represents the
-opposite idea/spirit of `F`?" The concept of an adjunction is one way to
-formalize what this means.
+For some functors, we can think of a "conceptual inverse". We can ask "I have a
+nice functor `F`. Conceptually, what functor represents the opposite idea/spirit
+of `F`?" The concept of an adjunction is one way to formalize what this means.
 
-In Haskell, with the `Adjunctions` typeclass (specifically, `Functor` functors),
-this manifests as this: if `F -| U` (`F` is left adjoint to `U`, and `U` is
-right adjoint to `F`), then all the ways of going "out of" `F a` to `b` are the
-same as all the ways of going "into" `U b` from `a`. Ways of going out can be
-encoded as ways of going in, and vice versa. They represent opposite ideas.
+In Haskell[^1], with the `Adjunctions` typeclass (specifically, `Functor`
+functors), this manifests as this: if `F -| U` (`F` is left adjoint to `U`, and
+`U` is right adjoint to `F`), then all the ways of going "out of" `F a` to `b`
+are the same as all the ways of going "into" `U b` from `a`. Ways of going out
+can be encoded as ways of going in, and vice versa. They represent opposite
+ideas.
 
 ``` {.haskell}
 -- | The class saying you can always convert between:
@@ -115,14 +116,6 @@ instance Adjunction f u where
         :: (a -> u b)       -- ^ the ways of going "into" u
         -> (f a -> b)       -- ^ the ways of going "out of" f
 ```
-
-Incidentally, adjunctions are also often described as one of the most
-"beautiful" concepts that Category Theory has introduced to the world.
-
-Note that the intuition we are going to be going into is specifically for
-adjunctions between `Functor` functors --- functors that the `Functor` typeclass
-models (aka, endofunctors in Hask). For a more general view of adjunctions in
-general, see the links above.
 
 ### Examples
 
@@ -176,13 +169,13 @@ Hunting for Adjunctions
 -----------------------
 
 So, from the build-up, you've probably guessed what we're going to do next: find
-a functor that is adjoint to `Fold r`. If you guessed that ... you're right!
-What's the "conceptual opposite" of `Fold r`? Let's go adjunction hunting!
+a functor that is adjoint to `Fold r`. What's the "conceptual opposite" of
+`Fold r`? Let's go adjunction hunting!
 
 Important note --- the rest of this section is not a set of hard rules, but
 rather an intuitive process of heuristics to search for candidates that would be
 adjoint to a given functor of interest. There are no hard and fast rules, and
-the adjoint might not always exist --- it usually doesn't. But when it does, it
+the adjoint might not always exist (it usually doesn't). But when it does, it
 can be a pleasant surprise.
 
 ### Patterns to look for
@@ -206,13 +199,9 @@ leftAdjunct  :: Adjunction f u => (f a -> b) -> (a -> u b)
 rightAdjunct :: Adjunction f u => (a -> u b) -> (f a -> b)
 ```
 
-These will often come in pairs, and they are significant because they are
-essentially the adjunctions "in practice": Sure, an `(r, a) -> b` is useful, but
-"using" the adjunction means that you can convert between `(r, a) -> b`
-(`uncurry`) and backwards.
-
-Basically, any time `Q a` is spotted with `a` with opposite polarity, it's
-something to investigate.
+This pair is significant because it is the adjunctions "in practice": Sure, an
+`(r, a) -> b` is useful, but "using" the adjunction means that you can convert
+*between* `(r, a) -> b` and `a -> r -> b`
 
 Another common pattern that you can spot are "indexing" and "tabulating"
 functions, in the case that you have a right-adjoint:
@@ -250,7 +239,7 @@ polarities/positions). This sort of function would make `Fold r` a *right
 adjoint*, since the naked type `b` (the final parameter of `Fold r b`) is the
 final result, not the input.
 
-Of our common patterns, this one looks a looooot like `indexAdjunction`.[^1]
+Of our common patterns, this one looks a looooot like `indexAdjunction`.[^2]
 
 ``` {.haskell}
 fold            :: Fold r b -> [r]  -> b
@@ -268,8 +257,8 @@ data EnvList r a = EnvList [r] a
   deriving (Functor, Show, Eq, Ord)
 ```
 
-`EnvList r` is essentially just a *list* of `r`s. It is now also our suspect for
-a potential left-adjoint to `Fold r`: a "conceptual opposite".
+`EnvList r` adds a *list* of `r`s to a type. It is now also our suspect for a
+potential left-adjoint to `Fold r`: a "conceptual opposite".
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L71-L72
@@ -320,12 +309,12 @@ tabulateFold :: (EnvList r () -> b) -> Fold r b
 tabulateFold f = F.foldMap (:[]) (\rs -> f (EnvList rs ()))
 ```
 
-And...that gives us a pretty strong footing to claim that `EnvList r` is the
-left-adjoint of `Fold r`. A proof by hunch, for now!
+The fact the have *both* of these gives us a pretty strong footing to claim that
+`EnvList r` is the left-adjoint of `Fold r`. Proof by hunch, for now.
 
 Note that if we had missed `fold` during our adjunction hunt, we might have also
-lucked out by noticing `F.foldMap (\r -> [r])` fitting the criteria for a
-candidate for `tabulateAdjunction`, instead.
+lucked out by noticing `F.foldMap (:[])` fitting the criteria for a candidate
+for `tabulateAdjunction`, instead.
 
 Opposite Concepts
 -----------------
@@ -340,16 +329,16 @@ Let's think about this from the beginning: What is the conceptual opposite of
 Well, what other thing is more naturally an opposite than "a list to be folded"!
 
 -   `EnvList r`: Tuples a list of `r`
--   `Fold r`: Parameterizes on a list of `r`
+-   `Fold r`: Consumes a list of `r`
 
 Or, in terms of the result of the functor application:
 
 -   `EnvList r a`
-    -   A list of `r`
-    -   ... tuplied with an `a`
+    -   An `a`
+    -   ... tupled with a list of `r`
 -   `Fold r a`
-    -   Consumes a list of `r`
-    -   ... to give a parameterized `a`
+    -   An `a`
+    -   ... parameterized by consumption of a list of `r`
 
 It seems to "flip" the idea of "list vs. list consumer", and *also* the idea of
 "tupled vs. parameterizing" (which was our first example of an adjunction
@@ -359,8 +348,8 @@ In addition, lists seem to be at the heart of how to create and consume a
 `Fold r`.
 
 `fold` can be thought of as the fundamental way to *consuming* a `Fold r`. This
-makes the adjunction against `EnvList r` make sense: what good is the *ability*
-to fold ... if there is nothing *to fold*? `EnvList r` (a list of `[r]`) is
+makes the adjunction with `EnvList r` make sense: what good is the *ability* to
+fold ... if there is nothing *to fold*? `EnvList r` (a list of `[r]`) is
 intimately related to `Fold r`: they are the yin and yang, peanut butter and
 jelly, night and day. Their fates are intertwined from their very inception. You
 cannot have one without the other.
@@ -369,13 +358,35 @@ In addition, `F.foldMap` is arguably a fundamental (although maybe inefficient)
 way to *specify* a `Fold r`. A `Fold r` is, fundamentally, a list processor ---
 which is what `EnvList r a -> b` literally is (an `[r] -> b`). `Fold r` and
 `EnvList r` --- [dyads in the
-force](https://starwars.fandom.com/wiki/Dyad_in_the_Force). Or, well...I guess
-literally monads, since [all adjunctions give rise to
-monads](http://www.stephendiehl.com/posts/adjunctions.html)...and comonads too.
+force](https://starwars.fandom.com/wiki/Dyad_in_the_Force). Or, well...literally
+*monads*, since all adjunctions give rise to monads, as we will see later.
 
 The fact that `EnvList r` and `Fold r` form an adjunction together formalizes
 the fact that they are conceptually "opposite" concepts, and also that they are
 bound together by destiny in a close and fundamental way.
+
+::: {.note}
+Note that in this case, a lot of what we are concluding simply stems from the
+fact that we can "index" a `Fold r a` using an `[r]`. This actually is more
+fundamentally associated with the concept of a [Representable
+Functor](https://hackage.haskell.org/package/adjunctions/docs/Data-Functor-Rep.html).
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L82-L85
+
+instance Representable (Fold r) where
+    type Rep (Fold r) = [r]
+    tabulate = F.foldMap (:[])
+    index    = F.fold
+```
+
+As it turns out, in Haskell, a functor being representable is *equivalent* to it
+having a left adjoint. So thinking of `Fold r` as a representable functor and
+thinking of it as a right adjoint are equivalent ideas. This article chooses to
+analyze it from the adjunctions perspective because we get to imagine the
+adjoint `Functor`, which can sometimes shed a little more light than just
+looking at some index *value*.
+:::
 
 The Helper Functions
 --------------------
@@ -413,14 +424,16 @@ zipR :: Fold r a -> Fold r b -> Fold r (a, b)
     unit :: Fold r [r]
     ```
 
-    This means that `unit` for `Fold r` folds a list `[r]` into "itself":
+    This means that `unit` for `Fold r` folds a list `[r]` into "itself", while
+    also tagging on a value
 
     ``` {.haskell}
-    fold unit [1,2,3]
-    #   => [1,2,3]
+    F.fold (unit True) [1,2,3]
+    #   => EnvList [1,2,3] True
     ```
 
-2.  `counit :: [r] -> Fold r a -> a` is essentially just `fold`. Neat!
+2.  `counit :: [r] -> Fold r a -> a` is essentially just `F.fold` when we expand
+    it. Neat!
 
 3.  `leftAdjunct :: ([r] -> a -> b) -> (a -> Fold r b)` ... if we write it as
     `leftAdjunct :: a -> (a -> [r] -> b) -> Fold r b`, and feed the `a` into the
@@ -430,8 +443,8 @@ zipR :: Fold r a -> Fold r b -> Fold r (a, b)
     leftAdjunct' :: ([r] -> b) -> Fold r b
     ```
 
-    which is just `tabulateAdjunction`, or `F.foldMap (\r -> [r])`! It encodes
-    our list processor `[r] -> b` into a `Fold r b.`
+    which is just `tabulateAdjunction`, or `F.foldMap (:[])`! It encodes our
+    list processor `[r] -> b` into a `Fold r b.`
 
 4.  `rightAdjunct :: (a -> Fold r b) -> ([r] -> a -> b)` -- if we again rewrite
     as `rightAdjunct :: a -> (a -> Fold r b) -> [r] -> b`, and again feed the
@@ -441,14 +454,10 @@ zipR :: Fold r a -> Fold r b -> Fold r (a, b)
     rightAdjunct' :: Fold r b -> [r] -> b
     ```
 
-    Which is just `fold`, or `counit`!
-
-    Note that `leftAdjunct` and `rightAdjunct` aren't always this cleanly
-    rearranged into `tabulate` or `counit` etc. -- in this case it's just
-    because of how `EnvList r a` is shaped.
+    which happens to just be `fold`, or `counit`!
 
 5.  `tabulateAdjunction` and `indexAdjunction` we went over earlier, seeing them
-    as `F.foldMap (\r -> [r])` and `fold`
+    as `F.foldMap (:[])` and `fold`
 
 6.  `zipR :: Fold r a -> Fold r b -> Fold r (a, b)` takes two `Fold r`s and
     combines them into a single fold. This is exactly the "combining fold"
@@ -458,7 +467,7 @@ zipR :: Fold r a -> Fold r b -> Fold r (a, b)
 
 Seeing how these functions all fit together, we can write a full instance of
 `Adjunction`. We can choose to provide `unit` and `counit`, or `leftAdjunct` and
-`rightAdjunct`[^2]; the `unit`/`counit` definitions are the easiest to
+`rightAdjunct`[^3]; the `unit`/`counit` definitions are the easiest to
 conceptualize, for me, but the other pair isn't much tricker to write.
 
 ``` {.haskell}
@@ -475,8 +484,9 @@ instance Adjunction (EnvList r) (Fold r) where
 ### Induced Monad and Comonad
 
 Another interesting thing we might want to look at is the monad and comonad that
-our adjunction defines. [All adjunctions define a
-monad](https://bartoszmilewski.com/2016/12/27/monads-categorically/), so what
+our adjunction defines. [All
+adjunctions](https://bartoszmilewski.com/2016/12/27/monads-categorically/)
+[define a monad](http://www.stephendiehl.com/posts/adjunctions.html), so what
 does our new knowledge of the `Fold r` adjunction give us?
 
 #### Induced Monad
@@ -493,7 +503,7 @@ newtype FoldEnv r a = FE { getFE :: Fold r (EnvList r a) }
 type FoldEnv r = Fold r ([r], a)
 ```
 
-As it turns out, this is essentially the famous [State
+As it turns out, this is essentially equivalent to the famous [State
 Monad](https://hackage.haskell.org/package/transformers/docs/Control-Monad-Trans-State-Lazy.html)!
 More specifically, it's the [*Representable* State
 Monad](https://hackage.haskell.org/package/adjunctions/docs/Control-Monad-Representable-State.html).
@@ -501,13 +511,17 @@ Monad](https://hackage.haskell.org/package/adjunctions/docs/Control-Monad-Repres
 ``` {.haskell}
 type FoldEnv r = State [r] a
 
--- or, from Control.Monad.Representable.State
+-- or, more literally, from Control.Monad.Representable.State
 type FoldEnv r = State (Fold r)
 ```
 
 So the induced monad from the adjunction we just found is essentially the same
 as the `State` monad over a list --- except with some potentially different
 performance characteristics.
+
+In the end, finding this adjunction gives us a neat way to represent stateful
+computations on lists, which is arguably an extension of what `Fold` was really
+meant for in the first place.
 
 #### Induced Comonad
 
@@ -523,15 +537,15 @@ newtype EnvFold r a = EF { getEF :: EnvList r (Fold r a) }
 type EnvFold r = ([r], Fold r a)
 ```
 
-As it turns out, this is equivalent to the [Representable Store
-Comonad](https://hackage.haskell.org/package/adjunctions/docs/Control-Comonad-Representable-Store.html).
+This one is exactly the [Representable Store
+comonad](https://hackage.haskell.org/package/adjunctions/docs/Control-Comonad-Representable-Store.html).
 It's essentially the normal [`Store`
 comonad](https://hackage.haskell.org/package/comonad/docs/Control-Comonad-Store.html):
 
 ``` {.haskell}
 type EnvFold r a = Store [r] a
 
--- or, from Control.Comonad.Representable.Store
+-- or, more literally, from Control.Comonad.Representable.Store
 type EnvFold r = Store (Fold r)
 ```
 
@@ -539,49 +553,47 @@ This comonad "stores" an `[r]` as well as a way to produce an `a` from an `[r]`.
 All of the utility of this induced comonad basically is the same as the utility
 of `Store`, except with potentially different performance profiles.
 
+In the end, finding this adjunction gives us a neat way to define a comonadic
+contextual projection on lists, which I would say is also an extension of the
+original purpose of `Fold`.
+
 Conclusion
 ----------
 
 In the end, in a "practical" sense, we got some nice helper functions, as well
-as a new way to compose computations dealing with `Fold` (via the representable
-state monad and the representable store comonad).
+as a new way to extend the conceptual idea of `Fold` using the induced monad and
+comonad.
 
 Admittedly, the selection of helper functions that `Adjunction` gives us pales
 in comparison to abstractions like `Monoid`, `Applicative`, `Traversable`,
 `Monad`, etc., which makes `Adjunction` (in my opinion) nowhere as practical
 when compared to them. A lot of these helper functions (like the induced state
 monad and store comonad) actually also just exist if we only talk about
-`Representable`
+`Representable`.
 
-However, to me (and, according to how I've seen other people use it),
-`Adjunction` is most useful as a conceptual tool in Haskell. The idea of
-"opposites" or "duals" show up a lot in Haskell, starting from the most basic
-level -- sums and products, products and functions. From day 1, Haskellers are
-introduced to natural pairs and opposites in concepts. The idea of opposites and
-how they interact with each other is always on the mind of a Haskeller, and
-close to their heart.
+However, to me (and, as how I've seen other people use it), `Adjunction` is most
+useful as a conceptual tool in Haskell. The idea of "opposites" or "duals" show
+up a lot in Haskell, starting from the most basic level -- sums and products,
+products and functions. From day 1, Haskellers are introduced to natural pairs
+and opposites in concepts. The idea of opposites and how they interact with each
+other is always on the mind of a Haskeller, and close to their heart.
 
 So, what makes `Adjunction` so useful to me is that it actually is able to
 formalize what we mean by "opposite concepts". The process of identifying a
 functor's "opposite concept" (if it exists) will only help is better understand
 the functor we're thinking about, in terms of how it works and how it is used.
 
-The Algebraic Way
------------------
-
+::: {.note}
 This article is done! Our first guess for an adjunction seems to be morally
-correct. But as an aside ... let's see if we can take this idea further. The
-rest of this post is not really important to the point I was trying to make!
-
-You never *need* all this fancy math to be able to write Haskell ... but many
-feel like it can make things a lot more fun! :)
+correct. But as an aside ... let's see if we can take this idea further.
 
 In this section we're going to get a bit mathy and look at the definition of
 `Fold`, to see if we can *algebraically* find an adjunction of `Fold`, instead
 of just trying to hunt for API functions like before. In practice you don't
 often have to make algebraic deductions like this, but it's at least nice to
 know that something like this possible from a purely algebraic and logical
-sense.
+sense. You never *need* all this fancy math to be able to write Haskell ... but
+many feel like it can make things a lot more fun! :)
 
 Be warned that this method *does* require some familiarity (or at least
 awareness) of certain types that appear often in the more ... esoteric corners
@@ -622,7 +634,7 @@ newtype Fix f = Fix (f (Fix f))
 newtype Mu  f = Mu (forall x. (f x -> x) -> x)
 ```
 
-In Haskell these are all equivalent[^3], but they have very different
+In Haskell these are all equivalent[^4], but they have very different
 performance profiles for certain operations. `Nu` is easy to "build up", and
 `Mu` is easy to "tear down" -- and they exist sort of opposite to each other.
 `Fix` exists in opposite to ... itself. Sorry, `Fix`.
@@ -654,7 +666,7 @@ type Fold r a   = Nu ((,) a :.: (->) r)
 type Fold r     = Cofree ((->) r)
 ```
 
-It looks like `Fold r` is just `Cofree ((->) r)` [^4] ... and now we've hit the
+It looks like `Fold r` is just `Cofree ((->) r)` [^5] ... and now we've hit the
 jackpot! That's because `Cofree f` has an instance of `Adjunction`!
 
 ``` {.haskell}
@@ -712,7 +724,7 @@ for `Adjunction (EL r) (Fold r)` and `F.foldMap`, since it can be shown that all
 adjuncts are unique up to isomorphism.
 
 And...this looks pretty neat, I think. In the end we discover that these two
-types are adjoints to each other:[^5]
+types are adjoints to each other:[^6]
 
 ``` {.haskell}
 data Fold r a = forall x. Fold            (x -> a)    (x -> r -> x)    x
@@ -727,7 +739,7 @@ in `Fold` becomes an `a -> x` in `EList`. Neat neat.
 Adjunctions: take an idea and just make everything opposite.
 
 One nice thing about this representation is that writing the fundamental
-operation of `Fold` (that is, `fold`) becomes really clean:[^6]
+operation of `Fold` (that is, `fold`) becomes really clean:[^7]
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl-algebraic.hs#L51-L52
@@ -737,6 +749,7 @@ foldEL (Fold step init extr) el = extr (runEL el (const init) step)
 ```
 
 And this is, maybe, the real treasure all along.
+:::
 
 --------------------------------------------------------------------------------
 
@@ -751,28 +764,34 @@ If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 
-[^1]: As it so happens, `fold` is actually exactly `index` for
+[^1]: Note that the intuition we are going to be going into is specifically for
+    adjunctions between `Functor` functors --- functors that the `Functor`
+    typeclass models (aka, endofunctors in Hask). For a more general view of
+    adjunctions in general, see the links above.
+
+[^2]: As it so happens, `fold` is actually exactly `index` for
     `Representable (Fold r)`, from
     *[Data.Functor.Rep](https://hackage.haskell.org/package/adjunctions/docs/Data-Functor-Rep.html)*.
-    Here we are utilizing the fact that a representable functor gives rise to a
-    left-adjoint for free.
+    Here we are utilizing the fact that a representable Functor gives rise to a
+    left-adjoint for free --- the two ideas are equivalent in Haskell. We go
+    into this in more detail in an upcoming aside.
 
-[^2]: We should also be able to define it using `tabulateAdjunction` and
-    `indexAdjunction`, I believe ... but this isn't allowed for some reason?
+[^3]: We should also be able to define it using `tabulateAdjunction` and
+    `indexAdjunction` ... but this isn't allowed for some reason?
 
-[^3]: They are only equivalent in Haskell because of laziness --- in strict
+[^4]: They are only equivalent in Haskell because of laziness --- in strict
     languages, they are different.
 
-[^4]: Some might recognize `Cofree ((->) r)` as a common way of implementing a
+[^5]: Some might recognize `Cofree ((->) r)` as a common way of implementing a
     [Moore machine](https://en.wikipedia.org/wiki/Moore_machine) in Haskell. In
     fact, our derivation here is basically a backwards version of [the process
     described
     here](https://www.schoolofhaskell.com/user/edwardk/moore/for-less).
 
-[^5]: The instance is [written out
+[^6]: The instance is [written out
     here](https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl-algebraic.hs#L58-L71).
 
-[^6]: Implementing a `tabulate` equivalent ([solution
+[^7]: Implementing a `tabulate` equivalent ([solution
     here](https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl-algebraic.hs#L54-L56))
     reveals that this refactoring is only really useful for `index` (to
     "consume" a `Fold`) ... using `tabulate` or `leftAdjunct` to "produce" a
