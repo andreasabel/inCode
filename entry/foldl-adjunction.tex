@@ -147,7 +147,7 @@ folds (for example, with \texttt{-XApplicativeDo})
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/adjunctions/foldl.hs\#L19{-}L26}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/adjunctions/foldl.hs\#L22{-}L29}
 
 \OtherTok{variance ::} \DataTypeTok{Fractional}\NormalTok{ a }\OtherTok{=>} \DataTypeTok{Fold}\NormalTok{ a a}
 \NormalTok{variance }\OtherTok{=} \KeywordTok{do}
@@ -167,7 +167,8 @@ folds.
 To me, \emph{foldl} is one of the shining examples of how well Haskell works for
 data and stream processing, and a library I often show to people when they ask
 what the big deal is about Haskell abstractions like \texttt{Applicative},
-purity, and lists.
+purity, and lists --- this technique is often described as
+``\href{https://www.google.com/search?q=beautiful+folds}{beautiful folds}''.
 
 \hypertarget{adjunctions}{%
 \section{Adjunctions}\label{adjunctions}}
@@ -176,8 +177,10 @@ The second concept is the idea of
 \emph{\href{https://en.wikipedia.org/wiki/Adjoint_functors}{adjoint functors}}
 (see also \href{https://bartoszmilewski.com/2016/04/18/adjunctions/}{Bartosz
 Milewski's introduction} and
-\href{https://ncatlab.org/nlab/show/adjoint+functor}{nlab}'s description),
-represented in Haskell by the
+\href{https://ncatlab.org/nlab/show/adjoint+functor}{nlab}'s description, as
+well as
+\href{https://www.math3ma.com/blog/what-is-an-adjunction-part-1}{Tai-Dinae
+Bradley's motivation}), represented in Haskell by the
 \emph{\href{https://hackage.haskell.org/package/adjunctions/docs/Data-Functor-Adjunction.html}{adjunctions
 library and typeclass}}
 (\href{https://chrispenner.ca/posts/adjunction-battleship}{Chris Penner} has a
@@ -187,12 +190,40 @@ simplify programs).
 The idea is that, for some functors, we can think of a ``conceptual inverse''.
 We can ask ``I have a nice functor \texttt{F}. Conceptually, what functor
 represents the opposite idea/spirit of \texttt{F}?'' The concept of an
-adjunction is one way to formalize what this means. The high-level idea is that
-if \texttt{F\ -\textbar{}\ G} (\texttt{F} is left adjoint to \texttt{G}, and
-\texttt{G} is right adjoint to \texttt{F}), then all the ways of going ``out
+adjunction is one way to formalize what this means.
+
+In Haskell, with the \texttt{Adjunctions} typeclass (specifically,
+\texttt{Functor} functors), this manifests as this: if
+\texttt{F\ -\textbar{}\ U} (\texttt{F} is left adjoint to \texttt{U}, and
+\texttt{U} is right adjoint to \texttt{F}), then all the ways of going ``out
 of'' \texttt{F\ a} to \texttt{b} are the same as all the ways of going ``into''
-\texttt{G\ b} from \texttt{a}. Ways of going out can be encoded as ways of going
+\texttt{U\ b} from \texttt{a}. Ways of going out can be encoded as ways of going
 in, and vice versa. They represent opposite ideas.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} | The class saying you can always convert between:}
+\CommentTok{{-}{-}}
+\CommentTok{{-}{-} * \textasciigrave{}f a {-}> b\textasciigrave{} (the ways to go out of \textasciigrave{}f\textasciigrave{})}
+\CommentTok{{-}{-} * \textasciigrave{}a {-}> u b\textasciigrave{} (the ways to go into \textasciigrave{}g\textasciigrave{})}
+\KeywordTok{instance} \DataTypeTok{Adjunction}\NormalTok{ f u }\KeywordTok{where}
+\NormalTok{    leftAdjunct}
+\OtherTok{        ::}\NormalTok{ (f a }\OtherTok{{-}>}\NormalTok{ b)       }\CommentTok{{-}{-} \^{} the ways of going "out of" \textasciigrave{}f\textasciigrave{}}
+        \OtherTok{{-}>}\NormalTok{ (a }\OtherTok{{-}>}\NormalTok{ u b)       }\CommentTok{{-}{-} \^{} the ways of going "into" \textasciigrave{}u\textasciigrave{}}
+
+\NormalTok{    rightAdjunct}
+\OtherTok{        ::}\NormalTok{ (a }\OtherTok{{-}>}\NormalTok{ u b)       }\CommentTok{{-}{-} \^{} the ways of going "into" u}
+        \OtherTok{{-}>}\NormalTok{ (f a }\OtherTok{{-}>}\NormalTok{ b)       }\CommentTok{{-}{-} \^{} the ways of going "out of" f}
+\end{Highlighting}
+\end{Shaded}
+
+Incidentally, adjunctions are also often described as one of the most
+``beautiful'' concepts that Category Theory has introduced to the world.
+
+Note that the intuition we are going to be going into is specifically for
+adjunctions between \texttt{Functor} functors --- functors that the
+\texttt{Functor} typeclass models (aka, endofunctors in Hask). For a more
+general view of adjunctions in general, see the links above.
 
 \hypertarget{examples}{%
 \subsection{Examples}\label{examples}}
@@ -213,7 +244,7 @@ Another common pair is with same-typed either and tuple:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/adjunctions/foldl.hs\#L28{-}L31}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/adjunctions/foldl.hs\#L31{-}L34}
 
 \KeywordTok{newtype} \DataTypeTok{SameEither}\NormalTok{ a }\OtherTok{=} \DataTypeTok{SE}\NormalTok{ (}\DataTypeTok{Either}\NormalTok{ a a)}
 
@@ -228,17 +259,17 @@ them).
 
 We can formalize this idea of opposites using adjunctions: Going ``out of''
 \texttt{Either\ a\ a} into \texttt{b} can be encoded as going ``into''
-\texttt{(b,\ b)} from \texttt{a},m and vice versa:
+\texttt{(b,\ b)} from \texttt{a}, and vice versa:
 \texttt{Either\ a\ a\ -\textgreater{}\ b} can be encoded as
-\texttt{a\ -\textgreater{}\ (b,\ b)} (and vice versa) --- the two types are
-isomorphic. This is because to go out of \texttt{Either\ a\ a}, you have to
-handle the situation of getting a \texttt{Left} and the situation of getting a
-\texttt{Right}. To go into \texttt{(b,\ b)}, you have to able to ask what goes
-in the first field, and what goes in the right field. Both
-\texttt{Either\ a\ a\ -\textgreater{}\ b} and
+\texttt{a\ -\textgreater{}\ (b,\ b)}, which can be encoded as
+\texttt{Either\ a\ a\ -\textgreater{}\ b} --- the two types are isomorphic. This
+is because to go out of \texttt{Either\ a\ a}, you have to handle the situation
+of getting a \texttt{Left} and the situation of getting a \texttt{Right}. To go
+into \texttt{(b,\ b)}, you have to able to ask what goes in the first field, and
+what goes in the right field. Both \texttt{Either\ a\ a\ -\textgreater{}\ b} and
 \texttt{a\ -\textgreater{}\ (b,\ b)} have to answer the same questions. (A fun
 exercise would be to write the functions to convert between the two ---
-\href{https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs\#L52-L53}{one
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs\#L55-L56}{one
 solution is here})
 
 \hypertarget{big-picture}{%
@@ -311,10 +342,6 @@ functions, in the case that you have a right-adjoint:
 \end{Highlighting}
 \end{Shaded}
 
-These also come in pairs! And they are equivalent in power --- you can implement
-\texttt{rightAdjunct} in terms of \texttt{indexAdjunction} and
-\texttt{leftAdjunct} in terms of \texttt{tabulateAdjunction} and vice versa.
-
 \texttt{indexAdjunction} means: if it's possible to ``extract'' from
 \texttt{u\ b} to \texttt{b} using only an \texttt{f\ ()} as extra information,
 then \texttt{u} might be right-adjoint to \texttt{f}.
@@ -322,6 +349,12 @@ then \texttt{u} might be right-adjoint to \texttt{f}.
 \texttt{tabulateAdjunction} means: if it's possible to ``generate'' a
 \texttt{u\ b} based on a function that ``builds'' a \texttt{b} from
 \texttt{f\ ()}, then \texttt{u} might right-adjoint to \texttt{f}.
+
+This pair is equivalent in power --- you can implement \texttt{rightAdjunct} in
+terms of \texttt{indexAdjunction} and \texttt{leftAdjunct} in terms of
+\texttt{tabulateAdjunction} and vice versa. This comes from the fact that all
+Adjunctions in Haskell \texttt{Functor}s arise from some idea of
+``indexability'' and ``representability''.
 
 \hypertarget{adjoints-to-fold}{%
 \subsection{\texorpdfstring{Adjoints to
@@ -364,7 +397,7 @@ just have \texttt{f\ a\ =\ ({[}r{]},\ a)}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/adjunctions/foldl.hs\#L65{-}L66}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/adjunctions/foldl.hs\#L68{-}L69}
 
 \KeywordTok{data} \DataTypeTok{EnvList}\NormalTok{ r a }\OtherTok{=} \DataTypeTok{EnvList}\NormalTok{ [r] a}
   \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Functor}\NormalTok{, }\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Eq}\NormalTok{, }\DataTypeTok{Ord}\NormalTok{)}
@@ -377,7 +410,7 @@ also our suspect for a potential left-adjoint to \texttt{Fold\ r}: a
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/adjunctions/foldl.hs\#L68{-}L69}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/adjunctions/foldl.hs\#L71{-}L72}
 
 \OtherTok{indexFold ::} \DataTypeTok{Fold}\NormalTok{ r b }\OtherTok{{-}>} \DataTypeTok{EnvList}\NormalTok{ r () }\OtherTok{{-}>}\NormalTok{ b}
 \NormalTok{indexFold fld (}\DataTypeTok{EnvList}\NormalTok{ rs \_) }\OtherTok{=}\NormalTok{ F.fold fld rs}
@@ -428,7 +461,7 @@ So:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/adjunctions/foldl.hs\#L71{-}L72}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/adjunctions/foldl.hs\#L74{-}L75}
 
 \OtherTok{tabulateFold ::}\NormalTok{ (}\DataTypeTok{EnvList}\NormalTok{ r () }\OtherTok{{-}>}\NormalTok{ b) }\OtherTok{{-}>} \DataTypeTok{Fold}\NormalTok{ r b}
 \NormalTok{tabulateFold f }\OtherTok{=}\NormalTok{ F.foldMap (}\OperatorTok{:}\NormalTok{[]) (\textbackslash{}rs }\OtherTok{{-}>}\NormalTok{ f (}\DataTypeTok{EnvList}\NormalTok{ rs ()))}
@@ -436,7 +469,8 @@ So:
 \end{Shaded}
 
 And\ldots that gives us a pretty strong footing to claim that
-\texttt{EnvList\ r} is the left-adjoint of \texttt{Fold\ r}.
+\texttt{EnvList\ r} is the left-adjoint of \texttt{Fold\ r}. A proof by hunch,
+for now!
 
 Note that if we had missed \texttt{fold} during our adjunction hunt, we might
 have also lucked out by noticing
@@ -505,13 +539,13 @@ related to \texttt{Fold\ r}: they are the yin and yang, peanut butter and jelly,
 night and day. Their fates are intertwined from their very inception. You cannot
 have one without the other.
 
-In addition, \texttt{F.foldMap} is arguably a fundamental (although inefficient)
-way to \emph{specify} a \texttt{Fold\ r}. A \texttt{Fold\ r} is, fundamentally,
-a list processor --- which is what \texttt{EnvList\ r\ a\ -\textgreater{}\ b}
-literally is (an \texttt{{[}r{]}\ -\textgreater{}\ b}). \texttt{Fold\ r} and
-\texttt{EnvList\ r} ---
-\href{https://starwars.fandom.com/wiki/Dyad_in_the_Force}{dyads in the force}.
-Or, well\ldots I guess literally monads, since
+In addition, \texttt{F.foldMap} is arguably a fundamental (although maybe
+inefficient) way to \emph{specify} a \texttt{Fold\ r}. A \texttt{Fold\ r} is,
+fundamentally, a list processor --- which is what
+\texttt{EnvList\ r\ a\ -\textgreater{}\ b} literally is (an
+\texttt{{[}r{]}\ -\textgreater{}\ b}). \texttt{Fold\ r} and \texttt{EnvList\ r}
+--- \href{https://starwars.fandom.com/wiki/Dyad_in_the_Force}{dyads in the
+force}. Or, well\ldots I guess literally monads, since
 \href{http://www.stephendiehl.com/posts/adjunctions.html}{all adjunctions give
 rise to monads}\ldots and comonads too.
 
@@ -634,24 +668,114 @@ conceptualize, for me, but the other pair isn't much tricker to write.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/adjunctions/foldl.hs\#L84{-}L89}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/adjunctions/foldl.hs\#L87{-}L92}
 
 \KeywordTok{instance} \DataTypeTok{Adjunction}\NormalTok{ (}\DataTypeTok{EnvList}\NormalTok{ r) (}\DataTypeTok{Fold}\NormalTok{ r) }\KeywordTok{where}
 \NormalTok{    unit x }\OtherTok{=}\NormalTok{ F.foldMap (}\OperatorTok{:}\NormalTok{[]) (}\OtherTok{\textasciigrave{}EnvList\textasciigrave{}}\NormalTok{ x)}
-\NormalTok{    counit (}\DataTypeTok{EnvList}\NormalTok{ rs f) }\OtherTok{=}\NormalTok{ F.fold f rs}
+\NormalTok{    counit (}\DataTypeTok{EnvList}\NormalTok{ rs fld) }\OtherTok{=}\NormalTok{ F.fold fld rs}
 
 \NormalTok{    leftAdjunct f x }\OtherTok{=}\NormalTok{ F.foldMap (}\OperatorTok{:}\NormalTok{[]) (\textbackslash{}rs }\OtherTok{{-}>}\NormalTok{ f (}\DataTypeTok{EnvList}\NormalTok{ rs x))}
 \NormalTok{    rightAdjunct f (}\DataTypeTok{EnvList}\NormalTok{ rs x) }\OtherTok{=}\NormalTok{ F.fold (f x) rs}
 \end{Highlighting}
 \end{Shaded}
 
+\hypertarget{induced-monad-and-comonad}{%
+\subsection{Induced Monad and Comonad}\label{induced-monad-and-comonad}}
+
+Another interesting thing we might want to look at is the monad and comonad that
+our adjunction defines.
+\href{https://bartoszmilewski.com/2016/12/27/monads-categorically/}{All
+adjunctions define a monad}, so what does our new knowledge of the
+\texttt{Fold\ r} adjunction give us?
+
+\hypertarget{induced-monad}{%
+\subsubsection{Induced Monad}\label{induced-monad}}
+
+If we have \texttt{F\ -\textbar{}\ U}, then \texttt{U\ .\ F} is a monad. In this
+case, we have \texttt{FoldEnv}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/adjunctions/foldl.hs\#L94{-}L95}
+
+\KeywordTok{newtype} \DataTypeTok{FoldEnv}\NormalTok{ r a }\OtherTok{=} \DataTypeTok{FE}\NormalTok{ \{}\OtherTok{ getFE ::} \DataTypeTok{Fold}\NormalTok{ r (}\DataTypeTok{EnvList}\NormalTok{ r a) \}}
+  \KeywordTok{deriving} \DataTypeTok{Functor}
+
+\CommentTok{{-}{-} or}
+\KeywordTok{type} \DataTypeTok{FoldEnv}\NormalTok{ r }\OtherTok{=} \DataTypeTok{Fold}\NormalTok{ r ([r], a)}
+\end{Highlighting}
+\end{Shaded}
+
+As it turns out, this is essentially the famous
+\href{https://hackage.haskell.org/package/transformers/docs/Control-Monad-Trans-State-Lazy.html}{State
+Monad}! More specifically, it's the
+\href{https://hackage.haskell.org/package/adjunctions/docs/Control-Monad-Representable-State.html}{\emph{Representable}
+State Monad}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{FoldEnv}\NormalTok{ r }\OtherTok{=} \DataTypeTok{State}\NormalTok{ [r] a}
+
+\CommentTok{{-}{-} or, from Control.Monad.Representable.State}
+\KeywordTok{type} \DataTypeTok{FoldEnv}\NormalTok{ r }\OtherTok{=} \DataTypeTok{State}\NormalTok{ (}\DataTypeTok{Fold}\NormalTok{ r)}
+\end{Highlighting}
+\end{Shaded}
+
+So the induced monad from the adjunction we just found is essentially the same
+as the \texttt{State} monad over a list --- except with some potentially
+different performance characteristics.
+
+\hypertarget{induced-comonad}{%
+\subsubsection{Induced Comonad}\label{induced-comonad}}
+
+If we have \texttt{F\ -\textbar{}\ U}, then \texttt{F\ .\ U} is a comonad. In
+this case, we have \texttt{EnvFold}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/adjunctions/foldl.hs\#L106{-}L107}
+
+\KeywordTok{newtype} \DataTypeTok{EnvFold}\NormalTok{ r a }\OtherTok{=} \DataTypeTok{EF}\NormalTok{ \{}\OtherTok{ getEF ::} \DataTypeTok{EnvList}\NormalTok{ r (}\DataTypeTok{Fold}\NormalTok{ r a) \}}
+  \KeywordTok{deriving} \DataTypeTok{Functor}
+
+\CommentTok{{-}{-} or}
+\KeywordTok{type} \DataTypeTok{EnvFold}\NormalTok{ r }\OtherTok{=}\NormalTok{ ([r], }\DataTypeTok{Fold}\NormalTok{ r a)}
+\end{Highlighting}
+\end{Shaded}
+
+As it turns out, this is equivalent to the
+\href{https://hackage.haskell.org/package/adjunctions/docs/Control-Comonad-Representable-Store.html}{Representable
+Store Comonad}. It's essentially the normal
+\href{https://hackage.haskell.org/package/comonad/docs/Control-Comonad-Store.html}{\texttt{Store}
+comonad}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{EnvFold}\NormalTok{ r a }\OtherTok{=} \DataTypeTok{Store}\NormalTok{ [r] a}
+
+\CommentTok{{-}{-} or, from Control.Comonad.Representable.Store}
+\KeywordTok{type} \DataTypeTok{EnvFold}\NormalTok{ r }\OtherTok{=} \DataTypeTok{Store}\NormalTok{ (}\DataTypeTok{Fold}\NormalTok{ r)}
+\end{Highlighting}
+\end{Shaded}
+
+This comonad ``stores'' an \texttt{{[}r{]}} as well as a way to produce an
+\texttt{a} from an \texttt{{[}r{]}}. All of the utility of this induced comonad
+basically is the same as the utility of \texttt{Store}, except with potentially
+different performance profiles.
+
 \hypertarget{conclusion}{%
 \section{Conclusion}\label{conclusion}}
+
+In the end, in a ``practical'' sense, we got some nice helper functions, as well
+as a new way to compose computations dealing with \texttt{Fold} (via the
+representable state monad and the representable store comonad).
 
 Admittedly, the selection of helper functions that \texttt{Adjunction} gives us
 pales in comparison to abstractions like \texttt{Monoid}, \texttt{Applicative},
 \texttt{Traversable}, \texttt{Monad}, etc., which makes \texttt{Adjunction} (in
-my opinion) nowhere as practical when compared to them.
+my opinion) nowhere as practical when compared to them. A lot of these helper
+functions (like the induced state monad and store comonad) actually also just
+exist if we only talk about \texttt{Representable}
 
 However, to me (and, according to how I've seen other people use it),
 \texttt{Adjunction} is most useful as a conceptual tool in Haskell. The idea of
