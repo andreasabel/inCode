@@ -254,7 +254,7 @@ This means that `Fold r b` is right-adjoint to some functor `f` where
 `f a = ([r], a)`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L68-L69
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L73-L74
 
 data EnvList r a = EnvList [r] a
   deriving (Functor, Show, Eq, Ord)
@@ -264,7 +264,7 @@ data EnvList r a = EnvList [r] a
 a potential left-adjoint to `Fold r`: a "conceptual opposite".
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L71-L72
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L76-L77
 
 indexFold :: Fold r b -> EnvList r () -> b
 indexFold fld (EnvList rs _) = F.fold fld rs
@@ -306,7 +306,7 @@ F.foldMap (\r -> [r])
 So:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L74-L75
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L79-L80
 
 tabulateFold :: (EnvList r () -> b) -> Fold r b
 tabulateFold f = F.foldMap (:[]) (\rs -> f (EnvList rs ()))
@@ -378,7 +378,7 @@ fundamentally associated with the concept of a [Representable
 Functor](https://hackage.haskell.org/package/adjunctions/docs/Data-Functor-Rep.html).
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L82-L85
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L87-L90
 
 instance Representable (Fold r) where
     type Rep (Fold r) = [r]
@@ -477,7 +477,7 @@ Seeing how these functions all fit together, we can write a full instance of
 conceptualize, for me, but the other pair isn't much tricker to write.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L87-L92
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L92-L97
 
 instance Adjunction (EnvList r) (Fold r) where
     unit x = F.foldMap (:[]) (`EnvList` x)
@@ -500,7 +500,7 @@ does our new knowledge of the `Fold r` adjunction give us?
 If we have `F -| U`, then `U . F` is a monad. In this case, we have `FoldEnv`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L94-L95
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L99-L100
 
 newtype FoldEnv r a = FE { getFE :: Fold r (EnvList r a) }
   deriving Functor
@@ -534,7 +534,7 @@ meant for in the first place.
 If we have `F -| U`, then `F . U` is a comonad. In this case, we have `EnvFold`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L106-L107
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L111-L112
 
 newtype EnvFold r a = EF { getEF :: EnvList r (Fold r a) }
   deriving Functor

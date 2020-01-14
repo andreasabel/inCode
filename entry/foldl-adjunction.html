@@ -103,12 +103,12 @@ compiled...really just the king of great languages.">Haskell</a>, <a href="https
 <div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="ot">fold            ::</span> <span class="dt">Fold</span> r b <span class="ot">-&gt;</span> [r]  <span class="ot">-&gt;</span> b</span>
 <span id="cb8-2"><a href="#cb8-2"></a><span class="ot">indexAdjunction ::</span> <span class="dt">Fold</span> r b <span class="ot">-&gt;</span> f () <span class="ot">-&gt;</span> b</span></code></pre></div>
 <p>This means that <code>Fold r b</code> is right-adjoint to some functor <code>f</code> where <code>f () = [r]</code>. A good first guess (just a hunch?) would be to just have <code>f a = ([r], a)</code>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L68-L69</span></span>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L73-L74</span></span>
 <span id="cb9-2"><a href="#cb9-2"></a></span>
 <span id="cb9-3"><a href="#cb9-3"></a><span class="kw">data</span> <span class="dt">EnvList</span> r a <span class="ot">=</span> <span class="dt">EnvList</span> [r] a</span>
 <span id="cb9-4"><a href="#cb9-4"></a>  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>)</span></code></pre></div>
 <p><code>EnvList r</code><a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> adds a <em>list</em> of <code>r</code>s to a type. It is now also our suspect for a potential left-adjoint to <code>Fold r</code>: a “conceptual opposite”.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L71-L72</span></span>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L76-L77</span></span>
 <span id="cb10-2"><a href="#cb10-2"></a></span>
 <span id="cb10-3"><a href="#cb10-3"></a><span class="ot">indexFold ::</span> <span class="dt">Fold</span> r b <span class="ot">-&gt;</span> <span class="dt">EnvList</span> r () <span class="ot">-&gt;</span> b</span>
 <span id="cb10-4"><a href="#cb10-4"></a>indexFold fld (<span class="dt">EnvList</span> rs _) <span class="ot">=</span> F.fold fld rs</span></code></pre></div>
@@ -131,7 +131,7 @@ compiled...really just the king of great languages.">Haskell</a>, <a href="https
 <span id="cb13-12"><a href="#cb13-12"></a><span class="ot">    ::</span> ([r] <span class="ot">-&gt;</span> b)</span>
 <span id="cb13-13"><a href="#cb13-13"></a>    <span class="ot">-&gt;</span> <span class="dt">Fold</span> r b</span></code></pre></div>
 <p>So:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L74-L75</span></span>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L79-L80</span></span>
 <span id="cb14-2"><a href="#cb14-2"></a></span>
 <span id="cb14-3"><a href="#cb14-3"></a><span class="ot">tabulateFold ::</span> (<span class="dt">EnvList</span> r () <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Fold</span> r b</span>
 <span id="cb14-4"><a href="#cb14-4"></a>tabulateFold f <span class="ot">=</span> F.foldMap (<span class="op">:</span>[]) (\rs <span class="ot">-&gt;</span> f (<span class="dt">EnvList</span> rs ()))</span></code></pre></div>
@@ -166,7 +166,7 @@ compiled...really just the king of great languages.">Haskell</a>, <a href="https
 <div class="note">
 <p><strong>A Note on Representable</strong></p>
 <p>Note that in this case, a lot of what we are concluding simply stems from the fact that we can “index” a <code>Fold r a</code> using an <code>[r]</code>. This actually is more fundamentally associated with the concept of a <a href="https://hackage.haskell.org/package/adjunctions/docs/Data-Functor-Rep.html">Representable Functor</a>.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L82-L85</span></span>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L87-L90</span></span>
 <span id="cb15-2"><a href="#cb15-2"></a></span>
 <span id="cb15-3"><a href="#cb15-3"></a><span class="kw">instance</span> <span class="dt">Representable</span> (<span class="dt">Fold</span> r) <span class="kw">where</span></span>
 <span id="cb15-4"><a href="#cb15-4"></a>    <span class="kw">type</span> <span class="dt">Rep</span> (<span class="dt">Fold</span> r) <span class="ot">=</span> [r]</span>
@@ -212,7 +212,7 @@ compiled...really just the king of great languages.">Haskell</a>, <a href="https
 <li><p><code>zipR :: Fold r a -&gt; Fold r b -&gt; Fold r (a, b)</code> takes two <code>Fold r</code>s and combines them into a single fold. This is exactly the “combining fold” behavior that makes <code>Fold</code>s so useful! The implementation of <code>zipR</code> is less efficient than the implementation of <code>&lt;*&gt;</code>/<code>liftA2</code> for <code>Fold r</code>, but knowing that <code>zipR</code> exists means that we know <code>Fold r</code>s can be combined.</p></li>
 </ol>
 <p>Seeing how these functions all fit together, we can write a full instance of <code>Adjunction</code>. We can choose to provide <code>unit</code> and <code>counit</code>, or <code>leftAdjunct</code> and <code>rightAdjunct</code><a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>; the <code>unit</code>/<code>counit</code> definitions are the easiest to conceptualize, for me, but the other pair isn’t much tricker to write.</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L87-L92</span></span>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L92-L97</span></span>
 <span id="cb21-2"><a href="#cb21-2"></a></span>
 <span id="cb21-3"><a href="#cb21-3"></a><span class="kw">instance</span> <span class="dt">Adjunction</span> (<span class="dt">EnvList</span> r) (<span class="dt">Fold</span> r) <span class="kw">where</span></span>
 <span id="cb21-4"><a href="#cb21-4"></a>    unit x <span class="ot">=</span> F.foldMap (<span class="op">:</span>[]) (<span class="ot">`EnvList`</span> x)</span>
@@ -224,7 +224,7 @@ compiled...really just the king of great languages.">Haskell</a>, <a href="https
 <p>Another interesting thing we might want to look at is the monad and comonad that our adjunction defines. <a href="https://bartoszmilewski.com/2016/12/27/monads-categorically/">All adjunctions</a> <a href="http://www.stephendiehl.com/posts/adjunctions.html">define a monad</a>, so what does our new knowledge of the <code>Fold r</code> adjunction give us?</p>
 <h4 id="induced-monad">Induced Monad</h4>
 <p>If we have <code>F -| U</code>, then <code>U . F</code> is a monad. In this case, we have <code>FoldEnv</code>:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L94-L95</span></span>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L99-L100</span></span>
 <span id="cb22-2"><a href="#cb22-2"></a></span>
 <span id="cb22-3"><a href="#cb22-3"></a><span class="kw">newtype</span> <span class="dt">FoldEnv</span> r a <span class="ot">=</span> <span class="dt">FE</span> {<span class="ot"> getFE ::</span> <span class="dt">Fold</span> r (<span class="dt">EnvList</span> r a) }</span>
 <span id="cb22-4"><a href="#cb22-4"></a>  <span class="kw">deriving</span> <span class="dt">Functor</span></span>
@@ -240,7 +240,7 @@ compiled...really just the king of great languages.">Haskell</a>, <a href="https
 <p>In the end, finding this adjunction gives us a neat way to represent stateful computations on lists, which is arguably an extension of what <code>Fold</code> was really meant for in the first place.</p>
 <h4 id="induced-comonad">Induced Comonad</h4>
 <p>If we have <code>F -| U</code>, then <code>F . U</code> is a comonad. In this case, we have <code>EnvFold</code>:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L106-L107</span></span>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L111-L112</span></span>
 <span id="cb24-2"><a href="#cb24-2"></a></span>
 <span id="cb24-3"><a href="#cb24-3"></a><span class="kw">newtype</span> <span class="dt">EnvFold</span> r a <span class="ot">=</span> <span class="dt">EF</span> {<span class="ot"> getEF ::</span> <span class="dt">EnvList</span> r (<span class="dt">Fold</span> r a) }</span>
 <span id="cb24-4"><a href="#cb24-4"></a>  <span class="kw">deriving</span> <span class="dt">Functor</span></span>
