@@ -259,8 +259,8 @@ data EnvList r a = EnvList [r] a
   deriving (Functor, Show, Eq, Ord)
 ```
 
-`EnvList r` adds a *list* of `r`s to a type. It is now also our suspect for a
-potential left-adjoint to `Fold r`: a "conceptual opposite".
+`EnvList r`[^3] adds a *list* of `r`s to a type. It is now also our suspect for
+a potential left-adjoint to `Fold r`: a "conceptual opposite".
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl.hs#L71-L72
@@ -471,7 +471,7 @@ zipR :: Fold r a -> Fold r b -> Fold r (a, b)
 
 Seeing how these functions all fit together, we can write a full instance of
 `Adjunction`. We can choose to provide `unit` and `counit`, or `leftAdjunct` and
-`rightAdjunct`[^3]; the `unit`/`counit` definitions are the easiest to
+`rightAdjunct`[^4]; the `unit`/`counit` definitions are the easiest to
 conceptualize, for me, but the other pair isn't much tricker to write.
 
 ``` {.haskell}
@@ -643,7 +643,7 @@ newtype Fix f = Fix (f (Fix f))
 newtype Mu  f = Mu (forall x. (f x -> x) -> x)
 ```
 
-In Haskell these are all equivalent[^4], but they have very different
+In Haskell these are all equivalent[^5], but they have very different
 performance profiles for certain operations. `Nu` is easy to "build up", and
 `Mu` is easy to "tear down" -- and they exist sort of opposite to each other.
 `Fix` exists in opposite to ... itself. Sorry, `Fix`.
@@ -675,7 +675,7 @@ type Fold r a   = Nu ((,) a :.: (->) r)
 type Fold r     = Cofree ((->) r)
 ```
 
-It looks like `Fold r` is just `Cofree ((->) r)` [^5] ... and now we've hit the
+It looks like `Fold r` is just `Cofree ((->) r)` [^6] ... and now we've hit the
 jackpot! That's because `Cofree f` has an instance of `Adjunction`!
 
 ``` {.haskell}
@@ -733,7 +733,7 @@ for `Adjunction (EL r) (Fold r)` and `F.foldMap`, since it can be shown that all
 adjuncts are unique up to isomorphism.
 
 And...this looks pretty neat, I think. In the end we discover that these two
-types are adjoints to each other:[^6]
+types are adjoints to each other:[^7]
 
 ``` {.haskell}
 data Fold r a = forall x. Fold            (x -> a)    (x -> r -> x)    x
@@ -748,7 +748,7 @@ in `Fold` becomes an `a -> x` in `EList`. Neat neat.
 Adjunctions: take an idea and just make everything opposite.
 
 One nice thing about this representation is that writing the fundamental
-operation of `Fold` (that is, `fold`) becomes really clean:[^7]
+operation of `Fold` (that is, `fold`) becomes really clean:[^8]
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl-algebraic.hs#L51-L52
@@ -792,22 +792,26 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     left-adjoint for free --- the two ideas are equivalent in Haskell. We go
     into this in more detail in an upcoming aside.
 
-[^3]: We should also be able to define it using `tabulateAdjunction` and
+[^3]: The name here is inspired by the [`Env`
+    comonad](https://hackage.haskell.org/package/comonad/docs/Control-Comonad-Trans-Env.html)
+    --- `EnvList r` is `Env [r]`.
+
+[^4]: We should also be able to define it using `tabulateAdjunction` and
     `indexAdjunction` ... but this isn't allowed for some reason?
 
-[^4]: They are only equivalent in Haskell because of laziness --- in strict
+[^5]: They are only equivalent in Haskell because of laziness --- in strict
     languages, they are different.
 
-[^5]: Some might recognize `Cofree ((->) r)` as a common way of implementing a
+[^6]: Some might recognize `Cofree ((->) r)` as a common way of implementing a
     [Moore machine](https://en.wikipedia.org/wiki/Moore_machine) in Haskell. In
     fact, our derivation here is basically a backwards version of [the process
-    described
-    here](https://www.schoolofhaskell.com/user/edwardk/moore/for-less).
+    described here by Edward
+    Kmett](https://www.schoolofhaskell.com/user/edwardk/moore/for-less).
 
-[^6]: The instance is [written out
+[^7]: The instance is [written out
     here](https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl-algebraic.hs#L58-L71).
 
-[^7]: Implementing a `tabulate` equivalent ([solution
+[^8]: Implementing a `tabulate` equivalent ([solution
     here](https://github.com/mstksg/inCode/tree/master/code-samples/adjunctions/foldl-algebraic.hs#L54-L56))
     reveals that this refactoring is only really useful for `index` (to
     "consume" a `Fold`) ... using `tabulate` or `leftAdjunct` to "produce" a
