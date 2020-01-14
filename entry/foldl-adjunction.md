@@ -331,7 +331,7 @@ Let's think about this from the beginning: What is the conceptual opposite of
 
 Well, what other thing is more naturally an opposite than "a list to be folded"!
 
--   `EnvList r`: Tuples a list of `r`
+-   `EnvList r`: A list of `r`
 -   `Fold r`: Consumes a list of `r`
 
 Or, in terms of the result of the functor application:
