@@ -515,7 +515,7 @@ More specifically, it's the [*Representable* State
 Monad](https://hackage.haskell.org/package/adjunctions/docs/Control-Monad-Representable-State.html).
 
 ``` {.haskell}
-type FoldEnv r = State [r] a
+type FoldEnv r = State [r]
 
 -- or, more literally, from Control.Monad.Representable.State
 type FoldEnv r = State (Fold r)
@@ -549,7 +549,7 @@ It's essentially the normal [`Store`
 comonad](https://hackage.haskell.org/package/comonad/docs/Control-Comonad-Store.html):
 
 ``` {.haskell}
-type EnvFold r a = Store [r] a
+type EnvFold r = Store [r]
 
 -- or, more literally, from Control.Comonad.Representable.Store
 type EnvFold r = Store (Fold r)
