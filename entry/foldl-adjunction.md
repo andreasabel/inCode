@@ -361,8 +361,9 @@ In addition, `F.foldMap` is arguably a fundamental (although maybe inefficient)
 way to *specify* a `Fold r`. A `Fold r` is, fundamentally, a list processor ---
 which is what `EnvList r a -> b` literally is (an `[r] -> b`). `Fold r` and
 `EnvList r` --- [dyads in the
-force](https://starwars.fandom.com/wiki/Dyad_in_the_Force). Or, well...literally
-*monads*, since all adjunctions give rise to monads, as we will see later.
+force](https://starwars.fandom.com/wiki/Dyad_in_the_Force). (Or,
+well...literally *monads*, since all adjunctions give rise to monads, as we will
+see later.)
 
 The fact that `EnvList r` and `Fold r` form an adjunction together formalizes
 the fact that they are conceptually "opposite" concepts, and also that they are
