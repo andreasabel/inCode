@@ -70,7 +70,7 @@
         , slugLength = 8
         }
     , codeSamples = Some "code-samples"
-    , copyright = "2018 Justin Le"
+    , copyright = "2020 Justin Le"
     , desc =
         ''
         Weblog of Justin Le, covering various adventures in programming and explorations in the worlds of computation physics, and knowledge.
