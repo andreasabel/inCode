@@ -28,8 +28,4 @@
       { level = < Amazing | Inactive | Support >.Amazing, twitter = None Text }
   , name = "Josh Vera"
   }
-, { info =
-      { level = < Amazing | Inactive | Support >.Amazing, twitter = None Text }
-  , name = "Bob Saget"
-  }
 ]
