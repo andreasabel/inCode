@@ -1,40 +1,31 @@
 [ { info =
       { level = < Amazing | Inactive | Support >.Support, twitter = None Text }
-  , name =
-      "Amir Saeid"
+  , name = "Amir Saeid"
   }
 , { info =
-      { level =
-          < Amazing | Inactive | Support >.Support
-      , twitter =
-          Some "argumatronic"
+      { level = < Amazing | Inactive | Support >.Support
+      , twitter = Some "argumatronic"
       }
-  , name =
-      "Julie Moronuki"
+  , name = "Julie Moronuki"
   }
 , { info =
       { level = < Amazing | Inactive | Support >.Support, twitter = None Text }
-  , name =
-      "Sam Stites"
+  , name = "Sam Stites"
   }
 , { info =
       { level = < Amazing | Inactive | Support >.Support, twitter = None Text }
-  , name =
-      "Finpan Halpenny"
+  , name = "Finpan Halpenny"
   }
 , { info =
       { level = < Amazing | Inactive | Support >.Support, twitter = None Text }
-  , name =
-      "Heneli Kailahi"
+  , name = "Heneli Kailahi"
   }
 , { info =
       { level = < Amazing | Inactive | Support >.Support, twitter = None Text }
-  , name =
-      "Josh Miller"
+  , name = "Josh Miller"
   }
 , { info =
       { level = < Amazing | Inactive | Support >.Amazing, twitter = None Text }
-  , name =
-      "Josh Vera"
+  , name = "Josh Vera"
   }
 ]
