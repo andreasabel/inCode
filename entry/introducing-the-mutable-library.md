@@ -1,7 +1,7 @@
 Introducing the mutable library
 ===============================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on January 23, 2020.
 > [Read online!](https://blog.jle.im/entry/introducing-the-mutable-library.html)
 
 **mutable**: [documentation](https://mutable.jle.im/) /
@@ -275,13 +275,19 @@ pattern, then `MyType f` doubles as both the pure type *and* the mutable type,
 just by choice of `f`. `MyTypeF Identity` would be the pure version, and
 `MyTypeF (RefFor m)` would be the mutable version.
 
-\`\`\`haskell top data MyTypeF f = MTF { mtfInt :: HKD f Int , mtfDouble :: HKD
-f Double , mtfVec :: HKD f (V.Vector Double) } deriving Generic
+``` {.haskell}
+data MyTypeF f = MTF
+    { mtfInt    :: HKD f Int
+    , mtfDouble :: HKD f Double
+    , mtfVec    :: HKD f (V.Vector Double)
+    }
+  deriving Generic
 
 type MyType' = MyTypeF Identity
 
-instance PrimMonad m =\> Mutable m MyType' where type Ref m MyType' = MyTypeF
-(RefFor m) \`\`\`\`
+instance PrimMonad m => Mutable m MyType' where
+    type Ref m MyType' = MyTypeF (RefFor m)
+```
 
 We can directly use it like a normal data type:
 
