@@ -36,8 +36,8 @@ adapt my [Functional
 Models](https://blog.jle.im/entries/series/+functional-models.html) framework to
 efficient Haskell code.
 
-To properly use Artificial Neural Networks with Haskell, you need to do a lot of
-independent piecewise mutations to matrices and vectors. This becomes
+To properly train Artificial Neural Networks with Haskell, you need to do a lot
+of independent piecewise mutations to matrices and vectors. This becomes
 inefficient, quickly, because you have to do a lot of copying in the process for
 pure vectors and neural network weights. This problem also comes up for
 efficient simulations that require mutating many different components
