@@ -129,10 +129,11 @@ For example, let's see the distinction between:
 
 What will either of these return, when you try to run it?
 
-Here we are using \texttt{undefined} as a way to directly observe evaluation in
-Haskell. This is a common trick people use when discussing evaluation in Haskell
---- it works because \texttt{undefined\ ::\ a} can take on any type, and any
-attempt to evaluate \texttt{undefined} can be immediately detected:
+Small note --- here, we are using \texttt{undefined} as a way to directly
+observe evaluation in Haskell. This is a common trick people use when discussing
+evaluation in Haskell --- it works because \texttt{undefined\ ::\ a} can take on
+any type, and any attempt to evaluate \texttt{undefined} can be immediately
+detected:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -145,8 +146,8 @@ attempt to evaluate \texttt{undefined} can be immediately detected:
 
 Think of it like laying a mine for poor old GHC to encounter. GHC tries to
 evaluate things, but when it tries to evaluate \texttt{undefined}, it
-immediately explodes and tells you that it has a boo-boo. Our investigation now
-becomes ``is this mine ever tripped, or not?''
+immediately explodes and tells you that it has a boo-boo. Our investigation
+becomes reframed as ``is this mine ever tripped, or not?''
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
@@ -179,7 +180,7 @@ instead just see a program locking up if a value is evaluated.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
-Let's try our let vs case situation out in ghci:
+With that in mind, let's find the answer to our previous question:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -232,21 +233,141 @@ explode.
 \hypertarget{option-one-of-one}{%
 \subsection{Option One of One}\label{option-one-of-one}}
 
-One potential confusion here is that answering ``does this value match this
-pattern'' seems silly for a tuple, since ``all'' tuples match that pattern,
-right?
+To someone new to Haskell (or unfamiliar with its semantics), it kind of seems
+silly that \texttt{case} would ``have'' to check \emph{which} constructor is
+being used\ldots since there is really only one option, \texttt{,}. Why can't
+\texttt{case} just know that it \emph{has} to be \texttt{,} and move on, without
+checking? Surely that would be more sensible.
 
 For example, let's look at a situation that is uncontroversial
 
-\begin{verbatim}
-ghci> case undefined of Left x -> False; Right y -> True
-*** Exception: Prelude.undefined
-\end{verbatim}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{case} \FunctionTok{undefined} \KeywordTok{of}
+        \DataTypeTok{Left}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{False}
+        \DataTypeTok{Right}\NormalTok{ y }\OtherTok{{-}>} \DataTypeTok{True}
+\OperatorTok{***} \DataTypeTok{Exception}\OperatorTok{:}\NormalTok{ Prelude.undefined}
+\end{Highlighting}
+\end{Shaded}
 
 Of \emph{course} that one has to explode, because it has to check if the
 \texttt{Either} is \texttt{Left} or \texttt{Right}. But in the case of
 \texttt{(x,\ y)}, it's always going to be \texttt{,}, so why can't it just
 ``know'' you are \texttt{(x,\ y)} since there isn't any other situation?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\OperatorTok{>} \KeywordTok{case} \FunctionTok{undefined} \KeywordTok{of}
+\NormalTok{        (x, y) }\OtherTok{{-}>} \DataTypeTok{False}
+\OperatorTok{***} \DataTypeTok{Exception}\OperatorTok{:}\NormalTok{ Prelude.undefined}
+\end{Highlighting}
+\end{Shaded}
+
+We know the answer will be \texttt{False} no matter what, so why bother
+checking? Why can't we just have it skip the check and return \texttt{False}?
+
+There are a couple of ways to approach this answer\ldots and I think all
+approaches illustrate something important about the philosophy of writing
+Haskell.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  If you shift your question from ``which constructor is it?'' to ``which
+  constructor was it \emph{made} with?'', then it starts to make sense.
+
+  Pattern matching isn't about asking ``which constructor does this value
+  match?'', but rather ``which constructor was this value \emph{made} with?''
+
+  So, it would be unwise to just have GHC skip the check. When we are doing
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{case}\NormalTok{ blahblah }\KeywordTok{of}
+\NormalTok{  (x, y) }\OtherTok{{-}>} \CommentTok{{-}{-} ...}
+\end{Highlighting}
+\end{Shaded}
+
+  We don't \emph{really} care ``what is \texttt{blahblah}''? We care ``how was
+  \texttt{blahblah} made?''
+
+  Under this light, we see that there actually are many ways to make a tuple
+  value \emph{without} ever using \texttt{(,)}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{tup1 ::}\NormalTok{ (}\DataTypeTok{Int}\NormalTok{, }\DataTypeTok{Bool}\NormalTok{)}
+\NormalTok{tup1 }\OtherTok{=} \FunctionTok{undefined}
+
+\OtherTok{tup2 ::}\NormalTok{ (}\DataTypeTok{Int}\NormalTok{, }\DataTypeTok{Bool}\NormalTok{)}
+\NormalTok{tup2 }\OtherTok{=}\NormalTok{ go }\DecValTok{0}
+  \KeywordTok{where}
+\NormalTok{    go n }\OtherTok{=}\NormalTok{ go (n }\OperatorTok{+} \DecValTok{1}\NormalTok{)}
+
+\OtherTok{tup3 ::}\NormalTok{ (}\DataTypeTok{Int}\NormalTok{, }\DataTypeTok{Bool}\NormalTok{)}
+\NormalTok{tup3}
+  \OperatorTok{|} \FunctionTok{even}\NormalTok{ (}\FunctionTok{sum}\NormalTok{ [}\DecValTok{1}\OperatorTok{..}\NormalTok{]) }\OtherTok{=}\NormalTok{ (}\DecValTok{3}\NormalTok{, }\DataTypeTok{True}\NormalTok{)}
+  \OperatorTok{|} \FunctionTok{otherwise}        \OtherTok{=} \FunctionTok{undefined}
+\end{Highlighting}
+\end{Shaded}
+
+  We can see here three perfectly valid values of type \texttt{(Int,\ Bool)}
+  that are \emph{not} constructed with \texttt{(,)}, or at least where the
+  question is ambiguous and up in the air. So \emph{skipping} checking the
+  constructor here is skipping the real question -- not ``what pattern does it
+  match'', but ``what was it made with''.
+\item
+  Haskell \texttt{data} declarations with boxed fields all follow the same
+  general schema in memory:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{MyType} \OtherTok{=} \DataTypeTok{A} \DataTypeTok{Int} \DataTypeTok{Bool}
+            \OperatorTok{|} \DataTypeTok{B} \DataTypeTok{String} \DataTypeTok{Double}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
++--------+------------------------+-------------------------+
+| A or B | pointer to first field | pointer to second field |
++--------+------------------------+-------------------------+
+\end{verbatim}
+
+  So, for example, a value like \texttt{A\ 3\ True} would look like:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+    \OperatorTok{+{-}{-}{-}+{-}{-}{-}+{-}{-}{-}+}
+\OperatorTok{{-}{-}>} \OperatorTok{|} \DataTypeTok{A} \OperatorTok{|}\NormalTok{ o }\OperatorTok{|}\NormalTok{ o }\OperatorTok{|}
+    \OperatorTok{+{-}{-}{-}+{-}|{-}+{-}|{-}+}
+      \OperatorTok{|}   \OperatorTok{|}
+\NormalTok{      v   v}
+      \DecValTok{3}   \DataTypeTok{True}
+\end{Highlighting}
+\end{Shaded}
+
+  For a type with a single constructor, that initial ``which constructor'' field
+  is still there. This just makes things a little more consistent --- there is
+  no special-case for a single-constructor situation.
+
+  When considering sematics, there is no fundamental difference between a
+  single-constructor type and a multi-constructor type. A single-constructor
+  type is just an n-constructor type where n = 1. This means that a type like:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{MyType} \OtherTok{=} \DataTypeTok{A} \DataTypeTok{Int} \DataTypeTok{Bool}
+\end{Highlighting}
+\end{Shaded}
+
+  will still have the constructor byte at the front:
+
+\begin{verbatim}
++---+------------------------+-------------------------+
+| A | pointer to first field | pointer to second field |
++---+------------------------+-------------------------+
+\end{verbatim}
+\end{enumerate}
 
 To me, the underlying reason is \emph{consistency}. A lot of beginners, when
 starting Haskell, come to the impression that Haskell is \emph{magical}: it just
