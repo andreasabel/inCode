@@ -48,9 +48,12 @@ The root "problem" of the silly javascript snippet is that `typeof a` returns a
 `string`, and not ... well, a type.
 
 So from the start, let's establish the idea of a "data type" as whatever it is
-that `typeof a` might return. And let's exit the world of javascript a bit and
-imagine that `typeof a` returns some sort of abstract value that denotes the
-idea of what type is supposed to be.
+that `typeof a` might return.
+
+We're going to exit the "world" of javascript a bit and talk about what it would
+mean to add (and do other stuff) to *types* together. We're not going to be
+literally implementing `+` for types, but rather imagining "what the result" of
+adding two types might be, in an abstract way.
 
 --------------------------------------------------------------------------------
 
