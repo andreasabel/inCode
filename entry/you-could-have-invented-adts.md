@@ -23,6 +23,9 @@ invented the idea yourself, just by playing around with types. And maybe, as a
 bonus along the way, you'll be able to also see why they might be a useful
 concept.
 
+The idea for this post came from a tweet I saw from [Joe
+Groff](https://twitter.com/jckarter):
+
 <blockquote class="twitter-tweet">
 <p lang="en" dir="ltr">
 Is this what they mean by "sum types"
@@ -34,7 +37,20 @@ Is this what they mean by "sum types"
 </blockquote>
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-Hi.
+It got me thinking: if you *didn't* know what sum types where, how *would* you
+attempt to make sense out of `typeof a + typeof b`? What answer makes the most
+sense?
+
+Pocket full of posies
+---------------------
+
+The root "problem" of the silly javascript snippet is that `typeof a` returns a
+`string`, and not ... well, a type.
+
+So from the start, let's establish the idea of a "data type" as whatever it is
+that `typeof a` might return. And let's exit the world of javascript a bit and
+imagine that `typeof a` returns some sort of abstract value that denotes the
+idea of what type is supposed to be.
 
 --------------------------------------------------------------------------------
 
