@@ -107,7 +107,12 @@ Code}}.}
 \href{http://hackage.haskell.org/package/mutable}{reference} /
 \href{https://github.com/mstksg/mutable}{github}
 
-I'm excited to announce the first release of the
+(\emph{Note:} This post has been heavily revised to reflect
+\emph{mutable-0.2.0.0}, as of July 2020. For reference,
+\href{https://github.com/mstksg/inCode/blob/7c25dd3798955e8287d31774da6fe34015256b5a/entry/introducing-the-mutable-library.md}{the
+original post} is available on github.)
+
+I'm excited to announce the release of the
 \emph{\href{https://mutable.jle.im/}{mutable}} library!
 
 The library offers what I call \emph{beautiful mutable values}\footnote{Okay so
@@ -181,6 +186,9 @@ However, this is extremely efficient with a mutable vector:
 \end{Highlighting}
 \end{Shaded}
 
+(this action is run in \texttt{ST}, the monad for mutable actions that is
+provided by GHC)
+
 This is because all of the other items in the vector are kept the same and not
 copied-over over the course of one million updates. It is
 \includegraphics{https://latex.codecogs.com/png.latex?O\%28n\%2Bl\%29} in memory
@@ -227,10 +235,10 @@ We'd have to write functions to ``thaw'' and ``freeze''
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{thawTwoVec ::}\NormalTok{ (s }\OperatorTok{\textasciitilde{}} \DataTypeTok{PrimState}\NormalTok{ m) }\OtherTok{=>} \DataTypeTok{TwoVec} \OtherTok{{-}>}\NormalTok{ m (}\DataTypeTok{TwoVecRef}\NormalTok{ s)}
+\OtherTok{thawTwoVec ::} \DataTypeTok{TwoVec} \OtherTok{{-}>} \DataTypeTok{ST}\NormalTok{ s (}\DataTypeTok{TwoVecRef}\NormalTok{ s)}
 \NormalTok{thawTwoVec (}\DataTypeTok{TV}\NormalTok{ x y) }\OtherTok{=} \DataTypeTok{TVR} \OperatorTok{<$>}\NormalTok{ V.thaw x }\OperatorTok{<*>}\NormalTok{ V.thaw y}
 
-\OtherTok{freezeTwoVec ::}\NormalTok{ (s }\OperatorTok{\textasciitilde{}} \DataTypeTok{PrimState}\NormalTok{ m) }\OtherTok{=>} \DataTypeTok{TwoVecRef}\NormalTok{ s }\OtherTok{{-}>}\NormalTok{ m }\DataTypeTok{TwoVec}
+\OtherTok{freezeTwoVec ::} \DataTypeTok{TwoVecRef}\NormalTok{ s }\OtherTok{{-}>} \DataTypeTok{ST}\NormalTok{ s }\DataTypeTok{TwoVec}
 \NormalTok{freezeTwoVec (}\DataTypeTok{TVR}\NormalTok{ u v) }\OtherTok{=} \DataTypeTok{TV} \OperatorTok{<$>}\NormalTok{ V.freeze u }\OperatorTok{<*>}\NormalTok{ V.freze v}
 \end{Highlighting}
 \end{Shaded}
@@ -242,26 +250,26 @@ of every data type.
 \subsection{Solution}\label{solution}}
 
 The library provides the \texttt{Mutable} typeclass and the \texttt{GRef} type,
-where \texttt{GRef\ m\ X} is the automatically derived piecewise-mutable version
+where \texttt{GRef\ s\ X} is the automatically derived piecewise-mutable version
 of \texttt{X}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{instance} \DataTypeTok{PrimMonad}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Mutable}\NormalTok{ m }\DataTypeTok{TwoVec} \KeywordTok{where}
-    \KeywordTok{type} \DataTypeTok{Ref}\NormalTok{ m }\DataTypeTok{TwoVec} \OtherTok{=} \DataTypeTok{GRef}\NormalTok{ m }\DataTypeTok{TwoVec}
+\KeywordTok{instance} \DataTypeTok{Mutable}\NormalTok{ s }\DataTypeTok{TwoVec} \KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Ref}\NormalTok{ s }\DataTypeTok{TwoVec} \OtherTok{=} \DataTypeTok{GRef}\NormalTok{ s }\DataTypeTok{TwoVec}
 \end{Highlighting}
 \end{Shaded}
 
-The type \texttt{GRef\ m\ TwoVec} is \emph{exactly} the \texttt{TwoVecRef} that
+The type \texttt{GRef\ s\ TwoVec} is \emph{exactly} the \texttt{TwoVecRef} that
 we defined earlier: it is a tuple of two \texttt{MVector}s. It can do this
 because \texttt{Vector} itself has a \texttt{Mutable} instance, where its
-mutable version is \texttt{MVector}. \texttt{GRef\ m\ TwoVec} is essentially the
+mutable version is \texttt{MVector}. \texttt{GRef\ s\ TwoVec} is essentially the
 ``MVector'' of \texttt{TwoVec}.
 
 This now gives us
-\texttt{thawRef\ ::\ TwoVec\ -\textgreater{}\ m\ (GRef\ m\ TwoVec)} and
-\texttt{freezeRef\ ::\ GRef\ m\ TwoVec\ -\textgreater{}\ m\ TwoVec}, for free,
-so we can write:
+\texttt{thawRef\ ::\ TwoVec\ -\textgreater{}\ ST\ s\ (GRef\ s\ TwoVec)} and
+\texttt{freezeRef\ ::\ GRef\ s\ TwoVec\ -\textgreater{}\ ST\ s\ TwoVec}, for
+free, so we can write:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -283,7 +291,7 @@ in-place piecewise. You can compose two functions that each work piecewise on
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{mut1 ::} \DataTypeTok{PrimMonad}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Ref}\NormalTok{ m }\DataTypeTok{TwoVec} \OtherTok{{-}>}\NormalTok{ m ()}
+\OtherTok{mut1 ::} \DataTypeTok{Ref}\NormalTok{ s }\DataTypeTok{TwoVec} \OtherTok{{-}>} \DataTypeTok{ST}\NormalTok{ s ()}
 \NormalTok{mut1 v }\OtherTok{=} \KeywordTok{do}
 \NormalTok{    withField }\OperatorTok{\#}\NormalTok{tv1 v }\OperatorTok{$}\NormalTok{ \textbackslash{}u }\OtherTok{{-}>}
 \NormalTok{      MV.modify u }\DecValTok{0}\NormalTok{ (}\OperatorTok{+} \DecValTok{1}\NormalTok{)}
@@ -292,7 +300,7 @@ in-place piecewise. You can compose two functions that each work piecewise on
 \NormalTok{      MV.modify u }\DecValTok{2}\NormalTok{ (}\OperatorTok{+} \DecValTok{3}\NormalTok{)}
 \NormalTok{      MV.modify u }\DecValTok{3}\NormalTok{ (}\OperatorTok{+} \DecValTok{4}\NormalTok{)}
 
-\OtherTok{mut2 ::} \DataTypeTok{PrimMonad}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Ref}\NormalTok{ m }\DataTypeTok{TwoVec} \OtherTok{{-}>}\NormalTok{ m ()}
+\OtherTok{mut2 ::} \DataTypeTok{Ref}\NormalTok{ s }\DataTypeTok{TwoVec} \OtherTok{{-}>} \DataTypeTok{ST}\NormalTok{ s ()}
 \NormalTok{mut2 v }\OtherTok{=} \KeywordTok{do}
 \NormalTok{    withField }\OperatorTok{\#}\NormalTok{tv1 v }\OperatorTok{$}\NormalTok{ \textbackslash{}u }\OtherTok{{-}>}
 \NormalTok{      MV.modify u }\DecValTok{4}\NormalTok{ (}\OperatorTok{+} \DecValTok{1}\NormalTok{)}
@@ -340,8 +348,8 @@ list type \ldots{} for free!
   \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Show}\NormalTok{, }\DataTypeTok{Generic}\NormalTok{)}
 \KeywordTok{infixr} \DecValTok{5} \OtherTok{\textasciigrave{}Cons\textasciigrave{}}
 
-\KeywordTok{instance}\NormalTok{ (}\DataTypeTok{Mutable}\NormalTok{ m a, }\DataTypeTok{PrimMonad}\NormalTok{ m) }\OtherTok{=>} \DataTypeTok{Mutable}\NormalTok{ m (}\DataTypeTok{List}\NormalTok{ a) }\KeywordTok{where}
-    \KeywordTok{type} \DataTypeTok{Ref}\NormalTok{ m (}\DataTypeTok{List}\NormalTok{ a) }\OtherTok{=} \DataTypeTok{GRef}\NormalTok{ m (}\DataTypeTok{List}\NormalTok{ a)}
+\KeywordTok{instance} \DataTypeTok{Mutable}\NormalTok{ s a }\OtherTok{=>} \DataTypeTok{Mutable}\NormalTok{ m (}\DataTypeTok{List}\NormalTok{ a) }\KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Ref}\NormalTok{ s (}\DataTypeTok{List}\NormalTok{ a) }\OtherTok{=} \DataTypeTok{GRef}\NormalTok{ s (}\DataTypeTok{List}\NormalTok{ a)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -356,9 +364,9 @@ list. For example, a function to check if a linked list is empty:
 \begin{Highlighting}[]
 \CommentTok{{-}{-} | Check if a mutable linked list is currently empty}
 \NormalTok{isEmpty}
-\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{PrimMonad}\NormalTok{ m, }\DataTypeTok{Mutable}\NormalTok{ m a)}
-    \OtherTok{=>} \DataTypeTok{Ref}\NormalTok{ m (}\DataTypeTok{List}\NormalTok{ a)}
-    \OtherTok{{-}>}\NormalTok{ m }\DataTypeTok{Bool}
+\OtherTok{    ::} \DataTypeTok{Mutable}\NormalTok{ s a}
+    \OtherTok{=>} \DataTypeTok{Ref}\NormalTok{ s (}\DataTypeTok{List}\NormalTok{ a)}
+    \OtherTok{{-}>} \DataTypeTok{ST}\NormalTok{ s }\DataTypeTok{Bool}
 \NormalTok{isEmpty }\OtherTok{=}\NormalTok{ hasBranch (constrMB }\OperatorTok{\#}\NormalTok{\_Nil)}
 \end{Highlighting}
 \end{Shaded}
@@ -369,9 +377,9 @@ and shifting the rest of the list up.
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{popStack}
-\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{PrimMonad}\NormalTok{ m, }\DataTypeTok{Mutable}\NormalTok{ m a)}
-    \OtherTok{=>} \DataTypeTok{Ref}\NormalTok{ m (}\DataTypeTok{List}\NormalTok{ a)}
-    \OtherTok{{-}>}\NormalTok{ m (}\DataTypeTok{Maybe}\NormalTok{ a)}
+\OtherTok{    ::} \DataTypeTok{Mutable}\NormalTok{ s a}
+    \OtherTok{=>} \DataTypeTok{Ref}\NormalTok{ s (}\DataTypeTok{List}\NormalTok{ a)}
+    \OtherTok{{-}>} \DataTypeTok{ST}\NormalTok{ s (}\DataTypeTok{Maybe}\NormalTok{ a)}
 \NormalTok{popStack xs }\OtherTok{=} \KeywordTok{do}
 \NormalTok{    c }\OtherTok{<{-}}\NormalTok{ projectBranch (constrMB }\OperatorTok{\#}\NormalTok{\_Cons) xs}
 \NormalTok{    forM c }\OperatorTok{$}\NormalTok{ \textbackslash{}(y, ys) }\OtherTok{{-}>} \KeywordTok{do}
@@ -386,10 +394,10 @@ And a function to concatenate a second linked list to the end of a first one:
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{concatLists}
-\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{PrimMonad}\NormalTok{ m, }\DataTypeTok{Mutable}\NormalTok{ m a)}
-    \OtherTok{=>} \DataTypeTok{Ref}\NormalTok{ m (}\DataTypeTok{List}\NormalTok{ a)}
-    \OtherTok{{-}>} \DataTypeTok{Ref}\NormalTok{ m (}\DataTypeTok{List}\NormalTok{ a)}
-    \OtherTok{{-}>}\NormalTok{ m ()}
+\OtherTok{    ::} \DataTypeTok{Mutable}\NormalTok{ s a}
+    \OtherTok{=>} \DataTypeTok{Ref}\NormalTok{ s (}\DataTypeTok{List}\NormalTok{ a)}
+    \OtherTok{{-}>} \DataTypeTok{Ref}\NormalTok{ s (}\DataTypeTok{List}\NormalTok{ a)}
+    \OtherTok{{-}>} \DataTypeTok{ST}\NormalTok{ s ()}
 \NormalTok{concatLists l1 l2 }\OtherTok{=} \KeywordTok{do}
 \NormalTok{    c }\OtherTok{<{-}}\NormalTok{ projectBranch consBranch l1}
     \KeywordTok{case}\NormalTok{ c }\KeywordTok{of}
@@ -424,8 +432,8 @@ version.
 
 \KeywordTok{type} \DataTypeTok{MyType\textquotesingle{}} \OtherTok{=} \DataTypeTok{MyTypeF} \DataTypeTok{Identity}
 
-\KeywordTok{instance} \DataTypeTok{PrimMonad}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Mutable}\NormalTok{ m }\DataTypeTok{MyType\textquotesingle{}} \KeywordTok{where}
-    \KeywordTok{type} \DataTypeTok{Ref}\NormalTok{ m }\DataTypeTok{MyType\textquotesingle{}} \OtherTok{=} \DataTypeTok{MyTypeF}\NormalTok{ (}\DataTypeTok{RefFor}\NormalTok{ m)}
+\KeywordTok{instance} \DataTypeTok{Mutable}\NormalTok{ s }\DataTypeTok{MyType\textquotesingle{}} \KeywordTok{where}
+    \KeywordTok{type} \DataTypeTok{Ref}\NormalTok{ s }\DataTypeTok{MyType\textquotesingle{}} \OtherTok{=} \DataTypeTok{MyTypeF}\NormalTok{ (}\DataTypeTok{RefFor}\NormalTok{ s)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -438,13 +446,13 @@ We can directly use it like a normal data type:
 \end{Highlighting}
 \end{Shaded}
 
-But now, \texttt{MyTypeF\ (RefFor\ m)} literally has mutable references as its
+But now, \texttt{MyTypeF\ (RefFor\ s)} literally has mutable references as its
 fields. You can pattern match to get \texttt{rI\ ::\ MutVar\ s\ Int},
 \texttt{rD\ ::\ MutVar\ s\ Double}, and \texttt{rV\ ::\ MVector\ s\ Double}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\DataTypeTok{MTF}\NormalTok{ rI rD}\OtherTok{ rV ::} \DataTypeTok{MyTypeF}\NormalTok{ (}\DataTypeTok{RefFor}\NormalTok{ m)}
+\DataTypeTok{MTF}\NormalTok{ rI rD}\OtherTok{ rV ::} \DataTypeTok{MyTypeF}\NormalTok{ (}\DataTypeTok{RefFor}\NormalTok{ s)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -453,8 +461,7 @@ and the accessors work as well:
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{mtfVec}
-\OtherTok{    ::}\NormalTok{ (s }\OperatorTok{\textasciitilde{}} \DataTypeTok{PrimState}\NormalTok{ m)}
-    \OtherTok{{-}>} \DataTypeTok{MyTypeF}\NormalTok{ (}\DataTypeTok{RefFor}\NormalTok{ m)}
+\OtherTok{    ::} \DataTypeTok{MyTypeF}\NormalTok{ (}\DataTypeTok{RefFor}\NormalTok{ s)}
     \OtherTok{{-}>} \DataTypeTok{MVector}\NormalTok{ s }\DataTypeTok{Double}
 \end{Highlighting}
 \end{Shaded}
@@ -482,6 +489,19 @@ You can use it like:
 
 The ``mutable version'' of a type literally \emph{is} the ADT, if you use the
 higher-kinded data pattern!
+
+\hypertarget{a-polymorphic-picture}{%
+\subsection{A Polymorphic Picture}\label{a-polymorphic-picture}}
+
+One important thing to note when looking at the actual library --- the examples
+in this post show the provided actions in \texttt{ST}, the mutable actions monad
+provided by GHC. However, the library provides these actions polymorphic for all
+\texttt{PrimMonad\ m}, an abstraction provided by the
+\emph{\href{https://hackage.haskell.org/package/primitive}{primitive}} library
+to generalize for all ``mutable monads'' (like \texttt{IO} and monad
+transformers applied to \texttt{IO} and \texttt{ST}), as long as
+\texttt{PrimState\ m\ \textasciitilde{}\ s}, so you can run them in whatever
+useful mutable monads you'd like.
 
 \hypertarget{reflections-on-generic}{%
 \section{Reflections on Generic}\label{reflections-on-generic}}
