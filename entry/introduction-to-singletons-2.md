@@ -30,7 +30,7 @@ Review
 Let's return to our `Door` type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L22-L28
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L23-L29
 
 $(singletons [d|
   data DoorState = Opened | Closed | Locked
@@ -127,11 +127,16 @@ type**:
 data SomeDoor = forall s. MkSomeDoor (Sing s) (Door s)
 
 -- or, using GADT syntax (preferred)
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L59-L60
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L60-L61
 
 data SomeDoor :: Type where
     MkSomeDoor :: Sing s -> Door s -> SomeDoor
 ```
+
+(Remember that `Sing s`, when `s` is a `DoorState`, is a type "synonym" for our
+favorite door singleton `SDoorState s`. We're going to switch to using `Sing s`
+instead of `SDoorState s` for the rest of this series just to move into a more
+universal style where we treat the `Sing` as basically syntactical noise)
 
 `MkSomeDoor` is a constructor for an existential data type, meaning that the
 data type "hides" a type variable `s`. Note the type
@@ -162,7 +167,7 @@ Let's write some basic functions to see. First, a function to "make" a
 `SomeDoor` from a `Door`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L62-L66
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L63-L67
 
 fromDoor :: Sing s -> Door s -> SomeDoor
 fromDoor = MkSomeDoor
@@ -176,7 +181,7 @@ functions to `SomeDoor`, by re-using our pre-existing functions whenever we can,
 and *pattern matching* on `MkSomeDoor`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L68-L75
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L69-L76
 
 closeSomeOpenedDoor :: SomeDoor -> Maybe SomeDoor
 closeSomeOpenedDoor (MkSomeDoor s d) = case s of
@@ -447,7 +452,7 @@ We can actually use these to write `mkSomeDoor` and `withDoor` in a nicer way,
 without directly pattern matching on our constructors:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L77-L82
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L78-L83
 
 mkSomeDoor :: DoorState -> String -> SomeDoor
 mkSomeDoor ds = case toSing ds of
@@ -466,9 +471,9 @@ at how *singletons* (the design pattern, and the library) helps us in general.
 
 ### Sing
 
-The crux of everything is the `Sing :: Type -> Type` indexed type. If you see a
-value of type `Sing s`, you should really just think "a runtime witness for
-`s`". If you see:
+The crux of everything is the `Sing :: k -> Type` kind-indexed injective type
+family. If you see a value of type `Sing s`, you should really just think "a
+runtime witness for `s`". If you see:
 
 ``` {.haskell}
 lockAnyDoor :: Sing s -> Door s -> Door 'Locked
@@ -502,9 +507,11 @@ singletons.
 
 It is important to remember that `Sing` is poly-kinded, so we can have
 `Sing 'Opened`, but also `Sing 'True`, `Sing 5`, and
-`Sing '['Just 3, 'Nothing, 'Just 0]` as well. This is the real benefit of using
-the *singletons* library instead of writing our own singletons -- we get to work
-uniformly with singletons of all kinds.
+`Sing '['Just 3, 'Nothing, 'Just 0]` as well. `Sing x` is an "synonym" for
+`SDoorState x` when `x` is a `DoorState`, but `Sing x` is a "synonym" for
+`SBool x` is a `Bool`. This is the real benefit of using the *singletons*
+library instead of writing our own singletons -- we get to work uniformly with
+singletons of all kinds.
 
 #### SingI
 
@@ -537,7 +544,7 @@ is passed in using a typeclass.
 We can *convert* from `SingI s ->` style to `SingI s =>` style using `sing`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L53-L66
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L54-L67
 
 lockAnyDoor_ :: SingI s => Door s -> Door 'Locked
 lockAnyDoor_ = lockAnyDoor sing
@@ -694,8 +701,12 @@ And a more sophisticated example, let's look at the instance for `Maybe`:
 
 ``` {.haskell}
 -- Maybe singletons have two constructors:
-SNothing :: Sing 'Nothing
-SJust    :: Sing x -> Sing ('Just x)
+data SMaybe :: Maybe k -> Type where
+    SNothing :: SMaybe 'Nothing
+    SJust    :: Sing x -> SMaybe ('Just x)
+
+-- The syntax for declaring an instance for the kind-indexed type family
+type instance Sing = SMaybe
 
 instance SingKind k => SingKind (Maybe k) where     -- the *kind* Maybe
     type Demote (Maybe k) = Maybe (Demote k)        -- the *type* Maybe
@@ -806,7 +817,7 @@ for solutions!
     `SomeDoor`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L59-L90
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L60-L91
 
     data OldSomeDoor :: Type where
         OldMkSomeDoor :: DoorState -> String -> OldSomeDoor
@@ -819,7 +830,7 @@ for solutions!
     between the two:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L92-L95
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L93-L96
 
     toOld :: SomeDoor -> OldSomeDoor
 
@@ -841,7 +852,7 @@ for solutions!
     Otherwise, *return the original locked door* (in a `SomeDoor`).
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L98-L103
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L99-L104
 
     unlockDoor :: Int -> Door 'Locked -> Maybe (Door 'Closed)
     unlockDoor n (UnsafeMkDoor m)
@@ -855,7 +866,7 @@ for solutions!
 3.  Implement `openAnyDoor'` in the same style, with respect to `openAnyDoor`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L108-L117
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L109-L118
 
     openAnyDoor :: SingI s => Int -> Door s -> Maybe (Door 'Opened)
     openAnyDoor n = openAnyDoor_ sing
@@ -875,13 +886,15 @@ for solutions!
 4.  Write the `SingKind` instance for the promoted kind of a custom list type:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L123-L129
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door2.hs#L124-L132
 
     data List a = Nil | Cons a (List a)
 
-    data instance Sing (x :: List k) where
-        SNil  :: Sing 'Nil
-        SCons :: Sing x -> Sing xs -> Sing ('Cons x xs)
+    data SList :: List a -> Type where
+        SNil  :: SList 'Nil
+        SCons :: Sing x -> SList xs -> SList ('Cons x xs)
+
+    type instance Sing = SList
 
     instance SingKind k => SingKind (List k) where
         type Demote (List k) = ???
@@ -891,13 +904,6 @@ for solutions!
 
         toSing :: List (Demote k) -> SomeSing (List k)
         toSing = ???
-    ```
-
-    The singletons for `List` are:
-
-    ``` {.haskell}
-    SNil  :: Sing 'Nil
-    SCons :: Sing x -> Sing xs -> Sing ('Cons x xs)
     ```
 
     Note that the built-in singletons for the list type also uses these same

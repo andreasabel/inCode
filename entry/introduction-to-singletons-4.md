@@ -27,7 +27,7 @@ Just as a quick review, this entire series we have been working with a `Door`
 type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L23-L32
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L24-L33
 
 $(singletons [d|
   data DoorState = Opened | Closed | Locked
@@ -163,7 +163,7 @@ $(singletons [d|
 This makes writing `mergeDoor`'s type clean to read:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L42-L46
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L43-L47
 
 mergeDoor
     :: Door s
@@ -176,7 +176,7 @@ And, with the help of singletons, we can also write this for our doors where we
 don't know the types until runtime:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L48-L50
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L49-L51
 
 mergeSomeDoor :: SomeDoor -> SomeDoor -> SomeDoor
 mergeSomeDoor (MkSomeDoor s d) (MkSomeDoor t e) =
@@ -214,7 +214,7 @@ by a door. We'll structure it like a linked list, and store the list of all door
 states as a type-level list as a type parameter:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L52-L60
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L53-L61
 
 data Hallway :: [DoorState] -> Type where
     HEnd  :: Hallway '[]        -- ^ end of the hallway, a stretch with no
@@ -276,7 +276,7 @@ singleton function `sMergeStateList :: Sing ss -> Sing (MergeStateList ss)`.
 With this, we can write `collapseHallway`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L68-L70
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/singletons/Door4.hs#L69-L71
 
 collapseHallway :: Hallway ss -> Door (MergeStateList ss)
 collapseHallway HEnd       = mkDoor SOpened "End of Hallway"

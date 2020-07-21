@@ -127,7 +127,7 @@ Let's return to our \texttt{Door} type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L22{-}L28}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L23{-}L29}
 
 \OperatorTok{$}\NormalTok{(singletons [d|}
 \NormalTok{  data DoorState = Opened | Closed | Locked}
@@ -242,12 +242,18 @@ actually implement \texttt{SomeDoor} \emph{in terms of} \texttt{Door}, using an
 \KeywordTok{data} \DataTypeTok{SomeDoor} \OtherTok{=} \KeywordTok{forall}\NormalTok{ s}\OperatorTok{.} \DataTypeTok{MkSomeDoor}\NormalTok{ (}\DataTypeTok{Sing}\NormalTok{ s) (}\DataTypeTok{Door}\NormalTok{ s)}
 
 \CommentTok{{-}{-} or, using GADT syntax (preferred)}
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L59{-}L60}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L60{-}L61}
 
 \KeywordTok{data} \DataTypeTok{SomeDoor}\OtherTok{ ::} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{MkSomeDoor}\OtherTok{ ::} \DataTypeTok{Sing}\NormalTok{ s }\OtherTok{{-}>} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{{-}>} \DataTypeTok{SomeDoor}
 \end{Highlighting}
 \end{Shaded}
+
+(Remember that \texttt{Sing\ s}, when \texttt{s} is a \texttt{DoorState}, is a
+type ``synonym'' for our favorite door singleton \texttt{SDoorState\ s}. We're
+going to switch to using \texttt{Sing\ s} instead of \texttt{SDoorState\ s} for
+the rest of this series just to move into a more universal style where we treat
+the \texttt{Sing} as basically syntactical noise)
 
 \texttt{MkSomeDoor} is a constructor for an existential data type, meaning that
 the data type ``hides'' a type variable \texttt{s}. Note the type
@@ -282,7 +288,7 @@ Let's write some basic functions to see. First, a function to ``make'' a
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L62{-}L66}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L63{-}L67}
 
 \OtherTok{fromDoor ::} \DataTypeTok{Sing}\NormalTok{ s }\OtherTok{{-}>} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{{-}>} \DataTypeTok{SomeDoor}
 \NormalTok{fromDoor }\OtherTok{=} \DataTypeTok{MkSomeDoor}
@@ -298,7 +304,7 @@ functions whenever we can, and \emph{pattern matching} on \texttt{MkSomeDoor}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L68{-}L75}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L69{-}L76}
 
 \OtherTok{closeSomeOpenedDoor ::} \DataTypeTok{SomeDoor} \OtherTok{{-}>} \DataTypeTok{Maybe} \DataTypeTok{SomeDoor}
 \NormalTok{closeSomeOpenedDoor (}\DataTypeTok{MkSomeDoor}\NormalTok{ s d) }\OtherTok{=} \KeywordTok{case}\NormalTok{ s }\KeywordTok{of}
@@ -634,7 +640,7 @@ a nicer way, without directly pattern matching on our constructors:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L77{-}L82}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L78{-}L83}
 
 \OtherTok{mkSomeDoor ::} \DataTypeTok{DoorState} \OtherTok{{-}>} \DataTypeTok{String} \OtherTok{{-}>} \DataTypeTok{SomeDoor}
 \NormalTok{mkSomeDoor ds }\OtherTok{=} \KeywordTok{case}\NormalTok{ toSing ds }\KeywordTok{of}
@@ -656,9 +662,9 @@ helps us in general.
 \hypertarget{sing}{%
 \subsection{Sing}\label{sing}}
 
-The crux of everything is the \texttt{Sing\ ::\ Type\ -\textgreater{}\ Type}
-indexed type. If you see a value of type \texttt{Sing\ s}, you should really
-just think ``a runtime witness for \texttt{s}''. If you see:
+The crux of everything is the \texttt{Sing\ ::\ k\ -\textgreater{}\ Type}
+kind-indexed injective type family. If you see a value of type \texttt{Sing\ s},
+you should really just think ``a runtime witness for \texttt{s}''. If you see:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -702,9 +708,11 @@ It is important to remember that \texttt{Sing} is poly-kinded, so we can have
 \texttt{Sing\ \textquotesingle{}Opened}, but also
 \texttt{Sing\ \textquotesingle{}True}, \texttt{Sing\ 5}, and
 \texttt{Sing\ \textquotesingle{}{[}\textquotesingle{}Just\ 3,\ \textquotesingle{}Nothing,\ \textquotesingle{}Just\ 0{]}}
-as well. This is the real benefit of using the \emph{singletons} library instead
-of writing our own singletons -- we get to work uniformly with singletons of all
-kinds.
+as well. \texttt{Sing\ x} is an ``synonym'' for \texttt{SDoorState\ x} when
+\texttt{x} is a \texttt{DoorState}, but \texttt{Sing\ x} is a ``synonym'' for
+\texttt{SBool\ x} is a \texttt{Bool}. This is the real benefit of using the
+\emph{singletons} library instead of writing our own singletons -- we get to
+work uniformly with singletons of all kinds.
 
 \hypertarget{singi}{%
 \subsubsection{SingI}\label{singi}}
@@ -746,7 +754,7 @@ We can \emph{convert} from \texttt{SingI\ s\ -\textgreater{}} style to
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L53{-}L66}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L54{-}L67}
 
 \OtherTok{lockAnyDoor\_ ::} \DataTypeTok{SingI}\NormalTok{ s }\OtherTok{=>} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{{-}>} \DataTypeTok{Door} \DataTypeTok{\textquotesingle{}Locked}
 \NormalTok{lockAnyDoor\_ }\OtherTok{=}\NormalTok{ lockAnyDoor sing}
@@ -924,8 +932,12 @@ And a more sophisticated example, let's look at the instance for \texttt{Maybe}:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{{-}{-} Maybe singletons have two constructors:}
-\DataTypeTok{SNothing}\OtherTok{ ::} \DataTypeTok{Sing} \DataTypeTok{\textquotesingle{}Nothing}
-\DataTypeTok{SJust}\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ (}\DataTypeTok{\textquotesingle{}Just}\NormalTok{ x)}
+\KeywordTok{data} \DataTypeTok{SMaybe}\OtherTok{ ::} \DataTypeTok{Maybe}\NormalTok{ k }\OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{SNothing}\OtherTok{ ::} \DataTypeTok{SMaybe} \DataTypeTok{\textquotesingle{}Nothing}
+    \DataTypeTok{SJust}\OtherTok{    ::} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{SMaybe}\NormalTok{ (}\DataTypeTok{\textquotesingle{}Just}\NormalTok{ x)}
+
+\CommentTok{{-}{-} The syntax for declaring an instance for the kind{-}indexed type family}
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Sing} \OtherTok{=} \DataTypeTok{SMaybe}
 
 \KeywordTok{instance} \DataTypeTok{SingKind}\NormalTok{ k }\OtherTok{=>} \DataTypeTok{SingKind}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ k) }\KeywordTok{where}     \CommentTok{{-}{-} the *kind* Maybe}
     \KeywordTok{type} \DataTypeTok{Demote}\NormalTok{ (}\DataTypeTok{Maybe}\NormalTok{ k) }\OtherTok{=} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Demote}\NormalTok{ k)        }\CommentTok{{-}{-} the *type* Maybe}
@@ -1055,7 +1067,7 @@ code} for solutions!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L59{-}L90}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L60{-}L91}
 
 \KeywordTok{data} \DataTypeTok{OldSomeDoor}\OtherTok{ ::} \DataTypeTok{Type} \KeywordTok{where}
     \DataTypeTok{OldMkSomeDoor}\OtherTok{ ::} \DataTypeTok{DoorState} \OtherTok{{-}>} \DataTypeTok{String} \OtherTok{{-}>} \DataTypeTok{OldSomeDoor}
@@ -1070,7 +1082,7 @@ code} for solutions!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L92{-}L95}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L93{-}L96}
 
 \OtherTok{toOld ::} \DataTypeTok{SomeDoor} \OtherTok{{-}>} \DataTypeTok{OldSomeDoor}
 
@@ -1096,7 +1108,7 @@ code} for solutions!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L98{-}L103}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L99{-}L104}
 
 \OtherTok{unlockDoor ::} \DataTypeTok{Int} \OtherTok{{-}>} \DataTypeTok{Door} \DataTypeTok{\textquotesingle{}Locked} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Door} \DataTypeTok{\textquotesingle{}Closed}\NormalTok{)}
 \NormalTok{unlockDoor n (}\DataTypeTok{UnsafeMkDoor}\NormalTok{ m)}
@@ -1113,7 +1125,7 @@ code} for solutions!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L108{-}L117}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L109{-}L118}
 
 \OtherTok{openAnyDoor ::} \DataTypeTok{SingI}\NormalTok{ s }\OtherTok{=>} \DataTypeTok{Int} \OtherTok{{-}>} \DataTypeTok{Door}\NormalTok{ s }\OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ (}\DataTypeTok{Door} \DataTypeTok{\textquotesingle{}Opened}\NormalTok{)}
 \NormalTok{openAnyDoor n }\OtherTok{=}\NormalTok{ openAnyDoor\_ sing}
@@ -1136,13 +1148,15 @@ code} for solutions!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L123{-}L129}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/singletons/Door2.hs\#L124{-}L132}
 
 \KeywordTok{data} \DataTypeTok{List}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Nil} \OperatorTok{|} \DataTypeTok{Cons}\NormalTok{ a (}\DataTypeTok{List}\NormalTok{ a)}
 
-\KeywordTok{data} \KeywordTok{instance} \DataTypeTok{Sing}\NormalTok{ (}\OtherTok{x ::} \DataTypeTok{List}\NormalTok{ k) }\KeywordTok{where}
-    \DataTypeTok{SNil}\OtherTok{  ::} \DataTypeTok{Sing} \DataTypeTok{\textquotesingle{}Nil}
-    \DataTypeTok{SCons}\OtherTok{ ::} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ xs }\OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ (}\DataTypeTok{\textquotesingle{}Cons}\NormalTok{ x xs)}
+\KeywordTok{data} \DataTypeTok{SList}\OtherTok{ ::} \DataTypeTok{List}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{SNil}\OtherTok{  ::} \DataTypeTok{SList} \DataTypeTok{\textquotesingle{}Nil}
+    \DataTypeTok{SCons}\OtherTok{ ::} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{SList}\NormalTok{ xs }\OtherTok{{-}>} \DataTypeTok{SList}\NormalTok{ (}\DataTypeTok{\textquotesingle{}Cons}\NormalTok{ x xs)}
+
+\KeywordTok{type} \KeywordTok{instance} \DataTypeTok{Sing} \OtherTok{=} \DataTypeTok{SList}
 
 \KeywordTok{instance} \DataTypeTok{SingKind}\NormalTok{ k }\OtherTok{=>} \DataTypeTok{SingKind}\NormalTok{ (}\DataTypeTok{List}\NormalTok{ k) }\KeywordTok{where}
     \KeywordTok{type} \DataTypeTok{Demote}\NormalTok{ (}\DataTypeTok{List}\NormalTok{ k) }\OtherTok{=} \OperatorTok{???}
@@ -1152,15 +1166,6 @@ code} for solutions!
 
 \OtherTok{    toSing ::} \DataTypeTok{List}\NormalTok{ (}\DataTypeTok{Demote}\NormalTok{ k) }\OtherTok{{-}>} \DataTypeTok{SomeSing}\NormalTok{ (}\DataTypeTok{List}\NormalTok{ k)}
 \NormalTok{    toSing }\OtherTok{=} \OperatorTok{???}
-\end{Highlighting}
-\end{Shaded}
-
-  The singletons for \texttt{List} are:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\DataTypeTok{SNil}\OtherTok{  ::} \DataTypeTok{Sing} \DataTypeTok{\textquotesingle{}Nil}
-\DataTypeTok{SCons}\OtherTok{ ::} \DataTypeTok{Sing}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ xs }\OtherTok{{-}>} \DataTypeTok{Sing}\NormalTok{ (}\DataTypeTok{\textquotesingle{}Cons}\NormalTok{ x xs)}
 \end{Highlighting}
 \end{Shaded}
 
