@@ -546,11 +546,11 @@ knockP d = putStrLn $ "Knock knock on " ++ doorMaterial d ++ " door!"
 ```
 
 `a ~ b` is a constraint for *type equality*. This constraint means that calling
-`knock` requires that `StatePass s` is *equal to* (or unifies with) `'Allow`.
+`knock` requires that `StatePass s` is *equal to* (or unifies with) `'Obstruct`.
 So, if we attempt to call `knock` with a `'Locked` door, then because
-`StatePass 'Locked` is `'Allow`, the constraint is satisfied and everyone is
+`StatePass 'Locked` is `'Obstruct`, the constraint is satisfied and everyone is
 happy. If we attempt to call `knock` with an `'Opened` door, `StatePass 'Opened`
-is `'Obstruct`, so the constraint is not satisfied and everyone is sad.
+is `'Allow`, so the constraint is not satisfied and everyone is sad.
 
 ``` {.haskell}
 ghci> let door1 = mkDoor SClosed "Oak"
