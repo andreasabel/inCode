@@ -224,16 +224,38 @@ Choice of:
 <p>We see that because <code>x</code> and <code>y</code> are “hidden” from the external world, we can’t directly use them without applying the “joining” function <code>x -&gt; y -&gt; a</code>. Due to how existential types work, we can’t get anything out of it that “contains” <code>x</code> or <code>y</code>. Because of this, <em>using</em> the joining function requires <em>both</em> <code>f x</code> and <code>g y</code>. If we only use <code>f x</code>, we can only get, at best,<code>f (y -&gt; a)</code>; if we only use <code>g y</code>, we can only get, at best, <code>g (x -&gt; a)</code>. In order to fully eliminate <em>both</em> existential variables, we need to get the <code>x</code> and <code>y</code> from <em>both</em> <code>f x</code> and <code>g y</code>, as if the two values held separate halves of the key.</p>
 </blockquote>
 <p>It seems as if our <code>TwoFields</code> is exactly <code>Day Field Field</code>, so we’re on the right track.</p>
-<p>Reading further on in the <code>Day</code> section, we see that a list of “<code>f</code>s dayed with each other multiple times” is precisely <code>Ap f</code>.</p>
+<p>Reading further on in the <code>Day</code> section, we see:</p>
+<blockquote>
+<p><strong>List type</strong>: (…) <code>Ap f a</code> is a bunch of <code>f x</code>s <code>Day</code>d with each other.</p>
+</blockquote>
+<p>All three different ways you might have arrived at the conclusion of using <code>Ap</code>!</p>
 <h3 id="using-ap">Using Ap</h3>
 <p>With this let’s write our final <code>Schema</code> type:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L25-L29</span></span>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L25-L47</span></span>
 <span id="cb17-2"><a href="#cb17-2"></a></span>
 <span id="cb17-3"><a href="#cb17-3"></a><span class="kw">data</span> <span class="dt">Schema</span> a <span class="ot">=</span></span>
 <span id="cb17-4"><a href="#cb17-4"></a>      <span class="dt">RecordType</span>  (<span class="dt">Ap</span> <span class="dt">Field</span> a)</span>
 <span id="cb17-5"><a href="#cb17-5"></a>    <span class="op">|</span> <span class="dt">SumType</span>     (<span class="dt">ListF</span> <span class="dt">Choice</span> a)</span>
 <span id="cb17-6"><a href="#cb17-6"></a>    <span class="op">|</span> <span class="dt">SchemaLeaf</span>  (<span class="dt">Primitive</span> a)</span>
-<span id="cb17-7"><a href="#cb17-7"></a>  <span class="kw">deriving</span> <span class="dt">Functor</span></span></code></pre></div>
+<span id="cb17-7"><a href="#cb17-7"></a>  <span class="kw">deriving</span> <span class="dt">Functor</span></span>
+<span id="cb17-8"><a href="#cb17-8"></a></span>
+<span id="cb17-9"><a href="#cb17-9"></a><span class="kw">data</span> <span class="dt">Choice</span> a <span class="ot">=</span> <span class="dt">Choice</span></span>
+<span id="cb17-10"><a href="#cb17-10"></a>    {<span class="ot"> choiceName  ::</span> <span class="dt">String</span></span>
+<span id="cb17-11"><a href="#cb17-11"></a>    ,<span class="ot"> choiceValue ::</span> <span class="dt">Schema</span> a</span>
+<span id="cb17-12"><a href="#cb17-12"></a>    }</span>
+<span id="cb17-13"><a href="#cb17-13"></a>  <span class="kw">deriving</span> <span class="dt">Functor</span></span>
+<span id="cb17-14"><a href="#cb17-14"></a></span>
+<span id="cb17-15"><a href="#cb17-15"></a><span class="kw">data</span> <span class="dt">Field</span> a <span class="ot">=</span> <span class="dt">Field</span></span>
+<span id="cb17-16"><a href="#cb17-16"></a>    {<span class="ot"> fieldName  ::</span> <span class="dt">String</span></span>
+<span id="cb17-17"><a href="#cb17-17"></a>    ,<span class="ot"> fieldValue ::</span> <span class="dt">Schema</span> a</span>
+<span id="cb17-18"><a href="#cb17-18"></a>    }</span>
+<span id="cb17-19"><a href="#cb17-19"></a>  <span class="kw">deriving</span> <span class="dt">Functor</span></span>
+<span id="cb17-20"><a href="#cb17-20"></a></span>
+<span id="cb17-21"><a href="#cb17-21"></a><span class="kw">data</span> <span class="dt">Primitive</span> a <span class="ot">=</span></span>
+<span id="cb17-22"><a href="#cb17-22"></a>      <span class="dt">PString</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</span>
+<span id="cb17-23"><a href="#cb17-23"></a>    <span class="op">|</span> <span class="dt">PNumber</span> (<span class="dt">Scientific</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</span>
+<span id="cb17-24"><a href="#cb17-24"></a>    <span class="op">|</span> <span class="dt">PBool</span>   (<span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</span>
+<span id="cb17-25"><a href="#cb17-25"></a>  <span class="kw">deriving</span> <span class="dt">Functor</span></span></code></pre></div>
 <section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>

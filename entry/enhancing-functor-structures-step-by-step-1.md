@@ -434,20 +434,41 @@ Scrolling down, we see:
 It seems as if our `TwoFields` is exactly `Day Field Field`, so we're on the
 right track.
 
-Reading further on in the `Day` section, we see that a list of "`f`s dayed with
-each other multiple times" is precisely `Ap f`.
+Reading further on in the `Day` section, we see:
+
+> **List type**: (...) `Ap f a` is a bunch of `f x`s `Day`d with each other.
+
+All three different ways you might have arrived at the conclusion of using `Ap`!
 
 ### Using Ap
 
 With this let's write our final `Schema` type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L25-L29
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L25-L47
 
 data Schema a =
       RecordType  (Ap Field a)
     | SumType     (ListF Choice a)
     | SchemaLeaf  (Primitive a)
+  deriving Functor
+
+data Choice a = Choice
+    { choiceName  :: String
+    , choiceValue :: Schema a
+    }
+  deriving Functor
+
+data Field a = Field
+    { fieldName  :: String
+    , fieldValue :: Schema a
+    }
+  deriving Functor
+
+data Primitive a =
+      PString (String -> Maybe a)
+    | PNumber (Scientific -> Maybe a)
+    | PBool   (Bool -> Maybe a)
   deriving Functor
 ```
 

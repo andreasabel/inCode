@@ -583,9 +583,15 @@ if the two values held separate halves of the key.
 It seems as if our \texttt{TwoFields} is exactly \texttt{Day\ Field\ Field}, so
 we're on the right track.
 
-Reading further on in the \texttt{Day} section, we see that a list of
-``\texttt{f}s dayed with each other multiple times'' is precisely
-\texttt{Ap\ f}.
+Reading further on in the \texttt{Day} section, we see:
+
+\begin{quote}
+\textbf{List type}: (\ldots) \texttt{Ap\ f\ a} is a bunch of \texttt{f\ x}s
+\texttt{Day}d with each other.
+\end{quote}
+
+All three different ways you might have arrived at the conclusion of using
+\texttt{Ap}!
 
 \hypertarget{using-ap}{%
 \subsection{Using Ap}\label{using-ap}}
@@ -594,12 +600,30 @@ With this let's write our final \texttt{Schema} type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L25{-}L29}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L25{-}L47}
 
 \KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
       \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Ap} \DataTypeTok{Field}\NormalTok{ a)}
     \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     (}\DataTypeTok{ListF} \DataTypeTok{Choice}\NormalTok{ a)}
     \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
+  \KeywordTok{deriving} \DataTypeTok{Functor}
+
+\KeywordTok{data} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Choice}
+\NormalTok{    \{}\OtherTok{ choiceName  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ choiceValue ::} \DataTypeTok{Schema}\NormalTok{ a}
+\NormalTok{    \}}
+  \KeywordTok{deriving} \DataTypeTok{Functor}
+
+\KeywordTok{data} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Field}
+\NormalTok{    \{}\OtherTok{ fieldName  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ fieldValue ::} \DataTypeTok{Schema}\NormalTok{ a}
+\NormalTok{    \}}
+  \KeywordTok{deriving} \DataTypeTok{Functor}
+
+\KeywordTok{data} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{PString}\NormalTok{ (}\DataTypeTok{String} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{PNumber}\NormalTok{ (}\DataTypeTok{Scientific} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{PBool}\NormalTok{   (}\DataTypeTok{Bool} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
   \KeywordTok{deriving} \DataTypeTok{Functor}
 \end{Highlighting}
 \end{Shaded}
