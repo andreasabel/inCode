@@ -1,0 +1,622 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+    \usepackage{xltxtra,xunicode}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{\usepackage{microtype}}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\newenvironment{Shaded}{}{}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex]{hyperref}
+\else
+  \usepackage[unicode=true]{hyperref}
+\fi
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            pdfauthor={Justin Le},
+            pdftitle={Enhancing Functor Structures Step-By-Step (Part 1)},
+            colorlinks=true,
+            citecolor=blue,
+            urlcolor=blue,
+            linkcolor=magenta,
+            pdfborder={0 0 0}}
+\urlstyle{same}  % don't use monospace font for urls
+% Make links footnotes instead of hotlinks:
+\renewcommand{\href}[2]{#2\footnote{\url{#1}}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\setcounter{secnumdepth}{0}
+
+\title{Enhancing Functor Structures Step-By-Step (Part 1)}
+\author{Justin Le}
+
+\begin{document}
+\maketitle
+
+\emph{Originally posted on
+\textbf{\href{https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-1.html}{in
+Code}}.}
+
+A style of Haskell programming that I've been pretty excited about with over the
+past year or so is something that I can maybe call a ``functor structure''
+designed pattern. This is the interest that culminated in my
+\href{https://blog.jle.im/entry/functor-combinatorpedia.html}{Functor
+Combinatorpedia} post last year and the
+\href{https://hackage.haskell.org/package/functor-combinators}{functor-combinators}
+library. In the blog post I called this style the ``functor combinator'' style
+because it involved building these functor structures out of small, simple
+pieces. This is just one way to build functor structures --- you could always
+just make them directly from scratch, but they can get rather messy and it's
+often times easier to use pre-made structures that have all the helper functions
+already defined for you. But I never really talked about \emph{how} you would
+build them from scratch, and also never really explored the more exotic types of
+lowercase-f functors in Hask --- contravariant functors and invariant functors.
+
+In this post we're going to be exploring these different types of functor
+structures step-by-step, by starting with a simple useful structure and
+enhancing it piece by piece. This process reflects a lot of the way I personally
+work through these things --- I normally don't get the whole powerful structure
+all the way; instead I incrementally add things as I see how things fit
+together.
+
+We're going build the tools to describe a \emph{json schema}, in the form of an
+algebraic data type -- sums and products. We'll start off just building things
+we can use to \emph{describe} the schema (by printing out documentation), and by
+the end of the journey we'll also be able to parse and generate values with our
+schema.
+
+This series is designed for an intermediate Haskeller with familiarity in things
+like monadic parser combinators.
+
+\hypertarget{the-schema}{%
+\section{The Schema}\label{the-schema}}
+
+Let's start with the simplest level of describing our schema: a plain ol' AST
+describing the possibilities our schema can take.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/doc.hs\#L10{-}L32}
+
+\KeywordTok{data} \DataTypeTok{Schema} \OtherTok{=}
+      \DataTypeTok{RecordType}\NormalTok{  [}\DataTypeTok{Field}\NormalTok{]}
+    \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     [}\DataTypeTok{Choice}\NormalTok{]}
+    \OperatorTok{|} \DataTypeTok{SchemaLeaf}  \DataTypeTok{Primitive}
+  \KeywordTok{deriving} \DataTypeTok{Show}
+
+\KeywordTok{data} \DataTypeTok{Choice} \OtherTok{=} \DataTypeTok{Choice}
+\NormalTok{    \{}\OtherTok{ choiceName  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ choiceValue ::} \DataTypeTok{Schema}
+\NormalTok{    \}}
+  \KeywordTok{deriving} \DataTypeTok{Show}
+
+\KeywordTok{data} \DataTypeTok{Field} \OtherTok{=} \DataTypeTok{Field}
+\NormalTok{    \{}\OtherTok{ fieldName  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ fieldValue ::} \DataTypeTok{Schema}
+\NormalTok{    \}}
+  \KeywordTok{deriving} \DataTypeTok{Show}
+
+\KeywordTok{data} \DataTypeTok{Primitive} \OtherTok{=}
+      \DataTypeTok{PString}
+    \OperatorTok{|} \DataTypeTok{PNumber}
+    \OperatorTok{|} \DataTypeTok{PBool}
+  \KeywordTok{deriving} \DataTypeTok{Show}
+\end{Highlighting}
+\end{Shaded}
+
+Our schema will either represent a record of many different fields, a sum of
+many different options, or a primitive value. If it's a sum type, it'll be
+described by a list of \texttt{Choice}, which describes each branch. If it's a
+record type, it'll be described by a list of \texttt{Field}, which describes
+each field. If it's a primitive type, it'll a \texttt{Primitive}, which is
+either a string, number, or boolean.
+
+Our end goal is to be able to write a schema for a type like
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/doc.hs\#L34{-}L37}
+
+\KeywordTok{data} \DataTypeTok{Customer} \OtherTok{=}
+      \DataTypeTok{CPerson}\NormalTok{   \{}\OtherTok{ cpName ::} \DataTypeTok{String}\NormalTok{,}\OtherTok{ cpAge ::} \DataTypeTok{Int}\NormalTok{ \}}
+    \OperatorTok{|} \DataTypeTok{CBusiness}\NormalTok{ \{}\OtherTok{ cbEmployees ::} \DataTypeTok{Int}\NormalTok{ \}}
+  \KeywordTok{deriving} \DataTypeTok{Show}
+\end{Highlighting}
+\end{Shaded}
+
+and be able to represent documenting, parsing, and printing it all within
+\texttt{Schema}. For our basic \texttt{Schema} above, this looks like:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/doc.hs\#L39{-}L53}
+
+\OtherTok{customerSchema ::} \DataTypeTok{Schema}
+\NormalTok{customerSchema }\OtherTok{=} \DataTypeTok{SumType}
+\NormalTok{    [ }\DataTypeTok{Choice}
+\NormalTok{        \{ choiceName  }\OtherTok{=} \StringTok{"Person"}
+\NormalTok{        , choiceValue }\OtherTok{=} \DataTypeTok{RecordType}
+\NormalTok{            [ }\DataTypeTok{Field}\NormalTok{ \{ fieldName }\OtherTok{=} \StringTok{"Name"}\NormalTok{, fieldValue }\OtherTok{=} \DataTypeTok{SchemaLeaf} \DataTypeTok{PString}\NormalTok{ \}}
+\NormalTok{            , }\DataTypeTok{Field}\NormalTok{ \{ fieldName }\OtherTok{=} \StringTok{"Age"}\NormalTok{ , fieldValue }\OtherTok{=} \DataTypeTok{SchemaLeaf} \DataTypeTok{PNumber}\NormalTok{ \}}
+\NormalTok{            ]}
+\NormalTok{        \}}
+\NormalTok{    , }\DataTypeTok{Choice}
+\NormalTok{        \{ choiceName  }\OtherTok{=} \StringTok{"Business"}
+\NormalTok{        , choiceValue }\OtherTok{=} \DataTypeTok{RecordType}
+\NormalTok{            [ }\DataTypeTok{Field}\NormalTok{ \{ fieldName }\OtherTok{=} \StringTok{"Employees"}\NormalTok{, fieldValue }\OtherTok{=} \DataTypeTok{SchemaLeaf} \DataTypeTok{PNumber}\NormalTok{ \} ]}
+\NormalTok{        \}}
+\NormalTok{    ]}
+\end{Highlighting}
+\end{Shaded}
+
+And a value like
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{PCustomer}\NormalTok{ \{ cpName }\OtherTok{=} \StringTok{"Sam"}\NormalTok{, cpAge }\OtherTok{=} \DecValTok{40}\NormalTok{ \}}
+\end{Highlighting}
+\end{Shaded}
+
+might be represented by a json value like
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{\{} \DataTypeTok{"tag"}\FunctionTok{:} \StringTok{"Customer"}\FunctionTok{,} 
+  \DataTypeTok{"contents"}\FunctionTok{:}
+    \FunctionTok{\{} \DataTypeTok{"Name"}\FunctionTok{:} \StringTok{"Sam"}
+    \FunctionTok{,} \DataTypeTok{"Age"}\FunctionTok{:} \FloatTok{40.0}
+    \FunctionTok{\}}
+\FunctionTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{documentation}{%
+\section{Documentation}\label{documentation}}
+
+Using our schema type, let's make a documentation generator. It'll take a
+\texttt{Schema} and nicely formatted documentation describing what the schema
+itself.
+
+To make our lives easier, we'll be using the
+\emph{\href{https://hackage.haskell.org/package/prettyprinter}{prettyprinter}}
+library, which will handle indentation, horizontal and vertical concatenation,
+and other printing concerns for us.
+
+The structure of this will match the structure of our future schema processors
+--- you'll find they all look like this in some form or another!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/doc.hs\#L55{-}L62}
+
+\NormalTok{schemaDoc}
+\OtherTok{    ::} \DataTypeTok{String}       \CommentTok{{-}{-} \^{} name}
+    \OtherTok{{-}>} \DataTypeTok{Schema}       \CommentTok{{-}{-} \^{} schema}
+    \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
+\NormalTok{schemaDoc title }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ recordDoc title fs}
+    \DataTypeTok{SumType}\NormalTok{ cs    }\OtherTok{{-}>}\NormalTok{ sumDoc title cs}
+    \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ leafDoc title p}
+\end{Highlighting}
+\end{Shaded}
+
+So \texttt{schemaDoc} will take the name of our type and a schema, and generate
+a \texttt{PP.Doc\ x}, the type of a text document in the \emph{prettyprinter}
+library.\footnote{I'm using \texttt{x} as the name of the type variable (instead
+  of something more traditional like \texttt{a}) to indicate that it isn't meant
+  to be referenced or used anywhere in any consistent way. Just remember it
+  doesn't mean anything special syntactically!} Nothing too fancy here other
+than simply matching on what type of schema we're dealing with, and dispatching
+a different function for each type.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/doc.hs\#L64{-}L72}
+
+\OtherTok{recordDoc ::} \DataTypeTok{String} \OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Field}\NormalTok{] }\OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
+\NormalTok{recordDoc title fs }\OtherTok{=}\NormalTok{ PP.vsep [}
+\NormalTok{      PP.pretty (}\StringTok{"\{"} \OperatorTok{<>}\NormalTok{ title }\OperatorTok{<>} \StringTok{"\}"}\NormalTok{)}
+\NormalTok{    , PP.indent }\DecValTok{2} \OperatorTok{.}\NormalTok{ PP.vsep }\OperatorTok{$}
+        \FunctionTok{map}\NormalTok{ (\textbackslash{}fld }\OtherTok{{-}>} \StringTok{"*"} \OperatorTok{PP.<+>}\NormalTok{ PP.indent }\DecValTok{2}\NormalTok{ (fieldDoc fld)) fs}
+\NormalTok{    ]}
+  \KeywordTok{where}
+\OtherTok{    fieldDoc ::} \DataTypeTok{Field} \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
+\NormalTok{    fieldDoc }\DataTypeTok{Field}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ schemaDoc fieldName fieldValue}
+\end{Highlighting}
+\end{Shaded}
+
+First, the \texttt{RecordType} handler uses \texttt{PP.vsep}, which takes a list
+of docs and concatenates them together vertically. The first doc is the title
+around curly braces, and the second doc is a \texttt{*}'d list of
+\texttt{fieldDoc} for each \texttt{fs}, concatenated vertically and indented two
+spaces.
+
+\texttt{fieldDoc} itself is then going to recursively call \texttt{schemaDoc}
+with the field name as the title and the field value as the sub-schema.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/doc.hs\#L74{-}L83}
+
+\OtherTok{sumDoc ::} \DataTypeTok{String} \OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Choice}\NormalTok{] }\OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
+\NormalTok{sumDoc title cs }\OtherTok{=}\NormalTok{ PP.vsep [}
+\NormalTok{      PP.pretty (}\StringTok{"("} \OperatorTok{<>}\NormalTok{ title }\OperatorTok{<>} \StringTok{")"}\NormalTok{)}
+\NormalTok{    , }\StringTok{"Choice of:"}
+\NormalTok{    , PP.indent }\DecValTok{2} \OperatorTok{.}\NormalTok{ PP.vsep }\OperatorTok{$}
+        \FunctionTok{map}\NormalTok{ choiceDoc cs}
+\NormalTok{    ]}
+  \KeywordTok{where}
+\OtherTok{    choiceDoc ::} \DataTypeTok{Choice} \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
+\NormalTok{    choiceDoc }\DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ schemaDoc choiceName choiceValue}
+\end{Highlighting}
+\end{Shaded}
+
+The \texttt{SumType} handler is going to be doing more or less the same thing,
+except surrounding the title in \texttt{(} \texttt{)} parentheses. There's
+another line \texttt{Choice\ of:}, followed by the list of each choice,
+vertically concatenated and indented twice.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/doc.hs\#L85{-}L93}
+
+\OtherTok{leafDoc ::} \DataTypeTok{String} \OtherTok{{-}>} \DataTypeTok{Primitive} \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
+\NormalTok{leafDoc title p }\OtherTok{=}\NormalTok{ PP.pretty (title }\OperatorTok{<>} \StringTok{":"}\NormalTok{)}
+           \OperatorTok{PP.<+>}\NormalTok{ primDoc p}
+  \KeywordTok{where}
+\OtherTok{    primDoc ::} \DataTypeTok{Primitive} \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
+\NormalTok{    primDoc }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{PString} \OtherTok{{-}>} \StringTok{"string"}
+      \DataTypeTok{PNumber} \OtherTok{{-}>} \StringTok{"number"}
+      \DataTypeTok{PBool}   \OtherTok{{-}>} \StringTok{"bool"}
+\end{Highlighting}
+\end{Shaded}
+
+Finally, the \texttt{leafDoc} handler prints out the schema of a single list: it
+gives the name of the leaf and then either \texttt{"string"}, \texttt{"number"},
+or \texttt{"bool"}.
+
+Hopefully that wasn't too bad! There were a lot of moving parts because we have
+a recursive data type, but in the end hopefully each specific branch was
+self-contained enough to understand on their own. We can test it out on
+\texttt{customerSchema}, taking advantage of the fact that \texttt{PP.Doc}'s
+\texttt{Show} instance will render the document:
+
+\begin{verbatim}
+ghci> schemaDoc "Customer" customerSchema
+(Customer)
+Choice of:
+  {Person}
+    *   Name: string
+    *   Age: number
+  {Business}
+    *   Employees: number
+\end{verbatim}
+
+It works!
+
+\hypertarget{parsing-with-covariance}{%
+\section{Parsing with Covariance}\label{parsing-with-covariance}}
+
+Now, let's talk about using our \texttt{Schema} type to define a json parser.
+We're going to rewrite \texttt{Schema} to take a type parameter to represent the
+type we want to parse into. A \texttt{Schema\ a} will be a schema that can be
+used to generate documentation \emph{and} describe a parser of \texttt{a}s. In
+the end, we want \texttt{customerSchema\ ::\ Schema\ Customer}, and a function
+like
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{schemaParser ::} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Parse} \DataTypeTok{ErrType}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+to generate a json parser of \texttt{a}s. We'll be using the json parser type
+\texttt{Parse\ err\ a} from
+\emph{\href{https://hackage.haskell.org/package/aeson-better-errors}{aeson-better-errors}}
+(not because of the better errors, but just because it's closer to an actual
+incremental/stateful parser than other alternatives out there), which can be run
+with
+\texttt{parse\ ::\ Parse\ err\ a\ -\textgreater{}\ ByteString\ -\textgreater{}\ Either\ (ParseError\ err)\ a}.
+So our final interface will look like:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L142{-}L143}
+
+\OtherTok{parseSchema ::} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{ByteString} \OtherTok{{-}>} \DataTypeTok{Either}\NormalTok{ (}\DataTypeTok{A.ParseError} \DataTypeTok{ErrType}\NormalTok{) a}
+\NormalTok{parseSchema sc }\OtherTok{=}\NormalTok{ A.parse (schemaParser sc)}
+\end{Highlighting}
+\end{Shaded}
+
+To do this, we now have to include information on ``how to parse an \texttt{a}''
+in our schema. Remember that our actual json format is pretty fixed/structured,
+so we don't need to address things like how to encode sum types within our
+\texttt{Schema} type itself. The only variation that our \texttt{Schema} can
+express can be isolated to one place: the \texttt{Primitive} type.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L43{-}L56}
+
+\KeywordTok{data} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{PString}\NormalTok{ (}\DataTypeTok{String} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{PNumber}\NormalTok{ (}\DataTypeTok{Scientific} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{PBool}\NormalTok{   (}\DataTypeTok{Bool} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+  \KeywordTok{deriving} \DataTypeTok{Functor}
+
+\OtherTok{pString ::} \DataTypeTok{Primitive} \DataTypeTok{String}
+\NormalTok{pString }\OtherTok{=} \DataTypeTok{PString} \DataTypeTok{Just}
+
+\OtherTok{pInt ::} \DataTypeTok{Primitive} \DataTypeTok{Int}
+\NormalTok{pInt }\OtherTok{=} \DataTypeTok{PNumber}\NormalTok{ toBoundedInteger}
+
+\OtherTok{pBool ::} \DataTypeTok{Primitive} \DataTypeTok{Bool}
+\NormalTok{pBool }\OtherTok{=} \DataTypeTok{PBool} \DataTypeTok{Just}
+\end{Highlighting}
+\end{Shaded}
+
+And that's it! Different data types will parse these primitive values in
+different ways, but other than that, everything is sort of already
+pre-determined. Remember, our \texttt{Schema} type is only meant to express the
+different ways our rigidly defined structure can vary.
+
+\hypertarget{finding-ap}{%
+\subsection{Finding Ap}\label{finding-ap}}
+
+However, this small change (and adding the type parameter) leaves in a
+predicament. What should \texttt{Schema} look like?
+
+At first glance, we might think we could just write
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{RecordType}\NormalTok{  [}\DataTypeTok{Field}\NormalTok{ a]}
+    \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     [}\DataTypeTok{Choice}\NormalTok{ a]}
+    \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
+  \KeywordTok{deriving} \DataTypeTok{Functor}
+
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L31{-}L41}
+
+\KeywordTok{data} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Field}
+\NormalTok{    \{}\OtherTok{ fieldName  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ fieldValue ::} \DataTypeTok{Schema}\NormalTok{ a}
+\NormalTok{    \}}
+  \KeywordTok{deriving} \DataTypeTok{Functor}
+
+\KeywordTok{data} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Choice}
+\NormalTok{    \{}\OtherTok{ choiceName  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ choiceValue ::} \DataTypeTok{Schema}\NormalTok{ a}
+\NormalTok{    \}}
+  \KeywordTok{deriving} \DataTypeTok{Functor}
+\end{Highlighting}
+\end{Shaded}
+
+But there's a problem here: \texttt{RecordType} is a combination of
+\texttt{Field}s, but\ldots each \texttt{Field} is of a different type! For
+example, in our \texttt{Customer} example, the \texttt{Person} branch has two
+fields: \texttt{Name} and \texttt{Age}. Our name schema would look like
+\texttt{nameField\ ::\ Field\ String}, and our age schema would look like
+\texttt{ageField\ ::\ Field\ Int}\ldots and so you can't really put that into a
+list like \texttt{{[}Field\ a{]}} since they each have different types. And
+further more, we want a final \texttt{Customer} (in our
+\texttt{Schema\ Customer}), a type which is different from both \texttt{String}
+and \texttt{Int}.
+
+What we need is a way to express heterogeneous collection/sequence of
+\texttt{Field\ a}, coupled with a way of ``combining'' all of them to create an
+aggregate value of a final type. A type that says ``use a bunch of
+\texttt{Field} of \texttt{x}s of different types to generate a final
+\texttt{a}''.
+
+There are a couple of ways to arrive at this mystery type. One way is to
+recognize ``combine a bunch of \texttt{f\ x}s of different types to create an
+\texttt{f\ b}'' is essentially the MO of the \emph{Applicative} abstraction, and
+so essentially we want to give \texttt{Field} some sort of \texttt{Applicative}
+structure. And so we can reach for ``the type that gives something an
+\texttt{Applicative} structure'', the
+\href{https://hackage.haskell.org/package/free/docs/Control-Applicative-Free.html}{free
+applicative}.
+
+Another way is to think about it as an enhancement along a functor combinator
+described in the
+\href{https://blog.jle.im/entry/functor-combinatorpedia.html}{functor
+combinatorpedia}. Here we know we want to enhance \texttt{Field} in a specific
+way, so we can scan the list of functor combinators until there is one that we
+need. And scrolling down, we see:
+
+\begin{quote}
+\href{https://blog.jle.im/entry/functor-combinatorpedia.html\#ap-ap1}{\textbf{Ap
+/ Ap1 }}
+
+\textbf{Origin}:
+\emph{\href{https://hackage.haskell.org/package/free/docs/Control-Applicative-Free.html}{Control.Applicative.Free}}
+/
+\emph{\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Apply-Free.html}{Data.Functor.Apply.Free}}
+
+\textbf{Enhancement}: The ability to provide multiple \texttt{f}s that the
+interpreter \emph{must} consume \emph{all} of. (\ldots)
+
+While \texttt{ListF} may be considered ``multiple options \emph{offered}'',
+\texttt{Ap} can be considered ``multiple actions all \emph{required}''. The
+interpreter must consume/interpret \emph{all} of the multiple \texttt{f}s in
+order to interpret an \texttt{Ap}.
+
+Note that ordering is not enforced: while the consumer must handle each
+\texttt{f} eventually, they are free to handle it in whatever order they desire.
+In fact, they could even all be handled in parallel. See \texttt{Free} for a
+version where ordering is enforced.
+
+\ldots{}
+
+Because this has an \texttt{Applicative} instance, you can use
+\texttt{(\textless{}*\textgreater{})\ ::\ Ap\ f\ (a\ -\textgreater{}\ b)\ -\textgreater{}\ Ap\ f\ a\ -\textgreater{}\ Ap\ f\ b}
+to sequence multiple \texttt{Ap\ f}s together, and
+\texttt{pure\ ::\ a\ -\textgreater{}\ Ap\ f\ a} to produce a ``no-op''
+\texttt{Ap} without any \texttt{f}s.
+\end{quote}
+
+That sounds like it matches to me! In order to parse a \texttt{RecordType}, we
+need to parse \emph{every} \texttt{Field}. It doesn't make any sense to skip one
+field or the other: they all need to be processed and parsed. This sounds like
+just the thing we need.
+
+The description here also gives a clue for what we might want to use for
+\texttt{SumType} (\texttt{ListF} sounds like a good companion for the behavior
+we want sum type parsers to have)
+
+Another way to come to this conclusion is to think about it in terms of
+tensoring functors: ``how do we want to tensor together \emph{two}
+\texttt{Field}s''?
+
+Well, earlier we said that we want to combine fields of different types, while
+also providing a way of combining the two types together to create a final
+aggregate type. We can express this in Haskell with something like:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{TwoFields} \OtherTok{=} \KeywordTok{forall}\NormalTok{ x y}\OperatorTok{.} \DataTypeTok{TwoFields}\NormalTok{ (}\DataTypeTok{Field}\NormalTok{ x) (}\DataTypeTok{Field}\NormalTok{ y) (x }\OtherTok{{-}>}\NormalTok{ y }\OtherTok{{-}>}\NormalTok{ a)}
+\end{Highlighting}
+\end{Shaded}
+
+In existential syntax, this says that \texttt{TwoFields\ a} consists of
+\texttt{Field\ x} and \texttt{Field\ y} of a ``hidden'' \texttt{x} and
+\texttt{y}, as well as a function to combine the \texttt{x} and \texttt{y} to
+make an \texttt{a}.
+
+We can look up what type of tensor this is in the functor combinatorpedia.
+Scrolling down, we see:
+
+\begin{quote}
+\href{https://blog.jle.im/entry/functor-combinatorpedia.html\#day}{\textbf{Day}}
+
+\textbf{Origin}:
+\emph{\href{https://hackage.haskell.org/package/kan-extensions/docs/Data-Functor-Day.html}{Data.Functor.Day}}
+
+\textbf{Mixing Strategy}: ``Both, together forever'': provide values from
+\emph{both} functors, and the user \emph{must} also \emph{use} both.
+
+\ldots{}
+
+Unlike for \texttt{:*:}, you always have to interpret \emph{both} functor values
+in order to interpret a \texttt{Day}. It's a ``full mixing''.
+
+The mechanism for this is interesting in and of itself. Looking at the
+definition of the data type:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Day}\NormalTok{ f g a }\OtherTok{=} \KeywordTok{forall}\NormalTok{ x y}\OperatorTok{.} \DataTypeTok{Day}\NormalTok{ (f x) (g y) (x }\OtherTok{{-}>}\NormalTok{ y }\OtherTok{{-}>}\NormalTok{ a)}
+\end{Highlighting}
+\end{Shaded}
+
+We see that because \texttt{x} and \texttt{y} are ``hidden'' from the external
+world, we can't directly use them without applying the ``joining'' function
+\texttt{x\ -\textgreater{}\ y\ -\textgreater{}\ a}. Due to how existential types
+work, we can't get anything out of it that ``contains'' \texttt{x} or
+\texttt{y}. Because of this, \emph{using} the joining function requires
+\emph{both} \texttt{f\ x} and \texttt{g\ y}. If we only use \texttt{f\ x}, we
+can only get, at best,\texttt{f\ (y\ -\textgreater{}\ a)}; if we only use
+\texttt{g\ y}, we can only get, at best, \texttt{g\ (x\ -\textgreater{}\ a)}. In
+order to fully eliminate \emph{both} existential variables, we need to get the
+\texttt{x} and \texttt{y} from \emph{both} \texttt{f\ x} and \texttt{g\ y}, as
+if the two values held separate halves of the key.
+\end{quote}
+
+It seems as if our \texttt{TwoFields} is exactly \texttt{Day\ Field\ Field}, so
+we're on the right track.
+
+Reading further on in the \texttt{Day} section, we see that a list of
+``\texttt{f}s dayed with each other multiple times'' is precisely
+\texttt{Ap\ f}.
+
+\hypertarget{using-ap}{%
+\subsection{Using Ap}\label{using-ap}}
+
+With this let's write our final \texttt{Schema} type:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L25{-}L29}
+
+\KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Ap} \DataTypeTok{Field}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     (}\DataTypeTok{ListF} \DataTypeTok{Choice}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
+  \KeywordTok{deriving} \DataTypeTok{Functor}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{signoff}{%
+\section{Signoff}\label{signoff}}
+
+Hi, thanks for reading! You can reach me via email at
+\href{mailto:justin@jle.im}{\nolinkurl{justin@jle.im}}, or at twitter at
+\href{https://twitter.com/mstk}{@mstk}! This post and all others are published
+under the \href{https://creativecommons.org/licenses/by-nc-nd/3.0/}{CC-BY-NC-ND
+3.0} license. Corrections and edits via pull request are welcome and encouraged
+at \href{https://github.com/mstksg/inCode}{the source repository}.
+
+If you feel inclined, or this post was particularly helpful for you, why not
+consider \href{https://www.patreon.com/justinle/overview}{supporting me on
+Patreon}, or a \href{bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU}{BTC donation}?
+:)
+
+\end{document}
