@@ -140,15 +140,15 @@ describing the possibilities our schema can take.
     \OperatorTok{|} \DataTypeTok{SchemaLeaf}  \DataTypeTok{Primitive}
   \KeywordTok{deriving} \DataTypeTok{Show}
 
-\KeywordTok{data} \DataTypeTok{Choice} \OtherTok{=} \DataTypeTok{Choice}
-\NormalTok{    \{}\OtherTok{ choiceName  ::} \DataTypeTok{String}
-\NormalTok{    ,}\OtherTok{ choiceValue ::} \DataTypeTok{Schema}
-\NormalTok{    \}}
-  \KeywordTok{deriving} \DataTypeTok{Show}
-
 \KeywordTok{data} \DataTypeTok{Field} \OtherTok{=} \DataTypeTok{Field}
 \NormalTok{    \{}\OtherTok{ fieldName  ::} \DataTypeTok{String}
 \NormalTok{    ,}\OtherTok{ fieldValue ::} \DataTypeTok{Schema}
+\NormalTok{    \}}
+  \KeywordTok{deriving} \DataTypeTok{Show}
+
+\KeywordTok{data} \DataTypeTok{Choice} \OtherTok{=} \DataTypeTok{Choice}
+\NormalTok{    \{}\OtherTok{ choiceName  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ choiceValue ::} \DataTypeTok{Schema}
 \NormalTok{    \}}
   \KeywordTok{deriving} \DataTypeTok{Show}
 
@@ -217,7 +217,7 @@ might be represented by a json value like
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{\{} \DataTypeTok{"tag"}\FunctionTok{:} \StringTok{"Customer"}\FunctionTok{,} 
+\FunctionTok{\{} \DataTypeTok{"tag"}\FunctionTok{:} \StringTok{"Customer"}\FunctionTok{,}
   \DataTypeTok{"contents"}\FunctionTok{:}
     \FunctionTok{\{} \DataTypeTok{"Name"}\FunctionTok{:} \StringTok{"Sam"}
     \FunctionTok{,} \DataTypeTok{"Age"}\FunctionTok{:} \FloatTok{40.0}
@@ -238,21 +238,23 @@ To make our lives easier, we'll be using the
 library, which will handle indentation, horizontal and vertical concatenation,
 and other printing concerns for us.
 
-The structure of this will match the structure of our future schema processors
---- you'll find they all look like this in some form or another!
+Let's build things up by defining documentation generators for our individual
+types, so they'll be easier to assemble.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/doc.hs\#L55{-}L62}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/doc.hs\#L55{-}L80}
 
 \NormalTok{schemaDoc}
 \OtherTok{    ::} \DataTypeTok{String}       \CommentTok{{-}{-} \^{} name}
     \OtherTok{{-}>} \DataTypeTok{Schema}       \CommentTok{{-}{-} \^{} schema}
     \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
-\NormalTok{schemaDoc title }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ recordDoc title fs}
-    \DataTypeTok{SumType}\NormalTok{ cs    }\OtherTok{{-}>}\NormalTok{ sumDoc title cs}
-    \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ leafDoc title p}
+
+\OtherTok{fieldDoc ::} \DataTypeTok{Field} \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
+
+\OtherTok{choiceDoc ::} \DataTypeTok{Choice} \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
+
+\OtherTok{primDoc ::} \DataTypeTok{Primitive} \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
 \end{Highlighting}
 \end{Shaded}
 
@@ -261,82 +263,76 @@ a \texttt{PP.Doc\ x}, the type of a text document in the \emph{prettyprinter}
 library.\footnote{I'm using \texttt{x} as the name of the type variable (instead
   of something more traditional like \texttt{a}) to indicate that it isn't meant
   to be referenced or used anywhere in any consistent way. Just remember it
-  doesn't mean anything special syntactically!} Nothing too fancy here other
-than simply matching on what type of schema we're dealing with, and dispatching
-a different function for each type.
+  doesn't mean anything special syntactically!} And \texttt{fieldDoc},
+\texttt{choiceDoc}, and \texttt{primDoc} just generate the documentation for
+each individual field or constructor.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/doc.hs\#L64{-}L72}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/doc.hs\#L74{-}L84}
 
-\OtherTok{recordDoc ::} \DataTypeTok{String} \OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Field}\NormalTok{] }\OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
-\NormalTok{recordDoc title fs }\OtherTok{=}\NormalTok{ PP.vsep [}
-\NormalTok{      PP.pretty (}\StringTok{"\{"} \OperatorTok{<>}\NormalTok{ title }\OperatorTok{<>} \StringTok{"\}"}\NormalTok{)}
-\NormalTok{    , PP.indent }\DecValTok{2} \OperatorTok{.}\NormalTok{ PP.vsep }\OperatorTok{$}
-        \FunctionTok{map}\NormalTok{ (\textbackslash{}fld }\OtherTok{{-}>} \StringTok{"*"} \OperatorTok{PP.<+>}\NormalTok{ PP.indent }\DecValTok{2}\NormalTok{ (fieldDoc fld)) fs}
-\NormalTok{    ]}
-  \KeywordTok{where}
-\OtherTok{    fieldDoc ::} \DataTypeTok{Field} \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
-\NormalTok{    fieldDoc }\DataTypeTok{Field}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ schemaDoc fieldName fieldValue}
+\OtherTok{fieldDoc ::} \DataTypeTok{Field} \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
+\NormalTok{fieldDoc }\DataTypeTok{Field}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ schemaDoc fieldName fieldValue}
+
+\OtherTok{choiceDoc ::} \DataTypeTok{Choice} \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
+\NormalTok{choiceDoc }\DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ schemaDoc choiceName choiceValue}
+
+\OtherTok{primDoc ::} \DataTypeTok{Primitive} \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
+\NormalTok{primDoc }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+  \DataTypeTok{PString} \OtherTok{{-}>} \StringTok{"string"}
+  \DataTypeTok{PNumber} \OtherTok{{-}>} \StringTok{"number"}
+  \DataTypeTok{PBool}   \OtherTok{{-}>} \StringTok{"bool"}
 \end{Highlighting}
 \end{Shaded}
 
-First, the \texttt{RecordType} handler uses \texttt{PP.vsep}, which takes a list
-of docs and concatenates them together vertically. The first doc is the title
-around curly braces, and the second doc is a \texttt{*}'d list of
-\texttt{fieldDoc} for each \texttt{fs}, concatenated vertically and indented two
-spaces.
+Nothing too fancy here --- since \texttt{Field} and \texttt{Choice} just have a
+name and a sub-schema, we can have them call \texttt{schemaDoc}.
+\texttt{primDoc} requires making our leaf documentation, so we can just print
+what type they have.
 
-\texttt{fieldDoc} itself is then going to recursively call \texttt{schemaDoc}
-with the field name as the title and the field value as the sub-schema.
+We tie it all together with \texttt{schemaDoc}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/doc.hs\#L74{-}L83}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/doc.hs\#L55{-}L72}
 
-\OtherTok{sumDoc ::} \DataTypeTok{String} \OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Choice}\NormalTok{] }\OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
-\NormalTok{sumDoc title cs }\OtherTok{=}\NormalTok{ PP.vsep [}
-\NormalTok{      PP.pretty (}\StringTok{"("} \OperatorTok{<>}\NormalTok{ title }\OperatorTok{<>} \StringTok{")"}\NormalTok{)}
-\NormalTok{    , }\StringTok{"Choice of:"}
-\NormalTok{    , PP.indent }\DecValTok{2} \OperatorTok{.}\NormalTok{ PP.vsep }\OperatorTok{$}
-        \FunctionTok{map}\NormalTok{ choiceDoc cs}
-\NormalTok{    ]}
-  \KeywordTok{where}
-\OtherTok{    choiceDoc ::} \DataTypeTok{Choice} \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
-\NormalTok{    choiceDoc }\DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ schemaDoc choiceName choiceValue}
+\NormalTok{schemaDoc}
+\OtherTok{    ::} \DataTypeTok{String}       \CommentTok{{-}{-} \^{} name}
+    \OtherTok{{-}>} \DataTypeTok{Schema}       \CommentTok{{-}{-} \^{} schema}
+    \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
+\NormalTok{schemaDoc title }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ PP.vsep [}
+\NormalTok{        PP.pretty (}\StringTok{"\{"} \OperatorTok{<>}\NormalTok{ title }\OperatorTok{<>} \StringTok{"\}"}\NormalTok{)}
+\NormalTok{      , PP.indent }\DecValTok{2} \OperatorTok{.}\NormalTok{ PP.vsep }\OperatorTok{$}
+          \FunctionTok{map}\NormalTok{ (\textbackslash{}fld }\OtherTok{{-}>} \StringTok{"*"} \OperatorTok{PP.<+>}\NormalTok{ PP.indent }\DecValTok{2}\NormalTok{ (fieldDoc fld)) fs}
+\NormalTok{      ]}
+    \DataTypeTok{SumType}\NormalTok{ cs    }\OtherTok{{-}>}\NormalTok{ PP.vsep [}
+\NormalTok{        PP.pretty (}\StringTok{"("} \OperatorTok{<>}\NormalTok{ title }\OperatorTok{<>} \StringTok{")"}\NormalTok{)}
+\NormalTok{      , }\StringTok{"Choice of:"}
+\NormalTok{      , PP.indent }\DecValTok{2} \OperatorTok{.}\NormalTok{ PP.vsep }\OperatorTok{$}
+          \FunctionTok{map}\NormalTok{ choiceDoc cs}
+\NormalTok{      ]}
+    \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ PP.pretty (title }\OperatorTok{<>} \StringTok{":"}\NormalTok{)}
+              \OperatorTok{PP.<+>}\NormalTok{ primDoc p}
 \end{Highlighting}
 \end{Shaded}
 
-The \texttt{SumType} handler is going to be doing more or less the same thing,
-except surrounding the title in \texttt{(} \texttt{)} parentheses. There's
-another line \texttt{Choice\ of:}, followed by the list of each choice,
-vertically concatenated and indented twice.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/doc.hs\#L85{-}L93}
-
-\OtherTok{leafDoc ::} \DataTypeTok{String} \OtherTok{{-}>} \DataTypeTok{Primitive} \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
-\NormalTok{leafDoc title p }\OtherTok{=}\NormalTok{ PP.pretty (title }\OperatorTok{<>} \StringTok{":"}\NormalTok{)}
-           \OperatorTok{PP.<+>}\NormalTok{ primDoc p}
-  \KeywordTok{where}
-\OtherTok{    primDoc ::} \DataTypeTok{Primitive} \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ x}
-\NormalTok{    primDoc }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-      \DataTypeTok{PString} \OtherTok{{-}>} \StringTok{"string"}
-      \DataTypeTok{PNumber} \OtherTok{{-}>} \StringTok{"number"}
-      \DataTypeTok{PBool}   \OtherTok{{-}>} \StringTok{"bool"}
-\end{Highlighting}
-\end{Shaded}
-
-Finally, the \texttt{leafDoc} handler prints out the schema of a single list: it
-gives the name of the leaf and then either \texttt{"string"}, \texttt{"number"},
-or \texttt{"bool"}.
+Here we use \texttt{PP.vsep}, which takes a list of docs and concatenates them
+vertically, \texttt{PP.\textless{}+\textgreater{}} which concatenates two docs
+horizontally, and \texttt{PP.indent} which indents things before going down a
+level. We appropriately call \texttt{fieldDoc}, \texttt{choiceDoc}, and
+\texttt{primDoc} when we actually need to print one of them.
 
 Hopefully that wasn't too bad! There were a lot of moving parts because we have
 a recursive data type, but in the end hopefully each specific branch was
-self-contained enough to understand on their own. We can test it out on
-\texttt{customerSchema}, taking advantage of the fact that \texttt{PP.Doc}'s
-\texttt{Show} instance will render the document:
+self-contained enough to understand on their own. In the end the important thing
+to take away isn't the mechanics of document generation, but rather how the data
+flows. Make sure you at least understand how the functions call each other, and
+how --- this pattern is going to be very consistent across all the schema
+processors we write!
+
+We can test out our function on \texttt{customerSchema}, taking advantage of the
+fact that \texttt{PP.Doc}'s \texttt{Show} instance will render the document:
 
 \begin{verbatim}
 ghci> schemaDoc "Customer" customerSchema
@@ -378,7 +374,7 @@ So our final interface will look like:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L142{-}L143}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L157{-}L158}
 
 \OtherTok{parseSchema ::} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{ByteString} \OtherTok{{-}>} \DataTypeTok{Either}\NormalTok{ (}\DataTypeTok{A.ParseError} \DataTypeTok{ErrType}\NormalTok{) a}
 \NormalTok{parseSchema sc }\OtherTok{=}\NormalTok{ A.parse (schemaParser sc)}
@@ -387,19 +383,34 @@ So our final interface will look like:
 
 To do this, we now have to include information on ``how to parse an \texttt{a}''
 in our schema. Remember that our actual json format is pretty fixed/structured,
-so we don't need to address things like how to encode sum types within our
-\texttt{Schema} type itself. The only variation that our \texttt{Schema} can
-express can be isolated to one place: the \texttt{Primitive} type.
+so all our \texttt{Schema} has to express are variations within that structure.
+The only variation that our \texttt{Schema} can express are how sums/products
+are structured, and also how to parse primitive types. And so, the main thing we
+need to modify is just \texttt{Primitive}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L43{-}L56}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L46{-}L50}
 
 \KeywordTok{data} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{=}
       \DataTypeTok{PString}\NormalTok{ (}\DataTypeTok{String} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
     \OperatorTok{|} \DataTypeTok{PNumber}\NormalTok{ (}\DataTypeTok{Scientific} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
     \OperatorTok{|} \DataTypeTok{PBool}\NormalTok{   (}\DataTypeTok{Bool} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
   \KeywordTok{deriving} \DataTypeTok{Functor}
+\end{Highlighting}
+\end{Shaded}
+
+A \texttt{Primitive\ a} will be a way to parse a json primitive --- it can be
+\texttt{PString}, \texttt{PNumber}, or \texttt{PBool}. To create a ``String
+Parser'', you need to use \texttt{PString} with a function on ``what to do with
+the string you get''. To create a ``Bool parser'', you need \texttt{PBool} with
+a function on what to do with the bool you get.
+
+We can write some helper primitives:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L52{-}L59}
 
 \OtherTok{pString ::} \DataTypeTok{Primitive} \DataTypeTok{String}
 \NormalTok{pString }\OtherTok{=} \DataTypeTok{PString} \DataTypeTok{Just}
@@ -412,10 +423,11 @@ express can be isolated to one place: the \texttt{Primitive} type.
 \end{Highlighting}
 \end{Shaded}
 
-And that's it! Different data types will parse these primitive values in
-different ways, but other than that, everything is sort of already
-pre-determined. Remember, our \texttt{Schema} type is only meant to express the
-different ways our rigidly defined structure can vary.
+\texttt{pString\ ::\ Primitive\ String} is the most basic way to parse a
+primitive json string: just return the \texttt{String} itself. \texttt{pInt}
+needs to reject any non-integer numbers, so
+\texttt{toBoundedInteger\ ::\ Scientific\ -\textgreater{}\ Maybe\ Int} works
+well.
 
 \hypertarget{finding-ap}{%
 \subsection{Finding Ap}\label{finding-ap}}
@@ -432,20 +444,11 @@ At first glance, we might think we could just write
     \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     [}\DataTypeTok{Choice}\NormalTok{ a]}
     \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
   \KeywordTok{deriving} \DataTypeTok{Functor}
-
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L31{-}L41}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L34{-}L40}
 
 \KeywordTok{data} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Field}
-\NormalTok{    \{}\OtherTok{ fieldName  ::} \DataTypeTok{String}
-\NormalTok{    ,}\OtherTok{ fieldValue ::} \DataTypeTok{Schema}\NormalTok{ a}
-\NormalTok{    \}}
-  \KeywordTok{deriving} \DataTypeTok{Functor}
 
 \KeywordTok{data} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Choice}
-\NormalTok{    \{}\OtherTok{ choiceName  ::} \DataTypeTok{String}
-\NormalTok{    ,}\OtherTok{ choiceValue ::} \DataTypeTok{Schema}\NormalTok{ a}
-\NormalTok{    \}}
-  \KeywordTok{deriving} \DataTypeTok{Functor}
 \end{Highlighting}
 \end{Shaded}
 
@@ -586,21 +589,23 @@ we're on the right track.
 Reading further on in the \texttt{Day} section, we see:
 
 \begin{quote}
-\textbf{List type}: (\ldots) \texttt{Ap\ f\ a} is a bunch of \texttt{f\ x}s
-\texttt{Day}d with each other.
+\textbf{List type}
+
+\ldots{} \texttt{Ap\ f\ a} is a bunch of \texttt{f\ x}s \texttt{Day}d with each
+other.
 \end{quote}
 
 All three different ways you might have arrived at the conclusion of using
 \texttt{Ap}!
 
-\hypertarget{using-ap}{%
-\subsection{Using Ap}\label{using-ap}}
+\hypertarget{interpreting-parsers}{%
+\subsection{Interpreting Parsers}\label{interpreting-parsers}}
 
-With this let's write our final \texttt{Schema} type:
+With this, we can write our final \texttt{Schema} type.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L25{-}L47}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L28{-}L50}
 
 \KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
       \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Ap} \DataTypeTok{Field}\NormalTok{ a)}
@@ -608,15 +613,15 @@ With this let's write our final \texttt{Schema} type:
     \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
   \KeywordTok{deriving} \DataTypeTok{Functor}
 
-\KeywordTok{data} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Choice}
-\NormalTok{    \{}\OtherTok{ choiceName  ::} \DataTypeTok{String}
-\NormalTok{    ,}\OtherTok{ choiceValue ::} \DataTypeTok{Schema}\NormalTok{ a}
-\NormalTok{    \}}
-  \KeywordTok{deriving} \DataTypeTok{Functor}
-
 \KeywordTok{data} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Field}
 \NormalTok{    \{}\OtherTok{ fieldName  ::} \DataTypeTok{String}
 \NormalTok{    ,}\OtherTok{ fieldValue ::} \DataTypeTok{Schema}\NormalTok{ a}
+\NormalTok{    \}}
+  \KeywordTok{deriving} \DataTypeTok{Functor}
+
+\KeywordTok{data} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Choice}
+\NormalTok{    \{}\OtherTok{ choiceName  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ choiceValue ::} \DataTypeTok{Schema}\NormalTok{ a}
 \NormalTok{    \}}
   \KeywordTok{deriving} \DataTypeTok{Functor}
 
@@ -627,6 +632,231 @@ With this let's write our final \texttt{Schema} type:
   \KeywordTok{deriving} \DataTypeTok{Functor}
 \end{Highlighting}
 \end{Shaded}
+
+Note that I switched from \texttt{{[}Choice\ a{]}} to \texttt{ListF\ Choice\ a}
+--- the two are the same, but the latter has the Functor instance we want
+(\texttt{fmap\ ::\ (a\ -\textgreater{}\ b)\ -\textgreater{}\ ListF\ Choice\ a\ -\textgreater{}\ ListF\ Choice\ b}),
+and is an instance of useful functor combinator typeclasses. Furthermore, it
+illustrates the duality between sum types, since \texttt{Ap} and \texttt{ListF}
+are contrasting types: \texttt{Ap} represents a product between many required
+fields, and \texttt{ListF} represents a sum between many possible choices. It's
+more clear how product types and list types are ``opposites'' in a nice clean
+way.
+
+Now, the typical way to ``run'' an applied functor combinator is with
+interpreting functions, like:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{interpret ::} \DataTypeTok{Applicative}\NormalTok{ g }\OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x) }\OtherTok{=>} \DataTypeTok{Ap}\NormalTok{ f a    }\OtherTok{{-}>}\NormalTok{ g a}
+\OtherTok{interpret ::} \DataTypeTok{Plus}\NormalTok{ g        }\OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x) }\OtherTok{=>} \DataTypeTok{ListF}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ g a}
+\end{Highlighting}
+\end{Shaded}
+
+You can interpret an \texttt{Ap\ f\ a} into any \texttt{Applicative\ g}, and you
+can interpret a \texttt{ListF\ f\ a} into any \texttt{Plus\ g} (\texttt{Plus} is
+basically \texttt{Alternative} without an \texttt{Applicative} requirement).
+Basically, you write a function to interpret any \texttt{f} you find, and
+\texttt{interpret} will accumulate them all together for you.
+
+In our case, if we decided to use \texttt{interpret}, we could write:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{interpret ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.} \DataTypeTok{Field}\NormalTok{  x }\OtherTok{{-}>} \DataTypeTok{Parse} \DataTypeTok{ErrType}\NormalTok{ x) }\OtherTok{{-}>} \DataTypeTok{Ap}    \DataTypeTok{Field}\NormalTok{  a }\OtherTok{{-}>} \DataTypeTok{Parse} \DataTypeTok{ErrType}\NormalTok{ x}
+\OtherTok{interpret ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.} \DataTypeTok{Choice}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{Parse} \DataTypeTok{ErrType}\NormalTok{ x) }\OtherTok{{-}>} \DataTypeTok{ListF} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Parse} \DataTypeTok{ErrType}\NormalTok{ x}
+\end{Highlighting}
+\end{Shaded}
+
+Basically, if we have a way to parse each \texttt{Field}, then we have a way to
+parse an \texttt{Ap\ Field\ a}. If we have a way to parse each \texttt{Choice},
+then we have a way to parse a \texttt{ListF\ Choice\ a}.
+
+Let's write those individual parsers for each smaller type:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L124{-}L125}
+
+\OtherTok{fieldParser ::} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ a}
+\NormalTok{fieldParser }\DataTypeTok{Field}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ A.key (T.pack fieldName) (schemaParser fieldValue)}
+\end{Highlighting}
+\end{Shaded}
+
+Here we use \emph{aeson-better-errors}'s
+\texttt{key\ ::\ Text\ -\textgreater{}\ Parser\ a\ -\textgreater{}\ Parser\ a},
+which takes a key and a parser, and runs that parser on whatever is under that
+key. For \texttt{fieldParser}, we run the schema parser for our sub-schema under
+that key.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L127{-}L132}
+
+\OtherTok{choiceParser ::} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ a}
+\NormalTok{choiceParser }\DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \KeywordTok{do}
+\NormalTok{  tag }\OtherTok{<{-}}\NormalTok{ A.key }\StringTok{"tag"}\NormalTok{ A.asString}
+\NormalTok{  unless (tag }\OperatorTok{==}\NormalTok{ choiceName) }\OperatorTok{$}
+\NormalTok{    A.throwCustomError }\StringTok{"Tag does not match"}
+\NormalTok{  A.key }\StringTok{"contents"} \OperatorTok{$}\NormalTok{ schemaParser choiceValue}
+\end{Highlighting}
+\end{Shaded}
+
+Our sum type encoding is a bit more involved, because json doesn't have any
+native sum type construct. So we're going to parse whatever is in the key
+\texttt{"tag"}, and if that tag matches our current choice's constructor, we
+parse the schema parser for our sub-schema under that key. Otherwise, this
+choice isn't what is currently in our json value.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L134{-}L141}
+
+\OtherTok{primParser ::} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ a}
+\NormalTok{primParser }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+  \DataTypeTok{PString}\NormalTok{ f }\OtherTok{{-}>}\NormalTok{ A.withString }\OperatorTok{$}
+    \FunctionTok{maybe}\NormalTok{ (}\DataTypeTok{Left} \StringTok{"error validating string"}\NormalTok{) }\DataTypeTok{Right} \OperatorTok{.}\NormalTok{ f}
+  \DataTypeTok{PNumber}\NormalTok{ f }\OtherTok{{-}>}\NormalTok{ A.withScientific }\OperatorTok{$}
+    \FunctionTok{maybe}\NormalTok{ (}\DataTypeTok{Left} \StringTok{"error validating number"}\NormalTok{) }\DataTypeTok{Right} \OperatorTok{.}\NormalTok{ f}
+  \DataTypeTok{PBool}\NormalTok{ f }\OtherTok{{-}>}\NormalTok{ A.withBool }\OperatorTok{$}
+    \FunctionTok{maybe}\NormalTok{ (}\DataTypeTok{Left} \StringTok{"error validating bool"}\NormalTok{) }\DataTypeTok{Right} \OperatorTok{.}\NormalTok{ f}
+\end{Highlighting}
+\end{Shaded}
+
+Our primitive parser is just going to use \emph{aeson-better-error}'s primitive
+value parsers with the function in them --- nothing too fancy, just some
+plumbing.
+
+Finally, to wrap bring it all together, we use the \texttt{interpret} functions
+we talked about:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L118{-}L122}
+
+\OtherTok{schemaParser ::} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{ErrType}\NormalTok{ a}
+\NormalTok{schemaParser }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ interpret fieldParser fs}
+    \DataTypeTok{SumType}\NormalTok{    cs }\OtherTok{{-}>}\NormalTok{ interpret choiceParser cs}
+    \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ primParser p}
+\end{Highlighting}
+\end{Shaded}
+
+And that's it!
+
+Ah well, not exactly so fast. Even though they could support it,
+\emph{aeson-better-errors} doesn't provide and \texttt{Plus} instances for
+\texttt{Parse}. We can write them as orphans here just because this is a fun
+learning experience (but we usually do like to avoid defining instances for
+types or typeclasses that aren't ours).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L111{-}L114}
+
+\KeywordTok{instance} \DataTypeTok{Monad}\NormalTok{ f }\OtherTok{=>} \DataTypeTok{Alt}\NormalTok{ (}\DataTypeTok{A.ParseT}\NormalTok{ e f) }\KeywordTok{where}
+\NormalTok{    (}\OperatorTok{<!>}\NormalTok{) }\OtherTok{=}\NormalTok{ (}\OperatorTok{A.<|>}\NormalTok{)}
+\KeywordTok{instance} \DataTypeTok{Monad}\NormalTok{ f }\OtherTok{=>} \DataTypeTok{Plus}\NormalTok{ (}\DataTypeTok{A.ParseT} \DataTypeTok{String}\NormalTok{ f) }\KeywordTok{where}
+\NormalTok{    zero  }\OtherTok{=}\NormalTok{ A.throwCustomError }\StringTok{"No options were validated"}
+\end{Highlighting}
+\end{Shaded}
+
+And\ldots that should work!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\OperatorTok{>} \OperatorTok{:}\NormalTok{set }\OperatorTok{{-}}\DataTypeTok{XOverloadedStrings}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ parseSchema customerSchema  }\StringTok{"\{ \textbackslash{}"tag\textbackslash{}": \textbackslash{}"Person\textbackslash{}", \textbackslash{}"contents\textbackslash{}": \{ \textbackslash{}"Name\textbackslash{}": \textbackslash{}"Same\textbackslash{}", \textbackslash{}"Age\textbackslash{}": 40 \} \}"}
+\DataTypeTok{Right}\NormalTok{ (}\DataTypeTok{CPerson}\NormalTok{ \{cpName }\OtherTok{=} \StringTok{"Same"}\NormalTok{, cpAge }\OtherTok{=} \DecValTok{30}\NormalTok{\})}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ parseSchema customerSchema  }\StringTok{"\{ \textbackslash{}"tag\textbackslash{}": \textbackslash{}"Business\textbackslash{}", \textbackslash{}"contents\textbackslash{}": \{ \textbackslash{}"Employees\textbackslash{}": 3 \} \}"}
+\DataTypeTok{Right}\NormalTok{ (}\DataTypeTok{CBusiness}\NormalTok{ \{cbEmployees }\OtherTok{=} \DecValTok{3}\NormalTok{\})}
+\end{Highlighting}
+\end{Shaded}
+
+We were able to generate a fully functional parser from our schema, by only
+providing parsers for the smaller, more specific types we had (\texttt{Field}
+and \texttt{Choice}), and having them all fit together in a way directed by
+their \texttt{Apply} and \texttt{Alt} typeclass instances.
+
+\hypertarget{direct-structural-inspection}{%
+\subsection{Direct Structural Inspection}\label{direct-structural-inspection}}
+
+However, sometimes the typeclass instances aren't really the best way to handle
+things. It gives us a nice principled shortcut --- for example, to interpret out
+of an \texttt{Ap}, GHC needs a way to know ``how to sequence \texttt{Parse}s'',
+and so \texttt{interpret} uses the \texttt{Applicative} instance for that. But
+we know there are usually different ways to sequence or combine actions ---
+famously in IO, we have the option to sequence IO actions in series or in
+parallel. So, offloading our logic to a typeclass can be a convenient route, but
+it's not necessarily the most pragmatic way.
+
+In our case, the \texttt{Plus} instance actually combines failed fallback
+behavior in an undesirable way: our errors become not too useful, because
+\texttt{\textless{}!\textgreater{}} always picks the right side's errors, and we
+eventually run into \texttt{A.throwCustomError\ "No\ options\ were\ validated"}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ parseSchema customerSchema  }\StringTok{"\{ \textbackslash{}"tag\textbackslash{}": \textbackslash{}"Business\textbackslash{}", \textbackslash{}"contents\textbackslash{}": \{ \textbackslash{}"Employees\textbackslash{}": \textbackslash{}"Mustard\textbackslash{}" \} \}"}
+\DataTypeTok{Left}\NormalTok{ (}\DataTypeTok{BadSchema}\NormalTok{ [] (}\DataTypeTok{CustomError} \StringTok{"No options were validated"}\NormalTok{))}
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ parseSchema customerSchema  }\StringTok{"\{ \textbackslash{}"tag\textbackslash{}": \textbackslash{}"Grape\textbackslash{}", \textbackslash{}"contents\textbackslash{}": \{ \textbackslash{}"Color\textbackslash{}": \textbackslash{}"purple\textbackslash{}" \} \}"}
+\DataTypeTok{Left}\NormalTok{ (}\DataTypeTok{BadSchema}\NormalTok{ [] (}\DataTypeTok{CustomError} \StringTok{"No options were validated"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+Since \texttt{Plus}'s \texttt{zero} definition always falls back to the same
+error, this is not very useful!
+
+So \texttt{interpret} for \texttt{ListF}, while convenient, isn't necessarily
+the best way to tear down a \texttt{ListF}. Luckily, most functor combinators
+are just ADTs that we can pattern match and break down and access the structures
+manually. In the case of \texttt{ListF}, the structure is pretty simple:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{ListF}\NormalTok{ f a }\OtherTok{=} \DataTypeTok{ListF}\NormalTok{ \{}\OtherTok{ runListF ::}\NormalTok{ [f a] \}}
+\end{Highlighting}
+\end{Shaded}
+
+So our \texttt{ListF\ Choice\ a} is just \texttt{{[}Choice\ a{]}}. This is
+something we can work with! Let's write a better \texttt{ListF\ Choice\ a}
+processor by working with the list itself.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L143{-}L155}
+
+\OtherTok{schemaParser2 ::} \KeywordTok{forall}\NormalTok{ a}\OperatorTok{.} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{ErrType}\NormalTok{ a}
+\NormalTok{schemaParser2 }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ interpret fieldParser fs}
+    \DataTypeTok{SumType}\NormalTok{    cs }\OtherTok{{-}>} \KeywordTok{do}
+      \KeywordTok{let}\OtherTok{ schemaMap ::} \DataTypeTok{M.Map} \DataTypeTok{String}\NormalTok{ (}\DataTypeTok{Schema}\NormalTok{ a)}
+\NormalTok{          schemaMap }\OtherTok{=}\NormalTok{ M.fromList [ (choiceName, choiceValue) }\OperatorTok{|} \DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{<{-}}\NormalTok{ runListF cs ]}
+\NormalTok{      tag }\OtherTok{<{-}}\NormalTok{ A.key }\StringTok{"tag"}\NormalTok{ A.asString}
+      \KeywordTok{case}\NormalTok{ M.lookup tag schemaMap }\KeywordTok{of}
+        \DataTypeTok{Nothing} \OtherTok{{-}>}\NormalTok{ A.throwCustomError }\OperatorTok{$}
+                \StringTok{"tag "} \OperatorTok{<>}\NormalTok{ tag }\OperatorTok{<>} \StringTok{" not recognized: Expected one of "}
+             \OperatorTok{<>}\NormalTok{ intercalate }\StringTok{", "}\NormalTok{ (M.keys schemaMap)}
+        \DataTypeTok{Just}\NormalTok{ sc }\OtherTok{{-}>}\NormalTok{ A.key }\StringTok{"contents"}\NormalTok{ (schemaParser2 sc)}
+    \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ primParser p}
+\end{Highlighting}
+\end{Shaded}
+
+We can use the structure of \texttt{ListF} to generate a \texttt{Map}
+associating any tags with the schemas they are meant to encode. We then parse
+the tag, look up what schema it represents (if any) and then use that schema
+under the contents key.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parseSchema2 customerSchema  }\StringTok{"\{ \textbackslash{}"tag\textbackslash{}": \textbackslash{}"Business\textbackslash{}", \textbackslash{}"contents\textbackslash{}": \{ \textbackslash{}"Employees\textbackslash{}": \textbackslash{}"Mustard\textbackslash{}" \} \}"}
+\DataTypeTok{Left}\NormalTok{ (}\DataTypeTok{BadSchema}\NormalTok{ [}\DataTypeTok{ObjectKey} \StringTok{"contents"}\NormalTok{,}\DataTypeTok{ObjectKey} \StringTok{"Employees"}\NormalTok{] (}\DataTypeTok{WrongType} \DataTypeTok{TyNumber}\NormalTok{ (}\DataTypeTok{String} \StringTok{"Mustard"}\NormalTok{)))}
+\NormalTok{λ}\OperatorTok{:}\NormalTok{ parseSchema2 customerSchema  }\StringTok{"\{ \textbackslash{}"tag\textbackslash{}": \textbackslash{}"Grape\textbackslash{}", \textbackslash{}"contents\textbackslash{}": \{ \textbackslash{}"Color\textbackslash{}": \textbackslash{}"purple\textbackslash{}" \} \}"}
+\DataTypeTok{Left}\NormalTok{ (}\DataTypeTok{BadSchema}\NormalTok{ [] (}\DataTypeTok{CustomError} \StringTok{"tag Grape not recognized: Expected one of Business, Person"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+Much better messages!
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
