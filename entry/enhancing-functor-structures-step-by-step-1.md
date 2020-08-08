@@ -256,7 +256,7 @@ with `parse :: Parse err a -> ByteString -> Either (ParseError err) a`. So our
 final interface will look like:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L157-L158
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L158-L159
 
 parseSchema :: Schema a -> ByteString -> Either (A.ParseError ErrType) a
 parseSchema sc = A.parse (schemaParser sc)
@@ -270,7 +270,7 @@ and also how to parse primitive types. And so, the main thing we need to modify
 is just `Primitive`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L46-L50
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L47-L51
 
 data Primitive a =
       PString (String -> Maybe a)
@@ -287,7 +287,7 @@ parser", you need `PBool` with a function on what to do with the bool you get.
 We can write some helper primitives:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L52-L59
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L53-L60
 
 pString :: Primitive String
 pString = PString Just
@@ -303,7 +303,7 @@ pBool = PBool Just
 string: just return the `String` itself. `pInt` needs to reject any non-integer
 numbers, so `toBoundedInteger :: Scientific -> Maybe Int` works well.
 
-### Finding Ap
+### Deducing Ap
 
 However, this small change (and adding the type parameter) leaves in a
 predicament. What should `Schema` look like?
@@ -316,7 +316,7 @@ data Schema a =
     | SumType     [Choice a]
     | SchemaLeaf  (Primitive a)
   deriving Functor
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L34-L40
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L35-L41
 
 data Field a = Field
 
@@ -444,12 +444,12 @@ Reading further on in the `Day` section, we see:
 
 All three different ways you might have arrived at the conclusion of using `Ap`!
 
-### Interpreting Parsers
+### Building Ap
 
 With this, we can write our final `Schema` type.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L28-L50
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L29-L51
 
 data Schema a =
       RecordType  (Ap Field a)
@@ -479,11 +479,56 @@ data Primitive a =
 Note that I switched from `[Choice a]` to `ListF Choice a` --- the two are the
 same, but the latter has the Functor instance we want
 (`fmap :: (a -> b) -> ListF Choice a -> ListF Choice b`), and is an instance of
-useful functor combinator typeclasses. Furthermore, it illustrates the duality
+useful functor combinator typeclasses. Furthermore, it illustrates the symmetry
 between sum types, since `Ap` and `ListF` are contrasting types: `Ap` represents
 a product between many required fields, and `ListF` represents a sum between
 many possible choices. It's more clear how product types and list types are
 "opposites" in a nice clean way.
+
+We can now make our `Customer` schema:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L67-L81
+
+customerSchema :: Schema Customer
+customerSchema = SumType $
+      inject Choice
+        { choiceName  = "Person"
+        , choiceValue = RecordType $
+            CPerson
+              <$> liftAp Field { fieldName = "Name", fieldValue = SchemaLeaf pString }
+              <*> liftAp Field { fieldName = "Age" , fieldValue = SchemaLeaf pInt    }
+        }
+  <!> inject Choice
+        { choiceName  = "Business"
+        , choiceValue = RecordType $
+            CBusiness
+              <$> liftAp Field { fieldName = "Employees", fieldValue = SchemaLeaf pInt }
+        }
+customerSchema :: Schema Customer
+customerSchema = SumType $
+      inject Choice
+        { choiceName  = "Person"
+        , choiceValue = RecordType $
+            CPerson
+              <$> liftAp Field { fieldName = "Name", fieldValue = SchemaLeaf pString }
+              <*> liftAp Field { fieldName = "Age" , fieldValue = SchemaLeaf pInt    }
+        }
+  <!> inject Choice
+        { choiceName  = "Business"
+        , choiceValue = RecordType $
+            CBusiness
+              <$> liftAp Field { fieldName = "Employees", fieldValue = SchemaLeaf pInt }
+        }
+```
+
+The main new thing is using `inject :: Choice a -> ListF Choice a` and
+`inject :: Field a -> Ap Field a` to lift our base types into their appropriate
+combinators. Then after that, we just use `Ap`'s `Applicative` instance and
+`ListF`'s `Plus` instance to combine them together. Overall it should look very
+similar to the schema we wrote for the documentation section.
+
+### Interpreting Ap
 
 Now, the typical way to "run" an applied functor combinator is with interpreting
 functions, like:
@@ -512,7 +557,7 @@ parse a `ListF Choice a`.
 Let's write those individual parsers for each smaller type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L124-L125
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L125-L126
 
 fieldParser :: Field a -> A.Parse String a
 fieldParser Field{..} = A.key (T.pack fieldName) (schemaParser fieldValue)
@@ -523,7 +568,7 @@ takes a key and a parser, and runs that parser on whatever is under that key.
 For `fieldParser`, we run the schema parser for our sub-schema under that key.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L127-L132
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L128-L133
 
 choiceParser :: Choice a -> A.Parse String a
 choiceParser Choice{..} = do
@@ -540,7 +585,7 @@ schema parser for our sub-schema under that key. Otherwise, this choice isn't
 what is currently in our json value.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L134-L141
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L135-L142
 
 primParser :: Primitive a -> A.Parse String a
 primParser = \case
@@ -559,7 +604,7 @@ Finally, to wrap bring it all together, we use the `interpret` functions we
 talked about:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L118-L122
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L119-L123
 
 schemaParser :: Schema a -> A.Parse ErrType a
 schemaParser = \case
@@ -571,13 +616,12 @@ schemaParser = \case
 And that's it!
 
 Ah well, not exactly so fast. Even though they could support it,
-*aeson-better-errors* doesn't provide and `Plus` instances for `Parse`. We can
-write them as orphans here just because this is a fun learning experience (but
-we usually do like to avoid defining instances for types or typeclasses that
-aren't ours).
+*aeson-better-errors* doesn't provide `Plus` a for `Parse`. We can write them as
+orphans here just because this is a fun learning experience (but we usually do
+like to avoid defining instances for types or typeclasses that aren't ours).
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L111-L114
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L112-L115
 
 instance Monad f => Alt (A.ParseT e f) where
     (<!>) = (A.<|>)
@@ -635,12 +679,11 @@ pattern match and break down and access the structures manually. In the case of
 data ListF f a = ListF { runListF :: [f a] }
 ```
 
-So our `ListF Choice a` is just `[Choice a]`. This is something we can work
-with! Let's write a better `ListF Choice a` processor by working with the list
-itself.
+Our `ListF Choice a` is just `[Choice a]`. This is something we can work with!
+Let's write a better `ListF Choice a` processor by working with the list itself.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L143-L155
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L144-L156
 
 schemaParser2 :: forall a. Schema a -> A.Parse ErrType a
 schemaParser2 = \case
@@ -669,6 +712,76 @@ Left (BadSchema [] (CustomError "tag Grape not recognized: Expected one of Busin
 ```
 
 Much better messages!
+
+### Backporting documentation
+
+Remember that the whole point of this exercise was to *add* functionality to our
+schema. That means we also have to upgrade our documentation function as well.
+
+Hopefully it is clear from the structure of our data type that we haven't *lost*
+any information. Updating our documentation generator should be just a matter of
+changing how to we get the items from our `ListF` and `Ap`.
+
+Yes, we could manually pattern match and take advantage of the structure, or use
+an interpretation function directly, etc., but if we just want to get a list of
+monomorphic items from a functor combinator, there's a convenient function in
+*functor-combinators* called `icollect`.
+
+``` {.haskell}
+icollect :: (forall x. f x -> b) -> ListF f a -> [b]
+icollect :: (forall x. f x -> b) -> Ap    f a -> [b]
+```
+
+Give it a function to "get" a `b` out of every `f`, it collects the `b` from
+every `f` inside the structure. Note that this type is very similar to the `map`
+we used earlier:
+
+``` {.haskell}
+-- what we used before
+map      :: (          Field   -> b) -> [Field]    -> [b]
+-- what we can use now
+icollect :: (forall x. Field x -> b) -> Ap Field a -> [b]
+```
+
+So it looks like `icollect` should work as a drop-in replacement for `map` ...
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L83-L110
+
+schemaDoc
+    :: String       -- ^ name
+    -> Schema x     -- ^ schema
+    -> PP.Doc a
+schemaDoc title = \case
+    RecordType fs -> PP.vsep [
+        PP.pretty ("{" <> title <> "}")
+      , PP.indent 2 . PP.vsep $
+          icollect (\fld -> "*" PP.<+> PP.indent 2 (fieldDoc fld)) fs
+      ]
+    SumType cs    -> PP.vsep [
+        PP.pretty ("(" <> title <> ")")
+      , "Choice of:"
+      , PP.indent 2 . PP.vsep $
+          icollect choiceDoc cs
+      ]
+    SchemaLeaf p  -> PP.pretty (title <> ":")
+              PP.<+> primDoc p
+  where
+    fieldDoc :: Field x -> PP.Doc a
+    fieldDoc Field{..} = schemaDoc fieldName fieldValue
+    choiceDoc :: Choice x -> PP.Doc a
+    choiceDoc Choice{..} = schemaDoc choiceName choiceValue
+    primDoc :: Primitive x -> PP.Doc a
+    primDoc = \case
+      PString _ -> "string"
+      PNumber _ -> "number"
+      PBool   _ -> "bool"
+```
+
+Neat, we just had to replace `map (\fld -> ..) fs` with
+`icollect (\fld -> ...) fs`, and `map choiceDoc cs` with
+`icollect choiceDoc cs`. We were able to re-use the exact same logic --- we lose
+no power and upgrading was a straightforward mechanical transformation.
 
 --------------------------------------------------------------------------------
 
