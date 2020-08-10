@@ -894,79 +894,278 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <li><p><strong>Interpret</strong></p>
 <p>You’re not going to have any luck here — you cannot interpret out of these, unfortunately!</p></li>
 </ul>
+<h2 id="contravariant-functor-combinators">Contravariant Functor Combinators</h2>
+<p><strong>Addendum: Post functor-combinators-0.3.0.0</strong></p>
+<p>Most of the above functor combinators have been “covariant” ones: an <code>t f a</code> represents some “producer” or “generator” of <code>a</code>s. Many of them require a <code>Functor</code> constraint on <code>f</code> interpret out of. However, there exist many useful <em>contravariant</em> ones too, where <code>t f a</code> represents a “consumer” of <code>a</code>s; many of these require a <code>Contravariant</code> constraint on <code>f</code> to interpret out of. These can be useful as the building blocks of consumers like serializers.</p>
+<p>I’ve included them all in a separate section because you to either be looking for one or the other, and also because there are much less contravariant combinators than covariant ones in the Haskell ecosystem.</p>
+<p>Also note that many of the functor combinators in the previous sections are compatible with both covariant <em>and</em> contravariant functors, like:</p>
+<ul>
+<li><code>:+:</code>/<code>Sum</code></li>
+<li><code>LeftF</code>/<code>RightF</code></li>
+<li><code>EnvT</code></li>
+<li><code>Step</code></li>
+<li><code>Flagged</code></li>
+<li><code>Final</code></li>
+<li><code>Chain</code></li>
+<li><code>IdentityT</code></li>
+</ul>
+<p>The following functor combinators in the previous section are also compatible with both, but their instances in <em>functor-combinator</em> are designed around covariant usage. However, some of them have contravariant twins that are otherwise identical except for the fact that their instances are instead designed around contravariant usage.</p>
+<ul>
+<li><code>:*:</code>/<code>Product</code> (contravariant version: the contravariant <code>Day</code>)</li>
+<li><code>These1</code></li>
+<li><code>ListF</code>/<code>NonEmptyF</code> (contravariant versions: <code>Div</code> and <code>Div1</code>)</li>
+<li><code>MaybeF</code></li>
+</ul>
+<p>This section was added following the release of <em>functor-combinators-0.3.0.0</em>, which added in support for contravariant and invariant functor combinators.</p>
+<h3 id="contravariant-day">Contravariant Day</h3>
+<ul>
+<li><p><strong>Origin</strong>: <em>[Data.Functor.Contravariant.Day][]</em></p></li>
+<li><p><strong>Mixing Strategy</strong>: “Both, together”: provide two consumers that are each meant to consume one part of the input.</p>
+<div class="sourceCode" id="cb101"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb101-1"><a href="#cb101-1"></a><span class="kw">data</span> <span class="dt">Day</span> f g a <span class="ot">=</span> <span class="kw">forall</span> x y<span class="op">.</span> <span class="dt">Day</span> (f x) (g y) (a <span class="ot">-&gt;</span> (x, y))</span></code></pre></div>
+<p>This type is essentially equivalent to <code>:*:</code>/<code>Product</code> if <code>f</code> is <code>Contravariant</code>, so it is useful in every situation where <code>:*:</code> would be useful. It can be thought of as simply a version of <code>:*:</code> that signals to the reader that it is meant to be used contravariantly (as a consumer) and not covariantly (as a producer).</p>
+<p>Like for <code>:*:</code>, it has the distinguishing property (if <code>f</code> is <code>Contravariant</code>) of allowing you to use either the <code>f</code> or the <code>g</code>, as you please.</p>
+<div class="sourceCode" id="cb102"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb102-1"><a href="#cb102-1"></a><span class="ot">dayOutL ::</span> <span class="dt">Contravariant</span> f <span class="ot">=&gt;</span> <span class="dt">Day</span> f g <span class="op">~&gt;</span> f</span>
+<span id="cb102-2"><a href="#cb102-2"></a>dayOutL (<span class="dt">Day</span> x _ f) <span class="ot">=</span> contramap (<span class="fu">fst</span> <span class="op">.</span> f) x</span>
+<span id="cb102-3"><a href="#cb102-3"></a></span>
+<span id="cb102-4"><a href="#cb102-4"></a><span class="ot">dayOutR ::</span> <span class="dt">Contravariant</span> g <span class="ot">=&gt;</span> <span class="dt">Day</span> f g <span class="op">~&gt;</span> g</span>
+<span id="cb102-5"><a href="#cb102-5"></a>dayOutR (<span class="dt">Day</span> _ y f) <span class="ot">=</span> contramap (<span class="fu">snd</span> <span class="op">.</span> f) y</span></code></pre></div>
+<p>In practice, however, I like to think of it as storing an <code>f</code> and a <code>g</code> that can each handle a separate “part” of an <code>a</code>. For example, the illustrative helper function</p>
+<div class="sourceCode" id="cb103"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb103-1"><a href="#cb103-1"></a><span class="ot">day ::</span> f a <span class="ot">-&gt;</span> g b <span class="ot">-&gt;</span> <span class="dt">Day</span> f g (a, b)</span>
+<span id="cb103-2"><a href="#cb103-2"></a>day x y <span class="ot">=</span> <span class="dt">Day</span> x y <span class="fu">id</span></span></code></pre></div>
+<p>allows you to couple an <code>f a</code> consumer of <code>a</code> with a <code>g b</code> consumer of <code>b</code> to produce a consumer of <code>(a, b)</code> that does its job by handing the <code>a</code> to <code>x</code>, and the <code>b</code> to <code>y</code>.</p></li>
+<li><p><strong>Identity</strong></p>
+<div class="sourceCode" id="cb104"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb104-1"><a href="#cb104-1"></a><span class="kw">instance</span> <span class="dt">Tensor</span> <span class="dt">Day</span> <span class="dt">Proxy</span></span></code></pre></div>
+<p>Since this type is essentially <code>(:*:)</code>, it has the same identity.</p>
+<div class="sourceCode" id="cb105"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb105-1"><a href="#cb105-1"></a>day <span class="dt">Proxy</span><span class="ot"> ::</span> g b <span class="ot">-&gt;</span> <span class="dt">Day</span> <span class="dt">Proxy</span> g (a, b)</span></code></pre></div>
+<p>is the <code>Day</code> that would “ignore” the <code>a</code> part and simply pass the <code>b</code> to <code>g</code>.</p></li>
+<li><p><strong>Monoids</strong></p>
+<div class="sourceCode" id="cb106"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb106-1"><a href="#cb106-1"></a><span class="kw">instance</span> <span class="dt">Divise</span>    f <span class="ot">=&gt;</span> <span class="dt">SemigroupIn</span> <span class="dt">Day</span> f</span>
+<span id="cb106-2"><a href="#cb106-2"></a><span class="kw">instance</span> <span class="dt">Divisible</span> f <span class="ot">=&gt;</span> <span class="dt">MonoidIn</span>    <span class="dt">Day</span> <span class="dt">Proxy</span> f</span>
+<span id="cb106-3"><a href="#cb106-3"></a></span>
+<span id="cb106-4"><a href="#cb106-4"></a>binterpret <span class="op">@</span><span class="dt">Day</span></span>
+<span id="cb106-5"><a href="#cb106-5"></a><span class="ot">    ::</span> <span class="dt">Divise</span> f</span>
+<span id="cb106-6"><a href="#cb106-6"></a>    <span class="ot">=&gt;</span> g <span class="op">~&gt;</span> f</span>
+<span id="cb106-7"><a href="#cb106-7"></a>    <span class="ot">-&gt;</span> h <span class="op">~&gt;</span> f</span>
+<span id="cb106-8"><a href="#cb106-8"></a>    <span class="ot">-&gt;</span> <span class="dt">Day</span> g h <span class="op">~&gt;</span> f</span>
+<span id="cb106-9"><a href="#cb106-9"></a></span>
+<span id="cb106-10"><a href="#cb106-10"></a>inL   <span class="op">@</span><span class="ot">(:*:) ::</span> <span class="dt">Divisible</span> g <span class="ot">=&gt;</span> f     <span class="op">~&gt;</span> <span class="dt">Day</span> f g</span>
+<span id="cb106-11"><a href="#cb106-11"></a>inR   <span class="op">@</span><span class="ot">(:*:) ::</span> <span class="dt">Divisible</span> f <span class="ot">=&gt;</span> g     <span class="op">~&gt;</span> <span class="dt">Day</span> f g</span>
+<span id="cb106-12"><a href="#cb106-12"></a>pureT <span class="op">@</span><span class="ot">(:*:) ::</span> <span class="dt">Divisible</span> h <span class="ot">=&gt;</span> <span class="dt">Proxy</span> <span class="op">~&gt;</span> h</span></code></pre></div>
+<p><code>Divise</code> from <em>[Data.Functor.Contravariant.Divise][]</em> can be thought of some version the “contravariant <code>Alt</code>”: it gives you a way to merge two <code>f a</code>s into a single one in a way that represents having both the items consume the input as they choose. The usual way of doing this is by providing a splitting function to choose to give some part of the input to one argument, and some part to another:</p>
+<div class="sourceCode" id="cb107"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb107-1"><a href="#cb107-1"></a><span class="kw">class</span> <span class="dt">Contravariant</span> f <span class="ot">=&gt;</span> <span class="dt">Divise</span> f <span class="kw">where</span></span>
+<span id="cb107-2"><a href="#cb107-2"></a><span class="ot">    divise ::</span> (a <span class="ot">-&gt;</span> (b, c)) <span class="ot">-&gt;</span> f b <span class="ot">-&gt;</span> f c <span class="ot">-&gt;</span> f a</span>
+<span id="cb107-3"><a href="#cb107-3"></a>                  <span class="co">-- ^ what to give to the &#39;f b&#39;</span></span>
+<span id="cb107-4"><a href="#cb107-4"></a>                     <span class="co">-- ^ what to give to the &#39;f c&#39;</span></span></code></pre></div>
+<p><code>Divisible</code> from <em>[Data.Functor.Contravariant.Divisible][]</em>, adds an identity that will ignore anything it is given: <code>conquer.</code></p>
+<div class="sourceCode" id="cb108"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb108-1"><a href="#cb108-1"></a><span class="kw">class</span> <span class="dt">Divise</span> f <span class="ot">=&gt;</span> <span class="dt">Divisible</span> f <span class="kw">where</span></span>
+<span id="cb108-2"><a href="#cb108-2"></a><span class="ot">    conquer ::</span> f a</span></code></pre></div>
+<p>(note: like with <code>Applicative</code> and <code>Apply</code>, the actual version requires only <code>Contravariant f</code>; <code>Divise</code> isn’t an actual superclass, even though it should be.)</p></li>
+<li><p><strong>List type</strong></p>
+<div class="sourceCode" id="cb109"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb109-1"><a href="#cb109-1"></a><span class="kw">type</span> <span class="dt">NonEmptyBy</span> <span class="dt">Day</span> <span class="ot">=</span> <span class="dt">Div1</span></span>
+<span id="cb109-2"><a href="#cb109-2"></a><span class="kw">type</span> <span class="dt">ListBy</span>     <span class="dt">Day</span> <span class="ot">=</span> <span class="dt">Div</span></span></code></pre></div>
+<p><code>Div1 f</code> and <code>Div f</code> are equivalent to <code>NonEmptyF f</code> and <code>ListF f</code>, respectively, as long as <code>f</code> is <code>Contravariant</code>. However, due to quirks of the the definition of <code>Day</code>, essential functions like appends, merges, etc. on <code>ListF</code> require <code>Contravariant f</code>. <code>Div</code> doesn’t require such instances, and so can be more useful as a free structure. Also, <code>Div1</code>/<code>Div</code> are constructed in a way that is more well-suited for common usage patterns of <code>Divisible</code> methods.</p>
+<p>Like for <code>Day</code>, it’s something that can be used instead of <code>:*:</code> to mentally signify how the type is meant to be used. You can think of <code>Div f a</code> as a chain of <code>f</code>s, where the <code>a</code> is distributed over each <code>f</code>, but the intent of its usage is that each <code>f</code> is meant to consume a different part of that <code>a</code>.</p>
+<p>See the information later on <code>Div</code> alone for more information on usage and utility.</p>
+<p><code>Div</code> is the possibly-empty version, and <code>Div1</code> is the nonempty version.</p></li>
+</ul>
+<p>[Data.Functor.Contravariant.Day][]: https://hackage.haskell.org/package/kan-extensions/docs/Data-Functor-Contravariant-Day.html [Data.Functor.Contravariant.Divisible][]: https://hackage.haskell.org/package/contravariant/docs/Data-Functor-Contravariant-Divisible.html [Data.Functor.Contravariant.Divise][]: https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Divise.html</p>
+<h3 id="night">Night</h3>
+<ul>
+<li><p><strong>Origin</strong>: <em>[Data.Functor.Contravariant.Night][]</em></p></li>
+<li><p><strong>Mixing Strategy</strong>: “One or the other, but chosen at consumption-time”: provide two consumers to handle input, but the choice of which consumer to use is made at consumption time.</p>
+<div class="sourceCode" id="cb110"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb110-1"><a href="#cb110-1"></a><span class="kw">data</span> <span class="dt">Night</span> f g a <span class="ot">=</span> <span class="kw">forall</span> x y<span class="op">.</span> <span class="dt">Night</span> (f x) (g y) (a <span class="ot">-&gt;</span> <span class="dt">Either</span> x y)</span></code></pre></div>
+<p>This one represents <em>delegation</em>: <code>Night f g a</code> contains <code>f</code> and <code>g</code> that could process some form of the <code>a</code>, but which of the two is chosen to depends on the value of <code>a</code> itself.</p>
+<p>This can be thought of as representing [sharding][] between <code>f</code> and <code>g</code>. Some discriminator determins which of <code>f</code> or <code>g</code> is better suited to consume the input, and picks which single one to use based on that.</p>
+<p>The illustrative helper function can make this clear:</p>
+<div class="sourceCode" id="cb111"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb111-1"><a href="#cb111-1"></a><span class="ot">night ::</span> f a <span class="ot">-&gt;</span> g b <span class="ot">-&gt;</span> <span class="dt">Night</span> f g (<span class="dt">Either</span> a b)</span>
+<span id="cb111-2"><a href="#cb111-2"></a>night x y <span class="ot">=</span> <span class="dt">Night</span> x y <span class="fu">id</span></span></code></pre></div>
+<p>allows you to couple an <code>f a</code> consumer of <code>a</code> with a <code>g b</code> consumer of <code>b</code> to produce a consumer of <code>Either a b</code> that does its job by using the <code>f</code> if given a <code>Left</code> input, and using the <code>g</code> if given a <code>b</code> input.</p>
+<p>This is technically still a day convolution (mathematically), but it uses <code>Either</code> instead of the typical <code>(,)</code> we use in Haskell. So it’s like the opposite of a usual Haskell <code>Day</code> — it’s <code>Night</code> :)</p></li>
+<li><p><strong>Identity</strong></p>
+<div class="sourceCode" id="cb112"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb112-1"><a href="#cb112-1"></a><span class="kw">instance</span> <span class="dt">Tensor</span> <span class="dt">Night</span> <span class="dt">Not</span></span>
+<span id="cb112-2"><a href="#cb112-2"></a></span>
+<span id="cb112-3"><a href="#cb112-3"></a><span class="co">-- | Data type that proves @a@ cannot exist</span></span>
+<span id="cb112-4"><a href="#cb112-4"></a><span class="kw">newtype</span> <span class="dt">Not</span> a <span class="ot">=</span> <span class="dt">Not</span> {<span class="ot"> refute ::</span> a <span class="ot">-&gt;</span> <span class="dt">Void</span> }</span></code></pre></div>
+<p>If <code>Night f g</code> assigns input to either <code>f</code> or <code>g</code>, then a functor that “cannot be chosen”/“cannot be used” would force the choice to the other side.</p>
+<p>That is, <code>Night f Not</code> must necessarily pass its input to <code>f</code>, as you cannot pass anything to a <code>Not</code>, since it only accepts passing in uninhabited types.</p></li>
+<li><p><strong>Monoids</strong></p>
+<div class="sourceCode" id="cb113"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb113-1"><a href="#cb113-1"></a><span class="kw">instance</span> <span class="dt">Decide</span>   f <span class="ot">=&gt;</span> <span class="dt">SemigroupIn</span> <span class="dt">Night</span> f</span>
+<span id="cb113-2"><a href="#cb113-2"></a><span class="kw">instance</span> <span class="dt">Conclude</span> f <span class="ot">=&gt;</span> <span class="dt">MonoidIn</span>    <span class="dt">Night</span> <span class="dt">Not</span> f</span>
+<span id="cb113-3"><a href="#cb113-3"></a></span>
+<span id="cb113-4"><a href="#cb113-4"></a>binterpret <span class="op">@</span><span class="dt">Night</span></span>
+<span id="cb113-5"><a href="#cb113-5"></a><span class="ot">    ::</span> <span class="dt">Decide</span> f</span>
+<span id="cb113-6"><a href="#cb113-6"></a>    <span class="ot">=&gt;</span> g <span class="op">~&gt;</span> f</span>
+<span id="cb113-7"><a href="#cb113-7"></a>    <span class="ot">-&gt;</span> h <span class="op">~&gt;</span> f</span>
+<span id="cb113-8"><a href="#cb113-8"></a>    <span class="ot">-&gt;</span> <span class="dt">Night</span> g h <span class="op">~&gt;</span> f</span>
+<span id="cb113-9"><a href="#cb113-9"></a></span>
+<span id="cb113-10"><a href="#cb113-10"></a>inL   <span class="op">@</span><span class="dt">Night</span><span class="ot"> ::</span> <span class="dt">Conclude</span> g <span class="ot">=&gt;</span> f   <span class="op">~&gt;</span> <span class="dt">Night</span> f g</span>
+<span id="cb113-11"><a href="#cb113-11"></a>inR   <span class="op">@</span><span class="dt">Night</span><span class="ot"> ::</span> <span class="dt">Conclude</span> f <span class="ot">=&gt;</span> g   <span class="op">~&gt;</span> <span class="dt">Night</span> f g</span>
+<span id="cb113-12"><a href="#cb113-12"></a>pureT <span class="op">@</span><span class="dt">Night</span><span class="ot"> ::</span> <span class="dt">Conclude</span> h <span class="ot">=&gt;</span> <span class="dt">Not</span> <span class="op">~&gt;</span> h</span></code></pre></div>
+<p><code>Decide</code> from <em>[Data.Functor.Contravariant.Decide][]</em> can be thought of as a deterministic sharding typeclass: You can combine two consumers along with a decision function on which consumer to use.</p>
+<div class="sourceCode" id="cb114"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb114-1"><a href="#cb114-1"></a><span class="kw">class</span> <span class="dt">Contravariant</span> f <span class="ot">=&gt;</span> <span class="dt">Decide</span> f <span class="kw">where</span></span>
+<span id="cb114-2"><a href="#cb114-2"></a><span class="ot">    decide ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Either</span> b c) <span class="ot">-&gt;</span> f b <span class="ot">-&gt;</span> f c <span class="ot">-&gt;</span> f a</span>
+<span id="cb114-3"><a href="#cb114-3"></a>                        <span class="co">-- ^ use the f b</span></span>
+<span id="cb114-4"><a href="#cb114-4"></a>                          <span class="co">-- ^ use the f c</span></span></code></pre></div>
+<p><code>Conclude</code> from <em>[Data.Functor.Contravariant.Conclude][]</em>, adds support for specifying an <code>f</code> that cannot be chosen by the decision function when used with <code>decide</code>.</p>
+<div class="sourceCode" id="cb115"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb115-1"><a href="#cb115-1"></a><span class="kw">class</span> <span class="dt">Decide</span> f <span class="ot">=&gt;</span> <span class="dt">Conclude</span> f <span class="kw">where</span></span>
+<span id="cb115-2"><a href="#cb115-2"></a><span class="ot">    conclude ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Void</span>) <span class="ot">-&gt;</span> f a</span></code></pre></div></li>
+<li><p><strong>List type</strong></p>
+<div class="sourceCode" id="cb116"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb116-1"><a href="#cb116-1"></a><span class="kw">type</span> <span class="dt">NonEmptyBy</span> <span class="dt">Night</span> <span class="ot">=</span> <span class="dt">Dec1</span></span>
+<span id="cb116-2"><a href="#cb116-2"></a><span class="kw">type</span> <span class="dt">ListBy</span>     <span class="dt">Night</span> <span class="ot">=</span> <span class="dt">Dec</span></span></code></pre></div>
+<p><code>Dec f</code> and <code>Dec1 f</code> represent a bunch of <code>f</code>s <code>Night</code>’d with each other — you can think of <code>Dec f</code> was the sharding over many different <code>f</code>s (or even none), and <code>Dec1 f</code> as the sharding over at least one <code>f</code>.</p>
+<p>See the later section on <code>Dec</code> for more information.</p></li>
+</ul>
+<p>[Data.Functor.Contravariant.Night][]: https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Night.html [sharding]: https://en.wikipedia.org/wiki/Shard_(database_architecture) [Data.Functor.Contravariant.Decide][]: https://hackage.haskell.org/package/contravariant/docs/Data-Functor-Contravariant-Decide.html [Data.Functor.Contravariant.Conclude][]: https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Conclude.html</p>
+<h3 id="contravariant-coyoneda">Contravariant Coyoneda</h3>
+<ul>
+<li><p><strong>Origin</strong>: <em><a href="https://hackage.haskell.org/package/kan-extensions/docs/Data-Functor-Contravariant-Coyoneda.html">Data.Functor.Contravariant.Coyoneda</a></em></p></li>
+<li><p><strong>Enhancement</strong>: The ability to contravariantly map over the parameter; it’s the free <code>Contravariant</code>.</p>
+<p>Can be useful if <code>f</code> is created using a <code>GADT</code> that cannot be given a <code>Contravariant</code> instance.</p>
+<p>For example, here is an indexed type that represents the type of a “prettyprinter”, where the type parameter represents the type that is being pretty-printed output result of the form element.</p>
+<div class="sourceCode" id="cb117"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb117-1"><a href="#cb117-1"></a><span class="kw">data</span> <span class="dt">PrettyPrim</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></span>
+<span id="cb117-2"><a href="#cb117-2"></a>    <span class="dt">PPString</span><span class="ot">  ::</span> <span class="dt">PrettyPrim</span> <span class="dt">String</span></span>
+<span id="cb117-3"><a href="#cb117-3"></a>    <span class="dt">PPInt</span><span class="ot">     ::</span> <span class="dt">PrettyPrim</span> <span class="dt">Int</span></span>
+<span id="cb117-4"><a href="#cb117-4"></a>    <span class="dt">PPBool</span><span class="ot">    ::</span> <span class="dt">PrettyPrim</span> <span class="dt">Bool</span></span></code></pre></div>
+<p>Then <code>Coyoneda PrettyPrim</code> has a <code>Contravariant</code> instance. We can now contramap over the input type of the pretty-printer; for example, <code>contramap :: (a -&gt; b) -&gt; Coyoneda PrettyPrim b -&gt; Coyoneda PrettyPrim a</code> takes a prettyprinter of <code>b</code>s and turns it into a prettyprinter of <code>a</code>s.</p></li>
+<li><p><strong>Interpret</strong></p>
+<div class="sourceCode" id="cb118"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb118-1"><a href="#cb118-1"></a><span class="kw">instance</span> <span class="dt">Contravariant</span> f <span class="ot">=&gt;</span> <span class="dt">Interpret</span> <span class="dt">Coyoneda</span> f</span>
+<span id="cb118-2"><a href="#cb118-2"></a></span>
+<span id="cb118-3"><a href="#cb118-3"></a>interpret <span class="op">@</span><span class="dt">Coyoneda</span></span>
+<span id="cb118-4"><a href="#cb118-4"></a><span class="ot">    ::</span> <span class="dt">Contravariant</span> f</span>
+<span id="cb118-5"><a href="#cb118-5"></a>    <span class="ot">=&gt;</span> g <span class="op">~&gt;</span> f</span>
+<span id="cb118-6"><a href="#cb118-6"></a>    <span class="ot">-&gt;</span> <span class="dt">Coyoneda</span> g <span class="op">~&gt;</span> f</span></code></pre></div>
+<p>Interpreting out of a <code>Coyoneda f</code> requires the target context to itself be <code>Contravariant</code>. For example, if we want to “run” a <code>Coyoneda PrettyPrim</code> in <code>Op String</code> (<code>Op String a</code> is a function from <code>a</code> to <code>String</code>), this would be <code>interpret :: (forall x. PrettyPrim x -&gt; Op String x) -&gt; Coyoneda PrettyPrim a -&gt; Op String a</code>.</p></li>
+</ul>
+<h3 id="div-div1">Div / Div1</h3>
+<ul>
+<li><p><strong>Origin</strong>: <em><a href="https://hackage.haskell.org/package/functor-combinators-0.3.2.0/docs/Data-Functor-Contravariant-Divisible-Free.html">Data.Functor.Contravariant.Divisible.Free</a></em></p></li>
+<li><p><strong>Enhancement</strong>: The ability to provide multiple <code>f</code>s to each consume a part of the overall input.</p>
+<p>If <code>f x</code> is a consumer of <code>x</code>s, then <code>Div f a</code> is a consumer of <code>a</code>s that does its job by splitting <code>a</code> across /all/ <code>f</code>s, forking them out in parallel. Often times, in practice, this will utilized by giving each <code>f</code> a separate part of the <code>a</code> to consume.</p>
+<p>For example, let’s say you had a type <code>Socket a</code> which represents some IO channel or socket that is expecting to receive <code>a</code>s. A <code>Div Socket b</code> would be a collection of sockets that expects a single <code>b</code> overall, but each individual <code>Socket</code> inside that <code>Div</code> is given some part of the overall <code>b</code>.</p>
+<p>Another common usage is to combine serializers by assigning each serializer <code>f</code> to one part of an overall input.</p>
+<p><em>Structurally</em>, <code>Div</code> is built like a linked list of <code>f x</code>s, which each link being existentially bound together:</p>
+<div class="sourceCode" id="cb119"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb119-1"><a href="#cb119-1"></a><span class="kw">data</span> <span class="dt">Div</span><span class="ot"> ::</span> (<span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span>) <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></span>
+<span id="cb119-2"><a href="#cb119-2"></a>    <span class="dt">Conquer</span><span class="ot"> ::</span> <span class="dt">Div</span> f a</span>
+<span id="cb119-3"><a href="#cb119-3"></a>    <span class="dt">Divide</span><span class="ot">  ::</span> f x <span class="ot">-&gt;</span> <span class="dt">Div</span> f y <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> (x, y)) <span class="ot">-&gt;</span> <span class="dt">Div</span> f a</span></code></pre></div>
+<p>This is more or less the same construction as for <code>Ap</code>: see information on <code>Ap</code> for a deeper explanation on how or why this works.</p>
+<p><code>Div1</code> is a variety of <code>Div</code> where you always have to have “at least one <code>f</code>”. Can be useful if you want to ensure, for example, that <em>at least one socket</em> will be handling the input (and it won’t be lost into the air).</p></li>
+<li><p><strong>Interpret</strong></p>
+<div class="sourceCode" id="cb120"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb120-1"><a href="#cb120-1"></a><span class="kw">instance</span> <span class="dt">Divisible</span> f <span class="ot">=&gt;</span> <span class="dt">Interpret</span> <span class="dt">Div</span>  f</span>
+<span id="cb120-2"><a href="#cb120-2"></a><span class="kw">instance</span> <span class="dt">Divise</span>    f <span class="ot">=&gt;</span> <span class="dt">Interpret</span> <span class="dt">Div1</span> f</span>
+<span id="cb120-3"><a href="#cb120-3"></a></span>
+<span id="cb120-4"><a href="#cb120-4"></a>interpret <span class="op">@</span><span class="dt">Div</span></span>
+<span id="cb120-5"><a href="#cb120-5"></a><span class="ot">    ::</span> <span class="dt">Divisible</span> f</span>
+<span id="cb120-6"><a href="#cb120-6"></a>    <span class="ot">=&gt;</span> g <span class="op">~&gt;</span> f</span>
+<span id="cb120-7"><a href="#cb120-7"></a>    <span class="ot">-&gt;</span> <span class="dt">Div</span> g <span class="op">~&gt;</span> f</span>
+<span id="cb120-8"><a href="#cb120-8"></a></span>
+<span id="cb120-9"><a href="#cb120-9"></a>interpret <span class="op">@</span><span class="dt">Div1</span></span>
+<span id="cb120-10"><a href="#cb120-10"></a><span class="ot">    ::</span> <span class="dt">Divise</span> f</span>
+<span id="cb120-11"><a href="#cb120-11"></a>    <span class="ot">=&gt;</span> g <span class="op">~&gt;</span> f</span>
+<span id="cb120-12"><a href="#cb120-12"></a>    <span class="ot">-&gt;</span> <span class="dt">Div1</span> g <span class="op">~&gt;</span> f</span></code></pre></div>
+<p>Interpreting out of an <code>Div f</code> requires the target context to be <code>Divisible</code>, and interpreting out of a <code>Div1 f</code> requires <code>Divise</code> (because you will never need the empty case).</p></li>
+</ul>
+<h3 id="dec-dec1">Dec / Dec1</h3>
+<ul>
+<li><p><strong>Origin</strong>: <em><a href="https://hackage.haskell.org/package/functor-combinators-0.3.2.0/docs/Data-Functor-Contravariant-Divisible-Free.html">Data.Functor.Contravariant.Divisible.Free</a></em></p></li>
+<li><p><strong>Enhancement</strong>: The ability to provide multiple <code>f</code>s, one of which will be chosen to consume the overall input.</p>
+<p>If <code>f x</code> is a consumer of <code>x</code>s, then <code>Dec f a</code> is a consumer of <code>a</code>s that does its job by choosing a single one of those <code>f</code>s to handle that consumption, based on what <code>a</code> is received.</p>
+<p>For example, let’s say you had a type <code>Socket a</code> which represents some IO channel or socket that is expecting to receive <code>a</code>s. A <code>Dec Socket b</code> would be a collection of sockets that expects a single <code>b</code> overall, and will pick exactly one of those <code>f</code>s to handle that <code>b</code>.</p>
+<p>In this sense, you can sort of think of <code>Dec</code> as a “sharding” of <code>f</code>s: each <code>f</code> handles a different possible categorization of the input.</p>
+<p>Another common usage is to combine serializers by assigning each serializer <code>f</code> to one possible form of possible input.</p>
+<p><em>Structurally</em>, <code>Dec</code> is built like a linked list of <code>f x</code>s, which each link being existentially bound together:</p>
+<div class="sourceCode" id="cb121"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb121-1"><a href="#cb121-1"></a><span class="kw">data</span> <span class="dt">Dec</span><span class="ot"> ::</span> (<span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span>) <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></span>
+<span id="cb121-2"><a href="#cb121-2"></a>    <span class="dt">Lose</span><span class="ot">   ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Void</span>) <span class="ot">-&gt;</span> <span class="dt">Dec</span> f a</span>
+<span id="cb121-3"><a href="#cb121-3"></a>    <span class="dt">Choose</span><span class="ot"> ::</span> f x <span class="ot">-&gt;</span> <span class="dt">Dec</span> f y <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Either</span> x y) <span class="ot">-&gt;</span> <span class="dt">Dec</span> f a</span></code></pre></div>
+<p>This is more or less the same construction as for <code>Ap</code>: see information on <code>Ap</code> for a deeper explanation on how or why this works.</p>
+<p><code>Dec1</code> is a variety of <code>Dec</code> where you always have to have “at least one <code>f</code>”. Can be useful if you want to ensure, for example, that there always exists at least one <code>f</code> that can handle the job.</p></li>
+<li><p><strong>Interpret</strong></p>
+<div class="sourceCode" id="cb122"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb122-1"><a href="#cb122-1"></a><span class="kw">instance</span> <span class="dt">Conclude</span> f <span class="ot">=&gt;</span> <span class="dt">Interpret</span> <span class="dt">Dec</span>  f</span>
+<span id="cb122-2"><a href="#cb122-2"></a><span class="kw">instance</span> <span class="dt">Decide</span>   f <span class="ot">=&gt;</span> <span class="dt">Interpret</span> <span class="dt">Dec1</span> f</span>
+<span id="cb122-3"><a href="#cb122-3"></a></span>
+<span id="cb122-4"><a href="#cb122-4"></a>interpret <span class="op">@</span><span class="dt">Dec</span></span>
+<span id="cb122-5"><a href="#cb122-5"></a><span class="ot">    ::</span> <span class="dt">Conclude</span> f</span>
+<span id="cb122-6"><a href="#cb122-6"></a>    <span class="ot">=&gt;</span> g <span class="op">~&gt;</span> f</span>
+<span id="cb122-7"><a href="#cb122-7"></a>    <span class="ot">-&gt;</span> <span class="dt">Dec</span> g <span class="op">~&gt;</span> f</span>
+<span id="cb122-8"><a href="#cb122-8"></a></span>
+<span id="cb122-9"><a href="#cb122-9"></a>interpret <span class="op">@</span><span class="dt">Dec1</span></span>
+<span id="cb122-10"><a href="#cb122-10"></a><span class="ot">    ::</span> <span class="dt">Decide</span> f</span>
+<span id="cb122-11"><a href="#cb122-11"></a>    <span class="ot">=&gt;</span> g <span class="op">~&gt;</span> f</span>
+<span id="cb122-12"><a href="#cb122-12"></a>    <span class="ot">-&gt;</span> <span class="dt">Dec1</span> g <span class="op">~&gt;</span> f</span></code></pre></div>
+<p>Interpreting out of an <code>Dec f</code> requires the target context to be <code>Conclude</code>, and interpreting out of a <code>Dec1 f</code> requires <code>Decide</code> (because you will never need the rejecting case).</p></li>
+</ul>
 <h2 id="combinator-combinators">Combinator Combinators</h2>
 <p>There exist higher-order functor combinator combinators that take functor combinators and return new ones, too. We can talk about a uniform interface for them, but they aren’t very common, so it is probably not worth the extra abstraction.</p>
 <h3 id="composet">ComposeT</h3>
 <ul>
 <li><p><strong>Origin</strong>: <em><a href="https://hackage.haskell.org/package/mmorph/docs/Control-Monad-Trans-Compose.html">Control.Monad.Trans.Compose</a></em></p></li>
 <li><p><strong>Enhancement</strong>: Compose enhancements from two different functor combinators</p>
-<div class="sourceCode" id="cb101"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb101-1"><a href="#cb101-1"></a><span class="kw">newtype</span> <span class="dt">ComposeT</span> s t f a <span class="ot">=</span> <span class="dt">ComposeT</span> {<span class="ot"> getComposeT ::</span> s (t f) a }</span></code></pre></div>
+<div class="sourceCode" id="cb123"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb123-1"><a href="#cb123-1"></a><span class="kw">newtype</span> <span class="dt">ComposeT</span> s t f a <span class="ot">=</span> <span class="dt">ComposeT</span> {<span class="ot"> getComposeT ::</span> s (t f) a }</span></code></pre></div>
 <p>Can be useful if you want to layer or nest functor combinators to get both enhancements as a <em>single</em> functor combinator*.</p>
 <p>Usually really only useful in the context of other abstractions that expect functor combinators, since this is the best way to turn two functor combinators into a third one.</p></li>
 <li><p><strong>Interpret</strong></p>
-<div class="sourceCode" id="cb102"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb102-1"><a href="#cb102-1"></a><span class="kw">instance</span> (<span class="dt">Interpret</span> s f, <span class="dt">Interpret</span> t f) <span class="ot">=&gt;</span> <span class="dt">Interpret</span> (<span class="dt">ComposeT</span> s t) f</span>
-<span id="cb102-2"><a href="#cb102-2"></a></span>
-<span id="cb102-3"><a href="#cb102-3"></a>interpret <span class="op">@</span>(<span class="dt">ComposeT</span> s t)</span>
-<span id="cb102-4"><a href="#cb102-4"></a><span class="ot">    ::</span> (<span class="dt">Interpret</span> s f, <span class="dt">Interpret</span> t f)</span>
-<span id="cb102-5"><a href="#cb102-5"></a>    <span class="ot">=&gt;</span> g <span class="op">~&gt;</span> f</span>
-<span id="cb102-6"><a href="#cb102-6"></a>    <span class="ot">-&gt;</span> <span class="dt">ComposeT</span> s t g <span class="op">~&gt;</span> f</span></code></pre></div>
+<div class="sourceCode" id="cb124"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb124-1"><a href="#cb124-1"></a><span class="kw">instance</span> (<span class="dt">Interpret</span> s f, <span class="dt">Interpret</span> t f) <span class="ot">=&gt;</span> <span class="dt">Interpret</span> (<span class="dt">ComposeT</span> s t) f</span>
+<span id="cb124-2"><a href="#cb124-2"></a></span>
+<span id="cb124-3"><a href="#cb124-3"></a>interpret <span class="op">@</span>(<span class="dt">ComposeT</span> s t)</span>
+<span id="cb124-4"><a href="#cb124-4"></a><span class="ot">    ::</span> (<span class="dt">Interpret</span> s f, <span class="dt">Interpret</span> t f)</span>
+<span id="cb124-5"><a href="#cb124-5"></a>    <span class="ot">=&gt;</span> g <span class="op">~&gt;</span> f</span>
+<span id="cb124-6"><a href="#cb124-6"></a>    <span class="ot">-&gt;</span> <span class="dt">ComposeT</span> s t g <span class="op">~&gt;</span> f</span></code></pre></div>
 <p>Interpreting out of these requires the constraints on <em>both</em> layers.</p></li>
 </ul>
 <h3 id="hlift">HLift</h3>
 <ul>
 <li><p><strong>Origin</strong>: <em><a href="https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor.html">Data.HFunctor</a></em></p></li>
 <li><p><strong>Enhancement</strong>: <code>HLift t f</code> lets <code>f</code> exist either unchanged, or with the structure of <code>t</code>.</p>
-<div class="sourceCode" id="cb103"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb103-1"><a href="#cb103-1"></a><span class="kw">data</span> <span class="dt">HLift</span> t f a</span>
-<span id="cb103-2"><a href="#cb103-2"></a>    <span class="ot">=</span> <span class="dt">HPure</span>  (f a)</span>
-<span id="cb103-3"><a href="#cb103-3"></a>    <span class="op">|</span> <span class="dt">HOther</span> (t f a)</span></code></pre></div>
+<div class="sourceCode" id="cb125"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb125-1"><a href="#cb125-1"></a><span class="kw">data</span> <span class="dt">HLift</span> t f a</span>
+<span id="cb125-2"><a href="#cb125-2"></a>    <span class="ot">=</span> <span class="dt">HPure</span>  (f a)</span>
+<span id="cb125-3"><a href="#cb125-3"></a>    <span class="op">|</span> <span class="dt">HOther</span> (t f a)</span></code></pre></div>
 <p>Can be useful if you want to “conditionally enhance” <code>f</code>. Either <code>f</code> can be enhanced by <code>t</code>, or it can exist in its pure “newly-injected” form.</p>
 <p>If <code>t</code> is <code>Identity</code>, we get <code>EnvT Any</code>, or <code>f :+: f</code>: the “pure or impure” combinator.</p></li>
 <li><p><strong>Interpret</strong></p>
-<div class="sourceCode" id="cb104"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb104-1"><a href="#cb104-1"></a><span class="kw">instance</span> <span class="dt">Interpret</span> t f <span class="ot">=&gt;</span> <span class="dt">Interpret</span> (<span class="dt">HLift</span> t) f</span>
-<span id="cb104-2"><a href="#cb104-2"></a></span>
-<span id="cb104-3"><a href="#cb104-3"></a>interpret <span class="op">@</span>(<span class="dt">HLift</span> t)</span>
-<span id="cb104-4"><a href="#cb104-4"></a><span class="ot">    ::</span> <span class="dt">Interpret</span> t f</span>
-<span id="cb104-5"><a href="#cb104-5"></a>    <span class="ot">=&gt;</span> g <span class="op">~&gt;</span> f</span>
-<span id="cb104-6"><a href="#cb104-6"></a>    <span class="ot">-&gt;</span> <span class="dt">HLift</span> t g <span class="op">~&gt;</span> f</span></code></pre></div>
+<div class="sourceCode" id="cb126"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb126-1"><a href="#cb126-1"></a><span class="kw">instance</span> <span class="dt">Interpret</span> t f <span class="ot">=&gt;</span> <span class="dt">Interpret</span> (<span class="dt">HLift</span> t) f</span>
+<span id="cb126-2"><a href="#cb126-2"></a></span>
+<span id="cb126-3"><a href="#cb126-3"></a>interpret <span class="op">@</span>(<span class="dt">HLift</span> t)</span>
+<span id="cb126-4"><a href="#cb126-4"></a><span class="ot">    ::</span> <span class="dt">Interpret</span> t f</span>
+<span id="cb126-5"><a href="#cb126-5"></a>    <span class="ot">=&gt;</span> g <span class="op">~&gt;</span> f</span>
+<span id="cb126-6"><a href="#cb126-6"></a>    <span class="ot">-&gt;</span> <span class="dt">HLift</span> t g <span class="op">~&gt;</span> f</span></code></pre></div>
 <p>Interpreting out of these requires the constraint on <code>t</code>, to handle the <code>HOther</code> case.</p></li>
 </ul>
 <h3 id="hfree">HFree</h3>
 <ul>
 <li><p><strong>Origin</strong>: <em><a href="https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor.html">Data.HFunctor</a></em></p></li>
 <li><p><strong>Enhancement</strong>: <code>HFree t f</code> lets <code>f</code> exist either unchanged, or with multiple nested enhancements by <code>t</code>.</p>
-<div class="sourceCode" id="cb105"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb105-1"><a href="#cb105-1"></a><span class="kw">data</span> <span class="dt">HFree</span> t f a</span>
-<span id="cb105-2"><a href="#cb105-2"></a>    <span class="ot">=</span> <span class="dt">HReturn</span> (f a)</span>
-<span id="cb105-3"><a href="#cb105-3"></a>    <span class="op">|</span> <span class="dt">HJoin</span>   (t (<span class="dt">HFree</span> t f) a)</span></code></pre></div>
+<div class="sourceCode" id="cb127"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb127-1"><a href="#cb127-1"></a><span class="kw">data</span> <span class="dt">HFree</span> t f a</span>
+<span id="cb127-2"><a href="#cb127-2"></a>    <span class="ot">=</span> <span class="dt">HReturn</span> (f a)</span>
+<span id="cb127-3"><a href="#cb127-3"></a>    <span class="op">|</span> <span class="dt">HJoin</span>   (t (<span class="dt">HFree</span> t f) a)</span></code></pre></div>
 <p>It is related to <code>HLift</code>, but lets you lift over arbitrary many compositions of <code>t</code>, enhancing <code>f</code> multiple times. This essentially creates a “tree” of <code>t</code> branches.</p>
 <p>One particularly useful functor combinator to use is <code>MapF</code>. In our earlier examples, if we have</p>
-<div class="sourceCode" id="cb106"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb106-1"><a href="#cb106-1"></a><span class="kw">data</span> <span class="dt">Command</span> a</span></code></pre></div>
+<div class="sourceCode" id="cb128"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb128-1"><a href="#cb128-1"></a><span class="kw">data</span> <span class="dt">Command</span> a</span></code></pre></div>
 <p>to represent the structure of a single command line argument parser, we can use</p>
-<div class="sourceCode" id="cb107"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb107-1"><a href="#cb107-1"></a><span class="kw">type</span> <span class="dt">Commands</span> <span class="ot">=</span> <span class="dt">MapF</span> <span class="dt">String</span> <span class="dt">Command</span></span></code></pre></div>
+<div class="sourceCode" id="cb129"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb129-1"><a href="#cb129-1"></a><span class="kw">type</span> <span class="dt">Commands</span> <span class="ot">=</span> <span class="dt">MapF</span> <span class="dt">String</span> <span class="dt">Command</span></span></code></pre></div>
 <p>to represent <em>multiple</em> potential named commands, each under a different <code>String</code> argument. With <code>HFree</code>, we can also use:</p>
-<div class="sourceCode" id="cb108"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb108-1"><a href="#cb108-1"></a><span class="kw">type</span> <span class="dt">CommandTree</span> <span class="ot">=</span> <span class="dt">HFree</span> (<span class="dt">MapF</span> <span class="dt">String</span>) <span class="dt">Command</span></span></code></pre></div>
+<div class="sourceCode" id="cb130"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb130-1"><a href="#cb130-1"></a><span class="kw">type</span> <span class="dt">CommandTree</span> <span class="ot">=</span> <span class="dt">HFree</span> (<span class="dt">MapF</span> <span class="dt">String</span>) <span class="dt">Command</span></span></code></pre></div>
 <p>to represent <em>nested</em> named commands, where each nested sub-command is descended on by a <code>String</code> key.</p>
 <p>For another example, <code>HFree IdentityT</code> is essentially <code>Step</code>.</p></li>
 <li><p><strong>Interpret</strong></p>
-<div class="sourceCode" id="cb109"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb109-1"><a href="#cb109-1"></a><span class="kw">instance</span> <span class="dt">Interpret</span> t f <span class="ot">=&gt;</span> <span class="dt">Interpret</span> (<span class="dt">HFree</span> t) f</span>
-<span id="cb109-2"><a href="#cb109-2"></a></span>
-<span id="cb109-3"><a href="#cb109-3"></a>interpret <span class="op">@</span>(<span class="dt">HFree</span> t)</span>
-<span id="cb109-4"><a href="#cb109-4"></a><span class="ot">    ::</span> <span class="dt">Interpre</span> t f</span>
-<span id="cb109-5"><a href="#cb109-5"></a>    <span class="ot">=&gt;</span> g <span class="op">~&gt;</span> f</span>
-<span id="cb109-6"><a href="#cb109-6"></a>    <span class="ot">-&gt;</span> <span class="dt">HFree</span> t g <span class="op">~&gt;</span> f</span></code></pre></div>
+<div class="sourceCode" id="cb131"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb131-1"><a href="#cb131-1"></a><span class="kw">instance</span> <span class="dt">Interpret</span> t f <span class="ot">=&gt;</span> <span class="dt">Interpret</span> (<span class="dt">HFree</span> t) f</span>
+<span id="cb131-2"><a href="#cb131-2"></a></span>
+<span id="cb131-3"><a href="#cb131-3"></a>interpret <span class="op">@</span>(<span class="dt">HFree</span> t)</span>
+<span id="cb131-4"><a href="#cb131-4"></a><span class="ot">    ::</span> <span class="dt">Interpre</span> t f</span>
+<span id="cb131-5"><a href="#cb131-5"></a>    <span class="ot">=&gt;</span> g <span class="op">~&gt;</span> f</span>
+<span id="cb131-6"><a href="#cb131-6"></a>    <span class="ot">-&gt;</span> <span class="dt">HFree</span> t g <span class="op">~&gt;</span> f</span></code></pre></div>
 <p>Interpreting out of these requires the constraint on <code>t</code>, to handle the <code>HJoin</code> case.</p>
 <p>However, it is probably usually more useful to directly pattern match on <code>HReturn</code> and <code>HJoin</code> and handle the recursion explicitly.</p>
 <p>Alternatively, we can also define a recursive folding function (provided in <em><a href="https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor.html">Data.HFunctor</a></em>) to recursively fold down each branch:</p>
-<div class="sourceCode" id="cb110"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb110-1"><a href="#cb110-1"></a>foldHFree</span>
-<span id="cb110-2"><a href="#cb110-2"></a><span class="ot">    ::</span> <span class="dt">HFunctor</span> t</span>
-<span id="cb110-3"><a href="#cb110-3"></a>    <span class="ot">=&gt;</span> (g <span class="op">~&gt;</span> f)</span>
-<span id="cb110-4"><a href="#cb110-4"></a>    <span class="ot">-&gt;</span> (t g <span class="op">~&gt;</span> f)</span>
-<span id="cb110-5"><a href="#cb110-5"></a>    <span class="ot">-&gt;</span> <span class="dt">HFree</span> t g <span class="op">~&gt;</span> f</span></code></pre></div>
+<div class="sourceCode" id="cb132"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb132-1"><a href="#cb132-1"></a>foldHFree</span>
+<span id="cb132-2"><a href="#cb132-2"></a><span class="ot">    ::</span> <span class="dt">HFunctor</span> t</span>
+<span id="cb132-3"><a href="#cb132-3"></a>    <span class="ot">=&gt;</span> (g <span class="op">~&gt;</span> f)</span>
+<span id="cb132-4"><a href="#cb132-4"></a>    <span class="ot">-&gt;</span> (t g <span class="op">~&gt;</span> f)</span>
+<span id="cb132-5"><a href="#cb132-5"></a>    <span class="ot">-&gt;</span> <span class="dt">HFree</span> t g <span class="op">~&gt;</span> f</span></code></pre></div>
 <p>This can be useful because it allows you to distinguish between the different branches, and also requires no constraint on <code>g</code>.</p>
 <p>Applied to the <code>CommandTree</code> example, this becomes:</p>
-<div class="sourceCode" id="cb111"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb111-1"><a href="#cb111-1"></a>foldHFree <span class="op">@</span>(<span class="dt">MapF</span> <span class="dt">String</span>) <span class="op">@</span><span class="dt">Command</span></span>
-<span id="cb111-2"><a href="#cb111-2"></a><span class="ot">    ::</span> <span class="dt">Command</span> <span class="op">~&gt;</span> f</span>
-<span id="cb111-3"><a href="#cb111-3"></a>    <span class="ot">-&gt;</span> <span class="dt">MapF</span> <span class="dt">String</span> <span class="op">~&gt;</span> f</span>
-<span id="cb111-4"><a href="#cb111-4"></a>    <span class="ot">-&gt;</span> <span class="dt">CommandTree</span> <span class="op">~&gt;</span> f</span></code></pre></div></li>
+<div class="sourceCode" id="cb133"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb133-1"><a href="#cb133-1"></a>foldHFree <span class="op">@</span>(<span class="dt">MapF</span> <span class="dt">String</span>) <span class="op">@</span><span class="dt">Command</span></span>
+<span id="cb133-2"><a href="#cb133-2"></a><span class="ot">    ::</span> <span class="dt">Command</span> <span class="op">~&gt;</span> f</span>
+<span id="cb133-3"><a href="#cb133-3"></a>    <span class="ot">-&gt;</span> <span class="dt">MapF</span> <span class="dt">String</span> <span class="op">~&gt;</span> f</span>
+<span id="cb133-4"><a href="#cb133-4"></a>    <span class="ot">-&gt;</span> <span class="dt">CommandTree</span> <span class="op">~&gt;</span> f</span></code></pre></div></li>
 </ul>
 <h2 id="closing-comments">Closing Comments</h2>
 <p>As I discover more interesting or useful functor combinators (or as the abstractions in <em>functor-combinators</em> change), I will continue to update this post. And, in the upcoming weeks and months I plan to present specific programs I have written (and simple examples of usage) that will help show this design pattern in use within a real program.</p>
