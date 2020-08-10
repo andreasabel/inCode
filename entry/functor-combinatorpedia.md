@@ -14,6 +14,10 @@ original
 post](https://github.com/mstksg/inCode/blob/ceee9f33492bb703380d877477728feb4fe60a6a/entry/functor-combinatorpedia.md)
 is available on github.)
 
+(*Note 2:* The section on contravariant functor combinators was added following
+the release of *functor-combinators-0.3* in August 2020, which added support for
+contravariant and invariant functor combinators.)
+
 Recently I've been very productive what I have been calling the "Functor
 Combinator" design pattern. It is heavily influenced by ideas like [Data types a
 la Carte](http://www.cs.ru.nl/~W.Swierstra/Publications/DataTypesALaCarte.pdf)
@@ -1948,6 +1952,452 @@ intact: functor combinators only ever *add* structure.
 
     You're not going to have any luck here --- you cannot interpret out of
     these, unfortunately!
+
+Contravariant Functor Combinators
+---------------------------------
+
+**Addendum: Post functor-combinators-0.3.0.0**
+
+Most of the above functor combinators have been "covariant" ones: an `t f a`
+represents some "producer" or "generator" of `a`s. Many of them require a
+`Functor` constraint on `f` interpret out of. However, there exist many useful
+*contravariant* ones too, where `t f a` represents a "consumer" of `a`s; many of
+these require a `Contravariant` constraint on `f` to interpret out of. These can
+be useful as the building blocks of consumers like serializers.
+
+I've included them all in a separate section because you to either be looking
+for one or the other, and also because there are much less contravariant
+combinators than covariant ones in the Haskell ecosystem.
+
+Also note that many of the functor combinators in the previous sections are
+compatible with both covariant *and* contravariant functors, like:
+
+-   `:+:`/`Sum`
+-   `LeftF`/`RightF`
+-   `EnvT`
+-   `Step`
+-   `Flagged`
+-   `Final`
+-   `Chain`
+-   `IdentityT`
+
+The following functor combinators in the previous section are also compatible
+with both, but their instances in *functor-combinator* are designed around
+covariant usage. However, some of them have contravariant twins that are
+otherwise identical except for the fact that their instances are instead
+designed around contravariant usage.
+
+-   `:*:`/`Product` (contravariant version: the contravariant `Day`)
+-   `These1`
+-   `ListF`/`NonEmptyF` (contravariant versions: `Div` and `Div1`)
+-   `MaybeF`
+
+This section was added following the release of *functor-combinators-0.3.0.0*,
+which added in support for contravariant and invariant functor combinators.
+
+### Contravariant Day
+
+-   **Origin**: *\[Data.Functor.Contravariant.Day\]\[\]*
+
+-   **Mixing Strategy**: "Both, together": provide two consumers that are each
+    meant to consume one part of the input.
+
+    ``` {.haskell}
+    data Day f g a = forall x y. Day (f x) (g y) (a -> (x, y))
+    ```
+
+    This type is essentially equivalent to `:*:`/`Product` if `f` is
+    `Contravariant`, so it is useful in every situation where `:*:` would be
+    useful. It can be thought of as simply a version of `:*:` that signals to
+    the reader that it is meant to be used contravariantly (as a consumer) and
+    not covariantly (as a producer).
+
+    Like for `:*:`, it has the distinguishing property (if `f` is
+    `Contravariant`) of allowing you to use either the `f` or the `g`, as you
+    please.
+
+    ``` {.haskell}
+    dayOutL :: Contravariant f => Day f g ~> f
+    dayOutL (Day x _ f) = contramap (fst . f) x
+
+    dayOutR :: Contravariant g => Day f g ~> g
+    dayOutR (Day _ y f) = contramap (snd . f) y
+    ```
+
+    In practice, however, I like to think of it as storing an `f` and a `g` that
+    can each handle a separate "part" of an `a`. For example, the illustrative
+    helper function
+
+    ``` {.haskell}
+    day :: f a -> g b -> Day f g (a, b)
+    day x y = Day x y id
+    ```
+
+    allows you to couple an `f a` consumer of `a` with a `g b` consumer of `b`
+    to produce a consumer of `(a, b)` that does its job by handing the `a` to
+    `x`, and the `b` to `y`.
+
+-   **Identity**
+
+    ``` {.haskell}
+    instance Tensor Day Proxy
+    ```
+
+    Since this type is essentially `(:*:)`, it has the same identity.
+
+    ``` {.haskell}
+    day Proxy :: g b -> Day Proxy g (a, b)
+    ```
+
+    is the `Day` that would "ignore" the `a` part and simply pass the `b` to
+    `g`.
+
+-   **Monoids**
+
+    ``` {.haskell}
+    instance Divise    f => SemigroupIn Day f
+    instance Divisible f => MonoidIn    Day Proxy f
+
+    binterpret @Day
+        :: Divise f
+        => g ~> f
+        -> h ~> f
+        -> Day g h ~> f
+
+    inL   @(:*:) :: Divisible g => f     ~> Day f g
+    inR   @(:*:) :: Divisible f => g     ~> Day f g
+    pureT @(:*:) :: Divisible h => Proxy ~> h
+    ```
+
+    `Divise` from *\[Data.Functor.Contravariant.Divise\]\[\]* can be thought of
+    some version the "contravariant `Alt`": it gives you a way to merge two
+    `f a`s into a single one in a way that represents having both the items
+    consume the input as they choose. The usual way of doing this is by
+    providing a splitting function to choose to give some part of the input to
+    one argument, and some part to another:
+
+    ``` {.haskell}
+    class Contravariant f => Divise f where
+        divise :: (a -> (b, c)) -> f b -> f c -> f a
+                      -- ^ what to give to the 'f b'
+                         -- ^ what to give to the 'f c'
+    ```
+
+    `Divisible` from *\[Data.Functor.Contravariant.Divisible\]\[\]*, adds an
+    identity that will ignore anything it is given: `conquer.`
+
+    ``` {.haskell}
+    class Divise f => Divisible f where
+        conquer :: f a
+    ```
+
+    (note: like with `Applicative` and `Apply`, the actual version requires only
+    `Contravariant f`; `Divise` isn't an actual superclass, even though it
+    should be.)
+
+-   **List type**
+
+    ``` {.haskell}
+    type NonEmptyBy Day = Div1
+    type ListBy     Day = Div
+    ```
+
+    `Div1 f` and `Div f` are equivalent to `NonEmptyF f` and `ListF f`,
+    respectively, as long as `f` is `Contravariant`. However, due to quirks of
+    the the definition of `Day`, essential functions like appends, merges, etc.
+    on `ListF` require `Contravariant f`. `Div` doesn't require such instances,
+    and so can be more useful as a free structure. Also, `Div1`/`Div` are
+    constructed in a way that is more well-suited for common usage patterns of
+    `Divisible` methods.
+
+    Like for `Day`, it's something that can be used instead of `:*:` to mentally
+    signify how the type is meant to be used. You can think of `Div f a` as a
+    chain of `f`s, where the `a` is distributed over each `f`, but the intent of
+    its usage is that each `f` is meant to consume a different part of that `a`.
+
+    See the information later on `Div` alone for more information on usage and
+    utility.
+
+    `Div` is the possibly-empty version, and `Div1` is the nonempty version.
+
+\[Data.Functor.Contravariant.Day\]\[\]:
+https://hackage.haskell.org/package/kan-extensions/docs/Data-Functor-Contravariant-Day.html
+\[Data.Functor.Contravariant.Divisible\]\[\]:
+https://hackage.haskell.org/package/contravariant/docs/Data-Functor-Contravariant-Divisible.html
+\[Data.Functor.Contravariant.Divise\]\[\]:
+https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Divise.html
+
+### Night
+
+-   **Origin**: *\[Data.Functor.Contravariant.Night\]\[\]*
+
+-   **Mixing Strategy**: "One or the other, but chosen at consumption-time":
+    provide two consumers to handle input, but the choice of which consumer to
+    use is made at consumption time.
+
+    ``` {.haskell}
+    data Night f g a = forall x y. Night (f x) (g y) (a -> Either x y)
+    ```
+
+    This one represents *delegation*: `Night f g a` contains `f` and `g` that
+    could process some form of the `a`, but which of the two is chosen to
+    depends on the value of `a` itself.
+
+    This can be thought of as representing \[sharding\]\[\] between `f` and `g`.
+    Some discriminator determins which of `f` or `g` is better suited to consume
+    the input, and picks which single one to use based on that.
+
+    The illustrative helper function can make this clear:
+
+    ``` {.haskell}
+    night :: f a -> g b -> Night f g (Either a b)
+    night x y = Night x y id
+    ```
+
+    allows you to couple an `f a` consumer of `a` with a `g b` consumer of `b`
+    to produce a consumer of `Either a b` that does its job by using the `f` if
+    given a `Left` input, and using the `g` if given a `b` input.
+
+    This is technically still a day convolution (mathematically), but it uses
+    `Either` instead of the typical `(,)` we use in Haskell. So it's like the
+    opposite of a usual Haskell `Day` --- it's `Night` :)
+
+-   **Identity**
+
+    ``` {.haskell}
+    instance Tensor Night Not
+
+    -- | Data type that proves @a@ cannot exist
+    newtype Not a = Not { refute :: a -> Void }
+    ```
+
+    If `Night f g` assigns input to either `f` or `g`, then a functor that
+    "cannot be chosen"/"cannot be used" would force the choice to the other
+    side.
+
+    That is, `Night f Not` must necessarily pass its input to `f`, as you cannot
+    pass anything to a `Not`, since it only accepts passing in uninhabited
+    types.
+
+-   **Monoids**
+
+    ``` {.haskell}
+    instance Decide   f => SemigroupIn Night f
+    instance Conclude f => MonoidIn    Night Not f
+
+    binterpret @Night
+        :: Decide f
+        => g ~> f
+        -> h ~> f
+        -> Night g h ~> f
+
+    inL   @Night :: Conclude g => f   ~> Night f g
+    inR   @Night :: Conclude f => g   ~> Night f g
+    pureT @Night :: Conclude h => Not ~> h
+    ```
+
+    `Decide` from *\[Data.Functor.Contravariant.Decide\]\[\]* can be thought of
+    as a deterministic sharding typeclass: You can combine two consumers along
+    with a decision function on which consumer to use.
+
+    ``` {.haskell}
+    class Contravariant f => Decide f where
+        decide :: (a -> Either b c) -> f b -> f c -> f a
+                            -- ^ use the f b
+                              -- ^ use the f c
+    ```
+
+    `Conclude` from *\[Data.Functor.Contravariant.Conclude\]\[\]*, adds support
+    for specifying an `f` that cannot be chosen by the decision function when
+    used with `decide`.
+
+    ``` {.haskell}
+    class Decide f => Conclude f where
+        conclude :: (a -> Void) -> f a
+    ```
+
+-   **List type**
+
+    ``` {.haskell}
+    type NonEmptyBy Night = Dec1
+    type ListBy     Night = Dec
+    ```
+
+    `Dec f` and `Dec1 f` represent a bunch of `f`s `Night`'d with each other ---
+    you can think of `Dec f` was the sharding over many different `f`s (or even
+    none), and `Dec1 f` as the sharding over at least one `f`.
+
+    See the later section on `Dec` for more information.
+
+\[Data.Functor.Contravariant.Night\]\[\]:
+https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Night.html
+\[sharding\]: https://en.wikipedia.org/wiki/Shard\_(database\_architecture)
+\[Data.Functor.Contravariant.Decide\]\[\]:
+https://hackage.haskell.org/package/contravariant/docs/Data-Functor-Contravariant-Decide.html
+\[Data.Functor.Contravariant.Conclude\]\[\]:
+https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Conclude.html
+
+### Contravariant Coyoneda
+
+-   **Origin**:
+    *[Data.Functor.Contravariant.Coyoneda](https://hackage.haskell.org/package/kan-extensions/docs/Data-Functor-Contravariant-Coyoneda.html)*
+
+-   **Enhancement**: The ability to contravariantly map over the parameter; it's
+    the free `Contravariant`.
+
+    Can be useful if `f` is created using a `GADT` that cannot be given a
+    `Contravariant` instance.
+
+    For example, here is an indexed type that represents the type of a
+    "prettyprinter", where the type parameter represents the type that is being
+    pretty-printed output result of the form element.
+
+    ``` {.haskell}
+    data PrettyPrim :: Type -> Type where
+        PPString  :: PrettyPrim String
+        PPInt     :: PrettyPrim Int
+        PPBool    :: PrettyPrim Bool
+    ```
+
+    Then `Coyoneda PrettyPrim` has a `Contravariant` instance. We can now
+    contramap over the input type of the pretty-printer; for example,
+    `contramap :: (a -> b) -> Coyoneda PrettyPrim b -> Coyoneda PrettyPrim a`
+    takes a prettyprinter of `b`s and turns it into a prettyprinter of `a`s.
+
+-   **Interpret**
+
+    ``` {.haskell}
+    instance Contravariant f => Interpret Coyoneda f
+
+    interpret @Coyoneda
+        :: Contravariant f
+        => g ~> f
+        -> Coyoneda g ~> f
+    ```
+
+    Interpreting out of a `Coyoneda f` requires the target context to itself be
+    `Contravariant`. For example, if we want to "run" a `Coyoneda PrettyPrim` in
+    `Op String` (`Op String a` is a function from `a` to `String`), this would
+    be
+    `interpret :: (forall x. PrettyPrim x -> Op String x) -> Coyoneda PrettyPrim a -> Op String a`.
+
+### Div / Div1
+
+-   **Origin**:
+    *[Data.Functor.Contravariant.Divisible.Free](https://hackage.haskell.org/package/functor-combinators-0.3.2.0/docs/Data-Functor-Contravariant-Divisible-Free.html)*
+
+-   **Enhancement**: The ability to provide multiple `f`s to each consume a part
+    of the overall input.
+
+    If `f x` is a consumer of `x`s, then `Div f a` is a consumer of `a`s that
+    does its job by splitting `a` across /all/ `f`s, forking them out in
+    parallel. Often times, in practice, this will utilized by giving each `f` a
+    separate part of the `a` to consume.
+
+    For example, let's say you had a type `Socket a` which represents some IO
+    channel or socket that is expecting to receive `a`s. A `Div Socket b` would
+    be a collection of sockets that expects a single `b` overall, but each
+    individual `Socket` inside that `Div` is given some part of the overall `b`.
+
+    Another common usage is to combine serializers by assigning each serializer
+    `f` to one part of an overall input.
+
+    *Structurally*, `Div` is built like a linked list of `f x`s, which each link
+    being existentially bound together:
+
+    ``` {.haskell}
+    data Div :: (Type -> Type) -> Type -> Type where
+        Conquer :: Div f a
+        Divide  :: f x -> Div f y -> (a -> (x, y)) -> Div f a
+    ```
+
+    This is more or less the same construction as for `Ap`: see information on
+    `Ap` for a deeper explanation on how or why this works.
+
+    `Div1` is a variety of `Div` where you always have to have "at least one
+    `f`". Can be useful if you want to ensure, for example, that *at least one
+    socket* will be handling the input (and it won't be lost into the air).
+
+-   **Interpret**
+
+    ``` {.haskell}
+    instance Divisible f => Interpret Div  f
+    instance Divise    f => Interpret Div1 f
+
+    interpret @Div
+        :: Divisible f
+        => g ~> f
+        -> Div g ~> f
+
+    interpret @Div1
+        :: Divise f
+        => g ~> f
+        -> Div1 g ~> f
+    ```
+
+    Interpreting out of an `Div f` requires the target context to be
+    `Divisible`, and interpreting out of a `Div1 f` requires `Divise` (because
+    you will never need the empty case).
+
+### Dec / Dec1
+
+-   **Origin**:
+    *[Data.Functor.Contravariant.Divisible.Free](https://hackage.haskell.org/package/functor-combinators-0.3.2.0/docs/Data-Functor-Contravariant-Divisible-Free.html)*
+
+-   **Enhancement**: The ability to provide multiple `f`s, one of which will be
+    chosen to consume the overall input.
+
+    If `f x` is a consumer of `x`s, then `Dec f a` is a consumer of `a`s that
+    does its job by choosing a single one of those `f`s to handle that
+    consumption, based on what `a` is received.
+
+    For example, let's say you had a type `Socket a` which represents some IO
+    channel or socket that is expecting to receive `a`s. A `Dec Socket b` would
+    be a collection of sockets that expects a single `b` overall, and will pick
+    exactly one of those `f`s to handle that `b`.
+
+    In this sense, you can sort of think of `Dec` as a "sharding" of `f`s: each
+    `f` handles a different possible categorization of the input.
+
+    Another common usage is to combine serializers by assigning each serializer
+    `f` to one possible form of possible input.
+
+    *Structurally*, `Dec` is built like a linked list of `f x`s, which each link
+    being existentially bound together:
+
+    ``` {.haskell}
+    data Dec :: (Type -> Type) -> Type -> Type where
+        Lose   :: (a -> Void) -> Dec f a
+        Choose :: f x -> Dec f y -> (a -> Either x y) -> Dec f a
+    ```
+
+    This is more or less the same construction as for `Ap`: see information on
+    `Ap` for a deeper explanation on how or why this works.
+
+    `Dec1` is a variety of `Dec` where you always have to have "at least one
+    `f`". Can be useful if you want to ensure, for example, that there always
+    exists at least one `f` that can handle the job.
+
+-   **Interpret**
+
+    ``` {.haskell}
+    instance Conclude f => Interpret Dec  f
+    instance Decide   f => Interpret Dec1 f
+
+    interpret @Dec
+        :: Conclude f
+        => g ~> f
+        -> Dec g ~> f
+
+    interpret @Dec1
+        :: Decide f
+        => g ~> f
+        -> Dec1 g ~> f
+    ```
+
+    Interpreting out of an `Dec f` requires the target context to be `Conclude`,
+    and interpreting out of a `Dec1 f` requires `Decide` (because you will never
+    need the rejecting case).
 
 Combinator Combinators
 ----------------------

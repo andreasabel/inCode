@@ -103,6 +103,10 @@ functor-combinators-0.2 refactoring, as of November 2019. For reference,
 \href{https://github.com/mstksg/inCode/blob/ceee9f33492bb703380d877477728feb4fe60a6a/entry/functor-combinatorpedia.md}{the
 original post} is available on github.)
 
+(\emph{Note 2:} The section on contravariant functor combinators was added
+following the release of \emph{functor-combinators-0.3} in August 2020, which
+added support for contravariant and invariant functor combinators.)
+
 Recently I've been very productive what I have been calling the ``Functor
 Combinator'' design pattern. It is heavily influenced by ideas like
 \href{http://www.cs.ru.nl/~W.Swierstra/Publications/DataTypesALaCarte.pdf}{Data
@@ -2476,6 +2480,553 @@ This means that if we inject and immediately interpret out of, we should never
 
   You're not going to have any luck here --- you cannot interpret out of these,
   unfortunately!
+\end{itemize}
+
+\hypertarget{contravariant-functor-combinators}{%
+\section{Contravariant Functor
+Combinators}\label{contravariant-functor-combinators}}
+
+\textbf{Addendum: Post functor-combinators-0.3.0.0}
+
+Most of the above functor combinators have been ``covariant'' ones: an
+\texttt{t\ f\ a} represents some ``producer'' or ``generator'' of \texttt{a}s.
+Many of them require a \texttt{Functor} constraint on \texttt{f} interpret out
+of. However, there exist many useful \emph{contravariant} ones too, where
+\texttt{t\ f\ a} represents a ``consumer'' of \texttt{a}s; many of these require
+a \texttt{Contravariant} constraint on \texttt{f} to interpret out of. These can
+be useful as the building blocks of consumers like serializers.
+
+I've included them all in a separate section because you to either be looking
+for one or the other, and also because there are much less contravariant
+combinators than covariant ones in the Haskell ecosystem.
+
+Also note that many of the functor combinators in the previous sections are
+compatible with both covariant \emph{and} contravariant functors, like:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{:+:}/\texttt{Sum}
+\item
+  \texttt{LeftF}/\texttt{RightF}
+\item
+  \texttt{EnvT}
+\item
+  \texttt{Step}
+\item
+  \texttt{Flagged}
+\item
+  \texttt{Final}
+\item
+  \texttt{Chain}
+\item
+  \texttt{IdentityT}
+\end{itemize}
+
+The following functor combinators in the previous section are also compatible
+with both, but their instances in \emph{functor-combinator} are designed around
+covariant usage. However, some of them have contravariant twins that are
+otherwise identical except for the fact that their instances are instead
+designed around contravariant usage.
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{:*:}/\texttt{Product} (contravariant version: the contravariant
+  \texttt{Day})
+\item
+  \texttt{These1}
+\item
+  \texttt{ListF}/\texttt{NonEmptyF} (contravariant versions: \texttt{Div} and
+  \texttt{Div1})
+\item
+  \texttt{MaybeF}
+\end{itemize}
+
+This section was added following the release of
+\emph{functor-combinators-0.3.0.0}, which added in support for contravariant and
+invariant functor combinators.
+
+\hypertarget{contravariant-day}{%
+\subsection{Contravariant Day}\label{contravariant-day}}
+
+\begin{itemize}
+\item
+  \textbf{Origin}: \emph{{[}Data.Functor.Contravariant.Day{]}{[}{]}}
+\item
+  \textbf{Mixing Strategy}: ``Both, together'': provide two consumers that are
+  each meant to consume one part of the input.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Day}\NormalTok{ f g a }\OtherTok{=} \KeywordTok{forall}\NormalTok{ x y}\OperatorTok{.} \DataTypeTok{Day}\NormalTok{ (f x) (g y) (a }\OtherTok{{-}>}\NormalTok{ (x, y))}
+\end{Highlighting}
+\end{Shaded}
+
+  This type is essentially equivalent to \texttt{:*:}/\texttt{Product} if
+  \texttt{f} is \texttt{Contravariant}, so it is useful in every situation where
+  \texttt{:*:} would be useful. It can be thought of as simply a version of
+  \texttt{:*:} that signals to the reader that it is meant to be used
+  contravariantly (as a consumer) and not covariantly (as a producer).
+
+  Like for \texttt{:*:}, it has the distinguishing property (if \texttt{f} is
+  \texttt{Contravariant}) of allowing you to use either the \texttt{f} or the
+  \texttt{g}, as you please.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{dayOutL ::} \DataTypeTok{Contravariant}\NormalTok{ f }\OtherTok{=>} \DataTypeTok{Day}\NormalTok{ f g }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+\NormalTok{dayOutL (}\DataTypeTok{Day}\NormalTok{ x \_ f) }\OtherTok{=}\NormalTok{ contramap (}\FunctionTok{fst} \OperatorTok{.}\NormalTok{ f) x}
+
+\OtherTok{dayOutR ::} \DataTypeTok{Contravariant}\NormalTok{ g }\OtherTok{=>} \DataTypeTok{Day}\NormalTok{ f g }\OperatorTok{\textasciitilde{}>}\NormalTok{ g}
+\NormalTok{dayOutR (}\DataTypeTok{Day}\NormalTok{ \_ y f) }\OtherTok{=}\NormalTok{ contramap (}\FunctionTok{snd} \OperatorTok{.}\NormalTok{ f) y}
+\end{Highlighting}
+\end{Shaded}
+
+  In practice, however, I like to think of it as storing an \texttt{f} and a
+  \texttt{g} that can each handle a separate ``part'' of an \texttt{a}. For
+  example, the illustrative helper function
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{day ::}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ g b }\OtherTok{{-}>} \DataTypeTok{Day}\NormalTok{ f g (a, b)}
+\NormalTok{day x y }\OtherTok{=} \DataTypeTok{Day}\NormalTok{ x y }\FunctionTok{id}
+\end{Highlighting}
+\end{Shaded}
+
+  allows you to couple an \texttt{f\ a} consumer of \texttt{a} with a
+  \texttt{g\ b} consumer of \texttt{b} to produce a consumer of \texttt{(a,\ b)}
+  that does its job by handing the \texttt{a} to \texttt{x}, and the \texttt{b}
+  to \texttt{y}.
+\item
+  \textbf{Identity}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{instance} \DataTypeTok{Tensor} \DataTypeTok{Day} \DataTypeTok{Proxy}
+\end{Highlighting}
+\end{Shaded}
+
+  Since this type is essentially \texttt{(:*:)}, it has the same identity.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{day }\DataTypeTok{Proxy}\OtherTok{ ::}\NormalTok{ g b }\OtherTok{{-}>} \DataTypeTok{Day} \DataTypeTok{Proxy}\NormalTok{ g (a, b)}
+\end{Highlighting}
+\end{Shaded}
+
+  is the \texttt{Day} that would ``ignore'' the \texttt{a} part and simply pass
+  the \texttt{b} to \texttt{g}.
+\item
+  \textbf{Monoids}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{instance} \DataTypeTok{Divise}\NormalTok{    f }\OtherTok{=>} \DataTypeTok{SemigroupIn} \DataTypeTok{Day}\NormalTok{ f}
+\KeywordTok{instance} \DataTypeTok{Divisible}\NormalTok{ f }\OtherTok{=>} \DataTypeTok{MonoidIn}    \DataTypeTok{Day} \DataTypeTok{Proxy}\NormalTok{ f}
+
+\NormalTok{binterpret }\OperatorTok{@}\DataTypeTok{Day}
+\OtherTok{    ::} \DataTypeTok{Divise}\NormalTok{ f}
+    \OtherTok{=>}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+    \OtherTok{{-}>}\NormalTok{ h }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+    \OtherTok{{-}>} \DataTypeTok{Day}\NormalTok{ g h }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+
+\NormalTok{inL   }\OperatorTok{@}\OtherTok{(:*:) ::} \DataTypeTok{Divisible}\NormalTok{ g }\OtherTok{=>}\NormalTok{ f     }\OperatorTok{\textasciitilde{}>} \DataTypeTok{Day}\NormalTok{ f g}
+\NormalTok{inR   }\OperatorTok{@}\OtherTok{(:*:) ::} \DataTypeTok{Divisible}\NormalTok{ f }\OtherTok{=>}\NormalTok{ g     }\OperatorTok{\textasciitilde{}>} \DataTypeTok{Day}\NormalTok{ f g}
+\NormalTok{pureT }\OperatorTok{@}\OtherTok{(:*:) ::} \DataTypeTok{Divisible}\NormalTok{ h }\OtherTok{=>} \DataTypeTok{Proxy} \OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+\end{Highlighting}
+\end{Shaded}
+
+  \texttt{Divise} from \emph{{[}Data.Functor.Contravariant.Divise{]}{[}{]}} can
+  be thought of some version the ``contravariant \texttt{Alt}'': it gives you a
+  way to merge two \texttt{f\ a}s into a single one in a way that represents
+  having both the items consume the input as they choose. The usual way of doing
+  this is by providing a splitting function to choose to give some part of the
+  input to one argument, and some part to another:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{Contravariant}\NormalTok{ f }\OtherTok{=>} \DataTypeTok{Divise}\NormalTok{ f }\KeywordTok{where}
+\OtherTok{    divise ::}\NormalTok{ (a }\OtherTok{{-}>}\NormalTok{ (b, c)) }\OtherTok{{-}>}\NormalTok{ f b }\OtherTok{{-}>}\NormalTok{ f c }\OtherTok{{-}>}\NormalTok{ f a}
+                  \CommentTok{{-}{-} \^{} what to give to the \textquotesingle{}f b\textquotesingle{}}
+                     \CommentTok{{-}{-} \^{} what to give to the \textquotesingle{}f c\textquotesingle{}}
+\end{Highlighting}
+\end{Shaded}
+
+  \texttt{Divisible} from
+  \emph{{[}Data.Functor.Contravariant.Divisible{]}{[}{]}}, adds an identity that
+  will ignore anything it is given: \texttt{conquer.}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{Divise}\NormalTok{ f }\OtherTok{=>} \DataTypeTok{Divisible}\NormalTok{ f }\KeywordTok{where}
+\OtherTok{    conquer ::}\NormalTok{ f a}
+\end{Highlighting}
+\end{Shaded}
+
+  (note: like with \texttt{Applicative} and \texttt{Apply}, the actual version
+  requires only \texttt{Contravariant\ f}; \texttt{Divise} isn't an actual
+  superclass, even though it should be.)
+\item
+  \textbf{List type}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{NonEmptyBy} \DataTypeTok{Day} \OtherTok{=} \DataTypeTok{Div1}
+\KeywordTok{type} \DataTypeTok{ListBy}     \DataTypeTok{Day} \OtherTok{=} \DataTypeTok{Div}
+\end{Highlighting}
+\end{Shaded}
+
+  \texttt{Div1\ f} and \texttt{Div\ f} are equivalent to \texttt{NonEmptyF\ f}
+  and \texttt{ListF\ f}, respectively, as long as \texttt{f} is
+  \texttt{Contravariant}. However, due to quirks of the the definition of
+  \texttt{Day}, essential functions like appends, merges, etc. on \texttt{ListF}
+  require \texttt{Contravariant\ f}. \texttt{Div} doesn't require such
+  instances, and so can be more useful as a free structure. Also,
+  \texttt{Div1}/\texttt{Div} are constructed in a way that is more well-suited
+  for common usage patterns of \texttt{Divisible} methods.
+
+  Like for \texttt{Day}, it's something that can be used instead of \texttt{:*:}
+  to mentally signify how the type is meant to be used. You can think of
+  \texttt{Div\ f\ a} as a chain of \texttt{f}s, where the \texttt{a} is
+  distributed over each \texttt{f}, but the intent of its usage is that each
+  \texttt{f} is meant to consume a different part of that \texttt{a}.
+
+  See the information later on \texttt{Div} alone for more information on usage
+  and utility.
+
+  \texttt{Div} is the possibly-empty version, and \texttt{Div1} is the nonempty
+  version.
+\end{itemize}
+
+{[}Data.Functor.Contravariant.Day{]}{[}{]}:
+https://hackage.haskell.org/package/kan-extensions/docs/Data-Functor-Contravariant-Day.html
+{[}Data.Functor.Contravariant.Divisible{]}{[}{]}:
+https://hackage.haskell.org/package/contravariant/docs/Data-Functor-Contravariant-Divisible.html
+{[}Data.Functor.Contravariant.Divise{]}{[}{]}:
+https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Divise.html
+
+\hypertarget{night}{%
+\subsection{Night}\label{night}}
+
+\begin{itemize}
+\item
+  \textbf{Origin}: \emph{{[}Data.Functor.Contravariant.Night{]}{[}{]}}
+\item
+  \textbf{Mixing Strategy}: ``One or the other, but chosen at
+  consumption-time'': provide two consumers to handle input, but the choice of
+  which consumer to use is made at consumption time.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Night}\NormalTok{ f g a }\OtherTok{=} \KeywordTok{forall}\NormalTok{ x y}\OperatorTok{.} \DataTypeTok{Night}\NormalTok{ (f x) (g y) (a }\OtherTok{{-}>} \DataTypeTok{Either}\NormalTok{ x y)}
+\end{Highlighting}
+\end{Shaded}
+
+  This one represents \emph{delegation}: \texttt{Night\ f\ g\ a} contains
+  \texttt{f} and \texttt{g} that could process some form of the \texttt{a}, but
+  which of the two is chosen to depends on the value of \texttt{a} itself.
+
+  This can be thought of as representing {[}sharding{]}{[}{]} between \texttt{f}
+  and \texttt{g}. Some discriminator determins which of \texttt{f} or \texttt{g}
+  is better suited to consume the input, and picks which single one to use based
+  on that.
+
+  The illustrative helper function can make this clear:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{night ::}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ g b }\OtherTok{{-}>} \DataTypeTok{Night}\NormalTok{ f g (}\DataTypeTok{Either}\NormalTok{ a b)}
+\NormalTok{night x y }\OtherTok{=} \DataTypeTok{Night}\NormalTok{ x y }\FunctionTok{id}
+\end{Highlighting}
+\end{Shaded}
+
+  allows you to couple an \texttt{f\ a} consumer of \texttt{a} with a
+  \texttt{g\ b} consumer of \texttt{b} to produce a consumer of
+  \texttt{Either\ a\ b} that does its job by using the \texttt{f} if given a
+  \texttt{Left} input, and using the \texttt{g} if given a \texttt{b} input.
+
+  This is technically still a day convolution (mathematically), but it uses
+  \texttt{Either} instead of the typical \texttt{(,)} we use in Haskell. So it's
+  like the opposite of a usual Haskell \texttt{Day} --- it's \texttt{Night} :)
+\item
+  \textbf{Identity}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{instance} \DataTypeTok{Tensor} \DataTypeTok{Night} \DataTypeTok{Not}
+
+\CommentTok{{-}{-} | Data type that proves @a@ cannot exist}
+\KeywordTok{newtype} \DataTypeTok{Not}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Not}\NormalTok{ \{}\OtherTok{ refute ::}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Void}\NormalTok{ \}}
+\end{Highlighting}
+\end{Shaded}
+
+  If \texttt{Night\ f\ g} assigns input to either \texttt{f} or \texttt{g}, then
+  a functor that ``cannot be chosen''/``cannot be used'' would force the choice
+  to the other side.
+
+  That is, \texttt{Night\ f\ Not} must necessarily pass its input to \texttt{f},
+  as you cannot pass anything to a \texttt{Not}, since it only accepts passing
+  in uninhabited types.
+\item
+  \textbf{Monoids}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{instance} \DataTypeTok{Decide}\NormalTok{   f }\OtherTok{=>} \DataTypeTok{SemigroupIn} \DataTypeTok{Night}\NormalTok{ f}
+\KeywordTok{instance} \DataTypeTok{Conclude}\NormalTok{ f }\OtherTok{=>} \DataTypeTok{MonoidIn}    \DataTypeTok{Night} \DataTypeTok{Not}\NormalTok{ f}
+
+\NormalTok{binterpret }\OperatorTok{@}\DataTypeTok{Night}
+\OtherTok{    ::} \DataTypeTok{Decide}\NormalTok{ f}
+    \OtherTok{=>}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+    \OtherTok{{-}>}\NormalTok{ h }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+    \OtherTok{{-}>} \DataTypeTok{Night}\NormalTok{ g h }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+
+\NormalTok{inL   }\OperatorTok{@}\DataTypeTok{Night}\OtherTok{ ::} \DataTypeTok{Conclude}\NormalTok{ g }\OtherTok{=>}\NormalTok{ f   }\OperatorTok{\textasciitilde{}>} \DataTypeTok{Night}\NormalTok{ f g}
+\NormalTok{inR   }\OperatorTok{@}\DataTypeTok{Night}\OtherTok{ ::} \DataTypeTok{Conclude}\NormalTok{ f }\OtherTok{=>}\NormalTok{ g   }\OperatorTok{\textasciitilde{}>} \DataTypeTok{Night}\NormalTok{ f g}
+\NormalTok{pureT }\OperatorTok{@}\DataTypeTok{Night}\OtherTok{ ::} \DataTypeTok{Conclude}\NormalTok{ h }\OtherTok{=>} \DataTypeTok{Not} \OperatorTok{\textasciitilde{}>}\NormalTok{ h}
+\end{Highlighting}
+\end{Shaded}
+
+  \texttt{Decide} from \emph{{[}Data.Functor.Contravariant.Decide{]}{[}{]}} can
+  be thought of as a deterministic sharding typeclass: You can combine two
+  consumers along with a decision function on which consumer to use.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{Contravariant}\NormalTok{ f }\OtherTok{=>} \DataTypeTok{Decide}\NormalTok{ f }\KeywordTok{where}
+\OtherTok{    decide ::}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Either}\NormalTok{ b c) }\OtherTok{{-}>}\NormalTok{ f b }\OtherTok{{-}>}\NormalTok{ f c }\OtherTok{{-}>}\NormalTok{ f a}
+                        \CommentTok{{-}{-} \^{} use the f b}
+                          \CommentTok{{-}{-} \^{} use the f c}
+\end{Highlighting}
+\end{Shaded}
+
+  \texttt{Conclude} from \emph{{[}Data.Functor.Contravariant.Conclude{]}{[}{]}},
+  adds support for specifying an \texttt{f} that cannot be chosen by the
+  decision function when used with \texttt{decide}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{Decide}\NormalTok{ f }\OtherTok{=>} \DataTypeTok{Conclude}\NormalTok{ f }\KeywordTok{where}
+\OtherTok{    conclude ::}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Void}\NormalTok{) }\OtherTok{{-}>}\NormalTok{ f a}
+\end{Highlighting}
+\end{Shaded}
+\item
+  \textbf{List type}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{NonEmptyBy} \DataTypeTok{Night} \OtherTok{=} \DataTypeTok{Dec1}
+\KeywordTok{type} \DataTypeTok{ListBy}     \DataTypeTok{Night} \OtherTok{=} \DataTypeTok{Dec}
+\end{Highlighting}
+\end{Shaded}
+
+  \texttt{Dec\ f} and \texttt{Dec1\ f} represent a bunch of \texttt{f}s
+  \texttt{Night}'d with each other --- you can think of \texttt{Dec\ f} was the
+  sharding over many different \texttt{f}s (or even none), and \texttt{Dec1\ f}
+  as the sharding over at least one \texttt{f}.
+
+  See the later section on \texttt{Dec} for more information.
+\end{itemize}
+
+{[}Data.Functor.Contravariant.Night{]}{[}{]}:
+https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Night.html
+{[}sharding{]}: https://en.wikipedia.org/wiki/Shard\_(database\_architecture)
+{[}Data.Functor.Contravariant.Decide{]}{[}{]}:
+https://hackage.haskell.org/package/contravariant/docs/Data-Functor-Contravariant-Decide.html
+{[}Data.Functor.Contravariant.Conclude{]}{[}{]}:
+https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Conclude.html
+
+\hypertarget{contravariant-coyoneda}{%
+\subsection{Contravariant Coyoneda}\label{contravariant-coyoneda}}
+
+\begin{itemize}
+\item
+  \textbf{Origin}:
+  \emph{\href{https://hackage.haskell.org/package/kan-extensions/docs/Data-Functor-Contravariant-Coyoneda.html}{Data.Functor.Contravariant.Coyoneda}}
+\item
+  \textbf{Enhancement}: The ability to contravariantly map over the parameter;
+  it's the free \texttt{Contravariant}.
+
+  Can be useful if \texttt{f} is created using a \texttt{GADT} that cannot be
+  given a \texttt{Contravariant} instance.
+
+  For example, here is an indexed type that represents the type of a
+  ``prettyprinter'', where the type parameter represents the type that is being
+  pretty-printed output result of the form element.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{PrettyPrim}\OtherTok{ ::} \DataTypeTok{Type} \OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{PPString}\OtherTok{  ::} \DataTypeTok{PrettyPrim} \DataTypeTok{String}
+    \DataTypeTok{PPInt}\OtherTok{     ::} \DataTypeTok{PrettyPrim} \DataTypeTok{Int}
+    \DataTypeTok{PPBool}\OtherTok{    ::} \DataTypeTok{PrettyPrim} \DataTypeTok{Bool}
+\end{Highlighting}
+\end{Shaded}
+
+  Then \texttt{Coyoneda\ PrettyPrim} has a \texttt{Contravariant} instance. We
+  can now contramap over the input type of the pretty-printer; for example,
+  \texttt{contramap\ ::\ (a\ -\textgreater{}\ b)\ -\textgreater{}\ Coyoneda\ PrettyPrim\ b\ -\textgreater{}\ Coyoneda\ PrettyPrim\ a}
+  takes a prettyprinter of \texttt{b}s and turns it into a prettyprinter of
+  \texttt{a}s.
+\item
+  \textbf{Interpret}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{instance} \DataTypeTok{Contravariant}\NormalTok{ f }\OtherTok{=>} \DataTypeTok{Interpret} \DataTypeTok{Coyoneda}\NormalTok{ f}
+
+\NormalTok{interpret }\OperatorTok{@}\DataTypeTok{Coyoneda}
+\OtherTok{    ::} \DataTypeTok{Contravariant}\NormalTok{ f}
+    \OtherTok{=>}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+    \OtherTok{{-}>} \DataTypeTok{Coyoneda}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+\end{Highlighting}
+\end{Shaded}
+
+  Interpreting out of a \texttt{Coyoneda\ f} requires the target context to
+  itself be \texttt{Contravariant}. For example, if we want to ``run'' a
+  \texttt{Coyoneda\ PrettyPrim} in \texttt{Op\ String} (\texttt{Op\ String\ a}
+  is a function from \texttt{a} to \texttt{String}), this would be
+  \texttt{interpret\ ::\ (forall\ x.\ PrettyPrim\ x\ -\textgreater{}\ Op\ String\ x)\ -\textgreater{}\ Coyoneda\ PrettyPrim\ a\ -\textgreater{}\ Op\ String\ a}.
+\end{itemize}
+
+\hypertarget{div-div1}{%
+\subsection{Div / Div1}\label{div-div1}}
+
+\begin{itemize}
+\item
+  \textbf{Origin}:
+  \emph{\href{https://hackage.haskell.org/package/functor-combinators-0.3.2.0/docs/Data-Functor-Contravariant-Divisible-Free.html}{Data.Functor.Contravariant.Divisible.Free}}
+\item
+  \textbf{Enhancement}: The ability to provide multiple \texttt{f}s to each
+  consume a part of the overall input.
+
+  If \texttt{f\ x} is a consumer of \texttt{x}s, then \texttt{Div\ f\ a} is a
+  consumer of \texttt{a}s that does its job by splitting \texttt{a} across /all/
+  \texttt{f}s, forking them out in parallel. Often times, in practice, this will
+  utilized by giving each \texttt{f} a separate part of the \texttt{a} to
+  consume.
+
+  For example, let's say you had a type \texttt{Socket\ a} which represents some
+  IO channel or socket that is expecting to receive \texttt{a}s. A
+  \texttt{Div\ Socket\ b} would be a collection of sockets that expects a single
+  \texttt{b} overall, but each individual \texttt{Socket} inside that
+  \texttt{Div} is given some part of the overall \texttt{b}.
+
+  Another common usage is to combine serializers by assigning each serializer
+  \texttt{f} to one part of an overall input.
+
+  \emph{Structurally}, \texttt{Div} is built like a linked list of
+  \texttt{f\ x}s, which each link being existentially bound together:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Div}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{Type} \OtherTok{{-}>} \DataTypeTok{Type}\NormalTok{) }\OtherTok{{-}>} \DataTypeTok{Type} \OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{Conquer}\OtherTok{ ::} \DataTypeTok{Div}\NormalTok{ f a}
+    \DataTypeTok{Divide}\OtherTok{  ::}\NormalTok{ f x }\OtherTok{{-}>} \DataTypeTok{Div}\NormalTok{ f y }\OtherTok{{-}>}\NormalTok{ (a }\OtherTok{{-}>}\NormalTok{ (x, y)) }\OtherTok{{-}>} \DataTypeTok{Div}\NormalTok{ f a}
+\end{Highlighting}
+\end{Shaded}
+
+  This is more or less the same construction as for \texttt{Ap}: see information
+  on \texttt{Ap} for a deeper explanation on how or why this works.
+
+  \texttt{Div1} is a variety of \texttt{Div} where you always have to have ``at
+  least one \texttt{f}''. Can be useful if you want to ensure, for example, that
+  \emph{at least one socket} will be handling the input (and it won't be lost
+  into the air).
+\item
+  \textbf{Interpret}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{instance} \DataTypeTok{Divisible}\NormalTok{ f }\OtherTok{=>} \DataTypeTok{Interpret} \DataTypeTok{Div}\NormalTok{  f}
+\KeywordTok{instance} \DataTypeTok{Divise}\NormalTok{    f }\OtherTok{=>} \DataTypeTok{Interpret} \DataTypeTok{Div1}\NormalTok{ f}
+
+\NormalTok{interpret }\OperatorTok{@}\DataTypeTok{Div}
+\OtherTok{    ::} \DataTypeTok{Divisible}\NormalTok{ f}
+    \OtherTok{=>}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+    \OtherTok{{-}>} \DataTypeTok{Div}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+
+\NormalTok{interpret }\OperatorTok{@}\DataTypeTok{Div1}
+\OtherTok{    ::} \DataTypeTok{Divise}\NormalTok{ f}
+    \OtherTok{=>}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+    \OtherTok{{-}>} \DataTypeTok{Div1}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+\end{Highlighting}
+\end{Shaded}
+
+  Interpreting out of an \texttt{Div\ f} requires the target context to be
+  \texttt{Divisible}, and interpreting out of a \texttt{Div1\ f} requires
+  \texttt{Divise} (because you will never need the empty case).
+\end{itemize}
+
+\hypertarget{dec-dec1}{%
+\subsection{Dec / Dec1}\label{dec-dec1}}
+
+\begin{itemize}
+\item
+  \textbf{Origin}:
+  \emph{\href{https://hackage.haskell.org/package/functor-combinators-0.3.2.0/docs/Data-Functor-Contravariant-Divisible-Free.html}{Data.Functor.Contravariant.Divisible.Free}}
+\item
+  \textbf{Enhancement}: The ability to provide multiple \texttt{f}s, one of
+  which will be chosen to consume the overall input.
+
+  If \texttt{f\ x} is a consumer of \texttt{x}s, then \texttt{Dec\ f\ a} is a
+  consumer of \texttt{a}s that does its job by choosing a single one of those
+  \texttt{f}s to handle that consumption, based on what \texttt{a} is received.
+
+  For example, let's say you had a type \texttt{Socket\ a} which represents some
+  IO channel or socket that is expecting to receive \texttt{a}s. A
+  \texttt{Dec\ Socket\ b} would be a collection of sockets that expects a single
+  \texttt{b} overall, and will pick exactly one of those \texttt{f}s to handle
+  that \texttt{b}.
+
+  In this sense, you can sort of think of \texttt{Dec} as a ``sharding'' of
+  \texttt{f}s: each \texttt{f} handles a different possible categorization of
+  the input.
+
+  Another common usage is to combine serializers by assigning each serializer
+  \texttt{f} to one possible form of possible input.
+
+  \emph{Structurally}, \texttt{Dec} is built like a linked list of
+  \texttt{f\ x}s, which each link being existentially bound together:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Dec}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{Type} \OtherTok{{-}>} \DataTypeTok{Type}\NormalTok{) }\OtherTok{{-}>} \DataTypeTok{Type} \OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
+    \DataTypeTok{Lose}\OtherTok{   ::}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Void}\NormalTok{) }\OtherTok{{-}>} \DataTypeTok{Dec}\NormalTok{ f a}
+    \DataTypeTok{Choose}\OtherTok{ ::}\NormalTok{ f x }\OtherTok{{-}>} \DataTypeTok{Dec}\NormalTok{ f y }\OtherTok{{-}>}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Either}\NormalTok{ x y) }\OtherTok{{-}>} \DataTypeTok{Dec}\NormalTok{ f a}
+\end{Highlighting}
+\end{Shaded}
+
+  This is more or less the same construction as for \texttt{Ap}: see information
+  on \texttt{Ap} for a deeper explanation on how or why this works.
+
+  \texttt{Dec1} is a variety of \texttt{Dec} where you always have to have ``at
+  least one \texttt{f}''. Can be useful if you want to ensure, for example, that
+  there always exists at least one \texttt{f} that can handle the job.
+\item
+  \textbf{Interpret}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{instance} \DataTypeTok{Conclude}\NormalTok{ f }\OtherTok{=>} \DataTypeTok{Interpret} \DataTypeTok{Dec}\NormalTok{  f}
+\KeywordTok{instance} \DataTypeTok{Decide}\NormalTok{   f }\OtherTok{=>} \DataTypeTok{Interpret} \DataTypeTok{Dec1}\NormalTok{ f}
+
+\NormalTok{interpret }\OperatorTok{@}\DataTypeTok{Dec}
+\OtherTok{    ::} \DataTypeTok{Conclude}\NormalTok{ f}
+    \OtherTok{=>}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+    \OtherTok{{-}>} \DataTypeTok{Dec}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+
+\NormalTok{interpret }\OperatorTok{@}\DataTypeTok{Dec1}
+\OtherTok{    ::} \DataTypeTok{Decide}\NormalTok{ f}
+    \OtherTok{=>}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+    \OtherTok{{-}>} \DataTypeTok{Dec1}\NormalTok{ g }\OperatorTok{\textasciitilde{}>}\NormalTok{ f}
+\end{Highlighting}
+\end{Shaded}
+
+  Interpreting out of an \texttt{Dec\ f} requires the target context to be
+  \texttt{Conclude}, and interpreting out of a \texttt{Dec1\ f} requires
+  \texttt{Decide} (because you will never need the rejecting case).
 \end{itemize}
 
 \hypertarget{combinator-combinators}{%
