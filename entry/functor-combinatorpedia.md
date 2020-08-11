@@ -1997,7 +1997,8 @@ which added in support for contravariant and invariant functor combinators.
 
 ### Contravariant Day
 
--   **Origin**: *\[Data.Functor.Contravariant.Day\]\[\]*
+-   **Origin**:
+    *[Data.Functor.Contravariant.Day](https://hackage.haskell.org/package/kan-extensions/docs/Data-Functor-Contravariant-Day.html)*
 
 -   **Mixing Strategy**: "Both, together": provide two consumers that are each
     meant to consume one part of the input.
@@ -2069,12 +2070,13 @@ which added in support for contravariant and invariant functor combinators.
     pureT @(:*:) :: Divisible h => Proxy ~> h
     ```
 
-    `Divise` from *\[Data.Functor.Contravariant.Divise\]\[\]* can be thought of
-    some version the "contravariant `Alt`": it gives you a way to merge two
-    `f a`s into a single one in a way that represents having both the items
-    consume the input as they choose. The usual way of doing this is by
-    providing a splitting function to choose to give some part of the input to
-    one argument, and some part to another:
+    `Divise` from
+    *[Data.Functor.Contravariant.Divise](https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Divise.html)*
+    can be thought of some version the "contravariant `Alt`": it gives you a way
+    to merge two `f a`s into a single one in a way that represents having both
+    the items consume the input as they choose. The usual way of doing this is
+    by providing a splitting function to choose to give some part of the input
+    to one argument, and some part to another:
 
     ``` {.haskell}
     class Contravariant f => Divise f where
@@ -2083,8 +2085,9 @@ which added in support for contravariant and invariant functor combinators.
                          -- ^ what to give to the 'f c'
     ```
 
-    `Divisible` from *\[Data.Functor.Contravariant.Divisible\]\[\]*, adds an
-    identity that will ignore anything it is given: `conquer.`
+    `Divisible` from
+    *[Data.Functor.Contravariant.Divisible](https://hackage.haskell.org/package/contravariant/docs/Data-Functor-Contravariant-Divisible.html)*,
+    adds an identity that will ignore anything it is given: `conquer.`
 
     ``` {.haskell}
     class Divise f => Divisible f where
@@ -2118,16 +2121,10 @@ which added in support for contravariant and invariant functor combinators.
 
     `Div` is the possibly-empty version, and `Div1` is the nonempty version.
 
-\[Data.Functor.Contravariant.Day\]\[\]:
-https://hackage.haskell.org/package/kan-extensions/docs/Data-Functor-Contravariant-Day.html
-\[Data.Functor.Contravariant.Divisible\]\[\]:
-https://hackage.haskell.org/package/contravariant/docs/Data-Functor-Contravariant-Divisible.html
-\[Data.Functor.Contravariant.Divise\]\[\]:
-https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Divise.html
-
 ### Night
 
--   **Origin**: *\[Data.Functor.Contravariant.Night\]\[\]*
+-   **Origin**:
+    *[Data.Functor.Contravariant.Night](https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Night.html)*
 
 -   **Mixing Strategy**: "One or the other, but chosen at consumption-time":
     provide two consumers to handle input, but the choice of which consumer to
@@ -2141,9 +2138,11 @@ https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contra
     could process some form of the `a`, but which of the two is chosen to
     depends on the value of `a` itself.
 
-    This can be thought of as representing \[sharding\]\[\] between `f` and `g`.
-    Some discriminator determins which of `f` or `g` is better suited to consume
-    the input, and picks which single one to use based on that.
+    This can be thought of as representing
+    [sharding](https://en.wikipedia.org/wiki/Shard_(database_architecture))
+    between `f` and `g`. Some discriminator determins which of `f` or `g` is
+    better suited to consume the input, and picks which single one to use based
+    on that.
 
     The illustrative helper function can make this clear:
 
@@ -2194,9 +2193,10 @@ https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contra
     pureT @Night :: Conclude h => Not ~> h
     ```
 
-    `Decide` from *\[Data.Functor.Contravariant.Decide\]\[\]* can be thought of
-    as a deterministic sharding typeclass: You can combine two consumers along
-    with a decision function on which consumer to use.
+    `Decide` from
+    *[Data.Functor.Contravariant.Decide](https://hackage.haskell.org/package/contravariant/docs/Data-Functor-Contravariant-Decide.html)*
+    can be thought of as a deterministic sharding typeclass: You can combine two
+    consumers along with a decision function on which consumer to use.
 
     ``` {.haskell}
     class Contravariant f => Decide f where
@@ -2205,9 +2205,10 @@ https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contra
                               -- ^ use the f c
     ```
 
-    `Conclude` from *\[Data.Functor.Contravariant.Conclude\]\[\]*, adds support
-    for specifying an `f` that cannot be chosen by the decision function when
-    used with `decide`.
+    `Conclude` from
+    *[Data.Functor.Contravariant.Conclude](https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Conclude.html)*,
+    adds support for specifying an `f` that cannot be chosen by the decision
+    function when used with `decide`.
 
     ``` {.haskell}
     class Decide f => Conclude f where
@@ -2226,14 +2227,6 @@ https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contra
     none), and `Dec1 f` as the sharding over at least one `f`.
 
     See the later section on `Dec` for more information.
-
-\[Data.Functor.Contravariant.Night\]\[\]:
-https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Night.html
-\[sharding\]: https://en.wikipedia.org/wiki/Shard\_(database\_architecture)
-\[Data.Functor.Contravariant.Decide\]\[\]:
-https://hackage.haskell.org/package/contravariant/docs/Data-Functor-Contravariant-Decide.html
-\[Data.Functor.Contravariant.Conclude\]\[\]:
-https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Conclude.html
 
 ### Contravariant Coyoneda
 
