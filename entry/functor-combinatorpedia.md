@@ -2100,16 +2100,23 @@ which added in support for contravariant and invariant functor combinators.
 
 -   **List type**
 
+    Basically,
+
+    ``` {.haskell}
+    type NonEmptyBy Day = NonEmptyF
+    type ListBy     Day = ListF
+    ```
+
+    Because the contravariant `Day` is equivalent to `:*:` for contravariant
+    inputs, they have the exact same "list type". However, in the
+    *functor-combinators* library, each list type can only have a single
+    `Interpret` instance, so instead the list types are defined to be a separate
+    (identical) type with a different name:
+
     ``` {.haskell}
     type NonEmptyBy Day = Div1
     type ListBy     Day = Div
     ```
-
-    `Div1 f` and `Div f` are equivalent to `NonEmptyF f` and `ListF f`,
-    respectively, as long as `f` is `Contravariant`. However, due to quirks of
-    the the definition of `Day`, essential functions like appends, merges, etc.
-    on `ListF` require `Contravariant f`. `Div` doesn't require such instances,
-    and so can be more useful as a free structure.
 
     Like for `Day`, it's something that can be used instead of `:*:` to mentally
     signify how the type is meant to be used. You can think of `Div f a` as a
