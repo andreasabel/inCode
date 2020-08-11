@@ -2682,9 +2682,7 @@ invariant functor combinators.
   \texttt{Contravariant}. However, due to quirks of the the definition of
   \texttt{Day}, essential functions like appends, merges, etc. on \texttt{ListF}
   require \texttt{Contravariant\ f}. \texttt{Div} doesn't require such
-  instances, and so can be more useful as a free structure. Also,
-  \texttt{Div1}/\texttt{Div} are constructed in a way that is more well-suited
-  for common usage patterns of \texttt{Divisible} methods.
+  instances, and so can be more useful as a free structure.
 
   Like for \texttt{Day}, it's something that can be used instead of \texttt{:*:}
   to mentally signify how the type is meant to be used. You can think of
@@ -2916,19 +2914,24 @@ https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contra
   Another common usage is to combine serializers by assigning each serializer
   \texttt{f} to one part of an overall input.
 
-  \emph{Structurally}, \texttt{Div} is built like a linked list of
-  \texttt{f\ x}s, which each link being existentially bound together:
+  \emph{Structurally}, \texttt{Div} and \texttt{Div1} are basically lists of
+  contravariant coyonedas:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Div}\OtherTok{ ::}\NormalTok{ (}\DataTypeTok{Type} \OtherTok{{-}>} \DataTypeTok{Type}\NormalTok{) }\OtherTok{{-}>} \DataTypeTok{Type} \OtherTok{{-}>} \DataTypeTok{Type} \KeywordTok{where}
-    \DataTypeTok{Conquer}\OtherTok{ ::} \DataTypeTok{Div}\NormalTok{ f a}
-    \DataTypeTok{Divide}\OtherTok{  ::}\NormalTok{ f x }\OtherTok{{-}>} \DataTypeTok{Div}\NormalTok{ f y }\OtherTok{{-}>}\NormalTok{ (a }\OtherTok{{-}>}\NormalTok{ (x, y)) }\OtherTok{{-}>} \DataTypeTok{Div}\NormalTok{ f a}
+\KeywordTok{newtype} \DataTypeTok{Div}\NormalTok{  f a }\OtherTok{=} \DataTypeTok{Div}\NormalTok{  \{}\OtherTok{ unDiv  ::}\NormalTok{ [}\DataTypeTok{Coyoneda}\NormalTok{ f a]          \}}
+\KeywordTok{newtype} \DataTypeTok{Div1}\NormalTok{ f a }\OtherTok{=} \DataTypeTok{Div1}\NormalTok{ \{}\OtherTok{ unDiv1 ::} \DataTypeTok{NonEmpty}\NormalTok{ (}\DataTypeTok{Coyoneda}\NormalTok{ f a) \}}
 \end{Highlighting}
 \end{Shaded}
 
-  This is more or less the same construction as for \texttt{Ap}: see information
-  on \texttt{Ap} for a deeper explanation on how or why this works.
+  This could be implemented as simply a normal \texttt{{[}f\ a{]}} and
+  \texttt{NonEmpty\ (f\ a)} (and so making them identical to \texttt{ListF}).
+  For the most part, you could use the two interchangely, except in the case
+  where you need to \texttt{Interpret} out of them: \texttt{ListF} requires a
+  \texttt{Plus} constraint, and \texttt{Div} requires a \texttt{Divisible}
+  constraint. The \texttt{Coyoneda} is also necessary for compatibility with the
+  version of the contravariant \texttt{Day} convolution provided by
+  \emph{kan-extensions}.
 
   \texttt{Div1} is a variety of \texttt{Div} where you always have to have ``at
   least one \texttt{f}''. Can be useful if you want to ensure, for example, that
