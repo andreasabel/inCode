@@ -303,6 +303,34 @@ pBool = PBool Just
 string: just return the `String` itself. `pInt` needs to reject any non-integer
 numbers, so `toBoundedInteger :: Scientific -> Maybe Int` works well.
 
+We can now start writing our parsers for each branch of `Schema`. The
+`SchemaLeaf` branch should be the simplest. We can use *aeson-better-error*'s
+primitive value parsers:
+
+``` {.haskell}
+-- | Parse successfuly only if the current value is a String, running the
+-- validation function
+withString     :: (String     -> Either ErrType a) -> Parse ErrType a
+
+withScientific :: (Scientific -> Either ErrType a) -> Parse ErrType a
+withBool       :: (Bool       -> Either ErrType a) -> Parse ErrType a
+```
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L134-L141
+
+primParser :: Primitive a -> A.Parse String a
+primParser = \case
+  PString f -> A.withString $
+    maybe (Left "error validating string") Right . f
+  PNumber f -> A.withScientific $
+    maybe (Left "error validating number") Right . f
+  PBool f -> A.withBool $
+    maybe (Left "error validating bool") Right . f
+```
+
+Nothing too fancy, mostly plumbing.
+
 ### Deducing Ap
 
 However, this small change (and adding the type parameter) leaves in a
@@ -509,22 +537,6 @@ native sum type construct. So we're going to parse whatever is in the key
 `"tag"`, and if that tag matches our current choice's constructor, we parse the
 schema parser for our sub-schema under that key. Otherwise, this choice isn't
 what is currently in our json value.
-
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L134-L141
-
-primParser :: Primitive a -> A.Parse String a
-primParser = \case
-  PString f -> A.withString $
-    maybe (Left "error validating string") Right . f
-  PNumber f -> A.withScientific $
-    maybe (Left "error validating number") Right . f
-  PBool f -> A.withBool $
-    maybe (Left "error validating bool") Right . f
-```
-
-Our primitive parser is just going to use *aeson-better-error*'s primitive value
-parsers with the function in them --- nothing too fancy, just some plumbing.
 
 Finally, to wrap bring it all together, we use the `interpret` functions we
 talked about:
@@ -764,6 +776,22 @@ pBool = PBool id
 json string: just return the `String` itself. `pInt` needs to serialize the
 `Int` into a `Scientific` (the numeric type of the aeson library).
 
+We can start off by writing the serializer for `Primitive` just go get a feel
+for how our serializer will work:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L153-L157
+
+primToValue :: Primitive a -> a -> Aeson.Value
+primToValue = \case
+  PString f -> \x -> Aeson.String (T.pack (f x))
+  PNumber f -> \x -> Aeson.Number (f x)
+  PBool   f -> \x -> Aeson.Bool   (f x)
+```
+
+Again, nothing too fancy --- mostly plumbing along the *aeson* library's
+primitive constructors.
+
 ### Covariance vs Contravariance
 
 Before we go further, let's take a moment to pause and discuss the difference
@@ -904,8 +932,8 @@ opposite types, as `Dec` represents a contravariant choice between different
 choices, and `Div` represents a contravariant merger between different
 consumers. It makes more clear the duality between product types and sum types.
 
-We can assemble our `Customer` schema using contravariant combinators like
-`decide` and `divided`, in a way that looks a lot like our parser schema:
+We can assemble our `Customer` schema, in a way that looks a lot like our parser
+schema:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L87-L102
@@ -926,6 +954,42 @@ customerSchema = SumType $
             inject Field { fieldName = "Age" , fieldValue = SchemaLeaf pInt    }
         }
       )
+```
+
+Here we use a few contravariant combinators to combine and merge contravariant
+functors (like `Div Field` and `Dec Choice`):
+
+`decide` works like:
+
+``` {.haskell}
+decide
+    :: Decide f
+    => (a -> Either b c)    -- ^ break into branches
+    -> f b                  -- ^ handle first branch
+    -> f c                  -- ^ handle second branch
+    -> f a                  -- ^ overall handler
+
+decide
+    :: (Customer -> Either (String, Int) Int)   -- ^ break into branches
+    -> Dec Choice (String, Int)                 -- ^ handle CPerson branch
+    -> Dec Choice Int                           -- ^ handle CBusiness branch
+    -> Dec Choice Customer
+```
+
+And `divised` works like:
+
+``` {.haskell}
+divised
+    :: Divise f
+    => f a          -- ^ first handler
+    -> f b          -- ^ second handler
+    -> f (a, b)     -- ^ merged handler
+
+divised
+    :: Divise f
+    => Div Field String          -- ^ handle the cpName field
+    -> Div Field Int             -- ^ handle the cpAge field
+    -> Div Field (String, Int)   -- ^ handle both together
 ```
 
 ### Interpreting Dec
@@ -988,12 +1052,123 @@ Let's write it!
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L143-L147
 
-choiceToValue :: Choice x -> Op Aeson.Value x
+choiceToValue :: Choice a -> Op Aeson.Value a
 choiceToValue Choice{..} = Op $ \x -> Aeson.object
     [ "tag"      Aeson..= T.pack choiceName
     , "contents" Aeson..= schemaToValue choiceValue x
     ]
 ```
+
+For the `RecordType`'s `Div Field a`, we want to build an object using
+`Aeson.object :: [Aeson.Pair] -> Aeson.Value`, so we want to write some
+underlying interface
+
+``` {.haskell}
+fieldToValue :: Field a -> a -> [Aeson.Pair]
+```
+
+This looks like we can just use `Op [Aeson.Pair]` as our context, so:
+
+``` {.haskell}
+fieldToValue :: Field a -> Op [Aeson.Pair] a
+
+interpret fieldToValue :: Div Field a -> Op [Aeson.Pair] a
+
+-- a newtype wrapper away from
+interpret fieldToValue :: Div Field a -> a -> [Aeson.Pair]
+```
+
+We can go ahead and write it out actually:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L149-L151
+
+fieldToValue :: Field a -> Op [Aeson.Pair] a
+fieldToValue Field{..} = Op $ \x ->
+    [T.pack fieldName Aeson..= schemaToValue fieldValue x]
+```
+
+Note that this behavior relies on the fact that the `interpret` instance for
+`Div` (using the `Divise` instance for `Op r`) will combine the `[Aeson.Pair]`
+list monoidally, concatenating the results of calling `fieldToValue` on every
+`Field` in the `Div Field a`.
+
+And now we should have enough to write our entire serializer:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L134-L141
+
+schemaToValue
+    :: Schema a
+    -> a
+    -> Aeson.Value
+schemaToValue = \case
+    SumType    cs -> getOp (runDec choiceToValue cs)
+    RecordType fs -> Aeson.object . getOp (runDiv fieldToValue fs)
+    SchemaLeaf p  -> primToValue p
+```
+
+Note that this contravariant interpretation pattern (wrapping in `Op` and then
+unwrapping it again to run it) is so common that *functor-combinators* has a
+helper function to make things a bit neater:
+
+``` {.haskell}
+iapply  :: (forall x. f x -> x -> b) -> Dec f a -> a -> b
+ifanout :: (forall x. f x -> x -> b) -> Div f a -> a -> [b]
+```
+
+With these we could write `choiceToValue` as simply
+`Choice a -> a -> Aeson.Value` and `fieldToValue` as simply
+`Field a -> a -> Aeson.Pair`, and then use `iapply choiceToValue cs` and
+`ifanout fieldToValue fs` instead of `getOp (interpret choiceToValue cs)` and
+`getOp (interpret fieldToValie fs)`.
+
+Running our `schemaToValue` on a sample `Person` gives the json value we expect:
+
+    ghci> Aeson.encode (schemaToValue customerSchema (CPerson "Sam" 40))
+    {"tag":"Person","contents":{"Age":40,"Name":"Sam"}}
+
+### Backporting documentation
+
+Because our new structure is pretty much the same as before (data types wrapped
+by functor combinators), and `Div`/`Dec` support `icollect` just like
+`Ap`/`ListF` did before, the implementation of `schemaDoc` is pretty much
+word-for-word identical as it was for our parser schema:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L104-L131
+
+schemaDoc
+    :: String       -- ^ name
+    -> Schema x     -- ^ schema
+    -> PP.Doc a
+schemaDoc title = \case
+    RecordType fs -> PP.vsep [
+        PP.pretty ("{" <> title <> "}")
+      , PP.indent 2 . PP.vsep $
+          icollect (\fld -> "*" PP.<+> PP.indent 2 (fieldDoc fld)) fs
+      ]
+    SumType cs    -> PP.vsep [
+        PP.pretty ("(" <> title <> ")")
+      , "Choice of:"
+      , PP.indent 2 . PP.vsep $
+          icollect choiceDoc cs
+      ]
+    SchemaLeaf p  -> PP.pretty (title <> ":")
+              PP.<+> primDoc p
+  where
+    fieldDoc :: Field x -> PP.Doc a
+    fieldDoc Field{..} = schemaDoc fieldName fieldValue
+    choiceDoc :: Choice x -> PP.Doc a
+    choiceDoc Choice{..} = schemaDoc choiceName choiceValue
+    primDoc :: Primitive x -> PP.Doc a
+    primDoc = \case
+      PString _ -> "string"
+      PNumber _ -> "number"
+      PBool   _ -> "bool"
+```
+
+Neat!
 
 --------------------------------------------------------------------------------
 

@@ -431,6 +431,38 @@ needs to reject any non-integer numbers, so
 \texttt{toBoundedInteger\ ::\ Scientific\ -\textgreater{}\ Maybe\ Int} works
 well.
 
+We can now start writing our parsers for each branch of \texttt{Schema}. The
+\texttt{SchemaLeaf} branch should be the simplest. We can use
+\emph{aeson-better-error}'s primitive value parsers:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} | Parse successfuly only if the current value is a String, running the}
+\CommentTok{{-}{-} validation function}
+\OtherTok{withString     ::}\NormalTok{ (}\DataTypeTok{String}     \OtherTok{{-}>} \DataTypeTok{Either} \DataTypeTok{ErrType}\NormalTok{ a) }\OtherTok{{-}>} \DataTypeTok{Parse} \DataTypeTok{ErrType}\NormalTok{ a}
+
+\OtherTok{withScientific ::}\NormalTok{ (}\DataTypeTok{Scientific} \OtherTok{{-}>} \DataTypeTok{Either} \DataTypeTok{ErrType}\NormalTok{ a) }\OtherTok{{-}>} \DataTypeTok{Parse} \DataTypeTok{ErrType}\NormalTok{ a}
+\OtherTok{withBool       ::}\NormalTok{ (}\DataTypeTok{Bool}       \OtherTok{{-}>} \DataTypeTok{Either} \DataTypeTok{ErrType}\NormalTok{ a) }\OtherTok{{-}>} \DataTypeTok{Parse} \DataTypeTok{ErrType}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L134{-}L141}
+
+\OtherTok{primParser ::} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ a}
+\NormalTok{primParser }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+  \DataTypeTok{PString}\NormalTok{ f }\OtherTok{{-}>}\NormalTok{ A.withString }\OperatorTok{$}
+    \FunctionTok{maybe}\NormalTok{ (}\DataTypeTok{Left} \StringTok{"error validating string"}\NormalTok{) }\DataTypeTok{Right} \OperatorTok{.}\NormalTok{ f}
+  \DataTypeTok{PNumber}\NormalTok{ f }\OtherTok{{-}>}\NormalTok{ A.withScientific }\OperatorTok{$}
+    \FunctionTok{maybe}\NormalTok{ (}\DataTypeTok{Left} \StringTok{"error validating number"}\NormalTok{) }\DataTypeTok{Right} \OperatorTok{.}\NormalTok{ f}
+  \DataTypeTok{PBool}\NormalTok{ f }\OtherTok{{-}>}\NormalTok{ A.withBool }\OperatorTok{$}
+    \FunctionTok{maybe}\NormalTok{ (}\DataTypeTok{Left} \StringTok{"error validating bool"}\NormalTok{) }\DataTypeTok{Right} \OperatorTok{.}\NormalTok{ f}
+\end{Highlighting}
+\end{Shaded}
+
+Nothing too fancy, mostly plumbing.
+
 \hypertarget{deducing-ap}{%
 \subsection{Deducing Ap}\label{deducing-ap}}
 
@@ -672,25 +704,6 @@ native sum type construct. So we're going to parse whatever is in the key
 \texttt{"tag"}, and if that tag matches our current choice's constructor, we
 parse the schema parser for our sub-schema under that key. Otherwise, this
 choice isn't what is currently in our json value.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L134{-}L141}
-
-\OtherTok{primParser ::} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ a}
-\NormalTok{primParser }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-  \DataTypeTok{PString}\NormalTok{ f }\OtherTok{{-}>}\NormalTok{ A.withString }\OperatorTok{$}
-    \FunctionTok{maybe}\NormalTok{ (}\DataTypeTok{Left} \StringTok{"error validating string"}\NormalTok{) }\DataTypeTok{Right} \OperatorTok{.}\NormalTok{ f}
-  \DataTypeTok{PNumber}\NormalTok{ f }\OtherTok{{-}>}\NormalTok{ A.withScientific }\OperatorTok{$}
-    \FunctionTok{maybe}\NormalTok{ (}\DataTypeTok{Left} \StringTok{"error validating number"}\NormalTok{) }\DataTypeTok{Right} \OperatorTok{.}\NormalTok{ f}
-  \DataTypeTok{PBool}\NormalTok{ f }\OtherTok{{-}>}\NormalTok{ A.withBool }\OperatorTok{$}
-    \FunctionTok{maybe}\NormalTok{ (}\DataTypeTok{Left} \StringTok{"error validating bool"}\NormalTok{) }\DataTypeTok{Right} \OperatorTok{.}\NormalTok{ f}
-\end{Highlighting}
-\end{Shaded}
-
-Our primitive parser is just going to use \emph{aeson-better-error}'s primitive
-value parsers with the function in them --- nothing too fancy, just some
-plumbing.
 
 Finally, to wrap bring it all together, we use the \texttt{interpret} functions
 we talked about:
@@ -979,6 +992,24 @@ primitive json string: just return the \texttt{String} itself. \texttt{pInt}
 needs to serialize the \texttt{Int} into a \texttt{Scientific} (the numeric type
 of the aeson library).
 
+We can start off by writing the serializer for \texttt{Primitive} just go get a
+feel for how our serializer will work:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L153{-}L157}
+
+\OtherTok{primToValue ::} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Aeson.Value}
+\NormalTok{primToValue }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+  \DataTypeTok{PString}\NormalTok{ f }\OtherTok{{-}>}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>} \DataTypeTok{Aeson.String}\NormalTok{ (T.pack (f x))}
+  \DataTypeTok{PNumber}\NormalTok{ f }\OtherTok{{-}>}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>} \DataTypeTok{Aeson.Number}\NormalTok{ (f x)}
+  \DataTypeTok{PBool}\NormalTok{   f }\OtherTok{{-}>}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>} \DataTypeTok{Aeson.Bool}\NormalTok{   (f x)}
+\end{Highlighting}
+\end{Shaded}
+
+Again, nothing too fancy --- mostly plumbing along the \emph{aeson} library's
+primitive constructors.
+
 \hypertarget{covariance-vs-contravariance}{%
 \subsection{Covariance vs Contravariance}\label{covariance-vs-contravariance}}
 
@@ -1138,8 +1169,7 @@ and record types; \texttt{Div} and \texttt{Dec} are opposite types, as
 \texttt{Div} represents a contravariant merger between different consumers. It
 makes more clear the duality between product types and sum types.
 
-We can assemble our \texttt{Customer} schema using contravariant combinators
-like \texttt{decide} and \texttt{divided}, in a way that looks a lot like our
+We can assemble our \texttt{Customer} schema, in a way that looks a lot like our
 parser schema:
 
 \begin{Shaded}
@@ -1162,6 +1192,46 @@ parser schema:
 \NormalTok{            inject }\DataTypeTok{Field}\NormalTok{ \{ fieldName }\OtherTok{=} \StringTok{"Age"}\NormalTok{ , fieldValue }\OtherTok{=} \DataTypeTok{SchemaLeaf}\NormalTok{ pInt    \}}
 \NormalTok{        \}}
 \NormalTok{      )}
+\end{Highlighting}
+\end{Shaded}
+
+Here we use a few contravariant combinators to combine and merge contravariant
+functors (like \texttt{Div\ Field} and \texttt{Dec\ Choice}):
+
+\texttt{decide} works like:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{decide}
+\OtherTok{    ::} \DataTypeTok{Decide}\NormalTok{ f}
+    \OtherTok{=>}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Either}\NormalTok{ b c)    }\CommentTok{{-}{-} \^{} break into branches}
+    \OtherTok{{-}>}\NormalTok{ f b                  }\CommentTok{{-}{-} \^{} handle first branch}
+    \OtherTok{{-}>}\NormalTok{ f c                  }\CommentTok{{-}{-} \^{} handle second branch}
+    \OtherTok{{-}>}\NormalTok{ f a                  }\CommentTok{{-}{-} \^{} overall handler}
+
+\NormalTok{decide}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Customer} \OtherTok{{-}>} \DataTypeTok{Either}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{) }\DataTypeTok{Int}\NormalTok{)   }\CommentTok{{-}{-} \^{} break into branches}
+    \OtherTok{{-}>} \DataTypeTok{Dec} \DataTypeTok{Choice}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)                 }\CommentTok{{-}{-} \^{} handle CPerson branch}
+    \OtherTok{{-}>} \DataTypeTok{Dec} \DataTypeTok{Choice} \DataTypeTok{Int}                           \CommentTok{{-}{-} \^{} handle CBusiness branch}
+    \OtherTok{{-}>} \DataTypeTok{Dec} \DataTypeTok{Choice} \DataTypeTok{Customer}
+\end{Highlighting}
+\end{Shaded}
+
+And \texttt{divised} works like:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{divised}
+\OtherTok{    ::} \DataTypeTok{Divise}\NormalTok{ f}
+    \OtherTok{=>}\NormalTok{ f a          }\CommentTok{{-}{-} \^{} first handler}
+    \OtherTok{{-}>}\NormalTok{ f b          }\CommentTok{{-}{-} \^{} second handler}
+    \OtherTok{{-}>}\NormalTok{ f (a, b)     }\CommentTok{{-}{-} \^{} merged handler}
+
+\NormalTok{divised}
+\OtherTok{    ::} \DataTypeTok{Divise}\NormalTok{ f}
+    \OtherTok{=>} \DataTypeTok{Div} \DataTypeTok{Field} \DataTypeTok{String}          \CommentTok{{-}{-} \^{} handle the cpName field}
+    \OtherTok{{-}>} \DataTypeTok{Div} \DataTypeTok{Field} \DataTypeTok{Int}             \CommentTok{{-}{-} \^{} handle the cpAge field}
+    \OtherTok{{-}>} \DataTypeTok{Div} \DataTypeTok{Field}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)   }\CommentTok{{-}{-} \^{} handle both together}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1241,13 +1311,145 @@ Let's write it!
 \begin{Highlighting}[]
 \CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L143{-}L147}
 
-\OtherTok{choiceToValue ::} \DataTypeTok{Choice}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{Op} \DataTypeTok{Aeson.Value}\NormalTok{ x}
+\OtherTok{choiceToValue ::} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Op} \DataTypeTok{Aeson.Value}\NormalTok{ a}
 \NormalTok{choiceToValue }\DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \DataTypeTok{Op} \OperatorTok{$}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>}\NormalTok{ Aeson.object}
 \NormalTok{    [ }\StringTok{"tag"}      \OperatorTok{Aeson..=}\NormalTok{ T.pack choiceName}
 \NormalTok{    , }\StringTok{"contents"} \OperatorTok{Aeson..=}\NormalTok{ schemaToValue choiceValue x}
 \NormalTok{    ]}
 \end{Highlighting}
 \end{Shaded}
+
+For the \texttt{RecordType}'s \texttt{Div\ Field\ a}, we want to build an object
+using \texttt{Aeson.object\ ::\ {[}Aeson.Pair{]}\ -\textgreater{}\ Aeson.Value},
+so we want to write some underlying interface
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{fieldToValue ::} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Aeson.Pair}\NormalTok{]}
+\end{Highlighting}
+\end{Shaded}
+
+This looks like we can just use \texttt{Op\ {[}Aeson.Pair{]}} as our context,
+so:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{fieldToValue ::} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Op}\NormalTok{ [}\DataTypeTok{Aeson.Pair}\NormalTok{] a}
+
+\NormalTok{interpret}\OtherTok{ fieldToValue ::} \DataTypeTok{Div} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Op}\NormalTok{ [}\DataTypeTok{Aeson.Pair}\NormalTok{] a}
+
+\CommentTok{{-}{-} a newtype wrapper away from}
+\NormalTok{interpret}\OtherTok{ fieldToValue ::} \DataTypeTok{Div} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Aeson.Pair}\NormalTok{]}
+\end{Highlighting}
+\end{Shaded}
+
+We can go ahead and write it out actually:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L149{-}L151}
+
+\OtherTok{fieldToValue ::} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Op}\NormalTok{ [}\DataTypeTok{Aeson.Pair}\NormalTok{] a}
+\NormalTok{fieldToValue }\DataTypeTok{Field}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \DataTypeTok{Op} \OperatorTok{$}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>}
+\NormalTok{    [T.pack fieldName }\OperatorTok{Aeson..=}\NormalTok{ schemaToValue fieldValue x]}
+\end{Highlighting}
+\end{Shaded}
+
+Note that this behavior relies on the fact that the \texttt{interpret} instance
+for \texttt{Div} (using the \texttt{Divise} instance for \texttt{Op\ r}) will
+combine the \texttt{{[}Aeson.Pair{]}} list monoidally, concatenating the results
+of calling \texttt{fieldToValue} on every \texttt{Field} in the
+\texttt{Div\ Field\ a}.
+
+And now we should have enough to write our entire serializer:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L134{-}L141}
+
+\NormalTok{schemaToValue}
+\OtherTok{    ::} \DataTypeTok{Schema}\NormalTok{ a}
+    \OtherTok{{-}>}\NormalTok{ a}
+    \OtherTok{{-}>} \DataTypeTok{Aeson.Value}
+\NormalTok{schemaToValue }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{SumType}\NormalTok{    cs }\OtherTok{{-}>}\NormalTok{ getOp (runDec choiceToValue cs)}
+    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ Aeson.object }\OperatorTok{.}\NormalTok{ getOp (runDiv fieldToValue fs)}
+    \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ primToValue p}
+\end{Highlighting}
+\end{Shaded}
+
+Note that this contravariant interpretation pattern (wrapping in \texttt{Op} and
+then unwrapping it again to run it) is so common that \emph{functor-combinators}
+has a helper function to make things a bit neater:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{iapply  ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ x }\OtherTok{{-}>}\NormalTok{ b) }\OtherTok{{-}>} \DataTypeTok{Dec}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ b}
+\OtherTok{ifanout ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ x }\OtherTok{{-}>}\NormalTok{ b) }\OtherTok{{-}>} \DataTypeTok{Div}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ [b]}
+\end{Highlighting}
+\end{Shaded}
+
+With these we could write \texttt{choiceToValue} as simply
+\texttt{Choice\ a\ -\textgreater{}\ a\ -\textgreater{}\ Aeson.Value} and
+\texttt{fieldToValue} as simply
+\texttt{Field\ a\ -\textgreater{}\ a\ -\textgreater{}\ Aeson.Pair}, and then use
+\texttt{iapply\ choiceToValue\ cs} and \texttt{ifanout\ fieldToValue\ fs}
+instead of \texttt{getOp\ (interpret\ choiceToValue\ cs)} and
+\texttt{getOp\ (interpret\ fieldToValie\ fs)}.
+
+Running our \texttt{schemaToValue} on a sample \texttt{Person} gives the json
+value we expect:
+
+\begin{verbatim}
+ghci> Aeson.encode (schemaToValue customerSchema (CPerson "Sam" 40))
+{"tag":"Person","contents":{"Age":40,"Name":"Sam"}}
+\end{verbatim}
+
+\hypertarget{backporting-documentation-1}{%
+\subsection{Backporting documentation}\label{backporting-documentation-1}}
+
+Because our new structure is pretty much the same as before (data types wrapped
+by functor combinators), and \texttt{Div}/\texttt{Dec} support \texttt{icollect}
+just like \texttt{Ap}/\texttt{ListF} did before, the implementation of
+\texttt{schemaDoc} is pretty much word-for-word identical as it was for our
+parser schema:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L104{-}L131}
+
+\NormalTok{schemaDoc}
+\OtherTok{    ::} \DataTypeTok{String}       \CommentTok{{-}{-} \^{} name}
+    \OtherTok{{-}>} \DataTypeTok{Schema}\NormalTok{ x     }\CommentTok{{-}{-} \^{} schema}
+    \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ a}
+\NormalTok{schemaDoc title }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ PP.vsep [}
+\NormalTok{        PP.pretty (}\StringTok{"\{"} \OperatorTok{<>}\NormalTok{ title }\OperatorTok{<>} \StringTok{"\}"}\NormalTok{)}
+\NormalTok{      , PP.indent }\DecValTok{2} \OperatorTok{.}\NormalTok{ PP.vsep }\OperatorTok{$}
+\NormalTok{          icollect (\textbackslash{}fld }\OtherTok{{-}>} \StringTok{"*"} \OperatorTok{PP.<+>}\NormalTok{ PP.indent }\DecValTok{2}\NormalTok{ (fieldDoc fld)) fs}
+\NormalTok{      ]}
+    \DataTypeTok{SumType}\NormalTok{ cs    }\OtherTok{{-}>}\NormalTok{ PP.vsep [}
+\NormalTok{        PP.pretty (}\StringTok{"("} \OperatorTok{<>}\NormalTok{ title }\OperatorTok{<>} \StringTok{")"}\NormalTok{)}
+\NormalTok{      , }\StringTok{"Choice of:"}
+\NormalTok{      , PP.indent }\DecValTok{2} \OperatorTok{.}\NormalTok{ PP.vsep }\OperatorTok{$}
+\NormalTok{          icollect choiceDoc cs}
+\NormalTok{      ]}
+    \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ PP.pretty (title }\OperatorTok{<>} \StringTok{":"}\NormalTok{)}
+              \OperatorTok{PP.<+>}\NormalTok{ primDoc p}
+  \KeywordTok{where}
+\OtherTok{    fieldDoc ::} \DataTypeTok{Field}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ a}
+\NormalTok{    fieldDoc }\DataTypeTok{Field}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ schemaDoc fieldName fieldValue}
+\OtherTok{    choiceDoc ::} \DataTypeTok{Choice}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ a}
+\NormalTok{    choiceDoc }\DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ schemaDoc choiceName choiceValue}
+\OtherTok{    primDoc ::} \DataTypeTok{Primitive}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ a}
+\NormalTok{    primDoc }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{PString}\NormalTok{ \_ }\OtherTok{{-}>} \StringTok{"string"}
+      \DataTypeTok{PNumber}\NormalTok{ \_ }\OtherTok{{-}>} \StringTok{"number"}
+      \DataTypeTok{PBool}\NormalTok{   \_ }\OtherTok{{-}>} \StringTok{"bool"}
+\end{Highlighting}
+\end{Shaded}
+
+Neat!
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
