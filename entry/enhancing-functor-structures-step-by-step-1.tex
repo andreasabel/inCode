@@ -1359,7 +1359,36 @@ Note that this behavior relies on the fact that the \texttt{interpret} instance
 for \texttt{Div} (using the \texttt{Divise} instance for \texttt{Op\ r}) will
 combine the \texttt{{[}Aeson.Pair{]}} list monoidally, concatenating the results
 of calling \texttt{fieldToValue} on every \texttt{Field} in the
-\texttt{Div\ Field\ a}.
+\texttt{Div\ Field\ a}.\footnote{Note that this contravariant interpretation
+  pattern (wrapping in \texttt{Op} and then unwrapping it again to run it) is so
+  common that \emph{functor-combinators} has a helper function to make things a
+  bit neater:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{iapply  ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ x }\OtherTok{{-}>}\NormalTok{ b) }\OtherTok{{-}>} \DataTypeTok{Dec}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ b}
+\OtherTok{ifanout ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ x }\OtherTok{{-}>}\NormalTok{ b) }\OtherTok{{-}>} \DataTypeTok{Div}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ [b]}
+\end{Highlighting}
+\end{Shaded}
+
+  With these we could write
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{choiceToValue ::} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Aeson.Value}
+\OtherTok{fieldToValue  ::} \DataTypeTok{Field}\NormalTok{ a  }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Aeson.Pair}\NormalTok{]}
+\end{Highlighting}
+\end{Shaded}
+
+  And then:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{iapply}\OtherTok{ choiceToValue ::} \DataTypeTok{Dec} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Aeson.Value}
+\NormalTok{ifanout}\OtherTok{ fieldToValue ::} \DataTypeTok{Div} \DataTypeTok{Field}\NormalTok{  a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Aeson.Pair}\NormalTok{]}
+\end{Highlighting}
+\end{Shaded}
+}
 
 And now we should have enough to write our entire serializer:
 
@@ -1377,25 +1406,6 @@ And now we should have enough to write our entire serializer:
     \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ primToValue p}
 \end{Highlighting}
 \end{Shaded}
-
-Note that this contravariant interpretation pattern (wrapping in \texttt{Op} and
-then unwrapping it again to run it) is so common that \emph{functor-combinators}
-has a helper function to make things a bit neater:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{iapply  ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ x }\OtherTok{{-}>}\NormalTok{ b) }\OtherTok{{-}>} \DataTypeTok{Dec}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ b}
-\OtherTok{ifanout ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ x }\OtherTok{{-}>}\NormalTok{ b) }\OtherTok{{-}>} \DataTypeTok{Div}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ [b]}
-\end{Highlighting}
-\end{Shaded}
-
-With these we could write \texttt{choiceToValue} as simply
-\texttt{Choice\ a\ -\textgreater{}\ a\ -\textgreater{}\ Aeson.Value} and
-\texttt{fieldToValue} as simply
-\texttt{Field\ a\ -\textgreater{}\ a\ -\textgreater{}\ Aeson.Pair}, and then use
-\texttt{iapply\ choiceToValue\ cs} and \texttt{ifanout\ fieldToValue\ fs}
-instead of \texttt{getOp\ (interpret\ choiceToValue\ cs)} and
-\texttt{getOp\ (interpret\ fieldToValie\ fs)}.
 
 Running our \texttt{schemaToValue} on a sample \texttt{Person} gives the json
 value we expect:

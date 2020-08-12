@@ -1091,7 +1091,7 @@ fieldToValue Field{..} = Op $ \x ->
 Note that this behavior relies on the fact that the `interpret` instance for
 `Div` (using the `Divise` instance for `Op r`) will combine the `[Aeson.Pair]`
 list monoidally, concatenating the results of calling `fieldToValue` on every
-`Field` in the `Div Field a`.
+`Field` in the `Div Field a`.[^3]
 
 And now we should have enough to write our entire serializer:
 
@@ -1107,21 +1107,6 @@ schemaToValue = \case
     RecordType fs -> Aeson.object . getOp (runDiv fieldToValue fs)
     SchemaLeaf p  -> primToValue p
 ```
-
-Note that this contravariant interpretation pattern (wrapping in `Op` and then
-unwrapping it again to run it) is so common that *functor-combinators* has a
-helper function to make things a bit neater:
-
-``` {.haskell}
-iapply  :: (forall x. f x -> x -> b) -> Dec f a -> a -> b
-ifanout :: (forall x. f x -> x -> b) -> Div f a -> a -> [b]
-```
-
-With these we could write `choiceToValue` as simply
-`Choice a -> a -> Aeson.Value` and `fieldToValue` as simply
-`Field a -> a -> Aeson.Pair`, and then use `iapply choiceToValue cs` and
-`ifanout fieldToValue fs` instead of `getOp (interpret choiceToValue cs)` and
-`getOp (interpret fieldToValie fs)`.
 
 Running our `schemaToValue` on a sample `Person` gives the json value we expect:
 
@@ -1194,4 +1179,27 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     ``` {.haskell}
     -- essentially
     icollect f = getConst . interpret (\x -> Const [f x])
+    ```
+
+[^3]: Note that this contravariant interpretation pattern (wrapping in `Op` and
+    then unwrapping it again to run it) is so common that *functor-combinators*
+    has a helper function to make things a bit neater:
+
+    ``` {.haskell}
+    iapply  :: (forall x. f x -> x -> b) -> Dec f a -> a -> b
+    ifanout :: (forall x. f x -> x -> b) -> Div f a -> a -> [b]
+    ```
+
+    With these we could write
+
+    ``` {.haskell}
+    choiceToValue :: Choice a -> a -> Aeson.Value
+    fieldToValue  :: Field a  -> a -> [Aeson.Pair]
+    ```
+
+    And then:
+
+    ``` {.haskell}
+    iapply choiceToValue :: Dec Choice a -> a -> Aeson.Value
+    ifanout fieldToValue :: Div Field  a -> a -> [Aeson.Pair]
     ```
