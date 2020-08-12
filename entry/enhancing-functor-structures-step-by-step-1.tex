@@ -527,79 +527,6 @@ The description here also gives a clue for what we might want to use for
 \texttt{SumType} (\texttt{ListF} sounds like a good companion for the behavior
 we want sum type parsers to have)
 
-Another way to come to this conclusion is to think about it in terms of
-tensoring functors: ``how do we want to tensor together \emph{two}
-\texttt{Field}s''?
-
-Well, earlier we said that we want to combine fields of different types, while
-also providing a way of combining the two types together to create a final
-aggregate type. We can express this in Haskell with something like:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{TwoFields} \OtherTok{=} \KeywordTok{forall}\NormalTok{ x y}\OperatorTok{.} \DataTypeTok{TwoFields}\NormalTok{ (}\DataTypeTok{Field}\NormalTok{ x) (}\DataTypeTok{Field}\NormalTok{ y) (x }\OtherTok{{-}>}\NormalTok{ y }\OtherTok{{-}>}\NormalTok{ a)}
-\end{Highlighting}
-\end{Shaded}
-
-In existential syntax, this says that \texttt{TwoFields\ a} consists of
-\texttt{Field\ x} and \texttt{Field\ y} of a ``hidden'' \texttt{x} and
-\texttt{y}, as well as a function to combine the \texttt{x} and \texttt{y} to
-make an \texttt{a}.
-
-We can look up what type of tensor this is in the functor combinatorpedia.
-Scrolling down, we see:
-
-\begin{quote}
-\href{https://blog.jle.im/entry/functor-combinatorpedia.html\#day}{\textbf{Day}}
-
-\textbf{Origin}:
-\emph{\href{https://hackage.haskell.org/package/kan-extensions/docs/Data-Functor-Day.html}{Data.Functor.Day}}
-
-\textbf{Mixing Strategy}: ``Both, together forever'': provide values from
-\emph{both} functors, and the user \emph{must} also \emph{use} both.
-
-\ldots{}
-
-Unlike for \texttt{:*:}, you always have to interpret \emph{both} functor values
-in order to interpret a \texttt{Day}. It's a ``full mixing''.
-
-The mechanism for this is interesting in and of itself. Looking at the
-definition of the data type:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{data} \DataTypeTok{Day}\NormalTok{ f g a }\OtherTok{=} \KeywordTok{forall}\NormalTok{ x y}\OperatorTok{.} \DataTypeTok{Day}\NormalTok{ (f x) (g y) (x }\OtherTok{{-}>}\NormalTok{ y }\OtherTok{{-}>}\NormalTok{ a)}
-\end{Highlighting}
-\end{Shaded}
-
-We see that because \texttt{x} and \texttt{y} are ``hidden'' from the external
-world, we can't directly use them without applying the ``joining'' function
-\texttt{x\ -\textgreater{}\ y\ -\textgreater{}\ a}. Due to how existential types
-work, we can't get anything out of it that ``contains'' \texttt{x} or
-\texttt{y}. Because of this, \emph{using} the joining function requires
-\emph{both} \texttt{f\ x} and \texttt{g\ y}. If we only use \texttt{f\ x}, we
-can only get, at best,\texttt{f\ (y\ -\textgreater{}\ a)}; if we only use
-\texttt{g\ y}, we can only get, at best, \texttt{g\ (x\ -\textgreater{}\ a)}. In
-order to fully eliminate \emph{both} existential variables, we need to get the
-\texttt{x} and \texttt{y} from \emph{both} \texttt{f\ x} and \texttt{g\ y}, as
-if the two values held separate halves of the key.
-\end{quote}
-
-It seems as if our \texttt{TwoFields} is exactly \texttt{Day\ Field\ Field}, so
-we're on the right track.
-
-Reading further on in the \texttt{Day} section, we see:
-
-\begin{quote}
-\textbf{List type}
-
-\ldots{} \texttt{Ap\ f\ a} is a bunch of \texttt{f\ x}s \texttt{Day}d with each
-other.
-\end{quote}
-
-All three different ways you might have arrived at the conclusion of using
-\texttt{Ap}!
-
 \hypertarget{building-ap}{%
 \subsection{Building Ap}\label{building-ap}}
 
@@ -636,14 +563,15 @@ With this, we can write our final \texttt{Schema} type.
 \end{Shaded}
 
 Note that I switched from \texttt{{[}Choice\ a{]}} to \texttt{ListF\ Choice\ a}
---- the two are the same, but the latter has the Functor instance we want
+--- the two are the same, but the latter has the \texttt{Functor} instance we
+want
 (\texttt{fmap\ ::\ (a\ -\textgreater{}\ b)\ -\textgreater{}\ ListF\ Choice\ a\ -\textgreater{}\ ListF\ Choice\ b}),
 and is an instance of useful functor combinator typeclasses. Furthermore, it
-illustrates the symmetry between sum types, since \texttt{Ap} and \texttt{ListF}
-are contrasting types: \texttt{Ap} represents a product between many required
-fields, and \texttt{ListF} represents a sum between many possible choices. It's
-more clear how product types and list types are ``opposites'' in a nice clean
-way.
+illustrates the symmetry between sum types and record, since \texttt{Ap} and
+\texttt{ListF} are contrasting types: \texttt{Ap} represents a product between
+many required fields, and \texttt{ListF} represents a sum between many possible
+choices. It's more clear how product types and sum types are ``opposites'' in a
+nice clean way.
 
 We can now make our \texttt{Customer} schema:
 
@@ -685,8 +613,8 @@ interpreting functions, like:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{interpret ::} \DataTypeTok{Applicative}\NormalTok{ g }\OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x) }\OtherTok{=>} \DataTypeTok{Ap}\NormalTok{ f a    }\OtherTok{{-}>}\NormalTok{ g a}
-\OtherTok{interpret ::} \DataTypeTok{Plus}\NormalTok{ g        }\OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x) }\OtherTok{=>} \DataTypeTok{ListF}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ g a}
+\OtherTok{interpret ::} \DataTypeTok{Applicative}\NormalTok{ g }\OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x) }\OtherTok{{-}>} \DataTypeTok{Ap}\NormalTok{ f a    }\OtherTok{{-}>}\NormalTok{ g a}
+\OtherTok{interpret ::} \DataTypeTok{Plus}\NormalTok{ g        }\OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x) }\OtherTok{{-}>} \DataTypeTok{ListF}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ g a}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1082,8 +1010,8 @@ which says: if you have a consumer of \texttt{b}s, you can always ``pre-filter''
 the input with an \texttt{a\ -\textgreater{}\ b} to get a consumer of
 \texttt{a}s.
 
-\hypertarget{finding-div}{%
-\subsection{Finding Div}\label{finding-div}}
+\hypertarget{deducing-dec}{%
+\subsection{Deducing Dec}\label{deducing-dec}}
 
 Now, back on to building our \texttt{Schema} type. Again, we might want to write
 something like
@@ -1103,33 +1031,223 @@ something like
 \end{Highlighting}
 \end{Shaded}
 
-However, this has the same problems as before. \texttt{RecordType} is a
-combination of \texttt{Field}s, and each \texttt{Field} is (again) a different
-type! We also have a unique situation in this case where each \texttt{Choice}
-has to consume a specific type (the sub-type of our \texttt{Sum}) if we want
-each one to not be a partial consumer. For example, for the \texttt{CBusiness}
-branch, we'd want it to have a \texttt{Choice\ Int} (the \texttt{cbEmployees}
-field), not \texttt{Choice\ Customer} --- \texttt{Customer} is too general of a
-type, since we want that specific branch to consume only \texttt{Int}s.
+However, we have a problem here --- and it's the opposite of the problem we had
+in the previous case. \texttt{Choice\ a} doesn't quite make sense as the sum
+type consumer for \texttt{Schema\ a}, because each \texttt{Choice} is only meant
+to handle the types in a \emph{specific} branch. For example, in our
+\texttt{Customer} example, for the \texttt{CPerson} branch we need a
+\texttt{Choice\ (String,\ Int)} to consume its contents, and in the
+\texttt{CBusiness} branch we need a \texttt{Choice\ Int} to consume its
+contents.
 
-So again we have the challenge of ``mixing'' together the types of our
-individual components somehow.
+What we need is a way to express a hetereogenous collection/sequence of
+\texttt{Choice\ a}, coupled with a way of ``choosing'' exactly one of them to
+handle one form that our input \texttt{a} can take. A type that says ``use
+exactly one of a bunch of \texttt{Choice}s of different \texttt{x}s, and choose
+one to dispatch depending on what \texttt{a} we get''.
 
-\begin{itemize}
-\tightlist
-\item
-  For \texttt{RecordType}, we need something that can combine multiple
-  \texttt{Field\ x}s into a \texttt{Schema\ a} by distributing the \texttt{a}
-  input and sharing it across all the \texttt{Field\ x}s.
-\item
-  For \texttt{SumType}, we need something that can combine multiple
-  \texttt{Choice\ x}s into a \texttt{Schema\ a} by \emph{redirecting} the
-  \texttt{a} input into the appropriate \texttt{Choice} that is meant to handle
-  it.
-\end{itemize}
+This one is a little bit trickier to grasp ``intuitively'', I feel, because
+contravariant abstractions and manipulations are much less common/ubiquitous in
+Haskell than the covariant ones. So how do we find the tool we need?
 
-These ones are a little trickier because contravariant abstractions like these
-are a little less commonly used than the covariant ones we talked about earlier.
+\emph{If} you are already familiar with contravariant abstractions (but who is?)
+you might recognize this as the essence of the
+\href{https://hackage.haskell.org/package/contravariant/docs/Data-Functor-Contravariant-Divisible.html\#g:6}{Decidable}
+typeclass, from the
+\emph{\href{https://hackage.haskell.org/package/contravariant}{contravariant}}
+library (or more accurately,
+\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Conclude.html}{Conclude}):
+a \texttt{Conclude\ f} allows you to combine two \texttt{f} values, and one will
+be picked to use based on inspection of the input value (I like to think of this
+one as the ``sharding'' abstraction). Then, like in the case with the parsers,
+we want to find a way to give \texttt{Choice} some \texttt{Conclude} interface,
+we could look for the ``type that gives us a free \texttt{Conclude} structure'';
+we can look that up and see that it is
+\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Divisible-Free.html}{\texttt{Dec}},
+and so we use \texttt{Dec\ Choice\ a} for our sum type consumer.
+
+But let's say you're like the vast majority of Haskell users and have never had
+any reason to look at the contravariant abstraction hierarchy. How would you
+think of this?
+
+Like before, we can also look through the
+\href{https://blog.jle.im/entry/functor-combinatorpedia.html}{functor
+combinatorpedia} (in specific, the contravariant section) and find:
+
+\begin{quote}
+\href{https://blog.jle.im/entry/functor-combinatorpedia.html\#dec-dec1}{\textbf{Dec
+/ Dec1}}
+
+\textbf{Enhancement}: The ability to provide multiple \texttt{f}s, one of which
+will be chosen to consume the overall input.
+
+If \texttt{f\ x} is a consumer of \texttt{x}s, then \texttt{Dec\ f\ a} is a
+consumer of \texttt{a}s that does its job by choosing a single one of those
+\texttt{f}s to handle that consumption, based on what \texttt{a} is received.
+
+For example, let's say you had a type \texttt{Socket\ a} which represents some
+IO channel or socket that is expecting to receive \texttt{a}s. A
+\texttt{Dec\ Socket\ b} would be a collection of sockets that expects a single
+\texttt{b} overall, and will pick exactly one of those \texttt{f}s to handle
+that \texttt{b}.
+\end{quote}
+
+Sounds like exactly what we need!
+
+\hypertarget{building-dec}{%
+\subsection{Building Dec}\label{building-dec}}
+
+With this, we can write our final \texttt{Schema} type.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L34{-}L54}
+
+\KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Div} \DataTypeTok{Field}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     (}\DataTypeTok{Dec} \DataTypeTok{Choice}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
+
+\KeywordTok{data} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Field}
+\NormalTok{    \{}\OtherTok{ fieldName  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ fieldValue ::} \DataTypeTok{Schema}\NormalTok{ a}
+\NormalTok{    \}}
+  \KeywordTok{deriving} \DataTypeTok{Generic}
+
+\KeywordTok{data} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Choice}
+\NormalTok{    \{}\OtherTok{ choiceName  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ choiceValue ::} \DataTypeTok{Schema}\NormalTok{ a}
+\NormalTok{    \}}
+  \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Generic}\NormalTok{, }\DataTypeTok{Generic1}\NormalTok{)}
+
+\KeywordTok{data} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{PString}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{String}\NormalTok{)}
+    \OperatorTok{|} \DataTypeTok{PNumber}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Scientific}\NormalTok{)}
+    \OperatorTok{|} \DataTypeTok{PBool}\NormalTok{   (a }\OtherTok{{-}>} \DataTypeTok{Bool}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Note that I switched from \texttt{{[}Field\ a{]}} to \texttt{Div\ Field\ a} ---
+the two are the same, but the latter has the \texttt{Contravariant} instance we
+want
+(\texttt{contramap\ ::\ (a\ -\textgreater{}\ b)\ -\textgreater{}\ Div\ Field\ b\ -\textgreater{}\ Div\ Field\ a}),
+and has useful functor combinator typeclass instances (like \texttt{ListF}
+before). And, again, I feel like it illustrates the symmetry between sum types
+and record types; \texttt{Div} and \texttt{Dec} are opposite types, as
+\texttt{Dec} represents a contravariant choice between different choices, and
+\texttt{Div} represents a contravariant merger between different consumers. It
+makes more clear the duality between product types and sum types.
+
+We can assemble our \texttt{Customer} schema using contravariant combinators
+like \texttt{decide} and \texttt{divided}, in a way that looks a lot like our
+parser schema:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L87{-}L102}
+
+\OtherTok{customerSchema ::} \DataTypeTok{Schema} \DataTypeTok{Customer}
+\NormalTok{customerSchema }\OtherTok{=} \DataTypeTok{SumType} \OperatorTok{$}
+\NormalTok{    decide (\textbackslash{}}\KeywordTok{case} \DataTypeTok{CPerson}\NormalTok{ x y }\OtherTok{{-}>} \DataTypeTok{Left}\NormalTok{ (x, y); }\DataTypeTok{CBusiness}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{Right}\NormalTok{ x)}
+\NormalTok{      (inject }\DataTypeTok{Choice}
+\NormalTok{        \{ choiceName }\OtherTok{=} \StringTok{"Person"}
+\NormalTok{        , choiceValue }\OtherTok{=} \DataTypeTok{RecordType} \OperatorTok{$}\NormalTok{ divided}
+\NormalTok{            (inject }\DataTypeTok{Field}\NormalTok{ \{ fieldName }\OtherTok{=} \StringTok{"Name"}\NormalTok{, fieldValue }\OtherTok{=} \DataTypeTok{SchemaLeaf}\NormalTok{ pString \})}
+\NormalTok{            (inject }\DataTypeTok{Field}\NormalTok{ \{ fieldName }\OtherTok{=} \StringTok{"Age"}\NormalTok{ , fieldValue }\OtherTok{=} \DataTypeTok{SchemaLeaf}\NormalTok{ pInt    \})}
+\NormalTok{        \}}
+\NormalTok{      )}
+\NormalTok{      (inject }\DataTypeTok{Choice}
+\NormalTok{        \{ choiceName  }\OtherTok{=} \StringTok{"Business"}
+\NormalTok{        , choiceValue }\OtherTok{=} \DataTypeTok{RecordType} \OperatorTok{$}
+\NormalTok{            inject }\DataTypeTok{Field}\NormalTok{ \{ fieldName }\OtherTok{=} \StringTok{"Age"}\NormalTok{ , fieldValue }\OtherTok{=} \DataTypeTok{SchemaLeaf}\NormalTok{ pInt    \}}
+\NormalTok{        \}}
+\NormalTok{      )}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{interpreting-dec}{%
+\subsection{Interpreting Dec}\label{interpreting-dec}}
+
+Now to write our schema serializers, we can use \texttt{interpret} again:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{interpret ::} \DataTypeTok{Divisible}\NormalTok{ g }\OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.} \DataTypeTok{Field}\NormalTok{  x }\OtherTok{{-}>}\NormalTok{ g x) }\OtherTok{{-}>} \DataTypeTok{Div} \DataTypeTok{Field}\NormalTok{  a }\OtherTok{{-}>}\NormalTok{ g a}
+\OtherTok{interpret ::} \DataTypeTok{Conclude}\NormalTok{ g  }\OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.} \DataTypeTok{Choice}\NormalTok{ x }\OtherTok{{-}>}\NormalTok{ g x) }\OtherTok{{-}>} \DataTypeTok{Dec} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ g a}
+\end{Highlighting}
+\end{Shaded}
+
+But, what should we choose as our choice of \texttt{g}?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{choiceToValue ::} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ g a}
+\end{Highlighting}
+\end{Shaded}
+
+Well, how do we want to ``use'' a \texttt{Choice\ a}? Remember that
+\texttt{Schema\ a} encodes a way to serialize an \texttt{a} to an json value, a
+\texttt{Primitive\ a} is a way to serialize an \texttt{a} to a json
+value\ldots a \texttt{Choice\ a} would be a way to serialize an \texttt{a} into
+a json value. We want to turn a \texttt{Choice\ a} into an
+\texttt{a\ -\textgreater{}\ Aeson.Value}, using the \texttt{Value} type from the
+popular \emph{aeson} library.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{choiceToValue ::} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Aeson.Value}\NormalTok{)}
+
+\CommentTok{{-}{-} is supposed to match up with}
+\OtherTok{choiceToValue ::} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ g a}
+\end{Highlighting}
+\end{Shaded}
+
+So we need to pick some \texttt{g} where \texttt{g\ a} is
+\texttt{a\ -\textgreater{}\ Aeson.Value}. This is exactly \texttt{Op} from
+\emph{\href{https://hackage.haskell.org/package/base/docs/Data-Functor-Contravariant.html}{Data.Functor.Contravariant}},
+in \emph{base}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Op}\NormalTok{ r a }\OtherTok{=} \DataTypeTok{Op}\NormalTok{ \{}\OtherTok{ getOp ::}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ r \}}
+\end{Highlighting}
+\end{Shaded}
+
+So, if we write
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{choiceToValue ::} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Op} \DataTypeTok{Aeson.Value}\NormalTok{ a}
+
+\CommentTok{{-}{-} a newtype wrapper away from}
+\OtherTok{choiceToValue ::} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Aeson.Value}
+\end{Highlighting}
+\end{Shaded}
+
+then we have
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{interpret}\OtherTok{ choiceToValue ::} \DataTypeTok{Dec} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Op} \DataTypeTok{Aeson.Value}\NormalTok{ a}
+
+\CommentTok{{-}{-} a newtype wrapper away from}
+\NormalTok{interpret}\OtherTok{ choiceToValue ::} \DataTypeTok{Dec} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Aeson.Value}
+\end{Highlighting}
+\end{Shaded}
+
+Let's write it!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L143{-}L147}
+
+\OtherTok{choiceToValue ::} \DataTypeTok{Choice}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{Op} \DataTypeTok{Aeson.Value}\NormalTok{ x}
+\NormalTok{choiceToValue }\DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \DataTypeTok{Op} \OperatorTok{$}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>}\NormalTok{ Aeson.object}
+\NormalTok{    [ }\StringTok{"tag"}      \OperatorTok{Aeson..=}\NormalTok{ T.pack choiceName}
+\NormalTok{    , }\StringTok{"contents"} \OperatorTok{Aeson..=}\NormalTok{ schemaToValue choiceValue x}
+\NormalTok{    ]}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
