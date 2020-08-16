@@ -22,14 +22,15 @@ work through these things --- I normally don't get the whole powerful structure
 all the way; instead I incrementally add things as I see how things fit
 together.
 
-We're going build the tools to describe a *json schema*, in the form of an
-algebraic data type -- sums and products. We'll start off just building things
-we can use to *describe* the schema (by printing out documentation), and by the
-end of the journey we'll also be able to parse and generate values with our
-schema.
+We're going build the tools to describe a *data type schema*, which can
+represent algebraic data types --- sums and products. We'll start off just
+building things we can use to *describe* the schema (by printing out
+documentation), and by the end of the journey we'll also be able to use our
+schema to generate parsers and serializers through json.
 
 This series is designed for an intermediate Haskeller with familiarity in things
-like monadic parser combinators.
+like product/sum types, using `Applicative`/`Alternative`, and monadic parser
+combinators.
 
 The Schema
 ----------
@@ -233,11 +234,14 @@ It works!
 Parsing with Covariance
 -----------------------
 
-Now, let's talk about using our `Schema` type to define a json parser. We're
-going to rewrite `Schema` to take a type parameter to represent the type we want
-to parse into. A `Schema a` will be a schema that can be used to generate
-documentation *and* describe a parser of `a`s. In the end, we want
-`customerSchema :: Schema Customer`, and a function like
+Now, let's talk about using our `Schema` type to generate a *json parser*. We
+want to be able to use our schema type and use it to parse information from a
+json value, of a given json format we are expecting.
+
+To do this, we're going to rewrite `Schema` to take a type parameter to
+represent the type we want to parse into. A `Schema a` will be a schema that can
+be used to generate documentation *and* describe a parser of `a`s. In the end,
+we want `customerSchema :: Schema Customer`, and a function like
 
 ``` {.haskell}
 schemaParser :: Schema a -> Parse ErrType a
@@ -259,11 +263,11 @@ parseSchema sc = A.parse (schemaParser sc)
 ```
 
 To do this, we now have to include information on "how to parse an `a`" in our
-schema. Remember that our actual json format is pretty fixed/structured, so all
-our `Schema` has to express are variations within that structure. The only
-variation that our `Schema` can express are how sums/products are structured,
-and also how to parse primitive types. And so, the main thing we need to modify
-is just `Primitive`:
+schema. "How to parse a record" and "how to parse a sum" are going to be handled
+universally for all schemas...so the only thing that really will vary from type
+to type (aside from the structure) is how to parse those primitive leaf types
+when we encounter them in the json. And so, the main thing we need to modify is
+just `Primitive`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L45-L49
@@ -275,10 +279,11 @@ data Primitive a =
   deriving Functor
 ```
 
-A `Primitive a` will be a way to parse a json primitive --- it can be `PString`,
-`PNumber`, or `PBool`. To create a "String Parser", you need to use `PString`
-with a function on "what to do with the string you get". To create a "Bool
-parser", you need `PBool` with a function on what to do with the bool you get.
+A `Primitive a` now encodes a way to *parse* an `a` if given the appropriate
+json primitive. It can be `PString`, `PNumber`, or `PBool`. To create a "String
+Parser", you need to use `PString` with a function on "what to do with the
+string you get". To create a "Bool parser", you need `PBool` with a function on
+what to do with the bool you get.
 
 We can write some helper primitives:
 
@@ -340,6 +345,7 @@ data Schema a =
     | SumType     [Choice a]
     | SchemaLeaf  (Primitive a)
   deriving Functor
+
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L33-L39
 
 data Field a = Field
@@ -363,10 +369,14 @@ to generate a final `a`".
 
 There are a couple of ways to arrive at this mystery type. One way is to
 recognize "combine a bunch of `f x`s of different types to create an `f b`" is
-essentially the MO of the *Applicative* abstraction, and so essentially we want
-to give `Field` some sort of `Applicative` structure. And so we can reach for
-"the type that gives something an `Applicative` structure", the [free
+essentially the M.O. of the *Applicative* abstraction, and so essentially we
+want to give `Field` some sort of `Applicative` structure. And so we can reach
+for "the type that gives something an `Applicative` structure", the [free
 applicative](https://hackage.haskell.org/package/free/docs/Control-Applicative-Free.html).
+(This is the strategy I talk about in my [Applicative Regular
+Expressions](https://blog.jle.im/entry/free-alternative-regexp.html) post: if
+you know exactly the interface you want, you can just use that interface's free
+structure)
 
 Another way is to think about it as an enhancement along a functor combinator
 described in the [functor
@@ -441,8 +451,8 @@ data Primitive a =
   deriving Functor
 ```
 
-Note that I switched from `[Choice a]` to `ListF Choice a` --- the two are the
-same, but the latter has the `Functor` instance we want
+Note that I switched from `[Choice a]` to `ListF Choice a` as hinted earlier ---
+the two are the same, but the latter has the `Functor` instance we want
 (`fmap :: (a -> b) -> ListF Choice a -> ListF Choice b`), and is an instance of
 useful functor combinator typeclasses. Furthermore, it illustrates the symmetry
 between sum types and record, since `Ap` and `ListF` are contrasting types: `Ap`
@@ -722,7 +732,8 @@ Contravariant Consumption
 
 Now, let's consider instead the situation where we would want to *serialize* an
 `a` with a schema. We'll make a type `Schema a` that represents something that
-can encode an `a` as a json value; we'll write a function:
+can encode an `a` as a json value. The overall interface of using that type
+would be:
 
 ``` {.haskell}
 schemaToValue :: Schema a -> a -> Aeson.Value
@@ -733,10 +744,9 @@ back in later. Let's just create a type that can *only* serialize by enhancing
 our documentation schema.
 
 Again, for the same reasons as before, we can get away with the only fundamental
-change being at the leaves/primitives. Our structure is very limited, and our
-schema type only expresses only variations within that limit, and the only
-variations (aside from sum/record structure) are how each leaf can be
-serialized.
+change being at the leaves/primitives. Our structure itself is defined by the
+ADT, and all of the variations outside of the structure itself comes from how
+each leaf is serialized.
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L44-L47
@@ -831,10 +841,10 @@ data Field a = Field
 data Choice a = Choice
 ```
 
-However, we have a problem here --- and it's the opposite of the problem we had
-in the previous case. `Choice a` doesn't quite make sense as the sum type
-consumer for `Schema a`, because each `Choice` is only meant to handle the types
-in a *specific* branch. For example, in our `Customer` example, for the
+However, we have a problem here (incidentally, it's the opposite of the problem
+we had in the previous case). `Choice a` doesn't quite make sense as the sum
+type consumer for `Schema a`, because each `Choice` is only meant to handle the
+types in a *specific* branch. For example, in our `Customer` example, for the
 `CPerson` branch we need a `Choice (String, Int)` to consume its contents, and
 in the `CBusiness` branch we need a `Choice Int` to consume its contents.
 
@@ -868,7 +878,7 @@ But let's say you're like the vast majority of Haskell users and have never had
 any reason to look at the contravariant abstraction hierarchy. How would you
 think of this?
 
-Like before, we can also look through the [functor
+Like before, we could also look through the [functor
 combinatorpedia](https://blog.jle.im/entry/functor-combinatorpedia.html) (in
 specific, the contravariant section) and find:
 
@@ -919,8 +929,9 @@ data Primitive a =
     | PBool   (a -> Bool)
 ```
 
-Note that I switched from `[Field a]` to `Div Field a` --- the two are the same,
-but the latter has the `Contravariant` instance we want
+Note that I switched from `[Field a]` to `Div Field a` --- the two are the same
+(`Div Field a` is essentially a newtype wrapper over `[Field a]`), but the
+latter has the `Contravariant` instance we want
 (`contramap :: (a -> b) -> Div Field b -> Div Field a`), and has useful functor
 combinator typeclass instances (like `ListF` before). And, again, I feel like it
 illustrates the symmetry between sum types and record types; `Div` and `Dec` are
@@ -1087,7 +1098,7 @@ fieldToValue Field{..} = Op $ \x ->
 Note that this behavior relies on the fact that the `interpret` instance for
 `Div` (using the `Divise` instance for `Op r`) will combine the `[Aeson.Pair]`
 list monoidally, concatenating the results of calling `fieldToValue` on every
-`Field` in the `Div Field a`.[^3]
+`Field` in the `Div Field a`.\[\^iapply\]
 
 And now we should have enough to write our entire serializer:
 
@@ -1108,6 +1119,31 @@ Running our `schemaToValue` on a sample `Person` gives the json value we expect:
 
     ghci> Aeson.encode (schemaToValue customerSchema (CPerson "Sam" 40))
     {"tag":"Person","contents":{"Age":40,"Name":"Sam"}}
+
+#### Some Convenience
+
+Note that this contravariant interpretation pattern (wrapping in `Op` and then
+unwrapping it again to run it) is so common that *functor-combinators* has a
+helper function to make things a bit neater:
+
+``` {.haskell}
+iapply  :: (forall x. f x -> x -> b) -> Dec f a -> a -> b
+ifanout :: (forall x. f x -> x -> b) -> Div f a -> a -> [b]
+```
+
+With these we could write
+
+``` {.haskell}
+choiceToValue :: Choice a -> a -> Aeson.Value
+fieldToValue  :: Field a  -> a -> [Aeson.Pair]
+```
+
+And then:
+
+``` {.haskell}
+iapply choiceToValue :: Dec Choice a -> a -> Aeson.Value
+ifanout fieldToValue :: Div Field  a -> a -> [Aeson.Pair]
+```
 
 ### Backporting documentation
 
@@ -1151,256 +1187,6 @@ schemaDoc title = \case
 
 Neat!
 
-Parsing and Serializing Invariantly
------------------------------------
-
-At this point, we have:
-
-1.  Started with a simple ADT representing the structure we want to be able to
-    express
-2.  Enhanced that simple ADT with Covariant Functor capabilities, in order to
-    interpret it as a parser
-3.  Enhanced that original simple ADT with Contravariant Functor, in order to
-    interpret it as a serializer.
-
-From this, it seems the next logical step would be to add *both* enhancements to
-the same structure!
-
-There are some clear benefits to this --- for example, we can now ensure that
-our "serialization" and "parsing" functions are always "in sync". If we defined
-a separate process/type for serializing and a separate process/type for parsing,
-then it's possible we might accidentally make errors in keeping them in
-sync...one might use a different tag, or we might make changes to one but not
-the other during refactoring.
-
-Like before, the main thing we need to change at the fundamental level is
-`Primitive`:
-
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L45-L48
-
-data Primitive a =
-      PString (a -> String)     (String     -> Maybe a)
-    | PNumber (a -> Scientific) (Scientific -> Maybe a)
-    | PBool   (a -> Bool)       (Bool       -> Maybe a)
-```
-
-We're just basically combining the additions we made to enable parsing with the
-additions we made to enable serialization. Our new `Primitive` type gives us the
-capability to do both!
-
-We call this new `Primitive` an ["Invariant"
-Functor](https://hackage.haskell.org/package/invariant/docs/Data-Functor-Invariant.html):
-these are functors that give you "both" capabilities: interpreting covariantly
-*and* contravariantly.
-
-### DivAp and DecAlt
-
-By now, we know the drill. We also need to change our `RecordType` and `SumType`
-constructors to get the right type of container.
-
-``` {.haskell}
--- Covariant Schema
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L27-L31
-
-data Schema a =
-      RecordType  (Ap Field a)
-    | SumType     (ListF Choice a)
-    | SchemaLeaf  (Primitive a)
-  deriving Functor
-
--- Contravariant Schema
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L27-L30
-
-data Schema a =
-      RecordType  (Div Field a)
-    | SumType     (Dec Choice a)
-    | SchemaLeaf  (Primitive a)
-```
-
-For the covariant `RecordType`, we used `Ap Field a`. For the contravariant
-`RecordType`, we used `Div Field a`. Is there a type that combines *both* `Ap`
-and `Div`?
-
-Ah, we're in luck! We have
-*[DivAp](https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Invariant-DivAp.html)*
-from the *functor-combinatotrs* library...which is named to invoke the idea of
-having both `Ap` and `Div` capabilities, combined together.
-
-For the covariant `SumType`, we used `ListF Choice a`. For the contravariant
-`SumType`, we used `Dec Choice a`. Is there a type that combines *both* `ListF`
-and `Dec`?
-
-Ah hah, if we look nearby `DivAp`, we see the answer:
-*[DecAlt](https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Invariant-DecAlt.html)*!
-It combines both `ListF` and `Dec`.
-
-Now let's wire it up:
-
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L30-L48
-
-data Schema a =
-      RecordType  (DivAp   Field  a)
-    | SumType     (DecAlt Choice a)
-    | SchemaLeaf  (Primitive a)
-
-data Field a = Field
-    { fieldName  :: String
-    , fieldValue :: Schema a
-    }
-
-data Choice a = Choice
-    { choiceName  :: String
-    , choiceValue :: Schema a
-    }
-
-data Primitive a =
-      PString (a -> String)     (String     -> Maybe a)
-    | PNumber (a -> Scientific) (Scientific -> Maybe a)
-    | PBool   (a -> Bool)       (Bool       -> Maybe a)
-```
-
-Writing a schema using this type is going to be very similar to writing the
-contravariant version. The main difference is, while `decide` expects the
-`a -> Either b c` splitting function, `swerve` (the invariant `DecAlt`
-equivalent) expects also the `Either b c -> a` recombiner. We also note that the
-invariant version of `divided` is `gathered`.
-
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L61-L76
-
-customerSchema :: Schema Customer
-customerSchema = SumType $
-    swerve (\case CPerson x y -> Left (x,y); CBusiness x -> Right x) (uncurry CPerson) CBusiness
-        (inject Choice
-          { choiceName  = "Person"
-          , choiceValue = RecordType $ gathered
-              (inject Field { fieldName = "Name", fieldValue = SchemaLeaf pString })
-              (inject Field { fieldName = "Age" , fieldValue = SchemaLeaf pInt    })
-          }
-        )
-        (inject Choice
-          { choiceName  = "Business"
-          , choiceValue = RecordType $
-              inject Field { fieldName = "Age" , fieldValue = SchemaLeaf pInt }
-          }
-        )
-```
-
-It looks like we mostly did all the work already. Writing `schemaDoc`,
-`schemaParser`, and `schemaToValue`, we can re-use pretty much all of our code!
-The main (unfortunate) difference is that instead of using `interpret` in every
-case, we can use `runCoDivAp` to run our `DivAp` in a covariant setting, and
-`runContraDivAp` to run our `DivAp` in a contravariant setting (similarly for
-`runCoDecAlt` and `runContraDecAlt`). Another small difference is that
-`icollect` doesn't quite work properly on `DivAp`/`DecAlt`, so we have to
-convert them to `Ap` and `Dec` first.[^4]
-
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L78-L154
-
-schemaDoc
-    :: String       -- ^ name
-    -> Schema x     -- ^ schema
-    -> PP.Doc a
-schemaDoc title = \case
-    RecordType fs -> PP.vsep [
-        PP.pretty ("{" <> title <> "}")
-      , PP.indent 2 . PP.vsep $
-          icollect (\fld -> "*" PP.<+> PP.indent 2 (fieldDoc fld)) (divApAp fs)
-      ]
-    SumType cs    -> PP.vsep [
-        PP.pretty ("(" <> title <> ")")
-      , "Choice of:"
-      , PP.indent 2 . PP.vsep $
-          icollect choiceDoc (decAltDec cs)
-      ]
-    SchemaLeaf p  -> PP.pretty (title <> ":")
-              PP.<+> primDoc p
-  where
-    fieldDoc :: Field x -> PP.Doc a
-    fieldDoc Field{..} = schemaDoc fieldName fieldValue
-    choiceDoc :: Choice x -> PP.Doc a
-    choiceDoc Choice{..} = schemaDoc choiceName choiceValue
-    primDoc :: Primitive x -> PP.Doc a
-    primDoc = \case
-      PString _ _ -> "string"
-      PNumber _ _ -> "number"
-      PBool   _ _ -> "bool"
-
-schemaParser
-    :: Schema a
-    -> A.Parse String a
-schemaParser = \case
-    RecordType fs -> runCoDivAp fieldParser fs
-    SumType    cs -> runCoDecAlt choiceParser cs
-    SchemaLeaf p  -> primParser p
-  where
-    choiceParser :: Choice b -> A.Parse String b
-    choiceParser Choice{..} = do
-      tag <- A.key "tag" A.asString
-      unless (tag == choiceName) $
-        A.throwCustomError "Tag does not match"
-      A.key "contents" $ schemaParser choiceValue
-    fieldParser :: Field b -> A.Parse String b
-    fieldParser Field{..} = A.key (T.pack fieldName) (schemaParser fieldValue)
-    primParser :: Primitive b -> A.Parse String b
-    primParser = \case
-      PString _ f -> A.withString $
-        maybe (Left "error validating string") Right . f
-      PNumber _ f -> A.withScientific $
-        maybe (Left "error validating number") Right . f
-      PBool _ f -> A.withBool $
-        maybe (Left "error validating bool") Right . f
-
-schemaToValue
-    :: Schema a
-    -> a
-    -> Aeson.Value
-schemaToValue = \case
-    RecordType fs -> Aeson.object
-                   . getOp (runContraDivAp fieldToValue fs)
-    SumType    cs -> getOp (runContraDecAlt choiceToValue cs)
-    SchemaLeaf p  -> primToValue p
-  where
-    choiceToValue :: Choice x -> Op Aeson.Value x
-    choiceToValue Choice{..} = Op $ \x -> Aeson.object
-      [ "tag"      Aeson..= T.pack choiceName
-      , "contents" Aeson..= schemaToValue choiceValue x
-      ]
-    fieldToValue :: Field x -> Op [Aeson.Pair] x
-    fieldToValue Field{..} = Op $ \x ->
-        [T.pack fieldName Aeson..= schemaToValue fieldValue x]
-    primToValue :: Primitive x -> x -> Aeson.Value
-    primToValue = \case
-      PString f _ -> Aeson.String . T.pack . f
-      PNumber f _ -> Aeson.Number . f
-      PBool   f _ -> Aeson.Bool . f
-```
-
-And there we have it --- a fully functional bidirectional parser schema type
-that we assembled step-by-step, adding each piece incrementally and exploring
-the space until we found something useful for us.
-
-A cute function we could write to tie things together would be one that does a
-round-trip, serializing and then parsing, to make sure things worked properly.
-
-``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L156-L160
-
-testRoundTrip
-    :: Schema a
-    -> a
-    -> Either (A.ParseError String) a
-testRoundTrip sch = A.parseValue (schemaParser sch) . schemaToValue sch
-```
-
-``` {.haskell}
-ghci> testRoundTrip customerSchema (CPerson "Sam" 40)
-Right (CPerson {cpName = "Sam", cpAge = 40})
-```
-
 --------------------------------------------------------------------------------
 
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at
@@ -1426,32 +1212,3 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     -- essentially
     icollect f = getConst . interpret (\x -> Const [f x])
     ```
-
-[^3]: Note that this contravariant interpretation pattern (wrapping in `Op` and
-    then unwrapping it again to run it) is so common that *functor-combinators*
-    has a helper function to make things a bit neater:
-
-    ``` {.haskell}
-    iapply  :: (forall x. f x -> x -> b) -> Dec f a -> a -> b
-    ifanout :: (forall x. f x -> x -> b) -> Div f a -> a -> [b]
-    ```
-
-    With these we could write
-
-    ``` {.haskell}
-    choiceToValue :: Choice a -> a -> Aeson.Value
-    fieldToValue  :: Field a  -> a -> [Aeson.Pair]
-    ```
-
-    And then:
-
-    ``` {.haskell}
-    iapply choiceToValue :: Dec Choice a -> a -> Aeson.Value
-    ifanout fieldToValue :: Div Field  a -> a -> [Aeson.Pair]
-    ```
-
-[^4]: These are unfortunate consequences of the fact that there is no general
-    typeclass that contains both `Applicative` and `Divisible` together, or no
-    typeclass that contains both `Plus` and `Conclude` together. If these
-    existed, we could just use `interpret` for all four of those functions, and
-    `icollect` would work fine as well.

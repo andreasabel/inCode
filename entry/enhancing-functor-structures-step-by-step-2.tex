@@ -1,0 +1,480 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+    \usepackage{xltxtra,xunicode}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{\usepackage{microtype}}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\newenvironment{Shaded}{}{}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex]{hyperref}
+\else
+  \usepackage[unicode=true]{hyperref}
+\fi
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            pdfauthor={Justin Le},
+            pdftitle={Enhancing Functor Structures Step-By-Step (Part 2)},
+            colorlinks=true,
+            citecolor=blue,
+            urlcolor=blue,
+            linkcolor=magenta,
+            pdfborder={0 0 0}}
+\urlstyle{same}  % don't use monospace font for urls
+% Make links footnotes instead of hotlinks:
+\renewcommand{\href}[2]{#2\footnote{\url{#1}}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\setcounter{secnumdepth}{0}
+
+\title{Enhancing Functor Structures Step-By-Step (Part 2)}
+\author{Justin Le}
+
+\begin{document}
+\maketitle
+
+\emph{Originally posted on
+\textbf{\href{https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-2.html}{in
+Code}}.}
+
+\hypertarget{parsing-and-serializing-invariantly}{%
+\section{Parsing and Serializing
+Invariantly}\label{parsing-and-serializing-invariantly}}
+
+At this point, we have:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Started with a simple ADT representing the structure we want to be able to
+  express
+\item
+  Enhanced that simple ADT with Covariant Functor capabilities, in order to
+  interpret it as a parser
+\item
+  Enhanced that original simple ADT with Contravariant Functor, in order to
+  interpret it as a serializer.
+\end{enumerate}
+
+From this, it seems the next logical step would be to add \emph{both}
+enhancements to the same structure!
+
+There are some clear benefits to this --- for example, we can now ensure that
+our ``serialization'' and ``parsing'' functions are always ``in sync''. If we
+defined a separate process/type for serializing and a separate process/type for
+parsing, then it's possible we might accidentally make errors in keeping them in
+sync\ldots one might use a different tag, or we might make changes to one but
+not the other during refactoring.
+
+Like before, the main thing we need to change at the fundamental level is
+\texttt{Primitive}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/invariant.hs\#L45{-}L48}
+
+\KeywordTok{data} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{PString}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{String}\NormalTok{)     (}\DataTypeTok{String}     \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{PNumber}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Scientific}\NormalTok{) (}\DataTypeTok{Scientific} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{PBool}\NormalTok{   (a }\OtherTok{{-}>} \DataTypeTok{Bool}\NormalTok{)       (}\DataTypeTok{Bool}       \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+\end{Highlighting}
+\end{Shaded}
+
+We're just basically combining the additions we made to enable parsing with the
+additions we made to enable serialization. Our new \texttt{Primitive} type gives
+us the capability to do both!
+
+We call this new \texttt{Primitive} an
+\href{https://hackage.haskell.org/package/invariant/docs/Data-Functor-Invariant.html}{``Invariant''
+Functor}: these are functors that give you ``both'' capabilities: interpreting
+covariantly \emph{and} contravariantly.
+
+\hypertarget{divap-and-decalt}{%
+\subsection{DivAp and DecAlt}\label{divap-and-decalt}}
+
+By now, we know the drill. We also need to change our \texttt{RecordType} and
+\texttt{SumType} constructors to get the right type of container.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} Covariant Schema}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L27{-}L31}
+
+\KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Ap} \DataTypeTok{Field}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     (}\DataTypeTok{ListF} \DataTypeTok{Choice}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
+  \KeywordTok{deriving} \DataTypeTok{Functor}
+
+\CommentTok{{-}{-} Contravariant Schema}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L27{-}L30}
+
+\KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Div} \DataTypeTok{Field}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     (}\DataTypeTok{Dec} \DataTypeTok{Choice}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
+\end{Highlighting}
+\end{Shaded}
+
+For the covariant \texttt{RecordType}, we used \texttt{Ap\ Field\ a}. For the
+contravariant \texttt{RecordType}, we used \texttt{Div\ Field\ a}. Is there a
+type that combines \emph{both} \texttt{Ap} and \texttt{Div}?
+
+Ah, we're in luck! We have
+\emph{\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Invariant-DivAp.html}{DivAp}}
+from the \emph{functor-combinatotrs} library\ldots which is named to invoke the
+idea of having both \texttt{Ap} and \texttt{Div} capabilities, combined
+together.
+
+For the covariant \texttt{SumType}, we used \texttt{ListF\ Choice\ a}. For the
+contravariant \texttt{SumType}, we used \texttt{Dec\ Choice\ a}. Is there a type
+that combines \emph{both} \texttt{ListF} and \texttt{Dec}?
+
+Ah hah, if we look nearby \texttt{DivAp}, we see the answer:
+\emph{\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Invariant-DecAlt.html}{DecAlt}}!
+It combines both \texttt{ListF} and \texttt{Dec}.
+
+\hypertarget{building-an-invariant-schema}{%
+\subsection{Building an Invariant Schema}\label{building-an-invariant-schema}}
+
+Now let's wire it up:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/invariant.hs\#L30{-}L48}
+
+\KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{DivAp}   \DataTypeTok{Field}\NormalTok{  a)}
+    \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     (}\DataTypeTok{DecAlt} \DataTypeTok{Choice}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
+
+\KeywordTok{data} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Field}
+\NormalTok{    \{}\OtherTok{ fieldName  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ fieldValue ::} \DataTypeTok{Schema}\NormalTok{ a}
+\NormalTok{    \}}
+
+\KeywordTok{data} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Choice}
+\NormalTok{    \{}\OtherTok{ choiceName  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ choiceValue ::} \DataTypeTok{Schema}\NormalTok{ a}
+\NormalTok{    \}}
+
+\KeywordTok{data} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{PString}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{String}\NormalTok{)     (}\DataTypeTok{String}     \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{PNumber}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Scientific}\NormalTok{) (}\DataTypeTok{Scientific} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{PBool}\NormalTok{   (a }\OtherTok{{-}>} \DataTypeTok{Bool}\NormalTok{)       (}\DataTypeTok{Bool}       \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+\end{Highlighting}
+\end{Shaded}
+
+Writing a schema using this type is going to be very similar to writing the
+contravariant version.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/invariant.hs\#L61{-}L76}
+
+\OtherTok{customerSchema ::} \DataTypeTok{Schema} \DataTypeTok{Customer}
+\NormalTok{customerSchema }\OtherTok{=} \DataTypeTok{SumType} \OperatorTok{$}
+\NormalTok{    swerve (\textbackslash{}}\KeywordTok{case} \DataTypeTok{CPerson}\NormalTok{ x y }\OtherTok{{-}>} \DataTypeTok{Left}\NormalTok{ (x,y); }\DataTypeTok{CBusiness}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{Right}\NormalTok{ x) (}\FunctionTok{uncurry} \DataTypeTok{CPerson}\NormalTok{) }\DataTypeTok{CBusiness}
+\NormalTok{        (inject }\DataTypeTok{Choice}
+\NormalTok{          \{ choiceName  }\OtherTok{=} \StringTok{"Person"}
+\NormalTok{          , choiceValue }\OtherTok{=} \DataTypeTok{RecordType} \OperatorTok{$}\NormalTok{ gathered}
+\NormalTok{              (inject }\DataTypeTok{Field}\NormalTok{ \{ fieldName }\OtherTok{=} \StringTok{"Name"}\NormalTok{, fieldValue }\OtherTok{=} \DataTypeTok{SchemaLeaf}\NormalTok{ pString \})}
+\NormalTok{              (inject }\DataTypeTok{Field}\NormalTok{ \{ fieldName }\OtherTok{=} \StringTok{"Age"}\NormalTok{ , fieldValue }\OtherTok{=} \DataTypeTok{SchemaLeaf}\NormalTok{ pInt    \})}
+\NormalTok{          \}}
+\NormalTok{        )}
+\NormalTok{        (inject }\DataTypeTok{Choice}
+\NormalTok{          \{ choiceName  }\OtherTok{=} \StringTok{"Business"}
+\NormalTok{          , choiceValue }\OtherTok{=} \DataTypeTok{RecordType} \OperatorTok{$}
+\NormalTok{              inject }\DataTypeTok{Field}\NormalTok{ \{ fieldName }\OtherTok{=} \StringTok{"Age"}\NormalTok{ , fieldValue }\OtherTok{=} \DataTypeTok{SchemaLeaf}\NormalTok{ pInt \}}
+\NormalTok{          \}}
+\NormalTok{        )}
+\end{Highlighting}
+\end{Shaded}
+
+The main difference is, while \texttt{decide} expects the
+\texttt{a\ -\textgreater{}\ Either\ b\ c} splitting function, \texttt{swerve}
+(the invariant \texttt{DecAlt} equivalent) expects also the functions to
+``recombine'' the \texttt{b} and \texttt{c} back to \texttt{a}. We also note
+that the invariant version of \texttt{divided} is \texttt{gathered}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{swerve}
+\OtherTok{    ::}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Either}\NormalTok{ b c)    }\CommentTok{{-}{-} \^{} break into branches}
+    \OtherTok{{-}>}\NormalTok{ (b }\OtherTok{{-}>}\NormalTok{ a)             }\CommentTok{{-}{-} \^{} put the branch back into the original input}
+    \OtherTok{{-}>}\NormalTok{ (c }\OtherTok{{-}>}\NormalTok{ a)             }\CommentTok{{-}{-} \^{} put the branch back into the original input}
+    \OtherTok{{-}>} \DataTypeTok{DecAlt}\NormalTok{ f b           }\CommentTok{{-}{-} \^{} handle first branch}
+    \OtherTok{{-}>} \DataTypeTok{DecAlt}\NormalTok{ f c           }\CommentTok{{-}{-} \^{} handle second branch}
+    \OtherTok{{-}>} \DataTypeTok{DecAlt}\NormalTok{ f a           }\CommentTok{{-}{-} \^{} overall handler}
+
+\NormalTok{swerve}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Customer} \OtherTok{{-}>} \DataTypeTok{Either}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{) }\DataTypeTok{Int}\NormalTok{)   }\CommentTok{{-}{-} \^{} break into branches}
+    \OtherTok{{-}>}\NormalTok{ ((}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{) }\OtherTok{{-}>} \DataTypeTok{Customer}\NormalTok{)              }\CommentTok{{-}{-} \^{} put the CPerson branch back into a Customer}
+    \OtherTok{{-}>}\NormalTok{ (}\DataTypeTok{Int} \OtherTok{{-}>} \DataTypeTok{Customer}\NormalTok{)                        }\CommentTok{{-}{-} \^{} put the CBusiness branch back into a Customer}
+    \OtherTok{{-}>} \DataTypeTok{DecAlt} \DataTypeTok{Choice}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)              }\CommentTok{{-}{-} \^{} handle CPerson branch}
+    \OtherTok{{-}>} \DataTypeTok{DecAlt} \DataTypeTok{Choice} \DataTypeTok{Int}                        \CommentTok{{-}{-} \^{} handle CBusiness branch}
+    \OtherTok{{-}>} \DataTypeTok{DecAlt} \DataTypeTok{Choice} \DataTypeTok{Customer}
+\end{Highlighting}
+\end{Shaded}
+
+And \texttt{gathered} works like:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{gathered}
+\OtherTok{    ::} \DataTypeTok{DivAp}\NormalTok{ f a          }\CommentTok{{-}{-} \^{} first handler}
+    \OtherTok{{-}>} \DataTypeTok{DivAp}\NormalTok{ f b          }\CommentTok{{-}{-} \^{} second handler}
+    \OtherTok{{-}>} \DataTypeTok{DivAp}\NormalTok{ f (a, b)     }\CommentTok{{-}{-} \^{} merged handler}
+
+\NormalTok{gathered}
+\OtherTok{    ::} \DataTypeTok{DivAp} \DataTypeTok{Field} \DataTypeTok{String}          \CommentTok{{-}{-} \^{} handle the cpName field}
+    \OtherTok{{-}>} \DataTypeTok{DivAp} \DataTypeTok{Field} \DataTypeTok{Int}             \CommentTok{{-}{-} \^{} handle the cpAge field}
+    \OtherTok{{-}>} \DataTypeTok{DivAp} \DataTypeTok{Field}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)   }\CommentTok{{-}{-} \^{} handle both together}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{using-invariant-schema}{%
+\subsection{Using Invariant Schema}\label{using-invariant-schema}}
+
+It looks like we mostly did all the work already. Writing \texttt{schemaDoc},
+\texttt{schemaParser}, and \texttt{schemaToValue}, we can re-use pretty much all
+of our code! The main (unfortunate) difference is that instead of using
+\texttt{interpret} in every case, we can use \texttt{runCoDivAp} to run our
+\texttt{DivAp} in a covariant setting, and \texttt{runContraDivAp} to run our
+\texttt{DivAp} in a contravariant setting (similarly for \texttt{runCoDecAlt}
+and \texttt{runContraDecAlt}). Another small difference is that
+\texttt{icollect} doesn't quite work properly on \texttt{DivAp}/\texttt{DecAlt},
+so we have to convert them to \texttt{Ap} and \texttt{Dec} first.\footnote{These
+  are unfortunate consequences of the fact that there is no general typeclass
+  that contains both \texttt{Applicative} and \texttt{Divisible} together, or no
+  typeclass that contains both \texttt{Plus} and \texttt{Conclude} together. If
+  these existed, we could just use \texttt{interpret} for all four of those
+  functions, and \texttt{icollect} would work fine as well.}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/invariant.hs\#L78{-}L154}
+
+\NormalTok{schemaDoc}
+\OtherTok{    ::} \DataTypeTok{String}       \CommentTok{{-}{-} \^{} name}
+    \OtherTok{{-}>} \DataTypeTok{Schema}\NormalTok{ x     }\CommentTok{{-}{-} \^{} schema}
+    \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ a}
+\NormalTok{schemaDoc title }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ PP.vsep [}
+\NormalTok{        PP.pretty (}\StringTok{"\{"} \OperatorTok{<>}\NormalTok{ title }\OperatorTok{<>} \StringTok{"\}"}\NormalTok{)}
+\NormalTok{      , PP.indent }\DecValTok{2} \OperatorTok{.}\NormalTok{ PP.vsep }\OperatorTok{$}
+\NormalTok{          icollect (\textbackslash{}fld }\OtherTok{{-}>} \StringTok{"*"} \OperatorTok{PP.<+>}\NormalTok{ PP.indent }\DecValTok{2}\NormalTok{ (fieldDoc fld)) (divApAp fs)}
+\NormalTok{      ]}
+    \DataTypeTok{SumType}\NormalTok{ cs    }\OtherTok{{-}>}\NormalTok{ PP.vsep [}
+\NormalTok{        PP.pretty (}\StringTok{"("} \OperatorTok{<>}\NormalTok{ title }\OperatorTok{<>} \StringTok{")"}\NormalTok{)}
+\NormalTok{      , }\StringTok{"Choice of:"}
+\NormalTok{      , PP.indent }\DecValTok{2} \OperatorTok{.}\NormalTok{ PP.vsep }\OperatorTok{$}
+\NormalTok{          icollect choiceDoc (decAltDec cs)}
+\NormalTok{      ]}
+    \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ PP.pretty (title }\OperatorTok{<>} \StringTok{":"}\NormalTok{)}
+              \OperatorTok{PP.<+>}\NormalTok{ primDoc p}
+  \KeywordTok{where}
+\OtherTok{    fieldDoc ::} \DataTypeTok{Field}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ a}
+\NormalTok{    fieldDoc }\DataTypeTok{Field}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ schemaDoc fieldName fieldValue}
+\OtherTok{    choiceDoc ::} \DataTypeTok{Choice}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ a}
+\NormalTok{    choiceDoc }\DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ schemaDoc choiceName choiceValue}
+\OtherTok{    primDoc ::} \DataTypeTok{Primitive}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ a}
+\NormalTok{    primDoc }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{PString}\NormalTok{ \_ \_ }\OtherTok{{-}>} \StringTok{"string"}
+      \DataTypeTok{PNumber}\NormalTok{ \_ \_ }\OtherTok{{-}>} \StringTok{"number"}
+      \DataTypeTok{PBool}\NormalTok{   \_ \_ }\OtherTok{{-}>} \StringTok{"bool"}
+
+\NormalTok{schemaParser}
+\OtherTok{    ::} \DataTypeTok{Schema}\NormalTok{ a}
+    \OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ a}
+\NormalTok{schemaParser }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ runCoDivAp fieldParser fs}
+    \DataTypeTok{SumType}\NormalTok{    cs }\OtherTok{{-}>}\NormalTok{ runCoDecAlt choiceParser cs}
+    \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ primParser p}
+  \KeywordTok{where}
+\OtherTok{    choiceParser ::} \DataTypeTok{Choice}\NormalTok{ b }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ b}
+\NormalTok{    choiceParser }\DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \KeywordTok{do}
+\NormalTok{      tag }\OtherTok{<{-}}\NormalTok{ A.key }\StringTok{"tag"}\NormalTok{ A.asString}
+\NormalTok{      unless (tag }\OperatorTok{==}\NormalTok{ choiceName) }\OperatorTok{$}
+\NormalTok{        A.throwCustomError }\StringTok{"Tag does not match"}
+\NormalTok{      A.key }\StringTok{"contents"} \OperatorTok{$}\NormalTok{ schemaParser choiceValue}
+\OtherTok{    fieldParser ::} \DataTypeTok{Field}\NormalTok{ b }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ b}
+\NormalTok{    fieldParser }\DataTypeTok{Field}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ A.key (T.pack fieldName) (schemaParser fieldValue)}
+\OtherTok{    primParser ::} \DataTypeTok{Primitive}\NormalTok{ b }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ b}
+\NormalTok{    primParser }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{PString}\NormalTok{ \_ f }\OtherTok{{-}>}\NormalTok{ A.withString }\OperatorTok{$}
+        \FunctionTok{maybe}\NormalTok{ (}\DataTypeTok{Left} \StringTok{"error validating string"}\NormalTok{) }\DataTypeTok{Right} \OperatorTok{.}\NormalTok{ f}
+      \DataTypeTok{PNumber}\NormalTok{ \_ f }\OtherTok{{-}>}\NormalTok{ A.withScientific }\OperatorTok{$}
+        \FunctionTok{maybe}\NormalTok{ (}\DataTypeTok{Left} \StringTok{"error validating number"}\NormalTok{) }\DataTypeTok{Right} \OperatorTok{.}\NormalTok{ f}
+      \DataTypeTok{PBool}\NormalTok{ \_ f }\OtherTok{{-}>}\NormalTok{ A.withBool }\OperatorTok{$}
+        \FunctionTok{maybe}\NormalTok{ (}\DataTypeTok{Left} \StringTok{"error validating bool"}\NormalTok{) }\DataTypeTok{Right} \OperatorTok{.}\NormalTok{ f}
+
+\NormalTok{schemaToValue}
+\OtherTok{    ::} \DataTypeTok{Schema}\NormalTok{ a}
+    \OtherTok{{-}>}\NormalTok{ a}
+    \OtherTok{{-}>} \DataTypeTok{Aeson.Value}
+\NormalTok{schemaToValue }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ Aeson.object}
+                   \OperatorTok{.}\NormalTok{ getOp (runContraDivAp fieldToValue fs)}
+    \DataTypeTok{SumType}\NormalTok{    cs }\OtherTok{{-}>}\NormalTok{ getOp (runContraDecAlt choiceToValue cs)}
+    \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ primToValue p}
+  \KeywordTok{where}
+\OtherTok{    choiceToValue ::} \DataTypeTok{Choice}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{Op} \DataTypeTok{Aeson.Value}\NormalTok{ x}
+\NormalTok{    choiceToValue }\DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \DataTypeTok{Op} \OperatorTok{$}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>}\NormalTok{ Aeson.object}
+\NormalTok{      [ }\StringTok{"tag"}      \OperatorTok{Aeson..=}\NormalTok{ T.pack choiceName}
+\NormalTok{      , }\StringTok{"contents"} \OperatorTok{Aeson..=}\NormalTok{ schemaToValue choiceValue x}
+\NormalTok{      ]}
+\OtherTok{    fieldToValue ::} \DataTypeTok{Field}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{Op}\NormalTok{ [}\DataTypeTok{Aeson.Pair}\NormalTok{] x}
+\NormalTok{    fieldToValue }\DataTypeTok{Field}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \DataTypeTok{Op} \OperatorTok{$}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>}
+\NormalTok{        [T.pack fieldName }\OperatorTok{Aeson..=}\NormalTok{ schemaToValue fieldValue x]}
+\OtherTok{    primToValue ::} \DataTypeTok{Primitive}\NormalTok{ x }\OtherTok{{-}>}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{Aeson.Value}
+\NormalTok{    primToValue }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{PString}\NormalTok{ f \_ }\OtherTok{{-}>} \DataTypeTok{Aeson.String} \OperatorTok{.}\NormalTok{ T.pack }\OperatorTok{.}\NormalTok{ f}
+      \DataTypeTok{PNumber}\NormalTok{ f \_ }\OtherTok{{-}>} \DataTypeTok{Aeson.Number} \OperatorTok{.}\NormalTok{ f}
+      \DataTypeTok{PBool}\NormalTok{   f \_ }\OtherTok{{-}>} \DataTypeTok{Aeson.Bool} \OperatorTok{.}\NormalTok{ f}
+\end{Highlighting}
+\end{Shaded}
+
+And there we have it --- a fully functional bidirectional parser schema type
+that we assembled step-by-step, adding each piece incrementally and exploring
+the space until we found something useful for us.
+
+A cute function we could write to tie things together would be one that does a
+round-trip, serializing and then parsing, to make sure things worked properly.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/invariant.hs\#L156{-}L160}
+
+\NormalTok{testRoundTrip}
+\OtherTok{    ::} \DataTypeTok{Schema}\NormalTok{ a}
+    \OtherTok{{-}>}\NormalTok{ a}
+    \OtherTok{{-}>} \DataTypeTok{Either}\NormalTok{ (}\DataTypeTok{A.ParseError} \DataTypeTok{String}\NormalTok{) a}
+\NormalTok{testRoundTrip sch }\OtherTok{=}\NormalTok{ A.parseValue (schemaParser sch) }\OperatorTok{.}\NormalTok{ schemaToValue sch}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ testRoundTrip customerSchema (}\DataTypeTok{CPerson} \StringTok{"Sam"} \DecValTok{40}\NormalTok{)}
+\DataTypeTok{Right}\NormalTok{ (}\DataTypeTok{CPerson}\NormalTok{ \{cpName }\OtherTok{=} \StringTok{"Sam"}\NormalTok{, cpAge }\OtherTok{=} \DecValTok{40}\NormalTok{\})}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{an-alternative-invariant-strategy}{%
+\section{An Alternative Invariant
+Strategy}\label{an-alternative-invariant-strategy}}
+
+The thought process ``I want to use both \texttt{Div} and \texttt{Ap}, let's
+just look for \texttt{DivAp}'' is kind of nice and straightforward, but it
+\emph{is} a little convenient that this type existed in the first place. If we
+look into the construction of \texttt{Ap} and \texttt{Div}, we probably
+\emph{could} be able to invent a data type of our own if we wanted to\ldots but
+that's a lot of heavy lifting.
+
+There's a major downside in using \texttt{DivAp} and \texttt{DecAlt} too, that
+make their ergonomics not so great when building them up. A major part about
+what makes \texttt{Ap} and \texttt{ListF} (and, to an extent, \texttt{Div} and
+\texttt{Dec}) so nice to use is that are instances of popular Haskell
+typeclasses like \texttt{Applicative} and \texttt{Alternative} (or,
+\texttt{Plus}, as we use it) and using \texttt{Applicative} and
+\texttt{Alternative} interfaces are pretty common in Haskell. Because of this,
+they are pretty comfortable for most Haskellers to use.
+
+However, \texttt{DivAp} and \texttt{DecAlt} aren't really instances of any
+commonly used typeclass (aside from \texttt{Invariant}). There \emph{could} be a
+typeclass for ``combination of \texttt{Applicative} and \texttt{Divisible}'' and
+``combination of \texttt{Plus} and \texttt{Conclude}'', but that doesn't really
+exist in popular Haskell. So you really don't have any nice interface for them
+other than just using functions specifically written for them, like
+\texttt{gather} and \texttt{swerve}, which may feel ad-hoc or unintuitive.
+
+Luckily, there's another way to achieve the same goals and also be able to take
+advantage of our favorite familiar interfaces. We can ``add Contravariance''
+directly into \texttt{Ap} itself, using
+\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor-Route.html\#t:Pre}{\texttt{Pre}}.
+A value of type:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{Ap}\NormalTok{ (}\DataTypeTok{Pre}\NormalTok{ a }\DataTypeTok{Field}\NormalTok{) b}
+\end{Highlighting}
+\end{Shaded}
+
+will ``produce'' \texttt{b}s covariantly\ldots but will ``consume'' \texttt{a}s
+contravariantly. You can think of the \texttt{Pre\ a} as adding an ``tunnel'' to
+guide the \texttt{a} to each \texttt{Field} in the \texttt{Ap}.
+
+\hypertarget{signoff}{%
+\section{Signoff}\label{signoff}}
+
+Hi, thanks for reading! You can reach me via email at
+\href{mailto:justin@jle.im}{\nolinkurl{justin@jle.im}}, or at twitter at
+\href{https://twitter.com/mstk}{@mstk}! This post and all others are published
+under the \href{https://creativecommons.org/licenses/by-nc-nd/3.0/}{CC-BY-NC-ND
+3.0} license. Corrections and edits via pull request are welcome and encouraged
+at \href{https://github.com/mstksg/inCode}{the source repository}.
+
+If you feel inclined, or this post was particularly helpful for you, why not
+consider \href{https://www.patreon.com/justinle/overview}{supporting me on
+Patreon}, or a \href{bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU}{BTC donation}?
+:)
+
+\end{document}

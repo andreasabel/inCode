@@ -1,0 +1,247 @@
+<!DOCTYPE HTML>
+<html><head><title>Enhancing Functor Structures Step-By-Step (Part 2) · in Code</title><meta name="description" content="Weblog of Justin Le, covering various adventures in programming and explorations in the worlds of computation physics, and knowledge.
+"><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="flattr:id" content="3p9jqr"><meta property="og:site_name" content="in Code"><meta property="og:description" content=""><meta property="og:type" content="article"><meta property="og:title" content="Enhancing Functor Structures Step-By-Step (Part 2)"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-2.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-2.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
+var disqus_shortname='incode';
+</script><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-443711-8', 'jle.im');
+ga('send', 'pageview');
+</script><script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script><script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5234d67a6b68dcd4"></script><script type="text/javascript" src="https://blog.jle.im/js/page/entry_toc.js"></script><script type="text/javascript" src="https://blog.jle.im/js/disqus_count.js"></script><script type="text/javascript" src="https://blog.jle.im/js/social.js"></script><script type="text/javascript" src="https://blog.jle.im/js/jquery/jquery.toc.js"></script><script type="text/javascript" src="https://blog.jle.im/purescript/entry.js"></script></head><body><div id="fb-root"><script>(function(d, s, id) {
+ var js, fjs = d.getElementsByTagName(s)[0];
+ if (d.getElementById(id)) return;
+ js = d.createElement(s); js.id = id;
+ js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=641852699171929";
+ fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));
+</script></div><div id="header-container"><div id="navbar-container" class="tile"><nav id="navbar-content"><div class="nav-info"><h1 class="site-title"><a href="https://blog.jle.im/" class="nav-title">in Code</a></h1><span class="nav-author">Justin Le</span></div><ul class="nav-links"><li><a href="https://blog.jle.im/">home</a></li><li><a href="https://blog.jle.im/entries.html">archives</a></li><li><a href="https://cv.jle.im">cv</a></li><div class="clear"></div></ul></nav></div><div id="header-content"></div></div><div id="body-container" class="container"><div id="main-container" class="grid"><div class="entry-section unit span-grid" role="main"><article class="tile article"><header><div class="unposted-banner">Unposted entry</div><h1 id="title">Enhancing Functor Structures Step-By-Step (Part 2)</h1><p class="entry-info">by <a class="author" href="https://blog.jle.im/">Justin Le</a></p><p><span class="source-info"><a class="source-link" href="https://github.com/mstksg/inCode/tree/master/copy/entries/functor-structures-2.md">Source</a><span class="info-separator"> &diams; </span><a class="source-link" href="https://github.com/mstksg/inCode/tree/gh-pages/entry/enhancing-functor-structures-step-by-step-2.md">Markdown</a><span class="info-separator"> &diams; </span><a class="source-link" href="https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-2.tex">LaTeX</a><span class="info-separator"> &diams; </span></span>Posted in <a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category" title="Functional, pure, non-strict, statically and strongly typed, natively
+compiled...really just the king of great languages.">Haskell</a><span class="info-separator"> &diams; </span><a class="comment-link" href="#disqus_thread">Comments</a></p></header><hr><aside class="contents-container"><h5 id="contents-header">Contents</h5><div id="toc"></div></aside><div class="main-content copy-content"><h2 id="parsing-and-serializing-invariantly">Parsing and Serializing Invariantly</h2>
+<p>At this point, we have:</p>
+<ol type="1">
+<li>Started with a simple ADT representing the structure we want to be able to express</li>
+<li>Enhanced that simple ADT with Covariant Functor capabilities, in order to interpret it as a parser</li>
+<li>Enhanced that original simple ADT with Contravariant Functor, in order to interpret it as a serializer.</li>
+</ol>
+<p>From this, it seems the next logical step would be to add <em>both</em> enhancements to the same structure!</p>
+<p>There are some clear benefits to this — for example, we can now ensure that our “serialization” and “parsing” functions are always “in sync”. If we defined a separate process/type for serializing and a separate process/type for parsing, then it’s possible we might accidentally make errors in keeping them in sync…one might use a different tag, or we might make changes to one but not the other during refactoring.</p>
+<p>Like before, the main thing we need to change at the fundamental level is <code>Primitive</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L45-L48</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">data</span> <span class="dt">Primitive</span> a <span class="ot">=</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>      <span class="dt">PString</span> (a <span class="ot">-&gt;</span> <span class="dt">String</span>)     (<span class="dt">String</span>     <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</span>
+<span id="cb1-5"><a href="#cb1-5"></a>    <span class="op">|</span> <span class="dt">PNumber</span> (a <span class="ot">-&gt;</span> <span class="dt">Scientific</span>) (<span class="dt">Scientific</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</span>
+<span id="cb1-6"><a href="#cb1-6"></a>    <span class="op">|</span> <span class="dt">PBool</span>   (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)       (<span class="dt">Bool</span>       <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</span></code></pre></div>
+<p>We’re just basically combining the additions we made to enable parsing with the additions we made to enable serialization. Our new <code>Primitive</code> type gives us the capability to do both!</p>
+<p>We call this new <code>Primitive</code> an <a href="https://hackage.haskell.org/package/invariant/docs/Data-Functor-Invariant.html">“Invariant” Functor</a>: these are functors that give you “both” capabilities: interpreting covariantly <em>and</em> contravariantly.</p>
+<h3 id="divap-and-decalt">DivAp and DecAlt</h3>
+<p>By now, we know the drill. We also need to change our <code>RecordType</code> and <code>SumType</code> constructors to get the right type of container.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="co">-- Covariant Schema</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L27-L31</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a></span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="kw">data</span> <span class="dt">Schema</span> a <span class="ot">=</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>      <span class="dt">RecordType</span>  (<span class="dt">Ap</span> <span class="dt">Field</span> a)</span>
+<span id="cb2-6"><a href="#cb2-6"></a>    <span class="op">|</span> <span class="dt">SumType</span>     (<span class="dt">ListF</span> <span class="dt">Choice</span> a)</span>
+<span id="cb2-7"><a href="#cb2-7"></a>    <span class="op">|</span> <span class="dt">SchemaLeaf</span>  (<span class="dt">Primitive</span> a)</span>
+<span id="cb2-8"><a href="#cb2-8"></a>  <span class="kw">deriving</span> <span class="dt">Functor</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a></span>
+<span id="cb2-10"><a href="#cb2-10"></a><span class="co">-- Contravariant Schema</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L27-L30</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a></span>
+<span id="cb2-13"><a href="#cb2-13"></a><span class="kw">data</span> <span class="dt">Schema</span> a <span class="ot">=</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a>      <span class="dt">RecordType</span>  (<span class="dt">Div</span> <span class="dt">Field</span> a)</span>
+<span id="cb2-15"><a href="#cb2-15"></a>    <span class="op">|</span> <span class="dt">SumType</span>     (<span class="dt">Dec</span> <span class="dt">Choice</span> a)</span>
+<span id="cb2-16"><a href="#cb2-16"></a>    <span class="op">|</span> <span class="dt">SchemaLeaf</span>  (<span class="dt">Primitive</span> a)</span></code></pre></div>
+<p>For the covariant <code>RecordType</code>, we used <code>Ap Field a</code>. For the contravariant <code>RecordType</code>, we used <code>Div Field a</code>. Is there a type that combines <em>both</em> <code>Ap</code> and <code>Div</code>?</p>
+<p>Ah, we’re in luck! We have <em><a href="https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Invariant-DivAp.html">DivAp</a></em> from the <em>functor-combinatotrs</em> library…which is named to invoke the idea of having both <code>Ap</code> and <code>Div</code> capabilities, combined together.</p>
+<p>For the covariant <code>SumType</code>, we used <code>ListF Choice a</code>. For the contravariant <code>SumType</code>, we used <code>Dec Choice a</code>. Is there a type that combines <em>both</em> <code>ListF</code> and <code>Dec</code>?</p>
+<p>Ah hah, if we look nearby <code>DivAp</code>, we see the answer: <em><a href="https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Invariant-DecAlt.html">DecAlt</a></em>! It combines both <code>ListF</code> and <code>Dec</code>.</p>
+<h3 id="building-an-invariant-schema">Building an Invariant Schema</h3>
+<p>Now let’s wire it up:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L30-L48</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="kw">data</span> <span class="dt">Schema</span> a <span class="ot">=</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>      <span class="dt">RecordType</span>  (<span class="dt">DivAp</span>   <span class="dt">Field</span>  a)</span>
+<span id="cb3-5"><a href="#cb3-5"></a>    <span class="op">|</span> <span class="dt">SumType</span>     (<span class="dt">DecAlt</span> <span class="dt">Choice</span> a)</span>
+<span id="cb3-6"><a href="#cb3-6"></a>    <span class="op">|</span> <span class="dt">SchemaLeaf</span>  (<span class="dt">Primitive</span> a)</span>
+<span id="cb3-7"><a href="#cb3-7"></a></span>
+<span id="cb3-8"><a href="#cb3-8"></a><span class="kw">data</span> <span class="dt">Field</span> a <span class="ot">=</span> <span class="dt">Field</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a>    {<span class="ot"> fieldName  ::</span> <span class="dt">String</span></span>
+<span id="cb3-10"><a href="#cb3-10"></a>    ,<span class="ot"> fieldValue ::</span> <span class="dt">Schema</span> a</span>
+<span id="cb3-11"><a href="#cb3-11"></a>    }</span>
+<span id="cb3-12"><a href="#cb3-12"></a></span>
+<span id="cb3-13"><a href="#cb3-13"></a><span class="kw">data</span> <span class="dt">Choice</span> a <span class="ot">=</span> <span class="dt">Choice</span></span>
+<span id="cb3-14"><a href="#cb3-14"></a>    {<span class="ot"> choiceName  ::</span> <span class="dt">String</span></span>
+<span id="cb3-15"><a href="#cb3-15"></a>    ,<span class="ot"> choiceValue ::</span> <span class="dt">Schema</span> a</span>
+<span id="cb3-16"><a href="#cb3-16"></a>    }</span>
+<span id="cb3-17"><a href="#cb3-17"></a></span>
+<span id="cb3-18"><a href="#cb3-18"></a><span class="kw">data</span> <span class="dt">Primitive</span> a <span class="ot">=</span></span>
+<span id="cb3-19"><a href="#cb3-19"></a>      <span class="dt">PString</span> (a <span class="ot">-&gt;</span> <span class="dt">String</span>)     (<span class="dt">String</span>     <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</span>
+<span id="cb3-20"><a href="#cb3-20"></a>    <span class="op">|</span> <span class="dt">PNumber</span> (a <span class="ot">-&gt;</span> <span class="dt">Scientific</span>) (<span class="dt">Scientific</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</span>
+<span id="cb3-21"><a href="#cb3-21"></a>    <span class="op">|</span> <span class="dt">PBool</span>   (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)       (<span class="dt">Bool</span>       <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</span></code></pre></div>
+<p>Writing a schema using this type is going to be very similar to writing the contravariant version.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L61-L76</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="ot">customerSchema ::</span> <span class="dt">Schema</span> <span class="dt">Customer</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>customerSchema <span class="ot">=</span> <span class="dt">SumType</span> <span class="op">$</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a>    swerve (\<span class="kw">case</span> <span class="dt">CPerson</span> x y <span class="ot">-&gt;</span> <span class="dt">Left</span> (x,y); <span class="dt">CBusiness</span> x <span class="ot">-&gt;</span> <span class="dt">Right</span> x) (<span class="fu">uncurry</span> <span class="dt">CPerson</span>) <span class="dt">CBusiness</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>        (inject <span class="dt">Choice</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a>          { choiceName  <span class="ot">=</span> <span class="st">&quot;Person&quot;</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a>          , choiceValue <span class="ot">=</span> <span class="dt">RecordType</span> <span class="op">$</span> gathered</span>
+<span id="cb4-9"><a href="#cb4-9"></a>              (inject <span class="dt">Field</span> { fieldName <span class="ot">=</span> <span class="st">&quot;Name&quot;</span>, fieldValue <span class="ot">=</span> <span class="dt">SchemaLeaf</span> pString })</span>
+<span id="cb4-10"><a href="#cb4-10"></a>              (inject <span class="dt">Field</span> { fieldName <span class="ot">=</span> <span class="st">&quot;Age&quot;</span> , fieldValue <span class="ot">=</span> <span class="dt">SchemaLeaf</span> pInt    })</span>
+<span id="cb4-11"><a href="#cb4-11"></a>          }</span>
+<span id="cb4-12"><a href="#cb4-12"></a>        )</span>
+<span id="cb4-13"><a href="#cb4-13"></a>        (inject <span class="dt">Choice</span></span>
+<span id="cb4-14"><a href="#cb4-14"></a>          { choiceName  <span class="ot">=</span> <span class="st">&quot;Business&quot;</span></span>
+<span id="cb4-15"><a href="#cb4-15"></a>          , choiceValue <span class="ot">=</span> <span class="dt">RecordType</span> <span class="op">$</span></span>
+<span id="cb4-16"><a href="#cb4-16"></a>              inject <span class="dt">Field</span> { fieldName <span class="ot">=</span> <span class="st">&quot;Age&quot;</span> , fieldValue <span class="ot">=</span> <span class="dt">SchemaLeaf</span> pInt }</span>
+<span id="cb4-17"><a href="#cb4-17"></a>          }</span>
+<span id="cb4-18"><a href="#cb4-18"></a>        )</span></code></pre></div>
+<p>The main difference is, while <code>decide</code> expects the <code>a -&gt; Either b c</code> splitting function, <code>swerve</code> (the invariant <code>DecAlt</code> equivalent) expects also the functions to “recombine” the <code>b</code> and <code>c</code> back to <code>a</code>. We also note that the invariant version of <code>divided</code> is <code>gathered</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a>swerve</span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="ot">    ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Either</span> b c)    <span class="co">-- ^ break into branches</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>    <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> a)             <span class="co">-- ^ put the branch back into the original input</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a>    <span class="ot">-&gt;</span> (c <span class="ot">-&gt;</span> a)             <span class="co">-- ^ put the branch back into the original input</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a>    <span class="ot">-&gt;</span> <span class="dt">DecAlt</span> f b           <span class="co">-- ^ handle first branch</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a>    <span class="ot">-&gt;</span> <span class="dt">DecAlt</span> f c           <span class="co">-- ^ handle second branch</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a>    <span class="ot">-&gt;</span> <span class="dt">DecAlt</span> f a           <span class="co">-- ^ overall handler</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a></span>
+<span id="cb5-9"><a href="#cb5-9"></a>swerve</span>
+<span id="cb5-10"><a href="#cb5-10"></a><span class="ot">    ::</span> (<span class="dt">Customer</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> (<span class="dt">String</span>, <span class="dt">Int</span>) <span class="dt">Int</span>)   <span class="co">-- ^ break into branches</span></span>
+<span id="cb5-11"><a href="#cb5-11"></a>    <span class="ot">-&gt;</span> ((<span class="dt">String</span>, <span class="dt">Int</span>) <span class="ot">-&gt;</span> <span class="dt">Customer</span>)              <span class="co">-- ^ put the CPerson branch back into a Customer</span></span>
+<span id="cb5-12"><a href="#cb5-12"></a>    <span class="ot">-&gt;</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Customer</span>)                        <span class="co">-- ^ put the CBusiness branch back into a Customer</span></span>
+<span id="cb5-13"><a href="#cb5-13"></a>    <span class="ot">-&gt;</span> <span class="dt">DecAlt</span> <span class="dt">Choice</span> (<span class="dt">String</span>, <span class="dt">Int</span>)              <span class="co">-- ^ handle CPerson branch</span></span>
+<span id="cb5-14"><a href="#cb5-14"></a>    <span class="ot">-&gt;</span> <span class="dt">DecAlt</span> <span class="dt">Choice</span> <span class="dt">Int</span>                        <span class="co">-- ^ handle CBusiness branch</span></span>
+<span id="cb5-15"><a href="#cb5-15"></a>    <span class="ot">-&gt;</span> <span class="dt">DecAlt</span> <span class="dt">Choice</span> <span class="dt">Customer</span></span></code></pre></div>
+<p>And <code>gathered</code> works like:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a>gathered</span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="ot">    ::</span> <span class="dt">DivAp</span> f a          <span class="co">-- ^ first handler</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>    <span class="ot">-&gt;</span> <span class="dt">DivAp</span> f b          <span class="co">-- ^ second handler</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>    <span class="ot">-&gt;</span> <span class="dt">DivAp</span> f (a, b)     <span class="co">-- ^ merged handler</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a></span>
+<span id="cb6-6"><a href="#cb6-6"></a>gathered</span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="ot">    ::</span> <span class="dt">DivAp</span> <span class="dt">Field</span> <span class="dt">String</span>          <span class="co">-- ^ handle the cpName field</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a>    <span class="ot">-&gt;</span> <span class="dt">DivAp</span> <span class="dt">Field</span> <span class="dt">Int</span>             <span class="co">-- ^ handle the cpAge field</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a>    <span class="ot">-&gt;</span> <span class="dt">DivAp</span> <span class="dt">Field</span> (<span class="dt">String</span>, <span class="dt">Int</span>)   <span class="co">-- ^ handle both together</span></span></code></pre></div>
+<h3 id="using-invariant-schema">Using Invariant Schema</h3>
+<p>It looks like we mostly did all the work already. Writing <code>schemaDoc</code>, <code>schemaParser</code>, and <code>schemaToValue</code>, we can re-use pretty much all of our code! The main (unfortunate) difference is that instead of using <code>interpret</code> in every case, we can use <code>runCoDivAp</code> to run our <code>DivAp</code> in a covariant setting, and <code>runContraDivAp</code> to run our <code>DivAp</code> in a contravariant setting (similarly for <code>runCoDecAlt</code> and <code>runContraDecAlt</code>). Another small difference is that <code>icollect</code> doesn’t quite work properly on <code>DivAp</code>/<code>DecAlt</code>, so we have to convert them to <code>Ap</code> and <code>Dec</code> first.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L78-L154</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a></span>
+<span id="cb7-3"><a href="#cb7-3"></a>schemaDoc</span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="ot">    ::</span> <span class="dt">String</span>       <span class="co">-- ^ name</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>    <span class="ot">-&gt;</span> <span class="dt">Schema</span> x     <span class="co">-- ^ schema</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a>    <span class="ot">-&gt;</span> <span class="dt">PP.Doc</span> a</span>
+<span id="cb7-7"><a href="#cb7-7"></a>schemaDoc title <span class="ot">=</span> \<span class="kw">case</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a>    <span class="dt">RecordType</span> fs <span class="ot">-&gt;</span> PP.vsep [</span>
+<span id="cb7-9"><a href="#cb7-9"></a>        PP.pretty (<span class="st">&quot;{&quot;</span> <span class="op">&lt;&gt;</span> title <span class="op">&lt;&gt;</span> <span class="st">&quot;}&quot;</span>)</span>
+<span id="cb7-10"><a href="#cb7-10"></a>      , PP.indent <span class="dv">2</span> <span class="op">.</span> PP.vsep <span class="op">$</span></span>
+<span id="cb7-11"><a href="#cb7-11"></a>          icollect (\fld <span class="ot">-&gt;</span> <span class="st">&quot;*&quot;</span> <span class="op">PP.&lt;+&gt;</span> PP.indent <span class="dv">2</span> (fieldDoc fld)) (divApAp fs)</span>
+<span id="cb7-12"><a href="#cb7-12"></a>      ]</span>
+<span id="cb7-13"><a href="#cb7-13"></a>    <span class="dt">SumType</span> cs    <span class="ot">-&gt;</span> PP.vsep [</span>
+<span id="cb7-14"><a href="#cb7-14"></a>        PP.pretty (<span class="st">&quot;(&quot;</span> <span class="op">&lt;&gt;</span> title <span class="op">&lt;&gt;</span> <span class="st">&quot;)&quot;</span>)</span>
+<span id="cb7-15"><a href="#cb7-15"></a>      , <span class="st">&quot;Choice of:&quot;</span></span>
+<span id="cb7-16"><a href="#cb7-16"></a>      , PP.indent <span class="dv">2</span> <span class="op">.</span> PP.vsep <span class="op">$</span></span>
+<span id="cb7-17"><a href="#cb7-17"></a>          icollect choiceDoc (decAltDec cs)</span>
+<span id="cb7-18"><a href="#cb7-18"></a>      ]</span>
+<span id="cb7-19"><a href="#cb7-19"></a>    <span class="dt">SchemaLeaf</span> p  <span class="ot">-&gt;</span> PP.pretty (title <span class="op">&lt;&gt;</span> <span class="st">&quot;:&quot;</span>)</span>
+<span id="cb7-20"><a href="#cb7-20"></a>              <span class="op">PP.&lt;+&gt;</span> primDoc p</span>
+<span id="cb7-21"><a href="#cb7-21"></a>  <span class="kw">where</span></span>
+<span id="cb7-22"><a href="#cb7-22"></a><span class="ot">    fieldDoc ::</span> <span class="dt">Field</span> x <span class="ot">-&gt;</span> <span class="dt">PP.Doc</span> a</span>
+<span id="cb7-23"><a href="#cb7-23"></a>    fieldDoc <span class="dt">Field</span>{<span class="op">..</span>} <span class="ot">=</span> schemaDoc fieldName fieldValue</span>
+<span id="cb7-24"><a href="#cb7-24"></a><span class="ot">    choiceDoc ::</span> <span class="dt">Choice</span> x <span class="ot">-&gt;</span> <span class="dt">PP.Doc</span> a</span>
+<span id="cb7-25"><a href="#cb7-25"></a>    choiceDoc <span class="dt">Choice</span>{<span class="op">..</span>} <span class="ot">=</span> schemaDoc choiceName choiceValue</span>
+<span id="cb7-26"><a href="#cb7-26"></a><span class="ot">    primDoc ::</span> <span class="dt">Primitive</span> x <span class="ot">-&gt;</span> <span class="dt">PP.Doc</span> a</span>
+<span id="cb7-27"><a href="#cb7-27"></a>    primDoc <span class="ot">=</span> \<span class="kw">case</span></span>
+<span id="cb7-28"><a href="#cb7-28"></a>      <span class="dt">PString</span> _ _ <span class="ot">-&gt;</span> <span class="st">&quot;string&quot;</span></span>
+<span id="cb7-29"><a href="#cb7-29"></a>      <span class="dt">PNumber</span> _ _ <span class="ot">-&gt;</span> <span class="st">&quot;number&quot;</span></span>
+<span id="cb7-30"><a href="#cb7-30"></a>      <span class="dt">PBool</span>   _ _ <span class="ot">-&gt;</span> <span class="st">&quot;bool&quot;</span></span>
+<span id="cb7-31"><a href="#cb7-31"></a></span>
+<span id="cb7-32"><a href="#cb7-32"></a>schemaParser</span>
+<span id="cb7-33"><a href="#cb7-33"></a><span class="ot">    ::</span> <span class="dt">Schema</span> a</span>
+<span id="cb7-34"><a href="#cb7-34"></a>    <span class="ot">-&gt;</span> <span class="dt">A.Parse</span> <span class="dt">String</span> a</span>
+<span id="cb7-35"><a href="#cb7-35"></a>schemaParser <span class="ot">=</span> \<span class="kw">case</span></span>
+<span id="cb7-36"><a href="#cb7-36"></a>    <span class="dt">RecordType</span> fs <span class="ot">-&gt;</span> runCoDivAp fieldParser fs</span>
+<span id="cb7-37"><a href="#cb7-37"></a>    <span class="dt">SumType</span>    cs <span class="ot">-&gt;</span> runCoDecAlt choiceParser cs</span>
+<span id="cb7-38"><a href="#cb7-38"></a>    <span class="dt">SchemaLeaf</span> p  <span class="ot">-&gt;</span> primParser p</span>
+<span id="cb7-39"><a href="#cb7-39"></a>  <span class="kw">where</span></span>
+<span id="cb7-40"><a href="#cb7-40"></a><span class="ot">    choiceParser ::</span> <span class="dt">Choice</span> b <span class="ot">-&gt;</span> <span class="dt">A.Parse</span> <span class="dt">String</span> b</span>
+<span id="cb7-41"><a href="#cb7-41"></a>    choiceParser <span class="dt">Choice</span>{<span class="op">..</span>} <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb7-42"><a href="#cb7-42"></a>      tag <span class="ot">&lt;-</span> A.key <span class="st">&quot;tag&quot;</span> A.asString</span>
+<span id="cb7-43"><a href="#cb7-43"></a>      unless (tag <span class="op">==</span> choiceName) <span class="op">$</span></span>
+<span id="cb7-44"><a href="#cb7-44"></a>        A.throwCustomError <span class="st">&quot;Tag does not match&quot;</span></span>
+<span id="cb7-45"><a href="#cb7-45"></a>      A.key <span class="st">&quot;contents&quot;</span> <span class="op">$</span> schemaParser choiceValue</span>
+<span id="cb7-46"><a href="#cb7-46"></a><span class="ot">    fieldParser ::</span> <span class="dt">Field</span> b <span class="ot">-&gt;</span> <span class="dt">A.Parse</span> <span class="dt">String</span> b</span>
+<span id="cb7-47"><a href="#cb7-47"></a>    fieldParser <span class="dt">Field</span>{<span class="op">..</span>} <span class="ot">=</span> A.key (T.pack fieldName) (schemaParser fieldValue)</span>
+<span id="cb7-48"><a href="#cb7-48"></a><span class="ot">    primParser ::</span> <span class="dt">Primitive</span> b <span class="ot">-&gt;</span> <span class="dt">A.Parse</span> <span class="dt">String</span> b</span>
+<span id="cb7-49"><a href="#cb7-49"></a>    primParser <span class="ot">=</span> \<span class="kw">case</span></span>
+<span id="cb7-50"><a href="#cb7-50"></a>      <span class="dt">PString</span> _ f <span class="ot">-&gt;</span> A.withString <span class="op">$</span></span>
+<span id="cb7-51"><a href="#cb7-51"></a>        <span class="fu">maybe</span> (<span class="dt">Left</span> <span class="st">&quot;error validating string&quot;</span>) <span class="dt">Right</span> <span class="op">.</span> f</span>
+<span id="cb7-52"><a href="#cb7-52"></a>      <span class="dt">PNumber</span> _ f <span class="ot">-&gt;</span> A.withScientific <span class="op">$</span></span>
+<span id="cb7-53"><a href="#cb7-53"></a>        <span class="fu">maybe</span> (<span class="dt">Left</span> <span class="st">&quot;error validating number&quot;</span>) <span class="dt">Right</span> <span class="op">.</span> f</span>
+<span id="cb7-54"><a href="#cb7-54"></a>      <span class="dt">PBool</span> _ f <span class="ot">-&gt;</span> A.withBool <span class="op">$</span></span>
+<span id="cb7-55"><a href="#cb7-55"></a>        <span class="fu">maybe</span> (<span class="dt">Left</span> <span class="st">&quot;error validating bool&quot;</span>) <span class="dt">Right</span> <span class="op">.</span> f</span>
+<span id="cb7-56"><a href="#cb7-56"></a></span>
+<span id="cb7-57"><a href="#cb7-57"></a>schemaToValue</span>
+<span id="cb7-58"><a href="#cb7-58"></a><span class="ot">    ::</span> <span class="dt">Schema</span> a</span>
+<span id="cb7-59"><a href="#cb7-59"></a>    <span class="ot">-&gt;</span> a</span>
+<span id="cb7-60"><a href="#cb7-60"></a>    <span class="ot">-&gt;</span> <span class="dt">Aeson.Value</span></span>
+<span id="cb7-61"><a href="#cb7-61"></a>schemaToValue <span class="ot">=</span> \<span class="kw">case</span></span>
+<span id="cb7-62"><a href="#cb7-62"></a>    <span class="dt">RecordType</span> fs <span class="ot">-&gt;</span> Aeson.object</span>
+<span id="cb7-63"><a href="#cb7-63"></a>                   <span class="op">.</span> getOp (runContraDivAp fieldToValue fs)</span>
+<span id="cb7-64"><a href="#cb7-64"></a>    <span class="dt">SumType</span>    cs <span class="ot">-&gt;</span> getOp (runContraDecAlt choiceToValue cs)</span>
+<span id="cb7-65"><a href="#cb7-65"></a>    <span class="dt">SchemaLeaf</span> p  <span class="ot">-&gt;</span> primToValue p</span>
+<span id="cb7-66"><a href="#cb7-66"></a>  <span class="kw">where</span></span>
+<span id="cb7-67"><a href="#cb7-67"></a><span class="ot">    choiceToValue ::</span> <span class="dt">Choice</span> x <span class="ot">-&gt;</span> <span class="dt">Op</span> <span class="dt">Aeson.Value</span> x</span>
+<span id="cb7-68"><a href="#cb7-68"></a>    choiceToValue <span class="dt">Choice</span>{<span class="op">..</span>} <span class="ot">=</span> <span class="dt">Op</span> <span class="op">$</span> \x <span class="ot">-&gt;</span> Aeson.object</span>
+<span id="cb7-69"><a href="#cb7-69"></a>      [ <span class="st">&quot;tag&quot;</span>      <span class="op">Aeson..=</span> T.pack choiceName</span>
+<span id="cb7-70"><a href="#cb7-70"></a>      , <span class="st">&quot;contents&quot;</span> <span class="op">Aeson..=</span> schemaToValue choiceValue x</span>
+<span id="cb7-71"><a href="#cb7-71"></a>      ]</span>
+<span id="cb7-72"><a href="#cb7-72"></a><span class="ot">    fieldToValue ::</span> <span class="dt">Field</span> x <span class="ot">-&gt;</span> <span class="dt">Op</span> [<span class="dt">Aeson.Pair</span>] x</span>
+<span id="cb7-73"><a href="#cb7-73"></a>    fieldToValue <span class="dt">Field</span>{<span class="op">..</span>} <span class="ot">=</span> <span class="dt">Op</span> <span class="op">$</span> \x <span class="ot">-&gt;</span></span>
+<span id="cb7-74"><a href="#cb7-74"></a>        [T.pack fieldName <span class="op">Aeson..=</span> schemaToValue fieldValue x]</span>
+<span id="cb7-75"><a href="#cb7-75"></a><span class="ot">    primToValue ::</span> <span class="dt">Primitive</span> x <span class="ot">-&gt;</span> x <span class="ot">-&gt;</span> <span class="dt">Aeson.Value</span></span>
+<span id="cb7-76"><a href="#cb7-76"></a>    primToValue <span class="ot">=</span> \<span class="kw">case</span></span>
+<span id="cb7-77"><a href="#cb7-77"></a>      <span class="dt">PString</span> f _ <span class="ot">-&gt;</span> <span class="dt">Aeson.String</span> <span class="op">.</span> T.pack <span class="op">.</span> f</span>
+<span id="cb7-78"><a href="#cb7-78"></a>      <span class="dt">PNumber</span> f _ <span class="ot">-&gt;</span> <span class="dt">Aeson.Number</span> <span class="op">.</span> f</span>
+<span id="cb7-79"><a href="#cb7-79"></a>      <span class="dt">PBool</span>   f _ <span class="ot">-&gt;</span> <span class="dt">Aeson.Bool</span> <span class="op">.</span> f</span></code></pre></div>
+<p>And there we have it — a fully functional bidirectional parser schema type that we assembled step-by-step, adding each piece incrementally and exploring the space until we found something useful for us.</p>
+<p>A cute function we could write to tie things together would be one that does a round-trip, serializing and then parsing, to make sure things worked properly.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L156-L160</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a></span>
+<span id="cb8-3"><a href="#cb8-3"></a>testRoundTrip</span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="ot">    ::</span> <span class="dt">Schema</span> a</span>
+<span id="cb8-5"><a href="#cb8-5"></a>    <span class="ot">-&gt;</span> a</span>
+<span id="cb8-6"><a href="#cb8-6"></a>    <span class="ot">-&gt;</span> <span class="dt">Either</span> (<span class="dt">A.ParseError</span> <span class="dt">String</span>) a</span>
+<span id="cb8-7"><a href="#cb8-7"></a>testRoundTrip sch <span class="ot">=</span> A.parseValue (schemaParser sch) <span class="op">.</span> schemaToValue sch</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a>ghci<span class="op">&gt;</span> testRoundTrip customerSchema (<span class="dt">CPerson</span> <span class="st">&quot;Sam&quot;</span> <span class="dv">40</span>)</span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="dt">Right</span> (<span class="dt">CPerson</span> {cpName <span class="ot">=</span> <span class="st">&quot;Sam&quot;</span>, cpAge <span class="ot">=</span> <span class="dv">40</span>})</span></code></pre></div>
+<h2 id="an-alternative-invariant-strategy">An Alternative Invariant Strategy</h2>
+<p>The thought process “I want to use both <code>Div</code> and <code>Ap</code>, let’s just look for <code>DivAp</code>” is kind of nice and straightforward, but it <em>is</em> a little convenient that this type existed in the first place. If we look into the construction of <code>Ap</code> and <code>Div</code>, we probably <em>could</em> be able to invent a data type of our own if we wanted to…but that’s a lot of heavy lifting.</p>
+<p>There’s a major downside in using <code>DivAp</code> and <code>DecAlt</code> too, that make their ergonomics not so great when building them up. A major part about what makes <code>Ap</code> and <code>ListF</code> (and, to an extent, <code>Div</code> and <code>Dec</code>) so nice to use is that are instances of popular Haskell typeclasses like <code>Applicative</code> and <code>Alternative</code> (or, <code>Plus</code>, as we use it) and using <code>Applicative</code> and <code>Alternative</code> interfaces are pretty common in Haskell. Because of this, they are pretty comfortable for most Haskellers to use.</p>
+<p>However, <code>DivAp</code> and <code>DecAlt</code> aren’t really instances of any commonly used typeclass (aside from <code>Invariant</code>). There <em>could</em> be a typeclass for “combination of <code>Applicative</code> and <code>Divisible</code>” and “combination of <code>Plus</code> and <code>Conclude</code>”, but that doesn’t really exist in popular Haskell. So you really don’t have any nice interface for them other than just using functions specifically written for them, like <code>gather</code> and <code>swerve</code>, which may feel ad-hoc or unintuitive.</p>
+<p>Luckily, there’s another way to achieve the same goals and also be able to take advantage of our favorite familiar interfaces. We can “add Contravariance” directly into <code>Ap</code> itself, using <a href="https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor-Route.html#t:Pre"><code>Pre</code></a>. A value of type:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a><span class="dt">Ap</span> (<span class="dt">Pre</span> a <span class="dt">Field</span>) b</span></code></pre></div>
+<p>will “produce” <code>b</code>s covariantly…but will “consume” <code>a</code>s contravariantly. You can think of the <code>Pre a</code> as adding an “tunnel” to guide the <code>a</code> to each <code>Field</code> in the <code>Ap</code>.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>These are unfortunate consequences of the fact that there is no general typeclass that contains both <code>Applicative</code> and <code>Divisible</code> together, or no typeclass that contains both <code>Plus</code> and <code>Conclude</code> together. If these existed, we could just use <code>interpret</code> for all four of those functions, and <code>icollect</code> would work fine as well.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im" class="email">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
+<p>If you feel inclined, or this post was particularly helpful for you, why not consider <a href="https://www.patreon.com/justinle/overview">supporting me on Patreon</a>, or a <a href="bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU">BTC donation</a>? :)</p></div><div class="clear"></div><ul class="entry-series"></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/free.html" class="tag-a-tag">#free</a></li><li><a href="https://blog.jle.im/entries/tagged/functional-programming.html" class="tag-a-tag">#functional programming</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/tagged/interpreters.html" class="tag-a-tag">#interpreters</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing &quot;in Code&quot;!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
+    this.page.url = 'https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-2.html';
+    this.page.identifier = 'functor-structures-2';
+};
+(function() {
+    var d = document, s = d.createElement('script');
+    s.src = '//incode.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+})();
+</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a><br></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></div></div></div><div id="footer-container"><div id="footer-content"><div class="tile"><div class="footer-copyright">&copy; 2020 Justin Le <span class="license-link">(<a href="https://creativecommons.org/licenses/by-nc-nd/3.0/" class="license">CC-BY-NC-ND 3.0</a>)</span></div><div class="footer-follow social-follows"><ul class="social-follows-list"><li><ul class="social-follows-list-social"><li><a class="social-follow-twitter" title="Follow me on Twitter!" href="https://twitter.com/intent/user?user_id=mstk" onclick="window.open(
+  &#39;http://twitter.com/intent/user?user_id=907281&#39;,
+  &#39;facebook-share-dialog&#39;,
+  &#39;width=550,height=520&#39;);
+return false;
+">Twitter</a></li><li><a class="social-follow-github" title="Fork me on Github!" href="https://github.com/mstksg">Github</a></li><li><a class="social-follow-twitch" title="Watch me on Twitch!" href="https://www.twitch.tv/justin_l">Twitch</a></li><li><a class="social-follow-patreon" title="Support me on Patreon!" href="https://www.patreon.com/justinle/overview">Patreon</a></li><li><a class="social-follow-gplus" title="Add me on Google+!" href="https://plus.google.com/+JustinLe">Google+</a></li><li><a class="social-follow-keybase" title="Track me on Keybase!" href="https://keybase.io/mstksg">Keybase</a></li><li><a class="social-follow-linkedin" title="Connect with me on LinkedIn!" href="https://linkedin.com/in/lejustin">LinkedIn</a></li><li><a class="social-follow-bitcoin" title="Donate via bitcoin!" href="bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU">Bitcoin</a></li></ul></li><li><ul class="social-follows-list-site"><li><a class="social-follow-rss" title="Subscribe to my RSS Feed!" href="http://feeds.feedburner.com/incodeblog">RSS</a></li><li><a class="social-follow-email" title="Subscribe to the mailing list!" href="https://feedburner.google.com/fb/a/mailverify?loc=en_US&amp;uri=incodeblog">Mailing list</a></li></ul></li></ul></div></div></div></div></body></html>
