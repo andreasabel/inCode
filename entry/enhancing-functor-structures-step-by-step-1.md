@@ -1259,6 +1259,33 @@ data Primitive a =
     | PBool   (a -> Bool)       (Bool       -> Maybe a)
 ```
 
+Writing a schema using this type is going to be very similar to writing the
+contravariant version. The main difference is, while `decide` expects the
+`a -> Either b c` splitting function, `swerve` (the invariant `DecAlt`
+equivalent) expects also the `Either b c -> a` recombiner. We also note that the
+invariant version of `divided` is `gathered`.
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L62-L77
+
+customerSchema :: Schema Customer
+customerSchema = SumType $
+    swerve (\case CPerson x y -> Left (x,y); CBusiness x -> Right x) (uncurry CPerson) CBusiness
+        (inject Choice
+          { choiceName  = "Person"
+          , choiceValue = RecordType $ gathered
+              (inject Field { fieldName = "Name", fieldValue = SchemaLeaf pString })
+              (inject Field { fieldName = "Age" , fieldValue = SchemaLeaf pInt    })
+          }
+        )
+        (inject Choice
+          { choiceName  = "Business"
+          , choiceValue = RecordType $
+              inject Field { fieldName = "Age" , fieldValue = SchemaLeaf pInt }
+          }
+        )
+```
+
 --------------------------------------------------------------------------------
 
 Hi, thanks for reading! You can reach me via email at <justin@jle.im>, or at

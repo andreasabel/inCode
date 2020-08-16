@@ -680,6 +680,25 @@ Choice of:
 <span id="cb62-19"><a href="#cb62-19"></a>      <span class="dt">PString</span> (a <span class="ot">-&gt;</span> <span class="dt">String</span>)     (<span class="dt">String</span>     <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</span>
 <span id="cb62-20"><a href="#cb62-20"></a>    <span class="op">|</span> <span class="dt">PNumber</span> (a <span class="ot">-&gt;</span> <span class="dt">Scientific</span>) (<span class="dt">Scientific</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</span>
 <span id="cb62-21"><a href="#cb62-21"></a>    <span class="op">|</span> <span class="dt">PBool</span>   (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)       (<span class="dt">Bool</span>       <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</span></code></pre></div>
+<p>Writing a schema using this type is going to be very similar to writing the contravariant version. The main difference is, while <code>decide</code> expects the <code>a -&gt; Either b c</code> splitting function, <code>swerve</code> (the invariant <code>DecAlt</code> equivalent) expects also the <code>Either b c -&gt; a</code> recombiner. We also note that the invariant version of <code>divided</code> is <code>gathered</code>.</p>
+<div class="sourceCode" id="cb63"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb63-1"><a href="#cb63-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L62-L77</span></span>
+<span id="cb63-2"><a href="#cb63-2"></a></span>
+<span id="cb63-3"><a href="#cb63-3"></a><span class="ot">customerSchema ::</span> <span class="dt">Schema</span> <span class="dt">Customer</span></span>
+<span id="cb63-4"><a href="#cb63-4"></a>customerSchema <span class="ot">=</span> <span class="dt">SumType</span> <span class="op">$</span></span>
+<span id="cb63-5"><a href="#cb63-5"></a>    swerve (\<span class="kw">case</span> <span class="dt">CPerson</span> x y <span class="ot">-&gt;</span> <span class="dt">Left</span> (x,y); <span class="dt">CBusiness</span> x <span class="ot">-&gt;</span> <span class="dt">Right</span> x) (<span class="fu">uncurry</span> <span class="dt">CPerson</span>) <span class="dt">CBusiness</span></span>
+<span id="cb63-6"><a href="#cb63-6"></a>        (inject <span class="dt">Choice</span></span>
+<span id="cb63-7"><a href="#cb63-7"></a>          { choiceName  <span class="ot">=</span> <span class="st">&quot;Person&quot;</span></span>
+<span id="cb63-8"><a href="#cb63-8"></a>          , choiceValue <span class="ot">=</span> <span class="dt">RecordType</span> <span class="op">$</span> gathered</span>
+<span id="cb63-9"><a href="#cb63-9"></a>              (inject <span class="dt">Field</span> { fieldName <span class="ot">=</span> <span class="st">&quot;Name&quot;</span>, fieldValue <span class="ot">=</span> <span class="dt">SchemaLeaf</span> pString })</span>
+<span id="cb63-10"><a href="#cb63-10"></a>              (inject <span class="dt">Field</span> { fieldName <span class="ot">=</span> <span class="st">&quot;Age&quot;</span> , fieldValue <span class="ot">=</span> <span class="dt">SchemaLeaf</span> pInt    })</span>
+<span id="cb63-11"><a href="#cb63-11"></a>          }</span>
+<span id="cb63-12"><a href="#cb63-12"></a>        )</span>
+<span id="cb63-13"><a href="#cb63-13"></a>        (inject <span class="dt">Choice</span></span>
+<span id="cb63-14"><a href="#cb63-14"></a>          { choiceName  <span class="ot">=</span> <span class="st">&quot;Business&quot;</span></span>
+<span id="cb63-15"><a href="#cb63-15"></a>          , choiceValue <span class="ot">=</span> <span class="dt">RecordType</span> <span class="op">$</span></span>
+<span id="cb63-16"><a href="#cb63-16"></a>              inject <span class="dt">Field</span> { fieldName <span class="ot">=</span> <span class="st">&quot;Age&quot;</span> , fieldValue <span class="ot">=</span> <span class="dt">SchemaLeaf</span> pInt }</span>
+<span id="cb63-17"><a href="#cb63-17"></a>          }</span>
+<span id="cb63-18"><a href="#cb63-18"></a>        )</span></code></pre></div>
 <section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
