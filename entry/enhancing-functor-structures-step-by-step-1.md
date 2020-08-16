@@ -1397,6 +1397,8 @@ testRoundTrip sch = A.parseValue (schemaParser sch) . schemaToValue sch
 ```
 
 ``` {.haskell}
+ghci> testRoundTrip customerSchema (CPerson "Sam" 40)
+Right (CPerson {cpName = "Sam", cpAge = 40})
 ```
 
 --------------------------------------------------------------------------------
