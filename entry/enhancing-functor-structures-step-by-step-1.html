@@ -637,6 +637,7 @@ Choice of:
 <span id="cb60-6"><a href="#cb60-6"></a>    <span class="op">|</span> <span class="dt">PBool</span>   (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)       (<span class="dt">Bool</span>       <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</span></code></pre></div>
 <p>We’re just basically combining the additions we made to enable parsing with the additions we made to enable serialization. Our new <code>Primitive</code> type gives us the capability to do both!</p>
 <p>We call this new <code>Primitive</code> an <a href="https://hackage.haskell.org/package/invariant/docs/Data-Functor-Invariant.html">“Invariant” Functor</a>: these are functors that give you “both” capabilities: interpreting covariantly <em>and</em> contravariantly.</p>
+<h3 id="divap-and-decalt">DivAp and DecAlt</h3>
 <p>By now, we know the drill. We also need to change our <code>RecordType</code> and <code>SumType</code> constructors to get the right type of container.</p>
 <div class="sourceCode" id="cb61"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb61-1"><a href="#cb61-1"></a><span class="co">-- Covariant Schema</span></span>
 <span id="cb61-2"><a href="#cb61-2"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L27-L31</span></span>
@@ -779,6 +780,16 @@ Choice of:
 <span id="cb64-77"><a href="#cb64-77"></a>      <span class="dt">PString</span> f _ <span class="ot">-&gt;</span> <span class="dt">Aeson.String</span> <span class="op">.</span> T.pack <span class="op">.</span> f</span>
 <span id="cb64-78"><a href="#cb64-78"></a>      <span class="dt">PNumber</span> f _ <span class="ot">-&gt;</span> <span class="dt">Aeson.Number</span> <span class="op">.</span> f</span>
 <span id="cb64-79"><a href="#cb64-79"></a>      <span class="dt">PBool</span>   f _ <span class="ot">-&gt;</span> <span class="dt">Aeson.Bool</span> <span class="op">.</span> f</span></code></pre></div>
+<p>And there we have it — a fully functional bidirectional parser schema type that we assembled step-by-step, adding each piece incrementally and exploring the space until we found something useful for us.</p>
+<p>A cute function we could write to tie things together would be one that does a round-trip, serializing and then parsing, to make sure things worked properly.</p>
+<div class="sourceCode" id="cb65"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb65-1"><a href="#cb65-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L156-L160</span></span>
+<span id="cb65-2"><a href="#cb65-2"></a></span>
+<span id="cb65-3"><a href="#cb65-3"></a>testRoundTrip</span>
+<span id="cb65-4"><a href="#cb65-4"></a><span class="ot">    ::</span> <span class="dt">Schema</span> a</span>
+<span id="cb65-5"><a href="#cb65-5"></a>    <span class="ot">-&gt;</span> a</span>
+<span id="cb65-6"><a href="#cb65-6"></a>    <span class="ot">-&gt;</span> <span class="dt">Either</span> (<span class="dt">A.ParseError</span> <span class="dt">String</span>) a</span>
+<span id="cb65-7"><a href="#cb65-7"></a>testRoundTrip sch <span class="ot">=</span> A.parseValue (schemaParser sch) <span class="op">.</span> schemaToValue sch</span></code></pre></div>
+<div class="sourceCode" id="cb66"><pre class="sourceCode haskell"><code class="sourceCode haskell"></code></pre></div>
 <section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>

@@ -1194,6 +1194,8 @@ Functor](https://hackage.haskell.org/package/invariant/docs/Data-Functor-Invaria
 these are functors that give you "both" capabilities: interpreting covariantly
 *and* contravariantly.
 
+### DivAp and DecAlt
+
 By now, we know the drill. We also need to change our `RecordType` and `SumType`
 constructors to get the right type of container.
 
@@ -1375,6 +1377,26 @@ schemaToValue = \case
       PString f _ -> Aeson.String . T.pack . f
       PNumber f _ -> Aeson.Number . f
       PBool   f _ -> Aeson.Bool . f
+```
+
+And there we have it --- a fully functional bidirectional parser schema type
+that we assembled step-by-step, adding each piece incrementally and exploring
+the space until we found something useful for us.
+
+A cute function we could write to tie things together would be one that does a
+round-trip, serializing and then parsing, to make sure things worked properly.
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L156-L160
+
+testRoundTrip
+    :: Schema a
+    -> a
+    -> Either (A.ParseError String) a
+testRoundTrip sch = A.parseValue (schemaParser sch) . schemaToValue sch
+```
+
+``` {.haskell}
 ```
 
 --------------------------------------------------------------------------------

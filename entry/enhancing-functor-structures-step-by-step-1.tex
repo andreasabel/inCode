@@ -1510,6 +1510,9 @@ We call this new \texttt{Primitive} an
 Functor}: these are functors that give you ``both'' capabilities: interpreting
 covariantly \emph{and} contravariantly.
 
+\hypertarget{divap-and-decalt}{%
+\subsection{DivAp and DecAlt}\label{divap-and-decalt}}
+
 By now, we know the drill. We also need to change our \texttt{RecordType} and
 \texttt{SumType} constructors to get the right type of container.
 
@@ -1706,6 +1709,31 @@ so we have to convert them to \texttt{Ap} and \texttt{Dec} first.\footnote{These
       \DataTypeTok{PString}\NormalTok{ f \_ }\OtherTok{{-}>} \DataTypeTok{Aeson.String} \OperatorTok{.}\NormalTok{ T.pack }\OperatorTok{.}\NormalTok{ f}
       \DataTypeTok{PNumber}\NormalTok{ f \_ }\OtherTok{{-}>} \DataTypeTok{Aeson.Number} \OperatorTok{.}\NormalTok{ f}
       \DataTypeTok{PBool}\NormalTok{   f \_ }\OtherTok{{-}>} \DataTypeTok{Aeson.Bool} \OperatorTok{.}\NormalTok{ f}
+\end{Highlighting}
+\end{Shaded}
+
+And there we have it --- a fully functional bidirectional parser schema type
+that we assembled step-by-step, adding each piece incrementally and exploring
+the space until we found something useful for us.
+
+A cute function we could write to tie things together would be one that does a
+round-trip, serializing and then parsing, to make sure things worked properly.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/invariant.hs\#L156{-}L160}
+
+\NormalTok{testRoundTrip}
+\OtherTok{    ::} \DataTypeTok{Schema}\NormalTok{ a}
+    \OtherTok{{-}>}\NormalTok{ a}
+    \OtherTok{{-}>} \DataTypeTok{Either}\NormalTok{ (}\DataTypeTok{A.ParseError} \DataTypeTok{String}\NormalTok{) a}
+\NormalTok{testRoundTrip sch }\OtherTok{=}\NormalTok{ A.parseValue (schemaParser sch) }\OperatorTok{.}\NormalTok{ schemaToValue sch}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+
 \end{Highlighting}
 \end{Shaded}
 
