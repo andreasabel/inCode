@@ -12,12 +12,8 @@ last year and the
 [functor-combinators](https://hackage.haskell.org/package/functor-combinators)
 library. In the blog post I called this style the "functor combinator" style
 because it involved building these functor structures out of small, simple
-pieces. This is just one way to build functor structures --- you could always
-just make them directly from scratch, but they can get rather messy and it's
-often times easier to use pre-made structures that have all the helper functions
-already defined for you. But I never really talked about *how* you would build
-them from scratch, and also never really explored the more exotic types of
-lowercase-f functors in Hask --- contravariant functors and invariant functors.
+pieces. But I've never really explored the more exotic types of lowercase-f
+functors in Hask --- contravariant functors and invariant functors.
 
 In this post we're going to be exploring these different types of functor
 structures step-by-step, by starting with a simple useful structure and
@@ -511,7 +507,7 @@ parse a `ListF Choice a`.
 Let's write those individual parsers for each smaller type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L124-L125
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L131-L132
 
 fieldParser :: Field a -> A.Parse String a
 fieldParser Field{..} = A.key (T.pack fieldName) (schemaParser fieldValue)
@@ -522,7 +518,7 @@ takes a key and a parser, and runs that parser on whatever is under that key.
 For `fieldParser`, we run the schema parser for our sub-schema under that key.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L127-L132
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L124-L129
 
 choiceParser :: Choice a -> A.Parse String a
 choiceParser Choice{..} = do
@@ -546,8 +542,8 @@ talked about:
 
 schemaParser :: Schema a -> A.Parse ErrType a
 schemaParser = \case
-    RecordType fs -> interpret fieldParser fs
     SumType    cs -> interpret choiceParser cs
+    RecordType fs -> interpret fieldParser fs
     SchemaLeaf p  -> primParser p
 ```
 
@@ -743,7 +739,7 @@ variations (aside from sum/record structure) are how each leaf can be
 serialized.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L51-L54
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L45-L48
 
 data Primitive a =
       PString (a -> String)
@@ -760,7 +756,7 @@ into a `String`.
 Again, it can be useful to add some helper primitives:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L73-L80
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L67-L74
 
 pString :: Primitive String
 pString = PString id
@@ -780,7 +776,7 @@ We can start off by writing the serializer for `Primitive` just go get a feel
 for how our serializer will work:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L153-L157
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L147-L151
 
 primToValue :: Primitive a -> a -> Aeson.Value
 primToValue = \case
@@ -828,7 +824,7 @@ data Schema a =
     | SumType     [Choice a]
     | SchemaLeaf  (Primitive a)
   deriving Functor
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L39-L45
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L33-L39
 
 data Field a = Field
 
@@ -898,7 +894,7 @@ Sounds like exactly what we need!
 With this, we can write our final `Schema` type.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L34-L54
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L28-L48
 
 data Schema a =
       RecordType  (Div Field a)
@@ -936,7 +932,7 @@ We can assemble our `Customer` schema, in a way that looks a lot like our parser
 schema:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L87-L102
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L81-L96
 
 customerSchema :: Schema Customer
 customerSchema = SumType $
@@ -1050,7 +1046,7 @@ interpret choiceToValue :: Dec Choice a -> a -> Aeson.Value
 Let's write it!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L143-L147
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L137-L141
 
 choiceToValue :: Choice a -> Op Aeson.Value a
 choiceToValue Choice{..} = Op $ \x -> Aeson.object
@@ -1081,7 +1077,7 @@ interpret fieldToValue :: Div Field a -> a -> [Aeson.Pair]
 We can go ahead and write it out actually:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L149-L151
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L143-L145
 
 fieldToValue :: Field a -> Op [Aeson.Pair] a
 fieldToValue Field{..} = Op $ \x ->
@@ -1096,15 +1092,15 @@ list monoidally, concatenating the results of calling `fieldToValue` on every
 And now we should have enough to write our entire serializer:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L134-L141
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L128-L135
 
 schemaToValue
     :: Schema a
     -> a
     -> Aeson.Value
 schemaToValue = \case
-    SumType    cs -> getOp (runDec choiceToValue cs)
-    RecordType fs -> Aeson.object . getOp (runDiv fieldToValue fs)
+    SumType    cs -> getOp (interpret choiceToValue cs)
+    RecordType fs -> Aeson.object . getOp (interpret fieldToValue fs)
     SchemaLeaf p  -> primToValue p
 ```
 
@@ -1121,7 +1117,7 @@ by functor combinators), and `Div`/`Dec` support `icollect` just like
 word-for-word identical as it was for our parser schema:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L104-L131
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L98-L125
 
 schemaDoc
     :: String       -- ^ name
@@ -1154,6 +1150,114 @@ schemaDoc title = \case
 ```
 
 Neat!
+
+Parsing and Serializing Invariantly
+-----------------------------------
+
+At this point, we have:
+
+1.  Started with a simple ADT representing the structure we want to be able to
+    express
+2.  Enhanced that simple ADT with Covariant Functor capabilities, in order to
+    interpret it as a parser
+3.  Enhanced that original simple ADT with Contravariant Functor, in order to
+    interpret it as a serializer.
+
+From this, it seems the next logical step would be to add *both* enhancements to
+the same structure!
+
+There are some clear benefits to this --- for example, we can now ensure that
+our "serialization" and "parsing" functions are always "in sync". If we defined
+a separate process/type for serializing and a separate process/type for parsing,
+then it's possible we might accidentally make errors in keeping them in
+sync...one might use a different tag, or we might make changes to one but not
+the other during refactoring.
+
+Like before, the main thing we need to change at the fundamental level is
+`Primitive`:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L46-L49
+
+data Primitive a =
+      PString (a -> String)     (String     -> Maybe a)
+    | PNumber (a -> Scientific) (Scientific -> Maybe a)
+    | PBool   (a -> Bool)       (Bool       -> Maybe a)
+```
+
+We're just basically combining the additions we made to enable parsing with the
+additions we made to enable serialization. Our new `Primitive` type gives us the
+capability to do both!
+
+We call this new `Primitive` an ["Invariant"
+Functor](https://hackage.haskell.org/package/invariant/docs/Data-Functor-Invariant.html):
+these are functors that give you "both" capabilities: interpreting covariantly
+*and* contravariantly.
+
+By now, we know the drill. We also need to change our `RecordType` and `SumType`
+constructors to get the right type of container.
+
+``` {.haskell}
+-- Covariant Schema
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L28-L32
+
+data Schema a =
+      RecordType  (Ap Field a)
+    | SumType     (ListF Choice a)
+    | SchemaLeaf  (Primitive a)
+  deriving Functor
+
+-- Contravariant Schema
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L28-L31
+
+data Schema a =
+      RecordType  (Div Field a)
+    | SumType     (Dec Choice a)
+    | SchemaLeaf  (Primitive a)
+```
+
+For the covariant `RecordType`, we used `Ap Field a`. For the contravariant
+`RecordType`, we used `Div Field a`. Is there a type that combines *both* `Ap`
+and `Div`?
+
+Ah, we're in luck! We have
+*[DivAp](https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Invariant-DivAp.html)*
+from the *functor-combinatotrs* library...which is named to invoke the idea of
+having both `Ap` and `Div` capabilities, combined together.
+
+For the covariant `SumType`, we used `ListF Choice a`. For the contravariant
+`SumType`, we used `Dec Choice a`. Is there a type that combines *both* `ListF`
+and `Dec`?
+
+Ah hah, if we look nearby `DivAp`, we see the answer:
+*[DecAlt](https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Invariant-DecAlt.html)*!
+It combines both `ListF` and `Dec`.
+
+Now let's wire it up:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L31-L49
+
+data Schema a =
+      RecordType  (DivAp   Field  a)
+    | SumType     (DecAlt Choice a)
+    | SchemaLeaf  (Primitive a)
+
+data Field a = Field
+    { fieldName  :: String
+    , fieldValue :: Schema a
+    }
+
+data Choice a = Choice
+    { choiceName  :: String
+    , choiceValue :: Schema a
+    }
+
+data Primitive a =
+      PString (a -> String)     (String     -> Maybe a)
+    | PNumber (a -> Scientific) (Scientific -> Maybe a)
+    | PBool   (a -> Bool)       (Bool       -> Maybe a)
+```
 
 --------------------------------------------------------------------------------
 

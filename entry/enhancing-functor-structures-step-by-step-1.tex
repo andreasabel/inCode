@@ -103,12 +103,8 @@ Combinatorpedia} post last year and the
 \href{https://hackage.haskell.org/package/functor-combinators}{functor-combinators}
 library. In the blog post I called this style the ``functor combinator'' style
 because it involved building these functor structures out of small, simple
-pieces. This is just one way to build functor structures --- you could always
-just make them directly from scratch, but they can get rather messy and it's
-often times easier to use pre-made structures that have all the helper functions
-already defined for you. But I never really talked about \emph{how} you would
-build them from scratch, and also never really explored the more exotic types of
-lowercase-f functors in Hask --- contravariant functors and invariant functors.
+pieces. But I've never really explored the more exotic types of lowercase-f
+functors in Hask --- contravariant functors and invariant functors.
 
 In this post we're going to be exploring these different types of functor
 structures step-by-step, by starting with a simple useful structure and
@@ -673,7 +669,7 @@ Let's write those individual parsers for each smaller type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L124{-}L125}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L131{-}L132}
 
 \OtherTok{fieldParser ::} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ a}
 \NormalTok{fieldParser }\DataTypeTok{Field}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ A.key (T.pack fieldName) (schemaParser fieldValue)}
@@ -688,7 +684,7 @@ that key.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L127{-}L132}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L124{-}L129}
 
 \OtherTok{choiceParser ::} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ a}
 \NormalTok{choiceParser }\DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \KeywordTok{do}
@@ -714,8 +710,8 @@ we talked about:
 
 \OtherTok{schemaParser ::} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{ErrType}\NormalTok{ a}
 \NormalTok{schemaParser }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ interpret fieldParser fs}
     \DataTypeTok{SumType}\NormalTok{    cs }\OtherTok{{-}>}\NormalTok{ interpret choiceParser cs}
+    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ interpret fieldParser fs}
     \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ primParser p}
 \end{Highlighting}
 \end{Shaded}
@@ -954,7 +950,7 @@ serialized.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L51{-}L54}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L45{-}L48}
 
 \KeywordTok{data} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{=}
       \DataTypeTok{PString}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{String}\NormalTok{)}
@@ -974,7 +970,7 @@ Again, it can be useful to add some helper primitives:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L73{-}L80}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L67{-}L74}
 
 \OtherTok{pString ::} \DataTypeTok{Primitive} \DataTypeTok{String}
 \NormalTok{pString }\OtherTok{=} \DataTypeTok{PString} \FunctionTok{id}
@@ -997,7 +993,7 @@ feel for how our serializer will work:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L153{-}L157}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L147{-}L151}
 
 \OtherTok{primToValue ::} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Aeson.Value}
 \NormalTok{primToValue }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -1054,7 +1050,7 @@ something like
     \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     [}\DataTypeTok{Choice}\NormalTok{ a]}
     \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
   \KeywordTok{deriving} \DataTypeTok{Functor}
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L39{-}L45}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L33{-}L39}
 
 \KeywordTok{data} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Field}
 
@@ -1132,7 +1128,7 @@ With this, we can write our final \texttt{Schema} type.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L34{-}L54}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L28{-}L48}
 
 \KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
       \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Div} \DataTypeTok{Field}\NormalTok{ a)}
@@ -1174,7 +1170,7 @@ parser schema:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L87{-}L102}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L81{-}L96}
 
 \OtherTok{customerSchema ::} \DataTypeTok{Schema} \DataTypeTok{Customer}
 \NormalTok{customerSchema }\OtherTok{=} \DataTypeTok{SumType} \OperatorTok{$}
@@ -1309,7 +1305,7 @@ Let's write it!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L143{-}L147}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L137{-}L141}
 
 \OtherTok{choiceToValue ::} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Op} \DataTypeTok{Aeson.Value}\NormalTok{ a}
 \NormalTok{choiceToValue }\DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \DataTypeTok{Op} \OperatorTok{$}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>}\NormalTok{ Aeson.object}
@@ -1347,7 +1343,7 @@ We can go ahead and write it out actually:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L149{-}L151}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L143{-}L145}
 
 \OtherTok{fieldToValue ::} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Op}\NormalTok{ [}\DataTypeTok{Aeson.Pair}\NormalTok{] a}
 \NormalTok{fieldToValue }\DataTypeTok{Field}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \DataTypeTok{Op} \OperatorTok{$}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>}
@@ -1394,15 +1390,15 @@ And now we should have enough to write our entire serializer:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L134{-}L141}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L128{-}L135}
 
 \NormalTok{schemaToValue}
 \OtherTok{    ::} \DataTypeTok{Schema}\NormalTok{ a}
     \OtherTok{{-}>}\NormalTok{ a}
     \OtherTok{{-}>} \DataTypeTok{Aeson.Value}
 \NormalTok{schemaToValue }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-    \DataTypeTok{SumType}\NormalTok{    cs }\OtherTok{{-}>}\NormalTok{ getOp (runDec choiceToValue cs)}
-    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ Aeson.object }\OperatorTok{.}\NormalTok{ getOp (runDiv fieldToValue fs)}
+    \DataTypeTok{SumType}\NormalTok{    cs }\OtherTok{{-}>}\NormalTok{ getOp (interpret choiceToValue cs)}
+    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ Aeson.object }\OperatorTok{.}\NormalTok{ getOp (interpret fieldToValue fs)}
     \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ primToValue p}
 \end{Highlighting}
 \end{Shaded}
@@ -1426,7 +1422,7 @@ parser schema:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L104{-}L131}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L98{-}L125}
 
 \NormalTok{schemaDoc}
 \OtherTok{    ::} \DataTypeTok{String}       \CommentTok{{-}{-} \^{} name}
@@ -1460,6 +1456,129 @@ parser schema:
 \end{Shaded}
 
 Neat!
+
+\hypertarget{parsing-and-serializing-invariantly}{%
+\section{Parsing and Serializing
+Invariantly}\label{parsing-and-serializing-invariantly}}
+
+At this point, we have:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Started with a simple ADT representing the structure we want to be able to
+  express
+\item
+  Enhanced that simple ADT with Covariant Functor capabilities, in order to
+  interpret it as a parser
+\item
+  Enhanced that original simple ADT with Contravariant Functor, in order to
+  interpret it as a serializer.
+\end{enumerate}
+
+From this, it seems the next logical step would be to add \emph{both}
+enhancements to the same structure!
+
+There are some clear benefits to this --- for example, we can now ensure that
+our ``serialization'' and ``parsing'' functions are always ``in sync''. If we
+defined a separate process/type for serializing and a separate process/type for
+parsing, then it's possible we might accidentally make errors in keeping them in
+sync\ldots one might use a different tag, or we might make changes to one but
+not the other during refactoring.
+
+Like before, the main thing we need to change at the fundamental level is
+\texttt{Primitive}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/invariant.hs\#L46{-}L49}
+
+\KeywordTok{data} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{PString}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{String}\NormalTok{)     (}\DataTypeTok{String}     \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{PNumber}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Scientific}\NormalTok{) (}\DataTypeTok{Scientific} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{PBool}\NormalTok{   (a }\OtherTok{{-}>} \DataTypeTok{Bool}\NormalTok{)       (}\DataTypeTok{Bool}       \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+\end{Highlighting}
+\end{Shaded}
+
+We're just basically combining the additions we made to enable parsing with the
+additions we made to enable serialization. Our new \texttt{Primitive} type gives
+us the capability to do both!
+
+We call this new \texttt{Primitive} an
+\href{https://hackage.haskell.org/package/invariant/docs/Data-Functor-Invariant.html}{``Invariant''
+Functor}: these are functors that give you ``both'' capabilities: interpreting
+covariantly \emph{and} contravariantly.
+
+By now, we know the drill. We also need to change our \texttt{RecordType} and
+\texttt{SumType} constructors to get the right type of container.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} Covariant Schema}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L28{-}L32}
+
+\KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Ap} \DataTypeTok{Field}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     (}\DataTypeTok{ListF} \DataTypeTok{Choice}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
+  \KeywordTok{deriving} \DataTypeTok{Functor}
+
+\CommentTok{{-}{-} Contravariant Schema}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L28{-}L31}
+
+\KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Div} \DataTypeTok{Field}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     (}\DataTypeTok{Dec} \DataTypeTok{Choice}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
+\end{Highlighting}
+\end{Shaded}
+
+For the covariant \texttt{RecordType}, we used \texttt{Ap\ Field\ a}. For the
+contravariant \texttt{RecordType}, we used \texttt{Div\ Field\ a}. Is there a
+type that combines \emph{both} \texttt{Ap} and \texttt{Div}?
+
+Ah, we're in luck! We have
+\emph{\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Invariant-DivAp.html}{DivAp}}
+from the \emph{functor-combinatotrs} library\ldots which is named to invoke the
+idea of having both \texttt{Ap} and \texttt{Div} capabilities, combined
+together.
+
+For the covariant \texttt{SumType}, we used \texttt{ListF\ Choice\ a}. For the
+contravariant \texttt{SumType}, we used \texttt{Dec\ Choice\ a}. Is there a type
+that combines \emph{both} \texttt{ListF} and \texttt{Dec}?
+
+Ah hah, if we look nearby \texttt{DivAp}, we see the answer:
+\emph{\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Invariant-DecAlt.html}{DecAlt}}!
+It combines both \texttt{ListF} and \texttt{Dec}.
+
+Now let's wire it up:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/invariant.hs\#L31{-}L49}
+
+\KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{DivAp}   \DataTypeTok{Field}\NormalTok{  a)}
+    \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     (}\DataTypeTok{DecAlt} \DataTypeTok{Choice}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
+
+\KeywordTok{data} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Field}
+\NormalTok{    \{}\OtherTok{ fieldName  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ fieldValue ::} \DataTypeTok{Schema}\NormalTok{ a}
+\NormalTok{    \}}
+
+\KeywordTok{data} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Choice}
+\NormalTok{    \{}\OtherTok{ choiceName  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ choiceValue ::} \DataTypeTok{Schema}\NormalTok{ a}
+\NormalTok{    \}}
+
+\KeywordTok{data} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{PString}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{String}\NormalTok{)     (}\DataTypeTok{String}     \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{PNumber}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Scientific}\NormalTok{) (}\DataTypeTok{Scientific} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{PBool}\NormalTok{   (a }\OtherTok{{-}>} \DataTypeTok{Bool}\NormalTok{)       (}\DataTypeTok{Bool}       \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
