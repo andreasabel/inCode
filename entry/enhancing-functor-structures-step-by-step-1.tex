@@ -101,9 +101,7 @@ designed pattern. This is the interest that culminated in my
 \href{https://blog.jle.im/entry/functor-combinatorpedia.html}{Functor
 Combinatorpedia} post last year and the
 \emph{\href{https://hackage.haskell.org/package/functor-combinators}{functor-combinators}}
-library. In the blog post I called this style the ``functor combinator'' style
-because it involved building these functor structures out of small, simple
-pieces. But I've never really explored the more exotic types of lowercase-f
+library. But I've never really explored the more exotic types of lowercase-f
 functors in Hask --- contravariant functors and invariant functors.
 
 In this post we're going to be exploring these different types of functor
@@ -230,8 +228,7 @@ might be represented by a json value like
 \section{Documentation}\label{documentation}}
 
 Using our schema type, let's make a documentation generator. It'll take a
-\texttt{Schema} and nicely formatted documentation describing what the schema
-itself.
+\texttt{Schema} and nicely formatted documentation describing the schema itself.
 
 To make our lives easier, we'll be using the
 \emph{\href{https://hackage.haskell.org/package/prettyprinter}{prettyprinter}}
@@ -608,10 +605,10 @@ as hinted earlier --- the two are the same, but the latter has the
 (\texttt{fmap\ ::\ (a\ -\textgreater{}\ b)\ -\textgreater{}\ ListF\ Choice\ a\ -\textgreater{}\ ListF\ Choice\ b}),
 and is an instance of useful functor combinator typeclasses. Furthermore, it
 illustrates the symmetry between sum types and record, since \texttt{Ap} and
-\texttt{ListF} are contrasting types: \texttt{Ap} represents a product between
-many required fields, and \texttt{ListF} represents a sum between many possible
-choices. It's more clear how product types and sum types are ``opposites'' in a
-nice clean way.
+\texttt{ListF} are contrasting types: \texttt{Ap} can be used to a represent the
+``product'' between many required fields, and \texttt{ListF} can be used to the
+option between many possible choices. It's more clear how product types and sum
+types are ``opposites'' in a nice clean way.
 
 We can now make our \texttt{Customer} schema:
 
@@ -772,9 +769,10 @@ things. It gives us a nice principled shortcut --- for example, to interpret out
 of an \texttt{Ap}, GHC needs a way to know ``how to sequence \texttt{Parse}s'',
 and so \texttt{interpret} uses the \texttt{Applicative} instance for that. But
 we know there are usually different ways to sequence or combine actions ---
-famously in IO, we have the option to sequence IO actions in series or in
-parallel. So, offloading our logic to a typeclass can be a convenient route, but
-it's not necessarily the most pragmatic way.
+famously in IO, we have the option to ``sequence'' IO actions in series or in
+parallel, with the default \texttt{Applicative} instance being series/blocking
+sequencing. So, offloading our logic to a typeclass can be a convenient route,
+but it's not necessarily the most pragmatic way.
 
 In our case, the \texttt{Plus} instance actually combines failed fallback
 behavior in an undesirable way: our errors become not too useful, because
@@ -791,7 +789,8 @@ eventually run into \texttt{A.throwCustomError\ "No\ options\ were\ validated"}.
 \end{Shaded}
 
 Since the definition of \texttt{zero} (which was our fault because we wrote it
-here --- oops!) always falls back to the same error, this is not very useful!
+here as an orphan instance --- oops!) always falls back to the same error, this
+is not very useful!
 
 So \texttt{interpret} for \texttt{ListF}, while convenient, isn't necessarily
 the best way to tear down a \texttt{ListF}. Luckily, most functor combinators
@@ -1128,8 +1127,8 @@ Contrast this with \texttt{Div}, where the multiple \texttt{f} actions are
 For example, let's say you had a type \texttt{Socket\ a} which represents some
 IO channel or socket that is expecting to receive \texttt{a}s. A
 \texttt{Dec\ Socket\ b} would be a collection of sockets that expects a single
-\texttt{b} overall, and will pick exactly one of those \texttt{f}s to handle
-that \texttt{b}.
+\texttt{b} overall, and will pick exactly one of those \texttt{Socket}s to
+handle that \texttt{b}.
 \end{quote}
 
 Sounds like exactly what we need! It also gives us a nice hint of what we might
@@ -1206,7 +1205,7 @@ parser schema:
 \end{Shaded}
 
 Here we use a few contravariant combinators to combine and merge contravariant
-functors (like \texttt{Div\ Field} and \texttt{Dec\ Choice}):
+functors values (like \texttt{Div\ Field\ a} and \texttt{Dec\ Choice\ a}):
 
 \texttt{decide} works like:
 

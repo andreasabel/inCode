@@ -2353,10 +2353,14 @@ which added in support for contravariant and invariant functor combinators.
     does its job by choosing a single one of those `f`s to handle that
     consumption, based on what `a` is received.
 
+    Contrast this with `Div`, where the multiple `f` actions are *all* used to
+    consume the input. `Dec` only uses *one single* `f` action to consume the
+    input, chosen at consumption time.
+
     For example, let's say you had a type `Socket a` which represents some IO
     channel or socket that is expecting to receive `a`s. A `Dec Socket b` would
     be a collection of sockets that expects a single `b` overall, and will pick
-    exactly one of those `f`s to handle that `b`.
+    exactly one of those `Socket`s to handle that `b`.
 
     In this sense, you can sort of think of `Dec` as a "sharding" of `f`s: each
     `f` handles a different possible categorization of the input.
