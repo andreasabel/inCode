@@ -296,40 +296,290 @@ An Alternative Invariant Strategy
 ---------------------------------
 
 The thought process "I want to use both `Div` and `Ap`, let's just look for
-`DivAp`" is kind of nice and straightforward, but it *is* a little convenient
-that this type existed in the first place. If we look into the construction of
-`Ap` and `Div`, we probably *could* be able to invent a data type of our own if
-we wanted to...but that's a lot of heavy lifting.
+`DivAp`" is kind of nice and straightforward. However, there's a major downside
+in using `DivAp` and `DecAlt` that make their ergonomics not so great when
+building them up.
 
-There's a major downside in using `DivAp` and `DecAlt` too, that make their
-ergonomics not so great when building them up. A major part about what makes
-`Ap` and `ListF` (and, to an extent, `Div` and `Dec`) so nice to use is that are
-instances of popular Haskell typeclasses like `Applicative` and `Alternative`
-(or, `Plus`, as we use it) and using `Applicative` and `Alternative` interfaces
-are pretty common in Haskell. Because of this, they are pretty comfortable for
-most Haskellers to use.
+A major part about what makes `Ap` and `ListF` (and, to an extent, `Div` and
+`Dec`) so nice to use is that are instances of popular Haskell typeclasses like
+`Applicative` and `Alternative` (or `Plus`) and using `Applicative` and
+`Alternative` interfaces are pretty common in Haskell. Because of this, they are
+pretty comfortable for most Haskellers to use.
 
 However, `DivAp` and `DecAlt` aren't really instances of any commonly used
-typeclass (aside from `Invariant`). There *could* be a typeclass for
-"combination of `Applicative` and `Divisible`" and "combination of `Plus` and
-`Conclude`", but that doesn't really exist in popular Haskell. So you really
-don't have any nice interface for them other than just using functions
-specifically written for them, like `gather` and `swerve`, which may feel ad-hoc
-or unintuitive.
+typeclass (aside from `Invariant`).[^2] So you really don't have any nice
+interface for them other than just using functions specifically written for
+them, like `gather` and `swerve`, which may feel ad-hoc.
 
 Luckily, there's another way to achieve the same goals and also be able to take
 advantage of our favorite familiar interfaces. We can "add Contravariance"
 directly into `Ap` itself, using
 [`Pre`](https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor-Route.html#t:Pre).
-A value of type:
+This is a trick I first saw in the
+*[unjson](https://hackage.haskell.org/package/unjson)* library. A value of type:
 
 ``` {.haskell}
-Ap (Pre a Field) b
+Ap (Pre r Field) a
 ```
 
-will "produce" `b`s covariantly...but will "consume" `a`s contravariantly. You
-can think of the `Pre a` as adding an "tunnel" to guide the `a` to each `Field`
+will "produce" `a`s covariantly...but will "consume" `r`s contravariantly. You
+can think of the `Pre r` as adding an "tunnel" to guide the `r` to each `Field`
 in the `Ap`.
+
+This means we can now use normal Applicative combinators to combine our fake
+invariant type:
+
+``` {.haskell}
+pure :: a -> Ap (Pre r Field) a
+
+(<*>)
+    :: Ap (Pre r Field) (a -> b)
+    -> Ap (Pre r Field) a
+    -> Ap (Pre r Field) b
+
+liftA2
+    :: (a -> b -> c)
+    -> Ap (Pre r Field) a
+    -> Ap (Pre r Field) b
+    -> Ap (Pre r Field) c
+```
+
+We see that the `Applicative` combinators will recombine our "output" covariant
+types appropriately, but will keep the "input" contravariant type
+constant...which works out because each of the `Field`s inside could work off of
+the same input type (remember that `Div f a ~ [f a]`, it's just a list of things
+that consume the same `a`).
+
+We can make an `Ap (Pre r Field) a` using `injectPre`, which asks us to provide
+that "get an `a` from `r`" function up-front:
+
+``` {.haskell}
+injectPre :: (r -> a) -> f a -> Ap (Pre r f) a
+```
+
+There's a useful newtype wrapper over `Pre` that makes consuming it convenient
+by requiring the `r` and `a` to be the same:
+
+``` {.haskell}
+newtype PreT t f a = PreT (t (Pre a f) a)
+
+-- | interpret for PreT treats `PreT Ap f a` as if it were just `Ap f a`, so we
+-- interpret into an `Applicative` context
+interpret
+    :: Applicative g
+    => (forall x. f x -> g x)
+    -> PreT Ap f a
+    -> g a
+
+-- | But we can also interpret into a `Divisible` context!  Just like as if we
+-- had `Div f a`!
+preDivisibleT
+    :: Divisible g
+    => (forall x. f x -> g x)
+    -> PreT Ap f a
+    -> g a
+```
+
+We see that `interpret` for `PreT Ap f a` works just like `interpret` for
+`Ap f a`...so we don't lose any power, it's the same as always if we wanted to
+just use `Ap f a` covariantly to interpret into a parser.
+
+But, we magically gain `preDivisibleT`, which lets us `interpret` into a
+contravariant `Divisible` context! Just like as if we had `Div f a`!
+
+So using `Pre` and `PreT`, we get to *assemble* it using our favorite
+`Applicative` combinators...then when we wrap it in `PreT`, we get to
+*interpret* it in whatever way we want by choosing different interpreters. It's
+the best of both worlds!
+
+We can do the opposite thing with `Dec` as well: we can use \[`Post`\]\[Post\]
+to embed covariant capabilities in `Dec`. A value of type:
+
+``` {.haskell}
+Dec (Post r Choice) a
+```
+
+will "consume" `a`s contravariantly (like a normal `Dec`), but will also produce
+`r`s covariantly. You can think of the `Post r` as adding an "tunnel" allowing
+the output of each `Choice` to exit out of the `Dec`.
+
+This means we can now use normal Decide contravariant typeclass-based
+combinators to combine our fake invariant type:
+
+``` {.haskell}
+decide
+    :: (a -> Either b c)        -- ^ break into branches
+    -> Dec (Post r Choice) b    -- ^ handle first branch
+    -> Dec (Post r Choice) c    -- ^ handle second branch
+    -> Dec (Post r Choice) a    -- ^ overall handler
+```
+
+We see that `decide` combinators will recombine our "input" contravariant types
+appropriately, but will keep the "output" covariant type constant...which works
+out because each of the `Choice`s inside could be embedded into the same output
+type (remember that we used `List f a ~ [f a]` for our contravariant choice
+collection before, just a list of things that produce the same `a`).
+
+Again, we can make a `Dec (Post r Choice) a` using `injectPost`, which asks us
+to provide that "embed the `a` in the `r`" function up-front:
+
+``` {.haskell}
+injectPost :: (a -> r) -> f a -> Dec (Post r f) a
+```
+
+And again, we have the newtype wrapper `PostT` that gives us convenient
+interpreting functions:
+
+``` {.haskell}
+newtype PostT t f a = PostT (t (Post a f) a)
+
+-- | interpret for PostT treats `PostT Dec f a` as if it were just `Dec f a`, so we
+-- interpret into a `Conclude` context like before
+interpret
+    :: Conclude g
+    => (forall x. f x -> g x)
+    -> PostT Dec f a
+    -> g a
+
+-- | But we can also interpret into a `Plus` context!  Just like as if we
+-- had `ListF f a`!
+postPlusT
+    :: Plus g
+    => (forall x. f x -> g x)
+    -> PostT Choice f a
+    -> g a
+```
+
+With these new tools, we can imagine a different invariant `Schema` type:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/routing.hs#L47-L100
+
+data Schema a =
+      RecordType  (PreT  Ap  Field  a)
+    | SumType     (PostT Dec Choice a)
+    | SchemaLeaf  (Primitive a)
+  deriving Generic
+
+data Field a = Field
+    { fieldName  :: String
+    , fieldValue :: Schema a
+    }
+  deriving Generic
+
+data Choice a = Choice
+    { choiceName  :: String
+    , choiceValue :: Schema a
+    }
+  deriving Generic
+
+data Primitive a =
+      PString (a -> String)     (String     -> Maybe a)
+    | PNumber (a -> Scientific) (Scientific -> Maybe a)
+    | PBool   (a -> Bool)       (Bool       -> Maybe a)
+  deriving Generic
+
+customerSchema :: Schema Customer
+customerSchema = SumType . PostT $
+    decide (\case CPerson x y -> Left (x, y); CBusiness x -> Right x)
+      (injectPost (uncurry CPerson) Choice
+        { choiceName = "Person"
+        , choiceValue = RecordType . PreT $ (,)
+            <$> injectPre fst Field { fieldName = "Name", fieldValue = SchemaLeaf pString }
+            <*> injectPre snd Field { fieldName = "Age" , fieldValue = SchemaLeaf pInt    }
+        }
+      )
+      (injectPost CBusiness         Choice
+        { choiceName = "Person"
+        , choiceValue = RecordType . inject $
+            Field { fieldName = "Age" , fieldValue = SchemaLeaf pInt    }
+        }
+      )
+```
+
+And all of our running functions look pretty much the same as well:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/routing.hs#L102-L182
+
+schemaDoc
+    :: String       -- ^ name
+    -> Schema x     -- ^ schema
+    -> PP.Doc a
+schemaDoc title = \case
+    RecordType fs -> PP.vsep [
+        PP.pretty ("{" <> title <> "}")
+      , PP.indent 2 . PP.vsep $
+          icollect (\fld -> "*" PP.<+> PP.indent 2 (fieldDoc fld)) fs
+      ]
+    SumType cs    -> PP.vsep [
+        PP.pretty ("(" <> title <> ")")
+      , "Choice of:"
+      , PP.indent 2 . PP.vsep $
+          icollect choiceDoc cs
+      ]
+    SchemaLeaf p  -> PP.pretty (title <> ":")
+              PP.<+> primDoc p
+  where
+    fieldDoc :: Field x -> PP.Doc a
+    fieldDoc Field{..} = schemaDoc fieldName fieldValue
+    choiceDoc :: Choice x -> PP.Doc a
+    choiceDoc Choice{..} = schemaDoc choiceName choiceValue
+    primDoc :: Primitive x -> PP.Doc a
+    primDoc = \case
+      PString _ _ -> "string"
+      PNumber _ _ -> "number"
+      PBool   _ _ -> "bool"
+
+schemaParser :: Schema a -> A.Parse ErrType a
+schemaParser = \case
+    RecordType fs -> interpret fieldParser fs
+    SumType    cs -> postPlusT choiceParser cs
+    SchemaLeaf p  -> primParser p
+  where
+    fieldParser :: Field a -> A.Parse String a
+    fieldParser Field{..} = A.key (T.pack fieldName) (schemaParser fieldValue)
+    choiceParser :: Choice a -> A.Parse String a
+    choiceParser Choice{..} = do
+      tag <- A.key "tag" A.asString
+      unless (tag == choiceName) $
+        A.throwCustomError "Tag does not match"
+      A.key "contents" $ schemaParser choiceValue
+    primParser :: Primitive a -> A.Parse String a
+    primParser = \case
+      PString _ f -> A.withString $
+        maybe (Left "error validating string") Right . f
+      PNumber _ f -> A.withScientific $
+        maybe (Left "error validating number") Right . f
+      PBool _ f -> A.withBool $
+        maybe (Left "error validating bool") Right . f
+
+schemaToValue
+    :: Schema a
+    -> a
+    -> Aeson.Value
+schemaToValue = \case
+    RecordType fs -> Aeson.object . getOp (preDivisibleT fieldToValue fs)
+    SumType    cs -> getOp (interpret choiceToValue cs)
+    SchemaLeaf p  -> primToValue p
+  where
+    fieldToValue :: Field a -> Op [Aeson.Pair] a
+    fieldToValue Field{..} = Op $ \x ->
+        [T.pack fieldName Aeson..= schemaToValue fieldValue x]
+    choiceToValue :: Choice a -> Op Aeson.Value a
+    choiceToValue Choice{..} = Op $ \x -> Aeson.object
+        [ "tag"      Aeson..= T.pack choiceName
+        , "contents" Aeson..= schemaToValue choiceValue x
+        ]
+    primToValue :: Primitive a -> a -> Aeson.Value
+    primToValue = \case
+      PString f _ -> \x -> Aeson.String (T.pack (f x))
+      PNumber f _ -> \x -> Aeson.Number (f x)
+      PBool   f _ -> \x -> Aeson.Bool   (f x)
+```
+
+Just two separate styles for you to consider if we want to go into combining
+*both* covariant productin *and* contravariant consumption!
 
 --------------------------------------------------------------------------------
 
@@ -349,3 +599,16 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     typeclass that contains both `Plus` and `Conclude` together. If these
     existed, we could just use `interpret` for all four of those functions, and
     `icollect` would work fine as well.
+
+[^2]: There *could* be a typeclass for "combination of `Applicative` and
+    `Divisible`" and "combination of `Plus` and `Conclude`":
+
+    ``` {.haskell}
+    class DivisibleApplicative f where
+      conquerpure :: a -> f a
+      divideAp :: (a -> (b, c)) -> (b -> c -> a) -> f b -> f c -> f a
+    ```
+
+    And every `Applicative` and `Divisible` instance would be a valid instance
+    of this. However, this doesn't really exist in any common Haskell
+    libraries...and I'm not sure it exists anywhere at all.

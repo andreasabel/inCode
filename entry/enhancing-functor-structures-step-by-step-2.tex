@@ -59,6 +59,7 @@
 \newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
 \newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
 \newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\usepackage{fancyvrb}
 \ifxetex
   \usepackage[setpagesize=false, % page size defined by xetex
               unicode=false, % unicode breaks when used with xetex
@@ -82,6 +83,7 @@
 \setlength{\parskip}{6pt plus 2pt minus 1pt}
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
+\VerbatimFootnotes % allows verbatim text in footnotes
 
 \title{Enhancing Functor Structures Step-By-Step (Part 2)}
 \author{Justin Le}
@@ -423,44 +425,335 @@ round-trip, serializing and then parsing, to make sure things worked properly.
 Strategy}\label{an-alternative-invariant-strategy}}
 
 The thought process ``I want to use both \texttt{Div} and \texttt{Ap}, let's
-just look for \texttt{DivAp}'' is kind of nice and straightforward, but it
-\emph{is} a little convenient that this type existed in the first place. If we
-look into the construction of \texttt{Ap} and \texttt{Div}, we probably
-\emph{could} be able to invent a data type of our own if we wanted to\ldots but
-that's a lot of heavy lifting.
+just look for \texttt{DivAp}'' is kind of nice and straightforward. However,
+there's a major downside in using \texttt{DivAp} and \texttt{DecAlt} that make
+their ergonomics not so great when building them up.
 
-There's a major downside in using \texttt{DivAp} and \texttt{DecAlt} too, that
-make their ergonomics not so great when building them up. A major part about
-what makes \texttt{Ap} and \texttt{ListF} (and, to an extent, \texttt{Div} and
-\texttt{Dec}) so nice to use is that are instances of popular Haskell
-typeclasses like \texttt{Applicative} and \texttt{Alternative} (or,
-\texttt{Plus}, as we use it) and using \texttt{Applicative} and
-\texttt{Alternative} interfaces are pretty common in Haskell. Because of this,
-they are pretty comfortable for most Haskellers to use.
+A major part about what makes \texttt{Ap} and \texttt{ListF} (and, to an extent,
+\texttt{Div} and \texttt{Dec}) so nice to use is that are instances of popular
+Haskell typeclasses like \texttt{Applicative} and \texttt{Alternative} (or
+\texttt{Plus}) and using \texttt{Applicative} and \texttt{Alternative}
+interfaces are pretty common in Haskell. Because of this, they are pretty
+comfortable for most Haskellers to use.
 
 However, \texttt{DivAp} and \texttt{DecAlt} aren't really instances of any
-commonly used typeclass (aside from \texttt{Invariant}). There \emph{could} be a
-typeclass for ``combination of \texttt{Applicative} and \texttt{Divisible}'' and
-``combination of \texttt{Plus} and \texttt{Conclude}'', but that doesn't really
-exist in popular Haskell. So you really don't have any nice interface for them
-other than just using functions specifically written for them, like
-\texttt{gather} and \texttt{swerve}, which may feel ad-hoc or unintuitive.
+commonly used typeclass (aside from \texttt{Invariant}).\footnote{There
+  \emph{could} be a typeclass for ``combination of \texttt{Applicative} and
+  \texttt{Divisible}'' and ``combination of \texttt{Plus} and
+  \texttt{Conclude}'':
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{DivisibleApplicative}\NormalTok{ f }\KeywordTok{where}
+\OtherTok{  conquerpure ::}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ f a}
+\OtherTok{  divideAp ::}\NormalTok{ (a }\OtherTok{{-}>}\NormalTok{ (b, c)) }\OtherTok{{-}>}\NormalTok{ (b }\OtherTok{{-}>}\NormalTok{ c }\OtherTok{{-}>}\NormalTok{ a) }\OtherTok{{-}>}\NormalTok{ f b }\OtherTok{{-}>}\NormalTok{ f c }\OtherTok{{-}>}\NormalTok{ f a}
+\end{Highlighting}
+\end{Shaded}
+
+  And every \texttt{Applicative} and \texttt{Divisible} instance would be a
+  valid instance of this. However, this doesn't really exist in any common
+  Haskell libraries\ldots and I'm not sure it exists anywhere at all.} So you
+really don't have any nice interface for them other than just using functions
+specifically written for them, like \texttt{gather} and \texttt{swerve}, which
+may feel ad-hoc.
 
 Luckily, there's another way to achieve the same goals and also be able to take
 advantage of our favorite familiar interfaces. We can ``add Contravariance''
 directly into \texttt{Ap} itself, using
 \href{https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor-Route.html\#t:Pre}{\texttt{Pre}}.
-A value of type:
+This is a trick I first saw in the
+\emph{\href{https://hackage.haskell.org/package/unjson}{unjson}} library. A
+value of type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\DataTypeTok{Ap}\NormalTok{ (}\DataTypeTok{Pre}\NormalTok{ a }\DataTypeTok{Field}\NormalTok{) b}
+\DataTypeTok{Ap}\NormalTok{ (}\DataTypeTok{Pre}\NormalTok{ r }\DataTypeTok{Field}\NormalTok{) a}
 \end{Highlighting}
 \end{Shaded}
 
-will ``produce'' \texttt{b}s covariantly\ldots but will ``consume'' \texttt{a}s
-contravariantly. You can think of the \texttt{Pre\ a} as adding an ``tunnel'' to
-guide the \texttt{a} to each \texttt{Field} in the \texttt{Ap}.
+will ``produce'' \texttt{a}s covariantly\ldots but will ``consume'' \texttt{r}s
+contravariantly. You can think of the \texttt{Pre\ r} as adding an ``tunnel'' to
+guide the \texttt{r} to each \texttt{Field} in the \texttt{Ap}.
+
+This means we can now use normal Applicative combinators to combine our fake
+invariant type:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{pure}\OtherTok{ ::}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Ap}\NormalTok{ (}\DataTypeTok{Pre}\NormalTok{ r }\DataTypeTok{Field}\NormalTok{) a}
+
+\NormalTok{(}\OperatorTok{<*>}\NormalTok{)}
+\OtherTok{    ::} \DataTypeTok{Ap}\NormalTok{ (}\DataTypeTok{Pre}\NormalTok{ r }\DataTypeTok{Field}\NormalTok{) (a }\OtherTok{{-}>}\NormalTok{ b)}
+    \OtherTok{{-}>} \DataTypeTok{Ap}\NormalTok{ (}\DataTypeTok{Pre}\NormalTok{ r }\DataTypeTok{Field}\NormalTok{) a}
+    \OtherTok{{-}>} \DataTypeTok{Ap}\NormalTok{ (}\DataTypeTok{Pre}\NormalTok{ r }\DataTypeTok{Field}\NormalTok{) b}
+
+\NormalTok{liftA2}
+\OtherTok{    ::}\NormalTok{ (a }\OtherTok{{-}>}\NormalTok{ b }\OtherTok{{-}>}\NormalTok{ c)}
+    \OtherTok{{-}>} \DataTypeTok{Ap}\NormalTok{ (}\DataTypeTok{Pre}\NormalTok{ r }\DataTypeTok{Field}\NormalTok{) a}
+    \OtherTok{{-}>} \DataTypeTok{Ap}\NormalTok{ (}\DataTypeTok{Pre}\NormalTok{ r }\DataTypeTok{Field}\NormalTok{) b}
+    \OtherTok{{-}>} \DataTypeTok{Ap}\NormalTok{ (}\DataTypeTok{Pre}\NormalTok{ r }\DataTypeTok{Field}\NormalTok{) c}
+\end{Highlighting}
+\end{Shaded}
+
+We see that the \texttt{Applicative} combinators will recombine our ``output''
+covariant types appropriately, but will keep the ``input'' contravariant type
+constant\ldots which works out because each of the \texttt{Field}s inside could
+work off of the same input type (remember that
+\texttt{Div\ f\ a\ \textasciitilde{}\ {[}f\ a{]}}, it's just a list of things
+that consume the same \texttt{a}).
+
+We can make an \texttt{Ap\ (Pre\ r\ Field)\ a} using \texttt{injectPre}, which
+asks us to provide that ``get an \texttt{a} from \texttt{r}'' function up-front:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{injectPre ::}\NormalTok{ (r }\OtherTok{{-}>}\NormalTok{ a) }\OtherTok{{-}>}\NormalTok{ f a }\OtherTok{{-}>} \DataTypeTok{Ap}\NormalTok{ (}\DataTypeTok{Pre}\NormalTok{ r f) a}
+\end{Highlighting}
+\end{Shaded}
+
+There's a useful newtype wrapper over \texttt{Pre} that makes consuming it
+convenient by requiring the \texttt{r} and \texttt{a} to be the same:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{newtype} \DataTypeTok{PreT}\NormalTok{ t f a }\OtherTok{=} \DataTypeTok{PreT}\NormalTok{ (t (}\DataTypeTok{Pre}\NormalTok{ a f) a)}
+
+\CommentTok{{-}{-} | interpret for PreT treats \textasciigrave{}PreT Ap f a\textasciigrave{} as if it were just \textasciigrave{}Ap f a\textasciigrave{}, so we}
+\CommentTok{{-}{-} interpret into an \textasciigrave{}Applicative\textasciigrave{} context}
+\NormalTok{interpret}
+\OtherTok{    ::} \DataTypeTok{Applicative}\NormalTok{ g}
+    \OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x)}
+    \OtherTok{{-}>} \DataTypeTok{PreT} \DataTypeTok{Ap}\NormalTok{ f a}
+    \OtherTok{{-}>}\NormalTok{ g a}
+
+\CommentTok{{-}{-} | But we can also interpret into a \textasciigrave{}Divisible\textasciigrave{} context!  Just like as if we}
+\CommentTok{{-}{-} had \textasciigrave{}Div f a\textasciigrave{}!}
+\NormalTok{preDivisibleT}
+\OtherTok{    ::} \DataTypeTok{Divisible}\NormalTok{ g}
+    \OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x)}
+    \OtherTok{{-}>} \DataTypeTok{PreT} \DataTypeTok{Ap}\NormalTok{ f a}
+    \OtherTok{{-}>}\NormalTok{ g a}
+\end{Highlighting}
+\end{Shaded}
+
+We see that \texttt{interpret} for \texttt{PreT\ Ap\ f\ a} works just like
+\texttt{interpret} for \texttt{Ap\ f\ a}\ldots so we don't lose any power, it's
+the same as always if we wanted to just use \texttt{Ap\ f\ a} covariantly to
+interpret into a parser.
+
+But, we magically gain \texttt{preDivisibleT}, which lets us \texttt{interpret}
+into a contravariant \texttt{Divisible} context! Just like as if we had
+\texttt{Div\ f\ a}!
+
+So using \texttt{Pre} and \texttt{PreT}, we get to \emph{assemble} it using our
+favorite \texttt{Applicative} combinators\ldots then when we wrap it in
+\texttt{PreT}, we get to \emph{interpret} it in whatever way we want by choosing
+different interpreters. It's the best of both worlds!
+
+We can do the opposite thing with \texttt{Dec} as well: we can use
+{[}\texttt{Post}{]}{[}Post{]} to embed covariant capabilities in \texttt{Dec}. A
+value of type:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{Dec}\NormalTok{ (}\DataTypeTok{Post}\NormalTok{ r }\DataTypeTok{Choice}\NormalTok{) a}
+\end{Highlighting}
+\end{Shaded}
+
+will ``consume'' \texttt{a}s contravariantly (like a normal \texttt{Dec}), but
+will also produce \texttt{r}s covariantly. You can think of the \texttt{Post\ r}
+as adding an ``tunnel'' allowing the output of each \texttt{Choice} to exit out
+of the \texttt{Dec}.
+
+This means we can now use normal Decide contravariant typeclass-based
+combinators to combine our fake invariant type:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{decide}
+\OtherTok{    ::}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Either}\NormalTok{ b c)        }\CommentTok{{-}{-} \^{} break into branches}
+    \OtherTok{{-}>} \DataTypeTok{Dec}\NormalTok{ (}\DataTypeTok{Post}\NormalTok{ r }\DataTypeTok{Choice}\NormalTok{) b    }\CommentTok{{-}{-} \^{} handle first branch}
+    \OtherTok{{-}>} \DataTypeTok{Dec}\NormalTok{ (}\DataTypeTok{Post}\NormalTok{ r }\DataTypeTok{Choice}\NormalTok{) c    }\CommentTok{{-}{-} \^{} handle second branch}
+    \OtherTok{{-}>} \DataTypeTok{Dec}\NormalTok{ (}\DataTypeTok{Post}\NormalTok{ r }\DataTypeTok{Choice}\NormalTok{) a    }\CommentTok{{-}{-} \^{} overall handler}
+\end{Highlighting}
+\end{Shaded}
+
+We see that \texttt{decide} combinators will recombine our ``input''
+contravariant types appropriately, but will keep the ``output'' covariant type
+constant\ldots which works out because each of the \texttt{Choice}s inside could
+be embedded into the same output type (remember that we used
+\texttt{List\ f\ a\ \textasciitilde{}\ {[}f\ a{]}} for our contravariant choice
+collection before, just a list of things that produce the same \texttt{a}).
+
+Again, we can make a \texttt{Dec\ (Post\ r\ Choice)\ a} using
+\texttt{injectPost}, which asks us to provide that ``embed the \texttt{a} in the
+\texttt{r}'' function up-front:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{injectPost ::}\NormalTok{ (a }\OtherTok{{-}>}\NormalTok{ r) }\OtherTok{{-}>}\NormalTok{ f a }\OtherTok{{-}>} \DataTypeTok{Dec}\NormalTok{ (}\DataTypeTok{Post}\NormalTok{ r f) a}
+\end{Highlighting}
+\end{Shaded}
+
+And again, we have the newtype wrapper \texttt{PostT} that gives us convenient
+interpreting functions:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{newtype} \DataTypeTok{PostT}\NormalTok{ t f a }\OtherTok{=} \DataTypeTok{PostT}\NormalTok{ (t (}\DataTypeTok{Post}\NormalTok{ a f) a)}
+
+\CommentTok{{-}{-} | interpret for PostT treats \textasciigrave{}PostT Dec f a\textasciigrave{} as if it were just \textasciigrave{}Dec f a\textasciigrave{}, so we}
+\CommentTok{{-}{-} interpret into a \textasciigrave{}Conclude\textasciigrave{} context like before}
+\NormalTok{interpret}
+\OtherTok{    ::} \DataTypeTok{Conclude}\NormalTok{ g}
+    \OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x)}
+    \OtherTok{{-}>} \DataTypeTok{PostT} \DataTypeTok{Dec}\NormalTok{ f a}
+    \OtherTok{{-}>}\NormalTok{ g a}
+
+\CommentTok{{-}{-} | But we can also interpret into a \textasciigrave{}Plus\textasciigrave{} context!  Just like as if we}
+\CommentTok{{-}{-} had \textasciigrave{}ListF f a\textasciigrave{}!}
+\NormalTok{postPlusT}
+\OtherTok{    ::} \DataTypeTok{Plus}\NormalTok{ g}
+    \OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x)}
+    \OtherTok{{-}>} \DataTypeTok{PostT} \DataTypeTok{Choice}\NormalTok{ f a}
+    \OtherTok{{-}>}\NormalTok{ g a}
+\end{Highlighting}
+\end{Shaded}
+
+With these new tools, we can imagine a different invariant \texttt{Schema} type:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/routing.hs\#L47{-}L100}
+
+\KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{PreT}  \DataTypeTok{Ap}  \DataTypeTok{Field}\NormalTok{  a)}
+    \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     (}\DataTypeTok{PostT} \DataTypeTok{Dec} \DataTypeTok{Choice}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
+  \KeywordTok{deriving} \DataTypeTok{Generic}
+
+\KeywordTok{data} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Field}
+\NormalTok{    \{}\OtherTok{ fieldName  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ fieldValue ::} \DataTypeTok{Schema}\NormalTok{ a}
+\NormalTok{    \}}
+  \KeywordTok{deriving} \DataTypeTok{Generic}
+
+\KeywordTok{data} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Choice}
+\NormalTok{    \{}\OtherTok{ choiceName  ::} \DataTypeTok{String}
+\NormalTok{    ,}\OtherTok{ choiceValue ::} \DataTypeTok{Schema}\NormalTok{ a}
+\NormalTok{    \}}
+  \KeywordTok{deriving} \DataTypeTok{Generic}
+
+\KeywordTok{data} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{=}
+      \DataTypeTok{PString}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{String}\NormalTok{)     (}\DataTypeTok{String}     \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{PNumber}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Scientific}\NormalTok{) (}\DataTypeTok{Scientific} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{PBool}\NormalTok{   (a }\OtherTok{{-}>} \DataTypeTok{Bool}\NormalTok{)       (}\DataTypeTok{Bool}       \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+  \KeywordTok{deriving} \DataTypeTok{Generic}
+
+\OtherTok{customerSchema ::} \DataTypeTok{Schema} \DataTypeTok{Customer}
+\NormalTok{customerSchema }\OtherTok{=} \DataTypeTok{SumType} \OperatorTok{.} \DataTypeTok{PostT} \OperatorTok{$}
+\NormalTok{    decide (\textbackslash{}}\KeywordTok{case} \DataTypeTok{CPerson}\NormalTok{ x y }\OtherTok{{-}>} \DataTypeTok{Left}\NormalTok{ (x, y); }\DataTypeTok{CBusiness}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{Right}\NormalTok{ x)}
+\NormalTok{      (injectPost (}\FunctionTok{uncurry} \DataTypeTok{CPerson}\NormalTok{) }\DataTypeTok{Choice}
+\NormalTok{        \{ choiceName }\OtherTok{=} \StringTok{"Person"}
+\NormalTok{        , choiceValue }\OtherTok{=} \DataTypeTok{RecordType} \OperatorTok{.} \DataTypeTok{PreT} \OperatorTok{$}\NormalTok{ (,)}
+            \OperatorTok{<$>}\NormalTok{ injectPre }\FunctionTok{fst} \DataTypeTok{Field}\NormalTok{ \{ fieldName }\OtherTok{=} \StringTok{"Name"}\NormalTok{, fieldValue }\OtherTok{=} \DataTypeTok{SchemaLeaf}\NormalTok{ pString \}}
+            \OperatorTok{<*>}\NormalTok{ injectPre }\FunctionTok{snd} \DataTypeTok{Field}\NormalTok{ \{ fieldName }\OtherTok{=} \StringTok{"Age"}\NormalTok{ , fieldValue }\OtherTok{=} \DataTypeTok{SchemaLeaf}\NormalTok{ pInt    \}}
+\NormalTok{        \}}
+\NormalTok{      )}
+\NormalTok{      (injectPost }\DataTypeTok{CBusiness}         \DataTypeTok{Choice}
+\NormalTok{        \{ choiceName }\OtherTok{=} \StringTok{"Person"}
+\NormalTok{        , choiceValue }\OtherTok{=} \DataTypeTok{RecordType} \OperatorTok{.}\NormalTok{ inject }\OperatorTok{$}
+            \DataTypeTok{Field}\NormalTok{ \{ fieldName }\OtherTok{=} \StringTok{"Age"}\NormalTok{ , fieldValue }\OtherTok{=} \DataTypeTok{SchemaLeaf}\NormalTok{ pInt    \}}
+\NormalTok{        \}}
+\NormalTok{      )}
+\end{Highlighting}
+\end{Shaded}
+
+And all of our running functions look pretty much the same as well:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/routing.hs\#L102{-}L182}
+
+\NormalTok{schemaDoc}
+\OtherTok{    ::} \DataTypeTok{String}       \CommentTok{{-}{-} \^{} name}
+    \OtherTok{{-}>} \DataTypeTok{Schema}\NormalTok{ x     }\CommentTok{{-}{-} \^{} schema}
+    \OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ a}
+\NormalTok{schemaDoc title }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ PP.vsep [}
+\NormalTok{        PP.pretty (}\StringTok{"\{"} \OperatorTok{<>}\NormalTok{ title }\OperatorTok{<>} \StringTok{"\}"}\NormalTok{)}
+\NormalTok{      , PP.indent }\DecValTok{2} \OperatorTok{.}\NormalTok{ PP.vsep }\OperatorTok{$}
+\NormalTok{          icollect (\textbackslash{}fld }\OtherTok{{-}>} \StringTok{"*"} \OperatorTok{PP.<+>}\NormalTok{ PP.indent }\DecValTok{2}\NormalTok{ (fieldDoc fld)) fs}
+\NormalTok{      ]}
+    \DataTypeTok{SumType}\NormalTok{ cs    }\OtherTok{{-}>}\NormalTok{ PP.vsep [}
+\NormalTok{        PP.pretty (}\StringTok{"("} \OperatorTok{<>}\NormalTok{ title }\OperatorTok{<>} \StringTok{")"}\NormalTok{)}
+\NormalTok{      , }\StringTok{"Choice of:"}
+\NormalTok{      , PP.indent }\DecValTok{2} \OperatorTok{.}\NormalTok{ PP.vsep }\OperatorTok{$}
+\NormalTok{          icollect choiceDoc cs}
+\NormalTok{      ]}
+    \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ PP.pretty (title }\OperatorTok{<>} \StringTok{":"}\NormalTok{)}
+              \OperatorTok{PP.<+>}\NormalTok{ primDoc p}
+  \KeywordTok{where}
+\OtherTok{    fieldDoc ::} \DataTypeTok{Field}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ a}
+\NormalTok{    fieldDoc }\DataTypeTok{Field}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ schemaDoc fieldName fieldValue}
+\OtherTok{    choiceDoc ::} \DataTypeTok{Choice}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ a}
+\NormalTok{    choiceDoc }\DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ schemaDoc choiceName choiceValue}
+\OtherTok{    primDoc ::} \DataTypeTok{Primitive}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{PP.Doc}\NormalTok{ a}
+\NormalTok{    primDoc }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{PString}\NormalTok{ \_ \_ }\OtherTok{{-}>} \StringTok{"string"}
+      \DataTypeTok{PNumber}\NormalTok{ \_ \_ }\OtherTok{{-}>} \StringTok{"number"}
+      \DataTypeTok{PBool}\NormalTok{   \_ \_ }\OtherTok{{-}>} \StringTok{"bool"}
+
+\OtherTok{schemaParser ::} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{ErrType}\NormalTok{ a}
+\NormalTok{schemaParser }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ interpret fieldParser fs}
+    \DataTypeTok{SumType}\NormalTok{    cs }\OtherTok{{-}>}\NormalTok{ postPlusT choiceParser cs}
+    \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ primParser p}
+  \KeywordTok{where}
+\OtherTok{    fieldParser ::} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ a}
+\NormalTok{    fieldParser }\DataTypeTok{Field}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=}\NormalTok{ A.key (T.pack fieldName) (schemaParser fieldValue)}
+\OtherTok{    choiceParser ::} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ a}
+\NormalTok{    choiceParser }\DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \KeywordTok{do}
+\NormalTok{      tag }\OtherTok{<{-}}\NormalTok{ A.key }\StringTok{"tag"}\NormalTok{ A.asString}
+\NormalTok{      unless (tag }\OperatorTok{==}\NormalTok{ choiceName) }\OperatorTok{$}
+\NormalTok{        A.throwCustomError }\StringTok{"Tag does not match"}
+\NormalTok{      A.key }\StringTok{"contents"} \OperatorTok{$}\NormalTok{ schemaParser choiceValue}
+\OtherTok{    primParser ::} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ a}
+\NormalTok{    primParser }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{PString}\NormalTok{ \_ f }\OtherTok{{-}>}\NormalTok{ A.withString }\OperatorTok{$}
+        \FunctionTok{maybe}\NormalTok{ (}\DataTypeTok{Left} \StringTok{"error validating string"}\NormalTok{) }\DataTypeTok{Right} \OperatorTok{.}\NormalTok{ f}
+      \DataTypeTok{PNumber}\NormalTok{ \_ f }\OtherTok{{-}>}\NormalTok{ A.withScientific }\OperatorTok{$}
+        \FunctionTok{maybe}\NormalTok{ (}\DataTypeTok{Left} \StringTok{"error validating number"}\NormalTok{) }\DataTypeTok{Right} \OperatorTok{.}\NormalTok{ f}
+      \DataTypeTok{PBool}\NormalTok{ \_ f }\OtherTok{{-}>}\NormalTok{ A.withBool }\OperatorTok{$}
+        \FunctionTok{maybe}\NormalTok{ (}\DataTypeTok{Left} \StringTok{"error validating bool"}\NormalTok{) }\DataTypeTok{Right} \OperatorTok{.}\NormalTok{ f}
+
+\NormalTok{schemaToValue}
+\OtherTok{    ::} \DataTypeTok{Schema}\NormalTok{ a}
+    \OtherTok{{-}>}\NormalTok{ a}
+    \OtherTok{{-}>} \DataTypeTok{Aeson.Value}
+\NormalTok{schemaToValue }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ Aeson.object }\OperatorTok{.}\NormalTok{ getOp (preDivisibleT fieldToValue fs)}
+    \DataTypeTok{SumType}\NormalTok{    cs }\OtherTok{{-}>}\NormalTok{ getOp (interpret choiceToValue cs)}
+    \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ primToValue p}
+  \KeywordTok{where}
+\OtherTok{    fieldToValue ::} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Op}\NormalTok{ [}\DataTypeTok{Aeson.Pair}\NormalTok{] a}
+\NormalTok{    fieldToValue }\DataTypeTok{Field}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \DataTypeTok{Op} \OperatorTok{$}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>}
+\NormalTok{        [T.pack fieldName }\OperatorTok{Aeson..=}\NormalTok{ schemaToValue fieldValue x]}
+\OtherTok{    choiceToValue ::} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Op} \DataTypeTok{Aeson.Value}\NormalTok{ a}
+\NormalTok{    choiceToValue }\DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \DataTypeTok{Op} \OperatorTok{$}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>}\NormalTok{ Aeson.object}
+\NormalTok{        [ }\StringTok{"tag"}      \OperatorTok{Aeson..=}\NormalTok{ T.pack choiceName}
+\NormalTok{        , }\StringTok{"contents"} \OperatorTok{Aeson..=}\NormalTok{ schemaToValue choiceValue x}
+\NormalTok{        ]}
+\OtherTok{    primToValue ::} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Aeson.Value}
+\NormalTok{    primToValue }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
+      \DataTypeTok{PString}\NormalTok{ f \_ }\OtherTok{{-}>}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>} \DataTypeTok{Aeson.String}\NormalTok{ (T.pack (f x))}
+      \DataTypeTok{PNumber}\NormalTok{ f \_ }\OtherTok{{-}>}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>} \DataTypeTok{Aeson.Number}\NormalTok{ (f x)}
+      \DataTypeTok{PBool}\NormalTok{   f \_ }\OtherTok{{-}>}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>} \DataTypeTok{Aeson.Bool}\NormalTok{   (f x)}
+\end{Highlighting}
+\end{Shaded}
+
+Just two separate styles for you to consider if we want to go into combining
+\emph{both} covariant productin \emph{and} contravariant consumption!
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}

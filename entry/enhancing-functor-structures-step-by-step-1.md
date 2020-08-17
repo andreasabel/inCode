@@ -983,17 +983,17 @@ decide
     -> Dec Choice Customer
 ```
 
-And `divised` works like:
+And `divided` works like:
 
 ``` {.haskell}
-divised
-    :: Divise f
+divided
+    :: Divisible f
     => f a          -- ^ first handler
     -> f b          -- ^ second handler
     -> f (a, b)     -- ^ merged handler
 
-divised
-    :: Divise f
+divided
+    :: Divisible f
     => Div Field String          -- ^ handle the cpName field
     -> Div Field Int             -- ^ handle the cpAge field
     -> Div Field (String, Int)   -- ^ handle both together
