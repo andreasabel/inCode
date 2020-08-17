@@ -95,11 +95,24 @@
 \textbf{\href{https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-2.html}{in
 Code}}.}
 
+Welcome to Part 2 of the
+\href{https://blog.jle.im/entries/series/+enhancing-functor-structures.html}{``Enhancing
+Functor Structures'' series}! Here we are taking a base structure describing a
+data type schema and enhancing it step-by-step with new functory capabilities:
+first, covariant capabilities (to generate parsers), then contravariant
+capabilities (to generate serializers)\ldots who knows what might be in store
+next?
+
+Please do check out
+\href{https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-1.html}{Part
+1} if you haven't already, since this post pretty much jumps straight into
+things!
+
 \hypertarget{parsing-and-serializing-invariantly}{%
 \section{Parsing and Serializing
 Invariantly}\label{parsing-and-serializing-invariantly}}
 
-At this point, we have:
+As we left off our project, we had done three things:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -118,12 +131,20 @@ At this point, we have:
 From this, it seems the next logical step would be to add \emph{both}
 enhancements to the same structure!
 
-There are some clear benefits to this --- for example, we can now ensure that
-our ``serialization'' and ``parsing'' functions are always ``in sync''. If we
-defined a separate process/type for serializing and a separate process/type for
-parsing, then it's possible we might accidentally make errors in keeping them in
-sync\ldots one might use a different tag, or we might make changes to one but
-not the other during refactoring.
+There are some clear benefits to this --- on the surface, it means we only have
+to write code once to get all three things (documentation, parsing, and
+serialization). Less code means less bugs!
+
+Even deeper, we can now ensure that our ``serialization'' and ``parsing''
+functions are always ``in sync''. If we defined a separate process/type for
+serializing and a separate process/type for parsing, then it's possible we might
+accidentally make errors in keeping them in sync\ldots one might use a different
+tag, or we might make changes to one but not the other during refactoring.
+There's a good chance you have been bitten by situations where documentation
+becomes out of sync with actual code.
+
+\hypertarget{adding-invariance}{%
+\subsection{Adding Invariance}\label{adding-invariance}}
 
 Like before, the main thing we need to change at the fundamental level is
 \texttt{Primitive}:
@@ -253,8 +274,7 @@ contravariant version.
 The main difference is, while \texttt{decide} expects the
 \texttt{a\ -\textgreater{}\ Either\ b\ c} splitting function, \texttt{swerve}
 (the invariant \texttt{DecAlt} equivalent) expects also the functions to
-``recombine'' the \texttt{b} and \texttt{c} back to \texttt{a}. We also note
-that the invariant version of \texttt{divided} is \texttt{gathered}.
+``recombine'' the \texttt{b} and \texttt{c} back to \texttt{a}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -273,10 +293,18 @@ that the invariant version of \texttt{divided} is \texttt{gathered}.
     \OtherTok{{-}>} \DataTypeTok{DecAlt} \DataTypeTok{Choice}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)              }\CommentTok{{-}{-} \^{} handle CPerson branch}
     \OtherTok{{-}>} \DataTypeTok{DecAlt} \DataTypeTok{Choice} \DataTypeTok{Int}                        \CommentTok{{-}{-} \^{} handle CBusiness branch}
     \OtherTok{{-}>} \DataTypeTok{DecAlt} \DataTypeTok{Choice} \DataTypeTok{Customer}
+
+\CommentTok{{-}{-} compare to what we used last time:}
+\NormalTok{decide}
+\OtherTok{    ::}\NormalTok{ (}\DataTypeTok{Customer} \OtherTok{{-}>} \DataTypeTok{Either}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{) }\DataTypeTok{Int}\NormalTok{)   }\CommentTok{{-}{-} \^{} break into branches}
+    \OtherTok{{-}>} \DataTypeTok{Dec} \DataTypeTok{Choice}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)                 }\CommentTok{{-}{-} \^{} handle CPerson branch}
+    \OtherTok{{-}>} \DataTypeTok{Dec} \DataTypeTok{Choice} \DataTypeTok{Int}                           \CommentTok{{-}{-} \^{} handle CBusiness branch}
+    \OtherTok{{-}>} \DataTypeTok{Dec} \DataTypeTok{Choice} \DataTypeTok{Customer}
 \end{Highlighting}
 \end{Shaded}
 
-And \texttt{gathered} works like:
+We also note that the invariant version of \texttt{divided} is
+\texttt{gathered}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -289,23 +317,31 @@ And \texttt{gathered} works like:
 \OtherTok{    ::} \DataTypeTok{DivAp} \DataTypeTok{Field} \DataTypeTok{String}          \CommentTok{{-}{-} \^{} handle the cpName field}
     \OtherTok{{-}>} \DataTypeTok{DivAp} \DataTypeTok{Field} \DataTypeTok{Int}             \CommentTok{{-}{-} \^{} handle the cpAge field}
     \OtherTok{{-}>} \DataTypeTok{DivAp} \DataTypeTok{Field}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)   }\CommentTok{{-}{-} \^{} handle both together}
+
+\CommentTok{{-}{-} compare to what we used last time:}
+\NormalTok{divided}
+\OtherTok{    ::} \DataTypeTok{Div} \DataTypeTok{Field} \DataTypeTok{String}          \CommentTok{{-}{-} \^{} handle the cpName field}
+    \OtherTok{{-}>} \DataTypeTok{Div} \DataTypeTok{Field} \DataTypeTok{Int}             \CommentTok{{-}{-} \^{} handle the cpAge field}
+    \OtherTok{{-}>} \DataTypeTok{Div} \DataTypeTok{Field}\NormalTok{ (}\DataTypeTok{String}\NormalTok{, }\DataTypeTok{Int}\NormalTok{)   }\CommentTok{{-}{-} \^{} handle both together}
 \end{Highlighting}
 \end{Shaded}
 
 \hypertarget{using-invariant-schema}{%
 \subsection{Using Invariant Schema}\label{using-invariant-schema}}
 
-It looks like we mostly did all the work already. Writing \texttt{schemaDoc},
-\texttt{schemaParser}, and \texttt{schemaToValue}, we can re-use pretty much all
-of our code! The main (unfortunate) difference is that instead of using
-\texttt{interpret} in every case, we can use \texttt{runCoDivAp} to run our
-\texttt{DivAp} in a covariant setting, and \texttt{runContraDivAp} to run our
-\texttt{DivAp} in a contravariant setting (similarly for \texttt{runCoDecAlt}
-and \texttt{runContraDecAlt}). Another small difference is that
-\texttt{icollect} doesn't quite work properly on \texttt{DivAp}/\texttt{DecAlt},
-so we have to convert them to \texttt{Ap} and \texttt{Dec} first.\footnote{These
-  are unfortunate consequences of the fact that there is no general typeclass
-  that contains both \texttt{Applicative} and \texttt{Divisible} together, or no
+Now to write our interpreters. Luckily, we already did all the work in the
+previous post. Writing \texttt{schemaDoc}, \texttt{schemaParser}, and
+\texttt{schemaToValue}, we can re-use pretty much all of our code!
+
+The main (unfortunate) difference is that instead of using \texttt{interpret} in
+every case, we can use \texttt{runCoDivAp} to run our \texttt{DivAp} in a
+covariant setting, and \texttt{runContraDivAp} to run our \texttt{DivAp} in a
+contravariant setting (similarly for \texttt{runCoDecAlt} and
+\texttt{runContraDecAlt}). Another small difference is that \texttt{icollect}
+doesn't quite work properly on \texttt{DivAp}/\texttt{DecAlt}, so we have to
+convert them to \texttt{Ap} and \texttt{Dec} first.\footnote{These are
+  unfortunate consequences of the fact that there is no general typeclass that
+  contains both \texttt{Applicative} and \texttt{Divisible} together, or no
   typeclass that contains both \texttt{Plus} and \texttt{Conclude} together. If
   these existed, we could just use \texttt{interpret} for all four of those
   functions, and \texttt{icollect} would work fine as well.}
@@ -420,6 +456,10 @@ round-trip, serializing and then parsing, to make sure things worked properly.
 \end{Highlighting}
 \end{Shaded}
 
+Looks solid to me. We now have a single schema that can represent documentation,
+parsing, and serialization in a way that they are all kept in sync, after
+writing things only once!
+
 \hypertarget{an-alternative-invariant-strategy}{%
 \section{An Alternative Invariant
 Strategy}\label{an-alternative-invariant-strategy}}
@@ -452,7 +492,11 @@ commonly used typeclass (aside from \texttt{Invariant}).\footnote{There
 
   And every \texttt{Applicative} and \texttt{Divisible} instance would be a
   valid instance of this. However, this doesn't really exist in any common
-  Haskell libraries\ldots and I'm not sure it exists anywhere at all.} So you
+  Haskell libraries\ldots and I'm not sure it exists anywhere at all.
+
+  Having this typeclass would also give us an \texttt{interpret} that we can use
+  for both \texttt{A.Parser\ ErrType} and \texttt{Op\ Aeson.Value}, so we don't
+  need the awkward two-different-interpreter situation we had before.} So you
 really don't have any nice interface for them other than just using functions
 specifically written for them, like \texttt{gather} and \texttt{swerve}, which
 may feel ad-hoc.
@@ -461,9 +505,14 @@ Luckily, there's another way to achieve the same goals and also be able to take
 advantage of our favorite familiar interfaces. We can ``add Contravariance''
 directly into \texttt{Ap} itself, using
 \href{https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor-Route.html\#t:Pre}{\texttt{Pre}}.
-This is a trick I first saw in the
-\emph{\href{https://hackage.haskell.org/package/unjson}{unjson}} library. A
-value of type:
+This is a trick I first saw used in the
+\emph{\href{https://hackage.haskell.org/package/unjson}{unjson}} library.
+
+Recall that \texttt{Ap\ Field\ a} is a collection that contains a bunch of
+\texttt{Field\ x}s of different \texttt{x}s, and can be used to covariantly
+\emph{produce} an \texttt{a}.
+
+Now, a value of type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -497,13 +546,14 @@ invariant type:
 
 We see that the \texttt{Applicative} combinators will recombine our ``output''
 covariant types appropriately, but will keep the ``input'' contravariant type
-constant\ldots which works out because each of the \texttt{Field}s inside could
-work off of the same input type (remember that
-\texttt{Div\ f\ a\ \textasciitilde{}\ {[}f\ a{]}}, it's just a list of things
-that consume the same \texttt{a}).
+constant\footnote{This works out because each of the \texttt{Field}s inside
+  could work off of the same input type. Remember that
+  \texttt{Div\ f\ a\ \textasciitilde{}\ {[}f\ a{]}}, it's just a list of things
+  that consume the same \texttt{a}.}
 
-We can make an \texttt{Ap\ (Pre\ r\ Field)\ a} using \texttt{injectPre}, which
-asks us to provide that ``get an \texttt{a} from \texttt{r}'' function up-front:
+We can construct a value of type \texttt{Ap\ (Pre\ r\ Field)\ a} using
+\texttt{injectPre}, which asks us to provide that ``get an \texttt{a} from
+\texttt{r}'' function up-front:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -511,23 +561,30 @@ asks us to provide that ``get an \texttt{a} from \texttt{r}'' function up-front:
 \end{Highlighting}
 \end{Shaded}
 
-There's a useful newtype wrapper over \texttt{Pre} that makes consuming it
-convenient by requiring the \texttt{r} and \texttt{a} to be the same:
+How do we interpret out of \texttt{Ap\ (Pre\ r\ f)\ a}? Well, there's a useful
+newtype wrapper over \texttt{Pre} called \texttt{PreT} that makes consuming and
+interpreting it very clean, by requiring the \texttt{r} and \texttt{a} to be the
+same:
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{newtype} \DataTypeTok{PreT}\NormalTok{ t f a }\OtherTok{=} \DataTypeTok{PreT}\NormalTok{ (t (}\DataTypeTok{Pre}\NormalTok{ a f) a)}
 
+\CommentTok{{-}{-} | \textasciigrave{}inject\textasciigrave{} works just like it did before with \textasciigrave{}Ap\textasciigrave{} and \textasciigrave{}Div\textasciigrave{}: put that \textasciigrave{}f\textasciigrave{}}
+\CommentTok{{-}{-} into a \textasciigrave{}PreT\textasciigrave{}}
+\OtherTok{inject ::}\NormalTok{ f a }\OtherTok{{-}>} \DataTypeTok{PreT} \DataTypeTok{Ap}\NormalTok{ f a}
+
 \CommentTok{{-}{-} | interpret for PreT treats \textasciigrave{}PreT Ap f a\textasciigrave{} as if it were just \textasciigrave{}Ap f a\textasciigrave{}, so we}
-\CommentTok{{-}{-} interpret into an \textasciigrave{}Applicative\textasciigrave{} context}
+\CommentTok{{-}{-} interpret into an \textasciigrave{}Applicative\textasciigrave{} context, like we did with the parsers when}
+\CommentTok{{-}{-} we used \textasciigrave{}Ap f a\textasciigrave{}.}
 \NormalTok{interpret}
 \OtherTok{    ::} \DataTypeTok{Applicative}\NormalTok{ g}
     \OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x)}
     \OtherTok{{-}>} \DataTypeTok{PreT} \DataTypeTok{Ap}\NormalTok{ f a}
     \OtherTok{{-}>}\NormalTok{ g a}
 
-\CommentTok{{-}{-} | But we can also interpret into a \textasciigrave{}Divisible\textasciigrave{} context!  Just like as if we}
-\CommentTok{{-}{-} had \textasciigrave{}Div f a\textasciigrave{}!}
+\CommentTok{{-}{-} | But we can also interpret into a \textasciigrave{}Divisible\textasciigrave{} context!  Just like when we}
+\CommentTok{{-}{-} used \textasciigrave{}Div f a\textasciigrave{} to write our serializer!}
 \NormalTok{preDivisibleT}
 \OtherTok{    ::} \DataTypeTok{Divisible}\NormalTok{ g}
     \OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x)}
@@ -539,11 +596,12 @@ convenient by requiring the \texttt{r} and \texttt{a} to be the same:
 We see that \texttt{interpret} for \texttt{PreT\ Ap\ f\ a} works just like
 \texttt{interpret} for \texttt{Ap\ f\ a}\ldots so we don't lose any power, it's
 the same as always if we wanted to just use \texttt{Ap\ f\ a} covariantly to
-interpret into a parser.
+interpret into a parser. Exactly what we did when we wrote our parser
+generation.
 
-But, we magically gain \texttt{preDivisibleT}, which lets us \texttt{interpret}
-into a contravariant \texttt{Divisible} context! Just like as if we had
-\texttt{Div\ f\ a}!
+But, we also gain \texttt{preDivisibleT}, which lets us \texttt{interpret} into
+a contravariant \texttt{Divisible} context! Just like as if we had
+\texttt{Div\ f\ a}! This is exactly what we did when we wrote our serializers.
 
 So using \texttt{Pre} and \texttt{PreT}, we get to \emph{assemble} it using our
 favorite \texttt{Applicative} combinators\ldots then when we wrap it in
@@ -551,8 +609,14 @@ favorite \texttt{Applicative} combinators\ldots then when we wrap it in
 different interpreters. It's the best of both worlds!
 
 We can do the opposite thing with \texttt{Dec} as well: we can use
-{[}\texttt{Post}{]}{[}Post{]} to embed covariant capabilities in \texttt{Dec}. A
-value of type:
+\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor-Route.html\#t:Post}{\texttt{Post}}
+to embed covariant capabilities in \texttt{Dec}.
+
+Recall that \texttt{Div\ Choice\ a} is a collection that contains a bunch of
+\texttt{Choice\ x}s of different \texttt{x}s, and can be used to contravariantly
+\emph{consume} an \texttt{a}.
+
+A value of type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -580,12 +644,13 @@ combinators to combine our fake invariant type:
 
 We see that \texttt{decide} combinators will recombine our ``input''
 contravariant types appropriately, but will keep the ``output'' covariant type
-constant\ldots which works out because each of the \texttt{Choice}s inside could
-be embedded into the same output type (remember that we used
-\texttt{List\ f\ a\ \textasciitilde{}\ {[}f\ a{]}} for our contravariant choice
-collection before, just a list of things that produce the same \texttt{a}).
+constant\footnote{This works out because each of the \texttt{Choice}s inside
+  could be embedded into the same output type. Remember that we used
+  \texttt{List\ f\ a\ \textasciitilde{}\ {[}f\ a{]}} for our contravariant
+  choice collection before, just a list of things that produce the same
+  \texttt{a}.}
 
-Again, we can make a \texttt{Dec\ (Post\ r\ Choice)\ a} using
+Again, we can construct a value of type \texttt{Dec\ (Post\ r\ Choice)\ a} using
 \texttt{injectPost}, which asks us to provide that ``embed the \texttt{a} in the
 \texttt{r}'' function up-front:
 
@@ -602,16 +667,21 @@ interpreting functions:
 \begin{Highlighting}[]
 \KeywordTok{newtype} \DataTypeTok{PostT}\NormalTok{ t f a }\OtherTok{=} \DataTypeTok{PostT}\NormalTok{ (t (}\DataTypeTok{Post}\NormalTok{ a f) a)}
 
+\CommentTok{{-}{-} | \textasciigrave{}inject\textasciigrave{} works just like it did before with \textasciigrave{}Dec\textasciigrave{} and \textasciigrave{}ListF\textasciigrave{}: put that \textasciigrave{}f\textasciigrave{}}
+\CommentTok{{-}{-} into a \textasciigrave{}PostT\textasciigrave{}}
+\OtherTok{inject ::}\NormalTok{ f a }\OtherTok{{-}>} \DataTypeTok{PostT} \DataTypeTok{Dec}\NormalTok{ f a}
+
 \CommentTok{{-}{-} | interpret for PostT treats \textasciigrave{}PostT Dec f a\textasciigrave{} as if it were just \textasciigrave{}Dec f a\textasciigrave{}, so we}
-\CommentTok{{-}{-} interpret into a \textasciigrave{}Conclude\textasciigrave{} context like before}
+\CommentTok{{-}{-} interpret into a \textasciigrave{}Conclude\textasciigrave{} context, like we did with the serializers when}
+\CommentTok{{-}{-} we used \textasciigrave{}Dec f a\textasciigrave{}}
 \NormalTok{interpret}
 \OtherTok{    ::} \DataTypeTok{Conclude}\NormalTok{ g}
     \OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x)}
     \OtherTok{{-}>} \DataTypeTok{PostT} \DataTypeTok{Dec}\NormalTok{ f a}
     \OtherTok{{-}>}\NormalTok{ g a}
 
-\CommentTok{{-}{-} | But we can also interpret into a \textasciigrave{}Plus\textasciigrave{} context!  Just like as if we}
-\CommentTok{{-}{-} had \textasciigrave{}ListF f a\textasciigrave{}!}
+\CommentTok{{-}{-} | But we can also interpret into a \textasciigrave{}Plus\textasciigrave{} context!  Just like when we}
+\CommentTok{{-}{-} used \textasciigrave{}ListF f a\textasciigrave{} to write our parser generation!}
 \NormalTok{postPlusT}
 \OtherTok{    ::} \DataTypeTok{Plus}\NormalTok{ g}
     \OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x)}
@@ -619,6 +689,11 @@ interpreting functions:
     \OtherTok{{-}>}\NormalTok{ g a}
 \end{Highlighting}
 \end{Shaded}
+
+We get the same benefits as for \texttt{PreT}: if we want to interpret into a
+\texttt{Conclude} (like we did for our serializers), we can use
+\texttt{interpret}. If we want to interpret into a \texttt{Plus} (like we did
+for our parser generation), we can use \texttt{postPlusT}.
 
 With these new tools, we can imagine a different invariant \texttt{Schema} type:
 
@@ -753,7 +828,75 @@ And all of our running functions look pretty much the same as well:
 \end{Shaded}
 
 Just two separate styles for you to consider if we want to go into combining
-\emph{both} covariant productin \emph{and} contravariant consumption!
+\emph{both} covariant production \emph{and} contravariant consumption!
+
+\hypertarget{concluding-thoughts}{%
+\section{Concluding Thoughts}\label{concluding-thoughts}}
+
+If you've come this far, thank you for reading!
+
+The thought process described in this series was pretty much my actual thought
+process when writing something similar. I needed to provide documentation, a
+json parser, and a json serializer for a collection of data formats that I had.
+At first I had written three separate systems, and wrote all three separately
+for each format. But I struggled with keeping all of them in sync, and
+everything clicked when I realized I could combine the documentation generator
+and the parser generation. I looked at my serializer system with regret on how
+it had to be a separate thing. But then I stared really really hard at it, and
+all of a sudden the idea of uniting all three of them became something I
+realized was worthwhile.
+
+It really was a truly ``step-by-step'' process\ldots and I think it's pretty
+rare that these fully formed united abstractions just pop out of your brain
+without going through the process of looking at each individual piece!
+
+In real code this pairing of the covariant and covariant is pretty prevalent. In
+another recent situation, I had to deal with ``incoming'' typed sockets
+(covariant outputters) and ``outgoing'' typed sockets (contravariant
+consumers)\ldots the contexts where you get these sort of opposing dual pairs
+comes up a lot. Being able write a functor structure that lets you deal with
+them together can save a lot of code, reduce the space for errors, and relieve a
+lot of maintenance burden. For example, in the case of sockets, we could even
+write:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} | allocate an outgoing socket that only accepts values of your schema}
+\OtherTok{makeOutSocket ::} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{IO}\NormalTok{ (}\DataTypeTok{OutSocket}\NormalTok{ a)}
+
+\CommentTok{{-}{-} | allocate an incoming socket that awaits values of your schema}
+\OtherTok{makeInSocket ::} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{IO}\NormalTok{ (}\DataTypeTok{InSocket}\NormalTok{ a)}
+\end{Highlighting}
+\end{Shaded}
+
+Here \texttt{Schema\ a} represents a data protocol; now you have the assurance
+that the protocol of sending a data type over a channel is always going to be
+the same as the protocol for receiving data, no matter what changes you make to
+your type. And you only have to write the code once, not twice.
+
+Try to investigate situations in your life where ``structures'' could be more
+useful as ``functor structures''\ldots and then maybe see if there's even more
+value you could add by enhancing them with more functor-ness!
+
+And hopefully
+\emph{\href{https://hackage.haskell.org/package/functor-combinators}{functor-combinators}}
+and the \emph{{[}functor combinatorpedia{]}{[}{]}} may be a useful guide along
+the way! You don't have to build things ``functor combinator style'' like in
+this post (you could make everything from scratch without using
+\texttt{Ap}/\texttt{Dec}, etc.), but I have found that thinking in this style
+helps guide your search to solutions that already exist (like how we found
+\texttt{ListF} by reading about \texttt{Ap}), instead of reinventing the wheel
+every time.
+
+Until next time, happy Haskelling! :)
+
+\hypertarget{special-thanks}{%
+\section{Special Thanks}\label{special-thanks}}
+
+I am very humbled to be supported by an amazing community, who make it possible
+for me to devote time to researching and writing these posts. Very special
+thanks to my supporter at the ``Amazing'' level on
+\href{https://www.patreon.com/justinle/overview}{patreon}, Josh Vera! :)
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}

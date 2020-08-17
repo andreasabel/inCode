@@ -9,7 +9,7 @@ past year or so is something that I can maybe call a "functor structure"
 designed pattern. This is the interest that culminated in my [Functor
 Combinatorpedia](https://blog.jle.im/entry/functor-combinatorpedia.html) post
 last year and the
-[functor-combinators](https://hackage.haskell.org/package/functor-combinators)
+*[functor-combinators](https://hackage.haskell.org/package/functor-combinators)*
 library. In the blog post I called this style the "functor combinator" style
 because it involved building these functor structures out of small, simple
 pieces. But I've never really explored the more exotic types of lowercase-f
@@ -30,7 +30,7 @@ schema to generate parsers and serializers through json.
 
 This series is designed for an intermediate Haskeller with familiarity in things
 like product/sum types, using `Applicative`/`Alternative`, and monadic parser
-combinators.
+combinators, and is written in sync with *functor-combinators-0.3.5.1*.
 
 The Schema
 ----------
@@ -993,8 +993,7 @@ divided
     -> f (a, b)     -- ^ merged handler
 
 divided
-    :: Divisible f
-    => Div Field String          -- ^ handle the cpName field
+    :: Div Field String          -- ^ handle the cpName field
     -> Div Field Int             -- ^ handle the cpAge field
     -> Div Field (String, Int)   -- ^ handle both together
 ```
@@ -1186,6 +1185,31 @@ schemaDoc title = \case
 ```
 
 Neat!
+
+Looking Forward
+---------------
+
+We first started with a simple structure to represent our schema. We then added
+*covariant* capabilities to get us parser generation. Then we added
+*contravariant* capabilities to get us serializers.
+
+The next step might be to add *both* enhancements to the same structure! The
+benefits for this seem pretty significant: we can write our structure once (less
+code, less bugs), and we also write our serializer, parser, and documenting
+functions in a way that are automatically kept in-sync, and can never be
+incompatible with each other. Solving the documentation rot and mismatched
+parser/serializer problem in one stroke!
+
+For this, we'll wait until the next post, where we explore not one, but two ways
+to combine our two capabilities into something known as an *invariant* functor!
+
+Special Thanks
+--------------
+
+I am very humbled to be supported by an amazing community, who make it possible
+for me to devote time to researching and writing these posts. Very special
+thanks to my supporter at the "Amazing" level on
+[patreon](https://www.patreon.com/justinle/overview), Josh Vera! :)
 
 --------------------------------------------------------------------------------
 
