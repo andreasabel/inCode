@@ -283,7 +283,9 @@ A `Primitive a` now encodes a way to *parse* an `a` if given the appropriate
 json primitive. It can be `PString`, `PNumber`, or `PBool`. To create a "String
 Parser", you need to use `PString` with a function on "what to do with the
 string you get". To create a "Bool parser", you need `PBool` with a function on
-what to do with the bool you get.
+what to do with the bool you get. Note that the `PNumber` parser takes a
+`Scientific`, which is the type *aeson* (the underlying json library) uses to
+represent valid JSON numbers (it's basically `Either Integer Double`).
 
 We can write some helper primitives:
 
@@ -585,8 +587,8 @@ Right (CBusiness {cbEmployees = 3})
 
 We were able to generate a fully functional parser from our schema, by only
 providing parsers for the smaller, more specific types we had (`Field` and
-`Choice`), and having them all fit together in a way directed by their `Apply`
-and `Alt` typeclass instances.
+`Choice`), and having them all fit together in a way directed by their
+`Applicative` and `Plus` typeclass instances.
 
 ### Direct Structural Inspection
 
@@ -611,8 +613,8 @@ ghci> parseSchema customerSchema  "{ \"tag\": \"Grape\", \"contents\": { \"Color
 Left (BadSchema [] (CustomError "No options were validated"))
 ```
 
-Since `Plus`'s `zero` definition always falls back to the same error, this is
-not very useful!
+Since the definition of `zero` (which was our fault because we wrote it here ---
+oops!) always falls back to the same error, this is not very useful!
 
 So `interpret` for `ListF`, while convenient, isn't necessarily the best way to
 tear down a `ListF`. Luckily, most functor combinators are just ADTs that we can
@@ -749,7 +751,7 @@ ADT, and all of the variations outside of the structure itself comes from how
 each leaf is serialized.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L44-L47
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L42-L45
 
 data Primitive a =
       PString (a -> String)
@@ -766,7 +768,7 @@ into a `String`.
 Again, it can be useful to add some helper primitives:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L66-L73
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L64-L71
 
 pString :: Primitive String
 pString = PString id
@@ -786,7 +788,7 @@ We can start off by writing the serializer for `Primitive` just go get a feel
 for how our serializer will work:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L146-L150
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L144-L148
 
 primToValue :: Primitive a -> a -> Aeson.Value
 primToValue = \case
@@ -834,7 +836,7 @@ data Schema a =
     | SumType     [Choice a]
     | SchemaLeaf  (Primitive a)
   deriving Functor
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L32-L38
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L32-L37
 
 data Field a = Field
 
@@ -852,20 +854,17 @@ What we need is a way to express a hetereogenous collection/sequence of
 `Choice a`, coupled with a way of "choosing" exactly one of them to handle one
 form that our input `a` can take. A type that says "use exactly one of a bunch
 of `Choice`s of different `x`s, and choose one to dispatch depending on what `a`
-we get".
-
-This one is a little bit trickier to grasp "intuitively", I feel, because
-contravariant abstractions and manipulations are much less common/ubiquitous in
-Haskell than the covariant ones. So how do we find the tool we need?
+we get". So how do we find the tool we need?
 
 *If* you are already familiar with contravariant abstractions (but who is?) you
 might recognize this as the essence of the
 [Decidable](https://hackage.haskell.org/package/contravariant/docs/Data-Functor-Contravariant-Divisible.html#g:6)
 typeclass, from the
-*[contravariant](https://hackage.haskell.org/package/contravariant)* library (or
-more accurately,
-[Conclude](https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Conclude.html)):
-a `Conclude f` allows you to combine two `f` values, and one will be picked to
+*[contravariant](https://hackage.haskell.org/package/contravariant)*
+library...or more accurately, "Decidable without a Divisible constraint", which
+is
+[Conclude](https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Conclude.html).
+A `Conclude f` allows you to combine two `f` values, and one will be picked to
 use based on inspection of the input value (I like to think of this one as the
 "sharding" abstraction). Then, like in the case with the parsers, we want to
 find a way to give `Choice` some `Conclude` interface, we could look for the
@@ -892,19 +891,24 @@ specific, the contravariant section) and find:
 > its job by choosing a single one of those `f`s to handle that consumption,
 > based on what `a` is received.
 >
+> Contrast this with `Div`, where the multiple `f` actions are *all* used to
+> consume the input. `Dec` only uses *one single* `f` action to consume the
+> input, chosen at consumption time.
+>
 > For example, let's say you had a type `Socket a` which represents some IO
 > channel or socket that is expecting to receive `a`s. A `Dec Socket b` would be
 > a collection of sockets that expects a single `b` overall, and will pick
 > exactly one of those `f`s to handle that `b`.
 
-Sounds like exactly what we need!
+Sounds like exactly what we need! It also gives us a nice hint of what we might
+want to use for `RecordType`.
 
 ### Building Dec
 
 With this, we can write our final `Schema` type.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L27-L47
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L27-L45
 
 data Schema a =
       RecordType  (Div Field a)
@@ -915,13 +919,11 @@ data Field a = Field
     { fieldName  :: String
     , fieldValue :: Schema a
     }
-  deriving Generic
 
 data Choice a = Choice
     { choiceName  :: String
     , choiceValue :: Schema a
     }
-  deriving (Generic, Generic1)
 
 data Primitive a =
       PString (a -> String)
@@ -931,19 +933,18 @@ data Primitive a =
 
 Note that I switched from `[Field a]` to `Div Field a` --- the two are the same
 (`Div Field a` is essentially a newtype wrapper over `[Field a]`), but the
-latter has the `Contravariant` instance we want
-(`contramap :: (a -> b) -> Div Field b -> Div Field a`), and has useful functor
-combinator typeclass instances (like `ListF` before). And, again, I feel like it
-illustrates the symmetry between sum types and record types; `Div` and `Dec` are
-opposite types, as `Dec` represents a contravariant choice between different
-choices, and `Div` represents a contravariant merger between different
-consumers. It makes more clear the duality between product types and sum types.
+latter has useful functor combinator typeclass instance methods like `interpret`
+(like `ListF` before)[^3]. And, again, I feel like it illustrates the symmetry
+between sum types and record types; `Div` and `Dec` are opposite types, as `Dec`
+represents a contravariant choice between different choices, and `Div`
+represents a contravariant merger between different consumers. It makes more
+clear the duality between product types and sum types.
 
 We can assemble our `Customer` schema, in a way that looks a lot like our parser
 schema:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L80-L95
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L78-L93
 
 customerSchema :: Schema Customer
 customerSchema = SumType $
@@ -1017,7 +1018,7 @@ Well, how do we want to "use" a `Choice a`? Remember that `Schema a` encodes a
 way to serialize an `a` to an json value, a `Primitive a` is a way to serialize
 an `a` to a json value...a `Choice a` would be a way to serialize an `a` into a
 json value. We want to turn a `Choice a` into an `a -> Aeson.Value`, using the
-`Value` type from the popular *aeson* library.
+`Value` type from the underlying *aeson* library we are using:
 
 ``` {.haskell}
 choiceToValue :: Choice a -> (a -> Aeson.Value)
@@ -1056,7 +1057,7 @@ interpret choiceToValue :: Dec Choice a -> a -> Aeson.Value
 Let's write it!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L136-L140
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L134-L138
 
 choiceToValue :: Choice a -> Op Aeson.Value a
 choiceToValue Choice{..} = Op $ \x -> Aeson.object
@@ -1087,7 +1088,7 @@ interpret fieldToValue :: Div Field a -> a -> [Aeson.Pair]
 We can go ahead and write it out actually:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L142-L144
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L140-L142
 
 fieldToValue :: Field a -> Op [Aeson.Pair] a
 fieldToValue Field{..} = Op $ \x ->
@@ -1097,12 +1098,12 @@ fieldToValue Field{..} = Op $ \x ->
 Note that this behavior relies on the fact that the `interpret` instance for
 `Div` (using the `Divise` instance for `Op r`) will combine the `[Aeson.Pair]`
 list monoidally, concatenating the results of calling `fieldToValue` on every
-`Field` in the `Div Field a`.\[\^iapply\]
+`Field` in the `Div Field a`.
 
 And now we should have enough to write our entire serializer:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L127-L134
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L125-L132
 
 schemaToValue
     :: Schema a
@@ -1152,7 +1153,7 @@ by functor combinators), and `Div`/`Dec` support `icollect` just like
 word-for-word identical as it was for our parser schema:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L97-L124
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L95-L122
 
 schemaDoc
     :: String       -- ^ name
@@ -1236,3 +1237,6 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     -- essentially
     icollect f = getConst . interpret (\x -> Const [f x])
     ```
+
+[^3]: And, if we want it, it has the more useful `Contravariant` instance:
+    `contramap :: (a -> b) -> Div Field b -> Div Field a`.

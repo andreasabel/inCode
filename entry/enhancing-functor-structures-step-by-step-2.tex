@@ -164,7 +164,7 @@ We're just basically combining the additions we made to enable parsing with the
 additions we made to enable serialization. Our new \texttt{Primitive} type gives
 us the capability to do both!
 
-We call this new \texttt{Primitive} an
+We can say this new \texttt{Primitive} is an
 \href{https://hackage.haskell.org/package/invariant/docs/Data-Functor-Invariant.html}{``Invariant''
 Functor}: these are functors that give you ``both'' capabilities: interpreting
 covariantly \emph{and} contravariantly.
@@ -329,12 +329,12 @@ We also note that the invariant version of \texttt{divided} is
 \hypertarget{using-invariant-schema}{%
 \subsection{Using Invariant Schema}\label{using-invariant-schema}}
 
-Now to write our interpreters. Luckily, we already did all the work in the
+Now to write our interpreters. Luckily, we already did most of the work in the
 previous post. Writing \texttt{schemaDoc}, \texttt{schemaParser}, and
 \texttt{schemaToValue}, we can re-use pretty much all of our code!
 
 The main (unfortunate) difference is that instead of using \texttt{interpret} in
-every case, we can use \texttt{runCoDivAp} to run our \texttt{DivAp} in a
+every case, we must use \texttt{runCoDivAp} to run our \texttt{DivAp} in a
 covariant setting, and \texttt{runContraDivAp} to run our \texttt{DivAp} in a
 contravariant setting (similarly for \texttt{runCoDecAlt} and
 \texttt{runContraDecAlt}). Another small difference is that \texttt{icollect}
@@ -432,7 +432,9 @@ convert them to \texttt{Ap} and \texttt{Dec} first.\footnote{These are
 
 And there we have it --- a fully functional bidirectional parser schema type
 that we assembled step-by-step, adding each piece incrementally and exploring
-the space until we found something useful for us.
+the space until we found something useful for us. We have a single schema that
+can represent documentation, parsing, and serialization in a way that they are
+all kept in sync, after writing things only once!
 
 A cute function we could write to tie things together would be one that does a
 round-trip, serializing and then parsing, to make sure things worked properly.
@@ -456,9 +458,7 @@ round-trip, serializing and then parsing, to make sure things worked properly.
 \end{Highlighting}
 \end{Shaded}
 
-Looks solid to me. We now have a single schema that can represent documentation,
-parsing, and serialization in a way that they are all kept in sync, after
-writing things only once!
+Looks solid to me!
 
 \hypertarget{an-alternative-invariant-strategy}{%
 \section{An Alternative Invariant
@@ -590,6 +590,12 @@ same:
     \OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x)}
     \OtherTok{{-}>} \DataTypeTok{PreT} \DataTypeTok{Ap}\NormalTok{ f a}
     \OtherTok{{-}>}\NormalTok{ g a}
+
+\CommentTok{{-}{-} | We can also use icollect like before}
+\NormalTok{icollect}
+\OtherTok{    ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ b)}
+    \OtherTok{{-}>} \DataTypeTok{PreT} \DataTypeTok{Ap}\NormalTok{ f a}
+    \OtherTok{{-}>}\NormalTok{ [b]}
 \end{Highlighting}
 \end{Shaded}
 
@@ -606,7 +612,8 @@ a contravariant \texttt{Divisible} context! Just like as if we had
 So using \texttt{Pre} and \texttt{PreT}, we get to \emph{assemble} it using our
 favorite \texttt{Applicative} combinators\ldots then when we wrap it in
 \texttt{PreT}, we get to \emph{interpret} it in whatever way we want by choosing
-different interpreters. It's the best of both worlds!
+different interpreters. It's the best of both worlds! We even get the useful
+\texttt{icollect} function back!
 
 We can do the opposite thing with \texttt{Dec} as well: we can use
 \href{https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor-Route.html\#t:Post}{\texttt{Post}}
@@ -687,13 +694,20 @@ interpreting functions:
     \OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x)}
     \OtherTok{{-}>} \DataTypeTok{PostT} \DataTypeTok{Choice}\NormalTok{ f a}
     \OtherTok{{-}>}\NormalTok{ g a}
+
+\CommentTok{{-}{-} | We can also use icollect like before}
+\NormalTok{icollect}
+\OtherTok{    ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ b)}
+    \OtherTok{{-}>} \DataTypeTok{PostT} \DataTypeTok{Choice}\NormalTok{ f a}
+    \OtherTok{{-}>}\NormalTok{ [b]}
 \end{Highlighting}
 \end{Shaded}
 
 We get the same benefits as for \texttt{PreT}: if we want to interpret into a
 \texttt{Conclude} (like we did for our serializers), we can use
 \texttt{interpret}. If we want to interpret into a \texttt{Plus} (like we did
-for our parser generation), we can use \texttt{postPlusT}.
+for our parser generation), we can use \texttt{postPlusT}. We also get direct
+access to the convenient \texttt{icollect} function from before.
 
 With these new tools, we can imagine a different invariant \texttt{Schema} type:
 

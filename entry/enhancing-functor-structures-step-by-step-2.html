@@ -37,7 +37,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb1-5"><a href="#cb1-5"></a>    <span class="op">|</span> <span class="dt">PNumber</span> (a <span class="ot">-&gt;</span> <span class="dt">Scientific</span>) (<span class="dt">Scientific</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</span>
 <span id="cb1-6"><a href="#cb1-6"></a>    <span class="op">|</span> <span class="dt">PBool</span>   (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)       (<span class="dt">Bool</span>       <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</span></code></pre></div>
 <p>We’re just basically combining the additions we made to enable parsing with the additions we made to enable serialization. Our new <code>Primitive</code> type gives us the capability to do both!</p>
-<p>We call this new <code>Primitive</code> an <a href="https://hackage.haskell.org/package/invariant/docs/Data-Functor-Invariant.html">“Invariant” Functor</a>: these are functors that give you “both” capabilities: interpreting covariantly <em>and</em> contravariantly.</p>
+<p>We can say this new <code>Primitive</code> is an <a href="https://hackage.haskell.org/package/invariant/docs/Data-Functor-Invariant.html">“Invariant” Functor</a>: these are functors that give you “both” capabilities: interpreting covariantly <em>and</em> contravariantly.</p>
 <h3 id="divap-and-decalt">DivAp and DecAlt</h3>
 <p>By now, we know the drill. We also need to change our <code>RecordType</code> and <code>SumType</code> constructors to get the right type of container.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="co">-- Covariant Schema</span></span>
@@ -142,8 +142,8 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb6-14"><a href="#cb6-14"></a>    <span class="ot">-&gt;</span> <span class="dt">Div</span> <span class="dt">Field</span> <span class="dt">Int</span>             <span class="co">-- ^ handle the cpAge field</span></span>
 <span id="cb6-15"><a href="#cb6-15"></a>    <span class="ot">-&gt;</span> <span class="dt">Div</span> <span class="dt">Field</span> (<span class="dt">String</span>, <span class="dt">Int</span>)   <span class="co">-- ^ handle both together</span></span></code></pre></div>
 <h3 id="using-invariant-schema">Using Invariant Schema</h3>
-<p>Now to write our interpreters. Luckily, we already did all the work in the previous post. Writing <code>schemaDoc</code>, <code>schemaParser</code>, and <code>schemaToValue</code>, we can re-use pretty much all of our code!</p>
-<p>The main (unfortunate) difference is that instead of using <code>interpret</code> in every case, we can use <code>runCoDivAp</code> to run our <code>DivAp</code> in a covariant setting, and <code>runContraDivAp</code> to run our <code>DivAp</code> in a contravariant setting (similarly for <code>runCoDecAlt</code> and <code>runContraDecAlt</code>). Another small difference is that <code>icollect</code> doesn’t quite work properly on <code>DivAp</code>/<code>DecAlt</code>, so we have to convert them to <code>Ap</code> and <code>Dec</code> first.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>Now to write our interpreters. Luckily, we already did most of the work in the previous post. Writing <code>schemaDoc</code>, <code>schemaParser</code>, and <code>schemaToValue</code>, we can re-use pretty much all of our code!</p>
+<p>The main (unfortunate) difference is that instead of using <code>interpret</code> in every case, we must use <code>runCoDivAp</code> to run our <code>DivAp</code> in a covariant setting, and <code>runContraDivAp</code> to run our <code>DivAp</code> in a contravariant setting (similarly for <code>runCoDecAlt</code> and <code>runContraDecAlt</code>). Another small difference is that <code>icollect</code> doesn’t quite work properly on <code>DivAp</code>/<code>DecAlt</code>, so we have to convert them to <code>Ap</code> and <code>Dec</code> first.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L78-L154</span></span>
 <span id="cb7-2"><a href="#cb7-2"></a></span>
 <span id="cb7-3"><a href="#cb7-3"></a>schemaDoc</span>
@@ -223,7 +223,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb7-77"><a href="#cb7-77"></a>      <span class="dt">PString</span> f _ <span class="ot">-&gt;</span> <span class="dt">Aeson.String</span> <span class="op">.</span> T.pack <span class="op">.</span> f</span>
 <span id="cb7-78"><a href="#cb7-78"></a>      <span class="dt">PNumber</span> f _ <span class="ot">-&gt;</span> <span class="dt">Aeson.Number</span> <span class="op">.</span> f</span>
 <span id="cb7-79"><a href="#cb7-79"></a>      <span class="dt">PBool</span>   f _ <span class="ot">-&gt;</span> <span class="dt">Aeson.Bool</span> <span class="op">.</span> f</span></code></pre></div>
-<p>And there we have it — a fully functional bidirectional parser schema type that we assembled step-by-step, adding each piece incrementally and exploring the space until we found something useful for us.</p>
+<p>And there we have it — a fully functional bidirectional parser schema type that we assembled step-by-step, adding each piece incrementally and exploring the space until we found something useful for us. We have a single schema that can represent documentation, parsing, and serialization in a way that they are all kept in sync, after writing things only once!</p>
 <p>A cute function we could write to tie things together would be one that does a round-trip, serializing and then parsing, to make sure things worked properly.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L156-L160</span></span>
 <span id="cb8-2"><a href="#cb8-2"></a></span>
@@ -234,7 +234,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb8-7"><a href="#cb8-7"></a>testRoundTrip sch <span class="ot">=</span> A.parseValue (schemaParser sch) <span class="op">.</span> schemaToValue sch</span></code></pre></div>
 <div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a>ghci<span class="op">&gt;</span> testRoundTrip customerSchema (<span class="dt">CPerson</span> <span class="st">&quot;Sam&quot;</span> <span class="dv">40</span>)</span>
 <span id="cb9-2"><a href="#cb9-2"></a><span class="dt">Right</span> (<span class="dt">CPerson</span> {cpName <span class="ot">=</span> <span class="st">&quot;Sam&quot;</span>, cpAge <span class="ot">=</span> <span class="dv">40</span>})</span></code></pre></div>
-<p>Looks solid to me. We now have a single schema that can represent documentation, parsing, and serialization in a way that they are all kept in sync, after writing things only once!</p>
+<p>Looks solid to me!</p>
 <h2 id="an-alternative-invariant-strategy">An Alternative Invariant Strategy</h2>
 <p>The thought process “I want to use both <code>Div</code> and <code>Ap</code>, let’s just look for <code>DivAp</code>” is kind of nice and straightforward. However, there’s a major downside in using <code>DivAp</code> and <code>DecAlt</code> that make their ergonomics not so great when building them up.</p>
 <p>A major part about what makes <code>Ap</code> and <code>ListF</code> (and, to an extent, <code>Div</code> and <code>Dec</code>) so nice to use is that are instances of popular Haskell typeclasses like <code>Applicative</code> and <code>Alternative</code> (or <code>Plus</code>) and using <code>Applicative</code> and <code>Alternative</code> interfaces are pretty common in Haskell. Because of this, they are pretty comfortable for most Haskellers to use.</p>
@@ -282,10 +282,16 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb14-19"><a href="#cb14-19"></a><span class="ot">    ::</span> <span class="dt">Divisible</span> g</span>
 <span id="cb14-20"><a href="#cb14-20"></a>    <span class="ot">=&gt;</span> (<span class="kw">forall</span> x<span class="op">.</span> f x <span class="ot">-&gt;</span> g x)</span>
 <span id="cb14-21"><a href="#cb14-21"></a>    <span class="ot">-&gt;</span> <span class="dt">PreT</span> <span class="dt">Ap</span> f a</span>
-<span id="cb14-22"><a href="#cb14-22"></a>    <span class="ot">-&gt;</span> g a</span></code></pre></div>
+<span id="cb14-22"><a href="#cb14-22"></a>    <span class="ot">-&gt;</span> g a</span>
+<span id="cb14-23"><a href="#cb14-23"></a></span>
+<span id="cb14-24"><a href="#cb14-24"></a><span class="co">-- | We can also use icollect like before</span></span>
+<span id="cb14-25"><a href="#cb14-25"></a>icollect</span>
+<span id="cb14-26"><a href="#cb14-26"></a><span class="ot">    ::</span> (<span class="kw">forall</span> x<span class="op">.</span> f x <span class="ot">-&gt;</span> b)</span>
+<span id="cb14-27"><a href="#cb14-27"></a>    <span class="ot">-&gt;</span> <span class="dt">PreT</span> <span class="dt">Ap</span> f a</span>
+<span id="cb14-28"><a href="#cb14-28"></a>    <span class="ot">-&gt;</span> [b]</span></code></pre></div>
 <p>We see that <code>interpret</code> for <code>PreT Ap f a</code> works just like <code>interpret</code> for <code>Ap f a</code>…so we don’t lose any power, it’s the same as always if we wanted to just use <code>Ap f a</code> covariantly to interpret into a parser. Exactly what we did when we wrote our parser generation.</p>
 <p>But, we also gain <code>preDivisibleT</code>, which lets us <code>interpret</code> into a contravariant <code>Divisible</code> context! Just like as if we had <code>Div f a</code>! This is exactly what we did when we wrote our serializers.</p>
-<p>So using <code>Pre</code> and <code>PreT</code>, we get to <em>assemble</em> it using our favorite <code>Applicative</code> combinators…then when we wrap it in <code>PreT</code>, we get to <em>interpret</em> it in whatever way we want by choosing different interpreters. It’s the best of both worlds!</p>
+<p>So using <code>Pre</code> and <code>PreT</code>, we get to <em>assemble</em> it using our favorite <code>Applicative</code> combinators…then when we wrap it in <code>PreT</code>, we get to <em>interpret</em> it in whatever way we want by choosing different interpreters. It’s the best of both worlds! We even get the useful <code>icollect</code> function back!</p>
 <p>We can do the opposite thing with <code>Dec</code> as well: we can use <a href="https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor-Route.html#t:Post"><code>Post</code></a> to embed covariant capabilities in <code>Dec</code>.</p>
 <p>Recall that <code>Div Choice a</code> is a collection that contains a bunch of <code>Choice x</code>s of different <code>x</code>s, and can be used to contravariantly <em>consume</em> an <code>a</code>.</p>
 <p>A value of type:</p>
@@ -322,8 +328,14 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb18-19"><a href="#cb18-19"></a><span class="ot">    ::</span> <span class="dt">Plus</span> g</span>
 <span id="cb18-20"><a href="#cb18-20"></a>    <span class="ot">=&gt;</span> (<span class="kw">forall</span> x<span class="op">.</span> f x <span class="ot">-&gt;</span> g x)</span>
 <span id="cb18-21"><a href="#cb18-21"></a>    <span class="ot">-&gt;</span> <span class="dt">PostT</span> <span class="dt">Choice</span> f a</span>
-<span id="cb18-22"><a href="#cb18-22"></a>    <span class="ot">-&gt;</span> g a</span></code></pre></div>
-<p>We get the same benefits as for <code>PreT</code>: if we want to interpret into a <code>Conclude</code> (like we did for our serializers), we can use <code>interpret</code>. If we want to interpret into a <code>Plus</code> (like we did for our parser generation), we can use <code>postPlusT</code>.</p>
+<span id="cb18-22"><a href="#cb18-22"></a>    <span class="ot">-&gt;</span> g a</span>
+<span id="cb18-23"><a href="#cb18-23"></a></span>
+<span id="cb18-24"><a href="#cb18-24"></a><span class="co">-- | We can also use icollect like before</span></span>
+<span id="cb18-25"><a href="#cb18-25"></a>icollect</span>
+<span id="cb18-26"><a href="#cb18-26"></a><span class="ot">    ::</span> (<span class="kw">forall</span> x<span class="op">.</span> f x <span class="ot">-&gt;</span> b)</span>
+<span id="cb18-27"><a href="#cb18-27"></a>    <span class="ot">-&gt;</span> <span class="dt">PostT</span> <span class="dt">Choice</span> f a</span>
+<span id="cb18-28"><a href="#cb18-28"></a>    <span class="ot">-&gt;</span> [b]</span></code></pre></div>
+<p>We get the same benefits as for <code>PreT</code>: if we want to interpret into a <code>Conclude</code> (like we did for our serializers), we can use <code>interpret</code>. If we want to interpret into a <code>Plus</code> (like we did for our parser generation), we can use <code>postPlusT</code>. We also get direct access to the convenient <code>icollect</code> function from before.</p>
 <p>With these new tools, we can imagine a different invariant <code>Schema</code> type:</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/routing.hs#L47-L100</span></span>
 <span id="cb19-2"><a href="#cb19-2"></a></span>

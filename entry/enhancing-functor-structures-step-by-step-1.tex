@@ -408,7 +408,9 @@ the appropriate json primitive. It can be \texttt{PString}, \texttt{PNumber}, or
 \texttt{PBool}. To create a ``String Parser'', you need to use \texttt{PString}
 with a function on ``what to do with the string you get''. To create a ``Bool
 parser'', you need \texttt{PBool} with a function on what to do with the bool
-you get.
+you get. Note that the \texttt{PNumber} parser takes a \texttt{Scientific},
+which is the type \emph{aeson} (the underlying json library) uses to represent
+valid JSON numbers (it's basically \texttt{Either\ Integer\ Double}).
 
 We can write some helper primitives:
 
@@ -760,7 +762,7 @@ And\ldots that should work!
 We were able to generate a fully functional parser from our schema, by only
 providing parsers for the smaller, more specific types we had (\texttt{Field}
 and \texttt{Choice}), and having them all fit together in a way directed by
-their \texttt{Apply} and \texttt{Alt} typeclass instances.
+their \texttt{Applicative} and \texttt{Plus} typeclass instances.
 
 \hypertarget{direct-structural-inspection}{%
 \subsection{Direct Structural Inspection}\label{direct-structural-inspection}}
@@ -788,8 +790,8 @@ eventually run into \texttt{A.throwCustomError\ "No\ options\ were\ validated"}.
 \end{Highlighting}
 \end{Shaded}
 
-Since \texttt{Plus}'s \texttt{zero} definition always falls back to the same
-error, this is not very useful!
+Since the definition of \texttt{zero} (which was our fault because we wrote it
+here --- oops!) always falls back to the same error, this is not very useful!
 
 So \texttt{interpret} for \texttt{ListF}, while convenient, isn't necessarily
 the best way to tear down a \texttt{ListF}. Luckily, most functor combinators
@@ -959,7 +961,7 @@ each leaf is serialized.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L44{-}L47}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L42{-}L45}
 
 \KeywordTok{data} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{=}
       \DataTypeTok{PString}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{String}\NormalTok{)}
@@ -979,7 +981,7 @@ Again, it can be useful to add some helper primitives:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L66{-}L73}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L64{-}L71}
 
 \OtherTok{pString ::} \DataTypeTok{Primitive} \DataTypeTok{String}
 \NormalTok{pString }\OtherTok{=} \DataTypeTok{PString} \FunctionTok{id}
@@ -1002,7 +1004,7 @@ feel for how our serializer will work:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L146{-}L150}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L144{-}L148}
 
 \OtherTok{primToValue ::} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Aeson.Value}
 \NormalTok{primToValue }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -1059,7 +1061,7 @@ something like
     \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     [}\DataTypeTok{Choice}\NormalTok{ a]}
     \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
   \KeywordTok{deriving} \DataTypeTok{Functor}
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L32{-}L38}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L32{-}L37}
 
 \KeywordTok{data} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Field}
 
@@ -1080,20 +1082,18 @@ What we need is a way to express a hetereogenous collection/sequence of
 \texttt{Choice\ a}, coupled with a way of ``choosing'' exactly one of them to
 handle one form that our input \texttt{a} can take. A type that says ``use
 exactly one of a bunch of \texttt{Choice}s of different \texttt{x}s, and choose
-one to dispatch depending on what \texttt{a} we get''.
-
-This one is a little bit trickier to grasp ``intuitively'', I feel, because
-contravariant abstractions and manipulations are much less common/ubiquitous in
-Haskell than the covariant ones. So how do we find the tool we need?
+one to dispatch depending on what \texttt{a} we get''. So how do we find the
+tool we need?
 
 \emph{If} you are already familiar with contravariant abstractions (but who is?)
 you might recognize this as the essence of the
 \href{https://hackage.haskell.org/package/contravariant/docs/Data-Functor-Contravariant-Divisible.html\#g:6}{Decidable}
 typeclass, from the
 \emph{\href{https://hackage.haskell.org/package/contravariant}{contravariant}}
-library (or more accurately,
-\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Conclude.html}{Conclude}):
-a \texttt{Conclude\ f} allows you to combine two \texttt{f} values, and one will
+library\ldots or more accurately, ``Decidable without a Divisible constraint'',
+which is
+\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Conclude.html}{Conclude}.
+A \texttt{Conclude\ f} allows you to combine two \texttt{f} values, and one will
 be picked to use based on inspection of the input value (I like to think of this
 one as the ``sharding'' abstraction). Then, like in the case with the parsers,
 we want to find a way to give \texttt{Choice} some \texttt{Conclude} interface,
@@ -1121,6 +1121,10 @@ If \texttt{f\ x} is a consumer of \texttt{x}s, then \texttt{Dec\ f\ a} is a
 consumer of \texttt{a}s that does its job by choosing a single one of those
 \texttt{f}s to handle that consumption, based on what \texttt{a} is received.
 
+Contrast this with \texttt{Div}, where the multiple \texttt{f} actions are
+\emph{all} used to consume the input. \texttt{Dec} only uses \emph{one single}
+\texttt{f} action to consume the input, chosen at consumption time.
+
 For example, let's say you had a type \texttt{Socket\ a} which represents some
 IO channel or socket that is expecting to receive \texttt{a}s. A
 \texttt{Dec\ Socket\ b} would be a collection of sockets that expects a single
@@ -1128,7 +1132,8 @@ IO channel or socket that is expecting to receive \texttt{a}s. A
 that \texttt{b}.
 \end{quote}
 
-Sounds like exactly what we need!
+Sounds like exactly what we need! It also gives us a nice hint of what we might
+want to use for \texttt{RecordType}.
 
 \hypertarget{building-dec}{%
 \subsection{Building Dec}\label{building-dec}}
@@ -1137,7 +1142,7 @@ With this, we can write our final \texttt{Schema} type.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L27{-}L47}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L27{-}L45}
 
 \KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
       \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Div} \DataTypeTok{Field}\NormalTok{ a)}
@@ -1148,13 +1153,11 @@ With this, we can write our final \texttt{Schema} type.
 \NormalTok{    \{}\OtherTok{ fieldName  ::} \DataTypeTok{String}
 \NormalTok{    ,}\OtherTok{ fieldValue ::} \DataTypeTok{Schema}\NormalTok{ a}
 \NormalTok{    \}}
-  \KeywordTok{deriving} \DataTypeTok{Generic}
 
 \KeywordTok{data} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Choice}
 \NormalTok{    \{}\OtherTok{ choiceName  ::} \DataTypeTok{String}
 \NormalTok{    ,}\OtherTok{ choiceValue ::} \DataTypeTok{Schema}\NormalTok{ a}
 \NormalTok{    \}}
-  \KeywordTok{deriving}\NormalTok{ (}\DataTypeTok{Generic}\NormalTok{, }\DataTypeTok{Generic1}\NormalTok{)}
 
 \KeywordTok{data} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{=}
       \DataTypeTok{PString}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{String}\NormalTok{)}
@@ -1165,22 +1168,23 @@ With this, we can write our final \texttt{Schema} type.
 
 Note that I switched from \texttt{{[}Field\ a{]}} to \texttt{Div\ Field\ a} ---
 the two are the same (\texttt{Div\ Field\ a} is essentially a newtype wrapper
-over \texttt{{[}Field\ a{]}}), but the latter has the \texttt{Contravariant}
-instance we want
-(\texttt{contramap\ ::\ (a\ -\textgreater{}\ b)\ -\textgreater{}\ Div\ Field\ b\ -\textgreater{}\ Div\ Field\ a}),
-and has useful functor combinator typeclass instances (like \texttt{ListF}
-before). And, again, I feel like it illustrates the symmetry between sum types
-and record types; \texttt{Div} and \texttt{Dec} are opposite types, as
-\texttt{Dec} represents a contravariant choice between different choices, and
-\texttt{Div} represents a contravariant merger between different consumers. It
-makes more clear the duality between product types and sum types.
+over \texttt{{[}Field\ a{]}}), but the latter has useful functor combinator
+typeclass instance methods like \texttt{interpret} (like \texttt{ListF}
+before)\footnote{And, if we want it, it has the more useful
+  \texttt{Contravariant} instance:
+  \texttt{contramap\ ::\ (a\ -\textgreater{}\ b)\ -\textgreater{}\ Div\ Field\ b\ -\textgreater{}\ Div\ Field\ a}.}.
+And, again, I feel like it illustrates the symmetry between sum types and record
+types; \texttt{Div} and \texttt{Dec} are opposite types, as \texttt{Dec}
+represents a contravariant choice between different choices, and \texttt{Div}
+represents a contravariant merger between different consumers. It makes more
+clear the duality between product types and sum types.
 
 We can assemble our \texttt{Customer} schema, in a way that looks a lot like our
 parser schema:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L80{-}L95}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L78{-}L93}
 
 \OtherTok{customerSchema ::} \DataTypeTok{Schema} \DataTypeTok{Customer}
 \NormalTok{customerSchema }\OtherTok{=} \DataTypeTok{SumType} \OperatorTok{$}
@@ -1266,7 +1270,7 @@ Well, how do we want to ``use'' a \texttt{Choice\ a}? Remember that
 value\ldots a \texttt{Choice\ a} would be a way to serialize an \texttt{a} into
 a json value. We want to turn a \texttt{Choice\ a} into an
 \texttt{a\ -\textgreater{}\ Aeson.Value}, using the \texttt{Value} type from the
-popular \emph{aeson} library.
+underlying \emph{aeson} library we are using:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1314,7 +1318,7 @@ Let's write it!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L136{-}L140}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L134{-}L138}
 
 \OtherTok{choiceToValue ::} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Op} \DataTypeTok{Aeson.Value}\NormalTok{ a}
 \NormalTok{choiceToValue }\DataTypeTok{Choice}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \DataTypeTok{Op} \OperatorTok{$}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>}\NormalTok{ Aeson.object}
@@ -1352,7 +1356,7 @@ We can go ahead and write it out actually:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L142{-}L144}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L140{-}L142}
 
 \OtherTok{fieldToValue ::} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Op}\NormalTok{ [}\DataTypeTok{Aeson.Pair}\NormalTok{] a}
 \NormalTok{fieldToValue }\DataTypeTok{Field}\NormalTok{\{}\OperatorTok{..}\NormalTok{\} }\OtherTok{=} \DataTypeTok{Op} \OperatorTok{$}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>}
@@ -1364,13 +1368,13 @@ Note that this behavior relies on the fact that the \texttt{interpret} instance
 for \texttt{Div} (using the \texttt{Divise} instance for \texttt{Op\ r}) will
 combine the \texttt{{[}Aeson.Pair{]}} list monoidally, concatenating the results
 of calling \texttt{fieldToValue} on every \texttt{Field} in the
-\texttt{Div\ Field\ a}.{[}\^{}iapply{]}
+\texttt{Div\ Field\ a}.
 
 And now we should have enough to write our entire serializer:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L127{-}L134}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L125{-}L132}
 
 \NormalTok{schemaToValue}
 \OtherTok{    ::} \DataTypeTok{Schema}\NormalTok{ a}
@@ -1434,7 +1438,7 @@ parser schema:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L97{-}L124}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L95{-}L122}
 
 \NormalTok{schemaDoc}
 \OtherTok{    ::} \DataTypeTok{String}       \CommentTok{{-}{-} \^{} name}
